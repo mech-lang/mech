@@ -1,17 +1,113 @@
 //! Application syntax normalized before canonical parsing in the opt-in AOT
 //! frontends. `value |> f(_, bound)` evaluates value once; all holes in a stage
 //! refer to that value. `f(x<T>) => <U> := expression` is a typed function body.
+//! `value |N> f` uses the same pipeline order and lowers to sequence/iterate.
 //! Indented bodies use the same signature: local definitions and mutations
 //! precede the final expression, binding, or local assignment result.
 //! Normalization creates ordinary bindings/functions and adds no native kernel.
 
 fn identifier_char(ch: char) -> bool {
-    ch.is_alphanumeric() || matches!(ch, '_' | '-' | '/')
+    ch.is_alphanumeric()
+        || !ch.is_ascii()
+        || matches!(
+            ch,
+            '_' | '&' | '$' | '%' | '/' | '#' | '\\' | '~' | '+' | '-' | '*' | '^'
+        )
+}
+
+// Callback names admit more symbols than a standalone argument-hole boundary.
+// Keep the original ASCII boundaries and distinguish canonical Unicode
+// operators from the non-ASCII characters accepted in names.
+fn hole_identifier_char(ch: char) -> bool {
+    (ch.is_alphanumeric() || !ch.is_ascii() || matches!(ch, '_' | '-' | '/'))
+        && !unicode_operator(ch)
+}
+
+fn unicode_operator(ch: char) -> bool {
+    matches!(
+        ch,
+        '×' | '÷'
+            | '·'
+            | '•'
+            | '⨯'
+            | '≠'
+            | '⩵'
+            | '≡'
+            | '≥'
+            | '≤'
+            | '∨'
+            | '⋁'
+            | '∧'
+            | '⋀'
+            | '¬'
+            | '⊕'
+            | '⊻'
+            | '⋈'
+            | '⟕'
+            | '⟖'
+            | '⟗'
+            | '⋉'
+            | '▷'
+            | '∪'
+            | '∩'
+            | '∖'
+            | '∁'
+            | '⊆'
+            | '⊇'
+            | '⊊'
+            | '⊂'
+            | '⊋'
+            | '⊃'
+            | '∈'
+            | '∉'
+            | 'Δ'
+            | '⊗'
+    )
 }
 fn identifier(source: &str) -> bool {
     !source.is_empty()
         && source.chars().all(identifier_char)
-        && source.chars().any(|c| c.is_alphabetic() || c == '_')
+        && canonical_fragment(
+            &format!("{source} := 0\n"),
+            mech_syntax::document::SyntaxKind::Identifier,
+            source,
+        )
+}
+
+/// Let the canonical grammar validate names, annotations and table headers.
+/// The surrounding binding only supplies a complete document for that parser.
+fn canonical_fragment(
+    source: &str,
+    kind: mech_syntax::document::SyntaxKind,
+    expected: &str,
+) -> bool {
+    use mech_syntax::document::{
+        DocumentId, ParseConfig, Revision, SyntaxNode, TextSnapshot, parse_canonical_document,
+    };
+    fn contains(node: SyntaxNode, kind: mech_syntax::document::SyntaxKind, expected: &str) -> bool {
+        (node.kind() == kind && node.text().is_ok_and(|text| text.trim() == expected.trim()))
+            || node.children().any(|child| contains(child, kind, expected))
+    }
+    let Ok(snapshot) = TextSnapshot::new(DocumentId(0x415050), Revision(0), source) else {
+        return false;
+    };
+    let parsed = parse_canonical_document(snapshot, ParseConfig::default());
+    parsed.is_strictly_clean() && contains(parsed.syntax(), kind, expected)
+}
+
+fn binding_head(source: &str) -> bool {
+    if identifier(source) {
+        return true;
+    }
+    if !source.contains('<') {
+        return false;
+    }
+    let probe = format!("{source} := 0\n");
+    canonical_fragment(
+        &probe,
+        mech_syntax::document::SyntaxKind::VariableDefine,
+        &probe,
+    )
 }
 
 /// Code bytes, with strings and comments masked, retain their original offsets.
@@ -137,6 +233,354 @@ fn split_top<'a>(source: &'a str, token: &str) -> Result<Vec<&'a str>, String> {
     Ok(parts)
 }
 
+#[derive(Clone, Copy)]
+struct Pipe {
+    start: usize,
+    end: usize,
+    repetitions: Option<u64>,
+}
+
+/// Recognize the same surface pipeline at every detection/continuation site.
+/// Other bars (boolean OR, comprehensions, match arms) keep their meaning.
+fn pipe_at(code: &str, start: usize) -> Result<Option<Pipe>, String> {
+    let bytes = code.as_bytes();
+    if bytes[start] != b'|'
+        || bytes.get(start + 1) == Some(&b'|')
+        || start.checked_sub(1).is_some_and(|i| bytes[i] == b'|')
+    {
+        return Ok(None);
+    }
+    let tail = &code[start + 1..];
+    if tail.starts_with('>') {
+        return Ok(Some(Pipe {
+            start,
+            end: start + 2,
+            repetitions: None,
+        }));
+    }
+
+    // A counted pipe is one local token. Do not search beyond whitespace or a
+    // structural delimiter: ordinary prose and table rows can contain many
+    // unrelated bars, and an unbounded search from each one is quadratic.
+    let tail_bytes = tail.as_bytes();
+    let mut token_start = 0;
+    while tail_bytes
+        .get(token_start)
+        .is_some_and(|byte| byte.is_ascii_whitespace() && *byte != b'\n' && *byte != b'\r')
+    {
+        token_start += 1;
+    }
+    let Some(&first) = tail_bytes.get(token_start) else {
+        return Ok(None);
+    };
+    if matches!(first, b'\n' | b'\r' | b'|') {
+        return Ok(None);
+    }
+    if token_start > 0 {
+        // Comprehension predicates and match-arm conditions use `| value >`.
+        // Counted pipes and their malformed-count diagnostics require the
+        // count token to be attached directly to `|`.
+        return Ok(None);
+    }
+
+    let count_like =
+        first.is_ascii_alphanumeric() || matches!(first, b'_' | b'+' | b'-' | b'.' | b'>');
+    if !count_like {
+        return Ok(None);
+    }
+
+    let mut end = token_start;
+    while tail_bytes.get(end).is_some_and(|byte| {
+        byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'+' | b'-' | b'.')
+    }) {
+        end += 1;
+    }
+    let mut close = end;
+    while tail_bytes
+        .get(close)
+        .is_some_and(|byte| byte.is_ascii_whitespace() && *byte != b'\n' && *byte != b'\r')
+    {
+        close += 1;
+    }
+    if tail_bytes.get(close) != Some(&b'>') {
+        // A counted pipe exists only when its complete attached token is
+        // present. Guessing that a numeric table cell omitted `>` makes valid
+        // compact rows such as `|9 false|` look like malformed applications.
+        return Ok(None);
+    }
+    let end = close;
+    let count = &tail[..end];
+    // A numeric match arm/transition is not an application operator.
+    if count.ends_with('=') || count.ends_with('-') {
+        return Ok(None);
+    }
+    if count.is_empty() || !count.bytes().all(|b| b.is_ascii_digit()) {
+        return Err("repeated application count must be a nonnegative decimal u64 integer literal, without spaces".into());
+    }
+    let pipe_end = start + end + 2;
+    let next = bytes[pipe_end..]
+        .iter()
+        .copied()
+        .find(|byte| !matches!(byte, b' ' | b'\t'));
+    if next.is_some_and(|byte| {
+        byte.is_ascii_digit() || matches!(byte, b'.' | b'+' | b'-' | b'"' | b'[' | b'{')
+    }) {
+        // Compact comparison predicates can spell their separator and left
+        // operand exactly like a counted pipe (`|1>0`). A repeated stage must
+        // begin with a function name (or continue on the following line), so
+        // retain literal-led right operands for the canonical parser.
+        return Ok(None);
+    }
+    let repetitions = count
+        .parse::<u64>()
+        .map_err(|_| "repeated application count exceeds u64::MAX")?;
+    Ok(Some(Pipe {
+        start,
+        end: pipe_end,
+        repetitions: Some(repetitions),
+    }))
+}
+
+fn bar_starts_match_arm(code: &str, start: usize) -> bool {
+    let bytes = code.as_bytes();
+    let mut delimiters = Vec::new();
+    let mut index = start + 1;
+    while let Some(&byte) = bytes.get(index) {
+        match byte {
+            b'(' | b'[' | b'{' => delimiters.push(byte),
+            b')' | b']' | b'}' => {
+                if delimiters.pop().is_none() {
+                    return false;
+                }
+            }
+            b'=' if delimiters.is_empty() && bytes.get(index + 1) == Some(&b'>') => {
+                return true;
+            }
+            _ if delimiters.is_empty() && bytes[index..].starts_with("⇒".as_bytes()) => {
+                return true;
+            }
+            b'|' | b'\n' | b'\r' | b';' if delimiters.is_empty() => return false,
+            _ => {}
+        }
+        index += 1;
+    }
+    false
+}
+
+// Locate one possible row boundary. The canonical probe below validates it;
+// projections, outer closers and following stages must not enter that probe.
+fn table_row_end(code: &str, start: usize) -> Option<usize> {
+    let bytes = code.as_bytes();
+    let mut delimiters = Vec::new();
+    for index in start + 1..bytes.len() {
+        match bytes[index] {
+            b'(' | b'[' | b'{' => delimiters.push(bytes[index]),
+            b')' | b']' | b'}' => {
+                delimiters.pop()?;
+            }
+            b'|' if delimiters.is_empty()
+                && bytes.get(index + 1) != Some(&b'|')
+                && bytes[index - 1] != b'|'
+                && !bar_starts_match_arm(code, index) =>
+            {
+                return Some(index + 1);
+            }
+            b'\n' | b'\r' | b';' if delimiters.is_empty() => return None,
+            _ => {}
+        }
+    }
+    None
+}
+
+/// Collect table separators in a forward pass. Header candidates slide over
+/// disjoint intervals; rows are checked independently, never by reparsing an
+/// ever-growing table prefix. The canonical parser owns both decisions.
+fn table_bar_offsets(code: &str) -> Vec<usize> {
+    #[derive(Default)]
+    struct Context {
+        first_bar: Option<usize>,
+        in_table: bool,
+        row_start: Option<usize>,
+    }
+    let bytes = code.as_bytes();
+    let mut contexts = vec![Context::default()];
+    let mut offsets = Vec::new();
+    for (index, byte) in bytes.iter().copied().enumerate() {
+        match byte {
+            b'(' | b'[' | b'{' => contexts.push(Context::default()),
+            b')' | b']' | b'}' => {
+                if contexts.len() > 1 {
+                    contexts.pop();
+                }
+            }
+            b'\r' if bytes.get(index + 1) == Some(&b'\n') => {}
+            b'\n' | b'\r' => {
+                let context = contexts.last_mut().unwrap();
+                if context.in_table && context.row_start.is_none() {
+                    context.row_start = Some(index + 1);
+                } else {
+                    *context = Context::default();
+                }
+            }
+            b';' => *contexts.last_mut().unwrap() = Context::default(),
+            b'|' => {
+                if bytes.get(index + 1) == Some(&b'|')
+                    || index
+                        .checked_sub(1)
+                        .is_some_and(|previous| bytes[previous] == b'|')
+                {
+                    continue;
+                }
+                let context = contexts.last_mut().unwrap();
+                if let Some(start) = context.row_start.take() {
+                    let leading = code[start..index].trim().is_empty();
+                    // Ordinary leading separators are cheap. Only a row
+                    // which looks like a pipe needs an independent canonical
+                    // row probe, not a growing multi-row table prefix.
+                    let regular_row = leading
+                        && (matches!(pipe_at(code, index), Ok(None))
+                            || table_row_end(code, index).is_some_and(|end| {
+                                let row = &code[index..end];
+                                let table = format!("|application-cell<u64>|\n{row}");
+                                canonical_fragment(
+                                    &format!("application-table := {table}\n"),
+                                    mech_syntax::document::SyntaxKind::Table,
+                                    &table,
+                                )
+                            }));
+                    if regular_row {
+                        offsets.push(index);
+                        context.first_bar = Some(index);
+                        continue;
+                    }
+                    *context = Context::default();
+                }
+                if context.in_table {
+                    if bar_starts_match_arm(code, index) {
+                        continue;
+                    }
+                    // Only an apparent application can end table ownership.
+                    // Ordinary row separators need no parser probe per row.
+                    if matches!(pipe_at(code, index), Ok(None)) {
+                        offsets.push(index);
+                        context.first_bar = Some(index);
+                        continue;
+                    }
+                    let start = context.first_bar.unwrap();
+                    let row = code[start + 1..index].trim();
+                    let table = format!("|application-cell<u64>| {row} |");
+                    if !row.is_empty()
+                        && canonical_fragment(
+                            &format!("application-table := {table}\n"),
+                            mech_syntax::document::SyntaxKind::Table,
+                            &table,
+                        )
+                    {
+                        offsets.push(index);
+                        context.first_bar = Some(index);
+                        continue;
+                    }
+                    // A projection or an empty gap after the last closing row
+                    // ends the table. A following |N> is a stage, not a row.
+                    context.in_table = false;
+                    context.first_bar = None;
+                }
+                if !context.in_table {
+                    if let Some(start) = context.first_bar {
+                        let header = code[start + 1..index].trim();
+                        let table = format!("|{header}| 0 |");
+                        // A literal header requires a kind annotation. Bare
+                        // fields belong to table *kinds*, not table literals.
+                        // Keep prose bar pairs off the canonical probe path.
+                        context.in_table = header.contains('<')
+                            && header.contains('>')
+                            && canonical_fragment(
+                                &format!("application-table := {table}\n"),
+                                mech_syntax::document::SyntaxKind::Table,
+                                &table,
+                            );
+                    }
+                    // Failed headers must not hide a later genuine table in
+                    // this context (including after a boolean OR expression).
+                    context.first_bar = Some(index);
+                }
+                if context.in_table {
+                    offsets.push(index);
+                }
+            }
+            _ => {}
+        }
+    }
+    offsets
+}
+
+fn pipe_offsets(source: &str) -> Result<Vec<Pipe>, String> {
+    let code = mask(source);
+    let mut table_bars = table_bar_offsets(&code).into_iter().peekable();
+    top_offsets(source, "|")?
+        .into_iter()
+        .filter_map(|offset| {
+            while table_bars.peek().is_some_and(|next| *next < offset) {
+                table_bars.next();
+            }
+            let in_table = table_bars.next_if_eq(&offset).is_some();
+            (!in_table && !bar_starts_match_arm(&code, offset))
+                .then(|| pipe_at(&code, offset).transpose())
+                .flatten()
+        })
+        .collect()
+}
+
+fn contains_pipe(source: &str) -> bool {
+    let code = mask(source);
+    let bytes = code.as_bytes();
+    let mut table_bars = table_bar_offsets(&code).into_iter().peekable();
+    let mut stack = Vec::new();
+    for (i, byte) in bytes.iter().copied().enumerate() {
+        match byte {
+            b'(' | b'[' | b'{' => stack.push(byte),
+            b')' | b']' | b'}' => {
+                stack.pop();
+            }
+            b'|' => {
+                let in_table = table_bars.next_if_eq(&i).is_some();
+                // Classify canonical expression separators before attempting
+                // counted-pipe validation. Compact comparisons can look like
+                // complete counts (`|1>`) or malformed counts (`|name>` and
+                // `|-1>`), and every match arm—not only the first—owns its
+                // separator through the same-depth `=>` that follows it.
+                if in_table
+                    || stack
+                        .last()
+                        .is_some_and(|delimiter| matches!(*delimiter, b'[' | b'{'))
+                    || bar_starts_match_arm(&code, i)
+                {
+                    continue;
+                }
+                match pipe_at(&code, i) {
+                    Ok(Some(_)) => return true,
+                    Ok(None) => {}
+                    Err(_) => return true,
+                }
+            }
+            _ => {}
+        }
+    }
+    false
+}
+
+fn starts_pipe(source: &str) -> bool {
+    let code = mask(source);
+    let code = code.trim_start();
+    code.starts_with('|') && !matches!(pipe_at(code, 0), Ok(None))
+}
+
+fn ends_pipe(source: &str) -> bool {
+    let code = mask(source);
+    let code = code.trim_end();
+    pipe_offsets(code).is_ok_and(|pipes| pipes.last().is_some_and(|pipe| pipe.end == code.len()))
+}
+
 fn substitute(stage: &str, value: &str) -> Result<String, String> {
     let code = mask(stage);
     let mut output = String::new();
@@ -144,11 +588,26 @@ fn substitute(stage: &str, value: &str) -> Result<String, String> {
     let mut holes = 0;
     for (i, ch) in code.char_indices() {
         if ch == '_'
-            && (i == 0 || !code[..i].chars().next_back().is_some_and(identifier_char))
-            && !code[i + 1..].chars().next().is_some_and(identifier_char)
+            && (i == 0
+                || !code[..i]
+                    .chars()
+                    .next_back()
+                    .is_some_and(hole_identifier_char))
+            && !code[i + 1..]
+                .chars()
+                .next()
+                .is_some_and(hole_identifier_char)
         {
             output.push_str(&stage[start..i]);
+            // Separate generated names from Unicode operator/emoji name
+            // characters so the canonical parser sees the original operator.
+            if code[..i].chars().next_back().is_some_and(unicode_operator) {
+                output.push(' ');
+            }
             output.push_str(value);
+            if code[i + 1..].chars().next().is_some_and(unicode_operator) {
+                output.push(' ');
+            }
             start = i + 1;
             holes += 1;
         }
@@ -199,33 +658,49 @@ fn pipeline(
     expression: &str,
     prefix: &str,
     serial: &mut usize,
+    counted: &mut bool,
 ) -> Result<(Vec<String>, String), String> {
     let expression = unparenthesized(expression)?;
-    let stages = split_top(expression, "|>")?;
+    let pipes = pipe_offsets(expression)?;
+    let mut stages = Vec::new();
+    let mut start = 0;
+    for pipe in &pipes {
+        stages.push(expression[start..pipe.start].trim());
+        start = pipe.end;
+    }
+    stages.push(expression[start..].trim());
     if stages.iter().any(|s| s.is_empty()) {
         return Err("empty pipeline stage".into());
     }
     let mut definitions = Vec::new();
     let mut value = stages[0].to_string();
-    if mask(&value).contains("|>") {
+    if contains_pipe(&value) {
         // Parenthesized initial pipelines can be flattened without moving them
         // across another operation or changing its evaluation/branch order.
         let input = unparenthesized(&value)?;
-        if top_offsets(input, "|>")?.is_empty() {
+        if pipe_offsets(input)?.is_empty() {
             return Err("a nested pipeline must be a complete parenthesized expression".into());
         }
-        let (nested, result) = pipeline(input, prefix, serial)?;
+        let (nested, result) = pipeline(input, prefix, serial, counted)?;
         definitions.extend(nested);
         value = result;
     }
-    for stage in &stages[1..] {
-        if mask(stage).contains("|>") {
+    for (pipe, stage) in pipes.iter().zip(&stages[1..]) {
+        if contains_pipe(stage) {
             return Err("pipelines inside stage arguments require a separate binding".into());
         }
         let name = format!("{prefix}{}", *serial);
         *serial += 1;
         definitions.push(format!("{name} := {value}"));
-        value = substitute(stage, &name)?;
+        value = if let Some(count) = pipe.repetitions {
+            if !identifier(stage) || *stage == "_" {
+                return Err("repeated application stage requires a function name".into());
+            }
+            *counted = true;
+            format!("sequence/iterate({name}, {count}, {stage})")
+        } else {
+            substitute(stage, &name)?
+        };
     }
     Ok((definitions, value))
 }
@@ -241,10 +716,45 @@ fn is_candidate(source: &str) -> bool {
         .next()
         .unwrap_or("");
     // Documentation/prose is not a definition just because it quotes an operator.
-    identifier(initial)
+    let named_statement = identifier(initial)
         && (code[initial.len()..].trim_start().starts_with(":=")
-            || code[initial.len()..].trim_start().starts_with('(')
-            || code[initial.len()..].trim_start().starts_with("|>"))
+            || code[initial.len()..].trim_start().starts_with('('));
+    if named_statement {
+        return true;
+    }
+    if top_offsets(code, ":=").is_ok_and(|offsets| {
+        offsets
+            .first()
+            .is_some_and(|offset| binding_head(code[..*offset].trim()))
+    }) {
+        return true;
+    }
+    let Ok(pipes) = pipe_offsets(code) else {
+        return false;
+    };
+    let Some(pipe) = pipes.first() else {
+        return false;
+    };
+    let seed = code[..pipe.start].trim();
+    let named_seed = identifier(seed);
+    let seed_binding = format!("application-seed-probe := {seed}\n");
+    let counted_seed = pipe.repetitions.is_some()
+        && canonical_fragment(
+            &seed_binding,
+            mech_syntax::document::SyntaxKind::VariableDefine,
+            &seed_binding,
+        );
+    // A standalone example may begin with a word just like a named seed.
+    // Require complete valid stages before treating it as executable source;
+    // bindings/functions above still retain all malformed-stage diagnostics.
+    (named_seed || counted_seed)
+        && pipeline(
+            code.trim_end_matches('.').trim_end(),
+            "application-probe-",
+            &mut 0,
+            &mut false,
+        )
+        .is_ok()
 }
 
 fn arrow_definition(source: &str) -> bool {
@@ -272,22 +782,38 @@ fn indentation(line: &str) -> usize {
 /// while retaining ordinary statement order in a function body.
 fn body_statements(source: &str) -> Result<Vec<String>, String> {
     let mut statements: Vec<String> = Vec::new();
+    let table_bars = table_bar_offsets(&mask(source));
+    let mut consumed = 0;
     for line in split_top(source, "\n")? {
         for part in split_top(line, ";")? {
+            let offset = consumed
+                + source[consumed..]
+                    .find(part)
+                    .expect("split parts remain in source order");
+            consumed = offset + part.len();
+            let table_row = table_bars.binary_search(&offset).is_ok() && part.starts_with('|');
             let part = compact(part);
             if part.is_empty() {
                 continue;
             }
-            let continuation = part.starts_with("|>")
+            if table_row && !statements.is_empty() {
+                let previous = statements.last_mut().unwrap();
+                previous.push('\n');
+                previous.push_str(&part);
+                continue;
+            }
+            let continuation = starts_pipe(&part)
                 || statements.last().is_some_and(|previous| {
                     let previous = mask(previous);
                     let previous = previous.trim_end();
-                    [
-                        "|>", "+", "-", "*", "/", "·", "&&", "||", "==", "!=", "<", ">", "<=",
-                        ">=", ":=", "=", "+=", "-=", "*=", "/=", "^=",
-                    ]
-                    .iter()
-                    .any(|token| previous.ends_with(token))
+                    ends_pipe(previous)
+                        || previous.chars().next_back().is_some_and(unicode_operator)
+                        || [
+                            "|>", "+", "-", "*", "/", "·", "&&", "||", "==", "!=", "<", ">", "<=",
+                            ">=", ":=", "=", "+=", "-=", "*=", "/=", "^=",
+                        ]
+                        .iter()
+                        .any(|token| previous.ends_with(token))
                 });
             if continuation && !statements.is_empty() {
                 let previous = statements.last_mut().unwrap();
@@ -378,6 +904,7 @@ fn normalize_arrow_body(
     result: &str,
     prefix: &str,
     serial: &mut usize,
+    counted: &mut bool,
 ) -> Result<Option<Vec<String>>, String> {
     let statements = body_statements(source)?;
     if statements.is_empty() {
@@ -385,6 +912,7 @@ fn normalize_arrow_body(
     }
     // Preserve existing expression normalization byte-for-byte.
     if statements.len() == 1
+        && !statements[0].contains('\n')
         && matches!(
             arrow_statement(&statements[0])?,
             ArrowStatement::Expression(_)
@@ -408,7 +936,7 @@ fn normalize_arrow_body(
         if expression.is_empty() {
             return Err("function local requires a value".into());
         }
-        let (temporary, value) = pipeline(expression, prefix, serial)?;
+        let (temporary, value) = pipeline(expression, prefix, serial, counted)?;
         definitions.extend(temporary);
         if let Some((target, operator)) = mutation {
             definitions.push(format!("{target} {operator} {value}"));
@@ -457,9 +985,10 @@ fn normalize_statement(
     source: &str,
     prefix: &str,
     serial: &mut usize,
+    counted: &mut bool,
 ) -> Result<Option<String>, String> {
     let code = mask(source);
-    if !code.contains("|>") && !code.contains("=>") {
+    if !contains_pipe(&code) && !code.contains("=>") {
         return Ok(None);
     }
     let original = source;
@@ -469,7 +998,7 @@ fn normalize_statement(
     let (head, expression) = if let Some(&i) = assignments.first() {
         (&source[..i], &source[i + 2..])
     } else {
-        if top_offsets(source, "|>")?.is_empty() {
+        if pipe_offsets(source)?.is_empty() {
             return Ok(None);
         }
         ("", source)
@@ -477,7 +1006,7 @@ fn normalize_statement(
     let signature = split_top(head.trim(), "=>")?;
     // Canonical match-arm functions use => but do not have := after the kind.
     // Canonical statement functions have their own := in the header; retain it.
-    if signature.len() == 1 && !head.trim().is_empty() && !identifier(head.trim()) {
+    if signature.len() == 1 && !head.trim().is_empty() && !binding_head(head.trim()) {
         return Ok(None);
     }
     let expression = expression.trim();
@@ -487,7 +1016,7 @@ fn normalize_statement(
     } else {
         expression
     };
-    if signature.len() == 1 && !mask(expression).contains("|>") {
+    if signature.len() == 1 && !contains_pipe(expression) {
         return Ok(None);
     }
     if signature.len() == 2 {
@@ -506,20 +1035,21 @@ fn normalize_statement(
         let original_assignment = top_offsets(original, ":=")?[0];
         let original_body = original[original_assignment + 2..].trim();
         let original_body = original_body.strip_suffix('.').unwrap_or(original_body);
-        let definitions =
-            if let Some(block) = normalize_arrow_body(original_body, &result, prefix, serial)? {
-                block
-            } else {
-                let (mut definitions, value) = pipeline(expression, prefix, serial)?;
-                definitions.push(format!("{result} := {value}"));
-                definitions
-            };
+        let definitions = if let Some(block) =
+            normalize_arrow_body(original_body, &result, prefix, serial, counted)?
+        {
+            block
+        } else {
+            let (mut definitions, value) = pipeline(expression, prefix, serial, counted)?;
+            definitions.push(format!("{result} := {value}"));
+            definitions
+        };
         Ok(Some(format!(
             "{header} = ({result}{kind}) := {}.",
             definitions.join("; ")
         )))
     } else if signature.len() == 1 {
-        let (mut definitions, value) = pipeline(expression, prefix, serial)?;
+        let (mut definitions, value) = pipeline(expression, prefix, serial, counted)?;
         let value = if head.trim().is_empty() {
             value
         } else {
@@ -541,17 +1071,40 @@ fn normalize_statement(
 /// line numbers stable. Application errors report their original line number.
 /// Parenthesized/multiline expressions and leading continuation pipes are allowed;
 /// arbitrary pipelines inside conditionals/call arguments are rejected explicitly.
+pub(super) struct NormalizedSource {
+    pub(super) source: String,
+    pub(super) counted: bool,
+}
+
+#[cfg(test)]
 pub(super) fn normalize(source: &str) -> Result<String, String> {
-    if !source.contains("|>") && !source.contains("=>") {
-        return Ok(source.to_string());
+    normalize_with_metadata(source).map(|normalized| normalized.source)
+}
+
+pub(super) fn normalize_with_metadata(source: &str) -> Result<NormalizedSource, String> {
+    if !contains_pipe(source) && !source.contains("=>") {
+        return Ok(NormalizedSource {
+            source: source.to_string(),
+            counted: false,
+        });
     }
     let mut prefix = "application-temp-".to_string();
     while source.contains(&prefix) {
         prefix.push_str("local-");
     }
     let lines: Vec<&str> = source.split_inclusive('\n').collect();
+    let table_bars = table_bar_offsets(&mask(source));
+    let line_offsets: Vec<usize> = lines
+        .iter()
+        .scan(0, |offset, line| {
+            let start = *offset;
+            *offset += line.len();
+            Some(start)
+        })
+        .collect();
     let mut output = String::new();
     let mut serial = 0;
+    let mut counted = false;
     let mut index = 0;
     let mut fence: Option<bool> = None;
     while index < lines.len() {
@@ -587,7 +1140,7 @@ pub(super) fn normalize(source: &str) -> Result<String, String> {
                 && lines.get(index + 1).is_some_and(|next| {
                     mask(next).trim().is_empty() || indentation(next) > header_indent
                 });
-            let continuation = code.trim_end().ends_with("|>")
+            let continuation = ends_pipe(&code)
                 || (!arrow
                     && code.trim_end().ends_with(":=")
                     && (code.contains("=>")
@@ -595,16 +1148,17 @@ pub(super) fn normalize(source: &str) -> Result<String, String> {
                             .split(":=")
                             .next()
                             .is_some_and(|s| identifier(s.trim()))))
-                || lines
-                    .get(index + 1)
-                    .is_some_and(|s| mask(s).trim_start().starts_with("|>"));
+                || lines.get(index + 1).is_some_and(|s| {
+                    let start = line_offsets[index + 1] + s.len() - s.trim_start().len();
+                    table_bars.binary_search(&start).is_err() && starts_pipe(s)
+                });
             if !(unbalanced || continuation || arrow_continuation) || index + 1 >= lines.len() {
                 break;
             }
             index += 1;
             statement.push_str(lines[index]);
         }
-        let normalized = normalize_statement(&statement, &prefix, &mut serial)
+        let normalized = normalize_statement(&statement, &prefix, &mut serial, &mut counted)
             .map_err(|e| format!("function application line {}: {e}", start + 1))?;
         if let Some(normalized) = normalized {
             output.push_str(&normalized);
@@ -619,12 +1173,390 @@ pub(super) fn normalize(source: &str) -> Result<String, String> {
         }
         index += 1;
     }
-    Ok(output)
+    Ok(NormalizedSource {
+        source: output,
+        counted,
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn counted_stages_lower_to_one_iteration_with_once_evaluated_inputs() {
+        let source =
+            "application-temp-0 := 2.0\nr := (Input() |0> step) |> twice |1> step |19> finish\n";
+        let n = normalize(source).unwrap();
+        assert_eq!(n.matches("Input()").count(), 1);
+        assert!(n.contains("application-temp-local-0 := Input()"));
+        assert!(n.contains("sequence/iterate(application-temp-local-0, 0, step)"));
+        assert!(n.contains("twice(application-temp-local-1)"));
+        assert!(n.contains("sequence/iterate(application-temp-local-2, 1, step)"));
+        assert!(n.contains("r := sequence/iterate(application-temp-local-3, 19, finish)"));
+        assert_eq!(n.matches("sequence/iterate(").count(), 3);
+        assert_eq!(normalize(&n).unwrap(), n);
+    }
+    #[test]
+    fn counted_continuations_work_in_documents_and_arrow_bodies() {
+        let source = "step(x<f64>) => <f64> :=\n  x |1>\n    next\n  |19> finish\nr := Input()\n  |0> step\n  |> next\n";
+        let n = normalize(source).unwrap();
+        assert!(n.contains("sequence/iterate(application-temp-0, 1, next)"));
+        assert!(n.contains("sequence/iterate(application-temp-1, 19, finish)"));
+        assert!(n.contains("sequence/iterate(application-temp-2, 0, step)"));
+        assert!(n.contains("r := next(application-temp-3)"));
+        assert_eq!(n.lines().count(), source.lines().count());
+    }
+    #[test]
+    fn counted_diagnostics_reject_invalid_counts_targets_and_nested_stages() {
+        for (operator, message) in [
+            ("|-1>", "nonnegative decimal"),
+            ("|+1>", "nonnegative decimal"),
+            ("|1.5>", "nonnegative decimal"),
+            ("|1e2>", "nonnegative decimal"),
+            ("|abc>", "nonnegative decimal"),
+            ("|_>", "nonnegative decimal"),
+            ("|1 >", "nonnegative decimal"),
+            ("|18446744073709551616>", "exceeds u64::MAX"),
+        ] {
+            let error = normalize(&format!("x := 1.0\nr := x {operator} step\n")).unwrap_err();
+            assert!(error.contains("line 2"), "{error}");
+            assert!(error.contains(message), "{operator}: {error}");
+        }
+        for stage in ["_", "step(_)", "step(_, bound)"] {
+            assert!(
+                normalize(&format!("r := x |19> {stage}\n"))
+                    .unwrap_err()
+                    .contains("function name")
+            );
+        }
+        assert!(
+            normalize("r := x |19>\n")
+                .unwrap_err()
+                .contains("empty pipeline stage")
+        );
+        assert!(
+            normalize("r := f(x |19> step)\n")
+                .unwrap_err()
+                .contains("nested pipeline")
+        );
+        assert!(
+            normalize("r := x |> f(_, (y |19> step))\n")
+                .unwrap_err()
+                .contains("stage arguments")
+        );
+        assert!(
+            normalize("r := x |19> (y |> step)\n")
+                .unwrap_err()
+                .contains("stage arguments")
+        );
+    }
+    #[test]
+    fn counted_operators_leave_other_bars_comments_and_prose_unchanged() {
+        let source = "Make(depth<u64>) => <ref>\n  | 0 => memory/null().\nx := (value ? | 1.5 => 1 | * => 2).\nx := (value ? | 0 -> 1 | * => 2).\nx := [number/to-f64(i) | i <- 0..3]\nb := true || false\nlabel := \"|19> =>\"\n-- r := x |19> f\n// r := x |19> f\n%% r := x |19> f\nUse `r := x |19> f` in examples.\n```rust\nr := x |19> f\n```\n(x |19> f) |> g\n";
+        assert_eq!(normalize(source).unwrap(), source);
+        let n = normalize("r := seed |18446744073709551615> step\n").unwrap();
+        assert!(n.contains("18446744073709551615, step)"));
+    }
+    #[test]
+    fn complete_counted_examples_in_prose_are_not_statements() {
+        use mech_syntax::document::{
+            DocumentId, ParseConfig, Revision, TextSnapshot, parse_canonical_document,
+        };
+        for source in [
+            "Use |1> step in examples.\n",
+            "Apply |19> step as an example.\n",
+        ] {
+            assert_eq!(normalize(source).unwrap(), source);
+            let canonical = parse_canonical_document(
+                TextSnapshot::new(DocumentId(1), Revision(0), source).unwrap(),
+                ParseConfig::default(),
+            );
+            // Let the canonical grammar decide whether bare bars need quoting;
+            // the application surface must neither reject nor admit the prose.
+            let public = super::super::ParsedSource::parse(source);
+            assert_eq!(public.is_ok(), canonical.diagnostics.is_empty());
+            if let Err(error) = public {
+                assert!(
+                    error.starts_with("canonical source diagnostics:"),
+                    "{error}"
+                );
+            }
+        }
+        let quoted = "Use `|1> step` in examples.\n";
+        assert_eq!(normalize(quoted).unwrap(), quoted);
+        super::super::ParsedSource::parse(quoted).unwrap();
+        assert!(
+            normalize("seed |1> step\n")
+                .unwrap()
+                .contains("sequence/iterate")
+        );
+        assert!(
+            normalize("seed |> step\n")
+                .unwrap()
+                .contains("step(application-temp-0)")
+        );
+    }
+
+    #[test]
+    fn compact_unicode_operators_do_not_hide_argument_holes() {
+        for operator in [
+            "×", "÷", "·", "•", "⨯", "≠", "⩵", "≡", "≥", "≤", "∨", "⋁", "∧", "⋀", "⊕", "⊻", "⋈",
+            "⟕", "⟖", "⟗", "⋉", "▷", "∪", "∩", "∖", "∁", "⊆", "⊇", "⊊", "⊂", "⊋", "⊃", "∈", "∉",
+            "Δ", "⊗",
+        ] {
+            let source = format!("r := x |> f(_{operator}2.0, 2.0{operator}_)\n");
+            let normalized = normalize(&source).unwrap();
+            assert!(
+                normalized.contains(&format!(
+                    "f(application-temp-0 {operator}2.0, 2.0{operator} application-temp-0)"
+                )),
+                "{normalized}"
+            );
+        }
+        let normalized = normalize("r := x |> f(¬_, some_🙂)\n").unwrap();
+        assert!(normalized.contains("f(¬ application-temp-0, some_🙂)"));
+    }
+
+    #[test]
+    fn unicode_arithmetic_continues_across_arrow_body_lines() {
+        for operator in ["×", "÷", "·", "•", "⨯"] {
+            let source = format!("F(x<f64>, y<f64>) => <f64> :=\n  x {operator}\n  y\n");
+            let normalized = normalize(&source).unwrap();
+            let compact = normalized.split_whitespace().collect::<Vec<_>>().join(" ");
+            assert!(
+                compact.contains(&format!("application-temp-result := x {operator} y.")),
+                "{normalized}"
+            );
+            assert!(!normalized.contains("effect-"));
+            super::super::ParsedSource::parse(&source).unwrap();
+        }
+    }
+    #[test]
+    fn counted_detection_preserves_prose_numeric_tables_and_bar_heavy_documents() {
+        let prose = "use |. Prefix each native application with its host.\n";
+        assert_eq!(normalize(prose).unwrap(), prose);
+
+        let table = "a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |\n";
+        assert_eq!(normalize(table).unwrap(), table);
+
+        let compact_table = "x := |a<f64> b<bool>|9 false|\n";
+        assert_eq!(normalize(compact_table).unwrap(), compact_table);
+
+        let comparison_table = "limit := 2; x := |a<bool>|1>limit|\n";
+        assert_eq!(normalize(comparison_table).unwrap(), comparison_table);
+        super::super::ParsedSource::parse(comparison_table).unwrap();
+        let table_pipe = normalize("x := |a<bool>|1>limit| |> Next\n").unwrap();
+        assert!(table_pipe.contains("application-temp-0 := |a<bool>|1>limit|"));
+        assert!(table_pipe.contains("x := Next(application-temp-0)"));
+
+        let rows = "| left | right |\n".repeat(4_096);
+        assert_eq!(normalize(&rows).unwrap(), rows);
+
+        for count in [4_000, 8_000] {
+            let inline = format!("x := |a<u64>|{}\n", " 0 |".repeat(count));
+            assert_eq!(table_bar_offsets(&inline).len(), count + 1);
+            assert_eq!(normalize(&inline).unwrap(), inline);
+        }
+    }
+
+    #[test]
+    fn table_detection_survives_earlier_bars_and_allows_counted_projection_seeds() {
+        for source in [
+            "r := Pair(true || false, |a<bool>|1>limit|)\n",
+            "r := Pair((true || false), |a<bool>|1>limit|)\n",
+            "r := Pair(value ? | true => 0 | * => 1, |a<bool>|1>limit|)\n",
+        ] {
+            assert_eq!(normalize(source).unwrap(), source);
+        }
+        for operator in ["|>", "|0>", "|1>", "|19>"] {
+            let source = format!("r := |a<bool>|1>limit|.a {operator} step\n");
+            let normalized = normalize(&source).unwrap();
+            assert!(
+                normalized.contains("application-temp-0 := |a<bool>|1>limit|.a"),
+                "{normalized}"
+            );
+            if operator == "|>" {
+                assert!(normalized.contains("r := step(application-temp-0)"));
+            } else {
+                assert!(
+                    normalized.contains("r := sequence/iterate(application-temp-0,"),
+                    "{normalized}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn canonical_regular_tables_and_unicode_arms_keep_their_bars() {
+        for binding in [
+            "x := |a<bool>|\n|1>limit|",
+            "x := |a<bool>|\n  |1>limit|\n  |0>limit|",
+            "x := |a<bool>|\r\n|1>limit|",
+            "x := (|a<bool>|\n|1>limit|\n)",
+            "x := value ? |1>limit ⇒ 1 | * ⇒ 0",
+        ] {
+            let source = format!("limit := 2\n{binding}\n");
+            assert!(
+                canonical_fragment(
+                    &source,
+                    mech_syntax::document::SyntaxKind::VariableDefine,
+                    binding,
+                ),
+                "{source}"
+            );
+            assert_eq!(normalize(&source).unwrap(), source);
+            // An unrelated real pipeline forces the document normalization
+            // pass, so its continuation classifier must use the same owners.
+            let program = format!("inc(x<f64>) => <f64> := x + 1.0\nr := 2.0 |1> inc\n{source}");
+            let normalized = normalize(&program).unwrap();
+            assert!(normalized.contains(binding), "{normalized}");
+            assert_eq!(normalized.matches("sequence/iterate").count(), 1);
+            super::super::ParsedSource::parse(&program).unwrap();
+        }
+    }
+
+    #[test]
+    fn unannotated_table_kinds_are_not_unannotated_table_literals() {
+        assert!(canonical_fragment(
+            "value<|a|>\n",
+            mech_syntax::document::SyntaxKind::TableKind,
+            "|a|",
+        ));
+        for binding in ["x := |a|1>limit|", "x := |a|\n|1>limit|"] {
+            assert!(
+                !canonical_fragment(
+                    &format!("limit := 2\n{binding}\n"),
+                    mech_syntax::document::SyntaxKind::VariableDefine,
+                    binding,
+                ),
+                "a table kind must not widen the literal grammar: {binding}"
+            );
+        }
+    }
+
+    #[test]
+    fn standalone_counted_seeds_use_canonical_numeric_syntax() {
+        for (seed, expected) in [
+            ("2u64", super::super::Constant::Integer(2)),
+            (
+                "18446744073709551615u64",
+                super::super::Constant::Integer(u64::MAX),
+            ),
+            ("2f64", super::super::Constant::Float(2.0_f64.to_bits())),
+            ("2e0", super::super::Constant::Float(2.0_f64.to_bits())),
+        ] {
+            let source = format!("{seed} |1> step\n");
+            let normalized = normalize(&source).unwrap();
+            assert!(
+                normalized.contains(&format!("application-temp-0 := {seed}")),
+                "{normalized}"
+            );
+            assert!(normalized.contains("sequence/iterate(application-temp-0, 1, step)"));
+            let parsed = super::super::ParsedSource::parse(&source).unwrap();
+            let mut numbers = Vec::new();
+            super::super::visit(
+                &parsed.syntax,
+                mech_syntax::document::SyntaxKind::Number,
+                &mut numbers,
+            );
+            let number = numbers
+                .into_iter()
+                .find(|node| node.text().is_ok_and(|text| text.trim() == seed))
+                .unwrap();
+            assert_eq!(
+                super::super::literal(number).unwrap_or_else(|error| panic!("{seed}: {error}")),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn counted_intrinsic_shadowing_rejects_only_actual_counted_lowering() {
+        let declaration = "sequence/iterate(x<f64>) => <f64> := x + 9.0\n";
+        for body in ["r := 2.0 |0> step\n", "r := (2.0 |1> step) |> step\n"] {
+            let source = format!("{declaration}step(x<f64>) => <f64> := x + 1.0\n{body}");
+            let error = super::super::ParsedSource::parse(&source).err().unwrap();
+            assert!(
+                error.contains("source function named sequence/iterate"),
+                "{error}"
+            );
+        }
+        for body in [
+            "r := 2.0 |> sequence/iterate(_)\n",
+            "Use `|1> step` in examples.\n",
+            "```rust\n2.0 |1> step\n```\n",
+        ] {
+            super::super::ParsedSource::parse(&format!("{declaration}{body}")).unwrap();
+        }
+    }
+
+    #[test]
+    fn arrow_body_table_rows_retain_newlines_instead_of_becoming_pipes() {
+        let source = "F(limit<f64>) => <f64> :=\n  |a<bool>|\n  |1>limit|\n";
+        let normalized = normalize(source).unwrap();
+        assert!(!normalized.contains("sequence/iterate"), "{normalized}");
+        assert!(normalized.contains("|a<bool>|\n|1>limit|"), "{normalized}");
+        super::super::ParsedSource::parse(source).unwrap();
+    }
+    #[test]
+    fn counted_detection_preserves_comprehension_and_match_comparisons() {
+        let source = "x := [x | x > 0]\ny := [x | 1 > 0]\nz := [x |1>0]\nby_name := [x |limit>zero]\nlimit := 2\nvalues := {limit |1>limit}\na := (value ? | n > 0 => n | * => 0)\nb := (value ? | 1 > 0 => 1 | * => 0)\nc := (value ? |1>0 => 1 | * => 0)\nd := value ? | true => 0 |1>limit => 1 | * => 2\ne := value ? |-1>limit => 1 | * => 0\n";
+        assert_eq!(normalize(source).unwrap(), source);
+
+        let arrow =
+            normalize("F(value<u64>) => <u64> := value ? |1>limit => 1 | * => 0\n").unwrap();
+        assert!(arrow.contains("value ? |1>limit => 1 | * => 0"));
+        assert!(!arrow.contains("sequence/iterate"));
+
+        let normalized = normalize("r := source |> filter([x | x > 0], _)\n").unwrap();
+        assert!(normalized.contains("r := filter([x | x > 0], application-temp-0)"));
+    }
+
+    #[test]
+    fn match_comparison_seed_does_not_hide_a_later_counted_stage() {
+        let normalized =
+            normalize("r := (value ? | flag < limit => 1 | * => 2) |1> step\n").unwrap();
+        assert!(
+            normalized.contains("application-temp-0 := (value ? | flag < limit => 1 | * => 2)")
+        );
+        assert!(normalized.contains("r := sequence/iterate(application-temp-0, 1, step)"));
+        let table = normalize("r := (|a<bool>|1>limit|) |1> step\n").unwrap();
+        assert!(table.contains("r := sequence/iterate(application-temp-0, 1, step)"));
+        let nested = "x := value ? | true => (|a<bool>|1>limit|) | * => (|a<bool>|0>limit|)\n";
+        assert_eq!(normalize(nested).unwrap(), nested);
+    }
+
+    #[test]
+    fn counted_stages_use_canonical_identifier_symbols_and_typed_bindings() {
+        for name in [
+            "step+fast",
+            "step*fast",
+            "step#fast",
+            "step~fast",
+            "step^fast",
+            "step&fast",
+            "step$fast",
+            "step%fast",
+            "step\\fast",
+            "step-🙂",
+        ] {
+            assert!(identifier(name), "{name}");
+            let source = format!("{name}(x<f64>) => <f64> := x + 1.0\nr<f64> := 2.0 |1> {name}\n");
+            let normalized = normalize(&source).unwrap();
+            assert!(normalized.contains(&format!(
+                "r<f64> := sequence/iterate(application-temp-0, 1, {name})"
+            )));
+            super::super::ParsedSource::parse(&source).unwrap();
+        }
+    }
+    #[test]
+    fn standalone_counted_literal_and_vector_seeds_are_normalized() {
+        let normalized = normalize("2.0 |1> step\n[1.0] |1> step\n").unwrap();
+        assert!(normalized.contains("application-temp-0 := 2.0"));
+        assert!(normalized.contains("sequence/iterate(application-temp-0, 1, step)"));
+        assert!(normalized.contains("application-temp-1 := [1.0]"));
+        assert!(normalized.contains("sequence/iterate(application-temp-1, 1, step)"));
+    }
     #[test]
     fn holes_share_one_evaluation_and_ignore_strings_and_identifiers() {
         let n = normalize("r := input() |> f(_, g(_), \"_|>\", some_name)\n").unwrap();
