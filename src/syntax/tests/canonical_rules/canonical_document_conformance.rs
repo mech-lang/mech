@@ -35,6 +35,21 @@ fn kind(name: &str) -> SyntaxKind {
         .unwrap_or_else(|| panic!("missing generated node kind for {name}"))
 }
 
+fn feature_enabled(name: &str) -> bool {
+    let rule = canonical_rule_id(name).unwrap();
+    let feature = crate::document::parser::canonical::document_grammar::DOCUMENT_RULES
+        .iter()
+        .find(|entry| entry.rule == rule)
+        .unwrap()
+        .feature;
+    match feature {
+        None => true,
+        Some("mika") => cfg!(feature = "mika"),
+        Some("invariant_define") => cfg!(feature = "invariant_define"),
+        Some(feature) => panic!("uncovered document feature {feature}"),
+    }
+}
+
 #[test]
 fn every_document_rule_has_a_clean_specification_derived_source() {
     let table = fs::read_to_string(
@@ -58,6 +73,13 @@ fn every_document_rule_has_a_clean_specification_derived_source() {
         let parsed =
             parse_canonical_document_rule_for_test(source(&text), rule, ParseConfig::default())
                 .unwrap_or_else(|| panic!("unsupported document rule {name}"));
+        assert_eq!(fields[4], format!("docs/design/specification.mec::{name}"));
+        if !feature_enabled(name) {
+            assert_eq!(parsed.outcome, CanonicalRuleOutcome::NoMatch, "{name}");
+            assert_eq!(parsed.consumed.start, parsed.consumed.end, "{name}");
+            assert!(parsed.diagnostics.is_empty(), "{name}");
+            continue;
+        }
         assert_eq!(parsed.outcome, CanonicalRuleOutcome::Matched, "{name}");
         assert!(
             parsed.diagnostics.is_empty(),
@@ -88,7 +110,6 @@ fn every_document_rule_has_a_clean_specification_derived_source() {
             }
             policy => panic!("invalid document node policy {policy}"),
         }
-        assert_eq!(fields[4], format!("docs/design/specification.mec::{name}"));
     }
 }
 
@@ -124,6 +145,12 @@ fn mika_expression_inner_accepts_only_registered_triples() {
         let parsed =
             parse_canonical_document_rule_for_test(source(text), rule, ParseConfig::default())
                 .unwrap();
+        if !feature_enabled("mika-expression-inner") {
+            assert_eq!(parsed.outcome, CanonicalRuleOutcome::NoMatch, "{text:?}");
+            assert_eq!(parsed.consumed.start, parsed.consumed.end, "{text:?}");
+            assert!(parsed.diagnostics.is_empty(), "{text:?}");
+            continue;
+        }
         assert_eq!(parsed.outcome, CanonicalRuleOutcome::Matched, "{text:?}");
         assert_eq!(parsed.consumed, parsed.source.full_range(), "{text:?}");
         assert!(parsed.diagnostics.is_empty(), "{text:?}");
