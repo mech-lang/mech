@@ -1152,10 +1152,10 @@ jobs:
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
       - name: Install activated native application build tools
         run: |
-          if ! command -v cc >/dev/null 2>&1 || ! command -v make >/dev/null 2>&1 || ! command -v m4 >/dev/null 2>&1
+          if ! command -v rg >/dev/null 2>&1 || ! command -v cc >/dev/null 2>&1 || ! command -v make >/dev/null 2>&1 || ! command -v m4 >/dev/null 2>&1
           then
             sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources -o Dir::Etc::sourceparts=-
-            sudo apt-get install --yes build-essential m4
+            sudo apt-get install --yes ripgrep build-essential m4
           fi
       - name: Execute activated native admission and pipe regressions
         timeout-minutes: 30
