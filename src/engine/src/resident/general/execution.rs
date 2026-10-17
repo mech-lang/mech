@@ -750,6 +750,18 @@ impl ReactiveInstance {
         artifact: &crate::ProgramArtifact,
         targets: &std::collections::BTreeSet<CellSlotId>,
     ) -> Result<(), ResidentExecutionError> {
+        self.refresh_output_projections_with_inputs(artifact, targets, &[])
+    }
+
+    /// Refresh a replacement's projections from its accepted input snapshot,
+    /// without observing providers or executing another state transition.
+    /// Inputs may be partial: unrelated, never-observed sources are not invented.
+    pub fn refresh_output_projections_with_inputs(
+        &mut self,
+        artifact: &crate::ProgramArtifact,
+        targets: &std::collections::BTreeSet<CellSlotId>,
+        inputs: &[CapturedValueInput<'_>],
+    ) -> Result<(), ResidentExecutionError> {
         if targets.is_empty() {
             return Ok(());
         }
@@ -777,6 +789,7 @@ impl ReactiveInstance {
                 slot: *targets.first().expect("nonempty targets checked"),
             });
         }
+        self.install_available_value_inputs(inputs)?;
         let epoch = self.published_epoch();
         // A canonical state writer copies its final candidate into the retained
         // cell. During projection refresh that candidate means the published
@@ -836,6 +849,44 @@ impl ReactiveInstance {
                 }
             }
         }
+        // Refresh only the dependency closure of the requested projections.
+        // Other outputs have already migrated from the published epoch. In
+        // particular, unrelated kernels must not consume absent transient host
+        // observations or execute unused work merely because they share a plan.
+        let mut required = std::collections::BTreeSet::new();
+        let mut pending = targets
+            .iter()
+            .filter_map(
+                |target| match artifact.slots()[target.get() as usize].producer {
+                    crate::ProducerReference::Output { source, .. } => Some(source),
+                    _ => None,
+                },
+            )
+            .collect::<Vec<_>>();
+        while let Some(source) = pending.pop() {
+            let crate::ArtifactSource::Slot(slot) = source else {
+                continue;
+            };
+            if self.plan.slots[slot.get() as usize].storage != ResidentStorageClass::Scratch {
+                continue;
+            }
+            let crate::ProducerReference::NodeOutput { node, .. } =
+                artifact.slots()[slot.get() as usize].producer
+            else {
+                continue;
+            };
+            if !required.insert(node) || published_candidates.contains_key(&node) {
+                continue;
+            }
+            let declaration = &artifact.nodes()[node.get() as usize];
+            for binding in &artifact.bindings()
+                [declaration.input_bindings.start as usize..declaration.input_bindings.end as usize]
+            {
+                if let crate::BindingDeclaration::Input { source, .. } = binding {
+                    pending.push(*source);
+                }
+            }
+        }
         self.refresh_f64_state_arenas(epoch);
         let execution_order = self.plan.execution_node_order.to_vec();
         let mut probe = ResidentStructuralProbe::default();
@@ -844,6 +895,7 @@ impl ReactiveInstance {
                 &self.plan.steps[node_index.get() as usize],
                 ActivatedTurnStep::Kernel(node)
                     if node.write.storage == ResidentStorageClass::Scratch
+                        && required.contains(&node.artifact_node)
             );
             if execute {
                 let ActivatedTurnStep::Kernel(node) = &self.plan.steps[node_index.get() as usize]
@@ -1459,6 +1511,13 @@ impl ReactiveInstance {
                 actual: inputs.len(),
             });
         }
+        self.install_available_value_inputs(inputs)
+    }
+
+    fn install_available_value_inputs(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+    ) -> Result<(), ResidentExecutionError> {
         for (ordinal, input) in inputs.iter().enumerate() {
             let Some(declared) = self
                 .plan

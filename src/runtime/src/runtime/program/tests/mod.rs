@@ -272,6 +272,14 @@ impl IndependentObservationProvider {
             "test://clock/slow" => self.slow_bits.load(Ordering::SeqCst),
             other => panic!("unexpected independent observation URI {other}"),
         };
+        if request.path == "vector" {
+            return RuntimeHostInputValue::F64Matrix {
+                rows: 2,
+                columns: 1,
+                values: vec![f64::from_bits(bits), f64::from_bits(bits) + 1.0],
+            }
+            .into_value();
+        }
         ValueCell::from_exact(f64::from_bits(bits))?.snapshot()
     }
 }
@@ -6158,6 +6166,178 @@ fn compatible_replacement_migrates_the_accepted_host_snapshot() {
         .collect::<Vec<_>>();
     values.sort_by(f64::total_cmp);
     assert_eq!(values, vec![7.0, 8.0]);
+}
+
+#[test]
+fn compatible_replacement_refreshes_matrix_projections_from_retained_inputs() {
+    fn load(source: &str, decoded: bool) -> (crate::MechRuntime, Arc<AtomicUsize>) {
+        let reads = Arc::new(AtomicUsize::new(0));
+        let configured = || {
+            let mut runtime = runtime();
+            runtime
+                .register_resource_provider(Box::new(IndependentObservationProvider {
+                    reads: reads.clone(),
+                    fast_bits: Arc::new(AtomicU64::new(2.0_f64.to_bits())),
+                    slow_bits: Arc::new(AtomicU64::new(3.0_f64.to_bits())),
+                }))
+                .unwrap();
+            let subject = runtime.runtime_context().unwrap().subject;
+            runtime
+                .grant_capability(Arc::new(BasicCapability::from_keys(
+                    CapabilityId(9_022),
+                    subject,
+                    "test://clock/fast/vector",
+                    ["read"],
+                )))
+                .unwrap();
+            runtime
+        };
+        let mut runtime = configured();
+        runtime
+            .load_interactive_source_program(source, crate::ResidentDurabilityPolicy::Retained)
+            .unwrap();
+        if decoded {
+            let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program
+            else {
+                panic!("the vector source must use resident external execution")
+            };
+            let bytes =
+                mech_engine::encode_program_artifact_bytecode_v1(&execution.artifact).unwrap();
+            let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+            runtime = configured();
+            runtime
+                .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Retained)
+                .unwrap();
+        }
+        (runtime, reads)
+    }
+
+    let source = "@fast := test://clock/fast{:read(vector)}\nvector := @fast/vector\n~state := 1.0\nstate = state + 1.0\nanswer := vector * state\nanswer\n";
+    for decoded in [false, true] {
+        let (idle_previous, idle_reads) = load(source, decoded);
+        let (mut idle_candidate, idle_candidate_reads) =
+            load(&format!("{source}unrelated := 99.0\nunrelated\n"), decoded);
+        idle_candidate
+            .preserve_compatible_resident_state_from(&idle_previous, &BTreeSet::new())
+            .unwrap();
+        assert_eq!(
+            canonical_f64(
+                idle_candidate
+                    .root_symbol_value("unrelated")
+                    .unwrap()
+                    .value()
+            ),
+            99.0
+        );
+        assert_eq!(
+            canonical_f64(idle_candidate.root_symbol_value("state").unwrap().value()),
+            1.0
+        );
+        assert!(
+            idle_candidate.root_symbol_value("answer").is_err(),
+            "an unobserved matrix must remain unavailable"
+        );
+        assert_eq!(idle_reads.load(Ordering::SeqCst), 0);
+        assert_eq!(idle_candidate_reads.load(Ordering::SeqCst), 0);
+        let (mut previous, previous_reads) = load(source, decoded);
+        previous
+            .ingress()
+            .submit(crate::RuntimeHostInput::single(
+                crate::RuntimeHostInputSource::new("test://clock/fast", "vector").unwrap(),
+                RuntimeHostInputValue::F64Matrix {
+                    rows: 2,
+                    columns: 1,
+                    values: vec![7.0, 9.0],
+                },
+            ))
+            .unwrap();
+        previous.drain_resident_host_inputs(1).unwrap();
+        assert_eq!(
+            canonical_f64_matrix(previous.root_symbol_value("answer").unwrap().value()),
+            [14.0, 18.0]
+        );
+
+        let (mut candidate, candidate_reads) = load(
+            &format!("{source}extra := answer + vector\nextra\n"),
+            decoded,
+        );
+        let ActiveProgramExecution::ResidentExternal(execution) = &candidate.active_program else {
+            unreachable!()
+        };
+        let candidate_epoch = execution.coordinator.instance().published_epoch();
+        candidate
+            .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
+            .unwrap();
+        let ActiveProgramExecution::ResidentExternal(execution) = &candidate.active_program else {
+            unreachable!()
+        };
+        assert_eq!(
+            execution.coordinator.instance().published_epoch(),
+            candidate_epoch
+        );
+        let extra = candidate.root_symbol_value("extra").unwrap();
+        let declared = execution
+            .artifact
+            .outputs()
+            .iter()
+            .find(|output| {
+                output
+                    .interactive_binding
+                    .as_ref()
+                    .is_some_and(|binding| binding.lexical_name == "extra")
+            })
+            .unwrap();
+        assert_eq!(extra.value().schema(), declared.schema);
+        assert_eq!(
+            extra.value().schema_key(),
+            execution
+                .artifact
+                .schemas()
+                .entry(declared.schema)
+                .unwrap()
+                .key()
+        );
+        assert_eq!(extra.value().shape().parameter_values(), [2]);
+        assert_eq!(
+            canonical_f64(candidate.root_symbol_value("state").unwrap().value()),
+            2.0
+        );
+        assert_eq!(
+            canonical_f64_matrix(candidate.root_symbol_value("extra").unwrap().value()),
+            [21.0, 27.0]
+        );
+        assert_eq!(
+            canonical_f64_matrix(previous.root_symbol_value("answer").unwrap().value()),
+            [14.0, 18.0]
+        );
+        assert_eq!(previous_reads.load(Ordering::SeqCst), 0);
+        assert_eq!(
+            candidate_reads.load(Ordering::SeqCst),
+            0,
+            "refresh must not observe providers or synthesize a turn"
+        );
+        candidate
+            .ingress()
+            .submit(crate::RuntimeHostInput::single(
+                crate::RuntimeHostInputSource::new("test://clock/fast", "vector").unwrap(),
+                RuntimeHostInputValue::F64Matrix {
+                    rows: 2,
+                    columns: 1,
+                    values: vec![11.0, 13.0],
+                },
+            ))
+            .unwrap();
+        candidate.drain_resident_host_inputs(1).unwrap();
+        assert_eq!(
+            canonical_f64(candidate.root_symbol_value("state").unwrap().value()),
+            3.0
+        );
+        assert_eq!(
+            canonical_f64_matrix(candidate.root_symbol_value("extra").unwrap().value()),
+            [44.0, 52.0]
+        );
+        assert_eq!(candidate_reads.load(Ordering::SeqCst), 0);
+    }
 }
 
 #[test]

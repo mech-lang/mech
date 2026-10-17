@@ -6,7 +6,31 @@
     "handoff": "benchmark-agent-handoff-v1.json",
     "rule": "Earlier receipts remain historical evidence for their recorded commits, not qualification of this corrected candidate."
   },
+  "landed_parents": [
+    {
+      "pr": 898,
+      "merge_commit": "8bc6c1ffd420b59677c659cc7cd6b913b9982b1a",
+      "verified_tree": "86cf6e0e6e8306364fc72c99c8c0b98a0c99d87a"
+    },
+    {
+      "pr": 900,
+      "reviewed_head": "7789a163febc4b6b7aa222c42bdda34ba249dfc7",
+      "successful_checks_before_ready_and_merge": 132,
+      "pending_or_unsuccessful_checks": 0,
+      "merge_commit": "91af774c254a7f8644d0001fe6fbef784469b343",
+      "tested_composition": "cfa5592eb72a218a14f8ccbe953533f37dd6f759",
+      "verified_identical_tree": "47ac97ea5d4d94e0b395b32805e2cf667b3c23f6"
+    }
+  ],
   "corrections": [
+    {
+      "area": "live-edit observation and projection migration",
+      "cause": "Both final-head EKF jobs reach execution, then reject a source replacement at coordinator node 45, math/mul: its dynamic 2-by-1 scene pointer input comes from resource/read node 1, but projection refresh runs before accepted input snapshots are transferred and installed. Scalars can mask absent input storage with zero values. The WebGPU canary retried the rejected incompatible edit on subsequent completions, obscuring the concrete error behind the idle watchdog.",
+      "implementation": "Transfer the accepted captured observation snapshot before refreshing projections; retain pending capture-only inputs separately. Populate replacement input storage through the same validated canonical-value writer used by ordinary execution. Evaluate only the requested projection dependency closure, stopping at published state candidates. Do not observe providers or synthesize a state transition. Keep all resource limits and browser semantic oracles unchanged.",
+      "regressions": "A reduced native source program reproduces the original InvalidInput failure before the correction. Original and decoded replacements now assert the retained nondefault matrix values, declared schema identity/key and actual shape, unchanged state/epoch, unavailable unobserved matrix facts, an independent new constant, and the next real input turn without provider reads. All five compatible-replacement regressions pass, including dormant FSMs and changing input geometry.",
+      "browser_evidence": "Replay of the exact 8d9e90c10 CI Wasm and retained page reaches the camera and parity oracles. Spaced paused stacks advance through replacement parsing, then expose the same node-45 InvalidInput error; this is not evidence of an allocator deadlock. Latch one incompatible-edit attempt and report a rejected/throwing replacement immediately as a failed oracle, without marking success or increasing timeouts.",
+      "precommit_validation": "815 runtime units, 61 source-acceptance tests, 11 EKF contracts and 94 workflow contracts pass in the correction worktree. This is precommit validation, not an immutable-source final receipt. Fresh source-pinned qualification, review and all required CI remain mandatory."
+    },
     {
       "area": "module layout",
       "implementation": "Retain native_resources/mod.rs and move program/tests.rs to program/tests/mod.rs; leave the existing layout gate unchanged."
@@ -104,6 +128,32 @@
     "Continue broader packaging and optimizer work independently of the corrected stack's qualification."
   ],
   "checks": [
+    {
+      "area": "complete immutable baseline before live-edit migration correction",
+      "source_commit": "8d9e90c10f0cb88ccb64d50efd0839b77458fb3b",
+      "runtime_unit_tests_passed": 814,
+      "source_acceptance_tests_passed": 61,
+      "resident_ekf_contract_tests_passed": 11,
+      "application_text_retention_tail_tests_passed": 46,
+      "unchanged_original_tail_tests_passed": 10,
+      "native_lowering_tests_passed": 15,
+      "native_host_kernel_tests_passed": 12,
+      "native_abi_tests_passed": 4,
+      "cli_byte_tests_passed": 8,
+      "resource_observation_replacement_replay_recording_tests_passed": 53,
+      "linked_native": {
+        "applications_built": 4,
+        "actual_launch_cases": 45,
+        "qualification_sha256": "9b830d1e815f2a9578d5ac157ecd5caa9ce556db519c9cd7b81ddc35fd7eb81b"
+      },
+      "linked_cli": {
+        "applications_built": 3,
+        "actual_launch_cases": 20,
+        "qualification_sha256": "a0aa54dec4f3a57ed6f6ab0edbcfec284f6d57326de77e5ac2c87aeccd186f50"
+      },
+      "logs": "tmp/pr-stack-evidence/review-final-v24-*.log",
+      "scope": "All local phases passed with exact clean source checked before/after each phase; both ignored linked qualifiers actually ran. Includes lexical/catalog, CI/type mutation, unsafe, distribution, warning, type/semantic, memory and layout gates. CI run 39008678510 still failed the scalar live edit and WebGPU incompatible edit. These receipts do not qualify the subsequent migration correction or constitute successful browser application evidence; no benchmark measurements are claimed."
+    },
     {
       "area": "allocation-free projection follow-up",
       "source_commit": "16577f301d4e1e7886fd9499c2ad001f9621aba3",

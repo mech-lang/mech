@@ -25,6 +25,18 @@ impl MechRuntime {
         previous: &MechRuntime,
         changed_state_names: &std::collections::BTreeSet<String>,
     ) -> MResult<()> {
+        use crate::runtime::program::ActiveProgramExecution;
+        if let (
+            ActiveProgramExecution::ResidentExternal(candidate),
+            ActiveProgramExecution::ResidentExternal(previous),
+        ) = (&mut self.active_program, &previous.active_program)
+        {
+            // Projection kernels read the accepted captured snapshot, not
+            // empty activation input storage or capture-only pending updates.
+            candidate
+                .coordinator
+                .preserve_compatible_live_inputs_from(&previous.coordinator)?;
+        }
         let Some((previous_artifact, previous_instance)) =
             previous.resident_artifact_and_instance()
         else {
@@ -62,20 +74,18 @@ impl MechRuntime {
                 .map_err(|error| {
                     super::diagnostics::activation_failure_for_artifact(&candidate_artifact, error)
                 })?;
-            candidate_instance
-                .refresh_output_projections(&candidate_artifact, &projection_refresh_targets)
-                .map_err(super::diagnostics::projection_refresh_failure)?;
-        }
-
-        use crate::runtime::program::ActiveProgramExecution;
-        if let (
-            ActiveProgramExecution::ResidentExternal(candidate),
-            ActiveProgramExecution::ResidentExternal(previous),
-        ) = (&mut self.active_program, &previous.active_program)
-        {
-            candidate
-                .coordinator
-                .preserve_compatible_live_inputs_from(&previous.coordinator)?;
+            match &mut self.active_program {
+                ActiveProgramExecution::ResidentExternal(candidate) => candidate
+                    .coordinator
+                    .refresh_output_projections(&projection_refresh_targets),
+                ActiveProgramExecution::ResidentPure(candidate) => candidate
+                    .instance
+                    .refresh_output_projections(&candidate_artifact, &projection_refresh_targets),
+                ActiveProgramExecution::None => {
+                    unreachable!("candidate artifact was checked above")
+                }
+            }
+            .map_err(super::diagnostics::projection_refresh_failure)?;
         }
         Ok(())
     }

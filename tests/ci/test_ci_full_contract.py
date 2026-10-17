@@ -932,6 +932,22 @@ class FullWorkflowContractTests(unittest.TestCase):
         ):
             self.assertIn(milestone, EKF_BROWSER)
 
+    def test_ekf_rejected_replacement_fails_once_without_retrying(self):
+        probe = EKF_BROWSER.split(
+            'expectedComputeBackend === "wgpu" && applicationQualifiedBeforeReset &&', 1
+        )[1].split('const originalSetTimeout', 1)[0]
+        self.assertIn('!incompatibleEditAttempted', probe)
+        self.assertLess(
+            probe.index('incompatibleEditAttempted = true;'),
+            probe.index('replaceSource(nextSource)'),
+        )
+        self.assertIn('if (!incompatibleEditRequested)', probe)
+        failure = probe.split('catch (error)', 1)[1]
+        self.assertIn('root.dataset.mechPageError = diagnosticText(error)', failure)
+        self.assertIn('signalCompletion("ekf-finished")', failure)
+        self.assertNotIn('mechDone = "true"', failure)
+        self.assertIn('root.dataset.mechObservedIncompatibleEditAttempted', EKF_BROWSER)
+
     def test_ekf_failure_diagnostics_are_not_numerical_evidence(self):
         self.assertIn('milestones["failureDataset"] = live_dataset', EKF_BROWSER)
         self.assertIn('write_dataset_snapshot(dom_file, live_dataset)', EKF_BROWSER)

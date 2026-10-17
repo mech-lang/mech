@@ -361,6 +361,7 @@ harness = r'''<script>
     let busySymbolAbsent = expectedComputeBackend !== "wgpu";
     let busyLogicalProgressUnchanged = expectedComputeBackend !== "wgpu";
     let applicationQualifiedBeforeReset = false;
+    let incompatibleEditAttempted = expectedComputeBackend !== "wgpu";
     let incompatibleEditRequested = expectedComputeBackend !== "wgpu";
     let incompatibleGenerationChanged = expectedComputeBackend !== "wgpu";
     let incompatibleResourcesReplaced = expectedComputeBackend !== "wgpu";
@@ -565,23 +566,32 @@ harness = r'''<script>
       }
       if (
         expectedComputeBackend === "wgpu" && applicationQualifiedBeforeReset &&
-        !incompatibleEditRequested
+        !incompatibleEditAttempted
       ) {
-        const source = acceptedSource();
-        const nextSource = source.replace(
-          `filter-count := ${expectedComputeInstances}.0`,
-          `filter-count := ${expectedComputeInstances + 1}.0`,
-        );
-        if (nextSource === source) {
-          throw new Error(
-            "the incompatible EKF source probe could not change the compute storage shape",
+        // A rejected replacement is a failed oracle, not another request to
+        // compile on every compute completion until the idle watchdog expires.
+        incompatibleEditAttempted = true;
+        try {
+          const source = acceptedSource();
+          const nextSource = source.replace(
+            `filter-count := ${expectedComputeInstances}.0`,
+            `filter-count := ${expectedComputeInstances + 1}.0`,
           );
-        }
-        incompatibleBefore = computeIdentity();
-        const accepted = globalThis.MechDocumentController?.replaceSource(nextSource);
-        incompatibleEditRequested = accepted === nextSource;
-        if (incompatibleEditRequested) {
+          if (nextSource === source) {
+            throw new Error(
+              "the incompatible EKF source probe could not change the compute storage shape",
+            );
+          }
+          incompatibleBefore = computeIdentity();
+          const accepted = globalThis.MechDocumentController?.replaceSource(nextSource);
+          incompatibleEditRequested = accepted === nextSource;
+          if (!incompatibleEditRequested) {
+            throw new Error("the incompatible EKF source replacement was not accepted");
+          }
           signalMilestone("incompatible-replacement-accepted");
+        } catch (error) {
+          root.dataset.mechPageError = diagnosticText(error);
+          signalCompletion("ekf-finished");
         }
       }
     });
@@ -1192,6 +1202,8 @@ harness = r'''<script>
       )?.getAttribute("opacity") || "";
       root.dataset.mechObservedIncompatibleEditRequested =
         String(incompatibleEditRequested);
+      root.dataset.mechObservedIncompatibleEditAttempted =
+        String(incompatibleEditAttempted);
       root.dataset.mechObservedIncompatibleGenerationChanged =
         String(incompatibleGenerationChanged);
       root.dataset.mechObservedIncompatibleResourcesReplaced =

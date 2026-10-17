@@ -460,6 +460,29 @@ impl ResidentExternalCoordinator {
     }
 
     #[cfg(feature = "resident-routing-source")]
+    pub(crate) fn refresh_output_projections(
+        &mut self,
+        targets: &std::collections::BTreeSet<CellSlotId>,
+    ) -> Result<(), ResidentExecutionError> {
+        let inputs = self
+            .bound
+            .observations()
+            .iter()
+            .zip(&self.latest_live_inputs)
+            .filter_map(|(observation, value)| {
+                Some(CapturedValueInput {
+                    slot: observation.input.slot,
+                    value: value.as_ref()?,
+                })
+            })
+            .collect::<Vec<_>>();
+        self.instance
+            .as_mut()
+            .expect("resident instance is present")
+            .refresh_output_projections_with_inputs(&self.artifact, targets, &inputs)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
     fn compatible_live_input_replacements_from(
         &self,
         previous: &ResidentExternalCoordinator,
