@@ -1,7 +1,8 @@
 {
   "schema": "mech.validation.pr901-integration-corrections.v1",
-  "status": "IMPLEMENTED_FINAL_STACK_QUALIFICATION_PENDING",
+  "status": "REVIEW_CORRECTIONS_IMPLEMENTED_QUALIFICATION_AND_CANONICAL_NATIVE_MIGRATION_PENDING",
   "landing_authority": "Keep PR901 draft and unmerged. Clean review and green CI are qualification gates, not authorization: wait for explicit user approval before any readiness change or merge.",
+  "runtime_authority": "One canonical source compiler, executable artifact and semantic/admission/publication contract is required. The current build --backend cranelift source-native route still has independent sequence/control/grid lowering; it is an unresolved migration gap, not the intended permanent alternative to canonical resident/artifact-native execution. Move its capabilities onto canonical artifact lowering, qualify resident/JIT/actually-linked AOT agreement, route native building through the artifact and retire alternate source lowering. Documentation alone does not fix this implementation gap; see benchmark-compiler-status-v1.json.",
   "historical_evidence": {
     "handoff_commit": "7baa187cf06db29746449220ab424242e8a047a3",
     "handoff": "benchmark-agent-handoff-v1.json",
@@ -24,6 +25,28 @@
     }
   ],
   "corrections": [
+    {
+      "area": "inherited Cargo runner environment, lexical exit aliases and unexpanded macro registrations",
+      "reviewed_source_commit": "63aa22621dc820019eb99809cf4b30ff0c3b2c64",
+      "fix_commit": "99b5b330631fdf72d5e5e0e88f608da7d228cd22",
+      "review_comments": [4304700705, 4304700706, 4304700708],
+      "environment": "Merge actual workflow/job/step environment mappings before admitting a step. Reject unmodeled environment structures and explicit command/compiler/runner overrides, including CARGO_TARGET_*_RUNNER. Apply the same rule to shell-prefix assignments. Cover all three inherited scopes, direct and maintained-wrapper commands and generator entry points; retain ordinary build jobs, target directories, debug/color settings and unrelated variables.",
+      "exit_aliases": "Process only reachable import statements in their lexical scope, not ast.walk(module). Called helpers inherit module aliases rather than caller-local imports, and callee-local imports do not leak back. Unknown conditional alias changes fail closed. Retain direct/aliased exits, called-helper termination and positive commands reached before an exit.",
+      "registration": "Blank unexpanded macro definition/invocation token-tree interiors while preserving source offsets and separators. Test-looking functions inside macros, other functions or non-module brace scopes cannot masquerade as registered free tests. Genuine sibling inline-module cases and their filters remain supported; macro-only filtered decoys cannot own a target. This remains conservative target/profile inventory, not macro expansion or exhaustive harness/platform attestation.",
+      "qualification": {
+        "source_commit": "99b5b330631fdf72d5e5e0e88f608da7d228cd22",
+        "result": "PASS all142 CI contract methods (41 inventory methods), six sharder tests, formatting and seven production guards: value execution boundary, warnings, type/semantic authority, memory runtime/planner and module layout. Exact clean source checked before and after every phase; the actual repository inventory retains every required target.",
+        "ci_log": "tmp/pr-stack-evidence/review-v125-ci-contracts.log",
+        "ci_log_sha256": "f24b591ea82dedbfc09399bef274095cac4e021b18332d16d4750f8fd71783ce",
+        "sharder_log": "tmp/pr-stack-evidence/review-v125-sharder.log",
+        "sharder_log_sha256": "7b144766cbd3e0e2dc7ba3d5de2e325dae016a528beb9041318f5d470ca1e99d",
+        "guard_logs": "tmp/pr-stack-evidence/review-v125-{formatting,value-boundary,warnings,type-authority,semantic-authority,memory-runtime,memory-planner,module-layout}.log",
+        "retained_failed_attempt": "The first dirty-source precommit run fails one old fixture that expected ownership despite a nested mapping used as an environment value. The fixture now explicitly requires no ownership for that invalid environment; all valid scalar metadata-decoy cases still retain the real command. No production guard is weakened.",
+        "rust_scope": "git diff392a96e2e..99b5b3306 for all Rust source, Cargo manifests and Cargo.lock is empty. The passing832 runtime units and61 source-acceptance cases remain scoped to392a96e2e, not relabeled as new browser/native/full-CI qualification."
+      },
+      "published_predecessor_ci": "Run39072885492 on63aa fails architecture formatting at query.rs:656 and the new post-clear epoch assertion (810 runtime units pass, one fails). Both failures were independently corrected in392a96e2e/9e7e227a4 and pass in the local scoped receipt. This failed run is not green and does not qualify the next published head.",
+      "remaining": "Fresh exact-head review, entirely green CI, final-source owners/applications/browser/all five actual linked routes and canonical-native migration remain required. Keep draft and unmerged without explicit user approval; no benchmark measurements."
+    },
     {
       "area": "asymmetric anonymous migration, unpublished bulk inspection and bounded CI inventory",
       "reviewed_source_commits": ["b70ca31cd5f2c176ac92c6796b75d9796ceb3855", "63544b972944f7b0b36e21abbb467b8c5af818a9"],

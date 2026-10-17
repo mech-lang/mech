@@ -7,11 +7,18 @@
     "branch": "codex/idiomatic-native-programs",
     "pull_request": "https://github.com/mech-lang/mech/pull/901",
     "pull_request_status": "OPEN_DRAFT",
-    "current_correction_source_commit": "f055793cee4d3abf5fcd580937e52a5b7d1007ca",
+    "current_correction_source_commit": "99b5b330631fdf72d5e5e0e88f608da7d228cd22",
     "current_correction_record": "pr901-integration-corrections-v1.json",
-    "current_qualification": "Final-source owner/application/linked qualification, fresh clean review and complete green CI remain pending. The following scalar receipts retain their historical source scope.",
+    "current_qualification": "All832 runtime units and61 source-acceptance cases pass on392a96e2e. Later changes are CI inventory and documentation only; final-source owner/application/browser/linked qualification, fresh clean review and complete green CI remain pending. The following scalar receipts retain their historical source scope.",
     "qualified_source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
     "qualification_receipts_commit": "6ffc5e0e8febaf6b9718753e2037840548c5bd4d"
+  },
+  "runtime_authority": {
+    "required_architecture": "One canonical source compiler and admitted executable artifact define Mech semantics. Resident execution, native JIT and native Object/AOT are execution backends of that artifact, not independent language implementations. Host adapters supply typed effects; they must not create a second language or bypass common capability admission and atomic publication contracts.",
+    "current_gap": "The opt-in CLI build --backend cranelift still calls mech_gpu::native_build::emit_application with a source path. That route reparses source through native_sequence::ParsedSource and separate sequence/control/grid lowering. This is an unresolved competing compiler authority, not a supported permanent alternative architecture. Shared syntax normalization alone does not make its semantics canonical.",
+    "observed_difference": "The source-native path rejects bracketed element-wise application counts that canonical resident execution supports. This establishes different accepted capability sets, not a reproduced same-program output mismatch.",
+    "migration_required": "Move remaining source-native capabilities into canonical artifact lowering and typed host/resource admission, preserve differential resident/JIT/actually-linked AOT qualification, route production native building through the artifact, then remove the alternate source lowering. Unsupported artifact/backend combinations must fail explicitly without reparsing source or silently falling back. Renaming paths or documenting the gap does not complete this requirement.",
+    "qualified_boundary": "Only stateless Turn-only Bool/U64/I64 artifact-native execution is qualified by the recorded scalar receipts. Locally staged F64 remains uncompiled, unqualified and outside the published PR."
   },
   "implemented_corrections_not_full_benchmark_qualification": {
     "record": "pr901-integration-corrections-v1.json",
@@ -83,7 +90,7 @@
     },
     {
       "requirement": "Complete canonical Cranelift AOT lowering",
-      "work": "F64, checked casts, computed activation/state, Match/Iteration, matrix/collection and resource execution. No whole-program interpreter fallback or benchmark-sized Rust bridge."
+      "work": "F64, checked casts, computed activation/state, Match/Iteration, matrix/collection and resource execution. Migrate the older source-native compiler's capabilities onto this artifact path and retire its independent source lowering; do not preserve two semantic authorities. No whole-program interpreter fallback or benchmark-sized Rust bridge."
     },
     {
       "requirement": "Close collection and ownership gaps",
