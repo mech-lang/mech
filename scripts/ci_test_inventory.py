@@ -529,6 +529,11 @@ def reachable_generator_commands(module: ast.Module):
             return
         for child in ast.iter_child_nodes(node):
             yield from expression(child, assignments)
+        if isinstance(node, ast.NamedExpr):
+            # Unmodeled expression-level binding may expose a list alias.
+            invalidate(node.value, assignments)
+            assignments.pop(node.target.id, None)
+            return
         if isinstance(node, ast.Call) and call_name(node.func) in {
             "exit", "quit", "sys.exit", "os._exit", "builtins.exit", "builtins.quit",
         }:
@@ -554,9 +559,11 @@ def reachable_generator_commands(module: ast.Module):
                 command = cargo_test_command(list(arguments))
                 if command is not None:
                     yield command
-        elif node.func.id in functions and node.func.id not in visited:
-            visited.add(node.func.id)
-            yield from statements(functions[node.func.id].body, {})
+        elif node.func.id in functions:
+            invalidate(functions[node.func.id], assignments)
+            if node.func.id not in visited:
+                visited.add(node.func.id)
+                yield from statements(functions[node.func.id].body, {})
             for argument in (*node.args, *[keyword.value for keyword in node.keywords]):
                 invalidate(argument, assignments)
         else:
@@ -615,6 +622,7 @@ def reachable_generator_commands(module: ast.Module):
                                 assignments[target.id] = value
                         else:
                             invalidate(target, assignments)
+                            invalidate(statement.value, assignments)
                 elif isinstance(statement, ast.AnnAssign):
                     value = assigned_value(statement.value, assignments) if statement.value else None
                     if isinstance(statement.target, ast.Name):
@@ -624,8 +632,11 @@ def reachable_generator_commands(module: ast.Module):
                             assignments[statement.target.id] = value
                     else:
                         invalidate(statement.target, assignments)
+                        if statement.value:
+                            invalidate(statement.value, assignments)
                 elif isinstance(statement, ast.AugAssign):
                     invalidate(statement.target, assignments)
+                    invalidate(statement.value, assignments)
                     if isinstance(statement.target, ast.Name):
                         assignments.pop(statement.target.id, None)
                 elif isinstance(statement, ast.Delete):

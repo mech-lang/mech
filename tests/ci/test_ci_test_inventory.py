@@ -192,6 +192,13 @@ class IntegrationInventoryTests(unittest.TestCase):
             "alias = command\nalias[0] = 'true'", "alias = command\nalias.append('--no-run')",
             "alias = command\nalias += ['--no-run']", "alias: list = command\nalias[0] = 'true'",
             "aliases = [command]\naliases[0][:] = ['true']",
+            "environment = {}\nenvironment['command'] = command\nenvironment['command'][:] = ['true']",
+            "environment = {}\nenvironment['command']: list = command\nenvironment['command'][:] = ['true']",
+            "aliases = []\naliases += [command]\naliases[0][:] = ['true']",
+            "(alias := command)\nalias[0] = 'true'",
+            "alias, = [command]\nalias[:] = ['true']",
+            "def mutate():\n    command[:] = ['true']\nmutate()",
+            f"def mutate():\n    command[:] = ['true']\nmutate()\ncommand = {literal}\nmutate()",
             "if dynamic():\n    command[:] = ['true']",
         ):
             source = f"command = {literal}\n{mutation}\nrun_streamed(command)\n"
