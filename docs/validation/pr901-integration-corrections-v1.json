@@ -25,6 +25,47 @@
   ],
   "corrections": [
     {
+      "area": "structural workflow extraction, supported shell forms and harness modes",
+      "reviewed_source_commit": "842c1596efe31dcfa240ec5cb37a8536700c498f",
+      "review_comments": [4304467755, 4304467762, 4304467769, 4304467774, 4304467779],
+      "fix_commit": "f055793cee4d3abf5fcd580937e52a5b7d1007ca",
+      "yaml": "Extract only real step mappings through a shared structural YAML parser. Inspect complete job and step metadata regardless of key order; inherit workflow/job run defaults. Non-root or unknown working directories and unsupported custom shells supply no ownership, including through local composite invocations. Scalar/environment/name text cannot masquerade as a run or uses property. Preserve the effective composite input/default rules. Reject duplicate/merge keys, custom object tags and recursive aliases rather than inventing execution credit.",
+      "dependency": "CI-only PyYAML6.0.3 is version/hash pinned in .github/ci/python-requirements.txt using all73 official release-file hashes. Both actual inventory entry points create isolated temporary virtual environments and install with --only-binary=:all: --require-hashes before execution. The dependency does not enter any Cargo compiler/runtime/application closure. Local qualification uses the same pinned package in a task-local environment.",
+      "shell": "Admit a bounded set of straight-line command forms, not arbitrary preceding executables. Unknown/mutating programs, filesystem replacement commands, arbitrary Python helpers and mutating maintained-wrapper payloads invalidate block ownership. Retain the prior state/control-flow denials. Supported maintained generators/wrappers retain their actual selections; ordinary literal output/check commands remain supported. This does not attest arbitrary host code or prove general shell/YAML/GitHub/platform execution.",
+      "harness": "Benchmark-only, list/help and unknown harness selection/mode options cannot own ordinary integration cases. Known ordinary/ignored/exact/skip/format/thread options retain their existing selection rules.",
+      "workflow_preservation": "The original release memory-safety RUSTFLAGS override is isolated in its own step between the unchanged complete core conformance and runtime/host memory commands. Every command, feature, target, release/debug assertion setting, job deadline and fail-fast ordering remains intact. The inventory therefore need not credit a dynamic shell assignment to preserve the genuine core selections. Regression checks protect the retained release command and ordering.",
+      "qualification": {
+        "source_commit": "f055793cee4d3abf5fcd580937e52a5b7d1007ca",
+        "result": "PASS: all131 CI contract methods (including all30 inventory methods), six sharder tests and formatting; exact clean source checked before and after every phase.",
+        "commands": [
+          ["python", "-B", "-m", "unittest", "discover", "-s", "tests/ci", "-p", "test_*.py"],
+          ["python", "-B", "-m", "unittest", "scripts.tests.test_run_python_unittest_shards"],
+          ["cargo", "+nightly-2026-03-03", "fmt", "--all", "--check"]
+        ],
+        "python_environment": "Isolated venv with the hash-pinned CI requirements installed; Python3.14 / PyYAML6.0.3 on aarch64-apple-darwin.",
+        "log": "tmp/pr-stack-evidence/review-v110-pinned-structural-ci-checks.log",
+        "log_sha256": "468e75804f04e6d6e7f01cb408a34306c91ea5461560aace7486e564be465b8f",
+        "failed_intermediate": "v106 passes130 methods but the real inventory loses eight legitimate core targets because a later dynamic release RUSTFLAGS assignment invalidates their shared block. Separate unchanged execution steps restore that ownership; v107/v109 pass all131. The failed attempt remains recorded."
+      },
+      "negative_harness_evidence": {
+        "source_commit": "842c1596efe31dcfa240ec5cb37a8536700c498f",
+        "executable_sha256": "ee2abd75c55f8fbb589885952393d4daad0070f90d228bf00bb024f37087d492",
+        "arguments": ["--bench", "--test-threads=1"],
+        "result": "EXIT0 with zero passed ordinary tests, one ignored and zero measured. This is a negative mode probe, not ordinary test qualification or benchmark measurement.",
+        "log": "tmp/pr-stack-evidence/review-v108-harness-bench-negative.log",
+        "log_sha256": "3029e622c46c97a544e3c69486809424d4a6d794b58ea71c2d1f2996823eb782"
+      },
+      "assignment_specialization_qualification": {
+        "source_commit": "842c1596efe31dcfa240ec5cb37a8536700c498f",
+        "command": ["cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1", "-p", "mech-stdlib", "--no-default-features", "--features", "full_compiler,matrix2,vector2", "--test", "source_op_assign_contract", "--test", "specialization_contract", "--", "--test-threads=1"],
+        "environment": {"CARGO_BUILD_JOBS": "1", "CARGO_PROFILE_DEV_DEBUG": "0", "CARGO_PROFILE_TEST_DEBUG": "0", "CARGO_INCREMENTAL": "0", "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true", "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"},
+        "result": "PASS: both original test methods and their retained factory/layout cases on exact clean source. Combined with the separately recorded24-target full_compiler batch, this covers all26 reviewed stdlib targets/130 methods across the two required profiles, not all other owners or original application/tail/linked gates.",
+        "log": "tmp/pr-stack-evidence/review-v101-current-coverage-stdlib-assignment-specialization.log",
+        "log_sha256": "44e36998c01d60970cec0abb1d9aebc9fc1ed8c6849ac6c01e2c9dfe79cacb77"
+      },
+      "remaining": "Publish, reply to/resolve all five findings and request fresh exact-head review. Complete remaining owner/application/linked qualification and the entire final-composition CI. Keep PR901 draft and unmerged pending explicit user approval, even after clean review and green CI. The wider native/compiler/ten-workload/security benchmark brief remains unfinished; no new timings or F64 qualification are claimed."
+    },
+    {
       "area": "shell resolution, invoked composite actions and complete reviewed stdlib source batch",
       "reviewed_source_commit": "b70ca31cd5f2c176ac92c6796b75d9796ceb3855",
       "review_comments": [4304398931, 4304398935],

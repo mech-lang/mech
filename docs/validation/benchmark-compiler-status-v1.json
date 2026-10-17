@@ -7,7 +7,7 @@
     "branch": "codex/idiomatic-native-programs",
     "pull_request": "https://github.com/mech-lang/mech/pull/901",
     "pull_request_status": "OPEN_DRAFT",
-    "current_correction_source_commit": "20239a4d87ff7bfbdcea271441bcd44a3c27f0fb",
+    "current_correction_source_commit": "f055793cee4d3abf5fcd580937e52a5b7d1007ca",
     "current_correction_record": "pr901-integration-corrections-v1.json",
     "current_qualification": "Final-source owner/application/linked qualification, fresh clean review and complete green CI remain pending. The following scalar receipts retain their historical source scope.",
     "qualified_source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
