@@ -8,7 +8,10 @@ use mech_core::{MResult, MechError, MechErrorKind, OperationContractDeclaration,
 use crate::extension::catch_extension;
 #[cfg(any(test, feature = "runtime"))]
 use crate::extension::invoke_extension;
-#[cfg(feature = "resident-external")]
+#[cfg(any(
+    feature = "resident-external",
+    all(feature = "runtime", feature = "string")
+))]
 use crate::extension::invoke_extension_value;
 use crate::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeCompensatableEffect,
@@ -455,7 +458,10 @@ impl RuntimeResourceRegistry {
         })
     }
 
-    #[cfg(feature = "resident-routing-source")]
+    #[cfg(any(
+        feature = "resident-routing-source",
+        all(feature = "runtime", feature = "string")
+    ))]
     pub(crate) fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
         let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
@@ -472,7 +478,10 @@ impl RuntimeResourceRegistry {
         })
     }
 
-    #[cfg(feature = "resident-routing-source")]
+    #[cfg(any(
+        feature = "resident-routing-source",
+        all(feature = "runtime", feature = "string")
+    ))]
     pub(crate) fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
         let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
         let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
@@ -489,6 +498,99 @@ impl RuntimeResourceRegistry {
             "plan_write",
             || entry.provider.plan_write(request),
         )
+    }
+
+    /// Effect-free admission for the native snapshot-text resource route.
+    #[cfg(all(feature = "runtime", feature = "string"))]
+    pub(crate) fn preflight_native_text_resource(
+        &self,
+        request: &mech_core::ExecutionResourceRequest,
+    ) -> MResult<()> {
+        use mech_core::{ResourceIntent, ValueData};
+        let invalid = |reason: &str| {
+            MechError::new(
+                crate::NativeResourceBindingError {
+                    reason: reason.into(),
+                },
+                None,
+            )
+        };
+        let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
+        let entry = self
+            .provider_entry_for(&scheme, &request.base_uri)
+            .ok_or_else(|| {
+                MechError::new(
+                    RuntimeResourceProviderNotFound {
+                        scheme: scheme.clone(),
+                        uri: request.base_uri.clone(),
+                    },
+                    None,
+                )
+            })?;
+        match request.intent {
+            ResourceIntent::Read => {
+                let contract = invoke_extension_value(
+                    format!("resource provider `{scheme}`"),
+                    "semantic_read_contract",
+                    || entry.provider.semantic_read_contract(),
+                )?;
+                if contract != Some(crate::resource_observation_contract()) {
+                    return Err(invalid(
+                        "native text read requires a snapshot observation contract",
+                    ));
+                }
+                let read = RuntimeResourceReadRequest {
+                    base_uri: request.base_uri.clone(),
+                    path: request.path.clone(),
+                    context_name: request.context_name.clone(),
+                };
+                let requires_driver = invoke_extension_value(
+                    format!("resource provider `{scheme}`"),
+                    "observation_requires_input_driver",
+                    || entry.provider.observation_requires_input_driver(&read),
+                )?;
+                if requires_driver {
+                    return Err(invalid(
+                        "native snapshot observations cannot require a live input driver",
+                    ));
+                }
+                let planned = self.plan_read(read)?;
+                if !matches!(planned.data(), ValueData::String(_)) {
+                    return Err(invalid("native text read requires a planned string value"));
+                }
+            }
+            ResourceIntent::Send => {
+                let contract = invoke_extension_value(
+                    format!("resource provider `{scheme}`"),
+                    "semantic_write_contract",
+                    || {
+                        entry
+                            .provider
+                            .semantic_write_contract(RuntimeResourceWriteIntent::Send)
+                    },
+                )?;
+                // The existing at-most-once, signal-input contract is also
+                // used by terminal output. Other effect protocols need their
+                // own native admission rather than weakened delivery rules.
+                if contract != Some(crate::compute_effect_contract()) {
+                    return Err(invalid(
+                        "native text send requires an at-most-once effect contract without idempotency",
+                    ));
+                }
+                self.plan_write(RuntimeResourceWriteCommand {
+                    base_uri: request.base_uri.clone(),
+                    path: request.path.clone(),
+                    context_name: request.context_name.clone(),
+                    operation: RuntimeCapabilityOperation::Write,
+                    intent: RuntimeResourceWriteIntent::Send,
+                    value: crate::RuntimeHostInputValue::String(String::new()).into_value()?,
+                })?;
+            }
+            ResourceIntent::Assign => {
+                return Err(invalid("native ports do not support assignment"));
+            }
+        }
+        Ok(())
     }
 
     #[cfg(any(test, feature = "runtime"))]

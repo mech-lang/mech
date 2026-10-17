@@ -1123,6 +1123,7 @@ jobs:
     name: Native hosted applications
     runs-on: ubuntu-latest
     env:
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_BUILD_JOBS: "1"
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: "0"
@@ -1149,6 +1150,38 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
+      - name: Install activated native application build tools
+        run: |
+          if ! command -v rg >/dev/null 2>&1 || ! command -v cc >/dev/null 2>&1 || ! command -v make >/dev/null 2>&1 || ! command -v m4 >/dev/null 2>&1
+          then
+            sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources -o Dir::Etc::sourceparts=-
+            sudo apt-get install --yes ripgrep build-essential m4
+          fi
+      - name: Execute activated native admission and pipe regressions
+        timeout-minutes: 30
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
+          --no-default-features --features native-build,native-io
+          --test native_host_io --test repeated_application
+          --test native_host_application --test native_source_admission -- --test-threads=1
+      - name: Qualify activated native launches with one linked executable
+        timeout-minutes: 30
+        env:
+          MECH_NATIVE_QUALIFICATION_DIRECTORY: ${{ runner.temp }}/activated-native-host-evidence
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
+          --no-default-features --features native-build,native-io
+          --test native_host_application -- --ignored --exact
+          one_linked_executable_runs_secure_and_trusted_without_rebuilding
+          --test-threads=1
+      - name: Retain activated native launch qualification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: activated-native-host-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/activated-native-host-evidence
+          if-no-files-found: error
+          retention-days: 14
       - name: Build hosted applications and CLI integration
         timeout-minutes: 150
         uses: ./.github/actions/native-applications

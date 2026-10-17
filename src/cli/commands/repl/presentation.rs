@@ -29,6 +29,7 @@ pub(super) fn value(value: &RuntimeValueSnapshot) -> Option<OutputContent> {
 pub(super) fn capabilities(grants: &EffectiveCliHostGrants) -> OutputContent {
     let mut rows = vec![
         capability_row("cli/env", "read", &grants.env_read_paths),
+        capability_row("cli/args", "read", &grants.args_read_paths),
         capability_row("cli/stdout", "write", &grants.stdout_write_paths),
         capability_row("cli/stderr", "write", &grants.stderr_write_paths),
     ];
@@ -371,11 +372,13 @@ mod tests {
     fn help_capabilities_and_docs_are_structured() {
         let grants = EffectiveCliHostGrants {
             env_read_paths: vec!["*".to_string()],
+            args_read_paths: Vec::new(),
             stdout_write_paths: vec!["text".to_string()],
             stderr_write_paths: Vec::new(),
         };
         let capabilities = rendered(capabilities(&grants));
         assert!(capabilities.contains("cli/env"));
+        assert!(capabilities.contains("cli/args"));
         assert!(capabilities.contains("granted"));
         assert!(capabilities.contains("denied"));
         assert!(capabilities.contains("display.scene.3d"));

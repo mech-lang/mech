@@ -3,12 +3,19 @@
 //! Source expressions become native calls; packed-window traversal is emitted
 //! by Cranelift. Byte storage, IO, formatting and hashbrown are library services.
 //! This is a separate admitted subset, not the general resident artifact path.
+#[cfg(feature = "native-io")]
+mod activation;
 mod bytes;
 mod compiler;
 mod counts;
+mod host_io;
 mod numeric;
 mod runtime;
+#[cfg(feature = "native-io")]
+pub use activation::{CliHostIo, NativeIoGrant, NativeIoPolicy};
 pub use compiler::{Constant, JitProgram, Program, compile, compile_parsed};
+pub use host_io::NativeHostIo;
+pub use mech_engine::native_sequence::{NativeResourceIntent, NativeResourceRequirement};
 pub use runtime::{Context, NativeEntry};
 
 /// Emit a scheduled, fused source program and its checked constant table.
@@ -51,6 +58,11 @@ pub fn emit_program_with_array_simd(
     std::fs::write(
         directory.join("constants.json"),
         serde_json::to_vec(&program.constants).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| e.to_string())?;
+    std::fs::write(
+        directory.join("resource-requirements.json"),
+        serde_json::to_vec(&program.resource_requirements()?).map_err(|e| e.to_string())?,
     )
     .map_err(|e| e.to_string())?;
     Ok(program)

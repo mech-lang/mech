@@ -349,9 +349,12 @@ impl Context {
     /// Callers retain the canonical graph between input executions.
     pub fn run_resident(&mut self, graph: &Graph) -> Result<(), String> {
         if !self.matches_constants(&graph.constants) {
-            return Err("resident constant table mismatch".into());
+            self.error = Some("resident constant table mismatch".into());
+            return self.finish_execution();
         }
-        self.resident_graph(graph, None)?;
+        if let Err(error) = self.resident_graph(graph, None) {
+            self.error = Some(error);
+        }
         self.finish_execution()
     }
     fn child(
@@ -363,7 +366,7 @@ impl Context {
         if inputs.len() != function.parameters.len() || captures.len() != function.captures.len() {
             return Err("resident callable arity mismatch".into());
         }
-        let mut child = Context::new(&function.program.constants, None, false);
+        let mut child = Context::pure(&function.program.constants);
         child.pool = self.pool.clone();
         child.scratch = self.scratch.clone();
         child.partitions = self.partitions;

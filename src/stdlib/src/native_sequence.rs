@@ -60,6 +60,7 @@ const OPERATIONS: Catalog = &[
     operation!("map/get", 30, [[Histogram], [Integer]], Fixed(Integer)),
     operation!("text/join-terminated", 31, [[Texts], [Text]], Fixed(Text)),
     operation!("io/argument-u64", 32, [[Integer]], Fixed(Integer)),
+    operation!("number/parse-u64", 82, [[Text]], Fixed(Integer)),
     operation!("sequence/fill", 33, [[Integer], [Float]], Fixed(Numbers)),
     operation!(
         "sequence/length",

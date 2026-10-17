@@ -1,0 +1,128 @@
+{
+  "activated_legacy_fallback_rejected": true,
+  "source_runner_activated_legacy_fallback_rejected": true,
+  "attempts": [
+    {
+      "exit_code": 0,
+      "mode": "trusted",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "995dea495af75b720afa10fa0c4ca7d8c8c79f6ccab72a9183b59d1b25714019"
+    },
+    {
+      "exit_code": 0,
+      "mode": "secure",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "995dea495af75b720afa10fa0c4ca7d8c8c79f6ccab72a9183b59d1b25714019"
+    },
+    {
+      "exit_code": 1,
+      "mode": "default-denied",
+      "stderr_sha256": "601ea3e1bbd3c24b836fb33e481f78f3810d717799a5a6c1cbf3a5819f7124fb",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "exit_code": 1,
+      "mode": "invalid-policy",
+      "stderr_sha256": "4e5d62988f70f6d2933776924c79f7dc13609b0870a052bfba68d3d5552f34ff",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "benchmark_measurements": 0,
+  "binary_sha256": "17354c24f2497f2559c13a5c4c00c7368e6162da346736b7f0bc1230fdbf9834",
+  "build_count": 1,
+  "constants_sha256": "bbd8ccb744a7cfd7bdac538acaf07179a37f3cb753ebfe90fec15f23c2a84a6c",
+  "object_sha256": "753ed7c7b654b0ed27067ab6362b4d873e72e416d6d8ef2df83f44d91ee8ae66",
+  "requirements_sha256": "7de59211c723212a7aa1ecc32d49739d41a3cd57f5dd424cba183f5bab0eae49",
+  "same_executable_for_all_attempts": true,
+  "schema": "native-host-application-qualification-v1",
+  "source_sha256": "253771653444a77ce577f45ba1cc0f73547fa6655ea28ee5537672d294754660",
+  "compiler_source_commit": "66690718c6126c43d49dcb0b8f05fcb982f30264",
+  "parent_application_commit": "9daa9c97db52a5ecf995504abef0253059138de7",
+  "application_policy_implementation_origin": "34f35b49f078d682e348b609e029575a553fccc1",
+  "host": "aarch64-apple-darwin",
+  "rustc": "1.96.0-nightly (ec818fda3 2026-03-02)",
+  "application_profile": "dev (Cargo defaults; unoptimized + debuginfo); target-cpu=native",
+  "application_lock_sha256": "41e92782769d88c4414a012c54ac4afcf4eb9326001341c453008f1541b1da49",
+  "application_manifest_sha256": "a2082f2d4e066ccc8e13c5bb4c56803fca22acec0c4f83c8382cd73f5c5a3157",
+  "source_files": {
+    "hosts/gpu/src/sequence/activation.rs": "b9a2122338dd4eae9365a7edc1f676baad55b1e2286a086315ab016af1b8a021",
+    "hosts/gpu/tests/native_host_io.rs": "e39920a4378721d79478f77ec2c763e6eb75ebd748e13c7b28044dc93039e82e",
+    "hosts/gpu/tests/native_host_application.rs": "08671108d59713d1cdf79615de87146aed2d07eb4e310c1ded074e53fb315aaa",
+    "hosts/gpu/src/execution.rs": "9bad3e518a9d2268bac4bb602316b76e44c1104c7937ebf10db7c5f463a3b7a6",
+    "hosts/gpu/tests/native_source_admission.rs": "1e98b1b7a8194b4f52b1c071a526c6ebdc12e402cec6e0885946d2f8eda53870"
+  },
+  "validation": {
+    "started_utc": "2026-10-17T01:28:57Z",
+    "finished_utc": "2026-10-17T01:38:56Z",
+    "command": [
+      "cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1",
+      "-p", "mech-gpu", "--no-default-features", "--features", "native-build,native-io",
+      "--test", "native_host_application", "--", "--ignored", "--exact",
+      "one_linked_executable_runs_secure_and_trusted_without_rebuilding", "--test-threads=1"
+    ],
+    "nonignored_command": [
+      "cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1",
+      "-p", "mech-gpu", "--no-default-features", "--features", "native-build,native-io",
+      "--test", "native_source_admission", "--test", "native_host_io", "--test", "repeated_application",
+      "--test", "native_host_application", "--", "--test-threads=1"
+    ],
+    "exit_code": 0,
+    "clean_source_before_and_after": true,
+    "serial_validation": true,
+    "environment": {
+      "CARGO_BUILD_JOBS": "1",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03",
+      "MECH_NATIVE_QUALIFICATION_DIRECTORY": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/pr900-native-host-v5"
+    },
+    "host_io_tests_passed": 6,
+    "repeated_application_tests_passed": 10,
+    "rejected_declaration_application_tests_passed": 1,
+    "source_runner_admission_tests_passed": 1,
+    "linked_application_tests_passed": 1,
+    "linked_selection_count": 1,
+    "port_admission_tests_passed": 10,
+    "normalizer_tests_passed": 45,
+    "ci_contract_tests_passed": 92,
+    "warning_policy_passed": true,
+    "module_layout_passed": true,
+    "port_admission_log": "tmp/pr-stack-evidence/pr900-final-port-admission-v5.log",
+    "port_admission_log_sha256": "1cc24864946c8c5f21a8ff021dcd54b623e64f7aad7df95fe8f2e6001b348e71",
+    "normalizer_log": "tmp/pr-stack-evidence/pr900-final-normalizer-v5.log",
+    "normalizer_log_sha256": "5ae36dacf840253e136f85ec8a22c20033cdd835faa682342a6e076298725297",
+    "ci_contract_log": "tmp/pr-stack-evidence/pr900-ci-contracts-final-v5.log",
+    "ci_contract_log_sha256": "5e9a839f84ebf4c5aa0d3d28ae83087fcdcaa81f576ffb189345885b909aefe7",
+    "nonignored_log": "tmp/pr-stack-evidence/pr900-runner-fallback-tests-v1.log",
+    "nonignored_log_sha256": "4e07edfcbb57791f8fcd54f05e12bde0a43fc8311619fe56f43989b41ef09391",
+    "log_sha256": "82f8d4a406d20db5f49854480be8384127e1f654a1758f683711cffb89d67677",
+    "evidence_directory": "tmp/pr-stack-evidence/pr900-native-host-v5",
+    "log": "tmp/pr-stack-evidence/pr900-final-native-linked-v5.log",
+    "generated_dependency_resolution": "Fresh offline application lock retained and hashed; generated application build uses --offline, while the outer test uses --locked --offline."
+  },
+  "prior_qualifications": [
+    {
+      "compiler_source_commit": "2356c455961005255f533f0b91fca578bb8c17a0",
+      "binary_sha256": "01696d7cba4b07e023f1744b8d5b92b6ac7774d90ff16e164f4a3a56c0f777b9",
+      "receipt_commit": "a95f2a69bc7f97cc078f3b3092eaffdf0bb6b183",
+      "log": "tmp/pr-stack-evidence/pr900-final-native-host-v4.log",
+      "status": "Historical passing 16-test host/application/execution qualification before the final suffixed-seed/import-alias parent corrections and source-runner fail-closed fix."
+    },
+    {
+      "compiler_source_commit": "c486413e6ee820cfcdc81f4797395b2efe13c7b0",
+      "binary_sha256": "e2e14d09335518d37afee4b02e96642d9555f08052ee593b71abb4644729f59d",
+      "receipt_commit": "53dade8ea7d0434ca11387ae9d1e4adaa41baea9",
+      "status": "Historical passing qualification before the rejected-declaration fix and final parent normalizer corrections."
+    },
+    {
+      "compiler_source_commit": "0e56c39d8cb950a0c672392791a19a826c81481b",
+      "binary_sha256": "9d147142e426b4ae02e46d8f1b326707bbfc1b2698c84de9f8688e9a3baebe4e",
+      "log": "tmp/pr-stack-evidence/pr900-final-native-host-v2.log",
+      "status": "Historical passing 16-test host/application/execution qualification before the final regular-table and Unicode-arm parent corrections."
+    }
+  ],
+  "superseded_qualification": {
+    "compiler_source_commit": "c10602eec8e67a9a31f22df4de56eda7f810e018",
+    "binary_sha256": "745fdf9e8a06dc6e0f6c4f4c0044328df300dcfbcb4e27d16fd67fbaa99b9467",
+    "receipt_commit": "657b3a841",
+    "status": "Historical only; predates trusted staging and secure completion-error propagation. Full prior receipt remains in Git history."
+  }
+}
