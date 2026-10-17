@@ -481,11 +481,11 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
             GrammarExpression::Rule(rules::GUARD_OPERATOR),
             GrammarExpression::Rule(rules::PATTERN),
             GrammarExpression::OneOrMore(&GrammarExpression::Choice(&[
+                GrammarExpression::Rule(rules::FSM_BLOCK_TRANSITION),
                 GrammarExpression::Rule(rules::FSM_STATEMENT_TRANSITION),
                 GrammarExpression::Rule(rules::FSM_STATE_TRANSITION),
                 GrammarExpression::Rule(rules::FSM_OUTPUT),
                 GrammarExpression::Rule(rules::FSM_ASYNC_TRANSITION),
-                GrammarExpression::Rule(rules::FSM_BLOCK_TRANSITION),
             ])),
         ]),
         kind: Some(SyntaxKind::FsmGuard),

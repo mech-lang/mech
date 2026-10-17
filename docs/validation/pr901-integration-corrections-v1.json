@@ -32,6 +32,7 @@
       "catalog_fixture": "Account for the nine deliberate text/number, map and collection exports by exact name while independently retaining the historical 120-name census. Exercise lookup rejection before arguments for every lexically callable module/internal name, including all additions.",
       "formatter_fixture": "Keep legacy named-result signatures as input, require their canonical output arrow, and retain both formatting passes and every unrelated document expectation. Do not revert canonical output to the legacy spelling.",
       "native_linkage_inventory": "Accept the canonical namespace/item syntax used by explicit custom contract declarations, while retaining forbidden placeholder, linkage, feature, signature and alias checks. Include all ten exact additive factories in current inventories and digests; independently preserve the historical full-surface identity and extended retained digest. Reject missing or duplicate additions, removed or changed retained factories, and unrelated undeclared additions. Refresh generated coverage from actual catalog inventories rather than treating the historical snapshot as the complete present language.",
+      "guarded_fsm_blocks": "The complete language-owner integration selection exposes a real ordered-choice defect: guarded transitions try record-valued states before blocks, unlike ordinary transitions. Put blocks first in the maintained grammar specification and regenerate the canonical grammar. Preserve both original regressions asserting ordinary definitions, mutable bindings, indexed assignments, empty blocks and the following state transition.",
       "gate": "These are follow-up repairs to failures exposed after CPU, WebGPU and parity qualification succeeded. A fresh review and all required checks on the next exact head remain mandatory before ready or merge."
     },
     {
@@ -139,6 +140,20 @@
     "Continue broader packaging and optimizer work independently of the corrected stack's qualification."
   ],
   "checks": [
+    {
+      "area": "additive linkage inventory regeneration, not final-head execution qualification",
+      "full_catalog_source_commit": "5732c87861470e5eab58dc71bc66f6cfb17712fb",
+      "full_catalog_entries": 9726,
+      "retained_full_entries": 9716,
+      "extended_shard_source_commit": "e7fb7f9f46160f2df03c6cd864e32839e24d8d82",
+      "extended_shard_ci_run": 39015685289,
+      "complete_catalog_entries": 122093,
+      "retained_complete_catalog_entries": 122083,
+      "retained_complete_catalog_digest": "34db793ac637b3b1bc532978c6e8a6e0be1b8be63c33ec5f3043045f765616f5",
+      "current_complete_catalog_digest": "911b2653d0a74023a90f190d51b3ba078bbc800c12d31203b477c6995fb38baf",
+      "generated_coverage_digest": "592c35a0c7e1749a7838edaa1066e24ced6032314444a4fd61098cccecc257dc",
+      "scope": "The full catalog is generated locally from clean pinned source; all 19 exhaustive extended shards are retained actual CI artifacts from the stated earlier head. No catalog declarations change between those sources. All entries pass linkage, contract syntax, signature, feature, alias, current-surface and independently retained identity checks. Use these measurements to regenerate the expected coverage record, not as a claim that the later final head has executed its exact-closure builds. Final-head CI must regenerate and qualify its own complete inventory."
+    },
     {
       "area": "complete immutable live-edit-corrected local qualification",
       "source_commit": "e7fb7f9f46160f2df03c6cd864e32839e24d8d82",

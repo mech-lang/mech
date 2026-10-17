@@ -3290,11 +3290,11 @@ fsm-arm := (fsm-guard-arm | fsm-transition | fsm-comment-arm),
 fsm-guard-arm := pattern, +fsm-guard ;
 fsm-comment-arm := comment ;
 fsm-guard := guard-operator, pattern,
-             +(fsm-statement-transition
+             +(fsm-block-transition
+             | fsm-statement-transition
              | fsm-state-transition
              | fsm-output
-             | fsm-async-transition
-             | fsm-block-transition) ;
+             | fsm-async-transition) ;
 fsm-transition := pattern,
                   +(fsm-block-transition
                   | fsm-statement-transition
