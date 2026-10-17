@@ -77,7 +77,7 @@ impl From<ResidentActivationError> for NativeArtifactLoweringError {
 /// metadata; it never activates a program, observes an input, runs a kernel,
 /// folds a computation, or reconstructs a program from source names.
 ///
-/// The scalar slice is stateless Turn-only Bool/U64/I64. Computed Activation
+/// The scalar slice is stateless Turn-only Bool/U64/I64/F64. Computed Activation
 /// nodes are rejected even when their result could have been constant-folded.
 pub fn lower_pure_native_artifact(
     artifact: &ProgramArtifact,
@@ -240,6 +240,9 @@ pub fn lower_pure_native_artifact(
             (NativeScalarKind::I64, mech_core::ValueData::I64(value)) => {
                 NativeScalarValue::I64(*value)
             }
+            (NativeScalarKind::F64, mech_core::ValueData::F64(value)) => {
+                NativeScalarValue::F64(*value)
+            }
             _ => {
                 return Err(NativeArtifactLoweringError::UnsupportedSchema {
                     schema: value.schema(),
@@ -373,6 +376,7 @@ fn scalar_type(
         SchemaBody::Bool => NativeScalarKind::Bool,
         SchemaBody::UnsignedInteger(IntegerWidth::W64) => NativeScalarKind::U64,
         SchemaBody::SignedInteger(IntegerWidth::W64) => NativeScalarKind::I64,
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => NativeScalarKind::F64,
         _ => return Err(NativeArtifactLoweringError::UnsupportedSchema { schema: id }),
     };
     let shape = schema
@@ -394,6 +398,7 @@ fn port_layout(ty: &NativeScalarType) -> ResidentPortLayout {
         schema_key: ty.schema_key,
         kind: match ty.kind {
             NativeScalarKind::Bool => ResidentValueKind::Bool,
+            NativeScalarKind::F64 => ResidentValueKind::F64,
             NativeScalarKind::U64 | NativeScalarKind::I64 => ResidentValueKind::Snapshot,
         },
         shape: ResidentShape::SCALAR,
@@ -421,6 +426,7 @@ fn public_kind(kind: native_semantics::NativeScalarKind) -> NativeScalarKind {
         native_semantics::NativeScalarKind::Bool => NativeScalarKind::Bool,
         native_semantics::NativeScalarKind::U64 => NativeScalarKind::U64,
         native_semantics::NativeScalarKind::I64 => NativeScalarKind::I64,
+        native_semantics::NativeScalarKind::F64 => NativeScalarKind::F64,
     }
 }
 fn public_op(op: native_semantics::NativeScalarOp) -> NativeScalarOp {
@@ -455,5 +461,17 @@ fn public_op(op: native_semantics::NativeScalarOp) -> NativeScalarOp {
         Private::I64Le => NativeScalarOp::I64Le,
         Private::I64Gt => NativeScalarOp::I64Gt,
         Private::I64Ge => NativeScalarOp::I64Ge,
+        Private::F64Add => NativeScalarOp::F64Add,
+        Private::F64Sub => NativeScalarOp::F64Sub,
+        Private::F64Mul => NativeScalarOp::F64Mul,
+        Private::F64Div => NativeScalarOp::F64Div,
+        Private::F64Neg => NativeScalarOp::F64Neg,
+        Private::F64Sqrt => NativeScalarOp::F64Sqrt,
+        Private::F64Eq => NativeScalarOp::F64Eq,
+        Private::F64Ne => NativeScalarOp::F64Ne,
+        Private::F64Lt => NativeScalarOp::F64Lt,
+        Private::F64Le => NativeScalarOp::F64Le,
+        Private::F64Gt => NativeScalarOp::F64Gt,
+        Private::F64Ge => NativeScalarOp::F64Ge,
     }
 }

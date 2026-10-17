@@ -42,6 +42,10 @@ const ORDERED: &str = "quotient := left<u64> / divisor<u64>\nlast := left<u64> +
 const SIGNED: &str = "sum := left<i64> + right<i64>\nnegative := -right<i64>\nsum\n";
 const SIGNED_DIVREM: &str =
     "quotient := left<i64> / divisor<i64>\nremainder := left<i64> % modulus<i64>\nquotient\n";
+
+#[path = "support/canonical_f64_cases.rs"]
+mod f64_cases;
+const FLOATS: &str = "+> math\nidentity := left<f64>\nsum := left<f64> + right<f64>\ndifference := left<f64> - right<f64>\nproduct := left<f64> * right<f64>\nquotient := left<f64> / right<f64>\nnegative := -left<f64>\nroot := math/sqrt(left<f64>)\nsame := left<f64> == right<f64>\ndiffers := left<f64> != right<f64>\nless := left<f64> < right<f64>\nat-most := left<f64> <= right<f64>\ngreater := left<f64> > right<f64>\nat-least := left<f64> >= right<f64>\nsum\n";
 const PROCESS_DEADLINE: Duration = Duration::from_secs(15);
 const WORKER_DEADLINE: Duration = Duration::from_secs(20 * 60);
 
@@ -181,6 +185,7 @@ fn arguments(values: &[NativeScalarValue]) -> Vec<String> {
             NativeScalarValue::Bool(value) => value.to_string(),
             NativeScalarValue::U64(value) => value.to_string(),
             NativeScalarValue::I64(value) => value.to_string(),
+            NativeScalarValue::F64(value) => format!("f64:{:016x}", value.bits()),
         })
         .collect()
 }
@@ -214,6 +219,7 @@ fn resident(
                     NativeScalarValue::Bool(value) => ValueDataDraft::Bool(*value),
                     NativeScalarValue::U64(value) => ValueDataDraft::U64(*value),
                     NativeScalarValue::I64(value) => ValueDataDraft::I64(*value),
+                    NativeScalarValue::F64(value) => ValueDataDraft::F64(*value),
                 },
             }
             .finalize(&SnapshotValidationContext::new(artifact.schemas()))
@@ -246,6 +252,7 @@ fn resident(
                 ValueData::Bool(value) => NativeScalarValue::Bool(*value),
                 ValueData::U64(value) => NativeScalarValue::U64(*value),
                 ValueData::I64(value) => NativeScalarValue::I64(*value),
+                ValueData::F64(value) => NativeScalarValue::F64(*value),
                 value => panic!("unexpected scalar {value:?}"),
             },
         )
@@ -316,6 +323,9 @@ fn with_limit(limit: &str, arguments: &[NativeScalarValue]) -> Vec<String> {
 fn reference_cases(name: &str, artifacts: &[ProgramArtifact; 2], result: usize) -> Vec<Value> {
     if name == "canonical-linked-signed-divrem" {
         return signed_divrem_reference_cases(artifacts, result);
+    }
+    if name == "canonical-linked-floats" {
+        return floating_reference_cases(artifacts);
     }
     if name == "canonical-linked-signed" {
         return signed_reference_cases(artifacts, result);
@@ -769,6 +779,146 @@ fn signed_divrem_reference_cases(artifacts: &[ProgramArtifact; 2], result: usize
     cases
 }
 
+fn floating_reference_cases(artifacts: &[ProgramArtifact; 2]) -> Vec<Value> {
+    use mech_core::snapshot::F64Bits;
+    let plans = artifacts.each_ref().map(|artifact| {
+        lower_pure_native_artifact(artifact, &mech_stdlib::source_catalog()).unwrap()
+    });
+    let jits = plans
+        .each_ref()
+        .map(|plan| JitArtifact::compile(plan).unwrap());
+    assert!(
+        plans[0]
+            .inputs()
+            .iter()
+            .all(|input| input.ty().kind() == NativeScalarKind::F64)
+    );
+    assert_eq!(plans[0].lets().len(), 12);
+    let mut cases = Vec::new();
+    let corpus = f64_cases::PAIRS
+        .iter()
+        .map(|&(label, left, right)| (label.to_owned(), left, right))
+        .chain(
+            f64_cases::UNARY_BITS
+                .iter()
+                .enumerate()
+                .map(|(index, &bits)| (format!("unary-{index}"), bits, 1.0f64.to_bits())),
+        );
+    for (label, left, right) in corpus {
+        let args = inputs(
+            &artifacts[0],
+            &[
+                ("left", NativeScalarValue::F64(F64Bits::from_bits(left))),
+                ("right", NativeScalarValue::F64(F64Bits::from_bits(right))),
+            ],
+        );
+        let expected = resident(&artifacts[0], &args).unwrap();
+        let identity = plans[0]
+            .outputs()
+            .iter()
+            .position(|output| {
+                output
+                    .interactive_binding()
+                    .is_some_and(|binding| binding.lexical_name == "identity")
+            })
+            .unwrap();
+        assert_eq!(
+            expected[identity],
+            NativeScalarValue::F64(F64Bits::from_bits(left)),
+            "raw NaN/zero bits must survive transport without an arithmetic operation"
+        );
+        for index in 0..2 {
+            assert_eq!(resident(&artifacts[index], &args).unwrap(), expected);
+            assert_eq!(
+                jit_success(&jits[index], &args).0,
+                expected,
+                "{label}: bitwise resident/JIT"
+            );
+        }
+        cases.push(success_case(&label, arguments(&args), &expected));
+        if label == "one-zero" {
+            let (_, work) = jit_success(&jits[0], &args);
+            for (name, limit, limits) in [
+                (
+                    "float-setup-denial",
+                    "--work=0".to_owned(),
+                    NativeExecutionLimits {
+                        max_work: 0,
+                        ..NativeExecutionLimits::default()
+                    },
+                ),
+                (
+                    "float-node-denial",
+                    "--work=400".to_owned(),
+                    NativeExecutionLimits {
+                        max_work: 400,
+                        ..NativeExecutionLimits::default()
+                    },
+                ),
+                (
+                    "float-completion-denial",
+                    format!("--work={}", work - 1),
+                    NativeExecutionLimits {
+                        max_work: work - 1,
+                        ..NativeExecutionLimits::default()
+                    },
+                ),
+                (
+                    "float-memory-denial",
+                    "--memory=0".to_owned(),
+                    NativeExecutionLimits {
+                        max_transport_bytes: 0,
+                        ..NativeExecutionLimits::default()
+                    },
+                ),
+            ] {
+                cases.push(exact_failure_case(
+                    name,
+                    with_limit(&limit, &args),
+                    &jit_error(&jits[0], &args, limits),
+                ));
+            }
+            let budget = mech_core::ManagedMemoryBudget::new(0);
+            let mut output = vec![NativeScalarValue::U64(0xfeed); plans[0].outputs().len()];
+            let before = output.clone();
+            let error = jits[0]
+                .evaluate_into(
+                    &args,
+                    &mut output,
+                    NativeExecutionLimits::default(),
+                    Some(&budget),
+                )
+                .unwrap_err();
+            assert_eq!(output, before);
+            assert_eq!(budget.used_bytes(), 0);
+            cases.push(exact_failure_case(
+                "float-shared-budget-denial",
+                with_limit("--budget=0", &args),
+                &error,
+            ));
+            for (label, bad) in [
+                ("float-decimal-rejected", "1.0"),
+                ("float-nan-text-rejected", "NaN"),
+                ("float-bits-too-short", "f64:0"),
+                ("float-bits-too-long", "f64:00000000000000000"),
+                ("float-bits-nonhex", "f64:000000000000000g"),
+            ] {
+                let mut invalid = arguments(&args);
+                invalid[0] = bad.into();
+                let mut case = failure_case(label, invalid, "invalid F64 bit argument");
+                case["stderr"] = json!("invalid F64 bit argument\n");
+                cases.push(case);
+            }
+            cases.push(success_case(
+                "float-recovery-after-denials",
+                arguments(&args),
+                &expected,
+            ));
+        }
+    }
+    cases
+}
+
 /// Only called in the contained worker. Subprocesses inherit its owned group;
 /// they do not open another process group that could escape its deadline.
 fn worker_command(mut command: Command, root: &Path, label: &str) -> Captured {
@@ -893,6 +1043,7 @@ fn canonical_native_link_build_worker() {
             | "canonical-linked-ordered"
             | "canonical-linked-signed"
             | "canonical-linked-signed-divrem"
+            | "canonical-linked-floats"
     ));
     let evidence = PathBuf::from(std::env::var_os("MECH_CANONICAL_NATIVE_EVIDENCE_DIR").unwrap());
     let root = evidence.join(&name);
@@ -1181,6 +1332,7 @@ fn linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic() 
         qualify(&evidence, "canonical-linked-ordered", ORDERED),
         qualify(&evidence, "canonical-linked-signed", SIGNED),
         qualify(&evidence, "canonical-linked-signed-divrem", SIGNED_DIVREM),
+        qualify(&evidence, "canonical-linked-floats", FLOATS),
     ];
     assert_eq!(pin(&workspace.join("Cargo.lock")), lock);
     clean(&workspace, &evidence, &commit, "after");

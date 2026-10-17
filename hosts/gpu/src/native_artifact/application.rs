@@ -174,7 +174,7 @@ build = "build.rs"
 mech-core = {{ path = {core}, default-features = false }}
 mech-engine = {{ path = {engine}, default-features = false, features = ["native-artifact"] }}
 mech-gpu = {{ path = {gpu}, default-features = false, features = ["canonical-native-runtime"] }}
-mech-stdlib = {{ path = {stdlib}, default-features = false, features = ["std", "native-plan", "bool", "u64", "i64", "math_neg", "math_add", "math_sub", "math_mul", "math_div", "math_mod", "compare_default", "logic_default"] }}
+mech-stdlib = {{ path = {stdlib}, default-features = false, features = ["std", "native-plan", "bool", "u64", "i64", "f64", "math_sqrt", "math_neg", "math_add", "math_sub", "math_mul", "math_div", "math_mod", "compare_default", "logic_default"] }}
 sha2 = {{ version = "0.11.0", default-features = false }}
 [build-dependencies]
 sha2 = {{ version = "0.11.0", default-features = false }}

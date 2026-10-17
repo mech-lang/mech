@@ -244,7 +244,7 @@ fn unsupported_lifecycle_control_and_kinds_fail_closed_original_and_decoded() {
     for source in [
         "1u64 / 0u64\n",
         "flag<bool> ? | true => left<u64> | false => right<u64>\n",
-        "left<f64> + right<f64>\n",
+        "left<f32> + right<f32>\n",
         "text<string>\n",
         "values<[u64]:1,2>\n",
         "~state := 0u64\nstate\n",

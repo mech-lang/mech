@@ -33,6 +33,15 @@ fn signed(text: &str) -> Result<i64, String> {
     }
     text.parse().map_err(|_| "invalid I64 argument".into())
 }
+fn floating_bits(text: &str) -> Result<mech_core::snapshot::F64Bits, String> {
+    let digits = text.strip_prefix("f64:").ok_or("invalid F64 bit argument")?;
+    if digits.len() != 16 || !digits.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err("invalid F64 bit argument".into());
+    }
+    u64::from_str_radix(digits, 16)
+        .map(mech_core::snapshot::F64Bits::from_bits)
+        .map_err(|_| "invalid F64 bit argument".into())
+}
 fn options(
     arguments: Vec<OsString>,
 ) -> Result<(NativeExecutionLimits, Option<u64>, Vec<OsString>), String> {
@@ -119,6 +128,7 @@ fn run() -> Result<(), String> {
         inputs.push(match input.ty().kind() {
             NativeScalarKind::U64 => NativeScalarValue::U64(unsigned(text)?),
             NativeScalarKind::I64 => NativeScalarValue::I64(signed(text)?),
+            NativeScalarKind::F64 => NativeScalarValue::F64(floating_bits(text)?),
             NativeScalarKind::Bool => NativeScalarValue::Bool(match text {
                 "true" => true,
                 "false" => false,
@@ -139,6 +149,7 @@ fn run() -> Result<(), String> {
             NativeScalarValue::Bool(v) => writeln!(&mut result, "{v}"),
             NativeScalarValue::U64(v) => writeln!(&mut result, "{v}"),
             NativeScalarValue::I64(v) => writeln!(&mut result, "{v}"),
+            NativeScalarValue::F64(v) => writeln!(&mut result, "f64:{:016x}", v.bits()),
         }
         .unwrap();
     }

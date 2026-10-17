@@ -4,7 +4,11 @@ use super::abi::{
 };
 use super::runtime::{NativeExecutionError, NativeExecutionLimits, NativeExecutionReport};
 use cranelift_codegen::{
-    ir::{AbiParam, Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types},
+    ir::{
+        AbiParam, Block, InstBuilder, MemFlags, Value,
+        condcodes::{FloatCC, IntCC},
+        types,
+    },
     isa::unwind::UnwindInst,
     settings::{self, Configurable},
 };
@@ -103,6 +107,7 @@ impl JitArtifact {
         let builder = cranelift_jit::JITBuilder::with_flags(
             &[
                 ("opt_level", "none"),
+                ("enable_nan_canonicalization", "false"),
                 ("is_pic", "true"),
                 ("preserve_frame_pointers", "true"),
                 ("unwind_info", "true"),
@@ -203,6 +208,7 @@ pub fn emit_object_with_limits(
     let mut flags = settings::builder();
     for (name, value) in [
         ("opt_level", "none"),
+        ("enable_nan_canonicalization", "false"),
         ("is_pic", "true"),
         ("preserve_frame_pointers", "true"),
         ("unwind_info", "true"),
@@ -249,6 +255,7 @@ impl Sources {
                 NativeScalarValue::Bool(_) => NativeScalarKind::Bool,
                 NativeScalarValue::U64(_) => NativeScalarKind::U64,
                 NativeScalarValue::I64(_) => NativeScalarKind::I64,
+                NativeScalarValue::F64(_) => NativeScalarKind::F64,
             }),
         }
     }
@@ -291,6 +298,7 @@ impl Sources {
                     NativeScalarValue::Bool(value) => u64::from(*value),
                     NativeScalarValue::U64(value) => *value,
                     NativeScalarValue::I64(value) => *value as u64,
+                    NativeScalarValue::F64(value) => value.bits(),
                 };
                 return Ok(b.ins().iconst(types::I64, word as i64));
             }
@@ -342,7 +350,7 @@ fn admit(
     guard(b, valid, error, STATUS_ADMISSION);
 }
 fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKind) {
-    use NativeScalarKind::{Bool, I64, U64};
+    use NativeScalarKind::{Bool, F64, I64, U64};
     use NativeScalarOp::*;
     match op {
         U64Add | U64Sub | U64Mul | U64Div | U64Rem => (&[U64, U64], U64),
@@ -350,6 +358,9 @@ fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKi
         I64Add | I64Sub | I64Mul | I64Div | I64Rem => (&[I64, I64], I64),
         I64Eq | I64Ne | I64Lt | I64Le | I64Gt | I64Ge => (&[I64, I64], Bool),
         I64Neg => (&[I64], I64),
+        F64Add | F64Sub | F64Mul | F64Div => (&[F64, F64], F64),
+        F64Neg | F64Sqrt => (&[F64], F64),
+        F64Eq | F64Ne | F64Lt | F64Le | F64Gt | F64Ge => (&[F64, F64], Bool),
         BoolNot => (&[Bool], Bool),
         BoolAnd | BoolOr | BoolXor | BoolEq | BoolNe => (&[Bool, Bool], Bool),
     }
@@ -362,6 +373,53 @@ fn primitive(
 ) -> Value {
     use NativeScalarOp::*;
     let a = args[0];
+    if matches!(
+        op,
+        F64Add
+            | F64Sub
+            | F64Mul
+            | F64Div
+            | F64Neg
+            | F64Sqrt
+            | F64Eq
+            | F64Ne
+            | F64Lt
+            | F64Le
+            | F64Gt
+            | F64Ge
+    ) {
+        // ABI transport remains raw words. Only the exact typed primitive
+        // interprets them as F64; no arithmetic cast or NaN canonicalization.
+        let left = b.ins().bitcast(types::F64, MemFlags::new(), a);
+        let value = match op {
+            F64Neg => b.ins().fneg(left),
+            F64Sqrt => b.ins().sqrt(left),
+            _ => {
+                let right = b.ins().bitcast(types::F64, MemFlags::new(), args[1]);
+                match op {
+                    F64Add => b.ins().fadd(left, right),
+                    F64Sub => b.ins().fsub(left, right),
+                    F64Mul => b.ins().fmul(left, right),
+                    F64Div => b.ins().fdiv(left, right),
+                    _ => {
+                        let cc = match op {
+                            F64Eq => FloatCC::Equal,
+                            // NotEqual includes unordered, matching Rust !=.
+                            F64Ne => FloatCC::NotEqual,
+                            F64Lt => FloatCC::LessThan,
+                            F64Le => FloatCC::LessThanOrEqual,
+                            F64Gt => FloatCC::GreaterThan,
+                            F64Ge => FloatCC::GreaterThanOrEqual,
+                            _ => unreachable!("typed floating primitive"),
+                        };
+                        let value = b.ins().fcmp(cc, left, right);
+                        return b.ins().uextend(types::I64, value);
+                    }
+                }
+            }
+        };
+        return b.ins().bitcast(types::I64, MemFlags::new(), value);
+    }
     if op == BoolNot {
         return b.ins().bxor_imm(a, 1);
     }
@@ -444,7 +502,8 @@ fn primitive(
             let value = b.ins().icmp(cc, a, c);
             b.ins().uextend(types::I64, value)
         }
-        BoolNot | I64Neg => unreachable!(),
+        BoolNot | I64Neg | F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt | F64Eq | F64Ne
+        | F64Lt | F64Le | F64Gt | F64Ge => unreachable!(),
     }
 }
 

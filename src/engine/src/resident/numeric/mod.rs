@@ -1549,7 +1549,13 @@ fn bind_negate(
         if request.inputs[0].shape != request.output.shape {
             return Err(ResidentKernelBindError::UnsupportedLayout);
         }
-        bound(negate, Vec::<u64>::new().into_boxed_slice())
+        bound(negate, Vec::<u64>::new().into_boxed_slice()).map(|kernel| {
+            super::native_semantics::certify(
+                request,
+                kernel,
+                super::native_semantics::NativeScalarOp::F64Neg,
+            )
+        })
     };
     dense().or_else(|_| bind_snapshot_numeric_negate(request))
 }
@@ -1893,7 +1899,17 @@ fn bind_floor(
 fn bind_sqrt(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_unary_float(request, square_root, square_root_f32)
+    // The dense executor uses the platform sqrt. The distinct Snapshot
+    // fallback uses libm and receives no platform-sqrt semantic witness.
+    bind_unary_f64(request, square_root)
+        .map(|kernel| {
+            super::native_semantics::certify(
+                request,
+                kernel,
+                super::native_semantics::NativeScalarOp::F64Sqrt,
+            )
+        })
+        .or_else(|_| bind_unary_float_snapshot(request, square_root_f32))
 }
 
 fn bind_sin(
@@ -2027,6 +2043,13 @@ fn bind_sub(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, subtract)
+        .map(|kernel| {
+            super::native_semantics::certify(
+                request,
+                kernel,
+                super::native_semantics::NativeScalarOp::F64Sub,
+            )
+        })
         .or_else(|_| bind_snapshot_numeric_binary(request, SemanticArithmetic::Subtract))
 }
 
@@ -2034,13 +2057,26 @@ fn bind_add(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, add)
+        .map(|kernel| {
+            super::native_semantics::certify(
+                request,
+                kernel,
+                super::native_semantics::NativeScalarOp::F64Add,
+            )
+        })
         .or_else(|_| bind_snapshot_numeric_binary(request, SemanticArithmetic::Add))
 }
 
 fn bind_mul(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary(request, multiply)
+    bind_binary(request, multiply).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Mul,
+        )
+    })
 }
 
 fn bind_semantic_mul(
@@ -2055,6 +2091,13 @@ fn bind_div(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, divide)
+        .map(|kernel| {
+            super::native_semantics::certify(
+                request,
+                kernel,
+                super::native_semantics::NativeScalarOp::F64Div,
+            )
+        })
         .or_else(|_| bind_snapshot_numeric_binary(request, SemanticArithmetic::Divide))
 }
 
@@ -2094,7 +2137,13 @@ fn bind_f64_comparison(
 fn bind_f64_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_comparison(request, f64_equal)
+    bind_f64_comparison(request, f64_equal).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Eq,
+        )
+    })
 }
 
 fn bind_semantic_equal(
@@ -2522,13 +2571,25 @@ fn bind_f64_vector_comparison(
 fn bind_f64_not_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_comparison(request, f64_not_equal)
+    bind_f64_comparison(request, f64_not_equal).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Ne,
+        )
+    })
 }
 
 fn bind_f64_less(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_comparison(request, f64_less)
+    bind_f64_comparison(request, f64_less).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Lt,
+        )
+    })
 }
 
 fn bind_semantic_less(
@@ -2542,7 +2603,13 @@ fn bind_semantic_less(
 fn bind_f64_less_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_comparison(request, f64_less_equal)
+    bind_f64_comparison(request, f64_less_equal).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Le,
+        )
+    })
 }
 
 fn bind_semantic_less_equal(
@@ -2556,7 +2623,13 @@ fn bind_semantic_less_equal(
 fn bind_f64_greater(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_comparison(request, f64_greater)
+    bind_f64_comparison(request, f64_greater).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Gt,
+        )
+    })
 }
 
 fn bind_semantic_greater(
@@ -2570,7 +2643,13 @@ fn bind_semantic_greater(
 fn bind_f64_greater_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_comparison(request, f64_greater_equal)
+    bind_f64_comparison(request, f64_greater_equal).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Ge,
+        )
+    })
 }
 
 fn bind_semantic_greater_equal(

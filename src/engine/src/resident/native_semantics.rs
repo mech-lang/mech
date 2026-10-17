@@ -18,6 +18,7 @@ pub(crate) enum NativeScalarKind {
     Bool,
     U64,
     I64,
+    F64,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -51,6 +52,18 @@ pub(crate) enum NativeScalarOp {
     I64Le,
     I64Gt,
     I64Ge,
+    F64Add,
+    F64Sub,
+    F64Mul,
+    F64Div,
+    F64Neg,
+    F64Sqrt,
+    F64Eq,
+    F64Ne,
+    F64Lt,
+    F64Le,
+    F64Gt,
+    F64Ge,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -65,13 +78,17 @@ impl NativeScalarSemantics {
         self.op
     }
     pub(crate) fn inputs(&self) -> &'static [NativeScalarKind] {
-        use NativeScalarKind::{Bool, I64, U64};
+        use NativeScalarKind::{Bool, F64, I64, U64};
         use NativeScalarOp::*;
         match self.op {
             BoolNot => &[Bool],
             BoolAnd | BoolOr | BoolXor | BoolEq | BoolNe => &[Bool, Bool],
             U64Add | U64Sub | U64Mul | U64Div | U64Rem | U64Eq | U64Ne | U64Lt | U64Le | U64Gt
             | U64Ge => &[U64, U64],
+            F64Neg | F64Sqrt => &[F64],
+            F64Add | F64Sub | F64Mul | F64Div | F64Eq | F64Ne | F64Lt | F64Le | F64Gt | F64Ge => {
+                &[F64, F64]
+            }
             I64Neg => &[I64],
             I64Add | I64Sub | I64Mul | I64Div | I64Rem | I64Eq | I64Ne | I64Lt | I64Le | I64Gt
             | I64Ge => &[I64, I64],
@@ -82,6 +99,7 @@ impl NativeScalarSemantics {
         match self.op {
             U64Add | U64Sub | U64Mul | U64Div | U64Rem => NativeScalarKind::U64,
             I64Add | I64Sub | I64Mul | I64Div | I64Rem | I64Neg => NativeScalarKind::I64,
+            F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt => NativeScalarKind::F64,
             _ => NativeScalarKind::Bool,
         }
     }
@@ -113,6 +131,7 @@ fn scalar_port(
         NativeScalarKind::Bool => SchemaBody::Bool,
         NativeScalarKind::U64 => SchemaBody::UnsignedInteger(IntegerWidth::W64),
         NativeScalarKind::I64 => SchemaBody::SignedInteger(IntegerWidth::W64),
+        NativeScalarKind::F64 => SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
     };
     entry.key() == port.schema_key
         && entry.schema().body() == &expected
@@ -123,6 +142,7 @@ fn scalar_port(
         && port.kind
             == match kind {
                 NativeScalarKind::Bool => ResidentValueKind::Bool,
+                NativeScalarKind::F64 => ResidentValueKind::F64,
                 NativeScalarKind::U64 | NativeScalarKind::I64 => ResidentValueKind::Snapshot,
             }
 }
@@ -137,10 +157,12 @@ fn scalar_request(
     let [output] = contract.outputs.as_ref() else {
         return false;
     };
-    // Unary negation has the maintained SameAsInput contract. Keep that
-    // authority specific to this checked signed operation; binary arithmetic,
-    // comparisons and BoolNot retain their exact Declared contract.
-    let shape = if semantics.op == NativeScalarOp::I64Neg {
+    // These exact unary implementations have the maintained SameAsInput
+    // contract. Binary arithmetic, comparisons and BoolNot retain Declared.
+    let shape = if matches!(
+        semantics.op,
+        NativeScalarOp::I64Neg | NativeScalarOp::F64Neg | NativeScalarOp::F64Sqrt
+    ) {
         ShapeRule::SameAsInput { input: 0 }
     } else {
         ShapeRule::Declared
@@ -298,6 +320,7 @@ mod tests {
                 SchemaBody::Bool,
                 SchemaBody::UnsignedInteger(IntegerWidth::W64),
                 SchemaBody::SignedInteger(IntegerWidth::W64),
+                SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
             ]
             .into_iter()
             .map(|body| {
@@ -325,12 +348,14 @@ mod tests {
                     NativeScalarKind::Bool => ids[0],
                     NativeScalarKind::U64 => ids[1],
                     NativeScalarKind::I64 => ids[2],
+                    NativeScalarKind::F64 => ids[3],
                 };
                 ResidentPortLayout {
                     schema_id,
                     schema_key: schemas.entry(schema_id).unwrap().key(),
                     kind: match kind {
                         NativeScalarKind::Bool => ResidentValueKind::Bool,
+                        NativeScalarKind::F64 => ResidentValueKind::F64,
                         NativeScalarKind::U64 | NativeScalarKind::I64 => {
                             ResidentValueKind::Snapshot
                         }
@@ -368,7 +393,12 @@ mod tests {
                     access: AccessMode::Write,
                     delivery: DeliveryMode::Signal,
                     construction: OutputConstruction::FullWrite {
-                        shape: if op == NativeScalarOp::I64Neg {
+                        shape: if matches!(
+                            op,
+                            NativeScalarOp::I64Neg
+                                | NativeScalarOp::F64Neg
+                                | NativeScalarOp::F64Sqrt
+                        ) {
                             ShapeRule::SameAsInput { input: 0 }
                         } else {
                             ShapeRule::Declared
@@ -542,6 +572,80 @@ mod tests {
         assert!(!scalar_request(
             &Binding::scalar(U64Add).request(),
             NativeScalarSemantics { op: I64Add }
+        ));
+    }
+
+    #[test]
+    fn dense_f64_branches_seal_exact_contracts_without_certifying_snapshot_libm() {
+        use NativeScalarOp::*;
+        let catalog = catalog();
+        for (module, name, op) in [
+            ("math", "add", F64Add),
+            ("math", "sub", F64Sub),
+            ("math", "mul", F64Mul),
+            ("math", "div", F64Div),
+            ("math", "neg", F64Neg),
+            ("math", "sqrt", F64Sqrt),
+            ("compare", "eq", F64Eq),
+            ("compare", "neq", F64Ne),
+            ("compare", "lt", F64Lt),
+            ("compare", "lte", F64Le),
+            ("compare", "gt", F64Gt),
+            ("compare", "gte", F64Ge),
+        ] {
+            let binding = Binding::scalar(op);
+            let kernel = binding.bind(&catalog, module, name);
+            assert!(validated_scalar(&kernel).is_none());
+            let sealed = bind_call(kernel, &binding.request(), binding.call(module, name));
+            assert_eq!(
+                validated_scalar(&sealed).map(|semantics| semantics.op()),
+                Some(op)
+            );
+            assert_eq!(
+                validated_scalar(&sealed.clone()).map(|semantics| semantics.op()),
+                Some(op)
+            );
+            assert!(validated_scalar(&sealed.with_retained_state(Arc::new(0u64))).is_none());
+        }
+        let mut snapshot_sqrt = Binding::scalar(F64Sqrt);
+        snapshot_sqrt.inputs[0].kind = ResidentValueKind::Snapshot;
+        snapshot_sqrt.output.kind = ResidentValueKind::Snapshot;
+        let kernel = snapshot_sqrt.bind(&catalog, "math", "sqrt");
+        assert!(
+            kernel.snapshot_schemas().is_some(),
+            "actual Snapshot/libm binder selected"
+        );
+        assert!(
+            validated_scalar(&bind_call(
+                kernel,
+                &snapshot_sqrt.request(),
+                snapshot_sqrt.call("math", "sqrt")
+            ))
+            .is_none()
+        );
+        for op in [F64Neg, F64Sqrt] {
+            let mut binding = Binding::scalar(op);
+            let ResolvedOperationContract::Declared(contract) = &mut binding.contract else {
+                unreachable!()
+            };
+            contract.outputs[0].construction = OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            };
+            assert!(!scalar_request(
+                &binding.request(),
+                NativeScalarSemantics { op }
+            ));
+        }
+        let mut binary = Binding::scalar(F64Add);
+        let ResolvedOperationContract::Declared(contract) = &mut binary.contract else {
+            unreachable!()
+        };
+        contract.outputs[0].construction = OutputConstruction::FullWrite {
+            shape: ShapeRule::SameAsInput { input: 0 },
+        };
+        assert!(!scalar_request(
+            &binary.request(),
+            NativeScalarSemantics { op: F64Add }
         ));
     }
 
