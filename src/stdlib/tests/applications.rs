@@ -155,6 +155,7 @@ fn enum_metadata_application(
     small_arm: bool,
 ) -> ([ProgramArtifact; 2], usize) {
     let fields = vec!["u64"; 512].join(",");
+    let guard = guard.replace("enabled", "guard");
     let arms = format!("  | {pattern}, {guard} => 0u64\n").repeat(1024);
     let small = if small_arm {
         "  | :small => 0u64\n"
@@ -162,7 +163,7 @@ fn enum_metadata_application(
         ""
     };
     let source = format!(
-        "<wide> := :large<({fields})> | :small\nselect(value<wide>, enabled<bool>) => <u64>\n{small}{arms}  | * => 1u64.\nselect(signal<wide>, enabled<bool>)\n"
+        "<wide> := :large<({fields})> | :small\nguard := enabled<bool>\nselect(value<wide>) => <u64>\n{small}{arms}  | * => 1u64.\nselect(signal<wide>)\n"
     );
     compile_with_frontend(
         &source,
@@ -211,7 +212,7 @@ fn enum_metadata_input(artifact: &ProgramArtifact, large: bool) -> Value {
 
 #[test]
 fn enum_metadata_is_shared_across_mismatched_and_guard_rejected_arms() {
-    for (pattern, small_arm) in [(":small", false), (":large(_)", true)] {
+    for (pattern, small_arm) in [(":small", false), (":large(*)", true)] {
         let (artifacts, output) = enum_metadata_application(pattern, "enabled", small_arm);
         let catalog = mech_stdlib::source_catalog();
         for (ordinal, artifact) in artifacts.iter().enumerate() {

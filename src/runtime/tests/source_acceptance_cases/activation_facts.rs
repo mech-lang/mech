@@ -1300,7 +1300,13 @@ fn refused_snapshot_boolean_copy_cannot_publish_selector_facts_through_masks() {
                 ) {
                     Ok(instance) => instance,
                     Err(ResidentActivationError::ActivationKernelExecution {
-                        error: mech_core::ResidentKernelError::InvalidShape,
+                        error:
+                            mech_core::ResidentKernelError::ResourceLimit {
+                                phase: mech_core::ResidentResourcePhase::Admission,
+                                dimension: mech_core::MemoryBudgetDimension::OutputElements,
+                                required: 80_000,
+                                limit: 65_536,
+                            },
                         ..
                     }) if refused => continue,
                     Err(error) => panic!("genuine {operation} binder: {error:?}"),
@@ -2314,9 +2320,15 @@ fn snapshot_gather_preparation_cannot_publish_a_cross_schema_selector_fact() {
                 "resident preparation must refuse the cumulative demand"
             ),
             Err(ResidentActivationError::ActivationKernelExecution {
-                error: mech_core::ResidentKernelError::InvalidShape,
+                error:
+                    mech_core::ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                        required,
+                        limit,
+                    },
                 ..
-            }) => {}
+            }) if required > limit && limit == mech_core::RESIDENT_MAX_BYTES => {}
             Err(error) => panic!("unsupported preparation fixture: {error:?}"),
         }
     }
