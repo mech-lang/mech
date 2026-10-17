@@ -25,6 +25,36 @@
   ],
   "corrections": [
     {
+      "area": "shell resolution, invoked composite actions and complete reviewed stdlib source batch",
+      "reviewed_source_commit": "b70ca31cd5f2c176ac92c6796b75d9796ceb3855",
+      "review_comments": [4304398931, 4304398935],
+      "inventory_fix_commit": "20239a4d87ff7bfbdcea271441bcd44a3c27f0fb",
+      "shell_resolution": "Reject hash and other explicit command-resolution/working-directory state changes, including PATH-prefix assignments. Direct, recorded and maintained-generator commands with unproven dynamic arguments do not establish ownership. Tests retain positive ordinary assignments while rejecting hash-to-true for both Cargo and Python, altered PATH, changed directory, dynamic flags and the previous unreachable-shell cases.",
+      "composite_actions": "Do not scan every action file. Follow admitted local uses step properties from workflows, confine action paths to the checkout and follow nested composite actions with cycle bounds. Resolve the maintained literal-string input/default subset, preserve explicit overrides, and fail closed on unknown action-local gates, missing required inputs and dynamic command arguments. Ignore disabled/allowed-failure invocations, run-body uses decoys, unused actions and non-composite actions. The actual engine and hosted invocations both retain their selections. This is a conservative target/profile inventory, not a general YAML/GitHub/shell execution proof.",
+      "inventory_qualification": {
+        "source_commit": "20239a4d87ff7bfbdcea271441bcd44a3c27f0fb",
+        "command": ["python3", "-B", "-m", "unittest", "discover", "-s", "tests/ci", "-p", "test_*.py"],
+        "result": "PASS: all 125 CI contract methods, including all 25 inventory methods and the actual repository inventory; clean immutable source checked before and after.",
+        "log": "tmp/pr-stack-evidence/review-v98-pinned-ci-contracts.log",
+        "log_sha256": "6a69ba4762d78894a1c240890fa03cc05ebb5e97598324b94513e34a0b4ebb3f",
+        "failed_intermediate": "v95 fails three checks because bare quoted left-hand operands were incorrectly interpreted as whole YAML scalars. Expanded action gates now retain their expression wrapper; v96 and the stronger v97 pass all125. Failed logs remain failed evidence."
+      },
+      "string_fixture_fix_commit": "5a566dd98cde45e772ae7a6be7333b8d28350976",
+      "string_diagnostics": "The unchanged b70 executables prove exact node-zero Admission/ComparisonWork denials for the retained literal comparison (65538/65536) and String membership (65910/65536). Replace only their stale InvalidShape expectations. Preserve both artifact routes, original large inputs, all caps, unselected zero-divisor laziness, accepted values, unchanged epochs and recovery. No Rust production changes in this follow-up.",
+      "stdlib_qualification": {
+        "source_commit": "5a566dd98cde45e772ae7a6be7333b8d28350976",
+        "command": ["cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1", "-p", "mech-stdlib", "--no-default-features", "--features", "full_compiler", "--test", "comprehension_captures", "--test", "comprehension_work_source", "--test", "control_local_geometry", "--test", "control_matrix_captures", "--test", "control_result_shapes", "--test", "function_output_contexts", "--test", "knucleotide_record_source", "--test", "map_keys_comprehensions", "--test", "map_source", "--test", "match_result_schemas", "--test", "matrix_block_comprehensions", "--test", "postfix_selection", "--test", "primitive_snapshot_constructors", "--test", "pure_text_managed", "--test", "pure_text_source", "--test", "retention_work", "--test", "sequence_sort", "--test", "set_comprehension_operands", "--test", "string_generators", "--test", "string_literal_match", "--test", "string_membership_comprehensions", "--test", "string_selector_shapes", "--test", "text_operations", "--test", "u64_float_conversion_source", "--", "--test-threads=1"],
+        "environment": {"CARGO_BUILD_JOBS": "1", "CARGO_PROFILE_DEV_DEBUG": "0", "CARGO_PROFILE_TEST_DEBUG": "0", "CARGO_INCREMENTAL": "0", "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true", "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"},
+        "result": "PASS: all 128 methods across all 24 selected integration targets; clean immutable source checked before and after. Includes the three retained exact budget-denial/recovery fixtures. All subsequent code changes in 20239a4d8 are confined to the inventory checker and its Python tests.",
+        "log": "tmp/pr-stack-evidence/review-v94-current-coverage-stdlib-source.log",
+        "log_sha256": "ed3767dd1b15f2823a5250c30fa3a216e5e0ee547a502f469bf08b413fb7cc0c",
+        "fixture_sha256": {"src/stdlib/tests/string_literal_match.rs": "284b8e1e46bf98a6263be7a8ac58a369a2366ba35879bdbd1f7f768e10b24fa0", "src/stdlib/tests/string_membership_comprehensions.rs": "b25746f46735612be2482a0781989bf2e7192a7b344d693509156aa8e355df23"},
+        "scope": "Complete execution of this 24-target reviewed source batch, not all stdlib targets, the separate assignment/specialization profile, all ten tail-control contracts, other owners, native linked applications, browser products or green full CI."
+      },
+      "retained_failures_and_cache": "v91 on b70 passes19 complete targets/105 methods, then fails at the stale literal diagnostic. The unchanged v92 executable exposes65538/65536. The no-fail-fast v93 follow-up exposes membership65910/65536 while all three other remaining targets pass. These attempts remain failures. Both original executables are recoverably compressed and uncompressed-hash verified (literal066f00e428178e042cf5086f5f486b6e47a5618607144c5ddea2ab45122d29f0; membership4b28099e54bd9819cca34bd38efcfad919bc4cb91d393cb3444f075758dbc8bf). Earlier11 task-owned cache executables were CRC/hash verified into recoverable archives to reclaim5.4GiB. Nine disk-truncated nonexecutable files were moved to retained quarantine and rebuilt without strip warnings. No source, raw logs or linked application evidence was deleted.",
+      "remaining": "Publish these corrections, reply to and resolve both new notes, request fresh exact-head review, and require complete final-source owner/application/linked qualification plus entirely green CI. Keep PR901 draft and unmerged pending explicit user approval. The broader native/compiler/workload brief and same-AOT-binary trusted/secured benchmarks remain unfinished; no new timing credit."
+    },
+    {
       "area": "unreachable shell ownership and matrix capture diagnostic follow-up",
       "reviewed_source_commit": "13c16150bfac868f8f5defd594fdb0bf87665076",
       "review_comment": 4304286467,

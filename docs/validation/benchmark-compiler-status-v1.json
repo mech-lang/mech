@@ -1,14 +1,28 @@
 {
   "schema": "mech.benchmark-compiler-status.v1",
-  "as_of_utc": "2026-10-16",
+  "as_of_utc": "2026-10-17",
   "status": "IN_PROGRESS_NOT_BENCHMARK_QUALIFIED",
   "integration": {
     "repository": "https://github.com/mech-lang/mech",
     "branch": "codex/idiomatic-native-programs",
     "pull_request": "https://github.com/mech-lang/mech/pull/901",
     "pull_request_status": "OPEN_DRAFT",
+    "current_correction_source_commit": "20239a4d87ff7bfbdcea271441bcd44a3c27f0fb",
+    "current_correction_record": "pr901-integration-corrections-v1.json",
+    "current_qualification": "Final-source owner/application/linked qualification, fresh clean review and complete green CI remain pending. The following scalar receipts retain their historical source scope.",
     "qualified_source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
     "qualification_receipts_commit": "6ffc5e0e8febaf6b9718753e2037840548c5bd4d"
+  },
+  "implemented_corrections_not_full_benchmark_qualification": {
+    "record": "pr901-integration-corrections-v1.json",
+    "resident": [
+      "Structural enum/tuple projections share immutable schema evidence instead of repeated whole-schema copies; shallow paths use bounded inline storage and deeper paths retain admitted storage.",
+      "Persistent projection metadata is included in ActivatedPlan.memory_plan and initial/refined peak demands, including budget None, with realization/release accounting.",
+      "Join comparison accounting, shared map schema ownership, typed resource denials and retained original tail contracts are implemented; complete current-source qualification remains mandatory.",
+      "Bracketed element-wise counts use canonical parsing, singleton broadcast or exact matrix geometry, one count evaluation, serial lane order and atomic publication. This does not establish native lowering or parallel execution.",
+      "Replacement refresh preserves ordered reset/new/retained-state views and accepted observations; optional queries retain unpublished absence."
+    ],
+    "boundary": "Do not reapply preserved whole-file candidates over these newer corrections. Historical source-only gap descriptions in the original handoff are not the current implementation status."
   },
   "qualified": [
     {
@@ -72,7 +86,7 @@
     },
     {
       "requirement": "Close collection and ownership gaps",
-      "work": "Borrowed structural Match projections still require persistent metadata memory charges in initial and refined plans, including budget None. Keep cumulative work limits; do not raise or discount them. Tree/arena references, bigint and byte operations require genuine compiler/runtime support."
+      "work": "Qualify the implemented structural projection and persistent metadata accounting on the final source while keeping cumulative limits unchanged. Genuine tree/arena references, bigint and remaining byte/collection operations still require compiler/runtime support."
     },
     {
       "requirement": "Native capability and CLI lifecycle",
@@ -88,7 +102,7 @@
     }
   ],
   "known_gaps": [
-    "Structural Match v3 does not yet charge its persistent projection metadata baseline; source preservation is not execution qualification.",
+    "Canonical native remains stateless Turn-only Bool/U64/I64; resident control, projection and bracketed-count corrections do not supply native lowering.",
     "Source CLI has no explicit parsed payload-vector boundary in current run options. Generated hosted applications already receive immutable payload OsStrings; preserve the custom factory seam.",
     "Pidigits source requires general bigint support. Replacing its algorithm with a Rust whole-program helper would not close that language gap.",
     "Archived native Match/Iteration control supports Bool/U64 only until wider scalar kinds, identities and transport are explicitly composed."
@@ -107,6 +121,6 @@
     "timing_dataset_changed_in_native_scalar_qualification": false
   },
   "benchmark_measurements_in_native_scalar_qualification": 0,
-  "release_policy": "Keep draft compiler PRs unmerged until their full qualification requirements are met.",
+  "release_policy": "Keep PR901 draft and unmerged. Fresh clean review and complete green CI are required but do not authorize readiness or merge; explicit user approval is still required.",
   "continuation_record": "benchmark-agent-handoff-v1.json"
 }
