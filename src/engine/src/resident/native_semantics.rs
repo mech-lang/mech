@@ -58,8 +58,9 @@ pub(crate) struct NativeScalarSemantics {
     op: NativeScalarOp,
 }
 impl NativeScalarSemantics {
-    // The optional canonical-native adapter consumes this read-only view.
-    #[cfg(feature = "native-artifact")]
+    // The optional adapter and its backend-independent seal tests consume
+    // this private read-only view. Resident-only production keeps it absent.
+    #[cfg(any(test, feature = "native-artifact"))]
     pub(crate) fn op(self) -> NativeScalarOp {
         self.op
     }

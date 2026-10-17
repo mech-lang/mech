@@ -24,6 +24,17 @@
   ],
   "corrections": [
     {
+      "area": "full-suite profile and fixture follow-up after restored browser qualification",
+      "source_commit_exposing_failures": "e7fb7f9f46160f2df03c6cd864e32839e24d8d82",
+      "ci_run": 39015685289,
+      "resident_only_witness": "Allow the private scalar witness accessor in unit-test builds as well as native-artifact builds. The resident-only production profile remains unchanged; explicitly execute the backend-independent witness tests in the managed-memory job without enabling native-artifact.",
+      "external_test_providers": "Add effect-free target preflight to the test-only scene and transactional providers, retaining DeferredToRuntime schema admission and real F64 payload checks. Validate both target and payload before effect preparation. A regression verifies unsupported targets, deferred Boolean schema, rejected Boolean values, and no preparation/delivery side effects from planning. Keep the original source/decoded 64-turn publication and replay contract unchanged.",
+      "catalog_fixture": "Account for the nine deliberate text/number, map and collection exports by exact name while independently retaining the historical 120-name census. Exercise lookup rejection before arguments for every lexically callable module/internal name, including all additions.",
+      "formatter_fixture": "Keep legacy named-result signatures as input, require their canonical output arrow, and retain both formatting passes and every unrelated document expectation. Do not revert canonical output to the legacy spelling.",
+      "native_linkage_inventory": "Accept the canonical namespace/item syntax used by explicit custom contract declarations, while retaining forbidden placeholder, linkage, feature, signature and alias checks. Include all ten exact additive factories in current inventories and digests; independently preserve the historical full-surface identity and extended retained digest. Reject missing or duplicate additions, removed or changed retained factories, and unrelated undeclared additions. Refresh generated coverage from actual catalog inventories rather than treating the historical snapshot as the complete present language.",
+      "gate": "These are follow-up repairs to failures exposed after CPU, WebGPU and parity qualification succeeded. A fresh review and all required checks on the next exact head remain mandatory before ready or merge."
+    },
+    {
       "area": "live-edit observation and projection migration",
       "cause": "Both final-head EKF jobs reach execution, then reject a source replacement at coordinator node 45, math/mul: its dynamic 2-by-1 scene pointer input comes from resource/read node 1, but projection refresh runs before accepted input snapshots are transferred and installed. Scalars can mask absent input storage with zero values. The WebGPU canary retried the rejected incompatible edit on subsequent completions, obscuring the concrete error behind the idle watchdog.",
       "implementation": "Transfer the accepted captured observation snapshot before refreshing projections; retain pending capture-only inputs separately. Populate replacement input storage through the same validated canonical-value writer used by ordinary execution. Evaluate only the requested projection dependency closure, stopping at published state candidates. Do not observe providers or synthesize a state transition. Keep all resource limits and browser semantic oracles unchanged.",
@@ -128,6 +139,47 @@
     "Continue broader packaging and optimizer work independently of the corrected stack's qualification."
   ],
   "checks": [
+    {
+      "area": "complete immutable live-edit-corrected local qualification",
+      "source_commit": "e7fb7f9f46160f2df03c6cd864e32839e24d8d82",
+      "engine_unit_tests_passed": 840,
+      "engine_integration_tests_passed": 192,
+      "syntax_unit_tests_passed": 509,
+      "stream_schema_integration_tests_passed": 14,
+      "runtime_unit_tests_passed": 815,
+      "source_acceptance_tests_passed": 61,
+      "resident_ekf_contract_tests_passed": 11,
+      "application_text_retention_tail_tests_passed": 46,
+      "unchanged_original_tail_tests_passed": 10,
+      "native_lowering_tests_passed": 15,
+      "native_host_kernel_tests_passed": 12,
+      "native_abi_tests_passed": 4,
+      "cli_byte_tests_passed": 8,
+      "resource_observation_replacement_replay_recording_tests_passed": 53,
+      "linked_native": {
+        "applications_built": 4,
+        "actual_launch_cases": 45,
+        "qualification_sha256": "01c0e24a7cbe174630867d210745e15f29035d257488609fd017e0ee093c7076"
+      },
+      "linked_cli": {
+        "applications_built": 3,
+        "actual_launch_cases": 20,
+        "qualification_sha256": "f0c2f9cf348d7b1d7a8b37fa410ee1bd81da0366dda3081a32987dfb8796ff1a"
+      },
+      "logs": "tmp/pr-stack-evidence/review-final-v37-*.log",
+      "scope": "All local phases passed serially with exact clean source checked before and after each phase. Includes lexical/catalog, 94 CI contracts, type mutations, unsafe audit/fixtures, static distribution, warnings, type/semantic authority, memory and layout checks. Both ignored linked qualifiers actually built and executed their applications. Separate full CI exposed additional profile, test-provider, expectation and inventory failures; this is not a claim of green full CI or qualification of subsequent repairs. No benchmark credit."
+    },
+    {
+      "area": "live-edit-corrected CPU, WebGPU and parity CI",
+      "source_commit": "e7fb7f9f46160f2df03c6cd864e32839e24d8d82",
+      "tested_composition": "50cd068b60af3cacf2371a0c1462703fb3ea42c0",
+      "verified_identical_tree": "bc00c19e381b23b849b2e9e75df94b659af4905a",
+      "ci_run": 39015685289,
+      "successful_jobs": {"cpu": 117348902216, "webgpu": 117348902214, "parity": 117353920099},
+      "cpu_artifact": {"id": 12095468097, "sha256": "0383ea62fb264f83d3938bf7bb8ae3e501b165188dd5b2c18f5ee6586a09d2bd"},
+      "webgpu_artifact": {"id": 12095223158, "sha256": "ecee81737fc6a0514160d1df3fd8a59637212e3fece42ca4bde3ee5260e826b6"},
+      "scope": "CPU one/1000-filter edited and unedited scenarios, WebGPU edited/unedited scenarios, continuity and incompatible replacement, camera disable/restore, resource/reset/stale-completion and terminal-disposal oracles pass with zero console/page errors. Artifact metadata and verified checkout identity bind the results to this composition. The wider required suite is not green; final-head review and CI remain separate landing gates."
+    },
     {
       "area": "complete immutable baseline before live-edit migration correction",
       "source_commit": "8d9e90c10f0cb88ccb64d50efd0839b77458fb3b",

@@ -80,6 +80,14 @@ SURFACE_DIRECTORY = ROOT / "target/native-linkage/surfaces"
 FEATURE_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 RUST_PATH = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_][A-Za-z0-9_]*)+$")
 CONTRACT_KIND = re.compile(r"^[a-z][a-z0-9_]*$")
+CANONICAL_CONTRACT_KIND = re.compile(r"^[a-z][a-z0-9_-]*(?:/[a-z][a-z0-9_-]*)+$")
+# These independently audited additions extend, rather than replace, the
+# historical full surface. Current inventories and digests include them all.
+ADDITIVE_RUNTIME_FACTORIES = frozenset({
+    "number/parse-u64", "NumberFormatScalarCanonical", "NumberFormatMatrixCanonical",
+    "sequence/length", "map/histogram", "map/keys", "map/values",
+    "sequence/sort-indices", "text/lines", "text/join",
+})
 MATRIX_FEATURES = {
     "matrix", "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
     "matrixd", "row_vector2", "row_vector3", "row_vector4", "row_vectord",
@@ -271,7 +279,10 @@ def validate_catalog(
             raise ContractError(f"{label} factory {name!r} has invalid linkage metadata")
         if not isinstance(features, list) or not all(isinstance(item, str) for item in features):
             raise ContractError(f"{label} factory {name!r} has invalid Cargo features")
-        if not isinstance(contract_kind, str) or not CONTRACT_KIND.fullmatch(contract_kind):
+        if not isinstance(contract_kind, str) or not (
+            CONTRACT_KIND.fullmatch(contract_kind)
+            or CANONICAL_CONTRACT_KIND.fullmatch(contract_kind)
+        ):
             raise ContractError(f"{label} factory {name!r} has an unknown contract kind")
         if contract_kind in {"unknown", "unchecked", "infer_from_name", "best_effort"}:
             raise ContractError(f"{label} factory {name!r} has forbidden contract kind {contract_kind!r}")
@@ -437,6 +448,19 @@ def surface_summary(entries: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def retained_runtime_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    additions = [
+        entry["runtime_factory_name"] for entry in entries
+        if entry["runtime_factory_name"] in ADDITIVE_RUNTIME_FACTORIES
+    ]
+    if len(additions) != len(ADDITIVE_RUNTIME_FACTORIES) or set(additions) != ADDITIVE_RUNTIME_FACTORIES:
+        raise ContractError("runtime surface must contain every exact additive factory once")
+    return [
+        entry for entry in entries
+        if entry["runtime_factory_name"] not in ADDITIVE_RUNTIME_FACTORIES
+    ]
+
+
 def verify_full_surface(entries: list[dict[str, Any]]) -> None:
     raw = FROZEN_SURFACE.read_bytes()
     if sha256(raw).hexdigest() != EXPECTED_FULL_SURFACE_SHA256:
@@ -445,8 +469,9 @@ def verify_full_surface(entries: list[dict[str, Any]]) -> None:
     if len(frozen) != EXPECTED_FULL_COUNT:
         raise ContractError("frozen full runtime surface count changed")
     expected = {(item["id_hex"], item["name"]) for item in frozen}
-    actual = {(item["runtime_factory_id"], item["runtime_factory_name"]) for item in entries}
-    if actual != expected:
+    retained = retained_runtime_entries(entries)
+    actual = {(item["runtime_factory_id"], item["runtime_factory_name"]) for item in retained}
+    if len(retained) != len(expected) or actual != expected:
         raise ContractError("runtime/native-plan drift in the frozen full surface")
 
 
@@ -455,6 +480,7 @@ def assemble_report(
 ) -> dict[str, Any]:
     extended = merge_surfaces("extended linkage universe", extended_surfaces)
     all_entries = merge_surfaces("complete linkage universe", [full, extended])
+    retained = retained_runtime_entries(all_entries)
     report = {
         "schema": "mech.native-linkage-coverage.v2",
         "full": surface_summary(full),
@@ -466,6 +492,8 @@ def assemble_report(
         "complete_catalog": {
             "entry_count": len(all_entries),
             "runtime_surface_digest": catalog_surface_digest(all_entries),
+            "retained_entry_count": len(retained),
+            "retained_runtime_surface_digest": catalog_surface_digest(retained),
         },
         "entries": grouped(all_entries),
         "signature_invariants": {
@@ -574,7 +602,9 @@ def verify_extended_runtime_contract(report: dict[str, Any]) -> None:
         raise ContractError(
             "stdlib extended runtime count diverges from the sharded catalog union"
         )
-    if complete.get("runtime_surface_digest") != expected_digest:
+    if complete.get("retained_entry_count") != expected_count - len(ADDITIVE_RUNTIME_FACTORIES):
+        raise ContractError("stdlib retained runtime count diverges from the sharded catalog union")
+    if complete.get("retained_runtime_surface_digest") != expected_digest:
         raise ContractError(
             "stdlib extended runtime digest diverges from the sharded catalog union"
         )

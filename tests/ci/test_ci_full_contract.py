@@ -1542,12 +1542,13 @@ class FullWorkflowContractTests(unittest.TestCase):
             " ".join(line.split())
             for line in runtime.replace("\\\n", " ").splitlines()
         ]
-        self.assertIn(
-            "cargo +nightly-2026-03-03 test --locked -p mech-engine "
-            "--no-default-features --features full_compiler,resident-artifact "
-            "--lib resident::general::live::",
-            commands,
-        )
+        for filter in ("resident::general::live::", "resident::native_semantics::"):
+            self.assertIn(
+                "cargo +nightly-2026-03-03 test --locked -p mech-engine "
+                "--no-default-features --features full_compiler,resident-artifact "
+                f"--lib {filter}",
+                commands,
+            )
         self.assertNotIn("continue-on-error", runtime)
 
     def test_artifact_completeness_prefetches_before_offline_native_build(self):

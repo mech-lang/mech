@@ -1,6 +1,7 @@
 """Cover the existing math surface partition in native-link-only builds."""
 
 import importlib.util
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -24,12 +25,14 @@ class NativeLinkageProfileTests(unittest.TestCase):
         surface_digest = LINKAGE.catalog_surface_digest(entries)
         report = {
             "complete_catalog": {
-                "entry_count": 2,
+                "entry_count": 2 + len(LINKAGE.ADDITIVE_RUNTIME_FACTORIES),
                 "runtime_surface_digest": surface_digest,
+                "retained_entry_count": 2,
+                "retained_runtime_surface_digest": surface_digest,
             }
         }
         contract = (
-            "const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 2;\n"
+            f"const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = {report['complete_catalog']['entry_count']};\n"
             "const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =\n"
             f'    "{surface_digest}";\n'
         )
@@ -38,11 +41,71 @@ class NativeLinkageProfileTests(unittest.TestCase):
             path.write_text(contract)
             with patch.object(LINKAGE, "STDLIB_PROFILE_CONTRACT", path):
                 LINKAGE.verify_extended_runtime_contract(report)
-                report["complete_catalog"]["runtime_surface_digest"] = "0" * 64
+                report["complete_catalog"]["retained_runtime_surface_digest"] = "0" * 64
                 with self.assertRaisesRegex(
                     LINKAGE.ContractError, "digest diverges"
                 ):
                     LINKAGE.verify_extended_runtime_contract(report)
+
+    def test_namespaced_custom_contracts_retain_fail_closed_linkage_validation(self):
+        entry = {
+            "name": "Example", "id_hex": "0000000000000001",
+            "runtime_signature": "unary(any, any)", "signature_cargo_features": [],
+            "package": "mech-engine", "crate_name": "mech_engine",
+            "installer_path": "mech_engine::__mech_native::install_example",
+            "cargo_features": ["native-link", "runtime"],
+            "contract_kind": "number/parse-u64",
+            "output_alias_policy": "disallow_input_alias",
+        }
+        known = {"mech-engine": {"native-link", "runtime"}}
+        for kind in ["no_matrix", "number/parse-u64", "number/format",
+                     "sequence/length", "map/histogram", "map/keys", "map/values",
+                     "sequence/sort-indices", "text/lines", "text/join"]:
+            with self.subTest(kind=kind):
+                result = LINKAGE.validate_catalog([{**entry, "contract_kind": kind}], "test", known)
+                self.assertEqual(result[0]["contract_kind"], kind)
+        for kind in [None, "", "/number", "number/", "number//parse", "number/../parse",
+                     "number/parse value", "unknown", "unchecked", "infer_from_name", "best_effort"]:
+            with self.subTest(kind=kind):
+                with self.assertRaisesRegex(LINKAGE.ContractError, "contract kind"):
+                    LINKAGE.validate_catalog([{**entry, "contract_kind": kind}], "test", known)
+        for changes, error in [
+            ({"installer_path": "not a Rust path"}, "invalid linkage metadata"),
+            ({"cargo_features": ["runtime"]}, "omits required native features"),
+            ({"output_alias_policy": "allow_input_alias"}, "outside register families"),
+            ({"signature_cargo_features": ["f64"]}, "omits signature-derived"),
+        ]:
+            with self.subTest(changes=changes):
+                with self.assertRaisesRegex(LINKAGE.ContractError, error):
+                    LINKAGE.validate_catalog([{**entry, **changes}], "test", known)
+
+    def test_additive_surface_preserves_every_retained_factory(self):
+        retained = {"runtime_factory_name": "Old", "runtime_factory_id": "01"}
+        additions = [
+            {"runtime_factory_name": name, "runtime_factory_id": f"{index + 2:02x}"}
+            for index, name in enumerate(sorted(LINKAGE.ADDITIVE_RUNTIME_FACTORIES))
+        ]
+        entries = [retained, *additions]
+        self.assertEqual(LINKAGE.retained_runtime_entries(entries), [retained])
+        for malformed in [entries[:-1], [*entries, additions[0]]]:
+            with self.assertRaisesRegex(LINKAGE.ContractError, "every exact additive factory once"):
+                LINKAGE.retained_runtime_entries(malformed)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "frozen.json"
+            raw = json.dumps({"runtime_factories": [{"name": "Old", "id_hex": "01"}]}).encode()
+            path.write_bytes(raw)
+            with patch.object(LINKAGE, "FROZEN_SURFACE", path), \
+                 patch.object(LINKAGE, "EXPECTED_FULL_COUNT", 1), \
+                 patch.object(LINKAGE, "EXPECTED_FULL_SURFACE_SHA256", LINKAGE.sha256(raw).hexdigest()):
+                LINKAGE.verify_full_surface(entries)
+                for malformed in [
+                    additions,
+                    [{**retained, "runtime_factory_id": "02"}, *additions],
+                    [*entries, retained],
+                    [*entries, {"runtime_factory_name": "Unreviewed", "runtime_factory_id": "ff"}],
+                ]:
+                    with self.assertRaisesRegex(LINKAGE.ContractError, "frozen full surface"):
+                        LINKAGE.verify_full_surface(malformed)
 
     def test_malformed_extended_rust_contract_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -372,6 +372,9 @@ jobs:
             --lib resident::general::live::
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact \
+            --lib resident::native_semantics::
+          cargo +nightly-2026-03-03 test --locked -p mech-engine \
+            --no-default-features --features full_compiler,resident-artifact \
             --lib memory_planner::resident::tests
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features standard_compiler \
