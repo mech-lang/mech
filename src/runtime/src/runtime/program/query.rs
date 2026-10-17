@@ -656,7 +656,9 @@ fn compatible_state_mappings(
                         &mut semantic_equivalence,
                     )))
             }) {
-                candidates.entry(target_slot.slot).or_insert(source_slot.slot);
+                candidates
+                    .entry(target_slot.slot)
+                    .or_insert(source_slot.slot);
                 *source_degrees.entry(source_slot.slot).or_insert(0usize) += 1;
                 *target_degrees.entry(target_slot.slot).or_insert(0usize) += 1;
             }
