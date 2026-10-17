@@ -25,6 +25,16 @@
   ],
   "corrections": [
     {
+      "area": "static mutation deadline and conditional inventory selection follow-up",
+      "source_commit_exposing_failure": "0c324ef23d7f2c042fb67d0005304abf1b29dd7a",
+      "ci_run": 39058636869,
+      "ci_job": 117471853044,
+      "cause": "All 87 tests in static mutation shard zero passed (43 in 438.403 seconds and 44 in 454.206 seconds), but setup plus execution and cleanup crossed the unchanged eight-minute job deadline. GitHub reports cancellation for exceeding 8m0s, so the strict aggregate correctly fails; successful test steps do not make the job green.",
+      "implementation": "Spread the identical mutation inventory across six required outer shards instead of four, retaining two workers per job, the eight-minute deadline and the strict aggregate. Add nested partition tests requiring the complete case multiset exactly once under both layouts. Do not skip tests, change their assertions or increase timeouts.",
+      "inventory_hardening": "Model leading crate cfg_attr gates, including nested conditions, without treating a later helper module's inner attribute as a crate gate. Match complete balanced test attribute blocks, conditional ignores and raw attribute spellings, so ignored-only invocation cannot own an ordinary target and ordinary invocation cannot own an ignored-only target. Keep the explicit scope distinction from exhaustive platform/dependency-unit/per-declaration coverage.",
+      "verification_scope": "These are CI-only changes. Rust production, Rust fixtures, package manifests and locked dependencies are unchanged from 0c324ef23. Local Rust qualification remains pinned to that clean source; the new Python regressions and final CI must execute before this follow-up is qualified. No new passing-test or benchmark credit is claimed here."
+    },
+    {
       "area": "deeper publication, admission and qualification review",
       "imported_review_commit": "48b565ac4166f2f94a2ba0597536f2c082c42da5",
       "integrated_commit": "fb8edad84ec9f62e163d9e23f48b152f3475327c",

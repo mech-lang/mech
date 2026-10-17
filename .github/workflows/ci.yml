@@ -178,7 +178,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
@@ -206,7 +206,7 @@ jobs:
         run: |
           python3 -B scripts/run-python-unittest-shards.py \
             --jobs 2 \
-            --shard-count 4 \
+            --shard-count 6 \
             --shard-index ${{ matrix.shard }} \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_compiler_planning_quarantine.py \

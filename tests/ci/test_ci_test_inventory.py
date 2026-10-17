@@ -85,6 +85,23 @@ class IntegrationInventoryTests(unittest.TestCase):
         source = '// #![cfg(feature = "decoy")]\n#![cfg(feature = "full")]\nconst TEXT: &str = r##"#![cfg(feature = "literal-decoy")]"##;'
         self.assertEqual(list(crate_cfgs(source)), ['feature = "full"'])
 
+    def test_conditional_crate_attributes_cannot_disable_the_selected_profile(self):
+        for attribute in (
+            '#![cfg_attr(feature = "full", cfg(any()))]',
+            '#![r#cfg_attr(r#all(feature = "full"), r#cfg(r#any()))]',
+            '#![cfg_attr(feature = "full", cfg_attr(feature = "source", cfg(any())))]',
+            '#![cfg_attr(feature = "full", allow(dead_code), cfg(any()))]',
+        ):
+            predicates = list(crate_cfgs(attribute + "\n#[test]\nfn actual() {}\n"))
+            self.assertTrue(predicates)
+            self.assertTrue(all(cfg_predicate(predicate, set()) is not False for predicate in predicates))
+            self.assertTrue(any(cfg_predicate(predicate, {"full", "source"}) is False for predicate in predicates))
+
+    def test_helper_module_cfg_does_not_disable_an_unconditional_crate(self):
+        source = '#![allow(dead_code)]\nmod helper {\n#![cfg(feature = "internal")]\n}\n#[test]\nfn actual() {}\n'
+        self.assertEqual(list(crate_cfgs(source)), [])
+        self.assertEqual(list(crate_cfgs('#![cfg_attr(windows, feature(windows_process_extensions_main_thread_handle))]\n#[test]\nfn actual() {}\n')), [])
+
     def test_new_targets_require_their_own_selection_and_one_adequate_profile(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
@@ -117,6 +134,34 @@ class IntegrationInventoryTests(unittest.TestCase):
             self.assertEqual(set(targets), {"named"})
             self.assertFalse(target_covered("sample", "named", targets["named"], manifest, [self.command(["--test", "named"])]))
             self.assertTrue(target_covered("sample", "named", targets["named"], manifest, [self.command(["--test", "named", "--features=native"])]))
+
+    def test_ignored_only_selection_cannot_own_an_ordinary_target(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "ordinary.rs"
+            path.write_text("#[test]\nfn actual() {}\n")
+            target = {"path": path, "required-features": []}
+            self.assertFalse(target_covered("sample", "ordinary", target, {}, [self.command(["--test", "ordinary", "--", "--ignored"])]))
+            self.assertTrue(target_covered("sample", "ordinary", target, {}, [self.command(["--test", "ordinary"])]))
+
+    def test_ignored_registration_order_and_conditional_ignores_match_the_harness(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "qualification.rs"
+            target = {"path": path, "required-features": []}
+            manifest = {"features": {"full": []}}
+            for attributes in (
+                '#[ignore = "linked qualification"]\n#[test]',
+                '#[test]\n#[ignore = "linked qualification"]',
+                '#[r#ignore = "linked qualification"]\n#[r#test]',
+                '#[r#test]\n#[r#ignore = "linked qualification"]',
+                '#[ignore = "linked qualification"]\n#[doc(alias = ["nested", "metadata"])]\n#[test]',
+                '#[test]\n#[doc(alias = ["nested", "metadata"])]\n#[ignore = "linked qualification"]',
+                '#[cfg_attr(feature = "full", ignore)]\n#[test]',
+                '#[test]\n#[cfg_attr(feature = "full", ignore)]',
+            ):
+                path.write_text(f"{attributes}\nfn actual() {{}}\n")
+                for harness, expected in (([], False), (["--ignored"], True), (["--include-ignored"], True)):
+                    command = self.command(["--test", "qualification", "--features", "full", "--", *harness])
+                    self.assertEqual(target_covered("sample", "qualification", target, manifest, [command]), expected, attributes)
 
 
 if __name__ == "__main__":

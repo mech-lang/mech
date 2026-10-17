@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import fnmatch
 import ast
+from bisect import bisect_right
 import json
 import re
 import shlex
@@ -142,6 +143,7 @@ def cargo_test_command(arguments: list[str]):
         "default": "--no-default-features" not in cargo,
         "all_features": "--all-features" in cargo,
         "filters": filters, "skips": skips, "exact": "--exact" in harness,
+        "ignored_mode": "all" if "--include-ignored" in harness else "only" if "--ignored" in harness else "ordinary",
     }
 
 
@@ -229,14 +231,14 @@ def feature_closure(manifest: dict, command: dict) -> set[str]:
 
 def cfg_predicate(expression: str, enabled: set[str]) -> bool | None:
     """Evaluate feature conditions; other target predicates remain unknown."""
-    tokens = re.findall(r'"(?:\\.|[^"\\])*"|[A-Za-z_][A-Za-z_0-9]*|[=(),]', expression)
+    tokens = re.findall(r'"(?:\\.|[^"\\])*"|(?:r#)?[A-Za-z_][A-Za-z_0-9]*|[=(),]', expression)
     position = 0
 
     def parse():
         nonlocal position
         if position >= len(tokens):
             raise ValueError("incomplete cfg predicate")
-        name = tokens[position]
+        name = tokens[position].removeprefix("r#")
         position += 1
         if position < len(tokens) and tokens[position] == "=":
             position += 1
@@ -272,20 +274,106 @@ def cfg_predicate(expression: str, enabled: set[str]) -> bool | None:
     return result
 
 
+def attribute_arguments(source: str) -> list[str]:
+    masked = rust_code(source)
+    parts, start, depth = [], 0, 0
+    for index, character in enumerate(masked):
+        if character in "([{":
+            depth += 1
+        elif character in ")]}":
+            depth -= 1
+        elif character == "," and depth == 0:
+            parts.append(source[start:index].strip())
+            start = index + 1
+    parts.append(source[start:].strip())
+    return [part for part in parts if part]
+
+
+def attribute_cfgs(attribute: str):
+    match = re.fullmatch(r"\s*(?:r#)?(cfg|cfg_attr)\s*\((.*)\)\s*", attribute, re.S)
+    if match is None:
+        return
+    if match[1] == "cfg":
+        yield match[2]
+        return
+    parts = attribute_arguments(match[2])
+    if len(parts) < 2:
+        raise ValueError("cfg_attr requires a condition and an attribute")
+    condition, *attributes = parts
+    for nested in attributes:
+        for predicate in attribute_cfgs(nested):
+            yield f"any(not({condition}), {predicate})"
+
+
 def crate_cfgs(source: str):
     preserved = rust_code(source, preserve_literals=True)
-    source = rust_code(source)
-    for match in re.finditer(r"#!\s*\[\s*cfg\s*\(", source):
+    masked, position = rust_code(source), 0
+    # Only leading inner attributes gate the crate. An inner cfg on a later
+    # helper module must not be mistaken for the whole integration target.
+    while position < len(masked):
+        while position < len(masked) and (masked[position].isspace() or masked[position] == "\ufeff"):
+            position += 1
+        match = re.compile(r"#\s*!\s*\[").match(masked, position)
+        if match is None:
+            return
         position, start, depth = match.end(), match.end(), 1
-        while position < len(source) and depth:
-            if source[position] == "(":
+        while position < len(masked) and depth:
+            if masked[position] == "[":
                 depth += 1
-            elif source[position] == ")":
+            elif masked[position] == "]":
                 depth -= 1
             position += 1
         if depth:
-            raise ValueError("unclosed crate cfg")
-        yield preserved[start:position - 1]
+            raise ValueError("unclosed crate attribute")
+        yield from attribute_cfgs(preserved[start:position - 1])
+
+
+def attribute_ignores(attribute: str):
+    if re.fullmatch(r"\s*(?:r#)?ignore(?:\s*=.*)?\s*", attribute, re.S):
+        yield "all()"
+        return
+    match = re.fullmatch(r"\s*(?:r#)?cfg_attr\s*\((.*)\)\s*", attribute, re.S)
+    if match is not None:
+        condition, *attributes = attribute_arguments(match[1])
+        for nested in attributes:
+            for predicate in attribute_ignores(nested):
+                yield f"all({condition}, {predicate})"
+
+
+def registered_cases(source: str):
+    masked = rust_code(source)
+    preserved = rust_code(source, preserve_literals=True)
+    # Match complete adjacent outer-attribute blocks, so ignore-before-test
+    # and ignore-after-test have identical harness selection semantics.
+    spans = []
+    for match in re.finditer(r"#\s*\[", masked):
+        if spans and match.start() < spans[-1][1]:
+            continue
+        position, depth = match.end(), 1
+        while position < len(masked) and depth:
+            if masked[position] == "[":
+                depth += 1
+            elif masked[position] == "]":
+                depth -= 1
+            position += 1
+        if depth:
+            raise ValueError("unclosed test attribute")
+        spans.append((match.start(), position, match.end(), position - 1))
+    ends = [span[1] for span in spans]
+    pattern = r"(?:pub(?:\([^)]*\))?\s+)?fn\s+([A-Za-z_][A-Za-z_0-9]*)\s*\("
+    for match in re.finditer(pattern, masked):
+        index, before, attributes = bisect_right(ends, match.start()) - 1, match.start(), []
+        while index >= 0 and not masked[spans[index][1]:before].strip():
+            start, _, content_start, content_end = spans[index]
+            attributes.append(preserved[content_start:content_end])
+            before, index = start, index - 1
+        if not any(re.fullmatch(r"\s*(?:r#)?test\s*", attribute) for attribute in attributes):
+            continue
+        yield {
+            "name": match[1],
+            "cfgs": [predicate for attribute in attributes for predicate in attribute_cfgs(attribute)],
+            "ignores": [predicate for attribute in attributes for predicate in attribute_ignores(attribute)],
+        }
 
 
 def integration_targets(directory: Path, manifest: dict):
@@ -303,22 +391,31 @@ def integration_targets(directory: Path, manifest: dict):
 def target_covered(package: str, name: str, target: dict, manifest: dict, commands: list[dict]) -> bool:
     source = target["path"].read_text(encoding="utf-8")
     predicates = list(crate_cfgs(source))
-    code = rust_code(source)
-    cases = re.findall(r"#\s*\[\s*test\s*\]\s*(?:#\s*\[[^\]]*\]\s*)*(?:pub(?:\([^)]*\))?\s+)?fn\s+([A-Za-z_][A-Za-z_0-9]*)\s*\(", code)
+    cases = list(registered_cases(source))
     for command in commands:
         if package not in command["packages"]:
             continue
         if not command["all_targets"] and not any(fnmatch.fnmatchcase(name, pattern) for pattern in command["targets"]):
             continue
-        selected = [case for case in cases if not any(skip in case for skip in command["skips"])]
-        if cases and not selected:
+        enabled = feature_closure(manifest, command)
+        selected = []
+        for case in cases:
+            if any(cfg_predicate(predicate, enabled) is False for predicate in case["cfgs"]):
+                continue
+            ignored = [cfg_predicate(predicate, enabled) for predicate in case["ignores"]]
+            if command["ignored_mode"] == "only" and not any(value is not False for value in ignored):
+                continue
+            if command["ignored_mode"] == "ordinary" and True in ignored:
+                continue
+            if not any(skip in case["name"] for skip in command["skips"]):
+                selected.append(case["name"])
+        if (cases or command["ignored_mode"] == "only") and not selected:
             continue
         if command["filters"] and not any(
             any(case == pattern if command["exact"] else pattern in case for pattern in command["filters"])
             for case in selected
         ):
             continue
-        enabled = feature_closure(manifest, command)
         if not set(target["required-features"]).issubset(enabled):
             continue
         if all(cfg_predicate(predicate, enabled) is not False for predicate in predicates):
