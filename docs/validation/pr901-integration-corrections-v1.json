@@ -41,7 +41,20 @@
     },
     {
       "area": "CI selection",
-      "implementation": "Select canonical application qualification for language/native impacts. Explicitly run ignored linked native-host, canonical-native and resident-CLI tests with pinned toolchain, locked dependencies, one test thread and retained evidence. A workflow regression test protects these selections."
+      "implementation": "Select canonical application qualification for language/native impacts. PR900's own required native-hosted gate also runs the nonignored rejected-declaration application regression and explicitly selects the ignored linked secure/trusted qualification. Run canonical-native and resident-CLI linked tests explicitly with pinned toolchain, locked dependencies, one test thread and retained evidence. Workflow regressions protect the normal and ignored selections without disabling existing gates."
+    },
+    {
+      "area": "bracketed element-wise counts",
+      "implementation": "Parse |[expression]> through the canonical matrix-expression continuation and typed AST. Evaluate seed and counts once. Broadcast one count, otherwise require identical actual matrix extents, and run pure scalar callback lanes in canonical serial order while preserving seed geometry. Validate every count before callbacks and publish only a complete successful result.",
+      "numeric_boundary": "Counts retain normal expression typing. Integer counts convert directly to U64 without a floating-point round trip; floating counts must be finite, whole, nonnegative and below 2^64. Fractions and out-of-range values are rejected rather than rounded or truncated.",
+      "compatibility": "|N> retains whole-carrier iteration, |> retains ordinary application, and old literal-count bytecode encoding remains unchanged. Bracketed counts have a distinct encoded count-input role. Older native frontends explicitly reject them; canonical-native Iteration lowering and parallel scheduling are not claimed.",
+      "parser_boundary": "A clean bracketed candidate commits only at >, retaining matrix-valued table row ownership and incremental chunk equivalence. EOF recovery still retains the missing-angle diagnostic.",
+      "coverage": "All three requested five-element count vectors, singleton and expression counts, scalar and empty seeds, matrix orientation, String lanes, original/decoded artifacts, exact integer boundaries, count production once, validation-before-callback, managed denial, failure atomicity and recovery. Final post-merge qualification is pending."
+    },
+    {
+      "area": "CI profile and diagnostic corrections",
+      "implementation": "Remove the unused legacy U8 feature from the CLI provider's standard graph; preserve canonical byte Snapshots. Correct all ten fixture includes after relocating runtime program tests. Handle MemoryPlan/ResourceAdmission and typed kernel resource failures in resident recording without discarding resource-limit details. Update authority and mutation guards to inspect the actual selected-binding and canonical schema-identity paths rather than obsolete wrapper text.",
+      "gate_boundary": "No warning, module-layout, schema-identity, bound-call retention or native-evidence gate is disabled. The optional canonical-native inspection helper has a narrowly reasoned, expiring warning-ledger entry. Parser conformance checks feature-enabled acceptance and explicit disabled-feature rejection."
     }
   ],
   "remaining_compatibility_accounting": {
@@ -55,6 +68,7 @@
   },
   "capabilities": {
     "canonical_resident": "Validated canonical ProgramArtifact execution with retained state, control, collections and configured resource contracts, subject to each selected implementation's supported layouts and admission limits.",
+    "bracketed_counts": "Canonical resident, pure primitive scalar/flat rank-two matrix lanes, singleton broadcast or exact actual shape, serial order and atomic enclosing publication; no parallel or native-lowering claim.",
     "older_source_native": "The separate source-based native application frontend and activated text ports remain distinct from canonical-artifact native lowering.",
     "canonical_native": "Stateless Turn-only Bool/U64/I64 scalar graphs with private selected implementation evidence; JIT/Object and linked qualification are separate phases.",
     "benchmark_credit": "No new benchmark measurements or complete ten-workload qualification are claimed."
@@ -67,6 +81,39 @@
     "Qualify complete same-binary trusted/secured workload execution before serial Mech-only timing; preserve historical language cohorts.",
     "Continue broader packaging and optimizer work independently of the corrected stack's qualification."
   ],
-  "checks": [],
+  "checks": [
+    {
+      "area": "bracketed canonical applications",
+      "source_commit": "d429cdef0ab0cfad1dd482982e6317400effff3d",
+      "passed": 15,
+      "log": "tmp/pr-stack-evidence/bracket-count-applications-v6.log",
+      "scope": "Original and decoded artifacts; predates final parser and parent corrections and is not final-stack qualification."
+    },
+    {
+      "area": "canonical application parser and full-feature document conformance",
+      "source_commit": "dc1933d0bbaf92c903defc5b9c44cc1c55c853a8",
+      "application_tests_passed": 9,
+      "document_tests_passed": 4,
+      "logs": ["tmp/pr-stack-evidence/bracket-count-parser-table-v3.log", "tmp/pr-stack-evidence/bracket-count-document-full-v3.log"],
+      "scope": "Includes the matrix-valued-table regression; minimal-feature fixture correction and final stack rerun remain pending."
+    },
+    {
+      "area": "parent counted-pipe canonical ownership regressions",
+      "source_commit": "765d403c8e63729c7b5ad19199e7a09ac23f7dfe",
+      "normalizer_tests_passed": 43,
+      "resident_jit_object_tests_passed": 8,
+      "logs": ["tmp/pr-stack-evidence/pr898-regular-tables-unicode-arms-v5.log", "tmp/pr-stack-evidence/pr898-regular-tables-execution-v5.log"],
+      "scope": "Regular tables including CRLF/arrow bodies, same-depth Unicode match arrows, kind-versus-literal grammar distinction, existing Unicode/table/prose/large-bar fixtures, and native repeated-application execution."
+    },
+    {
+      "area": "parent activated native ports and actual linked launches",
+      "source_commit": "0e56c39d8cb950a0c672392791a19a826c81481b",
+      "port_tests_passed": 9,
+      "host_application_execution_tests_passed": 16,
+      "binary_sha256": "9d147142e426b4ae02e46d8f1b326707bbfc1b2698c84de9f8688e9a3baebe4e",
+      "logs": ["tmp/pr-stack-evidence/pr900-final-port-admission-v2.log", "tmp/pr-stack-evidence/pr900-final-native-host-v2.log"],
+      "scope": "One executable, trusted/secure/default-denied/invalid-policy attempts with unchanged binary hash; actual qualification before the final parent normalizer fixes, being rerun on the restacked candidate."
+    }
+  ],
   "benchmark_measurements": 0
 }
