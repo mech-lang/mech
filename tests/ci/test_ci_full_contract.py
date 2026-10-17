@@ -611,6 +611,30 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--lib cli::app::tests::build_", NATIVE_APPLICATIONS)
         self.assertIn("--test mech_build", NATIVE_APPLICATIONS)
 
+    def test_native_hosted_requires_admission_and_explicit_linked_launch_qualification(self):
+        block = job_block(FULL, "native-hosted")
+        self.assertIn("RUSTUP_TOOLCHAIN: nightly-2026-03-03", block)
+        self.assertIn("CARGO_BUILD_JOBS: \"1\"", block)
+        self.assertNotIn("continue-on-error", block)
+        steps = job_steps(FULL, "native-hosted")
+        admission = next(step for step in steps
+                         if "Execute activated native admission and pipe regressions" in step)
+        linked = next(step for step in steps
+                      if "Qualify activated native launches with one linked executable" in step)
+        for step in (admission, linked):
+            self.assertIn("cargo +nightly-2026-03-03 test --locked --offline", step)
+            self.assertIn("--features native-build,native-io", step)
+            self.assertIn("--test native_host_application", step)
+            self.assertIn("--test-threads=1", step)
+        for target in ("native_host_io", "repeated_application"):
+            self.assertIn(f"--test {target}", admission)
+        self.assertNotIn("--ignored", admission)
+        self.assertIn("-- --ignored --exact", linked)
+        self.assertIn("one_linked_executable_runs_secure_and_trusted_without_rebuilding", linked)
+        self.assertIn("MECH_NATIVE_QUALIFICATION_DIRECTORY", linked)
+        self.assertIn("uses: actions/upload-artifact@", block)
+        self.assertIn("- native-hosted", job_block(FULL, "cargo"))
+
     def test_native_commands_preserve_bounded_execution_and_final_diagnostics(self):
         for target in ("native_literal", "native_scalar", "native_generated_end_to_end", "native_cli_hosted", "mech_build"):
             self.assertIn(f"--test {target}", NATIVE_APPLICATIONS)
