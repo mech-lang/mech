@@ -8294,18 +8294,30 @@ fn canonical_functions_capture_lexical_bindings_without_inheriting_caller_locals
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
-    for prelude in ["hidden := 42f32", "before := hidden<f32>"] {
+    for prelude in ["hidden := 42f32", "hidden := input<f32>"] {
         let document = canonical_planning_test_document(&format!(
             "{prelude}\nwrong(value<f32>) = result<f32> :=\n  result := hidden.\n\nanswer := wrong(1f32)\n",
         ));
         let product = compiler.compile_document(&document).unwrap();
-        if prelude.starts_with("before") {
+        if prelude.contains("input<f32>") {
             assert!(
                 product
                     .artifact()
                     .inputs()
                     .iter()
-                    .any(|input| input.name == "hidden")
+                    .any(|input| input.name == mech_engine::encode_source_input_name("input")),
+                "{:?}",
+                product.artifact().inputs()
+            );
+            assert_eq!(
+                compiler
+                    .evaluate_static_document_symbols_with_inputs(
+                        &document,
+                        &BTreeMap::from([("input".to_owned(), RuntimeHostInputValue::F32(42.0))]),
+                        &["answer"],
+                    )
+                    .unwrap(),
+                BTreeMap::from([("answer".to_owned(), RuntimeHostInputValue::F32(42.0))])
             );
         } else {
             assert_eq!(
@@ -8320,6 +8332,14 @@ fn canonical_functions_capture_lexical_bindings_without_inheriting_caller_locals
         "hidden := [42f32]\nwrong(value<f32>) = result<f32> :=\n  result := hidden[1].\n\nanswer := wrong(1f32)\n",
     );
     assert!(compiler.compile_document(&document).is_ok());
+    let document = canonical_planning_test_document(
+        "before := hidden<f32>\nwrong(value<f32>) = result<f32> :=\n  result := hidden.\n\nanswer := wrong(1f32)\n",
+    );
+    let error = compiler
+        .compile_document(&document)
+        .unwrap_err()
+        .display_message();
+    assert!(error.contains("undeclared local hidden"), "{error}");
     // A source lexical binding can be frozen into a function. A parameter of
     // the caller, however, must not become the callee's free variable.
     let document = canonical_planning_test_document(
