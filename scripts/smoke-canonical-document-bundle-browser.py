@@ -316,11 +316,43 @@ try {
       } while (frame.processed === 0 && performance.now() < deadline);
       assert(frame.processed === 1 && frame.pending === 1, 'timer dispatch queues one sample: ' + JSON.stringify(frame));
     }
+    // This edited document has an additional observation. Its publication
+    // assertion is about an accepted clock value, not the unchanged compute
+    // fixture's one-queued-sample scheduling contract checked below.
+    const acceptedBeforePending = pendingDoc.runtimeInfo().resident_accepted_turns;
     pendingDoc.start();
-    await dispatchTimerTurn(pendingDoc);
-    assert(pendingDoc.frame(1).processed === 1, 'pending document accepts the computed sample');
-    assert(pendingDoc.renderedSymbols(null).some(row => row.name === 'pending-tick'), 'accepted input makes browser observation available');
+    const pendingDeadline = performance.now() + 5000;
+    let pendingFrame;
+    let publishedPending = [];
+    do {
+      await new Promise(resolve => setTimeout(resolve, 10));
+      pendingFrame = pendingDoc.frame(1);
+      publishedPending = pendingDoc.renderedSymbols(['pending-tick']);
+    } while (publishedPending.length === 0 && performance.now() < pendingDeadline);
+    assert(publishedPending.length === 1 && publishedPending[0].kind === 'f64'
+      && Number.isFinite(Number(publishedPending[0].inlineHtml)) && Number(publishedPending[0].inlineHtml) > 0,
+      'accepted clock input publishes the real browser observation: ' + JSON.stringify({pendingFrame, publishedPending}));
+    assert(pendingDoc.runtimeInfo().resident_accepted_turns > acceptedBeforePending, 'pending observation follows a real accepted turn');
+    // No further await permits a timer callback here. Finish this tick's
+    // bounded queued work and prove the additional read did not dispatch the
+    // compute effect twice. Keep the original document's exact queue oracle
+    // below, rather than applying it to this edited observation topology.
+    const pendingCompletionFrames = [];
+    for (let remaining = 4; remaining > 0; remaining--) {
+      const frame = pendingDoc.frame(1);
+      pendingCompletionFrames.push(frame);
+      if (frame.pending === 0) break;
+    }
+    assert(pendingCompletionFrames.at(-1)?.pending === 0, 'pending observation tick settles within four completion frames: ' + JSON.stringify(pendingCompletionFrames));
+    assert(pendingDoc.renderedSymbol('answer')?.inlineHtml === '1', 'one observed clock packet dispatches compute exactly once: ' + JSON.stringify(pendingCompletionFrames));
+    const publishedInfo = JSON.stringify(pendingDoc.runtimeInfo());
+    const publishedRows = pendingDoc.renderedSymbols(['available', 'pending-tick']);
+    assert(publishedRows.length === 2, 'both available and published browser observations are listed');
     assert(pendingDoc.renderedSymbols(['available'])[0]?.inlineHtml === '7', 'available root value survives actual input');
+    const publishedInspection = pendingDoc.replInvoke(':whos');
+    assert(!JSON.stringify(publishedInspection).includes('has no value'), 'browser :whos also works after publication');
+    assert(JSON.stringify(pendingDoc.runtimeInfo()) === publishedInfo, 'published browser inspection does not execute another turn');
+    rows.push({name: 'pending-browser-observation', tick: publishedPending[0], frame: pendingFrame, completionFrames: pendingCompletionFrames});
     pendingDoc.stop();
     pendingDoc.free();
 
