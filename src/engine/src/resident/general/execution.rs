@@ -7798,7 +7798,12 @@ mod tests {
                     ResidentValueRef::Snapshot(&source),
                 )
             }),
-            Err(ResidentKernelError::InvalidShape)
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                required: 132,
+                limit: 131
+            })
         );
         instance.plan.slots[write.slot.get() as usize].activation_fixed_shape = false;
         plan.budget_limits.max_compute_work = Some(work);
@@ -7930,10 +7935,15 @@ mod tests {
                 ResidentValueRef::String(&candidate),
             )
         };
-        assert!(matches!(
-            budget::with_resident_turn_plan(denied.clone(), convert),
-            Err(ResidentKernelError::InvalidShape)
-        ));
+        assert_eq!(
+            budget::with_resident_turn_plan(denied.clone(), convert).map(drop),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                required: complete.compute_work(),
+                limit: complete.compute_work() - 1,
+            })
+        );
         assert!(!materialized.get());
         assert_eq!(instance.published_epoch(), epoch);
         let retained_pointers = match instance.output_borrow(0).unwrap() {

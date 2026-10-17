@@ -30373,7 +30373,12 @@ mod tests {
                     ResidentValueMut::String(&mut dense_output),
                 )
             }),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 55313,
+                limit: 55312
+            }),
         );
         assert_eq!(before_dense_draft.selector_reads.get(), 2);
         assert_eq!(dense_output[0].as_ptr(), original_pointer);
@@ -30838,7 +30843,12 @@ mod tests {
             let mut output = [1_u8];
             assert_eq!(
                 kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
-                Err(ResidentKernelError::InvalidShape),
+                Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                    required: 154696,
+                    limit: 65536
+                }),
             );
             assert_eq!(output, [1]);
         }
@@ -30985,12 +30995,7 @@ mod tests {
 
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
-            Err(ResidentKernelError::ResourceLimit {
-                phase: mech_core::ResidentResourcePhase::Admission,
-                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
-                required: 66560,
-                limit: 65536
-            }),
+            Err(ResidentKernelError::InvalidShape),
         );
         assert!(output.iter().all(|value| *value == 9));
     }
@@ -31102,7 +31107,12 @@ mod tests {
 
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 66560,
+                limit: 65536
+            }),
         );
         assert!(output.iter().all(|value| *value == 9));
     }
@@ -31215,7 +31225,12 @@ mod tests {
                     &Inputs(&[ResidentValueRef::Snapshot(&source)]),
                     ResidentValueMut::Snapshot(&mut output),
                 ),
-                Err(ResidentKernelError::InvalidShape),
+                Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                    required: 80063,
+                    limit: 65536
+                }),
             );
             assert!(
                 output[0]
@@ -31318,7 +31333,12 @@ mod tests {
         assert_eq!(
             snapshot_kernel(matrix_dot_snapshot, *u64_scalar, Box::new([]))
                 .execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output),),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                required: 28800304,
+                limit: 16777216
+            }),
         );
         assert!(output[0].is_none());
     }
@@ -31482,7 +31502,12 @@ mod tests {
                 &Inputs(&choose_inputs),
                 ResidentValueMut::F64(&mut choose_output),
             ),
-            Err(ResidentKernelError::InvalidShape)
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputElements,
+                required: 437580,
+                limit: 65536
+            })
         );
         assert!(choose_output.iter().all(|value| *value == 7.0));
     }

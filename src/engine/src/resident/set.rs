@@ -3022,7 +3022,12 @@ mod tests {
                 &Inputs(&normalization_inputs),
                 ResidentValueMut::Snapshot(&mut normalization_output),
             ),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 440440,
+                limit: 65536
+            }),
         );
         assert!(normalization_output[0].is_none());
 
@@ -3470,7 +3475,12 @@ mod tests {
                     &Inputs(&mutation_inputs),
                     ResidentValueMut::Snapshot(&mut output),
                 ),
-                Err(ResidentKernelError::InvalidShape),
+                Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                    required: 16777226,
+                    limit: 65536
+                }),
             );
             let ValueData::Set(output) = output[0].as_ref().unwrap().data() else {
                 unreachable!()

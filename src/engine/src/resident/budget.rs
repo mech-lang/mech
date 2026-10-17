@@ -2418,7 +2418,12 @@ mod tests {
             )
             .admit()
             .unwrap_err(),
-            ResidentKernelError::InvalidShape
+            ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                required: 18446744073709551615,
+                limit: 16777216
+            }
         );
     }
 
