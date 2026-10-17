@@ -230,7 +230,12 @@ fn matrix_capture_budget_failure_preserves_publication_and_recovers() {
             matches!(
                 error,
                 mech_engine::resident::ResidentExecutionError::Kernel {
-                    error: mech_core::ResidentKernelError::InvalidShape,
+                    error: mech_core::ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                        required: 65_631,
+                        limit: 65_536,
+                    },
                     ..
                 }
             ),
