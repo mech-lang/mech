@@ -98,6 +98,32 @@ class IntegrationInventoryTests(unittest.TestCase):
                     self.assertEqual(target_covered("sample", "fresh", target, manifest, [command]), accepted)
             self.assertIsNone(self.command(["--workspace", "--exclude=sample@1.0"]))
 
+    def test_inherited_execution_environment_overrides_cannot_own_commands(self):
+        cargo = "cargo test --target x86_64-unknown-linux-gnu -p sample --test fresh"
+        runner = "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER"
+        for key in (runner, "CARGO_BUILD_RUNNER", "RUSTC_WRAPPER", "CARGO_HOME", "PATH", "PYTHONPATH", "CARGO_ENCODED_RUSTFLAGS"):
+            for scope in ("workflow", "job", "step"):
+                workflow_env = f"env:\n  {key}: /bin/true\n" if scope == "workflow" else ""
+                job_env = f"    env:\n      {key}: /bin/true\n" if scope == "job" else ""
+                step_env = f"        env:\n          {key}: /bin/true\n" if scope == "step" else ""
+                for command in (cargo, "python3 scripts/run-native-plan-stage.py --stage test -- " + cargo):
+                    source = f"{workflow_env}jobs:\n  test:\n{job_env}    steps:\n      - run: {command}\n{step_env}"
+                    with self.subTest(key=key, scope=scope, command=command):
+                        self.assertEqual(list(workflow_commands(source)), [])
+            self.assertEqual(list(workflow_commands(f"steps:\n  - run: {key}=/bin/true {cargo}\n")), [])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "scripts/check-generated-project-determinism.py"
+            path = root / relative
+            path.parent.mkdir()
+            path.write_text("run_streamed(['cargo', 'test', '-p', 'sample', '--test', 'fresh'])\n")
+            source = f"env:\n  {runner}: /bin/true\nsteps:\n  - run: python3 {relative}\n"
+            self.assertEqual(list(invoked_generator_commands(root, [source])), [])
+        for environment in ("env: ${{ matrix.environment }}\n", "env:\n  INVALID: {nested: mapping}\n"):
+            self.assertEqual(list(workflow_commands(environment + f"steps:\n  - run: {cargo}\n")), [])
+        source = f"env:\n  CARGO_BUILD_JOBS: '1'\n  CARGO_TARGET_DIR: target/ci\njobs:\n  test:\n    env:\n      CARGO_PROFILE_TEST_DEBUG: '0'\n    steps:\n      - run: {cargo}\n        env:\n          CARGO_TERM_COLOR: always\n          MODE: checked\n"
+        self.assertEqual([command["targets"] for command in workflow_commands(source)], [["fresh"]])
+
     def test_only_the_maintained_stage_wrapper_can_supply_indirect_execution(self):
         source = '''steps:
   - run: |
@@ -232,6 +258,27 @@ class IntegrationInventoryTests(unittest.TestCase):
             self.assertTrue(commands, relative)
             self.assertTrue(any("mech-build" in command["packages"]
                                 and "generate_native_projects" in command["targets"] for command in commands), relative)
+
+    def test_generator_exit_aliases_follow_reachable_imports_and_lexical_scope(self):
+        runner = "run_streamed(['cargo', 'test', '-p', 'sample', '--test', 'fresh'])"
+        for source in (
+            f"import sys\nif False:\n    import os as sys\nsys.exit(0)\n{runner}\n",
+            f"import sys\ndef unused():\n    import os as sys\nsys.exit(0)\n{runner}\n",
+            f"import sys\ndef helper():\n    import os as sys\n    return 0\nhelper()\nsys.exit(0)\n{runner}\n",
+            f"import sys\ndef die():\n    sys.exit(0)\ndef main():\n    import os as sys\n    die()\n    {runner}\nmain()\n",
+            f"from sys import exit as halt\nif False:\n    from builtins import print as halt\nhalt(0)\n{runner}\n",
+            f"import sys\nif dynamic():\n    import os as sys\nsys.exit(0)\n{runner}\n",
+            f"import sys\nstop = sys.exit\nstop(0)\n{runner}\n",
+            f"def main():\n    from sys import exit as halt\n    halt(0)\n    {runner}\nmain()\n",
+        ):
+            with self.subTest(source=source):
+                self.assertEqual(list(reachable_generator_commands(ast.parse(source))), [])
+        for source in (
+            f"import sys\nif False:\n    import os as sys\n{runner}\n",
+            f"import sys\ndef helper():\n    import os as sys\n    {runner}\nhelper()\n",
+            f"def main():\n    from sys import exit as halt\n    {runner}\n    halt(0)\nmain()\n",
+        ):
+            self.assertEqual([command["targets"] for command in reachable_generator_commands(ast.parse(source))], [["fresh"]])
 
     def test_recorded_executables_require_real_execution_of_the_same_receipt(self):
         compile_step = '''steps:
@@ -370,12 +417,15 @@ class IntegrationInventoryTests(unittest.TestCase):
         for metadata in (
             "env:\n  DECOY: |\n    " + decoy + "\n",
             "name: |\n  " + decoy + "\n",
-            "env:\n  DECOY:\n    " + decoy + "\n",
             "env:\n  DECOY: >-\n    steps:\n      - " + decoy + "\n",
         ):
             source = metadata + "steps:\n  - run: cargo test -p sample --test actual\n"
             with self.subTest(metadata=metadata):
                 self.assertEqual([entry["targets"] for entry in workflow_commands(source)], [["actual"]])
+        # An environment value must be scalar. A nested mapping is neither an
+        # executable step nor a valid inherited environment for the real step.
+        source = "env:\n  DECOY:\n    " + decoy + "\nsteps:\n  - run: cargo test -p sample --test actual\n"
+        self.assertEqual(list(workflow_commands(source)), [])
         source = "steps:\n  - name: |\n      " + decoy + "\n    env:\n      MESSAGE: |\n        " + decoy + "\n    run: cargo test -p sample --test actual\n"
         self.assertEqual([entry["targets"] for entry in workflow_commands(source)], [["actual"]])
 
@@ -608,6 +658,30 @@ runs:
                 self.assertIs(target["harness"], harness)
                 self.assertEqual(target_covered("sample", "custom", target, manifest,
                                                 [self.command(["--test", "custom"])]), harness)
+
+    def test_unexpanded_macros_and_inner_items_are_not_registered_cases(self):
+        decoy = "#[test] fn decoy() { panic!(); }"
+        for macro in (
+            f"macro_rules! unused {{ () => {{ {decoy} }} }}",
+            f"macro_rules! unused ( () => {{ {decoy} }} );",
+            f"macro_rules! unused [ () => {{ {decoy} }} ];",
+            f"macro r#unused($args:tt) {{ {decoy} }}",
+            f"emit! {{ {decoy} }}",
+            f"fn outer() {{ {decoy} }}",
+            f"const _: () = {{ {decoy} }};",
+        ):
+            source = f"{macro}\nmod live {{ #[test] fn actual() {{}} }}\n"
+            with self.subTest(macro=macro):
+                self.assertEqual([case["name"] for case in registered_cases(source)], ["live::actual"])
+                with tempfile.TemporaryDirectory() as temporary:
+                    path = Path(temporary) / "fresh.rs"
+                    path.write_text(source)
+                    target = {"path": path, "required-features": []}
+                    self.assertFalse(target_covered("sample", "fresh", target, {}, [self.command(["--test", "fresh", "decoy"])]))
+                    self.assertTrue(target_covered("sample", "fresh", target, {}, [self.command(["--test", "fresh", "actual"])]))
+                    path.write_text(macro)
+                    self.assertFalse(target_covered("sample", "fresh", target, {}, [self.command(["--test", "fresh", "decoy"])]))
+        self.assertEqual(list(registered_cases("#[test] macro_rules! unused { () => {} } fn plain() {}")), [])
 
     def test_skip_filters_accept_both_harness_spellings_and_full_names(self):
         with tempfile.TemporaryDirectory() as temporary:

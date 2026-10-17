@@ -173,9 +173,31 @@ def disabled_metadata(metadata: dict) -> bool:
     return False
 
 
+def unproven_environment_variable(name: str) -> bool:
+    """Explicit overrides that can replace a command, compiler or test runner."""
+    name = name.upper()
+    return name in {
+        "PATH", "PATHEXT", "COMSPEC", "IFS", "BASH_ENV", "ENV", "SHELLOPTS", "BASHOPTS",
+        "BASH_CMDS", "BASH_ALIASES", "CDPATH", "ZDOTDIR", "HOME", "USERPROFILE",
+        "CARGO_HOME", "RUSTUP_HOME", "RUSTC", "RUSTC_WRAPPER", "RUSTC_WORKSPACE_WRAPPER",
+        "RUSTDOC", "RUSTFLAGS", "RUSTDOCFLAGS", "PYTHONPATH", "PYTHONHOME", "PYTHONSTARTUP",
+        "LD_PRELOAD", "DYLD_INSERT_LIBRARIES",
+    } or re.fullmatch(r"CARGO_(?:TARGET_.+_(?:RUNNER|RUSTFLAGS)|BUILD_(?:RUNNER|RUSTC(?:_WRAPPER|_WORKSPACE_WRAPPER)?|RUSTDOC|RUSTFLAGS)|ENCODED_RUST(?:DOC)?FLAGS)", name) is not None
+
+
 def admitted_steps(source: str):
     for document, job, step in step_contexts(source):
         if disabled_metadata(job) or disabled_metadata(step):
+            continue
+        environment, valid = {}, True
+        for context in (document, job, step):
+            mapping = context.get("env", {})
+            if not isinstance(mapping, dict) or any(not isinstance(key, str) or not isinstance(value, str)
+                                                   for key, value in mapping.items()):
+                valid = False
+                break
+            environment.update(mapping)
+        if not valid or any(unproven_environment_variable(name) for name in environment):
             continue
         defaults, valid = {}, True
         for context in (document, job):
@@ -352,7 +374,7 @@ def shell_commands(block: str) -> list[list[str]]:
         if any(token and all(character in ";&|<>()" for character in token) for token in arguments):
             return []
         while arguments and re.match(r"^[A-Za-z_][A-Za-z_0-9]*=", arguments[0]):
-            if any(marker in arguments[0] for marker in ("$", "`", "__GITHUB_EXPRESSION__")) or arguments[0].split("=", 1)[0] in {"PATH", "IFS", "BASH_ENV", "ENV", "SHELLOPTS", "BASHOPTS", "BASH_CMDS", "BASH_ALIASES", "CDPATH", "ZDOTDIR"}:
+            if any(marker in arguments[0] for marker in ("$", "`", "__GITHUB_EXPRESSION__")) or unproven_environment_variable(arguments[0].split("=", 1)[0]):
                 return []
             arguments = arguments[1:]
         if not arguments:
@@ -449,14 +471,13 @@ def reachable_generator_commands(module: ast.Module):
     """
     functions = {node.name: node for node in module.body if isinstance(node, ast.FunctionDef)}
     visited = set()
-    imported_names = {}
-    for node in ast.walk(module):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                imported_names[alias.asname or alias.name] = alias.name
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            for alias in node.names:
-                imported_names[alias.asname or alias.name] = f"{node.module}.{alias.name}"
+
+    class Scope(dict):
+        def __init__(self, aliases=None):
+            super().__init__()
+            self.aliases = dict(aliases or {})
+
+    module_scope = Scope()
 
     class ProcessExit(Exception):
         pass
@@ -467,11 +488,11 @@ def reachable_generator_commands(module: ast.Module):
         def __init__(self, node):
             self.node, self.valid = node, True
 
-    def call_name(node):
+    def call_name(node, assignments):
         if isinstance(node, ast.Name):
-            return imported_names.get(node.id, node.id)
+            return assignments.aliases.get(node.id, node.id) or "<unknown>"
         if isinstance(node, ast.Attribute):
-            return f"{call_name(node.value)}.{node.attr}"
+            return f"{call_name(node.value, assignments)}.{node.attr}"
         return ""
 
     def invalidate(node, assignments):
@@ -534,9 +555,9 @@ def reachable_generator_commands(module: ast.Module):
             invalidate(node.value, assignments)
             assignments.pop(node.target.id, None)
             return
-        if isinstance(node, ast.Call) and call_name(node.func) in {
+        if isinstance(node, ast.Call) and (call_name(node.func, assignments).startswith("<unknown>") or call_name(node.func, assignments) in {
             "exit", "quit", "sys.exit", "os._exit", "builtins.exit", "builtins.quit",
-        }:
+        }):
             # Arguments run first. An exit in a called helper terminates the
             # entry point too, unlike an ordinary return from that helper.
             raise ProcessExit
@@ -563,7 +584,9 @@ def reachable_generator_commands(module: ast.Module):
             invalidate(functions[node.func.id], assignments)
             if node.func.id not in visited:
                 visited.add(node.func.id)
-                yield from statements(functions[node.func.id].body, {})
+                # Python functions use module globals, never their caller's
+                # local imports. A callee's imports stay local to that scope.
+                yield from statements(functions[node.func.id].body, Scope(module_scope.aliases))
             for argument in (*node.args, *[keyword.value for keyword in node.keywords]):
                 invalidate(argument, assignments)
         else:
@@ -574,7 +597,13 @@ def reachable_generator_commands(module: ast.Module):
         for statement in body:
             if isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 continue
-            if isinstance(statement, ast.If):
+            if isinstance(statement, (ast.Import, ast.ImportFrom)):
+                for alias in statement.names:
+                    name = alias.asname or alias.name.split(".")[0]
+                    value = alias.name if isinstance(statement, ast.Import) else f"{statement.module}.{alias.name}"
+                    assignments.aliases[name] = value
+                    assignments.pop(name, None)
+            elif isinstance(statement, ast.If):
                 yield from expression(statement.test, assignments)
                 condition = constant(statement.test)
                 if condition is not unknown:
@@ -585,6 +614,11 @@ def reachable_generator_commands(module: ast.Module):
                     for child in ast.walk(statement):
                         if isinstance(child, ast.Name) and isinstance(child.ctx, (ast.Store, ast.Del)):
                             assignments.pop(child.id, None)
+                            if child.id in assignments.aliases:
+                                assignments.aliases[child.id] = None
+                        if isinstance(child, (ast.Import, ast.ImportFrom)):
+                            for alias in child.names:
+                                assignments.aliases[alias.asname or alias.name.split(".")[0]] = None
             elif isinstance(statement, (ast.With, ast.AsyncWith)):
                 for item in statement.items:
                     yield from expression(item.context_expr, assignments)
@@ -616,6 +650,9 @@ def reachable_generator_commands(module: ast.Module):
                     value = assigned_value(statement.value, assignments)
                     for target in statement.targets:
                         if isinstance(target, ast.Name):
+                            alias = call_name(statement.value, assignments)
+                            if target.id in assignments.aliases or target.id in {"sys", "os", "builtins", "exit", "quit"} or alias in {"sys", "os", "builtins", "exit", "quit", "sys.exit", "os._exit", "builtins.exit", "builtins.quit"}:
+                                assignments.aliases[target.id] = alias if alias else None
                             if value is None:
                                 assignments.pop(target.id, None)
                             else:
@@ -656,7 +693,7 @@ def reachable_generator_commands(module: ast.Module):
         return False
 
     try:
-        yield from statements(module.body, {})
+        yield from statements(module.body, module_scope)
     except ProcessExit:
         return
 
@@ -802,6 +839,50 @@ def attribute_ignores(attribute: str):
 def registered_cases(source: str):
     masked = rust_code(source)
     preserved = rust_code(source, preserve_literals=True)
+    # Token trees are not parsed items until a macro expands them. Keep their
+    # delimiters/prefixes as separators so a preceding attribute cannot attach
+    # to an unrelated function after blanking a body.
+    pairs, stack = {}, []
+    for position, character in enumerate(masked):
+        if character in "([{":
+            stack.append((character, position))
+        elif character in ")]}" and stack:
+            opening, start = stack.pop()
+            if opening != {")": "(", "]": "[", "}": "{"}[character]:
+                raise ValueError("unbalanced Rust token tree")
+            pairs[start] = position
+    ranges = []
+    identifier = r"(?:r#)?[A-Za-z_][A-Za-z_0-9]*"
+    for pattern, declaration in (
+        (rf"\bmacro_rules\s*!\s*{identifier}\s*([\[({{])", False),
+        (rf"\bmacro\s+{identifier}\s*([\[({{])", True),
+        (rf"\b{identifier}\s*!\s*([\[({{])", False),
+    ):
+        for match in re.finditer(pattern, masked):
+            opening = match.end() - 1
+            if opening not in pairs:
+                raise ValueError("unclosed macro token tree")
+            closing = pairs[opening]
+            ranges.append((opening, closing))
+            if declaration and masked[opening] == "(":
+                body = closing + 1
+                while body < len(masked) and masked[body].isspace():
+                    body += 1
+                if body < len(masked) and masked[body] == "{":
+                    if body not in pairs:
+                        raise ValueError("unclosed macro body")
+                    ranges.append((body, pairs[body]))
+    if ranges:
+        code, literals = list(masked), list(preserved)
+        last = -1
+        for opening, closing in sorted(ranges):
+            if opening < last:
+                continue
+            last = closing
+            for position in range(opening + 1, closing):
+                if code[position] not in "\r\n":
+                    code[position] = literals[position] = " "
+        masked, preserved = "".join(code), "".join(literals)
     # Match complete adjacent outer-attribute blocks, so ignore-before-test
     # and ignore-after-test have identical harness selection semantics.
     spans = []
@@ -847,7 +928,11 @@ def registered_cases(source: str):
         modules.append((opening, closes[opening], match[1].removeprefix("r#"), cfgs))
 
     pattern = r"(?:pub(?:\([^)]*\))?\s+)?fn\s+((?:r#)?[A-Za-z_][A-Za-z_0-9]*)\s*\("
+    module_openings = {module[0] for module in modules}
     for match in re.finditer(pattern, masked):
+        if any(opening < match.start() < closing and opening not in module_openings
+               for opening, closing in closes.items()):
+            continue  # inner items/methods are not registered free test cases
         attributes = preceding_attributes(match.start())
         if not any(re.fullmatch(r"\s*(?:r#)?test\s*", attribute) for attribute in attributes):
             continue
