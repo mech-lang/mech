@@ -167,6 +167,12 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn(case, step)
             self.assertIn("--test-threads=1", step)
             self.assertIn(evidence, step)
+            if target == "canonical_cli_application":
+                self.assertIn("--features standard-hosts,process-supervision", step)
+                self.assertIn("-- --list --ignored --exact", step)
+                self.assertIn("CLI_QUALIFICATION_TESTS", step)
+                self.assertIn("finish_without_drivers: test$", step)
+                self.assertIn('" -eq 1', step)
         self.assertIn("MECH_CANONICAL_NATIVE_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", block)
         self.assertIn("MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", block)
         self.assertIn("uses: actions/upload-artifact@", block)

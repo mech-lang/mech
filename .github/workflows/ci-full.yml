@@ -504,12 +504,18 @@ jobs:
         env:
           MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
           MECH_CANONICAL_CLI_EVIDENCE_DIR: ${{ runner.temp }}/canonical-cli-evidence
-        run: >-
-          cargo +nightly-2026-03-03 test --locked --offline -p mech-build
-          --no-default-features --features standard-hosts
-          --test canonical_cli_application -- --ignored --exact
-          linked_canonical_cli_arguments_and_stdin_finish_without_drivers
-          --test-threads=1
+        run: |
+          set -euo pipefail
+          CLI_QUALIFICATION_TESTS=$(cargo +nightly-2026-03-03 test --locked --offline -p mech-build \
+            --no-default-features --features standard-hosts,process-supervision \
+            --test canonical_cli_application -- --list --ignored --exact \
+            linked_canonical_cli_arguments_and_stdin_finish_without_drivers)
+          test "$(printf '%s\n' "$CLI_QUALIFICATION_TESTS" | rg -c '^linked_canonical_cli_arguments_and_stdin_finish_without_drivers: test$')" -eq 1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-build \
+            --no-default-features --features standard-hosts,process-supervision \
+            --test canonical_cli_application -- --ignored --exact \
+            linked_canonical_cli_arguments_and_stdin_finish_without_drivers \
+            --test-threads=1
       - name: Retain linked application evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
