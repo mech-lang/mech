@@ -30,6 +30,16 @@ fn rejected_declarations_cannot_select_legacy_application_frontends() {
     for (index, declaration) in ["+> *", "+> @out :="].iter().enumerate() {
         let source = root.join(format!("{index}.mec"));
         let text = format!("{declaration}\nio/print(\"legacy bypass\\n\")\n");
+        if *declaration == "+> *" {
+            assert!(
+                mech_engine::native_sequence::control::compile(
+                    &text,
+                    mech_stdlib::native_control_catalog()
+                )
+                .is_ok(),
+                "the regression must otherwise be accepted by the legacy control frontend"
+            );
+        }
         fs::write(&source, &text).unwrap();
         if let Ok(parsed) = mech_engine::native_sequence::ParsedSource::parse(&text) {
             assert!(parsed.has_activated_ports(), "{text}");
