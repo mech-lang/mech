@@ -324,8 +324,18 @@ class TypeSystemCheckerTests(unittest.TestCase):
         self.replace(
             root,
             "src/engine/src/source_semantics/frontend.rs",
-            ".is_some_and(|expected| expected != &schema)",
+            ".is_some_and(|expected| expected != &schema_identity)",
             ".is_some_and(|_| false)",
+        )
+        self.assert_failure(root, "match arms do not require one exact semantic result schema")
+
+    def test_source_match_result_identity_must_be_canonical(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/source_semantics/frontend.rs",
+            "let schema_identity = schema.clone().finalize()",
+            "let schema_identity = schema.clone().unchecked_draft_identity()",
         )
         self.assert_failure(root, "match arms do not require one exact semantic result schema")
 

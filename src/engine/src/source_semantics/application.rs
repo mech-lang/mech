@@ -429,7 +429,12 @@ impl SemanticBuilder {
             semantic: SourceSemanticNode {
                 operation: "iteration".to_owned(),
                 role: "iteration",
-                detail: Some(format!("{count:?}")),
+                detail: Some(match count {
+                    crate::IterationCount::Literal(count) => count.to_string(),
+                    crate::IterationCount::Elements { input } => {
+                        format!("element counts input {input}")
+                    }
+                }),
                 anchor: SourceSemanticAnchor::for_node(syntax),
             },
         });

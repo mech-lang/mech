@@ -491,7 +491,20 @@ impl PureTextRuntime {
             SchemaBody::Matrix { element, .. } => element.as_ref(),
             body => body,
         };
-        #[allow(unused_macros)]
+        #[cfg(any(
+            feature = "u8",
+            feature = "u16",
+            feature = "u32",
+            feature = "u64",
+            feature = "u128",
+            feature = "i8",
+            feature = "i16",
+            feature = "i32",
+            feature = "i64",
+            feature = "i128",
+            feature = "f32",
+            feature = "f64"
+        ))]
         macro_rules! typed {
             ($type:ty, $convert:expr) => {
                 frame.with_input_cell_value_view::<$type, _>(&self.inputs[0], 0, |view| {

@@ -31,10 +31,11 @@ use crate::{
 use super::*;
 
 const PURE_SOURCE: &str =
-    include_str!("../../../../../tests/architecture/resident-activation/n-body-source-v1.mec");
+    include_str!("../../../../../../tests/architecture/resident-activation/n-body-source-v1.mec");
 const PRODUCT_NBODY_SOURCE: &str =
-    include_str!("../../../../../examples/resident-n-body/n-body.mec");
-const PUBLIC_NBODY_VIEWER_SOURCE: &str = include_str!("../../../../../examples/n-body/n-body.mec");
+    include_str!("../../../../../../examples/resident-n-body/n-body.mec");
+const PUBLIC_NBODY_VIEWER_SOURCE: &str =
+    include_str!("../../../../../../examples/n-body/n-body.mec");
 
 fn runtime() -> crate::MechRuntime {
     RuntimeBuilder::new()
@@ -1115,7 +1116,7 @@ fn ordinary_output_names_are_never_inferred_as_interactive_symbols() {
         .unwrap();
     let product = compiler
         .compile_source(include_str!(
-            "../../../../../tests/fixtures/shims/all-slots.mec"
+            "../../../../../../tests/fixtures/shims/all-slots.mec"
         ))
         .unwrap();
     let compiled = product.artifact();
@@ -1174,7 +1175,7 @@ fn ordinary_output_names_are_never_inferred_as_interactive_symbols() {
 
 #[test]
 fn formatted_document_outputs_survive_source_and_bytecode_publication() {
-    let source = include_str!("../../../../../examples/working/fizzbuzz.mec");
+    let source = include_str!("../../../../../../examples/working/fizzbuzz.mec");
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
         .build_compiler()
@@ -1264,7 +1265,7 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         "rooted formatted documents must publish the same output symbols"
     );
 
-    let rich_source = include_str!("../../../../../tests/fixtures/shims/all-slots.mec");
+    let rich_source = include_str!("../../../../../../tests/fixtures/shims/all-slots.mec");
     let rich = compiler.compile_source(rich_source).unwrap();
     let rich_outputs = rich
         .artifact()
@@ -1309,7 +1310,7 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
 
 #[test]
 fn interactive_program_output_is_the_final_statement_without_a_fenced_output() {
-    let source = include_str!("../../../../../examples/working/factorial.mec");
+    let source = include_str!("../../../../../../examples/working/factorial.mec");
     let mut runtime = runtime();
     let loaded = runtime
         .load_interactive_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
@@ -8413,7 +8414,7 @@ fn canonical_mixed_source_retains_tuple_destructured_results() {
 #[cfg(feature = "compute")]
 #[test]
 fn canonical_mixed_shipped_ekf_region_compiles() {
-    let shipped = include_str!("../../../../../examples/ekf/localization.mec");
+    let shipped = include_str!("../../../../../../examples/ekf/localization.mec");
     let start = shipped.find("5. ekf-batch @compute\n").unwrap();
     let end = shipped.find("6. Live Tracking Field\n").unwrap();
     let source = format!(
@@ -8623,7 +8624,7 @@ fn canonical_resource_planning_closes_provider_matrix_shapes() {
 #[cfg(feature = "compute")]
 #[test]
 fn canonical_mixed_shipped_particle_region_initializes() {
-    let shipped = include_str!("../../../../../examples/gpu-particles/particles.mec");
+    let shipped = include_str!("../../../../../../examples/gpu-particles/particles.mec");
     let start = shipped.find("particle-field @compute\n").unwrap();
     for count in [5, 257, 16384, 1_000_000] {
         let source = format!(
@@ -9291,7 +9292,7 @@ fn canonical_ordered_roots_share_prior_definitions_and_reject_invalid_edges() {
 
 #[test]
 fn canonical_fizzbuzz_preserves_constraints_and_presentation_through_bytecode() {
-    let source = include_str!("../../../../../examples/working/fizzbuzz.mec");
+    let source = include_str!("../../../../../../examples/working/fizzbuzz.mec");
     let document = canonical_planning_test_document(source);
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())

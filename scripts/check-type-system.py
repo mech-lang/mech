@@ -35,7 +35,7 @@ REQUIRED = TYPE_MODULES + (
     "src/engine/src/function/resolver.rs",
     "src/engine/src/intrinsics/kind_conversion.rs",
     "src/engine/src/resident/conversion.rs",
-    "src/runtime/src/runtime/program/tests.rs",
+    "src/runtime/src/runtime/program/tests/mod.rs",
     "src/core/tests/type_system_builtin.rs",
     "src/core/tests/type_system_solver.rs",
     "src/core/tests/type_system_conversion.rs",
@@ -419,7 +419,8 @@ def failures(root: Path) -> list[str]:
     ):
         found.append("source match guard does not require the semantic Boolean schema")
     if (
-        "expected != &schema" not in rust_code(match_lowering)
+        "expected != &schema_identity" not in rust_code(match_lowering)
+        or "schema.clone().finalize()" not in rust_code(match_lowering)
         or '"source-semantics/incompatible-match-result-kind"' not in match_lowering
     ):
         found.append("source match arms do not require one exact semantic result schema")
