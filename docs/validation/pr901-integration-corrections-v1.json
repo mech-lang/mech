@@ -26,6 +26,46 @@
   ],
   "corrections": [
     {
+      "area": "target linker overrides, unoptimized recursion stack safety and root-scoped browser regression",
+      "reviewed_source_commit": "72836beda441232efba4321c4e3bab895ba73979",
+      "review_comment": 4304794153,
+      "inventory_fix_commit": "af0af71ea0401fa1eb6e91124f326aaaa0d10f80",
+      "stack_fix_commit": "a0d000061683ecab49822aad3530725395ae3860",
+      "browser_fixture_fix_commit": "efe8046f8a33b3c29cd42864431f6cc1f1965201",
+      "inventory": "Reject unmodeled CARGO_TARGET_* environment configuration except the non-target-specific CARGO_TARGET_DIR cache path. This includes target LINKER, RUNNER, compiler/doc flags and future unsupported target settings. Cargo build/profile Rust/Rustdoc flag overrides also cannot establish ownership. Retain regressions for all workflow/job/step scopes, inline assignments, direct and maintained-wrapper Cargo commands, generators, Linux/macOS target keys and legitimate cache/job/debug/color settings.",
+      "inventory_qualification": {
+        "source_commit": "af0af71ea0401fa1eb6e91124f326aaaa0d10f80",
+        "result": "PASS all142 CI contract methods (41 inventory methods), six sharder tests, formatting and all seven production architecture guards; exact clean source checked before and after every phase.",
+        "ci_log": "tmp/pr-stack-evidence/review-v129-ci-contracts.log",
+        "ci_log_sha256": "389982d926be3ae638b503f8a705b6d676b687ea7cfc2fd54d1f1d12f3385f54",
+        "guard_logs": "tmp/pr-stack-evidence/review-v129-*.log"
+      },
+      "stack_failure": "The original unchanged full application selection on72836beda passes17 applications,7 pure-text methods,4 retention methods and five tail cases, then aborts with host stack overflow in non_tail_recursive_postprocessing_keeps_the_existing_depth_limit_and_recovers. Later tail cases and text_operations are not reached. The macOS crash has24 repeated recursive call cycles; unoptimized code retains the large match, recursive-frame and unrelated continuation dispatcher stack frames before the emergency depth check can return. This is failed evidence, not a passing depth-limit test.",
+      "failed_log": "tmp/pr-stack-evidence/review-v127-applications-text-tail.log",
+      "failed_log_sha256": "5825291b9cfe980860bfb200b7214627966040d6f7bc41f6cb4d8cf1a74e8ecc",
+      "failed_executable_sha256": "a8afe48e5adc5354ea28d51b33d016c8960f41042ceb8763ce8b2c50bfd5f079",
+      "local_crash_report_sha256": "3c1fe87d64745d7fa2b81085e4834e046a43b56e72f7657fe70c1625e0cc5ff7",
+      "stack_correction": "Keep the recursive dispatcher small by extracting unchanged suspension/publication materialization into non-inlined helpers. Perform the same depth/storage check in a thin wrapper before entering the larger recursive frame/admission helper. No new heap carrier, resource discount, changed depth ceiling or enlarged thread stack is introduced. Preserve every logical frame/work/memory admission and continuation cleanup path.",
+      "stack_qualification": {
+        "source_commit": "a0d000061683ecab49822aad3530725395ae3860",
+        "profile": "nightly-2026-03-03, locked/offline, jobs1, no-default-features; test optimization0/debug0, assertions/overflow true, incremental0, one test thread and RUST_MIN_STACK unset. Exact clean source checked before and after every phase.",
+        "result": "PASS all46 methods in the original five application/text/retention/tail targets:17 applications,7 pure_text_source,4 retention_work, all10 tail_control and8 text_operations. None ignored or filtered. Also pass both selected engine non-tail methods (35 unrelated methods filtered), including original/decoded maximum admitted depth24, refusals at25/300, unchanged outputs/epochs and recovery, plus the separately selected original stdlib non-tail method (nine others filtered). The separate selected rerun is included in the46, not another unique acceptance case.",
+        "original_tail_source_sha256": "19b687442c3f6e74e0aa91f7c7e7d42678082a85502e600ce334450213bece4a",
+        "original_tail_preservation": "tail_control.rs is byte-identical between72836beda and this fix. Every original input, expected result, bound and recovery check is retained.",
+        "boundary_log": "tmp/pr-stack-evidence/review-v131-non-tail-boundary.log",
+        "boundary_log_sha256": "d06402f94d4349985503f71232752f41e597581b1cadf8444b57770a8fba0081",
+        "original_non_tail_log": "tmp/pr-stack-evidence/review-v131-original-non-tail.log",
+        "original_non_tail_log_sha256": "b31d4849d5ba162be822bce8e518fd29755d0d5f6609b7b5924930dc66bef15f",
+        "application_log": "tmp/pr-stack-evidence/review-v131-applications-text-tail.log",
+        "application_log_sha256": "eb55e9607f5771225353d00adff24e7675d5f8f7367b8ce308b1792959c113b4",
+        "static_checks": "All142 CI contracts (41 inventory methods), six sharder tests, formatting and seven production architecture guards pass on the same exact clean a0d000061 source; logs are review-v131-static-*.log. The complete serial v131 pipeline terminates successfully.",
+        "retained_zero_selection_attempt": "v130 initially omits resident-artifact from the engine invocation: Cargo exits0 with zero tests, and the qualifier's required nonempty-count assertion rejects the run. It receives no test credit. v131 includes the required feature and actually executes both intended methods.",
+        "scope": "Scoped application and boundary qualification, not complete current-source runtime/owner/native/browser/full-CI qualification. Earlier832-runtime/61-source results remain attributed to392a96e2e; the new Rust correction requires fresh owner qualification."
+      },
+      "browser": "CI39074994949 job117522321275 fails the new pending-observation row assertion on72836beda. Its test appended source after the trailing compute section, so the declarations were not admitted root symbols. The corrected regression explicitly inserts them before that section in an independent configured document, verifies source acceptance, checks all/named listing and :whos before publication, preserves unknown-name errors, clears/restores while unpublished, and checks actual accepted input. Dispose that document before running a fresh original fixture with its unchanged source, outputs, identities and edit/rejection oracles. Actual browser execution on the correction is still required; no browser pass is claimed.",
+      "remaining": "Finish final-source owner/runtime/source/browser/native/all-five-linked qualification, fresh clean review and entirely green CI. Keep draft and unmerged without explicit user approval. Canonical-native migration and the complete benchmark brief remain unfinished."
+    },
+    {
       "area": "inherited Cargo runner environment, lexical exit aliases and unexpanded macro registrations",
       "reviewed_source_commit": "63aa22621dc820019eb99809cf4b30ff0c3b2c64",
       "fix_commit": "99b5b330631fdf72d5e5e0e88f608da7d228cd22",

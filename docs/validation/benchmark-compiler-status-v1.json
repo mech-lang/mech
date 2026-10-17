@@ -7,9 +7,9 @@
     "branch": "codex/idiomatic-native-programs",
     "pull_request": "https://github.com/mech-lang/mech/pull/901",
     "pull_request_status": "OPEN_DRAFT",
-    "current_correction_source_commit": "99b5b330631fdf72d5e5e0e88f608da7d228cd22",
+    "current_correction_source_commit": "efe8046f8a33b3c29cd42864431f6cc1f1965201",
     "current_correction_record": "pr901-integration-corrections-v1.json",
-    "current_qualification": "All832 runtime units and61 source-acceptance cases pass on392a96e2e. Later changes are CI inventory and documentation only; final-source owner/application/browser/linked qualification, fresh clean review and complete green CI remain pending. The following scalar receipts retain their historical source scope.",
+    "current_qualification": "All46 retained application/text/retention/tail methods, including all10 original tail cases, pass on clean a0d000061 with optimization0/default thread stack. Two selected engine non-tail boundary methods also pass. The new host-stack repair requires fresh owner/runtime/source qualification: earlier832 runtime units and61 source-acceptance cases remain scoped to392a96e2e, not this later Rust source. Actual corrected browser execution, all five linked routes, fresh clean review and complete green CI remain pending. The following scalar receipts retain their historical source scope.",
     "qualified_source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
     "qualification_receipts_commit": "6ffc5e0e8febaf6b9718753e2037840548c5bd4d"
   },
@@ -28,7 +28,8 @@
       "Join comparison accounting, shared map schema ownership, typed resource denials and retained original tail contracts are implemented; complete current-source qualification remains mandatory.",
       "Bracketed element-wise counts use canonical parsing, singleton broadcast or exact matrix geometry, one count evaluation, serial lane order and atomic publication. This does not establish native lowering or parallel execution.",
       "Replacement refresh preserves ordered reset/new/retained-state views and accepted observations; optional queries retain unpublished absence.",
-      "The latest review correction requires anonymous state identity to be unambiguous in both directions and makes bulk interactive listing omit unpublished observations while retaining unknown-name errors. All832 runtime units and61 source-acceptance cases pass on clean392a96e2e; actual browser, linked and full final-head CI qualification remains pending."
+      "The latest review correction requires anonymous state identity to be unambiguous in both directions and makes bulk interactive listing omit unpublished observations while retaining unknown-name errors. All832 runtime units and61 source-acceptance cases pass on clean392a96e2e; actual browser, linked and full final-head CI qualification remains pending.",
+      "The original ten tail-control methods and36 other retained application/text/retention methods pass on a0d000061 after reducing recursive dispatcher host-stack use. The unchanged depth ceiling remains24; explicit source/decoded boundary/refusal/recovery tests use the default stack with optimization0. The browser pending-observation regression now uses root-scoped declarations in an independent document; its actual browser rerun remains pending."
     ],
     "boundary": "Do not reapply preserved whole-file candidates over these newer corrections. Historical source-only gap descriptions in the original handoff are not the current implementation status."
   },
