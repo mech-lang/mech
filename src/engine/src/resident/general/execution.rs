@@ -2813,180 +2813,21 @@ impl ReactiveInstance {
             );
         }
         if let ActivatedTurnStep::Suspend(suspension) = self.plan.steps[node_index.get() as usize] {
-            let target = suspension.target.get() as usize;
-            let capture_sources = match &self.plan.steps[target] {
-                ActivatedTurnStep::Match(control) => control.capture_sources.clone(),
-                _ => {
-                    return Err(ResidentExecutionError::Kernel {
-                        node: suspension.artifact_node,
-                        error: ResidentKernelError::InvalidInput,
-                    });
-                }
-            };
-            let fail = |error| ResidentExecutionError::Kernel {
-                node: suspension.artifact_node,
-                error,
-            };
-            let mut capture_meter = budget::ResidentBudgetMeter::default();
-            let (capture_bytes, capture_nodes) = core::iter::once(suspension.argument)
-                .chain(
-                    capture_sources
-                        .iter()
-                        .copied()
-                        .filter(|source| !matches!(source, ResidentReadLocation::Input(_))),
-                )
-                .try_fold((0_u64, 0_u64), |(bytes, nodes), source| {
-                    let value = self
-                        .read_location(source, working_epoch)
-                        .ok_or(ResidentKernelError::InvalidInput)?;
-                    let footprint = resident_frame_value_footprint(
-                        value,
-                        &self.plan.schemas,
-                        &mut capture_meter,
-                    )?;
-                    Ok::<_, ResidentKernelError>((
-                        bytes
-                            .checked_add(footprint.0)
-                            .ok_or(ResidentKernelError::InvalidShape)?,
-                        nodes
-                            .checked_add(footprint.1)
-                            .ok_or(ResidentKernelError::InvalidShape)?,
-                    ))
-                })
-                .map_err(fail)?;
-            let peak_bytes = live_bytes
-                .checked_add(capture_bytes)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let retained_nodes = live_nodes
-                .checked_add(capture_nodes)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let capture_work = capture_meter
-                .estimate()
-                .compute_work()
-                .checked_add(capture_bytes)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            (|| -> Result<(), ResidentKernelError> {
-                budget::PreparedKernel::new(
-                    (),
-                    budget::resident_cost! {
-                        compute_work: capture_work,
-                        temporary_bytes: peak_bytes,
-                        cloned_bytes: capture_bytes,
-                        retained_nodes,
-                        ..budget::KernelCostEstimate::default()
-                    },
-                )
-                .admit_control()?
-                .into_plan();
-                Ok(())
-            })()
-            .map_err(fail)?;
-            let state = self
-                .read_location(suspension.argument, working_epoch)
-                .map(owned_resident_value)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
-            let captures = capture_sources
-                .iter()
-                .copied()
-                .filter(|source| !matches!(source, ResidentReadLocation::Input(_)))
-                .map(|source| {
-                    self.read_location(source, working_epoch)
-                        .map(|value| (source, owned_resident_value(value)))
-                        .ok_or(ResidentExecutionError::Kernel {
-                            node: suspension.artifact_node,
-                            error: ResidentKernelError::InvalidInput,
-                        })
-                })
-                .collect::<Result<Box<[_]>, _>>()?;
-            self.workspace.continuation_candidates[target] =
-                Some(super::ResidentContinuation { state, captures });
-            clear_bit(&mut self.workspace.completed_continuations, target);
-            return Ok(false);
+            return self.execute_suspension_with_live_demand(
+                suspension,
+                working_epoch,
+                live_bytes,
+                live_nodes,
+            );
         }
         if let ActivatedTurnStep::Publish(publication) = self.plan.steps[node_index.get() as usize]
         {
-            let fail = |error| ResidentExecutionError::Kernel {
-                node: publication.artifact_node,
-                error,
-            };
-            let target = publication.target.get() as usize;
-            let write = match &self.plan.steps[target] {
-                ActivatedTurnStep::Match(control)
-                    if control.write.storage == ResidentStorageClass::Scratch =>
-                {
-                    control.write
-                }
-                _ => return Err(fail(ResidentKernelError::InvalidInput)),
-            };
-            let mut publication_meter = budget::ResidentBudgetMeter::default();
-            let (bytes, nodes) = self
-                .read_location(publication.value, working_epoch)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))
-                .and_then(|value| {
-                    resident_frame_value_footprint(
-                        value,
-                        &self.plan.schemas,
-                        &mut publication_meter,
-                    )
-                    .map_err(fail)
-                })?;
-            let (replaced_bytes, replaced_nodes) = resident_frame_value_footprint(
-                self.workspace.scratch.read(write.region),
-                &self.plan.schemas,
-                &mut publication_meter,
-            )
-            .map_err(fail)?;
-            let cloned_bytes = bytes
-                .checked_mul(2)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let retained_nodes = nodes
-                .checked_mul(2)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let peak_bytes = live_bytes
-                .checked_add(cloned_bytes)
-                .and_then(|bytes| bytes.checked_add(replaced_bytes))
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let retained_nodes = live_nodes
-                .checked_add(retained_nodes)
-                .and_then(|nodes| nodes.checked_add(replaced_nodes))
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let publication_work = publication_meter
-                .estimate()
-                .compute_work()
-                .checked_add(cloned_bytes)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            (|| -> Result<(), ResidentKernelError> {
-                budget::PreparedKernel::new(
-                    (),
-                    budget::resident_cost! {
-                        compute_work: publication_work,
-                        temporary_bytes: peak_bytes,
-                        cloned_bytes,
-                        retained_nodes,
-                        ..budget::KernelCostEstimate::default()
-                    },
-                )
-                .admit_control()?
-                .into_plan();
-                Ok(())
-            })()
-            .map_err(fail)?;
-            let value = self
-                .read_location(publication.value, working_epoch)
-                .map(owned_resident_value)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
-            let unchanged =
-                resident_values_equal(self.workspace.scratch.read(write.region), value.as_ref());
-            copy_input(&mut self.workspace.scratch, write.region, value.as_ref()).map_err(
-                |error| {
-                    error.at(ResidentExecutionError::Kernel {
-                        node: publication.artifact_node,
-                        error: ResidentKernelError::InvalidOutput,
-                    })
-                },
-            )?;
-            set_bit(&mut self.workspace.continuation_publications, target);
-            return Ok(!unchanged);
+            return self.execute_publication_with_live_demand(
+                publication,
+                working_epoch,
+                live_bytes,
+                live_nodes,
+            );
         }
         if matches!(
             self.plan.steps[node_index.get() as usize],
@@ -3003,6 +2844,191 @@ impl ReactiveInstance {
             live_bytes,
             live_nodes,
         )
+    }
+
+    // Recursive calls retain the dispatcher on the host stack. Keep the
+    // unrelated continuation materialization paths out of that frame, even
+    // in unoptimized builds, without allocating another runtime carrier.
+    #[inline(never)]
+    fn execute_suspension_with_live_demand(
+        &mut self,
+        suspension: super::ActivatedSuspension,
+        working_epoch: InstanceEpoch,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        let target = suspension.target.get() as usize;
+        let capture_sources = match &self.plan.steps[target] {
+            ActivatedTurnStep::Match(control) => control.capture_sources.clone(),
+            _ => {
+                return Err(ResidentExecutionError::Kernel {
+                    node: suspension.artifact_node,
+                    error: ResidentKernelError::InvalidInput,
+                });
+            }
+        };
+        let fail = |error| ResidentExecutionError::Kernel {
+            node: suspension.artifact_node,
+            error,
+        };
+        let mut capture_meter = budget::ResidentBudgetMeter::default();
+        let (capture_bytes, capture_nodes) = core::iter::once(suspension.argument)
+            .chain(
+                capture_sources
+                    .iter()
+                    .copied()
+                    .filter(|source| !matches!(source, ResidentReadLocation::Input(_))),
+            )
+            .try_fold((0_u64, 0_u64), |(bytes, nodes), source| {
+                let value = self
+                    .read_location(source, working_epoch)
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                let footprint =
+                    resident_frame_value_footprint(value, &self.plan.schemas, &mut capture_meter)?;
+                Ok::<_, ResidentKernelError>((
+                    bytes
+                        .checked_add(footprint.0)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                    nodes
+                        .checked_add(footprint.1)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                ))
+            })
+            .map_err(fail)?;
+        let peak_bytes = live_bytes
+            .checked_add(capture_bytes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let retained_nodes = live_nodes
+            .checked_add(capture_nodes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let capture_work = capture_meter
+            .estimate()
+            .compute_work()
+            .checked_add(capture_bytes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        (|| -> Result<(), ResidentKernelError> {
+            budget::PreparedKernel::new(
+                (),
+                budget::resident_cost! {
+                    compute_work: capture_work,
+                    temporary_bytes: peak_bytes,
+                    cloned_bytes: capture_bytes,
+                    retained_nodes,
+                    ..budget::KernelCostEstimate::default()
+                },
+            )
+            .admit_control()?
+            .into_plan();
+            Ok(())
+        })()
+        .map_err(fail)?;
+        let state = self
+            .read_location(suspension.argument, working_epoch)
+            .map(owned_resident_value)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+        let captures = capture_sources
+            .iter()
+            .copied()
+            .filter(|source| !matches!(source, ResidentReadLocation::Input(_)))
+            .map(|source| {
+                self.read_location(source, working_epoch)
+                    .map(|value| (source, owned_resident_value(value)))
+                    .ok_or(ResidentExecutionError::Kernel {
+                        node: suspension.artifact_node,
+                        error: ResidentKernelError::InvalidInput,
+                    })
+            })
+            .collect::<Result<Box<[_]>, _>>()?;
+        self.workspace.continuation_candidates[target] =
+            Some(super::ResidentContinuation { state, captures });
+        clear_bit(&mut self.workspace.completed_continuations, target);
+        Ok(false)
+    }
+
+    #[inline(never)]
+    fn execute_publication_with_live_demand(
+        &mut self,
+        publication: super::ActivatedPublication,
+        working_epoch: InstanceEpoch,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        let fail = |error| ResidentExecutionError::Kernel {
+            node: publication.artifact_node,
+            error,
+        };
+        let target = publication.target.get() as usize;
+        let write = match &self.plan.steps[target] {
+            ActivatedTurnStep::Match(control)
+                if control.write.storage == ResidentStorageClass::Scratch =>
+            {
+                control.write
+            }
+            _ => return Err(fail(ResidentKernelError::InvalidInput)),
+        };
+        let mut publication_meter = budget::ResidentBudgetMeter::default();
+        let (bytes, nodes) = self
+            .read_location(publication.value, working_epoch)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidInput))
+            .and_then(|value| {
+                resident_frame_value_footprint(value, &self.plan.schemas, &mut publication_meter)
+                    .map_err(fail)
+            })?;
+        let (replaced_bytes, replaced_nodes) = resident_frame_value_footprint(
+            self.workspace.scratch.read(write.region),
+            &self.plan.schemas,
+            &mut publication_meter,
+        )
+        .map_err(fail)?;
+        let cloned_bytes = bytes
+            .checked_mul(2)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let retained_nodes = nodes
+            .checked_mul(2)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let peak_bytes = live_bytes
+            .checked_add(cloned_bytes)
+            .and_then(|bytes| bytes.checked_add(replaced_bytes))
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let retained_nodes = live_nodes
+            .checked_add(retained_nodes)
+            .and_then(|nodes| nodes.checked_add(replaced_nodes))
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let publication_work = publication_meter
+            .estimate()
+            .compute_work()
+            .checked_add(cloned_bytes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        (|| -> Result<(), ResidentKernelError> {
+            budget::PreparedKernel::new(
+                (),
+                budget::resident_cost! {
+                    compute_work: publication_work,
+                    temporary_bytes: peak_bytes,
+                    cloned_bytes,
+                    retained_nodes,
+                    ..budget::KernelCostEstimate::default()
+                },
+            )
+            .admit_control()?
+            .into_plan();
+            Ok(())
+        })()
+        .map_err(fail)?;
+        let value = self
+            .read_location(publication.value, working_epoch)
+            .map(owned_resident_value)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+        let unchanged =
+            resident_values_equal(self.workspace.scratch.read(write.region), value.as_ref());
+        copy_input(&mut self.workspace.scratch, write.region, value.as_ref()).map_err(|error| {
+            error.at(ResidentExecutionError::Kernel {
+                node: publication.artifact_node,
+                error: ResidentKernelError::InvalidOutput,
+            })
+        })?;
+        set_bit(&mut self.workspace.continuation_publications, target);
+        Ok(!unchanged)
     }
 
     fn execute_match_step(
@@ -4160,6 +4186,34 @@ impl ReactiveInstance {
         {
             return Err(fail(ResidentKernelError::InvalidShape));
         }
+        self.execute_recursive_frame(
+            node_index,
+            call,
+            before_epoch,
+            working_epoch,
+            probe,
+            live_bytes,
+            live_nodes,
+        )
+    }
+
+    // The emergency depth check must run before reserving this larger host
+    // frame. Its logical frame, work and memory admission remain unchanged.
+    #[inline(never)]
+    fn execute_recursive_frame(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        call: super::ActivatedRecursiveCall,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        let fail = |error| ResidentExecutionError::Kernel {
+            node: call.artifact_node,
+            error,
+        };
         let (regions, returned, region_inventory_bytes) = {
             let ActivatedTurnStep::Match(root) = &self.plan.steps[call.target.get() as usize]
             else {

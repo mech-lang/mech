@@ -495,6 +495,90 @@ fn non_tail_recursive_frame_limit_rolls_back_and_allows_retry() {
 }
 
 #[test]
+fn non_tail_depth_boundary_uses_the_default_host_stack_and_recovers() {
+    let source = "countdown(n<f64>) => <f64>\n  | 0 => 0\n  | n => 1 + countdown(n - 1).\ncountdown(signal<f64>)\n";
+    let original = compile_document(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for (ordinal, artifact) in [original, decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x557, ordinal as u32),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let slot = instance.plan.inputs[0].slot;
+        for n in [24.0, 1.0, 24.0] {
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot,
+                    value: ResidentValueRef::F64(&[n]),
+                }])
+                .unwrap();
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                f(n)
+            );
+        }
+        let epoch = instance.published_epoch();
+        let previous = instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap();
+        for n in [25.0, 300.0] {
+            let error = instance
+                .turn(&[CapturedSignalInput {
+                    slot,
+                    value: ResidentValueRef::F64(&[n]),
+                }])
+                .unwrap_err();
+            assert!(
+                matches!(
+                    error,
+                    mech_engine::__resident::ResidentExecutionError::Kernel {
+                        error: mech_core::ResidentKernelError::InvalidShape,
+                        ..
+                    }
+                ),
+                "{error:?}"
+            );
+            assert_eq!(instance.published_epoch(), epoch);
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                previous
+            );
+        }
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[5.0]),
+            }])
+            .unwrap();
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            f(5.0)
+        );
+    }
+}
+
+#[test]
 fn promoted_arithmetic_executes_with_live_operands() {
     execute(
         "x := 250u8 + signal<f64>",
