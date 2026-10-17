@@ -143,7 +143,12 @@ fn denied_large_candidate_retains_published_value_and_recovers() {
             matches!(
                 error,
                 ResidentExecutionError::Kernel {
-                    error: ResidentKernelError::InvalidShape,
+                    error: ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                        required: 65_910,
+                        limit: 65_536,
+                    },
                     ..
                 }
             ),

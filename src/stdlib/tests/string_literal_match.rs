@@ -256,7 +256,12 @@ fn literal_comparison_denial_is_lazy_atomic_and_recovers() {
             matches!(
                 error,
                 mech_engine::resident::ResidentExecutionError::Kernel {
-                    error: mech_core::ResidentKernelError::InvalidShape,
+                    error: mech_core::ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                        required: 65_538,
+                        limit: 65_536,
+                    },
                     ..
                 }
             ),
