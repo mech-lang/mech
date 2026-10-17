@@ -25,6 +25,45 @@
   ],
   "corrections": [
     {
+      "area": "asymmetric anonymous migration, unpublished bulk inspection and bounded CI inventory",
+      "reviewed_source_commits": ["b70ca31cd5f2c176ac92c6796b75d9796ceb3855", "63544b972944f7b0b36e21abbb467b8c5af818a9"],
+      "runtime_fix_commits": ["baa157d2e", "2dcf376c26e87e73d837474c223262ab3c4b0938", "78698d980e0917e81f938c22ee7d7befc4cc96c2"],
+      "inventory_fix_commit": "6bdf60fe5958b135ee26f7384d525f6a04210bb1",
+      "browser_fixture_followup": "f5d89c9ba",
+      "review_comments": [4304589400, 4304589404, 4304589405, 4304589408, 4304589411, 4304589412, 4304589417],
+      "anonymous_migration": "Compute eligible anonymous source/target relationships before consuming either end. Only degree-one pairs in both directions migrate, in fixed-point batches against unchanged compatibility evidence. Keep exact-revision, named-state and unique anonymous matches. Retain O(states) candidate/degree storage rather than allocating every compatible edge. Source/decoded regressions cover one-old/two-new, two-old/one-new, both declaration orders and both assignment orders, actual candidate state/output defaults, unchanged previous hash/epoch and the next real turn.",
+      "inspection": "Root bulk value queries omit declared-but-unpublished outputs while preserving unknown-name errors. Single-value, program-output and integrity-constraint queries remain strict. The source/decoded clock fixture exercises symbols, symbol_inspections, actual :whos dispatch and step-completion reporting before publication, after accepted input and clearing while unpublished, with unchanged inspection epochs and zero provider reads. The existing served-compute browser gate exercises exported renderedSymbols and :whos alongside an independent constant before timer startup, then actual publication and clearing. Browser execution is still required; source wiring is not a passing browser receipt.",
+      "python_inventory": "Tracked literal command lists share alias invalidation. Index/slice writes, deletion, augmented assignment, mutation through aliases/methods and unmodeled container escape cannot retain stale command credit. Unrelated environment dictionary updates and pure alias rebinding/deletion retain valid commands. Explicit process exits, including import aliases and calls inside helpers, stop traversal after evaluating their arguments. Ordinary helper return does not terminate its caller. Both real maintained generators retain their literal Cargo selections.",
+      "cargo_inventory": "Parse a bounded option grammar and reject unknown, output-only/unit-graph, unstable and configuration-override modes. A manifest path must be the literal reviewed root Cargo.toml. Retain package exclusions and prevent excluded packages from owning targets. Preserve custom-harness metadata and reject harness=false as ordinary #[test] execution evidence. Composite run steps require explicit supported shells; an invalid composite cannot own any of its steps. These are conservative target/profile checks, not arbitrary Python/shell/host execution attestation or exhaustive platform/declaration coverage.",
+      "prior_two_notes": "The supplied rereview's shell hash remapping and unused/input-inapplicable composite findings were already fixed after b70 in20239a4d8 and strengthened by f055793ce. Preserve their direct/recorded/generator, disabled/allowed-failure caller, nested-action and effective engine/hosted input regressions; do not reopen those old defects by replacing current files with the older review source.",
+      "qualification": {
+        "source_commit": "2dcf376c26e87e73d837474c223262ab3c4b0938",
+        "status": "IN_PROGRESS",
+        "passed": "All139 CI contracts (including38 inventory methods), six sharder tests and formatting pass on exact clean source; runtime units and source acceptance remain pending.",
+        "ci_log": "tmp/pr-stack-evidence/review-v119-ci-contracts.log",
+        "runtime_log": "tmp/pr-stack-evidence/review-v119-runtime-units.log",
+        "failed_attempt": "v118 passes139 CI contracts, six sharder tests and formatting, then fails Rust compilation at two missing strict-query arguments. v119 includes their explicit strict behavior. The failed log remains failed evidence, not qualification."
+      },
+      "source_scope": "v119 is pinned to2dcf376c2. The later browser constant fixture and O(states) candidate storage/docs changes require their own final-head checks; do not relabel the pinned results as their qualification.",
+      "recoverable_cache": "Three inactive generated libraries in the separate repair checkout were gzip CRC/uncompressed-SHA256 verified before removing their exact cache originals to make build space. Source, raw logs and linked application evidence are untouched. Archives and per-file hashes remain in tmp/pr-stack-evidence/review-v120-inactive-repair-cache/ and its .log.",
+      "remaining": "Finish final-source runtime/owner/application/browser gates, all five actual linked routes with nonempty selection and evidence, exact-head clean review and entirely green CI. The zero-count Snapshot retained-node concern is not a confirmed defect: retain an exact-limit behavioral follow-up, and change production accounting only if a supported case establishes a failure. Keep PR901 draft and unmerged until explicit user approval; no new benchmark credit."
+    },
+    {
+      "area": "retained EKF guard fixture and scoped owner qualification",
+      "fixture_fix_commit": "457cdb63f597e84501432270d97d3877dca2924a",
+      "fixture": "Replace four test-only erased ValueCell constructors with explicit canonical SchemaDraft/ValueDraft finalization using shared immutable schemas. Keep the EKF architectural scanner unchanged and preserve every original value, payload size, bound and assertion. The production execution.rs prefix is byte-identical to63544b972 (SHA256 3e951b110a9d13dbb2421815bc61be49a6c978c7f85d194311e53d85908b4d5e).",
+      "qualification": [
+        {"source_commit": "63544b972944f7b0b36e21abbb467b8c5af818a9", "result": "PASS nine core all-feature integration targets /67 methods", "log": "tmp/pr-stack-evidence/review-v112-current-coverage-core-all-features.log", "log_sha256": "1c41c9b0ee83245729ec481cd0cfe1a6fd1fd9feea98816003dedcbe2bef7aa7"},
+        {"source_commit": "63544b972944f7b0b36e21abbb467b8c5af818a9", "result": "PASS three native-link integration targets /3 methods; registration/linkage, not actual linked application execution", "log": "tmp/pr-stack-evidence/review-v113-current-coverage-engine-native-link.log", "log_sha256": "f1058640c9832be9614a00952dba4aa806d2f258312e92995adefac2f9e49e54"},
+        {"source_commit": "63544b972944f7b0b36e21abbb467b8c5af818a9", "result": "PASS general native-link target /4 methods; not actual linked application execution", "log": "tmp/pr-stack-evidence/review-v113-current-coverage-engine-general-native-link.log", "log_sha256": "6a2e7f95e66e3aca0f4e4e52df2d9c573a03a6a97b9662a6f4eb65d16cddad5f"},
+        {"source_commit": "457cdb63f597e84501432270d97d3877dca2924a", "result": "PASS all37 resident general execution unit methods;688 other engine methods filtered, not run", "log": "tmp/pr-stack-evidence/review-v115-pinned-engine-execution.log", "log_sha256": "4a28be3756f0f575823869b6c74c8ae7b8fb55e5f9796101268a296f97b064f3"},
+        {"source_commit": "457cdb63f597e84501432270d97d3877dca2924a", "result": "PASS three source-shape integration targets /15 methods", "log": "tmp/pr-stack-evidence/review-v116-current-coverage-engine-source-shapes.log", "log_sha256": "ff10eea3c8f331917e1746e6a33f2ed6e6e2e598d8bdd05ec8e8cd2c13f493ec"},
+        {"source_commit": "457cdb63f597e84501432270d97d3877dca2924a", "result": "PASS all four retained EKF targets /22 methods", "log": "tmp/pr-stack-evidence/review-v116-current-coverage-engine-retained-ekf.log", "log_sha256": "6f67e34a9636d9f2c544d15312527e82a7eb5d46af7fafcdeeffaea93cbd4b3b"}
+      ],
+      "failed_attempt": {"source_commit": "63544b972944f7b0b36e21abbb467b8c5af818a9", "result": "v114 passes15 source-shape methods, then EKF artifact closure5 pass and contract3 pass/1 architectural-guard failure; activation/execution not reached", "log": "tmp/pr-stack-evidence/review-v114-current-coverage-engine-retained-ekf.log", "log_sha256": "27a5b4da70b1e3da6f6aeefcb79ef4418ceeaccf5b24322684271c73511b25b7"},
+      "scope": "Revision-specific serial correctness checks, not final later-source qualification, complete green CI or benchmark measurements. Original failed evidence remains retained."
+    },
+    {
       "area": "structural workflow extraction, supported shell forms and harness modes",
       "reviewed_source_commit": "842c1596efe31dcfa240ec5cb37a8536700c498f",
       "review_comments": [4304467755, 4304467762, 4304467769, 4304467774, 4304467779],
