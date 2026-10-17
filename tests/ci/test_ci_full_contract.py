@@ -1485,6 +1485,22 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertLess(body.index("run_browser_case"),
                             body.index('report_case_progress "$label" passed'))
 
+    def test_configured_clock_probe_waits_for_a_published_value(self):
+        smoke = (ROOT / "scripts/smoke-served-rich-document-browser.sh").read_text()
+        body = smoke.split("def assert_console_contract():\n", 1)[1].split("\ndef ", 1)[0]
+        function = ast.parse("def assert_console_contract():\n" + body)
+        waits = [
+            node for node in ast.walk(function)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+            and node.func.id == "wait_for" and len(node.args) >= 2
+            and isinstance(node.args[1], ast.Constant)
+            and node.args[1].value == "the configured clock variable after REPL replacement"
+        ]
+        self.assertEqual(len(waits), 1)
+        condition = ast.literal_eval(waits[0].args[0])
+        self.assertIn("?.dataset.mechValueAvailable === 'true'", condition)
+        self.assertIn("textContent.trim()", condition)
+
     def test_full_validation_stops_on_cancellation_and_keeps_selected_dependency_gates(self):
         block = job_block(CI, "full-validation")
         condition = re.search(r"(?s)    if: >-\n\s*\$\{\{(.*?)\}\}", block).group(1)

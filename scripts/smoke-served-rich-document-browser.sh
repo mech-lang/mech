@@ -2001,6 +2001,7 @@ def assert_console_contract():
 """)
         submit("clock-second := @clock/second;")
         wait_for(
+            "document.querySelector('#mech-smoke-clock .mech-var-placeholder')?.dataset.mechValueAvailable === 'true' && "
             "Boolean(document.querySelector('#mech-smoke-clock .mech-var-placeholder')?.textContent.trim())",
             "the configured clock variable after REPL replacement",
         )
