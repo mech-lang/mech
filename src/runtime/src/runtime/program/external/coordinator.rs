@@ -479,6 +479,7 @@ impl ResidentExternalCoordinator {
     pub(crate) fn refresh_output_projections(
         &mut self,
         targets: &std::collections::BTreeSet<CellSlotId>,
+        candidate_owned_states: &std::collections::BTreeSet<CellSlotId>,
     ) -> Result<(), ResidentExecutionError> {
         let inputs = self
             .bound
@@ -496,7 +497,12 @@ impl ResidentExternalCoordinator {
             .instance
             .as_mut()
             .expect("resident instance is present");
-        instance.refresh_output_projections_with_inputs(&self.artifact, targets, &inputs)?;
+        instance.refresh_replacement_projections(
+            &self.artifact,
+            targets,
+            &inputs,
+            candidate_owned_states,
+        )?;
         // Migration changes the published snapshot without creating a turn.
         // The next rejected receipt must describe that same snapshot.
         self.published_state_hash = instance.published_state_hash();

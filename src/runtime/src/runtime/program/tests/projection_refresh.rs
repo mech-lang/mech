@@ -133,6 +133,144 @@ fn replacement_keeps_ordered_candidate_projections_of_explicitly_mutated_state()
 }
 
 #[test]
+fn replacement_refreshes_outputs_combining_reset_and_migrated_state() {
+    let source = "~counter := 0.0\ncounter += 1.0\n~steady := 5.0\nsteady += 1.0\nmixed := counter + steady\nmixed\n";
+    for decoded in [false, true] {
+        for later_mutation in ["", "counter += 1.0\n"] {
+            let mut previous = load(source, decoded);
+            previous.step_active_program().unwrap();
+            previous.step_active_program().unwrap();
+            assert_eq!(
+                canonical_f64(previous.root_symbol_value("mixed").unwrap().value()),
+                11.0
+            );
+            let mut candidate = load(&format!("{source}{later_mutation}"), decoded);
+            let epoch = resident_parts(&candidate).1.published_epoch();
+            candidate
+                .preserve_compatible_resident_state_from(
+                    &previous,
+                    &BTreeSet::from(["counter".to_owned()]),
+                )
+                .unwrap();
+            for (name, expected) in [
+                ("counter", if later_mutation.is_empty() { 1.0 } else { 2.0 }),
+                ("steady", 8.0),
+                ("mixed", 9.0),
+            ] {
+                assert_eq!(
+                    canonical_f64(candidate.root_symbol_value(name).unwrap().value()),
+                    expected,
+                    "decoded={decoded}, later_mutation={later_mutation:?}, projection={name}",
+                );
+            }
+            assert_eq!(resident_parts(&candidate).1.published_epoch(), epoch);
+            assert_eq!(
+                canonical_f64(previous.root_symbol_value("mixed").unwrap().value()),
+                11.0
+            );
+            candidate.step_active_program().unwrap();
+            for (name, expected) in [
+                ("counter", if later_mutation.is_empty() { 2.0 } else { 4.0 }),
+                ("steady", 9.0),
+                (
+                    "mixed",
+                    if later_mutation.is_empty() {
+                        11.0
+                    } else {
+                        12.0
+                    },
+                ),
+            ] {
+                assert_eq!(
+                    canonical_f64(candidate.root_symbol_value(name).unwrap().value()),
+                    expected,
+                    "next turn: decoded={decoded}, later_mutation={later_mutation:?}, projection={name}",
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn replacement_orders_new_candidate_owned_state_and_raw_state_constraints() {
+    let retained = "~steady := 5.0\nsteady += 1.0\nsteady\n";
+    for decoded in [false, true] {
+        for initial_constraint in ["", "initial! := counter == 0.0\n"] {
+            let mut previous = load(retained, decoded);
+            previous.step_active_program().unwrap();
+            previous.step_active_program().unwrap();
+            let mut candidate = load(
+                &format!(
+                    "{retained}~counter := 0.0\n{initial_constraint}counter += 1.0\nmixed := counter + steady\ncounter += 1.0\nmixed\n"
+                ),
+                decoded,
+            );
+            let epoch = resident_parts(&candidate).1.published_epoch();
+            candidate
+                .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
+                .unwrap();
+            for (name, expected) in [("counter", 2.0), ("steady", 8.0), ("mixed", 9.0)] {
+                assert_eq!(
+                    canonical_f64(candidate.root_symbol_value(name).unwrap().value()),
+                    expected,
+                    "decoded={decoded}, initial_constraint={initial_constraint:?}, name={name}",
+                );
+            }
+            assert_eq!(resident_parts(&candidate).1.published_epoch(), epoch);
+            if initial_constraint.is_empty() {
+                candidate.step_active_program().unwrap();
+                for (name, expected) in [("counter", 4.0), ("steady", 9.0), ("mixed", 12.0)] {
+                    assert_eq!(
+                        canonical_f64(candidate.root_symbol_value(name).unwrap().value()),
+                        expected,
+                    );
+                }
+            } else {
+                let hash = resident_parts(&candidate).1.published_state_hash();
+                let error = candidate.step_active_program().unwrap_err();
+                assert!(error.display_message().contains("Integrity"), "{error:?}");
+                assert_eq!(resident_parts(&candidate).1.published_state_hash(), hash);
+                assert_eq!(resident_parts(&candidate).1.published_epoch(), epoch);
+            }
+            assert_eq!(
+                canonical_f64(previous.root_symbol_value("steady").unwrap().value()),
+                8.0
+            );
+        }
+    }
+}
+
+#[test]
+fn replacement_checks_mixed_reset_and_migrated_projections_before_acceptance() {
+    let source = "~counter := 0.0\ncounter += 1.0\n~steady := 5.0\nsteady += 1.0\nmixed := counter + steady\nmixed\n";
+    for decoded in [false, true] {
+        let mut previous = load(source, decoded);
+        previous.step_active_program().unwrap();
+        previous.step_active_program().unwrap();
+        let mut candidate = load(
+            &format!("{source}safe! := mixed < 8.0\ncounter += 1.0\nmixed\n"),
+            decoded,
+        );
+        let error = candidate
+            .preserve_compatible_resident_state_from(
+                &previous,
+                &BTreeSet::from(["counter".to_owned()]),
+            )
+            .expect_err("the candidate's initializer result7 cannot validate migrated result9");
+        assert!(error.display_message().contains("Integrity"), "{error:?}");
+        assert_eq!(
+            canonical_f64(previous.root_symbol_value("mixed").unwrap().value()),
+            11.0
+        );
+        previous.step_active_program().unwrap();
+        assert_eq!(
+            canonical_f64(previous.root_symbol_value("mixed").unwrap().value()),
+            13.0
+        );
+    }
+}
+
+#[test]
 fn replacement_keeps_hidden_invariant_order_around_an_explicit_state_edit() {
     for decoded in [false, true] {
         for retained_state in [false, true] {

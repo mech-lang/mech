@@ -45,6 +45,12 @@ use super::{
     output_materialization_depends_on_match,
 };
 
+struct ProjectionStatePublication {
+    buffer: usize,
+    epochs: [Option<InstanceEpoch>; 2],
+    initializer: ResidentRegion,
+}
+
 fn literal_string_text<'a>(
     value: ResidentValueRef<'a>,
     schema: mech_core::SchemaKey,
@@ -305,6 +311,9 @@ pub enum ResidentExecutionError {
         node: NodeId,
     },
     InvalidOutputMaterialization {
+        slot: CellSlotId,
+    },
+    InvalidProjectionState {
         slot: CellSlotId,
     },
     ExternalSummaryRequired,
@@ -766,6 +775,117 @@ impl ReactiveInstance {
         targets: &std::collections::BTreeSet<CellSlotId>,
         inputs: &[CapturedValueInput<'_>],
     ) -> Result<(), ResidentExecutionError> {
+        self.refresh_replacement_projections(artifact, targets, inputs, &Default::default())
+    }
+
+    /// Refresh an isolated replacement after migration, preserving the ordered
+    /// initial publication of states that belong to the candidate, not the old
+    /// runtime. Prefix computations read those states' admitted initializers;
+    /// final writer results and state outputs still use their actual publication.
+    /// The inactive, already planned state buffers supply the temporary read
+    /// view. No arena is cloned, no state transition or host observation runs,
+    /// and every published state/epoch is restored on both success and failure.
+    pub fn refresh_replacement_projections(
+        &mut self,
+        artifact: &crate::ProgramArtifact,
+        targets: &std::collections::BTreeSet<CellSlotId>,
+        inputs: &[CapturedValueInput<'_>],
+        candidate_owned_states: &std::collections::BTreeSet<CellSlotId>,
+    ) -> Result<(), ResidentExecutionError> {
+        let mut publications = std::collections::BTreeMap::new();
+        if candidate_owned_states.is_empty()
+            || (targets.is_empty()
+                && (self.plan.constraints.is_empty()
+                    || self.plan.integrity_mode == ResidentIntegrityMode::Unchecked))
+        {
+            return self.refresh_output_projections_inner(artifact, targets, inputs, &publications);
+        }
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        if artifact.revision() != self.plan.program_revision {
+            return Err(ResidentExecutionError::ArtifactRevisionMismatch {
+                expected: self.plan.program_revision,
+                actual: artifact.revision(),
+            });
+        }
+        let epoch = self.published_epoch();
+        // Validate the complete read view before touching either buffer.
+        for &slot in candidate_owned_states {
+            let invalid = || ResidentExecutionError::InvalidProjectionState { slot };
+            let declaration = artifact
+                .slots()
+                .get(slot.get() as usize)
+                .ok_or_else(invalid)?;
+            let resolved = self
+                .plan
+                .slots
+                .get(slot.get() as usize)
+                .ok_or_else(invalid)?;
+            if declaration.role != SlotRole::State
+                || resolved.storage != ResidentStorageClass::State
+            {
+                return Err(invalid());
+            }
+            let initializer = match declaration.initializer {
+                Some(crate::InitializerReference::Constant(constant)) => *self
+                    .plan
+                    .constant_regions
+                    .get(constant.get() as usize)
+                    .ok_or_else(invalid)?,
+                Some(crate::InitializerReference::Activation(source)) => {
+                    let source = self
+                        .plan
+                        .slots
+                        .get(source.get() as usize)
+                        .ok_or_else(invalid)?;
+                    if source.storage != ResidentStorageClass::Constant {
+                        return Err(invalid());
+                    }
+                    source.region
+                }
+                None => return Err(invalid()),
+            };
+            publications.insert(
+                slot,
+                ProjectionStatePublication {
+                    buffer: self.state.published_buffer(slot, epoch),
+                    epochs: self.state.version(slot).epochs,
+                    initializer,
+                },
+            );
+        }
+        let result = (|| {
+            for (&slot, publication) in &publications {
+                let initial = 1 - publication.buffer;
+                let region = self.state.version(slot).region;
+                self.state.buffers[initial]
+                    .copy_region_from(region, &self.activation, publication.initializer)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                let mut epochs = [None, None];
+                epochs[initial] = Some(epoch);
+                self.state.version_mut(slot).epochs = epochs;
+            }
+            self.refresh_output_projections_inner(artifact, targets, inputs, &publications)
+        })();
+        for (&slot, publication) in &publications {
+            let mut epochs = publication.epochs;
+            // The inactive buffer was scratch for this refresh, not a retained
+            // historical publication. Keep the actual published buffer/tag.
+            epochs[1 - publication.buffer] = None;
+            self.state.version_mut(slot).epochs = epochs;
+        }
+        self.refresh_f64_state_arenas(epoch);
+        result
+    }
+
+    fn refresh_output_projections_inner(
+        &mut self,
+        artifact: &crate::ProgramArtifact,
+        targets: &std::collections::BTreeSet<CellSlotId>,
+        inputs: &[CapturedValueInput<'_>],
+        publications: &std::collections::BTreeMap<CellSlotId, ProjectionStatePublication>,
+    ) -> Result<(), ResidentExecutionError> {
         if targets.is_empty()
             && (self.plan.constraints.is_empty()
                 || self.plan.integrity_mode == ResidentIntegrityMode::Unchecked)
@@ -828,6 +948,12 @@ impl ReactiveInstance {
             .collect::<std::collections::BTreeSet<_>>();
         self.install_available_value_inputs(inputs)?;
         let epoch = self.published_epoch();
+        let published_buffer = |state: &StateArena, slot| {
+            publications.get(&slot).map_or_else(
+                || state.published_buffer(slot, epoch),
+                |publication| publication.buffer,
+            )
+        };
         // A canonical state writer copies its final candidate into the retained
         // cell. During projection refresh that candidate means the published
         // state value: recomputing it would execute the transition a second time.
@@ -886,9 +1012,9 @@ impl ReactiveInstance {
                 let previous_region = self.plan.slots[previous.get() as usize].region;
                 let region = self.plan.slots[state.slot.get() as usize].region;
                 if !rmw_outputs_equal(
-                    &self.state.buffers[self.state.published_buffer(previous, epoch)],
+                    &self.state.buffers[published_buffer(&self.state, previous)],
                     previous_region,
-                    &self.state.buffers[self.state.published_buffer(state.slot, epoch)],
+                    &self.state.buffers[published_buffer(&self.state, state.slot)],
                     region,
                     &self.plan.schemas,
                 ) {
@@ -1034,7 +1160,7 @@ impl ReactiveInstance {
             if write.storage == ResidentStorageClass::Scratch {
                 if let Some(source) = published_candidates.get(&node) {
                     let source_region = self.plan.slots[source.get() as usize].region;
-                    let source_buffer = self.state.published_buffer(*source, epoch);
+                    let source_buffer = published_buffer(&self.state, *source);
                     self.workspace
                         .scratch
                         .copy_region_from(
@@ -1124,13 +1250,16 @@ impl ReactiveInstance {
                     ResidentReadLocation::State {
                         slot: source_slot,
                         region: source_region,
-                    } => self.state.stage_projection_from_state_slot(
-                        target,
-                        target_region,
-                        source_slot,
-                        source_region,
-                        epoch,
-                    ),
+                    } => {
+                        let source_buffer = published_buffer(&self.state, source_slot);
+                        self.state.stage_projection_from_state_buffer(
+                            target,
+                            target_region,
+                            source_buffer,
+                            source_region,
+                            epoch,
+                        )
+                    }
                 }
                 .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
                 refreshed.insert(target);
@@ -5215,16 +5344,15 @@ impl StateArena {
         self.buffers[target_buffer].copy_region_from(target_region, source, source_region)
     }
 
-    fn stage_projection_from_state_slot(
+    fn stage_projection_from_state_buffer(
         &mut self,
         target_slot: CellSlotId,
         target_region: ResidentRegion,
-        source_slot: CellSlotId,
+        source_buffer: usize,
         source_region: ResidentRegion,
         epoch: InstanceEpoch,
     ) -> mech_core::MemoryRuntimeResult<()> {
         let target_buffer = self.candidate_buffer(target_slot, epoch);
-        let source_buffer = self.published_buffer(source_slot, epoch);
         if source_buffer == target_buffer {
             self.buffers[target_buffer].copy_region_within(target_region, source_region)?;
         } else if target_buffer == 0 {
@@ -7119,7 +7247,33 @@ mod tests {
             instance
                 .refresh_output_projections(artifact, &std::collections::BTreeSet::from([target]))
                 .unwrap();
+            let state = artifact
+                .slots()
+                .iter()
+                .find(|slot| slot.role == SlotRole::State)
+                .unwrap()
+                .slot;
+            let state_hash = instance.published_state_hash();
+            assert!(matches!(
+                instance.refresh_replacement_projections(
+                    artifact,
+                    &std::collections::BTreeSet::from([target]),
+                    &[],
+                    &std::collections::BTreeSet::from([state, target]),
+                ),
+                Err(ResidentExecutionError::InvalidProjectionState { slot }) if slot == target
+            ));
+            assert_eq!(instance.published_state_hash(), state_hash);
+            instance
+                .refresh_replacement_projections(
+                    artifact,
+                    &std::collections::BTreeSet::from([target]),
+                    &[],
+                    &std::collections::BTreeSet::from([state]),
+                )
+                .unwrap();
             assert_eq!(instance.published_epoch(), epoch);
+            assert_eq!(instance.published_state_hash(), state_hash);
             assert_eq!(
                 instance
                     .copied_output(0)

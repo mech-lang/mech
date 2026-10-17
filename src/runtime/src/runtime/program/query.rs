@@ -64,20 +64,18 @@ impl MechRuntime {
             .iter()
             .map(|mapping| mapping.target)
             .collect::<std::collections::BTreeSet<_>>();
-        let reset_projections = artifact_slots_depending_on(
-            candidate_artifact,
-            &changed_state_slots(candidate_artifact, changed_state_names),
-        );
+        let candidate_owned_states = candidate_artifact
+            .slots()
+            .iter()
+            .filter(|slot| slot.role == SlotRole::State && !mapped_targets.contains(&slot.slot))
+            .map(|slot| slot.slot)
+            .collect::<std::collections::BTreeSet<_>>();
         let projection_refresh_targets = candidate_artifact
             .outputs()
             .iter()
             .map(|output| output.source)
             .filter(|slot| {
                 !mapped_targets.contains(slot)
-                    // Explicit mutation adopts the candidate's ordered
-                    // initial publication. Replaying a prefix projection from
-                    // its final state would apply that transition twice.
-                    && !reset_projections.contains(slot)
                     && candidate_artifact
                         .slots()
                         .get(slot.get() as usize)
@@ -111,10 +109,15 @@ impl MechRuntime {
         match &mut self.active_program {
             ActiveProgramExecution::ResidentExternal(candidate) => candidate
                 .coordinator
-                .refresh_output_projections(&projection_refresh_targets),
-            ActiveProgramExecution::ResidentPure(candidate) => candidate
-                .instance
-                .refresh_output_projections(&candidate_artifact, &projection_refresh_targets),
+                .refresh_output_projections(&projection_refresh_targets, &candidate_owned_states),
+            ActiveProgramExecution::ResidentPure(candidate) => {
+                candidate.instance.refresh_replacement_projections(
+                    &candidate_artifact,
+                    &projection_refresh_targets,
+                    &[],
+                    &candidate_owned_states,
+                )
+            }
             ActiveProgramExecution::None => {
                 unreachable!("candidate artifact was checked above")
             }

@@ -494,6 +494,11 @@ fn rejected_artifact_record(
             "ResidentOutputMaterialization",
             "resident output materialization failed",
         ),
+        ArtifactResidentExecutionError::InvalidProjectionState { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentProjectionState",
+            "resident replacement projection state was invalid",
+        ),
         ArtifactResidentExecutionError::ArtifactRevisionMismatch { .. } => (
             TurnFailurePhase::Execution,
             "ResidentArtifactRevisionMismatch",
