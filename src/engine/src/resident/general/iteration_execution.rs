@@ -95,7 +95,7 @@ impl ReactiveInstance {
                     let mut meter = budget::ResidentBudgetMeter::default();
                     let retained =
                         resident_frame_value_footprint(old, &self.plan.schemas, &mut meter)
-                            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                            .map_err(fail)?;
                     admit(|| {
                         Ok(budget::resident_cost! {
                             compute_work: meter.estimate().compute_work()
