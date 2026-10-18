@@ -452,6 +452,50 @@
     "benchmark_program_algorithm_changed": false,
     "not_established": "These are library-kernel transport tests, not complete NativeHost call-plan or generated-program execution. Native mixed control/comprehensions/FSM/resources, packed/streaming full125M support, linked lifecycle/timing, optimization/configuration and complete green CI remain required."
   },
+  "native_shared_library_work_qualification": {
+    "as_of_utc": "2026-10-18T11:55:57Z",
+    "status": "PASS_SHARED_NATIVE_LIBRARY_ACCOUNT_NOT_GENERATED_LIBRARY_CALLS",
+    "qualified_source_commit": "3b64240f1321ff8ab6d24b3a1cc51fe5b7698d6e",
+    "tested_base": "67978915ed1bee74f1a4ffdc1fef670738658c1d",
+    "changes": [
+      "Maintained leaf observations and direct native scalar debits can use one shared, cumulative compute/comparison account. A nested caller cannot replace the active account, even with equal limits. Clones and repeated scopes retain spent work; restrictions only lower limits and failures are atomic.",
+      "The existing native scalar meter promotes lazily, transferring all already-spent work into the same account before any mixed library use. Scalar-only ABI storage and charges remain unchanged. Native metadata is admitted before allocation on the caller's finite memory account.",
+      "A successful value-arena construction or work promotion binds the invocation's memory identity. Both creation orders reject foreign accounts before allocation without changing existing values or renewing work. Failed construction retains spent work and does not prevent the original supported recovery path.",
+      "Resident whole-turn compute/comparison defaults remain strict even when a native caller has a larger explicit account. No resident cap, ordinary workload algorithm or scalar work-policy identity is changed."
+    ],
+    "full_qualification_before_final_gpu_memory_guard": {
+      "driver": "tmp/pr-stack-evidence/qualify-native-shared-work-v250.zsh",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v250-native-shared-work.log",
+      "log_sha256": "6ab496f90b22d2dbebaa98303a441e3884bcebc882f57e9e3e746b382d9b5577",
+      "tracked_diff_sha256": "6f230d5dd260a472200464180479a3724869c3c0d1c733be40d801133da66216",
+      "exit_code": 0,
+      "engine_unit_methods": 754,
+      "integration_methods": 23,
+      "private_native_methods": 22,
+      "native_execution_methods": 39,
+      "ci_contract_methods": 77,
+      "checks": "Formatting, resident-only and native-runtime-only compilation, unsafe-boundary audit and warning policy all pass. Four engine budget methods and one actual maintained-leaf method cover cumulative work, nested account refusal, strict resident defaults, one metadata owner and unchanged output on denial."
+    },
+    "final_gpu_guard_qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-native-shared-memory-v251.zsh",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v251-native-shared-memory.log",
+      "log_sha256": "b4f85cde58665ce527c389772e08ea463a3685055a3e3512507cc397ac424aa4",
+      "tracked_diff_sha256": "ca084d58aadb21889a01e046a0934f50d052e7ed039cb0922ab1eb2961cfba3f",
+      "exit_code": 0,
+      "private_native_methods": 24,
+      "native_execution_methods": 39,
+      "ci_contract_methods": 77,
+      "checks": "Formatting, native-runtime-only compilation, unsafe-boundary audit and warning policy all pass. The two additional real-arena tests cover both creation orders, stable live handles/counters, foreign-account refusal before work/allocation and complete account release. Engine source is unchanged from the passing754-unit/23-integration v250 gate."
+    },
+    "engine_source_sha256": {
+      "src/engine/src/resident/budget.rs": "464dd8dd690b88d1027293bd476192706a2823a057618dbd54c9d593fbfefeb3",
+      "src/engine/src/native_artifact/mod.rs": "bfdcce7b7b77d8a9813b1b0fdfa5a738d3caf84f16c2b05bc0141330819c8c43",
+      "src/engine/src/resident/canonical_text_tests.rs": "ca153d4f2d40e65b37d70e1cd2e05e8c35da23eaa34fc4b0d56397f6033229af"
+    },
+    "preceding_failures": "v248 failed compilation on a missing MemoryBudgetDimension import; v249 failed two test assertions that incorrectly required PartialEq on canonical Value/ValueData. Both are corrected, their failed logs remain failures, and the final source passes the independently pinned v250/v251 gates.",
+    "ignored_linked_qualifier": "The existing explicit linked iteration process qualifier remains ignored in these default native test invocations. These runs do not replace its historical pinned actual-linked receipt.",
+    "not_established": "Complete current-visit NativeHost library invocation, generated mixed-value control/comprehensions/FSM/resources, full125M packed/streaming execution, new linked lifecycle, benchmark timing, optimized/configurable whole-program AOT or complete green CI/fresh review. The separate call-binding worktree is not included in this source commit."
+  },
   "remaining": [
     "Extend beyond the qualified100/400-base original/decoded library and real release CLI/resource cases to realistic full inputs, retaining finite admission, atomicity and recovery.",
     "Reduce actual general collection/histogram work; provide canonical packed and streaming operations for realistic full inputs.",
