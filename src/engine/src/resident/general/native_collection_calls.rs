@@ -14,6 +14,10 @@ use mech_core::{
     SchemaId, TargetMemoryProfile, physical_storage_descriptor, plan_call_memory,
 };
 
+#[path = "native_collection_invocation.rs"]
+mod invocation;
+pub use invocation::NativeCollectionInvocationError;
+
 /// A constructor-private binding of one actual artifact call at its current
 /// shapes. The selected factory, canonical contracts, actual handle
 /// storage and finite native policy are retained together. Runtime invocation
@@ -26,6 +30,8 @@ pub struct NativeCollectionCall {
     memory: CallMemoryPlan,
     inputs: Box<[ResidentPortLayout]>,
     output: ResidentPortLayout,
+    schemas: std::sync::Arc<mech_core::SchemaTable>,
+    invocation_metadata_bytes: u64,
 }
 impl NativeCollectionCall {
     pub fn template(&self) -> &NativeCollectionOperationTemplate {
@@ -193,11 +199,19 @@ pub fn bind_native_collection_operation(
         error: super::ResidentActivationError::KernelBind { node, error },
     })?;
     let kernel = crate::resident::native_semantics::bind_call(kernel, &request, call);
+    let invocation_metadata_bytes =
+        invocation::metadata_envelope(artifact.schemas(), &memory).ok_or_else(|| invalid(node))?;
+    let schemas = kernel
+        .shared_snapshot_schemas()
+        .cloned()
+        .unwrap_or_else(|| std::sync::Arc::new(artifact.schemas().clone()));
     Ok(NativeCollectionCall {
         template,
         kernel,
         memory,
         inputs,
         output,
+        schemas,
+        invocation_metadata_bytes,
     })
 }

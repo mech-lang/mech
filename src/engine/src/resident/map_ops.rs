@@ -246,6 +246,7 @@ fn execute(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
+    let _work_scope = budget::ControlWorkScopeGuard::enter();
     let plan = kernel
         .retained_state::<Plan>()
         .ok_or(ResidentKernelError::InvalidInput)?;

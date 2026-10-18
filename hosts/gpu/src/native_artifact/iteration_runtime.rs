@@ -6,7 +6,7 @@ use super::abi::{
 };
 use super::iteration_abi::{NativeIterationDescriptor, Progress, STATUS_REJECT, VERSION};
 use super::memory::{NativeWordStorage, transport_bytes};
-use super::{NativeExecutionError, NativeExecutionLimits};
+use super::{NativeExecutionError, NativeExecutionLimits, NativeExecutionPhase, NativeWorkMeter};
 use mech_core::ManagedMemoryBudget;
 use mech_engine::native_artifact::{NativeMatchOrigin, NativeScalarKind, NativeScalarValue};
 use std::ffi::c_void;
@@ -58,26 +58,27 @@ fn mul(a: u64, b: u64) -> Result<u64, NativeIterationExecutionError> {
         .ok_or_else(|| invalid("iteration count/work overflow"))
 }
 fn charge(
-    current: u64,
-    work: u64,
-    limit: u64,
+    meter: &mut NativeWorkMeter,
+    amount: u64,
     origin: Option<NativeMatchOrigin>,
-) -> Result<u64, NativeIterationExecutionError> {
-    let required = current
-        .checked_add(work)
-        .ok_or(NativeIterationExecutionError::Work {
-            origin,
-            required: u64::MAX,
-            limit,
-        })?;
-    if required > limit {
-        return Err(NativeIterationExecutionError::Work {
-            origin,
-            required,
-            limit,
-        });
-    }
-    Ok(required)
+) -> Result<(), NativeIterationExecutionError> {
+    meter
+        .charge(
+            origin.map_or(NativeExecutionPhase::Setup, |origin| {
+                NativeExecutionPhase::Node(origin.node())
+            }),
+            amount,
+        )
+        .map_err(|error| match error {
+            NativeExecutionError::WorkLimit {
+                required, limit, ..
+            } => NativeIterationExecutionError::Work {
+                origin,
+                required,
+                limit,
+            },
+            error => error.into(),
+        })
 }
 struct Context<'a> {
     descriptor: &'a NativeIterationDescriptor,
@@ -87,8 +88,7 @@ struct Context<'a> {
     current: Option<u32>,
     previous: Option<u32>,
     completed: bool,
-    work: u64,
-    limit: u64,
+    work: NativeWorkMeter,
     visits: u64,
     error: Option<NativeIterationExecutionError>,
 }
@@ -122,7 +122,7 @@ impl Context<'_> {
             .ok_or_else(|| invalid("iteration visit outside descriptor"))?;
         // Charge before reading/changing per-loop metadata or inspecting any
         // completion progress words. The generated block is not entered yet.
-        self.work = charge(self.work, site.work, self.limit, Some(site.origin))?;
+        charge(&mut self.work, site.work, Some(site.origin))?;
         match site.progress {
             Progress::Initialize(iteration) => {
                 let data = &self.descriptor.iterations[iteration as usize];
@@ -252,7 +252,8 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
             )?,
         )?,
     )?;
-    let setup = charge(0, setup, limits.max_work, None)?;
+    let mut work = NativeWorkMeter::new(limits.max_work)?;
+    charge(&mut work, setup, None)?;
     // Actual shared memory denial precedes input type scans as well as copies.
     let mut storage = NativeWordStorage::new(words, limits.max_transport_bytes, budget)?;
     for (index, (value, ty)) in inputs.iter().zip(&descriptor.inputs).enumerate() {
@@ -290,8 +291,7 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
         current: None,
         previous: None,
         completed: false,
-        work: setup,
-        limit: limits.max_work,
+        work,
         visits: 0,
         error: None,
     };
@@ -380,7 +380,7 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
         };
     }
     Ok(NativeIterationExecutionReport {
-        work: context.work,
+        work: context.work.used(),
         transport_bytes: bytes,
         visits: context.visits,
     })
@@ -427,8 +427,7 @@ mod tests {
                 current: None,
                 previous: None,
                 completed: false,
-                work: 0,
-                limit: 100_000,
+                work: NativeWorkMeter::new(100_000).unwrap(),
                 visits: 0,
                 error: None,
             };
@@ -440,12 +439,15 @@ mod tests {
             } else {
                 iteration.exit()
             };
-            let before = (context.work, context.visits, context.progress[0]);
+            let before = (context.work.used(), context.visits, context.progress[0]);
             assert!(matches!(
                 context.visit(denied as u64),
                 Err(NativeIterationExecutionError::Visit { .. })
             ));
-            assert_eq!((context.work, context.visits, context.progress[0]), before);
+            assert_eq!(
+                (context.work.used(), context.visits, context.progress[0]),
+                before
+            );
             // Identity's body has one no-op block. No hidden execution or
             // inferred effect is used to move this private progress counter.
             for _ in 0..count {

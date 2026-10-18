@@ -240,6 +240,7 @@ fn execute_lines(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
+    let _work_scope = budget::ControlWorkScopeGuard::enter();
     let text = kernel
         .retained_state::<ScalarTextPlan>()
         .ok_or(ResidentKernelError::InvalidInput)?
@@ -410,6 +411,7 @@ fn execute_join(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
+    let _work_scope = budget::ControlWorkScopeGuard::enter();
     let strings = texts(
         kernel,
         inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?,

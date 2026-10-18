@@ -17,6 +17,57 @@ use mech_syntax::document::{
     AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
     parse_canonical_document,
 };
+#[test]
+fn nested_match_entry_cannot_replace_an_active_library_account() {
+    use mech_gpu::native_artifact::{NativeExecutionPhase, NativeWorkMeter};
+    let (artifacts, last) =
+        artifacts("(flag<bool>? | true => value<u64> + 1u64 | false => 0u64)\n");
+    for artifact in artifacts {
+        let plan = lower_scalar_match_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let jit = JitMatchArtifact::compile(&plan).unwrap();
+        let args = inputs(
+            &artifact,
+            &[
+                ("flag", NativeScalarValue::Bool(true)),
+                ("value", NativeScalarValue::U64(2)),
+            ],
+        );
+        let memory = ManagedMemoryBudget::new(1_000_000);
+        let foreign = ManagedMemoryBudget::new(1_000_000);
+        let mut caller = NativeWorkMeter::new(10_000).unwrap();
+        let library = caller
+            .shared_library_budget(NativeExecutionPhase::Setup, 100, &memory)
+            .unwrap();
+        let before = memory.used_bytes();
+        let sentinel = vec![NativeScalarValue::U64(77); plan.outputs().len()];
+        let mut output = sentinel.clone();
+        library.with_scope(|| {
+            for supplied in [None, Some(&memory), Some(&foreign), Some(&foreign)] {
+                assert!(matches!(
+                    jit.evaluate_into(&args, &mut output, NativeExecutionLimits::default(), supplied),
+                    Err(NativeMatchExecutionError::Base(NativeExecutionError::Descriptor {
+                        reason: "independent native work ledger cannot replace an active invocation"
+                    }))
+                ));
+                assert_eq!(output, sentinel);
+                assert_eq!(library.used(), (64, 0));
+                assert_eq!(memory.used_bytes(), before);
+                assert_eq!(foreign.used_bytes(), 0);
+            }
+        }).unwrap();
+        jit.evaluate_into(
+            &args,
+            &mut output,
+            NativeExecutionLimits::default(),
+            Some(&memory),
+        )
+        .unwrap();
+        assert_eq!(output[last], NativeScalarValue::U64(3));
+        assert_eq!(memory.used_bytes(), before);
+        assert_eq!(library.used(), (64, 0));
+    }
+}
+
 fn compile_mode(source: &str, interactive: bool) -> (ProgramArtifact, usize) {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x4d415443), Revision(1), source).unwrap(),

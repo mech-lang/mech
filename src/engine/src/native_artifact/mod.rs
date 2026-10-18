@@ -32,5 +32,5 @@ pub use crate::resident::general::native_collection_templates::{
 
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 pub use crate::resident::general::native_collection_calls::{
-    NativeCollectionCall, bind_native_collection_operation,
+    NativeCollectionCall, NativeCollectionInvocationError, bind_native_collection_operation,
 };

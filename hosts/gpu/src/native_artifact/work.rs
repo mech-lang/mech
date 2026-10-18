@@ -126,6 +126,61 @@ mod tests {
     }
 
     #[test]
+    fn failed_repeated_promotion_preserves_existing_comparison_allowance() {
+        let memory = ManagedMemoryBudget::new(4096);
+        let mut work = NativeWorkMeter::new(100).unwrap();
+        let library = work
+            .shared_library_budget(NativeExecutionPhase::Setup, 10, &memory)
+            .unwrap();
+        work.charge(NativeExecutionPhase::Setup, 30).unwrap();
+        let backing = memory.used_bytes();
+        assert!(matches!(
+            work.shared_library_budget(NativeExecutionPhase::Setup, 5, &memory),
+            Err(NativeExecutionError::WorkLimit {
+                required: 102,
+                limit: 100,
+                ..
+            })
+        ));
+        assert_eq!(library.used(), (94, 0));
+        assert_eq!(memory.used_bytes(), backing);
+        library.charge(0, 10).unwrap();
+        work.charge(NativeExecutionPhase::Completion, 6).unwrap();
+        assert_eq!(library.used(), (100, 10));
+    }
+
+    #[test]
+    fn active_library_account_rejects_new_and_preexisting_independent_inline_meters() {
+        let memory = ManagedMemoryBudget::new(4096);
+        let mut caller = NativeWorkMeter::new(1000).unwrap();
+        let mut independent = NativeWorkMeter::new(1000).unwrap();
+        let library = caller
+            .shared_library_budget(NativeExecutionPhase::Setup, 10, &memory)
+            .unwrap();
+        library
+            .with_scope(|| {
+                assert!(matches!(
+                    NativeWorkMeter::new(1000),
+                    Err(NativeExecutionError::Descriptor { .. })
+                ));
+                assert!(matches!(
+                    independent.charge(NativeExecutionPhase::Setup, 1),
+                    Err(NativeExecutionError::LibraryWork {
+                        error: ResidentKernelError::InvalidInput,
+                        ..
+                    })
+                ));
+                assert_eq!(independent.used(), 0);
+                caller.charge(NativeExecutionPhase::Setup, 1).unwrap();
+            })
+            .unwrap();
+        assert_eq!(library.used(), (65, 0));
+        independent.charge(NativeExecutionPhase::Setup, 1).unwrap();
+        assert_eq!(independent.used(), 1);
+        assert!(NativeWorkMeter::new(1000).is_ok());
+    }
+
+    #[test]
     fn promotion_denials_precede_allocation_and_never_refund_prior_work() {
         let memory = ManagedMemoryBudget::new(4096);
         let mut denied = NativeWorkMeter::new(63).unwrap();
@@ -182,6 +237,11 @@ mod tests {
 }
 impl NativeWorkMeter {
     pub fn new(limit: u64) -> Result<Self, NativeExecutionError> {
+        if NativeLibraryWorkBudget::has_active_scope() {
+            return Err(NativeExecutionError::Descriptor {
+                reason: "independent native work ledger cannot replace an active invocation",
+            });
+        }
         let identity = NEXT_WORK_LEDGER
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
             .map_err(|_| NativeExecutionError::Descriptor {
@@ -251,9 +311,8 @@ impl NativeWorkMeter {
                 });
             }
             budget
-                .restrict(self.limit, comparison_limit)
+                .restrict_and_charge(self.limit, comparison_limit, 8, 0)
                 .map_err(|error| Self::library_error(phase, error))?;
-            self.charge(phase, 8)?;
             return Ok(self.library.as_ref().unwrap().clone());
         }
         // Charge the fixed-size metadata setup before reservation/allocation.
@@ -291,6 +350,12 @@ impl NativeWorkMeter {
         phase: NativeExecutionPhase,
         amount: u64,
     ) -> Result<(), NativeExecutionError> {
+        if self.library.is_none() && NativeLibraryWorkBudget::has_active_scope() {
+            return Err(Self::library_error(
+                phase,
+                ResidentKernelError::InvalidInput,
+            ));
+        }
         let required = self
             .used()
             .checked_add(amount)

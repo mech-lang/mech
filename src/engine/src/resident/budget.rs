@@ -268,6 +268,12 @@ impl NativeLibraryWorkBudget {
             .budget()
     }
 
+    /// An independent native meter must not bypass an active invocation.
+    /// Callers must reuse that invocation's account or reject nested entry.
+    pub fn has_active_scope() -> bool {
+        CONTROL_WORK.with(|active| active.borrow().is_some())
+    }
+
     /// Generated scalar/control work and maintained leaf work debit this same
     /// account. This method never replaces the current invocation's account.
     pub fn charge(&self, compute: u64, comparison: u64) -> Result<(), ResidentKernelError> {
@@ -291,18 +297,48 @@ impl NativeLibraryWorkBudget {
         compute_limit: u64,
         comparison_limit: u64,
     ) -> Result<(), ResidentKernelError> {
+        self.restrict_and_charge(compute_limit, comparison_limit, 0, 0)
+    }
+
+    /// Commit a restriction and its setup debit together. A denial must not
+    /// narrow the allowance of handles the caller already holds.
+    pub fn restrict_and_charge(
+        &self,
+        compute_limit: u64,
+        comparison_limit: u64,
+        compute: u64,
+        comparison: u64,
+    ) -> Result<(), ResidentKernelError> {
+        CONTROL_WORK.with(|active| {
+            if active
+                .borrow()
+                .as_ref()
+                .is_some_and(|current| !std::rc::Rc::ptr_eq(current, &self.account))
+            {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            Ok(())
+        })?;
         let mut state = self.account.borrow_mut();
         if compute_limit > state.compute_limit || comparison_limit > state.comparison_limit {
             return Err(ResidentKernelError::InvalidInput);
         }
         for (required, limit, dimension) in [
             (
-                state.used.compute,
+                state
+                    .used
+                    .compute
+                    .checked_add(compute)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
                 compute_limit,
                 MemoryBudgetDimension::ComputeWork,
             ),
             (
-                state.used.comparison,
+                state
+                    .used
+                    .comparison
+                    .checked_add(comparison)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
                 comparison_limit,
                 MemoryBudgetDimension::ComparisonWork,
             ),
@@ -316,6 +352,9 @@ impl NativeLibraryWorkBudget {
                 });
             }
         }
+        // This also applies the enclosing call/Resident caps before either
+        // the used counters or the account's limits can change.
+        charge_control_account(&mut state, compute, comparison)?;
         state.compute_limit = compute_limit;
         state.comparison_limit = comparison_limit;
         Ok(())
@@ -343,6 +382,37 @@ impl NativeLibraryWorkBudget {
         let _guard = Guard(previous);
         let _scope = ControlWorkScopeGuard::enter();
         Ok(execute())
+    }
+
+    /// A call may impose a tighter relative allowance on this same account.
+    /// Leaving a call restores its enclosing cap, never spent work. Nested
+    /// scopes cannot exceed either the enclosing call or invocation allowance.
+    pub fn with_call_limits<T>(
+        &self,
+        compute: u64,
+        comparison: u64,
+        execute: impl FnOnce() -> T,
+    ) -> Result<T, ResidentKernelError> {
+        self.with_scope(|| {
+            struct Guard(Option<(u64, u64)>);
+            impl Drop for Guard {
+                fn drop(&mut self) {
+                    CONTROL_ROOT_LIMITS.with(|active| active.set(self.0));
+                }
+            }
+            let used = self.used();
+            let previous = CONTROL_ROOT_LIMITS.with(|active| {
+                let previous = active.get();
+                let enclosing = previous.unwrap_or((u64::MAX, u64::MAX));
+                active.set(Some((
+                    used.0.saturating_add(compute).min(enclosing.0),
+                    used.1.saturating_add(comparison).min(enclosing.1),
+                )));
+                previous
+            });
+            let _guard = Guard(previous);
+            execute()
+        })
     }
 }
 
@@ -441,10 +511,10 @@ pub(crate) fn with_control_work_budget<T>(execute: impl FnOnce() -> T) -> T {
     execute()
 }
 
-struct ControlWorkScopeGuard(Option<ControlWorkScope>);
+pub(super) struct ControlWorkScopeGuard(Option<ControlWorkScope>);
 
 impl ControlWorkScopeGuard {
-    fn enter() -> Self {
+    pub(super) fn enter() -> Self {
         let next = CONTROL_WORK
             .with(|active| active.borrow().clone())
             .map(|total| ControlWorkScope {
@@ -503,7 +573,7 @@ fn charge_control_account(
     Ok(())
 }
 
-fn observe_control_work(demand: ResourceDemand) -> Result<(), ResidentKernelError> {
+pub(crate) fn observe_control_work(demand: ResourceDemand) -> Result<(), ResidentKernelError> {
     CONTROL_WORK_SCOPE.with(|active| {
         let mut active = active.borrow_mut();
         let Some(scope) = active.as_mut() else {
@@ -555,6 +625,39 @@ mod native_library_work_tests {
             Err(ResidentKernelError::InvalidInput)
         );
         assert_eq!(fresh.used(), (0, 0));
+    }
+
+    #[test]
+    fn native_per_call_caps_share_root_work_and_never_refill_the_invocation() {
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let budget = NativeLibraryWorkBudget::new(10, 4, &memory).unwrap();
+        budget.charge(2, 0).unwrap();
+        budget
+            .with_call_limits(3, 1, || {
+                budget.charge(2, 1).unwrap();
+                assert!(budget.charge(2, 0).is_err());
+                budget
+                    .with_call_limits(9, 9, || {
+                        assert!(budget.charge(2, 0).is_err());
+                        budget.charge(1, 0).unwrap();
+                    })
+                    .unwrap();
+            })
+            .unwrap();
+        assert_eq!(budget.used(), (5, 1));
+        budget
+            .with_call_limits(3, 1, || budget.charge(3, 1))
+            .unwrap()
+            .unwrap();
+        assert_eq!(budget.used(), (8, 2));
+        budget
+            .with_call_limits(3, 1, || {
+                assert!(budget.charge(3, 0).is_err());
+                budget.charge(2, 1).unwrap();
+            })
+            .unwrap();
+        assert_eq!(budget.used(), (10, 3));
+        assert!(budget.charge(1, 0).is_err());
     }
 
     #[test]
@@ -644,6 +747,26 @@ mod native_library_work_tests {
     }
 
     #[test]
+    fn native_restriction_and_setup_debit_are_atomic_under_root_and_call_caps() {
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let budget = NativeLibraryWorkBudget::new(10, 4, &memory).unwrap();
+        budget.charge(9, 0).unwrap();
+        assert!(budget.restrict_and_charge(10, 2, 2, 0).is_err());
+        assert_eq!(budget.used(), (9, 0));
+        budget
+            .with_call_limits(0, 4, || {
+                assert!(budget.restrict_and_charge(10, 1, 1, 0).is_err());
+            })
+            .unwrap();
+        assert_eq!(budget.used(), (9, 0));
+        budget.charge(0, 4).unwrap();
+        assert!(budget.restrict_and_charge(10, 3, 1, 0).is_err());
+        assert_eq!(budget.used(), (9, 4));
+        budget.restrict_and_charge(10, 4, 1, 0).unwrap();
+        assert_eq!(budget.used(), (10, 4));
+    }
+
+    #[test]
     fn native_library_metadata_has_one_account_owner_and_resident_defaults_stay_unchanged() {
         let empty = mech_core::ManagedMemoryBudget::new(0);
         assert!(NativeLibraryWorkBudget::new(1, 1, &empty).is_err());
@@ -721,6 +844,31 @@ pub(crate) fn with_payload_admission<T>(
 fn admit_payload_plan(plan: &TurnMemoryPlan) -> Result<(), ResidentKernelError> {
     ACTIVE_PAYLOAD_ADMISSION.with(|active| {
         if let Some(admission) = active.borrow().as_ref() {
+            if plan
+                .call
+                .as_ref()
+                .is_some_and(|call| call.target.kind == mech_core::MemoryTargetKind::NativeHost)
+            {
+                let mut demand = plan.demand;
+                demand.turn_peak_bytes = demand
+                    .turn_peak_bytes
+                    .checked_add(admission.auxiliary_bytes())
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                if let Some(violation) = mech_core::evaluate_call_memory_budget(
+                    mech_core::MemoryObjectOwner::NodeOutput {
+                        node: plan.node,
+                        port: 0,
+                    },
+                    demand,
+                    plan.output_bytes,
+                    plan.storage_buffer_bytes,
+                    plan.budget_limits,
+                )
+                .first()
+                {
+                    return Err(resource_budget_error(violation));
+                }
+            }
             admission
                 .admit_plan(plan)
                 .map_err(|_| ResidentKernelError::InvalidShape)?;

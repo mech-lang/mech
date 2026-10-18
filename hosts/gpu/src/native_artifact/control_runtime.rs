@@ -5,7 +5,7 @@ use super::abi::{
 };
 use super::control_abi::{NativeMatchDescriptor, STATUS_REJECT, VERSION};
 use super::memory::{NativeWordStorage, transport_bytes};
-use super::{NativeExecutionError, NativeExecutionLimits};
+use super::{NativeExecutionError, NativeExecutionLimits, NativeExecutionPhase, NativeWorkMeter};
 use mech_core::ManagedMemoryBudget;
 use mech_engine::native_artifact::{NativeMatchOrigin, NativeScalarKind, NativeScalarValue};
 use std::ffi::c_void;
@@ -62,8 +62,7 @@ struct Context<'a> {
     descriptor: &'a NativeMatchDescriptor,
     previous: Option<u32>,
     completed: bool,
-    work: u64,
-    limit: u64,
+    work: NativeWorkMeter,
     visits: u64,
     error: Option<NativeMatchExecutionError>,
 }
@@ -73,23 +72,23 @@ impl Context<'_> {
         origin: Option<NativeMatchOrigin>,
         work: u64,
     ) -> Result<(), NativeMatchExecutionError> {
-        let required = self
-            .work
-            .checked_add(work)
-            .ok_or(NativeMatchExecutionError::Work {
-                origin,
-                required: u64::MAX,
-                limit: self.limit,
-            })?;
-        if required > self.limit {
-            return Err(NativeMatchExecutionError::Work {
-                origin,
-                required,
-                limit: self.limit,
-            });
-        }
-        self.work = required;
-        Ok(())
+        self.work
+            .charge(
+                origin.map_or(NativeExecutionPhase::Setup, |origin| {
+                    NativeExecutionPhase::Node(origin.node())
+                }),
+                work,
+            )
+            .map_err(|error| match error {
+                NativeExecutionError::WorkLimit {
+                    required, limit, ..
+                } => NativeMatchExecutionError::Work {
+                    origin,
+                    required,
+                    limit,
+                },
+                error => error.into(),
+            })
     }
     fn visit(&mut self, raw: u64) -> Result<(), NativeMatchExecutionError> {
         let id = u32::try_from(raw).ok();
@@ -190,8 +189,7 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
         descriptor,
         previous: None,
         completed: false,
-        work: 0,
-        limit: limits.max_work,
+        work: NativeWorkMeter::new(limits.max_work)?,
         visits: 0,
         error: None,
     };
@@ -319,7 +317,7 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
         };
     }
     Ok(NativeMatchExecutionReport {
-        work: context.work,
+        work: context.work.used(),
         transport_bytes: bytes,
         visits: context.visits,
     })
@@ -406,18 +404,17 @@ mod tests {
             descriptor: &descriptor,
             previous: None,
             completed: false,
-            work: 0,
-            limit: u64::MAX,
+            work: NativeWorkMeter::new(u64::MAX).unwrap(),
             visits: 0,
             error: None,
         };
         context.visit(descriptor.entry as u64).unwrap();
-        let before = context.work;
+        let before = context.work.used();
         assert!(matches!(
             context.visit(descriptor.entry as u64),
             Err(NativeMatchExecutionError::Visit { .. })
         ));
-        assert_eq!(context.work, before);
+        assert_eq!(context.work.used(), before);
         assert_eq!(context.visits, 1);
     }
     #[test]

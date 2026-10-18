@@ -483,6 +483,7 @@ fn execute_parse_u64(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
+    let _work_scope = super::budget::ControlWorkScopeGuard::enter();
     let source = &plan(kernel)?.source;
     let text = source_text(
         source,
@@ -502,6 +503,7 @@ fn execute_length(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
+    let _work_scope = super::budget::ControlWorkScopeGuard::enter();
     let source = &plan(kernel)?.source;
     let input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
     let (value, work) = if source.body == SchemaBody::String {
@@ -580,6 +582,7 @@ fn execute_format(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
+    let _work_scope = super::budget::ControlWorkScopeGuard::enter();
     let plan = plan(kernel)?;
     let input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
     let dimensions = plan.source.geometry(input)?;

@@ -170,6 +170,10 @@ pub(crate) struct ResidentPayloadAdmission {
 }
 
 impl ResidentPayloadAdmission {
+    pub(crate) fn auxiliary_bytes(&self) -> u64 {
+        self.auxiliary.get()
+    }
+
     pub(crate) fn admit_plan(&self, plan: &TurnMemoryPlan) -> MemoryRuntimeResult<()> {
         let payload = plan
             .call

@@ -296,6 +296,52 @@ fn all_seven_maintained_collection_leaves_compose_with_canonical_string_transpor
     assert_eq!(string(&formatted), "18446744073709551615");
 }
 
+#[cfg(feature = "native-artifact")]
+#[test]
+fn all_seven_leaf_entries_charge_each_call_inside_one_shared_scope() {
+    fn twice(kernel: &BoundResidentKernel, inputs: &[&Value]) -> Value {
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let budget =
+            super::budget::NativeLibraryWorkBudget::new(1_000_000, 65_536, &memory).unwrap();
+        let mut first = None;
+        let mut second = None;
+        budget
+            .with_scope(|| {
+                run(kernel, inputs, &mut first).unwrap();
+                let once = budget.used();
+                assert!(once.0 > 0);
+                // Independent invocations, not refinements of the first call.
+                run(kernel, inputs, &mut second).unwrap();
+                assert_eq!(budget.used(), (once.0 * 2, once.1 * 2));
+                let spent = budget.used();
+                budget.restrict(spent.0, spent.1).unwrap();
+                let mut denied = None;
+                assert!(run(kernel, inputs, &mut denied).is_err());
+                assert!(denied.is_none());
+                assert_eq!(budget.used(), spent);
+            })
+            .unwrap();
+        first.unwrap()
+    }
+    let f = Fixture::new();
+    let text = f.value(f.text, ValueDataDraft::String("one\ntwo\none".into()));
+    let separator = f.value(f.text, ValueDataDraft::String(",".into()));
+    let precision = f.value(f.integer, ValueDataDraft::U64(0));
+    let words = twice(&f.bind("text/lines", &[f.text], f.words), &[&text]);
+    let counts = twice(&f.bind("map/histogram", &[f.words], f.counts), &[&words]);
+    twice(&f.bind("map/keys", &[f.counts], f.keys), &[&counts]);
+    twice(&f.bind("map/values", &[f.counts], f.values), &[&counts]);
+    let joined = twice(
+        &f.bind("text/join", &[f.words, f.text], f.text),
+        &[&words, &separator],
+    );
+    let length = twice(&f.bind("sequence/length", &[f.text], f.integer), &[&joined]);
+    twice(
+        &f.bind("number/format", &[f.integer, f.integer], f.text),
+        &[&length, &precision],
+    );
+}
+
 #[test]
 fn canonical_string_inputs_reject_wrong_types_and_dense_substitution_before_publication() {
     let f = Fixture::new();
