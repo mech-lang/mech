@@ -102,6 +102,22 @@ impl NativeProgramObject {
     pub fn identity(&self) -> &NativeProgramObjectIdentity {
         &self.identity
     }
+    pub fn metadata(&self) -> serde_json::Value {
+        serde_json::json!({
+            "schema": "mech.canonical-managed-program-object.v1",
+            "abi_version": VERSION,
+            "entry_symbol": ENTRY,
+            "work_policy_version": super::program_identity::NATIVE_PROGRAM_WORK_POLICY_VERSION,
+            "typed_ir_sha256": super::identity::hex(self.descriptor.typed_ir_sha256()),
+            "identity_symbol": self.identity.symbol(),
+            "target_tag": super::identity::host_target_tag(),
+            "program_revision": super::identity::hex(self.descriptor.plan().program_revision().as_bytes()),
+            "stack_bytes": self.descriptor.stack_bytes(),
+            "code_bytes": self.descriptor.code_bytes(),
+            "object_bytes": self.bytes.len(),
+            "linked": false, "executed": false, "timing_samples": 0,
+        })
+    }
 }
 pub fn emit_program_object(
     artifact: &ProgramArtifact,
