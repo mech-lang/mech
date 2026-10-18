@@ -80,9 +80,20 @@ fn inputs(
                 .unwrap_or_else(|| panic!("missing {name}"))
                 .1
                 .clone();
+            let shape_values = match &data {
+                ValueDataDraft::Matrix(values) => mech_core::shape_for_resolved_extents(
+                    artifact.schemas().get(input.schema).unwrap(),
+                    &[1, values.len() as u64],
+                )
+                .unwrap()
+                .parameter_values()
+                .to_vec()
+                .into_boxed_slice(),
+                _ => Box::new([]),
+            };
             let value = ValueDraft {
                 schema: input.schema,
-                shape_values: Box::new([]),
+                shape_values,
                 data,
             }
             .finalize(&SnapshotValidationContext::new(artifact.schemas()))
@@ -164,6 +175,31 @@ fn generated_root_calls_execute_all_seven_families_and_scalar_add() {
         ROOT,
         &[("input", ValueDataDraft::String("a\nbb\na".into()))],
     );
+}
+
+#[test]
+fn generated_dynamic_matrix_format_uses_live_shape_in_root_and_match_calls() {
+    for columns in [3, 0, 1] {
+        let values = ValueDataDraft::Matrix(
+            (1..=columns)
+                .map(ValueDataDraft::I64)
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        );
+        check(
+            "+> number\nnumber/format(values<[i64]>, 0u64)\n",
+            &[("values", values.clone())],
+        );
+        for flag in [false, true] {
+            check(
+                "+> number\nresult := (choose<bool>? | true => number/format(values<[i64]>, 0u64) | false => number/format(values, 0u64))\nresult\n",
+                &[
+                    ("values", values.clone()),
+                    ("choose", ValueDataDraft::Bool(flag)),
+                ],
+            );
+        }
+    }
 }
 #[test]
 fn generated_lexical_calls_execute_all_seven_families_with_live_carriers() {

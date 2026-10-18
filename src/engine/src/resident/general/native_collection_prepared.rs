@@ -147,8 +147,39 @@ impl NativePreparedLibraryCall {
                     .iter()
                     .map(|value| value.as_ref().unwrap().shape().parameter_values())
                     .collect::<Vec<_>>();
+                let current_shape;
                 let empty_shape;
-                let output_parameters = if let Some(value) = output.as_ref() {
+                let output_parameters = if let mech_core::OutputConstruction::FullWrite {
+                    shape: mech_core::ShapeRule::SameAsInput { input },
+                } = &contract.outputs[0].construction
+                {
+                    let index = usize::from(*input);
+                    let source = inputs
+                        .get(index)
+                        .and_then(Option::as_ref)
+                        .ok_or(InvokeError::InvalidInput)?;
+                    let schema = self
+                        .template
+                        .inputs()
+                        .get(index)
+                        .ok_or(InvokeError::InvalidInput)?;
+                    let dimensions = match schema.body() {
+                        mech_core::SchemaBody::Matrix { dimensions, .. } => dimensions.as_ref(),
+                        _ => &[],
+                    };
+                    let extents = dimensions
+                        .iter()
+                        .map(|dimension| source.shape().resolve_dimension(dimension))
+                        .collect::<Result<Vec<_>, _>>()
+                        .map_err(|_| InvokeError::InvalidInput)?;
+                    // SameAsInput describes the CURRENT logical extents, not
+                    // the parameter numbering of another schema or a stale
+                    // published output. Reuse the canonical shape resolver.
+                    current_shape =
+                        mech_core::shape_for_resolved_extents(self.template.output(), &extents)
+                            .map_err(|_| InvokeError::InvalidInput)?;
+                    current_shape.parameter_values()
+                } else if let Some(value) = output.as_ref() {
                     value.shape().parameter_values()
                 } else {
                     empty_shape = vec![0; self.output_parameters];

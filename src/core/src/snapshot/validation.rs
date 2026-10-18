@@ -565,10 +565,7 @@ impl Value {
                 limit: reservation.capacity_bytes(),
             });
         }
-        let registration_bytes = Self::shared_owner_allocation_bytes(
-            core::mem::size_of::<SnapshotBudgetRegistration>(),
-            core::mem::align_of::<SnapshotBudgetRegistration>(),
-        );
+        let registration_bytes = Self::budget_registration_allocation_bytes();
         budget.check_snapshot_import_allocation(
             registration_bytes,
             core::mem::align_of::<SnapshotBudgetRegistration>() as u32,
@@ -636,7 +633,11 @@ impl Value {
         Self::shared_owner_allocation_bytes(
             core::mem::size_of::<FrozenSnapshotStorage>(),
             core::mem::align_of::<FrozenSnapshotStorage>(),
-        ) + Self::shared_owner_allocation_bytes(
+        ) + Self::budget_registration_allocation_bytes()
+    }
+
+    const fn budget_registration_allocation_bytes() -> u64 {
+        Self::shared_owner_allocation_bytes(
             core::mem::size_of::<SnapshotBudgetRegistration>(),
             core::mem::align_of::<SnapshotBudgetRegistration>(),
         )
@@ -710,7 +711,7 @@ impl Value {
             .and_then(|owner| owner.memory_budget_retained_bytes(budget))
             .unwrap_or(0);
         (required - required.min(physical))
-            .checked_add(core::mem::size_of::<SnapshotBudgetRegistration>() as u64)
+            .checked_add(Self::budget_registration_allocation_bytes())
             .ok_or_else(|| crate::MemoryRuntimeError::CandidateValidationFailed {
                 object: None,
                 reason: "immutable snapshot import witness overflows".into(),
@@ -4228,6 +4229,46 @@ mod tests {
         }
         .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
         .unwrap();
+        let account = crate::ManagedMemoryBudget::new(1_000_000);
+        let full_registration = Value::shared_owner_allocation_bytes(
+            core::mem::size_of::<SnapshotBudgetRegistration>(),
+            core::mem::align_of::<SnapshotBudgetRegistration>(),
+        );
+        assert_eq!(
+            raw.unshared_memory_budget_admission_bytes(&account)
+                .unwrap(),
+            raw.memory_budget_required_bytes().unwrap() + full_registration,
+            "fresh import admission includes the complete registration Arc allocation",
+        );
+        let admitted = raw.memory_budget_required_bytes().unwrap() + full_registration;
+        let short = crate::ManagedMemoryBudget::new(admitted - 1);
+        assert_eq!(raw.memory_budget_admission_bytes(&short).unwrap(), admitted);
+        assert!(short.reserve_capacity(admitted).is_err());
+        assert_eq!(short.used_bytes(), 0);
+        let mut short_reservation = short.reserve_capacity(admitted - 1).unwrap();
+        assert!(matches!(
+            raw.clone().into_independent_memory_budget(&mut short_reservation),
+            Err(crate::MemoryRuntimeError::BudgetExceeded { requested, limit, .. })
+                if requested == admitted && limit == admitted - 1
+        ));
+        assert_eq!(short_reservation.capacity_bytes(), admitted - 1);
+        drop(short_reservation);
+        assert_eq!(short.used_bytes(), 0);
+        let exact = crate::ManagedMemoryBudget::new(admitted);
+        let mut reservation = exact.reserve_capacity(admitted).unwrap();
+        let imported = raw
+            .clone()
+            .into_independent_memory_budget(&mut reservation)
+            .unwrap();
+        assert_eq!(reservation.capacity_bytes(), 0);
+        assert_eq!(
+            exact.used_bytes(),
+            admitted,
+            "the retained claim includes the Arc header"
+        );
+        drop(imported);
+        drop(reservation);
+        assert_eq!(exact.used_bytes(), 0);
         let import = |budget: &crate::ManagedMemoryBudget| {
             let mut reservation = budget
                 .reserve_capacity(raw.memory_budget_admission_bytes(budget).unwrap())

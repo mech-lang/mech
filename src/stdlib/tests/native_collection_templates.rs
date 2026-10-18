@@ -968,6 +968,103 @@ fn prepared_native_binding_is_pre_admitted_and_cannot_refill_the_leaf_allowance(
 }
 
 #[test]
+fn prepared_matrix_format_derives_current_input_shape_without_or_after_publication() {
+    use mech_core::{SchemaBody, ValueData, ValueDataDraft, ValueDraft};
+    use mech_engine::native_artifact::{
+        NativeIterationAction, NativeLibraryWorkBudget, lower_native_program_artifact,
+    };
+    for source in [
+        "+> number\nnumber/format(values<[i64]>, 0u64)\n",
+        "+> number\nresult := (choose<bool>? | true => number/format(values<[i64]>, 0u64) | false => number/format(values, 0u64))\nresult\n",
+    ] {
+        for artifact in artifacts(source) {
+            let catalog = mech_stdlib::source_catalog();
+            let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+            let template = plan
+                .blocks()
+                .iter()
+                .find_map(|block| match block.action() {
+                    NativeIterationAction::LibraryCall { template, .. } => Some(template),
+                    _ => None,
+                })
+                .unwrap();
+            let prepared =
+                prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+            let memory = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let work = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
+            let mut limits = mech_core::TargetMemoryProfile::current_resident_cpu()
+                .unwrap()
+                .limits;
+            limits.max_compute_work = Some(128 * 1024 * 1024);
+            limits.max_temporary_bytes = Some(128 * 1024 * 1024);
+            let precision = admit_value(
+                scalar_value(
+                    &artifact,
+                    input_schema(&artifact, "number/format", 1),
+                    ValueDataDraft::U64(0),
+                ),
+                &memory,
+            );
+            let schema_id = input_schema(&artifact, "number/format", 0);
+            let schema = artifact.schemas().get(schema_id).unwrap();
+            let mut output = None;
+            for columns in [3, 0, 1, 5] {
+                let shape = mech_core::shape_for_resolved_extents(schema, &[1, columns]).unwrap();
+                let value = ValueDraft {
+                    schema: schema_id,
+                    shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
+                    data: ValueDataDraft::Matrix(
+                        (0..columns)
+                            .map(|i| ValueDataDraft::I64(i as i64 + 1))
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    ),
+                }
+                .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                    artifact.schemas(),
+                ))
+                .unwrap();
+                let input = admit_value(value, &memory);
+                prepared
+                    .invoke_current(
+                        &[Some(input), Some(precision.clone())],
+                        &mut output,
+                        limits,
+                        &work,
+                    )
+                    .unwrap();
+                let value = output.as_ref().unwrap();
+                assert!(value.memory_budget_retained_bytes(&memory).is_some());
+                let SchemaBody::Matrix { dimensions, .. } = template.output().body() else {
+                    panic!("matrix output")
+                };
+                assert_eq!(value.shape().resolve_dimension(&dimensions[0]).unwrap(), 1);
+                assert_eq!(
+                    value.shape().resolve_dimension(&dimensions[1]).unwrap(),
+                    columns
+                );
+                let ValueData::Matrix(matrix) = value.data() else {
+                    panic!("matrix value")
+                };
+                assert_eq!(matrix.elements().len(), columns as usize);
+                let mech_core::snapshot::SequenceView::String(values) = matrix.elements() else {
+                    panic!("packed String output")
+                };
+                assert_eq!(
+                    values
+                        .iter()
+                        .map(|value| value.as_ref())
+                        .collect::<Vec<_>>(),
+                    (1..=columns)
+                        .map(|value| value.to_string())
+                        .collect::<Vec<_>>()
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn native_leaf_errors_and_memory_denials_preserve_output_and_recover_on_the_same_account() {
     use mech_core::{MemoryRuntimeError, ValueDataDraft};
     use mech_engine::native_artifact::{

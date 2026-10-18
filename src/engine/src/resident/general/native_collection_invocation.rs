@@ -166,9 +166,22 @@ impl NativeCollectionCall {
             }
         }
         if let Some(value) = output.as_ref() {
+            // The bound output shape describes this invocation's result.
+            // A prior full-write publication may have different dimensions;
+            // its actual retained footprint is measured separately below.
+            let shape_follows_current_input = matches!(
+                self.template.contract(),
+                mech_core::ResolvedOperationContract::Declared(contract)
+                    if matches!(&contract.outputs[0].construction,
+                        mech_core::OutputConstruction::FullWrite {
+                            shape: mech_core::ShapeRule::SameAsInput { .. }
+                        })
+            );
             if value.schema() != self.output.schema_id
                 || value.schema_key() != self.output.schema_key
-                || value.shape().parameter_values() != self.output.shape_instance.parameter_values()
+                || (!shape_follows_current_input
+                    && value.shape().parameter_values()
+                        != self.output.shape_instance.parameter_values())
             {
                 return Err(NativeCollectionInvocationError::InvalidInput);
             }
