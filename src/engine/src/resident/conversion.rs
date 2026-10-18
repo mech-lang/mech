@@ -476,6 +476,36 @@ struct ResidentConversionPlan {
     resolve_live_matrix_shape: bool,
 }
 
+// This decision inspects the actual selected immutable conversion plan, after
+// its core planner has succeeded. Names, public tags and caller-supplied
+// parameters cannot request this private semantic certificate.
+fn native_scalar_cast(
+    plan: &ResidentConversionPlan,
+) -> Option<super::native_semantics::NativeScalarOp> {
+    use super::native_semantics::NativeScalarOp as Op;
+    use mech_core::{BuiltinScalarKind as K, ConversionMode, ConversionStep, ScalarConversion};
+    if plan.wrap_present || plan.dynamic_payload.is_some() || plan.resolve_live_matrix_shape {
+        return None;
+    }
+    let ConversionStep::Scalar(ScalarConversion::Builtin {
+        source,
+        target,
+        mode: ConversionMode::Explicit,
+    }) = &plan.conversion.step
+    else {
+        return None;
+    };
+    Some(match (source, target) {
+        (K::U64, K::I64) => Op::U64ToI64,
+        (K::I64, K::U64) => Op::I64ToU64,
+        (K::U64, K::F64) => Op::U64ToF64,
+        (K::I64, K::F64) => Op::I64ToF64,
+        (K::F64, K::U64) => Op::F64ToU64,
+        (K::F64, K::I64) => Op::F64ToI64,
+        _ => return None,
+    })
+}
+
 fn bind_kind_conversion(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -587,18 +617,22 @@ fn bind_conversion(
         dynamic_payload,
         resolve_live_matrix_shape,
     };
-    Ok(
-        BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
-            .with_retained_state(Arc::new(plan))
-            .with_snapshot_output(ResidentSnapshotOutput {
-                schema: request.output.schema_id,
-                schema_key: request.output.schema_key,
-                shape: request.output.shape_instance.clone(),
-                exact_cardinality: None,
-                maximum_cardinality: None,
-            })
-            .with_snapshot_schemas(request.schemas.clone()),
-    )
+    let native_cast = native_scalar_cast(&plan);
+    let kernel = BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
+        .with_retained_state(Arc::new(plan))
+        .with_snapshot_output(ResidentSnapshotOutput {
+            schema: request.output.schema_id,
+            schema_key: request.output.schema_key,
+            shape: request.output.shape_instance.clone(),
+            exact_cardinality: None,
+            maximum_cardinality: None,
+        })
+        .with_snapshot_schemas(request.schemas.clone());
+    // Attach last: subsequent semantic builder mutations must clear the proof.
+    Ok(match native_cast {
+        Some(op) => super::native_semantics::certify(request, kernel, op),
+        None => kernel,
+    })
 }
 
 fn layout_matches_schema(kind: ResidentValueKind, schema: &SchemaBody) -> bool {

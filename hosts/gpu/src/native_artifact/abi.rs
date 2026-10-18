@@ -60,7 +60,13 @@ pub(super) const fn primitive_work(op: NativeScalarOp) -> u64 {
         | NativeScalarOp::F64Lt
         | NativeScalarOp::F64Le
         | NativeScalarOp::F64Gt
-        | NativeScalarOp::F64Ge => 256,
+        | NativeScalarOp::F64Ge
+        | NativeScalarOp::U64ToI64
+        | NativeScalarOp::I64ToU64
+        | NativeScalarOp::U64ToF64
+        | NativeScalarOp::I64ToF64
+        | NativeScalarOp::F64ToU64
+        | NativeScalarOp::F64ToI64 => 256,
     }
 }
 

@@ -134,6 +134,36 @@ def literal_assignment(source: str, name: str):
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_benchmark_status_keeps_unique_keys_and_both_cli_records(self):
+        def unique_object(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result:
+                    raise ValueError(f"duplicate validation key: {key}")
+                result[key] = value
+            return result
+
+        source = (ROOT / "docs/validation/benchmark-compiler-status-v1.json").read_text()
+        document = json.loads(source, object_pairs_hook=unique_object)
+        qualification = document["cli_payload_continuation"]
+        for key in ("qualified_source_commit", "result", "remaining", "ci_wiring_source_commit"):
+            self.assertIn(key, qualification)
+        history = document["cli_payload_publication_history"]
+        self.assertEqual(history["pull_request"], "https://github.com/mech-lang/mech/pull/903")
+        self.assertEqual(history["status"], "INHERITED_PR903_IMPLEMENTATION_HISTORICAL_PUBLICATION_RECEIPT")
+        self.assertNotIn("NOT composed", history["scope"])
+        # Exercise real JSON parsing, including nested objects, rather than a
+        # textual key count that could confuse strings with object members.
+        mutants = (
+            source.replace('"cli_payload_continuation": {',
+                           '"cli_payload_continuation": {}, "cli_payload_continuation": {', 1),
+            '{"outer": {"qualified_source_commit": "first", "qualified_source_commit": "lost"}}',
+        )
+        for mutant in mutants:
+            with self.subTest(mutant=mutant[:100]):
+                with self.assertRaisesRegex(ValueError, "duplicate validation key"):
+                    json.loads(mutant, object_pairs_hook=unique_object)
+
     def test_linked_applications_have_an_independent_required_cold_build_budget(self):
         applications = job_block(FULL, "canonical-applications")
         linked = job_block(FULL, "canonical-linked-applications")
@@ -188,6 +218,34 @@ class FullWorkflowContractTests(unittest.TestCase):
         for family in ("memory", "numeric"):
             self.assertIn(f"'{family}'", collision.splitlines()[0])
         self.assertIn("- native-cli-collision", job_block(FULL, "cargo"))
+
+    def test_canonical_casts_execute_both_contract_targets_and_real_linked_qualification(self):
+        steps = job_steps(FULL, "canonical-applications")
+        contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)
+        self.assertIn("--test native_artifact_cast_lowering", contracts)
+        self.assertIn("--test canonical_artifact_cast", contracts)
+        self.assertIn("--features full_compiler,native-artifact", contracts)
+        self.assertIn("--features canonical-native", contracts)
+        self.assertNotIn("--ignored", contracts)
+        block = job_block(FULL, "canonical-linked-applications")
+        steps = job_steps(FULL, "canonical-linked-applications")
+        selected = "linked_canonical_artifact_cast_applications_preserve_checked_boundaries"
+        listing = next(step for step in steps if "Verify linked canonical cast selection is nonempty" in step)
+        execution = next(step for step in steps if "Qualify linked canonical cast applications" in step)
+        self.assertIn("--list --ignored --exact", listing)
+        self.assertIn(f"^{selected}: test$", listing)
+        self.assertIn("-eq 1", listing)
+        self.assertIn("--test canonical_artifact_application -- --ignored --exact", execution)
+        self.assertIn(selected, execution)
+        self.assertIn("--test-threads=1", execution)
+        self.assertNotIn("--list", execution)
+        self.assertIn("MECH_CANONICAL_NATIVE_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", execution)
+        self.assertIn("MECH_CANONICAL_NATIVE_EVIDENCE_DIR: ${{ runner.temp }}/canonical-cast-evidence", execution)
+        self.assertIn("${{ runner.temp }}/canonical-cast-evidence", block)
+        self.assertLess(block.index(listing), block.index(execution))
+        for step in (contracts, listing, execution):
+            self.assertNotIn("continue-on-error", step)
+            self.assertNotIn("if:", step)
 
     def test_native_linkage_workspace_lock_is_fetched_before_offline_installer_tests(self):
         block = job_block(FULL, "native-linkage-owners")

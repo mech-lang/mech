@@ -43,6 +43,8 @@ const SIGNED: &str = "sum := left<i64> + right<i64>\nnegative := -right<i64>\nsu
 const SIGNED_DIVREM: &str =
     "quotient := left<i64> / divisor<i64>\nremainder := left<i64> % modulus<i64>\nquotient\n";
 
+#[path = "support/canonical_cast_cases.rs"]
+mod cast_cases;
 #[path = "support/canonical_f64_cases.rs"]
 mod f64_cases;
 const FLOATS: &str = "+> math\nidentity := left<f64>\nsum := left<f64> + right<f64>\ndifference := left<f64> - right<f64>\nproduct := left<f64> * right<f64>\nquotient := left<f64> / right<f64>\nnegative := -left<f64>\nroot := math/sqrt(left<f64>)\nsame := left<f64> == right<f64>\ndiffers := left<f64> != right<f64>\nless := left<f64> < right<f64>\nat-most := left<f64> <= right<f64>\ngreater := left<f64> > right<f64>\nat-least := left<f64> >= right<f64>\nsum\n";
@@ -321,6 +323,9 @@ fn with_limit(limit: &str, arguments: &[NativeScalarValue]) -> Vec<String> {
 }
 
 fn reference_cases(name: &str, artifacts: &[ProgramArtifact; 2], result: usize) -> Vec<Value> {
+    if let Some(cast) = cast_cases::CASTS.iter().find(|cast| cast.name == name) {
+        return cast_reference_cases(*cast, artifacts);
+    }
     if name == "canonical-linked-signed-divrem" {
         return signed_divrem_reference_cases(artifacts, result);
     }
@@ -919,6 +924,166 @@ fn floating_reference_cases(artifacts: &[ProgramArtifact; 2]) -> Vec<Value> {
     cases
 }
 
+fn cast_reference_cases(cast: cast_cases::Cast, artifacts: &[ProgramArtifact; 2]) -> Vec<Value> {
+    let plans = artifacts.each_ref().map(|artifact| {
+        lower_pure_native_artifact(artifact, &mech_stdlib::source_catalog()).unwrap()
+    });
+    let jits = plans
+        .each_ref()
+        .map(|plan| JitArtifact::compile(plan).unwrap());
+    assert_eq!(plans[0].inputs().len(), 1);
+    assert_eq!(plans[0].inputs()[0].ty().kind(), cast.input);
+    assert_eq!(plans[0].lets().len(), 1);
+    assert_eq!(plans[0].lets()[0].op(), cast.op);
+    assert!(
+        plans[0]
+            .outputs()
+            .iter()
+            .all(|output| output.ty().kind() == cast.output)
+    );
+    let mut cases = Vec::new();
+    for (ordinal, input) in cast_cases::samples(cast).into_iter().enumerate() {
+        let args = inputs(&artifacts[0], &[("value", input)]);
+        let label = format!("cast-boundary-{ordinal}");
+        let expected = resident(&artifacts[0], &args);
+        match expected {
+            Ok(expected) => {
+                for index in 0..2 {
+                    assert_eq!(resident(&artifacts[index], &args).unwrap(), expected);
+                    assert_eq!(jit_success(&jits[index], &args).0, expected);
+                }
+                cases.push(success_case(&label, arguments(&args), &expected));
+            }
+            Err(_) => {
+                for index in 0..2 {
+                    assert!(resident(&artifacts[index], &args).is_err());
+                    assert!(
+                        matches!(jit_error(&jits[index],&args,NativeExecutionLimits::default()),NativeExecutionError::Arithmetic {node} if node==plans[index].lets()[0].node())
+                    );
+                }
+                cases.push(exact_failure_case(
+                    &label,
+                    arguments(&args),
+                    &jit_error(&jits[0], &args, NativeExecutionLimits::default()),
+                ));
+            }
+        }
+    }
+    let zero = match cast.input {
+        NativeScalarKind::U64 => NativeScalarValue::U64(0),
+        NativeScalarKind::I64 => NativeScalarValue::I64(0),
+        NativeScalarKind::F64 => NativeScalarValue::F64(mech_core::snapshot::F64Bits::from_bits(0)),
+        _ => unreachable!(),
+    };
+    let args = inputs(&artifacts[0], &[("value", zero)]);
+    let (expected, work) = jit_success(&jits[0], &args);
+    let setup = 2
+        * (plans[0].inputs().len() + plans[0].lets().len() + plans[0].outputs().len()) as u64
+        + 8 * plans[0].inputs().len() as u64
+        + 64;
+    for (label, option, limits) in [
+        (
+            "cast-setup-denial",
+            "--work=0".to_owned(),
+            NativeExecutionLimits {
+                max_work: 0,
+                ..NativeExecutionLimits::default()
+            },
+        ),
+        (
+            "cast-node-denial",
+            format!("--work={setup}"),
+            NativeExecutionLimits {
+                max_work: setup,
+                ..NativeExecutionLimits::default()
+            },
+        ),
+        (
+            "cast-completion-denial",
+            format!("--work={}", work - 1),
+            NativeExecutionLimits {
+                max_work: work - 1,
+                ..NativeExecutionLimits::default()
+            },
+        ),
+        (
+            "cast-memory-denial",
+            "--memory=0".to_owned(),
+            NativeExecutionLimits {
+                max_transport_bytes: 0,
+                ..NativeExecutionLimits::default()
+            },
+        ),
+    ] {
+        cases.push(exact_failure_case(
+            label,
+            with_limit(&option, &args),
+            &jit_error(&jits[0], &args, limits),
+        ));
+    }
+    let budget = mech_core::ManagedMemoryBudget::new(0);
+    let mut output = vec![NativeScalarValue::U64(0xfeed); plans[0].outputs().len()];
+    let before = output.clone();
+    let error = jits[0]
+        .evaluate_into(
+            &args,
+            &mut output,
+            NativeExecutionLimits::default(),
+            Some(&budget),
+        )
+        .unwrap_err();
+    assert_eq!(output, before);
+    assert_eq!(budget.used_bytes(), 0);
+    cases.push(exact_failure_case(
+        "cast-shared-budget-denial",
+        with_limit("--budget=0", &args),
+        &error,
+    ));
+    let (invalid, diagnostic) = match cast.input {
+        NativeScalarKind::U64 => (["-1", "1.0", " 1"], "invalid U64 argument"),
+        NativeScalarKind::I64 => (["+1", "1.0", " 1"], "invalid I64 argument"),
+        NativeScalarKind::F64 => (
+            ["NaN", "f64:0", "f64:000000000000000g"],
+            "invalid F64 bit argument",
+        ),
+        _ => unreachable!(),
+    };
+    for (ordinal, bad) in invalid.into_iter().enumerate() {
+        let mut case = failure_case(
+            &format!("cast-malformed-input-{ordinal}"),
+            vec![bad.into()],
+            diagnostic,
+        );
+        case["stderr"] = json!(format!("{diagnostic}\n"));
+        cases.push(case);
+    }
+    for (label, arguments) in [
+        ("cast-missing-input", vec![]),
+        ("cast-extra-input", vec!["0".into(), "0".into()]),
+    ] {
+        let mut case = failure_case(label, arguments, "expected 1 typed inputs");
+        case["stderr"] = json!("expected 1 typed inputs\n");
+        cases.push(case);
+    }
+    if invalid_unicode_argument().is_some() {
+        let mut case = failure_case(
+            "cast-nonunicode-input",
+            arguments(&args),
+            "argument is not Unicode",
+        );
+        case["stderr"] = json!("argument is not Unicode\n");
+        case["invalid_os_argument"] = json!(0);
+        cases.push(case);
+    }
+    assert_eq!(jit_success(&jits[0], &args).0, expected);
+    cases.push(success_case(
+        "cast-recovery-after-denials",
+        arguments(&args),
+        &expected,
+    ));
+    cases
+}
+
 /// Only called in the contained worker. Subprocesses inherit its owned group;
 /// they do not open another process group that could escape its deadline.
 fn worker_command(mut command: Command, root: &Path, label: &str) -> Captured {
@@ -1037,14 +1202,16 @@ fn review_ir(plan: &NativeArtifactPlan) -> Value {
 #[ignore = "internal worker; the outer qualification owns this complete process tree"]
 fn canonical_native_link_build_worker() {
     let name = std::env::var("MECH_CANONICAL_NATIVE_WORKER_NAME").unwrap();
-    assert!(matches!(
-        name.as_str(),
-        "canonical-linked-mixed"
-            | "canonical-linked-ordered"
-            | "canonical-linked-signed"
-            | "canonical-linked-signed-divrem"
-            | "canonical-linked-floats"
-    ));
+    assert!(
+        matches!(
+            name.as_str(),
+            "canonical-linked-mixed"
+                | "canonical-linked-ordered"
+                | "canonical-linked-signed"
+                | "canonical-linked-signed-divrem"
+                | "canonical-linked-floats"
+        ) || cast_cases::CASTS.iter().any(|cast| cast.name == name)
+    );
     let evidence = PathBuf::from(std::env::var_os("MECH_CANONICAL_NATIVE_EVIDENCE_DIR").unwrap());
     let root = evidence.join(&name);
     let source = fs::read_to_string(root.join("application.mec")).unwrap();
@@ -1337,4 +1504,31 @@ fn linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic() 
     assert_eq!(pin(&workspace.join("Cargo.lock")), lock);
     clean(&workspace, &evidence, &commit, "after");
     fs::write(evidence.join("qualification.json"),serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-artifact-linked-qualification.v1","source_commit":commit,"source_checkout_clean_before_and_after":true,"route":"canonical-artifact-cranelift-object","linked":true,"executed":true,"benchmark_measurements":0,"applications":applications})).unwrap()).unwrap();
+}
+
+#[test]
+#[ignore = "explicit six directed scalar cast Object applications; clean pinned checkout and fresh external evidence required"]
+fn linked_canonical_artifact_cast_applications_preserve_checked_boundaries() {
+    let workspace = workspace().canonicalize().unwrap();
+    let commit = std::env::var("MECH_CANONICAL_NATIVE_SOURCE_COMMIT").expect("pin immutable HEAD");
+    assert_eq!(commit.len(), 40);
+    assert!(commit.bytes().all(|byte| byte.is_ascii_hexdigit()));
+    let evidence = PathBuf::from(
+        std::env::var_os("MECH_CANONICAL_NATIVE_EVIDENCE_DIR")
+            .expect("new external evidence directory"),
+    );
+    assert!(evidence.is_absolute());
+    fs::create_dir(&evidence).unwrap();
+    let evidence = evidence.canonicalize().unwrap();
+    assert!(!evidence.starts_with(&workspace));
+    clean(&workspace, &evidence, &commit, "before");
+    let lock = pin(&workspace.join("Cargo.lock"));
+    let applications = cast_cases::CASTS
+        .iter()
+        .map(|cast| qualify(&evidence, cast.name, cast.source))
+        .collect::<Vec<_>>();
+    assert_eq!(applications.len(), 6);
+    assert_eq!(pin(&workspace.join("Cargo.lock")), lock);
+    clean(&workspace, &evidence, &commit, "after");
+    fs::write(evidence.join("qualification.json"),serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-artifact-linked-cast-qualification.v1","source_commit":commit,"source_checkout_clean_before_and_after":true,"route":"canonical-artifact-cranelift-object","linked":true,"executed":true,"benchmark_measurements":0,"applications":applications})).unwrap()).unwrap();
 }

@@ -359,6 +359,12 @@ fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKi
         I64Eq | I64Ne | I64Lt | I64Le | I64Gt | I64Ge => (&[I64, I64], Bool),
         I64Neg => (&[I64], I64),
         F64Add | F64Sub | F64Mul | F64Div => (&[F64, F64], F64),
+        U64ToI64 => (&[U64], I64),
+        I64ToU64 => (&[I64], U64),
+        U64ToF64 => (&[U64], F64),
+        I64ToF64 => (&[I64], F64),
+        F64ToU64 => (&[F64], U64),
+        F64ToI64 => (&[F64], I64),
         F64Neg | F64Sqrt => (&[F64], F64),
         F64Eq | F64Ne | F64Lt | F64Le | F64Gt | F64Ge => (&[F64, F64], Bool),
         BoolNot => (&[Bool], Bool),
@@ -372,6 +378,71 @@ fn primitive(
     error: Block,
 ) -> Value {
     use NativeScalarOp::*;
+    // Only genuine selected conversion witnesses reach these typed arms.
+    // Guards precede machine conversions and result stores, and the caller
+    // admits this complete checked template before loading its operand.
+    match op {
+        U64ToI64 => {
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], i64::MAX);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        I64ToU64 => {
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::SignedGreaterThanOrEqual, args[0], 0);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        U64ToF64 | I64ToF64 => {
+            let value = if op == U64ToF64 {
+                b.ins().fcvt_from_uint(types::F64, args[0])
+            } else {
+                b.ins().fcvt_from_sint(types::F64, args[0])
+            };
+            return b.ins().bitcast(types::I64, MemFlags::new(), value);
+        }
+        F64ToU64 | F64ToI64 => {
+            // The actual core executor rejects nonfinite before truncation.
+            // Inspect raw exponent bits first, so even signaling NaN reaches
+            // the checked error without executing a floating instruction.
+            let exponent = b.ins().band_imm(args[0], 0x7ff0_0000_0000_0000_i64);
+            let finite = b
+                .ins()
+                .icmp_imm(IntCC::NotEqual, exponent, 0x7ff0_0000_0000_0000_i64);
+            guard(b, finite, error, STATUS_ARITHMETIC);
+            let value = b.ins().bitcast(types::F64, MemFlags::new(), args[0]);
+            let truncated = b.ins().trunc(value);
+            let signed = op == F64ToI64;
+            let lower = b
+                .ins()
+                .f64const(cranelift_codegen::ir::immediates::Ieee64::with_bits(
+                    if signed { 0xc3e0_0000_0000_0000 } else { 0 },
+                ));
+            let upper = b
+                .ins()
+                .f64const(cranelift_codegen::ir::immediates::Ieee64::with_bits(
+                    if signed {
+                        0x43e0_0000_0000_0000
+                    } else {
+                        0x43f0_0000_0000_0000
+                    },
+                ));
+            // Range checks follow truncation: (-1,0) is valid unsigned zero.
+            let above = b.ins().fcmp(FloatCC::GreaterThanOrEqual, truncated, lower);
+            let below = b.ins().fcmp(FloatCC::LessThan, truncated, upper);
+            let valid = b.ins().band(above, below);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return if signed {
+                b.ins().fcvt_to_sint(types::I64, truncated)
+            } else {
+                b.ins().fcvt_to_uint(types::I64, truncated)
+            };
+        }
+        _ => {}
+    }
     let a = args[0];
     if matches!(
         op,
@@ -502,8 +573,9 @@ fn primitive(
             let value = b.ins().icmp(cc, a, c);
             b.ins().uextend(types::I64, value)
         }
-        BoolNot | I64Neg | F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt | F64Eq | F64Ne
-        | F64Lt | F64Le | F64Gt | F64Ge => unreachable!(),
+        U64ToI64 | I64ToU64 | U64ToF64 | I64ToF64 | F64ToU64 | F64ToI64 | BoolNot | I64Neg
+        | F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt | F64Eq | F64Ne | F64Lt | F64Le
+        | F64Gt | F64Ge => unreachable!(),
     }
 }
 

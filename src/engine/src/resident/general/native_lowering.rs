@@ -473,5 +473,17 @@ fn public_op(op: native_semantics::NativeScalarOp) -> NativeScalarOp {
         Private::F64Le => NativeScalarOp::F64Le,
         Private::F64Gt => NativeScalarOp::F64Gt,
         Private::F64Ge => NativeScalarOp::F64Ge,
+        #[cfg(feature = "convert")]
+        Private::U64ToI64 => NativeScalarOp::U64ToI64,
+        #[cfg(feature = "convert")]
+        Private::I64ToU64 => NativeScalarOp::I64ToU64,
+        #[cfg(feature = "convert")]
+        Private::U64ToF64 => NativeScalarOp::U64ToF64,
+        #[cfg(feature = "convert")]
+        Private::I64ToF64 => NativeScalarOp::I64ToF64,
+        #[cfg(feature = "convert")]
+        Private::F64ToU64 => NativeScalarOp::F64ToU64,
+        #[cfg(feature = "convert")]
+        Private::F64ToI64 => NativeScalarOp::F64ToI64,
     }
 }

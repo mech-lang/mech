@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 
 /// Fixed exported data size for the build-owned entry pairing record.
 pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
-pub const NATIVE_TYPED_IR_VERSION: u64 = 3;
+pub const NATIVE_TYPED_IR_VERSION: u64 = 4;
 pub const NATIVE_WORK_POLICY_VERSION: u64 = 1;
 const MAGIC: &[u8; 16] = b"MECHNATIVEOBJv1\0";
 
@@ -263,6 +263,12 @@ fn op_tag(op: NativeScalarOp) -> u8 {
         NativeScalarOp::F64Le => 39,
         NativeScalarOp::F64Gt => 40,
         NativeScalarOp::F64Ge => 41,
+        NativeScalarOp::U64ToI64 => 42,
+        NativeScalarOp::I64ToU64 => 43,
+        NativeScalarOp::U64ToF64 => 44,
+        NativeScalarOp::I64ToF64 => 45,
+        NativeScalarOp::F64ToU64 => 46,
+        NativeScalarOp::F64ToI64 => 47,
     }
 }
 
@@ -317,6 +323,28 @@ mod tests {
             let mut corrupt = *identity.bytes();
             corrupt[offset..offset + 8].fill(0);
             assert!(descriptor_from_identity(&first, &corrupt).is_err());
+        }
+    }
+
+    #[test]
+    fn cast_identity_rejects_pre_cast_versions_and_equal_width_reverse_direction() {
+        let forward = plan("result<i64> := value<u64>\nresult\n");
+        let reverse = plan("result<u64> := value<i64>\nresult\n");
+        assert_ne!(typed_ir_sha256(&forward), typed_ir_sha256(&reverse));
+        let descriptor = NativeAbiDescriptor::from_compiled(&forward, 32, 1024);
+        let identity = NativeObjectIdentity::from_descriptor(&descriptor).unwrap();
+        assert!(descriptor_from_identity(&forward, identity.bytes()).is_ok());
+        assert!(descriptor_from_identity(&reverse, identity.bytes()).is_err());
+
+        // The F64-only v3 identity must not silently acquire cast semantics.
+        // This is metadata validation only; no emitted object executes here.
+        for version in 0..NATIVE_TYPED_IR_VERSION {
+            let mut prior = *identity.bytes();
+            prior[16..24].copy_from_slice(&version.to_le_bytes());
+            assert!(matches!(
+                descriptor_from_identity(&forward, &prior),
+                Err("unsupported linked identity/ABI/work-policy version")
+            ));
         }
     }
 }
