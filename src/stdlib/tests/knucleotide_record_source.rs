@@ -2,8 +2,12 @@
 #![cfg(feature = "full_compiler")]
 
 use mech_core::{ReactiveInstanceId, ResidentValueRef, Value, ValueData};
-use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
-use mech_engine::{CanonicalSourceFrontend, ProgramArtifact, SourceDocumentOutputKind};
+use mech_engine::resident::{
+    ActivationFacts, CapturedSignalInput, ResidentExecutionError, activate,
+};
+use mech_engine::{
+    CanonicalSourceFrontend, ProgramArtifact, SourceDocumentOutputKind, SourceSemanticMap,
+};
 use mech_syntax::document::{
     AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
     parse_canonical_document,
@@ -25,7 +29,7 @@ fn document(source: &str) -> DocumentSyntax {
     DocumentSyntax::cast(parsed.syntax()).unwrap()
 }
 
-fn compile(source: &str) -> ([ProgramArtifact; 2], Vec<usize>) {
+fn compile(source: &str) -> ([ProgramArtifact; 2], Vec<usize>, SourceSemanticMap) {
     let program = CanonicalSourceFrontend
         .compile_document_with_catalog(&document(source), mech_stdlib::source_catalog())
         .unwrap_or_else(|error| panic!("{source}: {error:?}"));
@@ -39,7 +43,7 @@ fn compile(source: &str) -> ([ProgramArtifact; 2], Vec<usize>) {
     assert!(original.requirements().is_empty());
     let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
-    ([original, decoded], outputs)
+    ([original, decoded], outputs, program.source_map().clone())
 }
 
 // Keep the actual fixture's ordinary program and remove only its provider
@@ -82,7 +86,7 @@ sequence := text/join([uppercase{{char}} | char <- record], "")
 }
 
 fn check(source: &str, inputs: &[&str], expected: impl Fn(usize, &[Value])) {
-    let (artifacts, outputs) = compile(source);
+    let (artifacts, outputs, source_map) = compile(source);
     assert!(!outputs.is_empty());
     for (ordinal, artifact) in artifacts.iter().enumerate() {
         let mut instance = activate(
@@ -101,7 +105,16 @@ fn check(source: &str, inputs: &[&str], expected: impl Fn(usize, &[Value])) {
                     slot,
                     value: ResidentValueRef::String(&input),
                 }])
-                .unwrap_or_else(|error| panic!("turn {turn}, {text:?}: {error:?}"));
+                .unwrap_or_else(|error| {
+                    let node = match &error {
+                        ResidentExecutionError::Kernel { node, .. }
+                        | ResidentExecutionError::MemoryPlan { node, .. }
+                        | ResidentExecutionError::ResourceAdmission { node, .. } => Some(*node),
+                        _ => None,
+                    };
+                    let origin = node.and_then(|node| source_map.nodes.get(node.get() as usize));
+                    panic!("turn {turn}, {text:?}: {error:?}; root source owner: {origin:?}")
+                });
             assert!(!instance.has_ready_continuation());
             let values = outputs
                 .iter()
@@ -110,6 +123,23 @@ fn check(source: &str, inputs: &[&str], expected: impl Fn(usize, &[Value])) {
             expected(turn, &values);
         }
     }
+}
+
+fn delivery_text(outputs: &[Value]) -> String {
+    assert_eq!(outputs.len(), 1);
+    let ValueData::Tuple(deliveries) = outputs[0].data() else {
+        panic!("{:?}", outputs[0])
+    };
+    assert_eq!(deliveries.len(), 3);
+    deliveries
+        .iter()
+        .map(|value| {
+            let ValueData::String(text) = value else {
+                panic!("{value:?}")
+            };
+            text.as_ref()
+        })
+        .collect()
 }
 
 #[test]
@@ -171,22 +201,44 @@ fn ordinary_program_produces_exact_knucleotide_output_after_record_selection() {
             ">THREE\r\nGGTA\r\n",
             ">THREE\nGGTA",
         ],
-        |_, outputs| {
-            assert_eq!(outputs.len(), 1);
-            let ValueData::Tuple(deliveries) = outputs[0].data() else {
-                panic!("{:?}", outputs[0])
+        |_, outputs| assert_eq!(delivery_text(outputs), expected),
+    );
+}
+
+#[test]
+fn ordinary_program_handles_hundred_and_four_hundred_bases_without_raising_limits() {
+    // These are the two real-host inputs rejected by the first timing attempt.
+    // Qualify the unchanged complete algorithm through original and decoded
+    // artifacts, including growth and a later small-input refresh. Host/native
+    // execution and the full standard workload remain separate qualifications.
+    let repeats = [1, 25, 100, 1];
+    let inputs = repeats
+        .iter()
+        .map(|count| {
+            format!(
+                ">ONE\nAAAA\n>THREE timing\n{}\n>FOUR\nCC\n",
+                "GGTA".repeat(*count)
+            )
+        })
+        .collect::<Vec<_>>();
+    let expected = repeats
+        .iter()
+        .map(|count| {
+            let windows = 4 * count - 1;
+            let common = 100.0 * *count as f64 / windows as f64;
+            let other = if *count > 1 {
+                format!("AG {:.3}\n", 100.0 * (*count - 1) as f64 / windows as f64)
+            } else {
+                String::new()
             };
-            assert_eq!(deliveries.len(), 3);
-            let actual = deliveries
-                .iter()
-                .map(|value| {
-                    let ValueData::String(text) = value else {
-                        panic!("{value:?}")
-                    };
-                    text.as_ref()
-                })
-                .collect::<String>();
-            assert_eq!(actual, expected);
-        },
+            format!(
+                "G 50.000\nA 25.000\nT 25.000\n\nGG {common:.3}\nGT {common:.3}\nTA {common:.3}\n{other}\n{count}\tGGT\n{count}\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n"
+            )
+        })
+        .collect::<Vec<_>>();
+    check(
+        &ordinary_fixture(),
+        &inputs.iter().map(String::as_str).collect::<Vec<_>>(),
+        |turn, outputs| assert_eq!(delivery_text(outputs), expected[turn]),
     );
 }
