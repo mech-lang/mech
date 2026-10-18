@@ -1,7 +1,7 @@
 {
   "schema": "mech.checked-aot-workload-progress.v1",
   "status": "INCOMPLETE_IMPLEMENTATION_NOT_BENCHMARK_QUALIFIED",
-  "latest_qualification": "mixed_native_control_lowering_qualification",
+  "latest_qualification": "lexical_native_library_binding_qualification",
   "pull_request": "https://github.com/mech-lang/mech/pull/905",
   "baseline": "c4190315672337f039efc743a970263627f75834",
   "reproduction": {
@@ -579,6 +579,38 @@
     "default_limits_changed": false,
     "benchmark_program_algorithm_changed": false,
     "not_established": "The new mixed control plan is NOT emitted or executed yet. Generated admitted library callbacks, current-geometry binding for lexical calls, managed transport through actual native control, element-count matrices, comprehensions, FSM and typed resource lifecycle remain required. General packed/streaming all-seven-histogram support, full125M execution, same-executable trusted/secured release samples, binary/hot-path/dependency analysis, optimization/configuration and complete exact-head GitHub CI/fresh review also remain unfinished."
+  },
+  "lexical_native_library_binding_qualification": {
+    "as_of_utc": "2026-10-18T15:03:01Z",
+    "status": "PASS_SHARED_ROOT_LEXICAL_CALL_BOUNDARY_NOT_GENERATED_MIXED_EXECUTION",
+    "qualified_source_commit": "7f3a1936dae4b677ff3660e901d9ad1e960b6033",
+    "qualified_source_tree": "d914aaf9c153fd74b6097a0466cde9d4cd503567",
+    "tested_base": "f6446818c71d77e9d6412693eaae1c3a2d92b962",
+    "tested_tracked_diff_sha256": "d67326c008f73444a046f43d0e3d8bd2185c37f0681660e6fc5d031fb364400d",
+    "source_verification": "One serial pipeline froze the complete tracked diff through its terminal exit. The committed binary diff matches that exact tested hash. This qualification record is added separately after code qualification.",
+    "implementation": [
+      "Root and genuine lexical library sites use the SAME NativeCollectionCall binding and invocation implementation. NativeProgramLibraryTemplate retains the full selected root/lexical template; its origin and implementation-memory class feed the existing actual NativeHost BoundCall/planner/kernel boundary. No second leaf executor, source compiler, graph dispatcher or scheduling loop is introduced.",
+      "bind_native_collection_lexical resolves the actual canonical declaration tree before binding. bind_native_program_library_call rederives the current selected site and requires full retained-template equality, including revision, scope, sources, destination, canonical schemas, contract, selected implementation and memory class. A replaced factory is rejected before its binder runs; a properly cloned maintained catalog remains accepted.",
+      "Actual lexical calls reuse the existing same-account input/output ownership checks, finite call policy, cumulative work ledger, payload scope, current geometry, planning, private candidate and atomic publication/recovery. The template accessor now exposes the unified program template; root-only source/target details remain available through its root accessor.",
+      "These are binding/setup APIs: they allocate descriptor/catalog metadata. Generated runtime callers still must pre-admit that metadata before binding at a live geometry. This change does not introduce a generated mixed-value ABI, emit managed moves/library calls, or execute a whole program through Rust control flow."
+    ],
+    "gate": {
+      "driver": "tmp/pr-stack-evidence/qualify-lexical-native-calls-v270.zsh",
+      "driver_sha256": "04843afe99fbf1411b50325238f907ccf94327cd14094dab39dbb9d09444aa61",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v270-lexical-calls.log",
+      "log_sha256": "c33788f2e693d56ed13a5e86ffa20dc9ba7b7102a847a261de1d98517e895bec",
+      "exit_code": 0,
+      "engine_unit_methods": 758,
+      "stdlib_integration_methods": { "native_collection_templates": 13, "native_artifact_iteration_lowering": 5, "native_artifact_match_lowering": 5, "knucleotide_record_source": 5, "map_source": 7, "map_keys_comprehensions": 3, "pure_text_managed": 4 },
+      "ci_contract_methods": 152,
+      "memory_planner_baseline_and_mutation_methods": 2,
+      "other_checks": "Formatting, runtime-only native closure, canonical-native compilation, resident-only compilation, unsafe and warning audits, diff checks and source immutability pass.",
+      "new_coverage": "Original and decoded root and counted-function artifacts bind all seven real library families at actual canonical sites. Their NativeHost plans and complete retained CFG templates agree. All seven real lexical factories execute with same-account output ownership and full teardown; changed data-dependent shapes, memory/work/temporary denial, unadmitted or foreign inputs, unchanged prior publication and same-account recovery use the existing shared invocation implementation. These tests do not drive a generated whole-program CFG."
+    },
+    "default_limits_changed": false,
+    "benchmark_program_algorithm_changed": false,
+    "new_linked_execution_or_benchmark_samples": 0,
+    "not_established": "Mixed managed control still needs actual shared native emission and admitted callbacks/transport, including pre-admitted live-shape binding and scalar/canonical construction. Comprehensions, FSM, element-count matrices and typed resource lifecycle still need native execution. General packed/streaming all-seven-histogram operations, the full125M workload, same-executable trusted/secured release timing, binary/hot-path/dependency analysis, optimization/configuration and final-head clean review/full green GitHub CI remain required."
   },
   "remaining": [
     "Extend beyond the qualified100/400-base original/decoded library and real release CLI/resource cases to realistic full inputs, retaining finite admission, atomicity and recovery.",
