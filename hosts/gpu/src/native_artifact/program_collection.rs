@@ -2,7 +2,7 @@
 //! Generated blocks own every generator, filter, arithmetic op and backedge.
 use super::{Context, NativeProgramExecutionError as Error, invalid};
 use crate::native_artifact::{
-    NativeExecutionPhase as Phase, NativeProgramDescriptor, NativeWorkMeter,
+    NativeExecutionPhase as Phase, NativeProgramDescriptor, NativeValueHandle, NativeWorkMeter,
 };
 use core::mem::size_of;
 use mech_core::{
@@ -20,11 +20,14 @@ use mech_engine::{
 
 #[path = "program_collection_data.rs"]
 mod data;
+#[path = "program_collection_lifetime.rs"]
+mod lifetime;
 
 struct Source {
     value: Value,
     count: u64,
     byte_offset: usize,
+    element: Option<(NativeValueHandle, u64)>,
 }
 struct Builder {
     // Owned drafts and their backing are released before their reservation.
@@ -130,13 +133,6 @@ impl State {
             && self.sources.iter().all(Option::is_none)
             && self.builders.iter().all(Option::is_none)
     }
-    pub(super) fn release_source(&mut self, iteration: u32) -> Result<(), Error> {
-        self.sources
-            .get_mut(iteration as usize)
-            .and_then(Option::take)
-            .ok_or_else(|| invalid("collection exited without its admitted source"))?;
-        Ok(())
-    }
     fn builder(&mut self, id: u32) -> Result<&mut Builder, Error> {
         if self.current != Some(id) {
             return Err(invalid(
@@ -227,6 +223,7 @@ impl State {
                     value,
                     count,
                     byte_offset: 0,
+                    element: None,
                 });
                 Ok(Some(count))
             }
@@ -236,8 +233,10 @@ impl State {
                 else {
                     return Err(invalid("collection element on a fold"));
                 };
-                self.builder(definition.collection())?;
-                charge(&mut ctx.control.work, 32)?;
+                // Even discarded wildcard visits consume this builder's
+                // cumulative compute allowance, not just global native work.
+                self.account(ctx, definition.collection(), 0, 32)?;
+                self.retire_locals(ctx, *iteration)?;
                 let source = self.sources[*iteration as usize]
                     .as_ref()
                     .ok_or_else(|| invalid("missing collection source"))?;
@@ -283,7 +282,27 @@ impl State {
                         ))
                         .map_err(Error::Snapshot)?
                         .into_memory_budget(&mut reservation)?;
-                        ctx.arena.put(output.get(), &value, &mut ctx.control.work)?;
+                        let retained = value
+                            .memory_budget_retained_bytes(&ctx.library.memory_budget())
+                            .ok_or_else(|| invalid("unadmitted collection element"))?;
+                        let old = self.sources[*iteration as usize]
+                            .as_ref()
+                            .unwrap()
+                            .element
+                            .map_or(0, |(_, bytes)| bytes);
+                        let live = add(
+                            self.live_bytes
+                                .checked_sub(old)
+                                .ok_or_else(|| invalid("collection element accounting"))?,
+                            retained,
+                        )?;
+                        // The old element remains charged through construction
+                        // of the new envelope. All its iteration-local aliases
+                        // were retired above; put now releases its final slot.
+                        let handle = ctx.arena.put(output.get(), &value, &mut ctx.control.work)?;
+                        self.sources[*iteration as usize].as_mut().unwrap().element =
+                            Some((handle, retained));
+                        self.live_bytes = live;
                         None
                     }
                     _ => {

@@ -195,6 +195,32 @@ impl<'a> NativeValueArena<'a> {
             .ok_or(NativeValueError::StaleHandle)
     }
 
+    /// Only the certified generated caller may retire a lexical local. Payload
+    /// retirement was prepaid by put; invalidate its handle before releasing it.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(super) fn retire_current(
+        &mut self,
+        slot: u32,
+        work: &mut NativeWorkMeter,
+    ) -> Result<(), NativeValueError> {
+        self.check_work(work)?;
+        work.charge(NativeExecutionPhase::Setup, 32)?;
+        let index = slot as usize;
+        let value = self
+            .values
+            .values_mut()
+            .get_mut(index)
+            .ok_or(NativeValueError::InvalidSlot)?;
+        if value.is_some() {
+            let next = self.generations.values()[index]
+                .checked_add(1)
+                .ok_or(NativeValueError::GenerationExhausted)?;
+            self.generations.values_mut()[index] = next;
+            *value = None;
+        }
+        Ok(())
+    }
+
     #[cfg(feature = "canonical-native-program-runtime")]
     pub(super) fn publish_range(
         &self,
@@ -294,6 +320,46 @@ mod tests {
     }
     fn text(text: &str) -> (NativeValueSlot, Value) {
         value(SchemaBody::String, ValueDataDraft::String(text.into()))
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    #[test]
+    fn private_local_retirement_invalidates_only_its_exact_slot_and_ledger() {
+        let budget = ManagedMemoryBudget::new(1_000_000);
+        let (ty, raw) = text("local");
+        let owned = admit(&raw, &budget);
+        let types = [ty, ty];
+        let mut work = NativeWorkMeter::new(1_000_000).unwrap();
+        let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &budget, &mut work).unwrap();
+        let local = arena.put(0, &owned, &mut work).unwrap();
+        let capture = arena.put(1, &owned, &mut work).unwrap();
+        let before = budget.used_bytes();
+        let mut foreign = NativeWorkMeter::new(1_000_000).unwrap();
+        assert_eq!(
+            arena.retire_current(0, &mut foreign).unwrap_err(),
+            NativeValueError::WrongWorkLedger
+        );
+        assert!(arena.get(local, &mut work).is_ok());
+        arena.retire_current(0, &mut work).unwrap();
+        assert_eq!(
+            arena.get(local, &mut work).unwrap_err(),
+            NativeValueError::StaleHandle
+        );
+        assert!(arena.get(capture, &mut work).is_ok());
+        assert_eq!(
+            budget.used_bytes(),
+            before,
+            "the live capture keeps its shared payload"
+        );
+        arena.retire_current(0, &mut work).unwrap();
+        let replacement = arena.put(0, &owned, &mut work).unwrap();
+        assert_ne!(replacement, local);
+        assert_eq!(
+            arena.get(local, &mut work).unwrap_err(),
+            NativeValueError::StaleHandle
+        );
+        drop((owned, arena));
+        assert_eq!(budget.used_bytes(), 0);
     }
 
     #[test]

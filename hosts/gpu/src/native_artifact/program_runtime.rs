@@ -316,10 +316,13 @@ impl Context<'_> {
                 mech_engine::native_artifact::NativeControlLoop::Collection(_)
             )
         {
-            self.collections
-                .as_mut()
-                .ok_or_else(|| invalid("collection exit without state"))?
-                .release_source(iteration)?;
+            let mut state = self
+                .collections
+                .take()
+                .ok_or_else(|| invalid("collection exit without state"))?;
+            let result = state.release_source(self, iteration);
+            self.collections = Some(state);
+            result?;
         }
         if self.control.completed
             && self
@@ -1015,7 +1018,14 @@ mod tests {
                     "identity byte {offset}"
                 );
             }
-            for (offset, old) in [(16, 1u64), (24, 4u64), (32, 1u64), (112, 0u64), (120, 0u64)] {
+            for (offset, old) in [
+                (16, 1u64),
+                (24, 4u64),
+                (32, 1u64),
+                (32, 2u64),
+                (112, 0u64),
+                (120, 0u64),
+            ] {
                 let mut mutated = identity;
                 mutated[offset..offset + 8].copy_from_slice(&old.to_le_bytes());
                 assert!(

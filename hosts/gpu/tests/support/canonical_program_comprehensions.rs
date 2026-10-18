@@ -7,6 +7,7 @@ use mech_core::{
 };
 use mech_gpu::native_artifact::{
     JitProgramArtifact, NativeIterationExecutionError, NativeProgramExecutionError,
+    NativeProgramExecutionLimits,
 };
 
 fn numbers(values: &[u64]) -> ValueDataDraft {
@@ -94,6 +95,31 @@ fn generated_nested_generators_filters_wildcards_and_literal_loops_keep_their_sc
     ] {
         check(source, &[("values", numbers(&[3, 1, 2]))]);
         check(source, &[("values", numbers(&[]))]);
+    }
+}
+
+#[test]
+fn string_iteration_retirement_preserves_captures_yields_and_nested_results() {
+    for source in [
+        "[left | left <- values<[string]>, * <- values]\n",
+        "identity(word<string>) => <string>\n  | value => value.\n[identity(word) | word <- values<[string]>]\n",
+        "identity(word<string>) => <string>\n  | value => value.\n[word |2> identity | word <- values<[string]>]\n",
+        "+> text\n[text/join([inner | inner <- values], outer) | outer <- values<[string]>]\n",
+    ] {
+        for values in [vec!["é", "", "🧑‍🚀"], Vec::new()] {
+            check(
+                source,
+                &[(
+                    "values",
+                    ValueDataDraft::Matrix(
+                        values
+                            .into_iter()
+                            .map(|word| ValueDataDraft::String(word.into()))
+                            .collect(),
+                    ),
+                )],
+            );
+        }
     }
 }
 
@@ -244,5 +270,163 @@ fn collection_dimension_denials_release_workspace_preserve_output_and_recover() 
                 .unwrap();
             equal(&artifact, &output, &prior);
         }
+    }
+}
+
+// Derive the exact admission boundary from typed denials, rather than relying
+// on platform-specific metadata sizes. This changes only this invocation's
+// deliberately restrictive test policy, never the production/default limits.
+fn minimum_filtered_policy(
+    jit: &JitProgramArtifact,
+    args: &[Value],
+    outputs: usize,
+    dimension: Dimension,
+    memory: &ManagedMemoryBudget,
+) -> NativeProgramExecutionLimits {
+    let mut policy = limits();
+    let ceiling = match dimension {
+        Dimension::ComputeWork => policy.library.max_compute_work.unwrap(),
+        Dimension::TemporaryBytes => policy.library.max_temporary_bytes.unwrap(),
+        _ => unreachable!(),
+    };
+    let mut boundary = 0;
+    loop {
+        match dimension {
+            Dimension::ComputeWork => policy.library.max_compute_work = Some(boundary),
+            Dimension::TemporaryBytes => policy.library.max_temporary_bytes = Some(boundary),
+            _ => unreachable!(),
+        }
+        let before = memory.used_bytes();
+        let mut output = vec![None; outputs];
+        let result = jit.evaluate_into(args, &mut output, policy, memory);
+        if result.is_ok() {
+            drop(output);
+            assert_eq!(memory.used_bytes(), before);
+            return policy;
+        }
+        assert!(output.iter().all(Option::is_none));
+        assert_eq!(memory.used_bytes(), before, "boundary denial leaked memory");
+        match result.unwrap_err() {
+            NativeProgramExecutionError::Collection {
+                error:
+                    ResidentKernelError::ResourceLimit {
+                        dimension: actual,
+                        required,
+                        limit,
+                        ..
+                    },
+                ..
+            } if actual == dimension && limit == boundary && required > limit => {
+                assert!(
+                    required <= ceiling,
+                    "fixture exceeds its finite test ceiling"
+                );
+                boundary = required;
+            }
+            error => panic!("unexpected {dimension:?} boundary error: {error:?}"),
+        }
+    }
+}
+
+#[test]
+fn filtered_wildcard_visits_remain_cumulative_collection_compute() {
+    let (artifacts, _) = artifacts("[1u64 | * <- values<[u64]>, keep<bool>]\n");
+    for artifact in artifacts {
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let named = |values| {
+            [
+                ("values", numbers(values)),
+                ("keep", ValueDataDraft::Bool(false)),
+            ]
+        };
+        let small = inputs(&artifact, &named(&[1]), &memory);
+        let many = inputs(&artifact, &named(&vec![1; 4096]), &memory);
+        let policy = minimum_filtered_policy(
+            &jit,
+            &small,
+            artifact.outputs().len(),
+            Dimension::ComputeWork,
+            &memory,
+        );
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&small, &mut output, policy, &memory)
+            .unwrap();
+        let prior = output
+            .iter()
+            .map(|v| v.as_ref().unwrap().clone())
+            .collect::<Vec<_>>();
+        let before = memory.used_bytes();
+        let result = jit.evaluate_into(&many, &mut output, policy, &memory);
+        assert!(
+            matches!(result, Err(NativeProgramExecutionError::Collection {
+            error: ResidentKernelError::ResourceLimit {
+                dimension: Dimension::ComputeWork, required, limit, ..
+            }, ..
+        }) if required > limit),
+            "filtered wildcard traversal bypassed its collection budget: {result:?}"
+        );
+        assert_eq!(memory.used_bytes(), before);
+        equal(&artifact, &output, &prior);
+        jit.evaluate_into(&small, &mut output, policy, &memory)
+            .unwrap();
+        equal(&artifact, &output, &reference(&artifact, &small));
+        drop((small, many, prior, output));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn filtered_string_visits_admit_the_old_and_new_element_coexistence_peak() {
+    let (artifacts, _) = artifacts("[word | word <- values<[string]>, keep<bool>]\n");
+    for artifact in artifacts {
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let named = |count| {
+            [
+                (
+                    "values",
+                    ValueDataDraft::Matrix(
+                        (0..count)
+                            .map(|_| ValueDataDraft::String("x".repeat(8192)))
+                            .collect(),
+                    ),
+                ),
+                ("keep", ValueDataDraft::Bool(false)),
+            ]
+        };
+        let small = inputs(&artifact, &named(1), &memory);
+        let many = inputs(&artifact, &named(2), &memory);
+        let policy = minimum_filtered_policy(
+            &jit,
+            &small,
+            artifact.outputs().len(),
+            Dimension::TemporaryBytes,
+            &memory,
+        );
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&small, &mut output, policy, &memory)
+            .unwrap();
+        let prior = output
+            .iter()
+            .map(|v| v.as_ref().unwrap().clone())
+            .collect::<Vec<_>>();
+        let before = memory.used_bytes();
+        let result = jit.evaluate_into(&many, &mut output, policy, &memory);
+        assert!(
+            matches!(result, Err(NativeProgramExecutionError::Collection {
+            error: ResidentKernelError::ResourceLimit {
+                dimension: Dimension::TemporaryBytes, required, limit, ..
+            }, ..
+        }) if required > limit),
+            "retained generator element was omitted from the peak: {result:?}"
+        );
+        assert_eq!(memory.used_bytes(), before);
+        equal(&artifact, &output, &prior);
+        jit.evaluate_into(&small, &mut output, policy, &memory)
+            .unwrap();
+        equal(&artifact, &output, &reference(&artifact, &small));
+        drop((small, many, prior, output));
+        assert_eq!(memory.used_bytes(), 0);
     }
 }
