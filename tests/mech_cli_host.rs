@@ -1,4 +1,8 @@
 #[cfg(all(feature = "run", feature = "cli_host"))]
+#[path = "support/cli_payload.rs"]
+mod payload_arguments;
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
 fn temp_root(name: &str) -> std::path::PathBuf {
     let root = std::env::temp_dir().join(format!(
         "mech-cli-host-{name}-{}",

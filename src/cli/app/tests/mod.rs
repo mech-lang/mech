@@ -7,6 +7,9 @@ use crate::cli::commands::build::{
 #[cfg(any(feature = "serve", feature = "build", feature = "run"))]
 use std::path::PathBuf;
 
+#[cfg(feature = "run")]
+mod payload_arguments;
+
 #[cfg(all(test, feature = "serve"))]
 mod filesystem_capability_cli_tests {
     use super::*;

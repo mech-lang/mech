@@ -47,6 +47,15 @@ pub trait CliBackend: std::fmt::Debug {
             "command-line arguments are unavailable from this CLI backend",
         ))
     }
+    /// Return the length of the same immutable payload-only snapshot used by
+    /// `argument`. Backends without an explicit payload boundary leave this
+    /// unavailable instead of counting executable or launcher arguments.
+    fn argument_count(&self) -> MResult<u64> {
+        Err(cli_error(
+            "cli://args".to_string(),
+            "payload argument count is unavailable from this CLI backend",
+        ))
+    }
     /// Read exact Unicode text through EOF. Providers retain the first result,
     /// so a consumptive stream is observed only once per provider instance.
     fn stdin_text(&self) -> MResult<String> {
@@ -98,6 +107,15 @@ impl<B> ArgumentSnapshotCliBackend<B> {
 }
 
 impl<B: CliBackend> CliBackend for ArgumentSnapshotCliBackend<B> {
+    fn argument_count(&self) -> MResult<u64> {
+        u64::try_from(self.arguments.len()).map_err(|_| {
+            cli_error(
+                "cli://args".to_string(),
+                "payload argument count exceeds u64",
+            )
+        })
+    }
+
     fn argument(&self, index: usize) -> MResult<Option<OsString>> {
         Ok(index
             .checked_sub(1)
@@ -360,6 +378,15 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                 })?;
             RuntimeHostInputValue::String(value).into_value()
         } else if self.matches_base(&request.base_uri, "args") {
+            if request.path == "count" {
+                validate_argument_count_read(&request)?;
+                let count = self
+                    .backend
+                    .lock()
+                    .map_err(|_| cli_error(request.base_uri.clone(), "CLI backend lock poisoned"))?
+                    .argument_count()?;
+                return RuntimeHostInputValue::U64(count).into_value();
+            }
             let index = argument_index(&request.path)?;
             let argument = self
                 .backend
@@ -453,6 +480,12 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
             return RuntimeHostInputValue::String(String::new()).into_value();
         }
         if self.matches_base(&request.base_uri, "args") {
+            if request.path == "count" {
+                validate_argument_count_read(&request)?;
+                // This is only a typed planning value. It neither observes
+                // the payload vector nor establishes its actual cardinality.
+                return RuntimeHostInputValue::U64(0).into_value();
+            }
             argument_index(&request.path)?;
             return RuntimeHostInputValue::String(String::new()).into_value();
         }
@@ -720,6 +753,16 @@ impl<B: CliBackend> RuntimeAfterCommitEffect for CliOutputEffect<B> {
             }
         }
     }
+}
+
+fn validate_argument_count_read(request: &RuntimeResourceReadRequest) -> MResult<()> {
+    if request.context_name != "args" {
+        return Err(cli_error(
+            request.base_uri.clone(),
+            "argument count reads require context `args` and exactly the `count` path",
+        ));
+    }
+    Ok(())
 }
 
 fn argument_index(path: &str) -> MResult<usize> {

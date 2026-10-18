@@ -96,6 +96,9 @@ pub(crate) fn build_cli() -> Command {
                 .action(ArgAction::SetTrue),
         );
 
+    #[cfg(feature = "run")]
+    let cli_command =
+        cli_command.arg(crate::cli::run::payload_arguments_arg().requires("mech_paths"));
     #[cfg(feature = "formatter")]
     let cli_command = cli_command.subcommand(crate::cli::commands::format::command());
     #[cfg(feature = "build")]

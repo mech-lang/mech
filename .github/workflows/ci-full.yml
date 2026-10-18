@@ -570,7 +570,7 @@ jobs:
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-build
           --no-default-features --features standard-hosts
-          --test canonical_cli_bytes --test canonical_resource_execution
+          --test canonical_cli_bytes --test canonical_cli_argument_count --test canonical_resource_execution
           --test canonical_resource_planning --test canonical_map_features
           --test canonical_pure_text_features -- --test-threads=1
 
@@ -2097,6 +2097,18 @@ jobs:
             --test mech_cli_host -- --test-threads=1
           cargo test --lib --no-default-features --features run \
             cli::commands::run::tests
+          PAYLOAD_TESTS=$(cargo +nightly-2026-03-03 test --locked --lib \
+            --no-default-features --features run cli::app::tests::payload_arguments -- --list)
+          test "$(printf '%s\n' "$PAYLOAD_TESTS" | rg -c '^cli::app::tests::payload_arguments::.*: test$')" -eq 6
+          cargo +nightly-2026-03-03 test --locked --lib --no-default-features --features run \
+            cli::app::tests::payload_arguments -- --test-threads=1
+          DEFAULT_PAYLOAD_TESTS=$(cargo +nightly-2026-03-03 test --locked --lib \
+            --no-default-features --features run \
+            cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot -- --list --exact)
+          test "$(printf '%s\n' "$DEFAULT_PAYLOAD_TESTS" | rg -c '^cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot: test$')" -eq 1
+          cargo +nightly-2026-03-03 test --locked --lib --no-default-features --features run \
+            cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot \
+            -- --exact --test-threads=1
           cargo check -p mech-runtime -p mech-browser -p mech-terminal
           cargo check -p mech-terminal --no-default-features
 

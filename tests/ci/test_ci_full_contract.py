@@ -223,6 +223,24 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertNotIn("continue-on-error", install)
             self.assertLess(block.index(install), block.index(selection))
 
+    def test_source_cli_payload_parser_selection_is_nonempty_and_executed(self):
+        step = next(step for step in job_steps(FULL, "cargo-runtime")
+                    if "Run CLI host and context-send regression coverage" in step)
+        self.assertIn("--test mech_cli_host", step)
+        self.assertIn("PAYLOAD_TESTS=$(cargo +nightly-2026-03-03 test --locked --lib", step)
+        self.assertIn("^cli::app::tests::payload_arguments::.*: test$", step)
+        self.assertIn("-eq 6", step)
+        self.assertIn("--no-default-features --features run", step)
+        self.assertIn("cli::app::tests::payload_arguments -- --test-threads=1", step)
+        default_test = "cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot"
+        self.assertIn("DEFAULT_PAYLOAD_TESTS=$(cargo +nightly-2026-03-03 test --locked --lib", step)
+        self.assertIn(f"{default_test} -- --list --exact", step)
+        self.assertIn(f"^{default_test}: test$", step)
+        self.assertIn("-eq 1", step)
+        self.assertRegex(step, re.escape(default_test) + r"\s*\\\n\s*-- --exact --test-threads=1")
+        self.assertNotIn("--ignored", step)
+        self.assertNotIn("continue-on-error", step)
+
     def test_canonical_applications_execute_linked_qualifications_explicitly(self):
         block = job_block(FULL, "canonical-applications")
         self.assertIn("RUSTUP_TOOLCHAIN: nightly-2026-03-03", block)
@@ -231,7 +249,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             "applications", "tail_control", "native_artifact_lowering",
             "native_artifact_i64_lowering", "native_artifact_f64_lowering", "native_artifact_output_initializers",
             "canonical_artifact_native", "canonical_artifact_i64", "canonical_artifact_f64",
-            "canonical_cli_bytes",
+            "canonical_cli_bytes", "canonical_cli_argument_count",
         ):
             self.assertIn(f"--test {target}", block)
         self.assertIn("--lib resident::native_semantics::tests", block)
@@ -242,7 +260,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("-p mech-build", cli_step)
         self.assertIn("--no-default-features --features standard-hosts", cli_step)
         for target in (
-            "canonical_cli_bytes", "canonical_resource_execution",
+            "canonical_cli_bytes", "canonical_cli_argument_count", "canonical_resource_execution",
             "canonical_resource_planning", "canonical_map_features",
             "canonical_pure_text_features",
         ):

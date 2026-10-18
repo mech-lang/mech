@@ -13,7 +13,7 @@ rust-version = "1.92"
 [features]
 default = []
 # Canonical byte snapshots use ValueDataDraft::U8, not legacy boxed-u8 values.
-provider = ["mech-core/string"]
+provider = ["mech-core/string", "mech-runtime/u64"]
 
 [dependencies]
 mech-core = { version = "0.3.5", path = "../../src/core", default-features = false }
@@ -25,4 +25,9 @@ mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features
 [[test]]
 name = "provider"
 path = "tests/provider.rs"
+required-features = ["provider"]
+
+[[test]]
+name = "provider_argument_count"
+path = "tests/provider_argument_count.rs"
 required-features = ["provider"]
