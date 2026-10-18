@@ -1081,6 +1081,8 @@ jobs:
         run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked workspace linkage dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked
       - name: Check isolated owner native-link profiles
         run: |
           python3 -B -m unittest scripts/tests/test_native_linkage_profiles.py
@@ -1152,7 +1154,7 @@ jobs:
             --no-default-features --features standard_compiler \
             --test profile_contracts
       - name: Validate frozen full catalog profiles
-        if: ${{ matrix.profile != 'standard' }}
+        if: ${{ matrix.profile == 'full' }}
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features full_runtime \

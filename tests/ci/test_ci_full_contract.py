@@ -133,6 +133,21 @@ def literal_assignment(source: str, name: str):
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_native_linkage_workspace_lock_is_fetched_before_offline_installer_tests(self):
+        block = job_block(FULL, "native-linkage-owners")
+        steps = job_steps(FULL, "native-linkage-owners")
+        fetch = next(step for step in steps if "Fetch locked workspace linkage dependencies" in step)
+        offline = next(step for step in steps if "Execute general native-link installer contracts" in step)
+        self.assertIn("cargo +nightly-2026-03-03 fetch --locked", fetch)
+        self.assertNotIn("--manifest-path", fetch)
+        self.assertNotIn("--offline", fetch)
+        self.assertNotIn("if:", fetch)
+        self.assertIn("test --locked --offline -p mech-engine", offline)
+        self.assertIn("--features full_compiler,native-link", offline)
+        self.assertLess(block.index(fetch), block.index("Check isolated owner native-link profiles"))
+        self.assertLess(block.index(fetch), block.index(offline))
+        self.assertNotIn("continue-on-error", block)
+
     def test_dynamic_integration_inventory_executes_in_both_contract_paths(self):
         self.assertIn("tests.ci.test_ci_test_inventory", job_block(CI, "static-architecture"))
         self.assertIn("tests/ci/test_ci_test_inventory.py", job_block(FULL, "architecture-mutations"))
