@@ -12,6 +12,8 @@ mod identity;
 mod linked;
 mod memory;
 mod runtime;
+mod values;
+mod work;
 pub use abi::{NATIVE_ARTIFACT_ABI_VERSION, NATIVE_ARTIFACT_ENTRY_SYMBOL, NativeAbiDescriptor};
 #[cfg(feature = "canonical-native")]
 pub use application::{
@@ -30,6 +32,8 @@ pub use linked::{LinkedArtifact, NativeLinkError};
 pub use runtime::{
     NativeExecutionError, NativeExecutionLimits, NativeExecutionPhase, NativeExecutionReport,
 };
+pub use values::{NativeValueArena, NativeValueError, NativeValueHandle, NativeValueSlot};
+pub use work::NativeWorkMeter;
 
 mod control_abi;
 #[cfg(feature = "canonical-native")]
