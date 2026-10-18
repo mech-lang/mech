@@ -13,3 +13,11 @@ pub use crate::resident::general::native_match_lowering::{
     NativeMatchArtifactPlan, lower_scalar_match_artifact,
 };
 pub use control::*;
+
+mod iteration;
+pub use crate::resident::general::native_match_lowering::{
+    NativeIterationArtifactPlan, lower_scalar_iteration_artifact,
+};
+pub use iteration::*;
+
+pub(crate) mod iteration_validation;

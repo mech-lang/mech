@@ -98,6 +98,85 @@
       "New benchmark timing, security-overhead ratio, clean review or complete green CI"
     ]
   },
+  "borrowed_numeric_operand_followup": {
+    "as_of_utc": "2026-10-18T07:06:56Z",
+    "status": "PARTIAL_PROGRESS_400_BASE_COMPARISON_REGRESSION_STILL_RED",
+    "tested_base": "3571d9a0e8bef3b39789711dd39687c92bd3970f",
+    "tested_numeric_diff_sha256": "86951d9d8a9807f880cc64dc25048fe582c41eda4daa22419d8e47c1953b2b25",
+    "source_files_sha256": {
+      "src/core/src/snapshot/sequence.rs": "8966652ca732d8462a39831e5c43dadede7e6ed01f76736de049f506bdbf7ae5",
+      "src/engine/src/resident/numeric/mod.rs": "a72e772c26a8a0363185c3a6ace9dbcf1f065b6c82fe0432e7df1d1ec493e47d"
+    },
+    "changes": [
+      "Snapshot binary arithmetic borrows canonical packed or dense F64 inputs instead of materializing whole input draft vectors. Scalar results also avoid a result Vec. Core element conversion and the maintained numeric arithmetic/rational-power implementation remain the semantic authority.",
+      "Every fixed-width operand read occurrence, including broadcasts, is compute-reserved. The current input/output retention measurements, output construction, publication equality and full rational-power Euclidean allowance remain. Conservative memory, clone and node bounds are retained; default limits are unchanged.",
+      "Boundary coverage checks packed integer extrema, exact floating bit patterns, row-major canonical versus column-major dense geometry, empty axes, rational-power denial without publication, and required-minus-one versus exact-required work limits."
+    ],
+    "engine_units": {
+      "passed": 739,
+      "failed": 0,
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v218-borrowed-numeric-boundaries.log",
+      "log_sha256": "05921da3efa3b8e84faabc5970cef2463d1585726861db9724c962d30832d4e8"
+    },
+    "complete_workload_target": {
+      "status": "STILL_FAILS_ORIGINAL_400_BASE_TURN_DECODED_NOT_REACHED",
+      "hundred_base_original_artifact": "Completes with the independent exact output oracle before the later rejection.",
+      "dimension": "ComparisonWork",
+      "required": 65544,
+      "limit": 65536,
+      "node": 33,
+      "previous_compute_rejection": "The same unchanged 400-base workload now gets past its previous compute-work rejection, but it still does not complete.",
+      "regression_removed_or_ignored": false,
+      "default_limits_changed": false
+    },
+    "separate_contracts": {
+      "passed": 4,
+      "failed": 0,
+      "scope": "The other four integration methods were executed individually after the complete target aborted. Both original and decoded artifacts retain exact small-input output, 4000-base admission denial with unchanged publication, and successful next-turn recovery. This is not a passing complete workload target.",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v219-borrowed-numeric-contracts.log",
+      "log_sha256": "3ca514006132c677a5c1334d6f6bcfe4f6682dd2ee4507dbf74ffba524250e82"
+    }
+  },
+  "canonical_native_loop_foundation": {
+    "as_of_utc": "2026-10-18T07:06:56Z",
+    "status": "METADATA_AND_CURRENT_VISIT_PROOF_QUALIFIED_NOT_MACHINE_CODE_EXECUTION",
+    "source_archive": "69bbfb71e8f3e4b422aec2bed844bbb9bf9558b7",
+    "archive_patch_sha256": "6b2ed53b61e03d7a9b5263d8bd5759cf94852f0e2e6d4b4980177988e3a90201",
+    "composition": "Additive engine-only composition, not an archived whole-file replacement. Existing Bool/U64/I64/F64 types, constants, casts and selected private scalar witnesses are retained. Match and loop views share one Builder and lexical block lowering. Archived GPU emitter/runtime/application files have not been applied or qualified.",
+    "before_files_sha256": {
+      "src/engine/src/resident/general/native_match_lowering.rs": "7214a113638ba60e05475e9466a13f64775f6e474100fb8be6d4e78415f8a3c9",
+      "src/engine/src/native_artifact/mod.rs": "975abce12fa29c3f4c30ab999b606555f8d039ff14c74e4b10501e9b62054f0c"
+    },
+    "source_files_sha256": {
+      "src/engine/src/resident/general/native_match_lowering.rs": "d2335423e1dedcdd5dddb32a880b63e203fde7defaab28ba9bcf22d16d7a56af",
+      "src/engine/src/native_artifact/mod.rs": "95bbf5544441d223e0697407c40b076a996ca357f4e21fd44176e6838c4ef5a7",
+      "src/engine/src/native_artifact/iteration.rs": "9949b07cc155a09316be014cf15ef46348385d68ca626a80242262ac5f46dcf4",
+      "src/engine/src/native_artifact/iteration_validation.rs": "6ab6461fcde957f103107fbff6aa2867c263caa9a2464fb87e1663a42d3bf515",
+      "src/stdlib/tests/native_artifact_iteration_lowering.rs": "63fa3315b28989e819a67ad5f6151bb3afeb24fc6853127f3a6bd4dacdf48fb2"
+    },
+    "proof": "Constructor-private structured initialization/header/latch/exit ownership with bounded lexical DAG analysis. A fresh body visit begins with admitted ancestor values plus its private carrier, never previous-visit locals. Private mutation tests reject stale results, unowned backedges and forged carrier scopes.",
+    "qualification": {
+      "tested_base": "3571d9a0e8bef3b39789711dd39687c92bd3970f",
+      "tracked_diff_sha256": "bec18315b0ed561cf4b3ba1fd53e7a42ded75a462f5e76ec92dee3f35258946c",
+      "new_files": "The complete new-file hashes above were pinned separately because git diff does not include untracked files. The driver checked both tracked diff and new-file hashes unchanged through completion.",
+      "engine_unit_methods": 741,
+      "native_lowering_methods": 31,
+      "native_lowering_targets": ["native_artifact_lowering", "native_artifact_i64_lowering", "native_artifact_f64_lowering", "native_artifact_cast_lowering", "native_artifact_match_lowering", "native_artifact_output_initializers", "native_artifact_iteration_lowering"],
+      "ci_contract_methods": 75,
+      "failed": 0,
+      "profile": "nightly-2026-03-03; locked/offline; serial; full_compiler,native-artifact; debug assertions and overflow checks enabled",
+      "format_and_diff_checks": "Full-workspace cargo fmt --check and git diff --check pass on the final product source.",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v223-native-iteration-lowering.log",
+      "log_sha256": "0832f2298f65690c3afae1d6b2ec6c2411d1e8b493e1919baff9dda5120f5ac5"
+    },
+    "ci": "The complete new lowering target and private current-visit proof tests are selected explicitly in ci-full.yml and protected by an executed CI-contract test.",
+    "not_established": [
+      "Native JIT, emitted Object or actual linked loop execution on this new source",
+      "Native element-wise count matrices, aggregate carriers, comprehensions, FSM/lifecycle or resource I/O",
+      "Full-input packed/streaming workload support or optimized/configurable checked AOT",
+      "Benchmark measurements, same-binary security overhead, clean review or complete green CI"
+    ]
+  },
   "remaining": [
     "Make the unchanged ordinary workload pass original and decoded artifacts at 100 and 400 bases with default limits, and retain denial/atomicity/recovery qualification.",
     "Reduce actual general collection/histogram work; provide canonical packed and streaming operations for realistic full inputs.",

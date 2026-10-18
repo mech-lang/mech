@@ -18019,13 +18019,39 @@ fn preflight_snapshot_arithmetic(
     output_elements: usize,
     additional_compute_work: usize,
 ) -> Result<(), ResidentKernelError> {
+    preflight_snapshot_arithmetic_with_input_work(
+        kernel,
+        schemas,
+        inputs,
+        output,
+        input_elements,
+        output_elements,
+        additional_compute_work,
+        None,
+    )
+}
+
+fn preflight_snapshot_arithmetic_with_input_work(
+    kernel: &BoundResidentKernel,
+    schemas: &mech_core::SchemaTable,
+    inputs: &[&mech_core::Value],
+    output: &ResidentValueMut<'_>,
+    input_elements: usize,
+    output_elements: usize,
+    additional_compute_work: usize,
+    borrowed_input_read_work: Option<usize>,
+) -> Result<(), ResidentKernelError> {
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
     let (cloned_bytes, _input_nodes) =
         inputs
             .iter()
             .try_fold((0u64, 0u64), |(bytes, nodes), value| {
-                let (next_bytes, next_nodes) =
-                    snapshot_operand_copy_cost(&mut footprint_meter, value, schemas, true)?;
+                let (next_bytes, next_nodes) = snapshot_operand_copy_cost(
+                    &mut footprint_meter,
+                    value,
+                    schemas,
+                    borrowed_input_read_work.is_none(),
+                )?;
                 Ok::<_, ResidentKernelError>((
                     bytes
                         .checked_add(next_bytes)
@@ -18060,6 +18086,16 @@ fn preflight_snapshot_arithmetic(
             .checked_mul(core::mem::size_of::<ValueDataDraft>())
             .ok_or(ResidentKernelError::InvalidShape)?,
     )?;
+    // A borrowed binary operand is not unpacked into a whole draft vector.
+    // Reserve every fixed-width read occurrence, including broadcasts, plus
+    // the result draft. Keep the older conservative storage/node/clone bounds;
+    // this change does not grant any extra memory authority.
+    let construction_work = match borrowed_input_read_work {
+        Some(reads) => output_bytes
+            .checked_add(super::budget::checked_u64(reads)?)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        None => draft_bytes,
+    };
     let output_metadata = kernel
         .snapshot_output()
         .ok_or(ResidentKernelError::InvalidOutput)?;
@@ -18112,7 +18148,7 @@ fn preflight_snapshot_arithmetic(
             compute_work: super::budget::checked_u64(output_elements)?
                 .checked_add(super::budget::checked_u64(additional_compute_work)?)
                 .and_then(|work| work.checked_add(measured.compute_work()))
-                .and_then(|work| work.checked_add(draft_bytes))
+                .and_then(|work| work.checked_add(construction_work))
                 .and_then(|work| work.checked_add(publication_work))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             output_elements,
@@ -18324,8 +18360,19 @@ fn snapshot_numeric_binary(
     } else {
         0
     };
+    let fixed_read_width = |schema: Option<&mech_core::Schema>| match schema {
+        Some(schema) => {
+            snapshot_fixed_element_encoded_bytes(comparison_element_body(schema.body()))
+                .ok_or(ResidentKernelError::InvalidInput)
+        }
+        None => Ok(core::mem::size_of::<f64>()),
+    };
+    let borrowed_input_read_work = fixed_read_width(left_schema)?
+        .checked_add(fixed_read_width(right_schema)?)
+        .and_then(|width| width.checked_mul(output_len))
+        .ok_or(ResidentKernelError::InvalidShape)?;
     match (left, right, snapshot_output) {
-        (Some(left), Some(right), true) => preflight_snapshot_arithmetic(
+        (Some(left), Some(right), true) => preflight_snapshot_arithmetic_with_input_work(
             kernel,
             schemas,
             &[left, right],
@@ -18333,16 +18380,20 @@ fn snapshot_numeric_binary(
             input_elements,
             output_len,
             additional_compute_work,
+            Some(borrowed_input_read_work),
         )?,
-        (Some(input), None, true) | (None, Some(input), true) => preflight_snapshot_arithmetic(
-            kernel,
-            schemas,
-            &[input],
-            &output,
-            input_elements,
-            output_len,
-            additional_compute_work,
-        )?,
+        (Some(input), None, true) | (None, Some(input), true) => {
+            preflight_snapshot_arithmetic_with_input_work(
+                kernel,
+                schemas,
+                &[input],
+                &output,
+                input_elements,
+                output_len,
+                additional_compute_work,
+                Some(borrowed_input_read_work),
+            )?
+        }
         (Some(left), Some(right), false) => preflight_snapshot_dense_f64_output(
             schemas,
             &[left, right],
@@ -18355,34 +18406,49 @@ fn snapshot_numeric_binary(
         }
         (None, None, _) => return Err(ResidentKernelError::InvalidInput),
     }
-    let left = match left {
-        Some(value) => snapshot_numeric_elements(value)?,
-        None => dense_f64_canonical_drafts(left_input, left_dimensions.0, left_dimensions.1)?,
+    let left = BorrowedNumericOperand::new(left, left_schema, left_input, left_dimensions)?;
+    let right = BorrowedNumericOperand::new(right, right_schema, right_input, right_dimensions)?;
+    let apply = |row, column| {
+        let left = left.at(snapshot_binary_broadcast_index(
+            left_mode, row, column, columns,
+        ))?;
+        let right = right.at(snapshot_binary_broadcast_index(
+            right_mode, row, column, columns,
+        ))?;
+        if rational_power {
+            numeric_rational_power(left, right)
+        } else {
+            numeric_arithmetic(arithmetic, left, right)
+        }
     };
-    let right = match right {
-        Some(value) => snapshot_numeric_elements(value)?,
-        None => dense_f64_canonical_drafts(right_input, right_dimensions.0, right_dimensions.1)?,
-    };
+    if let Some(output_shape) = &output_shape {
+        let output_schema = schemas
+            .get(
+                kernel
+                    .snapshot_output()
+                    .ok_or(ResidentKernelError::InvalidOutput)?
+                    .schema,
+            )
+            .ok_or(ResidentKernelError::InvalidOutput)?;
+        if !matches!(output_schema.body(), SchemaBody::Matrix { .. }) {
+            if output_len != 1 {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            // Scalar arithmetic needs no operand or result Vec allocations.
+            let data = apply(0, 0)?;
+            return write_snapshot_data_for_shape_with_work_budget(
+                kernel,
+                output,
+                output_shape,
+                data,
+                Some(0),
+            );
+        }
+    }
     let mut result = Vec::with_capacity(output_len);
     for row in 0..rows {
         for column in 0..columns {
-            let left = left
-                .get(snapshot_binary_broadcast_index(
-                    left_mode, row, column, columns,
-                ))
-                .ok_or(ResidentKernelError::InvalidShape)?
-                .clone();
-            let right = right
-                .get(snapshot_binary_broadcast_index(
-                    right_mode, row, column, columns,
-                ))
-                .ok_or(ResidentKernelError::InvalidShape)?
-                .clone();
-            result.push(if rational_power {
-                numeric_rational_power(left, right)?
-            } else {
-                numeric_arithmetic(arithmetic, left, right)?
-            });
+            result.push(apply(row, column)?);
         }
     }
     if let Some(output_shape) = output_shape {
@@ -20000,6 +20066,91 @@ pub(super) fn numeric_float_binary_snapshot(
     }
 }
 
+/// One validated operand, borrowed for the complete synchronous arithmetic
+/// call. Canonical matrices are row-major; dense F64 transport is column-major.
+/// Element reads use the core conversion rather than another numeric relation.
+enum BorrowedNumericOperand<'a> {
+    Snapshot {
+        value: &'a mech_core::Value,
+        element: &'a SchemaBody,
+    },
+    DenseF64 {
+        values: &'a [f64],
+        rows: usize,
+        columns: usize,
+    },
+}
+
+impl<'a> BorrowedNumericOperand<'a> {
+    fn new(
+        value: Option<&'a mech_core::Value>,
+        schema: Option<&'a mech_core::Schema>,
+        input: ResidentValueRef<'a>,
+        (rows, columns): (usize, usize),
+    ) -> Result<Self, ResidentKernelError> {
+        if let (Some(value), Some(schema)) = (value, schema) {
+            return Ok(Self::Snapshot {
+                value,
+                element: comparison_element_body(schema.body()),
+            });
+        }
+        let ResidentValueRef::F64(values) = input else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        if values.len()
+            != rows
+                .checked_mul(columns)
+                .ok_or(ResidentKernelError::InvalidShape)?
+        {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        Ok(Self::DenseF64 {
+            values,
+            rows,
+            columns,
+        })
+    }
+
+    fn at(&self, index: usize) -> Result<ValueDataDraft, ResidentKernelError> {
+        match self {
+            Self::Snapshot { value, element } => {
+                if let ValueData::Matrix(matrix) = value.data() {
+                    let data = matrix
+                        .elements()
+                        .value_at(index)
+                        .ok_or(ResidentKernelError::InvalidShape)?;
+                    canonical_snapshot_data_draft(element, &data)
+                        .map_err(|_| ResidentKernelError::InvalidInput)
+                } else if index == 0 {
+                    canonical_snapshot_data_draft(element, value.data())
+                        .map_err(|_| ResidentKernelError::InvalidInput)
+                } else {
+                    Err(ResidentKernelError::InvalidShape)
+                }
+            }
+            Self::DenseF64 {
+                values,
+                rows,
+                columns,
+            } => {
+                if *columns == 0 || index >= values.len() {
+                    return Err(ResidentKernelError::InvalidShape);
+                }
+                let row = index / columns;
+                let column = index % columns;
+                let offset = column
+                    .checked_mul(*rows)
+                    .and_then(|offset| offset.checked_add(row))
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                let value = values
+                    .get(offset)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                Ok(ValueDataDraft::F64(F64Bits::from_f64(*value)))
+            }
+        }
+    }
+}
+
 fn snapshot_numeric_elements(
     value: &mech_core::Value,
 ) -> Result<Vec<ValueDataDraft>, ResidentKernelError> {
@@ -21172,6 +21323,78 @@ fn indexed_rows(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn borrowed_numeric_operands_preserve_packed_values_without_unpacking() {
+        for (element, data) in [
+            (
+                SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                vec![ValueDataDraft::U64(0), ValueDataDraft::U64(u64::MAX)],
+            ),
+            (
+                SchemaBody::SignedInteger(IntegerWidth::W64),
+                vec![ValueDataDraft::I64(i64::MIN), ValueDataDraft::I64(i64::MAX)],
+            ),
+            (
+                SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+                vec![
+                    ValueDataDraft::F64(F64Bits::from_f64(-0.0)),
+                    ValueDataDraft::F64(F64Bits::from_f64(f64::NAN)),
+                ],
+            ),
+        ] {
+            let body = SchemaBody::Matrix {
+                element: Box::new(element),
+                dimensions: Box::new([
+                    mech_core::DimensionExpr::Constant(1),
+                    mech_core::DimensionExpr::Constant(2),
+                ]),
+            };
+            let (schemas, ids) = test_schema_table([body]);
+            let value = test_value(
+                &schemas,
+                ids[0],
+                ValueDataDraft::Matrix(data.into_boxed_slice()),
+            );
+            let storage = [Some(value.clone())];
+            let operand = BorrowedNumericOperand::new(
+                Some(&value),
+                Some(schemas.get(ids[0]).unwrap()),
+                ResidentValueRef::Snapshot(&storage),
+                (1, 2),
+            )
+            .unwrap();
+            let expected = snapshot_numeric_elements(&value).unwrap();
+            for (index, expected) in expected.iter().enumerate() {
+                assert_eq!(&operand.at(index).unwrap(), expected);
+            }
+            assert!(operand.at(2).is_err());
+        }
+    }
+
+    #[test]
+    fn borrowed_dense_numeric_operands_preserve_column_major_geometry_and_empty_axes() {
+        let values = [1.0, 4.0, 2.0, 5.0, 3.0, 6.0];
+        let operand =
+            BorrowedNumericOperand::new(None, None, ResidentValueRef::F64(&values), (2, 3))
+                .unwrap();
+        for index in 0..6 {
+            assert_eq!(
+                operand.at(index).unwrap(),
+                ValueDataDraft::F64(F64Bits::from_f64(index as f64 + 1.0))
+            );
+        }
+        assert!(operand.at(6).is_err());
+        assert!(
+            BorrowedNumericOperand::new(None, None, ResidentValueRef::F64(&values), (3, 3))
+                .is_err()
+        );
+        for shape in [(0, 3), (3, 0)] {
+            let empty =
+                BorrowedNumericOperand::new(None, None, ResidentValueRef::F64(&[]), shape).unwrap();
+            assert!(empty.at(0).is_err());
+        }
+    }
 
     #[test]
     fn snapshot_comparison_preparation_measures_metadata_but_reserves_payload_work() {
@@ -26677,6 +26900,47 @@ mod tests {
         let prior = rational(0, 1);
         let expected = rational(3_372_041_405_099_481_409, 8_828_119_010_022_395_329);
 
+        // Borrowed operands no longer allocate two whole draft vectors or
+        // copy their immutable Value owners. Every concrete retention scan,
+        // fixed-width operand read and the full Euclidean power allowance
+        // remains. Derive the target-sized overhead instead of freezing the
+        // removed allocation path's numeric total.
+        let mut retention = super::super::budget::ResidentBudgetMeter::default();
+        for value in [
+            base[0].as_ref().unwrap(),
+            exponent[0].as_ref().unwrap(),
+            &prior,
+        ] {
+            super::super::budget::measure_borrowed_canonical_value_footprint(
+                &mut retention,
+                value,
+                &schemas,
+            )
+            .unwrap();
+        }
+        let prior_footprint = prior.retained_footprint(&schemas).unwrap();
+        let publication = super::super::budget::projected_language_equality_work(
+            &schemas,
+            &prior,
+            prior_footprint,
+            *rational_schema,
+            0,
+            ValueFootprint {
+                encoded_bytes: 16,
+                retained_bytes: core::mem::size_of::<ValueDataDraft>() as u64,
+                node_count: 2,
+            },
+        )
+        .unwrap();
+        let required_compute = RATIONAL_POWER_ELEMENT_COMPUTE_WORK as u64
+            + retention.estimate().compute_work()
+            + core::mem::size_of::<ValueDataDraft>() as u64
+            + 16
+            + 4
+            + 1
+            + publication;
+        assert!(required_compute >= RATIONAL_POWER_ELEMENT_COMPUTE_WORK as u64);
+
         let node = mech_core::NodeId::new(0);
         let program = crate::memory_planner::ProgramMemoryPlan {
             allocations: vec![mech_core::AllocationPlan {
@@ -26714,10 +26978,20 @@ mod tests {
                 Err(ResidentKernelError::ResourceLimit {
                     phase: mech_core::ResidentResourcePhase::Admission,
                     dimension: mech_core::MemoryBudgetDimension::ComputeWork,
-                    required: 130_083,
+                    required: required_compute,
                     limit: 1_000,
                 }),
             ),
+            (
+                required_compute - 1,
+                Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                    required: required_compute,
+                    limit: required_compute - 1,
+                }),
+            ),
+            (required_compute, Ok(true)),
         ] {
             let mut bounded = plan.clone();
             bounded.budget_limits.max_compute_work = Some(remaining_work);

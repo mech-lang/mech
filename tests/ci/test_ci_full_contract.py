@@ -219,6 +219,13 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn(f"'{family}'", collision.splitlines()[0])
         self.assertIn("- native-cli-collision", job_block(FULL, "cargo"))
 
+    def test_canonical_iteration_lowering_and_current_visit_proof_are_selected(self):
+        steps = job_steps(FULL, "canonical-applications")
+        contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)
+        self.assertRegex(contracts, r"--test\s+native_artifact_iteration_lowering(?:\s|$)")
+        self.assertIn("--lib resident::general::native_match_lowering::iteration_proof_tests", contracts)
+        self.assertIn("--features full_compiler,native-artifact", contracts)
+
     def test_canonical_match_executes_contracts_and_nonempty_linked_qualification(self):
         steps = job_steps(FULL, "canonical-applications")
         contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)
