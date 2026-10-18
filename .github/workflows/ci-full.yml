@@ -556,10 +556,12 @@ jobs:
             --no-default-features --features full_compiler,native-artifact \
             --test native_artifact_lowering --test native_artifact_i64_lowering \
             --test native_artifact_f64_lowering \
+            --test native_artifact_cast_lowering \
             --test native_artifact_output_initializers -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native \
-            --test canonical_artifact_native --test canonical_artifact_i64 --test canonical_artifact_f64 -- --test-threads=1
+            --test canonical_artifact_native --test canonical_artifact_i64 --test canonical_artifact_f64 \
+            --test canonical_artifact_cast -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native --lib native_artifact:: -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
@@ -672,6 +674,23 @@ jobs:
           --test canonical_artifact_application -- --ignored --exact
           linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic
           --test-threads=1
+      - name: Verify linked canonical cast selection is nonempty
+        run: |
+          CAST_QUALIFICATION_TESTS=$(cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native \
+            --test canonical_artifact_application -- --list --ignored --exact \
+            linked_canonical_artifact_cast_applications_preserve_checked_boundaries)
+          test "$(printf '%s\n' "$CAST_QUALIFICATION_TESTS" | rg -c '^linked_canonical_artifact_cast_applications_preserve_checked_boundaries: test$')" -eq 1
+      - name: Qualify linked canonical cast applications
+        env:
+          MECH_CANONICAL_NATIVE_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_NATIVE_EVIDENCE_DIR: ${{ runner.temp }}/canonical-cast-evidence
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
+          --no-default-features --features canonical-native
+          --test canonical_artifact_application -- --ignored --exact
+          linked_canonical_artifact_cast_applications_preserve_checked_boundaries
+          --test-threads=1
       - name: Verify linked canonical resident CLI selection is nonempty
         env:
           MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
@@ -700,6 +719,7 @@ jobs:
           name: canonical-linked-applications-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/canonical-native-evidence
+            ${{ runner.temp }}/canonical-cast-evidence
             ${{ runner.temp }}/canonical-cli-evidence
             ${{ runner.temp }}/native-host-evidence
             ${{ runner.temp }}/native-control-evidence

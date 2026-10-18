@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 
 /// Fixed exported data size for the build-owned entry pairing record.
 pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
-pub const NATIVE_TYPED_IR_VERSION: u64 = 3;
+pub const NATIVE_TYPED_IR_VERSION: u64 = 4;
 pub const NATIVE_WORK_POLICY_VERSION: u64 = 1;
 const MAGIC: &[u8; 16] = b"MECHNATIVEOBJv1\0";
 
@@ -263,6 +263,12 @@ fn op_tag(op: NativeScalarOp) -> u8 {
         NativeScalarOp::F64Le => 39,
         NativeScalarOp::F64Gt => 40,
         NativeScalarOp::F64Ge => 41,
+        NativeScalarOp::U64ToI64 => 42,
+        NativeScalarOp::I64ToU64 => 43,
+        NativeScalarOp::U64ToF64 => 44,
+        NativeScalarOp::I64ToF64 => 45,
+        NativeScalarOp::F64ToU64 => 46,
+        NativeScalarOp::F64ToI64 => 47,
     }
 }
 

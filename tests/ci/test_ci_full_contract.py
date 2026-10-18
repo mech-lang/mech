@@ -189,6 +189,34 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn(f"'{family}'", collision.splitlines()[0])
         self.assertIn("- native-cli-collision", job_block(FULL, "cargo"))
 
+    def test_canonical_casts_execute_both_contract_targets_and_real_linked_qualification(self):
+        steps = job_steps(FULL, "canonical-applications")
+        contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)
+        self.assertIn("--test native_artifact_cast_lowering", contracts)
+        self.assertIn("--test canonical_artifact_cast", contracts)
+        self.assertIn("--features full_compiler,native-artifact", contracts)
+        self.assertIn("--features canonical-native", contracts)
+        self.assertNotIn("--ignored", contracts)
+        block = job_block(FULL, "canonical-linked-applications")
+        steps = job_steps(FULL, "canonical-linked-applications")
+        selected = "linked_canonical_artifact_cast_applications_preserve_checked_boundaries"
+        listing = next(step for step in steps if "Verify linked canonical cast selection is nonempty" in step)
+        execution = next(step for step in steps if "Qualify linked canonical cast applications" in step)
+        self.assertIn("--list --ignored --exact", listing)
+        self.assertIn(f"^{selected}: test$", listing)
+        self.assertIn("-eq 1", listing)
+        self.assertIn("--test canonical_artifact_application -- --ignored --exact", execution)
+        self.assertIn(selected, execution)
+        self.assertIn("--test-threads=1", execution)
+        self.assertNotIn("--list", execution)
+        self.assertIn("MECH_CANONICAL_NATIVE_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", execution)
+        self.assertIn("MECH_CANONICAL_NATIVE_EVIDENCE_DIR: ${{ runner.temp }}/canonical-cast-evidence", execution)
+        self.assertIn("${{ runner.temp }}/canonical-cast-evidence", block)
+        self.assertLess(block.index(listing), block.index(execution))
+        for step in (contracts, listing, execution):
+            self.assertNotIn("continue-on-error", step)
+            self.assertNotIn("if:", step)
+
     def test_native_linkage_workspace_lock_is_fetched_before_offline_installer_tests(self):
         block = job_block(FULL, "native-linkage-owners")
         steps = job_steps(FULL, "native-linkage-owners")

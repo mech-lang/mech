@@ -57,6 +57,12 @@ pub enum NativeScalarOp {
     F64Le,
     F64Gt,
     F64Ge,
+    U64ToI64,
+    I64ToU64,
+    U64ToF64,
+    I64ToF64,
+    F64ToU64,
+    F64ToI64,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
