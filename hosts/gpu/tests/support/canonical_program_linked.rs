@@ -271,29 +271,45 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
             + 3 * plan.iterations().len()
             + plan.outputs().len()
             + 1;
-        let native_memory_limit = input_bytes + words as u64 * 8;
+        let mut native_memory_limit = input_bytes + words as u64 * 8;
         drop(imported);
         assert_eq!(account.used_bytes(), 0);
-        let account = ManagedMemoryBudget::new(native_memory_limit);
-        let imported = import_inputs(&variants[0], &input, &account);
-        assert_eq!(account.used_bytes(), input_bytes);
-        let mut denied_outputs = vec![None; plan.outputs().len()];
-        let denial = jit
-            .evaluate_into(&imported, &mut denied_outputs, limits(), &account)
-            .unwrap_err();
-        assert!(
-            matches!(
-                &denial,
+        let mut native_denial = None;
+        let mut transport_admission = Vec::new();
+        // Native transport includes managed plan metadata, not just payload.
+        // Follow its structured required bytes until transport is admitted;
+        // never guess a platform constant or accept a successful evaluation.
+        for _ in 0..16 {
+            let account = ManagedMemoryBudget::new(native_memory_limit);
+            let imported = import_inputs(&variants[0], &input, &account);
+            assert_eq!(account.used_bytes(), input_bytes);
+            let mut denied_outputs = vec![None; plan.outputs().len()];
+            let denial = jit
+                .evaluate_into(&imported, &mut denied_outputs, limits(), &account)
+                .unwrap_err();
+            assert!(denied_outputs.iter().all(Option::is_none));
+            assert_eq!(account.used_bytes(), input_bytes);
+            match &denial {
+                NativeProgramExecutionError::Base(NativeExecutionError::Memory {
+                    error: mech_core::MemoryRuntimeError::BudgetExceeded { requested, .. },
+                }) => {
+                    assert!(*requested > native_memory_limit);
+                    transport_admission
+                        .push(json!({"limit":native_memory_limit,"required":requested}));
+                    native_memory_limit = *requested;
+                }
                 NativeProgramExecutionError::Value(NativeValueError::Base(
                     NativeExecutionError::Memory {
-                        error: mech_core::MemoryRuntimeError::BudgetExceeded { .. }
-                    }
-                ))
-            ),
-            "{denial}"
-        );
-        assert!(denied_outputs.iter().all(Option::is_none));
-        assert_eq!(account.used_bytes(), input_bytes);
+                        error: mech_core::MemoryRuntimeError::BudgetExceeded { .. },
+                    },
+                )) => {
+                    native_denial = Some(denial.to_string());
+                    break;
+                }
+                _ => panic!("expected native transport/arena memory admission: {denial}"),
+            }
+        }
+        let denial = native_denial.expect("native Value arena denial was not exercised");
         let selected = policy(
             1_000_000_000,
             native_memory_limit,
@@ -309,7 +325,7 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
         assert!(!result.status.success());
         assert!(result.stdout.is_empty());
         assert_eq!(result.stderr, format!("{denial}\n").as_bytes());
-        cases.push(json!({"name":"native-arena-memory-denial","phase":"linked.evaluate_into managed Value arena admission","policy":selected,"input":input,"input_admitted_bytes":input_bytes,"word_transport_bytes":words * 8,"memory_limit":native_memory_limit,"stdout":"","stderr":String::from_utf8(result.stderr).unwrap(),"exit":result.status.code()}));
+        cases.push(json!({"name":"native-arena-memory-denial","phase":"linked.evaluate_into managed Value arena admission","policy":selected,"input":input,"input_admitted_bytes":input_bytes,"word_transport_payload_bytes":words * 8,"transport_admission":transport_admission,"memory_limit":native_memory_limit,"stdout":"","stderr":String::from_utf8(result.stderr).unwrap(),"exit":result.status.code()}));
         for (label, selected, diagnostic) in [
             (
                 "work-denial",
