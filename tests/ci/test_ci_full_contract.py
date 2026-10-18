@@ -233,6 +233,17 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertRegex(contracts, r"--test\s+resident_factory_lowering_attachment(?:\s|$)")
         self.assertRegex(contracts, r"--test\s+native_collection_templates(?:\s|$)")
         self.assertIn("--lib resident::general::native_collection_templates::tests", contracts)
+
+    def test_generated_mixed_program_execution_and_runtime_only_profile_are_selected(self):
+        contracts = next(step for step in job_steps(FULL, "canonical-applications")
+                         if "Execute canonical native lowering and selected implementation witnesses" in step)
+        commands = contracts.replace("\\\n", " ")
+        self.assertRegex(commands, r"--features canonical-native-program\s+--test canonical_artifact_program\s+-- --test-threads=1")
+        self.assertIn("--features canonical-native-program-runtime --lib", commands)
+        self.assertRegex(commands, r"--features canonical-native-program\s+--lib native_artifact::program_runtime::tests\s+-- --test-threads=1")
+        manifest = (ROOT / "hosts/gpu/Cargo.toml").read_text()
+        self.assertRegex(manifest, r'name = "canonical_artifact_program"\s+required-features = \["canonical-native-program"\]')
+        self.assertNotIn("--no-run", contracts)
         self.assertIn("--features functions", contracts)
         self.assertIn("--features full_compiler,native-artifact", contracts)
         self.assertNotIn("--no-run", contracts)

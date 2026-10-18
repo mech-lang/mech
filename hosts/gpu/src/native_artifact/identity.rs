@@ -125,7 +125,10 @@ pub(super) fn descriptor_from_identity(
     Ok(descriptor)
 }
 
-#[cfg(feature = "canonical-native")]
+#[cfg(any(
+    feature = "canonical-native",
+    feature = "canonical-native-program-runtime"
+))]
 pub(super) fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

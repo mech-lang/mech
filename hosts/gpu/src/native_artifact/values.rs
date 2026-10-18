@@ -177,6 +177,58 @@ impl<'a> NativeValueArena<'a> {
             .ok_or(NativeValueError::StaleHandle)
     }
 
+    /// Private generated-caller access. The emitted CFG/current-visit proof
+    /// determines the slot; no public integer-to-handle capability is exposed.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(super) fn copy_current(
+        &self,
+        slot: u32,
+        work: &mut NativeWorkMeter,
+    ) -> Result<Value, NativeValueError> {
+        self.check_work(work)?;
+        work.charge(NativeExecutionPhase::Setup, 32)?;
+        self.values
+            .values()
+            .get(slot as usize)
+            .and_then(Option::as_ref)
+            .cloned()
+            .ok_or(NativeValueError::StaleHandle)
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(super) fn publish_range(
+        &self,
+        start: usize,
+        outputs: &mut [Option<Value>],
+        work: &mut NativeWorkMeter,
+    ) -> Result<(), NativeValueError> {
+        self.check_work(work)?;
+        let end = start
+            .checked_add(outputs.len())
+            .ok_or(NativeValueError::InvalidSlot)?;
+        let values = self
+            .values
+            .values()
+            .get(start..end)
+            .ok_or(NativeValueError::InvalidSlot)?;
+        work.charge(
+            NativeExecutionPhase::Completion,
+            (outputs.len() as u64)
+                .checked_mul(16)
+                .and_then(|n| n.checked_add(32))
+                .ok_or(NativeValueError::InvalidSlot)?,
+        )?;
+        if values.iter().any(Option::is_none) {
+            return Err(NativeValueError::StaleHandle);
+        }
+        // All fallible checks/debits precede allocation-free publication.
+        // The caller has already prepaid retirement of the previous outputs.
+        for (target, value) in outputs.iter_mut().zip(values) {
+            *target = Some(value.as_ref().unwrap().clone());
+        }
+        Ok(())
+    }
+
     /// Moving a value out retains its real immutable ownership. It invalidates
     /// the handle before any later slot reuse; generation wrap fails closed.
     pub fn take(

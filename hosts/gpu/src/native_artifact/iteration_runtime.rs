@@ -80,26 +80,42 @@ fn charge(
             error => error.into(),
         })
 }
-struct Context<'a> {
-    descriptor: &'a NativeIterationDescriptor,
+pub(super) trait VisitPlan {
+    fn entry(&self) -> u32;
+    fn visits(&self) -> &[super::iteration_abi::NativeIterationVisit];
+    fn iterations(&self) -> &[mech_engine::native_artifact::NativeIterationLoop];
+}
+impl VisitPlan for NativeIterationDescriptor {
+    fn entry(&self) -> u32 {
+        self.entry
+    }
+    fn visits(&self) -> &[super::iteration_abi::NativeIterationVisit] {
+        &self.visits
+    }
+    fn iterations(&self) -> &[mech_engine::native_artifact::NativeIterationLoop] {
+        &self.iterations
+    }
+}
+pub(super) struct Context<'a, D: VisitPlan> {
+    pub(super) descriptor: &'a D,
     // Separate managed backing from generated code's locals/counters; no raw
     // machine pointer aliases this exclusive callback progress slice.
-    progress: &'a mut [u64],
-    current: Option<u32>,
-    previous: Option<u32>,
-    completed: bool,
-    work: NativeWorkMeter,
-    visits: u64,
-    error: Option<NativeIterationExecutionError>,
+    pub(super) progress: &'a mut [u64],
+    pub(super) current: Option<u32>,
+    pub(super) previous: Option<u32>,
+    pub(super) completed: bool,
+    pub(super) work: NativeWorkMeter,
+    pub(super) visits: u64,
+    pub(super) error: Option<NativeIterationExecutionError>,
 }
-impl Context<'_> {
-    fn visit(&mut self, raw: u64) -> Result<(), NativeIterationExecutionError> {
+impl<D: VisitPlan> Context<'_, D> {
+    pub(super) fn visit(&mut self, raw: u64) -> Result<(), NativeIterationExecutionError> {
         let id = u32::try_from(raw).ok();
         let allowed = !self.completed
             && match self.previous {
-                None => id == Some(self.descriptor.entry),
+                None => id == Some(self.descriptor.entry()),
                 Some(previous) => {
-                    let prior = &self.descriptor.visits[previous as usize];
+                    let prior = &self.descriptor.visits()[previous as usize];
                     if let Progress::Header(iteration) = prior.progress {
                         let remaining = self.progress[iteration as usize * 2];
                         id == prior.successors[usize::from(remaining == 0)]
@@ -117,7 +133,7 @@ impl Context<'_> {
         let id = id.ok_or_else(|| invalid("iteration visit id overflow"))?;
         let site = *self
             .descriptor
-            .visits
+            .visits()
             .get(id as usize)
             .ok_or_else(|| invalid("iteration visit outside descriptor"))?;
         // Charge before reading/changing per-loop metadata or inspecting any
@@ -125,7 +141,7 @@ impl Context<'_> {
         charge(&mut self.work, site.work, Some(site.origin))?;
         match site.progress {
             Progress::Initialize(iteration) => {
-                let data = &self.descriptor.iterations[iteration as usize];
+                let data = &self.descriptor.iterations()[iteration as usize];
                 if self.current != data.parent() || self.progress[iteration as usize * 2 + 1] != 0 {
                     return Err(invalid(
                         "iteration initialized outside exact parent invocation",
@@ -143,7 +159,7 @@ impl Context<'_> {
                     return Err(invalid("iteration exited before exact count"));
                 }
                 self.progress[iteration as usize * 2 + 1] = 0;
-                self.current = self.descriptor.iterations[iteration as usize].parent();
+                self.current = self.descriptor.iterations()[iteration as usize].parent();
                 if self.current != site.iteration {
                     return Err(invalid("iteration exit parent mismatch"));
                 }
@@ -179,7 +195,7 @@ unsafe extern "C" fn admit(context: *mut c_void, id: u64) -> u64 {
         return STATUS_ABI;
     }
     // SAFETY: execute owns context and disjoint progress backing synchronously.
-    let context = unsafe { &mut *context.cast::<Context<'_>>() };
+    let context = unsafe { &mut *context.cast::<Context<'_, NativeIterationDescriptor>>() };
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
@@ -295,7 +311,8 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
         visits: 0,
         error: None,
     };
-    let context_pointer = (&mut context as *mut Context<'_>).cast::<c_void>();
+    let context_pointer =
+        (&mut context as *mut Context<'_, NativeIterationDescriptor>).cast::<c_void>();
     let mut frame = Frame {
         version: VERSION,
         input_count: inputs.len() as u64,

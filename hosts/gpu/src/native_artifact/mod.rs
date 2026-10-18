@@ -63,10 +63,28 @@ mod iteration_abi;
 #[cfg(feature = "canonical-native")]
 mod iteration_application;
 #[cfg(feature = "canonical-native")]
+mod iteration_code_plan;
+#[cfg(feature = "canonical-native")]
 mod iteration_compiler;
 mod iteration_identity;
 mod iteration_linked;
 mod iteration_runtime;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_abi;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_descriptor;
+#[cfg(feature = "canonical-native")]
+mod program_hooks;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_identity;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_linked;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_runtime;
+#[cfg(feature = "canonical-native-program-runtime")]
+pub use program_linked::LinkedProgramArtifact;
+#[cfg(feature = "canonical-native-program")]
+mod program_compiler;
 pub use iteration_abi::{NativeIterationDescriptor, NativeIterationVisit};
 #[cfg(feature = "canonical-native")]
 pub use iteration_application::generate_linked_iteration_application;
@@ -81,3 +99,18 @@ pub use iteration_identity::{
 };
 pub use iteration_linked::LinkedIterationArtifact;
 pub use iteration_runtime::{NativeIterationExecutionError, NativeIterationExecutionReport};
+#[cfg(feature = "canonical-native-program")]
+pub use program_compiler::{
+    JitProgramArtifact, NativeProgramObject, emit_program_object, emit_program_object_with_limits,
+};
+#[cfg(feature = "canonical-native-program-runtime")]
+pub use program_descriptor::NativeProgramDescriptor;
+#[cfg(feature = "canonical-native-program-runtime")]
+pub use program_identity::{
+    NATIVE_PROGRAM_LINK_IDENTITY_BYTES, NATIVE_PROGRAM_TYPED_IR_VERSION,
+    NATIVE_PROGRAM_WORK_POLICY_VERSION, NativeProgramObjectIdentity,
+};
+#[cfg(feature = "canonical-native-program-runtime")]
+pub use program_runtime::{
+    NativeProgramExecutionError, NativeProgramExecutionLimits, NativeProgramExecutionReport,
+};

@@ -14,6 +14,8 @@ rust-version = "1.92"
 default = []
 canonical-native-runtime = ["mech-engine/native-artifact"]
 canonical-native = ["canonical-native-runtime", "aot", "dep:toml_edit"]
+canonical-native-program-runtime = ["canonical-native-runtime", "mech-engine/pure_text", "mech-engine/map_ops"]
+canonical-native-program = ["canonical-native-program-runtime", "canonical-native"]
 native-build = ["sequence-cli", "fused-cli"]
 system-gmp = ["dep:gmp-mpfr-sys", "gmp-mpfr-sys/use-system-libs"]
 sequence-cli = ["aot", "dep:hashbrown", "dep:fxhash", "dep:rayon", "dep:memchr", "dep:regex", "dep:rug", "dep:mech-stdlib", "mech-stdlib/native-sequence"]
@@ -160,3 +162,7 @@ required-features = ["canonical-native"]
 [[test]]
 name = "canonical_artifact_iteration"
 required-features = ["canonical-native"]
+
+[[test]]
+name = "canonical_artifact_program"
+required-features = ["canonical-native-program"]

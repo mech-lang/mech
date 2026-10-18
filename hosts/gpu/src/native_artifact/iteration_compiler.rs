@@ -174,7 +174,7 @@ fn successors(term: NativeIterationTerminator) -> [Option<u32>; 2] {
         _ => [None, None],
     }
 }
-fn validate(plan: &NativeIterationArtifactPlan) -> Result<(), NativeCompileError> {
+pub(super) fn validate(plan: &NativeIterationArtifactPlan) -> Result<(), NativeCompileError> {
     let bad = || NativeCompileError::InvalidPlan {
         node: None,
         reason: "invalid iteration scalar signature",
@@ -222,6 +222,26 @@ fn define<M: Module>(
     module: &mut M,
     limits: NativeCompileLimits,
 ) -> Result<(FuncId, NativeIterationDescriptor), NativeCompileError> {
+    let (function, stack, code) = define_cfg(
+        super::iteration_code_plan::CodePlan::Scalar(plan),
+        ENTRY,
+        VERSION,
+        module,
+        limits,
+    )?;
+    Ok((
+        function,
+        NativeIterationDescriptor::from_plan(plan, stack, code).map_err(backend)?,
+    ))
+}
+
+pub(super) fn define_cfg<M: Module>(
+    plan: super::iteration_code_plan::CodePlan<'_>,
+    entry_symbol: &str,
+    version: u64,
+    module: &mut M,
+    limits: NativeCompileLimits,
+) -> Result<(FuncId, u64, u64), NativeCompileError> {
     host_supported()?;
     if module.target_config().pointer_type() != types::I64 {
         return Err(NativeCompileError::UnsupportedHost);
@@ -233,33 +253,32 @@ fn define<M: Module>(
     )?;
     limit(
         "Iteration inputs",
-        plan.inputs().len() as u64,
+        plan.input_count() as u64,
         limits.max_inputs,
     )?;
     limit(
         "Iteration outputs",
-        plan.outputs().len() as u64,
+        plan.output_count() as u64,
         limits.max_outputs,
     )?;
     limit(
         "Iteration scalar values",
-        plan.values().len() as u64,
+        plan.value_count() as u64,
         limits.max_nodes.saturating_mul(8),
     )?;
     let local_count = plan
-        .values()
-        .len()
+        .value_count()
         .checked_add(plan.iterations().len())
         .ok_or_else(|| backend("iteration local count overflow"))?;
     offset(local_count)?;
-    offset(plan.inputs().len())?;
-    offset(plan.outputs().len())?;
-    validate(plan)?;
+    offset(plan.input_count())?;
+    offset(plan.output_count())?;
+    plan.validate()?;
     let mut signature_entry = module.make_signature();
     signature_entry.params.push(AbiParam::new(types::I64));
     signature_entry.returns.push(AbiParam::new(types::I64));
     let function = module
-        .declare_function(ENTRY, Linkage::Export, &signature_entry)
+        .declare_function(entry_symbol, Linkage::Export, &signature_entry)
         .map_err(backend)?;
     let mut callback_signature = module.make_signature();
     callback_signature.params = vec![AbiParam::new(types::I64); 2];
@@ -280,10 +299,10 @@ fn define<M: Module>(
         guard(&mut b, nonnull, error, STATUS_ABI);
         set_origin(&mut b, frame, NO_NODE);
         for (field, value) in [
-            (core::mem::offset_of!(Frame, version), VERSION),
+            (core::mem::offset_of!(Frame, version), version),
             (
                 core::mem::offset_of!(Frame, input_count),
-                plan.inputs().len() as u64,
+                plan.input_count() as u64,
             ),
             (
                 core::mem::offset_of!(Frame, local_count),
@@ -291,7 +310,7 @@ fn define<M: Module>(
             ),
             (
                 core::mem::offset_of!(Frame, output_count),
-                plan.outputs().len() as u64,
+                plan.output_count() as u64,
             ),
         ] {
             let actual = frame_load(&mut b, frame, field);
@@ -304,9 +323,9 @@ fn define<M: Module>(
         let user_context = frame_load(&mut b, frame, core::mem::offset_of!(Frame, context));
         let callback = frame_load(&mut b, frame, core::mem::offset_of!(Frame, admit_next));
         for (pointer, count) in [
-            (inputs, plan.inputs().len()),
+            (inputs, plan.input_count()),
             (locals, local_count),
-            (outputs, plan.outputs().len()),
+            (outputs, plan.output_count()),
             (user_context, 1),
             (callback, 1),
         ] {
@@ -315,35 +334,36 @@ fn define<M: Module>(
                 guard(&mut b, valid, error, STATUS_ABI);
             }
         }
-        for (index, input) in plan.inputs().iter().enumerate() {
+        let hooks = super::program_hooks::Hooks::load(
+            plan.is_program(),
+            &mut b,
+            module,
+            frame,
+            user_context,
+            error,
+        )?;
+        for index in 0..plan.input_count() {
+            let value = plan.input(index);
+            if plan.kind(value).is_none() {
+                continue;
+            }
             let word = b
                 .ins()
                 .load(types::I64, MemFlags::new(), inputs, offset(index)?);
-            if input.declaration().ty().kind() == NativeScalarKind::Bool {
+            if plan.kind(value) == Some(NativeScalarKind::Bool) {
                 let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, 1);
                 guard(&mut b, valid, error, STATUS_ABI);
             }
-            b.ins().store(
-                MemFlags::new(),
-                word,
-                locals,
-                offset(input.value().get() as usize)?,
-            );
+            b.ins()
+                .store(MemFlags::new(), word, locals, offset(value.get() as usize)?);
         }
-        for constant in plan.constants() {
-            let word = match constant.scalar() {
-                NativeScalarValue::Bool(value) => u64::from(value),
-                NativeScalarValue::U64(value) => value,
-                NativeScalarValue::I64(value) => value as u64,
-                NativeScalarValue::F64(value) => value.bits(),
-            };
-            let value = b.ins().iconst(types::I64, word as i64);
-            b.ins().store(
-                MemFlags::new(),
-                value,
-                locals,
-                offset(constant.value().get() as usize)?,
-            );
+        for index in 0..plan.constant_count() {
+            let (slot, word) = plan.constant(index)?;
+            if let Some(word) = word {
+                let value = b.ins().iconst(types::I64, word as i64);
+                b.ins()
+                    .store(MemFlags::new(), value, locals, offset(slot.get() as usize)?);
+            }
         }
         let callback_signature = b.import_signature(callback_signature);
         let mut reachable = vec![false; plan.blocks().len()];
@@ -382,26 +402,64 @@ fn define<M: Module>(
                 error,
             );
             match block.action() {
-                NativeIterationAction::LibraryCall { .. } => {
-                    return Err(NativeCompileError::InvalidPlan {
-                        node: Some(block.origin().node()),
-                        reason: "managed call requires native managed transport",
-                    });
+                NativeIterationAction::LibraryCall {
+                    operands, output, ..
+                } => {
+                    let hooks = hooks
+                        .as_ref()
+                        .ok_or_else(|| backend("missing mixed call hooks"))?;
+                    let mut args = [b.ins().iconst(types::I64, 0); 2];
+                    if operands.len() > 2 {
+                        return Err(backend("unsupported library arity"));
+                    }
+                    for (index, &operand) in operands.iter().enumerate() {
+                        if plan.kind(operand).is_some() {
+                            args[index] = load(&mut b, locals, operand)?;
+                        }
+                    }
+                    hooks.call(&mut b, index, 0, args, error);
+                    if plan.kind(*output).is_some() {
+                        let value = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+                        b.ins().store(
+                            MemFlags::new(),
+                            value,
+                            locals,
+                            offset(output.get() as usize)?,
+                        );
+                    }
                 }
                 NativeIterationAction::Scalar(action) => {
-                    emit_scalar_action(&mut b, locals, action, error)?
+                    if let NativeMatchAction::Copy { output, .. } = action
+                        && plan.kind(*output).is_none()
+                    {
+                        let hooks = hooks
+                            .as_ref()
+                            .ok_or_else(|| backend("missing managed move hook"))?;
+                        let zero = b.ins().iconst(types::I64, 0);
+                        hooks.call(&mut b, index, 1, [zero; 2], error);
+                    } else {
+                        emit_scalar_action(&mut b, locals, action, error)?;
+                    }
                 }
                 NativeIterationAction::Initialize { iteration } => {
                     let iteration = &plan.iterations()[*iteration as usize];
-                    let value = load(&mut b, locals, iteration.seed())?;
-                    b.ins().store(
-                        MemFlags::new(),
-                        value,
-                        locals,
-                        offset(iteration.carrier().get() as usize)?,
-                    );
+                    if plan.kind(iteration.carrier()).is_some() {
+                        let value = load(&mut b, locals, iteration.seed())?;
+                        b.ins().store(
+                            MemFlags::new(),
+                            value,
+                            locals,
+                            offset(iteration.carrier().get() as usize)?,
+                        );
+                    } else {
+                        let hooks = hooks
+                            .as_ref()
+                            .ok_or_else(|| backend("missing managed carrier hook"))?;
+                        let zero = b.ins().iconst(types::I64, 0);
+                        hooks.call(&mut b, index, 1, [zero; 2], error);
+                    }
                     let count = b.ins().iconst(types::I64, iteration.count() as i64);
-                    let slot = plan.values().len()
+                    let slot = plan.value_count()
                         + match block.action() {
                             NativeIterationAction::Initialize { iteration } => *iteration as usize,
                             _ => unreachable!(),
@@ -415,37 +473,76 @@ fn define<M: Module>(
                         types::I64,
                         MemFlags::new(),
                         locals,
-                        offset(plan.values().len() + id)?,
+                        offset(plan.value_count() + id)?,
                     );
                     let nonzero = b.ins().icmp_imm(IntCC::NotEqual, counter, 0);
                     guard(&mut b, nonzero, error, STATUS_ABI);
-                    let next = load(&mut b, locals, iteration.next())?;
-                    b.ins().store(
-                        MemFlags::new(),
-                        next,
-                        locals,
-                        offset(iteration.carrier().get() as usize)?,
-                    );
+                    if plan.kind(iteration.carrier()).is_some() {
+                        let next = load(&mut b, locals, iteration.next())?;
+                        b.ins().store(
+                            MemFlags::new(),
+                            next,
+                            locals,
+                            offset(iteration.carrier().get() as usize)?,
+                        );
+                    } else {
+                        let hooks = hooks
+                            .as_ref()
+                            .ok_or_else(|| backend("missing managed latch hook"))?;
+                        let zero = b.ins().iconst(types::I64, 0);
+                        hooks.call(&mut b, index, 1, [zero; 2], error);
+                    }
                     let remaining = b.ins().iadd_imm(counter, -1);
                     b.ins().store(
                         MemFlags::new(),
                         remaining,
                         locals,
-                        offset(plan.values().len() + id)?,
+                        offset(plan.value_count() + id)?,
                     );
                 }
             }
             match block.terminator() {
-                NativeIterationTerminator::Scalar(terminator) => emit_scalar_terminator(
-                    &mut b,
-                    frame,
-                    locals,
-                    outputs,
-                    terminator,
-                    &blocks,
-                    plan.outputs(),
-                    plan.values(),
-                )?,
+                NativeIterationTerminator::Scalar(terminator) => match plan {
+                    super::iteration_code_plan::CodePlan::Scalar(p) => emit_scalar_terminator(
+                        &mut b,
+                        frame,
+                        locals,
+                        outputs,
+                        terminator,
+                        &blocks,
+                        p.outputs(),
+                        p.values(),
+                    )?,
+                    #[cfg(feature = "canonical-native-program")]
+                    super::iteration_code_plan::CodePlan::Program(_) => {
+                        if terminator == NativeMatchTerminator::Complete {
+                            let hooks = hooks
+                                .as_ref()
+                                .ok_or_else(|| backend("missing typed completion hook"))?;
+                            for out in 0..plan.output_count() {
+                                let value = plan.output(out);
+                                let first = if plan.kind(value).is_some() {
+                                    load(&mut b, locals, value)?
+                                } else {
+                                    b.ins().iconst(types::I64, 0)
+                                };
+                                let zero = b.ins().iconst(types::I64, 0);
+                                hooks.call(&mut b, index, 2 + out as u64, [first, zero], error);
+                            }
+                            set_origin(&mut b, frame, NO_NODE);
+                            let status = b.ins().iconst(types::I64, super::abi::STATUS_OK as i64);
+                            b.ins().return_(&[status]);
+                        } else {
+                            super::control_compiler::emit_branch_terminator(
+                                &mut b,
+                                locals,
+                                terminator,
+                                &blocks,
+                                |v| plan.kind(v),
+                            )?;
+                        }
+                    }
+                },
                 NativeIterationTerminator::Header {
                     iteration,
                     body,
@@ -455,7 +552,7 @@ fn define<M: Module>(
                         types::I64,
                         MemFlags::new(),
                         locals,
-                        offset(plan.values().len() + iteration as usize)?,
+                        offset(plan.value_count() + iteration as usize)?,
                     );
                     let nonzero = b.ins().icmp_imm(IntCC::NotEqual, remaining, 0);
                     b.ins().brif(
@@ -478,8 +575,8 @@ fn define<M: Module>(
                     if block.terminator()
                         == NativeIterationTerminator::Scalar(NativeMatchTerminator::Complete)
                     {
-                        (plan.outputs().len() as u64)
-                            .checked_mul(8)
+                        (plan.output_count() as u64)
+                            .checked_mul(if plan.is_program() { 64 } else { 8 })
                             .and_then(|v| {
                                 v.checked_add((plan.iterations().len() as u64).checked_mul(8)?)
                             })
@@ -515,8 +612,5 @@ fn define<M: Module>(
     let code = compiled.code_info().total_size as u64;
     limit("Iteration stack", stack, limits.max_stack_bytes)?;
     limit("Iteration code", code, limits.max_code_bytes)?;
-    Ok((
-        function,
-        NativeIterationDescriptor::from_plan(plan, stack, code).map_err(backend)?,
-    ))
+    Ok((function, stack, code))
 }

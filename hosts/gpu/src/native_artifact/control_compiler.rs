@@ -610,6 +610,31 @@ pub(super) fn emit_scalar_terminator(
     output_values: &[mech_engine::native_artifact::NativeMatchOutput],
     value_types: &[mech_engine::native_artifact::NativeScalarType],
 ) -> Result<(), NativeCompileError> {
+    if terminator == NativeMatchTerminator::Complete {
+        set_origin(b, frame, NO_NODE);
+        for (index, output) in output_values.iter().enumerate() {
+            let value = load(b, locals, output.value())?;
+            b.ins()
+                .store(MemFlags::new(), value, outputs, offset(index)?);
+        }
+        let status = b.ins().iconst(types::I64, STATUS_OK as i64);
+        b.ins().return_(&[status]);
+        return Ok(());
+    }
+    emit_branch_terminator(b, locals, terminator, blocks, |value| {
+        value_types.get(value.get() as usize).map(|ty| ty.kind())
+    })
+}
+
+/// The same native branches serve scalar and mixed-value CFGs. A mixed value
+/// never acquires a fictitious scalar type merely to reuse this emitter.
+pub(super) fn emit_branch_terminator(
+    b: &mut FunctionBuilder<'_>,
+    locals: Value,
+    terminator: NativeMatchTerminator,
+    blocks: &[Option<cranelift_codegen::ir::Block>],
+    kind: impl Fn(NativeMatchValue) -> Option<NativeScalarKind>,
+) -> Result<(), NativeCompileError> {
     match terminator {
         NativeMatchTerminator::Jump(next) => {
             b.ins()
@@ -632,7 +657,10 @@ pub(super) fn emit_scalar_terminator(
             yes,
             no,
         } => {
-            let kind = value_types[left.get() as usize].kind();
+            let kind = kind(left).ok_or(NativeCompileError::InvalidPlan {
+                node: None,
+                reason: "literal branch needs its exact scalar kind",
+            })?;
             let left = load(b, locals, left)?;
             let right = load(b, locals, right)?;
             // Match literal equality is language equality, not raw
@@ -657,14 +685,10 @@ pub(super) fn emit_scalar_terminator(
             b.ins().return_(&[status]);
         }
         NativeMatchTerminator::Complete => {
-            set_origin(b, frame, NO_NODE);
-            for (index, output) in output_values.iter().enumerate() {
-                let value = load(b, locals, output.value())?;
-                b.ins()
-                    .store(MemFlags::new(), value, outputs, offset(index)?);
-            }
-            let status = b.ins().iconst(types::I64, STATUS_OK as i64);
-            b.ins().return_(&[status]);
+            return Err(NativeCompileError::InvalidPlan {
+                node: None,
+                reason: "completion must use its typed publication boundary",
+            });
         }
     }
 

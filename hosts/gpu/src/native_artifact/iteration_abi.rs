@@ -73,50 +73,7 @@ impl NativeIterationDescriptor {
             .and_then(|n| n.checked_add((plan.iterations().len() as u64).checked_mul(8)?))
             .and_then(|n| n.checked_add(256))
             .ok_or("iteration completion overflow")?;
-        let mut visits = Vec::with_capacity(plan.blocks().len());
-        for (id, block) in plan.blocks().iter().enumerate() {
-            let (successors, complete) = match block.terminator() {
-                Terminator::Scalar(Term::Jump(next)) => ([Some(next), None], false),
-                Terminator::Scalar(
-                    Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. },
-                ) => ([Some(yes), Some(no)], false),
-                Terminator::Header { body, exit, .. } => ([Some(body), Some(exit)], false),
-                Terminator::Scalar(Term::Complete) => ([None, None], true),
-                Terminator::Scalar(Term::Reject) => ([None, None], false),
-            };
-            let progress = match (block.action(), block.terminator()) {
-                (Action::Initialize { iteration }, _) => Progress::Initialize(*iteration),
-                (Action::Latch { iteration }, _) => Progress::Latch(*iteration),
-                (_, Terminator::Header { iteration, .. }) => Progress::Header(iteration),
-                _ => plan
-                    .iterations()
-                    .iter()
-                    .position(|v| v.exit() as usize == id)
-                    .map(|v| Progress::Exit(v as u32))
-                    .unwrap_or(Progress::Normal),
-            };
-            let arithmetic = matches!(block.action(), Action::Scalar(Scalar::Primitive { .. }));
-            let work = if complete {
-                completion
-            } else {
-                match block.action() {
-                    Action::Scalar(Scalar::Primitive { op, .. }) => super::abi::primitive_work(*op)
-                        .checked_add(128)
-                        .ok_or("iteration primitive work overflow")?,
-                    _ => 256,
-                }
-            };
-            visits.push(NativeIterationVisit {
-                origin: block.origin(),
-                successors,
-                iteration: block.iteration(),
-                progress,
-                complete,
-                arithmetic,
-                reject: block.terminator() == Terminator::Scalar(Term::Reject),
-                work,
-            });
-        }
+        let visits = control_visits(plan.blocks(), plan.iterations(), completion)?;
         Ok(Self {
             entry: plan.entry(),
             revision: plan.program_revision(),
@@ -168,4 +125,55 @@ impl NativeIterationDescriptor {
     pub(super) fn local_count(&self) -> Option<usize> {
         self.value_count.checked_add(self.iterations.len())
     }
+}
+
+pub(super) fn control_visits(
+    blocks: &[mech_engine::native_artifact::NativeIterationBlock],
+    iterations: &[NativeIterationLoop],
+    completion: u64,
+) -> Result<Vec<NativeIterationVisit>, &'static str> {
+    let mut visits = Vec::with_capacity(blocks.len());
+    for (id, block) in blocks.iter().enumerate() {
+        let (successors, complete) = match block.terminator() {
+            Terminator::Scalar(Term::Jump(next)) => ([Some(next), None], false),
+            Terminator::Scalar(
+                Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. },
+            ) => ([Some(yes), Some(no)], false),
+            Terminator::Header { body, exit, .. } => ([Some(body), Some(exit)], false),
+            Terminator::Scalar(Term::Complete) => ([None, None], true),
+            Terminator::Scalar(Term::Reject) => ([None, None], false),
+        };
+        let progress = match (block.action(), block.terminator()) {
+            (Action::Initialize { iteration }, _) => Progress::Initialize(*iteration),
+            (Action::Latch { iteration }, _) => Progress::Latch(*iteration),
+            (_, Terminator::Header { iteration, .. }) => Progress::Header(iteration),
+            _ => iterations
+                .iter()
+                .position(|v| v.exit() as usize == id)
+                .map(|v| Progress::Exit(v as u32))
+                .unwrap_or(Progress::Normal),
+        };
+        let arithmetic = matches!(block.action(), Action::Scalar(Scalar::Primitive { .. }));
+        let work = if complete {
+            completion
+        } else {
+            match block.action() {
+                Action::Scalar(Scalar::Primitive { op, .. }) => super::abi::primitive_work(*op)
+                    .checked_add(128)
+                    .ok_or("iteration primitive work overflow")?,
+                _ => 256,
+            }
+        };
+        visits.push(NativeIterationVisit {
+            origin: block.origin(),
+            successors,
+            iteration: block.iteration(),
+            progress,
+            complete,
+            arithmetic,
+            reject: block.terminator() == Terminator::Scalar(Term::Reject),
+            work,
+        });
+    }
+    Ok(visits)
 }
