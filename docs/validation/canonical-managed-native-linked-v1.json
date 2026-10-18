@@ -1,0 +1,84 @@
+{
+  "schema": "mech.canonical-managed-native-linked.v1",
+  "status": "ACTUAL_LINKED_FIXTURES_QUALIFIED_NOT_PRODUCTION_RESOURCE_AOT",
+  "pull_request": "https://github.com/mech-lang/mech/pull/906",
+  "qualified_source": {
+    "commit": "933117167d212ae7e13bcd0de83cad320603a7e2",
+    "tree": "480ce3b8ac7d74d49ba153ff1f9e7edbb5c813f8",
+    "parent_foundations": "b8b8a4bfc454903da135899a7612a06849f4f270",
+    "workspace_lock_sha256": "b70413d037a8cfbea0f1a851036ba14564ea43121ded258d605ebaf78b4f554e",
+    "state": "Clean committed source, unchanged from first gate through actual linked execution; later receipt-only commits are not relabeled as the tested source."
+  },
+  "architecture": [
+    "The application generator uses the existing canonical ProgramArtifact, private selected operation bindings, checked CFG/Object emitter, value arena, current-visit checker and cumulative native/library work account.",
+    "The shared pinned application writer selects a managed runtime-only profile. The shell accepts bounded typed qualification input and exports complete canonical snapshots after atomic evaluation; it is not an application capability host or program interpreter.",
+    "The existing iteration qualifier and the managed qualifier share process, source-pin and compiled-closure helpers. Generated Object metadata remains linked=false/executed=false; enclosing process evidence separately establishes actual linking and execution.",
+    "The earlier hosted benchmark capability bypass was removed. Runtime builder/state/admission match the parent. canonical_host_reference always uses the ordinary secured runtime/provider and remains an explicitly resident reference."
+  ],
+  "qualification": {
+    "finished_utc": "2026-10-18T19:25:34Z",
+    "exit": 0,
+    "toolchain": "nightly-2026-03-03",
+    "profile": "Locked/offline, serial -j1, debug/test opt0, debug0, assertions and overflow checks enabled, incremental disabled. Linked applications are debug correctness builds, not performance builds.",
+    "normal_managed_program_methods": 8,
+    "retained_scalar_iteration_methods": 11,
+    "explicit_linked_methods": 1,
+    "ci_contract_methods": 155,
+    "additional_checks": ["canonical-native-program-runtime library", "secured canonical_host_reference example", "unsafe audit", "warning policy contract", "module layout", "format", "diff", "unchanged clean source"],
+    "retained_ignored_iteration_process_qualifier": "Not executed in this run; no new execution credit is assigned to it.",
+    "explicit_linked_command": [
+      "MECH_CANONICAL_PROGRAM_SOURCE_COMMIT=933117167d212ae7e13bcd0de83cad320603a7e2",
+      "MECH_CANONICAL_PROGRAM_EVIDENCE_DIR=<fresh-absolute-directory-outside-checkout>",
+      "CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0",
+      "cargo +nightly-2026-03-03 test --locked --offline -j1 -p mech-gpu --no-default-features --features canonical-native-program --test canonical_artifact_program -- --ignored --exact linked_qualification::linked_managed_programs_preserve_canonical_outputs_errors_and_denials --test-threads=1"
+    ],
+    "selection": "An explicit --list --ignored --exact guard selected exactly one method before execution. CI applies the same nonempty exact-selection rule.",
+    "oracle": "Original/bytecode-decoded canonical resident and JIT results agree; actual linked process streams match complete canonical exported outputs. Root and lexical fixtures call all seven maintained families, with lexical Match and managed loops.",
+    "finite_fixture_policy": {"global_work": 1000000000, "managed_memory_bytes": 268435456, "library_compute": 134217728, "library_comparison": 1000000, "library_temporary_bytes": 134217728},
+    "policy_scope": "Explicit conservative fixture policy only; product defaults and ordinary 100/400 success and 4000 denial/recovery policies were not changed.",
+    "warnings": "Standalone selected machine profiles emit46 unused-code/macro warnings: math1, compare42, logic3. Workspace warning-policy checks pass; warning-free standalone compilation is not claimed."
+  },
+  "executables": [
+    {"name": "root", "sha256": "ca4c7dc9b30a6c4270146ae3edc667814f924aa6df94475debbd297ad35bdaef", "process_cases": 12, "success_or_recovery": 4, "required_denial_or_error": 8, "compiled_units": 114},
+    {"name": "lexical", "sha256": "7838835161aa7845c7f4c362a980d5e3a5fcab66c2b9bb2baad02fbdec0e9fc4", "process_cases": 14, "success_or_recovery": 7, "required_denial_or_error": 7, "compiled_units": 114}
+  ],
+  "failure_coverage": ["global work", "managed memory", "per-call compute", "per-call temporary memory", "invalid JSON transport", "missing input", "wrong input kind", "root late checked division", "fresh-process recovery with exact output"],
+  "runtime_closure": {
+    "mech_gpu_features": ["canonical-native-runtime", "canonical-native-program-runtime"],
+    "source_compiler_or_cranelift_compiled_units": 0,
+    "source_native_or_compiler_features": 0,
+    "independently_reconciled_binary_and_generated_input_pins": 34,
+    "evidence": "Actual compiler-artifact units and features are recorded for both linked builds, not inferred from their dependency manifests."
+  },
+  "local_evidence": {
+    "root": "tmp/pr-stack-evidence/",
+    "qualification": {"path": "canonical-program-linked-v307/qualification.json", "sha256": "12100e15e874b24b856acb7618ef2ea148be25606fff94c168c473a0ed25cafb"},
+    "log": {"path": "checked-aot-v307-linked-managed-program.log", "sha256": "ffc88cbc2e5511e07555391b57e9e8fb73a3146813a78c467c34104b2bbea7c7"},
+    "driver": {"path": "qualify-linked-managed-program-v307.zsh", "sha256": "a4e3e1f605ebf1d500227bcc8495a0d84d8b466adb9a9c3d660e64d21bfb2ac0"},
+    "failed_attempt": "v305 exited101 because Object metadata() was not exposed. It did not reach linked execution. The API was added in933117167 and the complete v307 rerun passed; the failed log is retained.",
+    "availability": "Raw projects, streams, compiled-unit records and binaries are local evidence, not committed products. The maintained qualifier and explicit command reproduce them from the qualified commit. CI uploads its independently generated evidence."
+  },
+  "resident_reference_admission_review_correction": {
+    "review_thread": "PRRT_kwDOCJ6M-c6tt3iG",
+    "review_comment": 4308464622,
+    "code_commit": "81b36beac362cec7af973b4dfd81c76f2f6e30f2",
+    "qualified_head_before_patch": "933117167d212ae7e13bcd0de83cad320603a7e2",
+    "qualified_tracked_patch_sha256": "111a586846bfd1fbd007de608d790c6d4829b3792ca80674e8b60f004991164a",
+    "qualified_code_diff_sha256": "b84fc5106aac42322e52cc0b06c639ac7dd9b486c148463b037c4975968e2a45",
+    "committed_code_reconciliation": "The four-file committed correction is byte-for-byte identical to its source-frozen qualified code diff. The full tracked patch also included the later documentation link, not changes to native/compiler/runtime-library implementation.",
+    "cause": "The resident reference manually decoded bytecode and invoked load_compiled_program, bypassing the ordinary bytecode loader's source-size admission and reading the entire file without a bound.",
+    "correction": "Read at most configured max_source_bytes+1, then use ordinary load_bytecode_program for size admission and decoding. Explicit None remains the ordinary unbounded configuration. Revision comes from the runtime load outcome; authority, limits, one-program ownership and shutdown remain unchanged.",
+    "executed_methods": ["exact_limit_reference_matches_ordinary_bytecode_loading", "oversized_valid_bytecode_matches_denial_and_preserves_publication", "acquisition_stops_at_limit_plus_one_and_respects_explicit_none"],
+    "results": "All three pass; 155 CI contracts and unsafe/warning/layout/format/diff/unchanged-source checks pass. CI explicitly executes the example test harness.",
+    "finished_utc": "2026-10-18T20:06:30Z",
+    "log": "tmp/pr-stack-evidence/checked-aot-v318-reference-bytecode-admission.log",
+    "log_sha256": "f8b2db85b22494daf973b90195a71b392886d56d6a4b31107e8f4fdbac600213",
+    "driver": "tmp/pr-stack-evidence/qualify-reference-bytecode-admission-v315.zsh, with only the log filename replaced v315 to v318",
+    "driver_sha256": "8621037dc702d9bc1089c270e2b8eaa0b0a3616e2c859ac40b2af65ef332e141",
+    "retained_failed_attempt": "v315 ran all three methods: two passed; the third passed admission/atomicity checks but attempted recovery by loading into an already-active runtime. The test now verifies the prior output remains and explicitly unloads before loading again. No runtime invariant was weakened; the original failure is retained.",
+    "scope": "This corrects only the secured resident reference. Native linked and I/O timing evidence retain their original qualified source933117167; the correction does not relabel or replace those results. Fresh exact-head review and CI are still required."
+  },
+  "benchmark_measurements": 0,
+  "not_established": ["complete production canonical build route", "native resource-host lifecycle", "general native comprehensions/element-wise counts/state/FSM", "all ten idiomatic programs", "full-size canonical k-nucleotide", "new canonical native performance result", "complete final-head CI or clean review"],
+  "remaining_full_objective": "checked-aot-workload-progress-v1.json follow_up_roadmap remains required. The separate legacy-native I/O diagnostic is native-io-migration-timing-v1.json; its measurements do not qualify this canonical backend or resolve the independent source compiler."
+}
