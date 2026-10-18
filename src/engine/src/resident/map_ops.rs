@@ -265,6 +265,7 @@ fn execute(
     let mut meter = ResidentBudgetMeter::default();
     let mut order = Vec::new();
     let mut scratch = Vec::new();
+    let mut radix_frames = Vec::new();
     let source_strings = if plan.operation == Operation::Histogram {
         Some(strings(plan, input)?)
     } else {
@@ -278,7 +279,9 @@ fn execute(
     } else {
         None
     };
-    let (count, payload, work, scratch_bytes) = if let Some(strings) = source_strings {
+    let (count, payload, work, key_comparison_work, scratch_bytes) = if let Some(strings) =
+        source_strings
+    {
         let n = strings.len();
         meter.charge_compute_work(budget::checked_u64(n)?)?;
         let bytes = (0..n).try_fold(0usize, |total, index| {
@@ -286,40 +289,55 @@ fn execute(
                 .checked_add(strings.get(index).len())
                 .ok_or(ResidentKernelError::InvalidShape)
         })?;
-        let levels = if n <= 1 {
-            0
-        } else {
-            usize::BITS - (n - 1).leading_zeros()
-        } as usize;
-        let work = bytes
+        let work = primitives::string_radix_compute_bound(n, bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        // Radix distribution performs no String-pair comparisons. Reserve the
+        // complete byte/metadata work as compute. One equality pass groups the
+        // sorted keys: unequal lengths stop at metadata, equal lengths scan at
+        // most the current key's bytes. Save its run starts for construction,
+        // rather than comparing every key again while building the result.
+        let key_comparison_work = bytes
             .checked_add(n)
-            .and_then(|value| value.checked_mul(levels.checked_add(6)?))
             .ok_or(ResidentKernelError::InvalidShape)?;
         let scratch_bytes = n
-            .checked_mul(core::mem::size_of::<usize>())
-            .and_then(|bytes| bytes.checked_mul(2))
+            .checked_mul(
+                2 * core::mem::size_of::<usize>()
+                    + core::mem::size_of::<primitives::StringRadixFrame>(),
+            )
+            .and_then(|bytes| bytes.checked_add(primitives::STRING_RADIX_FIXED_BYTES))
             .ok_or(ResidentKernelError::InvalidShape)?;
-        PreparedKernel::new((), budget::resident_cost! { compute_work: work, comparison_work: work, temporary_bytes: scratch_bytes, ..budget::KernelCostEstimate::default() }).admit()?.into_plan();
+        PreparedKernel::new((), budget::resident_cost! { compute_work: work, comparison_work: key_comparison_work, temporary_bytes: scratch_bytes, ..budget::KernelCostEstimate::default() }).admit()?.into_plan();
         order
             .try_reserve_exact(n)
             .map_err(|_| ResidentKernelError::InvalidShape)?;
         scratch
             .try_reserve_exact(n)
             .map_err(|_| ResidentKernelError::InvalidShape)?;
+        radix_frames
+            .try_reserve_exact(n)
+            .map_err(|_| ResidentKernelError::InvalidShape)?;
         order.resize(n, 0);
         scratch.resize(n, 0);
-        primitives::sort_positions(&mut order, &mut scratch, |index| strings.get(index));
+        radix_frames.resize(n, primitives::StringRadixFrame::default());
+        primitives::radix_sort_string_positions(
+            &mut order,
+            &mut scratch,
+            &mut radix_frames,
+            |index| strings.get(index),
+        )
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
         let mut count = 0usize;
         let mut payload = 0usize;
         let mut start = 0;
         while start < n {
+            scratch[count] = start;
             payload = payload
                 .checked_add(strings.get(order[start]).len())
                 .ok_or(ResidentKernelError::InvalidShape)?;
             start = primitives::run_end(&order, start, |index| strings.get(index));
             count += 1;
         }
-        (count, payload, work, scratch_bytes)
+        (count, payload, work, key_comparison_work, scratch_bytes)
     } else {
         let entries = source_map
             .ok_or(ResidentKernelError::InvalidInput)?
@@ -337,7 +355,7 @@ fn execute(
                     .ok_or(ResidentKernelError::InvalidShape)?;
             }
         }
-        (entries.len(), payload, entries.len(), 0)
+        (entries.len(), payload, entries.len(), entries.len(), 0)
     };
     let metadata = kernel
         .snapshot_output()
@@ -424,7 +442,7 @@ fn execute(
     let measured = meter.estimate();
     let cost = budget::resident_cost! {
         compute_work: (work as u64).checked_add(finalization_work).and_then(|v| v.checked_add(measured.compute_work())).ok_or(ResidentKernelError::InvalidShape)?,
-        comparison_work: comparison_work.checked_add(finalization_work).and_then(|v| v.checked_add(work as u64)).and_then(|v| v.checked_add(measured.comparison_work())).ok_or(ResidentKernelError::InvalidShape)?,
+        comparison_work: comparison_work.checked_add(finalization_work).and_then(|v| v.checked_add(key_comparison_work as u64)).and_then(|v| v.checked_add(measured.comparison_work())).ok_or(ResidentKernelError::InvalidShape)?,
         output_elements: count, output_bytes: footprint.retained_bytes, temporary_bytes: temporary, cloned_bytes: payload,
         retained_nodes: footprint.node_count.checked_mul(3).and_then(|v| v.checked_add(measured.retained_nodes())).ok_or(ResidentKernelError::InvalidShape)?,
         ..budget::KernelCostEstimate::default()
@@ -435,11 +453,17 @@ fn execute(
         entries
             .try_reserve_exact(count)
             .map_err(|_| ResidentKernelError::InvalidShape)?;
-        let mut start = 0;
-        while start < order.len() {
-            let end = primitives::run_end(&order, start, |index| strings.get(index));
-            let count =
-                primitives::count_run(start, end).map_err(|_| ResidentKernelError::InvalidShape)?;
+        for run in 0..count {
+            let start = scratch[run];
+            let end = if run + 1 < count {
+                scratch[run + 1]
+            } else {
+                order.len()
+            };
+            let count = budget::checked_u64(
+                end.checked_sub(start)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )?;
             entries.push(MapEntryDraft {
                 items: vec![
                     ValueDataDraft::String(strings.get(order[start]).to_owned()),
@@ -447,7 +471,6 @@ fn execute(
                 ]
                 .into_boxed_slice(),
             });
-            start = end;
         }
         ValueDataDraft::Map(entries.into_boxed_slice())
     } else {

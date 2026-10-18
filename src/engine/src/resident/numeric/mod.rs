@@ -15918,9 +15918,47 @@ fn map_access_entry_for_selector_with_meter(
         }
         _ => return Err(ResidentKernelError::InvalidInput),
     };
-    for entry in map.entries() {
-        super::budget::charge_canonical_key_footprint(meter, key_schema, entry.key().data())?;
-        meter.charge_comparison_work(candidate_work)?;
+    if matches!(key_schema, SchemaBody::String) {
+        // Canonical keys are immutable. Finding their largest encoded length
+        // reads String headers, not their UTF-8 payloads. Reserve the complete
+        // binary-search path before its first comparison; neither a missing
+        // key nor a late hit can obtain a cheaper admission decision.
+        let mut largest_key_work = candidate_work;
+        let mut key_bytes = 0u64;
+        for entry in map.entries() {
+            meter.charge_compute_work(64)?;
+            let ValueData::String(text) = entry.key().data() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            let bytes = super::budget::checked_u64(text.len())?;
+            largest_key_work = largest_key_work.max(
+                bytes
+                    .checked_add(8)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            );
+            key_bytes = key_bytes
+                .checked_add(bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            meter.charge_retained_nodes(1)?;
+        }
+        let comparisons = map
+            .entries()
+            .len()
+            .checked_ilog2()
+            .map_or(0, |height| u64::from(height) + 1);
+        meter.charge_comparison_work(
+            largest_key_work
+                .checked_mul(comparisons)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )?;
+        // Preserve the existing conservative selector-storage reservation.
+        // This optimization changes only real traversal/comparison work.
+        meter.charge_selector_bytes(key_bytes)?;
+    } else {
+        for entry in map.entries() {
+            super::budget::charge_canonical_key_footprint(meter, key_schema, entry.key().data())?;
+            meter.charge_comparison_work(candidate_work)?;
+        }
     }
     let cost = meter.estimate();
     super::budget::PreparedKernel::new((), cost)
@@ -28505,7 +28543,7 @@ mod tests {
             map_access_entry_for_selector(map, &string_body, ResidentValueRef::String(&selector))
                 .unwrap();
         assert_eq!(ordinal, 2);
-        let expected_work = map
+        let largest_key = map
             .entries()
             .iter()
             .map(|entry| {
@@ -28516,8 +28554,12 @@ mod tests {
                 .unwrap()
             })
             .map(|footprint| footprint.encoded_bytes.max(footprint.node_count).max(1))
-            .sum::<u64>()
-            + (selector[0].len() as u64 + 8) * (map.entries().len() as u64 + 1);
+            .max()
+            .unwrap();
+        let expected_work = selector[0].len() as u64
+            + 8
+            + largest_key.max(selector[0].len() as u64 + 8)
+                * u64::from(map.entries().len().ilog2() + 1);
         assert_eq!(comparison_work, expected_work);
     }
 
@@ -29617,13 +29659,40 @@ mod tests {
             unreachable!()
         };
         let late = ["key-04999".to_owned()];
+        let comparison_work =
+            (late[0].len() as u64 + 8) * (u64::from(map.entries().len().ilog2()) + 2);
+        let mut plan =
+            super::super::budget::detached_turn_plan(mech_core::ResourceDemand::default()).unwrap();
+        plan.budget_limits.max_comparison_work = Some(comparison_work - 1);
         assert_eq!(
-            map_access_entry_for_selector(map, &string_body, ResidentValueRef::String(&late)),
+            super::super::budget::with_resident_turn_plan(plan.clone(), || {
+                map_access_entry_for_selector(map, &string_body, ResidentValueRef::String(&late))
+            }),
             Err(ResidentKernelError::ResourceLimit {
                 phase: mech_core::ResidentResourcePhase::Admission,
                 dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
-                required: 65552,
-                limit: 65536
+                required: comparison_work,
+                limit: comparison_work - 1,
+            }),
+        );
+        plan.budget_limits.max_comparison_work = Some(comparison_work);
+        assert_eq!(
+            super::super::budget::with_resident_turn_plan(plan.clone(), || {
+                map_access_entry_for_selector(map, &string_body, ResidentValueRef::String(&late))
+            }),
+            Ok((4_999, comparison_work)),
+        );
+        let missing = ["key-05000".to_owned()];
+        plan.budget_limits.max_comparison_work = Some(comparison_work - 1);
+        assert_eq!(
+            super::super::budget::with_resident_turn_plan(plan, || {
+                map_access_entry_for_selector(map, &string_body, ResidentValueRef::String(&missing))
+            }),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: comparison_work,
+                limit: comparison_work - 1,
             }),
         );
     }

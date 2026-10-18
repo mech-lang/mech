@@ -1319,6 +1319,35 @@ pub(crate) struct BorrowedFootprintSchemaProof {
     supported: bool,
 }
 
+/// A bounded binding-time proof for the common scalar/packed-matrix layouts.
+/// It inspects at most two schema variants, allocates nothing and grants no
+/// concrete value footprint. Other schemas retain the metered recursive proof.
+pub(crate) fn shallow_borrowed_footprint_schema_proof(
+    schema: &mech_core::Schema,
+) -> Option<BorrowedFootprintSchemaProof> {
+    let scalar = |body: &SchemaBody| {
+        matches!(
+            body,
+            SchemaBody::Bool
+                | SchemaBody::UnsignedInteger(_)
+                | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Complex(_)
+                | SchemaBody::Rational64
+                | SchemaBody::String
+                | SchemaBody::Id
+                | SchemaBody::Index
+                | SchemaBody::Atom(_)
+        )
+    };
+    let supported = scalar(schema.body())
+        || matches!(schema.body(), SchemaBody::Matrix { element, .. } if scalar(element));
+    supported.then_some(BorrowedFootprintSchemaProof {
+        key: schema.key(),
+        supported,
+    })
+}
+
 fn borrowed_footprint_schema_supported(
     meter: &mut ResidentBudgetMeter,
     schema: &SchemaBody,
@@ -1785,6 +1814,117 @@ mod tests {
                 mech_core::DimensionExpr::Constant(1),
                 mech_core::DimensionExpr::Constant(count as u64),
             ]),
+        }
+    }
+
+    #[test]
+    fn shallow_borrowed_proofs_do_not_cache_concrete_shape_or_payload() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, IntegerWidth, SchemaDraft, SchemaTableBuilder,
+            ValueDataDraft, ValueDraft, snapshot::SnapshotValidationContext,
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: vec![DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Inferred,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: None,
+                    }]
+                    .into_boxed_slice(),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                        dimensions: Box::new([
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        ]),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let schema = built.resolve(handle).unwrap();
+        let mut proof = shallow_borrowed_footprint_schema_proof(built.table.get(schema).unwrap());
+        assert!(proof.is_some());
+        let mut compute = None;
+        for count in [1usize, 10_000, 0, 3] {
+            let value = ValueDraft {
+                schema,
+                shape_values: vec![count as u64].into_boxed_slice(),
+                data: ValueDataDraft::Matrix(
+                    vec![ValueDataDraft::U64(7); count].into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&built.table))
+            .unwrap();
+            let mut meter = ResidentBudgetMeter::for_closed_analysis(1_024, 0);
+            let footprint = measure_borrowed_canonical_value_footprint_with_proof(
+                &mut meter,
+                &value,
+                &built.table,
+                &mut proof,
+            )
+            .unwrap();
+            assert_eq!(footprint, value.retained_footprint(&built.table).unwrap());
+            assert_eq!(footprint.encoded_bytes, count as u64 * 8);
+            assert_eq!(meter.estimate().comparison_work(), 0);
+            let observed = meter.estimate().compute_work();
+            assert_eq!(*compute.get_or_insert(observed), observed);
+            assert!(observed > 0);
+        }
+    }
+
+    #[test]
+    fn shallow_borrowed_proofs_recheck_current_owner_semantic_identity() {
+        let (number, number_owner) = borrowed_retention_value(
+            SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+            mech_core::ValueDataDraft::U64(7),
+        );
+        let (text, text_owner) = borrowed_retention_value(
+            SchemaBody::String,
+            mech_core::ValueDataDraft::String("x".repeat(40_000)),
+        );
+        assert_eq!(number.schema(), text.schema());
+        assert_ne!(number.schema_key(), text.schema_key());
+        let original =
+            shallow_borrowed_footprint_schema_proof(number_owner.get(number.schema()).unwrap());
+        let mut proof = original;
+        let mut meter = ResidentBudgetMeter::for_closed_analysis(1_024, 0);
+        let footprint = measure_borrowed_canonical_value_footprint_with_proof(
+            &mut meter,
+            &text,
+            &text_owner,
+            &mut proof,
+        )
+        .unwrap();
+        assert_eq!(footprint, text.retained_footprint(&text_owner).unwrap());
+        assert_ne!(proof, original);
+        assert_eq!(
+            meter.estimate().compute_work(),
+            3 * BORROWED_FOOTPRINT_METADATA_WORK
+        );
+    }
+
+    #[test]
+    fn shallow_borrowed_proofs_decline_recursive_and_dynamic_layouts() {
+        for body in [
+            SchemaBody::Dynamic,
+            SchemaBody::Tuple(vec![SchemaBody::Bool; 1_000].into_boxed_slice()),
+            borrowed_retention_matrix(SchemaBody::Dynamic, 1),
+        ] {
+            let schema = mech_core::SchemaDraft {
+                body,
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap();
+            assert!(shallow_borrowed_footprint_schema_proof(&schema).is_none());
         }
     }
 

@@ -96,6 +96,204 @@ pub(crate) fn sort_positions<'a>(
         width = width.saturating_mul(2);
     }
 }
+
+/// Workspace for an iterative most-significant-byte radix sort. Live frames
+/// describe disjoint ranges with at least two keys, so `order.len()` slots
+/// suffice independently of key length. No recursive host stack is used.
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct StringRadixFrame {
+    start: usize,
+    end: usize,
+    byte: usize,
+}
+
+pub(crate) const STRING_RADIX_FIXED_BYTES: usize =
+    2 * 257 * core::mem::size_of::<usize>() + 5 * core::mem::size_of::<u64>();
+
+/// Every key contributes at most one terminal symbol and its UTF-8 bytes.
+/// Each level counts, redistributes and copies indices, and visits only the
+/// occupied buckets (a bitset avoids scanning 257 empty buckets per prefix).
+/// This is compute work, not a reservation to compare arbitrary string pairs.
+pub(crate) fn string_radix_compute_bound(count: usize, bytes: usize) -> Option<usize> {
+    bytes
+        .checked_add(count)?
+        .checked_mul(256)?
+        .checked_add(count.checked_mul(16)?)?
+        .checked_add(1_024)
+}
+
+/// Allocation-free byte radix ordering agrees with the core String key
+/// relation. Symbol zero is end-of-key; byte b has symbol b+1, preserving both
+/// embedded NULs and byte-prefix ordering. The caller admits all buffers and
+/// the complete compute bound before this helper touches them.
+pub(crate) fn radix_sort_string_positions<'a>(
+    order: &mut [usize],
+    scratch: &mut [usize],
+    frames: &mut [StringRadixFrame],
+    key: impl Fn(usize) -> &'a str,
+) -> MResult<u64> {
+    if scratch.len() != order.len() || frames.len() < order.len() {
+        return Err(invalid("String radix workspace is incomplete"));
+    }
+    for (index, slot) in order.iter_mut().enumerate() {
+        *slot = index;
+    }
+    if order.len() < 2 {
+        return Ok(0);
+    }
+    let mut counts = [0usize; 257];
+    let mut cursors = [0usize; 257];
+    let mut pending = 1;
+    let mut visits = 0u64;
+    frames[0] = StringRadixFrame {
+        start: 0,
+        end: order.len(),
+        byte: 0,
+    };
+    while pending != 0 {
+        pending -= 1;
+        let StringRadixFrame { start, end, byte } = frames[pending];
+        let mut occupied = [0u64; 5];
+        for &index in &order[start..end] {
+            let symbol = key(index)
+                .as_bytes()
+                .get(byte)
+                .map_or(0, |value| usize::from(*value) + 1);
+            counts[symbol] += 1;
+            occupied[symbol / 64] |= 1u64 << (symbol % 64);
+            visits = visits
+                .checked_add(1)
+                .ok_or_else(|| invalid("String radix work overflows"))?;
+        }
+        let mut position = start;
+        for (word, &bits) in occupied.iter().enumerate() {
+            let mut bits = bits;
+            while bits != 0 {
+                let symbol = word * 64 + bits.trailing_zeros() as usize;
+                cursors[symbol] = position;
+                position += counts[symbol];
+                bits &= bits - 1;
+            }
+        }
+        for &index in &order[start..end] {
+            let symbol = key(index)
+                .as_bytes()
+                .get(byte)
+                .map_or(0, |value| usize::from(*value) + 1);
+            scratch[cursors[symbol]] = index;
+            cursors[symbol] += 1;
+            visits = visits
+                .checked_add(1)
+                .ok_or_else(|| invalid("String radix work overflows"))?;
+        }
+        order[start..end].copy_from_slice(&scratch[start..end]);
+        for (word, &bits) in occupied.iter().enumerate() {
+            let mut bits = bits;
+            while bits != 0 {
+                let symbol = word * 64 + bits.trailing_zeros() as usize;
+                let count = counts[symbol];
+                if symbol != 0 && count > 1 {
+                    let slot = frames
+                        .get_mut(pending)
+                        .ok_or_else(|| invalid("String radix frame bound exceeded"))?;
+                    *slot = StringRadixFrame {
+                        start: cursors[symbol] - count,
+                        end: cursors[symbol],
+                        byte: byte
+                            .checked_add(1)
+                            .ok_or_else(|| invalid("String radix position overflows"))?,
+                    };
+                    pending += 1;
+                }
+                counts[symbol] = 0;
+                bits &= bits - 1;
+            }
+        }
+    }
+    Ok(visits)
+}
+
+#[cfg(test)]
+mod string_radix_tests {
+    use super::*;
+
+    fn check(strings: &[String]) {
+        let mut order = vec![usize::MAX; strings.len()];
+        let mut scratch = vec![usize::MAX; strings.len()];
+        let mut frames = vec![StringRadixFrame::default(); strings.len()];
+        let visits = radix_sort_string_positions(&mut order, &mut scratch, &mut frames, |index| {
+            strings[index].as_str()
+        })
+        .unwrap();
+        let actual = order
+            .iter()
+            .map(|&index| strings[index].as_str())
+            .collect::<Vec<_>>();
+        let mut expected = strings.iter().map(String::as_str).collect::<Vec<_>>();
+        expected.sort();
+        assert_eq!(actual, expected);
+        let bytes = strings.iter().map(String::len).sum::<usize>();
+        assert!(visits <= 2 * (bytes + strings.len()) as u64);
+        assert!(string_radix_compute_bound(strings.len(), bytes).unwrap() >= visits as usize);
+        order.sort_unstable();
+        assert_eq!(order, (0..strings.len()).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn string_radix_orders_empty_prefix_nul_unicode_and_duplicate_keys() {
+        let values = [
+            "", "a", "a\0", "a\0z", "a\0a", "aa", "a", "é", "e\u{301}", "🦀", "\0", "\0\0", "z",
+        ];
+        for rotation in 0..values.len() {
+            let strings = values
+                .iter()
+                .cycle()
+                .skip(rotation)
+                .take(values.len())
+                .map(|text| (*text).to_owned())
+                .collect::<Vec<_>>();
+            check(&strings);
+        }
+        check(&[]);
+        check(&[String::new()]);
+        check(&vec![String::new(); 400]);
+    }
+
+    #[test]
+    fn string_radix_handles_long_common_prefixes_without_recursion_or_length_product() {
+        let prefix = "x".repeat(40_000);
+        check(&[
+            format!("{prefix}b"),
+            format!("{prefix}a"),
+            prefix.clone(),
+            prefix,
+        ]);
+        // A single long key must not cause repeated passes over many empty keys.
+        let mut strings = vec![String::new(); 1_000];
+        strings.push("x".repeat(40_000));
+        check(&strings);
+    }
+
+    #[test]
+    fn string_radix_preserves_every_key_for_varied_deterministic_inputs() {
+        let mut state = 17u64;
+        let mut strings = Vec::new();
+        for count in 0..512 {
+            let mut text = String::new();
+            for _ in 0..count % 19 {
+                state = state
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1);
+                text.push(char::from((state >> 32) as u8));
+            }
+            strings.push(text);
+        }
+        check(&strings);
+        assert!(string_radix_compute_bound(usize::MAX, 0).is_none());
+        assert!(string_radix_compute_bound(1, usize::MAX).is_none());
+    }
+}
+
 pub(crate) fn run_end<'a>(order: &[usize], start: usize, key: impl Fn(usize) -> &'a str) -> usize {
     let mut end = start + 1;
     while end < order.len() && key(order[start]) == key(order[end]) {

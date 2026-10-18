@@ -32,6 +32,72 @@
     "new_boundary_test": "snapshot_comparison_preparation_measures_metadata_but_reserves_payload_work",
     "limits_changed": false
   },
+  "resident_collection_work_followup": {
+    "as_of_utc": "2026-10-18T06:14:01Z",
+    "status": "PARTIAL_PROGRESS_400_BASE_REGRESSION_STILL_RED",
+    "tested_base": "f7b36537309438e5383727424dca1cb5bb6eddee",
+    "tested_implementation_diff_sha256": "009b1a7f50ae523bd7cf7ff90714975a13444cfa93fdb72ca8692be31e46e6ac",
+    "source_files_sha256": {
+      "src/engine/src/intrinsics/map_ops.rs": "bf242650f2786142062e6de14553cf80775340a5119ee21eef93d796ab38c7c2",
+      "src/engine/src/resident/budget.rs": "4c00f39d9ff6bf5e76ef892f694704fec519aae940daebb4c81a72f5c5d76f46",
+      "src/engine/src/resident/general/comprehension_execution.rs": "6c99a92e05d8c03ad796ccd329120a80f67a8b03cf4eabadc70daa98902b4af4",
+      "src/engine/src/resident/map_ops.rs": "50ba68cdb3a4eaaca7a960dcb672b2911d8809a24979296ee1e6592db2855411",
+      "src/engine/src/resident/numeric/mod.rs": "c2c429f0be31cdfd99e8d1695104056aeb5b355cc745c8c65ba09480aaa086e7",
+      "src/stdlib/tests/knucleotide_record_source.rs": "0648f1607d63832047daa60aba0c80f77d73bf1e53757a5742e4f62469380b80"
+    },
+    "changes": [
+      "General iterative String-byte radix ordering with occupied-bucket bitsets, bounded admitted workspace and no recursive host stack. All byte distribution is compute-metered. One equality pass saves run starts for histogram construction instead of repeating key comparisons and count loops.",
+      "String map lookup inspects immutable key headers with compute metering, then admits the largest encoded key/selector times the worst-case binary-search path before any comparison. Initial selector comparison, temporary-storage and retained-node reservations remain. Missing keys and late hits have the same admission boundary; recursive non-String keys retain their original path.",
+      "Private, exact-SchemaKey shallow support proofs are built for scalar/packed-matrix schemas in the activated projection table. Their actual retained metadata is accounted. Current owner identity, concrete shapes and payload footprints are still checked/measured; no content token or concrete value cache grants authority.",
+      "Comprehension yield reuses the immutable local prefix already measured within that generator invocation and measures its remaining suffix. Generator suffix disposal and per-iteration evidence boundaries remain unchanged.",
+      "String set comparison reservation is derived from bounded heapsort, deduplication and sorted core finalization. Each comparison consumes its byte allowance before the shared core key relation runs; core finalization receives only the remainder of the same reservation. The broader metadata/payload-move compute bound remains.",
+      "Snapshot pattern binding excludes its prior target from the same unchanged local measurement using checked footprint subtraction, including all repeated matching regions. It no longer traverses all other locals twice before the first scratch write."
+    ],
+    "full_engine_units": {
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-engine --no-default-features --features full_compiler,resident-artifact --lib -- --nocapture --test-threads=1",
+      "passed": 737,
+      "failed": 0,
+      "ignored": 0,
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v214-binding-footprint-reuse.log",
+      "log_sha256": "ec239d46283ccf13433fa55f5b30865005fec452535864db74ddf39b0d9d2c21"
+    },
+    "ordinary_workload": {
+      "program_algorithm_changed": false,
+      "default_limits_changed": false,
+      "hundred_base_original_artifact": "Completes with the exact independent output oracle before the later 400-base rejection. This does not qualify 100/400 bases through both artifacts.",
+      "four_hundred_bases": {
+        "status": "STILL_FAILS_ORIGINAL_ARTIFACT_DECODED_NOT_REACHED",
+        "dimension": "ComputeWork",
+        "required": 16777278,
+        "limit": 16777216,
+        "node": 33,
+        "source_owner": "matrix/comprehension, source range 2469..2554"
+      },
+      "regression_removed_or_ignored": false,
+      "ci_selects_regression": ".github/workflows/ci-full.yml selects the complete knucleotide_record_source integration target. The failing method remains a readiness blocker."
+    },
+    "separately_executed_contracts": {
+      "methods": [
+        "ordinary_program_work_denial_preserves_publication_and_allows_recovery",
+        "ordinary_program_produces_exact_knucleotide_output_after_record_selection",
+        "record_bounds_handle_descriptions_empty_absent_terminal_headers_and_crlf",
+        "complete_ordinary_knucleotide_fixture_parses_without_record_or_translation_helpers"
+      ],
+      "passed": 4,
+      "failed": 0,
+      "boundary": "Each exact method was executed separately after the complete target had aborted on its still-failing 400-base method. This is partial qualification, not a passing full integration target.",
+      "denial_recovery": "Original and decoded artifacts each produce the four-base literal output, reject 4000 bases at the unchanged 65536 comparison-work limit without advancing the published epoch or changing any output, then successfully produce the independent eight-base mixed-case literal output.",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v215-knucleotide-contracts.log",
+      "log_sha256": "e22f6be1b78a7724174c7993f84aef6728ecba0305929433e5b24c439290b954"
+    },
+    "not_established": [
+      "Successful 400-base or full standard-input resident execution",
+      "Actual CLI/resource-host execution on the changed product source",
+      "Canonical full-program native control/collection/resource execution",
+      "Packed/streaming full-workload support, optimized/configurable checked AOT or generated-binary analysis",
+      "New benchmark timing, security-overhead ratio, clean review or complete green CI"
+    ]
+  },
   "remaining": [
     "Make the unchanged ordinary workload pass original and decoded artifacts at 100 and 400 bases with default limits, and retain denial/atomicity/recovery qualification.",
     "Reduce actual general collection/histogram work; provide canonical packed and streaming operations for realistic full inputs.",

@@ -242,3 +242,77 @@ fn ordinary_program_handles_hundred_and_four_hundred_bases_without_raising_limit
         |turn, outputs| assert_eq!(delivery_text(outputs), expected[turn]),
     );
 }
+
+#[test]
+fn ordinary_program_work_denial_preserves_publication_and_allows_recovery() {
+    use mech_core::{MemoryBudgetDimension, ResidentKernelError, ResidentResourcePhase};
+    use mech_engine::resident::ReactiveInstance;
+
+    let (artifacts, outputs, _) = compile(&ordinary_fixture());
+    let read = |instance: &ReactiveInstance| {
+        delivery_text(
+            &outputs
+                .iter()
+                .map(|output| instance.copied_output(*output).unwrap())
+                .collect::<Vec<_>>(),
+        )
+    };
+    let expected = concat!(
+        "G 50.000\nA 25.000\nT 25.000\n\n",
+        "GG 33.333\nGT 33.333\nTA 33.333\n\n",
+        "1\tGGT\n1\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+    );
+    let recovered = concat!(
+        "G 50.000\nA 25.000\nT 25.000\n\n",
+        "GG 28.571\nGT 28.571\nTA 28.571\nAG 14.286\n\n",
+        "2\tGGT\n2\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+    );
+    for (ordinal, artifact) in artifacts.iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x46415355, ordinal as u32),
+            artifact,
+            &mech_stdlib::source_catalog(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let slot = instance.plan.inputs[0].slot;
+        let first = [">THREE\nGGTA\n".to_owned()];
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&first),
+            }])
+            .unwrap();
+        assert_eq!(read(&instance), expected);
+        let epoch = instance.published_epoch();
+        let large = [format!(">THREE\n{}\n", "GGTA".repeat(1_000))];
+        let error = instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&large),
+            }])
+            .unwrap_err();
+        assert!(
+            matches!(error, ResidentExecutionError::Kernel {
+            error: ResidentKernelError::ResourceLimit {
+                phase: ResidentResourcePhase::Admission,
+                dimension: MemoryBudgetDimension::ComparisonWork,
+                required,
+                limit: 65_536,
+            }, ..
+        } if required > 65_536),
+            "{error:?}"
+        );
+        assert_eq!(instance.published_epoch(), epoch);
+        assert_eq!(read(&instance), expected);
+        let next = [">THREE\ngGtagGtA\n".to_owned()];
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&next),
+            }])
+            .unwrap();
+        assert_eq!(read(&instance), recovered);
+        assert!(!instance.has_ready_continuation());
+    }
+}
