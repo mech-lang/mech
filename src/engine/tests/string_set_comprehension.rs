@@ -102,20 +102,52 @@ fn live_string_set_comprehension_rebinds_cardinality_and_recovers_after_denied_w
                 expected(&result)
             );
         }
+        // Keep the former denial fixture: tighter String-set reservation now
+        // admits its 6 * 3 * (floor(log2(6)) + 1) * 1024 = 55,296 comparison
+        // units under the unchanged 65,536 limit. Do not restore removed work
+        // or raise a limit just to retain the obsolete rejection expectation.
+        let accepted = vec!["x".repeat(1024); 6];
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&accepted),
+            }])
+            .unwrap();
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            expected(&[accepted[0].as_str()])
+        );
         let before = instance
             .copied_output(0)
             .unwrap()
             .canonical_data_draft()
             .unwrap();
-        let denied = vec!["x".repeat(1024); 6];
+        let epoch = instance.published_epoch();
+        // Doubling only the key width requires 110,592 comparison units. The
+        // real byte-aware reservation must fail before changing publication.
+        let denied = vec!["x".repeat(2048); 6];
+        let error = instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&denied),
+            }])
+            .unwrap_err();
         assert!(
-            instance
-                .turn(&[CapturedSignalInput {
-                    slot,
-                    value: ResidentValueRef::String(&denied),
-                }])
-                .is_err()
+            matches!(error, mech_engine::__resident::ResidentExecutionError::Kernel {
+                error: mech_core::ResidentKernelError::ResourceLimit {
+                    dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                    required,
+                    limit,
+                    ..
+                }, ..
+            } if required > limit && limit == mech_core::RESIDENT_MAX_COMPARISON_WORK),
+            "{error:?}"
         );
+        assert_eq!(instance.published_epoch(), epoch);
         assert_eq!(
             instance
                 .copied_output(0)
