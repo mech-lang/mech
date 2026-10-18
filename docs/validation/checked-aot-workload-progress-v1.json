@@ -1,9 +1,57 @@
 {
   "schema": "mech.checked-aot-workload-progress.v1",
   "status": "INCOMPLETE_IMPLEMENTATION_NOT_BENCHMARK_QUALIFIED",
-  "latest_qualification": "generated_mixed_program_execution_qualification",
+  "latest_qualification": "bounded_snapshot_ownership_qualification",
   "pull_request": "https://github.com/mech-lang/mech/pull/905",
   "baseline": "c4190315672337f039efc743a970263627f75834",
+  "foundations_pr_scope": {
+    "title": "Add canonical native control and collection foundations",
+    "delivered": "Reduced redundant resident comparison/collection work; checked canonical scalar arithmetic/casts, Match and scalar literal loops; admitted typed managed-value storage and one cumulative native/library account; selected maintained root/lexical collection binding; generated mixed JIT control through the shared emitter/current-visit checker. The ownership correction bounds deregistration and exact same-owner reuse independently of later foreign imports.",
+    "boundary": "This is not completed production canonical AOT or a benchmark-qualified workload. Generated mixed execution is implemented, but a newly linked mixed-entry process is not yet qualified. The independent raw-source native fallback chain remains unresolved, not an accepted second canonical runtime authority.",
+    "remaining_work": "follow_up_roadmap",
+    "change_policy": "After the concrete ownership correction and accurate scope/evidence, stop adding compiler features to PR905. Handle corrective review/CI findings through existing gates. Do not mark ready or merge without explicit user approval; no new PR is authorized by this roadmap."
+  },
+  "follow_up_roadmap": {
+    "status": "REQUIRED_FULL_OBJECTIVE_INCOMPLETE_NOT_BENCHMARK_QUALIFIED",
+    "purpose": "One ordered continuation of the complete implementation/benchmark brief, not a replacement by the smaller foundations scope. Historical receipts below retain their original source identities and qualification limits.",
+    "original_handoff": "docs/validation/benchmark-agent-handoff-v1.json",
+    "milestones": [
+      {
+        "order": 1,
+        "name": "Qualify generated mixed execution through an actual linked process",
+        "current_state": "Generated root/lexical calls, managed carriers and scalar control execute through the shared JIT/Object emitter. Object identity and runtime-only linked entry APIs exist; Object emission is not linked-process execution credit.",
+        "completion_criteria": [
+          "Build and actually execute mixed linked applications using the same canonical artifact, selected maintained root/lexical bindings, arena, current-visit checks, finite memory policy and single cumulative work account as JIT execution.",
+          "Reconcile original/decoded resident, JIT and linked outputs, error ordering, denial atomicity and next-invocation recovery. Qualify linked metadata/provenance and mutation rejection rather than inferring them from Object metadata.",
+          "Pin source, artifact/IR/ABI/work identities, generated binary and complete process streams. Inspect the actual runtime compiled dependency closure, keeping parser/JIT/compiler out of the runtime-only linked executable."
+        ]
+      },
+      {
+        "order": 2,
+        "name": "Complete canonical production and native resource integration",
+        "completion_criteria": [
+          "Route production native builds through the same validated canonical ProgramArtifact and selected operation bindings. Remove the raw-source sequence/control/grid fallback chain from the route presented as canonical AOT. Unsupported constructs fail explicitly at that boundary; no whole-program interpreter fallback, competing semantic authority or workload-sized Rust bridge.",
+          "Complete general native collections/matrices, comprehensions, element-wise application counts, computed activation/state and FSM control through canonical language semantics and shared validation/publication machinery. Preserve checked arithmetic/casts, source error order, exact geometry, cumulative work and memory admission, and failure recovery.",
+          "Connect typed argv/stdin/stdout/raw-byte capabilities, strict immutable payload argument separation/count, observations, ordered effects, output staging/flush, shutdown and errors. Keep compilation separate from live drivers, transactions and replay; hosted resident success does not establish native AOT resource support.",
+          "Audit and close borrowed structural projection metadata charges in initial/refined plans including budget None, without double charging. Provide genuine recursive tree/reference allocation and arena/frame lifetimes, non-tail recursive work, bigint primitives and byte operations where the ten programs require them; retain original failing fixtures and unchanged admission limits.",
+          "Parse, compile and execute all ten canonical idiomatic programs with full input/output and required-work contracts, including ordinary functions/captures, named outputs, pipelines, repeated application, Match and state machines. Validate publication LOC from the executed sources, not archived unrun candidates."
+        ]
+      },
+      {
+        "order": 3,
+        "name": "Qualify the full workload, then measure and optimize",
+        "completion_criteria": [
+          "Reduce actual general collection/histogram work and provide canonical packed/streaming execution for all seven k-nucleotide histograms, not just the two short keys or workload-specific helpers. Run standard FASTA N=25000000 and its full THREE=125000000-base record with exact independent output and complete resource lifecycle.",
+          "Retain ordinary 100/400-base success and 4000-base denial/recovery under unchanged defaults. Qualify finite explicit full-input policy separately; do not raise, reset, discount or bypass admission to make a fixture pass.",
+          "Qualify trusted and secured modes of the SAME AOT executable across startup, arguments, inputs, work, output/flush, shutdown and errors before timing. Preserve executable/source/configuration/input pins and complete raw streams.",
+          "Run release Mech-only measurements serially after correctness/admission gates pass. Publish raw samples, reproducible commands, lifecycle/mode definitions and security overhead. Preserve existing other-language cohorts and historical optimization evidence; never overlap measurements.",
+          "Analyze the actual generated executable, binary size, hot paths and dependencies; optimize the real canonical path, remeasure, and expose explicit checked-AOT configuration while retaining admission, exact results and failure behavior. Do not substitute scalar samples, hosted runtime timings or copied old measurements for full-program native results.",
+          "Resolve all current review findings and obtain fresh clean review plus complete exact-head green CI. Leave readiness and merging to explicit user approval."
+        ]
+      }
+    ],
+    "new_benchmark_samples_in_this_correction": 0
+  },
   "reproduction": {
     "test": "ordinary_program_handles_hundred_and_four_hundred_bases_without_raising_limits",
     "result": "FAILS_AT_100_BASES_BEFORE_CORRECTION",
@@ -684,12 +732,56 @@
     "new_benchmark_samples": 0,
     "not_established": "Newly linked mixed-entry process execution and metadata/provenance mutation qualification; native element-count matrices/comprehensions/FSM/typed resource lifecycle and whole-program canonical AOT; general packed/streaming all-seven-histogram operations; full125M exact workload; same-executable trusted/secured release samples; actual full-program binary/hot-path/dependency analysis and optimized/configurable checked AOT. The independent legacy source compiler remains unresolved, not an accepted second runtime authority. Fresh final-head review and complete GitHub CI remain required."
   },
-  "remaining": [
-    "Extend beyond the qualified100/400-base original/decoded library and real release CLI/resource cases to realistic full inputs, retaining finite admission, atomicity and recovery.",
-    "Reduce actual general collection/histogram work; provide canonical packed and streaming operations for realistic full inputs.",
-    "Complete canonical native control, collections and resource I/O for the entire workload, without the independent source-native compiler or whole-program interpreter fallback.",
-    "Qualify full linked lifecycle and exact output, then measure the full workload in optimized checked AOT with explicit configuration and inspect its generated binary.",
-    "Resolve new review findings and obtain clean review plus complete green CI. Keep draft and unmerged until explicit user approval."
-  ],
+  "bounded_snapshot_ownership_qualification": {
+    "status": "FOCUSED_CORRECTIVE_BOUNDARY_QUALIFIED_NOT_FULL_WORKLOAD_OR_BENCHMARK",
+    "source_commit": "3769baa7bb5457a008b788dbd164bb743907aa71",
+    "tested_base": "bf10ff6a8ad430a25f81db9e0f1ff2ddafb3c502",
+    "complete_frozen_diff_sha256": "a58a5b85c880a28ed2ec85cd297fa396cb7e9a68b16be895241414b9fcb8472e",
+    "correction": [
+      "Stable admitted Arc registration identity and weak-previous/strong-next links permit direct deregistration of self and at most two neighbors. The shared data registry gate protects all link edits; no raw pointers or manual unsafe Send/Sync promise are introduced. The node detaches its strong next link before retirement.",
+      "Exact same-budget AND retained-schema-owner reuse returns before registry lookup, allocation or reservation transfer in both memory_budget_admission_bytes and into_memory_budget. Other ownership cases retain validation, allocation failure checks and reservation behavior. Registration Arc metadata is included in admission; registration and schema-owner references retire before the import capacity claim.",
+      "Precharged raw native constants use the same ownership implementation with an independently admitted wrapper instead of searching aliases. The complete unshared wrapper claim is required; immutable data and physical ownership remain shared. No work multiplier or admission default is increased."
+    ],
+    "focused_regressions": [
+      "Existing core validation suite: zero same-owner and independent-constant lookup steps; at most three link accesses for direct removal with 0/1/16 later foreign imports plus an earlier tail; surviving imports stay valid and all claims eventually release.",
+      "Existing native arena suite: replace or tear down A's last wrapper after 16 later foreign imports under unchanged prepaid work, retaining foreign owners.",
+      "Existing all-seven-library integration method: repeated unchanged text/join through original/decoded root/lexical legacy/prepared invocation with 16 live foreign imports, stable memory and unchanged charged-work delta.",
+      "Existing generated denial/recovery method: exposed raw constants have 16 live foreign-budget imports before invocation. Existing memory-runtime coverage retains schema-owner separation, failure injection/rollback and detached Send/physical-ticket behavior."
+    ],
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-ownership-corrected-ci-v293.zsh",
+      "driver_sha256": "fb978d38131a1a23b3dffc055b57575241beb110ebfd992a9ccf14378cc05f78",
+      "log": "tmp/pr-stack-evidence/checked-aot-v293-ownership-corrected-ci.log",
+      "log_sha256": "32db74661e4862f3b714c81f52e8f47f4ead1fff14e74a973cd4d248510c1db4",
+      "started_utc": "2026-10-18T17:39:27Z",
+      "completed_utc": "2026-10-18T17:41:06Z",
+      "exit": 0,
+      "execution": "One serial source-frozen pipeline, nightly-2026-03-03, locked/offline Cargo, one build job, debug/test optimization0, debug assertions/overflow checks enabled and no incremental compilation. Full command arrays and actual workflow-extracted ownership step are retained in driver/log.",
+      "environment": { "CARGO_BUILD_JOBS": "1", "CARGO_PROFILE_DEV_DEBUG": "0", "CARGO_PROFILE_TEST_DEBUG": "0", "CARGO_PROFILE_TEST_OPT_LEVEL": "0", "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true", "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true", "CARGO_INCREMENTAL": "0", "CARGO_NET_OFFLINE": "true", "python": "Python3 with PyYAML6.0.3" },
+      "commands": [
+        ["cargo", "+nightly-2026-03-03", "test", "--locked", "-p", "mech-core", "--all-features", "--lib", "snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports", "--", "--list", "--exact"],
+        ["cargo", "+nightly-2026-03-03", "test", "--locked", "-p", "mech-core", "--all-features", "--lib", "snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports", "--", "--exact", "--test-threads=1"],
+        ["cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1", "-p", "mech-core", "--all-features", "--test", "memory_runtime", "--", "--test-threads=1"],
+        ["cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1", "-p", "mech-stdlib", "-p", "mech-gpu", "--no-default-features", "--features", "mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-program", "--test", "native_collection_templates", "--test", "knucleotide_record_source", "--test", "canonical_artifact_program", "--", "--test-threads=1"],
+        ["cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1", "-p", "mech-stdlib", "-p", "mech-gpu", "--no-default-features", "--features", "mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-program", "--lib", "native_artifact::values::tests", "--", "--test-threads=1"],
+        ["cargo", "+nightly-2026-03-03", "check", "--locked", "--offline", "-j", "1", "-p", "mech-core", "--no-default-features", "--features", "no_std"],
+        ["cargo", "+nightly-2026-03-03", "check", "--locked", "--offline", "-j", "1", "-p", "mech-gpu", "--no-default-features", "--features", "canonical-native-program-runtime", "--lib"],
+        ["python3", "-B", "-m", "unittest", "discover", "-s", "tests/ci", "-p", "test_*.py"],
+        ["sh", "scripts/check-unsafe-boundaries.sh"],
+        ["python3", "-B", "scripts/check-warning-policy.py"],
+        ["cargo", "+nightly-2026-03-03", "fmt", "--all", "--", "--check"],
+        ["git", "diff", "--check"]
+      ],
+      "rust_methods": { "core_structural_ownership": 1, "core_memory_runtime": 48, "generated_mixed_program": 7, "ordinary_knucleotide": 5, "native_collection_templates": 14, "native_arena": 8, "total": 83 },
+      "ci_contracts": 155,
+      "other": "Core no_std and canonical-native-program-runtime builds; unsafe-boundary and warning-policy audits; formatting, diff and unchanged-source fingerprint checks all pass. The actual CI list guard selects exactly one structural method before executing it. Its dedicated step preserves straight-line inventory credit for the existing memory conformance tests."
+    },
+    "retained_attempts": [
+      { "log": "tmp/pr-stack-evidence/checked-aot-v285-ownership-final.log", "sha256": "fd4bf4df732ab069172bd8803c43ffb78b1e766832395e42b75215debbf72aa3", "result": "Terminal101: disk exhaustion creating libmech_math.rlib after the core structural and 48 memory methods passed. Not full qualification credit." },
+      { "log": "tmp/pr-stack-evidence/checked-aot-v289-ownership-recovery.log", "sha256": "0d19e62fc8abc2e6e40f19794bbe56ee8c17e4f49f4602bd193195ec1fbe8681", "result": "Terminal1: all83 Rust methods passed;154/155 CI contracts passed. The ownership shell guard in the memory conformance block prevented the conservative inventory verifier from crediting eight existing targets. Moved the guard to a dedicated workflow step without weakening the verifier; v293 requalifies the complete final diff." }
+    ],
+    "not_established": "Fresh final-head clean review/full GitHub CI, newly linked mixed execution, complete production canonical AOT, native resources/full workload, new benchmark samples or performance improvement. The full objective remains follow_up_roadmap."
+  },
+  "remaining": ["Complete follow_up_roadmap in its stated order; the foundations correction does not discharge the full implementation/benchmark brief."],
   "benchmark_samples": 0
 }
