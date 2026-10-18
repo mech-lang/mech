@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import tempfile
 import textwrap
@@ -241,6 +242,40 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertRegex(step, re.escape(default_test) + r"\s*\\\n\s*-- --exact --test-threads=1")
         self.assertNotIn("--ignored", step)
         self.assertNotIn("continue-on-error", step)
+
+    def test_source_cli_payload_counts_fail_closed_without_ripgrep(self):
+        step = next(step for step in job_steps(FULL, "cargo-runtime")
+                    if "Run CLI host and context-send regression coverage" in step)
+        default_test = "cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot"
+        cases = (
+            ("PAYLOAD_TESTS", [f"cli::app::tests::payload_arguments::case_{index}: test" for index in range(6)]),
+            ("DEFAULT_PAYLOAD_TESTS", [f"{default_test}: test"]),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            # The runner needs only the already-used POSIX awk, not ripgrep.
+            awk = shutil.which("awk")
+            self.assertIsNotNone(awk)
+            (Path(directory) / "awk").symlink_to(awk)
+            for variable, selected in cases:
+                guard = next(line.strip() for line in step.splitlines()
+                             if line.strip().startswith('test "$(printf')
+                             and f'"${variable}"' in line)
+                for listing, accepted in (
+                    (selected + ["7 tests, 0 benchmarks"], True),
+                    ([], False),
+                    (selected[:-1], False),
+                    (selected + selected[:1], False),
+                    ([line.replace(": test", ": benchmark") for line in selected], False),
+                    (["decoy::" + line for line in selected], False),
+                ):
+                    with self.subTest(variable=variable, listing=listing):
+                        result = subprocess.run(
+                            ["/bin/bash", "--noprofile", "--norc", "-euo", "pipefail", "-c", guard],
+                            env={"PATH": directory, variable: "\n".join(listing)},
+                            capture_output=True, text=True,
+                        )
+                        self.assertEqual(result.returncode == 0, accepted, result.stderr)
+                        self.assertNotIn("command not found", result.stderr)
 
     def test_canonical_applications_execute_linked_qualifications_explicitly(self):
         block = job_block(FULL, "canonical-applications")

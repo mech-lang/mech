@@ -2100,13 +2100,13 @@ jobs:
             cli::commands::run::tests
           PAYLOAD_TESTS=$(cargo +nightly-2026-03-03 test --locked --lib \
             --no-default-features --features run cli::app::tests::payload_arguments -- --list)
-          test "$(printf '%s\n' "$PAYLOAD_TESTS" | rg -c '^cli::app::tests::payload_arguments::.*: test$')" -eq 6
+          test "$(printf '%s\n' "$PAYLOAD_TESTS" | awk '/^cli::app::tests::payload_arguments::.*: test$/ { count += 1 } END { print count + 0 }')" -eq 6
           cargo +nightly-2026-03-03 test --locked --lib --no-default-features --features run \
             cli::app::tests::payload_arguments -- --test-threads=1
           DEFAULT_PAYLOAD_TESTS=$(cargo +nightly-2026-03-03 test --locked --lib \
             --no-default-features --features run \
             cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot -- --list --exact)
-          test "$(printf '%s\n' "$DEFAULT_PAYLOAD_TESTS" | rg -c '^cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot: test$')" -eq 1
+          test "$(printf '%s\n' "$DEFAULT_PAYLOAD_TESTS" | awk '/^cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot: test$/ { count += 1 } END { print count + 0 }')" -eq 1
           cargo +nightly-2026-03-03 test --locked --lib --no-default-features --features run \
             cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot \
             -- --exact --test-threads=1
