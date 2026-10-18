@@ -4823,52 +4823,122 @@ fn declared_fsm_failed_yields_and_resumes_preserve_the_published_continuation() 
 #[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_wakeup_rejects_reset_and_replacement_generations() {
-    use mech_engine::__resident::StateMigrationPolicy;
+    use mech_engine::__resident::{ResidentActivationError, StateMigrationPolicy};
 
     let source = "#Resettable() => <u64>\n  | :Start\n  | :Later(value<u64>)\n  | :Done(value<u64>).\n#Resettable() -> :Start\n  :Start ~> :Later(41u64)\n  :Later(value) -> :Done(value + 1u64)\n  :Done(value) => value.\n#Resettable()\n";
     let compiled = CanonicalSourceFrontend
         .compile_document(&document(source))
         .unwrap();
     let artifact = compiled.compile_artifact().unwrap();
-    let mut catalog = FunctionCatalogBuilder::new();
-    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
-    let catalog = catalog.build().unwrap();
-    let mut instance = activate(
-        ReactiveInstanceId::new(0x540, 50),
-        &artifact,
-        &catalog,
-        &ActivationFacts::default(),
-    )
-    .unwrap();
-    instance.turn(&[]).unwrap();
-    let stale = instance.continuation_wakeup().unwrap();
-    assert!(instance.accepts_continuation_wakeup(stale));
-
-    let reset = activate(
-        instance.id.checked_next_generation().unwrap(),
-        &artifact,
-        &catalog,
-        &ActivationFacts::default(),
-    )
-    .unwrap();
-    assert!(!reset.accepts_continuation_wakeup(stale));
-
     let replacement_source = source.replace("value + 1u64", "value + 2u64");
     let replacement = CanonicalSourceFrontend
         .compile_document(&document(&replacement_source))
         .unwrap()
         .compile_artifact()
         .unwrap();
-    instance
-        .reactivate(
-            &replacement,
-            &catalog,
-            &ActivationFacts::default(),
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+    )
+    .unwrap();
+    let decoded_replacement = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&replacement).unwrap(),
+    )
+    .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for (artifact, replacement) in [(&artifact, &replacement), (&decoded, &decoded_replacement)] {
+        for migration in [
+            StateMigrationPolicy::PreserveCompatibleRejectIncompatible,
             StateMigrationPolicy::PreserveCompatibleResetIncompatible,
-        )
-        .unwrap();
-    assert!(!instance.accepts_continuation_wakeup(stale));
-    assert!(!instance.has_ready_continuation());
+        ] {
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x540, 50),
+                artifact,
+                &catalog,
+                &ActivationFacts::default(),
+            )
+            .unwrap();
+            instance.turn(&[]).unwrap();
+            let stale = instance.continuation_wakeup().unwrap();
+            assert!(instance.accepts_continuation_wakeup(stale));
+            let epoch = instance.published_epoch();
+            let hash = instance.published_state_hash();
+            let plan_generation = instance.plan.plan_generation;
+            let layout_generation = instance.plan.layout_generation;
+
+            let mut reset = activate(
+                instance.id.checked_next_generation().unwrap(),
+                artifact,
+                &catalog,
+                &ActivationFacts::default(),
+            )
+            .unwrap();
+            reset.turn(&[]).unwrap();
+            assert!(reset.has_ready_continuation());
+            assert!(!reset.accepts_continuation_wakeup(stale));
+
+            // An identical plan is a no-op, but replacing a plan must not
+            // silently discard its captured frame or generation-bound wakeup.
+            instance
+                .reactivate(artifact, &catalog, &ActivationFacts::default(), migration)
+                .unwrap();
+            assert_eq!(
+                instance.reactivate(
+                    replacement,
+                    &catalog,
+                    &ActivationFacts::default(),
+                    migration,
+                ),
+                Err(ResidentActivationError::SuspendedContinuationMigration),
+            );
+            assert_eq!(instance.plan.program_revision, artifact.revision());
+            assert_eq!(instance.plan.plan_generation, plan_generation);
+            assert_eq!(instance.plan.layout_generation, layout_generation);
+            assert_eq!(instance.published_epoch(), epoch);
+            assert_eq!(instance.published_state_hash(), hash);
+            assert!(instance.has_suspended_continuation());
+            assert_eq!(instance.ready_continuation_count(), 1);
+            assert!(instance.accepts_continuation_wakeup(stale));
+            assert!(instance.output_borrow(0).is_none());
+
+            instance.turn(&[]).unwrap();
+            assert!(!instance.has_suspended_continuation());
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                ValueDataDraft::U64(42),
+            );
+            instance
+                .reactivate(
+                    replacement,
+                    &catalog,
+                    &ActivationFacts::default(),
+                    migration,
+                )
+                .unwrap();
+            assert_eq!(instance.plan.program_revision, replacement.revision());
+            assert_ne!(instance.plan.plan_generation, plan_generation);
+            assert!(!instance.accepts_continuation_wakeup(stale));
+            assert!(!instance.has_ready_continuation());
+            instance.turn(&[]).unwrap();
+            assert!(instance.has_ready_continuation());
+            assert!(!instance.accepts_continuation_wakeup(stale));
+            instance.turn(&[]).unwrap();
+            assert!(!instance.has_suspended_continuation());
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                ValueDataDraft::U64(43),
+            );
+        }
+    }
 }
 
 #[cfg(feature = "resident-artifact")]
