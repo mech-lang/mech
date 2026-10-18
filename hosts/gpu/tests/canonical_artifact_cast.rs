@@ -208,6 +208,34 @@ fn all_six_scalar_casts_match_actual_core_resident_and_jit_original_and_decoded(
             jit.evaluate_into(&args, &mut output, NativeExecutionLimits::default(), None)
                 .unwrap();
             assert_eq!(output, reference(artifact, &args).unwrap());
+
+            // All three numeric domains share a 64-bit transport word. A zero
+            // bit pattern must not allow one domain to impersonate another.
+            let same_width_wrong_inputs = match cast.input {
+                NativeScalarKind::U64 => [
+                    NativeScalarValue::I64(0),
+                    NativeScalarValue::F64(F64Bits::from_bits(0)),
+                ],
+                NativeScalarKind::I64 => [
+                    NativeScalarValue::U64(0),
+                    NativeScalarValue::F64(F64Bits::from_bits(0)),
+                ],
+                NativeScalarKind::F64 => [
+                    NativeScalarValue::U64(0),
+                    NativeScalarValue::I64(0),
+                ],
+                NativeScalarKind::Bool => unreachable!(),
+            };
+            for wrong in same_width_wrong_inputs {
+                let args = inputs(artifact, &[("value", wrong)]);
+                let mut output = vec![NativeScalarValue::U64(0xfeed); plan.outputs().len()];
+                let before = output.clone();
+                assert!(matches!(
+                    jit.evaluate_into(&args, &mut output, NativeExecutionLimits::default(), None),
+                    Err(NativeExecutionError::InputType { .. })
+                ));
+                assert_eq!(output, before);
+            }
         }
     }
 }
