@@ -1,0 +1,193 @@
+{
+  "schema": "mech.canonical-cli-payload-qualification.v1",
+  "status": "LOCAL_EXECUTION_PASSED_REVIEW_AND_FULL_CI_PENDING",
+  "as_of_utc": "2026-10-18T01:22:37Z",
+  "source": {
+    "commit": "667589bed4dce3636b3b08abaca68948d89c6b0f",
+    "tree": "825d76cc381b8dc4e3fec7ca4806a22eba6ca352",
+    "base": "2b07bd26f973445f8e83a0785524951b04d10cc6",
+    "branch": "codex/canonical-cli-payload-count",
+    "clean_before_and_after_each_command": true,
+    "qualification": "One serial local pipeline, CARGO_BUILD_JOBS=1, test opt-level0, debug assertions/overflow checks enabled, incremental disabled. Later documentation commits do not receive fabricated Rust execution credit; their source/build-input equality must be verified separately."
+  },
+  "platform": {
+    "system": "Darwin 24.6.0 arm64",
+    "host": "aarch64-apple-darwin",
+    "toolchain": "nightly-2026-03-03",
+    "rustc": "1.96.0-nightly (ec818fda3 2026-03-02)",
+    "rustc_commit": "ec818fda361ca216eb186f5cf45131bd9c776bb4"
+  },
+  "implementation": [
+    "Existing terminal provider and immutable ArgumentSnapshotCliBackend expose read-only args/count as scalar U64 from the same snapshot as indexed reads. No new host crate, runtime or language compiler.",
+    "Source CLI run and bare-source forms forward only raw OsStrings after explicit --. Without --, positionals remain source selectors. Launcher-looking payload cannot select backend/configuration or grant capabilities.",
+    "Default CLI/REPL factories supply an empty snapshot; explicit custom factory snapshots remain intact. Legacy direct StdCliBackend keeps indexed process argv but explicitly refuses inferred payload count.",
+    "Planning returns typed metadata without count/index getter calls, live execution captures actual values through canonical resource requirements and capability admission. A planning zero never becomes a fake observed count.",
+    "Exact count and index grants are independent; wildcard args grants cover both. Writes/sends, malformed paths and incorrect semantic contexts are rejected.",
+    "Ordinary partial-pattern functions enforce strict arity. Checked failures preserve staged-output atomicity and permit recovery without mutating payload. No workload-specific implementation bridge."
+  ],
+  "executed": {
+    "rust_methods_passed": 87,
+    "rust_failed": 0,
+    "rust_ignored": 0,
+    "groups": {
+      "provider_count": 8,
+      "retained_provider": 27,
+      "original_and_decoded_canonical_count": 6,
+      "retained_canonical_bytes": 8,
+      "launcher_parser": 6,
+      "default_and_custom_factory": 1,
+      "actual_cli_host": 31
+    },
+    "filter_scope": "The parser invocation selects6 and filters117 unrelated library methods; the exact default-factory invocation selects1 and filters122. All integration targets run their entire selected target with0 filtered. Actual CLI31 includes all5 new payload methods plus26 retained methods.",
+    "actual_payload_process_launches": 39,
+    "actual_payload_forms": [
+      "bare existing source path",
+      "run existing source path",
+      "run single-argument inline source"
+    ],
+    "ci_contract_methods": 144,
+    "architecture_checks": 7,
+    "formatting": "passed"
+  },
+  "actual_cli_executable": {
+    "path_at_qualification": "tmp/pr-stack-901/target/debug/mech",
+    "sha256": "738f78a2a00bcaa889103709a88b756a1f6c2f91548ec1fee2228a72898fd755",
+    "selection": "Actual integration tests invoke Cargo's CARGO_BIN_EXE_mech, not a mocked launcher.",
+    "scope": "Ordinary source CLI resident execution, not canonical native machine-code resources or same-AOT-binary trusted/secured lifecycle qualification."
+  },
+  "logs": [
+    {
+      "file": "review-v156-formatting.log",
+      "sha256": "6a34fdd05112f634ca3b4e3cb3c6963a83838fe30f5c3361308d1635f3503369",
+      "command": "cargo +nightly-2026-03-03 fmt --all -- --check",
+      "summaries": []
+    },
+    {
+      "file": "review-v156-ci-contracts.log",
+      "sha256": "7b9d1bce915619d9c0cd6f897af0ed891bb9495168c176f7eb54c2b7ae81c455",
+      "command": "python3 -B -m unittest discover -s tests/ci",
+      "summaries": [
+        "Ran 144 tests in 9.254s"
+      ]
+    },
+    {
+      "file": "review-v156-provider-count.log",
+      "sha256": "e8359eab34dfa724ef7a15f1599f6a888ca8fa2714efce41ac0e9ddd5c119842",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-terminal --no-default-features --features provider --test provider_argument_count -- --test-threads=1",
+      "summaries": [
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s"
+      ]
+    },
+    {
+      "file": "review-v156-provider-retained.log",
+      "sha256": "b1193c5e16e39e1409f43d47fb5ca6ce365df535113083855d1ca2c8f2a26431",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-terminal --no-default-features --features provider --test provider -- --test-threads=1",
+      "summaries": [
+        "test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s"
+      ]
+    },
+    {
+      "file": "review-v156-canonical-count.log",
+      "sha256": "031573e1ba95af71c1e254c318f8b00f1826d92f0aed237f21c6cd0700773284",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-build --no-default-features --features standard-hosts --test canonical_cli_argument_count -- --test-threads=1",
+      "summaries": [
+        "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.95s"
+      ]
+    },
+    {
+      "file": "review-v156-canonical-bytes.log",
+      "sha256": "37bb37de4047b35c86d889ba81947a398bfadd2abaf31bf6e786e5561d1c942c",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-build --no-default-features --features standard-hosts --test canonical_cli_bytes -- --test-threads=1",
+      "summaries": [
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.76s"
+      ]
+    },
+    {
+      "file": "review-v156-parser.log",
+      "sha256": "fd3f7fee1d49b1b4ad4e02ea358b6458127b6602a5f34dd09221eb0319548a59",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 --lib --no-default-features --features run cli::app::tests::payload_arguments -- --test-threads=1",
+      "summaries": [
+        "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 117 filtered out; finished in 0.13s"
+      ]
+    },
+    {
+      "file": "review-v156-default-factory.log",
+      "sha256": "57c4272ca18dc353a3a30c6d1181a826bfd37a788e02856e5ca4cb888c5d9fd8",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 --lib --no-default-features --features run cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot -- --exact --test-threads=1",
+      "summaries": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 122 filtered out; finished in 0.29s"
+      ]
+    },
+    {
+      "file": "review-v156-actual-cli.log",
+      "sha256": "464cd709bcea880e121c17a5cc4fff484ba50084b37e38a297f118a7b7cabaa1",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 --no-default-features --features distribution-standard --test mech_cli_host -- --test-threads=1",
+      "summaries": [
+        "test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 22.40s"
+      ]
+    },
+    {
+      "file": "review-v156-value-boundary.log",
+      "sha256": "c1af4b790dde7a78a13ad051e47ec1e9b5b1f8bf814e9da0018a3b06f3e713b3",
+      "command": "python3 -B scripts/check-value-execution-boundary.py",
+      "summaries": []
+    },
+    {
+      "file": "review-v156-warnings.log",
+      "sha256": "21ad6dca74a9eeda60d72c88d0e70189a6c6e5f2d2901bee813ecf30f25ba67c",
+      "command": "python3 -B scripts/check-warning-policy.py",
+      "summaries": []
+    },
+    {
+      "file": "review-v156-type-authority.log",
+      "sha256": "12c77b02bd38f59ed08fc01e35d6a1df74441ddde0d3e844f3551a268af5e6b5",
+      "command": "python3 -B scripts/check-type-system.py",
+      "summaries": []
+    },
+    {
+      "file": "review-v156-semantic-authority.log",
+      "sha256": "b6e63d78a1593ee4998338d0d497c0f0629dae1220708e945dc9179ba36feb01",
+      "command": "python3 -B scripts/check-semantic-type-authority.py",
+      "summaries": []
+    },
+    {
+      "file": "review-v156-memory-runtime.log",
+      "sha256": "cc126f8d51431ec43d07c88b1b5f26aa390b32fcabc3b18c7377bbbbfeaec4a7",
+      "command": "python3 -B scripts/check-memory-runtime.py",
+      "summaries": []
+    },
+    {
+      "file": "review-v156-memory-planner.log",
+      "sha256": "5dba9189698b281778b7614836e64841f768689b8707f3eab5a63f2d2bcc7271",
+      "command": "python3 -B scripts/check-memory-planner.py",
+      "summaries": []
+    },
+    {
+      "file": "review-v156-module-layout.log",
+      "sha256": "9bcc39a2cdaa6fcf0e6ed69317760a53650fdf5f3295001198ea9888555b2e43",
+      "command": "python3 -B scripts/check-rust-module-layout.py",
+      "summaries": []
+    }
+  ],
+  "retained_failures": [
+    {
+      "source": "6a95c79bd30ea29b3e040cfeb6f8af1cd0aa5b5a",
+      "log": "review-v152-canonical-count.log",
+      "sha256": "bf9e510c46c4cc29b4341712c26db3523eb4839352fcbbc00a048d808bce027f",
+      "result": "0passed6failed before execution: archived fixtures omitted explicit number import. Fixed imports in fixtures and documented example; assertions unchanged."
+    },
+    {
+      "source": "7f0ac23f9b9e67e3e1f299ed19b7478d8b313ac4",
+      "log": "review-v154-parser.log",
+      "sha256": "c74ba3df3c556293f14729034f69030711c0dd94169e8d863a80421d04d1ff8f",
+      "result": "5passed1failed: nonexistent bare program.mec was correctly admitted by the existing source classifier as a field expression. Boundary fixture now uses explicit ./program.mec; classifier and payload implementation unchanged. This failed run is not a passing receipt."
+    }
+  ],
+  "evidence_availability": "Commands, counts and log hashes are committed here. Full raw logs and built test/product binaries remain local operational evidence; no benchmark samples were generated. Replay with a clean source pin and a fresh evidence directory, preserving profile/input/limit semantics.",
+  "limits": [
+    "Fresh exact-head review and entirely green CI remain required; neither success authorizes readiness or merge without explicit user approval.",
+    "This does not supply native AOT resource execution, native control/Iteration/matrices, all ten workloads, security-lifecycle equivalence or benchmark measurements.",
+    "The older CLI Cranelift sequence/control/grid source compiler remains an unresolved competing authority. Continue canonical-artifact migration and retire its separate source lowering."
+  ],
+  "benchmark_measurements": 0
+}

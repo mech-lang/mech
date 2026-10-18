@@ -7,9 +7,9 @@
     "branch": "codex/idiomatic-native-programs",
     "pull_request": "https://github.com/mech-lang/mech/pull/901",
     "pull_request_status": "OPEN_DRAFT",
-    "current_correction_source_commit": "913c75d68c13b4c86fe9338c87dd9549faafe6bd",
+    "current_correction_source_commit": "2b07bd26f973445f8e83a0785524951b04d10cc6",
     "current_correction_record": "pr901-integration-corrections-v1.json",
-    "current_qualification": "Base PR901 remains draft at913c75d68, with all30 notes resolved and a fresh clean exact-head review. Actual corrected browser execution passes locally and in CI. All832 runtime units and61 source-acceptance cases pass on f02f9a884 with required OS notification access; failed sandbox receipts remain separate. All46 retained application/text/retention/tail methods, including all10 original tail cases, pass on a0d000061 with optimization0/default stack; later base changes preserve those Rust inputs. Full CI39079614374 and all5 linked workflow routes remain pending. The F64 follow-up has its own source-specific local receipt below; none of these base owner receipts are relabeled as F64 runs.",
+    "current_qualification": "PR901 head2b07bd26f has a fresh clean review; its full CI39084480933 remains incomplete. Clean local CI repair checks pass, including the exact offline native_linkage command (4methods). Existing832 runtime/61source and46application/text/retention/tail receipts retain their own source scopes. The separately committed CLI continuation below qualifies payload handling, not all five linked routes or full native resources. No complete green or integration landing is claimed.",
     "qualified_source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
     "qualification_receipts_commit": "6ffc5e0e8febaf6b9718753e2037840548c5bd4d"
   },
@@ -26,7 +26,15 @@
     "current_gap": "The opt-in CLI build --backend cranelift still calls mech_gpu::native_build::emit_application with a source path. That route reparses source through native_sequence::ParsedSource and separate sequence/control/grid lowering. This is an unresolved competing compiler authority, not a supported permanent alternative architecture. Shared syntax normalization alone does not make its semantics canonical.",
     "observed_difference": "The source-native path rejects bracketed element-wise application counts that canonical resident execution supports. This establishes different accepted capability sets, not a reproduced same-program output mismatch.",
     "migration_required": "Move remaining source-native capabilities into canonical artifact lowering and typed host/resource admission, preserve differential resident/JIT/actually-linked AOT qualification, route production native building through the artifact, then remove the alternate source lowering. Unsupported artifact/backend combinations must fail explicitly without reparsing source or silently falling back. Renaming paths or documenting the gap does not complete this requirement.",
-    "qualified_boundary": "Base PR901's recorded scalar subset is stateless Turn-only Bool/U64/I64. This follow-up adds dense F64 and passes local Darwin arm64 resident/JIT/actually-linked qualification; its fresh review, cross-platform and full CI gates remain required. It does not complete native control/resources or retire alternate source lowering."
+    "qualified_boundary": "This source tree inherits PR902's stateless Turn-only Bool/U64/I64/F64 artifact-native support and source-specific Darwin arm64 resident/JIT/linked qualification. It does not complete native control/resources or retire alternate source lowering. CLI payload success does not establish native AOT resource support. Fresh exact-head review and complete CI remain required after restacking."
+  },
+  "cli_payload_continuation": {
+    "branch": "codex/canonical-cli-payload-count",
+    "qualified_source_commit": "667589bed4dce3636b3b08abaca68948d89c6b0f",
+    "record": "canonical-cli-payload-count-v1.json",
+    "status": "LOCAL_EXECUTION_PASSED_REVIEW_AND_FULL_CI_PENDING",
+    "result": "87Rust methods,144CI contracts, formatting and7architecture checks pass. Existing canonical source/decoded resident execution and actual launchers use the same terminal provider, immutable payload boundary/count, capability admission and transactional output. No new runtime authority or benchmark result.",
+    "remaining": "Fresh review and complete green CI for the new continuation. Native AOT resources and all-ten-workload lifecycle qualification remain unfinished. Keep draft/unmerged; explicit user approval is required for readiness/merge."
   },
   "implemented_corrections_not_full_benchmark_qualification": {
     "record": "pr901-integration-corrections-v1.json",
@@ -67,6 +75,12 @@
       "feature": "Full resource input schemas and actual observation geometry",
       "source_commit": "4ef7ef70455b153f51e9006201e6120dde9b1098",
       "result": "44 distinct runtime cases and8 retained CLI byte-stream cases passed. Native resource machine-code lowering remains separate."
+    },
+    {
+      "feature": "Canonical CLI immutable payload boundary and typed count",
+      "source_commit": "667589bed4dce3636b3b08abaca68948d89c6b0f",
+      "evidence": "canonical-cli-payload-count-v1.json",
+      "result": "87localRust methods pass, including6original/decoded arity/count methods and31actual CLI methods. The5new actual payload methods launch39processes across bare source, explicit run and inline forms. Complete review/CI remains pending."
     }
   ],
   "preserved_candidates": {
@@ -95,7 +109,7 @@
       "native Match and linked Match",
       "native Iteration",
       "native matrix engine/GPU and constant-output consistency",
-      "strict CLI argument count",
+      "strict CLI argument count: composed and locally qualified by canonical-cli-payload-count-v1.json; archive itself remains historical",
       "packed U8 snapshot constructor",
       "borrowed structural Match projections",
       "nbody and six other idiomatic workload source candidates"
@@ -117,7 +131,7 @@
     },
     {
       "requirement": "Native capability and CLI lifecycle",
-      "work": "Typed argv/stdin/stdout/raw-byte ABI, strict payload argument boundary/count, ordered errors and output staging. Hosted resident CLI byte success does not establish native AOT resource support."
+      "work": "Preserve the locally qualified resident payload boundary/count and obtain its new-head review/CI. Complete typed argv/stdin/stdout/raw-byte native ABI, ordered errors, output staging and whole-lifecycle qualification. Hosted resident CLI success does not establish native AOT resource support."
     },
     {
       "requirement": "Same AOT binary trusted and secured",
@@ -130,7 +144,7 @@
   ],
   "known_gaps": [
     "The locally tested artifact-native subset is stateless Turn-only Bool/U64/I64/F64; F64 still requires fresh review/full CI/other-platform qualification. Resident control, projection and bracketed-count corrections do not supply native control/resource lowering.",
-    "Source CLI has no explicit parsed payload-vector boundary in current run options. Generated hosted applications already receive immutable payload OsStrings; preserve the custom factory seam.",
+    "Source CLI payload boundary/count now passes local qualification; new-head review/CI remains pending. Native AOT resource execution and same-binary lifecycle qualification remain separate gaps. The custom factory seam is preserved.",
     "Pidigits source requires general bigint support. Replacing its algorithm with a Rust whole-program helper would not close that language gap.",
     "Archived native Match/Iteration control supports Bool/U64 only until wider scalar kinds, identities and transport are explicitly composed."
   ],
