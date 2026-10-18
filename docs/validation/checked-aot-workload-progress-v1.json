@@ -1,6 +1,7 @@
 {
   "schema": "mech.checked-aot-workload-progress.v1",
   "status": "INCOMPLETE_IMPLEMENTATION_NOT_BENCHMARK_QUALIFIED",
+  "latest_qualification": "native_library_invocation_qualification",
   "pull_request": "https://github.com/mech-lang/mech/pull/905",
   "baseline": "c4190315672337f039efc743a970263627f75834",
   "reproduction": {
@@ -495,6 +496,46 @@
     "preceding_failures": "v248 failed compilation on a missing MemoryBudgetDimension import; v249 failed two test assertions that incorrectly required PartialEq on canonical Value/ValueData. Both are corrected, their failed logs remain failures, and the final source passes the independently pinned v250/v251 gates.",
     "ignored_linked_qualifier": "The existing explicit linked iteration process qualifier remains ignored in these default native test invocations. These runs do not replace its historical pinned actual-linked receipt.",
     "not_established": "Complete current-visit NativeHost library invocation, generated mixed-value control/comprehensions/FSM/resources, full125M packed/streaming execution, new linked lifecycle, benchmark timing, optimized/configurable whole-program AOT or complete green CI/fresh review. The separate call-binding worktree is not included in this source commit."
+  },
+  "native_library_invocation_qualification": {
+    "as_of_utc": "2026-10-18T13:36:17Z",
+    "status": "PASS_ACTUAL_MAINTAINED_LEAF_INVOCATION_NOT_GENERATED_PROGRAM_EXECUTION",
+    "qualified_source_commit": "27b9397cf1c516113ce5c273c13ce0f8ed9a0b0d",
+    "qualified_source_tree": "6d652c2e190a0d48d0b84f66eb0ffdda90b14f07",
+    "tested_base": "ca647c991b43e8bd13e25eb97db1701d912049af",
+    "tested_tracked_diff_sha256": "fa6043a8acb5772fbdfdc79f953d3f9333c0263f121c7058595ebe9846f9fd2b",
+    "new_invocation_source_sha256": "f845b5cfe6cf941743d17e9279c0d505eadd5eed48566317fb59f0c26f5516cd",
+    "source_commit_verification": "The committed binary diff excluding the separately pinned new invocation file exactly matches the tracked diff tested throughout v261. The new file hash also matches. No compiled source changed during the serial qualification.",
+    "implementation": [
+      "Constructor-private NativeCollectionCall bindings now invoke their actual selected maintained text/lines, text/join, sequence/length, number/format, map/histogram, map/keys and map/values leaves. Original and decoded canonical artifacts use the same factories; there is no graph scheduler, second program evaluator or workload-sized Rust bridge.",
+      "Input and prior-output schema IDs, keys, actual current shape parameters and complete same-account immutable payload ownership are checked. Unadmitted or foreign-account values cannot be imported implicitly. Live footprints feed the actual NativeHost CallMemoryPlan and its real allocation family, not a detached or relabeled ResidentCpu plan.",
+      "The invocation account supplies relative finite per-call work caps without refilling root work. Metadata is precharged and its temporary envelope is checked before private owner construction; planner/descriptor/fact-map coexistence is reserved before allocation. Measured traversal and candidate construction remain under the actual call policy and shared memory account.",
+      "A private candidate uses the existing shared payload admission and maintained kernel. Failure preserves the caller's published root; complete same-account ownership transfer precedes successful publication. Successful semantic equality follows the maintained leaf's existing behavior and does not promise root pointer identity."
+    ],
+    "review_corrections": {
+      "4306949290": "Repeated work-account promotion commits its tighter comparison limit and eight-unit setup debit atomically. Denial leaves existing limits, counters and memory unchanged, including an enclosing per-call cap.",
+      "4306949295": "Independent native entry is rejected while a library invocation account is active, before transport allocation or output changes. Scalar, Match and iteration execution now use the same NativeWorkMeter protection. New and preexisting unpromoted meters cannot bypass the active account; legitimate matching promoted work still shares it.",
+      "4306949299": "Each of all seven maintained leaf entries starts a fresh work-observation scope while retaining the same cumulative account. Two calls inside one outer scope charge the sum of their work, not the maximum."
+    },
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-native-review-final-v261.zsh",
+      "driver_sha256": "a71d0f4a97f049708e19c625d1a857049fd3c707efd95af604c94b68485937dd",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v261-native-review-final.log",
+      "log_sha256": "085ac526e2ca84ea91ab69de5848ec2a1b32aebe9848b4393840682a6e3b4bd1",
+      "exit_code": 0,
+      "engine_unit_methods": 757,
+      "stdlib_integration_methods": { "native_collection_templates": 9, "knucleotide_record_source": 5, "map_source": 7, "map_keys_comprehensions": 3, "pure_text_managed": 4 },
+      "private_native_methods": 26,
+      "native_execution_methods": { "scalar": 9, "i64": 4, "f64": 5, "casts": 4, "match": 9, "iteration": 11 },
+      "ci_contract_methods": 151,
+      "other_checks": "Formatting, native-runtime-only and resident-only compilation, unsafe-boundary audit, warning policy, diff check and exact source immutability all pass.",
+      "new_coverage": "All seven actual leaf families compose with same-account results and release their memory. Reused bindings, current-shape substitution, wrong precision, root work and tighter per-call policy denial, full global memory, atomic error publication and same-account recovery are checked through original and decoded artifacts. Actual scalar/Match/iteration JIT nested entries reject absent, same and foreign memory accounts without work refill or publication, then recover outside the scope.",
+      "ignored_linked_qualifier": "One explicit linked iteration qualifier remains intentionally ignored in the default integration run. No new actual linked-process execution, release timing or benchmark sample is credited by v261."
+    },
+    "preceding_failures": "v253 passed757 engine units before test-only Box<str> assertions failed to compile; those borrows were corrected. v254 exhausted disk while building mech-math, before native tests ran. v258 rejected a zero-cap test fixture during legitimate fixed-metadata binding, so the invocation test now uses valid constructible tighter caps. v259 exposed an incorrect test assumption about root pointer identity after a successful unchanged result; the maintained semantic equality contract is now asserted. All failed logs remain failures. The final same-source v260 gate passes all9 binding/invocation methods, followed by full v261 qualification.",
+    "default_limits_changed": false,
+    "benchmark_program_algorithm_changed": false,
+    "not_established": "The generated caller still needs actual current-visit mixed-value CFG/library calls, native comprehensions/FSM/typed resource lifecycle and whole-program canonical AOT. General packed/streaming all-seven-histogram execution, full125M workload, new linked lifecycle, same-binary trusted/secured timings, binary/hot-path/dependency analysis and optimized/configurable checked AOT remain unfinished. Local qualification does not establish fresh clean review or complete GitHub CI."
   },
   "remaining": [
     "Extend beyond the qualified100/400-base original/decoded library and real release CLI/resource cases to realistic full inputs, retaining finite admission, atomicity and recovery.",
