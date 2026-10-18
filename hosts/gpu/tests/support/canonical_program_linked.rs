@@ -21,6 +21,8 @@ use std::{
 
 #[path = "linked_process.rs"]
 mod linked_process;
+#[path = "canonical_program_pins.rs"]
+mod provenance;
 use linked_process::{
     assert_no_ambient_cargo_config, bounded, clean, closure, hash, pin, workspace,
 };
@@ -518,6 +520,15 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
             assert_eq!(result.stderr, expected.as_bytes());
             cases.push(json!({"name":"late-arithmetic","policy":standard,"input":input,"stdout":"","stderr":expected,"exit":result.status.code()}));
         }
+        let provenance_build = (name == "collection").then(|| {
+            provenance::qualify(
+                &generated,
+                &binary_name,
+                &binary,
+                &evidence.join("cargo-target"),
+                &directory,
+            )
+        });
         let result = bounded(
             Command::new(&binary).args(&standard).arg(&input),
             &directory,
@@ -539,7 +550,7 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
             assert_eq!(&pin(path), expected);
         }
         assert_eq!(pin(&binary), binary_pin);
-        receipts.push(json!({"name":name,"source":source,"source_sha256":hash(source.as_bytes()),"generator":generated.metadata(),"generated_pins":pins,"binary":binary,"binary_sha256":binary_pin,"lock_sha256":pin(&generated.root().join("Cargo.lock")),"compiled_units":units,"cases":cases,"linked":true,"executed":true,"timing_samples":0}));
+        receipts.push(json!({"name":name,"source":source,"source_sha256":hash(source.as_bytes()),"generator":generated.metadata(),"generated_pins":pins,"binary":binary,"binary_sha256":binary_pin,"lock_sha256":pin(&generated.root().join("Cargo.lock")),"compiled_units":units,"cases":cases,"provenance_build":provenance_build,"linked":true,"executed":true,"timing_samples":0}));
     }
     clean(&evidence, &commit, "after");
     fs::write(evidence.join("qualification.json"), serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-program-linked-qualification.v1","source_commit":commit,"programs":receipts,"scope":"managed root and lexical calls, scalar control and native String matrix comprehensions in real linked Objects; no resource-host/full-workload/performance claim","benchmark_measurements":0})).unwrap()).unwrap();

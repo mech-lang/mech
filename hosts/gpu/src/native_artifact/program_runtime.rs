@@ -982,6 +982,52 @@ mod tests {
         }
     }
     #[test]
+    fn managed_link_metadata_rederives_semantics_and_rejects_mutations_without_an_entry() {
+        let source = "+> text\n+> sequence\n+> number\nwords := text/lines(seed<string>)\ntext/join([number/format(sequence/length(word), 0u64) | word <- words], \",\")\n";
+        let original = artifact_source(source);
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
+        )
+        .unwrap();
+        let different = artifact_source(&source.replace("0u64", "1u64"));
+        let catalog = mech_stdlib::source_catalog();
+        let empty = mech_core::FunctionCatalogBuilder::new().build().unwrap();
+        let prepare = super::super::program_linked::prepare_descriptor;
+        for artifact in [original, decoded] {
+            let object = super::super::emit_program_object(&artifact, &catalog).unwrap();
+            let identity = *object.identity().bytes();
+            let descriptor = prepare(&artifact, &catalog, &identity).unwrap();
+            assert_eq!(
+                descriptor.typed_ir_sha256(),
+                object.descriptor().typed_ir_sha256()
+            );
+            for offset in 0..identity.len() {
+                // These two nonzero resource claims require build-owned Object
+                // provenance, tested by the real linked pin-mutation qualifier.
+                // They are not falsely treated as runtime-rederived semantics.
+                if (112..128).contains(&offset) {
+                    continue;
+                }
+                let mut mutated = identity;
+                mutated[offset] ^= 1;
+                assert!(
+                    prepare(&artifact, &catalog, &mutated).is_err(),
+                    "identity byte {offset}"
+                );
+            }
+            for (offset, old) in [(16, 1u64), (24, 4u64), (32, 1u64), (112, 0u64), (120, 0u64)] {
+                let mut mutated = identity;
+                mutated[offset..offset + 8].copy_from_slice(&old.to_le_bytes());
+                assert!(
+                    prepare(&artifact, &catalog, &mutated).is_err(),
+                    "identity field {offset}"
+                );
+            }
+            assert!(prepare(&different, &catalog, &identity).is_err());
+            assert!(prepare(&artifact, &empty, &identity).is_err());
+        }
+    }
+    #[test]
     fn abi5_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
         assert_eq!(VERSION, 5);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);

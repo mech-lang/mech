@@ -25,32 +25,7 @@ impl LinkedProgramArtifact {
         identity: &'static [u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES],
         entry: unsafe extern "C" fn(*mut c_void) -> u64,
     ) -> Result<Self, NativeLinkError> {
-        let get = |at: usize| {
-            u64::from_le_bytes(
-                identity[at..at + 8]
-                    .try_into()
-                    .expect("fixed identity field"),
-            )
-        };
-        let stack = get(112);
-        let code = get(120);
-        if stack == 0 || code == 0 {
-            return Err(NativeLinkError::new(
-                "program Object lacks checked stack/code metadata",
-            ));
-        }
-        let plan = lower_native_program_artifact(artifact, catalog).map_err(|_| {
-            NativeLinkError::new("program Object has no current canonical selection")
-        })?;
-        let descriptor = NativeProgramDescriptor::prepare(artifact, catalog, plan, stack, code)
-            .map_err(|_| NativeLinkError::new("program Object selection could not be prepared"))?;
-        let expected = NativeProgramObjectIdentity::from_descriptor(&descriptor)
-            .map_err(NativeLinkError::new)?;
-        if identity != expected.bytes() {
-            return Err(NativeLinkError::new(
-                "program Object identity/ABI/work/target/typed CFG differs from selected artifact",
-            ));
-        }
+        let descriptor = prepare_descriptor(artifact, catalog, identity)?;
         Ok(Self { entry, descriptor })
     }
     pub fn descriptor(&self) -> &NativeProgramDescriptor {
@@ -76,4 +51,41 @@ impl LinkedProgramArtifact {
             memory,
         )
     }
+}
+
+// Metadata preparation alone grants no entry/code authority. The unsafe
+// constructor still requires build-owned provenance for the exact Object.
+// In particular, nonzero stack/code claims come from that pinned Object;
+// runtime-only preparation cannot independently rediscover machine code size.
+pub(super) fn prepare_descriptor(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    identity: &[u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES],
+) -> Result<NativeProgramDescriptor, NativeLinkError> {
+    let get = |at: usize| {
+        u64::from_le_bytes(
+            identity[at..at + 8]
+                .try_into()
+                .expect("fixed identity field"),
+        )
+    };
+    let stack = get(112);
+    let code = get(120);
+    if stack == 0 || code == 0 {
+        return Err(NativeLinkError::new(
+            "program Object lacks checked stack/code metadata",
+        ));
+    }
+    let plan = lower_native_program_artifact(artifact, catalog)
+        .map_err(|_| NativeLinkError::new("program Object has no current canonical selection"))?;
+    let descriptor = NativeProgramDescriptor::prepare(artifact, catalog, plan, stack, code)
+        .map_err(|_| NativeLinkError::new("program Object selection could not be prepared"))?;
+    let expected =
+        NativeProgramObjectIdentity::from_descriptor(&descriptor).map_err(NativeLinkError::new)?;
+    if identity != expected.bytes() {
+        return Err(NativeLinkError::new(
+            "program Object identity/ABI/work/target/typed CFG differs from selected artifact",
+        ));
+    }
+    Ok(descriptor)
 }
