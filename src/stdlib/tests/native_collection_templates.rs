@@ -5,7 +5,8 @@ use mech_core::{
 };
 use mech_engine::native_artifact::{
     NativeArtifactLoweringError, NativeCollectionLexicalSource, NativeCollectionPrimitive,
-    native_collection_lexical_template, native_collection_operation_template,
+    bind_native_collection_operation, native_collection_lexical_template,
+    native_collection_operation_template,
 };
 use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
 use mech_syntax::document::{
@@ -135,6 +136,96 @@ fn original_and_decoded_collection_templates_retain_actual_schemas_and_selected_
     }
 }
 
+#[test]
+fn actual_collection_calls_bind_native_host_handles_and_explicit_finite_policy() {
+    let catalog = mech_stdlib::source_catalog();
+    let limits = mech_core::TargetMemoryProfile::current_resident_cpu()
+        .unwrap()
+        .limits;
+    for artifact in artifacts(SOURCE) {
+        let mut bound = 0;
+        for (node, _) in operations(&artifact) {
+            let Ok(template) = native_collection_operation_template(&artifact, node, &catalog)
+            else {
+                continue;
+            };
+            let parameters = template
+                .inputs()
+                .iter()
+                .map(|schema| vec![2; schema.dimension_parameters().len()])
+                .collect::<Vec<_>>();
+            let refs = parameters.iter().map(Vec::as_slice).collect::<Vec<_>>();
+            let output_parameters = vec![2; template.output().dimension_parameters().len()];
+            let call = bind_native_collection_operation(
+                &artifact,
+                node,
+                &catalog,
+                &refs,
+                &output_parameters,
+                limits,
+            )
+            .unwrap_or_else(|error| panic!("{}: {error:?}", template.primitive().name()));
+            bound += 1;
+            assert_eq!(call.template().node(), node);
+            assert_eq!(call.memory_plan().bound_call, *call.bound_call());
+            assert_eq!(
+                call.memory_plan().target.kind,
+                mech_core::MemoryTargetKind::NativeHost
+            );
+            assert_eq!(call.memory_plan().target.limits, limits);
+            assert_eq!(call.inputs().len(), template.inputs().len());
+            assert_eq!(call.output().schema_key, template.output().key());
+            for port in call
+                .memory_plan()
+                .inputs
+                .iter()
+                .chain(&call.memory_plan().outputs)
+            {
+                assert_eq!(
+                    port.value.storage.planned_slot(),
+                    mech_core::PlannedSlotKind::CanonicalValueHandle
+                );
+                assert_eq!(
+                    port.value.slot.bytes,
+                    core::mem::size_of::<Option<mech_core::Value>>() as u64
+                );
+            }
+            assert!(
+                call.memory_plan()
+                    .allocations
+                    .iter()
+                    .all(|allocation| allocation.space == mech_core::MemorySpace::Host)
+            );
+            assert!(!call.memory_plan().deferred_witnesses.is_empty());
+            assert!(
+                bind_native_collection_operation(
+                    &artifact,
+                    node,
+                    &catalog,
+                    &refs,
+                    &output_parameters,
+                    mech_core::MemoryBudgetLimits::default(),
+                )
+                .is_err()
+            );
+            let mut wrong_output = output_parameters.clone();
+            wrong_output.push(1);
+            assert!(
+                bind_native_collection_operation(
+                    &artifact,
+                    node,
+                    &catalog,
+                    &refs,
+                    &wrong_output,
+                    limits,
+                )
+                .is_err()
+            );
+        }
+        assert_eq!(bound, 7, "all seven actual maintained leaves must bind");
+    }
+}
+
 static BINDS: AtomicUsize = AtomicUsize::new(0);
 fn replacement(
     _: &ResidentKernelBindRequest<'_>,
@@ -177,6 +268,17 @@ fn factory_replacements_names_costs_and_public_opcodes_do_not_grant_collection_a
             assert!(
                 matches!(native_collection_operation_template(&artifact, node, &catalog), Err(NativeArtifactLoweringError::MissingSemanticWitness { node: actual }) if node == actual)
             );
+            assert!(matches!(
+                bind_native_collection_operation(
+                    &artifact,
+                    node,
+                    &catalog,
+                    &[&[]],
+                    &[],
+                    mech_core::TargetMemoryProfile::current_resident_cpu().unwrap().limits,
+                ),
+                Err(NativeArtifactLoweringError::MissingSemanticWitness { node: actual }) if node == actual
+            ));
         }
     }
     assert_eq!(

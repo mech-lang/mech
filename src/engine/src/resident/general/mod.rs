@@ -12,6 +12,11 @@ mod live;
     feature = "native-artifact",
     any(feature = "pure_text", feature = "map_ops")
 ))]
+pub(crate) mod native_collection_calls;
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
 pub(crate) mod native_collection_templates;
 #[cfg(feature = "native-artifact")]
 pub(crate) mod native_lowering;
