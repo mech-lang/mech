@@ -17,6 +17,11 @@ mod kernel;
 pub(crate) mod map_ops;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod matrix_literal;
+#[cfg(all(
+    feature = "resident-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(crate) mod native_collection_semantics;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod native_semantics;
 #[cfg(feature = "resident-artifact")]

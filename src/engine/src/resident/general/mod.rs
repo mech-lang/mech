@@ -8,6 +8,11 @@ pub use comprehension::{
     ActivatedCollectionStep, ActivatedComprehensionNode, ActivatedPatternBinding,
 };
 mod live;
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(crate) mod native_collection_templates;
 #[cfg(feature = "native-artifact")]
 pub(crate) mod native_lowering;
 #[cfg(feature = "native-artifact")]
@@ -12889,7 +12894,7 @@ fn bind_operation_for_target(
                 operation.operation_name.clone(),
             )
         },
-        |entry| Some(entry.key.clone()),
+        |entry| Some(entry.key().clone()),
     );
     let resident_operation = resident_operation.ok_or(ResidentActivationError::KernelBind {
         node: node_id,
@@ -12924,7 +12929,7 @@ fn bind_operation_for_target(
     };
     let implementation_memory = resident_entry
         .map_or(ImplementationMemoryClass::NoAdditionalScratch, |entry| {
-            entry.implementation_memory
+            entry.implementation_memory()
         });
     let memory_plan = if target == ExecutionTarget::ResidentCpu {
         resident_call_memory_plan(
@@ -12954,7 +12959,7 @@ fn bind_operation_for_target(
         output: output_layout,
     };
     let kernel = if let Some(factory) = resident_entry {
-        (factory.factory)(&bind_request)
+        (factory.factory())(&bind_request)
     } else {
         #[cfg(feature = "dynamic-modules")]
         {
@@ -22258,8 +22263,8 @@ mod shape_fact_tests {
             .insert_resident_factory(
                 ["math"],
                 "conformance-test-producer",
-                numeric.implementation_memory,
-                numeric.factory,
+                numeric.implementation_memory(),
+                numeric.factory(),
             )
             .unwrap();
         let extended = extended.build().unwrap();

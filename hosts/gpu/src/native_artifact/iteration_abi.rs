@@ -10,7 +10,7 @@ pub(super) const VERSION: u64 = 3;
 pub(super) const ENTRY: &str = "mech_canonical_scalar_iteration_entry_v1";
 pub(super) const STATUS_REJECT: u64 = 4;
 #[cfg(feature = "canonical-native")]
-pub(super) type Entry = unsafe extern "C" fn(*mut super::abi::NativeEntryFrame) -> u64;
+pub(super) use super::abi::RawEntry as Entry;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum Progress {
     Normal,

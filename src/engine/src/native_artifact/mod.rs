@@ -21,3 +21,10 @@ pub use crate::resident::general::native_match_lowering::{
 pub use iteration::*;
 
 pub(crate) mod iteration_validation;
+
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+pub use crate::resident::general::native_collection_templates::{
+    NativeCollectionLexicalSource, NativeCollectionLexicalTemplate,
+    NativeCollectionOperationTemplate, NativeCollectionPrimitive,
+    native_collection_lexical_template, native_collection_operation_template,
+};

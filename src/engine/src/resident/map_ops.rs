@@ -15,19 +15,7 @@ use mech_core::{
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    builder.insert_resident_factory(
-        ["map"],
-        "histogram",
-        Operation::Histogram.memory(),
-        |request| bind(request, Operation::Histogram),
-    )?;
-    builder.insert_resident_factory(["map"], "keys", Operation::Keys.memory(), |request| {
-        bind(request, Operation::Keys)
-    })?;
-    builder.insert_resident_factory(["map"], "values", Operation::Values.memory(), |request| {
-        bind(request, Operation::Values)
-    })?;
-    Ok(())
+    super::native_collection_semantics::register_maps(builder)
 }
 
 #[derive(Clone, Debug)]
@@ -39,7 +27,7 @@ struct Plan {
     dense_input_count: Option<usize>,
 }
 
-fn bind(
+pub(super) fn bind(
     request: &ResidentKernelBindRequest<'_>,
     operation: Operation,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {

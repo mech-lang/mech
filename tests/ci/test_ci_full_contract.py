@@ -227,6 +227,16 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--lib resident::general::native_match_lowering::iteration_proof_tests", contracts)
         self.assertIn("--features full_compiler,native-artifact", contracts)
 
+    def test_collection_factory_and_exact_template_contracts_are_executed(self):
+        steps = job_steps(FULL, "canonical-applications")
+        contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)
+        self.assertRegex(contracts, r"--test\s+resident_factory_lowering_attachment(?:\s|$)")
+        self.assertRegex(contracts, r"--test\s+native_collection_templates(?:\s|$)")
+        self.assertIn("--lib resident::general::native_collection_templates::tests", contracts)
+        self.assertIn("--features functions", contracts)
+        self.assertIn("--features full_compiler,native-artifact", contracts)
+        self.assertNotIn("--no-run", contracts)
+
     def test_canonical_iteration_has_nonempty_exact_linked_qualification(self):
         steps = job_steps(FULL, "canonical-linked-applications")
         selection = next(step for step in steps if "Verify linked canonical iteration selection is nonempty" in step)

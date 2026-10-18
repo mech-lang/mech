@@ -172,7 +172,7 @@ fn probe_bind(
     let entry = catalog
         .resident_factory(&["string".to_owned()], "concat")
         .ok_or(ResidentKernelBindError::UnsupportedContract)?;
-    let delegate = (entry.factory)(request)?;
+    let delegate = (entry.factory())(request)?;
     Ok(BoundResidentKernel::new(probe_execute, Box::new([]))
         .with_retained_state(Arc::new(delegate)))
 }
@@ -236,7 +236,7 @@ fn probe_catalog() -> Arc<FunctionCatalog> {
             maintained
                 .resident_factory(&["string".to_owned()], "concat")
                 .unwrap()
-                .implementation_memory,
+                .implementation_memory(),
             probe_bind,
         )
         .unwrap();

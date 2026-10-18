@@ -100,6 +100,7 @@ pub(crate) fn sort_positions<'a>(
 /// Workspace for an iterative most-significant-byte radix sort. Live frames
 /// describe disjoint ranges with at least two keys, so `order.len()` slots
 /// suffice independently of key length. No recursive host stack is used.
+#[cfg(any(test, feature = "resident-artifact"))]
 #[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct StringRadixFrame {
     start: usize,
@@ -107,6 +108,7 @@ pub(crate) struct StringRadixFrame {
     byte: usize,
 }
 
+#[cfg(feature = "resident-artifact")]
 pub(crate) const STRING_RADIX_FIXED_BYTES: usize =
     2 * 257 * core::mem::size_of::<usize>() + 5 * core::mem::size_of::<u64>();
 
@@ -116,6 +118,7 @@ pub(crate) const STRING_RADIX_FIXED_BYTES: usize =
 /// Each resolved bucket writes its run markers once; a subsequent linear pass
 /// compacts them. Those writes and scans fit within the additional 16*count.
 /// This is compute work, not a reservation to compare arbitrary string pairs.
+#[cfg(any(test, feature = "resident-artifact"))]
 pub(crate) fn string_radix_compute_bound(count: usize, bytes: usize) -> Option<usize> {
     bytes
         .checked_add(count)?
@@ -131,10 +134,12 @@ pub(crate) fn string_radix_compute_bound(count: usize, bytes: usize) -> Option<u
 /// at least two keys, so all frame charges together are at most 96*(bytes+n),
 /// below the complete bound above. No recursive or length-product work hides
 /// behind this charge. It must be admitted before reading any frame key.
+#[cfg(any(test, feature = "resident-artifact"))]
 pub(crate) fn string_radix_frame_compute_work(count: usize) -> Option<u64> {
     u64::try_from(count).ok()?.checked_mul(64)?.checked_add(64)
 }
 
+#[cfg(any(test, feature = "resident-artifact"))]
 #[derive(Debug)]
 pub(crate) enum StringRadixError<E> {
     InvalidWorkspace,
@@ -150,6 +155,7 @@ pub(crate) enum StringRadixError<E> {
 /// admits each frame before its first key access. On return,
 /// `scratch` contains one at each equal-key run's start and zero elsewhere;
 /// grouping needs no additional String-pair comparisons.
+#[cfg(any(test, feature = "resident-artifact"))]
 pub(crate) fn radix_sort_string_positions<'a, E>(
     order: &mut [usize],
     scratch: &mut [usize],
@@ -249,6 +255,7 @@ pub(crate) fn radix_sort_string_positions<'a, E>(
 /// Compact the radix run markers to sorted run starts in the same buffer.
 /// At each write the output index is at most the read index, so no unread
 /// marker is overwritten. This scans only integer metadata, not String keys.
+#[cfg(any(test, feature = "resident-artifact"))]
 pub(crate) fn compact_string_radix_runs(scratch: &mut [usize]) -> usize {
     let mut count = 0;
     for position in 0..scratch.len() {

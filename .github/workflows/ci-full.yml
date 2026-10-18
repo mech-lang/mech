@@ -552,6 +552,9 @@ jobs:
           --test source_op_assign_contract --test specialization_contract -- --test-threads=1
       - name: Execute canonical native lowering and selected implementation witnesses
         run: |
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-core \
+            --no-default-features --features functions \
+            --test resident_factory_lowering_attachment -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib \
             --no-default-features --features full_compiler,native-artifact \
             --test native_artifact_lowering --test native_artifact_i64_lowering \
@@ -559,7 +562,11 @@ jobs:
             --test native_artifact_cast_lowering \
             --test native_artifact_match_lowering \
             --test native_artifact_iteration_lowering \
+            --test native_collection_templates \
             --test native_artifact_output_initializers -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact \
+            --lib resident::general::native_collection_templates::tests -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native \
             --test canonical_artifact_native --test canonical_artifact_i64 --test canonical_artifact_f64 \

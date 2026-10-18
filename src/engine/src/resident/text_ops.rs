@@ -3,11 +3,11 @@ use super::budget::{self, PreparedKernel, ResidentBudgetMeter};
 use crate::intrinsics::text_ops::{self as primitives, Operation};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
-    ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
-    OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
-    ResidentKernelInputs, ResidentKernelWorkAccounting, ResidentShape, ResidentSnapshotOutput,
-    ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody,
-    SchemaId, SchemaKey, ShapeInstance, ShapeRule, ValueData, ValueDataDraft, ValueDraft,
+    ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction,
+    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
+    ResidentKernelWorkAccounting, ResidentShape, ResidentSnapshotOutput, ResidentValueKind,
+    ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody, SchemaId, SchemaKey,
+    ShapeInstance, ShapeRule, ValueData, ValueDataDraft, ValueDraft,
     snapshot::{
         SequenceView, SnapshotCanonicalizationBudget, SnapshotValidationContext,
         prospective_string_value_footprint,
@@ -16,18 +16,7 @@ use mech_core::{
 use std::sync::Arc;
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    builder.insert_resident_factory(
-        ["text"],
-        "lines",
-        ImplementationMemoryClass::CanonicalFinalize,
-        bind_lines,
-    )?;
-    builder.insert_resident_factory(
-        ["text"],
-        "join",
-        ImplementationMemoryClass::CanonicalFinalize,
-        bind_join,
-    )
+    super::native_collection_semantics::register_text(builder)
 }
 
 #[derive(Clone, Debug)]
@@ -91,7 +80,7 @@ fn validate(
     }
     Ok(())
 }
-fn bind_lines(
+pub(super) fn bind_lines(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate(request, Operation::Lines)?;
@@ -125,7 +114,7 @@ fn bind_lines(
         })
         .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
 }
-fn bind_join(
+pub(super) fn bind_join(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate(request, Operation::Join)?;

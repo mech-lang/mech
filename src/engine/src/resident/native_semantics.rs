@@ -492,7 +492,7 @@ mod tests {
         }
         fn bind(&self, catalog: &FunctionCatalog, module: &str, name: &str) -> BoundResidentKernel {
             let entry = catalog.resident_factory(&[module.into()], name).unwrap();
-            (entry.factory)(&self.request()).unwrap()
+            (entry.factory())(&self.request()).unwrap()
         }
         fn snapshot_output(&self) -> ResidentSnapshotOutput {
             ResidentSnapshotOutput {

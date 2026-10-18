@@ -22,18 +22,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         ImplementationMemoryClass::CanonicalFinalize,
         bind_parse_u64,
     )?;
-    builder.insert_resident_factory(
-        ["number"],
-        "format",
-        ImplementationMemoryClass::CanonicalFinalize,
-        bind_format,
-    )?;
-    builder.insert_resident_factory(
-        ["sequence"],
-        "length",
-        ImplementationMemoryClass::CanonicalFinalize,
-        bind_length,
-    )
+    super::native_collection_semantics::register_format_and_length(builder)
 }
 
 fn validate_full_write(
@@ -282,7 +271,7 @@ fn bind_parse_u64(
     ))
 }
 
-fn bind_length(
+pub(super) fn bind_length(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_full_write(
@@ -307,7 +296,7 @@ fn bind_length(
     ))
 }
 
-fn bind_format(
+pub(super) fn bind_format(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let Some(input) = request.inputs.first() else {
