@@ -1,7 +1,7 @@
 {
   "schema": "mech.checked-aot-workload-progress.v1",
   "status": "INCOMPLETE_IMPLEMENTATION_NOT_BENCHMARK_QUALIFIED",
-  "latest_qualification": "bounded_snapshot_ownership_qualification",
+  "latest_qualification": "registration_and_current_geometry_review_corrections",
   "pull_request": "https://github.com/mech-lang/mech/pull/905",
   "baseline": "c4190315672337f039efc743a970263627f75834",
   "foundations_pr_scope": {
@@ -781,6 +781,56 @@
       { "log": "tmp/pr-stack-evidence/checked-aot-v289-ownership-recovery.log", "sha256": "0d19e62fc8abc2e6e40f19794bbe56ee8c17e4f49f4602bd193195ec1fbe8681", "result": "Terminal1: all83 Rust methods passed;154/155 CI contracts passed. The ownership shell guard in the memory conformance block prevented the conservative inventory verifier from crediting eight existing targets. Moved the guard to a dedicated workflow step without weakening the verifier; v293 requalifies the complete final diff." }
     ],
     "not_established": "Fresh final-head clean review/full GitHub CI, newly linked mixed execution, complete production canonical AOT, native resources/full workload, new benchmark samples or performance improvement. The full objective remains follow_up_roadmap."
+  },
+  "registration_and_current_geometry_review_corrections": {
+    "status": "FOCUSED_REVIEW_FIXES_LOCALLY_QUALIFIED_FRESH_REVIEW_AND_CI_REQUIRED",
+    "source_commit": "19e0686754639db14b21db1e6e9ce63c84b1f451",
+    "tested_base": "08893dc9fa2d7af090686fba3d4e6ad83b6866b1",
+    "complete_frozen_diff_sha256": "5b22b521c006c9b0e55543b59cb0fe7364d44da3252577859881281785d4ef26",
+    "source_attribution": "The serial run tested the frozen diff on tested_base. The committed source range has independently verified byte-identical binary diff and the file pins below; the run is not relabeled as a clean-checkout execution.",
+    "findings": [
+      {
+        "thread": "https://github.com/mech-lang/mech/pull/905#discussion_r4308064415",
+        "correction": "One shared allocation-size helper now supplies the complete registration Arc allocation, including control block and padding, to allocation checks, public claim metadata and unshared admission/retained reservation transfer.",
+        "coverage": "The existing bounded-ownership structural method checks the full admission amount, exact-minus-one import rejection without consuming the reservation, exact-budget retained charge and full release. Existing alias/removal bounds and all48 memory-runtime methods remain selected."
+      },
+      {
+        "thread": "https://github.com/mech-lang/mech/pull/905#discussion_r4308064418",
+        "correction": "Prepared FullWrite/SameAsInput calls derive current logical input extents and resolve the output schema's own shape parameters after binding admission. Prior publication dimensions do not override that current contract. Only this verified construction permits a prior output with different shape parameters; schema/key/account checks, actual prior-footprint measurement and other geometry guards remain.",
+        "coverage": "One added maintained-template method exercises original/decoded root and lexical matrix number/format without a prior result and across3/0/1/5columns, checking exact packed Strings and same-account retention. One added generated-program method compares original/decoded resident and real JIT results plus Object identity in root and both Match arms at3/0/1columns."
+      }
+    ],
+    "source_files_sha256": {
+      "src/core/src/snapshot/validation.rs": "77d2b78a52d8def732da2505e241fa409ac952bca226b3e8c55520bb186d58f1",
+      "src/engine/src/resident/general/native_collection_invocation.rs": "e1da621f23d5d1a9906b15184c9ab038d4a50e43d95ce8c5b5bd9c45a4baaf73",
+      "src/engine/src/resident/general/native_collection_prepared.rs": "88c63ad9f51783ea0fe39a24b4d2e16b37db68beec97691caf0ffe97e76ce1f8",
+      "src/stdlib/tests/native_collection_templates.rs": "3af2416a0b06eee4dc99d153188d3291dbbf201150a45c1eb30f586d9dd065e2",
+      "hosts/gpu/tests/canonical_artifact_program.rs": "2f6741b3194f118ba682f5ceec0e90554ec669466758af616cdd201f27e469da"
+    },
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-registration-and-shape-v304.zsh",
+      "driver_sha256": "807037329ccfc0569674159defd379769836a23db1d32e2939a4ab93c70ae273",
+      "log": "tmp/pr-stack-evidence/checked-aot-v304-registration-and-shape.log",
+      "log_sha256": "b3c15174e9467b7209a73f9f1c65a5b01c9fe4ed89c54d196cd282112c4855d7",
+      "started_utc": "2026-10-18T19:04:37Z",
+      "completed_utc": "2026-10-18T19:07:13Z",
+      "exit": 0,
+      "commands": "The command arrays in bounded_snapshot_ownership_qualification.qualification.commands are executed unchanged by the pinned v293 driver, wrapped only with the current base/diff and fresh v304 log. The actual workflow ownership list/execute guard is extracted and executed; exact-one selection succeeds. No test-only filter removes the two new integration methods.",
+      "execution": "One serial source-frozen pipeline; nightly2026-03-03, locked/offline, one build job, opt0/debug0 tests, debug assertions and overflow checks enabled, no incremental compilation.",
+      "rust_methods": { "core_structural_ownership": 1, "core_memory_runtime": 48, "generated_mixed_program": 8, "ordinary_knucleotide": 5, "native_collection_templates": 15, "native_arena": 8, "total": 85 },
+      "ci_contracts": 155,
+      "other": "Core no_std and native-program runtime-only checks, unsafe and warning audits, formatting, diff and unchanged-source fingerprint all pass. Separate python3 -B scripts/check-rust-module-layout.py passes after the terminal run.",
+      "unchanged_workload": "Ordinary100/400-base success and4000-base denial/recovery still pass with unchanged source algorithm and default limits."
+    },
+    "retained_attempts": [
+      { "log": "tmp/pr-stack-evidence/checked-aot-v300-registration-and-shape.log", "sha256": "9d3061e9529dd008a7ab1953e04c2dd86730aa775ec0d3295887bba27017b3bd", "result": "Terminal101 after structural1/memory48 and7existing generated methods passed. The added generated matrix method failed during resident-reference activation (KernelBind UnsupportedLayout), before native invocation. Extra input-only activation shape seeds were removed from the reference helper; its normal dynamic-shape activation accepts actual Turn values without changing the cases or their required outputs." },
+      { "log": "tmp/pr-stack-evidence/checked-aot-v303-matrix-reference.log", "sha256": "eb04400992e9a6f091642a9af5cc827720b9546cc88e18e36dcb3440d1a4185c", "result": "Terminal0 for the exact added matrix method on the final5b22b521diff. The complete v304 run then requalifies all85Rust and155CI methods."
+      }
+    ],
+    "default_limits_changed": false,
+    "benchmark_algorithm_changed": false,
+    "new_linked_executions_or_benchmark_samples": 0,
+    "not_established": "Fresh final-head review and complete GitHub CI; full linked mixed/native-resource and workload qualification; old bypassing-I/O versus existing secured-path performance or full native security overhead. The full objective remains follow_up_roadmap."
   },
   "remaining": ["Complete follow_up_roadmap in its stated order; the foundations correction does not discharge the full implementation/benchmark brief."],
   "benchmark_samples": 0
