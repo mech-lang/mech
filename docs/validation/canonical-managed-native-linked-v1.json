@@ -133,6 +133,29 @@
     ],
     "remaining": "Fresh exact-head review and CI remain required. This does not complete canonical resource hosts, all ten programs or full-workload canonical AOT."
   },
+  "utf8_source_admission_review_correction": {
+    "review_thread": "PRRT_kwDOCJ6M-c6tuaWB",
+    "review_comment": 4308696876,
+    "implementation_commit": "90a1fb115ea3d62f84692a4982a8040f87f22fc3",
+    "qualified_base": "a1e1ae7aaf820dd745d344f79da1b3d222c23250",
+    "qualified_three_file_patch_sha256": "6525d5417b4847bd982d4b39c50ce904019df0b40a01ccd03f6681d53819447e",
+    "cause": "A bounded limit+1 prefix of valid oversized UTF-8 can end inside a character. Decoding before compiler admission returned a UTF-8 error instead of the ordinary source_bytes budget denial.",
+    "correction": "ProgramCompiler.compile_canonical_source_bytes enforces the existing source-byte limit before decoding and delegates admitted text to compile_canonical_source. The reference retains bounded acquisition and the same compiler configuration. No new frontend, authority or limit policy is introduced.",
+    "reproduced_before_fix": {"exit": 101, "capture": "tmp/pr-stack-evidence/checked-aot-v332-utf8-boundary-reproduction.json", "capture_sha256": "9410b5095bf79db4bec2f3ce84f65b070f472eb61a06ce648baa9e5e86c21af8", "scope": "Structured capture of the actual failed first boundary case, not a raw full-process log or execution credit for the remaining cases."},
+    "qualification": {
+      "reference_methods": 7,
+      "ordinary_source_limit_methods": 5,
+      "ci_contract_methods": 155,
+      "unicode_boundary_cases": 9,
+      "coverage": "Valid complete source with2/3/4-byte Unicode characters, bounded acquisition and ordinary source_bytes denial at64/65/66-byte caps; within-limit invalid UTF-8; byte/str bytecode equality and compiler reuse. Retained source/bytecode publication/recovery and atomic no-overwrite tests pass.",
+      "additional_checks": ["unsafe audit", "warning policy", "module layout", "format", "diff", "unchanged frozen source"],
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v333-utf8-source-admission.log", "sha256": "409ab8463e13e581943a107faf20f60fdbcc76b0c218992e2395db9cb390ebaf"},
+      "driver": {"path": "tmp/pr-stack-evidence/qualify-utf8-source-admission-v333.zsh", "sha256": "f4b5af7daf06176da2f4cfb871e9346e63551c131efa571ed3fbe23d657c26d7"},
+      "finished_utc": "2026-10-18T21:11:34Z",
+      "exit": 0
+    },
+    "scope": "Frontend/reference admission correction only. Earlier linked/native performance results retain their original qualified source. Fresh exact-head review and CI remain required."
+  },
   "benchmark_measurements": 0,
   "not_established": ["complete production canonical build route", "native resource-host lifecycle", "general native comprehensions/element-wise counts/state/FSM", "all ten idiomatic programs", "full-size canonical k-nucleotide", "new canonical native performance result", "complete final-head CI or clean review"],
   "remaining_full_objective": "checked-aot-workload-progress-v1.json follow_up_roadmap remains required. The separate legacy-native I/O diagnostic is native-io-migration-timing-v1.json; its measurements do not qualify this canonical backend or resolve the independent source compiler."
