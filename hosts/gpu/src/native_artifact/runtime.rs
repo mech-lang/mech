@@ -283,6 +283,7 @@ where
             (NativeScalarValue::Bool(_), NativeScalarKind::Bool)
                 | (NativeScalarValue::U64(_), NativeScalarKind::U64)
                 | (NativeScalarValue::I64(_), NativeScalarKind::I64)
+                | (NativeScalarValue::F64(_), NativeScalarKind::F64)
         ) {
             return Err(NativeExecutionError::InputType {
                 input: index,
@@ -297,6 +298,7 @@ where
             NativeScalarValue::Bool(value) => u64::from(*value),
             NativeScalarValue::U64(value) => *value,
             NativeScalarValue::I64(value) => *value as u64,
+            NativeScalarValue::F64(value) => value.bits(),
         };
     }
     let input_pointer = input_words.as_ptr();
@@ -399,6 +401,9 @@ where
             NativeScalarKind::Bool => NativeScalarValue::Bool(*word != 0),
             NativeScalarKind::U64 => NativeScalarValue::U64(*word),
             NativeScalarKind::I64 => NativeScalarValue::I64(*word as i64),
+            NativeScalarKind::F64 => {
+                NativeScalarValue::F64(mech_core::snapshot::F64Bits::from_bits(*word))
+            }
         };
     }
     Ok(NativeExecutionReport {

@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 
 /// Fixed exported data size for the build-owned entry pairing record.
 pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
-pub const NATIVE_TYPED_IR_VERSION: u64 = 2;
+pub const NATIVE_TYPED_IR_VERSION: u64 = 3;
 pub const NATIVE_WORK_POLICY_VERSION: u64 = 1;
 const MAGIC: &[u8; 16] = b"MECHNATIVEOBJv1\0";
 
@@ -149,6 +149,7 @@ pub(super) fn typed_ir_sha256(plan: &NativeArtifactPlan) -> [u8; 32] {
             NativeScalarKind::Bool => 1,
             NativeScalarKind::U64 => 2,
             NativeScalarKind::I64 => 3,
+            NativeScalarKind::F64 => 4,
         }]);
         word(hash, u64::from(value.schema().get()));
         hash.update(value.schema_key().as_bytes());
@@ -191,6 +192,10 @@ pub(super) fn typed_ir_sha256(plan: &NativeArtifactPlan) -> [u8; 32] {
             NativeScalarValue::I64(v) => {
                 hash.update([3]);
                 word(&mut hash, v as u64);
+            }
+            NativeScalarValue::F64(v) => {
+                hash.update([4]);
+                word(&mut hash, v.bits());
             }
         }
     }
@@ -246,6 +251,18 @@ fn op_tag(op: NativeScalarOp) -> u8 {
         NativeScalarOp::I64Le => 27,
         NativeScalarOp::I64Gt => 28,
         NativeScalarOp::I64Ge => 29,
+        NativeScalarOp::F64Add => 30,
+        NativeScalarOp::F64Sub => 31,
+        NativeScalarOp::F64Mul => 32,
+        NativeScalarOp::F64Div => 33,
+        NativeScalarOp::F64Neg => 34,
+        NativeScalarOp::F64Sqrt => 35,
+        NativeScalarOp::F64Eq => 36,
+        NativeScalarOp::F64Ne => 37,
+        NativeScalarOp::F64Lt => 38,
+        NativeScalarOp::F64Le => 39,
+        NativeScalarOp::F64Gt => 40,
+        NativeScalarOp::F64Ge => 41,
     }
 }
 

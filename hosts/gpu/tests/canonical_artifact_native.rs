@@ -99,6 +99,7 @@ fn reference(
                     NativeScalarValue::Bool(v) => ValueDataDraft::Bool(*v),
                     NativeScalarValue::U64(v) => ValueDataDraft::U64(*v),
                     NativeScalarValue::I64(v) => ValueDataDraft::I64(*v),
+                    NativeScalarValue::F64(v) => ValueDataDraft::F64(*v),
                 },
             }
             .finalize(&SnapshotValidationContext::new(artifact.schemas()))
@@ -131,6 +132,7 @@ fn reference(
                 ValueData::Bool(v) => NativeScalarValue::Bool(*v),
                 ValueData::U64(v) => NativeScalarValue::U64(*v),
                 ValueData::I64(v) => NativeScalarValue::I64(*v),
+                ValueData::F64(v) => NativeScalarValue::F64(*v),
                 v => panic!("unexpected scalar {v:?}"),
             },
         )

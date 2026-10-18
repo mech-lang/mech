@@ -1,0 +1,102 @@
+{
+  "schema": "mech.validation.canonical-native-f64.v1",
+  "status": "DARWIN_ARM64_JIT_OBJECT_LINKED_PASSED_REVIEW_AND_FULL_CI_REQUIRED",
+  "source_commit": "2641b289b04283978171d41e93f084fea47de77b",
+  "source_tree": "4abebd208c2eb65821a16ccb1843fbf26baf4a1a",
+  "parent_pr901_head": "913c75d68c13b4c86fe9338c87dd9549faafe6bd",
+  "branch": "codex/canonical-artifact-f64",
+  "qualification_date_utc": "2026-10-18",
+  "source_identity": "Every phase checked this exact clean committed checkout before and after execution. A subsequent documentation-only commit does not turn this receipt into a different-source run; its Rust/manifests/lock equality must be verified explicitly.",
+  "target": {
+    "os": "Darwin 24.6.0",
+    "machine": "arm64",
+    "pointer_width": 64,
+    "endianness": "little",
+    "toolchain": "nightly-2026-03-03"
+  },
+  "architecture": {
+    "input": "The canonical frontend's validated ProgramArtifact and actual selected catalog implementation; no new source parser, source rewriting, interpreter fallback or whole-program Rust bridge.",
+    "authority": "Only completed dense F64 binder branches receive private native semantic evidence. Exact contracts, scalar geometry, NativeHost storage, parameters and final binding must match. Same-name replacements, changed metadata and the distinct Snapshot/libm sqrt branch remain uncertified.",
+    "scope": "Stateless Turn-only Bool/U64/I64/F64 scalar graphs. This extends the artifact backend; it does not complete production CLI native migration or retire the older source-native compiler.",
+    "operations": ["add", "subtract", "multiply", "divide", "negate", "platform sqrt", "equal", "not equal", "less", "less or equal", "greater", "greater or equal"],
+    "transport": "Raw F64Bits preserve signed zero and NaN payloads. Arithmetic interprets typed raw words, not numeric U64-to-F64 casts. Ordered nodes are not fused, reassociated or discarded.",
+    "identity": "Typed IR version3; F64 kind/value tag4; operation tags30..41. C ABI1 and work policy1 are unchanged. Older typed identities are rejected, not silently reinterpreted."
+  },
+  "execution_profile": "One serial local validation pipeline; locked/offline dependencies; unoptimized tests; debug0; assertions and overflow checks enabled; test-threads1; incremental0. Supervised generated-project builds use the committed bounded worker and its own shared runtime-only target cache.",
+  "checks": {
+    "private_selected_semantics": {"passed": 7, "ignored": 0, "unrelated_filtered": 719},
+    "lowering": {"native_artifact_f64_lowering": 3, "native_artifact_i64_lowering": 3, "native_artifact_lowering": 8, "native_artifact_output_initializers": 4, "total_passed": 18, "ignored": 0, "filtered": 0},
+    "backend": {"canonical_artifact_f64": 5, "canonical_artifact_i64": 4, "canonical_artifact_native": 8, "total_passed": 17, "ignored": 0, "filtered": 0},
+    "private_abi_identity": {"passed": 4, "ignored": 0, "unrelated_filtered": 35},
+    "runtime_only": "PASS cargo check -p mech-gpu --no-default-features --features canonical-native-runtime --lib",
+    "ci_contract_methods": 142,
+    "python_sharder_methods": 6,
+    "formatting": "PASS",
+    "production_architecture_guards": "All7 pass: value execution boundary, warning policy, type system, semantic type authority, memory runtime, memory planner and Rust module layout."
+  },
+  "semantic_coverage": [
+    "Original and bytecode-decoded artifacts, actual resident execution and JIT agree; no metadata-only substitution for execution.",
+    "All12 F64 operations;28 binary boundary pairs and18 unary bit patterns, including signed zeros, subnormals, finite overflow/underflow, infinities, quiet/signaling NaNs and payload ordering.",
+    "Numeric comparisons retain NaN and signed-zero behavior. Non-fused multiply/add and non-reassociated addition retain ordered rounding.",
+    "Direct constants, aliases, shared values, unused ordered nodes, actual fixed-scalar native memory, unsupported state/Activation/control/kinds and same-name replacements.",
+    "Setup, node, completion, transport-memory and shared-budget denials; equal-width wrong input kind; first-error order; unchanged caller outputs and later recovery.",
+    "Retained Bool/U64/I64 operations, signed overflow/zero/MIN-minus-one division and remainder, and exact failure-node diagnostics remain covered."
+  ],
+  "linked": {
+    "selected_test": "linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic",
+    "selection": "Exactly1 intended ignored test listed, then explicitly executed:1 passed,0 failed,0 ignored;1 internal worker test filtered.",
+    "evidence_relative_to_repository": "tmp/pr-stack-evidence/review-v145-native-linked",
+    "qualification_sha256": "d66fa9bef4aa94de4537a6d0eb95c64cbcc61f5c52721c49ed5746bd4670307e",
+    "standalone_executables": 5,
+    "fresh_process_cases": 102,
+    "f64_process_cases": 57,
+    "distinction": "These5 scalar executables belong to ONE canonical-native qualification route. They do not establish completion of all5 distinct linked workflow routes.",
+    "verification": "Complete stdout, stderr, exit status, arguments and unchanged executable/generated-input pins checked for every case. Original and decoded generation pins match. Each actual build's114 compiled units exclude mech-syntax, Cranelift and forbidden source/compiler/native-sequence feature paths; metadata weak edges are not mistaken for compiled units.",
+    "applications": [
+      {"name": "canonical-linked-mixed", "cases": 18, "binary_sha256": "d3c07deacea6152344c56b359316457e8c88ef50df83f24679e4185591b532e2"},
+      {"name": "canonical-linked-ordered", "cases": 5, "binary_sha256": "4d20161c588d07e647be9cbe5ec7f3b45f42bf11ed9a4be21b0c77c7a31ad922"},
+      {"name": "canonical-linked-signed", "cases": 12, "binary_sha256": "f030d84d71b7754ddb64058065a2953d03649ecea227d55d0616502c2e2657f1"},
+      {"name": "canonical-linked-signed-divrem", "cases": 10, "binary_sha256": "6714f32e624d996f997a14fb15828a71fc876cc7862f887d16e6ac08ca13bd54"},
+      {"name": "canonical-linked-floats", "cases": 57, "binary_sha256": "782c13ccba759cbe98b91daf7baaeebdc285f8aa20627cba5a78cfbf5037a6bc"}
+    ]
+  },
+  "commands": [
+    "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-engine --no-default-features --features full_compiler,native-artifact --lib resident::native_semantics::tests -- --test-threads=1",
+    "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-stdlib --no-default-features --features full_compiler,native-artifact --test native_artifact_lowering --test native_artifact_i64_lowering --test native_artifact_f64_lowering --test native_artifact_output_initializers -- --test-threads=1",
+    "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-gpu --no-default-features --features canonical-native --test canonical_artifact_native --test canonical_artifact_i64 --test canonical_artifact_f64 -- --test-threads=1",
+    "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-gpu --no-default-features --features canonical-native --lib native_artifact:: -- --test-threads=1",
+    "MECH_CANONICAL_NATIVE_SOURCE_COMMIT=2641b289b04283978171d41e93f084fea47de77b MECH_CANONICAL_NATIVE_EVIDENCE_DIR=<fresh-absolute-external-directory> cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-gpu --no-default-features --features canonical-native --test canonical_artifact_application -- --ignored --exact linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic --test-threads=1"
+  ],
+  "logs_sha256": {
+    "review-v141-backend.log": "2e5d5cf324906c2b0256b5bd54f1ee59e4e359dffd8ed593d04a03b190e5be39",
+    "review-v141-private-abi.log": "1f91a909f468eea0d4c2c58450e71c2b7edc9a558564c7e759a401e2e42b11fb",
+    "review-v141-runtime-only.log": "e0f2be5f846bc5a51471023496dc278df007b1f948d8c11e011aed39062aa767",
+    "review-v144-selected-semantics.log": "264931e85e7fdc08f7b53c813210658fccc9bf4f05e99d91375d9fe36d09e0aa",
+    "review-v144-lowering.log": "c155d020ae3f3193fd89f8fdc26f518cf3fbff5ccd6079e1613cd99532bae6ae",
+    "review-v145-linked-list.log": "a2fe84b33598fbab1a6c52b55faac22a615d37b629809945b2b815c44281cf1e",
+    "review-v145-linked.log": "89c1e1f1012f9d471cc3dd2c9376e631df8782f4beb67aff2c12e71aa4d69dd5",
+    "review-v146-ci-contracts.log": "0e74403b4487cab62be6ab5be85b01f234692ddfb85f8997b34b838a0e05fa05",
+    "review-v146-sharder.log": "3154f4c6a3f112d9f64b559c96f85e35e9a41ffdc9cd3dd3bcb8406a847d05d6",
+    "review-v146-formatting.log": "b78c8dd23abb81d28e073259b303b1309bfd05d0e43804349cccf71be8ab19a1",
+    "review-v146-value-boundary.log": "06a091326455c529b1a03a7ee72cdeeb68645e32043eddd08e9455336603d9b2",
+    "review-v146-warnings.log": "32c53a15c6ec8638fab75b359bc2b55ceee21f80d87fd45250e6445f2e1f894a",
+    "review-v146-type-authority.log": "cf9c66f983ec734398999ebe6add1c8c0fd38ff3fd5ebe5d742ddc826a37baf8",
+    "review-v146-semantic-authority.log": "2ac7e230abc3033fe32f6789277adae7755fe4c693b58dc988129ad842fb0625",
+    "review-v146-memory-runtime.log": "10c3302a8f490ade8e2960af24b670fa57e31275ff928af83622375cc3157ea3",
+    "review-v146-memory-planner.log": "36db1331e2d5f3eb1cfd9a13a1aad981e9cb4a2350b5c1a4c2224c2bffc07768",
+    "review-v146-module-layout.log": "8b462352814defcc9a82b887123272959cdc8db526ba489ab89760807828ec4d"
+  },
+  "retained_failed_evidence": [
+    {"source_commit": "510e6e30edacf895eacf60215f2ceefae237aa7a", "phase": "review-v139-backend", "result": "Compile failed before tests: local artifacts binding shadowed helper. Fixed by renaming the helper in2641b289b without changing assertions.", "log_sha256": "9c32b560c6207452def88a54a01be8b6fe9991fbb19942867da2a7dbc76b65a8"},
+    {"source_commit": "2641b289b04283978171d41e93f084fea47de77b", "phase": "review-v142-lowering", "result": "Library archive build failed with OS error28, no disk space. Zero lowering tests executed;v143 linked was not reached. Verified lossless archives of inactive test binaries recovered space; complete unchanged-source v144/v145 reruns pass.", "log_sha256": "8e0569a1feac509a4a5943718c3aeec0210b485199b9d86e17e8354fa9c365c1"}
+  ],
+  "remaining": [
+    "Fresh review, full applicable CI and other-platform execution are required; this is not a complete green or cross-platform claim.",
+    "Complete owner/runtime/source/distribution qualification must cover this F64 source. The832 runtime and61 source-acceptance base receipts are scoped to f02f9a884, not relabeled as F64 runs.",
+    "Computed Activation/state, Match/Iteration, matrices/collections, checked casts and native typed resource execution remain separate work.",
+    "Retire the old source-native compiler after canonical-artifact capability migration; documentation alone does not close the competing-authority gap.",
+    "All10 workloads and whole-lifecycle same-AOT-binary trusted/secured qualification remain incomplete. No benchmark timing is credited.",
+    "Keep draft and unmerged until explicit user approval, even after clean review and green CI."
+  ],
+  "benchmark_measurements": 0
+}

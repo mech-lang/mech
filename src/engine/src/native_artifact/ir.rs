@@ -9,6 +9,7 @@ pub enum NativeScalarKind {
     Bool,
     U64,
     I64,
+    F64,
 }
 
 /// Checked operations certified by the actual selected maintained binder.
@@ -44,6 +45,18 @@ pub enum NativeScalarOp {
     I64Le,
     I64Gt,
     I64Ge,
+    F64Add,
+    F64Sub,
+    F64Mul,
+    F64Div,
+    F64Neg,
+    F64Sqrt,
+    F64Eq,
+    F64Ne,
+    F64Lt,
+    F64Le,
+    F64Gt,
+    F64Ge,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -51,6 +64,7 @@ pub enum NativeScalarValue {
     Bool(bool),
     U64(u64),
     I64(i64),
+    F64(mech_core::snapshot::F64Bits),
 }
 
 /// An artifact value identity. A local is evaluated by its one ordered Let;

@@ -14210,6 +14210,9 @@ fn operation_storage_descriptor(
         SchemaBody::SignedInteger(mech_core::IntegerWidth::W64) => {
             mech_core::FunctionValueRepresentation::I64
         }
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => {
+            mech_core::FunctionValueRepresentation::F64
+        }
         _ => return Err(MemoryPlanError::UnsupportedStorageLayout),
     };
     Ok(mech_core::physical_storage_descriptor(

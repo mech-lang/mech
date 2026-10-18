@@ -170,7 +170,7 @@ fn signed_extension_preserves_scope_kind_and_selected_implementation_boundaries(
         "1i64 / 0i64\n",
         "~state := 0i64\nstate\n",
         "left<i32> + right<i32>\n",
-        "left<f64> + right<f64>\n",
+        "left<f32> + right<f32>\n",
         "values<[i64]:1,1>\n",
         "flag<bool>? | true => left<i64> | false => right<i64>\n",
     ] {
