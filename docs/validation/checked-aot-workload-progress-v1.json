@@ -362,7 +362,7 @@
   "selected_native_collection_template_qualification": {
     "as_of_utc": "2026-10-18T09:56:19Z",
     "status": "PASS_SELECTED_ROOT_AND_LEXICAL_METADATA_NOT_EXECUTION",
-    "qualified_source_commit": "a484c36f9",
+    "qualified_source_commit": "a484c36f9831f37bc30db460fd36798ecdee3359",
     "tested_base": "e072b15570cdccbc59bed91939151cb3b2c92478",
     "tested_tracked_diff_sha256": "a0657dac42cb6531a02ec9f7e29ac9f6e73fa717e83695cd8720dba6144d16ae",
     "new_source_files_sha256": {
@@ -395,6 +395,36 @@
     "preceding_failures": "v237 exposed a mismatched turn-shaped versus fixed-shape Match test fixture; v239 exposed one remaining old public factory-field test access. Both were corrected, not ignored. Static inspection also found an unaudited conditional warning suppression, which was removed before the final full qualification.",
     "ci_diagnosis": "Run39110851697 tested integration merge210336ea106084934c848f3c8a5f72b354f049d4, with parents89f417d5317981516666368c3f9f457ffe165138 ande072b15570cdccbc59bed91939151cb3b2c92478. The different68c02e42f7b0ca360fef82d45b55ae0ae911cfea exact-ref lines are contract-test fixture output, not the job checkout. That run failed the resident-disabled dead-code builds and iteration unsafe audit; local checks for both now pass. Remote CI on the correction is still required.",
     "not_established": "These are selected-leaf templates, not complete mixed-value NativeHost call descriptors, runtime library calls, native comprehensions/FSM/resource I/O, whole-program AOT, full-size packed/streaming execution, benchmark timing, clean review or complete green CI."
+  },
+  "native_canonical_value_transport_qualification": {
+    "as_of_utc": "2026-10-18T10:10:33Z",
+    "status": "PASS_MANAGED_STORAGE_AND_EXISTING_NATIVE_REGRESSIONS_NOT_COLLECTION_CALLS",
+    "qualified_source_commit": "b6ee04a379e196b0a2c786ed4533002bf52df30f",
+    "tested_base": "865e5d97a71c31c733e402e5683492ed1c200ea9",
+    "tested_tracked_diff_sha256": "daf94af8642a16477ddd18d2cda214e71e4a3921fa5074e6fed2bfad1730562d",
+    "new_source_files_sha256": {
+      "hosts/gpu/src/native_artifact/values.rs": "3365a02248a7c568400740d366e21cb80ae382d777601891beed16f5b6e203a4",
+      "hosts/gpu/src/native_artifact/work.rs": "d47fe099df5381f5ec9548d8b736c241a788cd35a983628b21c813d6e49f9a48"
+    },
+    "changes": [
+      "Canonical immutable values and generation lanes occupy actual typed planned Host arenas on the caller's existing finite account. Core projection independently checks slot type, layout and admitted backing. The original private U64 transport now uses the same generic arena helper.",
+      "Only already fully admitted same-account values with exact schema ID/key enter a slot. Retaining them does not import, unpack or clone payloads. Slot replacement/take validates all fallible conditions before mutation; opaque domain/slot/generation handles reject cross-arena substitution, stale reuse and generation wrap.",
+      "One non-resettable work ledger accumulates setup/access/retirement work. Each arena is bound to that exact ledger's private unique identity, so a fresh meter cannot renew its allowance. Retained-root retirement is conservatively prepaid before ownership is cloned. The frozen scalar invocation uses the same ledger with its original charges; no ABI or default limit changes."
+    ],
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-native-value-storage-v242.zsh",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v242-native-value-storage.log",
+      "log_sha256": "119aadbf926a419f1c12bb49fa3daa9cc772246fcca34b07d7b30a5c95ef6247",
+      "exit_code": 0,
+      "source_unchanged_through_run": true,
+      "format_warning_policy_unsafe_audit_runtime_only_build": "PASS",
+      "private_runtime_methods": 18,
+      "new_methods": "Five canonical storage methods and two shared work-ledger methods, including actual String/map/max-U64 values, complete account release, wrong-schema/unadmitted/foreign-account rejection, stale/cross-arena handles, memory/transport/work denials, rejected fresh-ledger substitution and generation overflow.",
+      "native_execution_methods": { "scalar": 8, "i64": 4, "f64": 5, "casts": 4, "match": 8, "iteration": 10 },
+      "ignored_methods": "The existing explicit linked iteration process qualification is intentionally ignored in the default native target. This run did not execute it and does not replace its earlier pinned linked receipt.",
+      "ci_contract_methods": 77
+    },
+    "not_established": "Current-visit mixed-value NativeHost call descriptors, actual native library calls, native comprehensions/FSM/resource lifecycle, full-size packed/streaming execution, new linked-process qualification, benchmarks, optimized/configurable whole-program AOT or complete green CI/clean review."
   },
   "remaining": [
     "Extend beyond the qualified100/400-base original/decoded library and real release CLI/resource cases to realistic full inputs, retaining finite admission, atomicity and recovery.",
