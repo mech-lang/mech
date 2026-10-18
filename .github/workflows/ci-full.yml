@@ -557,11 +557,12 @@ jobs:
             --test native_artifact_lowering --test native_artifact_i64_lowering \
             --test native_artifact_f64_lowering \
             --test native_artifact_cast_lowering \
+            --test native_artifact_match_lowering \
             --test native_artifact_output_initializers -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native \
             --test canonical_artifact_native --test canonical_artifact_i64 --test canonical_artifact_f64 \
-            --test canonical_artifact_cast -- --test-threads=1
+            --test canonical_artifact_cast --test canonical_artifact_match -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native --lib native_artifact:: -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
@@ -691,6 +692,24 @@ jobs:
           --test canonical_artifact_application -- --ignored --exact
           linked_canonical_artifact_cast_applications_preserve_checked_boundaries
           --test-threads=1
+      - name: Verify linked canonical Match selection is nonempty
+        run: |
+          set -euo pipefail
+          MATCH_QUALIFICATION_TESTS=$(cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native \
+            --test canonical_artifact_match_application -- --list --ignored --exact \
+            linked_canonical_match_applications_are_lazy_bounded_and_atomic)
+          test "$(printf '%s\n' "$MATCH_QUALIFICATION_TESTS" | rg -c '^linked_canonical_match_applications_are_lazy_bounded_and_atomic: test$')" -eq 1
+      - name: Qualify linked canonical Match applications
+        env:
+          MECH_CANONICAL_MATCH_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_MATCH_EVIDENCE_DIR: ${{ runner.temp }}/canonical-match-evidence
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
+          --no-default-features --features canonical-native
+          --test canonical_artifact_match_application -- --ignored --exact
+          linked_canonical_match_applications_are_lazy_bounded_and_atomic
+          --test-threads=1
       - name: Verify linked canonical resident CLI selection is nonempty
         env:
           MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
@@ -720,6 +739,7 @@ jobs:
           path: |
             ${{ runner.temp }}/canonical-native-evidence
             ${{ runner.temp }}/canonical-cast-evidence
+            ${{ runner.temp }}/canonical-match-evidence
             ${{ runner.temp }}/canonical-cli-evidence
             ${{ runner.temp }}/native-host-evidence
             ${{ runner.temp }}/native-control-evidence

@@ -114,21 +114,11 @@ fn workspace_resolution_patches(workspace: &Path) -> Result<String, NativeApplic
     Ok(result)
 }
 
-/// Derives a real private-witness plan from `artifact` and the actual catalog,
-/// emits its Object, and creates a Rust runtime-only linked application.
-/// No source interpreter, resident executor, JIT or compiler runs in that app.
-/// `source_provenance` is retained and pinned; it is never parsed or used as a
-/// semantic substitute for the canonical artifact. Callers that claim source
-/// pairing must establish that compilation separately. The destination must
-/// be fresh. Generation does not run Cargo, a linker, or an application.
-pub fn generate_linked_application(
+pub(super) fn prepare_destination(
     workspace: &Path,
     directory: &Path,
     binary_name: &str,
-    artifact: &ProgramArtifact,
-    catalog: &FunctionCatalog,
-    source_provenance: &[u8],
-) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
+) -> Result<PathBuf, NativeApplicationError> {
     if binary_name.is_empty()
         || binary_name.len() > 64
         || !binary_name
@@ -151,17 +141,89 @@ pub fn generate_linked_application(
             "destination must be new and absolute",
         ));
     }
-    let workspace_text = workspace.to_str().ok_or(NativeApplicationError::Invalid(
+    workspace.to_str().ok_or(NativeApplicationError::Invalid(
         "workspace path is not Unicode",
     ))?;
+    Ok(workspace)
+}
+
+pub(super) struct LinkedApplicationInputs<'a> {
+    pub source_provenance: &'a [u8],
+    pub bytecode: Vec<u8>,
+    pub object: &'a [u8],
+    pub identity: &'a [u8],
+    pub main: String,
+    pub revision: &'a [u8],
+    pub typed_ir_sha256: &'a [u8],
+    pub object_metadata: Value,
+    pub manifest_schema: &'static str,
+    pub route: &'static str,
+}
+
+pub(super) fn render_main(template: &str, symbol: &str, bytecode: &[u8]) -> String {
+    template
+        .replace("@IDENTITY_SYMBOL@", symbol)
+        .replace("@BYTECODE_SHA256@", &digest(bytecode))
+        .replace(
+            "@ARGUMENT_HELPERS@",
+            include_str!("templates/linked_arguments.rs.in"),
+        )
+}
+
+/// Derives a real private-witness plan from `artifact` and the actual catalog,
+/// emits its Object, and creates a Rust runtime-only linked application.
+/// No source interpreter, resident executor, JIT or compiler runs in that app.
+/// `source_provenance` is retained and pinned; it is never parsed or used as a
+/// semantic substitute for the canonical artifact. Callers that claim source
+/// pairing must establish that compilation separately. The destination must
+/// be fresh. Generation does not run Cargo, a linker, or an application.
+pub fn generate_linked_application(
+    workspace: &Path,
+    directory: &Path,
+    binary_name: &str,
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    source_provenance: &[u8],
+) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
+    let workspace = prepare_destination(workspace, directory, binary_name)?;
     let plan =
         lower_pure_native_artifact(artifact, catalog).map_err(NativeApplicationError::Lowering)?;
     let object = emit_object(&plan).map_err(NativeApplicationError::Compile)?;
     let bytecode = encode_program_artifact_bytecode_v1(artifact)
         .map_err(|error| NativeApplicationError::Encoding(format!("{error:?}")))?;
-    let main = include_str!("templates/linked_main.rs.in")
-        .replace("@IDENTITY_SYMBOL@", object.identity().symbol())
-        .replace("@BYTECODE_SHA256@", &digest(&bytecode));
+    let main = render_main(
+        include_str!("templates/linked_main.rs.in"),
+        object.identity().symbol(),
+        &bytecode,
+    );
+    write_linked_application(
+        &workspace,
+        directory,
+        binary_name,
+        LinkedApplicationInputs {
+            source_provenance,
+            bytecode,
+            object: object.bytes(),
+            identity: object.identity().bytes(),
+            main,
+            revision: artifact.revision().as_bytes(),
+            typed_ir_sha256: object.descriptor().typed_ir_sha256(),
+            object_metadata: object.metadata(),
+            manifest_schema: "mech.canonical-linked-application.v1",
+            route: "canonical-artifact-cranelift-object",
+        },
+    )
+}
+
+pub(super) fn write_linked_application(
+    workspace: &Path,
+    directory: &Path,
+    binary_name: &str,
+    inputs: LinkedApplicationInputs<'_>,
+) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
+    let workspace_text = workspace.to_str().ok_or(NativeApplicationError::Invalid(
+        "workspace path is not Unicode",
+    ))?;
     let mut cargo = format!(
         r#"[package]
 name = {name}
@@ -189,21 +251,18 @@ incremental = false
         gpu = json_string(&format!("{workspace_text}/hosts/gpu")),
         stdlib = json_string(&format!("{workspace_text}/src/stdlib")),
     );
-    cargo.push_str(&workspace_resolution_patches(&workspace)?);
+    cargo.push_str(&workspace_resolution_patches(workspace)?);
     let mut files = BTreeMap::<String, Vec<u8>>::from([
-        ("application.mec".into(), source_provenance.to_vec()),
-        ("program.mecb".into(), bytecode),
-        ("program.o".into(), object.bytes().to_vec()),
-        (
-            "object-identity.bin".into(),
-            object.identity().bytes().to_vec(),
-        ),
+        ("application.mec".into(), inputs.source_provenance.to_vec()),
+        ("program.mecb".into(), inputs.bytecode),
+        ("program.o".into(), inputs.object.to_vec()),
+        ("object-identity.bin".into(), inputs.identity.to_vec()),
         ("Cargo.toml".into(), cargo.into_bytes()),
         (
             "rust-toolchain.toml".into(),
             b"[toolchain]\nchannel = \"nightly-2026-03-03\"\nprofile = \"minimal\"\n".to_vec(),
         ),
-        ("src/main.rs".into(), main.into_bytes()),
+        ("src/main.rs".into(), inputs.main.into_bytes()),
     ]);
     let mut pins = files
         .iter()
@@ -211,18 +270,20 @@ incremental = false
         .collect::<BTreeMap<_, _>>();
     // The script pins the independent immutable inputs; the manifest pins the
     // script after it is rendered, avoiding a self-referential digest.
-    let build = include_str!("templates/linked_build.rs.in").replace(
-        "@PIN_JSON_LITERAL@",
-        &json_string(&serde_json::to_string(&pins).unwrap()),
-    );
+    let build = include_str!("templates/linked_build.rs.in")
+        .replace("@MANIFEST_SCHEMA@", inputs.manifest_schema)
+        .replace(
+            "@PIN_JSON_LITERAL@",
+            &json_string(&serde_json::to_string(&pins).unwrap()),
+        );
     pins.insert("build.rs".into(), digest(build.as_bytes()));
     files.insert("build.rs".into(), build.into_bytes());
     let metadata = json!({
-        "schema": "mech.canonical-linked-application.v1",
-        "route": "canonical-artifact-cranelift-object",
-        "program_revision": super::identity::hex(artifact.revision().as_bytes()),
-        "typed_ir_sha256": super::identity::hex(object.descriptor().typed_ir_sha256()),
-        "object": object.metadata(), "pins": pins,
+        "schema": inputs.manifest_schema,
+        "route": inputs.route,
+        "program_revision": super::identity::hex(inputs.revision),
+        "typed_ir_sha256": super::identity::hex(inputs.typed_ir_sha256),
+        "object": inputs.object_metadata, "pins": pins,
         "source_is_provenance_only": true,
         "runtime_features": ["mech-gpu/canonical-native-runtime", "mech-engine/native-artifact", "mech-stdlib/native-plan"],
         "linked": false, "executed": false, "timing_samples": 0,

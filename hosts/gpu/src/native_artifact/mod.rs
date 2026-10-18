@@ -31,19 +31,26 @@ pub use runtime::{
     NativeExecutionError, NativeExecutionLimits, NativeExecutionPhase, NativeExecutionReport,
 };
 
-#[cfg(feature = "canonical-native")]
 mod control_abi;
 #[cfg(feature = "canonical-native")]
+mod control_application;
+#[cfg(feature = "canonical-native")]
 mod control_compiler;
-#[cfg(feature = "canonical-native")]
 mod control_identity;
-#[cfg(feature = "canonical-native")]
+mod control_linked;
 mod control_runtime;
-#[cfg(feature = "canonical-native")]
 pub use control_abi::{NativeMatchDescriptor, NativeMatchVisit};
 #[cfg(feature = "canonical-native")]
 pub use control_compiler::{
     JitMatchArtifact, NativeMatchObject, emit_match_object, emit_match_object_with_limits,
 };
-#[cfg(feature = "canonical-native")]
 pub use control_runtime::{NativeMatchExecutionError, NativeMatchExecutionReport};
+
+pub use control_identity::{
+    NATIVE_MATCH_LINK_IDENTITY_BYTES, NATIVE_MATCH_TYPED_IR_VERSION,
+    NATIVE_MATCH_WORK_POLICY_VERSION, NativeMatchObjectIdentity,
+};
+pub use control_linked::LinkedMatchArtifact;
+
+#[cfg(feature = "canonical-native")]
+pub use control_application::generate_linked_match_application;

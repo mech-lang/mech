@@ -89,8 +89,7 @@ impl JitMatchArtifact {
 pub struct NativeMatchObject {
     bytes: Vec<u8>,
     descriptor: NativeMatchDescriptor,
-    identity: [u8; 168],
-    symbol: String,
+    identity: super::control_identity::NativeMatchObjectIdentity,
 }
 impl NativeMatchObject {
     pub fn bytes(&self) -> &[u8] {
@@ -100,16 +99,19 @@ impl NativeMatchObject {
         &self.descriptor
     }
     pub fn identity_bytes(&self) -> &[u8; 168] {
-        &self.identity
+        self.identity.bytes()
     }
     pub fn identity_symbol(&self) -> &str {
-        &self.symbol
+        self.identity.symbol()
+    }
+    pub fn identity(&self) -> &super::control_identity::NativeMatchObjectIdentity {
+        &self.identity
     }
     pub fn metadata(&self) -> serde_json::Value {
         serde_json::json!({
             "schema":"mech.canonical-scalar-match-object.v1","control_abi_version":VERSION,
             "typed_ir_sha256":super::identity::hex(self.descriptor.typed_ir_sha256()),
-            "identity_symbol":self.symbol,"stack_bytes":self.descriptor.stack_bytes(),"code_bytes":self.descriptor.code_bytes(),
+            "identity_symbol":self.identity.symbol(),"stack_bytes":self.descriptor.stack_bytes(),"code_bytes":self.descriptor.code_bytes(),
             "linked":false,"executed":false,"timing_samples":0,
         })
     }
@@ -142,16 +144,13 @@ pub fn emit_match_object_with_limits(
             .map_err(backend)?,
     );
     let (_, descriptor) = define(plan, &mut module, limits)?;
-    let identity = super::control_identity::object_record(plan, &descriptor)?;
-    let symbol = format!(
-        "mech_canonical_scalar_match_identity_v1_{}",
-        super::identity::hex(descriptor.typed_ir_sha256())
-    );
+    let identity = super::control_identity::NativeMatchObjectIdentity::from_descriptor(&descriptor)
+        .map_err(backend)?;
     let id = module
-        .declare_data(&symbol, Linkage::Export, false, false)
+        .declare_data(identity.symbol(), Linkage::Export, false, false)
         .map_err(backend)?;
     let mut data = DataDescription::new();
-    data.define(identity.to_vec().into_boxed_slice());
+    data.define(identity.bytes().to_vec().into_boxed_slice());
     data.set_align(8);
     module.define_data(id, &data).map_err(backend)?;
     let bytes = module.finish().emit().map_err(backend)?;
@@ -159,7 +158,6 @@ pub fn emit_match_object_with_limits(
         bytes,
         descriptor,
         identity,
-        symbol,
     })
 }
 
@@ -632,6 +630,6 @@ fn define<M: Module>(
     limit("Match code", code, limits.max_code_bytes)?;
     Ok((
         function,
-        NativeMatchDescriptor::from_compiled(plan, stack, code)?,
+        NativeMatchDescriptor::from_plan(plan, stack, code).map_err(backend)?,
     ))
 }

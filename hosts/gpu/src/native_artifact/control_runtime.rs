@@ -325,7 +325,7 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
     })
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "canonical-native"))]
 mod tests {
     use super::super::JitMatchArtifact;
     use super::*;

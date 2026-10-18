@@ -10,6 +10,11 @@ use mech_engine::native_artifact::{NativeArtifactPlan, NativeScalarValue};
 pub struct NativeLinkError {
     reason: &'static str,
 }
+impl NativeLinkError {
+    pub(super) const fn new(reason: &'static str) -> Self {
+        Self { reason }
+    }
+}
 impl std::fmt::Display for NativeLinkError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(

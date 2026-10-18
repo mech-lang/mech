@@ -219,6 +219,36 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn(f"'{family}'", collision.splitlines()[0])
         self.assertIn("- native-cli-collision", job_block(FULL, "cargo"))
 
+    def test_canonical_match_executes_contracts_and_nonempty_linked_qualification(self):
+        steps = job_steps(FULL, "canonical-applications")
+        contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)
+        self.assertRegex(contracts, r"--test\s+native_artifact_match_lowering(?:\s|$)")
+        self.assertRegex(contracts, r"--test\s+canonical_artifact_match(?:\s|$)")
+        self.assertIn("--features full_compiler,native-artifact", contracts)
+        self.assertIn("--features canonical-native", contracts)
+        self.assertIn("--features canonical-native-runtime --lib", contracts)
+        self.assertNotIn("--ignored", contracts)
+        block = job_block(FULL, "canonical-linked-applications")
+        steps = job_steps(FULL, "canonical-linked-applications")
+        selected = "linked_canonical_match_applications_are_lazy_bounded_and_atomic"
+        listing = next(step for step in steps if "Verify linked canonical Match selection is nonempty" in step)
+        execution = next(step for step in steps if "Qualify linked canonical Match applications" in step)
+        self.assertIn("set -euo pipefail", listing)
+        self.assertIn("--list --ignored --exact", listing)
+        self.assertIn(f"^{selected}: test$", listing)
+        self.assertIn("-eq 1", listing)
+        self.assertIn("--test canonical_artifact_match_application -- --ignored --exact", execution)
+        self.assertIn(selected, execution)
+        self.assertIn("--test-threads=1", execution)
+        self.assertNotIn("--list", execution)
+        self.assertIn("MECH_CANONICAL_MATCH_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", execution)
+        self.assertIn("MECH_CANONICAL_MATCH_EVIDENCE_DIR: ${{ runner.temp }}/canonical-match-evidence", execution)
+        self.assertIn("${{ runner.temp }}/canonical-match-evidence", block)
+        self.assertLess(block.index(listing), block.index(execution))
+        for step in (contracts, listing, execution):
+            self.assertNotIn("continue-on-error", step)
+            self.assertNotIn("if:", step)
+
     def test_canonical_casts_execute_both_contract_targets_and_real_linked_qualification(self):
         steps = job_steps(FULL, "canonical-applications")
         contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)

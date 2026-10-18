@@ -1,13 +1,17 @@
 //! Versioned scalar CFG ABI, separate from the frozen straight-line protocol.
-use super::{NativeCompileError, abi::NativeEntryFrame, compiler::backend};
+#[cfg(feature = "canonical-native")]
+use super::abi::NativeEntryFrame;
+use mech_core::ProgramRevision;
 use mech_engine::native_artifact::{
     NativeMatchAction, NativeMatchArtifactPlan, NativeMatchOrigin, NativeMatchTerminator,
     NativeScalarType,
 };
 
 pub(super) const VERSION: u64 = 2;
+#[cfg(feature = "canonical-native")]
 pub(super) const ENTRY: &str = "mech_canonical_scalar_match_entry_v1";
 pub(super) const STATUS_REJECT: u64 = 4;
+#[cfg(feature = "canonical-native")]
 pub(super) type Entry = unsafe extern "C" fn(*mut NativeEntryFrame) -> u64;
 
 #[derive(Clone, Debug)]
@@ -37,6 +41,7 @@ impl NativeMatchVisit {
 #[derive(Clone, Debug)]
 pub struct NativeMatchDescriptor {
     pub(super) entry: u32,
+    pub(super) revision: ProgramRevision,
     pub(super) inputs: Box<[NativeScalarType]>,
     pub(super) outputs: Box<[NativeScalarType]>,
     pub(super) value_count: usize,
@@ -47,15 +52,15 @@ pub struct NativeMatchDescriptor {
     pub(super) identity: [u8; 32],
 }
 impl NativeMatchDescriptor {
-    pub(super) fn from_compiled(
+    pub(super) fn from_plan(
         plan: &NativeMatchArtifactPlan,
         stack_bytes: u64,
         code_bytes: u64,
-    ) -> Result<Self, NativeCompileError> {
+    ) -> Result<Self, &'static str> {
         let completion = (plan.outputs().len() as u64)
             .checked_mul(8)
             .and_then(|n| n.checked_add(128))
-            .ok_or_else(|| backend("Match completion work overflow"))?;
+            .ok_or("Match completion work overflow")?;
         let visits = plan
             .blocks()
             .iter()
@@ -88,6 +93,7 @@ impl NativeMatchDescriptor {
             .collect();
         Ok(Self {
             entry: plan.entry(),
+            revision: plan.program_revision(),
             inputs: plan
                 .inputs()
                 .iter()
@@ -105,6 +111,9 @@ impl NativeMatchDescriptor {
             code_bytes,
             identity: super::control_identity::typed_ir_sha256(plan),
         })
+    }
+    pub const fn revision(&self) -> ProgramRevision {
+        self.revision
     }
     pub const fn entry(&self) -> u32 {
         self.entry
