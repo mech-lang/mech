@@ -138,3 +138,14 @@ benchmark qualification remain unfinished. This divergence is an unresolved
 migration, not a supported second semantic authority. See the single
 [`follow_up_roadmap`](../../docs/validation/checked-aot-workload-progress-v1.json)
 for the required canonical production/resource integration and qualification.
+
+The [canonical k-nucleotide source](tests/fixtures/native/knucleotide-idiomatic.mec)
+expresses record selection, overlapping String windows, frequency widths and
+queries in Mech, using comprehensions and general-purpose library primitives
+such as `map/histogram`. Keep that algorithm in the language: packing, streaming,
+fusion and parallel execution should be compiler optimizations over its canonical
+semantics, not a benchmark-sized external helper. The original/decoded resident
+source checks do not establish native comprehension lowering or those
+optimizations; that native work remains required. Older `sequence/packed-windows`
+timings are separately scoped migration diagnostics, not completion of this
+language-level target.
