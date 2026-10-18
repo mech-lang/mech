@@ -223,8 +223,22 @@ class FullWorkflowContractTests(unittest.TestCase):
         steps = job_steps(FULL, "canonical-applications")
         contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)
         self.assertRegex(contracts, r"--test\s+native_artifact_iteration_lowering(?:\s|$)")
+        self.assertRegex(contracts, r"--test\s+canonical_artifact_iteration(?:\s|$)")
         self.assertIn("--lib resident::general::native_match_lowering::iteration_proof_tests", contracts)
         self.assertIn("--features full_compiler,native-artifact", contracts)
+
+    def test_canonical_iteration_has_nonempty_exact_linked_qualification(self):
+        steps = job_steps(FULL, "canonical-linked-applications")
+        selection = next(step for step in steps if "Verify linked canonical iteration selection is nonempty" in step)
+        execute = next(step for step in steps if "Qualify linked canonical iteration application" in step)
+        name = "linked_qualification::one_linked_iteration_executable_preserves_exact_typed_loops_and_denials"
+        self.assertIn("--list --ignored --exact", selection)
+        self.assertIn(name + ": test$", selection)
+        self.assertIn("--test canonical_artifact_iteration", execute)
+        self.assertIn("--ignored --exact", execute)
+        self.assertIn(name, execute)
+        self.assertIn("MECH_CANONICAL_ITERATION_SOURCE_COMMIT", execute)
+        self.assertIn("MECH_CANONICAL_ITERATION_EVIDENCE_DIR", execute)
 
     def test_canonical_match_executes_contracts_and_nonempty_linked_qualification(self):
         steps = job_steps(FULL, "canonical-applications")

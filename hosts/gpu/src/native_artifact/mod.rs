@@ -54,3 +54,26 @@ pub use control_linked::LinkedMatchArtifact;
 
 #[cfg(feature = "canonical-native")]
 pub use control_application::generate_linked_match_application;
+
+mod iteration_abi;
+#[cfg(feature = "canonical-native")]
+mod iteration_application;
+#[cfg(feature = "canonical-native")]
+mod iteration_compiler;
+mod iteration_identity;
+mod iteration_linked;
+mod iteration_runtime;
+pub use iteration_abi::{NativeIterationDescriptor, NativeIterationVisit};
+#[cfg(feature = "canonical-native")]
+pub use iteration_application::generate_linked_iteration_application;
+#[cfg(feature = "canonical-native")]
+pub use iteration_compiler::{
+    JitIterationArtifact, NativeIterationObject, emit_iteration_object,
+    emit_iteration_object_with_limits,
+};
+pub use iteration_identity::{
+    NATIVE_ITERATION_LINK_IDENTITY_BYTES, NATIVE_ITERATION_TYPED_IR_VERSION,
+    NATIVE_ITERATION_WORK_POLICY_VERSION, NativeIterationObjectIdentity,
+};
+pub use iteration_linked::LinkedIterationArtifact;
+pub use iteration_runtime::{NativeIterationExecutionError, NativeIterationExecutionReport};

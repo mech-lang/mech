@@ -177,6 +177,52 @@
       "Benchmark measurements, same-binary security overhead, clean review or complete green CI"
     ]
   },
+  "canonical_native_loop_codegen": {
+    "as_of_utc": "2026-10-18T07:33:25Z",
+    "status": "SCALAR_JIT_QUALIFIED_LINKED_EXECUTION_PENDING_FULL_PROGRAM_INCOMPLETE",
+    "tested_base": "73b9663a462ac92903b6acb6760a7fb71b5fb2ed",
+    "tracked_diff_sha256": "9d7e6f04b2de9bfbde0e07e434890e321c041d2772feefd20ebebbc2415c35dc",
+    "source_files_sha256": {
+      "hosts/gpu/src/native_artifact/control_compiler.rs": "39e08e5be7a131d77e76ce4fcfb666b1cf4aa64c7a9f5f1c3cfd752e4ed0c293",
+      "hosts/gpu/src/native_artifact/mod.rs": "a1e87ec4e472c3d8b5a6fa022cf2d78b62ce05d972854745dd64ad19db3e88b3",
+      "hosts/gpu/src/native_artifact/iteration_abi.rs": "829ec13e6cd51b9f09410a24b17991b1b7efe51310ed8963399f08abf02ac3a6",
+      "hosts/gpu/src/native_artifact/iteration_application.rs": "396b8a1d6d5ef374b022874fa257f24cc1d6863899a45645966056abc6ffa96a",
+      "hosts/gpu/src/native_artifact/iteration_compiler.rs": "12720147107bdf996917b920b6fa42a1ff8a2095da60b2b268a69f50233b03c0",
+      "hosts/gpu/src/native_artifact/iteration_identity.rs": "2855366ce025cb1e78f10c59d34048e5aade8a84eaad73e69e1ec87a2f0b5de6",
+      "hosts/gpu/src/native_artifact/iteration_linked.rs": "5df98b3e94946aa6284fbe2916481f792b3fac10bb4db83c0f3a2fe3dd3c9441",
+      "hosts/gpu/src/native_artifact/iteration_runtime.rs": "8bc8f36f916ab2863aafeb5662038793c784f57c229a73ce0f4d8d961a180f64",
+      "hosts/gpu/src/native_artifact/templates/linked_iteration_main.rs.in": "c6e12ed0f10a37d4c2d7bf968b74850bf28d5ce8148862532cf98b1c9def97a2",
+      "hosts/gpu/tests/canonical_artifact_iteration.rs": "832155682c11c854a8eef32f4f4f14584c0584606df5975b62edf3a11ef0c0f5",
+      "hosts/gpu/tests/support/canonical_iteration_linked.rs": "35f17114df223fe9151608ec59dc7297d0a7fdf0818064ac1dd9365205917797"
+    },
+    "implementation": [
+      "Shared JIT/Object definition emits actual initialization, header, latch and backedge machine code. Every loop has private carrier/counter storage independent of its literal count.",
+      "Match and loops use one maintained scalar action/literal-branch emitter, preserving Bool/U64/I64/F64 arithmetic, checked casts, signed-zero equality and NaN behavior. No source parser, resident whole-program executor or older source-native compiler substitutes for generated control.",
+      "ABI3 admission checks exact legal visits and count progress using disjoint managed progress storage. Cumulative work remains finite; setup/transport/shared-budget checks precede input traversal and all typed output publication is staged atomically. Existing scalar ABI1 and Match ABI2 remain separate and unchanged.",
+      "Typed object identity explicitly binds revision, types, raw constants, selected operations, scopes, counts, CFG, entry, target and work-policy versions. Runtime-only linked construction and generation use the existing common shell and generated-input pinning."
+    ],
+    "qualification": {
+      "new_loop_execution_methods": 10,
+      "existing_native_execution_methods": 29,
+      "private_abi_admission_identity_methods": 11,
+      "runtime_only_build_check": true,
+      "ci_contract_methods": 76,
+      "failed": 0,
+      "explicit_linked_test_selection_nonempty": true,
+      "linked_test_execution": "NOT_YET_RUN; the clean-source committed qualification is a separate next gate",
+      "coverage": "Original and decoded artifacts versus canonical resident and real JIT results; zero/one/25/64/max counts; nested carriers/captures; lazy Match and retained dead checked nodes; all four scalar kinds; exact floating values, negative zero and NaN bits; checked casts; mid-loop overflow; cumulative denial, output atomicity and same-entry recovery. A four-sibling-loop interactive fixture retains and checks all six canonical outputs, including aliases.",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v229-native-iteration-codegen.log",
+      "log_sha256": "10fdfd65b96ac39919aa8762ccfa83a1b5cbc3d318e6d2d51fa8c8cf72bef104",
+      "source_pin": "Tracked diff and all nine new-file hashes were verified unchanged by the driver. Full workspace format and diff checks pass."
+    },
+    "not_established": [
+      "Actual linked loop execution or runtime compiled-dependency closure on this new source",
+      "Native element-count matrices, aggregate carriers, comprehensions, FSM/lifecycle, collections or resources",
+      "Successful 400-base/full-input resident workload, general packed/streaming support or whole-program canonical AOT",
+      "Release trusted/secured timings, security-overhead ratio, emitted full-program binary analysis or optimization/configuration completion",
+      "Clean review or complete green CI"
+    ]
+  },
   "remaining": [
     "Make the unchanged ordinary workload pass original and decoded artifacts at 100 and 400 bases with default limits, and retain denial/atomicity/recovery qualification.",
     "Reduce actual general collection/histogram work; provide canonical packed and streaming operations for realistic full inputs.",

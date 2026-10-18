@@ -156,3 +156,7 @@ required-features = ["canonical-native"]
 name = "canonical_artifact_cast"
 path = "tests/canonical_artifact_cast.rs"
 required-features = ["canonical-native"]
+
+[[test]]
+name = "canonical_artifact_iteration"
+required-features = ["canonical-native"]

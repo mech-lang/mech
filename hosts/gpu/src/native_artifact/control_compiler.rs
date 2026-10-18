@@ -335,7 +335,7 @@ fn validate(plan: &NativeMatchArtifactPlan) -> Result<(), NativeCompileError> {
     Ok(())
 }
 
-fn load(
+pub(super) fn load(
     b: &mut FunctionBuilder<'_>,
     locals: Value,
     value: NativeMatchValue,
@@ -502,93 +502,17 @@ fn define<M: Module>(
                 index,
                 error,
             );
-            match block.action() {
-                NativeMatchAction::Primitive {
-                    op,
-                    operands,
-                    output,
-                    ..
-                } => {
-                    let args = operands
-                        .iter()
-                        .map(|&value| load(&mut b, locals, value))
-                        .collect::<Result<Vec<_>, _>>()?;
-                    let value = primitive(&mut b, *op, &args, error);
-                    b.ins().store(
-                        MemFlags::new(),
-                        value,
-                        locals,
-                        offset(output.get() as usize)?,
-                    );
-                }
-                NativeMatchAction::Copy { source, output } => {
-                    let value = load(&mut b, locals, *source)?;
-                    b.ins().store(
-                        MemFlags::new(),
-                        value,
-                        locals,
-                        offset(output.get() as usize)?,
-                    );
-                }
-                NativeMatchAction::None => {}
-            }
-            match block.terminator() {
-                NativeMatchTerminator::Jump(next) => {
-                    b.ins()
-                        .jump(blocks[next as usize].expect("reachable successor"), &[]);
-                }
-                NativeMatchTerminator::Branch { condition, yes, no } => {
-                    let value = load(&mut b, locals, condition)?;
-                    let condition = b.ins().icmp_imm(IntCC::NotEqual, value, 0);
-                    b.ins().brif(
-                        condition,
-                        blocks[yes as usize].expect("reachable successor"),
-                        &[],
-                        blocks[no as usize].expect("reachable successor"),
-                        &[],
-                    );
-                }
-                NativeMatchTerminator::LiteralBranch {
-                    left,
-                    right,
-                    yes,
-                    no,
-                } => {
-                    let kind = plan.values()[left.get() as usize].kind();
-                    let left = load(&mut b, locals, left)?;
-                    let right = load(&mut b, locals, right)?;
-                    // Match literal equality is language equality, not raw
-                    // transport-bit identity: signed zeros match, NaNs do not.
-                    let condition = if kind == NativeScalarKind::F64 {
-                        let left = b.ins().bitcast(types::F64, MemFlags::new(), left);
-                        let right = b.ins().bitcast(types::F64, MemFlags::new(), right);
-                        b.ins().fcmp(FloatCC::Equal, left, right)
-                    } else {
-                        b.ins().icmp(IntCC::Equal, left, right)
-                    };
-                    b.ins().brif(
-                        condition,
-                        blocks[yes as usize].expect("reachable successor"),
-                        &[],
-                        blocks[no as usize].expect("reachable successor"),
-                        &[],
-                    );
-                }
-                NativeMatchTerminator::Reject => {
-                    let status = b.ins().iconst(types::I64, STATUS_REJECT as i64);
-                    b.ins().return_(&[status]);
-                }
-                NativeMatchTerminator::Complete => {
-                    set_origin(&mut b, frame, NO_NODE);
-                    for (index, output) in plan.outputs().iter().enumerate() {
-                        let value = load(&mut b, locals, output.value())?;
-                        b.ins()
-                            .store(MemFlags::new(), value, outputs, offset(index)?);
-                    }
-                    let status = b.ins().iconst(types::I64, STATUS_OK as i64);
-                    b.ins().return_(&[status]);
-                }
-            }
+            emit_scalar_action(&mut b, locals, block.action(), error)?;
+            emit_scalar_terminator(
+                &mut b,
+                frame,
+                locals,
+                outputs,
+                block.terminator(),
+                &blocks,
+                plan.outputs(),
+                plan.values(),
+            )?;
             let emitted = (b.func.dfg.num_insts() - before) as u64;
             let bound = match block.action() {
                 NativeMatchAction::Primitive { op, .. } => super::abi::primitive_work(*op),
@@ -632,4 +556,117 @@ fn define<M: Module>(
         function,
         NativeMatchDescriptor::from_plan(plan, stack, code).map_err(backend)?,
     ))
+}
+
+/// One maintained scalar semantic emitter, shared by acyclic and loop CFGs.
+pub(super) fn emit_scalar_action(
+    b: &mut FunctionBuilder<'_>,
+    locals: Value,
+    action: &NativeMatchAction,
+    error: cranelift_codegen::ir::Block,
+) -> Result<(), NativeCompileError> {
+    match action {
+        NativeMatchAction::Primitive {
+            op,
+            operands,
+            output,
+            ..
+        } => {
+            let args = operands
+                .iter()
+                .map(|&value| load(b, locals, value))
+                .collect::<Result<Vec<_>, _>>()?;
+            let value = primitive(b, *op, &args, error);
+            b.ins().store(
+                MemFlags::new(),
+                value,
+                locals,
+                offset(output.get() as usize)?,
+            );
+        }
+        NativeMatchAction::Copy { source, output } => {
+            let value = load(b, locals, *source)?;
+            b.ins().store(
+                MemFlags::new(),
+                value,
+                locals,
+                offset(output.get() as usize)?,
+            );
+        }
+        NativeMatchAction::None => {}
+    }
+
+    Ok(())
+}
+
+/// Literal branches preserve language equality for all exact scalar kinds.
+pub(super) fn emit_scalar_terminator(
+    b: &mut FunctionBuilder<'_>,
+    frame: Value,
+    locals: Value,
+    outputs: Value,
+    terminator: NativeMatchTerminator,
+    blocks: &[Option<cranelift_codegen::ir::Block>],
+    output_values: &[mech_engine::native_artifact::NativeMatchOutput],
+    value_types: &[mech_engine::native_artifact::NativeScalarType],
+) -> Result<(), NativeCompileError> {
+    match terminator {
+        NativeMatchTerminator::Jump(next) => {
+            b.ins()
+                .jump(blocks[next as usize].expect("reachable successor"), &[]);
+        }
+        NativeMatchTerminator::Branch { condition, yes, no } => {
+            let value = load(b, locals, condition)?;
+            let condition = b.ins().icmp_imm(IntCC::NotEqual, value, 0);
+            b.ins().brif(
+                condition,
+                blocks[yes as usize].expect("reachable successor"),
+                &[],
+                blocks[no as usize].expect("reachable successor"),
+                &[],
+            );
+        }
+        NativeMatchTerminator::LiteralBranch {
+            left,
+            right,
+            yes,
+            no,
+        } => {
+            let kind = value_types[left.get() as usize].kind();
+            let left = load(b, locals, left)?;
+            let right = load(b, locals, right)?;
+            // Match literal equality is language equality, not raw
+            // transport-bit identity: signed zeros match, NaNs do not.
+            let condition = if kind == NativeScalarKind::F64 {
+                let left = b.ins().bitcast(types::F64, MemFlags::new(), left);
+                let right = b.ins().bitcast(types::F64, MemFlags::new(), right);
+                b.ins().fcmp(FloatCC::Equal, left, right)
+            } else {
+                b.ins().icmp(IntCC::Equal, left, right)
+            };
+            b.ins().brif(
+                condition,
+                blocks[yes as usize].expect("reachable successor"),
+                &[],
+                blocks[no as usize].expect("reachable successor"),
+                &[],
+            );
+        }
+        NativeMatchTerminator::Reject => {
+            let status = b.ins().iconst(types::I64, STATUS_REJECT as i64);
+            b.ins().return_(&[status]);
+        }
+        NativeMatchTerminator::Complete => {
+            set_origin(b, frame, NO_NODE);
+            for (index, output) in output_values.iter().enumerate() {
+                let value = load(b, locals, output.value())?;
+                b.ins()
+                    .store(MemFlags::new(), value, outputs, offset(index)?);
+            }
+            let status = b.ins().iconst(types::I64, STATUS_OK as i64);
+            b.ins().return_(&[status]);
+        }
+    }
+
+    Ok(())
 }

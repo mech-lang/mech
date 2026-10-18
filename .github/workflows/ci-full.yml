@@ -563,7 +563,8 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native \
             --test canonical_artifact_native --test canonical_artifact_i64 --test canonical_artifact_f64 \
-            --test canonical_artifact_cast --test canonical_artifact_match -- --test-threads=1
+            --test canonical_artifact_cast --test canonical_artifact_match \
+            --test canonical_artifact_iteration -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native --lib native_artifact:: -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
@@ -713,6 +714,24 @@ jobs:
           --no-default-features --features canonical-native
           --test canonical_artifact_match_application -- --ignored --exact
           linked_canonical_match_applications_are_lazy_bounded_and_atomic
+          --test-threads=1
+      - name: Verify linked canonical iteration selection is nonempty
+        run: |
+          set -euo pipefail
+          ITERATION_QUALIFICATION_TESTS=$(cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native \
+            --test canonical_artifact_iteration -- --list --ignored --exact \
+            linked_qualification::one_linked_iteration_executable_preserves_exact_typed_loops_and_denials)
+          test "$(printf '%s\n' "$ITERATION_QUALIFICATION_TESTS" | rg -c '^linked_qualification::one_linked_iteration_executable_preserves_exact_typed_loops_and_denials: test$')" -eq 1
+      - name: Qualify linked canonical iteration application
+        env:
+          MECH_CANONICAL_ITERATION_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_ITERATION_EVIDENCE_DIR: ${{ runner.temp }}/canonical-iteration-evidence
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
+          --no-default-features --features canonical-native
+          --test canonical_artifact_iteration -- --ignored --exact
+          linked_qualification::one_linked_iteration_executable_preserves_exact_typed_loops_and_denials
           --test-threads=1
       - name: Verify linked canonical resident CLI selection is nonempty
         env:
