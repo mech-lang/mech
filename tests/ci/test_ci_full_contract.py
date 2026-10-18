@@ -234,6 +234,17 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertRegex(contracts, r"--test\s+native_collection_templates(?:\s|$)")
         self.assertIn("--lib resident::general::native_collection_templates::tests", contracts)
 
+    def test_shared_snapshot_ownership_regression_is_nonempty_and_executed(self):
+        step = next(step for step in job_steps(FULL, "managed-memory-runtime")
+                    if "Execute bounded shared snapshot ownership regression" in step)
+        name = "snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports"
+        self.assertEqual(step.count(name), 3)
+        self.assertIn("-- --list --exact", step)
+        self.assertIn("-- --exact --test-threads=1", step)
+        self.assertIn(f"^{name}: test$", step)
+        self.assertIn('" -eq 1', step)
+        self.assertNotIn("--no-run", step)
+
     def test_generated_mixed_program_execution_and_runtime_only_profile_are_selected(self):
         contracts = next(step for step in job_steps(FULL, "canonical-applications")
                          if "Execute canonical native lowering and selected implementation witnesses" in step)

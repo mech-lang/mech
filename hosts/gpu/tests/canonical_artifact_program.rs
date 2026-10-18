@@ -200,6 +200,26 @@ fn generated_denials_preserve_every_prior_output_and_allow_recovery() {
             &memory,
         );
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        // Public immutable constants can be shared into later foreign budgets
+        // before native admission. Keep these imports alive through invocation
+        // and recovery; the raw-constant import must use the bounded path.
+        let _foreign_constants = jit
+            .descriptor()
+            .plan()
+            .constants()
+            .iter()
+            .flat_map(|constant| {
+                (0..16).map(move |_| {
+                    let account = ManagedMemoryBudget::new(1_000_000);
+                    let raw = constant.constant();
+                    let mut capacity = account
+                        .reserve_capacity(raw.memory_budget_admission_bytes(&account).unwrap())
+                        .unwrap();
+                    let imported = raw.clone().into_memory_budget(&mut capacity).unwrap();
+                    (account, imported)
+                })
+            })
+            .collect::<Vec<_>>();
         let mut output = vec![None; artifact.outputs().len()];
         jit.evaluate_into(&args, &mut output, limits(), &memory)
             .unwrap();

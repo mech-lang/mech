@@ -370,6 +370,16 @@ jobs:
             --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
             --test memory_safety
+      - name: Execute bounded shared snapshot ownership regression
+        run: |
+          OWNERSHIP_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --all-features --lib \
+            snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports \
+            -- --list --exact)
+          test "$(printf '%s\n' "$OWNERSHIP_TESTS" | awk '/^snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports: test$/ { count += 1 } END { print count + 0 }')" -eq 1
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib \
+            snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports \
+            -- --exact --test-threads=1
       - name: Execute the retained release-mode memory safety boundary
         run: |
           RUSTFLAGS="${RUSTFLAGS:-} -C debug-assertions=no" \

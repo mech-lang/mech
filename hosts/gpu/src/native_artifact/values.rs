@@ -367,6 +367,46 @@ mod tests {
     }
 
     #[test]
+    fn late_foreign_imports_do_not_expand_arena_replacement_or_teardown_work() {
+        for replace in [false, true] {
+            for later in [0, 16] {
+                let budget = ManagedMemoryBudget::new(1_000_000);
+                let (ty, raw) = text("small");
+                let owned = admit(&raw, &budget);
+                let types = [ty];
+                let mut work = NativeWorkMeter::new(1_000_000).unwrap();
+                let mut arena =
+                    NativeValueArena::new(&types, TRANSPORT_LIMIT, &budget, &mut work).unwrap();
+                arena.put(0, &owned, &mut work).unwrap();
+                drop(owned); // The arena owns A's last imported wrapper.
+                let foreign = (0..later)
+                    .map(|_| {
+                        let account = ManagedMemoryBudget::new(1_000_000);
+                        let value = admit(&raw, &account);
+                        (account, value)
+                    })
+                    .collect::<Vec<_>>();
+                if replace {
+                    let (_, replacement) = text("other");
+                    let replacement = admit(&replacement, &budget);
+                    let retained = replacement.memory_budget_retained_bytes(&budget).unwrap();
+                    let before = work.used();
+                    arena.put(0, &replacement, &mut work).unwrap();
+                    assert_eq!(work.used() - before, retained * 4 + 64);
+                    drop(replacement);
+                }
+                drop(arena);
+                assert_eq!(budget.used_bytes(), 0);
+                for (account, value) in foreign {
+                    assert!(value.memory_budget_retained_bytes(&account).is_some());
+                    drop(value);
+                    assert_eq!(account.used_bytes(), 0);
+                }
+            }
+        }
+    }
+
+    #[test]
     fn slot_reuse_and_other_arenas_never_revalidate_old_handles() {
         let budget = ManagedMemoryBudget::new(1_000_000);
         let (ty, first) = text("first");

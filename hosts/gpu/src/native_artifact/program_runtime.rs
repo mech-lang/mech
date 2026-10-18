@@ -464,10 +464,13 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
                 .ok_or_else(|| invalid("constant admission work overflow"))?,
         )?;
         let mut reservation = memory.reserve_capacity(bound)?;
+        // A raw constant may already have arbitrarily many foreign imports.
+        // Its precharged full bound pays for an independent wrapper; never
+        // search those other accounts under this invocation's finite work cap.
         let value = constant
             .constant()
             .clone()
-            .into_memory_budget(&mut reservation)?;
+            .into_independent_memory_budget(&mut reservation)?;
         arena.put(constant.value().get(), &value, &mut work)?;
     }
     let (input_words, rest) = storage.values_mut().split_at_mut(inputs.len());

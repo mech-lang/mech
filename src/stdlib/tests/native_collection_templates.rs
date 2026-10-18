@@ -681,10 +681,64 @@ fn native_leaf_invocation_runs_all_seven_real_factories_and_transfers_same_accou
                     output
                 };
                 let mut words = invoke("text/lines", &[Some(text.clone())]);
-                let joined = invoke("text/join", &[words.clone(), Some(separator.clone())]);
+                let mut joined = invoke("text/join", &[words.clone(), Some(separator.clone())]);
                 assert!(
                     matches!(joined.as_ref().unwrap().data(), ValueData::String(value) if value.as_ref() == "one,two,one")
                 );
+                // Unchanged joins still finish the candidate's ownership
+                // scope. Reusing its actual A-owned wrapper must not search
+                // through registrations later imported into other accounts.
+                let join_args = [words.clone(), Some(separator.clone())];
+                let join_call =
+                    call_for_values(&artifact, "text/join", &join_args, &joined, limits);
+                let prepared_join = prepared_mode.then(|| {
+                    prepare_native_program_library_call(
+                        &artifact,
+                        join_call.template(),
+                        &mech_stdlib::source_catalog(),
+                    )
+                    .unwrap()
+                });
+                let repeat_join = |output: &mut Option<mech_core::Value>| {
+                    if let Some(prepared) = &prepared_join {
+                        let mut policy = limits;
+                        policy.max_compute_work = Some(128 * 1024 * 1024);
+                        policy.max_temporary_bytes = Some(128 * 1024 * 1024);
+                        prepared
+                            .invoke_current(&join_args, output, policy, &work)
+                            .unwrap()
+                    } else {
+                        join_call.invoke(&join_args, output, &work).unwrap()
+                    }
+                };
+                let before = work.used();
+                assert!(!repeat_join(&mut joined));
+                let baseline = (work.used().0 - before.0, work.used().1 - before.1);
+                let retained = memory.used_bytes();
+                let foreign = (0..16)
+                    .map(|_| {
+                        let account = mech_core::ManagedMemoryBudget::new(1_000_000);
+                        let value = admit_value(joined.as_ref().unwrap().clone(), &account);
+                        (account, value)
+                    })
+                    .collect::<Vec<_>>();
+                for _ in 0..2 {
+                    let before = work.used();
+                    assert!(!repeat_join(&mut joined));
+                    assert_eq!(
+                        (work.used().0 - before.0, work.used().1 - before.1),
+                        baseline
+                    );
+                    assert_eq!(memory.used_bytes(), retained);
+                    assert!(
+                        joined
+                            .as_ref()
+                            .unwrap()
+                            .memory_budget_retained_bytes(&memory)
+                            .is_some()
+                    );
+                }
+                drop(foreign);
                 let length = invoke("sequence/length", &[joined.clone()]);
                 assert!(matches!(
                     length.as_ref().unwrap().data(),
