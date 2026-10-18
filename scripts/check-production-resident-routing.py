@@ -8,6 +8,9 @@ import re
 import sys
 import tomllib
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rust_source import rust_code
+
 
 ROOT = Path(__file__).resolve().parent.parent
 PRODUCT_ROOTS = (
@@ -230,6 +233,22 @@ def check_feature_boundaries() -> list[str]:
     return failures
 
 
+def explicit_empty_cli_factory_is_registered(source: str) -> bool:
+    """Require the real empty snapshot factory to reach the registration seam."""
+    body = rust_function_body(rust_code(rust_without_test_modules(source)),
+                              "register_cli_host_factories")
+    if body is None:
+        return False
+    return re.fullmatch(
+        r"\s*let\s+(?P<factory>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
+        r"(?:mech_terminal\s*::\s*)?CliHostFactory\s*::\s*with_arguments\s*"
+        r"\(\s*Vec\s*::\s*new\s*\(\s*\)\s*\)\s*\?\s*;\s*"
+        r"register_cli_host_factories_with_cli_factory\s*\(\s*builder\s*,\s*"
+        r"Box\s*::\s*new\s*\(\s*(?P=factory)\s*\)\s*\)\s*",
+        body,
+    ) is not None
+
+
 def check_required_product_seams() -> list[str]:
     required = {
         "src/cli/commands/run.rs": "load_source_program",
@@ -340,9 +359,9 @@ def check_required_product_seams() -> list[str]:
     terminal_run_factory = (ROOT / "src/cli/host_factories.rs").read_text(
         encoding="utf-8"
     )
-    if "CliHostFactory::new" not in terminal_run_factory:
+    if not explicit_empty_cli_factory_is_registered(terminal_run_factory):
         failures.append(
-            "src/cli/host_factories.rs: normal mech run must install CliHostFactory"
+            "src/cli/host_factories.rs: normal mech run must register the explicit empty-payload CliHostFactory"
         )
     root_manifest = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
     expected_cli_host = [

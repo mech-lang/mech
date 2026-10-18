@@ -3,8 +3,8 @@
 use mech_core::{IntegerWidth, MResult, MechError, SchemaBody, Value, ValueData};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder,
-    RuntimeCapabilityOperation, RuntimeHostInputValue, RuntimeResourceProvider,
-    RuntimeResourceReadRequest, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
+    RuntimeCapabilityOperation, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
 };
 use mech_terminal::{
     ArgumentSnapshotCliBackend, CliBackend, CliHostFactory, CliResourceProvider,
@@ -226,7 +226,7 @@ fn count_is_read_only_under_assign_and_send() {
                     path: "count".into(),
                     context_name: "args".into(),
                     operation: RuntimeCapabilityOperation::Write,
-                    value: RuntimeHostInputValue::U64(1).into_value().unwrap(),
+                    value: provider.plan_read(read("cli://cli/args", "count")).unwrap(),
                     intent,
                 })
                 .is_err()
