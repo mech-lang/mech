@@ -1202,14 +1202,16 @@ fn review_ir(plan: &NativeArtifactPlan) -> Value {
 #[ignore = "internal worker; the outer qualification owns this complete process tree"]
 fn canonical_native_link_build_worker() {
     let name = std::env::var("MECH_CANONICAL_NATIVE_WORKER_NAME").unwrap();
-    assert!(matches!(
-        name.as_str(),
-        "canonical-linked-mixed"
-            | "canonical-linked-ordered"
-            | "canonical-linked-signed"
-            | "canonical-linked-signed-divrem"
-            | "canonical-linked-floats"
-    ) || cast_cases::CASTS.iter().any(|cast| cast.name == name));
+    assert!(
+        matches!(
+            name.as_str(),
+            "canonical-linked-mixed"
+                | "canonical-linked-ordered"
+                | "canonical-linked-signed"
+                | "canonical-linked-signed-divrem"
+                | "canonical-linked-floats"
+        ) || cast_cases::CASTS.iter().any(|cast| cast.name == name)
+    );
     let evidence = PathBuf::from(std::env::var_os("MECH_CANONICAL_NATIVE_EVIDENCE_DIR").unwrap());
     let root = evidence.join(&name);
     let source = fs::read_to_string(root.join("application.mec")).unwrap();
