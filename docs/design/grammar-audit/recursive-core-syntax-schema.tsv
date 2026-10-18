@@ -1,4 +1,7 @@
 grammar-name	parser-module	emission-policy	syntax-kind	kind-origin	notes
+application-expression	expressions	conditional-node	ApplicationExpression	new	Emits an ordered application owner only when at least one stage is present.
+application-operator	expressions	node	ApplicationOperator	new	Owns ordinary, literal-count and bracketed matrix-count operators.
+application-stage	expressions	node	ApplicationStage	new	Owns one application operator and its lexical callback.
 argument-list	calls	node	ArgumentList	new	Emits the complete call argument list.
 binding	structures	node	RecordBinding	new	Uses the concrete record-binding role.
 brace-subscript	subscripts	node	BraceSubscript	new	Preserves brace-delimited subscript structure.

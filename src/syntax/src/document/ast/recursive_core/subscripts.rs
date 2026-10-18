@@ -6,7 +6,9 @@ use crate::document::{
     SwizzleSubscriptSyntax, SyntaxKind, SyntaxNode, SyntaxToken,
 };
 
-use super::{FormulaSyntax, RangeExpressionSyntax, child, children, direct_token};
+use super::{
+    FactorValueSyntax, FormulaSyntax, RangeExpressionSyntax, child, children, direct_token,
+};
 
 recursive_ast_node!(SliceSyntax, Slice);
 recursive_ast_node!(SubscriptListSyntax, SubscriptList);
@@ -19,6 +21,8 @@ recursive_ast_node!(RangeSubscriptSyntax, RangeSubscript);
 pub enum SliceStemSyntax {
     Identifier(IdentifierSyntax),
     Context(PrefixedContextPathSyntax),
+    /// An evaluated expression base, retained once before its selector chain.
+    Value(FactorValueSyntax),
 }
 
 impl AstNode for SliceStemSyntax {
@@ -26,7 +30,7 @@ impl AstNode for SliceStemSyntax {
         matches!(
             kind,
             SyntaxKind::Identifier | SyntaxKind::PrefixedContextPath
-        )
+        ) || FactorValueSyntax::can_cast(kind)
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         match syntax.kind() {
@@ -34,13 +38,14 @@ impl AstNode for SliceStemSyntax {
             SyntaxKind::PrefixedContextPath => {
                 PrefixedContextPathSyntax::cast(syntax).map(Self::Context)
             }
-            _ => None,
+            _ => FactorValueSyntax::cast(syntax).map(Self::Value),
         }
     }
     fn syntax(&self) -> &SyntaxNode {
         match self {
             Self::Identifier(value) => value.syntax(),
             Self::Context(value) => value.syntax(),
+            Self::Value(value) => value.syntax(),
         }
     }
 }

@@ -115,6 +115,14 @@ impl ParsedSource {
         let normalized = application::normalize_with_metadata(source)?;
         let source = normalized.source;
         let syntax = Self::parse_syntax(&source)?;
+        fn bracketed_counts(node: &SyntaxNode) -> bool {
+            mech_syntax::document::ApplicationOperatorSyntax::cast(node.clone())
+                .is_some_and(|operator| operator.count_expression().is_some())
+                || node.children().any(|child| bracketed_counts(&child))
+        }
+        if bracketed_counts(&syntax) {
+            return Err("bracketed application counts require canonical resident execution; legacy native frontends cannot lower element-wise iteration".into());
+        }
         let parsed = Self {
             source,
             syntax,

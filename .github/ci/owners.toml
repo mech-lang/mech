@@ -43,7 +43,7 @@ standard = true
 cross_cutting = true
 
 [owners.mech-gpu]
-families = ["memory", "numeric", "runtime", "artifact", "linkage", "browser"]
+families = ["memory", "numeric", "runtime", "artifact", "linkage", "native", "browser"]
 exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 paths = ["hosts/gpu/**"]
@@ -70,7 +70,7 @@ standard = true
 cross_cutting = true
 
 [owners.mech-stdlib]
-families = ["numeric", "artifact", "linkage"]
+families = ["language", "numeric", "artifact", "linkage", "native"]
 exclude_paths = ["*.md", "LICENSE"]
 paths = ["src/stdlib/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "profile_contracts", "--test", "managed_functions", "--no-default-features", "--features", "standard_compiler"]

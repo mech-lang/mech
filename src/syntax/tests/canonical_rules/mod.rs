@@ -79,3 +79,5 @@ fn lexical_rules() -> Vec<(&'static str, crate::document::RuleId)> {
     })
     .collect()
 }
+
+mod canonical_application;

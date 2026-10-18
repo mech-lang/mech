@@ -1,0 +1,190 @@
+{
+  "schema": "mech.validation.canonical-string-retention-library-acceptance.v1",
+  "status": "library-source-qualified-tail-acceptance-incomplete",
+  "baseline_commit": "eb562ece317ecb78fb9a02800cc21a1507281aa1",
+  "baseline_receipt": "docs/validation/canonical-string-indices-and-retention-v1.json",
+  "baseline_receipt_sha256": "3869992dabefb408946e77e69069a909f3ab3aab012f9c9f93afb60f203e8225",
+  "baseline_engine_source_checks": {
+    "passed": 1019,
+    "scope": "822 engine unit, 36 source completion, 147 source semantics, 8 String selection and 6 native ordering checks; source pins remain in baseline receipt."
+  },
+  "additional_library_source_validation": {
+    "source_commit": "eb562ece317ecb78fb9a02800cc21a1507281aa1",
+    "suites": [
+      {
+        "name": "primitive Snapshot constructors",
+        "passed": 3,
+        "failed": 0
+      },
+      {
+        "name": "retention work",
+        "passed": 4,
+        "failed": 0
+      },
+      {
+        "name": "String selector shapes",
+        "passed": 3,
+        "failed": 0
+      },
+      {
+        "name": "ordinary k-nucleotide record source",
+        "passed": 3,
+        "failed": 0
+      }
+    ],
+    "ignored": 0,
+    "filtered": 0
+  },
+  "original_tail_acceptance": {
+    "source_commit": "eb562ece317ecb78fb9a02800cc21a1507281aa1",
+    "fixture": "src/stdlib/tests/tail_control.rs",
+    "fixture_sha256": "14c1b6e8968a11ed81e5f622ac7b9be2ac819fe42d001ee654d623f39aa1d902",
+    "inputs_changed": false,
+    "limits_changed": false,
+    "expectations_changed": false,
+    "all_ten_executed_individually": true,
+    "passed": 8,
+    "failed": 2,
+    "cases": [
+      {
+        "test": "a_late_checked_error_after_many_backedges_preserves_publication_and_recovers",
+        "passed": true,
+        "exit_code": 0,
+        "log_name": "retention-tail-individual-v2-00.log",
+        "log_sha256": "f1801baf7f27dcfe388cbf306395d8765f39154a16c0ebc53b4712a59373f61d"
+      },
+      {
+        "test": "actual_full_ordinary_knucleotide_output_survives_long_fasta_prefixes",
+        "passed": true,
+        "exit_code": 0,
+        "log_name": "retention-tail-individual-v2-01.log",
+        "log_sha256": "ee01f209dc941eafdb5599c19195a5f83fc7806e74b2fefbe0dca46e1231688e"
+      },
+      {
+        "test": "actual_record_bounds_machine_scans_long_fasta_prefix_and_body_in_source_order",
+        "passed": false,
+        "exit_code": -6,
+        "log_name": "retention-tail-individual-v2-02.log",
+        "log_sha256": "9d7151dd3cdb61e281b931dc93a94291aa6c14c20adb198dd0dee05cfe1c0656"
+      },
+      {
+        "test": "configured_managed_budget_denial_preserves_a_long_walk_publication_and_recovers",
+        "passed": true,
+        "exit_code": 0,
+        "log_name": "retention-tail-individual-v2-03.log",
+        "log_sha256": "e6130eb9a3f6d0f7ff9356a50f3f3b393b64fa4fb9091eb45198316bd7defda9"
+      },
+      {
+        "test": "fixed_empty_matrix_carriers_and_zero_lane_results_keep_logical_tail_identity",
+        "passed": true,
+        "exit_code": 0,
+        "log_name": "retention-tail-individual-v2-04.log",
+        "log_sha256": "c8be3f390d056f574b5b6bf6e96d25ee3a49855f57ba5feee4a3cf2988de18e9"
+      },
+      {
+        "test": "non_tail_recursive_postprocessing_keeps_the_existing_depth_limit_and_recovers",
+        "passed": true,
+        "exit_code": 0,
+        "log_name": "retention-tail-individual-v2-05.log",
+        "log_sha256": "9dda59d24bbc9a2c97799203a7670e7fbed90715438738f2f3795d532e3bd6df"
+      },
+      {
+        "test": "nonempty_matrix_state_is_carried_before_locals_are_reused_on_each_tail_transition",
+        "passed": true,
+        "exit_code": 0,
+        "log_name": "retention-tail-individual-v2-06.log",
+        "log_sha256": "7e868e1581f57f1dce7556c1ee87b5f2296803adc543a15268ad98af6cc64a02"
+      },
+      {
+        "test": "suspension_stays_a_turn_boundary_and_retains_frozen_arguments_beside_live_values",
+        "passed": true,
+        "exit_code": 0,
+        "log_name": "retention-tail-individual-v2-07.log",
+        "log_sha256": "fb79ca0d90e32bf18588a41e1b5ba7b720c64337e4cb1e9ef5d67d717b4e790a"
+      },
+      {
+        "test": "synchronous_state_transitions_exceed_the_non_tail_frame_ceiling_and_refresh",
+        "passed": false,
+        "exit_code": -6,
+        "log_name": "retention-tail-individual-v2-08.log",
+        "log_sha256": "ab1e455dd54d599bf52af9ec7c00b40b4321fa49ffbd02cebedd82767389a90a"
+      },
+      {
+        "test": "terminal_nested_matches_forward_to_the_exact_outer_recursive_target",
+        "passed": true,
+        "exit_code": 0,
+        "log_name": "retention-tail-individual-v2-09.log",
+        "log_sha256": "9c429efeff45ddb2b4983f3b4ded6a5cb1d5215f8867ac0109d97391ca2ac7f3"
+      }
+    ],
+    "remaining_failure": "Both cases return Kernel node 2 InvalidShape. The current failing input and admission dimension need localization; historical comparison-counter diagnostics do not establish the current cause.",
+    "macos_failure_note": "The two failed test processes abort after their assertion panic. Separate launches retained results for every acceptance case."
+  },
+  "feature_correction": {
+    "source_pins": {
+      "src/engine/src/intrinsics/access/mod.rs": "0b2f06064df6c1574c03aa15fa20723986d3c10047345984040c6dc664bf54af",
+      "src/engine/src/intrinsics/mod.rs": "736075787b8f985e940a407e06420f5ed603a5efcd107e06703c082d54fe5ace"
+    },
+    "scope": [
+      "Compile canonical Matrix geometry metadata independently of the optional dense Matrix module.",
+      "Gate optional typed Record/Table diagnostics on their actual assignment-module owners; retain canonical fallback errors without those owners.",
+      "Gate paste and the dense Matrix constructor helper on actual consumers; forward the installer catalog under every enabled concrete factory."
+    ],
+    "features_added": [],
+    "warnings_suppressed": false,
+    "minimal_managed_string_check": {
+      "features": "std,semantic-compiler,access,string,u64",
+      "passed": true
+    },
+    "full_compiler_access_checks": {
+      "features": "full_compiler",
+      "passed": 25,
+      "failed": 0,
+      "ignored": 0,
+      "other_tests_filtered": 185
+    },
+    "baseline_runtime_only_closure": {
+      "features": "std,resident-artifact,bool,u64,string,map_ops,set",
+      "passed": true,
+      "source_commit": "eb562ece317ecb78fb9a02800cc21a1507281aa1"
+    },
+    "scope_note": "The full compiler profile compiled and all 25 access checks ran after the correction. The 1,019 baseline checks and 13 additional library cases retain their exact earlier source pins; overlapping checks are not summed."
+  },
+  "logs": [
+    {
+      "name": "string-retention-constructor-source-v4.log",
+      "sha256": "70845de2b5e8830064c123190b7e5d99e56709f9ef443e83d7d9129b05857866"
+    },
+    {
+      "name": "string-retention-retained-source-v2.log",
+      "sha256": "0d32b1839401cb77b2005a32f1921da687ba0422970a5317d16ae01e5d8708f9"
+    },
+    {
+      "name": "retention-tail-individual-v2-build.log",
+      "sha256": "7ee28808b9cb35056ffeb9fa2999f0149442769be643d6884f401e5315d0bfef"
+    },
+    {
+      "name": "string-retention-constructor-runtime-closure-v2.log",
+      "sha256": "22354dc3957673c915d97e617081d2834ee133bc5016c2cec882afcbdcaab4b9"
+    },
+    {
+      "name": "string-managed-helper-closure-v3.log",
+      "sha256": "b4fa061a8154c4de5e2c957217c5f092febb9f8a498d6332ed532e48d6582bea"
+    },
+    {
+      "name": "managed-access-feature-full-profile-v2.log",
+      "sha256": "ebe1144026fd9ef87c2790d2dec960b856876d7799a0e7765adbe55e24cbb876"
+    }
+  ],
+  "serial_validation": true,
+  "benchmark_measurements": 0,
+  "new_runtime_timings": false,
+  "native_full_workload_qualification": false,
+  "remaining_scope": [
+    "Resolve both unchanged tail acceptance failures without input, expectation or limit changes.",
+    "All ten full idiomatic benchmark sources and complete outputs/argument contracts.",
+    "Ordinary repeated application and actual canonical native value/control/matrix support.",
+    "Generic raw-byte capability ports, strict argument count and canonical activated native IO.",
+    "One actual AOT executable qualified under secured/trusted complete-process behavior before serial Mech-only timing replacement."
+  ]
+}

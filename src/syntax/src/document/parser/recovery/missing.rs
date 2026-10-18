@@ -25,6 +25,7 @@ pub(crate) struct MissingContinuation<'a> {
     message: &'a str,
     expected: Option<ExpectedSyntax>,
     token: Option<SyntaxKind>,
+    diagnostic_rule: Option<RuleId>,
     at: TextSize,
     marker: Option<CompletedMarker>,
     phase: Phase,
@@ -42,11 +43,16 @@ impl<'a> MissingContinuation<'a> {
             message,
             expected: Some(expected),
             token,
+            diagnostic_rule: None,
             at: TextSize::ZERO,
             marker: None,
             phase: Phase::Start,
             work: 0,
         }
+    }
+    pub fn with_diagnostic_rule(mut self, rule: Option<RuleId>) -> Self {
+        self.diagnostic_rule = rule;
+        self
     }
     pub fn advance(
         &mut self,
@@ -140,7 +146,7 @@ impl<'a> MissingContinuation<'a> {
                         code: DiagnosticCode::from(self.code),
                         phase: DiagnosticPhase::Syntax,
                         severity: Severity::Error,
-                        rule: parser.current_rule(),
+                        rule: self.diagnostic_rule.or_else(|| parser.current_rule()),
                         context: parser.current_context(),
                         primary: DiagnosticAnchor::Absolute {
                             revision: parser.source().revision(),

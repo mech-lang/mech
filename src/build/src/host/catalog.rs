@@ -70,6 +70,30 @@ pub struct NativeHostLinkage {
     pub planning_factory: fn() -> MResult<Box<dyn RuntimeHostFactory>>,
 }
 
+/// Explicit constructor input supplied to a selected native host factory.
+///
+/// This belongs to the trusted registration, rather than the provider name:
+/// custom factories keep their declared constructor and input contract.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum NativeHostFactoryInput {
+    #[default]
+    None,
+    ProgramArguments,
+}
+
+impl NativeHostFactoryInput {
+    pub fn is_none(&self) -> bool {
+        matches!(self, Self::None)
+    }
+}
+
+#[derive(Clone, Debug)]
+struct NativeHostRegistration {
+    linkage: NativeHostLinkage,
+    factory_input: NativeHostFactoryInput,
+}
+
 impl std::fmt::Debug for NativeHostLinkage {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
@@ -105,7 +129,7 @@ pub enum NativeHostFunctionContext {
 /// host-function name.
 #[derive(Clone, Debug, Default)]
 pub struct NativeHostCatalog {
-    providers: BTreeMap<String, NativeHostLinkage>,
+    providers: BTreeMap<String, NativeHostRegistration>,
     functions: BTreeMap<String, NativeHostFunctionLinkage>,
 }
 
@@ -115,6 +139,14 @@ impl NativeHostCatalog {
     }
 
     pub fn insert_provider(&mut self, linkage: NativeHostLinkage) -> MResult<()> {
+        self.insert_provider_with_input(linkage, NativeHostFactoryInput::None)
+    }
+
+    pub fn insert_provider_with_input(
+        &mut self,
+        linkage: NativeHostLinkage,
+        factory_input: NativeHostFactoryInput,
+    ) -> MResult<()> {
         validate_provider_linkage(&linkage)?;
         if self.providers.contains_key(linkage.provider) {
             return invalid(format!(
@@ -122,7 +154,13 @@ impl NativeHostCatalog {
                 linkage.provider
             ));
         }
-        self.providers.insert(linkage.provider.to_string(), linkage);
+        self.providers.insert(
+            linkage.provider.to_string(),
+            NativeHostRegistration {
+                linkage,
+                factory_input,
+            },
+        );
         Ok(())
     }
 
@@ -136,7 +174,18 @@ impl NativeHostCatalog {
     }
 
     pub fn provider(&self, provider: &str) -> Option<&NativeHostLinkage> {
-        self.providers.get(provider)
+        self.providers
+            .get(provider)
+            .map(|registration| &registration.linkage)
+    }
+
+    pub(crate) fn provider_registration(
+        &self,
+        provider: &str,
+    ) -> Option<(&NativeHostLinkage, NativeHostFactoryInput)> {
+        self.providers
+            .get(provider)
+            .map(|registration| (&registration.linkage, registration.factory_input))
     }
 
     pub fn function(&self, name: &str) -> Option<&NativeHostFunctionLinkage> {
@@ -148,7 +197,7 @@ impl NativeHostCatalog {
     ) -> impl DoubleEndedIterator<Item = (&str, &NativeHostLinkage)> + ExactSizeIterator {
         self.providers
             .iter()
-            .map(|(provider, linkage)| (provider.as_str(), linkage))
+            .map(|(provider, registration)| (provider.as_str(), &registration.linkage))
     }
 
     pub fn functions(
@@ -401,6 +450,32 @@ mod tests {
                 .map(|(provider, _)| provider)
                 .collect::<Vec<_>>(),
             ["test", "z-test"]
+        );
+    }
+
+    #[test]
+    fn constructor_input_is_bound_to_the_selected_registration() {
+        let mut default_catalog = NativeHostCatalog::new();
+        default_catalog.insert_provider(linkage()).unwrap();
+        let (selected, input) = default_catalog.provider_registration("test").unwrap();
+        assert_eq!(selected.factory_path, linkage().factory_path);
+        assert_eq!(input, NativeHostFactoryInput::None);
+
+        let mut custom = linkage();
+        custom.factory_path = "mech_test_host::CustomSnapshotFactory::create";
+        let mut snapshot_catalog = NativeHostCatalog::new();
+        snapshot_catalog
+            .insert_provider_with_input(custom, NativeHostFactoryInput::ProgramArguments)
+            .unwrap();
+        let (selected, input) = snapshot_catalog.provider_registration("test").unwrap();
+        assert_eq!(
+            selected.factory_path,
+            "mech_test_host::CustomSnapshotFactory::create"
+        );
+        assert_eq!(input, NativeHostFactoryInput::ProgramArguments);
+        assert_eq!(
+            snapshot_catalog.provider("test").unwrap().factory_path,
+            selected.factory_path
         );
     }
 

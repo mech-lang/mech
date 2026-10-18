@@ -1,0 +1,179 @@
+{
+  "schema": "mech.activated-pattern-source-reuse.v1",
+  "source_parent_commit": "9cbc0318371acdbbf291ea3aac6a2e98adda5730",
+  "status": "partial-resident-source-qualification-three-open-tail-cases",
+  "scope": "Typed structural Match schema reuse and exact borrowed-retention versus materialization accounting.",
+  "changes": [
+    "Activation constructs private typed-source evidence from the genuine projection arena; runtime rechecks the actual retained owner and plan schema ID/key.",
+    "Eligible structural Match values reuse existing projection schemas rather than rebuilding full source-owner closures and key indexes at each invocation. Unsupported owner-local and deep schema forms retain the original route.",
+    "Borrowed retention measures actual container metadata and lengths while preserving exact encoded/retained bytes and nodes. Real comparisons, copying, finalization and result validation retain separate finite charges.",
+    "Actual packed and zero-byte Unit sequence lengths bound expanded draft slots; maximum lexical intermediate depth bounds deep Values/Table payload copies before materialization.",
+    "Metadata compute and comparison work propagate separately into enclosing retention meters. The certificate check allowance applies only to actual Snapshot paths that perform the check."
+  ],
+  "finite_limits": {
+    "compute_work": 16777216,
+    "comparison_work": 65536,
+    "source": "src/core/src/memory_plan/target.rs",
+    "changed": false
+  },
+  "source_files": [
+    {
+      "path": "src/engine/src/resident/budget.rs",
+      "sha256": "eab54d7fed8ed9d2b1294aa50b05de33201d3e10e11463feadc984ed5dcde6ba"
+    },
+    {
+      "path": "src/engine/src/resident/general/mod.rs",
+      "sha256": "148cb12f3e4c6b9cd6e2b1d06fefe8dae66e594068579b7a0589ab7e60070449"
+    },
+    {
+      "path": "src/engine/src/resident/general/comprehension_execution.rs",
+      "sha256": "0352708cff1112ca7e1e2d009dbbb0ddf66f353516b84bcad05ff33eedf29fe3"
+    },
+    {
+      "path": "src/engine/src/resident/general/execution.rs",
+      "sha256": "7e843f58c5161da0f2bde794cf89738344f6c585087c057175ed9f0c058ff0f0"
+    }
+  ],
+  "unchanged_acceptance_source": {
+    "path": "src/stdlib/tests/tail_control.rs",
+    "sha256": "14c1b6e8968a11ed81e5f622ac7b9be2ac819fe42d001ee654d623f39aa1d902",
+    "cases": 10,
+    "input_counts_changed": false,
+    "oracles_changed": false
+  },
+  "actual_test_runs": [
+    {
+      "package": "mech-engine",
+      "targets": {
+        "lib": 782,
+        "canonical_source_completion": 36,
+        "canonical_source_semantics": 147
+      },
+      "passed": 965,
+      "failed": 0,
+      "ignored": 0,
+      "log": "tail-source-context-v2-engine.log",
+      "log_sha256": "e58890f58f448b68abda8b41474cad50b820fa506d391f0f9e39e1492fc5f76a",
+      "exit_code": 0
+    }
+  ],
+  "tail_acceptance": {
+    "prior_receipt": "docs/validation/canonical-matrix-control-results-v1.json",
+    "prior_passed": 6,
+    "prior_failed": 4,
+    "passed": 7,
+    "failed": 3,
+    "execution": "Each unchanged case ran in its own serial process against one current Cargo test executable. Each passing case qualifies all original and decoded artifact branches in that case.",
+    "executable_sha256": "67f61f5e7cde0540bc097ea81dd990a54136a45be2fe5ab33eb4b7460b59aebc",
+    "newly_passing": "fixed_empty_matrix_carriers_and_zero_lane_results_keep_logical_tail_identity",
+    "cases": [
+      {
+        "test": "a_late_checked_error_after_many_backedges_preserves_publication_and_recovers",
+        "log": "tail-source-context-v2-a_late_checked_error_after_many_backedges_preserves_publication_and_recovers.log",
+        "log_sha256": "46de7855a1a9266ef34c202afe9eb8a7702902643367e5b42599852da2e8295a",
+        "exit_code": 0
+      },
+      {
+        "test": "actual_full_ordinary_knucleotide_output_survives_long_fasta_prefixes",
+        "log": "tail-source-context-v2-actual_full_ordinary_knucleotide_output_survives_long_fasta_prefixes.log",
+        "log_sha256": "c6b755f4775b68fad53fe3d2ab323678d72a1160ff3df115fbd0a4a773b5739f",
+        "exit_code": -6
+      },
+      {
+        "test": "actual_record_bounds_machine_scans_long_fasta_prefix_and_body_in_source_order",
+        "log": "tail-source-context-v2-actual_record_bounds_machine_scans_long_fasta_prefix_and_body_in_source_order.log",
+        "log_sha256": "b3becead3c2c25dfccbd1de913e2fc8ee0646c36a9929c7f511169b86157ba30",
+        "exit_code": -6
+      },
+      {
+        "test": "configured_managed_budget_denial_preserves_a_long_walk_publication_and_recovers",
+        "log": "tail-source-context-v2-configured_managed_budget_denial_preserves_a_long_walk_publication_and_recovers.log",
+        "log_sha256": "f6b2b9c014adf3ae3d285ffaee19da79d128198e59c7003eda4be497408dbf4b",
+        "exit_code": 0
+      },
+      {
+        "test": "fixed_empty_matrix_carriers_and_zero_lane_results_keep_logical_tail_identity",
+        "log": "tail-source-context-v2-fixed_empty_matrix_carriers_and_zero_lane_results_keep_logical_tail_identity.log",
+        "log_sha256": "61b425f09f821c9c1eda0fb2a9a7d1e3e667a1f3a045dee604d68cbc0acc02e3",
+        "exit_code": 0
+      },
+      {
+        "test": "non_tail_recursive_postprocessing_keeps_the_existing_depth_limit_and_recovers",
+        "log": "tail-source-context-v2-non_tail_recursive_postprocessing_keeps_the_existing_depth_limit_and_recovers.log",
+        "log_sha256": "3488ea2c8b29a7810a0bfec32aa438178ccb8b6df50f2655c3d9a332c9d3c36d",
+        "exit_code": 0
+      },
+      {
+        "test": "nonempty_matrix_state_is_carried_before_locals_are_reused_on_each_tail_transition",
+        "log": "tail-source-context-v2-nonempty_matrix_state_is_carried_before_locals_are_reused_on_each_tail_transition.log",
+        "log_sha256": "3789d2e555d564c029b495b69a3e7fef629c9d08f8fe11ae705a48832d02f61d",
+        "exit_code": 0
+      },
+      {
+        "test": "suspension_stays_a_turn_boundary_and_retains_frozen_arguments_beside_live_values",
+        "log": "tail-source-context-v2-suspension_stays_a_turn_boundary_and_retains_frozen_arguments_beside_live_values.log",
+        "log_sha256": "66955fa50df617be07144afc7002d78415b386a53c081108f653aeac43c0e68d",
+        "exit_code": 0
+      },
+      {
+        "test": "synchronous_state_transitions_exceed_the_non_tail_frame_ceiling_and_refresh",
+        "log": "tail-source-context-v2-synchronous_state_transitions_exceed_the_non_tail_frame_ceiling_and_refresh.log",
+        "log_sha256": "2c5087885217e091697b634fe563cda39e08df9b9ef3552d92c50031c918a305",
+        "exit_code": -6
+      },
+      {
+        "test": "terminal_nested_matches_forward_to_the_exact_outer_recursive_target",
+        "log": "tail-source-context-v2-terminal_nested_matches_forward_to_the_exact_outer_recursive_target.log",
+        "log_sha256": "9c429efeff45ddb2b4983f3b4ded6a5cb1d5215f8867ac0109d97391ca2ac7f3",
+        "exit_code": 0
+      }
+    ]
+  },
+  "runtime_only_closure": {
+    "package": "mech-engine",
+    "features": [
+      "std",
+      "resident-artifact",
+      "bool",
+      "u64",
+      "string",
+      "map_ops",
+      "set"
+    ],
+    "passed": true,
+    "log": "tail-source-context-v2-runtime.log",
+    "log_sha256": "c3bfadaa3ed012aba92d3f40c22974bd5410b9cd88ac3851234b193d00d48e15",
+    "exit_code": 0
+  },
+  "retained_boundary_regression": {
+    "test": "selected_match_calls_share_a_budget_that_resets_each_turn",
+    "source_changed": false,
+    "status": "passed",
+    "purpose": "Repeated selected calls share finite per-turn work admission and reset only at a new turn."
+  },
+  "test_coverage": {
+    "new_unit_cases": 11,
+    "source_context_cases": 5,
+    "borrowed_retention_cases": 6,
+    "included_in_engine_total": true,
+    "copy_regression_forms": [
+      "String4096",
+      "512U64",
+      "512AtomUnitWithZeroEncodedBytes",
+      "nestedPackedMatrix",
+      "TableStringIntermediateDepth1",
+      "nestedValuesStringIntermediateDepth2"
+    ]
+  },
+  "benchmark_measurements": 0,
+  "execution_policy": {
+    "cargo_jobs": 1,
+    "test_threads": 1,
+    "builds_and_test_processes": "serial"
+  },
+  "remaining_scope": [
+    "Three unchanged tail acceptance cases still return InvalidShape: scalar countdown, actual FASTA record scanning and actual k-nucleotide with longer prefixes. Fresh failure metadata is required before attributing these current failures.",
+    "Prepared String-index integration and remaining ordinary benchmark workload migrations require actual qualification.",
+    "Full canonical Cranelift native workload execution and same-binary secured/trusted complete-process AOT timing remain unqualified."
+  ]
+}

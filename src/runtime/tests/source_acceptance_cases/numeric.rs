@@ -984,7 +984,13 @@ fn public_linear_power_budget_rejection_preserves_accepted_session() {
     .unwrap();
     let error = session.replace_document(rejected).unwrap_err();
     assert_eq!(error.kind_name(), "ResidentRouteFailure");
-    assert!(format!("{error:?}").contains("InvalidShape"), "{error:?}");
+    assert!(
+        format!("{error:?}").contains(concat!(
+            "node: NodeId(0), error: ResourceLimit { phase: Admission, ",
+            "dimension: ComparisonWork, required: 65539, limit: 65536 }"
+        )),
+        "{error:?}"
+    );
     assert_value(
         &session.symbol("a").unwrap().unwrap().to_value(),
         &accepted,

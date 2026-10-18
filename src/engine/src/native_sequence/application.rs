@@ -803,6 +803,11 @@ fn body_statements(source: &str) -> Result<Vec<String>, String> {
                 continue;
             }
             let continuation = starts_pipe(&part)
+                || (mask(&part).trim_start().starts_with('|')
+                    && statements.last().is_some_and(|previous| {
+                        top_offsets(previous, "?").is_ok_and(|positions| !positions.is_empty())
+                            && !mask(previous).trim_end().ends_with('.')
+                    }))
                 || statements.last().is_some_and(|previous| {
                     let previous = mask(previous);
                     let previous = previous.trim_end();
@@ -937,6 +942,7 @@ fn normalize_arrow_body(
             return Err("function local requires a value".into());
         }
         let (temporary, value) = pipeline(expression, prefix, serial, counted)?;
+        let value = group_match_result(value)?;
         definitions.extend(temporary);
         if let Some((target, operator)) = mutation {
             definitions.push(format!("{target} {operator} {value}"));
@@ -979,6 +985,16 @@ fn normalize_arrow_body(
         }
     }
     Ok(Some(definitions))
+}
+
+// A final postfix match must end before the function's statement terminator.
+// Grouping establishes that boundary without inventing a second evaluation.
+fn group_match_result(value: String) -> Result<String, String> {
+    if top_offsets(&value, "?")?.is_empty() {
+        Ok(value)
+    } else {
+        Ok(format!("({value})"))
+    }
 }
 
 fn normalize_statement(
@@ -1028,6 +1044,16 @@ fn normalize_statement(
             return Err("invalid expression-bodied function signature".into());
         }
         let kind = signature[1];
+        // Named-output statement functions already have canonical bodies.
+        // Their result tuple is a signature, not an anonymous output kind.
+        if (kind.starts_with('(') && kind.ends_with(')'))
+            || (kind.ends_with('>')
+                && kind
+                    .find('<')
+                    .is_some_and(|open| identifier(kind[..open].trim())))
+        {
+            return Ok(None);
+        }
         if !kind.starts_with('<') || !kind.ends_with('>') {
             return Err("function requires an explicit output kind".into());
         }
@@ -1041,11 +1067,12 @@ fn normalize_statement(
             block
         } else {
             let (mut definitions, value) = pipeline(expression, prefix, serial, counted)?;
+            let value = group_match_result(value)?;
             definitions.push(format!("{result} := {value}"));
             definitions
         };
         Ok(Some(format!(
-            "{header} = ({result}{kind}) := {}.",
+            "{header} => ({result}{kind}) := {}.",
             definitions.join("; ")
         )))
     } else if signature.len() == 1 {
@@ -1318,6 +1345,16 @@ mod tests {
     }
 
     #[test]
+    fn legacy_native_frontends_explicitly_reject_canonical_element_counts() {
+        let error = super::super::ParsedSource::parse(
+            "step(x<f64>) => <f64> := x + 1.0\nx := [10.0 20.0] |[1 3]> step\n",
+        )
+        .err()
+        .unwrap();
+        assert!(error.contains("canonical resident execution"), "{error}");
+    }
+
+    #[test]
     fn unicode_arithmetic_continues_across_arrow_body_lines() {
         for operator in ["×", "÷", "·", "•", "⨯"] {
             let source = format!("F(x<f64>, y<f64>) => <f64> :=\n  x {operator}\n  y\n");
@@ -1558,6 +1595,16 @@ mod tests {
         assert!(normalized.contains("sequence/iterate(application-temp-1, 1, step)"));
     }
     #[test]
+    fn typed_numeric_match_patterns_are_not_counted_pipes() {
+        for source in [
+            "value := input?\n  | -1<i64> => 7u64\n  | 0<u64> => 8u64\n  | * => 0u64.\n",
+            "Value(x<i64>) => <u64>\n  | -1<i64> => 7u64\n  | 1<i64> => 8u64\n  | * => 0u64.\n",
+            "value := (input? | -1<i64> => 7u64 | * => 0u64).\n",
+        ] {
+            assert_eq!(normalize(source).unwrap(), source);
+        }
+    }
+    #[test]
     fn holes_share_one_evaluation_and_ignore_strings_and_identifiers() {
         let n = normalize("r := input() |> f(_, g(_), \"_|>\", some_name)\n").unwrap();
         assert_eq!(
@@ -1573,10 +1620,32 @@ mod tests {
     #[test]
     fn typed_functions_unary_stages_and_periods() {
         let n = normalize("f(x<f64>) => <f64> := x |> math/sqrt.\ny := 4.0 |> f\n").unwrap();
-        assert!(n.contains("f(x<f64>) = (application-temp-result<f64>)"));
+        assert!(n.contains("f(x<f64>) => (application-temp-result<f64>)"));
         assert!(n.contains("math/sqrt(application-temp-0)."));
         assert!(n.contains("y := f(application-temp-1)"));
         assert_eq!(normalize(&n).unwrap(), n);
+    }
+    #[test]
+    fn named_output_arrows_keep_their_declared_result_bindings() {
+        for source in [
+            "Identity(x<u64>) => (output<u64>) :=\n  output := x.\n",
+            "Identity(x<u64>) => output<u64> :=\n  output := x.\n",
+        ] {
+            assert_eq!(normalize(source).unwrap(), source);
+        }
+    }
+    #[test]
+    fn expression_function_postfix_matches_keep_arms_and_function_boundaries() {
+        for source in [
+            "Choose(x<u64>) => <i64> := x?\n  | 0u64 => -1<i64>\n  | * => 1<i64>.\nr := Choose(0u64)\nio/write(text/format(\"{}\", r))\n",
+            "Choose(x<u64>) => <i64> :=\n  result := x?\n    | 0u64 => -1<i64>\n    | * => 1<i64>.\n  result.\nr := Choose(0u64)\nio/write(text/format(\"{}\", r))\n",
+        ] {
+            let normalized = normalize(source).unwrap();
+            assert!(!normalized.contains("?;"), "{normalized}");
+            crate::native_sequence::control::compile(&normalized, &[])
+                .unwrap_or_else(|error| panic!("{normalized}\n{error}"));
+            assert_eq!(normalize(&normalized).unwrap(), normalized);
+        }
     }
     #[test]
     fn arrow_blocks_keep_local_definition_order_and_return_final_expression() {
@@ -1703,7 +1772,7 @@ mod tests {
         assert!(normalized.contains("effect-0 := x == 1.0; application-temp-effect-1 := x != 2.0; application-temp-effect-2 := x <= 3.0; application-temp-effect-3 := x >= 4.0;"));
         assert!(
             normalized
-                .contains("application-temp-result := x == 5.0 ? | true => true | * => false.")
+                .contains("application-temp-result := (x == 5.0 ? | true => true | * => false).")
         );
         assert!(normalized.contains("effect-4 := x ¬= 5.0; application-temp-effect-5 := x === 6.0; application-temp-effect-6 := x !== 7.0; application-temp-effect-7 := 0..=3;"));
         assert!(normalized.contains("\"state = {} +=\""));
@@ -1833,7 +1902,7 @@ mod tests {
     fn multiline_calls_and_continuations_keep_original_lines() {
         let source = "f(x<[f64]>) => <[f64]> :=\n  x\n  |> g(\n     _, h(_), \"→\")\n  |> k\nr := input()\n  |> f\n";
         let n = normalize(source).unwrap();
-        assert!(n.contains("f(x<[f64]>) = (application-temp-result<[f64]>)"));
+        assert!(n.contains("f(x<[f64]>) => (application-temp-result<[f64]>)"));
         assert!(n.contains("r := f(application-temp-2)"));
         assert_eq!(n.lines().count(), source.lines().count());
     }

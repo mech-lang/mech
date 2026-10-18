@@ -1,8 +1,8 @@
 use core::any::Any;
 
 use crate::{
-    BoundCall, ImplementationMemoryClass, ResolvedOperationContract, SchemaId, SchemaKey,
-    SchemaTable, ShapeInstance, Value,
+    BoundCall, ImplementationMemoryClass, MemoryBudgetDimension, ResolvedOperationContract,
+    SchemaId, SchemaKey, SchemaTable, ShapeInstance, Value,
 };
 
 #[cfg(feature = "no_std")]
@@ -136,6 +136,14 @@ pub enum ResidentKernelBindError {
     InvalidParameters,
 }
 
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum ResidentResourcePhase {
+    Planning,
+    Admission,
+    Execution,
+    Publication,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResidentKernelError {
     InvalidInput,
@@ -150,6 +158,12 @@ pub enum ResidentKernelError {
     IndexOutOfRange {
         index: u64,
         upper_bound: u64,
+    },
+    ResourceLimit {
+        phase: ResidentResourcePhase,
+        dimension: MemoryBudgetDimension,
+        required: u64,
+        limit: u64,
     },
     IncompleteOutput,
 }
@@ -329,14 +343,33 @@ enum ResidentKernelDispatch {
     F64Output4(ResidentKernelF64OutputExecutor4),
 }
 
+/// Work-accounting contract declared by the selected bound implementation.
+///
+/// This is a trusted implementation contract, not a semantic identity or a
+/// native-lowering witness. `RuntimeMetered` means the executor admits its
+/// data-dependent compute, comparison and materialization demand through the
+/// resident budget before performing that work or publishing output. A
+/// caller may therefore account only for dispatch overhead around that call.
+/// It does not waive the call's memory plan or its input/output validation.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum ResidentKernelWorkAccounting {
+    #[default]
+    Unclassified,
+    RuntimeMetered,
+}
+
 #[derive(Clone)]
 pub struct BoundResidentKernel {
     dispatch: ResidentKernelDispatch,
     parameters: Box<[u64]>,
     snapshot_output: Option<ResidentSnapshotOutput>,
-    snapshot_schemas: Option<SchemaTable>,
+    snapshot_schemas: Option<Arc<SchemaTable>>,
     retained_state: Option<Arc<dyn Any + Send + Sync>>,
     bound_call: Option<BoundCall>,
+    work_accounting: ResidentKernelWorkAccounting,
+    // The defining implementation owns the concrete type. No erased getter
+    // exposes an attachment for copying onto an unrelated kernel.
+    lowering_witness: Option<Arc<dyn Any + Send + Sync>>,
 }
 
 #[derive(Clone, Debug)]
@@ -358,6 +391,8 @@ impl core::fmt::Debug for BoundResidentKernel {
             .field("snapshot_schemas", &self.snapshot_schemas.is_some())
             .field("retained_state", &self.retained_state.is_some())
             .field("bound_call", &self.bound_call)
+            .field("work_accounting", &self.work_accounting)
+            .field("lowering_witness", &self.lowering_witness.is_some())
             .finish()
     }
 }
@@ -371,6 +406,8 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -382,6 +419,8 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -393,6 +432,8 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -404,6 +445,8 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -415,6 +458,8 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -429,6 +474,8 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -443,6 +490,8 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -457,6 +506,8 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -471,16 +522,59 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
+    }
+
+    /// Declares the finished implementation's accounting contract. Call this
+    /// after constructing all execution metadata. Replacing retained state,
+    /// schemas, output metadata or a bound call clears the declaration, so a
+    /// delegated kernel cannot accidentally retain it after semantic mutation.
+    /// Cloning an unchanged bound kernel preserves the declaration.
+    pub fn with_work_accounting(mut self, accounting: ResidentKernelWorkAccounting) -> Self {
+        self.lowering_witness = None;
+        self.work_accounting = accounting;
+        self
+    }
+
+    /// Attaches implementation-owned lowering evidence after all execution
+    /// metadata is finished. Only the defining implementation can recognize a
+    /// private concrete witness type. This generic storage grants no semantic
+    /// authority by itself. All semantic and cost builders invalidate it.
+    pub fn with_lowering_witness<T>(mut self, witness: Arc<T>) -> Self
+    where
+        T: Any + Send + Sync,
+    {
+        self.lowering_witness = Some(witness);
+        self
+    }
+
+    /// Borrows only a caller-known concrete attachment type. The implicit
+    /// Sized bound and absence of an erased getter keep private witness types
+    /// inaccessible to unrelated implementations.
+    pub fn lowering_witness<T>(&self) -> Option<&T>
+    where
+        T: Any + Send + Sync,
+    {
+        self.lowering_witness.as_deref()?.downcast_ref()
+    }
+
+    pub const fn work_accounting(&self) -> ResidentKernelWorkAccounting {
+        self.work_accounting
     }
 
     pub fn with_snapshot_output(mut self, output: ResidentSnapshotOutput) -> Self {
         self.snapshot_output = Some(output);
+        self.lowering_witness = None;
+        self.work_accounting = ResidentKernelWorkAccounting::Unclassified;
         self
     }
 
     pub fn with_bound_call(mut self, bound_call: BoundCall) -> Self {
         self.bound_call = Some(bound_call);
+        self.lowering_witness = None;
+        self.work_accounting = ResidentKernelWorkAccounting::Unclassified;
         self
     }
 
@@ -493,11 +587,19 @@ impl BoundResidentKernel {
     }
 
     pub fn with_snapshot_schemas(mut self, schemas: SchemaTable) -> Self {
-        self.snapshot_schemas = Some(schemas);
+        self.snapshot_schemas = Some(Arc::new(schemas));
+        self.lowering_witness = None;
+        self.work_accounting = ResidentKernelWorkAccounting::Unclassified;
         self
     }
 
     pub fn snapshot_schemas(&self) -> Option<&SchemaTable> {
+        self.snapshot_schemas.as_deref()
+    }
+
+    /// Shares the immutable bound schema arena with produced snapshots. This
+    /// avoids a per-result clone of unrelated artifact schema metadata.
+    pub fn shared_snapshot_schemas(&self) -> Option<&Arc<SchemaTable>> {
         self.snapshot_schemas.as_ref()
     }
 
@@ -510,6 +612,8 @@ impl BoundResidentKernel {
         T: Any + Send + Sync,
     {
         self.retained_state = Some(state);
+        self.lowering_witness = None;
+        self.work_accounting = ResidentKernelWorkAccounting::Unclassified;
         self
     }
 

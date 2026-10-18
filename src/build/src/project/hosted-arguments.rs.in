@@ -1,0 +1,45 @@
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct GeneratedArguments {
+    once: bool,
+    print_result: bool,
+    runtime_info: bool,
+    max_live_turns: Option<usize>,
+    // Payload only: index zero becomes the CLI provider's one-based args/1.
+    program_arguments: Vec<std::ffi::OsString>,
+}
+
+fn parse_arguments(
+    arguments: impl IntoIterator<Item = std::ffi::OsString>,
+) -> Result<GeneratedArguments, ()> {
+    let mut parsed = GeneratedArguments {
+        once: false,
+        print_result: false,
+        runtime_info: false,
+        max_live_turns: None,
+        program_arguments: Vec::new(),
+    };
+    let mut arguments = arguments.into_iter();
+    while let Some(argument) = arguments.next() {
+        if argument == std::ffi::OsStr::new("--once") {
+            parsed.once = true;
+        } else if argument == std::ffi::OsStr::new("--print-result") {
+            parsed.print_result = true;
+        } else if argument == std::ffi::OsStr::new("--runtime-info") {
+            parsed.runtime_info = true;
+        } else if argument == std::ffi::OsStr::new("--max-live-turns") {
+            let value = arguments.next().ok_or(())?;
+            let value = value.to_str().ok_or(())?.parse::<usize>().map_err(|_| ())?;
+            if value == 0 {
+                return Err(());
+            }
+            parsed.max_live_turns = Some(value);
+        } else {
+            if argument != std::ffi::OsStr::new("--") {
+                parsed.program_arguments.push(argument);
+            }
+            parsed.program_arguments.extend(arguments);
+            break;
+        }
+    }
+    Ok(parsed)
+}

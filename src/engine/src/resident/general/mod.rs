@@ -3,10 +3,13 @@
 mod closed_comprehension;
 mod comprehension;
 mod execution;
+mod iteration;
 pub use comprehension::{
     ActivatedCollectionStep, ActivatedComprehensionNode, ActivatedPatternBinding,
 };
 mod live;
+#[cfg(feature = "native-artifact")]
+pub(crate) mod native_lowering;
 
 pub use execution::*;
 
@@ -41,6 +44,7 @@ use crate::memory_planner::{
     attach_resident_call_memory_template, finalize_resident_current_footprints,
     plan_program_memory_template, plan_resident_arenas, plan_resident_effect_payload,
     resident_arena_id, resident_payload_arena_id, resident_storage_descriptor, schedule_points,
+    set_resident_metadata_demand,
 };
 use crate::memory_runtime::ManagedProgramMemory;
 use crate::{
@@ -168,6 +172,15 @@ pub struct ActivatedControlStep {
     pub excluded_locals: Box<[u32]>,
 }
 
+// This identity comes from the validated artifact's yielded local, before
+// arena placement erases logical slots. In particular, distinct empty dense
+// values may have identical zero-length physical regions.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ControlYieldIdentity {
+    slot: CellSlotId,
+    storage: ResidentStorageClass,
+}
+
 #[derive(Clone, Debug)]
 pub struct ActivatedControlBlock {
     pub steps: std::sync::Arc<[ActivatedControlStep]>,
@@ -176,6 +189,7 @@ pub struct ActivatedControlBlock {
     pub locals: std::sync::Arc<[ResidentRegion]>,
     pub yield_value: ResidentReadLocation,
     pub yield_layout: ResidentPortLayout,
+    yield_identity: Option<ControlYieldIdentity>,
 }
 
 #[derive(Clone, Debug)]
@@ -218,11 +232,35 @@ pub struct ActivatedMatchNode {
     pub scrutinee: ResidentReadLocation,
     pub scrutinee_schema: SchemaId,
     pub scrutinee_shape_values: Box<[u64]>,
+    structural_source: Option<execution::comprehension_execution::PlanPatternSource>,
     pub write: ResidentWriteLocation,
     pub arms: Box<[ActivatedMatchArm]>,
     pub locals: Box<[ResidentRegion]>,
     pub continuation: bool,
     pub capture_sources: Box<[ResidentReadLocation]>,
+}
+
+#[derive(Clone, Debug)]
+pub enum ActivatedIterationCount {
+    Literal(u64),
+    Elements {
+        read: ResidentReadLocation,
+        layout: ResidentPortLayout,
+    },
+}
+
+#[derive(Clone, Debug)]
+pub struct ActivatedIterationNode {
+    pub artifact_node: NodeId,
+    pub budget_node: NodeId,
+    pub carrier_memory_node: NodeId,
+    pub count: ActivatedIterationCount,
+    pub seed: ResidentReadLocation,
+    pub seed_layout: ResidentPortLayout,
+    pub write: ResidentWriteLocation,
+    pub carrier: ResidentWriteLocation,
+    pub body: Option<ActivatedControlBlock>,
+    pub locals: Box<[ResidentRegion]>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -249,6 +287,7 @@ pub struct ActivatedPublication {
 
 #[derive(Clone, Debug)]
 pub enum ActivatedTurnStep {
+    Iteration(std::sync::Arc<ActivatedIterationNode>),
     Match(ActivatedMatchNode),
     Recur(ActivatedRecursiveCall),
     Suspend(ActivatedSuspension),
@@ -294,6 +333,7 @@ impl ActivatedTurnStep {
         match self {
             Self::Kernel(node) => node.artifact_node,
             Self::Match(node) => node.artifact_node,
+            Self::Iteration(node) => node.artifact_node,
             Self::Recur(node) => node.artifact_node,
             Self::Suspend(node) => node.artifact_node,
             Self::Publish(node) => node.artifact_node,
@@ -408,6 +448,7 @@ fn read_location_depends_on_match(
             ActivatedTurnStep::Match(node) => Some(node.write),
             ActivatedTurnStep::Recur(node) => Some(node.write),
             ActivatedTurnStep::Comprehension(node) => Some(node.write),
+            ActivatedTurnStep::Iteration(node) => Some(node.write),
             ActivatedTurnStep::External(_)
             | ActivatedTurnStep::Suspend(_)
             | ActivatedTurnStep::Publish(_) => None,
@@ -1383,6 +1424,9 @@ impl TurnWorkspace {
 #[derive(Clone, Debug, Default)]
 pub struct ActivationFacts {
     pub slot_shapes: BTreeMap<CellSlotId, ShapeInstance>,
+    /// Initial validated geometry for turn-varying inputs. These seeds do not
+    /// prove an invariant resident layout; declared lifetimes govern updates.
+    pub slot_shape_seeds: BTreeMap<CellSlotId, ShapeInstance>,
     // Derived preparation facts, not caller-supplied geometry or wire data.
     // A known shape does not change the resident implementation's layout.
     resident_snapshot_slots: BTreeSet<CellSlotId>,
@@ -1575,6 +1619,12 @@ impl ReactiveInstance {
         !self.ready_continuations.is_empty()
     }
 
+    /// Published continuation frames are not transferable between plans.
+    /// A compatible replacement must wait until these computations finish.
+    pub fn has_suspended_continuation(&self) -> bool {
+        self.continuations.iter().any(Option::is_some)
+    }
+
     pub fn ready_continuation_count(&self) -> usize {
         self.ready_continuations.len()
     }
@@ -1677,6 +1727,9 @@ impl ReactiveInstance {
         if self.candidate_active || source.candidate_active {
             return Err(ResidentActivationError::ActiveCandidate);
         }
+        if self.has_suspended_continuation() || source.has_suspended_continuation() {
+            return Err(ResidentActivationError::SuspendedContinuationMigration);
+        }
 
         let mut targets = BTreeSet::<CellSlotId>::new();
         let mut sources = BTreeSet::<CellSlotId>::new();
@@ -1763,6 +1816,9 @@ impl ReactiveInstance {
             && activation_facts_fingerprint(facts) == self.plan.activation_facts_fingerprint
         {
             return Ok(());
+        }
+        if self.has_suspended_continuation() {
+            return Err(ResidentActivationError::SuspendedContinuationMigration);
         }
         let next_plan = self
             .plan
@@ -1951,6 +2007,7 @@ pub enum ResidentActivationError {
         slot: CellSlotId,
     },
     InvalidStateMigration,
+    SuspendedContinuationMigration,
     PlanGenerationExhausted,
     LayoutGenerationExhausted,
 }
@@ -2173,6 +2230,21 @@ fn resident_concrete_execution_cases(
         })
         .collect::<Result<Vec<_>, _>>()?;
     for node in artifact.nodes() {
+        if let crate::ExecutableNodeBody::Iteration(control) = &node.body {
+            let sources = node_inputs(artifact, node.node)?
+                .into_iter()
+                .map(Some)
+                .collect::<Vec<_>>();
+            append_iteration_execution_cases(
+                artifact,
+                node.node,
+                control,
+                &sources,
+                static_selectors,
+                &mut cases,
+            )?;
+            continue;
+        }
         if let crate::ExecutableNodeBody::Comprehension(control) = &node.body {
             let sources = node_inputs(artifact, node.node)?
                 .into_iter()
@@ -2266,6 +2338,16 @@ fn append_comprehension_execution_cases(
                 static_selectors,
                 cases,
             )?,
+            crate::ControlOperationBody::Iteration(nested) => {
+                append_iteration_execution_cases(
+                    artifact,
+                    owner,
+                    nested,
+                    &inputs,
+                    static_selectors,
+                    cases,
+                )?;
+            }
             crate::ControlOperationBody::Comprehension(nested) => {
                 append_comprehension_execution_cases(
                     artifact,
@@ -2279,6 +2361,97 @@ fn append_comprehension_execution_cases(
             crate::ControlOperationBody::Recur(_)
             | crate::ControlOperationBody::Suspend
             | crate::ControlOperationBody::Publish => {}
+        }
+    }
+    Ok(())
+}
+
+fn append_iteration_execution_cases(
+    artifact: &ProgramArtifact,
+    owner: NodeId,
+    control: &crate::IterationDeclaration,
+    sources: &[Option<ArtifactSource>],
+    static_selectors: &mut ArtifactStaticSelectorResolver,
+    cases: &mut Vec<ConcreteExecutionCase>,
+) -> Result<(), ResidentActivationError> {
+    for operation in &control.body.operations {
+        let inputs = operation
+            .inputs
+            .iter()
+            .map(|value| match *value {
+                crate::ControlValue::Constant(id) => Some(ArtifactSource::Constant(id)),
+                crate::ControlValue::Parameter { ordinal, .. } => {
+                    match control.body.parameters[ordinal as usize].source {
+                        crate::ControlParameterSource::IterationCarrier => None,
+                        crate::ControlParameterSource::Capture(index) => {
+                            sources[control.captures[index as usize].input as usize]
+                        }
+                        crate::ControlParameterSource::Scrutinee
+                        | crate::ControlParameterSource::PatternBinding(_) => None,
+                    }
+                }
+                crate::ControlValue::Local { .. } => None,
+            })
+            .collect::<Vec<_>>();
+        match &operation.body {
+            crate::ControlOperationBody::Iteration(nested) => append_iteration_execution_cases(
+                artifact,
+                owner,
+                nested,
+                &inputs,
+                static_selectors,
+                cases,
+            )?,
+            crate::ControlOperationBody::Match(nested) => append_match_execution_cases(
+                artifact,
+                owner,
+                nested,
+                &inputs,
+                static_selectors,
+                cases,
+            )?,
+            crate::ControlOperationBody::Comprehension(nested) => {
+                append_comprehension_execution_cases(
+                    artifact,
+                    owner,
+                    nested,
+                    &inputs,
+                    static_selectors,
+                    cases,
+                )?
+            }
+            crate::ControlOperationBody::Operation {
+                operation: reference,
+                contract,
+            } => {
+                let Some(mech_core::ResolvedOperationContract::Declared(contract)) =
+                    artifact.contracts().get(*contract)
+                else {
+                    return Err(ResidentActivationError::LegacyOpaque { node: owner });
+                };
+                let selectors = inputs
+                    .into_iter()
+                    .map(|source| {
+                        source
+                            .map(|source| static_selectors.resolve(artifact, source))
+                            .transpose()
+                            .map(Option::flatten)
+                    })
+                    .collect::<Result<Box<[_]>, _>>()?;
+                cases.push(ConcreteExecutionCase {
+                    node: owner,
+                    operation: reference.clone(),
+                    input_schemas: contract.inputs.iter().map(|port| port.schema).collect(),
+                    input_resolved_selectors: selectors,
+                    output_schema: operation.schema,
+                    targets: ExecutionTargetSet::RESIDENT_CPU,
+                });
+            }
+            crate::ControlOperationBody::Recur(_)
+            | crate::ControlOperationBody::Suspend
+            | crate::ControlOperationBody::Publish => {
+                return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
+            }
         }
     }
     Ok(())
@@ -2307,6 +2480,7 @@ fn append_match_execution_cases(
                     crate::ControlValue::Parameter { ordinal, .. } => {
                         let input = match block.parameters[ordinal as usize].source {
                             crate::ControlParameterSource::Scrutinee => control.scrutinee,
+                            crate::ControlParameterSource::IterationCarrier => return None,
                             crate::ControlParameterSource::PatternBinding(local) => {
                                 // A root binding uses call-local storage at runtime but
                                 // still has the scrutinee's static capability provenance.
@@ -2342,6 +2516,16 @@ fn append_match_execution_cases(
                     static_selectors,
                     cases,
                 )?,
+                crate::ControlOperationBody::Iteration(nested) => {
+                    append_iteration_execution_cases(
+                        artifact,
+                        owner,
+                        nested,
+                        &inputs,
+                        static_selectors,
+                        cases,
+                    )?;
+                }
                 crate::ControlOperationBody::Comprehension(nested) => {
                     append_comprehension_execution_cases(
                         artifact,
@@ -2880,6 +3064,13 @@ fn preflight_state_initializers(
 
 fn activation_facts_fingerprint(facts: &ActivationFacts) -> [u8; 32] {
     let mut hash = Sha256::new();
+    hash.update(b"resident-slot-shape-seeds-v1");
+    hash.update((facts.slot_shape_seeds.len() as u64).to_le_bytes());
+    for (slot, shape) in &facts.slot_shape_seeds {
+        hash.update(slot.get().to_le_bytes());
+        hash.update(shape.canonical_bytes());
+    }
+    hash.update(b"resident-fixed-slot-shapes-v1");
     hash.update((facts.slot_shapes.len() as u64).to_le_bytes());
     for (slot, shape) in &facts.slot_shapes {
         hash.update(slot.get().to_le_bytes());
@@ -4737,7 +4928,7 @@ fn closed_access_preparation_meter(
     analysis: &ClosedActivationAnalysisContext,
 ) -> Result<Option<super::budget::ResidentBudgetMeter>, ResidentActivationError> {
     let mut meter = analysis.construction.preparation_meter();
-    if super::budget::measure_canonical_value_footprint(
+    if super::budget::measure_borrowed_canonical_value_footprint(
         &mut meter,
         &source.value,
         artifact.schemas(),
@@ -4748,7 +4939,7 @@ fn closed_access_preparation_meter(
     }
     for selector in selectors {
         if closed_operand_resident_kind(artifact, selector, facts)? == ResidentValueKind::Snapshot
-            && super::budget::measure_canonical_value_footprint(
+            && super::budget::measure_borrowed_canonical_value_footprint(
                 &mut meter,
                 &selector.value,
                 artifact.schemas(),
@@ -4772,30 +4963,37 @@ fn closed_copy_preparation(
     let mut meter = analysis.construction.preparation_meter();
     let mut finalization = 0_u64;
     for operand in operands {
-        if super::budget::measure_canonical_value_footprint(
+        let Ok((_, work)) = super::budget::prepare_snapshot_copy_input(
             &mut meter,
             &operand.value,
             artifact.schemas(),
-        )
-        .is_err()
-        {
+            closed_operand_resident_kind(artifact, operand, facts)? == ResidentValueKind::Snapshot,
+        ) else {
             return Ok(None);
-        }
-        if closed_operand_resident_kind(artifact, operand, facts)? == ResidentValueKind::Snapshot {
-            let Ok(work) = super::budget::preflight_canonical_data_finalization(
-                &mut meter,
-                &operand.schema,
-                operand.value.data(),
-            ) else {
-                return Ok(None);
-            };
-            let Some(work) = finalization.checked_add(work) else {
-                return Ok(None);
-            };
-            finalization = work;
-        }
+        };
+        let Some(total) = finalization.checked_add(work) else {
+            return Ok(None);
+        };
+        finalization = total;
     }
-    Ok(Some((meter.estimate().comparison_work(), finalization)))
+    let measured = meter.estimate();
+    let Some(non_comparison_work) = measured
+        .compute_work()
+        .checked_sub(measured.comparison_work())
+    else {
+        return Ok(None);
+    };
+    // The caller already admits the returned comparisons as both compute and
+    // comparison work. Preserve the independently charged metadata/encoding
+    // preparation as well, without counting those comparisons twice.
+    if non_comparison_work > 0
+        && !analysis
+            .construction
+            .charge_compute_chunk(0, non_comparison_work, 1)
+    {
+        return Ok(None);
+    }
+    Ok(Some((measured.comparison_work(), finalization)))
 }
 
 fn closed_publication_comparison_work_measured(
@@ -5172,6 +5370,7 @@ fn constant_comparison_operand_at_depth<'a>(
 enum ClosedProducerDisposition {
     Value,
     ExactMask,
+    DeferredPureValue,
     DeferredStatefulMutation,
 }
 
@@ -5221,6 +5420,23 @@ fn closed_producer_disposition(
             ))
     {
         return Some(ClosedProducerDisposition::ExactMask);
+    }
+    // These maintained pure operations have resident implementations, but no
+    // bounded closed-value analysis owner yet. Record that limit explicitly;
+    // recognizing a public spelling does not authorize an unimplemented fold.
+    if operation.module_path.as_ref() == ["map"]
+        && matches!(
+            operation.operation_name.as_str(),
+            "histogram" | "keys" | "values"
+        )
+        || operation.module_path.as_ref() == ["number"]
+            && matches!(operation.operation_name.as_str(), "format" | "parse-u64")
+        || operation.module_path.as_ref() == ["sequence"]
+            && matches!(operation.operation_name.as_str(), "length" | "sort-indices")
+        || operation.module_path.as_ref() == ["text"]
+            && matches!(operation.operation_name.as_str(), "join" | "lines")
+    {
+        return Some(ClosedProducerDisposition::DeferredPureValue);
     }
     if operation.module_path.as_ref() == ["set"] {
         return match operation.operation_name.as_str() {
@@ -11891,6 +12107,7 @@ fn complete_activation_shape_facts_with_analysis(
 }
 
 struct LayoutBuild {
+    control_carriers: BTreeMap<(NodeId, u32), (CellSlotId, NodeId)>,
     control_locals: BTreeMap<(NodeId, u32, u32), (CellSlotId, NodeId)>,
     match_bindings: BTreeMap<(NodeId, u32, u32), (CellSlotId, NodeId)>,
     slots: Box<[ResolvedSlot]>,
@@ -12040,6 +12257,7 @@ fn build_layout(
             len,
         ));
     }
+    let mut control_carriers = BTreeMap::new();
     let mut control_locals = BTreeMap::new();
     let mut match_bindings = BTreeMap::new();
     let mut next_local = 0u32;
@@ -12053,6 +12271,9 @@ fn build_layout(
             }
             crate::ExecutableNodeBody::Comprehension(control) => {
                 comprehension::all_local_definitions(control)
+            }
+            crate::ExecutableNodeBody::Iteration(control) => {
+                iteration::all_local_definitions(control)
             }
             _ => continue,
         };
@@ -12130,7 +12351,9 @@ fn build_layout(
                 lifetime: mech_core::MemoryLifetime::Turn { first, last },
                 producer: Some(node.node),
             });
-            if pattern_binding {
+            if local == iteration::CARRIER_LOCAL {
+                control_carriers.insert((node.node, block), (slot, physical_node));
+            } else if pattern_binding {
                 match_bindings.insert((node.node, block, local), (slot, physical_node));
             } else {
                 control_locals.insert((node.node, block, local), (slot, physical_node));
@@ -12148,7 +12371,9 @@ fn build_layout(
                 },
                 schema.key(),
                 shape,
-                true,
+                // A runtime-shaped local carries its actual geometry in the
+                // snapshot; its lower-bound shape is only an arena seed.
+                has_fixed_shape || !(turn_shaped_binding || turn_shaped_schema),
                 ResidentStorageClass::Scratch,
                 kind,
                 resident_shape,
@@ -12215,6 +12440,7 @@ fn build_layout(
         )
         .collect::<Result<Vec<_>, ResidentActivationError>>()?;
     Ok(LayoutBuild {
+        control_carriers,
         control_locals,
         match_bindings,
         slots: slots.into_boxed_slice(),
@@ -12282,7 +12508,11 @@ fn slot_shape(
             ArtifactSource::Slot(source) => slot_shape(artifact, source, facts),
         };
     }
-    if let Some(shape) = facts.slot_shapes.get(&slot) {
+    if let Some(shape) = facts
+        .slot_shapes
+        .get(&slot)
+        .or_else(|| facts.slot_shape_seeds.get(&slot))
+    {
         let schema = artifact
             .schemas()
             .entry(declaration.schema)
@@ -12312,16 +12542,20 @@ fn slot_shape(
             .instantiate_shape(Box::new([]))
             .map_err(|_| ResidentActivationError::UnresolvedShape { slot });
     }
-    // Snapshot-backed aggregate outputs carry their canonical shape inside
-    // the published value. Their arena is one scalar snapshot cell, so a
-    // durable artifact may start turn-varying parameters at their declared
-    // lower bounds without serializing compilation-instance shape hints.
+    // Snapshot-backed aggregates carry their current canonical shape inside
+    // the value. An input whose parameters are all turn-lived can also use a
+    // scalar snapshot lane seeded at the declared lower bounds. This does not
+    // invent an activation witness for an activation-lived parameter.
     let requires_dense_matrix_shape = matches!(
         schema.body(),
         SchemaBody::Matrix { element, dimensions }
             if dimensions.len() == 2 && dense_resident_kind(element).is_some()
     );
     if !requires_dense_matrix_shape
+        || schema
+            .dimension_parameters()
+            .iter()
+            .all(|parameter| parameter.lifetime() == DimensionLifetime::Turn)
         || comprehension::owns_output(artifact, slot)
         || matches!(declaration.producer, ProducerReference::NodeOutput { .. })
     {
@@ -12360,6 +12594,12 @@ fn slot_has_activation_fixed_shape(
             false
         }
         ProducerReference::NodeOutput { .. } => artifact.slot_shape_hint(slot).is_some(),
+        // A published constant keeps its immutable concrete geometry, even
+        // when its schema originated from a turn-shaped resource input.
+        ProducerReference::Output {
+            source: ArtifactSource::Constant(_),
+            ..
+        } => true,
         ProducerReference::Output {
             source: ArtifactSource::Slot(source),
             ..
@@ -12447,7 +12687,12 @@ fn schema_layout(
     if needs_dense_shape
         && !schema_entry.schema().dimension_parameters().is_empty()
         && !has_activation_shape_fact
-        && produced_without_shape_fact
+        && (produced_without_shape_fact
+            || schema_entry
+                .schema()
+                .dimension_parameters()
+                .iter()
+                .all(|parameter| parameter.lifetime() == DimensionLifetime::Turn))
     {
         return Ok((ResidentValueKind::Snapshot, ResidentShape::SCALAR));
     }
@@ -12498,7 +12743,9 @@ fn slot_retains_snapshot_layout(
     // shape. Looking only at the alias's schema can turn a snapshot value into
     // a dense read after its inferred geometry becomes known.
     for _ in 0..artifact.slots().len() {
-        if facts.resident_snapshot_slots.contains(&slot) {
+        if facts.resident_snapshot_slots.contains(&slot)
+            || facts.slot_shape_seeds.contains_key(&slot)
+        {
             return true;
         }
         match artifact.slots()[slot.get() as usize].producer {
@@ -12557,6 +12804,28 @@ fn bind_resident_operation(
     contract_id: mech_core::OperationContractId,
     input_layouts: &[ResidentPortLayout],
     output_layout: ResidentPortLayout,
+) -> Result<(BoundResidentKernel, mech_core::CallMemoryPlan), ResidentActivationError> {
+    bind_operation_for_target(
+        artifact,
+        catalog,
+        node_id,
+        operation,
+        contract_id,
+        input_layouts,
+        output_layout,
+        ExecutionTarget::ResidentCpu,
+    )
+}
+
+fn bind_operation_for_target(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    node_id: NodeId,
+    operation: &crate::OperationReference,
+    contract_id: mech_core::OperationContractId,
+    input_layouts: &[ResidentPortLayout],
+    output_layout: ResidentPortLayout,
+    target: ExecutionTarget,
 ) -> Result<(BoundResidentKernel, mech_core::CallMemoryPlan), ResidentActivationError> {
     let canonical_operation = operation.canonical_name();
     let mech_core::ResolvedOperationContract::Declared(contract) = artifact
@@ -12639,11 +12908,12 @@ fn bind_resident_operation(
         error: ResidentKernelBindError::InvalidParameters,
     })?;
     let resident_context = ResidentBuildContext {
-        bound_call: BoundCall::artifact_operation(
+        bound_call: BoundCall::artifact_operation_for_target(
             semantic_operation,
             input_descriptors,
             vec![output_descriptor].into_boxed_slice(),
             resident_operation,
+            target,
         )
         .map_err(|_| ResidentActivationError::KernelBind {
             node: node_id,
@@ -12654,13 +12924,27 @@ fn bind_resident_operation(
         .map_or(ImplementationMemoryClass::NoAdditionalScratch, |entry| {
             entry.implementation_memory
         });
-    let memory_plan = resident_call_memory_plan(
-        &resident_context.bound_call,
-        &input_layouts,
-        &output_layout,
-        output_contract,
-        implementation_memory,
-    )?;
+    let memory_plan = if target == ExecutionTarget::ResidentCpu {
+        resident_call_memory_plan(
+            &resident_context.bound_call,
+            input_layouts,
+            &output_layout,
+            output_contract,
+            implementation_memory,
+        )?
+    } else {
+        // Retain the selected implementation's conservative scratch policy
+        // while deriving actual native scalar storage. This is metadata-only;
+        // a future native executor must qualify its own complete cost policy.
+        operation_call_memory_plan(
+            &resident_context.bound_call,
+            input_layouts,
+            &output_layout,
+            output_contract,
+            implementation_memory,
+            target,
+        )?
+    };
     let bind_request = ResidentKernelBindRequest {
         contract: artifact.contracts().get(contract_id).unwrap(),
         schemas: artifact.schemas(),
@@ -12687,8 +12971,12 @@ fn bind_resident_operation(
     .map_err(|error| ResidentActivationError::KernelBind {
         node: node_id,
         error,
-    })?
-    .with_bound_call(resident_context.bound_call);
+    })?;
+    // Preserve the selected binder's cost contract for this exact request.
+    // The private semantic certifier independently validates its candidate
+    // before sealing the engine's final BoundCall; custom kernels stay unsealed.
+    let kernel =
+        super::native_semantics::bind_call(kernel, &bind_request, resident_context.bound_call);
     Ok((kernel, memory_plan))
 }
 
@@ -12780,6 +13068,28 @@ fn build_plan(
                 });
             }
         }
+        if let crate::ExecutableNodeBody::Iteration(control) = &node.body {
+            let sources = node_inputs(artifact, node.node)?;
+            let input_reads = sources
+                .iter()
+                .copied()
+                .map(|source| resolve_read(&layout, source))
+                .collect::<Result<Vec<_>, _>>()?;
+            let output_slot = node_output_slot(artifact, node.node)?;
+            steps.push(ActivatedTurnStep::Iteration(std::sync::Arc::new(
+                iteration::prepare(
+                    artifact,
+                    node.node,
+                    node.node,
+                    control,
+                    &sources,
+                    &input_reads,
+                    output_slot,
+                    &layout,
+                )?,
+            )));
+            continue;
+        }
         if let crate::ExecutableNodeBody::Comprehension(control) = &node.body {
             let output_slot = node_output_slot(artifact, node.node)?;
             let output = &layout.slots[output_slot.get() as usize];
@@ -12802,6 +13112,7 @@ fn build_plan(
                     steps: Box::new([]),
                     locals: Box::new([]),
                     schema_reads: Box::new([]),
+                    invariant_text_sources: Box::new([]),
                     yield_value: ResidentReadLocation::Scratch(output.region),
                     yield_schema: output.schema,
                 },
@@ -13004,6 +13315,40 @@ fn build_plan(
     }
     let mut control_calls = Vec::new();
     for node in artifact.nodes() {
+        if let crate::ExecutableNodeBody::Iteration(control) = &node.body {
+            let sources = node_inputs(artifact, node.node)?;
+            let input_reads = sources
+                .iter()
+                .copied()
+                .map(|source| resolve_read(&layout, source))
+                .collect::<Result<Vec<_>, _>>()?;
+            let output_slot = node_output_slot(artifact, node.node)?;
+            let body = iteration::bind_body(
+                artifact,
+                catalog,
+                node.node,
+                node.node,
+                control,
+                &sources,
+                &input_reads,
+                output_slot,
+                &layout,
+                &mut steps,
+                &mut reads,
+                &mut control_calls,
+                &[],
+            )?;
+            let index = artifact_to_activated[node.node.get() as usize]
+                .unwrap()
+                .get() as usize;
+            let ActivatedTurnStep::Iteration(prepared) = &mut steps[index] else {
+                unreachable!()
+            };
+            std::sync::Arc::get_mut(prepared)
+                .expect("unpublished iteration plan")
+                .body = Some(body);
+            continue;
+        }
         if let crate::ExecutableNodeBody::Comprehension(control) = &node.body {
             let index = artifact_to_activated[node.node.get() as usize]
                 .unwrap()
@@ -13236,7 +13581,9 @@ fn build_plan(
             Some(mech_core::ResolvedOperationContract::Declared(contract))
                 if contract.interaction == ExternalInteraction::Pure
         ),
-        crate::ExecutableNodeBody::Match(_) | crate::ExecutableNodeBody::Comprehension(_) => true,
+        crate::ExecutableNodeBody::Match(_)
+        | crate::ExecutableNodeBody::Comprehension(_)
+        | crate::ExecutableNodeBody::Iteration(_) => true,
         crate::ExecutableNodeBody::Activation(_) | crate::ExecutableNodeBody::Fsm(_) => false,
     };
     // Pure nodes used only to compute an activation capture belong to that
@@ -13591,7 +13938,8 @@ fn build_plan(
                     | ActivatedTurnStep::Recur(_)
                     | ActivatedTurnStep::Suspend(_)
                     | ActivatedTurnStep::Publish(_)
-                    | ActivatedTurnStep::Comprehension(_) => {
+                    | ActivatedTurnStep::Comprehension(_)
+                    | ActivatedTurnStep::Iteration(_) => {
                         unreachable!("pure resident plan contains a non-kernel step")
                     }
                 })
@@ -13653,21 +14001,83 @@ fn build_plan(
             Some(control.artifact_node)
         }
         ActivatedTurnStep::Comprehension(_)
+        | ActivatedTurnStep::Iteration(_)
         | ActivatedTurnStep::Kernel(_)
         | ActivatedTurnStep::Recur(_)
         | ActivatedTurnStep::Suspend(_)
         | ActivatedTurnStep::Publish(_)
         | ActivatedTurnStep::External(_) => None,
     });
+    let mut structural_metadata = mech_core::ResourceDemand::default();
     let (schemas, structural_projections) = if let Some(node) = structural_match {
-        execution::structural_projection_schema_context(artifact.schemas())
-            .map_err(|_| ResidentActivationError::UnsupportedControlLayout { node })?
+        let (schemas, structural_projections) =
+            execution::structural_projection_schema_context(artifact.schemas())
+                .map_err(|_| ResidentActivationError::UnsupportedControlLayout { node })?;
+        structural_metadata =
+            execution::comprehension_execution::structural_projection_metadata_demand(
+                artifact.schemas(),
+                &schemas,
+                &structural_projections,
+            )
+            .ok_or(ResidentActivationError::ResidentMemoryPlanRejected {
+                error: MemoryPlanError::ArithmeticOverflow {
+                    field: "structural projection metadata",
+                },
+            })?;
+        (schemas, structural_projections)
     } else {
         (
             artifact.schemas().clone(),
             execution::StructuralProjectionTable::default(),
         )
     };
+    for step in &mut steps {
+        if let ActivatedTurnStep::Match(matched) = step {
+            matched.structural_source = execution::comprehension_execution::PlanPatternSource::new(
+                matched.scrutinee_schema,
+                &schemas,
+                &structural_projections,
+            );
+            if let Some(source) = &matched.structural_source {
+                let demand = source.retained_metadata_demand().ok_or(
+                    ResidentActivationError::ResidentMemoryPlanRejected {
+                        error: MemoryPlanError::ArithmeticOverflow {
+                            field: "structural source metadata",
+                        },
+                    },
+                )?;
+                structural_metadata =
+                    crate::memory_planner::checked_demand_add(structural_metadata, demand)
+                        .map_err(
+                            |error| ResidentActivationError::ResidentMemoryPlanRejected { error },
+                        )?;
+            }
+        }
+    }
+    if let Some(node) = structural_match {
+        set_resident_metadata_demand(
+            &mut layout.memory_plan,
+            mech_core::MemoryObjectOwner::NodeScratch {
+                node,
+                ordinal: u16::MAX,
+            },
+            structural_metadata,
+        )
+        .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+        ensure_resident_plan_admitted(&layout.memory_plan)?;
+    }
+    // Static binding/write proof only; no String bytes are read or indexed.
+    for index in 0..steps.len() {
+        if let ActivatedTurnStep::Comprehension(control) = &steps[index] {
+            let sources = super::text_index::qualify_sources(&steps, &reads, control);
+            let ActivatedTurnStep::Comprehension(control) = &mut steps[index] else {
+                unreachable!()
+            };
+            std::sync::Arc::get_mut(control)
+                .expect("unpublished collection plan")
+                .invariant_text_sources = sources;
+        }
+    }
     let plan = ActivatedPlan {
         program_revision: artifact.revision(),
         activation_facts_fingerprint,
@@ -13710,8 +14120,31 @@ fn resident_call_memory_plan(
     output_contract: &mech_core::ResolvedOutputPort,
     implementation_memory: ImplementationMemoryClass,
 ) -> Result<mech_core::CallMemoryPlan, ResidentActivationError> {
-    let target = TargetMemoryProfile::current_resident_cpu()
-        .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+    operation_call_memory_plan(
+        bound_call,
+        inputs,
+        output,
+        output_contract,
+        implementation_memory,
+        ExecutionTarget::ResidentCpu,
+    )
+}
+
+fn operation_call_memory_plan(
+    bound_call: &BoundCall,
+    inputs: &[ResidentPortLayout],
+    output: &ResidentPortLayout,
+    output_contract: &mech_core::ResolvedOutputPort,
+    implementation_memory: ImplementationMemoryClass,
+    execution_target: ExecutionTarget,
+) -> Result<mech_core::CallMemoryPlan, ResidentActivationError> {
+    let target = match execution_target {
+        ExecutionTarget::ResidentCpu => TargetMemoryProfile::current_resident_cpu(),
+        ExecutionTarget::Native => TargetMemoryProfile::current_native_host(),
+        _ => Err(MemoryPlanError::DescriptorMismatch),
+    }
+    .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+
     let lifetime = MemoryLifetime::Turn {
         first: MemoryPlanPoint::new(0),
         last: MemoryPlanPoint::new(1),
@@ -13719,18 +14152,20 @@ fn resident_call_memory_plan(
     let input_storage = inputs
         .iter()
         .zip(bound_call.inputs())
-        .map(|(layout, descriptor)| resident_storage_descriptor(descriptor, layout.kind, lifetime))
+        .map(|(layout, descriptor)| {
+            operation_storage_descriptor(descriptor, layout.kind, lifetime, &target)
+        })
         .collect::<Result<Vec<_>, _>>()
         .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
     let output_storage = vec![
-        resident_storage_descriptor(&bound_call.outputs()[0], output.kind, lifetime)
+        operation_storage_descriptor(&bound_call.outputs()[0], output.kind, lifetime, &target)
             .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?,
     ];
     let input_witnesses = inputs
         .iter()
-        .map(resident_port_memory_witness)
+        .map(|layout| operation_port_memory_witness(layout, execution_target))
         .collect::<Result<Vec<_>, _>>()?;
-    let output_witnesses = vec![resident_port_memory_witness(output)?];
+    let output_witnesses = vec![operation_port_memory_witness(output, execution_target)?];
     let regions = vec![match &output_contract.construction {
         OutputConstruction::ReadModifyWrite { regions, .. } => RegionAccessPlan::Deferred(*regions),
         _ => RegionAccessPlan::WholeValue,
@@ -13747,6 +14182,56 @@ fn resident_call_memory_plan(
         regions: &regions,
     })
     .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })
+}
+
+// Native scalar slots are planned as actual host scalar storage, not relabeled
+// resident canonical handles. Only the certified exact scalar schemas are
+// admitted; other backends/layouts need their own derivation.
+fn operation_storage_descriptor(
+    descriptor: &mech_core::ResolvedValueDescriptor,
+    resident_kind: ResidentValueKind,
+    lifetime: MemoryLifetime,
+    target: &TargetMemoryProfile,
+) -> Result<mech_core::PhysicalStorageDescriptor, MemoryPlanError> {
+    if target.kind == mech_core::MemoryTargetKind::ResidentCpu {
+        return resident_storage_descriptor(descriptor, resident_kind, lifetime);
+    }
+    if target.kind != mech_core::MemoryTargetKind::NativeHost
+        || !descriptor.shape().parameter_values().is_empty()
+        || !descriptor.schema().dimension_parameters().is_empty()
+    {
+        return Err(MemoryPlanError::UnsupportedStorageLayout);
+    }
+    let representation = match descriptor.schema().body() {
+        SchemaBody::Bool => mech_core::FunctionValueRepresentation::Bool,
+        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64) => {
+            mech_core::FunctionValueRepresentation::U64
+        }
+        SchemaBody::SignedInteger(mech_core::IntegerWidth::W64) => {
+            mech_core::FunctionValueRepresentation::I64
+        }
+        _ => return Err(MemoryPlanError::UnsupportedStorageLayout),
+    };
+    Ok(mech_core::physical_storage_descriptor(
+        representation,
+        target,
+        lifetime,
+    ))
+}
+
+fn operation_port_memory_witness(
+    layout: &ResidentPortLayout,
+    target: ExecutionTarget,
+) -> Result<MemoryFootprintWitness, ResidentActivationError> {
+    if target == ExecutionTarget::Native {
+        // The exact scalar schema has already been checked by the physical
+        // descriptor builder. No payload observation is needed for one lane.
+        return Ok(MemoryFootprintWitness::Known(CurrentMemoryFootprint {
+            logical_elements: 1,
+            ..CurrentMemoryFootprint::default()
+        }));
+    }
+    resident_port_memory_witness(layout)
 }
 
 fn resident_port_memory_witness(
@@ -15100,6 +15585,162 @@ mod shape_fact_tests {
         }
         assert!(accepted > 1);
         assert!(rejected, "reused child footprints must accumulate");
+    }
+
+    #[test]
+    fn constant_output_aliases_keep_concrete_turn_schema_layouts() {
+        for (element, data, kind) in [
+            (
+                SchemaBody::Bool,
+                ValueDataDraft::Bool(true),
+                ResidentValueKind::Bool,
+            ),
+            (
+                SchemaBody::Index,
+                ValueDataDraft::Index(2),
+                ResidentValueKind::Index,
+            ),
+            (
+                SchemaBody::FloatingPoint(FloatWidth::W64),
+                ValueDataDraft::F64(F64Bits::from_f64(42.0)),
+                ResidentValueKind::F64,
+            ),
+            (
+                SchemaBody::String,
+                ValueDataDraft::String("value".to_owned()),
+                ResidentValueKind::String,
+            ),
+        ] {
+            let mut schemas = SchemaTableBuilder::new();
+            let schema = schemas
+                .insert(
+                    SchemaDraft {
+                        dimension_parameters: (0..2)
+                            .map(|index| DimensionParameterDeclaration {
+                                id: DimensionParameterId::new(index),
+                                origin: DimensionParameterOrigin::Explicit,
+                                lifetime: DimensionLifetime::Turn,
+                                lower_bound: DimensionExpr::Constant(0),
+                                upper_bound: None,
+                            })
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                        body: SchemaBody::Matrix {
+                            element: Box::new(element),
+                            dimensions: (0..2)
+                                .map(|index| {
+                                    DimensionExpr::Parameter(DimensionParameterId::new(index))
+                                })
+                                .collect::<Vec<_>>()
+                                .into_boxed_slice(),
+                        },
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+            let built = schemas.finish().unwrap();
+            let schema = built.resolve(schema).unwrap();
+            let (schemas, _) = built.into_parts();
+            let value = ValueDraft {
+                schema,
+                shape_values: vec![2, 3].into_boxed_slice(),
+                data: ValueDataDraft::Matrix(vec![data; 6].into_boxed_slice()),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap();
+            let mut constants = ConstantStoreBuilder::new(&schemas);
+            let constant = constants.insert(value).unwrap();
+            let built = constants.finish().unwrap();
+            let constant = built.resolve(constant).unwrap();
+            let (constants, _) = built.into_parts();
+            let artifact = ProgramArtifactDraft {
+                schemas,
+                constants,
+                contracts: OperationContractTableBuilder::new()
+                    .finish()
+                    .unwrap()
+                    .into_parts()
+                    .0,
+                requirements: Default::default(),
+                inputs: Box::new([]),
+                slots: (0..2)
+                    .map(|index| SlotDeclaration {
+                        slot: CellSlotId::new(index),
+                        schema,
+                        role: SlotRole::Output,
+                        producer: ProducerReference::Output {
+                            source: if index == 0 {
+                                ArtifactSource::Constant(constant)
+                            } else {
+                                ArtifactSource::Slot(CellSlotId::new(0))
+                            },
+                            output: mech_core::OutputId::new(index),
+                        },
+                        initializer: (index == 0)
+                            .then_some(InitializerReference::Constant(constant)),
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                nodes: Box::new([]),
+                bindings: Box::new([]),
+                outputs: (0..2)
+                    .map(|index| crate::OutputDeclaration {
+                        output: mech_core::OutputId::new(index),
+                        name: format!("output-{index}"),
+                        interactive_binding: None,
+                        source: CellSlotId::new(index),
+                        schema,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                constraints: Box::new([]),
+                compute_regions: Box::new([]),
+            }
+            .finalize()
+            .unwrap();
+            let decoded = crate::decode_program_artifact_bytecode_v1(
+                &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            )
+            .unwrap();
+            let catalog = mech_core::FunctionCatalogBuilder::new().build().unwrap();
+            for artifact in [&artifact, &decoded] {
+                let mut instance = activate(
+                    mech_core::ReactiveInstanceId::new(0x434f, 0),
+                    artifact,
+                    &catalog,
+                    &ActivationFacts::default(),
+                )
+                .unwrap();
+                for slot in &instance.plan.slots {
+                    assert!(slot.activation_fixed_shape);
+                    assert_eq!(slot.region.kind, kind);
+                    assert_eq!(
+                        slot.region.shape,
+                        ResidentShape {
+                            rows: 2,
+                            columns: 3
+                        }
+                    );
+                }
+                for _ in 0..2 {
+                    instance.turn(&[]).unwrap();
+                    for output in 0..2 {
+                        assert!(
+                            instance
+                                .copied_output(output)
+                                .unwrap()
+                                .snapshot_eq(
+                                    artifact.schemas(),
+                                    artifact.constants().get(constant).unwrap(),
+                                    artifact.schemas(),
+                                )
+                                .unwrap()
+                        );
+                    }
+                }
+            }
+        }
     }
 
     fn closed_dense_add_artifact(count: usize, parameterized_output: bool) -> ProgramArtifact {
@@ -18008,6 +18649,104 @@ mod shape_fact_tests {
         .unwrap()
     }
 
+    // Preserve denial-before-materialization under the resource actually
+    // consumed. Payload size alone no longer predicts comparison exhaustion
+    // when finalization metadata/encoding is admitted as compute.
+    fn assert_closed_copy_work_boundaries(
+        artifact: &ProgramArtifact,
+        admitted: &ClosedActivationAnalysisContext,
+        expected: &Value,
+        label: &str,
+    ) {
+        let source = ArtifactSource::Slot(CellSlotId::new(0));
+        let encoded_payload =
+            u64::try_from(expected.canonical_payload_len(artifact.schemas()).unwrap()).unwrap();
+        assert!(
+            admitted.construction.compute_work.get() >= encoded_payload,
+            "{label}: actual copied/encoded payload must be funded independently of measured boundary"
+        );
+        for (resource, required, limit) in [
+            (
+                "compute",
+                admitted.construction.compute_work.get(),
+                mech_core::RESIDENT_MAX_COMPUTE_WORK,
+            ),
+            (
+                "comparison",
+                admitted.construction.comparison_work.get(),
+                mech_core::RESIDENT_MAX_COMPARISON_WORK,
+            ),
+        ] {
+            if required == 0 {
+                continue;
+            }
+            let configure = |remaining| {
+                let analysis = ClosedActivationAnalysisContext::default();
+                let consumed = limit.checked_sub(remaining).unwrap();
+                match resource {
+                    "compute" => analysis.construction.compute_work.set(consumed),
+                    "comparison" => analysis.construction.comparison_work.set(consumed),
+                    _ => unreachable!(),
+                }
+                analysis
+            };
+            let denied = configure(required - 1);
+            CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.set(0));
+            CLOSED_OPERAND_DRAFT_ENTRIES.with(|entries| entries.set(0));
+            assert!(
+                constant_comparison_operand(
+                    artifact,
+                    NodeId::new(0),
+                    source,
+                    &ActivationFacts::default(),
+                    &denied,
+                    false,
+                )
+                .unwrap()
+                .is_none(),
+                "{label}: {resource} must be finite"
+            );
+            assert_eq!(
+                CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get()),
+                0,
+                "{label}: publication draft before {resource} admission"
+            );
+            assert_eq!(
+                CLOSED_OPERAND_DRAFT_ENTRIES.with(|entries| entries.get()),
+                0,
+                "{label}: whole-source draft before {resource} admission"
+            );
+            assert!(
+                !denied.values.borrow().contains_key(&source),
+                "{label}: refused result entered usable cache"
+            );
+
+            let funded = configure(required);
+            let result = constant_comparison_operand(
+                artifact,
+                NodeId::new(0),
+                source,
+                &ActivationFacts::default(),
+                &funded,
+                false,
+            )
+            .unwrap()
+            .unwrap_or_else(|| panic!("{label}: exact funded {resource} retry"));
+            assert!(
+                result
+                    .value
+                    .snapshot_eq(artifact.schemas(), expected, artifact.schemas())
+                    .unwrap()
+            );
+            let consumed = match resource {
+                "compute" => funded.construction.compute_work.get(),
+                "comparison" => funded.construction.comparison_work.get(),
+                _ => unreachable!(),
+            };
+            assert_eq!(consumed, limit, "{label}: exact {resource} boundary");
+        }
+    }
+
     #[test]
     fn snapshot_copy_preparation_matches_resident_cumulative_work() {
         let tuple = SchemaBody::Tuple(
@@ -18065,8 +18804,8 @@ mod shape_fact_tests {
                 );
                 let (inputs, output) = match case {
                     "literal" | "encoded-literal" => (
-                        // Each input fits independently. Input scan plus the
-                        // canonicalization preflight exceeds the shared limit.
+                        // Retain the original payload-size fixtures. Metadata and
+                        // encoding use compute; real comparisons stay separate.
                         vec![(
                             tuple.clone(),
                             cell(
@@ -18147,7 +18886,7 @@ mod shape_fact_tests {
                         false,
                     )
                     .unwrap();
-                    if large {
+                    if folded.is_none() {
                         assert_eq!(
                             CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get()),
                             0,
@@ -18159,35 +18898,17 @@ mod shape_fact_tests {
                             "whole source copy before refusal: {case}"
                         );
                     } else {
-                        let insufficient = ClosedActivationAnalysisContext::default();
-                        insufficient
-                            .construction
-                            .comparison_work
-                            .set(mech_core::RESIDENT_MAX_COMPARISON_WORK);
-                        CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.set(0));
-                        CLOSED_OPERAND_DRAFT_ENTRIES.with(|entries| entries.set(0));
+                        assert_closed_copy_work_boundaries(
+                            artifact,
+                            &analysis,
+                            &folded.as_ref().unwrap().value,
+                            case,
+                        );
+                    }
+                    if !large {
                         assert!(
-                            constant_comparison_operand(
-                                artifact,
-                                NodeId::new(0),
-                                ArtifactSource::Slot(CellSlotId::new(0)),
-                                &ActivationFacts::default(),
-                                &insufficient,
-                                false
-                            )
-                            .unwrap()
-                            .is_none(),
-                            "exhausted preparation: {case}"
-                        );
-                        assert_eq!(
-                            CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get()),
-                            0,
-                            "payload copy after exhaustion: {case}"
-                        );
-                        assert_eq!(
-                            CLOSED_OPERAND_DRAFT_ENTRIES.with(|entries| entries.get()),
-                            0,
-                            "whole source copy after exhaustion: {case}"
+                            folded.is_some(),
+                            "small fixture must remain admitted: {case}"
                         );
                     }
                     let mut catalog = mech_core::FunctionCatalogBuilder::new();
@@ -18201,9 +18922,15 @@ mod shape_fact_tests {
                     let mut instance = match instance {
                         Ok(instance) => instance,
                         Err(ResidentActivationError::ActivationKernelExecution {
-                            error: ResidentKernelError::InvalidShape,
+                            error:
+                                ResidentKernelError::ResourceLimit {
+                                    phase: mech_core::ResidentResourcePhase::Admission,
+                                    required,
+                                    limit,
+                                    ..
+                                },
                             ..
-                        }) if large => {
+                        }) if large && required > limit => {
                             assert!(
                                 folded.is_none(),
                                 "analysis accepted runtime preparation refusal: {case}"
@@ -18215,13 +18942,8 @@ mod shape_fact_tests {
                     let actual = instance.turn(&[]);
                     assert_eq!(
                         actual.is_ok(),
-                        !large,
-                        "resident {module}/{name}: {actual:?}"
-                    );
-                    assert_eq!(
                         folded.is_some(),
-                        !large,
-                        "analysis must share cumulative preparation for {module}/{name}"
+                        "analysis must share resident cumulative preparation for {module}/{name}: {actual:?}"
                     );
                     if let Some(folded) = folded {
                         assert!(
@@ -18294,12 +19016,13 @@ mod shape_fact_tests {
                 .unwrap();
                 for artifact in [&artifact, &decoded] {
                     CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.set(0));
+                    let analysis = ClosedActivationAnalysisContext::default();
                     let folded = constant_comparison_operand(
                         artifact,
                         NodeId::new(0),
                         ArtifactSource::Slot(CellSlotId::new(0)),
                         &ActivationFacts::default(),
-                        &ClosedActivationAnalysisContext::default(),
+                        &analysis,
                         false,
                     )
                     .unwrap();
@@ -18331,13 +19054,21 @@ mod shape_fact_tests {
                     );
                     if let Some(actual) = actual {
                         admitted += 1;
+                        let folded = folded.unwrap();
+                        assert!(
+                            analysis.construction.comparison_work.get() >= bytes as u64 + 1,
+                            "real common-prefix key comparisons must remain charged"
+                        );
+                        assert_closed_copy_work_boundaries(
+                            artifact,
+                            &analysis,
+                            &folded.value,
+                            operation,
+                        );
+                        refused += 1; // The tight finite boundary above refused before drafts.
                         assert!(
                             actual
-                                .snapshot_eq(
-                                    artifact.schemas(),
-                                    &folded.unwrap().value,
-                                    artifact.schemas()
-                                )
+                                .snapshot_eq(artifact.schemas(), &folded.value, artifact.schemas())
                                 .unwrap()
                         );
                     } else {
@@ -18380,6 +19111,7 @@ mod shape_fact_tests {
                 .into_boxed_slice(),
             )
         };
+        let mut previous_work = None;
         for repeats in [2, 3] {
             let artifact = closed_copy_artifact(
                 "access",
@@ -18412,70 +19144,74 @@ mod shape_fact_tests {
                 false,
             )
             .unwrap();
+            let operand =
+                operand.expect("original gathers now fit: copying is compute, not key comparison");
+            let work = analysis.construction.compute_work.get();
+            if let Some(previous) = previous_work {
+                assert!(
+                    work.checked_sub(previous).unwrap() >= 11_000,
+                    "every repeated selection must fund at least its 11,000 copied String bytes"
+                );
+            }
+            previous_work = Some(work);
+            let before_compute = work;
+            let before_comparison = analysis.construction.comparison_work.get();
+            let copies = CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get());
+            let reused = constant_comparison_operand(
+                &artifact,
+                NodeId::new(0),
+                source,
+                &ActivationFacts::default(),
+                &analysis,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+            assert_eq!(before_compute, analysis.construction.compute_work.get());
             assert_eq!(
-                operand.is_some(),
-                repeats == 2,
-                "each selected occurrence must fit cumulative preparation"
+                before_comparison,
+                analysis.construction.comparison_work.get()
             );
-            if repeats == 2 {
-                let before = analysis.construction.comparison_work.get();
-                let copies = CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get());
-                let reused = constant_comparison_operand(
-                    &artifact,
+            assert_eq!(
+                copies,
+                CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get())
+            );
+            assert!(
+                operand
+                    .value
+                    .snapshot_eq(artifact.schemas(), &reused.value, artifact.schemas())
+                    .unwrap()
+            );
+            assert_closed_copy_work_boundaries(
+                &artifact,
+                &analysis,
+                &operand.value,
+                "repeated gather",
+            );
+            let retry = closed_copy_artifact(
+                "access",
+                "scalar",
+                vec![
+                    (
+                        matrix(1, tuple.clone()),
+                        ValueDataDraft::Matrix(vec![cell(1, 70)].into_boxed_slice()),
+                    ),
+                    (SchemaBody::Index, ValueDataDraft::Index(1)),
+                ],
+                tuple.clone(),
+            );
+            assert!(
+                constant_comparison_operand(
+                    &retry,
                     NodeId::new(0),
                     source,
                     &ActivationFacts::default(),
-                    &analysis,
+                    &ClosedActivationAnalysisContext::default(),
                     false,
                 )
                 .unwrap()
-                .unwrap();
-                assert_eq!(before, analysis.construction.comparison_work.get());
-                assert_eq!(
-                    copies,
-                    CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get())
-                );
-                assert!(
-                    operand
-                        .unwrap()
-                        .value
-                        .snapshot_eq(artifact.schemas(), &reused.value, artifact.schemas())
-                        .unwrap()
-                );
-            } else {
-                assert!(
-                    !analysis.values.borrow().contains_key(&source),
-                    "a refused result must not enter the usable cache"
-                );
-                assert_eq!(
-                    CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get()),
-                    0
-                );
-                let retry = closed_copy_artifact(
-                    "access",
-                    "scalar",
-                    vec![
-                        (
-                            matrix(1, tuple.clone()),
-                            ValueDataDraft::Matrix(vec![cell(1, 70)].into_boxed_slice()),
-                        ),
-                        (SchemaBody::Index, ValueDataDraft::Index(1)),
-                    ],
-                    tuple.clone(),
-                );
-                assert!(
-                    constant_comparison_operand(
-                        &retry,
-                        NodeId::new(0),
-                        source,
-                        &ActivationFacts::default(),
-                        &ClosedActivationAnalysisContext::default(),
-                        false
-                    )
-                    .unwrap()
-                    .is_some()
-                );
-            }
+                .is_some()
+            );
             let mut catalog = mech_core::FunctionCatalogBuilder::new();
             crate::install_intrinsic_resident(&mut catalog).unwrap();
             match activate(
@@ -18484,11 +19220,13 @@ mod shape_fact_tests {
                 &catalog.build().unwrap(),
                 &ActivationFacts::default(),
             ) {
-                Ok(mut instance) => assert_eq!(instance.turn(&[]).is_ok(), repeats == 2),
+                Ok(mut instance) => {
+                    instance.turn(&[]).unwrap();
+                }
                 Err(ResidentActivationError::ActivationKernelExecution {
                     error: ResidentKernelError::InvalidShape,
                     ..
-                }) if repeats == 3 => {}
+                }) => panic!("original repeated gather must fit its actual work"),
                 Err(error) => panic!("unsupported repeated-access fixture: {error:?}"),
             }
         }
@@ -21660,6 +22398,51 @@ mod shape_fact_tests {
         ];
         const DEFERRED_PRODUCERS: &[(&[&str], &str, ClosedProducerDisposition)] = &[
             (
+                &["map"],
+                "histogram",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["map"],
+                "keys",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["map"],
+                "values",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["number"],
+                "format",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["number"],
+                "parse-u64",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["sequence"],
+                "length",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["sequence"],
+                "sort-indices",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["text"],
+                "join",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["text"],
+                "lines",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
                 &["set"],
                 "insert",
                 ClosedProducerDisposition::DeferredStatefulMutation,
@@ -23104,6 +23887,24 @@ fn prepare_match_node(
     layout: &LayoutBuild,
 ) -> Result<ActivatedMatchNode, ResidentActivationError> {
     let continuation = control.contains_suspend();
+    for capture in &control.captures {
+        let schema = artifact
+            .schemas()
+            .get(capture.schema)
+            .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
+        if !crate::is_control_value_schema(schema) {
+            // A variable-shaped capture must carry its own validated geometry.
+            // Never reinterpret a dense lower-bound arena as the current value.
+            let region = input_reads[capture.input as usize].region();
+            if !crate::is_control_capture_schema(schema)
+                || region.kind != ResidentValueKind::Snapshot
+                || region.shape != ResidentShape::SCALAR
+                || region.len != 1
+            {
+                return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
+            }
+        }
+    }
     let scrutinee_source = inputs[control.scrutinee as usize];
     let scrutinee = input_reads[control.scrutinee as usize];
     let (scrutinee_schema, scrutinee_shape_values) = match scrutinee_source {
@@ -23146,19 +23947,35 @@ fn prepare_match_node(
         let supported = matches!(
             region.kind,
             ResidentValueKind::Bool | ResidentValueKind::Index | ResidentValueKind::F64
-        ) || (region.kind == ResidentValueKind::Snapshot
-            && crate::is_control_scalar_schema(schema));
+        ) || (region.kind == ResidentValueKind::String
+            && matches!(schema.body(), SchemaBody::String))
+            || (region.kind == ResidentValueKind::Snapshot
+                && crate::is_control_literal_schema(schema));
         if !supported || region.len != 1 {
             return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
         }
     }
     let output = &layout.slots[output_slot.get() as usize];
+    let output_schema = artifact
+        .schemas()
+        .get(output.schema)
+        .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
+    if !crate::is_control_value_schema(output_schema)
+        && (!crate::is_control_result_schema(output_schema)
+            || output.region.kind != ResidentValueKind::Snapshot
+            || output.region.shape != ResidentShape::SCALAR
+            || output.region.len != 1)
+    {
+        return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
+    }
     Ok(ActivatedMatchNode {
         artifact_node: owner,
         budget_node,
         scrutinee,
         scrutinee_schema,
         scrutinee_shape_values,
+        // Bound only after the genuine projection arena has been constructed.
+        structural_source: None,
         write: ResidentWriteLocation {
             slot: output_slot,
             storage: output.storage,
@@ -23168,7 +23985,9 @@ fn prepare_match_node(
         locals: comprehension::all_match_local_definitions(control)
             .into_iter()
             .map(|(pattern_binding, _, block, local, _)| {
-                let slot = if pattern_binding {
+                let slot = if local == iteration::CARRIER_LOCAL {
+                    layout.control_carriers[&(owner, block)].0
+                } else if pattern_binding {
                     layout.match_bindings[&(owner, block, local)].0
                 } else {
                     layout.control_locals[&(owner, block, local)].0
@@ -23462,7 +24281,7 @@ fn bind_match_arms(
                     catalog,
                     owner,
                     owner_block,
-                    control,
+                    &ControlBlockInputScope::Match(control),
                     block,
                     captures,
                     capture_reads,
@@ -23502,12 +24321,40 @@ fn bind_match_arms(
         .collect()
 }
 
+enum ControlBlockInputScope<'a> {
+    Match(&'a crate::MatchDeclaration),
+    Iteration {
+        captures: &'a [crate::ControlCapture],
+        carrier_slot: CellSlotId,
+    },
+}
+impl ControlBlockInputScope<'_> {
+    fn captures(&self) -> &[crate::ControlCapture] {
+        match self {
+            Self::Match(control) => &control.captures,
+            Self::Iteration { captures, .. } => captures,
+        }
+    }
+    fn scrutinee(&self) -> Option<u16> {
+        match self {
+            Self::Match(control) => Some(control.scrutinee),
+            Self::Iteration { .. } => None,
+        }
+    }
+    fn carrier_slot(&self) -> Option<CellSlotId> {
+        match self {
+            Self::Iteration { carrier_slot, .. } => Some(*carrier_slot),
+            Self::Match(_) => None,
+        }
+    }
+}
+
 fn bind_control_block(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
     owner: NodeId,
     pattern_owner: u32,
-    control: &crate::MatchDeclaration,
+    control: &ControlBlockInputScope<'_>,
     block: &crate::ControlBlock,
     captures: &[ArtifactSource],
     capture_reads: &[ResidentReadLocation],
@@ -23528,14 +24375,23 @@ fn bind_control_block(
             crate::ControlValue::Constant(id) => ArtifactSource::Constant(id),
             crate::ControlValue::Parameter { ordinal, .. } => {
                 let input = match block.parameters[ordinal as usize].source {
-                    crate::ControlParameterSource::Scrutinee => control.scrutinee,
+                    crate::ControlParameterSource::Scrutinee => {
+                        control.scrutinee().expect("validated Match parameter")
+                    }
+                    crate::ControlParameterSource::IterationCarrier => {
+                        return ArtifactSource::Slot(
+                            control
+                                .carrier_slot()
+                                .expect("validated Iteration parameter"),
+                        );
+                    }
                     crate::ControlParameterSource::PatternBinding(local) => {
                         return ArtifactSource::Slot(
                             layout.match_bindings[&(owner, pattern_owner, local)].0,
                         );
                     }
                     crate::ControlParameterSource::Capture(index) => {
-                        control.captures[index as usize].input
+                        control.captures()[index as usize].input
                     }
                 };
                 captures[input as usize]
@@ -23552,10 +24408,10 @@ fn bind_control_block(
             };
             let selected = match block.parameters[ordinal as usize].source {
                 crate::ControlParameterSource::Scrutinee => {
-                    capture_reads[control.scrutinee as usize]
+                    capture_reads[control.scrutinee().expect("validated Match parameter") as usize]
                 }
                 crate::ControlParameterSource::Capture(index) => {
-                    let capture = &control.captures[index as usize];
+                    let capture = &control.captures()[index as usize];
                     let selected = capture_reads[capture.input as usize];
                     match (capture.freeze_on_suspend, selected) {
                         (true, ResidentReadLocation::Input(region)) => {
@@ -23564,6 +24420,12 @@ fn bind_control_block(
                         _ => selected,
                     }
                 }
+                crate::ControlParameterSource::IterationCarrier => resolve_read(
+                    layout,
+                    ArtifactSource::Slot(control.carrier_slot().ok_or(
+                        ResidentActivationError::UnsupportedControlLayout { node: owner },
+                    )?),
+                )?,
                 crate::ControlParameterSource::PatternBinding(_) => {
                     resolve_read(layout, source(value))?
                 }
@@ -23611,7 +24473,10 @@ fn bind_control_block(
             .collect::<Result<Vec<_>, _>>()?;
         let index =
             u32::try_from(steps.len()).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
-        let nested_match = matches!(operation.body, crate::ControlOperationBody::Match(_));
+        let nested_match = matches!(
+            operation.body,
+            crate::ControlOperationBody::Match(_) | crate::ControlOperationBody::Iteration(_)
+        );
         let prior_local_count = u32::try_from(local_regions.len())
             .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
         let current_local = prior_local_count;
@@ -23629,11 +24494,13 @@ fn bind_control_block(
                 .filter_map(|value| match value {
                     crate::ControlValue::Parameter { ordinal, .. } => {
                         let parameter = &block.parameters[*ordinal as usize];
-                        let crate::ControlParameterSource::PatternBinding(local) = parameter.source
-                        else {
-                            return None;
-                        };
-                        binding_local_indices.get(&local).copied()
+                        match parameter.source {
+                            crate::ControlParameterSource::PatternBinding(local) => {
+                                binding_local_indices.get(&local).copied()
+                            }
+                            crate::ControlParameterSource::IterationCarrier => Some(0),
+                            _ => None,
+                        }
                     }
                     crate::ControlValue::Local { node, .. } => operation_locals.get(node).copied(),
                     crate::ControlValue::Constant(_) => None,
@@ -23688,6 +24555,40 @@ fn bind_control_block(
                     };
                     prepared.arms = arms;
                 }
+                crate::ControlOperationBody::Iteration(nested) => {
+                    let prepared = iteration::prepare(
+                        artifact,
+                        owner,
+                        physical_node,
+                        nested,
+                        &inputs,
+                        &input_reads,
+                        output_slot,
+                        layout,
+                    )?;
+                    steps.push(ActivatedTurnStep::Iteration(std::sync::Arc::new(prepared)));
+                    let body = iteration::bind_body(
+                        artifact,
+                        catalog,
+                        owner,
+                        physical_node,
+                        nested,
+                        &inputs,
+                        &input_reads,
+                        output_slot,
+                        layout,
+                        steps,
+                        reads,
+                        calls,
+                        recursive_roots,
+                    )?;
+                    let ActivatedTurnStep::Iteration(prepared) = &mut steps[index as usize] else {
+                        unreachable!()
+                    };
+                    std::sync::Arc::get_mut(prepared)
+                        .expect("unpublished iteration plan")
+                        .body = Some(body);
+                }
                 crate::ControlOperationBody::Comprehension(nested) => {
                     let start = reads.len() as u32;
                     reads.extend(input_reads.iter().copied());
@@ -23706,6 +24607,7 @@ fn bind_control_block(
                             steps: Box::new([]),
                             locals: Box::new([]),
                             schema_reads: Box::new([]),
+                            invariant_text_sources: Box::new([]),
                             yield_value: ResidentReadLocation::Scratch(output.region),
                             yield_schema: output.schema,
                         },
@@ -23723,6 +24625,7 @@ fn bind_control_block(
                         owner,
                         nested,
                         &inputs,
+                        &input_reads,
                         output_slot,
                         layout,
                         steps,
@@ -23864,10 +24767,36 @@ fn bind_control_block(
         }));
     }
     let yielded = source(block.yield_value);
+    let yield_value = read(block.yield_value)?;
+    let yield_layout = port(yielded)?;
+    let yield_schema = artifact
+        .schemas()
+        .get(yield_layout.schema_id)
+        .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
+    if !crate::is_control_value_schema(yield_schema)
+        && (!crate::is_control_result_schema(yield_schema)
+            || yield_value.region().kind != ResidentValueKind::Snapshot
+            || yield_value.region().shape != ResidentShape::SCALAR
+            || yield_value.region().len != 1)
+    {
+        return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
+    }
+    let yield_identity = match block.yield_value {
+        crate::ControlValue::Local { node, .. } => {
+            let (slot, _) = layout.control_locals[&(owner, block.id.0, node)];
+            let resolved = &layout.slots[slot.get() as usize];
+            Some(ControlYieldIdentity {
+                slot,
+                storage: resolved.storage,
+            })
+        }
+        crate::ControlValue::Constant(_) | crate::ControlValue::Parameter { .. } => None,
+    };
     Ok(ActivatedControlBlock {
         steps: direct_steps.into(),
         locals: local_regions.into(),
-        yield_value: read(block.yield_value)?,
-        yield_layout: port(yielded)?,
+        yield_value,
+        yield_layout,
+        yield_identity,
     })
 }

@@ -2215,13 +2215,106 @@ impl KernelMemoryFrame<'_> {
         self.snapshot_input_cell(input.cell(), index)
     }
 
+    /// Borrows metadata from the current realized input plan after validating
+    /// the logical cell, semantic ordinal and live region incarnation. This
+    /// does not observe or reconstruct the input payload.
+    #[cfg(feature = "functions")]
+    pub fn input_cell_descriptor(
+        &self,
+        input: &crate::ValueCell,
+        semantic_input: usize,
+    ) -> crate::MResult<&crate::ResolvedValueDescriptor> {
+        let lease = self.port_lease(
+            input.reactive_cell_id(),
+            ManagedPortRole::Input(semantic_input),
+            false,
+        )?;
+        self.realized
+            .call_plan()
+            .and_then(|plan| plan.inputs.get(semantic_input))
+            .map(|port| &port.descriptor)
+            .ok_or_else(|| {
+                MemoryRuntimeError::CandidateValidationFailed {
+                    object: Some(lease.object.object()),
+                    reason: "input descriptor is absent from the active call plan".into(),
+                }
+                .into()
+            })
+    }
+
+    /// Reads the current input footprint through its semantic lease without
+    /// traversing or reconstructing the input payload. Deferred witnesses have
+    /// no execution authority and cannot fall back to a published output.
+    #[cfg(feature = "functions")]
+    pub fn input_cell_footprint(
+        &self,
+        input: &crate::ValueCell,
+        semantic_input: usize,
+    ) -> crate::MResult<crate::CurrentMemoryFootprint> {
+        let lease = self.port_lease(
+            input.reactive_cell_id(),
+            ManagedPortRole::Input(semantic_input),
+            false,
+        )?;
+        self.realized.binding(lease.object)?;
+        {
+            let state = self.domain.state.borrow();
+            let region = state
+                .regions
+                .get(&lease.object)
+                .ok_or(MemoryRuntimeError::UnknownPlanObject { key: lease.object })?;
+            if region.incarnation != lease.incarnation {
+                return Err(MemoryRuntimeError::StaleRegionIncarnation {
+                    key: lease.object,
+                    expected: lease.incarnation,
+                    actual: region.incarnation,
+                }
+                .into());
+            }
+        }
+        let witness = self
+            .realized
+            .call_plan()
+            .and_then(|plan| plan.input_witnesses.get(semantic_input))
+            .ok_or_else(|| MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(lease.object.object()),
+                reason: "input footprint is absent from the active call plan".into(),
+            })?;
+        match witness {
+            crate::MemoryFootprintWitness::Known(footprint) => Ok(*footprint),
+            crate::MemoryFootprintWitness::Deferred(stage) => Err(crate::MechError::new(
+                crate::MemoryPlanError::MissingFootprintWitness { stage: *stage },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+
+    /// Borrows one fixed-width input through its semantic lease. The view
+    /// retains the current matrix geometry and strides without reconstructing
+    /// a canonical value or exposing a backing allocation.
+    #[cfg(feature = "functions")]
+    pub fn with_input_cell_value_view<T: ManagedElement, R>(
+        &self,
+        input: &crate::ValueCell,
+        semantic_input: usize,
+        access: impl FnOnce(ManagedValueView<'_, T>) -> crate::MResult<R>,
+    ) -> crate::MResult<R> {
+        let lease = self.port_lease(
+            input.reactive_cell_id(),
+            ManagedPortRole::Input(semantic_input),
+            false,
+        )?;
+        self.validate_managed_element::<T>(lease, false)?;
+        access(self.read_view::<T>(lease)?)
+    }
+
     /// Snapshots one logical input by its semantic call-plan ordinal.
     ///
     /// Aggregate source implementations retain heterogeneous [`ValueCell`]
-    /// identities rather than a single typed [`FunctionValueInput`].  They
-    /// still must resolve every read through the live call frame so a revised
-    /// binding or region incarnation cannot be bypassed by reading the cell
-    /// directly.
+    /// identities rather than a single typed [`FunctionValueInput`]. They
+    /// resolve every read through the live call frame so a revised binding or
+    /// region incarnation cannot be bypassed by reading the cell directly.
     #[cfg(feature = "functions")]
     pub fn snapshot_input_cell(
         &self,
@@ -2233,7 +2326,8 @@ impl KernelMemoryFrame<'_> {
 
     /// Reconstructs a fixed-width input directly from this frame while
     /// charging every draft/finalization allocation to the caller's finite
-    /// canonical construction authority. Canonical inputs retain their
+    /// temporary construction workspace, preserving the output finalization
+    /// reserve. Canonical inputs retain their
     /// already frozen root and therefore require no reconstruction.
     #[cfg(feature = "functions")]
     pub fn snapshot_input_cell_with_construction(
@@ -2242,7 +2336,8 @@ impl KernelMemoryFrame<'_> {
         semantic_input: usize,
         construction: &super::FrozenSnapshotConstruction,
     ) -> crate::MResult<crate::Value> {
-        self.snapshot_input_cell_inner(input, semantic_input, Some(construction))
+        let temporary = construction.temporary_snapshot_authority();
+        self.snapshot_input_cell_inner(input, semantic_input, Some(&temporary))
     }
 
     #[cfg(feature = "functions")]
@@ -2250,7 +2345,7 @@ impl KernelMemoryFrame<'_> {
         &self,
         input: &crate::ValueCell,
         semantic_input: usize,
-        construction: Option<&super::FrozenSnapshotConstruction>,
+        construction: Option<&dyn crate::snapshot::validation::SnapshotConstructionAuthority>,
     ) -> crate::MResult<crate::Value> {
         let lease = self.port_lease(
             input.reactive_cell_id(),

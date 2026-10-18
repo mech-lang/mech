@@ -173,7 +173,7 @@ pub(super) fn compile_document_with_catalog_and_input_schemas(
     document: &DocumentSyntax,
     nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Arc<mech_core::FunctionCatalog>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_options(
         document,
@@ -193,7 +193,7 @@ pub(super) fn compile_document_with_catalog_and_resources(
     document: &DocumentSyntax,
     nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Arc<mech_core::FunctionCatalog>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     interactive: bool,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
@@ -223,7 +223,7 @@ pub struct CanonicalCoordinatorPlan {
     nominal_declarations: Vec<PendingNominalDeclaration>,
     exports: Vec<ExportDeclarationSyntax>,
     catalog: Arc<mech_core::FunctionCatalog>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     resolved_source_modules: BTreeSet<String>,
 }
@@ -231,8 +231,16 @@ pub struct CanonicalCoordinatorPlan {
 impl CanonicalCoordinatorPlan {
     /// Complete coordinator lowering after the caller plans interface-dependent reads.
     pub fn compile(
-        mut self,
+        self,
         additional_input_schemas: BTreeMap<String, SchemaBody>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_schema_drafts(closed_input_schema_drafts(additional_input_schemas))
+    }
+
+    /// Completes coordinator lowering without closing supplied dimensions.
+    pub fn compile_schema_drafts(
+        mut self,
+        additional_input_schemas: BTreeMap<String, SchemaDraft>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         self.input_schemas.extend(additional_input_schemas);
         compile_collected_document(
@@ -260,7 +268,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     nominal_origin: Option<&CanonicalNominalPath>,
     imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
     catalog: Arc<mech_core::FunctionCatalog>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     external_inputs: &BTreeSet<String>,
     retained_outputs: &BTreeSet<String>,
@@ -401,7 +409,7 @@ pub(super) fn compile_document_with_options(
     nominal_origin: Option<&CanonicalNominalPath>,
     imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
     interactive: bool,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     external_definitions: &BTreeSet<String>,
@@ -428,7 +436,7 @@ pub(super) fn compile_document_with_capture_options(
     nominal_origin: Option<&CanonicalNominalPath>,
     imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
     interactive: bool,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     external_definitions: &BTreeSet<String>,
@@ -580,7 +588,7 @@ fn compile_collected_document(
     units: Vec<DocumentUnit>,
     exports: Vec<ExportDeclarationSyntax>,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
     interactive: bool,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     external_definitions: &BTreeSet<String>,
@@ -1213,6 +1221,24 @@ fn compile_document_units(
     presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
     interactive: bool,
 ) -> Result<Option<CompiledDocumentValue>, SourceSemanticError> {
+    compile_document_units_with_definition_context(
+        builder,
+        units,
+        local_bindings,
+        presentation,
+        interactive,
+        &BTreeMap::new(),
+    )
+}
+
+fn compile_document_units_with_definition_context(
+    builder: &mut SemanticBuilder,
+    units: Vec<DocumentUnit>,
+    local_bindings: &BTreeSet<String>,
+    presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
+    interactive: bool,
+    expected_bindings: &BTreeMap<String, SchemaDraft>,
+) -> Result<Option<CompiledDocumentValue>, SourceSemanticError> {
     let mut deferred_inline = Vec::new();
     let mut last = compile_document_units_inner(
         builder,
@@ -1221,6 +1247,7 @@ fn compile_document_units(
         presentation,
         &mut deferred_inline,
         interactive,
+        expected_bindings,
     )?;
     refresh_deferred_inline(builder, &mut deferred_inline, presentation, &mut last)?;
     retain_document_boundary_result(builder, last.as_ref());
@@ -1240,6 +1267,7 @@ fn compile_document_units_inner(
     presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
     deferred_inline: &mut Vec<DeferredInline>,
     interactive: bool,
+    expected_bindings: &BTreeMap<String, SchemaDraft>,
 ) -> Result<Option<CompiledDocumentValue>, SourceSemanticError> {
     let mut last = None;
     for unit in units {
@@ -1265,9 +1293,10 @@ fn compile_document_units_inner(
             }
             DocumentUnit::Statement(unit) => {
                 let result = match unit.kind() {
-                    SyntaxKind::VariableDefine => {
-                        builder.definition(&VariableDefineSyntax::cast(unit).unwrap())?
-                    }
+                    SyntaxKind::VariableDefine => builder.definition_with_expected_bindings(
+                        &VariableDefineSyntax::cast(unit).unwrap(),
+                        expected_bindings,
+                    )?,
                     SyntaxKind::Expression => {
                         builder.expression(&ExpressionSyntax::cast(unit).unwrap())?
                     }
@@ -1362,6 +1391,7 @@ fn compile_document_units_inner(
                     presentation,
                     deferred_inline,
                     interactive,
+                    expected_bindings,
                 )? {
                     let value = builder.read_document_binding(
                         PendingBinding::Value(compiled.value),
@@ -1394,6 +1424,11 @@ fn compile_document_units_inner(
             builder
                 .bindings
                 .insert("ans".to_owned(), PendingBinding::Value(value.value));
+        }
+        if builder.active_functions.is_empty() {
+            // Advance only the document's completed lexical environment.
+            // Expanded function bodies cannot replace document globals.
+            builder.document_bindings.clone_from(&builder.bindings);
         }
     }
     Ok(last)
@@ -2297,7 +2332,7 @@ impl OrderedDocumentScope {
 }
 
 pub(super) fn compile_ordered_documents(
-    documents: &[CanonicalOrderedDocument],
+    documents: &[CanonicalOrderedDocument<SchemaDraft>],
     catalog: Arc<mech_core::FunctionCatalog>,
     imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
@@ -2342,6 +2377,7 @@ pub(super) fn compile_ordered_documents(
             OrderedDocumentScope::default().activate(&mut builder);
         }
         builder.active_functions.clear();
+        builder.document_bindings.clone_from(&builder.bindings);
         builder.active_recursive_outputs.clear();
         builder.retained_result_boundary = None;
         builder.retained_result = None;
@@ -2363,19 +2399,12 @@ pub(super) fn compile_ordered_documents(
         builder.declared_variants.clear();
         builder.resource_writes = root.resource_writes.clone();
         builder.resolved_source_modules = root.resolved_modules.clone();
-        builder.input_schema_overrides = root
-            .input_schemas
-            .iter()
-            .map(|(name, body)| {
-                (
-                    name.clone(),
-                    SchemaDraft {
-                        body: body.clone(),
-                        dimension_parameters: Box::new([]),
-                    },
-                )
-            })
-            .collect();
+        for schema in root.input_schemas.values() {
+            schema.clone().finalize().map_err(|error| {
+                internal(anchor, format!("invalid declared input schema: {error:?}"))
+            })?;
+        }
+        builder.input_schema_overrides = root.input_schemas.clone();
         for (name, imported) in &root.imports {
             let binding = match imported {
                 CanonicalOrderedImport::RootExport { root, name: export } => *exports_by_root

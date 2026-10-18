@@ -37,10 +37,9 @@ The complete profiles are `full_runtime`, `full_source`, and
 The frozen standard runtime catalog uses the `standard-linked-dynamic-shape`
 distribution. Standard profiles therefore include the dynamic shapes
 `row_vectord`, `vectord`, and `matrixd`, while fixed shapes remain individually
-selectable and covered by specialization fixtures. Enabling every fixed shape
-would change the catalog from 9,019 to 116,603 entries and invalidate the
-frozen raw-catalog digest, so frozen compatibility defines the standard shape
-closure.
+selectable and covered by specialization fixtures. The frozen catalog
+contracts bind this dynamic shape closure; profiles selecting fixed shapes
+have a separate exhaustive compatibility digest.
 
 Smaller distributions combine a layer with selected operation, value, and
 shape features. For example:
@@ -53,13 +52,47 @@ mech-stdlib = {
 }
 ```
 
-The crate default is `full_source`. Distribution manifests should use
+The crate has no default features. Distribution manifests should use
 `default-features = false` and select a profile explicitly when dependency-graph
 size or execution capability is part of their contract.
 
 That profile links scalar-add runtime support without source specialization or
 the bytecode compiler. Use `runtime_catalog()` for bytecode-only execution and
 `source_catalog()` for source execution or compiler tooling.
+
+## Pure numeric text and length
+
+The `pure_text` operation feature is included in the standard and full
+operation profiles. It exports ordinary source operations through the
+`number` and `sequence` modules:
+
+```mech
++> number
++> sequence
+n := number/parse-u64("42")
+formatted := number/format(1.25, 9)
+length := sequence/length("é👩🏽‍💻")
+```
+
+`number/parse-u64` accepts a nonempty string of ASCII decimal digits and
+checks overflow. Its result is a canonical `u64`; signs, whitespace,
+fractions, exponents and non-ASCII digits are errors.
+
+`number/format` accepts plain signed and unsigned integers of 8, 16, 32, 64
+or 128 bits, and `f32` or `f64`. Integer precision must be zero. Floating
+precision is an integer from zero through twelve, producing fixed decimal
+notation with rounding. A matrix uses one scalar precision for every
+element, preserving its dimensions and element order. Precision has kind
+`u64`; a bare integer literal receives that type from the call declaration.
+
+`sequence/length` returns a canonical `u64`. For a string it counts extended
+grapheme clusters; the example above has length two. For a matrix it counts
+elements, including when those elements are strings or aggregates.
+
+The core owns these operations' type schemes and pure contracts. Managed
+runtime factories and resident kernels use those declarations, and native
+application planning retains their `pure_text` dependency feature. Invalid
+inputs leave the previous published result intact.
 
 The crate does not own execution, host integration, parsing, dynamic modules,
 or dynamic-library loading. `mech-engine`, `mech-runtime`, and host-provider

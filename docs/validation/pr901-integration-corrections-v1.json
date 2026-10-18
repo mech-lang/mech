@@ -1,0 +1,628 @@
+{
+  "schema": "mech.validation.pr901-integration-corrections.v1",
+  "status": "REVIEW_CORRECTIONS_IMPLEMENTED_QUALIFICATION_AND_CANONICAL_NATIVE_MIGRATION_PENDING",
+  "landing_authority": "Keep PR901 draft and unmerged. Clean review and green CI are qualification gates, not authorization: wait for explicit user approval before any readiness change or merge.",
+  "runtime_authority": "One canonical source compiler, executable artifact and semantic/admission/publication contract is required. The current build --backend cranelift source-native route still has independent sequence/control/grid lowering; it is an unresolved migration gap, not the intended permanent alternative to canonical resident/artifact-native execution. Move its capabilities onto canonical artifact lowering, qualify resident/JIT/actually-linked AOT agreement, route native building through the artifact and retire alternate source lowering. Documentation alone does not fix this implementation gap; see benchmark-compiler-status-v1.json.",
+  "historical_evidence": {
+    "handoff_commit": "7baa187cf06db29746449220ab424242e8a047a3",
+    "handoff": "benchmark-agent-handoff-v1.json",
+    "rule": "Earlier receipts remain historical evidence for their recorded commits, not qualification of this corrected candidate."
+  },
+  "landed_parents": [
+    {
+      "pr": 898,
+      "merge_commit": "8bc6c1ffd420b59677c659cc7cd6b913b9982b1a",
+      "verified_tree": "86cf6e0e6e8306364fc72c99c8c0b98a0c99d87a"
+    },
+    {
+      "pr": 900,
+      "reviewed_head": "7789a163febc4b6b7aa222c42bdda34ba249dfc7",
+      "successful_checks_before_ready_and_merge": 132,
+      "pending_or_unsuccessful_checks": 0,
+      "merge_commit": "91af774c254a7f8644d0001fe6fbef784469b343",
+      "tested_composition": "cfa5592eb72a218a14f8ccbe953533f37dd6f759",
+      "verified_identical_tree": "47ac97ea5d4d94e0b395b32805e2cf667b3c23f6"
+    }
+  ],
+  "corrections": [
+    {
+      "area": "target linker overrides, unoptimized recursion stack safety and root-scoped browser regression",
+      "reviewed_source_commit": "72836beda441232efba4321c4e3bab895ba73979",
+      "review_comment": 4304794153,
+      "inventory_fix_commit": "af0af71ea0401fa1eb6e91124f326aaaa0d10f80",
+      "stack_fix_commit": "a0d000061683ecab49822aad3530725395ae3860",
+      "browser_fixture_fix_commit": "efe8046f8a33b3c29cd42864431f6cc1f1965201",
+      "inventory": "Reject unmodeled CARGO_TARGET_* environment configuration except the non-target-specific CARGO_TARGET_DIR cache path. This includes target LINKER, RUNNER, compiler/doc flags and future unsupported target settings. Cargo build/profile Rust/Rustdoc flag overrides also cannot establish ownership. Retain regressions for all workflow/job/step scopes, inline assignments, direct and maintained-wrapper Cargo commands, generators, Linux/macOS target keys and legitimate cache/job/debug/color settings.",
+      "inventory_qualification": {
+        "source_commit": "af0af71ea0401fa1eb6e91124f326aaaa0d10f80",
+        "result": "PASS all142 CI contract methods (41 inventory methods), six sharder tests, formatting and all seven production architecture guards; exact clean source checked before and after every phase.",
+        "ci_log": "tmp/pr-stack-evidence/review-v129-ci-contracts.log",
+        "ci_log_sha256": "389982d926be3ae638b503f8a705b6d676b687ea7cfc2fd54d1f1d12f3385f54",
+        "guard_logs": "tmp/pr-stack-evidence/review-v129-*.log"
+      },
+      "stack_failure": "The original unchanged full application selection on72836beda passes17 applications,7 pure-text methods,4 retention methods and five tail cases, then aborts with host stack overflow in non_tail_recursive_postprocessing_keeps_the_existing_depth_limit_and_recovers. Later tail cases and text_operations are not reached. The macOS crash has24 repeated recursive call cycles; unoptimized code retains the large match, recursive-frame and unrelated continuation dispatcher stack frames before the emergency depth check can return. This is failed evidence, not a passing depth-limit test.",
+      "failed_log": "tmp/pr-stack-evidence/review-v127-applications-text-tail.log",
+      "failed_log_sha256": "5825291b9cfe980860bfb200b7214627966040d6f7bc41f6cb4d8cf1a74e8ecc",
+      "failed_executable_sha256": "a8afe48e5adc5354ea28d51b33d016c8960f41042ceb8763ce8b2c50bfd5f079",
+      "local_crash_report_sha256": "3c1fe87d64745d7fa2b81085e4834e046a43b56e72f7657fe70c1625e0cc5ff7",
+      "stack_correction": "Keep the recursive dispatcher small by extracting unchanged suspension/publication materialization into non-inlined helpers. Perform the same depth/storage check in a thin wrapper before entering the larger recursive frame/admission helper. No new heap carrier, resource discount, changed depth ceiling or enlarged thread stack is introduced. Preserve every logical frame/work/memory admission and continuation cleanup path.",
+      "stack_qualification": {
+        "source_commit": "a0d000061683ecab49822aad3530725395ae3860",
+        "profile": "nightly-2026-03-03, locked/offline, jobs1, no-default-features; test optimization0/debug0, assertions/overflow true, incremental0, one test thread and RUST_MIN_STACK unset. Exact clean source checked before and after every phase.",
+        "result": "PASS all46 methods in the original five application/text/retention/tail targets:17 applications,7 pure_text_source,4 retention_work, all10 tail_control and8 text_operations. None ignored or filtered. Also pass both selected engine non-tail methods (35 unrelated methods filtered), including original/decoded maximum admitted depth24, refusals at25/300, unchanged outputs/epochs and recovery, plus the separately selected original stdlib non-tail method (nine others filtered). The separate selected rerun is included in the46, not another unique acceptance case.",
+        "original_tail_source_sha256": "19b687442c3f6e74e0aa91f7c7e7d42678082a85502e600ce334450213bece4a",
+        "original_tail_preservation": "tail_control.rs is byte-identical between72836beda and this fix. Every original input, expected result, bound and recovery check is retained.",
+        "boundary_log": "tmp/pr-stack-evidence/review-v131-non-tail-boundary.log",
+        "boundary_log_sha256": "d06402f94d4349985503f71232752f41e597581b1cadf8444b57770a8fba0081",
+        "original_non_tail_log": "tmp/pr-stack-evidence/review-v131-original-non-tail.log",
+        "original_non_tail_log_sha256": "b31d4849d5ba162be822bce8e518fd29755d0d5f6609b7b5924930dc66bef15f",
+        "application_log": "tmp/pr-stack-evidence/review-v131-applications-text-tail.log",
+        "application_log_sha256": "eb55e9607f5771225353d00adff24e7675d5f8f7367b8ce308b1792959c113b4",
+        "static_checks": "All142 CI contracts (41 inventory methods), six sharder tests, formatting and seven production architecture guards pass on the same exact clean a0d000061 source; logs are review-v131-static-*.log. The complete serial v131 pipeline terminates successfully.",
+        "retained_zero_selection_attempt": "v130 initially omits resident-artifact from the engine invocation: Cargo exits0 with zero tests, and the qualifier's required nonempty-count assertion rejects the run. It receives no test credit. v131 includes the required feature and actually executes both intended methods.",
+        "scope": "Scoped application and boundary qualification, not complete current-source runtime/owner/native/browser/full-CI qualification. Earlier832-runtime/61-source results remain attributed to392a96e2e; the new Rust correction requires fresh owner qualification."
+      },
+      "browser": "CI39074994949 job117522321275 fails the new pending-observation row assertion on72836beda. Its test appended source after the trailing compute section, so the declarations were not admitted root symbols. The corrected regression explicitly inserts them before that section in an independent configured document, verifies source acceptance, checks all/named listing and :whos before publication, preserves unknown-name errors, clears/restores while unpublished, and checks actual accepted input. Dispose that document before running a fresh original fixture with its unchanged source, outputs, identities and edit/rejection oracles. Actual browser execution on the correction is still required; no browser pass is claimed.",
+      "remaining": "Finish final-source owner/runtime/source/browser/native/all-five-linked qualification, fresh clean review and entirely green CI. Keep draft and unmerged without explicit user approval. Canonical-native migration and the complete benchmark brief remain unfinished."
+    },
+    {
+      "area": "inherited Cargo runner environment, lexical exit aliases and unexpanded macro registrations",
+      "reviewed_source_commit": "63aa22621dc820019eb99809cf4b30ff0c3b2c64",
+      "fix_commit": "99b5b330631fdf72d5e5e0e88f608da7d228cd22",
+      "review_comments": [4304700705, 4304700706, 4304700708],
+      "environment": "Merge actual workflow/job/step environment mappings before admitting a step. Reject unmodeled environment structures and explicit command/compiler/runner overrides, including CARGO_TARGET_*_RUNNER. Apply the same rule to shell-prefix assignments. Cover all three inherited scopes, direct and maintained-wrapper commands and generator entry points; retain ordinary build jobs, target directories, debug/color settings and unrelated variables.",
+      "exit_aliases": "Process only reachable import statements in their lexical scope, not ast.walk(module). Called helpers inherit module aliases rather than caller-local imports, and callee-local imports do not leak back. Unknown conditional alias changes fail closed. Retain direct/aliased exits, called-helper termination and positive commands reached before an exit.",
+      "registration": "Blank unexpanded macro definition/invocation token-tree interiors while preserving source offsets and separators. Test-looking functions inside macros, other functions or non-module brace scopes cannot masquerade as registered free tests. Genuine sibling inline-module cases and their filters remain supported; macro-only filtered decoys cannot own a target. This remains conservative target/profile inventory, not macro expansion or exhaustive harness/platform attestation.",
+      "qualification": {
+        "source_commit": "99b5b330631fdf72d5e5e0e88f608da7d228cd22",
+        "result": "PASS all142 CI contract methods (41 inventory methods), six sharder tests, formatting and seven production guards: value execution boundary, warnings, type/semantic authority, memory runtime/planner and module layout. Exact clean source checked before and after every phase; the actual repository inventory retains every required target.",
+        "ci_log": "tmp/pr-stack-evidence/review-v125-ci-contracts.log",
+        "ci_log_sha256": "f24b591ea82dedbfc09399bef274095cac4e021b18332d16d4750f8fd71783ce",
+        "sharder_log": "tmp/pr-stack-evidence/review-v125-sharder.log",
+        "sharder_log_sha256": "7b144766cbd3e0e2dc7ba3d5de2e325dae016a528beb9041318f5d470ca1e99d",
+        "guard_logs": "tmp/pr-stack-evidence/review-v125-{formatting,value-boundary,warnings,type-authority,semantic-authority,memory-runtime,memory-planner,module-layout}.log",
+        "retained_failed_attempt": "The first dirty-source precommit run fails one old fixture that expected ownership despite a nested mapping used as an environment value. The fixture now explicitly requires no ownership for that invalid environment; all valid scalar metadata-decoy cases still retain the real command. No production guard is weakened.",
+        "rust_scope": "git diff392a96e2e..99b5b3306 for all Rust source, Cargo manifests and Cargo.lock is empty. The passing832 runtime units and61 source-acceptance cases remain scoped to392a96e2e, not relabeled as new browser/native/full-CI qualification."
+      },
+      "published_predecessor_ci": "Run39072885492 on63aa fails architecture formatting at query.rs:656 and the new post-clear epoch assertion (810 runtime units pass, one fails). Both failures were independently corrected in392a96e2e/9e7e227a4 and pass in the local scoped receipt. This failed run is not green and does not qualify the next published head.",
+      "remaining": "Fresh exact-head review, entirely green CI, final-source owners/applications/browser/all five actual linked routes and canonical-native migration remain required. Keep draft and unmerged without explicit user approval; no benchmark measurements."
+    },
+    {
+      "area": "asymmetric anonymous migration, unpublished bulk inspection and bounded CI inventory",
+      "reviewed_source_commits": ["b70ca31cd5f2c176ac92c6796b75d9796ceb3855", "63544b972944f7b0b36e21abbb467b8c5af818a9"],
+      "runtime_fix_commits": ["baa157d2e", "2dcf376c26e87e73d837474c223262ab3c4b0938", "78698d980e0917e81f938c22ee7d7befc4cc96c2", "9e7e227a48b54a7ab0f873a3930c877fa7a255e4", "392a96e2e8e717650273d99a5ae5df11a88029f0"],
+      "inventory_fix_commit": "6bdf60fe5958b135ee26f7384d525f6a04210bb1",
+      "inventory_alias_followup": "388f13b735c35759e3e8cc79863ce527954a030c",
+      "browser_fixture_followup": "f5d89c9ba",
+      "review_comments": [4304589400, 4304589404, 4304589405, 4304589408, 4304589411, 4304589412, 4304589417],
+      "anonymous_migration": "Compute eligible anonymous source/target relationships before consuming either end. Only degree-one pairs in both directions migrate, in fixed-point batches against unchanged compatibility evidence. Keep exact-revision, named-state and unique anonymous matches. Retain O(states) candidate/degree storage rather than allocating every compatible edge. Source/decoded regressions cover one-old/two-new, two-old/one-new, both declaration orders and both assignment orders, actual candidate state/output defaults, unchanged previous hash/epoch and the next real turn.",
+      "inspection": "Root bulk value queries omit declared-but-unpublished outputs while preserving unknown-name errors. Single-value, program-output and integrity-constraint queries remain strict. The source/decoded clock fixture exercises symbols, symbol_inspections, actual :whos dispatch and step-completion reporting before publication, after accepted input and clearing while unpublished, with unchanged inspection epochs and zero provider reads. The existing served-compute browser gate exercises exported renderedSymbols and :whos alongside an independent constant before timer startup, then actual publication and clearing. Browser execution is still required; source wiring is not a passing browser receipt.",
+      "python_inventory": "Tracked literal command lists share alias invalidation. Index/slice writes, deletion, augmented assignment, mutation through aliases/methods and unmodeled container escape cannot retain stale command credit. Unrelated environment dictionary updates and pure alias rebinding/deletion retain valid commands. Explicit process exits, including import aliases and calls inside helpers, stop traversal after evaluating their arguments. Ordinary helper return does not terminate its caller. Both real maintained generators retain their literal Cargo selections.",
+      "cargo_inventory": "Parse a bounded option grammar and reject unknown, output-only/unit-graph, unstable and configuration-override modes. A manifest path must be the literal reviewed root Cargo.toml. Retain package exclusions and prevent excluded packages from owning targets. Preserve custom-harness metadata and reject harness=false as ordinary #[test] execution evidence. Composite run steps require explicit supported shells; an invalid composite cannot own any of its steps. These are conservative target/profile checks, not arbitrary Python/shell/host execution attestation or exhaustive platform/declaration coverage.",
+      "prior_two_notes": "The supplied rereview's shell hash remapping and unused/input-inapplicable composite findings were already fixed after b70 in20239a4d8 and strengthened by f055793ce. Preserve their direct/recorded/generator, disabled/allowed-failure caller, nested-action and effective engine/hosted input regressions; do not reopen those old defects by replacing current files with the older review source.",
+      "qualification": {
+        "source_commit": "392a96e2e8e717650273d99a5ae5df11a88029f0",
+        "status": "SCOPED_RUNTIME_AND_SOURCE_ACCEPTANCE_PASSED_NOT_FULL_QUALIFICATION",
+        "passed": "All832 runtime unit methods and61 source-acceptance cases pass with none ignored or filtered. All139 CI contracts (including38 inventory methods), six sharder tests and formatting also pass on this exact clean source. The last CI-only alias follow-up has separate qualification; these results do not establish browser, linked-executable, all-owner or full-CI success.",
+        "command_profile": "Pinned nightly-2026-03-03, locked/offline, jobs1, no-default-features and full_compiler,full_source,resident-routing-source,resident_external_test_support,resident_ekf_benchmarks,compute; test optimization0, debug0, assertions/overflow checks true, incremental0, one test thread. Source identity and cleanliness checked before and after each phase.",
+        "ci_log": "tmp/pr-stack-evidence/review-v121-ci-contracts.log",
+        "ci_log_sha256": "3b9f1cb107224fa76065f905198c3675f8cc05f0c185a7af8b3f09091ac87a74",
+        "runtime_log": "tmp/pr-stack-evidence/review-v121-runtime-units.log",
+        "runtime_log_sha256": "74e1ebfe25a6d5c87e546e64450a21b8228da17c0550df35dd9b32abeb86d760",
+        "source_acceptance_log": "tmp/pr-stack-evidence/review-v121-source-acceptance.log",
+        "source_acceptance_log_sha256": "420a987e162cfa56b3d4fe2e62584df33531771f452c9f2c5cbc9d16d399da91",
+        "failed_attempts": [
+          "v118 passes139 CI contracts, six sharder tests and formatting, then fails Rust compilation at two missing strict-query arguments;2dcf376c2 supplies the intended strict behavior.",
+          "v119 on2dcf376c2 completes832 runtime units with831 passing and one newly added post-clear epoch assertion failing; source acceptance is not reached. Clearing the last observation activates a new pure program at epoch1, not the retired external program epoch0.9e7e227a4 checks inspection against the post-clear program's epoch, retains the original before-clear unchanged-epoch/zero-provider-read assertions and all before/after publication checks. All13 migration/replacement methods already passed. The failed runtime log SHA256 is03027a3a92e50f5972b333ea413ea3153ab21c776fe611ae0d79e3492f66ffff."
+        ]
+      },
+      "source_scope": "v121 is pinned to392a96e2e and includes the final bounded migration implementation and bulk inspection fixtures. Subsequent changes are confined to CI inventory/regressions and documentation; Rust/manifest/lock identity must be verified before relying on the scoped runtime receipt. Final-head complete CI and all other qualification remain mandatory.",
+      "ci_alias_qualification": {
+        "source_commit": "388f13b735c35759e3e8cc79863ce527954a030c",
+        "result": "PASS all139 CI contracts (38 inventory methods), six sharder tests, formatting and seven production guards: value execution boundary, warnings, type/semantic authority, memory runtime/planner and module layout. Exact clean source checked before and after every phase. Real maintained generators and the complete repository target inventory remain covered.",
+        "additional_alias_cases": "Container insertion, annotated insertion, augmented containers, expression-level binding, destructuring and repeated helper calls cannot expose an untracked mutable alias while retaining command credit. Unknown values remain conservative; unrelated environment dictionary updates remain positive fixtures.",
+        "ci_log": "tmp/pr-stack-evidence/review-v122-ci-contracts.log",
+        "ci_log_sha256": "1783913d60c58bf1d9a131051b7e6a2230e805591097b862c27e1df202316222",
+        "sharder_log": "tmp/pr-stack-evidence/review-v122-sharder.log",
+        "sharder_log_sha256": "947d23b396608b81ca81d8393583d64604b349c19e902a4e523c71062c835c10",
+        "guard_logs": "tmp/pr-stack-evidence/review-v122-{formatting,value-boundary,warnings,type-authority,semantic-authority,memory-runtime,memory-planner,module-layout}.log",
+        "rust_scope": "git diff392a96e2e..388f13b73 for all Rust source, Cargo manifests and Cargo.lock is empty. Scoped832-unit/61-source results remain attributed to392a96e2e, not relabeled as new native/browser/full-CI execution."
+      },
+      "recoverable_cache": "Three inactive generated libraries in the separate repair checkout were gzip CRC/uncompressed-SHA256 verified before removing their exact cache originals to make build space. Source, raw logs and linked application evidence are untouched. Archives and per-file hashes remain in tmp/pr-stack-evidence/review-v120-inactive-repair-cache/ and its .log.",
+      "remaining": "Finish final-source runtime/owner/application/browser gates, all five actual linked routes with nonempty selection and evidence, exact-head clean review and entirely green CI. The zero-count Snapshot retained-node concern is not a confirmed defect: retain an exact-limit behavioral follow-up, and change production accounting only if a supported case establishes a failure. Keep PR901 draft and unmerged until explicit user approval; no new benchmark credit."
+    },
+    {
+      "area": "retained EKF guard fixture and scoped owner qualification",
+      "fixture_fix_commit": "457cdb63f597e84501432270d97d3877dca2924a",
+      "fixture": "Replace four test-only erased ValueCell constructors with explicit canonical SchemaDraft/ValueDraft finalization using shared immutable schemas. Keep the EKF architectural scanner unchanged and preserve every original value, payload size, bound and assertion. The production execution.rs prefix is byte-identical to63544b972 (SHA256 3e951b110a9d13dbb2421815bc61be49a6c978c7f85d194311e53d85908b4d5e).",
+      "qualification": [
+        {"source_commit": "63544b972944f7b0b36e21abbb467b8c5af818a9", "result": "PASS nine core all-feature integration targets /67 methods", "log": "tmp/pr-stack-evidence/review-v112-current-coverage-core-all-features.log", "log_sha256": "1c41c9b0ee83245729ec481cd0cfe1a6fd1fd9feea98816003dedcbe2bef7aa7"},
+        {"source_commit": "63544b972944f7b0b36e21abbb467b8c5af818a9", "result": "PASS three native-link integration targets /3 methods; registration/linkage, not actual linked application execution", "log": "tmp/pr-stack-evidence/review-v113-current-coverage-engine-native-link.log", "log_sha256": "f1058640c9832be9614a00952dba4aa806d2f258312e92995adefac2f9e49e54"},
+        {"source_commit": "63544b972944f7b0b36e21abbb467b8c5af818a9", "result": "PASS general native-link target /4 methods; not actual linked application execution", "log": "tmp/pr-stack-evidence/review-v113-current-coverage-engine-general-native-link.log", "log_sha256": "6a2e7f95e66e3aca0f4e4e52df2d9c573a03a6a97b9662a6f4eb65d16cddad5f"},
+        {"source_commit": "457cdb63f597e84501432270d97d3877dca2924a", "result": "PASS all37 resident general execution unit methods;688 other engine methods filtered, not run", "log": "tmp/pr-stack-evidence/review-v115-pinned-engine-execution.log", "log_sha256": "4a28be3756f0f575823869b6c74c8ae7b8fb55e5f9796101268a296f97b064f3"},
+        {"source_commit": "457cdb63f597e84501432270d97d3877dca2924a", "result": "PASS three source-shape integration targets /15 methods", "log": "tmp/pr-stack-evidence/review-v116-current-coverage-engine-source-shapes.log", "log_sha256": "ff10eea3c8f331917e1746e6a33f2ed6e6e2e598d8bdd05ec8e8cd2c13f493ec"},
+        {"source_commit": "457cdb63f597e84501432270d97d3877dca2924a", "result": "PASS all four retained EKF targets /22 methods", "log": "tmp/pr-stack-evidence/review-v116-current-coverage-engine-retained-ekf.log", "log_sha256": "6f67e34a9636d9f2c544d15312527e82a7eb5d46af7fafcdeeffaea93cbd4b3b"}
+      ],
+      "failed_attempt": {"source_commit": "63544b972944f7b0b36e21abbb467b8c5af818a9", "result": "v114 passes15 source-shape methods, then EKF artifact closure5 pass and contract3 pass/1 architectural-guard failure; activation/execution not reached", "log": "tmp/pr-stack-evidence/review-v114-current-coverage-engine-retained-ekf.log", "log_sha256": "27a5b4da70b1e3da6f6aeefcb79ef4418ceeaccf5b24322684271c73511b25b7"},
+      "scope": "Revision-specific serial correctness checks, not final later-source qualification, complete green CI or benchmark measurements. Original failed evidence remains retained."
+    },
+    {
+      "area": "structural workflow extraction, supported shell forms and harness modes",
+      "reviewed_source_commit": "842c1596efe31dcfa240ec5cb37a8536700c498f",
+      "review_comments": [4304467755, 4304467762, 4304467769, 4304467774, 4304467779],
+      "fix_commit": "f055793cee4d3abf5fcd580937e52a5b7d1007ca",
+      "yaml": "Extract only real step mappings through a shared structural YAML parser. Inspect complete job and step metadata regardless of key order; inherit workflow/job run defaults. Non-root or unknown working directories and unsupported custom shells supply no ownership, including through local composite invocations. Scalar/environment/name text cannot masquerade as a run or uses property. Preserve the effective composite input/default rules. Reject duplicate/merge keys, custom object tags and recursive aliases rather than inventing execution credit.",
+      "dependency": "CI-only PyYAML6.0.3 is version/hash pinned in .github/ci/python-requirements.txt using all73 official release-file hashes. Both actual inventory entry points create isolated temporary virtual environments and install with --only-binary=:all: --require-hashes before execution. The dependency does not enter any Cargo compiler/runtime/application closure. Local qualification uses the same pinned package in a task-local environment.",
+      "shell": "Admit a bounded set of straight-line command forms, not arbitrary preceding executables. Unknown/mutating programs, filesystem replacement commands, arbitrary Python helpers and mutating maintained-wrapper payloads invalidate block ownership. Retain the prior state/control-flow denials. Supported maintained generators/wrappers retain their actual selections; ordinary literal output/check commands remain supported. This does not attest arbitrary host code or prove general shell/YAML/GitHub/platform execution.",
+      "harness": "Benchmark-only, list/help and unknown harness selection/mode options cannot own ordinary integration cases. Known ordinary/ignored/exact/skip/format/thread options retain their existing selection rules.",
+      "workflow_preservation": "The original release memory-safety RUSTFLAGS override is isolated in its own step between the unchanged complete core conformance and runtime/host memory commands. Every command, feature, target, release/debug assertion setting, job deadline and fail-fast ordering remains intact. The inventory therefore need not credit a dynamic shell assignment to preserve the genuine core selections. Regression checks protect the retained release command and ordering.",
+      "qualification": {
+        "source_commit": "f055793cee4d3abf5fcd580937e52a5b7d1007ca",
+        "result": "PASS: all131 CI contract methods (including all30 inventory methods), six sharder tests and formatting; exact clean source checked before and after every phase.",
+        "commands": [
+          ["python", "-B", "-m", "unittest", "discover", "-s", "tests/ci", "-p", "test_*.py"],
+          ["python", "-B", "-m", "unittest", "scripts.tests.test_run_python_unittest_shards"],
+          ["cargo", "+nightly-2026-03-03", "fmt", "--all", "--check"]
+        ],
+        "python_environment": "Isolated venv with the hash-pinned CI requirements installed; Python3.14 / PyYAML6.0.3 on aarch64-apple-darwin.",
+        "log": "tmp/pr-stack-evidence/review-v110-pinned-structural-ci-checks.log",
+        "log_sha256": "468e75804f04e6d6e7f01cb408a34306c91ea5461560aace7486e564be465b8f",
+        "failed_intermediate": "v106 passes130 methods but the real inventory loses eight legitimate core targets because a later dynamic release RUSTFLAGS assignment invalidates their shared block. Separate unchanged execution steps restore that ownership; v107/v109 pass all131. The failed attempt remains recorded."
+      },
+      "negative_harness_evidence": {
+        "source_commit": "842c1596efe31dcfa240ec5cb37a8536700c498f",
+        "executable_sha256": "ee2abd75c55f8fbb589885952393d4daad0070f90d228bf00bb024f37087d492",
+        "arguments": ["--bench", "--test-threads=1"],
+        "result": "EXIT0 with zero passed ordinary tests, one ignored and zero measured. This is a negative mode probe, not ordinary test qualification or benchmark measurement.",
+        "log": "tmp/pr-stack-evidence/review-v108-harness-bench-negative.log",
+        "log_sha256": "3029e622c46c97a544e3c69486809424d4a6d794b58ea71c2d1f2996823eb782"
+      },
+      "assignment_specialization_qualification": {
+        "source_commit": "842c1596efe31dcfa240ec5cb37a8536700c498f",
+        "command": ["cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1", "-p", "mech-stdlib", "--no-default-features", "--features", "full_compiler,matrix2,vector2", "--test", "source_op_assign_contract", "--test", "specialization_contract", "--", "--test-threads=1"],
+        "environment": {"CARGO_BUILD_JOBS": "1", "CARGO_PROFILE_DEV_DEBUG": "0", "CARGO_PROFILE_TEST_DEBUG": "0", "CARGO_INCREMENTAL": "0", "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true", "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"},
+        "result": "PASS: both original test methods and their retained factory/layout cases on exact clean source. Combined with the separately recorded24-target full_compiler batch, this covers all26 reviewed stdlib targets/130 methods across the two required profiles, not all other owners or original application/tail/linked gates.",
+        "log": "tmp/pr-stack-evidence/review-v101-current-coverage-stdlib-assignment-specialization.log",
+        "log_sha256": "44e36998c01d60970cec0abb1d9aebc9fc1ed8c6849ac6c01e2c9dfe79cacb77"
+      },
+      "remaining": "Publish, reply to/resolve all five findings and request fresh exact-head review. Complete remaining owner/application/linked qualification and the entire final-composition CI. Keep PR901 draft and unmerged pending explicit user approval, even after clean review and green CI. The wider native/compiler/ten-workload/security benchmark brief remains unfinished; no new timings or F64 qualification are claimed."
+    },
+    {
+      "area": "shell resolution, invoked composite actions and complete reviewed stdlib source batch",
+      "reviewed_source_commit": "b70ca31cd5f2c176ac92c6796b75d9796ceb3855",
+      "review_comments": [4304398931, 4304398935],
+      "inventory_fix_commit": "20239a4d87ff7bfbdcea271441bcd44a3c27f0fb",
+      "shell_resolution": "Reject hash and other explicit command-resolution/working-directory state changes, including PATH-prefix assignments. Direct, recorded and maintained-generator commands with unproven dynamic arguments do not establish ownership. Tests retain positive ordinary assignments while rejecting hash-to-true for both Cargo and Python, altered PATH, changed directory, dynamic flags and the previous unreachable-shell cases.",
+      "composite_actions": "Do not scan every action file. Follow admitted local uses step properties from workflows, confine action paths to the checkout and follow nested composite actions with cycle bounds. Resolve the maintained literal-string input/default subset, preserve explicit overrides, and fail closed on unknown action-local gates, missing required inputs and dynamic command arguments. Ignore disabled/allowed-failure invocations, run-body uses decoys, unused actions and non-composite actions. The actual engine and hosted invocations both retain their selections. This is a conservative target/profile inventory, not a general YAML/GitHub/shell execution proof.",
+      "inventory_qualification": {
+        "source_commit": "20239a4d87ff7bfbdcea271441bcd44a3c27f0fb",
+        "command": ["python3", "-B", "-m", "unittest", "discover", "-s", "tests/ci", "-p", "test_*.py"],
+        "result": "PASS: all 125 CI contract methods, including all 25 inventory methods and the actual repository inventory; clean immutable source checked before and after.",
+        "log": "tmp/pr-stack-evidence/review-v98-pinned-ci-contracts.log",
+        "log_sha256": "6a69ba4762d78894a1c240890fa03cc05ebb5e97598324b94513e34a0b4ebb3f",
+        "failed_intermediate": "v95 fails three checks because bare quoted left-hand operands were incorrectly interpreted as whole YAML scalars. Expanded action gates now retain their expression wrapper; v96 and the stronger v97 pass all125. Failed logs remain failed evidence."
+      },
+      "string_fixture_fix_commit": "5a566dd98cde45e772ae7a6be7333b8d28350976",
+      "string_diagnostics": "The unchanged b70 executables prove exact node-zero Admission/ComparisonWork denials for the retained literal comparison (65538/65536) and String membership (65910/65536). Replace only their stale InvalidShape expectations. Preserve both artifact routes, original large inputs, all caps, unselected zero-divisor laziness, accepted values, unchanged epochs and recovery. No Rust production changes in this follow-up.",
+      "stdlib_qualification": {
+        "source_commit": "5a566dd98cde45e772ae7a6be7333b8d28350976",
+        "command": ["cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1", "-p", "mech-stdlib", "--no-default-features", "--features", "full_compiler", "--test", "comprehension_captures", "--test", "comprehension_work_source", "--test", "control_local_geometry", "--test", "control_matrix_captures", "--test", "control_result_shapes", "--test", "function_output_contexts", "--test", "knucleotide_record_source", "--test", "map_keys_comprehensions", "--test", "map_source", "--test", "match_result_schemas", "--test", "matrix_block_comprehensions", "--test", "postfix_selection", "--test", "primitive_snapshot_constructors", "--test", "pure_text_managed", "--test", "pure_text_source", "--test", "retention_work", "--test", "sequence_sort", "--test", "set_comprehension_operands", "--test", "string_generators", "--test", "string_literal_match", "--test", "string_membership_comprehensions", "--test", "string_selector_shapes", "--test", "text_operations", "--test", "u64_float_conversion_source", "--", "--test-threads=1"],
+        "environment": {"CARGO_BUILD_JOBS": "1", "CARGO_PROFILE_DEV_DEBUG": "0", "CARGO_PROFILE_TEST_DEBUG": "0", "CARGO_INCREMENTAL": "0", "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true", "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"},
+        "result": "PASS: all 128 methods across all 24 selected integration targets; clean immutable source checked before and after. Includes the three retained exact budget-denial/recovery fixtures. All subsequent code changes in 20239a4d8 are confined to the inventory checker and its Python tests.",
+        "log": "tmp/pr-stack-evidence/review-v94-current-coverage-stdlib-source.log",
+        "log_sha256": "ed3767dd1b15f2823a5250c30fa3a216e5e0ee547a502f469bf08b413fb7cc0c",
+        "fixture_sha256": {"src/stdlib/tests/string_literal_match.rs": "284b8e1e46bf98a6263be7a8ac58a369a2366ba35879bdbd1f7f768e10b24fa0", "src/stdlib/tests/string_membership_comprehensions.rs": "b25746f46735612be2482a0781989bf2e7192a7b344d693509156aa8e355df23"},
+        "scope": "Complete execution of this 24-target reviewed source batch, not all stdlib targets, the separate assignment/specialization profile, all ten tail-control contracts, other owners, native linked applications, browser products or green full CI."
+      },
+      "retained_failures_and_cache": "v91 on b70 passes19 complete targets/105 methods, then fails at the stale literal diagnostic. The unchanged v92 executable exposes65538/65536. The no-fail-fast v93 follow-up exposes membership65910/65536 while all three other remaining targets pass. These attempts remain failures. Both original executables are recoverably compressed and uncompressed-hash verified (literal066f00e428178e042cf5086f5f486b6e47a5618607144c5ddea2ab45122d29f0; membership4b28099e54bd9819cca34bd38efcfad919bc4cb91d393cb3444f075758dbc8bf). Earlier11 task-owned cache executables were CRC/hash verified into recoverable archives to reclaim5.4GiB. Nine disk-truncated nonexecutable files were moved to retained quarantine and rebuilt without strip warnings. No source, raw logs or linked application evidence was deleted.",
+      "remaining": "Publish these corrections, reply to and resolve both new notes, request fresh exact-head review, and require complete final-source owner/application/linked qualification plus entirely green CI. Keep PR901 draft and unmerged pending explicit user approval. The broader native/compiler/workload brief and same-AOT-binary trusted/secured benchmarks remain unfinished; no new timing credit."
+    },
+    {
+      "area": "unreachable shell ownership and matrix capture diagnostic follow-up",
+      "reviewed_source_commit": "13c16150bfac868f8f5defd594fdb0bf87665076",
+      "review_comment": 4304286467,
+      "inventory_fix_commit": "71358dbfde91e363b3659bea3a51934d06d4485d",
+      "fixture_fix_commit": "66935784466154d34ac59550b117baf2e8e647e8",
+      "inventory": "Use one conservative straight-line shell admission pass for direct Cargo, recorded-executable and maintained-generator ownership. Reject compound or indirect flow, heredocs, multiline strings, pipelines, noexec modes and unsupported shell operators; stop at terminating commands. False branches and post-exit decoys cannot own tests. This is not a general shell interpreter or an exhaustive execution/platform coverage claim.",
+      "workflow": "Keep the complete full syntax suite in its own straight-line step and retain all reduced-profile loops in a separate step with the identical checked optimization settings. Expand the four fixed native unit filters into their identical explicit invocations. Express standard/full catalog selection as job-matrix step conditions. Keep each exact nonempty ignored-test listing check before its separate real linked execution in the same fail-fast job, with matching target, features and preserved evidence environment. No selection, timeout, resource allowance or assertion is removed or relaxed.",
+      "matrix_capture": "The original large retained matrix is correctly denied at Admission / ComparisonWork / required 65631 / limit 65536. Replace only the stale InvalidShape expectation with that exact typed diagnostic. Keep the original input, global limit, previous values, unchanged epoch and later recovery for both original and decoded artifacts.",
+      "qualification": [
+        {
+          "source_commit": "71358dbfde91e363b3659bea3a51934d06d4485d",
+          "command": ["python3", "-B", "-m", "unittest", "discover", "-s", "tests/ci", "-p", "test_*.py"],
+          "result": "PASS: all 122 CI contract methods, including all 22 integration-inventory methods; clean source checked before and after.",
+          "log": "tmp/pr-stack-evidence/review-v87-pinned-ci-contracts.log",
+          "log_sha256": "882e69659cc2c37374dbbf6cc688cf26138b9f568ee72991a1a1b766ec260d01"
+        },
+        {
+          "source_commit": "66935784466154d34ac59550b117baf2e8e647e8",
+          "command": ["cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1", "-p", "mech-stdlib", "--no-default-features", "--features", "full_compiler", "--test", "control_matrix_captures", "--", "--test-threads=1"],
+          "environment": {"CARGO_BUILD_JOBS": "1", "CARGO_PROFILE_DEV_DEBUG": "0", "CARGO_PROFILE_TEST_DEBUG": "0", "CARGO_INCREMENTAL": "0", "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true", "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"},
+          "toolchain": "rustc 1.96.0-nightly (ec818fda3 2026-03-02), aarch64-apple-darwin",
+          "result": "PASS: all five control_matrix_captures methods, including both artifact routes in the unchanged denial/recovery fixture; clean source checked before and after.",
+          "fixture_sha256": "21b4cf0a4ebb6a9dbdd002c0a21dcc64714fde73903fa49be476c993cf667376",
+          "log": "tmp/pr-stack-evidence/review-v88-pinned-matrix-capture.log",
+          "log_sha256": "8f6a8bb5048475cb6be0c61d05849c76c773465b70395873c26492917764b57f"
+        }
+      ],
+      "failed_evidence": "The v84 and v85 intermediate guard checks fail on legitimate complex workflow selections; v86 passes after explicit workflow restructuring. The pinned v82 stdlib batch on 13c16150 fails at the stale matrix expectation after 14 earlier methods pass and also records disk-limited strip warnings; it is not complete qualification. The unchanged v83 executable exposes the exact typed denial before the panic abort. Logs are retained. Its original executable is recoverably archived as review-v83-control-matrix-original.gz, verified by CRC and uncompressed SHA256 bea5a476c41263eaf667a9e2c224a8511a8d619bc10b466bb4a0cc29b510ba9a; archive SHA256 c7c73255278cb43172f6e55ab081129ffe8241914d9b757e7320a765d66788ec.",
+      "remaining": "Full final-source owner/application/linked qualification, fresh exact-head clean review and complete green CI remain required. No new benchmark measurement or wider native capability is claimed. Keep PR901 draft and unmerged pending explicit user approval."
+    },
+    {
+      "area": "mixed ordered replacement publication, optional observations and inventory review",
+      "reviewed_source_commit": "a280076095391682f3587176a34d1731066c8bcc",
+      "runtime_review": "Remove the blanket exclusion of reset-dependent outputs. Refresh non-migrated outputs using admitted initializer reads for candidate-owned state and published reads for migrated state. Reuse the inactive planned state buffers, retain actual final writer/output publications, and restore every current state publication and epoch on success or failure. Cover prefix projections, mixed state, hidden constraints, next-turn recovery and invalid read-view requests without raising limits or cloning a state arena.",
+      "inventory_review": "Trace maintained generator calls from their executed script entry point; do not credit unused helpers, disabled branches, deferred expressions or unproven loop bodies. Decode workflow constant truthiness and comparisons, nested module cfg gates, qualified harness names, both skip-filter spellings and Rust raw-string cfg values. Unknown constant-only workflow conditions and potentially allowed-failure commands supply no ownership. Keep platform, dependency-unit and per-declaration coverage outside this target-ownership claim.",
+      "browser_failure": {
+        "ci_run": 39060111762,
+        "job": 117476550426,
+        "artifact": 12111767924,
+        "cause": "The configured browser artifact contains the expected step-count diagnostic, but the Errors tab is selected after optional placeholder inspection reports that clock-second has no value. A newly added observation legitimately awaits its first accepted input; ResidentReplSession::symbol incorrectly converted that absence into a strict root-value error.",
+        "fix_commit": "6b43b203f",
+        "implementation": "Keep the known OutputId and return runtime.output_value directly, preserving None for unpublished symbols while retaining real query errors. A source/decoded interactive replacement regression checks absent observations, repeated inspection without epoch changes, first real input, clearing and zero provider reads. Retain every existing browser assertion/deadline and strengthen the clock probe to require actual publication before taking its first sample; the following change check still requires another tick. An AST-based CI contract protects that prerequisite."
+      },
+      "precommit_validation": {
+        "inventory_methods_passed": 20,
+        "ci_contract_methods_passed": 120,
+        "sharder_methods_passed": 6,
+        "ordered_projection_methods_passed": 12,
+        "published_input_methods_passed": 2,
+        "runtime_unit_methods_passed": 831,
+        "source_acceptance_methods_passed": 61,
+        "recording_methods_passed": 12,
+        "engine_execution_methods_passed": 37,
+        "frozen_precommit_base": "6b43b203ff18b99502dc72feed4a6ce3cd483fbf",
+        "frozen_precommit_git_diff_sha256": "d2991c7de13f284221fba0f731012862e1c732ba635ce49501dffc9848459fd1",
+        "frozen_precommit_git_status_sha256": "58befb7a5841b702ab23b1b8ba647de1ed3c6a452ce094e4165e5e4acf1fe4c9",
+        "logs": ["review-v79-precommit-current-runtime-units.log", "review-v79-precommit-current-runtime-source-acceptance.log", "review-v79-precommit-current-runtime-recording.log", "review-v79-precommit-current-engine-execution.log", "review-v79-precommit-current-ci-contracts.log", "review-v79-precommit-current-sharder.log", "review-v79-precommit-current-formatting.log", "review-v80-precommit-static-audits.log", "review-v81-precommit-ci-contracts.log"],
+        "static_audits": "Unsafe boundaries and their fixtures, type-system and semantic authority, managed memory, memory planner and Rust module layout all pass without new allowances. Shell syntax and formatting checks pass.",
+        "scope": "All seven serial v79 phases pass with the base commit and complete dirty-tree diff/status hashes checked before and after each phase. This includes all 12 projection methods, new-state/raw-constraint behavior, optional observation queries, extended engine read-view assertions and recording classification. Subsequent changes only strengthen the browser probe and its CI contract and update these receipts; v81 passes all120 contracts. These are precommit checks, not final immutable-source, actual browser or green-CI receipts. Prior failed mixed-prefix assertions, compile failure and disk-limited build remain failures, not passing qualification."
+      },
+      "earlier_pinned_pipeline": "All seven deeper-review phases pass on clean 0c324ef23: engine37, envelope4, runtime projection9, published input1, loader2, builder137unit+82integration (seven intentional ignored entries), and minimal core239 including doc tests. These source-pinned results predate this production follow-up and do not qualify it.",
+      "gate": "Publish tested corrections, reply to and resolve all six review notes, then request fresh exact-head review and require the complete final CI. The a280 workflow fails the browser canary and its aggregates despite all six mutation shards passing. Keep PR901 draft and unmerged; no benchmark measurements are claimed."
+    },
+    {
+      "area": "static mutation deadline and conditional inventory selection follow-up",
+      "source_commit_exposing_failure": "0c324ef23d7f2c042fb67d0005304abf1b29dd7a",
+      "ci_run": 39058636869,
+      "ci_job": 117471853044,
+      "cause": "All 87 tests in static mutation shard zero passed (43 in 438.403 seconds and 44 in 454.206 seconds), but setup plus execution and cleanup crossed the unchanged eight-minute job deadline. GitHub reports cancellation for exceeding 8m0s, so the strict aggregate correctly fails; successful test steps do not make the job green.",
+      "implementation": "Spread the identical mutation inventory across six required outer shards instead of four, retaining two workers per job, the eight-minute deadline and the strict aggregate. Add nested partition tests requiring the complete case multiset exactly once under both layouts. Do not skip tests, change their assertions or increase timeouts.",
+      "inventory_hardening": "Model leading crate cfg_attr gates, including nested conditions, without treating a later helper module's inner attribute as a crate gate. Match complete balanced test attribute blocks, conditional ignores and raw attribute spellings, so ignored-only invocation cannot own an ordinary target and ordinary invocation cannot own an ignored-only target. Keep the explicit scope distinction from exhaustive platform/dependency-unit/per-declaration coverage.",
+      "verification_scope": "These are CI-only changes. Rust production, Rust fixtures, package manifests and locked dependencies are unchanged from 0c324ef23. Local Rust qualification remains pinned to that clean source; the new Python regressions and final CI must execute before this follow-up is qualified. No new passing-test or benchmark credit is claimed here."
+    },
+    {
+      "area": "deeper publication, admission and qualification review",
+      "imported_review_commit": "48b565ac4166f2f94a2ba0597536f2c082c42da5",
+      "integrated_commit": "fb8edad84ec9f62e163d9e23f48b152f3475327c",
+      "implementation_follow_up_commit": "3438086e15a9ebbf175f41c48c83f902cc2cd9b6",
+      "test_authority_follow_up": "d5f0c527fa844f5123b74b4f4c01a3c75e3fdb6e keeps fixture inspection inside the runtime test module instead of widening a private production API.",
+      "publication": "Refresh ordinary control projections and invariant dependency roots through the existing executor, even without state mappings when accepted captured inputs survive. Preserve published FSM results, dormant activation and unavailable observations. Retain the last accepted live/replay input snapshot separately from rejected or pending captures, and refresh the migrated publication hash. The older accepted snapshot has additional bounded retained-memory cost; it is not a zero-cost alias.",
+      "admission": "Runtime loading and native application planning use the same complete canonical bytecode envelope decoder. Reject legacy-only execution, hybrid execution authorities and inconsistent requirement tables. Remove the production instruction-only planning fallback while retaining low-level malformed codec and linkage tests at their owning APIs. The runtime rejection fixture now constructs a genuinely valid initialized legacy ConstLoad/Return program before checking these denials.",
+      "typed_iteration": "Preserve resource dimension, phase, required amount and limit through counted-application planning and admission. Literal and bracketed counts retain exact diagnostics, publication atomicity and recovery without raising limits.",
+      "replacement_follow_up": "Match unnamed state by a unique semantic writer/initializer graph rather than artifact-local producer offsets. Exact immutable revisions retain exact cell identity; unrelated nominal origins and ambiguous changed-revision cells are not guessed compatible. Reject suspended continuation migration before copying inputs or state; the original frame and generation-bound wakeup remain usable until the host completes the computation and retries.",
+      "ordered_mutation_follow_up": "The complete runtime run exposed an existing interactive edit returning display=13 instead of the candidate's ordered display=11. Exclude projections dependent on explicitly mutated cells from refresh, retaining their candidate publication while independently refreshing compatible retained state. Source/decoded regressions also check hidden invariant order around a later mutation, with and without independently retained state.",
+      "allowance_lifecycle": "Remove the supplied 20 stale value-boundary allowances for 14 deleted paths and reject future allowances for absent files. This is the value-execution boundary manifest, not an unsafe-boundary permission change.",
+      "audit_follow_up": "The existing unsafe-boundary audit flags the supplied arity fixture's nested raw-hash ID construction. Use RuntimeFunctionId::from_name for the same catalog lookup, retaining all exact ID, arity, linkage and production-denial assertions. The unchanged unsafe audit then passes; no new allowance is introduced.",
+      "ci_inventory": "Execute the supplied 44 previously omitted integration targets and the complete resident execution unit module. Add dynamic Cargo integration-target discovery for core, syntax, engine, stdlib, runtime, build and GPU, requiring a real selected target with one adequate crate-level feature closure. Compilation/listing, unrelated filters, disabled or allowed-failure steps, comments and display strings do not supply execution ownership. Track recorded test binaries through actual invocation and inspect literal commands passed to the invoked maintained generator runners, preserving existing planning/generation coverage. Select 17 additional missing or partially selected integration targets identified by this broader inventory. This is target/profile ownership, not executed-test counts, platform qualification, exhaustive dependency-unit coverage or a per-declaration coverage percentage. Explicit ignored-case and nonempty-selection contracts remain required.",
+      "precommit_evidence": {
+        "runtime_full_log": "tmp/pr-stack-evidence/review-v67-precommit-runtime-all.log",
+        "runtime_unit_tests_passed": 826,
+        "runtime_integration_targets_passed": 20,
+        "runtime_integration_cases_passed": 387,
+        "source_acceptance_cases_passed": 61,
+        "additional_projection_order_log": "tmp/pr-stack-evidence/review-v69-constraint-order.log",
+        "projection_methods_passed_after_additional_case": 9,
+        "ci_contract_log": "tmp/pr-stack-evidence/review-v68-ci-contracts.log",
+        "ci_contract_tests_passed": 110,
+        "builder_partial_log": "tmp/pr-stack-evidence/review-v60-precommit-builder.log",
+        "builder_unit_tests_passed": 137,
+        "builder_integration_cases_passed_before_process_failure": 18,
+        "process_environment_follow_up": "The full builder attempt then failed six process-supervision tests because the sandbox forbids ps. The exact unchanged isolated_process executable passes all 12 real process cases with required access; four ignored entries are fixture subprocess entry points exercised by those cases. Keep the sandboxed full-suite attempt failed rather than crediting later unexecuted targets.",
+        "unchanged_process_binary_sha256": "62d8eab9c2a7aef8dd02a426a12971b2396b407eb4316fcda5abd0dccd7b5798",
+        "process_log": "tmp/pr-stack-evidence/review-v61-builder-process-outside-sandbox.log"
+      },
+      "scope": "These are serial precommit checks in isolated repair checkouts, not final immutable-source, new linked-application, fresh-review or green-CI receipts. The complete runtime run predates only the additional passing test method and the CI/documentation additions, not a later Rust production change. Fresh final-candidate qualification remains required. No benchmark measurements are claimed."
+    },
+    {
+      "area": "isolated resident-source admission expectations",
+      "source_commit_exposing_failures": "60b8f753f3ee3f9cf024af8449405f0a5b9e5c3e",
+      "discovery": "Proactively execute the isolated full_source,resident-artifact stages that follow the earlier core compilation failure in Cargo language CI. The table-join and composite-memory refusals still expect generic InvalidShape despite the retained typed resource-limit implementation.",
+      "implementation": "Require exact node-zero Admission/ComparisonWork refusals: table join requires 65538 against 65536; the original large composite String requires 8388676 against 65536. Preserve the original 300-by-300 join and half-byte-cap String inputs, global limits, publication/schema/shape/value checks and recovery. Exercise both original and decoded join artifacts, assert the actual one-row baseline and unchanged publication epoch on failure, and retain original/decoded composite coverage with exact baseline data and unchanged epoch. Do not restore generic errors or change production accounting.",
+      "precommit_validation": "All 10 collection and 21 structure integration cases pass after both corrections, along with 33 isolated source-frontend and 146 resident-numeric unit cases. Earlier complete target attempts retain their actual failures rather than being relabeled passing. Fresh exact-head qualification, review and CI remain required."
+    },
+    {
+      "area": "minimal core sort-shape regression profile",
+      "source_commit_exposing_failure": "464abb5ff3b019eeb13ed0689f82cad4421ccc2f",
+      "ci_run": 39036311908,
+      "ci_job": 117413907101,
+      "cause": "The complete minimal mech-core suite cannot compile sequence_sort_shape_constraints because its helper calls maintained_source_type_declaration, which belongs to the optional functions catalog module.",
+      "implementation": "Read the same maintained sequence/sort-indices KindSchemes directly from the always-available storage-blind type-system registry. Preserve every live/fixed shape, empty product, rejection, identity-conversion and one-based Index result assertion. Do not gate or skip these tests, enable extra production features, or change the implementation being tested.",
+      "precommit_validation": "The complete minimal mech-core suite passes. With functions enabled, both sort-shape tests and all 26 type-system catalog tests pass. Fresh exact-head review and CI remain required.",
+      "local_watcher_boundary": "The preceding local runtime-owner run on 464abb5ff3b019eeb13ed0689f82cad4421ccc2f stopped at the filesystem wake-up test under the filesystem sandbox (815 passed, one failed). The exact unchanged test binary passes ten consecutive runs outside that sandbox, each within 0.1 seconds. Treat the sandboxed attempt as failed environment-limited evidence, not a production watcher correction or a passing full-owner receipt; run filesystem-dependent qualification with the required access."
+    },
+    {
+      "area": "full-suite profile and fixture follow-up after restored browser qualification",
+      "source_commit_exposing_failures": "e7fb7f9f46160f2df03c6cd864e32839e24d8d82",
+      "ci_run": 39015685289,
+      "resident_only_witness": "Allow the private scalar witness accessor in unit-test builds as well as native-artifact builds. The resident-only production profile remains unchanged; explicitly execute the backend-independent witness tests in the managed-memory job without enabling native-artifact.",
+      "external_test_providers": "Add effect-free target preflight to the test-only scene and transactional providers, retaining DeferredToRuntime schema admission and real F64 payload checks. Validate both target and payload before effect preparation. A regression verifies unsupported targets, deferred Boolean schema, rejected Boolean values, and no preparation/delivery side effects from planning. Keep the original source/decoded 64-turn publication and replay contract unchanged.",
+      "catalog_fixture": "Account for the nine deliberate text/number, map and collection exports by exact name while independently retaining the historical 120-name census. Exercise lookup rejection before arguments for every lexically callable module/internal name, including all additions.",
+      "formatter_fixture": "Keep legacy named-result signatures as input, require their canonical output arrow, and retain both formatting passes and every unrelated document expectation. Do not revert canonical output to the legacy spelling.",
+      "native_linkage_inventory": "Accept the canonical namespace/item syntax used by explicit custom contract declarations, while retaining forbidden placeholder, linkage, feature, signature and alias checks. Include all ten exact additive factories in current inventories and digests; independently preserve the historical full-surface identity and extended retained digest. Reject missing or duplicate additions, removed or changed retained factories, and unrelated undeclared additions. Refresh generated coverage from actual catalog inventories rather than treating the historical snapshot as the complete present language.",
+      "guarded_fsm_blocks": "The complete language-owner integration selection exposes a real ordered-choice defect: guarded transitions try record-valued states before blocks, unlike ordinary transitions. Put blocks first in the maintained grammar specification and regenerate the canonical grammar. Preserve both original regressions asserting ordinary definitions, mutable bindings, indexed assignments, empty blocks and the following state transition.",
+      "mixed_sample_fixture": "The complete runtime integration selection reaches a stale expectation that compute sample representatives specialize provider-declared matrix parameters to constant geometry. Preserve the original scalar, 1-by-3 and 2-by-3 compute-port cases. Assert the complete host-observation schema and key, dimension declarations, and validated nondefault sample shape against original and decoded coordinator artifacts instead of discarding provider lifetimes/bounds. Separate resource-schema execution regressions retain changing actual observations, rejected geometry, atomicity and recovery.",
+      "parser_limit_fixtures": "The complete syntax integration selection reaches two stale measured-budget fixtures. A read-only probe of the pinned full-syntax library measures 11 additional application-lookahead steps and one event at the unchanged completed-prefix boundary. Keep the original fuel budgets 390/648 with their exact current remainders 46/89; additionally test the original semantic boundaries at fuel 401/659 (remainders 49/100). Preserve event budget 128 with its exact remainder 47 and add adjacent 129 with remainder 49. Require hard bounds, one structural error, lossless reconstruction, no ordinary tokens beyond the remainder, and the unchanged completed prefix. No parser implementation or production resource limit is changed.",
+      "grammar_ledger_fixture": "The final full-syntax integration target retained only IMPORT-001 and MATCH-001 in its expected applied correction census. Include the already maintained COUNT-001 bracketed-count correction, retain both earlier IDs, and require both affected application grammar rules to exist. Do not remove the correction record or its conformance cases.",
+      "syntax_stress_ci_profile": "Use optimization level 1 only for the full/reduced syntax grammar-suite step, explicitly retaining debug assertions and overflow checks. Keep every selected test, 8192-through-65536 stress size, 3x doubling assertion, work/resource bound and timeout unchanged. The unoptimized local run was interrupted while its first large fenced case remained CPU-active after more than twelve minutes; the checked optimized build completed all thirteen unchanged streaming-complexity tests in 361.67 seconds on the same source. This is correctness qualification, not benchmark credit. A workflow regression requires all three profile settings and the original complete test selection without skipping or no-run.",
+      "review_contract_hardening": "Address both P2 notes on 38d6d3dd570bfdec7375681b73c6ada72e44ea38. Inspect comment/literal-masked Rust function bodies to require every large streaming size, all seven resource settings, both total/consumer 3x assertions, settled-prefix bound, 64-byte chunking and all six enabled stress entry points. Mutation cases must reject weakened settings even with retained spellings in comment/string decoys. For COUNT-001, compare complete whitespace-normalized operator/stage bodies, preserving grouping, choice, repetition and the stage-to-operator reference; reject sequence-only, missing-alternative, lost-grouping and bypassed-stage variants while accepting multiline formatting.",
+      "stress_registration_review_follow_up": "The follow-up P2 on 2717cacb36fd488b0763e3f3ee6e30e5f3e13273 identifies ignore-before-test ordering as a remaining registration loophole. Inspect each complete outer-attribute block and require exactly the unconditional test attribute; require top-level entry points and reject inner target attributes. Mutation cases insert ignore/reasoned-ignore, false cfg and disabling cfg_attr before and after test on all six entry points, plus file-level cfg and hidden-module wrappers. The real stress tests and their attributes are unchanged.",
+      "stress_registration_precommit_validation": "All 97 workflow contracts pass in the repair worktree, including 60 attribute-order mutants and file-level/module disabling cases. This is precommit validation, not a final immutable-source or CI receipt. Rust implementation and stress inputs/settings are unchanged from 2717cacb36fd488b0763e3f3ee6e30e5f3e13273.",
+      "gate": "These are follow-up repairs to failures exposed after CPU, WebGPU and parity qualification succeeded. A fresh review and all required checks on the next exact head remain mandatory before ready or merge."
+    },
+    {
+      "area": "live-edit observation and projection migration",
+      "cause": "Both final-head EKF jobs reach execution, then reject a source replacement at coordinator node 45, math/mul: its dynamic 2-by-1 scene pointer input comes from resource/read node 1, but projection refresh runs before accepted input snapshots are transferred and installed. Scalars can mask absent input storage with zero values. The WebGPU canary retried the rejected incompatible edit on subsequent completions, obscuring the concrete error behind the idle watchdog.",
+      "implementation": "Transfer the accepted captured observation snapshot before refreshing projections; retain pending capture-only inputs separately. Populate replacement input storage through the same validated canonical-value writer used by ordinary execution. Evaluate only the requested projection dependency closure, stopping at published state candidates. Do not observe providers or synthesize a state transition. Keep all resource limits and browser semantic oracles unchanged.",
+      "regressions": "A reduced native source program reproduces the original InvalidInput failure before the correction. Original and decoded replacements now assert the retained nondefault matrix values, declared schema identity/key and actual shape, unchanged state/epoch, unavailable unobserved matrix facts, an independent new constant, and the next real input turn without provider reads. All five compatible-replacement regressions pass, including dormant FSMs and changing input geometry.",
+      "browser_evidence": "Replay of the exact 8d9e90c10 CI Wasm and retained page reaches the camera and parity oracles. Spaced paused stacks advance through replacement parsing, then expose the same node-45 InvalidInput error; this is not evidence of an allocator deadlock. Latch one incompatible-edit attempt and report a rejected/throwing replacement immediately as a failed oracle, without marking success or increasing timeouts.",
+      "precommit_validation": "815 runtime units, 61 source-acceptance tests, 11 EKF contracts and 94 workflow contracts pass in the correction worktree. This is precommit validation, not an immutable-source final receipt. Fresh source-pinned qualification, review and all required CI remain mandatory."
+    },
+    {
+      "area": "module layout",
+      "implementation": "Retain native_resources/mod.rs and move program/tests.rs to program/tests/mod.rs; leave the existing layout gate unchanged."
+    },
+    {
+      "area": "text/join",
+      "cause": "The previous comparison estimate charged the longer payload even when unequal lengths establish inequality immediately.",
+      "implementation": "Charge fixed comparison work for unequal lengths and admit the possible payload comparison for equal lengths. Keep traversal, copying, allocation and retention charges and the global limits.",
+      "coverage": "Original and decoded artifacts; first publication at 65535, 65536, 65537 and 70000 bytes, growth/shrinkage, isolated repeated join, denial atomicity and recovery."
+    },
+    {
+      "area": "structural tail carriers",
+      "cause": "Repeated full enum, schema-body and draft copies consumed cumulative work on retained countdown and RecordBounds carriers.",
+      "implementation": "Bind and cache structural eligibility at activation; retain canonical values with schema-key/body/path evidence and borrow projections. Admit actual draft materialization, finalization and equality when needed.",
+      "diagnostics": "Preserve ResourceLimit with planning/admission/execution/publication phase, dimension, required amount and limit instead of collapsing admission causes to InvalidShape.",
+      "fixture_rule": "All ten original tail_control inputs, limits, expected results and recovery assertions are unchanged; only failure context was added."
+    },
+    {
+      "area": "persistent projection metadata",
+      "implementation": "Install a non-arena metadata demand in ActivatedPlan.memory_plan and initial/refined peak demands. Replace rather than accumulate the previous baseline, preserve value footprint nodes, reserve once at realization and release on denial/close, including budget None.",
+      "coverage": "Exact limit and one-under denial, refinement idempotence, growth, retained-node limits and release after failed realization."
+    },
+    {
+      "area": "map ownership and metering",
+      "implementation": "Keys, Values and Histogram finalize with the selected kernel's shared immutable schema owner. Their Snapshot implementations admit scans, histogram sort workspace, shape construction, drafts, payload copies, bounded canonical finalization and equality.",
+      "accounting_contract": "RuntimeMetered belongs to these audited selected implementations. The dense String output bridge remains Unclassified because it has additional copies.",
+      "coverage": "Owner identity, unrelated large schema arena/small result, exact U64 values, canonical order and geometry, finite per-call budget, repeated publication, denial and recovery. The original Keys/Values 4096-byte cases remain; the new Histogram case admits its complete 4148-byte workspace within 6144 bytes, below the unrelated arena's size."
+    },
+    {
+      "area": "native signed linked coverage",
+      "implementation": "Retain Bool/U64/I64 selected implementation witnesses and add a linked signed division/remainder fixture covering signs, extrema, zero divisors, MIN/-1 traps, source ordering, atomic outputs and recovery."
+    },
+    {
+      "area": "CI selection",
+      "implementation": "Select canonical application qualification for language/native impacts. PR900's own required native-hosted gate also runs the nonignored rejected-declaration application regression and explicitly selects the ignored linked secure/trusted qualification. Run canonical-native and resident-CLI linked tests explicitly with pinned toolchain, locked dependencies, one test thread and retained evidence. Workflow regressions protect the normal and ignored selections without disabling existing gates."
+    },
+    {
+      "area": "bracketed element-wise counts",
+      "implementation": "Parse |[expression]> through the canonical matrix-expression continuation and typed AST. Evaluate seed and counts once. Broadcast one count, otherwise require identical actual matrix extents, and run pure scalar callback lanes in canonical serial order while preserving seed geometry. Validate every count before callbacks and publish only a complete successful result.",
+      "numeric_boundary": "Counts retain normal expression typing. Integer counts convert directly to U64 without a floating-point round trip; floating counts must be finite, whole, nonnegative and below 2^64. Fractions and out-of-range values are rejected rather than rounded or truncated.",
+      "compatibility": "|N> retains whole-carrier iteration, |> retains ordinary application, and old literal-count bytecode encoding remains unchanged. Bracketed counts have a distinct encoded count-input role. Older native frontends explicitly reject them; canonical-native Iteration lowering and parallel scheduling are not claimed.",
+      "parser_boundary": "A clean bracketed candidate commits only at >, retaining matrix-valued table row ownership and incremental chunk equivalence. EOF recovery still retains the missing-angle diagnostic.",
+      "coverage": "All three requested five-element count vectors, singleton and expression counts, scalar and empty seeds, matrix orientation, String lanes, original/decoded artifacts, exact integer boundaries, count production once, validation-before-callback, managed denial, failure atomicity and recovery. Final post-merge qualification is pending."
+    },
+    {
+      "area": "CI profile and diagnostic corrections",
+      "implementation": "Remove the unused legacy U8 feature from the CLI provider's standard graph; preserve canonical byte Snapshots. Correct all ten fixture includes after relocating runtime program tests. Handle MemoryPlan/ResourceAdmission and typed kernel resource failures in resident recording without discarding resource-limit details. Update authority and mutation guards to inspect the actual selected-binding and canonical schema-identity paths rather than obsolete wrapper text.",
+      "gate_boundary": "No warning, module-layout, schema-identity, bound-call retention or native-evidence gate is disabled. The optional canonical-native inspection helper has a narrowly reasoned, expiring warning-ledger entry. Parser conformance checks feature-enabled acceptance and explicit disabled-feature rejection."
+    },
+    {
+      "area": "post-restack CI repair",
+      "cause": "Runtime activation diagnostics still formatted the old numeric count after IterationCount gained Literal/Elements forms, blocking native, browser, Windows and source-profile consumers. The full-feature activation test helper also omitted the new Iteration node variant. Parent test selection landed in the canonical job but missed native-hosted; an adjacency assertion and composite mutation fixture retained obsolete text. The canonical match guard could mistake scrutinee finalization for result-identity finalization.",
+      "implementation": "Describe literal and element-wise counts explicitly, with tests preserving exact literal diagnostics and identifying count inputs. Keep the simple activation fixture exhaustive by explicitly rejecting Iteration. Select native_source_admission in both required application gates, checking targets independently of order. Match the actual canonical result-identity binding and prove unchecked or unused identities fail; retarget the composite mutation to remove admission before the current fixed/dynamic constructor branch.",
+      "distribution_evidence": "Fresh standard/full catalog probes on a6e1c22721dc88aee62e02ea187c87f31d667a30 each measure the already implemented ten runtime and nine source additions. Refresh only catalog counts and digests: standard 1709/79; full 15709/129. Packages, dependencies, selected hosts, root features and machine operations remain identical. Historical retained catalog projections and their independent exact-addition assertions stay enforced.",
+      "probe_logs": ["tmp/pr-stack-evidence/pr901-ci-standard-v1.json", "tmp/pr-stack-evidence/pr901-ci-full-v1.json"],
+      "host_catalog": "After the repaired standard snapshot passed, CI reached a stale CLI factory expectation. Preserve the explicit launcher argument snapshot: require CliHostFactory::with_arguments and ProgramArguments in the actual CLI registration rather than reverting to the process-global constructor. Positive and mutation fixtures cover the selected constructor, an unrelated matching name, and a dropped argument input; production metadata validation remains enforced.",
+      "runtime_fixtures": "Separate schema planning from concrete value planning without live reads, preparation or delivery. Test explicit immutable lexical captures with encoded artifact input names while retaining rejection of undeclared ambient inputs and caller-local leakage. Planning selector representatives supply schemas only; live portable-width rejection, atomicity and recovery remain tested.",
+      "admission_fixtures": "Retain the original small and larger Boolean and String payloads. Metadata and canonical encoding use their actual compute allowance, not an assumed comparison allowance. Add Boolean duplication beyond the unchanged output-element cap and repeated String selections whose payload alone fits but whose two staged copies exceed the unchanged temporary-byte cap. Refused producers cannot publish selector facts through strict comparisons, source loading or decoded bytecode; the original cumulative closed-analysis refusal and recovery cases remain asserted.",
+      "constant_output_layout": "The EKF browser canaries exposed a constant matrix published through snapshot storage while its constant source used dense storage. Mark output aliases of immutable constants as activation-fixed, including alias chains; do not treat live control or input shapes as fixed. Regressions cover Bool/Index/F64/String matrices with turn-parameterized schemas, nonsquare geometry, two turns and original/decoded artifacts. Compile the entire shipped EKF coordinator at both one and 1000 filters with planning-only providers, not just its compute subsection.",
+      "qualification": "Focused constant-alias and full EKF coordinator regressions pass. Runtime units passed 793/793 on 4d2f2f22571a6ee5bef2652864f99333423f9f05; source acceptance passed 61/61 on 9f897f8b1f6b0fd5faf31b5a90af49295303e9b2, before the constant-layout correction. Final immutable-source runtime/engine, complete affected contracts and linked qualification are still pending; this entry does not credit earlier receipts as final qualification."
+    },
+    {
+      "area": "supplied rereview correction pass",
+      "enum_projection": "Canonical enum and tuple projections retain the immutable root schema Arc and walk schema/data paths together. Reject mismatched enum ordinals before allocating a projection; matching arms also share the schema. Reserve bounded path storage separately for peak active depth and cumulative attempted pattern work.",
+      "shallow_projection_storage": "Use checked U32 member ordinals and allocation-free inline storage for up to two projection steps. Cache the maximum possible projection descent in the immutable activation certificate; admit every attempt using that schema bound and active pattern depth. Deeper paths retain separately funded exact-capacity Vec/Arc storage. This removes real work, without changing target limits.",
+      "qualification_follow_up": "Final application qualification on f1792b675 exposed the unchanged 1024-transition countdown just beyond its compute allowance (16782450 required, 16777216 limit). That run is not credited as tail qualification. Allocation-free shallow paths and certified descent bounds restore all ten unchanged original tail cases on 16577f301.",
+      "constructor_authority": "Closed copy preparation and the selected runtime Snapshot constructor call the same borrowed retention/finalization preflight. Keep payload equality separately metered and retain existing output, copy, temporary, node and work limits. Add the two live 32768-element Boolean-input boundary and closed selector-fact boundary.",
+      "typed_denial": "Preserve existing and recomputed budget violations through ordinary permits, current-turn planning, continuation/frame measurement, recursive calls and iteration replacement. Assert exact phase/dimension/required/limit diagnostics rather than treating resource denials as InvalidShape. Existing arithmetic and malformed-layout InvalidShape assertions remain.",
+      "regressions": "Shared schema and tuple-array identity across 1024 attempts; finite cumulative path accounting; many mismatched and guard-rejected matching arms on original/decoded artifacts; binding-copy denial with unchanged output/epoch and recovery; unchanged original ten tail-control cases.",
+      "status": "Implemented locally; focused and full qualification in progress. No final-candidate qualification or new benchmark credit is claimed."
+    }
+  ],
+  "remaining_compatibility_accounting": {
+    "location": "src/engine/src/resident/general/comprehension.rs:bind_inner",
+    "paths": [
+      "Legacy non-String-Set Snapshot results retain a representation-based dispatch-only fallback relying on their bound memory plan.",
+      "Older dense primitive operations retain canonical-name-based fixed scalar bounds, reduction/access exceptions and element-based concatenation/Set bounds."
+    ],
+    "boundary": "New String Set controls require RuntimeMetered descendants rather than inheriting those compatibility fallbacks. Audited map implementations meter their actual paths. None of these public work contracts supplies the private selected native-semantic witness.",
+    "follow_up": "Replace inherited name/representation fallbacks with implementation-owned contracts as those kernels are migrated."
+  },
+  "capabilities": {
+    "canonical_resident": "Validated canonical ProgramArtifact execution with retained state, control, collections and configured resource contracts, subject to each selected implementation's supported layouts and admission limits.",
+    "bracketed_counts": "Canonical resident, pure primitive scalar/flat rank-two matrix lanes, singleton broadcast or exact actual shape, serial order and atomic enclosing publication; no parallel or native-lowering claim.",
+    "older_source_native": "The separate source-based native application frontend and activated text ports remain distinct from canonical-artifact native lowering.",
+    "canonical_native": "Stateless Turn-only Bool/U64/I64 scalar graphs with private selected implementation evidence; JIT/Object and linked qualification are separate phases.",
+    "benchmark_credit": "No new benchmark measurements or complete ten-workload qualification are claimed."
+  },
+  "live_follow_up_work": [
+    "Compose and qualify preserved additive F64 and checked-cast candidates against current source hashes.",
+    "Expand canonical native control, state, Iteration, matrices, collections and typed resources with real compiler/runtime support.",
+    "Migrate older native frontends to canonical artifacts; consolidate executable-region walkers, shape/Snapshot/admission/publication helpers.",
+    "Complete strict CLI payload/count and ownership/collection/bigint gaps, then qualify all ten idiomatic programs and publication LOC.",
+    "Qualify complete same-binary trusted/secured workload execution before serial Mech-only timing; preserve historical language cohorts.",
+    "Continue broader packaging and optimizer work independently of the corrected stack's qualification."
+  ],
+  "checks": [
+    {
+      "area": "additive linkage inventory regeneration, not final-head execution qualification",
+      "full_catalog_source_commit": "5732c87861470e5eab58dc71bc66f6cfb17712fb",
+      "full_catalog_entries": 9726,
+      "retained_full_entries": 9716,
+      "extended_shard_source_commit": "e7fb7f9f46160f2df03c6cd864e32839e24d8d82",
+      "extended_shard_ci_run": 39015685289,
+      "complete_catalog_entries": 122093,
+      "retained_complete_catalog_entries": 122083,
+      "retained_complete_catalog_digest": "34db793ac637b3b1bc532978c6e8a6e0be1b8be63c33ec5f3043045f765616f5",
+      "current_complete_catalog_digest": "911b2653d0a74023a90f190d51b3ba078bbc800c12d31203b477c6995fb38baf",
+      "generated_coverage_digest": "592c35a0c7e1749a7838edaa1066e24ced6032314444a4fd61098cccecc257dc",
+      "scope": "The full catalog is generated locally from clean pinned source; all 19 exhaustive extended shards are retained actual CI artifacts from the stated earlier head. No catalog declarations change between those sources. All entries pass linkage, contract syntax, signature, feature, alias, current-surface and independently retained identity checks. Use these measurements to regenerate the expected coverage record, not as a claim that the later final head has executed its exact-closure builds. Final-head CI must regenerate and qualify its own complete inventory."
+    },
+    {
+      "area": "complete immutable live-edit-corrected local qualification",
+      "source_commit": "e7fb7f9f46160f2df03c6cd864e32839e24d8d82",
+      "engine_unit_tests_passed": 840,
+      "engine_integration_tests_passed": 192,
+      "syntax_unit_tests_passed": 509,
+      "stream_schema_integration_tests_passed": 14,
+      "runtime_unit_tests_passed": 815,
+      "source_acceptance_tests_passed": 61,
+      "resident_ekf_contract_tests_passed": 11,
+      "application_text_retention_tail_tests_passed": 46,
+      "unchanged_original_tail_tests_passed": 10,
+      "native_lowering_tests_passed": 15,
+      "native_host_kernel_tests_passed": 12,
+      "native_abi_tests_passed": 4,
+      "cli_byte_tests_passed": 8,
+      "resource_observation_replacement_replay_recording_tests_passed": 53,
+      "linked_native": {
+        "applications_built": 4,
+        "actual_launch_cases": 45,
+        "qualification_sha256": "01c0e24a7cbe174630867d210745e15f29035d257488609fd017e0ee093c7076"
+      },
+      "linked_cli": {
+        "applications_built": 3,
+        "actual_launch_cases": 20,
+        "qualification_sha256": "f0c2f9cf348d7b1d7a8b37fa410ee1bd81da0366dda3081a32987dfb8796ff1a"
+      },
+      "logs": "tmp/pr-stack-evidence/review-final-v37-*.log",
+      "scope": "All local phases passed serially with exact clean source checked before and after each phase. Includes lexical/catalog, 94 CI contracts, type mutations, unsafe audit/fixtures, static distribution, warnings, type/semantic authority, memory and layout checks. Both ignored linked qualifiers actually built and executed their applications. Separate full CI exposed additional profile, test-provider, expectation and inventory failures; this is not a claim of green full CI or qualification of subsequent repairs. No benchmark credit."
+    },
+    {
+      "area": "live-edit-corrected CPU, WebGPU and parity CI",
+      "source_commit": "e7fb7f9f46160f2df03c6cd864e32839e24d8d82",
+      "tested_composition": "50cd068b60af3cacf2371a0c1462703fb3ea42c0",
+      "verified_identical_tree": "bc00c19e381b23b849b2e9e75df94b659af4905a",
+      "ci_run": 39015685289,
+      "successful_jobs": {"cpu": 117348902216, "webgpu": 117348902214, "parity": 117353920099},
+      "cpu_artifact": {"id": 12095468097, "sha256": "0383ea62fb264f83d3938bf7bb8ae3e501b165188dd5b2c18f5ee6586a09d2bd"},
+      "webgpu_artifact": {"id": 12095223158, "sha256": "ecee81737fc6a0514160d1df3fd8a59637212e3fece42ca4bde3ee5260e826b6"},
+      "scope": "CPU one/1000-filter edited and unedited scenarios, WebGPU edited/unedited scenarios, continuity and incompatible replacement, camera disable/restore, resource/reset/stale-completion and terminal-disposal oracles pass with zero console/page errors. Artifact metadata and verified checkout identity bind the results to this composition. The wider required suite is not green; final-head review and CI remain separate landing gates."
+    },
+    {
+      "area": "complete immutable baseline before live-edit migration correction",
+      "source_commit": "8d9e90c10f0cb88ccb64d50efd0839b77458fb3b",
+      "runtime_unit_tests_passed": 814,
+      "source_acceptance_tests_passed": 61,
+      "resident_ekf_contract_tests_passed": 11,
+      "application_text_retention_tail_tests_passed": 46,
+      "unchanged_original_tail_tests_passed": 10,
+      "native_lowering_tests_passed": 15,
+      "native_host_kernel_tests_passed": 12,
+      "native_abi_tests_passed": 4,
+      "cli_byte_tests_passed": 8,
+      "resource_observation_replacement_replay_recording_tests_passed": 53,
+      "linked_native": {
+        "applications_built": 4,
+        "actual_launch_cases": 45,
+        "qualification_sha256": "9b830d1e815f2a9578d5ac157ecd5caa9ce556db519c9cd7b81ddc35fd7eb81b"
+      },
+      "linked_cli": {
+        "applications_built": 3,
+        "actual_launch_cases": 20,
+        "qualification_sha256": "a0aa54dec4f3a57ed6f6ab0edbcfec284f6d57326de77e5ac2c87aeccd186f50"
+      },
+      "logs": "tmp/pr-stack-evidence/review-final-v24-*.log",
+      "scope": "All local phases passed with exact clean source checked before/after each phase; both ignored linked qualifiers actually ran. Includes lexical/catalog, CI/type mutation, unsafe, distribution, warning, type/semantic, memory and layout gates. CI run 39008678510 still failed the scalar live edit and WebGPU incompatible edit. These receipts do not qualify the subsequent migration correction or constitute successful browser application evidence; no benchmark measurements are claimed."
+    },
+    {
+      "area": "allocation-free projection follow-up",
+      "source_commit": "16577f301d4e1e7886fd9499c2ad001f9621aba3",
+      "engine_unit_tests_passed": 840,
+      "engine_integration_tests_passed": 192,
+      "original_tail_control_tests_passed": 10,
+      "logs": ["tmp/pr-stack-evidence/review-v23-engine-all.log", "tmp/pr-stack-evidence/review-v23-all-tail.log"],
+      "scope": "Complete engine selection and every original tail-control test pass. Inputs, limits, expected values and recovery assertions are unchanged. Explicit tests distinguish allocation-free shallow paths from funded deeper shared storage, retain actual wide schema/tuple-array sharing across 1024 attempts, and enforce finite cumulative accounting. Full final-head application/runtime/contracts/native/linked/CI qualification remains pending."
+    },
+    {
+      "area": "supplied rereview probe-free engine owner",
+      "source_commit": "c871683e121e1a93e2104e4bf9804901c03cecd6",
+      "engine_unit_tests_passed": 839,
+      "engine_integration_tests_passed": 192,
+      "log": "tmp/pr-stack-evidence/review-v20-engine-all.log",
+      "scope": "Complete engine lib plus canonical executable/source, iteration-artifact and memory-runtime integration targets; zero failures or ignored tests. Includes exact ordinary and tail resource diagnostics, shared enum schema/tuple-array identity and cumulative projection cost, and two distinct live 32768-element Snapshot Bool inputs in both concatenation orientations. All temporary diagnostic instrumentation is removed; the original ten tail-control cases remain unchanged and await the separate final application selection."
+    },
+    {
+      "area": "supplied rereview source enum regressions",
+      "source_commit": "50f19b6ef571b05753687c4d70e940ebed483d17",
+      "passed": 2,
+      "log": "tmp/pr-stack-evidence/review-v14-source-enum.log",
+      "scope": "Both original and decoded artifacts; 512-U64 tuple payload and 1024 mismatched or guard-rejected matching arms; genuine binding-copy denial preserves output/epoch and recovers. Uses unchanged normal resource limits. Later changes are diagnostic expectations and browser failure evidence, not new benchmark measurements."
+    },
+    {
+      "area": "supplied rereview complete runtime owner",
+      "source_commit": "13c2cb74cf8b35ffa98ffe5b7fd09479cda85798",
+      "runtime_unit_tests_passed": 814,
+      "source_acceptance_tests_passed": 61,
+      "resident_ekf_contract_tests_passed": 11,
+      "log": "tmp/pr-stack-evidence/review-v16-runtime-owner.log",
+      "scope": "Full serial owner selection passed on clean immutable source. Includes the 32768-element Snapshot Bool constructor/closed-selector boundary, exact successful values/schema identities/shapes, actual gather-producer refusal, public-session typed denial, original/decoded artifacts and recovery. Final-head owner, unchanged tail/application and actual linked qualification are still required."
+    },
+    {
+      "area": "pre-rereview-fix immutable correctness baseline",
+      "source_commit": "2fad121c2b70a6822ebef2c2ba25925893639282",
+      "engine_unit_tests_passed": 835,
+      "engine_integration_tests_passed": 192,
+      "runtime_unit_tests_passed": 814,
+      "source_acceptance_tests_passed": 61,
+      "resident_ekf_contract_tests_passed": 11,
+      "syntax_unit_tests_passed": 509,
+      "logs": ["tmp/pr-stack-evidence/ci-repair-v10-engine.log", "tmp/pr-stack-evidence/ci-repair-v10-runtime-owner.log", "tmp/pr-stack-evidence/ci-repair-v10-syntax-complete.log"],
+      "scope": "All passed serially with unchanged clean source before/after. Includes complete shipped EKF coordinator compilation at one and 1000 filters. Also passed lexical/catalog, CI/type mutation, unsafe, distribution, warning, authority, memory and layout gates. Predates the supplied rereview fixes and is not their qualification. Browser WebGPU CI passed coordinator startup and completed 376 turns, then failed an idle completion deadline; this is a failure, not completed application evidence."
+    },
+    {
+      "area": "bracketed canonical applications",
+      "source_commit": "d429cdef0ab0cfad1dd482982e6317400effff3d",
+      "passed": 15,
+      "log": "tmp/pr-stack-evidence/bracket-count-applications-v6.log",
+      "scope": "Original and decoded artifacts; predates final parser and parent corrections and is not final-stack qualification."
+    },
+    {
+      "area": "canonical application parser and full-feature document conformance",
+      "source_commit": "dc1933d0bbaf92c903defc5b9c44cc1c55c853a8",
+      "application_tests_passed": 9,
+      "document_tests_passed": 4,
+      "logs": ["tmp/pr-stack-evidence/bracket-count-parser-table-v3.log", "tmp/pr-stack-evidence/bracket-count-document-full-v3.log"],
+      "scope": "Includes the matrix-valued-table regression; minimal-feature fixture correction and final stack rerun remain pending."
+    },
+    {
+      "area": "parent counted-pipe canonical ownership regressions",
+      "source_commit": "765d403c8e63729c7b5ad19199e7a09ac23f7dfe",
+      "normalizer_tests_passed": 43,
+      "resident_jit_object_tests_passed": 8,
+      "logs": ["tmp/pr-stack-evidence/pr898-regular-tables-unicode-arms-v5.log", "tmp/pr-stack-evidence/pr898-regular-tables-execution-v5.log"],
+      "scope": "Regular tables including CRLF/arrow bodies, same-depth Unicode match arrows, kind-versus-literal grammar distinction, existing Unicode/table/prose/large-bar fixtures, and native repeated-application execution."
+    },
+    {
+      "area": "parent activated native ports and actual linked launches",
+      "source_commit": "0e56c39d8cb950a0c672392791a19a826c81481b",
+      "port_tests_passed": 9,
+      "host_application_execution_tests_passed": 16,
+      "binary_sha256": "9d147142e426b4ae02e46d8f1b326707bbfc1b2698c84de9f8688e9a3baebe4e",
+      "logs": ["tmp/pr-stack-evidence/pr900-final-port-admission-v2.log", "tmp/pr-stack-evidence/pr900-final-native-host-v2.log"],
+      "scope": "One executable, trusted/secure/default-denied/invalid-policy attempts with unchanged binary hash; actual qualification before the final parent normalizer fixes, being rerun on the restacked candidate."
+    }
+  ],
+  "benchmark_measurements": 0
+}

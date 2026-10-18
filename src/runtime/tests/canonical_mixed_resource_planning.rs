@@ -52,7 +52,7 @@ fn document(path: &str, compute: &str) -> String {
     )
 }
 
-fn assert_answer_schema(artifact: &mech_engine::ProgramArtifact, expected: &mech_core::SchemaBody) {
+fn answer_schema(artifact: &mech_engine::ProgramArtifact) -> &mech_core::Schema {
     let output = artifact
         .outputs()
         .iter()
@@ -63,15 +63,16 @@ fn assert_answer_schema(artifact: &mech_engine::ProgramArtifact, expected: &mech
                 .is_some_and(|binding| binding.lexical_name == "answer")
         })
         .expect("coordinator exposes the sampled answer");
-    assert_eq!(
-        artifact.schemas().get(output.schema).unwrap().body(),
-        expected
-    );
+    artifact.schemas().get(output.schema).unwrap()
+}
+
+fn assert_answer_schema(artifact: &mech_engine::ProgramArtifact, expected: &mech_core::SchemaBody) {
+    assert_eq!(answer_schema(artifact).body(), expected);
 }
 
 #[test]
 fn canonical_mixed_sample_shapes_survive_bytecode() {
-    use mech_core::{DimensionExpr, FloatWidth, SchemaBody};
+    use mech_runtime::RuntimeHostInputValue;
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
@@ -88,22 +89,45 @@ fn canonical_mixed_sample_shapes_survive_bytecode() {
             mixed.compute.interface.outputs[0].dimensions.as_ref(),
             dimensions.as_slice()
         );
-        let expected = if dimensions.is_empty() {
-            SchemaBody::FloatingPoint(FloatWidth::W64)
+        // Compute ports have concrete geometry, but the observation schema
+        // retains the host value's declared dimension lifetimes and bounds.
+        // Do not freeze a planning representative into constant dimensions.
+        let sample = if dimensions.is_empty() {
+            RuntimeHostInputValue::F64(7.25)
         } else {
-            SchemaBody::Matrix {
-                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
-                dimensions: dimensions
-                    .into_iter()
-                    .map(|n| DimensionExpr::Constant(n as u64))
+            RuntimeHostInputValue::F64Matrix {
+                rows: usize::try_from(dimensions[0]).unwrap(),
+                columns: usize::try_from(dimensions[1]).unwrap(),
+                values: (0..dimensions.iter().product::<u64>())
+                    .map(|index| index as f64 + 0.25)
                     .collect(),
             }
-        };
+        }
+        .into_value()
+        .unwrap();
+        let schemas = sample.schemas().unwrap();
+        sample.validate_against(&schemas).unwrap();
+        let expected = schemas.get(sample.schema()).unwrap();
         let artifact = mixed.coordinator.artifact();
-        assert_answer_schema(artifact, &expected);
         let encoded = mech_engine::encode_program_artifact_bytecode_v1(artifact).unwrap();
         let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
-        assert_answer_schema(&decoded, &expected);
+        for candidate in [artifact, &decoded] {
+            let actual = answer_schema(candidate);
+            assert_eq!(actual, expected);
+            assert_eq!(actual.key(), sample.schema_key());
+            assert_eq!(
+                actual
+                    .instantiate_shape(
+                        sample
+                            .shape()
+                            .parameter_values()
+                            .to_vec()
+                            .into_boxed_slice(),
+                    )
+                    .unwrap(),
+                *sample.shape()
+            );
+        }
     }
 }
 

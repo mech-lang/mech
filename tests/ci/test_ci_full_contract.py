@@ -13,6 +13,8 @@ import textwrap
 import unittest
 from pathlib import Path
 
+from scripts.rust_source import rust_code
+
 
 ROOT = Path(__file__).resolve().parents[2]
 CI = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
@@ -131,6 +133,239 @@ def literal_assignment(source: str, name: str):
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_linked_applications_have_an_independent_required_cold_build_budget(self):
+        applications = job_block(FULL, "canonical-applications")
+        linked = job_block(FULL, "canonical-linked-applications")
+        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", applications).group(1)), 90)
+        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", linked).group(1)), 60)
+        self.assertEqual(applications.splitlines()[0], linked.splitlines()[0])
+        for setting in (
+            "RUSTUP_TOOLCHAIN: nightly-2026-03-03",
+            "CARGO_INCREMENTAL: 0", 'CARGO_PROFILE_DEV_DEBUG: "0"',
+            'CARGO_PROFILE_TEST_DEBUG: "0"', 'CARGO_BUILD_JOBS: "1"',
+            FULL_CHECKOUT_REF, "Record exact-ref checkout identity",
+        ):
+            self.assertIn(setting, applications)
+            self.assertIn(setting, linked)
+        self.assertNotIn("Qualify linked", applications)
+        steps = job_steps(FULL, "canonical-linked-applications")
+        fetch = next(step for step in steps if "Fetch locked application dependencies" in step)
+        admission = next(step for step in steps if "Execute activated native host I/O and application syntax" in step)
+        self.assertIn("cargo +nightly-2026-03-03 fetch --locked", fetch)
+        self.assertLess(linked.index(fetch), linked.index(admission))
+        upload = next(step for step in steps if "Retain linked application evidence" in step)
+        self.assertIn("if: ${{ always() }}", upload)
+        for evidence in (
+            "canonical-native-evidence", "canonical-cli-evidence", "native-host-evidence",
+            "native-control-evidence", "native-stdin-evidence",
+        ):
+            self.assertIn(f"${{{{ runner.temp }}}}/{evidence}", upload)
+        self.assertIn("- canonical-linked-applications", job_block(FULL, "cargo"))
+        self.assertNotIn("continue-on-error", linked)
+
+    def test_native_cli_collision_has_an_independent_required_cold_build_budget(self):
+        memory = job_block(FULL, "managed-memory-runtime")
+        collision = job_block(FULL, "native-cli-collision")
+        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", memory).group(1)), 75)
+        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", collision).group(1)), 30)
+        self.assertNotIn("cranelift_kept_project_collision_precedes_emission_and_output_writes", memory)
+        self.assertIn(FULL_CHECKOUT_REF, collision)
+        self.assertIn("Record exact-ref checkout identity", collision)
+        self.assertIn('CARGO_BUILD_JOBS: "1"', collision)
+        steps = job_steps(FULL, "native-cli-collision")
+        fetch = next(step for step in steps if "Fetch locked native CLI dependencies" in step)
+        execute = next(step for step in steps if "Check CLI kept-project collision before native build" in step)
+        self.assertIn("cargo +nightly-2026-03-03 fetch --locked", fetch)
+        self.assertIn("timeout-minutes: 25", execute)
+        self.assertLess(collision.index(fetch), collision.index(execute))
+        commands = [" ".join(line.split()) for line in execute.replace("\\\n", " ").splitlines()]
+        self.assertIn("cargo +nightly-2026-03-03 check --locked --offline -p mech --features cranelift_build", commands)
+        self.assertIn("cargo +nightly-2026-03-03 test --locked --offline -p mech --features cranelift_build --lib cli::commands::build::tests::cranelift_kept_project_collision_precedes_emission_and_output_writes -- --exact --test-threads=1", commands)
+        self.assertNotIn("--no-run", execute)
+        self.assertNotIn("--list", execute)
+        self.assertNotIn("continue-on-error", collision)
+        for family in ("memory", "numeric"):
+            self.assertIn(f"'{family}'", collision.splitlines()[0])
+        self.assertIn("- native-cli-collision", job_block(FULL, "cargo"))
+
+    def test_native_linkage_workspace_lock_is_fetched_before_offline_installer_tests(self):
+        block = job_block(FULL, "native-linkage-owners")
+        steps = job_steps(FULL, "native-linkage-owners")
+        fetch = next(step for step in steps if "Fetch locked workspace linkage dependencies" in step)
+        offline = next(step for step in steps if "Execute general native-link installer contracts" in step)
+        self.assertIn("cargo +nightly-2026-03-03 fetch --locked", fetch)
+        self.assertNotIn("--manifest-path", fetch)
+        self.assertNotIn("--offline", fetch)
+        self.assertNotIn("if:", fetch)
+        self.assertIn("test --locked --offline -p mech-engine", offline)
+        self.assertIn("--features full_compiler,native-link", offline)
+        self.assertLess(block.index(fetch), block.index("Check isolated owner native-link profiles"))
+        self.assertLess(block.index(fetch), block.index(offline))
+        self.assertNotIn("continue-on-error", block)
+
+    def test_dynamic_integration_inventory_executes_in_both_contract_paths(self):
+        self.assertIn("tests.ci.test_ci_test_inventory", job_block(CI, "static-architecture"))
+        self.assertIn("tests/ci/test_ci_test_inventory.py", job_block(FULL, "architecture-mutations"))
+
+    def test_inventory_yaml_dependency_is_pinned_and_installed_before_execution(self):
+        requirements = (ROOT / ".github/ci/python-requirements.txt").read_text()
+        self.assertIn("PyYAML==6.0.3", requirements)
+        self.assertGreater(len(re.findall(r"--hash=sha256:[0-9a-f]{64}", requirements)), 1)
+        for source, job, selection in (
+            (CI, "static-architecture", "tests.ci.test_ci_test_inventory"),
+            (FULL, "architecture-mutations", "tests/ci/test_ci_test_inventory.py"),
+        ):
+            block = job_block(source, job)
+            install = next(step for step in job_steps(source, job) if "Install pinned CI YAML parser" in step)
+            self.assertIn('python3 -m venv "$RUNNER_TEMP/ci-inventory-python"', install)
+            self.assertIn("--only-binary=:all: --require-hashes -r .github/ci/python-requirements.txt", install)
+            self.assertIn('>> "$GITHUB_PATH"', install)
+            self.assertNotIn("continue-on-error", install)
+            self.assertLess(block.index(install), block.index(selection))
+
+    def test_canonical_applications_execute_linked_qualifications_explicitly(self):
+        block = job_block(FULL, "canonical-applications")
+        self.assertIn("RUSTUP_TOOLCHAIN: nightly-2026-03-03", block)
+        self.assertNotIn("continue-on-error", block)
+        for target in (
+            "applications", "tail_control", "native_artifact_lowering",
+            "native_artifact_i64_lowering", "native_artifact_output_initializers",
+            "canonical_artifact_native", "canonical_artifact_i64",
+            "canonical_cli_bytes",
+        ):
+            self.assertIn(f"--test {target}", block)
+        self.assertIn("--lib resident::native_semantics::tests", block)
+        self.assertIn("--features canonical-native --lib native_artifact::", block)
+        self.assertIn("--features canonical-native-runtime --lib", block)
+        cli_step = next(step for step in job_steps(FULL, "canonical-applications")
+                        if "Execute canonical CLI byte and resource contracts" in step)
+        self.assertIn("-p mech-build", cli_step)
+        self.assertIn("--no-default-features --features standard-hosts", cli_step)
+        for target in (
+            "canonical_cli_bytes", "canonical_resource_execution",
+            "canonical_resource_planning", "canonical_map_features",
+            "canonical_pure_text_features",
+        ):
+            self.assertIn(f"--test {target}", cli_step)
+        self.assertIn("-- --test-threads=1", cli_step)
+        self.assertNotIn("--ignored", cli_step)
+        linked = job_block(FULL, "canonical-linked-applications")
+        self.assertIn("RUSTUP_TOOLCHAIN: nightly-2026-03-03", linked)
+        self.assertNotIn("continue-on-error", linked)
+        admission_step = next(step for step in job_steps(FULL, "canonical-linked-applications")
+                              if "Execute activated native host I/O and application syntax" in step)
+        for target in (
+            "native_host_io", "repeated_application", "native_host_application",
+            "native_source_admission", "control_fsm", "control_postfix_selection",
+            "control_selection", "control_signed", "idiomatic_sources",
+        ):
+            self.assertIn(f"--test {target}", admission_step)
+        self.assertIn("--features native-build,native-io", admission_step)
+        self.assertIn("-- --test-threads=1", admission_step)
+        self.assertNotIn("--ignored", admission_step)
+        for target, case, evidence in (
+            ("native_host_application",
+             "one_linked_executable_runs_secure_and_trusted_without_rebuilding",
+             "MECH_NATIVE_QUALIFICATION_DIRECTORY"),
+            ("canonical_artifact_application",
+             "linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic",
+             "MECH_CANONICAL_NATIVE_EVIDENCE_DIR"),
+            ("canonical_cli_application",
+             "linked_canonical_cli_arguments_and_stdin_finish_without_drivers",
+             "MECH_CANONICAL_CLI_EVIDENCE_DIR"),
+            ("control_application",
+             "one_linked_control_executable_preserves_signed_machine_outputs",
+             "MECH_CONTROL_QUALIFICATION_DIRECTORY"),
+            ("native_stdin_application",
+             "one_linked_stdin_executable_preserves_unicode_snapshots_and_launch_policy",
+             "MECH_NATIVE_STDIN_QUALIFICATION_DIRECTORY"),
+        ):
+            step = next(step for step in job_steps(FULL, "canonical-linked-applications")
+                        if f"--test {target} " in step and case in step
+                        and "-- --ignored --exact" in step)
+            self.assertIn("cargo +nightly-2026-03-03 test --locked --offline", step)
+            self.assertIn("-- --ignored --exact", step)
+            self.assertIn(case, step)
+            self.assertIn("--test-threads=1", step)
+            self.assertIn(evidence, step)
+            if target in {"control_application", "native_stdin_application", "canonical_cli_application"}:
+                selection = next(selected for selected in job_steps(FULL, "canonical-linked-applications")
+                                 if f"--test {target} " in selected and case in selected
+                                 and "-- --list --ignored --exact" in selected)
+                self.assertIn("cargo +nightly-2026-03-03 test --locked --offline", selection)
+                self.assertIn(f"^{case}: test$", selection)
+                self.assertIn('" -eq 1', selection)
+                self.assertNotIn("continue-on-error", selection)
+                self.assertNotIn("    if:", selection)
+                self.assertNotIn("    if:", step)
+                self.assertLess(linked.index(selection), linked.index(step))
+            if target in {"control_application", "native_stdin_application"}:
+                self.assertIn("--features native-build,native-io", step)
+                self.assertIn("--features native-build,native-io", selection)
+            if target == "control_application":
+                self.assertIn('MECH_CONTROL_INLINE: "0"', step)
+            if target == "canonical_cli_application":
+                self.assertIn("--features standard-hosts,process-supervision", step)
+                self.assertIn("--features standard-hosts,process-supervision", selection)
+                self.assertIn("CLI_QUALIFICATION_TESTS", selection)
+        self.assertIn("MECH_CANONICAL_NATIVE_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", linked)
+        self.assertIn("MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", linked)
+        self.assertIn("uses: actions/upload-artifact@", linked)
+        for evidence in ("native-control-evidence", "native-stdin-evidence"):
+            self.assertIn(f"${{{{ runner.temp }}}}/{evidence}", linked)
+
+    def test_canonical_source_and_native_registration_targets_are_selected(self):
+        groups = (
+            (
+                "canonical-applications", "Execute canonical collection and text source contracts",
+                "mech-stdlib", "--no-default-features --features full_compiler",
+                (
+                    "comprehension_captures", "comprehension_work_source",
+                    "control_local_geometry", "control_matrix_captures", "control_result_shapes",
+                    "function_output_contexts", "knucleotide_record_source", "map_keys_comprehensions",
+                    "map_source", "match_result_schemas", "matrix_block_comprehensions",
+                    "postfix_selection", "primitive_snapshot_constructors", "pure_text_managed",
+                    "pure_text_source", "retention_work", "sequence_sort", "set_comprehension_operands",
+                    "string_generators", "string_literal_match", "string_membership_comprehensions",
+                    "string_selector_shapes", "text_operations", "u64_float_conversion_source",
+                ),
+            ),
+            (
+                "cargo-language", "Execute canonical resident string and input shape contracts",
+                "mech-engine", "--no-default-features --features full_compiler,resident-artifact",
+                ("canonical_string_selection", "string_set_comprehension", "value_input_shapes"),
+            ),
+            (
+                "native-linkage-owners", "Execute canonical intrinsic native-link registration",
+                "mech-engine", "--no-default-features --features native-link,pure_text,map_ops,sequence_sort",
+                ("map_native_linkage", "sequence_sort_native_linkage", "text_operations_native_linkage"),
+            ),
+            (
+                "managed-memory-runtime", "Execute the complete managed-memory conformance boundary",
+                "mech-core", "--all-features",
+                ("managed_input_descriptor", "borrowed_string_footprint", "resident_lowering_attachment"),
+            ),
+        )
+        for job, name, package, profile, targets in groups:
+            with self.subTest(job=job, name=name):
+                step = next(step for step in job_steps(FULL, job) if name in step)
+                self.assertIn(f"-p {package}", step)
+                self.assertIn(profile, step)
+                for target in targets:
+                    self.assertIn(f"--test {target}", step)
+                self.assertNotIn("--ignored", step)
+                self.assertNotIn("--no-run", step)
+        memory = job_block(FULL, "managed-memory-runtime")
+        release = next(step for step in job_steps(FULL, "managed-memory-runtime")
+                       if "Execute the retained release-mode memory safety boundary" in step)
+        self.assertIn('RUSTFLAGS="${RUSTFLAGS:-} -C debug-assertions=no"', release)
+        self.assertIn("--release -p mech-core", release)
+        self.assertIn("--features functions,u8,u64,f64,string,matrixd,bool", release)
+        self.assertIn("--test memory_safety", release)
+        self.assertNotIn("continue-on-error", release)
+        self.assertLess(memory.index("Execute the complete managed-memory conformance boundary"), memory.index(release))
+        self.assertLess(memory.index(release), memory.index("Execute maintained runtime and host memory boundaries"))
+
     def test_runtime_family_keeps_minimal_and_complete_source_profiles(self):
         block = job_block(FULL, "cargo-runtime")
         self.assertIn("run: cargo test -p mech-runtime --lib --tests", block)
@@ -190,6 +425,169 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--features full_source,resident-artifact,r64,c64", step)
         self.assertIn("--lib resident::general::shape_fact_tests::", step)
         self.assertIn(step, block)
+
+    def test_syntax_stress_optimization_retains_assertions_and_complete_selection(self):
+        step = next(
+            step for step in job_steps(FULL, "cargo-language")
+            if "Run syntax grammar suites" in step
+        )
+        for setting in (
+            'CARGO_PROFILE_TEST_OPT_LEVEL: "1"',
+            'CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: "true"',
+            'CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"',
+        ):
+            self.assertIn(setting, step)
+            reduced = next(selected for selected in job_steps(FULL, "cargo-language")
+                           if "Run reduced syntax feature profiles" in selected)
+            self.assertIn(setting, reduced)
+        self.assertIn(
+            "cargo +nightly-2026-03-03 test --locked -p mech-syntax --lib --tests "
+            "--no-default-features --features full -- --test-threads=1", step
+        )
+        self.assertNotIn("--skip", step)
+        self.assertNotIn("--no-run", step)
+        self.assertNotIn("continue-on-error", step)
+        self.assertNotIn("timeout-minutes", step)
+        self._assert_retained_syntax_stress_settings(
+            (ROOT / "src/syntax/tests/document_streaming_complexity.rs").read_text()
+        )
+
+    def _assert_retained_syntax_stress_settings(self, source):
+        # Bind checks to executable function bodies, not comments or literals
+        # that merely repeat an old bound elsewhere in the file.
+        code = rust_code(source)
+        self.assertNotRegex(code, r"#\s*!\s*\[", "stress target must remain unconditional")
+
+        def enabled_test(name):
+            function = re.search(rf"\bfn\s+{re.escape(name)}\s*\(", code)
+            self.assertIsNotNone(function, name)
+            position = function.start()
+            self.assertEqual(
+                code[:position].count("{") - code[:position].count("}"), 0,
+                f"{name} must remain a top-level stress entry point",
+            )
+            attributes = []
+            while True:
+                while position and code[position - 1].isspace():
+                    position -= 1
+                if not position or code[position - 1] != "]":
+                    break
+                end = position - 1
+                position = end
+                depth = 1
+                while depth and position:
+                    position -= 1
+                    depth += (code[position] == "]") - (code[position] == "[")
+                self.assertEqual(depth, 0, name)
+                start = position
+                while position and code[position - 1].isspace():
+                    position -= 1
+                self.assertGreater(position, 0, name)
+                self.assertEqual(code[position - 1], "#", name)
+                attributes.append(re.sub(r"\s+", "", code[start + 1:end]))
+                position -= 1
+            self.assertEqual(attributes, ["test"], f"{name} must be enabled unconditionally")
+
+        def body(name):
+            matches = list(re.finditer(rf"\bfn\s+{re.escape(name)}\s*\(", code))
+            self.assertEqual(len(matches), 1, name)
+            start = code.index("{", matches[0].end())
+            depth = 1
+            end = start + 1
+            while depth and end < len(code):
+                depth += (code[end] == "{") - (code[end] == "}")
+                end += 1
+            self.assertEqual(depth, 0, name)
+            compact = re.sub(r"\s+", "", code[start + 1:end - 1])
+            return re.sub(r"(?<=\d)_(?=\d)", "", compact)
+
+        config = body("large_config")
+        for field, value in {
+            "max_nesting": 256,
+            "max_diagnostics": 65_536,
+            "max_events": 16_000_000,
+            "max_recovery_bytes": 8_000_000,
+            "fuel": 1_000_000_000,
+            "max_source_bytes": 1_000_000,
+            "max_parser_work": 2_000_000_000,
+        }.items():
+            self.assertIn(f"{field}:{value},", config)
+        growth = body("large_growth")
+        settled = body("large_settled_prefix_does_not_increase_small_append_work")
+        for actual in (growth, settled):
+            self.assertIn("fornin[8192,16384,32768,65536]{", actual)
+        self.assertIn("workload_with_config(&source,true,clean,config,limits,64)", growth)
+        self.assertIn("assert!(work.accounted<=total*3,", growth)
+        self.assertIn("assert!(work.consumer.work()<=consumer*3,", growth)
+        self.assertIn("assert!(costs[3]<=costs[0]*3,", settled)
+        for name in (
+            "large_generated_mech_consumes_every_delta",
+            "large_mixed_documents_consume_every_delta",
+            "large_unfinished_tokens_and_late_selection_consume_every_delta",
+            "large_executable_fences_consume_every_delta",
+            "large_malformed_tails_consume_every_delta",
+            "large_settled_prefix_does_not_increase_small_append_work",
+        ):
+            enabled_test(name)
+            if name != "large_settled_prefix_does_not_increase_small_append_work":
+                self.assertIn("large_growth(", body(name))
+
+    def test_syntax_stress_contract_rejects_weakened_settings_and_decoys(self):
+        source = (ROOT / "src/syntax/tests/document_streaming_complexity.rs").read_text()
+        for before, after in (
+            ("[8_192, 16_384, 32_768, 65_536]", "[8_192, 16_384, 32_768]"),
+            ("work.accounted <= total * 3", "work.accounted <= total * 4"),
+            ("work.consumer.work() <= consumer * 3", "work.consumer.work() <= consumer * 4"),
+            ("costs[3] <= costs[0] * 3", "costs[3] <= costs[0] * 4"),
+            ("max_nesting: 256", "max_nesting: 512"),
+            ("max_diagnostics: 65_536", "max_diagnostics: 131_072"),
+            ("max_events: 16_000_000", "max_events: 32_000_000"),
+            ("max_recovery_bytes: 8_000_000", "max_recovery_bytes: 16_000_000"),
+            ("fuel: 1_000_000_000", "fuel: 1"),
+            ("max_source_bytes: 1_000_000", "max_source_bytes: 2_000_000"),
+            ("max_parser_work: 2_000_000_000", "max_parser_work: 4_000_000_000"),
+            ("config, limits, 64)", "config, limits, 128)"),
+            ("#[test]\nfn large_generated_mech", "#[ignore]\nfn large_generated_mech"),
+        ):
+            with self.subTest(setting=before):
+                mutated = source.replace(before, after)
+                self.assertNotEqual(mutated, source)
+                # Neither a comment nor a string containing the retained
+                # spelling can rescue a weakened executable setting.
+                mutated += (
+                    "\n// " + before.replace("\n", "\n// ")
+                    + "\nconst DECOY: &str = " + json.dumps(before) + ";\n"
+                )
+                with self.assertRaises(AssertionError):
+                    self._assert_retained_syntax_stress_settings(mutated)
+
+    def test_syntax_stress_contract_rejects_disabling_attributes_in_any_order(self):
+        source = (ROOT / "src/syntax/tests/document_streaming_complexity.rs").read_text()
+        for name in (
+            "large_generated_mech_consumes_every_delta",
+            "large_mixed_documents_consume_every_delta",
+            "large_unfinished_tokens_and_late_selection_consume_every_delta",
+            "large_executable_fences_consume_every_delta",
+            "large_malformed_tails_consume_every_delta",
+            "large_settled_prefix_does_not_increase_small_append_work",
+        ):
+            original = f"#[test]\nfn {name}"
+            for disabled in (
+                "#[ignore]", '#[ignore = "slow"]', "#[cfg(any())]",
+                "#[cfg_attr(all(), ignore)]", "#[cfg_attr(all(), cfg(any()))]",
+            ):
+                for attributes in (f"{disabled}\n#[test]", f"#[test]\n{disabled}"):
+                    with self.subTest(name=name, attributes=attributes):
+                        mutated = source.replace(original, f"{attributes}\nfn {name}", 1)
+                        self.assertNotEqual(mutated, source)
+                        with self.assertRaises(AssertionError):
+                            self._assert_retained_syntax_stress_settings(mutated)
+        for disabled in (
+            "#![cfg(any())]\n" + source,
+            "#[cfg(any())]\nmod hidden {\n" + source + "\n}\n",
+        ):
+            with self.assertRaises(AssertionError):
+                self._assert_retained_syntax_stress_settings(disabled)
 
     def test_full_source_profile_is_bounded_and_independent(self):
         profile = job_block(CI, "full-source-profile")
@@ -694,6 +1092,16 @@ class FullWorkflowContractTests(unittest.TestCase):
                 for result in ("failure", "cancelled", "skipped", ""):
                     self.assertFalse(accepts([family], changes={selected_job: result}))
         self.assertTrue(accepts(["all"], in_caller=True))
+        for family in ("all", "memory", "numeric"):
+            for result in ("failure", "cancelled", "skipped", ""):
+                with self.subTest(family=family, collision=result):
+                    self.assertFalse(accepts([family], changes={"native-cli-collision": result}))
+            self.assertFalse(accepts([family], omitted="native-cli-collision"))
+        for family in ("all", "language", "native"):
+            for result in ("failure", "cancelled", "skipped", ""):
+                with self.subTest(family=family, linked=result):
+                    self.assertFalse(accepts([family], changes={"canonical-linked-applications": result}))
+            self.assertFalse(accepts([family], omitted="canonical-linked-applications"))
         self.assertFalse(accepts(["native"], in_caller=True, changes={"native-plan": "failure"}))
         self.assertFalse(accepts(["cli"], changes={"release-package-dry-run": "success"}))
         self.assertFalse(accepts(["cli"], omitted="native-engine"))
@@ -739,16 +1147,17 @@ class FullWorkflowContractTests(unittest.TestCase):
     def test_architecture_mutations_are_bounded_parallel_shards(self):
         normal = job_block(CI, "static-mutations")
         full = job_block(FULL, "architecture-mutations")
-        for block, checkout in (
-            (normal, "ref: ${{ github.sha }}"),
-            (full, FULL_CHECKOUT_REF),
+        for block, count, checkout in (
+            (normal, 6, "ref: ${{ github.sha }}"),
+            (full, 4, FULL_CHECKOUT_REF),
         ):
             with self.subTest(checkout=checkout):
-                self.assertIn("shard: [0, 1, 2, 3]", block)
+                self.assertIn(f"shard: {list(range(count))}", block)
                 self.assertIn("timeout-minutes: 8", block)
-                self.assertIn("--shard-count 4", block)
+                self.assertIn(f"--shard-count {count}", block)
                 self.assertIn("--shard-index ${{ matrix.shard }}", block)
                 self.assertIn("scripts/tests/test_check_memory_runtime.py", block)
+                self.assertIn("scripts/tests/test_check_native_host_catalog.py", block)
                 self.assertIn(checkout, block)
                 self.assertNotIn("continue-on-error", block)
 
@@ -883,7 +1292,28 @@ class FullWorkflowContractTests(unittest.TestCase):
         ):
             self.assertIn(milestone, EKF_BROWSER)
 
+    def test_ekf_rejected_replacement_fails_once_without_retrying(self):
+        probe = EKF_BROWSER.split(
+            'expectedComputeBackend === "wgpu" && applicationQualifiedBeforeReset &&', 1
+        )[1].split('const originalSetTimeout', 1)[0]
+        self.assertIn('!incompatibleEditAttempted', probe)
+        self.assertLess(
+            probe.index('incompatibleEditAttempted = true;'),
+            probe.index('replaceSource(nextSource)'),
+        )
+        self.assertIn('if (!incompatibleEditRequested)', probe)
+        failure = probe.split('catch (error)', 1)[1]
+        self.assertIn('root.dataset.mechPageError = diagnosticText(error)', failure)
+        self.assertIn('signalCompletion("ekf-finished")', failure)
+        self.assertNotIn('mechDone = "true"', failure)
+        self.assertIn('root.dataset.mechObservedIncompatibleEditAttempted', EKF_BROWSER)
+
     def test_ekf_failure_diagnostics_are_not_numerical_evidence(self):
+        self.assertIn('milestones["failureDataset"] = live_dataset', EKF_BROWSER)
+        self.assertIn('write_dataset_snapshot(dom_file, live_dataset)', EKF_BROWSER)
+        self.assertIn('timeout=5,', EKF_BROWSER)
+        self.assertIn('root.dataset.mechObservedContinuitySourceAccepted', EKF_BROWSER)
+        self.assertIn('root.dataset.mechObservedReplDiagnostics', EKF_BROWSER)
         for backend, label in (("cpu", "scalar"), ("wgpu", "WebGPU")):
             with self.subTest(backend=backend):
                 steps = job_steps(CI, f"browser-ekf-{backend}")
@@ -1174,6 +1604,22 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn('report_case_progress "$label" passed', body)
             self.assertLess(body.index("run_browser_case"),
                             body.index('report_case_progress "$label" passed'))
+
+    def test_configured_clock_probe_waits_for_a_published_value(self):
+        smoke = (ROOT / "scripts/smoke-served-rich-document-browser.sh").read_text()
+        body = smoke.split("def assert_console_contract():\n", 1)[1].split("\ndef ", 1)[0]
+        function = ast.parse("def assert_console_contract():\n" + body)
+        waits = [
+            node for node in ast.walk(function)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+            and node.func.id == "wait_for" and len(node.args) >= 2
+            and isinstance(node.args[1], ast.Constant)
+            and node.args[1].value == "the configured clock variable after REPL replacement"
+        ]
+        self.assertEqual(len(waits), 1)
+        condition = ast.literal_eval(waits[0].args[0])
+        self.assertIn("?.dataset.mechValueAvailable === 'true'", condition)
+        self.assertIn("textContent.trim()", condition)
 
     def test_full_validation_stops_on_cancellation_and_keeps_selected_dependency_gates(self):
         block = job_block(CI, "full-validation")
@@ -1466,18 +1912,23 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("- managed-memory-fixed-profiles", cargo)
         self.assertIn("- managed-memory-miri", cargo)
 
-    def test_managed_memory_retains_resident_live_admission_unit_tests(self):
+    def test_managed_memory_retains_resident_live_and_execution_unit_tests(self):
         runtime = job_block(FULL, "managed-memory-runtime")
         commands = [
             " ".join(line.split())
             for line in runtime.replace("\\\n", " ").splitlines()
         ]
-        self.assertIn(
-            "cargo +nightly-2026-03-03 test --locked -p mech-engine "
-            "--no-default-features --features full_compiler,resident-artifact "
-            "--lib resident::general::live::",
-            commands,
-        )
+        for filter in (
+            "resident::general::live::",
+            "resident::general::execution::tests::",
+            "resident::native_semantics::",
+        ):
+            self.assertIn(
+                "cargo +nightly-2026-03-03 test --locked -p mech-engine "
+                "--no-default-features --features full_compiler,resident-artifact "
+                f"--lib {filter}",
+                commands,
+            )
         self.assertNotIn("continue-on-error", runtime)
 
     def test_artifact_completeness_prefetches_before_offline_native_build(self):
@@ -1512,7 +1963,8 @@ class FullWorkflowContractTests(unittest.TestCase):
 
     def test_syntax_grammar_step_uses_current_targets_and_features(self):
         block = job_block(FULL, "cargo-language")
-        grammar = block.split("- name: Run syntax grammar suites", 1)[1].split("- name:", 1)[0]
+        grammar = next(step for step in job_steps(FULL, "cargo-language")
+                       if "Run reduced syntax feature profiles" in step)
         self.assertNotRegex(grammar, r"--test\s+grammar_conformance\b")
         for target in (
             "canonical_rule_registry",

@@ -232,11 +232,29 @@ fn configured_catalog_census_rejects_unbound_names_before_arguments() {
         .all_exports()
         .map(|export| export.canonical_name.clone())
         .collect::<BTreeSet<_>>();
+    // Keep the historical census independently visible, and account for each
+    // deliberate text/number, map, and collection addition by exact name.
+    let additions = BTreeSet::from([
+        "number/parse-u64",
+        "number/format",
+        "sequence/length",
+        "map/histogram",
+        "map/keys",
+        "map/values",
+        "sequence/sort-indices",
+        "text/lines",
+        "text/join",
+    ]);
+    assert!(additions.iter().all(|name| names.contains(*name)));
     assert_eq!(
-        names.len(),
+        names
+            .iter()
+            .filter(|name| !additions.contains(name.as_str()))
+            .count(),
         120,
-        "review any change to the frozen catalog census"
+        "review any change to the retained catalog census"
     );
+    assert_eq!(names.len(), 129, "review every catalog addition by name");
     let mut checked = 0;
     for name in names {
         if catalog.all_exports().any(|export| {

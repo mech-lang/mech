@@ -89,6 +89,7 @@ pub enum SourceNodeBody {
     Activation(super::MatchDeclaration<OperationContractDeclaration>),
     Comprehension(super::ComprehensionDeclaration<OperationContractDeclaration>),
     Fsm(super::FsmDeclaration),
+    Iteration(super::IterationDeclaration<OperationContractDeclaration>),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -105,7 +106,8 @@ impl SourceNode {
             SourceNodeBody::Match(_)
             | SourceNodeBody::Activation(_)
             | SourceNodeBody::Comprehension(_)
-            | SourceNodeBody::Fsm(_) => None,
+            | SourceNodeBody::Fsm(_)
+            | SourceNodeBody::Iteration(_) => None,
         }
     }
 }
@@ -485,6 +487,12 @@ fn compile_source_program_with_metadata(
                     })?)
                 }
                 SourceNodeBody::Fsm(control) => crate::ExecutableNodeBody::Fsm(control.clone()),
+                SourceNodeBody::Iteration(control) => {
+                    control.validate_depth(node)?;
+                    crate::ExecutableNodeBody::Iteration(control.map_contracts(|_, _, _| {
+                        Ok::<_, ArtifactBuildError>(OperationContractId::new(0))
+                    })?)
+                }
             },
             input_bindings: input_start..input_end,
             output_bindings: output_start..output_end,

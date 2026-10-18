@@ -1,0 +1,3418 @@
+{
+  "schema": "mech.canonical-native-scalar-qualification.v1",
+  "source_commit": "c3ab0741bdda6c8abc78295b5a501e83ba6af081",
+  "route": "canonical-artifact-cranelift-object",
+  "linked": true,
+  "executed": true,
+  "benchmark_measurements": 0,
+  "clean_checkout_before_and_after": true,
+  "source_evidence_sha256": "7a77aadf19ef1aa8641174fa98c5db75e10fe883dc112ddf3c0f492eefaaad9e",
+  "target": {
+    "architecture": "aarch64",
+    "os": "macos",
+    "pointer_width": 64,
+    "endianness": "little"
+  },
+  "checks": {
+    "linked_executables": 2,
+    "complete_process_launches": 23,
+    "independent_saved_pin_and_stream_reconciliation": "passed",
+    "pre_link_regressions": {
+      "native_scalar_integration": 8,
+      "private_abi": 3,
+      "typed_identity": 1,
+      "runtime_only_production_build": "passed",
+      "evidence_sha256": "3b5a795458bb96d257843aa2bd6e3f784d79fbce624936e8e7a40e90ef1edd2f",
+      "scope": "Pre-link compiler checkpoint; exact c3ab0741b linked execution is recorded separately above.",
+      "code_checkpoint": "be3d4a0b3fbb58185c3fee60320ff33e6232c456"
+    },
+    "independent_source_and_saved_evidence_audit": "passed"
+  },
+  "scope": [
+    "Ordinary canonical interactive source compiled to original and decoded artifacts; private selected Bool/U64 implementation seals lower to typed native IR.",
+    "JIT and Object emission share a generic Cranelift definition; linked and JIT entries share managed admission and atomic typed publication.",
+    "Every actual compiled Cargo unit is checked for parser/codegen exclusion; reachable Mech units use local workspace source. Metadata, generated lock, Object, bytecode, generated inputs, executables and streams are retained and hashed.",
+    "Success values match complete ordinary resident and JIT outputs on original and decoded artifacts. Native finite-denial oracles compare with the JIT native work policy."
+  ],
+  "limitations": [
+    "Bool/U64 straight-line scalar graphs only; no I64/F64, collections, Match/FSM/Activation, resources or capability I/O qualification.",
+    "These are correctness and linking checks, not full benchmark workload runs or measurements.",
+    "No secure/trusted full-program timing equivalence is established."
+  ],
+  "applications": [
+    {
+      "name": "canonical-linked-mixed",
+      "source_sha256": "d7504f814201dec2f97ac1a57cb16e06cc3ce2c068e156f4646a4e18764c3042",
+      "source": "increment := left<u64> + step<u64>\nflag := !enabled<bool>\nincrement\n",
+      "program_revision": "2f0885eec61672fa7af4d41afd71676d7e0a6709c4255ac657cc5d721f5cf797",
+      "typed_ir_sha256": "b787b5fe38e443edbcd585a794f8a294a8c8e8b57ec68a493c0ef00fcb26dcc9",
+      "binary_sha256": "9887e66666550343dbfcfb4c9553d465f34285f75a1f0e6eadcf708dfc4e33c7",
+      "build_count": 1,
+      "object_emissions": 2,
+      "original_and_decoded_pair_equal": true,
+      "generated_input_pins": {
+        "Cargo.toml": "ac8ee98326eb53264a7a19547820fd3ba6135a17afc38ce989e0647c2f67248f",
+        "application.mec": "d7504f814201dec2f97ac1a57cb16e06cc3ce2c068e156f4646a4e18764c3042",
+        "build.rs": "09a3018175a5721a05c7ab558148a84c32d2afe1e5fadbfaae7d387edb601c21",
+        "object-identity.bin": "95d41bb23f06ffd288095ca840ae5a54a148086d17d4d67b0322afd177b78a36",
+        "program.mecb": "0eccf9ca8dfe2cec19f918a934430524350556fad31c25ac61a5b3c515ccd7fe",
+        "program.o": "8814468ee7b50c97d7cf6bbb3ef5c7e48e484cd344094132e332e8942ca0c708",
+        "rust-toolchain.toml": "19219593d7dba33a75623287af94da940a93fac92eeef99e8fff9b7fd804fcf9",
+        "src/main.rs": "c927059abbc228d963cbf4f840bc531ff0954eb4825ede39ba4255d91ea21333"
+      },
+      "compiled_units": [
+        {
+          "name": "canonical-linked-mixed",
+          "version": "0.0.0",
+          "features": [],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "canonical-linked-mixed",
+          "version": "0.0.0",
+          "features": [],
+          "target_name": "canonical-linked-mixed",
+          "target_kind": [
+            "bin"
+          ]
+        },
+        {
+          "name": "mech-gpu",
+          "version": "0.3.5",
+          "features": [
+            "canonical-native-runtime"
+          ],
+          "target_name": "mech_gpu",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "mech-compare",
+          "version": "0.3.5",
+          "features": [
+            "bool",
+            "compare",
+            "eq",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "max",
+            "min",
+            "native-plan",
+            "neq",
+            "numbers",
+            "runtime",
+            "seq",
+            "sneq",
+            "u64",
+            "unsigned_ints"
+          ],
+          "target_name": "mech_compare",
+          "target_kind": [
+            "rlib"
+          ]
+        },
+        {
+          "name": "mech-logic",
+          "version": "0.3.5",
+          "features": [
+            "and",
+            "bool",
+            "logic",
+            "native-plan",
+            "not",
+            "or",
+            "runtime",
+            "xor"
+          ],
+          "target_name": "mech_logic",
+          "target_kind": [
+            "rlib"
+          ]
+        },
+        {
+          "name": "mech-math",
+          "version": "0.3.5",
+          "features": [
+            "add",
+            "bool",
+            "div",
+            "math",
+            "mod",
+            "mul",
+            "native-plan",
+            "numbers",
+            "ops",
+            "runtime",
+            "sub",
+            "u64",
+            "unsigned_ints"
+          ],
+          "target_name": "mech_math",
+          "target_kind": [
+            "rlib",
+            "cdylib"
+          ]
+        },
+        {
+          "name": "mech-compute",
+          "version": "0.3.5",
+          "features": [
+            "default",
+            "runtime-values"
+          ],
+          "target_name": "mech_compute",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "mech-core",
+          "version": "0.3.5",
+          "features": [
+            "base64",
+            "bincode",
+            "bool",
+            "brotli",
+            "byteorder",
+            "crc32fast",
+            "f32",
+            "f64",
+            "floats",
+            "functions",
+            "indexmap",
+            "matrix",
+            "matrixd",
+            "nalgebra",
+            "native-plan",
+            "num-traits",
+            "numbers",
+            "program",
+            "range",
+            "resident-execution",
+            "row_vectord",
+            "serde",
+            "serde_derive",
+            "serde_json",
+            "std",
+            "symbol_table",
+            "u64",
+            "unsigned_ints",
+            "vectord"
+          ],
+          "target_name": "mech_core",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "mech-engine",
+          "version": "0.3.5",
+          "features": [
+            "artifact-codec",
+            "assign",
+            "bool",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compare_seq",
+            "compare_sneq",
+            "f64",
+            "floats",
+            "functions",
+            "logic_and",
+            "logic_not",
+            "logic_or",
+            "logic_xor",
+            "math_add",
+            "math_div",
+            "math_mod",
+            "math_mul",
+            "math_sub",
+            "matrix",
+            "matrix_horzcat",
+            "matrix_vertcat",
+            "matrixd",
+            "nalgebra",
+            "native-artifact",
+            "native-plan",
+            "numbers",
+            "program",
+            "resident-artifact",
+            "resident-ekf",
+            "row_vectord",
+            "runtime",
+            "std",
+            "symbol_table",
+            "u64",
+            "unsigned_ints",
+            "vectord"
+          ],
+          "target_name": "mech_engine",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "mech-stdlib",
+          "version": "0.3.5",
+          "features": [
+            "bool",
+            "compare_default",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_max",
+            "compare_min",
+            "compare_neq",
+            "compare_seq",
+            "compare_sneq",
+            "logic_and",
+            "logic_default",
+            "logic_not",
+            "logic_or",
+            "logic_xor",
+            "math_add",
+            "math_div",
+            "math_mod",
+            "math_mul",
+            "math_sub",
+            "mech-compare",
+            "mech-logic",
+            "mech-math",
+            "native-plan",
+            "runtime",
+            "std",
+            "u64"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "mech-stdlib",
+          "version": "0.3.5",
+          "features": [
+            "bool",
+            "compare_default",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_max",
+            "compare_min",
+            "compare_neq",
+            "compare_seq",
+            "compare_sneq",
+            "logic_and",
+            "logic_default",
+            "logic_not",
+            "logic_or",
+            "logic_xor",
+            "math_add",
+            "math_div",
+            "math_mod",
+            "math_mul",
+            "math_sub",
+            "mech-compare",
+            "mech-logic",
+            "mech-math",
+            "native-plan",
+            "runtime",
+            "std",
+            "u64"
+          ],
+          "target_name": "mech_stdlib",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "alloc-no-stdlib",
+          "version": "2.0.4",
+          "features": [],
+          "target_name": "alloc_no_stdlib",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "alloc-stdlib",
+          "version": "0.2.4",
+          "features": [],
+          "target_name": "alloc_stdlib",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "approx",
+          "version": "0.5.1",
+          "features": [
+            "std"
+          ],
+          "target_name": "approx",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "autocfg",
+          "version": "1.5.1",
+          "features": [],
+          "target_name": "autocfg",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "base64",
+          "version": "0.22.1",
+          "features": [
+            "alloc",
+            "default",
+            "std"
+          ],
+          "target_name": "base64",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "bincode",
+          "version": "2.0.1",
+          "features": [
+            "alloc",
+            "bincode_derive",
+            "default",
+            "derive",
+            "serde",
+            "std"
+          ],
+          "target_name": "bincode",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "bincode_derive",
+          "version": "2.0.1",
+          "features": [],
+          "target_name": "bincode_derive",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "block-buffer",
+          "version": "0.10.4",
+          "features": [],
+          "target_name": "block_buffer",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "block-buffer",
+          "version": "0.12.1",
+          "features": [],
+          "target_name": "block_buffer",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "brotli-decompressor",
+          "version": "5.0.3",
+          "features": [
+            "alloc-stdlib",
+            "std"
+          ],
+          "target_name": "brotli_decompressor",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "brotli",
+          "version": "8.0.4",
+          "features": [
+            "alloc-stdlib",
+            "default",
+            "std"
+          ],
+          "target_name": "brotli",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "bytemuck",
+          "version": "1.25.2",
+          "features": [],
+          "target_name": "bytemuck",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "byteorder",
+          "version": "1.5.0",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "byteorder",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "cfg-if",
+          "version": "1.0.4",
+          "features": [],
+          "target_name": "cfg_if",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "cpufeatures",
+          "version": "0.2.17",
+          "features": [],
+          "target_name": "cpufeatures",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "cpufeatures",
+          "version": "0.3.0",
+          "features": [],
+          "target_name": "cpufeatures",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "crc32fast",
+          "version": "1.5.0",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "crc32fast",
+          "version": "1.5.0",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "crc32fast",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "crypto-common",
+          "version": "0.1.7",
+          "features": [
+            "std"
+          ],
+          "target_name": "crypto_common",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "crypto-common",
+          "version": "0.2.2",
+          "features": [],
+          "target_name": "crypto_common",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "digest",
+          "version": "0.10.7",
+          "features": [
+            "alloc",
+            "block-buffer",
+            "core-api",
+            "default",
+            "std"
+          ],
+          "target_name": "digest",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "digest",
+          "version": "0.11.3",
+          "features": [
+            "block-api",
+            "default"
+          ],
+          "target_name": "digest",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "displaydoc",
+          "version": "0.2.6",
+          "features": [],
+          "target_name": "displaydoc",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "equivalent",
+          "version": "1.0.2",
+          "features": [],
+          "target_name": "equivalent",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "generic-array",
+          "version": "0.14.7",
+          "features": [
+            "more_lengths"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "generic-array",
+          "version": "0.14.7",
+          "features": [
+            "more_lengths"
+          ],
+          "target_name": "generic_array",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "grapheme",
+          "version": "1.3.0",
+          "features": [],
+          "target_name": "grapheme",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "grapheme_macro",
+          "version": "2.0.0",
+          "features": [],
+          "target_name": "grapheme_macro",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "hashbrown",
+          "version": "0.17.1",
+          "features": [],
+          "target_name": "hashbrown",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "hybrid-array",
+          "version": "0.4.14",
+          "features": [],
+          "target_name": "hybrid_array",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "icu_collections",
+          "version": "2.2.0",
+          "features": [],
+          "target_name": "icu_collections",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "icu_locale_core",
+          "version": "2.2.0",
+          "features": [
+            "zerovec"
+          ],
+          "target_name": "icu_locale_core",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "icu_properties",
+          "version": "2.2.0",
+          "features": [
+            "compiled_data",
+            "default"
+          ],
+          "target_name": "icu_properties",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "icu_properties_data",
+          "version": "2.2.0",
+          "features": [],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "icu_properties_data",
+          "version": "2.2.0",
+          "features": [],
+          "target_name": "icu_properties_data",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "icu_provider",
+          "version": "2.2.0",
+          "features": [
+            "baked"
+          ],
+          "target_name": "icu_provider",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "indexmap",
+          "version": "2.14.0",
+          "features": [
+            "default",
+            "serde",
+            "std"
+          ],
+          "target_name": "indexmap",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "itoa",
+          "version": "1.0.18",
+          "features": [],
+          "target_name": "itoa",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "libc",
+          "version": "0.2.189",
+          "features": [],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "libc",
+          "version": "0.2.189",
+          "features": [],
+          "target_name": "libc",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "libm",
+          "version": "0.2.16",
+          "features": [
+            "arch",
+            "default"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "libm",
+          "version": "0.2.16",
+          "features": [
+            "arch",
+            "default"
+          ],
+          "target_name": "libm",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "litemap",
+          "version": "0.8.2",
+          "features": [],
+          "target_name": "litemap",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "matrixmultiply",
+          "version": "0.3.11",
+          "features": [
+            "avx512",
+            "default",
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "matrixmultiply",
+          "version": "0.3.11",
+          "features": [
+            "avx512",
+            "default",
+            "std"
+          ],
+          "target_name": "matrixmultiply",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "memchr",
+          "version": "2.8.3",
+          "features": [
+            "alloc",
+            "std"
+          ],
+          "target_name": "memchr",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "nalgebra-macros",
+          "version": "0.3.0",
+          "features": [],
+          "target_name": "nalgebra_macros",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "nalgebra",
+          "version": "0.34.2",
+          "features": [
+            "default",
+            "macros",
+            "matrixmultiply",
+            "nalgebra-macros",
+            "std"
+          ],
+          "target_name": "nalgebra",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "num-complex",
+          "version": "0.4.6",
+          "features": [
+            "std"
+          ],
+          "target_name": "num_complex",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "num-integer",
+          "version": "0.1.46",
+          "features": [
+            "i128",
+            "std"
+          ],
+          "target_name": "num_integer",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "num-rational",
+          "version": "0.4.2",
+          "features": [
+            "std"
+          ],
+          "target_name": "num_rational",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "num-traits",
+          "version": "0.2.19",
+          "features": [
+            "i128",
+            "libm",
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "num-traits",
+          "version": "0.2.19",
+          "features": [
+            "i128",
+            "libm",
+            "std"
+          ],
+          "target_name": "num_traits",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "paste",
+          "version": "1.0.15",
+          "features": [],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "paste",
+          "version": "1.0.15",
+          "features": [],
+          "target_name": "paste",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "potential_utf",
+          "version": "0.1.5",
+          "features": [
+            "zerovec"
+          ],
+          "target_name": "potential_utf",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "proc-macro2",
+          "version": "1.0.107",
+          "features": [
+            "default",
+            "proc-macro"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "proc-macro2",
+          "version": "1.0.107",
+          "features": [
+            "default",
+            "proc-macro"
+          ],
+          "target_name": "proc_macro2",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "quote",
+          "version": "1.0.47",
+          "features": [
+            "default",
+            "proc-macro"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "quote",
+          "version": "1.0.47",
+          "features": [
+            "default",
+            "proc-macro"
+          ],
+          "target_name": "quote",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "rawpointer",
+          "version": "0.2.1",
+          "features": [],
+          "target_name": "rawpointer",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "safe_arch",
+          "version": "0.7.4",
+          "features": [
+            "bytemuck",
+            "default"
+          ],
+          "target_name": "safe_arch",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "seahash",
+          "version": "4.1.0",
+          "features": [
+            "default"
+          ],
+          "target_name": "seahash",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "serde",
+          "version": "1.0.229",
+          "features": [
+            "alloc",
+            "default",
+            "derive",
+            "serde_derive",
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "serde",
+          "version": "1.0.229",
+          "features": [
+            "alloc",
+            "default",
+            "derive",
+            "serde_derive",
+            "std"
+          ],
+          "target_name": "serde",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "serde_core",
+          "version": "1.0.229",
+          "features": [
+            "alloc",
+            "result",
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "serde_core",
+          "version": "1.0.229",
+          "features": [
+            "alloc",
+            "result",
+            "std"
+          ],
+          "target_name": "serde_core",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "serde_core",
+          "version": "1.0.229",
+          "features": [
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "serde_core",
+          "version": "1.0.229",
+          "features": [
+            "std"
+          ],
+          "target_name": "serde_core",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "serde_derive",
+          "version": "1.0.229",
+          "features": [
+            "default"
+          ],
+          "target_name": "serde_derive",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "serde_json",
+          "version": "1.0.151",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "serde_json",
+          "version": "1.0.151",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "serde_json",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "sha2",
+          "version": "0.10.9",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "sha2",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "sha2",
+          "version": "0.11.0",
+          "features": [],
+          "target_name": "sha2",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "simba",
+          "version": "0.9.1",
+          "features": [
+            "std",
+            "wide"
+          ],
+          "target_name": "simba",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "smallvec",
+          "version": "1.15.2",
+          "features": [],
+          "target_name": "smallvec",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "stable_deref_trait",
+          "version": "1.2.1",
+          "features": [],
+          "target_name": "stable_deref_trait",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "syn",
+          "version": "2.0.119",
+          "features": [
+            "clone-impls",
+            "default",
+            "derive",
+            "extra-traits",
+            "fold",
+            "full",
+            "parsing",
+            "printing",
+            "proc-macro",
+            "visit"
+          ],
+          "target_name": "syn",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "syn",
+          "version": "3.0.3",
+          "features": [
+            "clone-impls",
+            "derive",
+            "parsing",
+            "printing",
+            "proc-macro"
+          ],
+          "target_name": "syn",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "synstructure",
+          "version": "0.13.2",
+          "features": [
+            "default",
+            "proc-macro"
+          ],
+          "target_name": "synstructure",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "tinystr",
+          "version": "0.8.3",
+          "features": [
+            "zerovec"
+          ],
+          "target_name": "tinystr",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "tinyvec",
+          "version": "1.12.0",
+          "features": [
+            "alloc",
+            "default",
+            "tinyvec_macros"
+          ],
+          "target_name": "tinyvec",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "tinyvec_macros",
+          "version": "0.1.1",
+          "features": [],
+          "target_name": "tinyvec_macros",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "typenum",
+          "version": "1.20.1",
+          "features": [
+            "const-generics"
+          ],
+          "target_name": "typenum",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "unicode-ident",
+          "version": "1.0.24",
+          "features": [],
+          "target_name": "unicode_ident",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "unicode-normalization",
+          "version": "0.1.25",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "unicode_normalization",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "unicode-segmentation",
+          "version": "1.13.3",
+          "features": [],
+          "target_name": "unicode_segmentation",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "unty",
+          "version": "0.0.4",
+          "features": [],
+          "target_name": "unty",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "utf8_iter",
+          "version": "1.0.4",
+          "features": [],
+          "target_name": "utf8_iter",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "version_check",
+          "version": "0.9.5",
+          "features": [],
+          "target_name": "version_check",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "virtue",
+          "version": "0.0.18",
+          "features": [],
+          "target_name": "virtue",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "web-time",
+          "version": "1.1.0",
+          "features": [],
+          "target_name": "web_time",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "wide",
+          "version": "0.7.33",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "wide",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "writeable",
+          "version": "0.6.3",
+          "features": [],
+          "target_name": "writeable",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "yoke-derive",
+          "version": "0.8.2",
+          "features": [],
+          "target_name": "yoke_derive",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "yoke",
+          "version": "0.8.3",
+          "features": [
+            "derive",
+            "zerofrom"
+          ],
+          "target_name": "yoke",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "zerofrom-derive",
+          "version": "0.1.7",
+          "features": [],
+          "target_name": "zerofrom_derive",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "zerofrom",
+          "version": "0.1.8",
+          "features": [
+            "derive"
+          ],
+          "target_name": "zerofrom",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "zerotrie",
+          "version": "0.2.4",
+          "features": [
+            "yoke",
+            "zerofrom"
+          ],
+          "target_name": "zerotrie",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "zerovec-derive",
+          "version": "0.11.3",
+          "features": [],
+          "target_name": "zerovec_derive",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "zerovec",
+          "version": "0.11.6",
+          "features": [
+            "derive",
+            "yoke"
+          ],
+          "target_name": "zerovec",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "zmij",
+          "version": "1.0.23",
+          "features": [],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "zmij",
+          "version": "1.0.23",
+          "features": [],
+          "target_name": "zmij",
+          "target_kind": [
+            "lib"
+          ]
+        }
+      ],
+      "launches": [
+        {
+          "arguments_os_encoded_hex": [
+            "39303037313939323534373430393933",
+            "36",
+            "74727565"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 0,
+          "expected_diagnostic": null,
+          "expected_stderr_sha256": null,
+          "expected_stdout_sha256": "3042055e2a82a304ec26c2219964e6029b7e542a88be562e1558224cb81ca303",
+          "name": "above-f64-exact-range",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "3042055e2a82a304ec26c2219964e6029b7e542a88be562e1558224cb81ca303"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "2d2d",
+            "39303037313939323534373430393933",
+            "36",
+            "74727565"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 0,
+          "expected_diagnostic": null,
+          "expected_stderr_sha256": null,
+          "expected_stdout_sha256": "3042055e2a82a304ec26c2219964e6029b7e542a88be562e1558224cb81ca303",
+          "name": "explicit-boundary",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "3042055e2a82a304ec26c2219964e6029b7e542a88be562e1558224cb81ca303"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "2d2d776f726b3d363831",
+            "39303037313939323534373430393933",
+            "36",
+            "74727565"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "canonical native execution: WorkLimit { phase: Completion, required: 682, limit: 681 }",
+          "expected_stderr_sha256": "b84211c5c25b7610849eb8a6335a0ab05be05ab33ae1844e996118ce6b1305f5",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "completion-denial",
+          "stderr_sha256": "b84211c5c25b7610849eb8a6335a0ab05be05ab33ae1844e996118ce6b1305f5",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "2d2d776f726b3d30",
+            "39303037313939323534373430393933",
+            "36",
+            "74727565"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "canonical native execution: WorkLimit { phase: Setup, required: 106, limit: 0 }",
+          "expected_stderr_sha256": "014d5772798f73f3cc971db620d9e7f5260a11f1e05d843723f4adf2e6a34a67",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "setup-denial",
+          "stderr_sha256": "014d5772798f73f3cc971db620d9e7f5260a11f1e05d843723f4adf2e6a34a67",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "2d2d6d656d6f72793d30",
+            "39303037313939323534373430393933",
+            "36",
+            "74727565"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "canonical native execution: TransportLimit { required: 72, limit: 0 }",
+          "expected_stderr_sha256": "c8040102b27044b2e91d8ff19fb1f00c38b7c5cdb5343b3772083148a6245c46",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "memory-denial",
+          "stderr_sha256": "c8040102b27044b2e91d8ff19fb1f00c38b7c5cdb5343b3772083148a6245c46",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "2d2d6275646765743d30",
+            "39303037313939323534373430393933",
+            "36",
+            "74727565"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "canonical native execution: Memory { error: BudgetExceeded { operation: None, requested: 88, limit: 0 } }",
+          "expected_stderr_sha256": "ea9dd1361609166a42e240ecd38f0052bed4d607633cdded94960993f1de15c8",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "shared-budget-denial",
+          "stderr_sha256": "ea9dd1361609166a42e240ecd38f0052bed4d607633cdded94960993f1de15c8",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "2d2d737461636b3d30",
+            "39303037313939323534373430393933",
+            "36",
+            "74727565"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "StackLimit",
+          "expected_stderr_sha256": "50b4e48c7b1d1b88e11774cf0aad3b7343da10bc19df7e30a49100e6bf736864",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "stack-denial",
+          "stderr_sha256": "50b4e48c7b1d1b88e11774cf0aad3b7343da10bc19df7e30a49100e6bf736864",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "2d2d",
+            "3138343436373434303733373039353531363136",
+            "36",
+            "74727565"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "invalid U64 argument",
+          "expected_stderr_sha256": "a873e2a8958a7da4d67e6464f30f26b0f6eeda3935bb266244845dbb08d232d3",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "u64-overflow-input",
+          "stderr_sha256": "a873e2a8958a7da4d67e6464f30f26b0f6eeda3935bb266244845dbb08d232d3",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "2d2d",
+            "2d31",
+            "36",
+            "74727565"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "invalid U64 argument",
+          "expected_stderr_sha256": "a873e2a8958a7da4d67e6464f30f26b0f6eeda3935bb266244845dbb08d232d3",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "signed-u64-input",
+          "stderr_sha256": "a873e2a8958a7da4d67e6464f30f26b0f6eeda3935bb266244845dbb08d232d3",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "2d2d",
+            "2031",
+            "36",
+            "74727565"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "invalid U64 argument",
+          "expected_stderr_sha256": "a873e2a8958a7da4d67e6464f30f26b0f6eeda3935bb266244845dbb08d232d3",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "whitespace-u64-input",
+          "stderr_sha256": "a873e2a8958a7da4d67e6464f30f26b0f6eeda3935bb266244845dbb08d232d3",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "ff58",
+            "36",
+            "74727565"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "argument is not Unicode",
+          "expected_stderr_sha256": "5c283a6cef61fc2bf8148a757bd797bbb2342c77a3a7a337df6616f8a0206d53",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "invalid-unicode-input",
+          "stderr_sha256": "5c283a6cef61fc2bf8148a757bd797bbb2342c77a3a7a337df6616f8a0206d53",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "39303037313939323534373430393933",
+            "36",
+            "54525545"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "invalid Bool argument",
+          "expected_stderr_sha256": "572c904c949e8df94cc4b9f3f21fd00dd98ab5adc5cf63a9c7b3071bcc202234",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "invalid-bool-input",
+          "stderr_sha256": "572c904c949e8df94cc4b9f3f21fd00dd98ab5adc5cf63a9c7b3071bcc202234",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "typed inputs",
+          "expected_stderr_sha256": "b1c026bfbd4fe1f967fb44303cacf85be9398285df30a53b9f5839eed05473c1",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "missing-input",
+          "stderr_sha256": "b1c026bfbd4fe1f967fb44303cacf85be9398285df30a53b9f5839eed05473c1",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "39303037313939323534373430393933",
+            "36",
+            "74727565",
+            "7461696c"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "typed inputs",
+          "expected_stderr_sha256": "b1c026bfbd4fe1f967fb44303cacf85be9398285df30a53b9f5839eed05473c1",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "extra-input",
+          "stderr_sha256": "b1c026bfbd4fe1f967fb44303cacf85be9398285df30a53b9f5839eed05473c1",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "2d2d756e6b6e6f776e"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "unknown option",
+          "expected_stderr_sha256": "739348a8b226d6e6d36fc8adad6cc05c2bee2ed93e1f21849b0808edf13e1c6c",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "unknown-option",
+          "stderr_sha256": "739348a8b226d6e6d36fc8adad6cc05c2bee2ed93e1f21849b0808edf13e1c6c",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "2d2d776f726b3d696e76616c6964"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "limit",
+          "expected_stderr_sha256": "790575ed6b53075a32788b848e74d1717d1d32294e56802f8ee2aac99488c28c",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "invalid-limit",
+          "stderr_sha256": "790575ed6b53075a32788b848e74d1717d1d32294e56802f8ee2aac99488c28c",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "3138343436373434303733373039353531363134",
+            "31",
+            "66616c7365"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 0,
+          "expected_diagnostic": null,
+          "expected_stderr_sha256": null,
+          "expected_stdout_sha256": "56f85315b968e9d663b10b3ef101eff4bf9320040c4f9676b81fac2f5d89548e",
+          "name": "u64-max",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "56f85315b968e9d663b10b3ef101eff4bf9320040c4f9676b81fac2f5d89548e"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "30",
+            "30",
+            "74727565"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 0,
+          "expected_diagnostic": null,
+          "expected_stderr_sha256": null,
+          "expected_stdout_sha256": "df1dcee78602188d31597bb3cd62dcab7cc0fe01bd96abe1f30b04af2b1d7e66",
+          "name": "zero",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "df1dcee78602188d31597bb3cd62dcab7cc0fe01bd96abe1f30b04af2b1d7e66"
+        }
+      ],
+      "object_emission": {
+        "abi_version": 1,
+        "code_bytes": 612,
+        "entry_symbol": "mech_canonical_scalar_entry_v1",
+        "executed": false,
+        "generated_entry_stack_bytes": 64,
+        "identity_sha256": "95d41bb23f06ffd288095ca840ae5a54a148086d17d4d67b0322afd177b78a36",
+        "identity_symbol": "mech_canonical_scalar_identity_v1_b787b5fe38e443edbcd585a794f8a294a8c8e8b57ec68a493c0ef00fcb26dcc9",
+        "inputs": [
+          {
+            "kind": "U64",
+            "schema_key": "8acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a48"
+          },
+          {
+            "kind": "U64",
+            "schema_key": "8acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a48"
+          },
+          {
+            "kind": "Bool",
+            "schema_key": "ae4fd11fd6195a3547c6aa0a5dc7e31a491ae0a604d1ff6543ed6472e88cbadb"
+          }
+        ],
+        "linked": false,
+        "object_bytes": 1304,
+        "ordered_nodes": [
+          {
+            "node": 0,
+            "op": "U64Add"
+          },
+          {
+            "node": 1,
+            "op": "BoolNot"
+          }
+        ],
+        "outputs": [
+          {
+            "kind": "U64",
+            "schema_key": "8acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a48"
+          },
+          {
+            "kind": "U64",
+            "schema_key": "8acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a48"
+          },
+          {
+            "kind": "Bool",
+            "schema_key": "ae4fd11fd6195a3547c6aa0a5dc7e31a491ae0a604d1ff6543ed6472e88cbadb"
+          },
+          {
+            "kind": "U64",
+            "schema_key": "8acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a48"
+          }
+        ],
+        "program_revision": "2f0885eec61672fa7af4d41afd71676d7e0a6709c4255ac657cc5d721f5cf797",
+        "schema": "mech.canonical-native-object.v1",
+        "target_tag": [
+          1,
+          2,
+          1,
+          64,
+          1,
+          0,
+          0,
+          0
+        ],
+        "timing_samples": 0,
+        "typed_ir_sha256": "b787b5fe38e443edbcd585a794f8a294a8c8e8b57ec68a493c0ef00fcb26dcc9",
+        "work_policy_version": 1
+      },
+      "object_emission_phase": "Emission-only metadata; enclosing qualification and launches establish actual linking/execution."
+    },
+    {
+      "name": "canonical-linked-ordered",
+      "source_sha256": "3418134a79ebeca016cd62e007b288c54f7a348690605b0c23bb628214adae06",
+      "source": "quotient := left<u64> / divisor<u64>\nlast := left<u64> + 1u64\nlast\n",
+      "program_revision": "f0fb661cf5ee261ab162ce22f1e2df3dfb16a5180d72b46b91f88774305d1d69",
+      "typed_ir_sha256": "e3f57e3d7562385077480a6856d553bcd882dbfe60498440294dd742ac9208fc",
+      "binary_sha256": "dcb71abc8aa9f89b979bbedc1c40543b0fd5583232339df2114939c0145518d3",
+      "build_count": 1,
+      "object_emissions": 2,
+      "original_and_decoded_pair_equal": true,
+      "generated_input_pins": {
+        "Cargo.toml": "bea65278e77949c5dfa601e78d1ddd99962fc20ed62e25b19b5159ac7f021c65",
+        "application.mec": "3418134a79ebeca016cd62e007b288c54f7a348690605b0c23bb628214adae06",
+        "build.rs": "8f95a662efffe87862a60f0ad69302d6fdd51c479b5d98e28546d1db7a8b5e24",
+        "object-identity.bin": "88087c3b566f288c04a6e5293c128ece98a452857598c6a5afece8b95047d655",
+        "program.mecb": "58162efa045c041669c7d5519f64f4c4f5380e9ac13f20592e5d1794ddddcdfc",
+        "program.o": "1237db5cdfb0fc2fe527da5dd6cdadb2f1039c895d2814266bf4ac40daac991e",
+        "rust-toolchain.toml": "19219593d7dba33a75623287af94da940a93fac92eeef99e8fff9b7fd804fcf9",
+        "src/main.rs": "e31746db719de6a490301bef060a2e6f90d53d96e7eb7e26841822b6680fec1a"
+      },
+      "compiled_units": [
+        {
+          "name": "canonical-linked-ordered",
+          "version": "0.0.0",
+          "features": [],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "canonical-linked-ordered",
+          "version": "0.0.0",
+          "features": [],
+          "target_name": "canonical-linked-ordered",
+          "target_kind": [
+            "bin"
+          ]
+        },
+        {
+          "name": "mech-gpu",
+          "version": "0.3.5",
+          "features": [
+            "canonical-native-runtime"
+          ],
+          "target_name": "mech_gpu",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "mech-compare",
+          "version": "0.3.5",
+          "features": [
+            "bool",
+            "compare",
+            "eq",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "max",
+            "min",
+            "native-plan",
+            "neq",
+            "numbers",
+            "runtime",
+            "seq",
+            "sneq",
+            "u64",
+            "unsigned_ints"
+          ],
+          "target_name": "mech_compare",
+          "target_kind": [
+            "rlib"
+          ]
+        },
+        {
+          "name": "mech-logic",
+          "version": "0.3.5",
+          "features": [
+            "and",
+            "bool",
+            "logic",
+            "native-plan",
+            "not",
+            "or",
+            "runtime",
+            "xor"
+          ],
+          "target_name": "mech_logic",
+          "target_kind": [
+            "rlib"
+          ]
+        },
+        {
+          "name": "mech-math",
+          "version": "0.3.5",
+          "features": [
+            "add",
+            "bool",
+            "div",
+            "math",
+            "mod",
+            "mul",
+            "native-plan",
+            "numbers",
+            "ops",
+            "runtime",
+            "sub",
+            "u64",
+            "unsigned_ints"
+          ],
+          "target_name": "mech_math",
+          "target_kind": [
+            "rlib",
+            "cdylib"
+          ]
+        },
+        {
+          "name": "mech-compute",
+          "version": "0.3.5",
+          "features": [
+            "default",
+            "runtime-values"
+          ],
+          "target_name": "mech_compute",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "mech-core",
+          "version": "0.3.5",
+          "features": [
+            "base64",
+            "bincode",
+            "bool",
+            "brotli",
+            "byteorder",
+            "crc32fast",
+            "f32",
+            "f64",
+            "floats",
+            "functions",
+            "indexmap",
+            "matrix",
+            "matrixd",
+            "nalgebra",
+            "native-plan",
+            "num-traits",
+            "numbers",
+            "program",
+            "range",
+            "resident-execution",
+            "row_vectord",
+            "serde",
+            "serde_derive",
+            "serde_json",
+            "std",
+            "symbol_table",
+            "u64",
+            "unsigned_ints",
+            "vectord"
+          ],
+          "target_name": "mech_core",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "mech-engine",
+          "version": "0.3.5",
+          "features": [
+            "artifact-codec",
+            "assign",
+            "bool",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compare_seq",
+            "compare_sneq",
+            "f64",
+            "floats",
+            "functions",
+            "logic_and",
+            "logic_not",
+            "logic_or",
+            "logic_xor",
+            "math_add",
+            "math_div",
+            "math_mod",
+            "math_mul",
+            "math_sub",
+            "matrix",
+            "matrix_horzcat",
+            "matrix_vertcat",
+            "matrixd",
+            "nalgebra",
+            "native-artifact",
+            "native-plan",
+            "numbers",
+            "program",
+            "resident-artifact",
+            "resident-ekf",
+            "row_vectord",
+            "runtime",
+            "std",
+            "symbol_table",
+            "u64",
+            "unsigned_ints",
+            "vectord"
+          ],
+          "target_name": "mech_engine",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "mech-stdlib",
+          "version": "0.3.5",
+          "features": [
+            "bool",
+            "compare_default",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_max",
+            "compare_min",
+            "compare_neq",
+            "compare_seq",
+            "compare_sneq",
+            "logic_and",
+            "logic_default",
+            "logic_not",
+            "logic_or",
+            "logic_xor",
+            "math_add",
+            "math_div",
+            "math_mod",
+            "math_mul",
+            "math_sub",
+            "mech-compare",
+            "mech-logic",
+            "mech-math",
+            "native-plan",
+            "runtime",
+            "std",
+            "u64"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "mech-stdlib",
+          "version": "0.3.5",
+          "features": [
+            "bool",
+            "compare_default",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_max",
+            "compare_min",
+            "compare_neq",
+            "compare_seq",
+            "compare_sneq",
+            "logic_and",
+            "logic_default",
+            "logic_not",
+            "logic_or",
+            "logic_xor",
+            "math_add",
+            "math_div",
+            "math_mod",
+            "math_mul",
+            "math_sub",
+            "mech-compare",
+            "mech-logic",
+            "mech-math",
+            "native-plan",
+            "runtime",
+            "std",
+            "u64"
+          ],
+          "target_name": "mech_stdlib",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "alloc-no-stdlib",
+          "version": "2.0.4",
+          "features": [],
+          "target_name": "alloc_no_stdlib",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "alloc-stdlib",
+          "version": "0.2.4",
+          "features": [],
+          "target_name": "alloc_stdlib",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "approx",
+          "version": "0.5.1",
+          "features": [
+            "std"
+          ],
+          "target_name": "approx",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "autocfg",
+          "version": "1.5.1",
+          "features": [],
+          "target_name": "autocfg",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "base64",
+          "version": "0.22.1",
+          "features": [
+            "alloc",
+            "default",
+            "std"
+          ],
+          "target_name": "base64",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "bincode",
+          "version": "2.0.1",
+          "features": [
+            "alloc",
+            "bincode_derive",
+            "default",
+            "derive",
+            "serde",
+            "std"
+          ],
+          "target_name": "bincode",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "bincode_derive",
+          "version": "2.0.1",
+          "features": [],
+          "target_name": "bincode_derive",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "block-buffer",
+          "version": "0.10.4",
+          "features": [],
+          "target_name": "block_buffer",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "block-buffer",
+          "version": "0.12.1",
+          "features": [],
+          "target_name": "block_buffer",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "brotli-decompressor",
+          "version": "5.0.3",
+          "features": [
+            "alloc-stdlib",
+            "std"
+          ],
+          "target_name": "brotli_decompressor",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "brotli",
+          "version": "8.0.4",
+          "features": [
+            "alloc-stdlib",
+            "default",
+            "std"
+          ],
+          "target_name": "brotli",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "bytemuck",
+          "version": "1.25.2",
+          "features": [],
+          "target_name": "bytemuck",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "byteorder",
+          "version": "1.5.0",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "byteorder",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "cfg-if",
+          "version": "1.0.4",
+          "features": [],
+          "target_name": "cfg_if",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "cpufeatures",
+          "version": "0.2.17",
+          "features": [],
+          "target_name": "cpufeatures",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "cpufeatures",
+          "version": "0.3.0",
+          "features": [],
+          "target_name": "cpufeatures",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "crc32fast",
+          "version": "1.5.0",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "crc32fast",
+          "version": "1.5.0",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "crc32fast",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "crypto-common",
+          "version": "0.1.7",
+          "features": [
+            "std"
+          ],
+          "target_name": "crypto_common",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "crypto-common",
+          "version": "0.2.2",
+          "features": [],
+          "target_name": "crypto_common",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "digest",
+          "version": "0.10.7",
+          "features": [
+            "alloc",
+            "block-buffer",
+            "core-api",
+            "default",
+            "std"
+          ],
+          "target_name": "digest",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "digest",
+          "version": "0.11.3",
+          "features": [
+            "block-api",
+            "default"
+          ],
+          "target_name": "digest",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "displaydoc",
+          "version": "0.2.6",
+          "features": [],
+          "target_name": "displaydoc",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "equivalent",
+          "version": "1.0.2",
+          "features": [],
+          "target_name": "equivalent",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "generic-array",
+          "version": "0.14.7",
+          "features": [
+            "more_lengths"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "generic-array",
+          "version": "0.14.7",
+          "features": [
+            "more_lengths"
+          ],
+          "target_name": "generic_array",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "grapheme",
+          "version": "1.3.0",
+          "features": [],
+          "target_name": "grapheme",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "grapheme_macro",
+          "version": "2.0.0",
+          "features": [],
+          "target_name": "grapheme_macro",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "hashbrown",
+          "version": "0.17.1",
+          "features": [],
+          "target_name": "hashbrown",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "hybrid-array",
+          "version": "0.4.14",
+          "features": [],
+          "target_name": "hybrid_array",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "icu_collections",
+          "version": "2.2.0",
+          "features": [],
+          "target_name": "icu_collections",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "icu_locale_core",
+          "version": "2.2.0",
+          "features": [
+            "zerovec"
+          ],
+          "target_name": "icu_locale_core",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "icu_properties",
+          "version": "2.2.0",
+          "features": [
+            "compiled_data",
+            "default"
+          ],
+          "target_name": "icu_properties",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "icu_properties_data",
+          "version": "2.2.0",
+          "features": [],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "icu_properties_data",
+          "version": "2.2.0",
+          "features": [],
+          "target_name": "icu_properties_data",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "icu_provider",
+          "version": "2.2.0",
+          "features": [
+            "baked"
+          ],
+          "target_name": "icu_provider",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "indexmap",
+          "version": "2.14.0",
+          "features": [
+            "default",
+            "serde",
+            "std"
+          ],
+          "target_name": "indexmap",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "itoa",
+          "version": "1.0.18",
+          "features": [],
+          "target_name": "itoa",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "libc",
+          "version": "0.2.189",
+          "features": [],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "libc",
+          "version": "0.2.189",
+          "features": [],
+          "target_name": "libc",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "libm",
+          "version": "0.2.16",
+          "features": [
+            "arch",
+            "default"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "libm",
+          "version": "0.2.16",
+          "features": [
+            "arch",
+            "default"
+          ],
+          "target_name": "libm",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "litemap",
+          "version": "0.8.2",
+          "features": [],
+          "target_name": "litemap",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "matrixmultiply",
+          "version": "0.3.11",
+          "features": [
+            "avx512",
+            "default",
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "matrixmultiply",
+          "version": "0.3.11",
+          "features": [
+            "avx512",
+            "default",
+            "std"
+          ],
+          "target_name": "matrixmultiply",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "memchr",
+          "version": "2.8.3",
+          "features": [
+            "alloc",
+            "std"
+          ],
+          "target_name": "memchr",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "nalgebra-macros",
+          "version": "0.3.0",
+          "features": [],
+          "target_name": "nalgebra_macros",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "nalgebra",
+          "version": "0.34.2",
+          "features": [
+            "default",
+            "macros",
+            "matrixmultiply",
+            "nalgebra-macros",
+            "std"
+          ],
+          "target_name": "nalgebra",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "num-complex",
+          "version": "0.4.6",
+          "features": [
+            "std"
+          ],
+          "target_name": "num_complex",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "num-integer",
+          "version": "0.1.46",
+          "features": [
+            "i128",
+            "std"
+          ],
+          "target_name": "num_integer",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "num-rational",
+          "version": "0.4.2",
+          "features": [
+            "std"
+          ],
+          "target_name": "num_rational",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "num-traits",
+          "version": "0.2.19",
+          "features": [
+            "i128",
+            "libm",
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "num-traits",
+          "version": "0.2.19",
+          "features": [
+            "i128",
+            "libm",
+            "std"
+          ],
+          "target_name": "num_traits",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "paste",
+          "version": "1.0.15",
+          "features": [],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "paste",
+          "version": "1.0.15",
+          "features": [],
+          "target_name": "paste",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "potential_utf",
+          "version": "0.1.5",
+          "features": [
+            "zerovec"
+          ],
+          "target_name": "potential_utf",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "proc-macro2",
+          "version": "1.0.107",
+          "features": [
+            "default",
+            "proc-macro"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "proc-macro2",
+          "version": "1.0.107",
+          "features": [
+            "default",
+            "proc-macro"
+          ],
+          "target_name": "proc_macro2",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "quote",
+          "version": "1.0.47",
+          "features": [
+            "default",
+            "proc-macro"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "quote",
+          "version": "1.0.47",
+          "features": [
+            "default",
+            "proc-macro"
+          ],
+          "target_name": "quote",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "rawpointer",
+          "version": "0.2.1",
+          "features": [],
+          "target_name": "rawpointer",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "safe_arch",
+          "version": "0.7.4",
+          "features": [
+            "bytemuck",
+            "default"
+          ],
+          "target_name": "safe_arch",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "seahash",
+          "version": "4.1.0",
+          "features": [
+            "default"
+          ],
+          "target_name": "seahash",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "serde",
+          "version": "1.0.229",
+          "features": [
+            "alloc",
+            "default",
+            "derive",
+            "serde_derive",
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "serde",
+          "version": "1.0.229",
+          "features": [
+            "alloc",
+            "default",
+            "derive",
+            "serde_derive",
+            "std"
+          ],
+          "target_name": "serde",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "serde_core",
+          "version": "1.0.229",
+          "features": [
+            "alloc",
+            "result",
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "serde_core",
+          "version": "1.0.229",
+          "features": [
+            "alloc",
+            "result",
+            "std"
+          ],
+          "target_name": "serde_core",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "serde_core",
+          "version": "1.0.229",
+          "features": [
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "serde_core",
+          "version": "1.0.229",
+          "features": [
+            "std"
+          ],
+          "target_name": "serde_core",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "serde_derive",
+          "version": "1.0.229",
+          "features": [
+            "default"
+          ],
+          "target_name": "serde_derive",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "serde_json",
+          "version": "1.0.151",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "serde_json",
+          "version": "1.0.151",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "serde_json",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "sha2",
+          "version": "0.10.9",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "sha2",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "sha2",
+          "version": "0.11.0",
+          "features": [],
+          "target_name": "sha2",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "simba",
+          "version": "0.9.1",
+          "features": [
+            "std",
+            "wide"
+          ],
+          "target_name": "simba",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "smallvec",
+          "version": "1.15.2",
+          "features": [],
+          "target_name": "smallvec",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "stable_deref_trait",
+          "version": "1.2.1",
+          "features": [],
+          "target_name": "stable_deref_trait",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "syn",
+          "version": "2.0.119",
+          "features": [
+            "clone-impls",
+            "default",
+            "derive",
+            "extra-traits",
+            "fold",
+            "full",
+            "parsing",
+            "printing",
+            "proc-macro",
+            "visit"
+          ],
+          "target_name": "syn",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "syn",
+          "version": "3.0.3",
+          "features": [
+            "clone-impls",
+            "derive",
+            "parsing",
+            "printing",
+            "proc-macro"
+          ],
+          "target_name": "syn",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "synstructure",
+          "version": "0.13.2",
+          "features": [
+            "default",
+            "proc-macro"
+          ],
+          "target_name": "synstructure",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "tinystr",
+          "version": "0.8.3",
+          "features": [
+            "zerovec"
+          ],
+          "target_name": "tinystr",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "tinyvec",
+          "version": "1.12.0",
+          "features": [
+            "alloc",
+            "default",
+            "tinyvec_macros"
+          ],
+          "target_name": "tinyvec",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "tinyvec_macros",
+          "version": "0.1.1",
+          "features": [],
+          "target_name": "tinyvec_macros",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "typenum",
+          "version": "1.20.1",
+          "features": [
+            "const-generics"
+          ],
+          "target_name": "typenum",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "unicode-ident",
+          "version": "1.0.24",
+          "features": [],
+          "target_name": "unicode_ident",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "unicode-normalization",
+          "version": "0.1.25",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "unicode_normalization",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "unicode-segmentation",
+          "version": "1.13.3",
+          "features": [],
+          "target_name": "unicode_segmentation",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "unty",
+          "version": "0.0.4",
+          "features": [],
+          "target_name": "unty",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "utf8_iter",
+          "version": "1.0.4",
+          "features": [],
+          "target_name": "utf8_iter",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "version_check",
+          "version": "0.9.5",
+          "features": [],
+          "target_name": "version_check",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "virtue",
+          "version": "0.0.18",
+          "features": [],
+          "target_name": "virtue",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "web-time",
+          "version": "1.1.0",
+          "features": [],
+          "target_name": "web_time",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "wide",
+          "version": "0.7.33",
+          "features": [
+            "default",
+            "std"
+          ],
+          "target_name": "wide",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "writeable",
+          "version": "0.6.3",
+          "features": [],
+          "target_name": "writeable",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "yoke-derive",
+          "version": "0.8.2",
+          "features": [],
+          "target_name": "yoke_derive",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "yoke",
+          "version": "0.8.3",
+          "features": [
+            "derive",
+            "zerofrom"
+          ],
+          "target_name": "yoke",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "zerofrom-derive",
+          "version": "0.1.7",
+          "features": [],
+          "target_name": "zerofrom_derive",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "zerofrom",
+          "version": "0.1.8",
+          "features": [
+            "derive"
+          ],
+          "target_name": "zerofrom",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "zerotrie",
+          "version": "0.2.4",
+          "features": [
+            "yoke",
+            "zerofrom"
+          ],
+          "target_name": "zerotrie",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "zerovec-derive",
+          "version": "0.11.3",
+          "features": [],
+          "target_name": "zerovec_derive",
+          "target_kind": [
+            "proc-macro"
+          ]
+        },
+        {
+          "name": "zerovec",
+          "version": "0.11.6",
+          "features": [
+            "derive",
+            "yoke"
+          ],
+          "target_name": "zerovec",
+          "target_kind": [
+            "lib"
+          ]
+        },
+        {
+          "name": "zmij",
+          "version": "1.0.23",
+          "features": [],
+          "target_name": "build-script-build",
+          "target_kind": [
+            "custom-build"
+          ]
+        },
+        {
+          "name": "zmij",
+          "version": "1.0.23",
+          "features": [],
+          "target_name": "zmij",
+          "target_kind": [
+            "lib"
+          ]
+        }
+      ],
+      "launches": [
+        {
+          "arguments_os_encoded_hex": [
+            "33",
+            "31"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 0,
+          "expected_diagnostic": null,
+          "expected_stderr_sha256": null,
+          "expected_stdout_sha256": "6ea9a805a87d95d45bdfd7b8c604c88bcec3bce120f8a70147da3310df7e7970",
+          "name": "success",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "6ea9a805a87d95d45bdfd7b8c604c88bcec3bce120f8a70147da3310df7e7970"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "2d2d776f726b3d343030",
+            "3138343436373434303733373039353531363135",
+            "30"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "canonical native execution: Arithmetic { node: NodeId(0) }",
+          "expected_stderr_sha256": "9062d0563140eda6e8c94ad32bbb33b5c8f77cff48f28db749b930821c5c07d3",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "first-arithmetic-before-later-denial",
+          "stderr_sha256": "9062d0563140eda6e8c94ad32bbb33b5c8f77cff48f28db749b930821c5c07d3",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "2d2d776f726b3d343030",
+            "3138343436373434303733373039353531363135",
+            "31"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "canonical native execution: WorkLimit { phase: Node(NodeId(1)), required: 608, limit: 400 }",
+          "expected_stderr_sha256": "63c79a26d4f940bd8d0afa70c0d22136e9bf537063aa2a14cdacf9b578fba3a0",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "later-node-denial-before-overflow",
+          "stderr_sha256": "63c79a26d4f940bd8d0afa70c0d22136e9bf537063aa2a14cdacf9b578fba3a0",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "3138343436373434303733373039353531363135",
+            "31"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 1,
+          "expected_diagnostic": "canonical native execution: Arithmetic { node: NodeId(1) }",
+          "expected_stderr_sha256": "acf37e87336f9548e6a60dcec6b0d9b72d7584f2590f7e911c9e07ad48e61878",
+          "expected_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "later-arithmetic-is-atomic",
+          "stderr_sha256": "acf37e87336f9548e6a60dcec6b0d9b72d7584f2590f7e911c9e07ad48e61878",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "arguments_os_encoded_hex": [
+            "33",
+            "31"
+          ],
+          "binary_unchanged": true,
+          "exact_complete_stderr": true,
+          "exact_complete_stdout": true,
+          "exit_code": 0,
+          "expected_diagnostic": null,
+          "expected_stderr_sha256": null,
+          "expected_stdout_sha256": "6ea9a805a87d95d45bdfd7b8c604c88bcec3bce120f8a70147da3310df7e7970",
+          "name": "recovery",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "6ea9a805a87d95d45bdfd7b8c604c88bcec3bce120f8a70147da3310df7e7970"
+        }
+      ],
+      "object_emission": {
+        "abi_version": 1,
+        "code_bytes": 572,
+        "entry_symbol": "mech_canonical_scalar_entry_v1",
+        "executed": false,
+        "generated_entry_stack_bytes": 64,
+        "identity_sha256": "88087c3b566f288c04a6e5293c128ece98a452857598c6a5afece8b95047d655",
+        "identity_symbol": "mech_canonical_scalar_identity_v1_e3f57e3d7562385077480a6856d553bcd882dbfe60498440294dd742ac9208fc",
+        "inputs": [
+          {
+            "kind": "U64",
+            "schema_key": "8acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a48"
+          },
+          {
+            "kind": "U64",
+            "schema_key": "8acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a48"
+          }
+        ],
+        "linked": false,
+        "object_bytes": 1264,
+        "ordered_nodes": [
+          {
+            "node": 0,
+            "op": "U64Div"
+          },
+          {
+            "node": 1,
+            "op": "U64Add"
+          }
+        ],
+        "outputs": [
+          {
+            "kind": "U64",
+            "schema_key": "8acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a48"
+          },
+          {
+            "kind": "U64",
+            "schema_key": "8acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a48"
+          },
+          {
+            "kind": "U64",
+            "schema_key": "8acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a48"
+          },
+          {
+            "kind": "U64",
+            "schema_key": "8acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a48"
+          }
+        ],
+        "program_revision": "f0fb661cf5ee261ab162ce22f1e2df3dfb16a5180d72b46b91f88774305d1d69",
+        "schema": "mech.canonical-native-object.v1",
+        "target_tag": [
+          1,
+          2,
+          1,
+          64,
+          1,
+          0,
+          0,
+          0
+        ],
+        "timing_samples": 0,
+        "typed_ir_sha256": "e3f57e3d7562385077480a6856d553bcd882dbfe60498440294dd742ac9208fc",
+        "work_policy_version": 1
+      },
+      "object_emission_phase": "Emission-only metadata; enclosing qualification and launches establish actual linking/execution."
+    }
+  ]
+}

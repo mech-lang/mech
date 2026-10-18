@@ -931,11 +931,11 @@ fn closed_strict_selector_artifact(
 // to exercise the snapshot constructor's cumulative finalization admission.
 fn repeated_snapshot_boolean_copy_artifacts(
     operation: &str,
-    large: bool,
+    rows: u64,
+    columns: u64,
 ) -> (ProgramArtifact, ProgramArtifact) {
     use mech_core::*;
     use mech_engine::*;
-    let (rows, columns) = if large { (200, 100) } else { (2, 3) };
     let matrix = |dimensions| SchemaBody::Matrix {
         element: Box::new(SchemaBody::Bool),
         dimensions,
@@ -1254,9 +1254,20 @@ fn repeated_snapshot_boolean_copy_artifacts(
 fn refused_snapshot_boolean_copy_cannot_publish_selector_facts_through_masks() {
     let catalog = mech_stdlib::source_catalog();
     for operation in ["horzcat", "vertcat"] {
-        for large in [false, true] {
-            let (rows, columns) = if large { (200, 100) } else { (2, 3) };
-            let (first, repeated) = repeated_snapshot_boolean_copy_artifacts(operation, large);
+        // Keep the original small and 20,000-element inputs. Metadata and
+        // encoding now consume compute, not comparison work, so both fit.
+        // Doubling 40,000 elements must still exceed the output-element cap.
+        for (rows, columns, refused) in [
+            (2, 3, false),
+            (200, 100, false),
+            (256, 128, false),
+            (200, 200, true),
+        ] {
+            if refused {
+                assert!(2 * rows * columns > mech_core::RESIDENT_MAX_OUTPUT_ELEMENTS);
+            }
+            let (first, repeated) =
+                repeated_snapshot_boolean_copy_artifacts(operation, rows, columns);
             for first in [&first, &roundtrip(&first)] {
                 let mut instance = activate(
                     ReactiveInstanceId::new(0x606, 51),
@@ -1289,14 +1300,20 @@ fn refused_snapshot_boolean_copy_cannot_publish_selector_facts_through_masks() {
                 ) {
                     Ok(instance) => instance,
                     Err(ResidentActivationError::ActivationKernelExecution {
-                        error: mech_core::ResidentKernelError::InvalidShape,
+                        error:
+                            mech_core::ResidentKernelError::ResourceLimit {
+                                phase: mech_core::ResidentResourcePhase::Admission,
+                                dimension: mech_core::MemoryBudgetDimension::OutputElements,
+                                required: 80_000,
+                                limit: 65_536,
+                            },
                         ..
-                    }) if large => continue,
+                    }) if refused => continue,
                     Err(error) => panic!("genuine {operation} binder: {error:?}"),
                 };
                 let result = instance.turn(&[]);
-                assert_eq!(result.is_ok(), !large, "resident {operation}: {result:?}");
-                if !large {
+                assert_eq!(result.is_ok(), !refused, "resident {operation}: {result:?}");
+                if !refused {
                     let actual = instance.copied_output(0).unwrap();
                     let extents = if operation == "horzcat" {
                         [rows, 2 * columns]
@@ -1304,6 +1321,10 @@ fn refused_snapshot_boolean_copy_cannot_publish_selector_facts_through_masks() {
                         [2 * rows, columns]
                     };
                     assert_eq!(actual.schema(), producer.outputs()[0].schema);
+                    assert_eq!(
+                        actual.schema_key(),
+                        producer.schemas().entry(actual.schema()).unwrap().key()
+                    );
                     assert_eq!(
                         actual.shape(),
                         &mech_core::shape_for_resolved_extents(
@@ -1342,7 +1363,7 @@ fn refused_snapshot_boolean_copy_cannot_publish_selector_facts_through_masks() {
                         &catalog,
                         &ActivationFacts::default(),
                     );
-                    if large {
+                    if refused {
                         assert!(
                             matches!(result, Err(ResidentActivationError::UnresolvedShape { .. })),
                             "refused snapshot {operation} supplied {comparison} mask facts"
@@ -1366,7 +1387,7 @@ fn refused_snapshot_boolean_copy_cannot_publish_selector_facts_through_masks() {
                     &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
                     ResidentDurabilityPolicy::Volatile,
                 );
-                if large {
+                if refused {
                     assert!(
                         format!("{:?}", result.err().expect("resident refusal"))
                             .contains("UnresolvedShape")
@@ -2226,7 +2247,57 @@ fn snapshot_gather_preparation_cannot_publish_a_cross_schema_selector_fact() {
         )
     };
     let large_matrix = matrix(15_000, 25_000);
-    let producer = compile(&format!("{large_matrix}m[[2]]\n"));
+    // Preserve the original source payload and single selection as supported
+    // compute work. Repeating the same selection must fund every copy, even
+    // though the source is borrowed and the comparison can reject by schema.
+    let copies = mech_core::RESIDENT_MAX_BYTES / (2 * 25_000) + 1;
+    assert!(copies * 25_000 <= mech_core::RESIDENT_MAX_BYTES);
+    assert!(2 * copies * 25_000 > mech_core::RESIDENT_MAX_BYTES);
+    let selector = vec!["2"; copies as usize].join(" ");
+    let comparison_target = format!(
+        "other<[(u8,string)]:{copies},1> := [{}]\n",
+        vec!["(3u8, \"short\")"; copies as usize].join("; "),
+    );
+    let catalog = mech_stdlib::source_catalog();
+    let original_producer = compile(&format!("{large_matrix}m[[2]]\n"));
+    for artifact in [&original_producer, &roundtrip(&original_producer)] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x606, 39),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        let value = instance.copied_output(0).unwrap();
+        assert_eq!(value.schema(), artifact.outputs()[0].schema);
+        assert_eq!(
+            value.schema_key(),
+            artifact.schemas().entry(value.schema()).unwrap().key()
+        );
+        assert_eq!(
+            value.canonical_data_draft().unwrap(),
+            mech_core::ValueDataDraft::Matrix(
+                vec![mech_core::ValueDataDraft::Tuple(
+                    vec![
+                        mech_core::ValueDataDraft::U8(2),
+                        mech_core::ValueDataDraft::String("b".repeat(25_000)),
+                    ]
+                    .into_boxed_slice()
+                )]
+                .into_boxed_slice(),
+            )
+        );
+        assert_eq!(
+            value.shape(),
+            &mech_core::shape_for_resolved_extents(
+                artifact.schemas().get(value.schema()).unwrap(),
+                &[1, 1],
+            )
+            .unwrap(),
+        );
+    }
+    let producer = compile(&format!("{large_matrix}m[[{selector}]]\n"));
     assert!(
         producer.nodes().iter().any(|node| node
             .as_operation()
@@ -2234,9 +2305,8 @@ fn snapshot_gather_preparation_cannot_publish_a_cross_schema_selector_fact() {
         "fixture must execute the snapshot gather"
     );
     // This is a supported binding, not an UnsupportedLayout reproduction.
-    // The selected payload fits alone, but source and selection preparation
-    // cannot share one 65,536-work allowance.
-    let catalog = mech_stdlib::source_catalog();
+    // The selected payload fits alone, but its staged and finalized copies
+    // cannot share the temporary-byte allowance.
     for artifact in [&producer, &roundtrip(&producer)] {
         let instance = activate(
             ReactiveInstanceId::new(0x606, 40),
@@ -2250,15 +2320,50 @@ fn snapshot_gather_preparation_cannot_publish_a_cross_schema_selector_fact() {
                 "resident preparation must refuse the cumulative demand"
             ),
             Err(ResidentActivationError::ActivationKernelExecution {
-                error: mech_core::ResidentKernelError::InvalidShape,
-                ..
-            }) => {}
+                node,
+                error:
+                    mech_core::ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                        required: 75_030,
+                        limit: 65_536,
+                    },
+            }) => {
+                let operation = artifact
+                    .nodes()
+                    .iter()
+                    .find(|candidate| candidate.node == node)
+                    .unwrap();
+                assert!(
+                    matches!(&operation.body, mech_engine::ExecutableNodeBody::Operation(body)
+                    if body.operation.module_path.as_ref() == ["access".to_owned()]
+                        && body.operation.operation_name == "range"),
+                    "denial must belong to the gather producer: {operation:?}"
+                );
+            }
             Err(error) => panic!("unsupported preparation fixture: {error:?}"),
         }
     }
     for (comparison, selected) in [("===", "[]"), ("!==", "[42]")] {
-        let source = format!(
+        // The original single-gather source still exhausts the shared closed
+        // analysis through its preceding literal constructor. Runtime support
+        // alone must not manufacture an unavailable selector fact.
+        let original = compile(&format!(
             "{large_matrix}g := m[[2]]\nother<[(u8,string)]:1,1> := [(3u8, \"short\")]\np := g {comparison} other\nx := [42]\nx[[p]]\n"
+        ));
+        for artifact in [&original, &roundtrip(&original)] {
+            assert!(matches!(
+                activate(
+                    ReactiveInstanceId::new(0x606, 44),
+                    artifact,
+                    &catalog,
+                    &ActivationFacts::default(),
+                ),
+                Err(ResidentActivationError::UnresolvedShape { .. })
+            ));
+        }
+        let source = format!(
+            "{large_matrix}g := m[[{selector}]]\n{comparison_target}p := g {comparison} other\nx := [42]\nx[[p]]\n"
         );
         let artifact = compile(&source);
         let decoded = roundtrip(&artifact);
@@ -2279,7 +2384,7 @@ fn snapshot_gather_preparation_cannot_publish_a_cross_schema_selector_fact() {
         exact_closed_mask(
             &format!(
                 "{}g := m[[2]]\nother<[(u8,string)]:1,1> := [(3u8, \"short\")]\np := g {comparison} other\nx := [42]\nx[[p]]\n",
-                matrix(50, 70)
+                matrix(50, 70),
             ),
             selected,
         );
@@ -2342,7 +2447,20 @@ fn genuine_snapshot_literal_and_available_source_gather_require_producer_admissi
         |id, bytes| D::Tuple(vec![D::U8(id), D::String("x".repeat(bytes))].into_boxed_slice());
     let catalog = mech_stdlib::source_catalog();
     for operation in ["literal", "range"] {
-        for large in [false, true] {
+        for (large, repeated) in [(false, false), (true, false), (true, true)] {
+            if operation == "literal" && repeated {
+                continue;
+            }
+            let copies = if repeated {
+                mech_core::RESIDENT_MAX_BYTES / (2 * 25_000) + 1
+            } else {
+                1
+            };
+            let refused = large && (operation == "literal" || repeated);
+            if repeated {
+                assert!(copies * 25_000 <= mech_core::RESIDENT_MAX_BYTES);
+                assert!(2 * copies * 25_000 > mech_core::RESIDENT_MAX_BYTES);
+            }
             let (module, inputs) = if operation == "literal" {
                 (
                     "matrix",
@@ -2362,11 +2480,25 @@ fn genuine_snapshot_literal_and_available_source_gather_require_producer_admissi
                                 .into_boxed_slice(),
                             ),
                         ),
-                        (SchemaBody::Index, D::Index(2)),
+                        if repeated {
+                            (
+                                SchemaBody::Matrix {
+                                    element: Box::new(SchemaBody::Index),
+                                    dimensions: vec![
+                                        DimensionExpr::Constant(1),
+                                        DimensionExpr::Constant(copies),
+                                    ]
+                                    .into_boxed_slice(),
+                                },
+                                D::Matrix(vec![D::Index(2); copies as usize].into_boxed_slice()),
+                            )
+                        } else {
+                            (SchemaBody::Index, D::Index(2))
+                        },
                     ],
                 )
             };
-            let producer = closed_snapshot_copy_artifact(module, operation, inputs, matrix(1));
+            let producer = closed_snapshot_copy_artifact(module, operation, inputs, matrix(copies));
             assert_eq!(
                 producer.nodes().len(),
                 1,
@@ -2388,7 +2520,7 @@ fn genuine_snapshot_literal_and_available_source_gather_require_producer_admissi
                         &catalog,
                         &ActivationFacts::default(),
                     );
-                    if large {
+                    if refused {
                         assert!(
                             matches!(
                                 instance,
@@ -2399,6 +2531,29 @@ fn genuine_snapshot_literal_and_available_source_gather_require_producer_admissi
                     } else {
                         let mut instance = instance.unwrap();
                         instance.turn(&[]).unwrap();
+                        let produced = instance.copied_output(0).unwrap();
+                        assert_eq!(produced.schema(), artifact.outputs()[0].schema);
+                        assert_eq!(
+                            produced.schema_key(),
+                            artifact.schemas().entry(produced.schema()).unwrap().key()
+                        );
+                        assert_eq!(
+                            produced.shape(),
+                            &mech_core::shape_for_resolved_extents(
+                                artifact.schemas().get(produced.schema()).unwrap(),
+                                &[1, 1],
+                            )
+                            .unwrap()
+                        );
+                        let expected = if operation == "literal" {
+                            cell(1, 70)
+                        } else {
+                            cell(2, if large { 25_000 } else { 70 })
+                        };
+                        assert_eq!(
+                            produced.canonical_data_draft().unwrap(),
+                            D::Matrix(vec![expected].into_boxed_slice())
+                        );
                         let value = instance.copied_output(1).unwrap();
                         assert_selected_identity(
                             artifact,
@@ -2422,7 +2577,7 @@ fn genuine_snapshot_literal_and_available_source_gather_require_producer_admissi
                     &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
                     ResidentDurabilityPolicy::Volatile,
                 );
-                if large {
+                if refused {
                     assert!(
                         format!("{:?}", outcome.err().expect("producer admission"))
                             .contains("UnresolvedShape")

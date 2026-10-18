@@ -187,10 +187,20 @@ impl ResidentPayloadAdmission {
         } else {
             0
         };
-        self.admit_peak(
-            add(plan.demand.turn_peak_bytes.max(payload), metadata)?,
-            payload,
-        )?;
+        // Lexical index backing is independently reserved by this exact
+        // active domain/account. It remains in finite turn-peak admission,
+        // but must not be reserved again by a candidate output scope.
+        let already_owned = super::super::text_index::reserved_bytes_for(&self.owner.budget);
+        let candidate_peak = plan
+            .demand
+            .turn_peak_bytes
+            .checked_sub(already_owned)
+            .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "resident independently owned index backing",
+                current: plan.demand.turn_peak_bytes,
+                change: already_owned,
+            })?;
+        self.admit_peak(add(candidate_peak.max(payload), metadata)?, payload)?;
         self.materializing.set(true);
         Ok(())
     }

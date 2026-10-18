@@ -46,6 +46,7 @@ fsm-statement-transition	document-dependency	Generated member of the canonical D
 fsm-transition	document-dependency	Generated member of the canonical Document closure.
 function-arg	document-dependency	Generated member of the canonical Document closure.
 function-define	document-dependency	Generated member of the canonical Document closure.
+function-define-expression	document-dependency	Generated member of the canonical Document closure.
 function-define-match-arms	document-dependency	Generated member of the canonical Document closure.
 function-define-statements	document-dependency	Generated member of the canonical Document closure.
 function-match-arm	document-dependency	Generated member of the canonical Document closure.

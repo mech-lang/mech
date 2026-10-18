@@ -141,6 +141,11 @@ pub struct PlannedHostInstance {
     pub crate_name: String,
     pub cargo_features: Vec<String>,
     pub factory_path: String,
+    #[serde(
+        default,
+        skip_serializing_if = "crate::host::NativeHostFactoryInput::is_none"
+    )]
+    pub factory_input: crate::host::NativeHostFactoryInput,
     pub settings: ConfigValue,
 }
 

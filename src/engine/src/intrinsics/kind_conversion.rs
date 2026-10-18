@@ -569,6 +569,115 @@ fn conversion_string_payload_bound(step: &ConversionStep) -> Option<u64> {
     })
 }
 
+// Input reconstruction and converted-output construction are independent
+// obligations. This hook consumes refreshed input witnesses and physical
+// metadata only; it neither snapshots a cell nor scans its payload.
+#[cfg(feature = "convert")]
+fn conversion_input_reconstruction_demand(
+    source: &ValueCell,
+    output: &ValueCell,
+    request: &mech_core::ExecutionDemandPlanningRequest<'_>,
+) -> MResult<mech_core::PlannedExecutionDemand> {
+    // This is exactly the ManagedCanonical test used by the frame's snapshot
+    // fast path. Such inputs share their frozen root and schema owner.
+    if !output.requires_canonical_output_builder()? || source.requires_canonical_output_builder()? {
+        return Ok(mech_core::PlannedExecutionDemand::default());
+    }
+    let overflow = |field| {
+        MechError::new(
+            mech_core::MemoryPlanError::ArithmeticOverflow { field },
+            None,
+        )
+        .with_compiler_loc()
+    };
+    let footprint = request
+        .input_footprint(0)
+        .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+    let layouts = mech_core::TargetMemoryProfile::current_direct_host()
+        .map_err(|error| MechError::new(error, None).with_compiler_loc())?
+        .primitives;
+    use mech_core::{FloatWidth, ScalarMemoryKind as Scalar, StorageElementKind, StorageTopology};
+    let scalar = match source.storage_capabilities().topology {
+        StorageTopology::Scalar(scalar)
+        | StorageTopology::DenseSequence {
+            element: StorageElementKind::Scalar(scalar),
+        } => scalar,
+        _ => {
+            return Err(
+                MechError::new(mech_core::MemoryPlanError::UnsupportedStorageLayout, None)
+                    .with_compiler_loc(),
+            );
+        }
+    };
+    // Derive the actual host width even when a fixed replan witness omits
+    // derived fixed_bytes. Widths come from the maintained target profile.
+    let width = match scalar {
+        Scalar::Bool => layouts.bool_slot,
+        Scalar::Unsigned(IntegerWidth::W8) => layouts.u8_slot,
+        Scalar::Unsigned(IntegerWidth::W16) => layouts.u16_slot,
+        Scalar::Unsigned(IntegerWidth::W32) => layouts.u32_slot,
+        Scalar::Unsigned(IntegerWidth::W64) => layouts.u64_slot,
+        Scalar::Unsigned(IntegerWidth::W128) => layouts.u128_slot,
+        Scalar::Signed(IntegerWidth::W8) => layouts.i8_slot,
+        Scalar::Signed(IntegerWidth::W16) => layouts.i16_slot,
+        Scalar::Signed(IntegerWidth::W32) => layouts.i32_slot,
+        Scalar::Signed(IntegerWidth::W64) => layouts.i64_slot,
+        Scalar::Signed(IntegerWidth::W128) => layouts.i128_slot,
+        Scalar::Floating(FloatWidth::W32) => layouts.f32_slot,
+        Scalar::Floating(FloatWidth::W64) => layouts.f64_slot,
+        Scalar::Complex(FloatWidth::W32) => layouts.c32_slot,
+        Scalar::Complex(FloatWidth::W64) => layouts.c64_slot,
+        Scalar::Rational64 => layouts.r64_slot,
+        Scalar::Id => layouts.id_slot,
+        Scalar::Index => layouts.index_slot,
+        Scalar::Atom => layouts.atom_slot,
+        Scalar::String => layouts.string_header,
+    }
+    .bytes;
+    let fixed_bytes = footprint
+        .logical_elements
+        .checked_mul(width)
+        .ok_or_else(|| overflow("conversion reconstructed input fixed bytes"))?
+        .max(footprint.fixed_bytes);
+    let payload_bytes = footprint
+        .payload_bytes
+        .checked_add(fixed_bytes)
+        .ok_or_else(|| overflow("conversion reconstructed input payload"))?;
+    let nodes = footprint.retained_nodes.max(
+        footprint
+            .logical_elements
+            .checked_add(1)
+            .ok_or_else(|| overflow("conversion reconstructed input nodes"))?,
+    );
+    let reconstructed = mech_core::CurrentMemoryFootprint {
+        payload_bytes,
+        encoded_bytes: footprint.encoded_bytes.max(payload_bytes),
+        retained_nodes: nodes,
+        ..footprint
+    };
+    let draft = mech_core::canonical_snapshot_draft_bytes(reconstructed)
+        .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+    let finalization = mech_core::canonical_snapshot_finalization_bytes(reconstructed)
+        .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+    let temporary_bytes = draft
+        .checked_add(finalization)
+        .ok_or_else(|| overflow("conversion input reconstruction workspace"))?;
+    Ok(mech_core::PlannedExecutionDemand {
+        temporary_bytes,
+        cloned_bytes: temporary_bytes,
+        retained_nodes: nodes
+            .checked_mul(2)
+            .and_then(|n| n.checked_add(2))
+            .ok_or_else(|| overflow("conversion input reconstruction live nodes"))?,
+        work: mech_core::WorkDemand {
+            compute: temporary_bytes
+                .checked_add(footprint.logical_elements)
+                .ok_or_else(|| overflow("conversion input reconstruction work"))?,
+            ..Default::default()
+        },
+    })
+}
+
 #[cfg(feature = "convert")]
 fn stage_conversion_output(
     frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -591,9 +700,11 @@ fn stage_conversion_output(
             );
         }
         frame.with_admitted_canonical_output(output, footprint, |frame, construction| {
+            // Input draft/finalization uses its separately planned temporary
+            // allowance before the converted-build envelope is sealed. The
+            // published output's finalization reserve remains untouched.
+            let snapshot = frame.snapshot_input_cell_with_construction(source, 0, construction)?;
             let next = construction.try_build_canonical_candidate_with(|construction| {
-                let snapshot =
-                    frame.snapshot_input_cell_with_construction(source, 0, construction)?;
                 let converted = execute_conversion_draft_from_snapshot(source, &snapshot, plan)?;
                 if plan.source.dimension_parameters() == plan.target.dimension_parameters()
                     && output.shape().parameter_values().len()
@@ -898,6 +1009,13 @@ impl MechFunctionFactory for RuntimeReifiedKindConversion {
 
 #[cfg(feature = "convert")]
 impl MechFunctionImpl for RuntimeKindConversion {
+    fn planned_execution_demand(
+        &self,
+        request: &mech_core::ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<mech_core::PlannedExecutionDemand> {
+        conversion_input_reconstruction_demand(self.source.cell(), self.output.cell(), request)
+    }
+
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
         Ok(prospective_conversion_output_footprint(
             self.output.cell(),
@@ -931,6 +1049,13 @@ impl MechFunctionImpl for RuntimeKindConversion {
 
 #[cfg(feature = "convert")]
 impl MechFunctionImpl for RuntimeReifiedKindConversion {
+    fn planned_execution_demand(
+        &self,
+        request: &mech_core::ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<mech_core::PlannedExecutionDemand> {
+        conversion_input_reconstruction_demand(self.source.cell(), self.output.cell(), request)
+    }
+
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
         Ok(prospective_conversion_output_footprint(
             self.output.cell(),
@@ -3844,6 +3969,13 @@ impl CanonicalFunctionSpecializer for ConvertKind {
 
 #[cfg(feature = "convert")]
 impl MechFunctionImpl for PlannedTypeConversion {
+    fn planned_execution_demand(
+        &self,
+        request: &mech_core::ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<mech_core::PlannedExecutionDemand> {
+        conversion_input_reconstruction_demand(&self.source, &self.output, request)
+    }
+
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
         Ok(
             prospective_conversion_output_footprint(&self.output, &self.source, &self.plan)?
@@ -7407,6 +7539,329 @@ mod canonical_conversion_tests {
 
         let conversion = planned_type_conversion_specialized(source, output, plan).unwrap();
         conversion.instance().solve_result().unwrap();
+    }
+
+    #[cfg(all(feature = "matrix", feature = "string"))]
+    fn dense_string_conversion_fixture(values: &[f64]) -> (ValueCell, ValueCell, ConversionPlan) {
+        let source = ValueCell::dynamic_matrix_from_cells(
+            1,
+            values.len(),
+            &values
+                .iter()
+                .map(|v| ValueCell::from_exact(*v).unwrap())
+                .collect::<Vec<_>>(),
+        )
+        .unwrap();
+        let SchemaBody::Matrix { dimensions, .. } = source.closed_schema_body().unwrap() else {
+            panic!("dense input must have matrix schema")
+        };
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::String),
+            dimensions,
+        };
+        let source_type = source.resolved_type().unwrap();
+        let KindExpr::Matrix { dimensions, .. } = source_type.kind() else {
+            unreachable!()
+        };
+        let target_type = ResolvedType::new(
+            KindExpr::Matrix {
+                element: Box::new(BuiltinScalarKind::String.kind_expr()),
+                dimensions: dimensions.clone(),
+            },
+            source_type
+                .dimension_parameters()
+                .to_vec()
+                .into_boxed_slice(),
+        )
+        .unwrap();
+        let plan = plan_explicit_cast(&source_type, &target_type).unwrap();
+        let output = execute_conversion_plan(&source, &target, &plan).unwrap();
+        (source, output, plan)
+    }
+
+    #[cfg(all(feature = "matrix", feature = "string"))]
+    fn matrix_string_values(cell: &ValueCell) -> Vec<String> {
+        let value = cell.snapshot().unwrap();
+        let ValueData::Matrix(matrix) = value.data() else {
+            panic!("expected matrix")
+        };
+        let mech_core::snapshot::SequenceView::String(values) = matrix.elements() else {
+            panic!("expected String matrix")
+        };
+        values.iter().map(|value| value.to_string()).collect()
+    }
+
+    #[cfg(all(feature = "matrix", feature = "string"))]
+    #[test]
+    fn conversion_input_reconstruction_replans_dense_sizes_and_extreme_strings() {
+        let first = [f64::MAX, f64::MIN, f64::from_bits(1), -f64::from_bits(1)];
+        let (source, output, plan) = dense_string_conversion_fixture(&first);
+        assert!(!source.requires_canonical_output_builder().unwrap());
+        assert!(output.requires_canonical_output_builder().unwrap());
+        let conversion =
+            planned_type_conversion_specialized(source.clone(), output.clone(), plan).unwrap();
+        for values in [
+            first.to_vec(),
+            vec![-0.0],
+            vec![
+                f64::INFINITY,
+                f64::NEG_INFINITY,
+                f64::NAN,
+                1.25,
+                1e-300,
+                0.0,
+                -9.5,
+            ],
+            vec![3.0, 4.0],
+        ] {
+            let (replacement, _, _) = dense_string_conversion_fixture(&values);
+            source.replace(&replacement.snapshot().unwrap()).unwrap();
+            conversion.instance().solve_result().unwrap();
+            assert_eq!(
+                output.current_top_level_extents().unwrap().as_ref(),
+                &[1, values.len() as u64]
+            );
+            assert_eq!(
+                matrix_string_values(&output),
+                values.iter().map(ToString::to_string).collect::<Vec<_>>()
+            );
+            let inputs = [source.resolved_descriptor().unwrap()];
+            let witnesses = [mech_core::MemoryFootprintWitness::Known(
+                source.current_memory_footprint().unwrap(),
+            )];
+            let request = mech_core::ExecutionDemandPlanningRequest {
+                inputs: &inputs,
+                input_witnesses: &witnesses,
+            };
+            let demand = conversion
+                .instance()
+                .implementation()
+                .planned_execution_demand(&request)
+                .unwrap();
+            assert!(
+                demand.temporary_bytes
+                    >= values.len() as u64 * std::mem::size_of::<ValueDataDraft>() as u64
+            );
+            assert!(demand.cloned_bytes >= demand.temporary_bytes);
+        }
+    }
+
+    #[cfg(feature = "string")]
+    #[test]
+    fn conversion_input_reconstruction_hooks_match_all_factories_and_share_canonical_roots() {
+        let (id, path) = builtin_scalar_named_kind(mech_core::hash_str("string")).unwrap();
+        let kind = ReifiedKind::from_closed_kind(
+            &KindExpr::Named(id),
+            &[],
+            &NamedKinds(BTreeMap::from([(id, path)])),
+        )
+        .unwrap();
+        let target = ValueCell::from_schema_data(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(ReifiedTypeDraft::CanonicalKind(
+                kind.canonical_bytes().to_vec().into_boxed_slice(),
+            )),
+        )
+        .unwrap();
+        for canonical in [false, true] {
+            let source = if canonical {
+                ValueCell::from_schema_data(
+                    SchemaBody::String,
+                    ValueDataDraft::String("e\u{301}🙂".repeat(128)),
+                )
+                .unwrap()
+            } else {
+                ValueCell::from_exact(f64::MAX).unwrap()
+            };
+            let source_type = source.resolved_type().unwrap();
+            let target_type = ResolvedType::from_schema_body(&SchemaBody::String, &[]).unwrap();
+            let plan = plan_explicit_cast(&source_type, &target_type).unwrap();
+            let output = execute_conversion_plan(&source, &SchemaBody::String, &plan).unwrap();
+            assert_eq!(
+                source.requires_canonical_output_builder().unwrap(),
+                canonical
+            );
+            let source_root = source.snapshot().unwrap();
+            let (planned, invocation) =
+                planned_type_conversion_instance(source.clone(), output.clone(), plan, None, None);
+            let runtime = RuntimeKindConversion::new_invocation(invocation.clone()).unwrap();
+            let reified_invocation =
+                FunctionInvocation::binary(output.clone(), source.clone(), target.clone());
+            let reified =
+                RuntimeReifiedKindConversion::new_invocation(reified_invocation.clone()).unwrap();
+            let inputs = [
+                source.resolved_descriptor().unwrap(),
+                target.resolved_descriptor().unwrap(),
+            ];
+            let witnesses = [
+                mech_core::MemoryFootprintWitness::Known(
+                    source.current_memory_footprint().unwrap(),
+                ),
+                mech_core::MemoryFootprintWitness::Known(
+                    target.current_memory_footprint().unwrap(),
+                ),
+            ];
+            let expected = conversion_input_reconstruction_demand(
+                &source,
+                &output,
+                &mech_core::ExecutionDemandPlanningRequest {
+                    inputs: &inputs[..1],
+                    input_witnesses: &witnesses[..1],
+                },
+            )
+            .unwrap();
+            assert_eq!(
+                expected == mech_core::PlannedExecutionDemand::default(),
+                canonical
+            );
+            for (implementation, invocation, reified) in [
+                (planned, invocation.clone(), false),
+                (runtime, invocation, false),
+                (reified, reified_invocation, true),
+            ] {
+                let count = if reified { 2 } else { 1 };
+                let request = mech_core::ExecutionDemandPlanningRequest {
+                    inputs: &inputs[..count],
+                    input_witnesses: &witnesses[..count],
+                };
+                assert_eq!(
+                    implementation.planned_execution_demand(&request).unwrap(),
+                    expected
+                );
+                let name = if reified {
+                    "convert/kind/reified"
+                } else {
+                    "convert/kind"
+                };
+                let contract = if reified {
+                    CHECKED_TYPE_CONVERSION_CONTRACT.clone()
+                } else {
+                    PURE_TYPE_CONVERSION_CONTRACT.clone()
+                };
+                let function = SpecializedFunction::syntax_directed(
+                    (implementation, invocation),
+                    ResolvedOperationDescriptor::from_name(name, contract).unwrap(),
+                    RuntimeFunctionId::from_name(name),
+                    ExecutionTarget::DirectRuntime,
+                    mech_core::ImplementationMemoryClass::CanonicalFinalize,
+                )
+                .unwrap();
+                function.instance().solve_result().unwrap();
+                if canonical {
+                    assert!(
+                        output
+                            .snapshot()
+                            .unwrap()
+                            .shares_frozen_storage(&source_root)
+                    );
+                } else {
+                    assert!(
+                        matches!(output.snapshot().unwrap().data(), ValueData::String(value) if value.as_ref() == f64::MAX.to_string())
+                    );
+                }
+            }
+        }
+    }
+
+    #[cfg(all(feature = "matrix", feature = "string"))]
+    #[test]
+    fn conversion_input_reconstruction_denial_preserves_publication_and_retries() {
+        let values = [f64::MAX, f64::MIN, f64::from_bits(1), -f64::from_bits(1)];
+        let (source, output, plan) = dense_string_conversion_fixture(&values);
+        let reference =
+            planned_type_conversion_specialized(source.clone(), output.clone(), plan.clone())
+                .unwrap();
+        let template = reference.memory_plan();
+        // The cells have not changed since this real specialization. Use its
+        // public bound call and verify the current witnesses still agree.
+        let current = template.bound_call.clone();
+        assert_eq!(
+            current.inputs()[0].shape(),
+            source.resolved_descriptor().unwrap().shape()
+        );
+        assert_eq!(
+            current.outputs()[0].shape(),
+            output.resolved_descriptor().unwrap().shape()
+        );
+        let mut prospective = prospective_conversion_output_footprint(&output, &source, &plan)
+            .unwrap()
+            .unwrap();
+        prospective.schema_bytes = prospective.schema_bytes.max(
+            output
+                .retained_schema_table()
+                .clone_allocation_bound_bytes()
+                .unwrap(),
+        );
+        let resolved = BTreeMap::from([
+            (
+                (mech_core::PortDirection::Input, 0u16),
+                source.current_memory_footprint().unwrap(),
+            ),
+            ((mech_core::PortDirection::Output, 0u16), prospective),
+        ]);
+        let base = mech_core::memory_plan::resolve_current_call_memory(
+            template,
+            &current,
+            &resolved,
+            Some(&[output.current_memory_footprint().unwrap()]),
+        )
+        .unwrap();
+        let witnesses = [mech_core::MemoryFootprintWitness::Known(
+            source.current_memory_footprint().unwrap(),
+        )];
+        let extra = conversion_input_reconstruction_demand(
+            &source,
+            &output,
+            &mech_core::ExecutionDemandPlanningRequest {
+                inputs: current.inputs(),
+                input_witnesses: &witnesses,
+            },
+        )
+        .unwrap();
+        assert!(extra.temporary_bytes > 0);
+        let limit = base
+            .demand
+            .turn_peak_bytes
+            .checked_add(extra.temporary_bytes)
+            .unwrap()
+            - 1;
+        assert!(
+            base.demand.turn_peak_bytes <= limit,
+            "output-only prospective plan fits; separate input reconstruction crosses the limit"
+        );
+        let mut limited = template.clone();
+        limited.target.limits.max_temporary_bytes = Some(limit);
+        let bounded = SpecializedFunction::new(
+            planned_type_conversion_instance(source.clone(), output.clone(), plan, None, None),
+            limited.bound_call.clone(),
+            limited,
+        )
+        .unwrap();
+        drop(reference);
+        let previous = output.snapshot().unwrap();
+        let version = output.published_version();
+        let error = bounded.instance().solve_result().unwrap_err();
+        assert!(format!("{error:?}").contains("TemporaryBytes"), "{error:?}");
+        assert!(output.snapshot().unwrap().shares_frozen_storage(&previous));
+        assert_eq!(output.published_version(), version);
+        let (small, _, _) = dense_string_conversion_fixture(&[2.5]);
+        source.replace(&small.snapshot().unwrap()).unwrap();
+        bounded.instance().solve_result().unwrap();
+        assert_eq!(matrix_string_values(&output), vec!["2.5"]);
+        let previous = output.snapshot().unwrap();
+        let version = output.published_version();
+        let (next, _, _) = dense_string_conversion_fixture(&[3.5]);
+        source.replace(&next.snapshot().unwrap()).unwrap();
+        output
+            .memory_domain()
+            .unwrap()
+            .inject_failure_after(mech_core::MemoryFailurePoint::HostAllocation, 0)
+            .unwrap();
+        assert!(bounded.instance().solve_result().is_err());
+        assert!(output.snapshot().unwrap().shares_frozen_storage(&previous));
+        assert_eq!(output.published_version(), version);
+        bounded.instance().solve_result().unwrap();
+        assert_eq!(matrix_string_values(&output), vec!["3.5"]);
     }
 
     #[cfg(all(feature = "matrix", feature = "string"))]

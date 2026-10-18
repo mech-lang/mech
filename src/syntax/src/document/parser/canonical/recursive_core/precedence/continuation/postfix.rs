@@ -105,7 +105,9 @@ pub(super) enum Phase {
     Separator(Marker, List, bool, TextSize),
     Next(Marker, List, bool, TextSize),
     Close(List, bool),
-    SlicePath(Marker),
+    SliceOpen(Marker, ParserCheckpoint),
+    SlicePath(Marker, ParserCheckpoint),
+    SliceIdentifier(Marker, ParserCheckpoint),
     SliceStem(Marker),
     SubscriptFirst(Marker),
     SubscriptLoop(Marker, bool),
@@ -190,10 +192,8 @@ impl Continuation {
                 rules::SLICE => {
                     self.transaction(parser, rule);
                     let node = parser.start();
-                    self.postfix(Phase::SlicePath(node));
-                    self.push(Frame::LeafPath(Box::new(paths::Continuation::new(
-                        rules::PREFIXED_CONTEXT_PATH,
-                    ))));
+                    self.postfix(Phase::SliceOpen(node, parser.checkpoint()));
+                    self.base(rules::LEFT_PARENTHESIS);
                 }
                 rules::SUBSCRIPT => {
                     self.transaction(parser, rule);
@@ -358,10 +358,31 @@ impl Continuation {
                     ))));
                 }
             }
-            Phase::SlicePath(node) => {
-                self.postfix(Phase::SliceStem(node));
+            Phase::SliceOpen(node, stem) => {
+                if self.result == Attempt::Matched {
+                    parser.rewind(stem);
+                    self.postfix(Phase::SliceStem(node));
+                    self.push(Frame::Parenthesis(Box::new(parenthesis::Phase::Enter)));
+                } else {
+                    self.postfix(Phase::SlicePath(node, stem));
+                    self.push(Frame::LeafPath(Box::new(paths::Continuation::new(
+                        rules::PREFIXED_CONTEXT_PATH,
+                    ))));
+                }
+            }
+            Phase::SlicePath(node, stem) => {
                 if self.result == Attempt::NoMatch {
+                    self.postfix(Phase::SliceIdentifier(node, stem));
                     self.base(rules::IDENTIFIER);
+                } else {
+                    self.postfix(Phase::SliceStem(node));
+                }
+            }
+            Phase::SliceIdentifier(node, stem) => {
+                self.postfix(Phase::SliceStem(node));
+                if self.result == Attempt::Matched && parser.cursor().starts_with("(") {
+                    parser.rewind(stem);
+                    self.push(Frame::Call(rules::FUNCTION_CALL));
                 }
             }
             Phase::SliceStem(node) => {

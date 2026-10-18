@@ -55,6 +55,9 @@ impl PendingComprehension {
                         PendingControlOperationBody::Comprehension(nested) => {
                             nested.visit_schemas(visit);
                         }
+                        PendingControlOperationBody::Iteration(nested) => {
+                            nested.visit_schemas(visit)
+                        }
                     }
                 }
             }
@@ -252,6 +255,7 @@ impl SemanticBuilder {
         result: Option<ExpressionSyntax>,
         qualifiers: Vec<mech_syntax::document::ComprehensionQualifierSyntax>,
         operation: &'static str,
+        expected: Option<ExpectedSchema<'_>>,
     ) -> Result<PendingValue, SourceSemanticError> {
         if self.control_depth >= crate::MAX_CONTROL_DEPTH {
             return Err(SourceSemanticError {
@@ -280,6 +284,7 @@ impl SemanticBuilder {
             operation,
             crate::ControlBlockId(id),
             start,
+            expected,
         );
         self.control_depth -= 1;
         self.comprehension_depth -= 1;
@@ -296,6 +301,7 @@ impl SemanticBuilder {
         operation: &'static str,
         id: crate::ControlBlockId,
         start: usize,
+        expected: Option<ExpectedSchema<'_>>,
     ) -> Result<PendingValue, SourceSemanticError> {
         let mut events = Vec::new();
         let mut names = BTreeMap::new();
@@ -317,11 +323,11 @@ impl SemanticBuilder {
                         SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => {
                             canonical_component_schema_draft(&schema, element, generator.syntax())?
                         }
-                        SchemaBody::Dynamic => schema,
+                        SchemaBody::String | SchemaBody::Dynamic => schema,
                         _ => {
                             return Err(unsupported(
                                 generator.syntax(),
-                                "a generator requires a matrix or set",
+                                "a generator requires a String, matrix, or set",
                             ));
                         }
                     };
@@ -363,16 +369,141 @@ impl SemanticBuilder {
             }
         }
         let result = self.required(result, syntax, "a collection yield")?;
-        let result = self.expression(&result)?.0;
+        let yield_context = expected
+            .and_then(|context| match context {
+                ExpectedSchema::MatrixElement(schema) => Some(Ok(schema.clone())),
+                ExpectedSchema::Value(schema) | ExpectedSchema::CallArgument(schema) => {
+                    match match &schema.body {
+                        SchemaBody::Option(payload) => payload.as_ref(),
+                        body => body,
+                    } {
+                        SchemaBody::Matrix { element, .. } => {
+                            Some(canonical_component_schema_draft(schema, element, syntax))
+                        }
+                        _ => None,
+                    }
+                }
+            })
+            .transpose()?;
+        let complete_context = matches!(
+            expected,
+            Some(ExpectedSchema::Value(_)) | Some(ExpectedSchema::CallArgument(_))
+        );
+        // A Matrix element context is ambiguous between complete nested value
+        // and the leaf of a horizontal block. Infer that complete yield once
+        // before using a genuine conversion plan to choose Elements.
+        let inference_context = yield_context.as_ref().filter(|schema| {
+            !(complete_context && matches!(schema.body, SchemaBody::Matrix { .. }))
+        });
+        let mut result = self
+            .expression_with_expected(
+                &result,
+                inference_context.map(|schema| match expected {
+                    Some(ExpectedSchema::MatrixElement(_)) => ExpectedSchema::MatrixElement(schema),
+                    _ => ExpectedSchema::Value(schema),
+                }),
+            )?
+            .0;
+        // An explicit nested result may independently constrain the complete
+        // yielded Matrix (including its live axes). Use the normal checked
+        // conversion; never cast a Matrix block to the outer scalar element.
+        let inferred = self.schema_draft_of(result)?;
+        let nested_target = complete_context
+            .then(|| yield_context.as_ref())
+            .flatten()
+            .and_then(|schema| {
+                if !matches!(inferred.body, SchemaBody::Matrix { .. })
+                    || !matches!(schema.body, SchemaBody::Matrix { .. })
+                {
+                    return None;
+                }
+                // Match normal annotation conformance's dimension specialization
+                // before asking whether this is a genuine complete-value cast.
+                let target = if !schema.dimension_parameters.is_empty() {
+                    specialize_annotation_dimensions(&inferred, schema, syntax).ok()?
+                } else {
+                    schema.clone()
+                };
+                let actual =
+                    ResolvedType::from_schema_body(&inferred.body, &inferred.dimension_parameters)
+                        .ok()?;
+                let expected =
+                    ResolvedType::from_schema_body(&target.body, &target.dimension_parameters)
+                        .ok()?;
+                plan_explicit_cast(&actual, &expected).ok()?;
+                Some(target)
+            });
+        let explicit_nested = nested_target.is_some();
+        if let Some(target) = nested_target {
+            result = self.conform_schema_draft(
+                result,
+                &target,
+                syntax,
+                "source-semantics/incompatible-comprehension-element-kind",
+                "yielded matrix does not satisfy the explicitly nested element kind",
+            )?;
+        }
         let element = self.schema_draft_of(result)?;
-        let kind = if operation == "set/comprehension" {
+        let explicit_elements = explicit_nested
+            || complete_context
+                && yield_context.as_ref().is_some_and(|expected| {
+                    expected
+                        .clone()
+                        .finalize()
+                        .ok()
+                        .zip(element.clone().finalize().ok())
+                        .is_some_and(|(expected, actual)| expected.key() == actual.key())
+                });
+        let row_source = if operation != "set/comprehension" && !explicit_elements {
+            self.horizontal_block_row_source(result, start)
+        } else {
+            None
+        };
+        let mut kind = if operation == "set/comprehension" {
             crate::ComprehensionKind::Set
+        } else if !explicit_elements && matches!(element.body, SchemaBody::Matrix { .. }) {
+            let fixed_context = match expected {
+                Some(ExpectedSchema::Value(schema) | ExpectedSchema::CallArgument(schema)) => {
+                    match match &schema.body {
+                        SchemaBody::Option(payload) => payload.as_ref(),
+                        body => body,
+                    } {
+                        SchemaBody::Matrix { dimensions, .. } => match dimensions.first() {
+                            Some(DimensionExpr::Constant(rows)) => Some(*rows),
+                            _ => None,
+                        },
+                        _ => None,
+                    }
+                }
+                _ => None,
+            };
+            let fixed_yield = match &element.body {
+                SchemaBody::Matrix { dimensions, .. } => match dimensions.first() {
+                    Some(DimensionExpr::Constant(rows)) => Some(*rows),
+                    _ => None,
+                },
+                _ => None,
+            };
+            let fixed_source = row_source.and_then(|source| {
+                let source = self.schema_draft_of(source).ok()?;
+                let SchemaBody::Matrix { dimensions, .. } = source.body else {
+                    return None;
+                };
+                dimensions.iter().try_fold(1u64, |count, axis| match axis {
+                    DimensionExpr::Constant(axis) => count.checked_mul(*axis),
+                    _ => None,
+                })
+            });
+            crate::ComprehensionKind::MatrixHorizontalBlocks {
+                rows: fixed_context
+                    .or(fixed_yield)
+                    .or(fixed_source)
+                    .map(crate::MatrixBlockRows::Fixed)
+                    .unwrap_or(crate::MatrixBlockRows::InferOrZero),
+            }
         } else {
             crate::ComprehensionKind::Matrix
         };
-        // Set identity remains restricted to keyable closed elements. Matrix
-        // comprehensions own a distinct prefix of parameters for their yielded
-        // element and append their cardinality after that prefix.
         if kind == crate::ComprehensionKind::Set && !element.dimension_parameters.is_empty() {
             return Err(unsupported(
                 syntax,
@@ -382,9 +513,7 @@ impl SemanticBuilder {
         let output = if is_dynamic_schema_draft(&element) {
             element
         } else if kind == crate::ComprehensionKind::Set {
-            if !is_dynamic_schema_draft(&element) {
-                require_keyable_set_element(&element.body, &element.dimension_parameters, syntax)?;
-            }
+            require_keyable_set_element(&element.body, &element.dimension_parameters, syntax)?;
             SchemaDraft {
                 dimension_parameters: Box::new([]),
                 body: SchemaBody::Set {
@@ -393,29 +522,79 @@ impl SemanticBuilder {
                 },
             }
         } else {
+            let leaf = if let crate::ComprehensionKind::MatrixHorizontalBlocks { .. } = kind {
+                let SchemaBody::Matrix {
+                    element: leaf,
+                    dimensions,
+                } = &element.body
+                else {
+                    unreachable!()
+                };
+                if dimensions.len() != 2 {
+                    return Err(unsupported(syntax, "matrix blocks require rank two"));
+                }
+                canonical_component_schema_draft(&element, leaf, syntax)?
+            } else {
+                element
+            };
             let mut parameters = Vec::new();
-            let element = embed_schema_draft(
-                &element,
+            let leaf = embed_schema_draft(
+                &leaf,
                 &mut parameters,
                 SourceSemanticAnchor::for_node(syntax),
             )?;
-            let extent =
-                DimensionParameterId::new(u32::try_from(parameters.len()).map_err(|_| {
-                    unsupported(syntax, "collection dimension identity space was exhausted")
-                })?);
-            parameters.push(DimensionParameterDeclaration {
-                id: extent,
-                origin: DimensionParameterOrigin::Inferred,
-                lifetime: DimensionLifetime::Turn,
-                lower_bound: DimensionExpr::Constant(0),
-                upper_bound: None,
+            let mut fresh_axis = || -> Result<DimensionExpr, SourceSemanticError> {
+                let id =
+                    DimensionParameterId::new(u32::try_from(parameters.len()).map_err(|_| {
+                        unsupported(syntax, "collection dimension identity space was exhausted")
+                    })?);
+                parameters.push(DimensionParameterDeclaration {
+                    id,
+                    origin: DimensionParameterOrigin::Inferred,
+                    lifetime: DimensionLifetime::Turn,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                });
+                Ok(DimensionExpr::Parameter(id))
+            };
+            let rows = match kind {
+                crate::ComprehensionKind::MatrixHorizontalBlocks {
+                    rows: crate::MatrixBlockRows::Fixed(rows),
+                } => DimensionExpr::Constant(rows),
+                crate::ComprehensionKind::MatrixHorizontalBlocks { .. } => fresh_axis()?,
+                _ => DimensionExpr::Constant(1),
+            };
+            // Only a complete result annotation constrains the constructor's
+            // outer cardinality. Carry a declared constant directly in its
+            // schema; completed_matrix_shape checks the executed geometry
+            // after the ordered yields, before any result is published.
+            let declared_columns = expected.and_then(|context| match context {
+                ExpectedSchema::Value(schema) | ExpectedSchema::CallArgument(schema) => {
+                    let body = match &schema.body {
+                        SchemaBody::Option(payload) => payload.as_ref(),
+                        body => body,
+                    };
+                    match body {
+                        SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2 => {
+                            match dimensions[1] {
+                                DimensionExpr::Constant(columns) => Some(columns),
+                                _ => None,
+                            }
+                        }
+                        _ => None,
+                    }
+                }
+                ExpectedSchema::MatrixElement(_) => None,
             });
+            let columns = match declared_columns {
+                Some(columns) => DimensionExpr::Constant(columns),
+                None => fresh_axis()?,
+            };
             SchemaDraft {
                 dimension_parameters: parameters.into_boxed_slice(),
                 body: SchemaBody::Matrix {
-                    element: Box::new(element),
-                    dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Parameter(extent)]
-                        .into_boxed_slice(),
+                    element: Box::new(leaf),
+                    dimensions: Box::new([rows, columns]),
                 },
             }
         };
@@ -527,6 +706,20 @@ impl SemanticBuilder {
             converted_events.push((position, event));
         }
         let yield_value = capture(result)?;
+        if let Some(source) = row_source {
+            if matches!(
+                kind,
+                crate::ComprehensionKind::MatrixHorizontalBlocks {
+                    rows: crate::MatrixBlockRows::InferOrZero
+                }
+            ) {
+                if let PendingCollectionValue::Input(input) = capture(source)? {
+                    kind = crate::ComprehensionKind::MatrixHorizontalBlocks {
+                        rows: crate::MatrixBlockRows::InputMatrixElements { input },
+                    };
+                }
+            }
+        }
         let mut steps = Vec::new();
         let nodes = self.nodes.split_off(start);
         let mut events = converted_events.into_iter().peekable();
@@ -615,6 +808,24 @@ impl SemanticBuilder {
                         },
                     ));
                 }
+                PendingNodeBody::Iteration(control) if node.state.is_none() => {
+                    let inputs = require_preceding_collection_inputs(
+                        node.inputs
+                            .into_iter()
+                            .map(&mut capture)
+                            .collect::<Result<Box<[_]>, _>>()?,
+                        scheduled_local,
+                        syntax,
+                    )?;
+                    steps.push(PendingComprehensionStep::Operation(
+                        PendingComprehensionOperation {
+                            local: scheduled_local,
+                            body: PendingControlOperationBody::Iteration(control),
+                            schema: node.schema,
+                            inputs,
+                        },
+                    ));
+                }
                 _ => {
                     return Err(unsupported(
                         syntax,
@@ -645,6 +856,79 @@ impl SemanticBuilder {
             },
         });
         Ok(PendingValue::Node(node))
+    }
+
+    fn horizontal_block_row_source(
+        &self,
+        result: PendingValue,
+        start: usize,
+    ) -> Option<PendingValue> {
+        let PendingValue::Node(index) = result else {
+            return None;
+        };
+        let transpose = self.nodes.get(index as usize)?;
+        let PendingNodeBody::Operation {
+            contract: Some(contract),
+            requirement: None,
+            ..
+        } = &transpose.body
+        else {
+            return None;
+        };
+        // This relation belongs to the selected declaration, never a public
+        // module/function spelling. Every successful execution must honor it.
+        if contract.interaction != mech_core::ExternalInteraction::Pure
+            || contract.inputs.resolve(1).ok()?.len() != 1
+            || contract.outputs.len() != 1
+            || contract.outputs[0].construction
+                != (mech_core::OutputConstruction::FullWrite {
+                    shape: mech_core::ShapeRule::TransposeOf { input: 0 },
+                })
+        {
+            return None;
+        }
+        let [PendingValue::Node(inner)] = transpose.inputs.as_slice() else {
+            return None;
+        };
+        let inner = self.nodes.get(*inner as usize)?;
+        let PendingNodeBody::Comprehension(control) = &inner.body else {
+            return None;
+        };
+        if control.kind != crate::ComprehensionKind::Matrix
+            || !matches!(&inner.schema.body, SchemaBody::Matrix { element, .. } if builtin_schema_for_body(element).is_some())
+        {
+            return None;
+        }
+        let [
+            PendingComprehensionStep::Generator { source, pattern },
+            rest @ ..,
+        ] = control.steps.as_ref()
+        else {
+            return None;
+        };
+        if !matches!(
+            pattern,
+            CollectionPattern::Bind { .. } | CollectionPattern::Wildcard
+        ) || rest
+            .iter()
+            .any(|step| !matches!(step, PendingComprehensionStep::Operation(_)))
+        {
+            return None;
+        }
+        let source = match source {
+            PendingCollectionValue::Input(input) => *inner.inputs.get(*input as usize)?,
+            PendingCollectionValue::Constant(id) => PendingValue::Constant(*id),
+            PendingCollectionValue::Local(_) => return None,
+        };
+        if matches!(source, PendingValue::Node(index) if index as usize >= start)
+            || !matches!(
+                self.schema_draft_of(source).ok()?.body,
+                SchemaBody::Matrix { .. }
+            )
+        {
+            return None;
+        }
+        Some(source)
     }
 
     pub(super) fn collection_pattern(
@@ -1099,6 +1383,11 @@ pub(super) fn resolve_comprehension(
                             }
                             PendingControlOperationBody::Comprehension(nested) => {
                                 crate::ControlOperationBody::Comprehension(resolve_comprehension(
+                                    nested, schemas, constants,
+                                ))
+                            }
+                            PendingControlOperationBody::Iteration(nested) => {
+                                crate::ControlOperationBody::Iteration(resolve_iteration(
                                     nested, schemas, constants,
                                 ))
                             }

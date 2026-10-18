@@ -2,8 +2,9 @@ use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
     ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
     OutputConstruction, RegionPolicy, ResidentKernelBindError, ResidentKernelBindRequest,
-    ResidentKernelError, ResidentKernelInputs, ResidentShape, ResidentValueKind, ResidentValueMut,
-    ResidentValueRef, ResolvedOperationContract, ShapeRule,
+    ResidentKernelError, ResidentKernelInputs, ResidentKernelWorkAccounting, ResidentShape,
+    ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody,
+    ShapeRule, ValueData,
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
@@ -256,6 +257,9 @@ fn string_transpose(
 pub(super) fn bind_string_gather(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    if canonical_string_source(request) {
+        return bind_canonical_string_selection(request, false);
+    }
     let ResolvedOperationContract::Declared(contract) = request.contract else {
         return Err(ResidentKernelBindError::UnsupportedContract);
     };
@@ -413,7 +417,8 @@ fn bind_string_scalar_comparison(
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
-    Ok(BoundResidentKernel::new(executor, Box::new([])))
+    Ok(BoundResidentKernel::new(executor, Box::new([]))
+        .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
 }
 
 fn string_equal(
@@ -478,6 +483,9 @@ fn admit_scalar_string_comparison(left: &str, right: &str) -> Result<(), Residen
 pub(super) fn bind_string_scalar_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    if canonical_string_source(request) {
+        return bind_canonical_string_selection(request, true);
+    }
     let ResolvedOperationContract::Declared(contract) = request.contract else {
         return Err(ResidentKernelBindError::UnsupportedContract);
     };
@@ -518,7 +526,8 @@ pub(super) fn bind_string_scalar_access(
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
-    Ok(BoundResidentKernel::new(string_scalar_access, Box::new([])))
+    Ok(BoundResidentKernel::new(string_scalar_access, Box::new([]))
+        .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
 }
 
 fn string_scalar_access(
@@ -552,6 +561,370 @@ fn string_scalar_access(
         core::mem::size_of::<u64>(),
     )?;
     let next = next.clone();
+    let changed = *target != next;
+    if changed {
+        *target = next;
+    }
+    Ok(changed)
+}
+
+fn canonical_string_source(request: &ResidentKernelBindRequest<'_>) -> bool {
+    request.inputs.first().is_some_and(|source| {
+        request
+            .schemas
+            .get(source.schema_id)
+            .is_some_and(|schema| matches!(schema.body(), SchemaBody::String))
+    })
+}
+
+// Snapshot selector matrices carry current geometry in the immutable value.
+// Keep the actual schema and shape lifetime authority, rather than treating an
+// activation lower-bound seed as the geometry of every subsequent selection.
+struct CanonicalStringSelectorPlan {
+    schema: mech_core::SchemaId,
+    schema_key: mech_core::SchemaKey,
+    shape: mech_core::ShapeInstance,
+    activation_fixed_shape: bool,
+}
+
+fn canonical_string_selector_geometry(
+    kernel: &BoundResidentKernel,
+    selector: ResidentValueRef<'_>,
+    rows: usize,
+    columns: usize,
+) -> Result<(usize, usize), ResidentKernelError> {
+    let ResidentValueRef::Snapshot([Some(value)]) = selector else {
+        return if matches!(selector, ResidentValueRef::Snapshot(_)) {
+            Err(ResidentKernelError::InvalidInput)
+        } else {
+            Ok((rows, columns))
+        };
+    };
+    let plan = kernel
+        .retained_state::<CanonicalStringSelectorPlan>()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    if value.schema() != plan.schema || value.schema_key() != plan.schema_key {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let schema = value
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    if !mech_core::shape_change_allowed(schema, &plan.shape, value.shape())
+        || (plan.activation_fixed_shape && value.shape() != &plan.shape)
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    match schema.body() {
+        SchemaBody::Matrix { dimensions, .. } => {
+            let [rows, columns] = dimensions.as_ref() else {
+                return Err(ResidentKernelError::InvalidShape);
+            };
+            let dimension = |axis| {
+                value
+                    .shape()
+                    .resolve_dimension(axis)
+                    .ok()
+                    .and_then(|value| usize::try_from(value).ok())
+                    .ok_or(ResidentKernelError::InvalidShape)
+            };
+            let (rows, columns) = (dimension(rows)?, dimension(columns)?);
+            let ValueData::Matrix(matrix) = value.data() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            if rows.checked_mul(columns) != Some(matrix.elements().len()) {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            Ok((rows, columns))
+        }
+        _ => Ok((1, 1)),
+    }
+}
+
+fn bind_canonical_string_selection(
+    request: &ResidentKernelBindRequest<'_>,
+    scalar: bool,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let ResolvedOperationContract::Declared(contract) = request.contract else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    let Some(source) = request.inputs.first() else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if (scalar && request.inputs.len() != 2)
+        || (!scalar && !matches!(request.inputs.len(), 1 | 2))
+        || source.kind != ResidentValueKind::String
+        || source.shape != ResidentShape::SCALAR
+        || request.output.kind != ResidentValueKind::String
+        || request.output.shape != ResidentShape::SCALAR
+        || !request
+            .schemas
+            .get(request.output.schema_id)
+            .is_some_and(|schema| matches!(schema.body(), SchemaBody::String))
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    if contract.interaction != ExternalInteraction::Pure
+        || contract.inputs.len() != request.inputs.len()
+        || contract.outputs.len() != 1
+        || contract
+            .inputs
+            .iter()
+            .zip(request.inputs)
+            .any(|(port, layout)| {
+                port.schema != layout.schema_id
+                    || port.access != AccessMode::Read
+                    || port.delivery != DeliveryMode::Signal
+            })
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    let output = &contract.outputs[0];
+    if output.schema != request.output.schema_id
+        || output.access != AccessMode::Write
+        || output.delivery != DeliveryMode::Signal
+        || output.construction
+            != (OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            })
+        || output.alias != AliasPolicy::NoAlias
+        || output.change_detection != ChangeDetectionPolicy::KernelReported
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    let Some(selector) = request.inputs.get(1) else {
+        return Ok(
+            BoundResidentKernel::new(canonical_string_selection, Box::new([0, 0, 0]))
+                .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered),
+        );
+    };
+    let schema = request
+        .schemas
+        .get(selector.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let (rows, columns, logical) = match schema.body() {
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } => {
+            let [rows, columns] = dimensions.as_ref() else {
+                return Err(ResidentKernelBindError::UnsupportedLayout);
+            };
+            let dimension = |value| {
+                selector
+                    .shape_instance
+                    .resolve_dimension(value)
+                    .ok()
+                    .and_then(|value| u32::try_from(value).ok())
+                    .ok_or(ResidentKernelBindError::UnsupportedLayout)
+            };
+            (
+                dimension(rows)?,
+                dimension(columns)?,
+                element.as_ref() == &SchemaBody::Bool,
+            )
+        }
+        _ => (1, 1, false),
+    };
+    if (logical
+        && (scalar
+            || !matches!(
+                selector.kind,
+                ResidentValueKind::Bool | ResidentValueKind::Snapshot
+            )))
+        || (!logical && !super::numeric::numeric_positional_selector_layout(request, selector))
+        || (selector.kind == ResidentValueKind::Snapshot && selector.shape != ResidentShape::SCALAR)
+        || (selector.kind != ResidentValueKind::Snapshot
+            && selector.shape != (ResidentShape { rows, columns }))
+        || (scalar && (rows != 1 || columns != 1))
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let mut kernel = BoundResidentKernel::new(
+        canonical_string_selection,
+        Box::new([
+            if scalar { 1 } else { 2 },
+            u64::from(rows),
+            u64::from(columns),
+        ]),
+    );
+    if selector.kind == ResidentValueKind::Snapshot {
+        kernel = kernel
+            .with_snapshot_schemas(request.schemas.clone())
+            .with_retained_state(std::sync::Arc::new(CanonicalStringSelectorPlan {
+                schema: selector.schema_id,
+                schema_key: selector.schema_key,
+                shape: selector.shape_instance.clone(),
+                activation_fixed_shape: selector.activation_fixed_shape,
+            }));
+    }
+    Ok(kernel.with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
+}
+
+// Dense resident matrices store columns contiguously, whereas canonical
+// selectors (including Snapshot matrices) visit their elements row by row.
+fn visit_canonical_string_selector(
+    selector: ResidentValueRef<'_>,
+    rows: usize,
+    columns: usize,
+    upper: usize,
+    mut visit: impl FnMut(usize) -> Result<(), ResidentKernelError>,
+) -> Result<(), ResidentKernelError> {
+    let count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if let ResidentValueRef::Snapshot([Some(value)]) = selector {
+        let actual_count = match value.data() {
+            ValueData::Matrix(matrix) => matrix.elements().len(),
+            _ => 1,
+        };
+        if actual_count != count {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        return super::numeric::selector_for_each_access_index(selector, upper, visit);
+    }
+    if selector.len() != count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    if matches!(selector, ResidentValueRef::Bool(_)) && count != upper {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    for row in 0..rows {
+        for column in 0..columns {
+            let lane_index = column * rows + row;
+            let value = match selector {
+                ResidentValueRef::Index(values) => ValueData::Index(values[lane_index]),
+                ResidentValueRef::F64(values) => {
+                    ValueData::F64(mech_core::snapshot::F64Bits::from_f64(values[lane_index]))
+                }
+                ResidentValueRef::Bool(values) => {
+                    match values[lane_index] {
+                        0 => {}
+                        1 => visit(row * columns + column)?,
+                        _ => return Err(ResidentKernelError::InvalidInput),
+                    }
+                    continue;
+                }
+                _ => return Err(ResidentKernelError::InvalidInput),
+            };
+            let index = mech_core::canonical_positional_index(&value, upper)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            visit(index)?;
+        }
+    }
+    Ok(())
+}
+
+fn admit_string_selection_scratch(
+    compute_work: usize,
+    scratch_bytes: usize,
+) -> Result<(), ResidentKernelError> {
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            compute_work,
+            temporary_bytes: scratch_bytes,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
+}
+
+fn canonical_string_selection(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::String([source])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::String([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let [mode, rows, columns] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    if *mode == 0 {
+        admit_string_materialization(
+            1,
+            source.len(),
+            source.len(),
+            source.len(),
+            target.len().max(source.len()),
+            1,
+            0,
+            0,
+        )?;
+        let next = source.clone();
+        let changed = *target != next;
+        if changed {
+            *target = next;
+        }
+        return Ok(changed);
+    }
+    let selector = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
+    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    // This uses only immutable schema/shape and sequence-length metadata. The
+    // current count must govern admission before any selector/payload scan.
+    let (rows, columns) = canonical_string_selector_geometry(kernel, selector, rows, columns)?;
+    let selector_count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let index = super::text_index::prepared(source)?;
+    let extent = index.len();
+    let scan_work = selector_count
+        .checked_mul(2)
+        .and_then(|work| work.checked_add(index.compute_work))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_string_selection_scratch(scan_work, index.scratch_bytes)?;
+    let mut selected_count = 0usize;
+    let mut payload_bytes = 0usize;
+    visit_canonical_string_selector(selector, rows, columns, extent, |ordinal| {
+        selected_count = selected_count
+            .checked_add(1)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        payload_bytes = payload_bytes
+            .checked_add(
+                source[index
+                    .byte_range(ordinal)
+                    .ok_or(ResidentKernelError::InvalidInput)?]
+                .len(),
+            )
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        Ok(())
+    })?;
+    if *mode == 1 && selected_count != 1 {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let compute_work = scan_work
+        .checked_add(payload_bytes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    // Repeated graphemes each contribute their full UTF-8 payload. Keep the
+    // span table in the peak demand while staging the complete new String.
+    admit_string_materialization(
+        1,
+        payload_bytes,
+        payload_bytes,
+        compute_work,
+        target.len().max(payload_bytes),
+        1,
+        index.scratch_bytes,
+        0,
+    )?;
+    let mut next = String::with_capacity(payload_bytes);
+    visit_canonical_string_selector(selector, rows, columns, extent, |ordinal| {
+        next.push_str(
+            &source[index
+                .byte_range(ordinal)
+                .ok_or(ResidentKernelError::InvalidInput)?],
+        );
+        Ok(())
+    })?;
     let changed = *target != next;
     if changed {
         *target = next;
@@ -711,7 +1084,8 @@ fn bind_concat(
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
-    Ok(BoundResidentKernel::new(concat, Box::new([])))
+    Ok(BoundResidentKernel::new(concat, Box::new([]))
+        .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
 }
 
 fn concat(
@@ -1097,6 +1471,169 @@ mod tests {
     }
 
     #[test]
+    fn snapshot_string_selector_geometry_obeys_turn_activation_and_fixed_authority() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, IntegerWidth, SchemaDraft, SchemaTableBuilder,
+            ValueDataDraft, ValueDraft, snapshot::SnapshotValidationContext,
+        };
+        let declaration = |id, lifetime| DimensionParameterDeclaration {
+            id: DimensionParameterId::new(id),
+            origin: DimensionParameterOrigin::Explicit,
+            lifetime,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: Some(DimensionExpr::Constant(8)),
+        };
+        let schema = SchemaDraft {
+            dimension_parameters: vec![
+                declaration(0, DimensionLifetime::Activation),
+                declaration(1, DimensionLifetime::Turn),
+            ]
+            .into_boxed_slice(),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                dimensions: Box::new([
+                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                    DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                ]),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let seed = schema
+            .instantiate_shape(vec![1, 0].into_boxed_slice())
+            .unwrap();
+        let key = schema.key();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let id = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let kernel = |fixed| {
+            BoundResidentKernel::new(canonical_string_selection, Box::new([2, 1, 0]))
+                .with_snapshot_schemas(schemas.clone())
+                .with_retained_state(std::sync::Arc::new(CanonicalStringSelectorPlan {
+                    schema: id,
+                    schema_key: key,
+                    shape: seed.clone(),
+                    activation_fixed_shape: fixed,
+                }))
+        };
+        let value = |rows: u64, columns: u64, elements: &[u64]| {
+            ValueDraft {
+                schema: id,
+                shape_values: vec![rows, columns].into_boxed_slice(),
+                data: ValueDataDraft::Matrix(
+                    elements
+                        .iter()
+                        .copied()
+                        .map(ValueDataDraft::U64)
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap()
+        };
+        let changing = kernel(false);
+        for columns in [0, 3, 1, 4, 0] {
+            let elements = (1..=columns).collect::<Vec<_>>();
+            let current = [Some(value(1, columns, &elements))];
+            assert_eq!(
+                canonical_string_selector_geometry(
+                    &changing,
+                    ResidentValueRef::Snapshot(&current),
+                    1,
+                    0
+                )
+                .unwrap(),
+                (1, columns as usize)
+            );
+        }
+        let wrong_activation = [Some(value(2, 1, &[1, 2]))];
+        assert!(matches!(
+            canonical_string_selector_geometry(
+                &changing,
+                ResidentValueRef::Snapshot(&wrong_activation),
+                1,
+                0
+            ),
+            Err(ResidentKernelError::InvalidShape)
+        ));
+        let fixed = kernel(true);
+        let changed_turn = [Some(value(1, 1, &[1]))];
+        assert!(matches!(
+            canonical_string_selector_geometry(
+                &fixed,
+                ResidentValueRef::Snapshot(&changed_turn),
+                1,
+                0
+            ),
+            Err(ResidentKernelError::InvalidShape)
+        ));
+        let source = ["e\u{301}👩🏽‍💻Z🇺🇸".to_owned()];
+        let selected = [Some(value(1, 3, &[3, 1, 3]))];
+        let mut output = ["previous".to_owned()];
+        changing
+            .execute(
+                &Refs(vec![
+                    ResidentValueRef::String(&source),
+                    ResidentValueRef::Snapshot(&selected),
+                ]),
+                ResidentValueMut::String(&mut output),
+            )
+            .unwrap();
+        assert_eq!(output[0], "Ze\u{301}Z");
+        let rectangle = BoundResidentKernel::new(canonical_string_selection, Box::new([2, 2, 0]))
+            .with_snapshot_schemas(schemas.clone())
+            .with_retained_state(std::sync::Arc::new(CanonicalStringSelectorPlan {
+                schema: id,
+                schema_key: key,
+                shape: schemas
+                    .get(id)
+                    .unwrap()
+                    .instantiate_shape(vec![2, 0].into_boxed_slice())
+                    .unwrap(),
+                activation_fixed_shape: false,
+            }));
+        let row_major = [Some(value(2, 2, &[3, 1, 4, 2]))];
+        let mut rectangular_output = [String::new()];
+        rectangle
+            .execute(
+                &Refs(vec![
+                    ResidentValueRef::String(&source),
+                    ResidentValueRef::Snapshot(&row_major),
+                ]),
+                ResidentValueMut::String(&mut rectangular_output),
+            )
+            .unwrap();
+        assert_eq!(rectangular_output[0], "Ze\u{301}🇺🇸👩🏽‍💻");
+        let invalid = [Some(value(1, 2, &[1, 9]))];
+        assert!(
+            changing
+                .execute(
+                    &Refs(vec![
+                        ResidentValueRef::String(&source),
+                        ResidentValueRef::Snapshot(&invalid)
+                    ]),
+                    ResidentValueMut::String(&mut output)
+                )
+                .is_err()
+        );
+        assert_eq!(output[0], "Ze\u{301}Z");
+        changing
+            .execute(
+                &Refs(vec![
+                    ResidentValueRef::String(&source),
+                    ResidentValueRef::Snapshot(&selected),
+                ]),
+                ResidentValueMut::String(&mut output),
+            )
+            .unwrap();
+        assert_eq!(output[0], "Ze\u{301}Z");
+    }
+
+    #[test]
     fn scalar_concat_writes_the_normal_resident_output() {
         let kernel = BoundResidentKernel::new(concat, Box::new([]));
         let inputs = Inputs(["Hello, ".to_string(), "Ada".to_string()]);
@@ -1157,7 +1694,12 @@ mod tests {
         let mut output = ["unchanged".to_owned()];
         assert_eq!(
             kernel.execute(&inputs, ResidentValueMut::String(&mut output)),
-            Err(ResidentKernelError::InvalidShape)
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputBytes,
+                required: 16777241,
+                limit: 16777216
+            })
         );
         assert_eq!(output, ["unchanged"]);
     }
@@ -1176,7 +1718,12 @@ mod tests {
         assert_eq!(
             BoundResidentKernel::new(string_mask_assign, Box::new([]))
                 .execute(&inputs, ResidentValueMut::String(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputBytes,
+                required: 16777275,
+                limit: 16777216
+            }),
         );
         assert_eq!(output[0].len(), oversized.len());
         assert_eq!(output[1], "old");
@@ -1190,7 +1737,12 @@ mod tests {
         assert_eq!(
             BoundResidentKernel::new(string_index_assign, Box::new([]))
                 .execute(&inputs, ResidentValueMut::String(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputBytes,
+                required: 16777275,
+                limit: 16777216
+            }),
         );
         assert_eq!(output[0].len(), oversized.len());
         assert_eq!(output[1], "old");
@@ -1199,7 +1751,12 @@ mod tests {
         assert_eq!(
             BoundResidentKernel::new(string_indices_assign, Box::new([]))
                 .execute(&inputs, ResidentValueMut::String(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputBytes,
+                required: 16_777_275,
+                limit: 16_777_216,
+            }),
         );
         assert_eq!(
             output[0].len(),
@@ -1247,7 +1804,12 @@ mod tests {
             let mut output = [9_u8];
             assert_eq!(
                 kernel.execute(&inputs, ResidentValueMut::Bool(&mut output)),
-                Err(ResidentKernelError::InvalidShape),
+                Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                    required: 65537,
+                    limit: 65536
+                }),
             );
             assert_eq!(output, [9]);
         }

@@ -4,6 +4,18 @@
     {
       "directive": "allow",
       "expires_release": "0.5.0",
+      "expiry_condition": "Remove when optional native lowering and witness tests share a feature-gated seal-reader module.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Canonical native selected-implementation witnesses",
+      "path": "src/engine/src/resident/native_semantics.rs",
+      "production_or_test": "production",
+      "reason": "canonical-native adapter is optional; private seal inspection is exercised by witness tests"
+    },
+    {
+      "directive": "allow",
+      "expires_release": "0.5.0",
       "expiry_condition": "Remove when the owner-process wrapper support is split into per-target modules with no unused helpers.",
       "introduced_release": "0.4.0",
       "lint": "dead_code",

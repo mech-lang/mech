@@ -296,7 +296,7 @@ if set(profiles) != expected_profiles:
     raise SystemExit(
         "static distribution profile contract failed: deterministic profile set mismatch"
     )
-expected_digest = "5fabffc02877ac6f1bedf2a88e2b12af966843c81cde6885192377c6702e447c"
+expected_digest = "3ab7408f06e6a8459a410804854e35ee751ad08092e4fdb33a3152878b1ec21e"
 selected_digest = "a006c5b25aa925939f4973273e2aea9cac2897fbcca32dc25edd6be74631445d"
 runtime_surface = json.loads(runtime_surface_path.read_text(encoding="utf-8"))
 runtime_factories = runtime_surface.get("runtime_factories")
@@ -318,10 +318,17 @@ if actual_digest != expected_digest:
     )
 expected_surface = {
     "selected-runtime": (3, 0, 0, 0, 0, selected_digest, "sha256-canonical-id-tab-name-lf-v1"),
-    "full-runtime": (9716, 0, 0, 0, 0, expected_digest, "sha256-canonical-id-tab-name-lf-v1"),
-    "full-source": (15694, 120, 13, 52, 51, "eaa1ce4cbfb9b493a5df7f52729157faf7382be957c738e8611dd9cddfc978ca", "sha256-canonical-id-tab-name-lf-v1"),
-    "full-compiler": (15698, 120, 13, 52, 51, "b003f902cf7ff4ba285cdf9a2ebb0310b8d97fef63c27f198aa8342b073acf99", "sha256-canonical-id-tab-name-lf-v1"),
+    "full-runtime": (9726, 0, 0, 0, 0, expected_digest, "sha256-canonical-id-tab-name-lf-v1"),
+    "full-source": (15705, 129, 13, 52, 60, "a16bbda4836c7b943cc3ded05a90ba7605b7a835a12daeb761c62b5912422ced", "sha256-canonical-id-tab-name-lf-v1"),
+    "full-compiler": (15709, 129, 13, 52, 60, "2ab905a5774fbe6fccc6ce7c5df3a3a5d7536d136816d0b10be26cd4e2438923", "sha256-canonical-id-tab-name-lf-v1"),
 }
+historical_surfaces = {
+    "full-runtime": [9716, 0, 0, 0, 0, "5fabffc02877ac6f1bedf2a88e2b12af966843c81cde6885192377c6702e447c", "sha256-canonical-id-tab-name-lf-v1"],
+    "full-source": [15694, 120, 13, 52, 51, "eaa1ce4cbfb9b493a5df7f52729157faf7382be957c738e8611dd9cddfc978ca", "sha256-canonical-id-tab-name-lf-v1"],
+    "full-compiler": [15698, 120, 13, 52, 51, "b003f902cf7ff4ba285cdf9a2ebb0310b8d97fef63c27f198aa8342b073acf99", "sha256-canonical-id-tab-name-lf-v1"],
+}
+if contracts.get("historical_surfaces") != historical_surfaces:
+    raise SystemExit("static distribution profile contract failed: historical surfaces changed")
 surface_keys = (
     "catalog_factory_count", "source_specializer_count", "intrinsic_count",
     "prelude_count", "module_export_count", "runtime_surface_digest", "digest_algorithm",

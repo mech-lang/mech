@@ -15,7 +15,7 @@ use crate::*;
 use mech_core::matrix::Matrix;
 
 #[cfg(any(
-    feature = "access",
+    all(feature = "access", feature = "matrix"),
     feature = "convert",
     feature = "variable_define",
     feature = "matrix_horzcat",
@@ -102,8 +102,16 @@ pub mod convert;
 pub mod define;
 #[cfg(feature = "matrix_horzcat")]
 pub mod horzcat;
+#[cfg(feature = "map_ops")]
+pub(crate) mod map_ops;
+#[cfg(feature = "pure_text")]
+pub(crate) mod pure_text;
+#[cfg(feature = "sequence_sort")]
+pub(crate) mod sequence_sort;
 #[cfg(feature = "table")]
 pub mod table_ops;
+#[cfg(feature = "pure_text")]
+pub(crate) mod text_ops;
 #[cfg(feature = "matrix_vertcat")]
 pub mod vertcat;
 

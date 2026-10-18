@@ -45,13 +45,28 @@ enum Scalar {
     ToFloat,
     Shift,
     Factorial,
+    SignedAdd,
+    SignedSub,
+    SignedMul,
+    SignedDiv,
+    SignedMod,
+    SignedNeg,
+    FNeg,
+    SignedLt,
+    SignedLe,
+    SignedGt,
+    SignedGe,
+    SignedMax,
+    SignedToFloat,
+    ToSigned,
+    ToUnsigned,
 }
 enum Instruction {
     Scalar(Scalar, usize, usize, usize),
     Copy(Vec<(usize, usize)>),
     Select(usize, Registers, Registers, Registers),
     Argument(usize, usize),
-    Bounded(usize, usize, usize, usize),
+    Bounded(usize, usize, usize, usize, bool),
     Fail(String),
     Positive(usize),
     Get(Registers, usize, usize),
@@ -71,18 +86,10 @@ enum Instruction {
         Registers,
         Registers,
     ),
-    Print(String, Registers),
+    Print(String, Registers, Vec<bool>),
     Write(String),
     Scan(usize, Registers, usize, usize, String, usize, Registers),
-    Parallel(
-        usize,
-        usize,
-        usize,
-        usize,
-        Registers,
-        Vec<String>,
-        Registers,
-    ),
+    Parallel(usize, usize, usize, usize, Registers, Vec<u8>, Registers),
 }
 struct Tape {
     initial: Vec<u64>,
@@ -105,6 +112,7 @@ struct Builder<'a> {
     code: Vec<Instruction>,
     active: Vec<String>,
     locals: BTreeMap<usize, Registers>,
+    folds: BTreeMap<usize, usize>,
     bigint_values: bool,
 }
 impl Builder<'_> {
@@ -172,6 +180,7 @@ impl Builder<'_> {
         // functions. Recursive calls retain explicit checked resident frames.
         self.active.push(name.into());
         let caller_bigint_values = self.bigint_values;
+        let caller_folds = std::mem::take(&mut self.folds);
         // A callee without transitive value creation returns only borrowed
         // handles; omitting its empty frame leaves their caller ownership intact.
         self.bigint_values &= self.program.computation.functions[name].big_integer_values;
@@ -193,6 +202,7 @@ impl Builder<'_> {
             Ok(values)
         })();
         self.bigint_values = caller_bigint_values;
+        self.folds = caller_folds;
         self.active.pop();
         result
     }
@@ -207,6 +217,21 @@ impl Builder<'_> {
         }
         let value = match &e.op {
             Op::Integer(n) | Op::Float(n) => vec![self.constant(*n)],
+            Op::SignedInteger(n) => vec![self.constant(*n as u64)],
+            Op::Convert(inner) => {
+                let value = self.expr(inner, params, memo)?[0];
+                let output = self.reserve(1)[0];
+                let operation = match (&inner.kind, &e.kind) {
+                    (ControlKind::Integer, ControlKind::SignedInteger) => Scalar::ToSigned,
+                    (ControlKind::SignedInteger, ControlKind::Integer) => Scalar::ToUnsigned,
+                    (ControlKind::Integer, ControlKind::Float) => Scalar::ToFloat,
+                    (ControlKind::SignedInteger, ControlKind::Float) => Scalar::SignedToFloat,
+                    _ => return Err("unsupported native scalar conversion".into()),
+                };
+                self.code
+                    .push(Instruction::Scalar(operation, value, value, output));
+                vec![output]
+            }
             Op::Boolean(b) => vec![self.constant(u64::from(*b))],
             Op::Text(_) | Op::Type => vec![],
             Op::ReadBytes(bytes) => {
@@ -335,7 +360,21 @@ impl Builder<'_> {
                 }
                 output
             }
+            Op::Fold { fold, body } => {
+                if self.folds.contains_key(fold) {
+                    return Err("duplicate active comprehension fold".into());
+                }
+                let sum = self.reserve(1)[0];
+                let zero = self.constant(0);
+                self.copy(&[zero], &[sum]);
+                self.folds.insert(*fold, sum);
+                let emitted = self.expr(body, params, &mut memo.clone());
+                self.folds.remove(fold);
+                emitted?;
+                vec![sum]
+            }
             Op::Reduce {
+                fold,
                 index,
                 start,
                 step,
@@ -350,9 +389,7 @@ impl Builder<'_> {
                 self.code.push(Instruction::Positive(step));
                 let i = self.reserve(1)[0];
                 self.copy(&[first], &[i]);
-                let sum = self.reserve(1)[0];
-                let zero = self.constant(0);
-                self.copy(&[zero], &[sum]);
+                let sum = *self.folds.get(fold).ok_or("unbound comprehension fold")?;
                 let head = self.code.len();
                 let cond = self.reserve(1)[0];
                 self.code.push(Instruction::Scalar(
@@ -365,19 +402,9 @@ impl Builder<'_> {
                 self.code.push(Instruction::JumpZero(cond, 0));
                 self.locals.insert(*index, vec![i]);
                 self.bigint_frame(40, &ControlKind::Integer, &[]);
-                let value = self.expr(body, params, &mut memo.clone())?[0];
+                self.expr(body, params, &mut memo.clone())?;
                 self.bigint_frame(41, &ControlKind::Integer, &[]);
                 self.locals.remove(index);
-                self.code.push(Instruction::Scalar(
-                    if e.kind == ControlKind::Float {
-                        Scalar::FAdd
-                    } else {
-                        Scalar::Add
-                    },
-                    sum,
-                    value,
-                    sum,
-                ));
                 let remaining = self.reserve(1)[0];
                 self.code
                     .push(Instruction::Scalar(Scalar::Sub, end, i, remaining));
@@ -395,6 +422,19 @@ impl Builder<'_> {
                 let done = self.code.len();
                 self.code[exit] = Instruction::JumpZero(cond, done);
                 self.code[finish] = Instruction::JumpZero(another, done);
+                vec![sum]
+            }
+            Op::Accumulate { fold, value } => {
+                let value = self.expr(value, params, memo)?[0];
+                let sum = *self.folds.get(fold).ok_or("unbound comprehension fold")?;
+                let operation = match e.kind {
+                    ControlKind::Float => Scalar::FAdd,
+                    ControlKind::SignedInteger => Scalar::SignedAdd,
+                    ControlKind::Integer => Scalar::Add,
+                    _ => return Err("unsupported comprehension accumulator kind".into()),
+                };
+                self.code
+                    .push(Instruction::Scalar(operation, sum, value, sum));
                 vec![sum]
             }
             Op::Heap {
@@ -447,7 +487,14 @@ impl Builder<'_> {
                 for a in values {
                     args.extend(self.expr(a, params, memo)?);
                 }
-                self.code.push(Instruction::Print(format.clone(), args));
+                self.code.push(Instruction::Print(
+                    format.clone(),
+                    args,
+                    values
+                        .iter()
+                        .map(|value| value.kind == ControlKind::SignedInteger)
+                        .collect(),
+                ));
                 vec![self.constant(0)]
             }
             Op::Write { text, .. } => {
@@ -499,7 +546,7 @@ impl Builder<'_> {
                     grain,
                     self.functions[function],
                     args,
-                    reductions.clone(),
+                    super::runtime::reducer_codes(&e.kind, reductions)?,
                     result.clone(),
                 ));
                 result
@@ -515,43 +562,71 @@ impl Builder<'_> {
                 let floating = arguments
                     .first()
                     .is_some_and(|a| a.kind == ControlKind::Float);
-                let scalar = match (name.as_str(), floating) {
-                    ("+", false) => Some(Scalar::Add),
-                    ("-", false) => Some(Scalar::Sub),
-                    ("*", false) => Some(Scalar::Mul),
-                    ("/", false) => Some(Scalar::Div),
-                    ("==", false) => Some(Scalar::Eq),
-                    ("!=", false) => Some(Scalar::Ne),
-                    ("<", false) => Some(Scalar::Lt),
-                    ("<=", false) => Some(Scalar::Le),
-                    (">", false) => Some(Scalar::Gt),
-                    (">=", false) => Some(Scalar::Ge),
-                    ("+", true) => Some(Scalar::FAdd),
-                    ("-", true) => Some(Scalar::FSub),
-                    ("*", true) => Some(Scalar::FMul),
-                    ("/", true) => Some(Scalar::FDiv),
-                    ("==", true) => Some(Scalar::FEq),
-                    ("!=", true) => Some(Scalar::FNe),
-                    ("<", true) => Some(Scalar::FLt),
-                    ("<=", true) => Some(Scalar::FLe),
-                    (">", true) => Some(Scalar::FGt),
-                    (">=", true) => Some(Scalar::FGe),
-                    ("number/mod", _) => Some(Scalar::Mod),
-                    ("number/max", _) => Some(Scalar::Max),
-                    ("&&", _) => Some(Scalar::And),
-                    ("||", _) => Some(Scalar::Or),
-                    ("number/to-f64", _) => Some(Scalar::ToFloat),
-                    ("number/shift-left", _) => Some(Scalar::Shift),
-                    ("number/factorial", _) => Some(Scalar::Factorial),
-                    _ => None,
+                let signed = arguments
+                    .first()
+                    .is_some_and(|arg| arg.kind == ControlKind::SignedInteger);
+                let scalar = if signed {
+                    match name.as_str() {
+                        "+" => Some(Scalar::SignedAdd),
+                        "-" if arguments.len() == 1 => Some(Scalar::SignedNeg),
+                        "-" => Some(Scalar::SignedSub),
+                        "*" => Some(Scalar::SignedMul),
+                        "/" => Some(Scalar::SignedDiv),
+                        "number/mod" | "%" => Some(Scalar::SignedMod),
+                        "==" => Some(Scalar::Eq),
+                        "!=" => Some(Scalar::Ne),
+                        "<" => Some(Scalar::SignedLt),
+                        "<=" => Some(Scalar::SignedLe),
+                        ">" => Some(Scalar::SignedGt),
+                        ">=" => Some(Scalar::SignedGe),
+                        "number/max" => Some(Scalar::SignedMax),
+                        "number/to-f64" => Some(Scalar::SignedToFloat),
+                        _ => None,
+                    }
+                } else {
+                    match (name.as_str(), floating) {
+                        ("+", false) => Some(Scalar::Add),
+                        ("-", false) if arguments.len() == 1 => {
+                            return Err("unsigned negation is unsupported".into());
+                        }
+                        ("-", false) => Some(Scalar::Sub),
+                        ("*", false) => Some(Scalar::Mul),
+                        ("/", false) => Some(Scalar::Div),
+                        ("==", false) => Some(Scalar::Eq),
+                        ("!=", false) => Some(Scalar::Ne),
+                        ("<", false) => Some(Scalar::Lt),
+                        ("<=", false) => Some(Scalar::Le),
+                        (">", false) => Some(Scalar::Gt),
+                        (">=", false) => Some(Scalar::Ge),
+                        ("+", true) => Some(Scalar::FAdd),
+                        ("-", true) if arguments.len() == 1 => Some(Scalar::FNeg),
+                        ("-", true) => Some(Scalar::FSub),
+                        ("*", true) => Some(Scalar::FMul),
+                        ("/", true) => Some(Scalar::FDiv),
+                        ("==", true) => Some(Scalar::FEq),
+                        ("!=", true) => Some(Scalar::FNe),
+                        ("<", true) => Some(Scalar::FLt),
+                        ("<=", true) => Some(Scalar::FLe),
+                        (">", true) => Some(Scalar::FGt),
+                        (">=", true) => Some(Scalar::FGe),
+                        ("number/mod" | "%", _) => Some(Scalar::Mod),
+                        ("number/max", _) => Some(Scalar::Max),
+                        ("&&", _) => Some(Scalar::And),
+                        ("||", _) => Some(Scalar::Or),
+                        ("number/to-f64", _) => Some(Scalar::ToFloat),
+                        ("number/shift-left", _) => Some(Scalar::Shift),
+                        ("number/factorial", _) => Some(Scalar::Factorial),
+                        _ => None,
+                    }
                 };
                 if let Some(op) = scalar {
                     self.code.push(Instruction::Scalar(op, a, b, output[0]));
                 } else {
                     match name.as_str() {
                         "number/bounded" => {
-                            self.code
-                                .push(Instruction::Bounded(a, args[1][0], args[2][0], output[0]));
+                            self.code.push(Instruction::Bounded(
+                                a, args[1][0], args[2][0], output[0], signed,
+                            ));
                         }
                         "io/argument-u64" => {
                             let Op::Integer(index) = arguments[0].op else {
@@ -611,7 +686,9 @@ impl Builder<'_> {
                 output
             }
         };
-        memo.insert(e.clone(), value.clone());
+        if !matches!(e.op, Op::Accumulate { .. }) {
+            memo.insert(e.clone(), value.clone());
+        }
         Ok(value)
     }
 }
@@ -656,6 +733,7 @@ impl ResidentProgram {
                     vec![name.into()]
                 },
                 locals: BTreeMap::new(),
+                folds: BTreeMap::new(),
                 bigint_values: if name.is_empty() {
                     program.computation.entry.big_integer_values
                 } else {
@@ -680,7 +758,7 @@ impl ResidentProgram {
                 output: result,
             });
         }
-        let descriptor = serde_json::json!({"arguments":program.argument_count,"outputs":width(&program.output.kind),"format":program.format,"big_integers":program.computation.entry.coeffects.big_integers,"stream_output":!program.effects.is_empty()});
+        let descriptor = serde_json::json!({"arguments":program.argument_count,"outputs":width(&program.output.kind),"format":program.format,"output_signed":super::runtime::signed_fields(&program.output.kind),"big_integers":program.computation.entry.coeffects.big_integers,"stream_output":!program.effects.is_empty()});
         Ok(Self {
             tapes,
             tables,
@@ -766,9 +844,11 @@ impl<'a> Machine<'a> {
                     let xf = f64::from_bits(x);
                     let yf = f64::from_bits(y);
                     self.cells[base + d] = match op {
-                        Scalar::Add => x.wrapping_add(y),
-                        Scalar::Sub => x.wrapping_sub(y),
-                        Scalar::Mul => x.wrapping_mul(y),
+                        Scalar::Add => x.checked_add(y).ok_or("unsigned addition overflow")?,
+                        Scalar::Sub => x.checked_sub(y).ok_or("unsigned subtraction overflow")?,
+                        Scalar::Mul => {
+                            x.checked_mul(y).ok_or("unsigned multiplication overflow")?
+                        }
                         Scalar::Div => x.checked_div(y).ok_or("division by zero")?,
                         Scalar::Mod => x.checked_rem(y).ok_or("division by zero")?,
                         Scalar::Eq => u64::from(x == y),
@@ -791,6 +871,42 @@ impl<'a> Machine<'a> {
                         Scalar::FGt => u64::from(xf > yf),
                         Scalar::FGe => u64::from(xf >= yf),
                         Scalar::ToFloat => (x as f64).to_bits(),
+                        Scalar::FNeg => (-xf).to_bits(),
+                        Scalar::SignedAdd => (x as i64)
+                            .checked_add(y as i64)
+                            .ok_or("signed addition overflow")?
+                            as u64,
+                        Scalar::SignedSub => (x as i64)
+                            .checked_sub(y as i64)
+                            .ok_or("signed subtraction overflow")?
+                            as u64,
+                        Scalar::SignedMul => (x as i64)
+                            .checked_mul(y as i64)
+                            .ok_or("signed multiplication overflow")?
+                            as u64,
+                        Scalar::SignedDiv => (x as i64)
+                            .checked_div(y as i64)
+                            .ok_or("signed division domain")?
+                            as u64,
+                        Scalar::SignedMod => (x as i64)
+                            .checked_rem(y as i64)
+                            .ok_or("signed remainder domain")?
+                            as u64,
+                        Scalar::SignedNeg => {
+                            (x as i64).checked_neg().ok_or("signed negation overflow")? as u64
+                        }
+                        Scalar::SignedLt => u64::from((x as i64) < (y as i64)),
+                        Scalar::SignedLe => u64::from((x as i64) <= (y as i64)),
+                        Scalar::SignedGt => u64::from((x as i64) > (y as i64)),
+                        Scalar::SignedGe => u64::from((x as i64) >= (y as i64)),
+                        Scalar::SignedMax => (x as i64).max(y as i64) as u64,
+                        Scalar::SignedToFloat => ((x as i64) as f64).to_bits(),
+                        Scalar::ToSigned => {
+                            i64::try_from(x).map_err(|_| "i64 conversion out of range")? as u64
+                        }
+                        Scalar::ToUnsigned => {
+                            u64::try_from(x as i64).map_err(|_| "u64 conversion out of range")?
+                        }
                         Scalar::Shift => x
                             .checked_shl(u32::try_from(y).map_err(|_| "invalid shift")?)
                             .ok_or("invalid shift")?,
@@ -816,9 +932,15 @@ impl<'a> Machine<'a> {
                 Instruction::Argument(index, dst) => {
                     self.cells[base + dst] = *self.args.get(index - 1).ok_or("missing argument")?;
                 }
-                Instruction::Bounded(a, low, high, dst) => {
+                Instruction::Bounded(a, low, high, dst, signed) => {
                     let value = self.cells[base + a];
-                    if value < self.cells[base + low] || value > self.cells[base + high] {
+                    let lower = self.cells[base + low];
+                    let upper = self.cells[base + high];
+                    if if *signed {
+                        (value as i64) < (lower as i64) || (value as i64) > (upper as i64)
+                    } else {
+                        value < lower || value > upper
+                    } {
                         return Err("value outside bounded domain".into());
                     }
                     self.cells[base + dst] = value;
@@ -965,24 +1087,12 @@ impl<'a> Machine<'a> {
                         result?;
                     }
                 }
-                Instruction::Print(format, args) => {
-                    let mut text = String::new();
-                    let mut rest = format.as_str();
-                    for &r in args {
-                        let at = rest.find('{').ok_or("format mismatch")?;
-                        text.push_str(&rest[..at]);
-                        let value = self.cells[base + r];
-                        if rest[at..].starts_with("{:i64}") {
-                            text.push_str(&(value as i64).to_string());
-                            rest = &rest[at + 6..];
-                        } else if rest[at..].starts_with("{}") {
-                            text.push_str(&value.to_string());
-                            rest = &rest[at + 2..];
-                        } else {
-                            return Err("unsupported format".into());
-                        }
-                    }
-                    text.push_str(rest);
+                Instruction::Print(format, args, signed) => {
+                    let fields = args
+                        .iter()
+                        .map(|r| self.cells[base + r])
+                        .collect::<Vec<_>>();
+                    let text = super::runtime::format_fields(format, &fields, signed)?;
                     if super::runtime::write_bytes(text.as_bytes()) != 0 {
                         return Err("output failed".into());
                     }
@@ -1060,32 +1170,36 @@ impl<'a> Machine<'a> {
                     let count = (end - start).div_ceil(grain);
                     let program = self.program;
                     let arguments = self.args;
-                    let results = (0..count)
-                        .into_par_iter()
-                        .map(|i| {
-                            let a = start + i * grain;
-                            let b = a.saturating_add(grain).min(end);
-                            let mut input = vec![a, b];
-                            input.extend(&extra);
-                            let mut result = vec![0; out.len()];
-                            Machine::new(program, arguments).root(
-                                *callee,
-                                &input,
-                                &mut result,
-                                None,
-                            )?;
-                            Ok::<_, String>(result)
-                        })
-                        .collect::<Result<Vec<_>, _>>()?;
-                    for (i, &r) in out.iter().enumerate() {
-                        self.cells[base + r] = 0;
-                        for result in &results {
-                            self.cells[base + r] = if reductions[i] == "max" {
-                                self.cells[base + r].max(result[i])
-                            } else {
-                                self.cells[base + r].wrapping_add(result[i])
-                            };
+                    let mut total = super::runtime::reduction_identity(reductions);
+                    let mut first = 0;
+                    let window = super::runtime::reduction_window();
+                    while first < count {
+                        let last = first.saturating_add(window as u64).min(count);
+                        let results = (0..(last - first) as usize)
+                            .into_par_iter()
+                            .map(|offset| {
+                                let i = first + offset as u64;
+                                let a = start + i * grain;
+                                let b = a.saturating_add(grain).min(end);
+                                let mut input = vec![a, b];
+                                input.extend(&extra);
+                                let mut result = vec![0; out.len()];
+                                Machine::new(program, arguments).root(
+                                    *callee,
+                                    &input,
+                                    &mut result,
+                                    None,
+                                )?;
+                                Ok::<_, String>(result)
+                            })
+                            .collect::<Vec<_>>();
+                        for result in results {
+                            super::runtime::reduce_values(&mut total, &result?, reductions)?;
                         }
+                        first = last;
+                    }
+                    for (&r, value) in out.iter().zip(total) {
+                        self.cells[base + r] = value;
                     }
                 }
             }

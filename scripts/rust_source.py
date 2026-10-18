@@ -8,11 +8,13 @@ CHAR_LITERAL = re.compile(
 )
 
 
-def rust_code(source: str) -> str:
-    """Blank Rust comments and literals, preserving character offsets and CR/LF.
+def rust_code(source: str, *, preserve_literals: bool = False) -> str:
+    """Blank Rust comments and optionally literals, preserving offsets and CR/LF.
 
     Identifiers (including raw identifiers), lifetimes, and code punctuation stay
-    intact. Callers own any identifier normalization or include-file traversal.
+    intact. Literal-preserving callers can inspect field values without treating
+    comment markers inside strings as comments. The default remains code-only.
+    Callers own any identifier normalization or include-file traversal.
     """
     output = list(source)
     size = len(source)
@@ -49,12 +51,14 @@ def rust_code(source: str) -> str:
             delimiter = '"' + raw.group("hashes")
             end = source.find(delimiter, raw.end())
             end = size if end < 0 else end + len(delimiter)
-            blank(index, end)
+            if not preserve_literals:
+                blank(index, end)
             index = end
             continue
         character = CHAR_LITERAL.match(source, index)
         if character:
-            blank(index, character.end())
+            if not preserve_literals:
+                blank(index, character.end())
             index = character.end()
             continue
         prefix = 1 if source.startswith(('b"', 'c"'), index) else 0
@@ -69,7 +73,8 @@ def rust_code(source: str) -> str:
                 escaped = character == "\\" and not escaped
                 if character != "\\":
                     escaped = False
-            blank(index, end)
+            if not preserve_literals:
+                blank(index, end)
             index = end
             continue
         index += 1

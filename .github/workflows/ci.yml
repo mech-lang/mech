@@ -144,12 +144,18 @@ jobs:
               -o Dir::Etc::sourceparts=-
             sudo apt-get install --yes ripgrep
           fi
+      - name: Install pinned CI YAML parser
+        run: |
+          python3 -m venv "$RUNNER_TEMP/ci-inventory-python"
+          "$RUNNER_TEMP/ci-inventory-python/bin/python" -m pip install --disable-pip-version-check --only-binary=:all: --require-hashes -r .github/ci/python-requirements.txt
+          echo "$RUNNER_TEMP/ci-inventory-python/bin" >> "$GITHUB_PATH"
       - name: Check formatting and global contracts
         run: |
           cargo +nightly-2026-03-03 fmt --all -- --check
           python3 -B -m unittest \
             tests.ci.test_ci_impact \
             tests.ci.test_ci_full_contract \
+            tests.ci.test_ci_test_inventory \
             tests.browser.harness.test_chrome_session \
             tests.browser.harness.test_completion_server
           python3 scripts/check-production-resident-routing.py
@@ -177,7 +183,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
@@ -205,10 +211,11 @@ jobs:
         run: |
           python3 -B scripts/run-python-unittest-shards.py \
             --jobs 2 \
-            --shard-count 4 \
+            --shard-count 6 \
             --shard-index ${{ matrix.shard }} \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_compiler_planning_quarantine.py \
+            scripts/tests/test_check_native_host_catalog.py \
             scripts/tests/test_check_no_retired_value_system.py \
             scripts/tests/test_rust_source.py \
             scripts/tests/test_check_type_memory_boundary.py \

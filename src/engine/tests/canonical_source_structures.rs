@@ -1342,8 +1342,9 @@ fn composite_memory_admission_failure_preserves_publication_and_recovers() {
     let mut catalog = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
     let catalog = catalog.build().unwrap();
-    // Each native String input, native draft, and output is individually
-    // smaller than the byte limit; their admitted coexistence exceeds it.
+    // Keep the original large payload below the individual byte limit. Its
+    // complete composite admission now reaches comparison work first; verify
+    // that real refusal instead of collapsing it to a generic shape error.
     let large = "x".repeat((mech_core::RESIDENT_MAX_BYTES / 2) as usize);
     for artifact in [&direct, &decoded] {
         let mut instance = activate(
@@ -1362,6 +1363,10 @@ fn composite_memory_admission_failure_preserves_publication_and_recovers() {
             }])
             .unwrap();
         let prior = instance.copied_output(0).unwrap();
+        assert!(
+            matches!(prior.data(), ValueData::Tuple(items) if matches!(items.as_ref(), [ValueData::String(text), ValueData::Bool(true)] if text.as_ref() == "before"))
+        );
+        let published_epoch = instance.published_epoch();
         let error = instance
             .turn(&[CapturedSignalInput {
                 slot,
@@ -1372,12 +1377,18 @@ fn composite_memory_admission_failure_preserves_publication_and_recovers() {
             matches!(
                 error,
                 mech_engine::resident::ResidentExecutionError::Kernel {
-                    error: mech_core::ResidentKernelError::InvalidShape,
-                    ..
+                    node: mech_core::NodeId(0),
+                    error: mech_core::ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                        required: 8388676,
+                        limit: 65536,
+                    },
                 }
             ),
             "{error:?}"
         );
+        assert_eq!(instance.published_epoch(), published_epoch);
         let after = instance.copied_output(0).unwrap();
         assert_eq!(after.schema_key(), prior.schema_key());
         assert_eq!(after.shape(), prior.shape());

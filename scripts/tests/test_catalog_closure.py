@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import subprocess
 from types import SimpleNamespace
 import tempfile
@@ -180,6 +181,35 @@ class CatalogClosureCommandTests(unittest.TestCase):
 
 
 class CatalogClosureWorkflowTests(unittest.TestCase):
+    def assert_profile_validation_steps(self, block):
+        """Check the maintained YAML gates and commands, not a retired shell if."""
+        self.assertNotIn("continue-on-error", block)
+        steps = re.split(r"(?m)(?=^      - )", block)
+        prefix = ["cargo", "+nightly-2026-03-03", "test", "--locked", "-p", "mech-stdlib",
+                  "--no-default-features", "--features"]
+        profiles = {
+            "standard": ("Validate frozen standard catalog profile", ["standard_compiler"]),
+            "full": ("Validate frozen full catalog profiles", ["full_runtime", "full_source", "full_compiler"]),
+        }
+        for profile, (name, features) in profiles.items():
+            matching = [step for step in steps if step.splitlines()[0] == f"      - name: {name}"]
+            self.assertEqual(len(matching), 1, f"required {profile} validation step is missing or duplicated")
+            step = matching[0]
+            self.assertEqual(re.findall(r"(?m)^        if: (.+)$", step),
+                             ["${{ matrix.profile == '" + profile + "' }}"],
+                             f"{profile} validation must execute only for its actual matrix profile")
+            parts = step.split("        run: |\n")
+            self.assertEqual(len(parts), 2, "required literal validation script is missing or duplicated")
+            script = textwrap.dedent(parts[1]).replace("\\\n", "")
+            commands = [shlex.split(line) for line in script.splitlines() if line.strip()]
+            expected = []
+            for feature in features:
+                command = [*prefix, feature, "--test", "profile_contracts"]
+                if feature == "full_source":
+                    command += ["--test", "maintained_contract_authority"]
+                expected.append(command)
+            self.assertEqual(commands, expected, f"{profile} must execute every exact profile contract")
+
     def test_ci_runs_both_exact_profiles_and_retains_reports(self):
         block = job_block("catalog-closure")
         matrix = re.search(r"(?ms)matrix:\n\s+profile:\n(?P<rows>(?:\s+- [a-z0-9-]+\n)+)", block)
@@ -190,7 +220,7 @@ class CatalogClosureWorkflowTests(unittest.TestCase):
         self.assertIn("python3 -B -m unittest scripts/tests/test_catalog_closure.py", block)
         self.assertIn("cargo +nightly-2026-03-03 fetch --locked", block)
         self.assertIn('python3 scripts/check-native-linkage-coverage.py catalog-closure "${{ matrix.profile }}"', block)
-        self.assertIn('if test "${{ matrix.profile }}" = standard', block)
+        self.assert_profile_validation_steps(block)
         for feature in ("standard_compiler", "full_runtime", "full_source", "full_compiler"):
             self.assertIn(f"--no-default-features --features {feature}", block)
         self.assertEqual(block.count("--test profile_contracts"), 4)
@@ -199,6 +229,36 @@ class CatalogClosureWorkflowTests(unittest.TestCase):
         self.assertIn("path: target/native-linkage/catalog-closure-${{ matrix.profile }}.json", block)
         self.assertIn("if-no-files-found: error", block)
         self.assertNotIn("continue-on-error", block)
+
+    def test_missing_disabled_duplicate_and_wrong_profile_steps_cannot_claim_validation(self):
+        block = job_block("catalog-closure")
+        steps = re.split(r"(?m)(?=^      - )", block)
+        standard = next(step for step in steps if step.startswith("      - name: Validate frozen standard catalog profile\n"))
+        full = next(step for step in steps if step.startswith("      - name: Validate frozen full catalog profiles\n"))
+        cases = {
+            "missing standard": block.replace(standard, "", 1),
+            "missing full": block.replace(full, "", 1),
+            "duplicate standard": block.replace(standard, standard + standard, 1),
+            "disabled standard": block.replace("if: ${{ matrix.profile == 'standard' }}", "if: false", 1),
+            "disabled full": block.replace("if: ${{ matrix.profile == 'full' }}", "if: false", 1),
+            "full on wrong profile": block.replace("if: ${{ matrix.profile == 'full' }}", "if: ${{ matrix.profile == 'standard' }}", 1),
+            "duplicate condition": block.replace(standard, standard.replace("        run: |", "        if: false\n        run: |", 1), 1),
+        }
+        for name, changed in cases.items():
+            with self.subTest(name=name), self.assertRaises(AssertionError):
+                self.assert_profile_validation_steps(changed)
+
+    def test_wrong_features_nonexecuting_modes_and_allowed_failures_are_rejected(self):
+        block = job_block("catalog-closure")
+        for before, after in [
+            ("--features full_source", "--features standard_compiler"),
+            ("--test profile_contracts", "--test profile_contracts --list"),
+            ("--test profile_contracts", "--test profile_contracts --no-run"),
+            ("--test maintained_contract_authority", "--test profile_contracts"),
+            ("        run: |", "        continue-on-error: true\n        run: |"),
+        ]:
+            with self.subTest(after=after), self.assertRaises(AssertionError):
+                self.assert_profile_validation_steps(block.replace(before, after, 1))
 
     def test_cargo_aggregate_requires_catalog_closure_success(self):
         block = job_block("cargo")

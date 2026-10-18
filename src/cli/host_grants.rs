@@ -129,7 +129,7 @@ pub fn has_explicit_cli_run_grants(config: &LoadedMechConfig) -> MResult<bool> {
     for grant in &run.grants {
         let (instance, context) = mech_runtime::parse_host_context_target(&grant.target)?;
         if cli_instances.contains(instance)
-            && matches!(context, "env" | "args" | "stdout" | "stderr")
+            && matches!(context, "env" | "args" | "stdin" | "stdout" | "stderr")
         {
             return Ok(true);
         }
@@ -221,6 +221,35 @@ mod tests {
             .unwrap();
             let loaded = LoadedMechConfig {
                 path: "args.mcfg".into(),
+                base_dir: Default::default(),
+                document,
+                discovered_project_dir: None,
+            };
+            assert!(has_explicit_cli_run_grants(&loaded).unwrap());
+            assert_eq!(
+                effective_cli_host_grants(Some(&loaded), CliHostCapabilitySelection::default())
+                    .unwrap(),
+                EffectiveCliHostGrants::empty()
+            );
+        }
+    }
+
+    #[test]
+    fn configured_stdin_grants_suppress_defaults_for_cli_and_alias_instances() {
+        for instance in ["cli", "term"] {
+            let document = mech_runtime::parse_config_document(
+                "stdin.mcfg",
+                &format!(
+                    r#"config := {{
+                hosts: [{{name: "term" provider: "cli" settings: {{}}}}]
+                run: {{grants: [{{target: "{instance}/stdin" operations: ["read"] paths: ["text"]}}]}}
+            }}"#
+                ),
+                mech_runtime::ConfigProfileOptions::default(),
+            )
+            .unwrap();
+            let loaded = LoadedMechConfig {
+                path: "stdin.mcfg".into(),
                 base_dir: Default::default(),
                 document,
                 discovered_project_dir: None,

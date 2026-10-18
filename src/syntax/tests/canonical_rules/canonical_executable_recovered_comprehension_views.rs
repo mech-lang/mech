@@ -46,17 +46,41 @@ fn same_node(actual: &SyntaxNode, expected: &SyntaxNode) {
 #[test]
 fn halted_comprehension_exposes_its_retained_head_and_bar() {
     let text = "[x | x <- (1 +)]";
-    let parsed = parse_canonical_executable_rule_for_test(
-        snapshot(text, false),
-        rules::MATRIX_COMPREHENSION,
-        ParseConfig {
-            limits: ParseLimits {
-                fuel: 52,
-                ..Default::default()
-            },
-        },
-    )
-    .unwrap();
+    // Select the retained head/bar phase by its physical syntax, rather than
+    // coupling the view contract to one parser-frame fuel count.
+    let parsed = (0..=400)
+        .find_map(|fuel| {
+            let parsed = parse_canonical_executable_rule_for_test(
+                snapshot(text, false),
+                rules::MATRIX_COMPREHENSION,
+                ParseConfig {
+                    limits: ParseLimits {
+                        fuel,
+                        ..Default::default()
+                    },
+                },
+            )
+            .unwrap();
+            assert!(parsed.stats.parser_steps <= fuel);
+            validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed).unwrap();
+            let node = find(&parsed.syntax(), SyntaxKind::MatrixComprehension)?;
+            let head = find(&node, SyntaxKind::Expression)?;
+            let physical_bar = node.tokens().into_iter().any(|token| {
+                token.kind() == SyntaxKind::Bar
+                    && token.range() == TextRange::at(TextSize(3), TextSize(1))
+                    && !token
+                        .flags()
+                        .intersects(TokenFlags::ERROR | TokenFlags::MISSING | TokenFlags::SYNTHETIC)
+            });
+            (head.text().unwrap() == "x"
+                && physical_bar
+                && parsed
+                    .diagnostics
+                    .iter()
+                    .any(|d| matches!(d.recovery, Some(RecoveryAction::ResourceLimit { .. }))))
+            .then_some(parsed)
+        })
+        .expect("a bounded halt must retain the completed physical head and bar");
     assert!(
         parsed
             .diagnostics

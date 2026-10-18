@@ -1,11 +1,12 @@
 use mech_console::{ConsoleHostFactory, ConsoleResourceProvider, RecordingConsoleBackend};
 use mech_core::{
-    EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement,
+    DimensionExpr, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
+    IdempotencyRequirement, IntegerWidth, SchemaBody, SchemaDraft,
 };
 use mech_runtime::{
-    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEffectId, RuntimeHostFactory,
-    RuntimeHostInputValue, RuntimeResourceProvider, RuntimeResourceWriteIntent,
-    RuntimeResourceWriteRequest, TransactionId,
+    PreparedRuntimeEffect, ResourceSchemaPreflight, RuntimeCapabilityOperation, RuntimeEffectId,
+    RuntimeHostFactory, RuntimeHostInputValue, RuntimeResourceProvider, RuntimeResourceWriteIntent,
+    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, TransactionId,
 };
 
 fn effect_id() -> RuntimeEffectId {
@@ -67,6 +68,69 @@ fn provider_rejects_unknown_path() {
         })
         .unwrap_err();
     assert!(format!("{err:?}").contains("line"));
+}
+
+#[test]
+fn schema_preflight_preserves_any_value_output_without_delivery() {
+    let backend = RecordingConsoleBackend::new();
+    let observed = backend.clone();
+    let provider = ConsoleResourceProvider::new("console", backend);
+    let schemas = [
+        SchemaBody::String,
+        SchemaBody::UnsignedInteger(IntegerWidth::W64),
+        SchemaBody::Matrix {
+            element: Box::new(SchemaBody::String),
+            dimensions: Box::new([DimensionExpr::Constant(1), DimensionExpr::Constant(2)]),
+        },
+    ]
+    .map(|body| {
+        SchemaDraft {
+            body,
+            dimension_parameters: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    });
+    let request = |base: &str, path: &str, intent| RuntimeResourceWritePreflightRequest {
+        base_uri: base.into(),
+        path: path.into(),
+        context_name: "out".into(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent,
+    };
+    for schema in &schemas {
+        for base in ["console://console/output", "console://output"] {
+            assert_eq!(
+                provider
+                    .preflight_write_schema(
+                        request(base, "line", RuntimeResourceWriteIntent::Send),
+                        schema
+                    )
+                    .unwrap(),
+                ResourceSchemaPreflight::Validated,
+            );
+        }
+        for (base, path, intent) in [
+            (
+                "console://other/output",
+                "line",
+                RuntimeResourceWriteIntent::Send,
+            ),
+            ("console://output", "text", RuntimeResourceWriteIntent::Send),
+            (
+                "console://output",
+                "line",
+                RuntimeResourceWriteIntent::Assign,
+            ),
+        ] {
+            assert!(
+                provider
+                    .preflight_write_schema(request(base, path, intent), schema)
+                    .is_err()
+            );
+        }
+    }
+    assert!(observed.lines().is_empty());
 }
 
 #[test]

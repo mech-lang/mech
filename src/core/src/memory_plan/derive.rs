@@ -289,6 +289,169 @@ pub fn plan_call_memory(
     })
 }
 
+/// Adds implementation-specific demand to a clean current call plan.
+/// The caller retains that clean base independently, so this function never
+/// receives a previously augmented plan during managed refresh.
+#[cfg(feature = "functions")]
+pub(crate) fn augment_call_execution_demand(
+    base: &CallMemoryPlan,
+    additional: super::PlannedExecutionDemand,
+) -> Result<CallMemoryPlan, MemoryPlanError> {
+    let mut plan = base.clone();
+    plan.demand.turn_peak_bytes = checked_add(
+        plan.demand.turn_peak_bytes,
+        additional.temporary_bytes,
+        "planned execution temporary bytes",
+    )?;
+    plan.demand.cloned_bytes = checked_add(
+        plan.demand.cloned_bytes,
+        additional.cloned_bytes,
+        "planned execution cloned bytes",
+    )?;
+    plan.demand.retained_nodes = checked_add(
+        plan.demand.retained_nodes,
+        additional.retained_nodes,
+        "planned execution retained nodes",
+    )?;
+    plan.demand.work.comparison = checked_add(
+        plan.demand.work.comparison,
+        additional.work.comparison,
+        "planned execution comparison work",
+    )?;
+    plan.demand.work.compute = checked_add(
+        plan.demand.work.compute,
+        additional.work.compute,
+        "planned execution compute work",
+    )?;
+    plan.demand.work.canonicalization = checked_add(
+        plan.demand.work.canonicalization,
+        additional.work.canonicalization,
+        "planned execution canonicalization work",
+    )?;
+    plan.demand.work.scalar_instructions = checked_add(
+        plan.demand.work.scalar_instructions,
+        additional.work.scalar_instructions,
+        "planned execution scalar instructions",
+    )?;
+    if additional.temporary_bytes != 0 {
+        let id = match plan
+            .allocations
+            .iter()
+            .map(|allocation| allocation.id.get())
+            .max()
+        {
+            Some(last) => MemoryObjectId::new(checked_next_object(last)?),
+            None => MemoryObjectId::new(0),
+        };
+        let ordinal = match plan
+            .allocations
+            .iter()
+            .filter_map(|allocation| match allocation.owner {
+                MemoryObjectOwner::NodeScratch { ordinal, .. } => Some(ordinal),
+                _ => None,
+            })
+            .max()
+        {
+            Some(last) => last
+                .checked_add(1)
+                .ok_or(MemoryPlanError::ArithmeticOverflow {
+                    field: "planned execution scratch ordinal",
+                })?,
+            None => 0,
+        };
+        // FrozenSnapshotConstruction allocates independent host-owned objects;
+        // this arena reserves authority without materializing a backing block.
+        let space = MemorySpace::Host;
+        let arena = construction_arena_for_space(space);
+        let offset = plan
+            .allocations
+            .iter()
+            .filter(|allocation| allocation.placement.arena == arena)
+            .try_fold(0_u64, |end, allocation| {
+                checked_add(
+                    allocation.placement.offset,
+                    allocation.capacity_bytes,
+                    "planned execution arena extent",
+                )
+                .map(|next| end.max(next))
+            })?;
+        let end = checked_add(
+            offset,
+            additional.temporary_bytes,
+            "planned execution arena extent",
+        )?;
+        if end > plan.target.maximum_addressable_bytes {
+            return Err(MemoryPlanError::TargetAddressOverflow);
+        }
+        let mut allocations = plan.allocations.to_vec();
+        allocations.push(AllocationPlan {
+            id,
+            owner: MemoryObjectOwner::NodeScratch {
+                node: crate::NodeId::new(0),
+                ordinal,
+            },
+            role: AllocationRole::ConstructionWorkspace,
+            slot: None,
+            space,
+            current_bytes: additional.temporary_bytes,
+            capacity_bytes: additional.temporary_bytes,
+            payload_block_capacity: 0,
+            alignment: 1,
+            lifetime: MemoryLifetime::Turn {
+                first: super::MemoryPlanPoint::new(0),
+                last: super::MemoryPlanPoint::new(0),
+            },
+            placement: ArenaPlacement { arena, offset },
+            reuse_group: None,
+        });
+        allocations.sort_by_key(|allocation| allocation.id);
+        plan.allocations = allocations.into_boxed_slice();
+    }
+    let output_bytes = plan.outputs.iter().try_fold(0_u64, |total, output| {
+        checked_add(
+            total,
+            value_required_bytes(&output.value)?,
+            "planned execution output bytes",
+        )
+    })?;
+    let owner = plan
+        .outputs
+        .first()
+        .and_then(|output| {
+            plan.allocations
+                .iter()
+                .find(|allocation| allocation.id == output.object)
+        })
+        .map(|allocation| allocation.owner.clone())
+        .unwrap_or(MemoryObjectOwner::DirectCallPort {
+            call: 0,
+            direction: PortDirection::Output,
+            port: 0,
+        });
+    let storage_buffer_bytes = if plan.target.kind == MemoryTargetKind::Gpu {
+        plan.allocations
+            .iter()
+            .map(|allocation| allocation.capacity_bytes)
+            .max()
+            .unwrap_or(0)
+    } else {
+        0
+    };
+    if let Some(violation) = evaluate_call_memory_budget(
+        owner,
+        plan.demand,
+        output_bytes,
+        storage_buffer_bytes,
+        plan.target.limits,
+    )
+    .first()
+    .cloned()
+    {
+        return Err(MemoryPlanError::TargetLimitExceeded { violation });
+    }
+    Ok(plan)
+}
+
 /// Re-runs the complete call planner when a provider supplies the final
 /// semantic operation contract. No derived field survives by assignment.
 #[cfg(feature = "functions")]

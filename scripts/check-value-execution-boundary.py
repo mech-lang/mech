@@ -406,6 +406,12 @@ def audit(root: Path, manifest: Path) -> list[str]:
         actual = occurrences(root, boundary["pattern"])
         approved_occurrences: set[Occurrence] = set()
         for approval in boundary["allowed"]:
+            if not (root / approval["path"]).is_file():
+                failures.append(
+                    f"{identifier}: stale allowance references missing file: "
+                    f"{approval['path']}"
+                )
+                continue
             spans = allowed_spans(root, approval)
             scoped = [
                 occurrence
