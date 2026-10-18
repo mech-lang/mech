@@ -1,7 +1,7 @@
 {
   "schema": "mech.checked-aot-workload-progress.v1",
   "status": "INCOMPLETE_IMPLEMENTATION_NOT_BENCHMARK_QUALIFIED",
-  "latest_qualification": "prepared_native_library_call_qualification",
+  "latest_qualification": "generated_mixed_program_execution_qualification",
   "pull_request": "https://github.com/mech-lang/mech/pull/905",
   "baseline": "c4190315672337f039efc743a970263627f75834",
   "reproduction": {
@@ -644,6 +644,45 @@
     "benchmark_program_algorithm_changed": false,
     "new_linked_execution_or_benchmark_samples": 0,
     "not_established": "The prepared entry point is not yet called by generated mixed native code. Shared CFG emission, admitted managed moves, scalar/canonical construction and constant ownership, comprehensions/FSM/element-count matrices/typed resource lifecycle, general packed/streaming all-seven-histogram support, full125M execution, same-binary trusted/secured release samples, binary/hot-path/dependency analysis and optimized/configurable checked AOT remain required. Metadata bounds are conservative and live binding is not cached; no performance improvement is claimed. Fresh final-head review and full GitHub CI remain required."
+  },
+  "generated_mixed_program_execution_qualification": {
+    "status": "GENERATED_MIXED_CFG_EXECUTES_NOT_FULL_PROGRAM_OR_BENCHMARK_QUALIFIED",
+    "source_commit": "6e11860ad3e4dcfd7c15c06fb0ef3034cfbba8ba",
+    "tested_base": "d2b5e6bf37824b8f47f74c3af525ca4c928aebdf",
+    "complete_frozen_diff_sha256": "48694b7bbbff63de3c3929b2682bf60bf78055afc59d1ed0b29e33b9429c6e1d",
+    "architecture": [
+      "The SAME iteration_compiler define_cfg pass emits scalar and mixed modes for both JIT and Object. The SAME scalar action/branch emitters and managed current-visit/progress checker remain authoritative. Generated code owns arithmetic, branches, carrier counters and real backedges; Rust does not schedule or interpret the graph.",
+      "Explicit ABI4 preserves the frozen scalar-frame prefix and adds a checked leaf/managed-move helper plus a disjoint private result word. Exact current-site/action-once checks select only the retained private-witness-derived maintained call. The helper receives scalar operand words directly rather than aliasing generated locals. Managed copies, carriers and private output slots use typed same-account NativeValueArena storage.",
+      "All control/setup/leaf/retirement work debits one non-refillable ledger. Seven finite library dimensions and a ManagedMemoryBudget are required. Constant ownership and scalar canonical construction use precharged work and pre-admitted bounds before wrappers/finalization. Prior-output retirement is prepaid; all typed outputs publish together only after complete success.",
+      "Runtime-only LinkedProgramArtifact rederives selection and exact Object identity against the actual artifact/catalog and shares the JIT invocation boundary. Its unsafe build-provenance obligation is explicit. This boundary has NOT yet been qualified by a newly linked mixed-program process. Object emission/identity are not credited as execution."
+    ],
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-generated-program-v280.zsh",
+      "driver_sha256": "4ff2460c184e2b2b77a886900c5cd73002312c25393894ba6a5a77c51ce34d7a",
+      "log": "tmp/pr-stack-evidence/checked-aot-v280-generated-program.log",
+      "log_sha256": "1aa6ee30e2b2008c20aa5edb0e35b31d7405f762cd102f66dd568307db26eb57",
+      "completed_utc": "2026-10-18T16:41:15Z",
+      "exit": 0,
+      "generated_mixed_integration_methods": 7,
+      "private_native_methods": 30,
+      "existing_scalar_control_execution_methods": 42,
+      "ci_contracts": 154,
+      "other": "Runtime-only build, unsafe-boundary audit, formatting, diff checks and source immutability pass. The existing explicitly ignored linked-iteration process qualifier was not rerun.",
+      "coverage": "Original/decoded canonical values match ordinary resident outputs for all seven actual root and lexical library families plus scalar arithmetic. Zero/nonzero managed loops, both Match arms, nested managed carriers and scalar captures execute. Arithmetic after a leaf and work/transport/library/memory-policy denial preserve every prior typed output and recover. Foreign ownership is rejected. Private tests reject wrong site/kind/result pointer, duplicate/omitted helpers, setup admission before entry, and independent entry under an active account; ABI4 prefix/lanes are checked."
+    },
+    "runtime_closure": {
+      "driver": "tmp/pr-stack-evidence/qualify-generated-program-static-v281.zsh",
+      "log": "tmp/pr-stack-evidence/checked-aot-v281-generated-static.log",
+      "log_sha256": "aca2de4409aa48279b34466c966482697d55023b81fe9dfa3214bcf0f00e76d6",
+      "graph": "tmp/pr-stack-evidence/checked-aot-v281-runtime-graph.txt",
+      "graph_sha256": "cd5c1834edbaf6bad08888ed66ea027f7b0e16ebb3a4a3dc0429be4c90e8ad1d",
+      "result": "Same frozen source passes warning policy, Rust module layout and old scalar runtime-only build. Normal dependency graph for canonical-native-program-runtime excludes Cranelift, mech-syntax, mech-stdlib and mech-runtime. This graph check is not an analysis of a newly linked executable."
+    },
+    "preceding_failure": "v278 passed its five actual generated-entry methods but failed runtime-only compilation because the common hex encoder was compiler-feature-gated. The shared encoder's gate was corrected; v280/v281 requalify the complete final source, with stronger execution/protocol tests. The failed receipt is retained at tmp/pr-stack-evidence/checked-aot-v278-generated-program.log (SHA256 1f0601f09c408903df584ef09e1af6be09b05931582ea31d081f27a6063cca51).",
+    "explicit_test_policy": "Finite qualification policy: global compute1B, library compute134217728, comparison1M and temporary128MiB on a256MiB memory account. These conservative binding/construction envelopes are NOT product-default/resident-limit or performance claims. No product defaults or benchmark source algorithms changed.",
+    "new_linked_process_executions": 0,
+    "new_benchmark_samples": 0,
+    "not_established": "Newly linked mixed-entry process execution and metadata/provenance mutation qualification; native element-count matrices/comprehensions/FSM/typed resource lifecycle and whole-program canonical AOT; general packed/streaming all-seven-histogram operations; full125M exact workload; same-executable trusted/secured release samples; actual full-program binary/hot-path/dependency analysis and optimized/configurable checked AOT. The independent legacy source compiler remains unresolved, not an accepted second runtime authority. Fresh final-head review and complete GitHub CI remain required."
   },
   "remaining": [
     "Extend beyond the qualified100/400-base original/decoded library and real release CLI/resource cases to realistic full inputs, retaining finite admission, atomicity and recovery.",
