@@ -325,4 +325,26 @@ mod tests {
             assert!(descriptor_from_identity(&first, &corrupt).is_err());
         }
     }
+
+    #[test]
+    fn cast_identity_rejects_pre_cast_versions_and_equal_width_reverse_direction() {
+        let forward = plan("result<i64> := value<u64>\nresult\n");
+        let reverse = plan("result<u64> := value<i64>\nresult\n");
+        assert_ne!(typed_ir_sha256(&forward), typed_ir_sha256(&reverse));
+        let descriptor = NativeAbiDescriptor::from_compiled(&forward, 32, 1024);
+        let identity = NativeObjectIdentity::from_descriptor(&descriptor).unwrap();
+        assert!(descriptor_from_identity(&forward, identity.bytes()).is_ok());
+        assert!(descriptor_from_identity(&reverse, identity.bytes()).is_err());
+
+        // The F64-only v3 identity must not silently acquire cast semantics.
+        // This is metadata validation only; no emitted object executes here.
+        for version in 0..NATIVE_TYPED_IR_VERSION {
+            let mut prior = *identity.bytes();
+            prior[16..24].copy_from_slice(&version.to_le_bytes());
+            assert!(matches!(
+                descriptor_from_identity(&forward, &prior),
+                Err("unsupported linked identity/ABI/work-policy version")
+            ));
+        }
+    }
 }
