@@ -184,13 +184,13 @@
     "result": "All55 contract Rust methods,144CI contracts,7architecture guards, runtime-only build and formatting pass on clean781bd9257. Eleven actual linked executables pass322 fresh-process cases: five retained scalar applications102 cases plus six cast applications220 cases. Actual114-unit runtime builds exclude parser/codegen. Typed IR4, C ABI1/work1. Fresh review/full CI/other platforms remain required.",
     "boundary": "One canonical numeric native route, not all five workflow routes, native resources, all ten workloads, same-AOT-binary lifecycle qualification or benchmarks."
   },
-  "cli_payload_continuation": {
+  "cli_payload_publication_history": {
     "pull_request": "https://github.com/mech-lang/mech/pull/903",
     "published_head": "e49f3afbb996654b435e767f9edb7341caa2a9f0",
     "qualified_product_source": "1bf3f731226f62df3bf5670bcaf327ff5011d9b8",
     "ci_wiring_source": "77ce4f1e92f3cde4b2489e2ada5df8322406f8a8",
     "record": "https://github.com/mech-lang/mech/blob/e49f3afbb996654b435e767f9edb7341caa2a9f0/docs/validation/canonical-cli-payload-count-v1.json",
-    "status": "SEPARATE_SIBLING_DRAFT_LOCAL_PASSED_REVIEW_CLEAN_FULL_CI_PENDING",
-    "scope": "The sibling qualifies immutable source-launcher payload/count with87 actual Rust methods, unchanged standard/full distribution probes and an exact35-method combined provider command. Review is clean on e49f3afbb; CI39088856522 remains incomplete. Its Rust implementation is NOT composed into this casts branch. Resident CLI qualification does not establish native AOT resource execution."
+    "status": "INHERITED_PR903_IMPLEMENTATION_HISTORICAL_PUBLICATION_RECEIPT",
+    "scope": "PR903's immutable source-launcher payload/count implementation is inherited in this casts branch after rebasing onto PR903, including src/cli/run/mod.rs and hosts/terminal/src/provider.rs. The recorded87 Rust methods, unchanged distribution probes, exact35-method combined provider command, clean e49f3afbb review and incomplete CI39088856522 are historical receipts on their original source, not fresh qualification of this rebased head. Current-head review and complete CI remain required. Resident CLI qualification does not establish native AOT resource execution."
   }
 }
