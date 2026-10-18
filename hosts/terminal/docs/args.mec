@@ -1,18 +1,25 @@
 CLI Arguments
 ===============================================================================
 
-The CLI argument context exposes raw Unicode argument text as read-only resources.
+The CLI argument context exposes read-only payload cardinality and indexed
+Unicode argument text.
 
 ```mech
 +> @args := cli/args
 first := @args/1
+count := @args/count
 ```
 
 1. Paths and values
 -------------------------------------------------------------------------------
 
-Paths are one-based positive canonical decimal indices: 1, 2, 3, and so on.
-Index 1 selects the first argument after the executable. Zero, leading zeroes,
+The count path returns the exact number of raw payload arguments as a scalar U64.
+It counts empty and non-Unicode arguments without reading or decoding their text.
+It requires an explicitly supplied payload snapshot; the standard backend alone
+reports count unavailable because process argv has no launcher boundary.
+
+Indexed paths are one-based positive canonical decimal indices: 1, 2, 3, and so on.
+Index 1 selects the first payload argument supplied by the launcher. Zero, leading zeroes,
 signs, spaces, fractions, extra path segments and overflowing indices are rejected.
 Missing arguments and arguments that are not valid Unicode produce errors.
 An empty argument is valid and returns an empty string. No numeric conversion or
@@ -27,13 +34,33 @@ For example, generated-app --once 19 --runtime-info supplies 19 as @args/1 and
 --runtime-info as @args/2. Use generated-app -- --once to supply --once as
 @args/1. The --print-result launcher control also applies only before the payload
 boundary; after it, the spelling is ordinary argument text. Hosted results are
-displayed only when that control is explicitly requested. The Mech interpreter
-CLI does not yet provide this forwarding boundary.
+displayed only when that control is explicitly requested.
+
+The Mech source launcher uses an explicit -- boundary because its earlier
+positional values select files, projects or inline source. For example,
+mech run program.mec -- 19 --runtime-info supplies only 19 and --runtime-info
+to the program; the executable, run command, source selector and launcher
+controls before -- are excluded. Bare mech program.mec -- ARG uses the same
+boundary. Without --, positional values remain source selectors, not guessed
+payload. A source run without payload supplies an empty immutable vector.
+Launcher-looking values after -- cannot enable capabilities, select a backend,
+change configuration or become filesystem grants. Empty and non-Unicode payload
+values survive launch parsing unchanged; only an actual indexed resource read
+requires Unicode. Explicit mech run may still select its source from run.paths
+in configuration before forwarding payload.
+
+Default CLI runtime/REPL factories also use an empty payload snapshot rather
+than adopting their host process controls. Custom factory injection keeps the
+caller's explicit snapshot. Direct use of StdCliBackend or CliHostFactory::new
+retains the legacy indexed process-argv behavior described above; it is not the
+source launcher's forwarding contract and cannot infer a payload count.
 
 2. Planning and capabilities
 -------------------------------------------------------------------------------
 
-Planning validates the index and String schema without reading argv. The runtime captures the actual read through the same observation and
+Planning validates the index and String schema, or the count path and U64 schema,
+without reading argv or asking the backend for a count. The typed count placeholder
+is not an observed argument count. The runtime captures the actual read through the same observation and
 capability system as cli/env. Args do not require an input driver. Writes and
 sends are rejected.
 
@@ -43,13 +70,14 @@ do not grant args reads. Grant specific indices in configuration:
 ```mech
 config := {
   run: {
-    grants: [{ target: "cli/args" operations: ["read"] paths: ["1"] }]
+    grants: [{ target: "cli/args" operations: ["read"] paths: ["count" "1"] }]
   }
 }
 ```
 
-The explicit :cli/args capability profile grants read access to all argument
-indices. Configured CLI aliases use their instance name, such as term/args.
+A grant for index 1 does not grant count, and a count-only grant does not grant
+argument text. The explicit :cli/args capability profile uses the wildcard path
+and grants read access to every args path, including count and indexed values. Configured CLI aliases use their instance name, such as term/args.
 
 3. Embedding
 -------------------------------------------------------------------------------
@@ -57,7 +85,11 @@ indices. Configured CLI aliases use their instance name, such as term/args.
 Custom CLI backends implement argument(index) using a user-argument snapshot;
 the snapshot excludes the executable and launcher policy flags. Existing backends
 can omit this optional method, in which case reads report arguments unavailable.
-No argument contents need to be read during compilation or planning.
+No argument contents need to be read during compilation or planning. Custom
+backends may implement argument_count() only when they own the same immutable
+payload snapshot as indexed reads; its default reports unavailable. The standard
+backend keeps its historical indexed process-argv behavior but does not infer a
+payload count or parse launcher controls.
 
 CliHostFactory::with_arguments(Vec<OsString>) installs an immutable payload-only
 snapshot over the standard environment, stdin and output backend. Vector element
@@ -69,3 +101,26 @@ the provider validates Unicode only when the corresponding resource is read.
 Embedders can wrap another backend with ArgumentSnapshotCliBackend::new(backend,
 arguments). Cloned wrappers share the same immutable argument snapshot and
 delegate all other CLI I/O to their backend.
+
+4. Strict payload arity
+-------------------------------------------------------------------------------
+
+Count is ordinary resource metadata. Programs must check it when they require an
+exact number of payload arguments. A pure pattern function can deliberately be
+partial, so a missing pattern produces a checked failed call:
+
+```mech
++> number
+parse-input(count<u64>, raw<string>) => <u64>
+  | (1u64, value) => number/parse-u64(value).
+
++> @args := cli/args
+n := parse-input(@args/count, @args/1)
+```
+
+This accepts one payload argument and rejects extra arguments. Missing arguments
+and invalid Unicode remain checked resource errors. An empty single argument
+counts as one and then fails the strict numeric parser. Failed source turns do
+not deliver staged terminal output. Resource acquisition can precede the pure
+pattern check, so this does not promise arity errors before all resource errors.
+Ordinary match expressions still require exhaustive coverage.

@@ -269,6 +269,7 @@ jobs:
             tests/ci/test_ci_test_inventory.py \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_native_host_catalog.py \
+            scripts/tests/test_check_production_resident_routing.py \
             scripts/tests/test_check_no_retired_value_system.py \
             scripts/tests/test_rust_source.py \
             scripts/tests/test_check_type_memory_boundary.py \
@@ -570,7 +571,7 @@ jobs:
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-build
           --no-default-features --features standard-hosts
-          --test canonical_cli_bytes --test canonical_resource_execution
+          --test canonical_cli_bytes --test canonical_cli_argument_count --test canonical_resource_execution
           --test canonical_resource_planning --test canonical_map_features
           --test canonical_pure_text_features -- --test-threads=1
 
@@ -2087,7 +2088,7 @@ jobs:
         run: |
           cargo test -p mech-syntax --all-features \
             --lib document::parser::canonical::tests::canonical_declaration_
-          cargo test -p mech-terminal --features provider --test provider
+          cargo +nightly-2026-03-03 test --locked -p mech-terminal --features provider --test provider --test provider_argument_count
           cargo test -p mech-console
           cargo test -p mech-browser
           cargo test -p mech-browser --features provider
@@ -2097,6 +2098,18 @@ jobs:
             --test mech_cli_host -- --test-threads=1
           cargo test --lib --no-default-features --features run \
             cli::commands::run::tests
+          PAYLOAD_TESTS=$(cargo +nightly-2026-03-03 test --locked --lib \
+            --no-default-features --features run cli::app::tests::payload_arguments -- --list)
+          test "$(printf '%s\n' "$PAYLOAD_TESTS" | awk '/^cli::app::tests::payload_arguments::.*: test$/ { count += 1 } END { print count + 0 }')" -eq 6
+          cargo +nightly-2026-03-03 test --locked --lib --no-default-features --features run \
+            cli::app::tests::payload_arguments -- --test-threads=1
+          DEFAULT_PAYLOAD_TESTS=$(cargo +nightly-2026-03-03 test --locked --lib \
+            --no-default-features --features run \
+            cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot -- --list --exact)
+          test "$(printf '%s\n' "$DEFAULT_PAYLOAD_TESTS" | awk '/^cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot: test$/ { count += 1 } END { print count + 0 }')" -eq 1
+          cargo +nightly-2026-03-03 test --locked --lib --no-default-features --features run \
+            cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot \
+            -- --exact --test-threads=1
           cargo check -p mech-runtime -p mech-browser -p mech-terminal
           cargo check -p mech-terminal --no-default-features
 

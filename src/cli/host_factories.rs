@@ -15,7 +15,10 @@ use mech_timer::NativeTimerHostFactory;
 pub fn register_cli_host_factories(
     builder: RuntimeBuilder,
 ) -> MResult<(RuntimeBuilder, BTreeSet<String>)> {
-    let cli_factory = CliHostFactory::new()?;
+    // A launcher without an explicit payload must not expose its executable,
+    // source selectors or policy flags as application arguments. Embedders
+    // that supply a custom factory retain their own argument snapshot.
+    let cli_factory = CliHostFactory::with_arguments(Vec::new())?;
     register_cli_host_factories_with_cli_factory(builder, Box::new(cli_factory))
 }
 

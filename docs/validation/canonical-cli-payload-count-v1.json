@@ -1,0 +1,462 @@
+{
+  "schema": "mech.canonical-cli-payload-qualification.v1",
+  "status": "LOCAL_EXECUTION_PASSED_REVIEW_AND_FULL_CI_PENDING",
+  "as_of_utc": "2026-10-18T02:04:30Z",
+  "source": {
+    "commit": "1bf3f731226f62df3bf5670bcaf327ff5011d9b8",
+    "tree": "f1c1adf9f7581e55c1c1593ef73bf4a2cb55dbc5",
+    "base": "2b07bd26f973445f8e83a0785524951b04d10cc6",
+    "branch": "codex/canonical-cli-payload-count",
+    "clean_before_and_after_each_command": true,
+    "qualification": "One serial local pipeline on this exact clean source, CARGO_BUILD_JOBS=1, test opt-level0, debug assertions/overflow checks enabled, incremental disabled. The separately recorded CI-wiring-only qualification does not receive fabricated rerun credit for these 87 Rust methods; the full tracked diff proves product source/build inputs unchanged. Later documentation commits require their own input-equality and static checks."
+  },
+  "platform": {
+    "system": "Darwin 24.6.0 arm64",
+    "host": "aarch64-apple-darwin",
+    "toolchain": "nightly-2026-03-03",
+    "rustc": "1.96.0-nightly (ec818fda3 2026-03-02)",
+    "rustc_commit": "ec818fda361ca216eb186f5cf45131bd9c776bb4"
+  },
+  "implementation": [
+    "Existing terminal provider and immutable ArgumentSnapshotCliBackend expose read-only args/count as scalar U64 from the same snapshot as indexed reads. No new host crate, runtime or language compiler.",
+    "Count values are constructed through canonical SchemaDraft/SchemaTableBuilder/ValueDraft snapshots without enabling the forbidden legacy runtime U64 feature. Standard and full distribution restrictions are unchanged.",
+    "Source CLI run and bare-source forms forward only raw OsStrings after explicit --. Without --, positionals remain source selectors. Launcher-looking payload cannot select backend/configuration or grant capabilities.",
+    "Default CLI/REPL factories supply an empty snapshot; explicit custom factory snapshots remain intact. Legacy direct StdCliBackend keeps indexed process argv but explicitly refuses inferred payload count.",
+    "Planning returns typed metadata without count/index getter calls, live execution captures actual values through canonical resource requirements and capability admission. A planning zero never becomes a fake observed count.",
+    "Exact count and index grants are independent; wildcard args grants cover both. Writes/sends, malformed paths and incorrect semantic contexts are rejected.",
+    "Ordinary partial-pattern functions enforce strict arity. Checked failures preserve staged-output atomicity and permit recovery without mutating payload. No workload-specific implementation bridge."
+  ],
+  "executed": {
+    "rust_methods_passed": 87,
+    "rust_failed": 0,
+    "rust_ignored": 0,
+    "groups": {
+      "provider_count": 8,
+      "retained_provider": 27,
+      "original_and_decoded_canonical_count": 6,
+      "retained_canonical_bytes": 8,
+      "launcher_parser": 6,
+      "default_and_custom_factory": 1,
+      "actual_cli_host": 31
+    },
+    "filter_scope": "The parser invocation selects6 and filters117 unrelated library methods; the exact default-factory invocation selects1 and filters122. All integration targets run their entire selected target with0 filtered. Actual CLI31 includes all5 new payload methods plus26 retained methods.",
+    "actual_payload_process_launches": 39,
+    "actual_payload_forms": [
+      "bare existing source path",
+      "run existing source path",
+      "run single-argument inline source"
+    ],
+    "ci_contract_methods": 144,
+    "architecture_checks": 15,
+    "formatting": "passed",
+    "additional_gates": {
+      "routing_guard_fixture_methods": 10,
+      "production_resident_routing": "passed",
+      "distribution_standard": "passed, including actual Cargo catalog probe",
+      "distribution_full": "passed, including actual Cargo catalog probe",
+      "distribution_packaging": "passed",
+      "native_host_catalog": "passed"
+    }
+  },
+  "actual_cli_executable": {
+    "path_at_qualification": "tmp/pr-stack-901/target/debug/mech",
+    "sha256": "ccdf7bd945c018ff0925d6fed073b06cfbbfbe0521dd06e4432048c60315a1a8",
+    "selection": "Actual integration tests invoke Cargo's CARGO_BIN_EXE_mech, not a mocked launcher.",
+    "scope": "Ordinary source CLI resident execution, not canonical native machine-code resources or same-AOT-binary trusted/secured lifecycle qualification."
+  },
+  "logs": [
+    {
+      "file": "review-v162-formatting.log",
+      "sha256": "8bb3a7b925d8339f15461ba2eb62b040541112a556c80bdb76a76c2a950f49a5",
+      "command": "cargo +nightly-2026-03-03 fmt --all -- --check",
+      "started_utc": "2026-10-18T01:41:06Z",
+      "ended_utc": "2026-10-18T01:41:11Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-routing-fixtures.log",
+      "sha256": "e943a7fecbf9d5b65bfba8e9d17c2f94654382801d6b8d9c788b3f275e416b23",
+      "command": "python3 -B -m unittest scripts/tests/test_check_production_resident_routing.py",
+      "started_utc": "2026-10-18T01:41:11Z",
+      "ended_utc": "2026-10-18T01:41:11Z",
+      "summaries": [
+        "Ran 10 tests in 0.057s"
+      ]
+    },
+    {
+      "file": "review-v162-production-routing.log",
+      "sha256": "c31ff42b12bfb9aa06b3d5ec70578018eac50174da2b27196c698b94d789cf02",
+      "command": "python3 -B scripts/check-production-resident-routing.py",
+      "started_utc": "2026-10-18T01:41:11Z",
+      "ended_utc": "2026-10-18T01:41:11Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-distribution-standard.log",
+      "sha256": "54bbc84c529344cf3fd97e9a629afdb483d5c324152a7666cb59de135e4290eb",
+      "command": "python3 -B scripts/check-distribution-contracts.py --profile standard",
+      "started_utc": "2026-10-18T01:41:11Z",
+      "ended_utc": "2026-10-18T01:43:00Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-distribution-full.log",
+      "sha256": "38f1418b3c62fbc56474d13c7e617483bf54188d130a9ba0b9a8e0721c9b1289",
+      "command": "python3 -B scripts/check-distribution-contracts.py --profile full",
+      "started_utc": "2026-10-18T01:43:00Z",
+      "ended_utc": "2026-10-18T01:49:58Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-distribution-packaging.log",
+      "sha256": "0d6cfdb6b1ea69fb3a870c0dfcae6b0d026fdeed13a6a974da4db0aa0570ee03",
+      "command": "python3 -B scripts/check-distribution-packaging.py",
+      "started_utc": "2026-10-18T01:49:58Z",
+      "ended_utc": "2026-10-18T01:49:58Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-native-host-catalog.log",
+      "sha256": "d07dd4de142cddb32b57444d22635eb40a65f42c34ea04281e133d977f12ec87",
+      "command": "python3 -B scripts/check-native-host-catalog.py",
+      "started_utc": "2026-10-18T01:49:58Z",
+      "ended_utc": "2026-10-18T01:49:59Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-ci-contracts.log",
+      "sha256": "8cd69e42285967a41422587f649a9738c5bfc13190ac96c6c7979914749765a8",
+      "command": "python3 -B -m unittest discover -s tests/ci",
+      "started_utc": "2026-10-18T01:49:59Z",
+      "ended_utc": "2026-10-18T01:50:09Z",
+      "summaries": [
+        "Ran 144 tests in 10.134s"
+      ]
+    },
+    {
+      "file": "review-v162-provider-count.log",
+      "sha256": "063b41feeece4b67b2766b12ba90f70eb1441ada7defba76f9d5ad77e57c597f",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-terminal --no-default-features --features provider --test provider_argument_count -- --test-threads=1",
+      "started_utc": "2026-10-18T01:50:09Z",
+      "ended_utc": "2026-10-18T01:50:34Z",
+      "summaries": [
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s"
+      ]
+    },
+    {
+      "file": "review-v162-provider-retained.log",
+      "sha256": "95c0078133ef00ea00ce227b0c80bf38aa685c6a3ce813f2afd329439230afd8",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-terminal --no-default-features --features provider --test provider -- --test-threads=1",
+      "started_utc": "2026-10-18T01:50:34Z",
+      "ended_utc": "2026-10-18T01:50:35Z",
+      "summaries": [
+        "test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s"
+      ]
+    },
+    {
+      "file": "review-v162-canonical-count.log",
+      "sha256": "842bc9405ea8df7368bc302f92b467e4ab7304167487aa6528ee4adbfbbf69a9",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-build --no-default-features --features standard-hosts --test canonical_cli_argument_count -- --test-threads=1",
+      "started_utc": "2026-10-18T01:50:35Z",
+      "ended_utc": "2026-10-18T01:55:35Z",
+      "summaries": [
+        "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.93s"
+      ]
+    },
+    {
+      "file": "review-v162-canonical-bytes.log",
+      "sha256": "92620bd82e3c75329a5af0c699adce5e277803312619afeadd6f7485a511696d",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-build --no-default-features --features standard-hosts --test canonical_cli_bytes -- --test-threads=1",
+      "started_utc": "2026-10-18T01:55:35Z",
+      "ended_utc": "2026-10-18T01:55:56Z",
+      "summaries": [
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.68s"
+      ]
+    },
+    {
+      "file": "review-v162-parser.log",
+      "sha256": "596fd36da30a00a0b1344547ad0a6166482cc6d8d74c8e76613a14e768f887fa",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 --lib --no-default-features --features run cli::app::tests::payload_arguments -- --test-threads=1",
+      "started_utc": "2026-10-18T01:55:56Z",
+      "ended_utc": "2026-10-18T01:57:31Z",
+      "summaries": [
+        "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 117 filtered out; finished in 0.13s"
+      ]
+    },
+    {
+      "file": "review-v162-default-factory.log",
+      "sha256": "11633df20a26998bad519f9380c48a71e8aa40eb00e40a143dd55c2f2500f975",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 --lib --no-default-features --features run cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot -- --exact --test-threads=1",
+      "started_utc": "2026-10-18T01:57:31Z",
+      "ended_utc": "2026-10-18T01:57:37Z",
+      "summaries": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 122 filtered out; finished in 0.30s"
+      ]
+    },
+    {
+      "file": "review-v162-actual-cli.log",
+      "sha256": "687c1c68c1f39c99daa4c7f45e4f0ed0c7ac48d5bebfc0d2dff41adefe1ce993",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 --no-default-features --features distribution-standard --test mech_cli_host -- --test-threads=1",
+      "started_utc": "2026-10-18T01:57:37Z",
+      "ended_utc": "2026-10-18T01:59:37Z",
+      "summaries": [
+        "test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 22.45s"
+      ]
+    },
+    {
+      "file": "review-v162-value-boundary.log",
+      "sha256": "ea1ce1f8f08a39a1c3fb8ef2c59f6e4e944d752c084e17e52218815588e2216b",
+      "command": "python3 -B scripts/check-value-execution-boundary.py",
+      "started_utc": "2026-10-18T01:59:37Z",
+      "ended_utc": "2026-10-18T01:59:57Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-warnings.log",
+      "sha256": "04cc039d341b385a4a13b29295213fef12f5f477880f9af9c125b115e205a0a6",
+      "command": "python3 -B scripts/check-warning-policy.py",
+      "started_utc": "2026-10-18T01:59:57Z",
+      "ended_utc": "2026-10-18T02:00:07Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-type-authority.log",
+      "sha256": "2a10b685dbd6322de43a348b117654d69ce5167827ddf42d6ae0482846aa1bff",
+      "command": "python3 -B scripts/check-type-system.py",
+      "started_utc": "2026-10-18T02:00:07Z",
+      "ended_utc": "2026-10-18T02:00:16Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-semantic-authority.log",
+      "sha256": "eff715b9063ed3f44fd53107c39504a19822c305afef8fa10c2a7da261aa0572",
+      "command": "python3 -B scripts/check-semantic-type-authority.py",
+      "started_utc": "2026-10-18T02:00:16Z",
+      "ended_utc": "2026-10-18T02:00:17Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-memory-runtime.log",
+      "sha256": "2ad401e05bf5b3e36d603591d3d7e17ec305ef9cc2ae411ebedd261112f63837",
+      "command": "python3 -B scripts/check-memory-runtime.py",
+      "started_utc": "2026-10-18T02:00:17Z",
+      "ended_utc": "2026-10-18T02:00:34Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-memory-planner.log",
+      "sha256": "003f412d8c1490818faeadfc0ecce4379e0247716bb4bf0c46d82cdb8ff8f38c",
+      "command": "python3 -B scripts/check-memory-planner.py",
+      "started_utc": "2026-10-18T02:00:34Z",
+      "ended_utc": "2026-10-18T02:00:46Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-module-layout.log",
+      "sha256": "a013d2f95a0639c2ca4a7a62156898487068ee12799c72a38488e465bfa419fa",
+      "command": "python3 -B scripts/check-rust-module-layout.py",
+      "started_utc": "2026-10-18T02:00:47Z",
+      "ended_utc": "2026-10-18T02:00:47Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-interactive.log",
+      "sha256": "13c3a7bacb7e7a0947bfaa2df169353757e131c03f6fc0463537fc9f7a025dc7",
+      "command": "python3 -B scripts/check-interactive-architecture.py",
+      "started_utc": "2026-10-18T02:00:47Z",
+      "ended_utc": "2026-10-18T02:00:47Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-planning-quarantine.log",
+      "sha256": "86780724eb309a5f55d859773fb6baa78add639ed72397110f0dd80f5d867287",
+      "command": "python3 -B scripts/check-compiler-planning-quarantine.py",
+      "started_utc": "2026-10-18T02:00:47Z",
+      "ended_utc": "2026-10-18T02:02:30Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-unsafe.log",
+      "sha256": "53c1d811d5a6b82b06c5df833426bc354906d3930c6bf6feead1a9155d0fc73c",
+      "command": "bash scripts/check-unsafe-boundaries.sh",
+      "started_utc": "2026-10-18T02:02:30Z",
+      "ended_utc": "2026-10-18T02:02:55Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-runtime-factory.log",
+      "sha256": "98827862a621971742896fb2ffaff05a29a78b4f31644cecfd073bc6693aec2e",
+      "command": "python3 -B scripts/check-runtime-factory-safety.py",
+      "started_utc": "2026-10-18T02:02:55Z",
+      "ended_utc": "2026-10-18T02:02:55Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-value-system.log",
+      "sha256": "ec8eba20283f7b313b8476570180974b81702300b838028f921ec2178284e2c4",
+      "command": "python3 -B scripts/check-value-system-contract.py",
+      "started_utc": "2026-10-18T02:02:55Z",
+      "ended_utc": "2026-10-18T02:02:55Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-retired-values.log",
+      "sha256": "b961c3755ed79deb40dfe89f2a0dd9a9c597275c85b2959074d35b7d618c0f29",
+      "command": "python3 -B scripts/check-no-retired-value-system.py",
+      "started_utc": "2026-10-18T02:02:55Z",
+      "ended_utc": "2026-10-18T02:03:16Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-type-memory.log",
+      "sha256": "cc875e9814c3ceb46b7c3e41546cd14dc46b2bf2f7835e4f18a3ca99b76aea9f",
+      "command": "python3 -B scripts/check-type-memory-boundary.py",
+      "started_utc": "2026-10-18T02:03:16Z",
+      "ended_utc": "2026-10-18T02:03:26Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v162-bytecode-format.log",
+      "sha256": "7bd03cc5db3847edb7b618cd03f0d68175966e2ac6a4ba699a740ec1f43efb84",
+      "command": "python3 -B scripts/check-bytecode-v1-format.py",
+      "started_utc": "2026-10-18T02:03:26Z",
+      "ended_utc": "2026-10-18T02:03:26Z",
+      "summaries": []
+    }
+  ],
+  "retained_failures": [
+    {
+      "source": "6a95c79bd30ea29b3e040cfeb6f8af1cd0aa5b5a",
+      "log": "review-v152-canonical-count.log",
+      "sha256": "bf9e510c46c4cc29b4341712c26db3523eb4839352fcbbc00a048d808bce027f",
+      "result": "0passed6failed before execution: archived fixtures omitted explicit number import. Fixed imports in fixtures and documented example; assertions unchanged."
+    },
+    {
+      "source": "7f0ac23f9b9e67e3e1f299ed19b7478d8b313ac4",
+      "log": "review-v154-parser.log",
+      "sha256": "c74ba3df3c556293f14729034f69030711c0dd94169e8d863a80421d04d1ff8f",
+      "result": "5passed1failed: nonexistent bare program.mec was correctly admitted by the existing source classifier as a field expression. Boundary fixture now uses explicit ./program.mec; classifier and payload implementation unchanged. This failed run is not a passing receipt."
+    },
+    {
+      "source": "b5120d8c83fb4565ef60ff857ee792e887937de2",
+      "log": "review-v160-pr903-ci-117554378288.log",
+      "sha256": "12d4ed7067a8bf4db830ff1296ea52ab40ee7e1402e84de216ce76261c615c6b",
+      "workflow_run": 39086581640,
+      "workflow_job": 117554378288,
+      "result": "Published-head CI failed: the production routing guard required the old CliHostFactory::new spelling. The correction checks construction of an explicit empty snapshot and registration of that same factory through the shared Rust lexical mask, with ten positive/negative fixture methods. No gate is waived."
+    },
+    {
+      "source": "b5120d8c83fb4565ef60ff857ee792e887937de2",
+      "log": "review-v160-pr903-ci-117554378303.log",
+      "sha256": "07506c64bf2513788ed70f9cf64c96397e79e162b7de1c680f2359ba2be93c52",
+      "workflow_run": 39086581640,
+      "workflow_job": 117554378303,
+      "result": "Published-head CI failed: added mech-runtime/u64 enabled forbidden legacy U64 features in standard-profile packages. The correction constructs canonical U64 snapshots and restores the provider's original feature graph; forbidden-feature restrictions remain unchanged. The actual standard and full probes pass in review-v162."
+    }
+  ],
+  "evidence_availability": "Commands, counts and hashes of all30 review-v162 logs are committed here. Full raw logs and built test/product binaries remain local operational evidence; no benchmark samples were generated. Historical qualification and failed CI logs are retained, not relabeled. Replay on a clean source pin with fresh evidence, preserving profiles, inputs and limits.",
+  "limits": [
+    "Fresh exact-head review and entirely green CI remain required; neither success authorizes readiness or merge without explicit user approval.",
+    "This does not supply native AOT resource execution, native control/Iteration/matrices, all ten workloads, security-lifecycle equivalence or benchmark measurements.",
+    "The older CLI Cranelift sequence/control/grid source compiler remains an unresolved competing authority. Continue canonical-artifact migration and retire its separate source lowering."
+  ],
+  "benchmark_measurements": 0,
+  "historical_qualification": {
+    "source": "667589bed4dce3636b3b08abaca68948d89c6b0f",
+    "tree": "825d76cc381b8dc4e3fec7ca4806a22eba6ca352",
+    "receipt_commit": "b5120d8c83fb4565ef60ff857ee792e887937de2",
+    "record": "docs/validation/canonical-cli-payload-count-v1.json",
+    "scope": "Historical review-v156 87-method receipt and review-v158 documentation-only static qualification remain preserved in Git and raw local logs. That source enabled legacy mech-runtime/u64, subsequently rejected by the unchanged standard distribution contract. It does not supply corrected-profile qualification; review-v162 above actually reruns all87 on the corrected source."
+  },
+  "review_ci_wiring_qualification": {
+    "source_commit": "77ce4f1e92f3cde4b2489e2ada5df8322406f8a8",
+    "source_tree": "fefdba2cbcdf2b1606e3b881a33485c7badb758d",
+    "product_source_commit": "1bf3f731226f62df3bf5670bcaf327ff5011d9b8",
+    "changed_files_since_product_qualification": [
+      ".github/workflows/ci-full.yml",
+      "tests/ci/test_ci_full_contract.py"
+    ],
+    "tracked_product_source_templates_manifests_and_lock_unchanged": true,
+    "correction": "The full workflow explicitly runs both retained provider and new provider_argument_count targets with the pinned toolchain and --locked. The CI contract asserts that exact command.",
+    "executed": "The exact full-workflow command passed all27 retained provider and8 count methods on clean77ce4f1e9, using default provider features. Formatting,144CI contracts,10routing fixtures,actual production routing,14catalog contracts,10linkage contracts and6sharder methods also passed. The full87-method product suite and distribution probes retain their actual1bf3f7312 source pin; no same-head rerun is invented.",
+    "logs": [
+      {
+        "file": "review-v165-combined-provider.log",
+        "sha256": "91411701d26d2932e7939c4b1ce289eb8b2dcc0c9d93ebeebcb49fc285bbca93",
+        "command": "cargo +nightly-2026-03-03 test --locked -p mech-terminal --features provider --test provider --test provider_argument_count",
+        "started_utc": "2026-10-18T02:03:45Z",
+        "ended_utc": "2026-10-18T02:03:47Z",
+        "summaries": [
+          "test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+          "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s"
+        ]
+      },
+      {
+        "file": "review-v165-formatting.log",
+        "sha256": "45d29e6996ea7a9dcf8bf69646c1414b2079d5fa87c71e81d847c837cfb3daa8",
+        "command": "cargo +nightly-2026-03-03 fmt --all -- --check",
+        "started_utc": "2026-10-18T02:03:47Z",
+        "ended_utc": "2026-10-18T02:03:53Z",
+        "summaries": []
+      },
+      {
+        "file": "review-v165-ci-contracts.log",
+        "sha256": "7da007f32ee5643b4ddb601b509734e5940c3da09e96fa521cd7fc0e354d53a6",
+        "command": "python3 -B -m unittest discover -s tests/ci",
+        "started_utc": "2026-10-18T02:03:53Z",
+        "ended_utc": "2026-10-18T02:04:02Z",
+        "summaries": [
+          "Ran 144 tests in 9.322s"
+        ]
+      },
+      {
+        "file": "review-v165-routing-fixtures.log",
+        "sha256": "a61272375b08b457356729573001c525327fbf0d8de3b3e2b995c08f8e742ecc",
+        "command": "python3 -B -m unittest scripts/tests/test_check_production_resident_routing.py",
+        "started_utc": "2026-10-18T02:04:02Z",
+        "ended_utc": "2026-10-18T02:04:02Z",
+        "summaries": [
+          "Ran 10 tests in 0.055s"
+        ]
+      },
+      {
+        "file": "review-v165-production-routing.log",
+        "sha256": "0dbd4082269692ce5965bcf45a130f7e7f6fbee0698225a57515714dbd9efecf",
+        "command": "python3 -B scripts/check-production-resident-routing.py",
+        "started_utc": "2026-10-18T02:04:02Z",
+        "ended_utc": "2026-10-18T02:04:03Z",
+        "summaries": []
+      },
+      {
+        "file": "review-v165-catalog-contract.log",
+        "sha256": "29290a9a7c6f7c80350f4a20bf1f18853dcf2d94fa2aeccb38a79d52fbb33047",
+        "command": "python3 -B -m unittest scripts/tests/test_catalog_closure.py",
+        "started_utc": "2026-10-18T02:04:03Z",
+        "ended_utc": "2026-10-18T02:04:03Z",
+        "summaries": [
+          "Ran 14 tests in 0.295s"
+        ]
+      },
+      {
+        "file": "review-v165-linkage-contract.log",
+        "sha256": "705d666628af2775677073b017b098443fee1c5b2969b859debc561ba66d2b12",
+        "command": "python3 -B -m unittest scripts/tests/test_native_linkage_profiles.py",
+        "started_utc": "2026-10-18T02:04:03Z",
+        "ended_utc": "2026-10-18T02:04:03Z",
+        "summaries": [
+          "Ran 10 tests in 0.024s"
+        ]
+      },
+      {
+        "file": "review-v165-sharder.log",
+        "sha256": "c90a84f6ada8d3ee18d70dc225202c67127564c631703938e0129ecc510b97a4",
+        "command": "python3 -B -m unittest discover -s scripts/tests -p test_run_python_unittest_shards.py",
+        "started_utc": "2026-10-18T02:04:03Z",
+        "ended_utc": "2026-10-18T02:04:03Z",
+        "summaries": [
+          "Ran 6 tests in 0.002s"
+        ]
+      }
+    ]
+  }
+}

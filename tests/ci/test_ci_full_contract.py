@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import tempfile
 import textwrap
@@ -223,6 +224,59 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertNotIn("continue-on-error", install)
             self.assertLess(block.index(install), block.index(selection))
 
+    def test_source_cli_payload_parser_selection_is_nonempty_and_executed(self):
+        step = next(step for step in job_steps(FULL, "cargo-runtime")
+                    if "Run CLI host and context-send regression coverage" in step)
+        self.assertIn("cargo +nightly-2026-03-03 test --locked -p mech-terminal --features provider --test provider --test provider_argument_count", step)
+        self.assertIn("--test mech_cli_host", step)
+        self.assertIn("PAYLOAD_TESTS=$(cargo +nightly-2026-03-03 test --locked --lib", step)
+        self.assertIn("^cli::app::tests::payload_arguments::.*: test$", step)
+        self.assertIn("-eq 6", step)
+        self.assertIn("--no-default-features --features run", step)
+        self.assertIn("cli::app::tests::payload_arguments -- --test-threads=1", step)
+        default_test = "cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot"
+        self.assertIn("DEFAULT_PAYLOAD_TESTS=$(cargo +nightly-2026-03-03 test --locked --lib", step)
+        self.assertIn(f"{default_test} -- --list --exact", step)
+        self.assertIn(f"^{default_test}: test$", step)
+        self.assertIn("-eq 1", step)
+        self.assertRegex(step, re.escape(default_test) + r"\s*\\\n\s*-- --exact --test-threads=1")
+        self.assertNotIn("--ignored", step)
+        self.assertNotIn("continue-on-error", step)
+
+    def test_source_cli_payload_counts_fail_closed_without_ripgrep(self):
+        step = next(step for step in job_steps(FULL, "cargo-runtime")
+                    if "Run CLI host and context-send regression coverage" in step)
+        default_test = "cli::run::tests::default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot"
+        cases = (
+            ("PAYLOAD_TESTS", [f"cli::app::tests::payload_arguments::case_{index}: test" for index in range(6)]),
+            ("DEFAULT_PAYLOAD_TESTS", [f"{default_test}: test"]),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            # The runner needs only the already-used POSIX awk, not ripgrep.
+            awk = shutil.which("awk")
+            self.assertIsNotNone(awk)
+            (Path(directory) / "awk").symlink_to(awk)
+            for variable, selected in cases:
+                guard = next(line.strip() for line in step.splitlines()
+                             if line.strip().startswith('test "$(printf')
+                             and f'"${variable}"' in line)
+                for listing, accepted in (
+                    (selected + ["7 tests, 0 benchmarks"], True),
+                    ([], False),
+                    (selected[:-1], False),
+                    (selected + selected[:1], False),
+                    ([line.replace(": test", ": benchmark") for line in selected], False),
+                    (["decoy::" + line for line in selected], False),
+                ):
+                    with self.subTest(variable=variable, listing=listing):
+                        result = subprocess.run(
+                            ["/bin/bash", "--noprofile", "--norc", "-euo", "pipefail", "-c", guard],
+                            env={"PATH": directory, variable: "\n".join(listing)},
+                            capture_output=True, text=True,
+                        )
+                        self.assertEqual(result.returncode == 0, accepted, result.stderr)
+                        self.assertNotIn("command not found", result.stderr)
+
     def test_canonical_applications_execute_linked_qualifications_explicitly(self):
         block = job_block(FULL, "canonical-applications")
         self.assertIn("RUSTUP_TOOLCHAIN: nightly-2026-03-03", block)
@@ -231,7 +285,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             "applications", "tail_control", "native_artifact_lowering",
             "native_artifact_i64_lowering", "native_artifact_f64_lowering", "native_artifact_output_initializers",
             "canonical_artifact_native", "canonical_artifact_i64", "canonical_artifact_f64",
-            "canonical_cli_bytes",
+            "canonical_cli_bytes", "canonical_cli_argument_count",
         ):
             self.assertIn(f"--test {target}", block)
         self.assertIn("--lib resident::native_semantics::tests", block)
@@ -242,7 +296,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("-p mech-build", cli_step)
         self.assertIn("--no-default-features --features standard-hosts", cli_step)
         for target in (
-            "canonical_cli_bytes", "canonical_resource_execution",
+            "canonical_cli_bytes", "canonical_cli_argument_count", "canonical_resource_execution",
             "canonical_resource_planning", "canonical_map_features",
             "canonical_pure_text_features",
         ):
@@ -1158,6 +1212,7 @@ class FullWorkflowContractTests(unittest.TestCase):
                 self.assertIn("--shard-index ${{ matrix.shard }}", block)
                 self.assertIn("scripts/tests/test_check_memory_runtime.py", block)
                 self.assertIn("scripts/tests/test_check_native_host_catalog.py", block)
+                self.assertIn("scripts/tests/test_check_production_resident_routing.py", block)
                 self.assertIn(checkout, block)
                 self.assertNotIn("continue-on-error", block)
 

@@ -8,9 +8,9 @@ use std::{
 use mech_core::{
     AccessMode, DeliveryMode, DimensionExpr, EffectContract, EffectDeliveryPolicy,
     ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, IntegerWidth,
-    MResult, MechError, MechErrorKind, OperationContractDeclaration, Schema, SchemaBody, Value,
-    ValueCell, ValueData,
-    snapshot::{SequenceView, ValueDataDraft},
+    MResult, MechError, MechErrorKind, OperationContractDeclaration, Schema, SchemaBody,
+    SchemaDraft, SchemaTableBuilder, Value, ValueCell, ValueData,
+    snapshot::{SequenceView, SnapshotValidationContext, ValueDataDraft, ValueDraft},
 };
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, ResourceSchemaPreflight,
@@ -45,6 +45,15 @@ pub trait CliBackend: std::fmt::Debug {
         Err(cli_error(
             "cli://args".to_string(),
             "command-line arguments are unavailable from this CLI backend",
+        ))
+    }
+    /// Return the length of the same immutable payload-only snapshot used by
+    /// `argument`. Backends without an explicit payload boundary leave this
+    /// unavailable instead of counting executable or launcher arguments.
+    fn argument_count(&self) -> MResult<u64> {
+        Err(cli_error(
+            "cli://args".to_string(),
+            "payload argument count is unavailable from this CLI backend",
         ))
     }
     /// Read exact Unicode text through EOF. Providers retain the first result,
@@ -98,6 +107,15 @@ impl<B> ArgumentSnapshotCliBackend<B> {
 }
 
 impl<B: CliBackend> CliBackend for ArgumentSnapshotCliBackend<B> {
+    fn argument_count(&self) -> MResult<u64> {
+        u64::try_from(self.arguments.len()).map_err(|_| {
+            cli_error(
+                "cli://args".to_string(),
+                "payload argument count exceeds u64",
+            )
+        })
+    }
+
     fn argument(&self, index: usize) -> MResult<Option<OsString>> {
         Ok(index
             .checked_sub(1)
@@ -360,6 +378,15 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                 })?;
             RuntimeHostInputValue::String(value).into_value()
         } else if self.matches_base(&request.base_uri, "args") {
+            if request.path == "count" {
+                validate_argument_count_read(&request)?;
+                let count = self
+                    .backend
+                    .lock()
+                    .map_err(|_| cli_error(request.base_uri.clone(), "CLI backend lock poisoned"))?
+                    .argument_count()?;
+                return argument_count_value(count);
+            }
             let index = argument_index(&request.path)?;
             let argument = self
                 .backend
@@ -453,6 +480,12 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
             return RuntimeHostInputValue::String(String::new()).into_value();
         }
         if self.matches_base(&request.base_uri, "args") {
+            if request.path == "count" {
+                validate_argument_count_read(&request)?;
+                // This is only a typed planning value. It neither observes
+                // the payload vector nor establishes its actual cardinality.
+                return argument_count_value(0);
+            }
             argument_index(&request.path)?;
             return RuntimeHostInputValue::String(String::new()).into_value();
         }
@@ -571,6 +604,35 @@ impl CliOutputPayload {
             Self::Bytes(bytes) => bytes.len(),
         }
     }
+}
+
+fn argument_count_value(count: u64) -> MResult<Value> {
+    // This canonical scalar snapshot is independent of the legacy boxed-u64
+    // feature. The standard distribution must not grow its feature closure
+    // merely to expose fixed-size typed resource metadata.
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder.insert(
+        SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::UnsignedInteger(IntegerWidth::W64),
+        }
+        .finalize()?,
+    )?;
+    let built = builder.finish()?;
+    let schema = built.resolve(handle)?;
+    let (schemas, _) = built.into_parts();
+    ValueDraft {
+        schema,
+        shape_values: Box::new([]),
+        data: ValueDataDraft::U64(count),
+    }
+    .finalize(&SnapshotValidationContext::new(&schemas))
+    .map_err(|error| {
+        cli_error(
+            "cli://args".into(),
+            format!("invalid argument count snapshot: {error:?}"),
+        )
+    })
 }
 
 fn byte_row_value(bytes: &[u8], resource: &str) -> MResult<Value> {
@@ -720,6 +782,16 @@ impl<B: CliBackend> RuntimeAfterCommitEffect for CliOutputEffect<B> {
             }
         }
     }
+}
+
+fn validate_argument_count_read(request: &RuntimeResourceReadRequest) -> MResult<()> {
+    if request.context_name != "args" {
+        return Err(cli_error(
+            request.base_uri.clone(),
+            "argument count reads require context `args` and exactly the `count` path",
+        ));
+    }
+    Ok(())
 }
 
 fn argument_index(path: &str) -> MResult<usize> {
