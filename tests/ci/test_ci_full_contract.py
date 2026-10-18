@@ -226,6 +226,7 @@ class FullWorkflowContractTests(unittest.TestCase):
     def test_source_cli_payload_parser_selection_is_nonempty_and_executed(self):
         step = next(step for step in job_steps(FULL, "cargo-runtime")
                     if "Run CLI host and context-send regression coverage" in step)
+        self.assertIn("cargo +nightly-2026-03-03 test --locked -p mech-terminal --features provider --test provider --test provider_argument_count", step)
         self.assertIn("--test mech_cli_host", step)
         self.assertIn("PAYLOAD_TESTS=$(cargo +nightly-2026-03-03 test --locked --lib", step)
         self.assertIn("^cli::app::tests::payload_arguments::.*: test$", step)

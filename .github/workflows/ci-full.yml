@@ -2088,7 +2088,7 @@ jobs:
         run: |
           cargo test -p mech-syntax --all-features \
             --lib document::parser::canonical::tests::canonical_declaration_
-          cargo test -p mech-terminal --features provider --test provider
+          cargo +nightly-2026-03-03 test --locked -p mech-terminal --features provider --test provider --test provider_argument_count
           cargo test -p mech-console
           cargo test -p mech-browser
           cargo test -p mech-browser --features provider
