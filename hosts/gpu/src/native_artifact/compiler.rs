@@ -64,10 +64,14 @@ impl std::fmt::Display for NativeCompileError {
     }
 }
 impl std::error::Error for NativeCompileError {}
-fn backend(error: impl std::fmt::Display) -> NativeCompileError {
+pub(super) fn backend(error: impl std::fmt::Display) -> NativeCompileError {
     NativeCompileError::Backend(error.to_string())
 }
-fn limit(dimension: &'static str, required: u64, maximum: u64) -> Result<(), NativeCompileError> {
+pub(super) fn limit(
+    dimension: &'static str,
+    required: u64,
+    maximum: u64,
+) -> Result<(), NativeCompileError> {
     if required > maximum {
         Err(NativeCompileError::Limit {
             dimension,
@@ -78,7 +82,7 @@ fn limit(dimension: &'static str, required: u64, maximum: u64) -> Result<(), Nat
         Ok(())
     }
 }
-fn host_supported() -> Result<(), NativeCompileError> {
+pub(super) fn host_supported() -> Result<(), NativeCompileError> {
     if !cfg!(all(
         target_pointer_width = "64",
         any(target_arch = "x86_64", target_arch = "aarch64")
@@ -307,7 +311,7 @@ impl Sources {
             .load(types::I64, MemFlags::new(), base, offset(index)?))
     }
 }
-fn offset(index: usize) -> Result<i32, NativeCompileError> {
+pub(super) fn offset(index: usize) -> Result<i32, NativeCompileError> {
     index
         .checked_mul(8)
         .and_then(|v| i32::try_from(v).ok())
@@ -316,17 +320,17 @@ fn offset(index: usize) -> Result<i32, NativeCompileError> {
             reason: "transport offset exceeds ABI",
         })
 }
-fn guard(b: &mut FunctionBuilder<'_>, valid: Value, error: Block, status: u64) {
+pub(super) fn guard(b: &mut FunctionBuilder<'_>, valid: Value, error: Block, status: u64) {
     let good = b.create_block();
     let status = b.ins().iconst(types::I64, status as i64);
     b.ins().brif(valid, good, &[], error, &[status.into()]);
     b.switch_to_block(good);
 }
-fn frame_load(b: &mut FunctionBuilder<'_>, frame: Value, offset: usize) -> Value {
+pub(super) fn frame_load(b: &mut FunctionBuilder<'_>, frame: Value, offset: usize) -> Value {
     b.ins()
         .load(types::I64, MemFlags::new(), frame, offset as i32)
 }
-fn set_origin(b: &mut FunctionBuilder<'_>, frame: Value, node: u64) {
+pub(super) fn set_origin(b: &mut FunctionBuilder<'_>, frame: Value, node: u64) {
     let word = b.ins().iconst(types::I64, node as i64);
     b.ins().store(
         MemFlags::new(),
@@ -335,7 +339,7 @@ fn set_origin(b: &mut FunctionBuilder<'_>, frame: Value, node: u64) {
         core::mem::offset_of!(NativeEntryFrame, error_node) as i32,
     );
 }
-fn admit(
+pub(super) fn admit(
     b: &mut FunctionBuilder<'_>,
     sig: cranelift_codegen::ir::SigRef,
     callback: Value,
@@ -349,7 +353,7 @@ fn admit(
     let valid = b.ins().icmp_imm(IntCC::Equal, status, STATUS_OK as i64);
     guard(b, valid, error, STATUS_ADMISSION);
 }
-fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKind) {
+pub(super) fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKind) {
     use NativeScalarKind::{Bool, F64, I64, U64};
     use NativeScalarOp::*;
     match op {
@@ -371,7 +375,7 @@ fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKi
         BoolAnd | BoolOr | BoolXor | BoolEq | BoolNe => (&[Bool, Bool], Bool),
     }
 }
-fn primitive(
+pub(super) fn primitive(
     b: &mut FunctionBuilder<'_>,
     op: NativeScalarOp,
     args: &[Value],
@@ -812,7 +816,7 @@ fn define<M: Module>(
     Ok((entry_id, descriptor))
 }
 
-fn compiled_stack_bytes(
+pub(super) fn compiled_stack_bytes(
     buffer: &cranelift_codegen::MachBufferFinalized<cranelift_codegen::Final>,
 ) -> Result<u64, NativeCompileError> {
     let layout = buffer

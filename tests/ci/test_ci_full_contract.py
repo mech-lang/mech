@@ -219,6 +219,94 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn(f"'{family}'", collision.splitlines()[0])
         self.assertIn("- native-cli-collision", job_block(FULL, "cargo"))
 
+    def test_canonical_iteration_lowering_and_current_visit_proof_are_selected(self):
+        steps = job_steps(FULL, "canonical-applications")
+        contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)
+        self.assertRegex(contracts, r"--test\s+native_artifact_iteration_lowering(?:\s|$)")
+        self.assertRegex(contracts, r"--test\s+canonical_artifact_iteration(?:\s|$)")
+        self.assertIn("--lib resident::general::native_match_lowering::iteration_proof_tests", contracts)
+        self.assertIn("--features full_compiler,native-artifact", contracts)
+
+    def test_collection_factory_and_exact_template_contracts_are_executed(self):
+        steps = job_steps(FULL, "canonical-applications")
+        contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)
+        self.assertRegex(contracts, r"--test\s+resident_factory_lowering_attachment(?:\s|$)")
+        self.assertRegex(contracts, r"--test\s+native_collection_templates(?:\s|$)")
+        self.assertIn("--lib resident::general::native_collection_templates::tests", contracts)
+
+    def test_shared_snapshot_ownership_regression_is_nonempty_and_executed(self):
+        step = next(step for step in job_steps(FULL, "managed-memory-runtime")
+                    if "Execute bounded shared snapshot ownership regression" in step)
+        name = "snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports"
+        self.assertEqual(step.count(name), 3)
+        self.assertIn("-- --list --exact", step)
+        self.assertIn("-- --exact --test-threads=1", step)
+        self.assertIn(f"^{name}: test$", step)
+        self.assertIn('" -eq 1', step)
+        self.assertNotIn("--no-run", step)
+
+    def test_generated_mixed_program_execution_and_runtime_only_profile_are_selected(self):
+        contracts = next(step for step in job_steps(FULL, "canonical-applications")
+                         if "Execute canonical native lowering and selected implementation witnesses" in step)
+        commands = contracts.replace("\\\n", " ")
+        self.assertRegex(commands, r"--features canonical-native-program\s+--test canonical_artifact_program\s+-- --test-threads=1")
+        self.assertIn("--features canonical-native-program-runtime --lib", commands)
+        self.assertRegex(commands, r"--features canonical-native-program\s+--lib native_artifact::program_runtime::tests\s+-- --test-threads=1")
+        manifest = (ROOT / "hosts/gpu/Cargo.toml").read_text()
+        self.assertRegex(manifest, r'name = "canonical_artifact_program"\s+required-features = \["canonical-native-program"\]')
+        self.assertNotIn("--no-run", contracts)
+        self.assertIn("--features functions", contracts)
+        self.assertIn("--features full_compiler,native-artifact", contracts)
+        self.assertNotIn("--no-run", contracts)
+
+    def test_canonical_iteration_has_nonempty_exact_linked_qualification(self):
+        steps = job_steps(FULL, "canonical-linked-applications")
+        selection = next(step for step in steps if "Verify linked canonical iteration selection is nonempty" in step)
+        execute = next(step for step in steps if "Qualify linked canonical iteration application" in step)
+        name = "linked_qualification::one_linked_iteration_executable_preserves_exact_typed_loops_and_denials"
+        self.assertIn("--list --ignored --exact", selection)
+        self.assertIn(name + ": test$", selection)
+        self.assertIn("--test canonical_artifact_iteration", execute)
+        evidence = "${{ runner.temp }}/canonical-iteration-evidence"
+        self.assertIn(f"MECH_CANONICAL_ITERATION_EVIDENCE_DIR: {evidence}", execute)
+        upload = next(step for step in steps if "Retain linked application evidence" in step)
+        self.assertIn("if: ${{ always() }}", upload)
+        self.assertIn(evidence, upload)
+        self.assertIn("--ignored --exact", execute)
+        self.assertIn(name, execute)
+        self.assertIn("MECH_CANONICAL_ITERATION_SOURCE_COMMIT", execute)
+        self.assertIn("MECH_CANONICAL_ITERATION_EVIDENCE_DIR", execute)
+
+    def test_canonical_match_executes_contracts_and_nonempty_linked_qualification(self):
+        steps = job_steps(FULL, "canonical-applications")
+        contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)
+        self.assertRegex(contracts, r"--test\s+native_artifact_match_lowering(?:\s|$)")
+        self.assertRegex(contracts, r"--test\s+canonical_artifact_match(?:\s|$)")
+        self.assertIn("--features full_compiler,native-artifact", contracts)
+        self.assertIn("--features canonical-native", contracts)
+        self.assertIn("--features canonical-native-runtime --lib", contracts)
+        self.assertNotIn("--ignored", contracts)
+        block = job_block(FULL, "canonical-linked-applications")
+        steps = job_steps(FULL, "canonical-linked-applications")
+        selected = "linked_canonical_match_applications_are_lazy_bounded_and_atomic"
+        listing = next(step for step in steps if "Verify linked canonical Match selection is nonempty" in step)
+        execution = next(step for step in steps if "Qualify linked canonical Match applications" in step)
+        self.assertIn("set -euo pipefail", listing)
+        self.assertIn("--list --ignored --exact", listing)
+        self.assertIn(f"^{selected}: test$", listing)
+        self.assertIn("-eq 1", listing)
+        self.assertIn("--test canonical_artifact_match_application -- --ignored --exact", execution)
+        self.assertIn(selected, execution)
+        self.assertIn("--test-threads=1", execution)
+        self.assertNotIn("--list", execution)
+        self.assertIn("MECH_CANONICAL_MATCH_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", execution)
+        self.assertIn("MECH_CANONICAL_MATCH_EVIDENCE_DIR: ${{ runner.temp }}/canonical-match-evidence", execution)
+        self.assertIn("${{ runner.temp }}/canonical-match-evidence", block)
+        self.assertLess(block.index(listing), block.index(execution))
+        for step in (contracts, listing, execution):
+            self.assertNotIn("continue-on-error", step)
+            self.assertNotIn("if:", step)
+
     def test_canonical_casts_execute_both_contract_targets_and_real_linked_qualification(self):
         steps = job_steps(FULL, "canonical-applications")
         contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)

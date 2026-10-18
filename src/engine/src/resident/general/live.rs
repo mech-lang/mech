@@ -20,6 +20,16 @@ pub(super) fn footprint(
     _schemas: &mech_core::SchemaTable,
     work: &mut ResourceDemand,
 ) -> Result<CurrentMemoryFootprint, MemoryPlanError> {
+    footprint_with_check(value, descriptor, _schemas, work, &mut check_measurement)
+}
+
+pub(super) fn footprint_with_check(
+    value: ResidentValueRef<'_>,
+    descriptor: &mech_core::ResolvedValueDescriptor,
+    _schemas: &mech_core::SchemaTable,
+    work: &mut ResourceDemand,
+    check: &mut impl FnMut(CurrentMemoryFootprint, ResourceDemand) -> Result<(), MemoryPlanError>,
+) -> Result<CurrentMemoryFootprint, MemoryPlanError> {
     let mut result = CurrentMemoryFootprint {
         logical_elements: value.len() as u64,
         schema_bytes: descriptor.schema().canonical_bytes().len() as u64,
@@ -34,7 +44,7 @@ pub(super) fn footprint(
                 result.retained_nodes = add(result.retained_nodes, 1)?;
                 // Reading a length is O(1), not a scan of the string contents.
                 work.work.compute = add(work.work.compute, 1)?;
-                check_measurement(result, *work)?;
+                check(result, *work)?;
             }
         }
         ResidentValueRef::Snapshot(values) => {
@@ -50,7 +60,7 @@ pub(super) fn footprint(
                     .entry(value.schema())
                     .ok_or(MemoryPlanError::DescriptorMismatch)?;
                 work.work.compute = add(work.work.compute, entry.canonical_bytes().len() as u64)?;
-                check_measurement(result, *work)?;
+                check(result, *work)?;
                 let schema = value
                     .validate_against(&owner)
                     .map_err(|_| MemoryPlanError::DescriptorMismatch)?;
@@ -75,7 +85,7 @@ pub(super) fn footprint(
                         result.encoded_bytes = add(result.encoded_bytes, chunk.encoded_bytes)?;
                         result.retained_nodes = add(result.retained_nodes, chunk.node_count)?;
                         work.work.compute = add(work.work.compute, chunk.node_count.max(1))?;
-                        check_measurement(result, *work)
+                        check(result, *work)
                     },
                 )
                 .map_err(|error| match error {
@@ -107,7 +117,7 @@ pub(super) fn footprint(
                 .ok_or(MemoryPlanError::TargetAddressOverflow)?
         }
     }
-    check_measurement(result, *work)?;
+    check(result, *work)?;
     Ok(result)
 }
 
@@ -116,6 +126,14 @@ fn check_measurement(
     work: ResourceDemand,
 ) -> Result<(), MemoryPlanError> {
     let target = TargetMemoryProfile::current_resident_cpu()?;
+    check_measurement_with_limits(f, work, target.limits)
+}
+
+pub(super) fn check_measurement_with_limits(
+    f: CurrentMemoryFootprint,
+    work: ResourceDemand,
+    limits: mech_core::MemoryBudgetLimits,
+) -> Result<(), MemoryPlanError> {
     // Inspecting an input or the old publication produces no new output.
     // Keep call-scoped traversal/retention guards here; facts() carries the
     // complete measured storage into memory planning's coexistence and candidate admission.
@@ -134,7 +152,7 @@ fn check_measurement(
         demand,
         0,
         0,
-        target.limits,
+        limits,
     )
     .first()
     {
@@ -154,12 +172,28 @@ pub(super) fn facts(
     published: ResidentValueRef<'_>,
     schemas: &mech_core::SchemaTable,
 ) -> Result<TurnMemoryFacts, MemoryPlanError> {
+    facts_with(call, node, inputs, published, schemas, footprint)
+}
+
+pub(super) fn facts_with(
+    call: &CallMemoryPlan,
+    node: NodeId,
+    inputs: &[ResidentValueRef<'_>],
+    published: ResidentValueRef<'_>,
+    schemas: &mech_core::SchemaTable,
+    mut measure: impl FnMut(
+        ResidentValueRef<'_>,
+        &mech_core::ResolvedValueDescriptor,
+        &mech_core::SchemaTable,
+        &mut ResourceDemand,
+    ) -> Result<CurrentMemoryFootprint, MemoryPlanError>,
+) -> Result<TurnMemoryFacts, MemoryPlanError> {
     if inputs.len() != call.inputs.len() || call.outputs.len() != 1 {
         return Err(MemoryPlanError::DescriptorArityMismatch);
     }
     let mut facts = TurnMemoryFacts::default();
     for (ordinal, (value, port)) in inputs.iter().zip(&call.inputs).enumerate() {
-        let f = footprint(
+        let f = measure(
             *value,
             &port.descriptor,
             schemas,
@@ -169,7 +203,7 @@ pub(super) fn facts(
             .resolved_footprints
             .insert((node, PortDirection::Input, ordinal as u16), f);
     }
-    let current = footprint(
+    let current = measure(
         published,
         &call.outputs[0].descriptor,
         schemas,

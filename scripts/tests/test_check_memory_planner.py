@@ -418,11 +418,14 @@ class MemoryPlannerCheckerTests(unittest.TestCase):
 
     def test_35b_resident_synthetic_program_plan_fails(self):
         root = self.fixture()
+        admission = (
+            "pub(crate) fn admit_control(self) -> Result<AdmittedKernel<P>, ResidentKernelError> {"
+        )
         self.replace(
             root,
             "src/engine/src/resident/budget.rs",
-            "let _scope = ControlWorkScopeGuard::enter();",
-            "let _scope = ControlWorkScopeGuard::enter();\n        let _ = ProgramMemoryPlan { values: Box::new([]) };",
+            admission,
+            admission + "\n        let _ = ProgramMemoryPlan { values: Box::new([]) };",
         )
         self.assert_failure(root, "control admission manufactures a synthetic memory plan")
 

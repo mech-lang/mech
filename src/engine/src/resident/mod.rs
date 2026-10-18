@@ -17,6 +17,11 @@ mod kernel;
 pub(crate) mod map_ops;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod matrix_literal;
+#[cfg(all(
+    feature = "resident-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(crate) mod native_collection_semantics;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod native_semantics;
 #[cfg(feature = "resident-artifact")]
@@ -66,5 +71,12 @@ pub use general::{
     ResidentActivationPreflight, ResidentStructuralProbe, preflight_activation,
 };
 
+#[cfg(all(
+    test,
+    feature = "resident-artifact",
+    feature = "pure_text",
+    feature = "map_ops"
+))]
+mod canonical_text_tests;
 #[cfg(test)]
 mod tests;

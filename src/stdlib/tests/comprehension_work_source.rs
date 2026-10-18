@@ -361,7 +361,7 @@ fn mutated_concat_bind(
     let entry = catalog
         .resident_factory(&["string".into()], "concat")
         .unwrap();
-    let delegate = (entry.factory)(request)?;
+    let delegate = (entry.factory())(request)?;
     assert_eq!(
         delegate.work_accounting(),
         ResidentKernelWorkAccounting::RuntimeMetered
@@ -375,7 +375,7 @@ fn mutated_comparison_bind(
     REPLACEMENT_BINDS.fetch_add(1, Ordering::SeqCst);
     let catalog = mech_stdlib::source_catalog();
     let entry = catalog.resident_factory(&["compare".into()], "gt").unwrap();
-    let delegate = (entry.factory)(request)?;
+    let delegate = (entry.factory())(request)?;
     assert_eq!(
         delegate.work_accounting(),
         ResidentKernelWorkAccounting::RuntimeMetered
@@ -390,7 +390,7 @@ fn cloned_concat_bind(
     let entry = catalog
         .resident_factory(&["string".into()], "concat")
         .unwrap();
-    Ok((entry.factory)(request)?.clone())
+    Ok((entry.factory())(request)?.clone())
 }
 
 #[test]
@@ -441,8 +441,12 @@ fn replacement_catalog(
             .insert_resident_factory(
                 key.module_path.iter().cloned(),
                 key.operation_name.clone(),
-                entry.implementation_memory,
-                if replacement { factory } else { entry.factory },
+                entry.implementation_memory(),
+                if replacement {
+                    factory
+                } else {
+                    entry.factory()
+                },
             )
             .unwrap();
     }

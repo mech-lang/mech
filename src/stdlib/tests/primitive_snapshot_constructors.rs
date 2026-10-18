@@ -178,7 +178,7 @@ fn unclassified_bind(
     let maintained = catalog
         .resident_factory(&["matrix".to_owned()], "horzcat")
         .unwrap();
-    let genuine = (maintained.factory)(request)?;
+    let genuine = (maintained.factory())(request)?;
     assert_eq!(
         genuine.work_accounting(),
         ResidentKernelWorkAccounting::RuntimeMetered
@@ -222,11 +222,11 @@ fn same_name_unclassified_constructor_is_rejected_before_execution() {
             .insert_resident_factory(
                 key.module_path.iter().cloned(),
                 key.operation_name.clone(),
-                entry.implementation_memory,
+                entry.implementation_memory(),
                 if replace {
                     unclassified_bind
                 } else {
-                    entry.factory
+                    entry.factory()
                 },
             )
             .unwrap();

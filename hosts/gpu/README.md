@@ -129,3 +129,12 @@ are documented in
 [`examples/function-application-prototype`](../../examples/function-application-prototype/README.md).
 Recorded workload timings, compiler snapshots and optimization ledgers remain
 in the benchmark repository.
+
+That source-native route is legacy: it still uses independent source lowering
+and is not the completed canonical AOT route. The checked canonical artifact
+APIs provide scalar/control and managed collection foundations, including
+generated mixed execution, but production CLI integration and full-workload
+benchmark qualification remain unfinished. This divergence is an unresolved
+migration, not a supported second semantic authority. See the single
+[`follow_up_roadmap`](../../docs/validation/checked-aot-workload-progress-v1.json)
+for the required canonical production/resource integration and qualification.

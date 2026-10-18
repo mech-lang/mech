@@ -334,6 +334,30 @@ struct ComprehensionLiveLocalFootprint {
     footprint: ValueFootprint,
 }
 
+fn exclude_repeated_local_footprint(
+    total: ValueFootprint,
+    excluded: ValueFootprint,
+    occurrences: u64,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    let excluded = excluded
+        .checked_multiply(occurrences)
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    Ok(ValueFootprint {
+        encoded_bytes: total
+            .encoded_bytes
+            .checked_sub(excluded.encoded_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        retained_bytes: total
+            .retained_bytes
+            .checked_sub(excluded.retained_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        node_count: total
+            .node_count
+            .checked_sub(excluded.node_count)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    })
+}
+
 #[derive(Clone, Copy)]
 pub(in crate::resident::general) enum Item {
     Bool(bool),
@@ -563,6 +587,7 @@ fn canonical_key_sift_down(
     values: &mut [ValueData],
     mut root: usize,
     end: usize,
+    work: &mut StringSetComparisonReservation,
 ) -> Result<(), ResidentKernelError> {
     loop {
         let Some(mut child) = root.checked_mul(2).and_then(|root| root.checked_add(1)) else {
@@ -572,14 +597,14 @@ fn canonical_key_sift_down(
             return Ok(());
         }
         if child + 1 < end
-            && mech_core::snapshot::compare_key_data(element, &values[child], &values[child + 1])
-                .map_err(|_| ResidentKernelError::InvalidInput)?
+            && work
+                .compare(element, &values[child], &values[child + 1])?
                 .is_lt()
         {
             child += 1;
         }
-        if !mech_core::snapshot::compare_key_data(element, &values[root], &values[child])
-            .map_err(|_| ResidentKernelError::InvalidInput)?
+        if !work
+            .compare(element, &values[root], &values[child])?
             .is_lt()
         {
             return Ok(());
@@ -589,13 +614,60 @@ fn canonical_key_sift_down(
     }
 }
 
+fn string_set_comparison_bound(values: &[ValueDataDraft]) -> Result<u64, ResidentKernelError> {
+    let count = values.len();
+    if count < 2 {
+        return Ok(0);
+    }
+    let key_work = values.iter().try_fold(1u64, |largest, value| {
+        let ValueDataDraft::String(value) = value else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        Ok(largest.max(budget::checked_u64(value.len())?))
+    })?;
+    // Heap height h=floor(log2 n). Building visits at most n/2 roots and
+    // extraction at most n roots, each with at most 2h key comparisons.
+    // Deduplication and the core's sorted-key append finalizer each use at
+    // most n-1 further comparisons. 3n(h+1) conservatively covers their sum.
+    budget::checked_u64(count)?
+        .checked_mul(3 * (u64::from(count.ilog2()) + 1))
+        .and_then(|work| work.checked_mul(key_work))
+        .ok_or(ResidentKernelError::InvalidShape)
+}
+
+struct StringSetComparisonReservation {
+    remaining: u64,
+}
+
+impl StringSetComparisonReservation {
+    fn compare(
+        &mut self,
+        element: &SchemaBody,
+        left: &ValueData,
+        right: &ValueData,
+    ) -> Result<core::cmp::Ordering, ResidentKernelError> {
+        let (ValueData::String(left_text), ValueData::String(right_text)) = (left, right) else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        let work = budget::checked_u64(left_text.len().max(right_text.len()).max(1))?;
+        self.remaining = self
+            .remaining
+            .checked_sub(work)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        mech_core::snapshot::compare_key_data(element, left, right)
+            .map_err(|_| ResidentKernelError::InvalidInput)
+    }
+}
+
 /// Called only after admitting normalization storage and work. Heapsort has a
 /// bounded number of comparisons without allocating comparator-owned Strings;
 /// ordering and key identity still come from the core canonical key relation.
 fn normalize_string_collection_set(
     element: &SchemaBody,
     values: &mut Vec<ValueDataDraft>,
-) -> Result<(), ResidentKernelError> {
+) -> Result<u64, ResidentKernelError> {
+    let bound = string_set_comparison_bound(values)?;
+    let mut work = StringSetComparisonReservation { remaining: bound };
     let mut keys = Vec::new();
     keys.try_reserve_exact(values.len())
         .map_err(|_| ResidentKernelError::InvalidShape)?;
@@ -607,17 +679,17 @@ fn normalize_string_collection_set(
     }
     for start in (0..keys.len() / 2).rev() {
         let end = keys.len();
-        canonical_key_sift_down(element, &mut keys, start, end)?;
+        canonical_key_sift_down(element, &mut keys, start, end, &mut work)?;
     }
     for end in (1..keys.len()).rev() {
         keys.swap(0, end);
-        canonical_key_sift_down(element, &mut keys, 0, end)?;
+        canonical_key_sift_down(element, &mut keys, 0, end, &mut work)?;
     }
     let mut retained = 0;
     for next in 0..keys.len() {
         if retained == 0
-            || !mech_core::snapshot::compare_key_data(element, &keys[retained - 1], &keys[next])
-                .map_err(|_| ResidentKernelError::InvalidInput)?
+            || !work
+                .compare(element, &keys[retained - 1], &keys[next])?
                 .is_eq()
         {
             keys.swap(retained, next);
@@ -631,13 +703,15 @@ fn normalize_string_collection_set(
         };
         values.push(ValueDataDraft::String(value.into_string()));
     }
-    Ok(())
+    bound
+        .checked_sub(work.remaining)
+        .ok_or(ResidentKernelError::InvalidShape)
 }
 
 pub(in crate::resident::general) fn normalize_collection_set(
     element: &SchemaBody,
     values: &mut Vec<ValueDataDraft>,
-) -> Result<(), ResidentKernelError> {
+) -> Result<u64, ResidentKernelError> {
     if !collection_set_element_supported(element) {
         return Err(ResidentKernelError::InvalidInput);
     }
@@ -663,7 +737,7 @@ pub(in crate::resident::general) fn normalize_collection_set(
     };
     values.sort_unstable_by(compare);
     values.dedup_by(|left, right| compare(left, right).is_eq());
-    Ok(())
+    Ok(0)
 }
 
 fn closed_yield_body(
@@ -1028,6 +1102,7 @@ struct StructuralProjectionEntry {
     tuple_children: Box<[Option<SchemaId>]>,
     matrix_element: Option<SchemaId>,
     matrix_rest: Option<SchemaId>,
+    borrowed_footprint: Option<budget::BorrowedFootprintSchemaProof>,
 }
 
 impl StructuralProjectionTable {
@@ -1054,7 +1129,7 @@ impl StructuralProjectionTable {
                         .copied()
                         .ok_or(SemanticModelError::InvalidSchemaHandleV1)
                 };
-                Ok(match parent.body() {
+                let mut projection = match parent.body() {
                     SchemaBody::Tuple(children) => StructuralProjectionEntry {
                         tuple_children: children
                             .iter()
@@ -1086,7 +1161,10 @@ impl StructuralProjectionTable {
                         ..StructuralProjectionEntry::default()
                     },
                     _ => StructuralProjectionEntry::default(),
-                })
+                };
+                projection.borrowed_footprint =
+                    budget::shallow_borrowed_footprint_schema_proof(parent);
+                Ok(projection)
             })
             .collect::<Result<Vec<_>, SemanticModelError>>()?
             .into_boxed_slice();
@@ -1111,6 +1189,13 @@ impl StructuralProjectionTable {
 
     fn matrix_rest(&self, parent: SchemaId) -> Option<SchemaId> {
         self.entries.get(parent.get() as usize)?.matrix_rest
+    }
+
+    fn borrowed_footprint_proof(
+        &self,
+        schema: SchemaId,
+    ) -> Option<budget::BorrowedFootprintSchemaProof> {
+        self.entries.get(schema.get() as usize)?.borrowed_footprint
     }
 
     fn retained_footprint(&self) -> Option<(u64, u64)> {
@@ -5511,6 +5596,19 @@ pub(in crate::resident::general) fn collection_canonicalization_work(
         .ok_or(ResidentKernelError::InvalidShape)
 }
 
+fn collection_canonicalization_comparison_work(
+    kind: crate::ComprehensionKind,
+    values: &[ValueDataDraft],
+) -> Result<u64, ResidentKernelError> {
+    if kind == crate::ComprehensionKind::Set
+        && matches!(values.first(), Some(ValueDataDraft::String(_)))
+    {
+        string_set_comparison_bound(values)
+    } else {
+        collection_canonicalization_work(kind, values)
+    }
+}
+
 fn measure_owned_canonical_value_footprint(
     meter: &mut ResidentBudgetMeter,
     value: &mech_core::snapshot::Value,
@@ -5532,6 +5630,7 @@ impl ReactiveInstance {
         value: ResidentValueRef<'_>,
         schemas: &mech_core::SchemaTable,
         meter: &mut ResidentBudgetMeter,
+        projections: &StructuralProjectionTable,
     ) -> Result<ValueFootprint, ResidentKernelError> {
         let mut footprint = ValueFootprint::zero();
         match value {
@@ -5550,8 +5649,18 @@ impl ReactiveInstance {
             ResidentValueRef::Snapshot(values) => {
                 for value in values.iter().flatten() {
                     let mut local_meter = ResidentBudgetMeter::default();
-                    let local =
-                        measure_owned_canonical_value_footprint(&mut local_meter, value, schemas)?;
+                    // Cache only immutable schema-support evidence, never a
+                    // concrete payload footprint or a content-token result.
+                    // The budget helper rechecks the exact semantic key against
+                    // the current owner before reusing this private proof.
+                    let owner = value.schemas();
+                    let mut proof = projections.borrowed_footprint_proof(value.schema());
+                    let local = budget::measure_borrowed_canonical_value_footprint_with_proof(
+                        &mut local_meter,
+                        value,
+                        owner.as_deref().unwrap_or(schemas),
+                        &mut proof,
+                    )?;
                     meter.charge_compute_work(
                         local_meter
                             .estimate()
@@ -5583,6 +5692,7 @@ impl ReactiveInstance {
                     self.workspace.scratch.read(local),
                     schemas,
                     meter,
+                    &self.plan.structural_projections,
                 )?)
                 .map_err(|_| ResidentKernelError::InvalidShape)?;
         }
@@ -6244,8 +6354,8 @@ impl ReactiveInstance {
             let value = self
                 .read_location(location, working)
                 .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
-            let input =
-                Self::resident_value_footprint(value, &schemas, &mut meter).map_err(fail)?;
+            let input = Self::resident_value_footprint(value, &schemas, &mut meter, &projections)
+                .map_err(fail)?;
             captured_total = captured_total
                 .checked_add(input)
                 .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
@@ -6302,13 +6412,13 @@ impl ReactiveInstance {
         if control.kind == crate::ComprehensionKind::Set
             && matches!(values.first(), Some(ValueDataDraft::String(_)))
         {
-            // Two metadata-only passes determine comparison work and the
+            // Three metadata-only passes determine comparison work and the
             // sidecar/shrink storage before either can be allocated.
             meter
                 .charge_compute_work(
                     budget::checked_u64(draft_count)
                         .map_err(fail)?
-                        .checked_mul(2)
+                        .checked_mul(3)
                         .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
                 )
                 .map_err(fail)?;
@@ -6318,9 +6428,13 @@ impl ReactiveInstance {
         }
         let canonical_work =
             collection_canonicalization_work(control.kind, &values).map_err(fail)?;
+        let canonical_comparison_work =
+            collection_canonicalization_comparison_work(control.kind, &values).map_err(fail)?;
         if control.kind == crate::ComprehensionKind::Set {
             meter.charge_compute_work(canonical_work).map_err(fail)?;
-            meter.charge_comparison_work(canonical_work).map_err(fail)?;
+            meter
+                .charge_comparison_work(canonical_comparison_work)
+                .map_err(fail)?;
         }
         let schema = schemas
             .get(control.output_schema)
@@ -6340,6 +6454,7 @@ impl ReactiveInstance {
         .map_err(fail)?;
         admit_generator_schema_workspace(shape_workspace, live_bytes, live_nodes, &mut meter)
             .map_err(fail)?;
+        let mut normalization_comparison_work = 0;
         let (count, footprint, shape_values, data) = match control.kind {
             crate::ComprehensionKind::Matrix | crate::ComprehensionKind::MatrixPreserveShape => {
                 let mech_core::SchemaBody::Matrix { .. } = schema.body() else {
@@ -6487,7 +6602,8 @@ impl ReactiveInstance {
                 };
                 // The core key relation owns float normalization and set identity.
                 // Admission above covers sorting and finalization before either runs.
-                normalize_collection_set(element, &mut values).map_err(fail)?;
+                normalization_comparison_work =
+                    normalize_collection_set(element, &mut values).map_err(fail)?;
                 let footprint = values
                     .iter()
                     .try_fold(ValueFootprint::zero(), |total, value| {
@@ -6556,7 +6672,15 @@ impl ReactiveInstance {
         .map_err(fail)?;
         let finalization_work = nested_finalization_work
             .checked_add(if control.kind == crate::ComprehensionKind::Set {
-                canonical_work
+                if matches!(schema.body(), SchemaBody::Set { element, .. } if matches!(element.as_ref(), SchemaBody::String)) {
+                    // Normalization consumed part of the same pre-admitted
+                    // comparison reservation. Core finalization may use only
+                    // its remainder, not an independent second allowance.
+                    canonical_comparison_work.checked_sub(normalization_comparison_work)
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?
+                } else {
+                    canonical_work
+                }
             } else {
                 0
             })
@@ -6859,14 +6983,24 @@ impl ReactiveInstance {
                     ResidentValueRef::Snapshot(_) => ValueFootprint::zero(),
                     _ => return Err(fail(ResidentKernelError::InvalidOutput)),
                 };
-                let other_live_locals = self
-                    .comprehension_live_local_footprint(
-                        locals,
-                        Some(binding.region),
-                        schemas,
-                        meter,
-                    )
+                // No scratch write has occurred since measuring live_locals
+                // above. Exclude this exact region from that same measurement,
+                // rather than traversing every other immutable local again.
+                // Count all equal regions to preserve the previous filter's
+                // behavior even when arena placement shares a region identity.
+                meter
+                    .charge_compute_work(budget::checked_u64(locals.len()).map_err(fail)?)
                     .map_err(fail)?;
+                let occurrences = budget::checked_u64(
+                    locals
+                        .iter()
+                        .filter(|local| **local == binding.region)
+                        .count(),
+                )
+                .map_err(fail)?;
+                let other_live_locals =
+                    exclude_repeated_local_footprint(live_locals, previous_binding, occurrences)
+                        .map_err(fail)?;
                 admit_pattern_binding_finalization(
                     binding.schema,
                     &shape_values,
@@ -7940,7 +8074,21 @@ impl ReactiveInstance {
             .dimension_parameters()
             .len();
         let live_locals = self
-            .comprehension_live_local_footprint(&control.locals, None, schemas, meter)
+            // Earlier child admissions already measured the immutable lexical
+            // prefix for this exact generator invocation. Only the remaining
+            // suffix (including the last output) needs measurement at yield.
+            // Generator recursion copies this evidence and discards its suffix
+            // before the next item; no concrete footprint crosses iterations.
+            .incremental_comprehension_live_local_footprint(
+                &control.locals,
+                u32::try_from(control.locals.len())
+                    .map_err(|_| fail(ResidentKernelError::InvalidShape))?,
+                &[],
+                false,
+                &mut live_local,
+                schemas,
+                meter,
+            )
             .map_err(fail)?;
         let current_capacity = values.capacity();
         if next > current_capacity {
@@ -8110,6 +8258,46 @@ impl ReactiveInstance {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn local_footprint_exclusion_preserves_absent_duplicate_and_overflow_cases() {
+        let item = ValueFootprint {
+            encoded_bytes: 17,
+            retained_bytes: 29,
+            node_count: 3,
+        };
+        let total = item.checked_multiply(3).unwrap();
+        assert_eq!(
+            exclude_repeated_local_footprint(total, item, 0).unwrap(),
+            total
+        );
+        assert_eq!(
+            exclude_repeated_local_footprint(total, item, 2).unwrap(),
+            item
+        );
+        assert_eq!(
+            exclude_repeated_local_footprint(total, item, 3).unwrap(),
+            ValueFootprint::zero()
+        );
+        assert!(exclude_repeated_local_footprint(total, item, 4).is_err());
+        assert!(exclude_repeated_local_footprint(total, item, u64::MAX).is_err());
+        for incomplete in [
+            ValueFootprint {
+                encoded_bytes: 16,
+                ..item
+            },
+            ValueFootprint {
+                retained_bytes: 28,
+                ..item
+            },
+            ValueFootprint {
+                node_count: 2,
+                ..item
+            },
+        ] {
+            assert!(exclude_repeated_local_footprint(incomplete, item, 1).is_err());
+        }
+    }
     use mech_core::{
         CanonicalNominalPath, CardinalitySpec, DimensionExpr, DimensionLifetime,
         DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, FloatWidth,
@@ -11210,17 +11398,81 @@ mod tests {
 
     #[test]
     fn string_set_comparison_work_is_byte_aware_and_admitted_before_sorting() {
-        let short = vec![ValueDataDraft::String("x".to_owned())];
-        let long = vec![ValueDataDraft::String("x".repeat(1024))];
+        let short = vec![ValueDataDraft::String("x".to_owned()); 64];
+        let long = vec![ValueDataDraft::String("x".repeat(1024)); 64];
         let short_work =
-            collection_canonicalization_work(crate::ComprehensionKind::Set, &short).unwrap();
+            collection_canonicalization_comparison_work(crate::ComprehensionKind::Set, &short)
+                .unwrap();
         let long_work =
-            collection_canonicalization_work(crate::ComprehensionKind::Set, &long).unwrap();
+            collection_canonicalization_comparison_work(crate::ComprehensionKind::Set, &long)
+                .unwrap();
         assert_eq!(long_work, short_work * 1024);
         let mut meter = ResidentBudgetMeter::default();
         assert!(meter.charge_comparison_work(long_work).is_err());
-        assert_eq!(long.len(), 1);
+        assert_eq!(long.len(), 64);
         assert!(matches!(&long[0], ValueDataDraft::String(value) if value.len() == 1024));
+    }
+
+    #[test]
+    fn string_set_reservation_covers_normalization_and_core_finalization_together() {
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Set {
+                        element: Box::new(SchemaBody::String),
+                        cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let schema = built.resolve(handle).unwrap();
+        let prefixes = ["", "a", "a\0", "é", "e\u{301}", "🦀"];
+        for count in [0, 1, 2, 3, 4, 7, 8, 17, 64, 255] {
+            for rotation in 0..prefixes.len() {
+                let mut values = (0..count)
+                    .map(|index| {
+                        ValueDataDraft::String(format!(
+                            "{}{}",
+                            prefixes[(index + rotation) % prefixes.len()],
+                            "x".repeat(index % 13)
+                        ))
+                    })
+                    .collect::<Vec<_>>();
+                let bound = string_set_comparison_bound(&values).unwrap();
+                let used = normalize_collection_set(&SchemaBody::String, &mut values).unwrap();
+                assert!(used <= bound);
+                let budget = SnapshotCanonicalizationBudget::new(bound - used);
+                ValueDraft {
+                    schema,
+                    shape_values: Box::new([]),
+                    data: ValueDataDraft::Set(values.into_boxed_slice()),
+                }
+                .finalize(
+                    &SnapshotValidationContext::new(&built.table)
+                        .with_canonicalization_budget(&budget),
+                )
+                .unwrap();
+                assert!(used + budget.consumed() <= bound);
+            }
+        }
+    }
+
+    #[test]
+    fn string_set_comparison_reservation_has_an_exact_admission_boundary() {
+        let values = vec![ValueDataDraft::String("x".repeat(1024)); 2];
+        let work = string_set_comparison_bound(&values).unwrap();
+        let mut denied = ResidentBudgetMeter::for_closed_analysis(1_000_000, work - 1);
+        assert!(denied.charge_comparison_work(work).is_err());
+        let mut admitted = ResidentBudgetMeter::for_closed_analysis(1_000_000, work);
+        admitted.charge_comparison_work(work).unwrap();
+        assert_eq!(admitted.estimate().comparison_work(), work);
+        assert_eq!(string_set_comparison_bound(&[]).unwrap(), 0);
+        assert_eq!(string_set_comparison_bound(&values[..1]).unwrap(), 0);
     }
 
     #[test]

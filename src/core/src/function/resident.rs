@@ -789,9 +789,79 @@ impl ResidentOperationKey {
     }
 }
 
-#[derive(Clone, Debug)]
+/// One immutable selected implementation registration. A defining library may
+/// attach private typed lowering metadata; public semantic/cost replacements
+/// always invalidate that metadata, including same-value replacements.
+#[derive(Clone)]
 pub struct ResidentKernelFactoryEntry {
-    pub key: ResidentOperationKey,
-    pub implementation_memory: ImplementationMemoryClass,
-    pub factory: ResidentKernelFactory,
+    key: ResidentOperationKey,
+    implementation_memory: ImplementationMemoryClass,
+    factory: ResidentKernelFactory,
+    lowering_witness: Option<Arc<dyn Any + Send + Sync>>,
+}
+
+impl core::fmt::Debug for ResidentKernelFactoryEntry {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("ResidentKernelFactoryEntry")
+            .field("key", &self.key)
+            .field("implementation_memory", &self.implementation_memory)
+            .field("factory", &"<prebound>")
+            .field("lowering_witness", &self.lowering_witness.is_some())
+            .finish()
+    }
+}
+
+impl ResidentKernelFactoryEntry {
+    pub fn new(
+        key: ResidentOperationKey,
+        implementation_memory: ImplementationMemoryClass,
+        factory: ResidentKernelFactory,
+    ) -> Self {
+        Self {
+            key,
+            implementation_memory,
+            factory,
+            lowering_witness: None,
+        }
+    }
+
+    pub fn key(&self) -> &ResidentOperationKey {
+        &self.key
+    }
+    pub const fn implementation_memory(&self) -> ImplementationMemoryClass {
+        self.implementation_memory
+    }
+    pub const fn factory(&self) -> ResidentKernelFactory {
+        self.factory
+    }
+
+    pub fn with_key(mut self, key: ResidentOperationKey) -> Self {
+        self.key = key;
+        self.lowering_witness = None;
+        self
+    }
+    pub fn with_implementation_memory(
+        mut self,
+        implementation_memory: ImplementationMemoryClass,
+    ) -> Self {
+        self.implementation_memory = implementation_memory;
+        self.lowering_witness = None;
+        self
+    }
+    pub fn with_factory(mut self, factory: ResidentKernelFactory) -> Self {
+        self.factory = factory;
+        self.lowering_witness = None;
+        self
+    }
+
+    /// The defining library owns T. There is deliberately no erased getter or
+    /// Arc accessor that can copy its private certificate onto another entry.
+    pub fn with_lowering_witness<T: Any + Send + Sync>(mut self, witness: Arc<T>) -> Self {
+        self.lowering_witness = Some(witness);
+        self
+    }
+    pub fn lowering_witness<T: Any + Send + Sync>(&self) -> Option<&T> {
+        self.lowering_witness.as_deref()?.downcast_ref()
+    }
 }

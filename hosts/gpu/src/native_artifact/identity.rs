@@ -125,7 +125,10 @@ pub(super) fn descriptor_from_identity(
     Ok(descriptor)
 }
 
-#[cfg(feature = "canonical-native")]
+#[cfg(any(
+    feature = "canonical-native",
+    feature = "canonical-native-program-runtime"
+))]
 pub(super) fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
@@ -220,7 +223,7 @@ pub(super) fn typed_ir_sha256(plan: &NativeArtifactPlan) -> [u8; 32] {
     }
     hash.finalize().into()
 }
-fn op_tag(op: NativeScalarOp) -> u8 {
+pub(super) fn op_tag(op: NativeScalarOp) -> u8 {
     match op {
         NativeScalarOp::U64Add => 1,
         NativeScalarOp::U64Sub => 2,

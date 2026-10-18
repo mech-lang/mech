@@ -936,7 +936,7 @@ fn observed_division_bind(
     let entry = maintained
         .resident_factory(&["math".into()], "div")
         .unwrap();
-    let delegate = (entry.factory)(request)?;
+    let delegate = (entry.factory())(request)?;
     let output = delegate.snapshot_output().cloned();
     let work = delegate.work_accounting();
     let mut kernel = BoundResidentKernel::new(observed_division, Box::new([]))
@@ -958,11 +958,11 @@ fn runtime_global_and_seed_producers_execute_once_per_invocation() {
             .insert_resident_factory(
                 key.module_path.iter().cloned(),
                 key.operation_name.clone(),
-                entry.implementation_memory,
+                entry.implementation_memory(),
                 if key.module_path.as_ref() == ["math".to_owned()] && key.operation_name == "div" {
                     observed_division_bind
                 } else {
-                    entry.factory
+                    entry.factory()
                 },
             )
             .unwrap();

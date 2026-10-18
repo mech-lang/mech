@@ -18,7 +18,7 @@ fn main() {
     let expected: BTreeMap<String, String> = serde_json::from_str(EXPECTED).unwrap();
     let manifest_bytes = fs::read(root.join("linked-manifest.json")).unwrap();
     let manifest: serde_json::Value = serde_json::from_slice(&manifest_bytes).unwrap();
-    assert_eq!(manifest["schema"], "mech.canonical-linked-application.v1");
+    assert_eq!(manifest["schema"], "@MANIFEST_SCHEMA@");
     let mut pins: BTreeMap<String, String> =
         serde_json::from_value(manifest["pins"].clone()).unwrap();
     let script = pins.remove("build.rs").expect("build script pin");

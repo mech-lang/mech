@@ -155,6 +155,62 @@ fn check(source: &str, named: &[(&str, NativeScalarValue)], expected: NativeScal
         assert_eq!(jit.descriptor().revision(), artifact.revision());
     }
 }
+
+#[test]
+fn nested_scalar_entry_cannot_refill_an_active_library_account_or_change_its_memory() {
+    use mech_engine::native_artifact::NativeLibraryWorkBudget;
+    use mech_gpu::native_artifact::NativeWorkMeter;
+    let (artifacts, _) = artifacts("left<u64> + right<u64>\n");
+    for artifact in artifacts {
+        let plan = lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let jit = JitArtifact::compile(&plan).unwrap();
+        let args = inputs(
+            &artifact,
+            &[
+                ("left", NativeScalarValue::U64(2)),
+                ("right", NativeScalarValue::U64(3)),
+            ],
+        );
+        let memory = mech_core::ManagedMemoryBudget::new(1_000_000);
+        let foreign = mech_core::ManagedMemoryBudget::new(1_000_000);
+        let mut caller = NativeWorkMeter::new(10_000).unwrap();
+        let library = caller
+            .shared_library_budget(NativeExecutionPhase::Setup, 100, &memory)
+            .unwrap();
+        let before = memory.used_bytes();
+        let sentinel = vec![NativeScalarValue::U64(0xdead); plan.outputs().len()];
+        let mut output = sentinel.clone();
+        library
+            .with_scope(|| {
+                assert!(NativeLibraryWorkBudget::has_active_scope());
+                for supplied in [None, Some(&memory), Some(&foreign), Some(&foreign)] {
+                    assert!(matches!(
+                        jit.evaluate_into(&args, &mut output, NativeExecutionLimits::default(), supplied),
+                        Err(NativeExecutionError::Descriptor {
+                            reason: "independent native work ledger cannot replace an active invocation"
+                        })
+                    ));
+                    assert_eq!(output, sentinel);
+                    assert_eq!(library.used(), (64, 0));
+                    assert_eq!(memory.used_bytes(), before);
+                    assert_eq!(foreign.used_bytes(), 0);
+                }
+            })
+            .unwrap();
+        assert!(!NativeLibraryWorkBudget::has_active_scope());
+        jit.evaluate_into(
+            &args,
+            &mut output,
+            NativeExecutionLimits::default(),
+            Some(&memory),
+        )
+        .unwrap();
+        assert_eq!(output.last(), Some(&NativeScalarValue::U64(5)));
+        assert_eq!(memory.used_bytes(), before);
+        assert_eq!(library.used(), (64, 0));
+    }
+}
+
 #[test]
 fn all_certified_scalar_primitives_match_ordinary_resident_original_and_decoded() {
     use NativeScalarValue::{Bool, U64};

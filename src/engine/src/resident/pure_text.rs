@@ -22,18 +22,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         ImplementationMemoryClass::CanonicalFinalize,
         bind_parse_u64,
     )?;
-    builder.insert_resident_factory(
-        ["number"],
-        "format",
-        ImplementationMemoryClass::CanonicalFinalize,
-        bind_format,
-    )?;
-    builder.insert_resident_factory(
-        ["sequence"],
-        "length",
-        ImplementationMemoryClass::CanonicalFinalize,
-        bind_length,
-    )
+    super::native_collection_semantics::register_format_and_length(builder)
 }
 
 fn validate_full_write(
@@ -51,6 +40,17 @@ fn validate_full_write(
     if request.inputs.len() != arity
         || contract.inputs.len() != arity
         || contract.interaction != ExternalInteraction::Pure
+        || request
+            .inputs
+            .iter()
+            .chain(core::iter::once(&request.output))
+            .any(|layout| {
+                request
+                    .schemas
+                    .get(layout.schema_id)
+                    .map(|schema| schema.key())
+                    != Some(layout.schema_key)
+            })
         || contract
             .inputs
             .iter()
@@ -135,9 +135,7 @@ impl InputPlan {
             _ => ResidentValueKind::Snapshot,
         };
         if layout.kind == ResidentValueKind::Snapshot {
-            if layout.shape != ResidentShape::SCALAR
-                || (dimensions.is_none() && ordinary_kind != ResidentValueKind::Snapshot)
-            {
+            if layout.shape != ResidentShape::SCALAR {
                 return Err(ResidentKernelBindError::UnsupportedLayout);
             }
         } else {
@@ -282,7 +280,7 @@ fn bind_parse_u64(
     ))
 }
 
-fn bind_length(
+pub(super) fn bind_length(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_full_write(
@@ -307,7 +305,7 @@ fn bind_length(
     ))
 }
 
-fn bind_format(
+pub(super) fn bind_format(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let Some(input) = request.inputs.first() else {
@@ -355,12 +353,15 @@ fn bind_format(
         }
     } else {
         if output_body != &SchemaBody::String
-            || request.output.kind != ResidentValueKind::String
+            || !matches!(
+                request.output.kind,
+                ResidentValueKind::String | ResidentValueKind::Snapshot
+            )
             || request.output.shape != ResidentShape::SCALAR
         {
             return Err(ResidentKernelBindError::UnsupportedLayout);
         }
-        Some((1, 1))
+        (request.output.kind == ResidentValueKind::String).then_some((1, 1))
     };
     Ok(bound(
         request,
@@ -482,9 +483,12 @@ fn execute_parse_u64(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let Some(ResidentValueRef::String([text])) = inputs.get(0) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
+    let _work_scope = super::budget::ControlWorkScopeGuard::enter();
+    let source = &plan(kernel)?.source;
+    let text = source_text(
+        source,
+        inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?,
+    )?;
     let work = text
         .len()
         .checked_mul(2)
@@ -499,12 +503,11 @@ fn execute_length(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
+    let _work_scope = super::budget::ControlWorkScopeGuard::enter();
     let source = &plan(kernel)?.source;
     let input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
     let (value, work) = if source.body == SchemaBody::String {
-        let ResidentValueRef::String([text]) = input else {
-            return Err(ResidentKernelError::InvalidInput);
-        };
+        let text = source_text(source, input)?;
         admit_work(text.len(), 0)?;
         (
             primitives::grapheme_length(text).map_err(|_| ResidentKernelError::InvalidInput)?,
@@ -518,6 +521,25 @@ fn execute_length(
         (super::budget::checked_u64(count)?, 1)
     };
     publish_u64(kernel, output, value, work)
+}
+
+fn source_text<'a>(
+    plan: &InputPlan,
+    input: ResidentValueRef<'a>,
+) -> Result<&'a str, ResidentKernelError> {
+    if plan.body != SchemaBody::String || input.kind() != plan.kind {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    match input {
+        ResidentValueRef::String([text]) => Ok(text),
+        ResidentValueRef::Snapshot(_) => {
+            let ValueData::String(text) = plan.snapshot(input)?.data() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            Ok(text)
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
 }
 
 #[derive(Default)]
@@ -560,6 +582,7 @@ fn execute_format(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
+    let _work_scope = super::budget::ControlWorkScopeGuard::enter();
     let plan = plan(kernel)?;
     let input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
     let dimensions = plan.source.geometry(input)?;
@@ -652,7 +675,7 @@ fn execute_format(
         ResidentValueMut::Snapshot([current]) => {
             let next = mech_core::snapshot::prospective_string_value_footprint(
                 metadata.shape.parameter_values().len(),
-                true,
+                plan.source.dimensions.is_some(),
                 super::budget::checked_u64(count)?,
                 super::budget::checked_u64(payload)?,
             )
@@ -732,17 +755,23 @@ fn execute_format(
             let schema = schemas
                 .get(metadata.schema)
                 .ok_or(ResidentKernelError::InvalidOutput)?;
-            let rows = super::budget::checked_u64(dimensions.0)?;
-            let columns = super::budget::checked_u64(dimensions.1)?;
-            let shape = mech_core::shape_for_resolved_extents(schema, &[rows, columns])
-                .map_err(|_| ResidentKernelError::InvalidShape)?;
-            let data = ValueDataDraft::Matrix(
-                candidate
-                    .into_iter()
-                    .map(ValueDataDraft::String)
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice(),
-            );
+            let (shape, data) = if plan.source.dimensions.is_some() {
+                let rows = super::budget::checked_u64(dimensions.0)?;
+                let columns = super::budget::checked_u64(dimensions.1)?;
+                let shape = mech_core::shape_for_resolved_extents(schema, &[rows, columns])
+                    .map_err(|_| ResidentKernelError::InvalidShape)?;
+                let data = ValueDataDraft::Matrix(
+                    candidate
+                        .into_iter()
+                        .map(ValueDataDraft::String)
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                );
+                (shape, data)
+            } else {
+                let text = candidate.pop().ok_or(ResidentKernelError::InvalidOutput)?;
+                (metadata.shape.clone(), ValueDataDraft::String(text))
+            };
             let next = finalize(kernel, &shape, data, finalization_work)?;
             let changed = match target.as_ref() {
                 Some(current) => !current

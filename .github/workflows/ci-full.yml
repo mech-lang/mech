@@ -370,6 +370,16 @@ jobs:
             --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
             --test memory_safety
+      - name: Execute bounded shared snapshot ownership regression
+        run: |
+          OWNERSHIP_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --all-features --lib \
+            snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports \
+            -- --list --exact)
+          test "$(printf '%s\n' "$OWNERSHIP_TESTS" | awk '/^snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports: test$/ { count += 1 } END { print count + 0 }')" -eq 1
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib \
+            snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports \
+            -- --exact --test-threads=1
       - name: Execute the retained release-mode memory safety boundary
         run: |
           RUSTFLAGS="${RUSTFLAGS:-} -C debug-assertions=no" \
@@ -552,21 +562,42 @@ jobs:
           --test source_op_assign_contract --test specialization_contract -- --test-threads=1
       - name: Execute canonical native lowering and selected implementation witnesses
         run: |
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-core \
+            --no-default-features --features functions \
+            --test resident_factory_lowering_attachment -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib \
             --no-default-features --features full_compiler,native-artifact \
             --test native_artifact_lowering --test native_artifact_i64_lowering \
             --test native_artifact_f64_lowering \
             --test native_artifact_cast_lowering \
+            --test native_artifact_match_lowering \
+            --test native_artifact_iteration_lowering \
+            --test native_collection_templates \
             --test native_artifact_output_initializers -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact \
+            --lib resident::general::native_collection_templates::tests -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native \
             --test canonical_artifact_native --test canonical_artifact_i64 --test canonical_artifact_f64 \
-            --test canonical_artifact_cast -- --test-threads=1
+            --test canonical_artifact_cast --test canonical_artifact_match \
+            --test canonical_artifact_iteration -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-program \
+            --test canonical_artifact_program -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-program \
+            --lib native_artifact::program_runtime::tests -- --test-threads=1
+          cargo +nightly-2026-03-03 check --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-program-runtime --lib
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native --lib native_artifact:: -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_compiler,native-artifact \
             --lib resident::native_semantics::tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact \
+            --lib resident::general::native_match_lowering::iteration_proof_tests -- --test-threads=1
           cargo +nightly-2026-03-03 check --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-runtime --lib
       - name: Execute canonical CLI byte and resource contracts
@@ -691,6 +722,42 @@ jobs:
           --test canonical_artifact_application -- --ignored --exact
           linked_canonical_artifact_cast_applications_preserve_checked_boundaries
           --test-threads=1
+      - name: Verify linked canonical Match selection is nonempty
+        run: |
+          set -euo pipefail
+          MATCH_QUALIFICATION_TESTS=$(cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native \
+            --test canonical_artifact_match_application -- --list --ignored --exact \
+            linked_canonical_match_applications_are_lazy_bounded_and_atomic)
+          test "$(printf '%s\n' "$MATCH_QUALIFICATION_TESTS" | rg -c '^linked_canonical_match_applications_are_lazy_bounded_and_atomic: test$')" -eq 1
+      - name: Qualify linked canonical Match applications
+        env:
+          MECH_CANONICAL_MATCH_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_MATCH_EVIDENCE_DIR: ${{ runner.temp }}/canonical-match-evidence
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
+          --no-default-features --features canonical-native
+          --test canonical_artifact_match_application -- --ignored --exact
+          linked_canonical_match_applications_are_lazy_bounded_and_atomic
+          --test-threads=1
+      - name: Verify linked canonical iteration selection is nonempty
+        run: |
+          set -euo pipefail
+          ITERATION_QUALIFICATION_TESTS=$(cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native \
+            --test canonical_artifact_iteration -- --list --ignored --exact \
+            linked_qualification::one_linked_iteration_executable_preserves_exact_typed_loops_and_denials)
+          test "$(printf '%s\n' "$ITERATION_QUALIFICATION_TESTS" | rg -c '^linked_qualification::one_linked_iteration_executable_preserves_exact_typed_loops_and_denials: test$')" -eq 1
+      - name: Qualify linked canonical iteration application
+        env:
+          MECH_CANONICAL_ITERATION_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_ITERATION_EVIDENCE_DIR: ${{ runner.temp }}/canonical-iteration-evidence
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
+          --no-default-features --features canonical-native
+          --test canonical_artifact_iteration -- --ignored --exact
+          linked_qualification::one_linked_iteration_executable_preserves_exact_typed_loops_and_denials
+          --test-threads=1
       - name: Verify linked canonical resident CLI selection is nonempty
         env:
           MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
@@ -720,6 +787,8 @@ jobs:
           path: |
             ${{ runner.temp }}/canonical-native-evidence
             ${{ runner.temp }}/canonical-cast-evidence
+            ${{ runner.temp }}/canonical-match-evidence
+            ${{ runner.temp }}/canonical-iteration-evidence
             ${{ runner.temp }}/canonical-cli-evidence
             ${{ runner.temp }}/native-host-evidence
             ${{ runner.temp }}/native-control-evidence
