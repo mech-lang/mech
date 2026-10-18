@@ -426,6 +426,32 @@
     },
     "not_established": "Current-visit mixed-value NativeHost call descriptors, actual native library calls, native comprehensions/FSM/resource lifecycle, full-size packed/streaming execution, new linked-process qualification, benchmarks, optimized/configurable whole-program AOT or complete green CI/clean review."
   },
+  "canonical_string_leaf_transport_qualification": {
+    "as_of_utc": "2026-10-18T10:48:58Z",
+    "status": "PASS_SHARED_LIBRARY_LEAVES_NOT_NATIVE_PROGRAM_EXECUTION",
+    "qualified_source_commit": "3f56954a4ea7b104c7f622ebd6a16726ef421d0f",
+    "integrated_source_commit": "27a1197f336b8f7c24bd441bf72214a24fb8ac72",
+    "tested_base": "a484c36f9831f37bc30db460fd36798ecdee3359",
+    "tested_tracked_diff_sha256": "f2d9b27cc1a1e7990db7c78ed5473b085b98070d3b72fe08d68f47b0f31a1cad",
+    "new_test_source_sha256": "22815e34005d3b54202d0d39388fd769ab79c25e8bc18b9cf78a92c17c8dc965",
+    "changes": "The actual maintained text/lines, text/join, sequence/length and number/format factories now accept canonical scalar String/numeric transport where needed, and join/format can produce canonical String results. Dense paths retain the same algorithms and policies. Canonical String inputs are borrowed without dense-copy bridges; ID/key and representation substitution checks precede use. Canonical outputs reserve their real construction/finalization/temporary/equality demand before publication. No second program evaluator or workload-sized Rust implementation is introduced.",
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-canonical-text-final-v247.zsh",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v247-canonical-text-final.log",
+      "log_sha256": "c630f82c166dde71905eb1b509a288a491f0a9dfdf89daf9ddc4cd2d949f9d9c",
+      "exit_code": 0,
+      "source_unchanged_through_run": true,
+      "new_library_methods": 4,
+      "engine_unit_methods": 749,
+      "integration_methods": { "native_collection_templates": 4, "knucleotide_record_source": 5, "map_source": 7, "map_keys_comprehensions": 3, "pure_text_managed": 4 },
+      "format_warning_policy_and_resident_only_build": "PASS",
+      "coverage": "All seven maintained text/length/format/histogram/key/value leaves compose using canonical values. Exact U64 maxima, aligned counts, Unicode grapheme length, forged keys, wrong kinds, dense substitution, unchanged output, error recovery, percentage rounding, negative zero and invalid precision are checked. The complete unchanged ordinary 100/400-base original/decoded workload and its denial/publication/recovery contract remain green."
+    },
+    "preceding_environmental_failure": "v243 passed three new methods and748 engine units but LLVM failed while compiling mech-math because the disk filled. After recoverably archiving only exact inactive old test executables, v246 completed all23 integrations and checks on the same unchanged source. v247 then independently qualifies the final source with additional canonical F64 coverage and preserved legacy dense-layout acceptance.",
+    "default_limits_changed": false,
+    "benchmark_program_algorithm_changed": false,
+    "not_established": "These are library-kernel transport tests, not complete NativeHost call-plan or generated-program execution. Native mixed control/comprehensions/FSM/resources, packed/streaming full125M support, linked lifecycle/timing, optimization/configuration and complete green CI remain required."
+  },
   "remaining": [
     "Extend beyond the qualified100/400-base original/decoded library and real release CLI/resource cases to realistic full inputs, retaining finite admission, atomicity and recovery.",
     "Reduce actual general collection/histogram work; provide canonical packed and streaming operations for realistic full inputs.",
