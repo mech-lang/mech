@@ -213,3 +213,17 @@ fn wider_scalar_matches_share_the_selected_cast_witness_and_exact_types() {
         );
     }
 }
+
+#[test]
+fn counted_application_is_rejected_whole_by_the_match_only_plan() {
+    let source = "inc(x<u64>) => <u64> := x + 1u64\nseed<u64> |[2]> inc\n";
+    for artifact in artifacts(source) {
+        assert!(
+            artifact
+                .nodes()
+                .iter()
+                .any(|node| matches!(&node.body, mech_engine::ExecutableNodeBody::Iteration(_)))
+        );
+        assert!(lower_scalar_match_artifact(&artifact, &mech_stdlib::source_catalog()).is_err());
+    }
+}

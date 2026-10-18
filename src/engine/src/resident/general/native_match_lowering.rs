@@ -184,6 +184,9 @@ impl Builder<'_> {
                     ControlParameterSource::PatternBinding(local) => binding
                         .filter(|(id, _)| *id == local)
                         .map(|(_, value)| value),
+                    ControlParameterSource::IterationCarrier => {
+                        return Err(unsupported(owner, "Iteration-carried control parameter"));
+                    }
                 }
                 .ok_or(Error::InvalidBinding { node: Some(owner) })?;
                 if self.ty(value).schema() != parameter.schema {
