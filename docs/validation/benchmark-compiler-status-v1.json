@@ -1,7 +1,26 @@
 {
   "schema": "mech.benchmark-compiler-status.v1",
   "as_of_utc": "2026-10-18",
-  "status": "IN_PROGRESS_NOT_BENCHMARK_QUALIFIED",
+  "status": "IMPLEMENTING_CHECKED_AOT_BENCHMARK_NOT_QUALIFIED",
+  "checked_aot_benchmark_followup": {
+    "branch": "codex/canonical-checked-aot-benchmark",
+    "status": "OPEN_DRAFT_IMPLEMENTATION_IN_PROGRESS",
+    "pull_request": "https://github.com/mech-lang/mech/pull/905",
+    "progress_record": "checked-aot-workload-progress-v1.json",
+    "planned_pull_request_base": "codex/canonical-artifact-casts",
+    "preserved_pr904_head": "89f417d5317981516666368c3f9f457ffe165138",
+    "preserved_cli_prerequisite": "4e7fe599f56ec7adb8e1d983c5786cf9907596a1",
+    "preserved_pending_match_source": "dbf8ae7a6edae85801517c00ecf1c21ec027ab8e",
+    "requirements": [
+      "Trace and reduce the actual ordinary resident workload cost without weakening admission or discounting real work.",
+      "Complete canonical-artifact native control, collection and resource execution needed by the full k-nucleotide program; do not invoke the independent older source compiler or a whole-program interpreter/helper.",
+      "Provide general packed/streaming operations through the canonical architecture and preserve exact checked semantics.",
+      "Qualify the complete AOT executable and lifecycle before serial full-workload trusted/secured timings on the same binary; inspect its actual generated machine code and dependencies.",
+      "Optimize the checked AOT path and expose explicit configuration while preserving checked semantics and existing default limits.",
+      "Publish an accurately scoped new stacked draft PR, resolve its reviews and obtain complete applicable green CI; no readiness or merge without explicit user approval."
+    ],
+    "qualification": "The unchanged 100-base regression reproduces the comparison-work rejection. Temporary tracing identifies cumulative scalar preparation, histogram sorting and set normalization costs. The first scalar metadata correction passes 147 numeric unit methods at the exact source-file/diff pins in checked-aot-workload-progress-v1.json. Larger workload success, full canonical AOT, benchmarks, review and complete CI remain unproved. Existing receipts retain their exact historical source pins."
+  },
   "integration": {
     "repository": "https://github.com/mech-lang/mech",
     "branch": "codex/idiomatic-native-programs",

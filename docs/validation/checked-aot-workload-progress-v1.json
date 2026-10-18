@@ -1,0 +1,43 @@
+{
+  "schema": "mech.checked-aot-workload-progress.v1",
+  "status": "INCOMPLETE_IMPLEMENTATION_NOT_BENCHMARK_QUALIFIED",
+  "pull_request": "https://github.com/mech-lang/mech/pull/905",
+  "baseline": "c4190315672337f039efc743a970263627f75834",
+  "reproduction": {
+    "test": "ordinary_program_handles_hundred_and_four_hundred_bases_without_raising_limits",
+    "result": "FAILS_AT_100_BASES_BEFORE_CORRECTION",
+    "dimension": "ComparisonWork",
+    "required": 69986,
+    "limit": 65536,
+    "source_owner": "matrix/comprehension, node 33, source range 2469..2554",
+    "local_log": "tmp/pr-stack-evidence/checked-aot-v201-knucleotide-regression.log",
+    "log_sha256": "c5dc1f71472de2632b9e6c1ac04cc4cefc8edb9f80835b4a8e76e0648d489533"
+  },
+  "diagnosis": {
+    "local_log": "tmp/pr-stack-evidence/checked-aot-v204-control-total-trace.log",
+    "log_sha256": "814a0da456b0b31d4025addd56b9670c0e4e57380b5558481162bc1d1b9f0dfe",
+    "diagnostic_diff_sha256": "505357e74ac18a59c735f34a07dddbf378f980e8a5e9bc434be366386f65028c",
+    "finding": "Nested control correctly shares a cumulative authority. Histogram node 144 requests 15041 units after a total of 54945. Scalar comparison preparation charges encoded payload work for metadata inspection before separately reserving actual comparisons. String set normalization also retains a broad sorting bound. The unrelated-schema-scan hypothesis was not implicated by this trace.",
+    "instrumentation": "Temporary local logging only; removed before implementation qualification. No limits or admission decisions changed."
+  },
+  "scalar_metadata_correction": {
+    "source_file": "src/engine/src/resident/numeric/mod.rs",
+    "source_file_sha256": "f5bbf56cf9efd29df912b5e9ded8192c481e6ebacb5d2e3d3d2d6910cdfac553",
+    "implementation_diff_sha256": "c0d35d8bdefa9c24020987928fa87a3ff61168f6726b509083535d9c932d26ee",
+    "change": "Known one-chunk scalar layouts use the maintained metered borrowed-footprint inspection. The caller still reserves the same encoded-byte work for every actual comparison and broadcast occurrence. Composite and interval layouts retain their original recursive path.",
+    "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-engine --no-default-features --features full_compiler,resident-artifact --lib resident::numeric::tests:: -- --nocapture --test-threads=1",
+    "result": { "passed": 147, "failed": 0, "ignored": 0, "filtered": 581 },
+    "local_log": "tmp/pr-stack-evidence/checked-aot-v205-comparison-metadata.log",
+    "log_sha256": "5696dcc092a45b1cbb35abf79953421825c05086d06d246b7e076776b9a8d15f",
+    "new_boundary_test": "snapshot_comparison_preparation_measures_metadata_but_reserves_payload_work",
+    "limits_changed": false
+  },
+  "remaining": [
+    "Make the unchanged ordinary workload pass original and decoded artifacts at 100 and 400 bases with default limits, and retain denial/atomicity/recovery qualification.",
+    "Reduce actual general collection/histogram work; provide canonical packed and streaming operations for realistic full inputs.",
+    "Complete canonical native control, collections and resource I/O for the entire workload, without the independent source-native compiler or whole-program interpreter fallback.",
+    "Qualify full linked lifecycle and exact output, then measure the full workload in optimized checked AOT with explicit configuration and inspect its generated binary.",
+    "Resolve new review findings and obtain clean review plus complete green CI. Keep draft and unmerged until explicit user approval."
+  ],
+  "benchmark_samples": 0
+}

@@ -90,12 +90,39 @@ fn snapshot_element_comparison_work(
     data: &ValueData,
     index: usize,
 ) -> Result<u64, ResidentKernelError> {
+    fn scalar_work(
+        meter: &mut super::budget::ResidentBudgetMeter,
+        body: &SchemaBody,
+        data: &ValueData,
+    ) -> Result<u64, ResidentKernelError> {
+        if !matches!(
+            body,
+            SchemaBody::Bool
+                | SchemaBody::Index
+                | SchemaBody::String
+                | SchemaBody::UnsignedInteger(_)
+                | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Rational64
+                | SchemaBody::Complex(_)
+        ) {
+            return super::budget::measure_canonical_data_comparison_work(meter, body, data);
+        }
+        // These scalar layouts have one canonical chunk. Inspecting its
+        // immutable metadata does not scan its payload. The caller separately
+        // reserves the returned work for EVERY actual comparison occurrence,
+        // including scalar broadcasts. Composite/interval layouts keep their
+        // original recursive comparison reservation.
+        let footprint =
+            super::budget::measure_borrowed_canonical_data_footprint(meter, body, data)?;
+        Ok(footprint.encoded_bytes.max(footprint.node_count).max(1))
+    }
     match (body, data) {
         (SchemaBody::Matrix { element, .. }, ValueData::Matrix(matrix)) => {
             match matrix.elements() {
                 SequenceView::Values(values) => {
                     let value = values.get(index).ok_or(ResidentKernelError::InvalidShape)?;
-                    super::budget::measure_canonical_data_comparison_work(meter, element, value)
+                    scalar_work(meter, element, value)
                 }
                 values => {
                     let footprint =
@@ -105,9 +132,7 @@ fn snapshot_element_comparison_work(
                 }
             }
         }
-        (_, _) if index == 0 => {
-            super::budget::measure_canonical_data_comparison_work(meter, body, data)
-        }
+        (_, _) if index == 0 => scalar_work(meter, body, data),
         _ => Err(ResidentKernelError::InvalidShape),
     }
 }
@@ -21109,6 +21134,37 @@ fn indexed_rows(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn snapshot_comparison_preparation_measures_metadata_but_reserves_payload_work() {
+        let mut metadata_work = None;
+        for text in [String::new(), "é".repeat(1_024), "x".repeat(40_000)] {
+            let bytes = text.len() as u64;
+            let data = ValueData::String(text.into_boxed_str());
+            let mut meter =
+                super::super::budget::ResidentBudgetMeter::for_closed_analysis(1_024, 0);
+            let comparison =
+                snapshot_element_comparison_work(&mut meter, &SchemaBody::String, &data, 0)
+                    .unwrap();
+            assert_eq!(comparison, bytes + 8);
+            assert_eq!(meter.estimate().comparison_work(), 0);
+            let compute = meter.estimate().compute_work();
+            assert!(compute > 0);
+            assert_eq!(*metadata_work.get_or_insert(compute), compute);
+            // Metadata inspection grants no payload comparison. Its returned
+            // reservation still has an exact deny/allow boundary.
+            let mut denied = super::super::budget::ResidentBudgetMeter::for_closed_analysis(
+                1_000_000,
+                comparison - 1,
+            );
+            assert!(denied.charge_comparison_work(comparison).is_err());
+            let mut admitted = super::super::budget::ResidentBudgetMeter::for_closed_analysis(
+                1_000_000, comparison,
+            );
+            admitted.charge_comparison_work(comparison).unwrap();
+            assert_eq!(admitted.estimate().comparison_work(), comparison);
+        }
+    }
 
     fn primitive_constructor_fixture(
         element: SchemaBody,
