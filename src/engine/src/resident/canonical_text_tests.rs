@@ -191,6 +191,39 @@ fn string(value: &Option<Value>) -> &str {
     text
 }
 
+#[cfg(feature = "native-artifact")]
+#[test]
+fn shared_native_work_budget_observes_the_actual_maintained_leaf_without_resetting() {
+    let f = Fixture::new();
+    let input = f.value(f.text, ValueDataDraft::String("hello".into()));
+    let kernel = f.bind("sequence/length", &[f.text], f.integer);
+    let memory = mech_core::ManagedMemoryBudget::new(4096);
+    let budget = super::budget::NativeLibraryWorkBudget::new(1_000_000, 65_536, &memory).unwrap();
+    budget.charge(11, 0).unwrap();
+    let mut output = None;
+    budget
+        .with_scope(|| run(&kernel, &[&input], &mut output))
+        .unwrap()
+        .unwrap();
+    assert!(matches!(output.as_ref().unwrap().data(), ValueData::U64(5)));
+    let used = budget.used();
+    assert!(used.0 > 11);
+    let prior = output.clone();
+    budget.restrict(used.0, used.1).unwrap();
+    assert!(
+        budget
+            .with_scope(|| run(&kernel, &[&input], &mut output))
+            .unwrap()
+            .is_err()
+    );
+    assert_eq!(budget.used(), used);
+    assert!(matches!(output.as_ref().unwrap().data(), ValueData::U64(5)));
+    assert!(core::ptr::eq(
+        output.as_ref().unwrap().data(),
+        prior.as_ref().unwrap().data()
+    ));
+}
+
 #[test]
 fn all_seven_maintained_collection_leaves_compose_with_canonical_string_transport() {
     let f = Fixture::new();

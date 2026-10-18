@@ -77,6 +77,7 @@ impl<'a> NativeValueArena<'a> {
             }
             .into());
         }
+        work.check_memory_budget(budget)?;
         // Covers both initialization passes and their bounded metadata. This
         // debits the caller's ledger, not a fresh per-arena work allowance.
         let setup = u64::from(count)
@@ -86,9 +87,12 @@ impl<'a> NativeValueArena<'a> {
                 reason: "native value setup work overflows",
             })?;
         work.charge(NativeExecutionPhase::Setup, setup)?;
+        let values = NativeTypedStorage::new_values(types.len(), max_transport_bytes, budget)?;
+        let generations = NativeWordStorage::new(types.len(), max_transport_bytes, Some(budget))?;
+        work.bind_memory_budget(budget)?;
         Ok(Self {
-            values: NativeTypedStorage::new_values(types.len(), max_transport_bytes, budget)?,
-            generations: NativeWordStorage::new(types.len(), max_transport_bytes, Some(budget))?,
+            values,
+            generations,
             types,
             budget: budget.clone(),
             work_identity: work.identity(),
@@ -156,6 +160,7 @@ impl<'a> NativeValueArena<'a> {
         if work.identity() != self.work_identity {
             return Err(NativeValueError::WrongWorkLedger);
         }
+        work.check_memory_budget(&self.budget)?;
         Ok(())
     }
 
@@ -441,6 +446,76 @@ mod tests {
             NativeValueError::WrongWorkLedger
         );
         assert_eq!(fresh.used(), 0);
+    }
+
+    #[test]
+    fn arena_before_promotion_pins_memory_and_retains_the_same_live_handles_and_counter() {
+        let memory = ManagedMemoryBudget::new(1_000_000);
+        let other = ManagedMemoryBudget::new(1_000_000);
+        let (ty, raw) = text("same invocation");
+        let good = admit(&raw, &memory);
+        let types = [ty];
+        let mut work = NativeWorkMeter::new(1_000_000).unwrap();
+        let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
+        let handle = arena.put(0, &good, &mut work).unwrap();
+        let before = work.used();
+        let bytes = memory.used_bytes();
+        assert!(
+            work.shared_library_budget(NativeExecutionPhase::Setup, 10, &other)
+                .is_err()
+        );
+        assert_eq!(work.used(), before);
+        assert_eq!(memory.used_bytes(), bytes);
+        assert_eq!(other.used_bytes(), 0);
+        let library = work
+            .shared_library_budget(NativeExecutionPhase::Setup, 10, &memory)
+            .unwrap();
+        assert_eq!(library.used(), (before + 64, 0));
+        assert_eq!(
+            arena.get(handle, &mut work).unwrap().schema_key(),
+            good.schema_key()
+        );
+        assert_eq!(library.used(), (before + 80, 0));
+        library.charge(3, 2).unwrap();
+        assert_eq!(work.used(), before + 83);
+        let moved = arena.take(handle, &mut work).unwrap();
+        assert!(moved.shares_frozen_storage(&good));
+        drop((arena, work, library, good, moved));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+
+    #[test]
+    fn promotion_before_arena_rejects_foreign_backing_before_work_or_allocation() {
+        let memory = ManagedMemoryBudget::new(1_000_000);
+        let other = ManagedMemoryBudget::new(1_000_000);
+        let (ty, raw) = text("already shared");
+        let good = admit(&raw, &memory);
+        let types = [ty];
+        let mut work = NativeWorkMeter::new(1_000_000).unwrap();
+        let library = work
+            .shared_library_budget(NativeExecutionPhase::Setup, 10, &memory)
+            .unwrap();
+        let bytes = memory.used_bytes();
+        assert!(matches!(
+            NativeValueArena::new(&types, TRANSPORT_LIMIT, &other, &mut work),
+            Err(NativeValueError::Base(
+                NativeExecutionError::Descriptor { .. }
+            ))
+        ));
+        assert_eq!(work.used(), 64);
+        assert_eq!(other.used_bytes(), 0);
+        assert_eq!(memory.used_bytes(), bytes);
+        let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
+        let handle = arena.put(0, &good, &mut work).unwrap();
+        assert_eq!(library.used().0, work.used());
+        assert!(
+            arena
+                .get(handle, &mut work)
+                .unwrap()
+                .shares_frozen_storage(&good)
+        );
+        drop((arena, work, library, good));
+        assert_eq!(memory.used_bytes(), 0);
     }
 
     #[test]

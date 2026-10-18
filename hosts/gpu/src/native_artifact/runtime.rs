@@ -60,6 +60,10 @@ pub enum NativeExecutionError {
         required: u64,
         limit: u64,
     },
+    LibraryWork {
+        phase: NativeExecutionPhase,
+        error: mech_core::ResidentKernelError,
+    },
     StackLimit {
         required: u64,
         limit: u64,
