@@ -1,6 +1,6 @@
 //! Actual same-Object executable qualification, not a benchmark.
 use super::{artifacts_mode, inputs, reference};
-use mech_build::{CargoInvocation, parse_cargo_build_messages, process::ContainedChild};
+use mech_build::{CargoInvocation, parse_cargo_build_messages};
 use mech_core::snapshot::F64Bits;
 use mech_engine::native_artifact::{
     NativeScalarKind, NativeScalarValue, lower_scalar_iteration_artifact,
@@ -10,36 +10,21 @@ use mech_gpu::native_artifact::{
     NativeIterationExecutionError, generate_linked_iteration_application,
 };
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 use std::{
     collections::{BTreeMap, BTreeSet},
-    fs::{self, File},
+    fs,
     io::Cursor,
-    path::{Path, PathBuf},
-    process::{Command, Output, Stdio},
-    thread,
-    time::{Duration, Instant},
+    path::PathBuf,
+    process::Command,
+};
+
+#[path = "linked_process.rs"]
+mod linked_process;
+use linked_process::{
+    assert_no_ambient_cargo_config, bounded, clean, closure, hash, pin, workspace,
 };
 
 const SOURCE: &str = "inc(x<u64>) => (next<u64>) := next := x + 1u64.\ndec(x<i64>) => (next<i64>) := next := x - 1i64.\nhalf(x<f64>) => (next<f64>) := next := x * 0.5.\nidentity(x<bool>) => (next<bool>) := next := x.\nunsigned := seed<u64> |25> inc\nsigned := start<i64> |3> dec\nfloating := real<f64> |2> half\nboolean := enabled<bool> |0> identity\n";
-
-fn workspace() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .to_owned()
-}
-fn hash(bytes: &[u8]) -> String {
-    Sha256::digest(bytes)
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect()
-}
-fn pin(path: &Path) -> String {
-    hash(&fs::read(path).unwrap())
-}
 
 fn named(
     seed: u64,
@@ -122,140 +107,6 @@ fn four_typed_sibling_loops_have_independent_carriers_and_literal_outputs() {
     }
 }
 
-fn bounded(command: &mut Command, evidence: &Path, label: &str, seconds: u64) -> Output {
-    let stdout = evidence.join(format!("{label}.stdout"));
-    let stderr = evidence.join(format!("{label}.stderr"));
-    command
-        .stdin(Stdio::null())
-        .stdout(Stdio::from(File::create(&stdout).unwrap()))
-        .stderr(Stdio::from(File::create(&stderr).unwrap()));
-    let mut child = ContainedChild::spawn(command).unwrap();
-    let deadline = Instant::now() + Duration::from_secs(seconds);
-    let status = loop {
-        if let Some(status) = child.child_mut().try_wait().unwrap() {
-            break status;
-        }
-        if Instant::now() >= deadline {
-            child.terminate_tree().unwrap();
-            let reap = Instant::now() + Duration::from_secs(5);
-            while child.child_mut().try_wait().unwrap().is_none() && Instant::now() < reap {
-                thread::sleep(Duration::from_millis(20));
-            }
-            panic!("{label} exceeded deadline; see {}", stderr.display());
-        }
-        thread::sleep(Duration::from_millis(20));
-    };
-    child.terminate_tree().unwrap();
-    Output {
-        status,
-        stdout: fs::read(stdout).unwrap(),
-        stderr: fs::read(stderr).unwrap(),
-    }
-}
-
-fn clean(evidence: &Path, commit: &str, label: &str) {
-    let head = bounded(
-        Command::new("git")
-            .args(["rev-parse", "HEAD"])
-            .current_dir(workspace()),
-        evidence,
-        &format!("{label}-head"),
-        15,
-    );
-    assert!(head.status.success());
-    assert_eq!(String::from_utf8(head.stdout).unwrap().trim(), commit);
-    let status = bounded(
-        Command::new("git")
-            .args(["status", "--porcelain", "--untracked-files=all"])
-            .current_dir(workspace()),
-        evidence,
-        &format!("{label}-status"),
-        15,
-    );
-    assert!(status.status.success());
-    assert!(
-        status.stdout.is_empty(),
-        "requires a clean immutable checkout"
-    );
-}
-
-fn closure(metadata: &Value, stdout: &[u8]) -> Vec<Value> {
-    let packages = metadata["packages"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|p| (p["id"].as_str().unwrap(), p))
-        .collect::<BTreeMap<_, _>>();
-    let root = metadata["resolve"]["root"].as_str().unwrap();
-    let mut seen = BTreeSet::new();
-    let mut result = Vec::new();
-    let mut names = BTreeSet::new();
-    for line in stdout
-        .split(|byte| *byte == b'\n')
-        .filter(|line| !line.is_empty())
-    {
-        let message: Value = serde_json::from_slice(line).unwrap();
-        if message["reason"] != "compiler-artifact" {
-            continue;
-        }
-        let id = message["package_id"].as_str().unwrap();
-        let package = packages[id];
-        let name = package["name"].as_str().unwrap();
-        names.insert(name.to_owned());
-        assert_ne!(name, "mech-syntax", "runtime contains parser");
-        assert!(
-            !name.starts_with("cranelift-"),
-            "runtime contains code generator"
-        );
-        if name.starts_with("mech-") {
-            assert!(package["source"].is_null(), "registry Mech crate {name}");
-            assert!(
-                Path::new(package["manifest_path"].as_str().unwrap())
-                    .canonicalize()
-                    .unwrap()
-                    .starts_with(workspace().canonicalize().unwrap())
-            );
-        }
-        let forbidden: &[&str] = match name {
-            "mech-gpu" => &[
-                "canonical-native",
-                "jit",
-                "aot",
-                "sequence-cli",
-                "native-build",
-                "fused-cli",
-            ],
-            "mech-engine" | "mech-stdlib" => &[
-                "source",
-                "semantic-compiler",
-                "compiler",
-                "full_compiler",
-                "standard_compiler",
-                "native-sequence",
-            ],
-            _ => &[],
-        };
-        for feature in message["features"].as_array().unwrap() {
-            assert!(
-                !forbidden.contains(&feature.as_str().unwrap()),
-                "runtime enabled {name}/{feature}"
-            );
-        }
-        if seen.insert((
-            id.to_owned(),
-            message["target"].to_string(),
-            message["features"].to_string(),
-        )) {
-            result.push(json!({"name":name, "id":id, "root":id==root, "target":message["target"], "features":message["features"], "filenames":message["filenames"]}));
-        }
-    }
-    for name in ["mech-core", "mech-engine", "mech-gpu", "mech-stdlib"] {
-        assert!(names.contains(name));
-    }
-    assert!(result.iter().any(|unit| unit["root"] == true));
-    result
-}
-
 #[test]
 #[ignore = "explicit clean-source linked qualification; builds one runtime-only executable and records no timings"]
 fn one_linked_iteration_executable_preserves_exact_typed_loops_and_denials() {
@@ -307,15 +158,7 @@ fn one_linked_iteration_executable_preserves_exact_typed_loops_and_denials() {
         generated.root().join("Cargo.lock"),
     )
     .unwrap();
-    let cargo_home = std::env::var_os("CARGO_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|value| PathBuf::from(value).join(".cargo")));
-    if let Some(home) = cargo_home {
-        assert!(
-            !home.join("config").exists() && !home.join("config.toml").exists(),
-            "ambient Cargo configuration is unsupported"
-        );
-    }
+    assert_no_ambient_cargo_config();
     let isolated = generated.root().ancestors().last().unwrap();
     let resolved = bounded(
         &mut CargoInvocation::resolve_lockfile(generated.manifest_path(), true)

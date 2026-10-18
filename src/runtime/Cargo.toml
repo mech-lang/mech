@@ -238,9 +238,9 @@ path = "examples/transactional_runtime.rs"
 required-features = ["runtime_default"]
 
 [[example]]
-name = "canonical_host_benchmark"
-path = "examples/canonical_host_benchmark.rs"
-required-features = ["full_compiler", "resident-routing-source", "runtime_bench_probes"]
+name = "canonical_host_reference"
+path = "examples/canonical_host_reference.rs"
+required-features = ["full_compiler", "resident-routing-source"]
 
 [[test]]
 name = "config_profile"

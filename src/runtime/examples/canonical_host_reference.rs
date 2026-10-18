@@ -1,6 +1,6 @@
-//! One canonical hosted executable for paired capability-authorization timing.
-//! This is resident execution of precompiled bytecode, not native machine-code
-//! AOT and not a comparison against the independent legacy native compiler.
+//! Secured resident reference for canonical hosted native qualification.
+//! Uses the existing runtime, real CLI provider and ordinary capability policy.
+//! This is not native AOT or an old-I/O-versus-secured benchmark result.
 use std::{ffi::OsString, path::Path};
 
 use mech_runtime::{
@@ -63,20 +63,10 @@ fn run() -> Result<(), String> {
             Ok(())
         }
         Some("run") => {
-            let policy = arguments
-                .next()
-                .and_then(|value| value.into_string().ok())
-                .ok_or("missing policy: secure or trusted-capabilities")?;
-            let trusted = match policy.as_str() {
-                "secure" => false,
-                "trusted-capabilities" => true,
-                _ => return Err("policy must be secure or trusted-capabilities".into()),
-            };
             let bytecode = arguments.next().ok_or("missing bytecode path")?;
             let grants = arguments.next().ok_or("missing grants JSON path")?;
             // A report is qualification evidence, not application output. A
-            // literal '-' disables it during timing; compilation is never in
-            // the measured process and payload argv has one explicit boundary.
+            // literal '-' disables it. Payload argv has one explicit boundary.
             let report = arguments.next().ok_or("missing report path or '-' ")?;
             if arguments.next().as_deref() != Some(std::ffi::OsStr::new("--")) {
                 return Err("run requires '--' before immutable payload arguments".into());
@@ -86,18 +76,14 @@ fn run() -> Result<(), String> {
             )
             .map_err(|error| error.to_string())?;
             let mut builder = builder(arguments.collect())?;
-            // Both modes install the same supplied grants. The sole baseline
-            // difference is resident capability admission/revalidation; no
-            // evaluator, algorithm, work/memory or transaction policy changes.
+            // Authority is always enforced by the existing runtime; there is
+            // no benchmark-specific trusted bypass or alternate evaluator.
             for grant in grants {
                 builder = builder.run_resource_grant(RunResourceGrantConfig {
                     target: grant.target,
                     operations: grant.operations,
                     paths: grant.paths,
                 });
-            }
-            if trusted {
-                builder = builder.benchmark_trusted_resident_capabilities();
             }
             let mut runtime = builder.build().map_err(diagnostic)?;
             let execution = (|| {
@@ -132,8 +118,8 @@ fn run() -> Result<(), String> {
                     return Err("refusing to overwrite qualification report".into());
                 }
                 let document = serde_json::json!({
-                    "schema": "mech.canonical-host-capability-comparison.v1",
-                    "policy": policy,
+                    "schema": "mech.canonical-host-reference.v1",
+                    "policy": "secured",
                     "route": "canonical-resident-external-precompiled-bytecode",
                     "program_revision": format!("{:?}", info.program_revision),
                     "requirements": info.requirement_count,
@@ -142,7 +128,7 @@ fn run() -> Result<(), String> {
                     "accepted": info.resident_accepted_turns,
                     "rejected": info.resident_rejected_turns,
                     "shutdown": "completed",
-                    "scope": "capability authorization only; shared checked evaluator, limits and publication remain enabled",
+                    "scope": "resident reference; ordinary runtime authority, provider, evaluator and publication policy",
                     "native_aot": false
                 });
                 std::fs::write(report, serde_json::to_vec_pretty(&document).unwrap())
@@ -150,7 +136,7 @@ fn run() -> Result<(), String> {
             }
             Ok(())
         }
-        _ => Err("usage: canonical_host_benchmark compile SOURCE BYTECODE | run POLICY BYTECODE GRANTS REPORT_OR_DASH -- [PAYLOAD...]".into()),
+        _ => Err("usage: canonical_host_reference compile SOURCE BYTECODE | run BYTECODE GRANTS REPORT_OR_DASH -- [PAYLOAD...]".into()),
     }
 }
 

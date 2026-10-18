@@ -258,6 +258,21 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--features functions", contracts)
         self.assertIn("--features full_compiler,native-artifact", contracts)
         self.assertNotIn("--no-run", contracts)
+        linked = job_steps(FULL, "canonical-linked-applications")
+        selection = next(step for step in linked if "Verify linked canonical managed program selection is nonempty" in step)
+        execute = next(step for step in linked if "Qualify linked canonical managed programs" in step)
+        name = "linked_qualification::linked_managed_programs_preserve_canonical_outputs_errors_and_denials"
+        self.assertIn("--list --ignored --exact", selection)
+        self.assertIn(name + ": test$", selection)
+        self.assertIn("--features canonical-native-program", execute)
+        self.assertIn("--test canonical_artifact_program", execute)
+        self.assertIn("--ignored --exact", execute)
+        self.assertIn(name, execute)
+        self.assertIn("MECH_CANONICAL_PROGRAM_SOURCE_COMMIT", execute)
+        self.assertIn("MECH_CANONICAL_PROGRAM_EVIDENCE_DIR", execute)
+        upload = next(step for step in linked if "Retain linked application evidence" in step)
+        self.assertIn("if: ${{ always() }}", upload)
+        self.assertIn("${{ runner.temp }}/canonical-program-evidence", upload)
 
     def test_canonical_iteration_has_nonempty_exact_linked_qualification(self):
         steps = job_steps(FULL, "canonical-linked-applications")

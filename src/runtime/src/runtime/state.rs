@@ -47,8 +47,6 @@ pub struct MechRuntime {
     pub(super) config: RuntimeConfig,
     #[cfg(feature = "resident-routing")]
     pub(super) function_catalog: Arc<FunctionCatalog>,
-    #[cfg(all(feature = "resident-routing", feature = "runtime_bench_probes"))]
-    pub(super) trust_resident_requirements_for_benchmark: bool,
     #[cfg(feature = "resident-routing")]
     pub(super) active_program: ActiveProgramExecution,
     #[cfg(feature = "resident-routing")]

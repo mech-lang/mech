@@ -34,8 +34,6 @@ pub struct RuntimeBuilder {
     config: RuntimeConfig,
     #[cfg(feature = "resident-routing")]
     function_catalog: Arc<FunctionCatalog>,
-    #[cfg(all(feature = "resident-routing", feature = "runtime_bench_probes"))]
-    trust_resident_requirements_for_benchmark: bool,
     id_generator: Box<dyn IdGenerator>,
     store: Box<dyn MechStore>,
     capability_kernel: Box<dyn CapabilityKernel>,
@@ -89,8 +87,6 @@ impl Default for RuntimeBuilder {
             config: RuntimeConfig::default(),
             #[cfg(feature = "resident-routing")]
             function_catalog: mech_engine::empty_function_catalog(),
-            #[cfg(all(feature = "resident-routing", feature = "runtime_bench_probes"))]
-            trust_resident_requirements_for_benchmark: false,
             id_generator: Box::new(DefaultIdGenerator::new()),
             store: Box::new(extension::RuntimeStoreBoundary::new(Box::new(
                 InMemoryStore::new(),
@@ -140,22 +136,6 @@ impl RuntimeBuilder {
     #[cfg(feature = "resident-routing")]
     pub fn function_catalog(mut self, catalog: Arc<FunctionCatalog>) -> Self {
         self.function_catalog = catalog;
-        self
-    }
-
-    /// Explicit host-owned baseline for capability-authorization measurements.
-    ///
-    /// Available only in benchmark-probe builds, never selected by source,
-    /// serialized configuration or environment variables. Resident resource
-    /// requirements are still bound exactly to the artifact and real provider
-    /// contracts. Only capability-kernel admission/revalidation is omitted:
-    /// the canonical executor, limits, managed memory, transaction/publication
-    /// protocol, output delivery and shutdown remain the same.
-    ///
-    /// This is not a complete unchecked-runtime or legacy-native baseline.
-    #[cfg(all(feature = "resident-routing", feature = "runtime_bench_probes"))]
-    pub fn benchmark_trusted_resident_capabilities(mut self) -> Self {
-        self.trust_resident_requirements_for_benchmark = true;
         self
     }
 
@@ -339,9 +319,6 @@ impl RuntimeBuilder {
             config: self.config,
             #[cfg(feature = "resident-routing")]
             function_catalog: Arc::clone(&self.function_catalog),
-            #[cfg(all(feature = "resident-routing", feature = "runtime_bench_probes"))]
-            trust_resident_requirements_for_benchmark: self
-                .trust_resident_requirements_for_benchmark,
             #[cfg(feature = "resident-routing")]
             active_program: Default::default(),
             #[cfg(feature = "resident-routing")]

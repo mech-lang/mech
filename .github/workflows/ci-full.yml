@@ -758,6 +758,24 @@ jobs:
           --test canonical_artifact_iteration -- --ignored --exact
           linked_qualification::one_linked_iteration_executable_preserves_exact_typed_loops_and_denials
           --test-threads=1
+      - name: Verify linked canonical managed program selection is nonempty
+        run: |
+          set -euo pipefail
+          PROGRAM_QUALIFICATION_TESTS=$(cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-program \
+            --test canonical_artifact_program -- --list --ignored --exact \
+            linked_qualification::linked_managed_programs_preserve_canonical_outputs_errors_and_denials)
+          test "$(printf '%s\n' "$PROGRAM_QUALIFICATION_TESTS" | rg -c '^linked_qualification::linked_managed_programs_preserve_canonical_outputs_errors_and_denials: test$')" -eq 1
+      - name: Qualify linked canonical managed programs
+        env:
+          MECH_CANONICAL_PROGRAM_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_PROGRAM_EVIDENCE_DIR: ${{ runner.temp }}/canonical-program-evidence
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
+          --no-default-features --features canonical-native-program
+          --test canonical_artifact_program -- --ignored --exact
+          linked_qualification::linked_managed_programs_preserve_canonical_outputs_errors_and_denials
+          --test-threads=1
       - name: Verify linked canonical resident CLI selection is nonempty
         env:
           MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
@@ -789,6 +807,7 @@ jobs:
             ${{ runner.temp }}/canonical-cast-evidence
             ${{ runner.temp }}/canonical-match-evidence
             ${{ runner.temp }}/canonical-iteration-evidence
+            ${{ runner.temp }}/canonical-program-evidence
             ${{ runner.temp }}/canonical-cli-evidence
             ${{ runner.temp }}/native-host-evidence
             ${{ runner.temp }}/native-control-evidence

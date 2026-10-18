@@ -16,9 +16,15 @@ use mech_syntax::document::{
     parse_canonical_document,
 };
 
+#[path = "support/canonical_program_linked.rs"]
+mod linked_qualification;
+
 const ROOT: &str = "+> text\n+> sequence\n+> number\n+> map\nwords := text/lines(input<string>)\njoined := text/join(words, \",\")\nsize := sequence/length(joined)\nformatted := number/format(size, 0u64)\ncounts := map/histogram(words)\nkeys := map/keys(counts)\nvalues := map/values(counts)\nmore := size + 1u64\n";
 const LEXICAL: &str = "+> text\n+> sequence\n+> number\n+> map\nstep(x<string>) => (next<string>) :=\n  words := text/lines(x)\n  joined := text/join(words, \",\")\n  size := sequence/length(joined)\n  counts := map/histogram(words)\n  keys := map/keys(counts)\n  values := map/values(counts)\n  formatted := number/format(size + sequence/length(values), 0u64)\n  next := text/join(keys, formatted).\nseed<string> |2> step\n";
 fn artifacts(source: &str) -> ([ProgramArtifact; 2], usize) {
+    artifacts_mode(source, false)
+}
+fn artifacts_mode(source: &str, interactive: bool) -> ([ProgramArtifact; 2], usize) {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x50524f47), Revision(1), source).unwrap(),
         ParseConfig::default(),
@@ -28,12 +34,15 @@ fn artifacts(source: &str) -> ([ProgramArtifact; 2], usize) {
         "{source}: {:?}",
         parsed.diagnostics
     );
-    let product = CanonicalSourceFrontend
-        .compile_document_with_catalog(
-            &DocumentSyntax::cast(parsed.syntax()).unwrap(),
-            mech_stdlib::source_catalog(),
-        )
-        .unwrap();
+    let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
+    let product = if interactive {
+        CanonicalSourceFrontend
+            .compile_interactive_document_with_catalog(&syntax, mech_stdlib::source_catalog())
+    } else {
+        CanonicalSourceFrontend
+            .compile_document_with_catalog(&syntax, mech_stdlib::source_catalog())
+    }
+    .unwrap();
     let last = product
         .document_outputs()
         .iter()
@@ -106,13 +115,16 @@ fn inputs(
         .collect()
 }
 fn reference(artifact: &ProgramArtifact, args: &[Value]) -> Vec<Value> {
+    reference_result(artifact, args).unwrap()
+}
+fn reference_result(artifact: &ProgramArtifact, args: &[Value]) -> Result<Vec<Value>, String> {
     let mut instance = activate(
         ReactiveInstanceId::new(0x50524f47, 0),
         artifact,
         &mech_stdlib::source_catalog(),
         &ActivationFacts::default(),
     )
-    .unwrap();
+    .map_err(|error| format!("{error:?}"))?;
     let captured = instance
         .plan
         .inputs
@@ -128,11 +140,15 @@ fn reference(artifact: &ProgramArtifact, args: &[Value]) -> Vec<Value> {
         .collect::<Vec<_>>();
     instance
         .prepare_turn_values(&captured)
-        .unwrap()
+        .map_err(|error| format!("{error:?}"))?
         .publish()
-        .unwrap();
+        .map_err(|error| format!("{error:?}"))?;
     (0..artifact.outputs().len())
-        .map(|index| instance.copied_output(index).unwrap())
+        .map(|index| {
+            instance
+                .copied_output(index)
+                .map_err(|error| format!("{error:?}"))
+        })
         .collect()
 }
 fn equal(artifact: &ProgramArtifact, left: &[Option<Value>], right: &[Value]) {
