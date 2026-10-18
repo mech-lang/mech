@@ -1,4 +1,4 @@
-//! Build-owned ABI4 binding. JIT and linked calls use one invocation boundary.
+//! Build-owned ABI5 binding. JIT and linked calls use one invocation boundary.
 use super::{
     NATIVE_PROGRAM_LINK_IDENTITY_BYTES, NativeLinkError, NativeProgramDescriptor,
     NativeProgramExecutionError, NativeProgramExecutionLimits, NativeProgramExecutionReport,
@@ -13,7 +13,7 @@ pub struct LinkedProgramArtifact {
 }
 impl LinkedProgramArtifact {
     /// # Safety
-    /// The entry must be the process-lifetime ABI4 entry emitted by this crate's
+    /// The entry must be the process-lifetime ABI5 entry emitted by this crate's
     /// checked shared CFG definition, and identity its readonly symbol in the
     /// SAME unchanged Object. The build must verify source/Object/bytecode pins
     /// before linking. No retained pointers, unwinding, ambient effects, foreign

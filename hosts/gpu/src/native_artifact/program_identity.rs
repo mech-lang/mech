@@ -1,4 +1,4 @@
-//! Explicit program IR/ABI4 identity. No Debug or pointer serialization.
+//! Explicit program IR/ABI5 identity. No Debug or pointer serialization.
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
     NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind,
@@ -11,8 +11,8 @@ fn bytes(hash: &mut Sha256, value: &[u8]) {
     word(hash, value.len() as u64);
     hash.update(value);
 }
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 1;
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 1;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 2;
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 2;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -123,7 +123,7 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
             None => hash.update([0]),
         }
         match block.action() {
-            // ABI4 commits the maintained selection as well as operand slots.
+            // ABI5 commits the maintained selection as well as operand slots.
             NativeIterationAction::LibraryCall {
                 template,
                 operands,
@@ -189,6 +189,23 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
                 hash.update([2]);
                 word(&mut hash, *iteration as u64);
             }
+            NativeIterationAction::CollectionBegin { collection } => {
+                hash.update([4]);
+                word(&mut hash, *collection as u64);
+            }
+            NativeIterationAction::CollectionElement { iteration } => {
+                hash.update([5]);
+                word(&mut hash, *iteration as u64);
+            }
+            NativeIterationAction::CollectionPush { collection, value } => {
+                hash.update([6]);
+                word(&mut hash, *collection as u64);
+                word(&mut hash, value.get() as u64);
+            }
+            NativeIterationAction::CollectionFinish { collection } => {
+                hash.update([7]);
+                word(&mut hash, *collection as u64);
+            }
         }
         match block.terminator() {
             NativeIterationTerminator::Scalar(terminator) => {
@@ -252,6 +269,7 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
     }
     word(&mut hash, plan.iterations().len() as u64);
     for iteration in plan.iterations() {
+        let iteration = iteration.as_ref();
         word(&mut hash, iteration.origin().node().get() as u64);
         for id in [
             iteration.origin().block(),
@@ -266,14 +284,26 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
                 None => hash.update([0]),
             }
         }
-        word(&mut hash, iteration.count());
-        for value in [
-            iteration.seed(),
-            iteration.carrier(),
-            iteration.next(),
-            iteration.result(),
-        ] {
-            word(&mut hash, value.get() as u64);
+        match iteration {
+            mech_engine::native_artifact::NativeControlLoopRef::Iteration(fold) => {
+                hash.update([0]);
+                word(&mut hash, fold.count());
+                for value in [fold.seed(), fold.carrier(), fold.next(), fold.result()] {
+                    word(&mut hash, value.get() as u64);
+                }
+            }
+            mech_engine::native_artifact::NativeControlLoopRef::Collection(collection) => {
+                hash.update([1]);
+                word(&mut hash, collection.collection() as u64);
+                word(&mut hash, collection.source().get() as u64);
+                match collection.element() {
+                    Some(value) => {
+                        hash.update([1]);
+                        word(&mut hash, value.get() as u64);
+                    }
+                    None => hash.update([0]),
+                }
+            }
         }
         for id in [
             iteration.initialize(),
@@ -283,6 +313,56 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
             iteration.exit(),
         ] {
             word(&mut hash, id as u64);
+        }
+    }
+
+    word(&mut hash, plan.collections().len() as u64);
+    for collection in plan.collections() {
+        word(&mut hash, collection.origin().node().get() as u64);
+        for id in [
+            collection.origin().block(),
+            collection.origin().local(),
+            collection.parent(),
+            collection.parent_collection(),
+        ] {
+            match id {
+                Some(id) => {
+                    hash.update([1]);
+                    word(&mut hash, id as u64);
+                }
+                None => hash.update([0]),
+            }
+        }
+        match collection.kind() {
+            mech_engine::ComprehensionKind::Matrix => hash.update([0]),
+            mech_engine::ComprehensionKind::MatrixPreserveShape => hash.update([1]),
+            mech_engine::ComprehensionKind::Set => hash.update([2]),
+            mech_engine::ComprehensionKind::MatrixHorizontalBlocks { rows } => {
+                hash.update([3]);
+                match rows {
+                    mech_engine::MatrixBlockRows::InferOrZero => hash.update([0]),
+                    mech_engine::MatrixBlockRows::Fixed(n) => {
+                        hash.update([1]);
+                        word(&mut hash, n);
+                    }
+                    mech_engine::MatrixBlockRows::InputMatrixElements { input } => {
+                        hash.update([2]);
+                        word(&mut hash, input as u64);
+                    }
+                }
+            }
+        }
+        for value in [
+            collection.output().get(),
+            collection.begin(),
+            collection.push(),
+            collection.finish(),
+        ] {
+            word(&mut hash, value as u64);
+        }
+        word(&mut hash, collection.generators().len() as u64);
+        for &generator in collection.generators() {
+            word(&mut hash, generator as u64);
         }
     }
 

@@ -2,8 +2,9 @@
 //! This is a constructor-private compiler view of ProgramArtifact, not another
 //! serialized program, interpreter, scheduler or execution authority.
 use super::{
-    NativeArtifactLoweringError, NativeIterationBlock, NativeIterationLoop,
-    NativeIterationValueScope, NativeMatchValue, NativeScalarKind, NativeScalarType,
+    NativeArtifactLoweringError, NativeControlLoop, NativeIterationBlock,
+    NativeIterationValueScope, NativeMatchValue, NativeProgramCollection, NativeScalarKind,
+    NativeScalarType,
 };
 use mech_core::{
     CellSlotId, InputId, OutputId, ProgramRevision, Schema, SchemaId, SchemaKey, Value,
@@ -217,7 +218,8 @@ pub struct NativeProgramArtifactPlan {
     pub(crate) values: Box<[NativeProgramType]>,
     pub(crate) value_scopes: Box<[NativeIterationValueScope]>,
     pub(crate) blocks: Box<[NativeIterationBlock]>,
-    pub(crate) iterations: Box<[NativeIterationLoop]>,
+    pub(crate) iterations: Box<[NativeControlLoop]>,
+    pub(crate) collections: Box<[NativeProgramCollection]>,
     pub(crate) outputs: Box<[NativeProgramOutput]>,
     pub(crate) entry: u32,
 }
@@ -240,8 +242,11 @@ impl NativeProgramArtifactPlan {
     pub fn blocks(&self) -> &[NativeIterationBlock] {
         &self.blocks
     }
-    pub fn iterations(&self) -> &[NativeIterationLoop] {
+    pub fn iterations(&self) -> &[NativeControlLoop] {
         &self.iterations
+    }
+    pub fn collections(&self) -> &[NativeProgramCollection] {
+        &self.collections
     }
     pub fn outputs(&self) -> &[NativeProgramOutput] {
         &self.outputs

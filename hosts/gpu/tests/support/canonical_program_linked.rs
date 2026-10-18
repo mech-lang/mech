@@ -82,6 +82,75 @@ fn import_inputs(
         .collect()
 }
 
+fn collection_source() -> String {
+    format!(
+        "{ROOT}projection := text/join([number/format(sequence/length(word) / (sequence/length(word) - divisor<u64>), 0u64) | word <- words], \",\")\n"
+    )
+}
+
+#[test]
+fn linked_collection_fixture_checks_each_body_and_discards_a_partial_result() {
+    let (variants, _) = artifacts_mode(&collection_source(), true);
+    for artifact in variants {
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let mut output = vec![None; artifact.outputs().len()];
+        for (text, divisor) in [("a\nbb\na", 0), ("", 0), ("é\n👋\né", 0)] {
+            let args = inputs(
+                &artifact,
+                &[
+                    ("input", ValueDataDraft::String(text.into())),
+                    ("divisor", ValueDataDraft::U64(divisor)),
+                ],
+                &memory,
+            );
+            let expected = reference_result(&artifact, &args).unwrap();
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            equal(&artifact, &output, &expected);
+        }
+        // The first word yields 2; the second divides by zero. Neither this
+        // partial collection nor any earlier root may replace prior outputs.
+        let args = inputs(
+            &artifact,
+            &[
+                ("input", ValueDataDraft::String("bb\na".into())),
+                ("divisor", ValueDataDraft::U64(1)),
+            ],
+            &memory,
+        );
+        assert!(reference_result(&artifact, &args).is_err());
+        let prior = exported(
+            &artifact,
+            &output
+                .iter()
+                .map(|v| v.clone().unwrap())
+                .collect::<Vec<_>>(),
+        );
+        let before = memory.used_bytes();
+        let error = jit
+            .evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            NativeProgramExecutionError::Control(
+                mech_gpu::native_artifact::NativeIterationExecutionError::Arithmetic { .. }
+            )
+        ));
+        assert_eq!(memory.used_bytes(), before);
+        assert_eq!(
+            exported(
+                &artifact,
+                &output
+                    .iter()
+                    .map(|v| v.clone().unwrap())
+                    .collect::<Vec<_>>()
+            ),
+            prior
+        );
+    }
+}
+
 #[test]
 #[ignore = "explicit clean-source linked managed-program qualification; no timings"]
 fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
@@ -114,7 +183,11 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
         128 * 1024 * 1024,
     );
     let mut receipts = Vec::new();
-    for (name, source, input_name) in [("root", root, "input"), ("lexical", lexical, "seed")] {
+    for (name, source, input_name) in [
+        ("root", root, "input"),
+        ("lexical", lexical, "seed"),
+        ("collection", collection_source(), "input"),
+    ] {
         let directory = evidence.join(name);
         fs::create_dir(&directory).unwrap();
         let (variants, _) = artifacts_mode(&source, true);
@@ -205,13 +278,16 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
             ("unicode", "é\n👋\né"),
         ] {
             for choose in [false, true] {
-                if name == "root" && !choose {
+                if name != "lexical" && !choose {
                     continue;
                 }
                 let label = format!("{case}-{choose}");
                 let named = [
                     (input_name, ValueDataDraft::String(text.into())),
-                    ("divisor", ValueDataDraft::U64(1)),
+                    (
+                        "divisor",
+                        ValueDataDraft::U64(u64::from(name != "collection")),
+                    ),
                     ("flag", ValueDataDraft::Bool(choose)),
                 ];
                 let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
@@ -401,26 +477,26 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
         assert!(result.stdout.is_empty());
         assert!(!result.stderr.is_empty());
         cases.push(json!({"name":"wrong-input-kind","policy":standard,"input":malformed,"stdout":"","stderr":String::from_utf8(result.stderr).unwrap(),"exit":result.status.code()}));
-        if name == "root" {
+        if name != "lexical" {
+            let named = [
+                (
+                    input_name,
+                    ValueDataDraft::String(if name == "collection" {
+                        "bb\na".into()
+                    } else {
+                        "a\nbb\na".into()
+                    }),
+                ),
+                (
+                    "divisor",
+                    ValueDataDraft::U64(u64::from(name == "collection")),
+                ),
+            ];
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
-            let args = inputs(
-                &variants[0],
-                &[
-                    (input_name, ValueDataDraft::String("a\nbb\na".into())),
-                    ("divisor", ValueDataDraft::U64(0)),
-                ],
-                &memory,
-            );
+            let args = inputs(&variants[0], &named, &memory);
             for artifact in &variants {
                 let account = ManagedMemoryBudget::new(256 * 1024 * 1024);
-                let values = inputs(
-                    artifact,
-                    &[
-                        (input_name, ValueDataDraft::String("a\nbb\na".into())),
-                        ("divisor", ValueDataDraft::U64(0)),
-                    ],
-                    &account,
-                );
+                let values = inputs(artifact, &named, &account);
                 assert!(reference_result(artifact, &values).is_err());
             }
             let mut output = vec![None; variants[0].outputs().len()];
@@ -466,5 +542,5 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
         receipts.push(json!({"name":name,"source":source,"source_sha256":hash(source.as_bytes()),"generator":generated.metadata(),"generated_pins":pins,"binary":binary,"binary_sha256":binary_pin,"lock_sha256":pin(&generated.root().join("Cargo.lock")),"compiled_units":units,"cases":cases,"linked":true,"executed":true,"timing_samples":0}));
     }
     clean(&evidence, &commit, "after");
-    fs::write(evidence.join("qualification.json"), serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-program-linked-qualification.v1","source_commit":commit,"programs":receipts,"scope":"managed root and lexical calls with scalar control in real linked Objects; no resource-host/full-workload/performance claim","benchmark_measurements":0})).unwrap()).unwrap();
+    fs::write(evidence.join("qualification.json"), serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-program-linked-qualification.v1","source_commit":commit,"programs":receipts,"scope":"managed root and lexical calls, scalar control and native String matrix comprehensions in real linked Objects; no resource-host/full-workload/performance claim","benchmark_measurements":0})).unwrap()).unwrap();
 }

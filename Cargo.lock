@@ -2774,6 +2774,7 @@ dependencies = [
  "cranelift-object",
  "fxhash",
  "gmp-mpfr-sys",
+ "grapheme",
  "hashbrown 0.15.5",
  "libloading 0.8.9",
  "mech-build",

@@ -144,8 +144,13 @@ expresses record selection, overlapping String windows, frequency widths and
 queries in Mech, using comprehensions and general-purpose library primitives
 such as `map/histogram`. Keep that algorithm in the language: packing, streaming,
 fusion and parallel execution should be compiler optimizations over its canonical
-semantics, not a benchmark-sized external helper. The original/decoded resident
-source checks do not establish native comprehension lowering or those
-optimizations; that native work remains required. Older `sequence/packed-windows`
+semantics, not a benchmark-sized external helper. The checked native backend
+now lowers scalar/String matrix comprehensions and shape-preserving unary
+pattern-function lifting to generated loops, including filters and nested
+generators. It uses the same artifact, current-visit proof, scalar emitter and
+invocation budgets; collection helpers project elements and stage results,
+never interpret body operations. This does not yet lower the complete benchmark:
+Set/composite outputs, element-wise counts, resource/state integration and
+whole-program optimization/qualification remain required. Older `sequence/packed-windows`
 timings are separately scoped migration diagnostics, not completion of this
 language-level target.

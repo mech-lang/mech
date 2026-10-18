@@ -78,4 +78,47 @@ impl Hooks {
             .icmp_imm(IntCC::Equal, status, super::abi::STATUS_OK as i64);
         guard(b, valid, error, super::abi::STATUS_ADMISSION);
     }
+    pub fn collection(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        site: usize,
+        args: [Value; 2],
+        error: Block,
+    ) -> Result<(), NativeCompileError> {
+        #[cfg(feature = "canonical-native-program")]
+        {
+            self.call(b, site, super::program_abi::COLLECTION, args, error);
+            Ok(())
+        }
+        #[cfg(not(feature = "canonical-native-program"))]
+        {
+            let _ = (b, site, args, error);
+            Err(super::compiler::backend("collection ABI is not enabled"))
+        }
+    }
+    pub fn output(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        site: usize,
+        ordinal: usize,
+        value: Value,
+        error: Block,
+    ) -> Result<(), NativeCompileError> {
+        #[cfg(feature = "canonical-native-program")]
+        {
+            let operation = super::program_abi::OUTPUT_BASE
+                .checked_add(ordinal as u64)
+                .ok_or_else(|| super::compiler::backend("output helper ordinal overflow"))?;
+            let zero = b.ins().iconst(types::I64, 0);
+            self.call(b, site, operation, [value, zero], error);
+            Ok(())
+        }
+        #[cfg(not(feature = "canonical-native-program"))]
+        {
+            let _ = (b, site, ordinal, value, error);
+            Err(super::compiler::backend(
+                "managed output ABI is not enabled",
+            ))
+        }
+    }
 }

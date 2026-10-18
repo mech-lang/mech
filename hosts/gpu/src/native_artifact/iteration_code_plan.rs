@@ -1,7 +1,7 @@
 //! Compiler-only view over the SAME canonical scalar/mixed loop CFG.
 use super::NativeCompileError;
 use mech_engine::native_artifact::{
-    NativeIterationArtifactPlan, NativeIterationBlock, NativeIterationLoop, NativeMatchValue,
+    NativeControlLoopRef, NativeIterationArtifactPlan, NativeIterationBlock, NativeMatchValue,
     NativeScalarKind, NativeScalarValue,
 };
 
@@ -19,11 +19,18 @@ impl<'a> CodePlan<'a> {
             Self::Program(p) => p.blocks(),
         }
     }
-    pub fn iterations(self) -> &'a [NativeIterationLoop] {
+    pub fn iteration_count(self) -> usize {
         match self {
-            Self::Scalar(p) => p.iterations(),
+            Self::Scalar(p) => p.iterations().len(),
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(p) => p.iterations(),
+            Self::Program(p) => p.iterations().len(),
+        }
+    }
+    pub fn iteration(self, index: usize) -> NativeControlLoopRef<'a> {
+        match self {
+            Self::Scalar(p) => (&p.iterations()[index]).into(),
+            #[cfg(feature = "canonical-native-program")]
+            Self::Program(p) => p.iterations()[index].as_ref(),
         }
     }
     pub fn is_program(self) -> bool {

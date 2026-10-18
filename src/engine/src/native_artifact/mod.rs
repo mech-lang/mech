@@ -21,6 +21,10 @@ pub use crate::resident::general::native_match_lowering::{
 };
 pub use iteration::*;
 
+mod collection;
+pub use collection::*;
+
+mod collection_validation;
 pub(crate) mod iteration_validation;
 
 mod program;

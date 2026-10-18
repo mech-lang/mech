@@ -268,7 +268,7 @@ pub(super) fn define_cfg<M: Module>(
     )?;
     let local_count = plan
         .value_count()
-        .checked_add(plan.iterations().len())
+        .checked_add(plan.iteration_count())
         .ok_or_else(|| backend("iteration local count overflow"))?;
     offset(local_count)?;
     offset(plan.input_count())?;
@@ -442,33 +442,41 @@ pub(super) fn define_cfg<M: Module>(
                     }
                 }
                 NativeIterationAction::Initialize { iteration } => {
-                    let iteration = &plan.iterations()[*iteration as usize];
-                    if plan.kind(iteration.carrier()).is_some() {
-                        let value = load(&mut b, locals, iteration.seed())?;
-                        b.ins().store(
-                            MemFlags::new(),
-                            value,
-                            locals,
-                            offset(iteration.carrier().get() as usize)?,
-                        );
-                    } else {
-                        let hooks = hooks
-                            .as_ref()
-                            .ok_or_else(|| backend("missing managed carrier hook"))?;
-                        let zero = b.ins().iconst(types::I64, 0);
-                        hooks.call(&mut b, index, 1, [zero; 2], error);
-                    }
-                    let count = b.ins().iconst(types::I64, iteration.count() as i64);
-                    let slot = plan.value_count()
-                        + match block.action() {
-                            NativeIterationAction::Initialize { iteration } => *iteration as usize,
-                            _ => unreachable!(),
-                        };
+                    let count = match plan.iteration(*iteration as usize) {
+                        mech_engine::native_artifact::NativeControlLoopRef::Iteration(
+                            iteration,
+                        ) => {
+                            if plan.kind(iteration.carrier()).is_some() {
+                                let value = load(&mut b, locals, iteration.seed())?;
+                                b.ins().store(
+                                    MemFlags::new(),
+                                    value,
+                                    locals,
+                                    offset(iteration.carrier().get() as usize)?,
+                                );
+                            } else {
+                                let hooks = hooks
+                                    .as_ref()
+                                    .ok_or_else(|| backend("missing managed carrier hook"))?;
+                                let zero = b.ins().iconst(types::I64, 0);
+                                hooks.call(&mut b, index, 1, [zero; 2], error);
+                            }
+                            b.ins().iconst(types::I64, iteration.count() as i64)
+                        }
+                        mech_engine::native_artifact::NativeControlLoopRef::Collection(_) => {
+                            let hooks = hooks
+                                .as_ref()
+                                .ok_or_else(|| backend("missing collection initializer hook"))?;
+                            let zero = b.ins().iconst(types::I64, 0);
+                            hooks.collection(&mut b, index, [zero; 2], error)?;
+                            b.ins().load(types::I64, MemFlags::new(), hooks.result, 0)
+                        }
+                    };
+                    let slot = plan.value_count() + *iteration as usize;
                     b.ins().store(MemFlags::new(), count, locals, offset(slot)?);
                 }
                 NativeIterationAction::Latch { iteration } => {
                     let id = *iteration as usize;
-                    let iteration = &plan.iterations()[id];
                     let counter = b.ins().load(
                         types::I64,
                         MemFlags::new(),
@@ -477,20 +485,25 @@ pub(super) fn define_cfg<M: Module>(
                     );
                     let nonzero = b.ins().icmp_imm(IntCC::NotEqual, counter, 0);
                     guard(&mut b, nonzero, error, STATUS_ABI);
-                    if plan.kind(iteration.carrier()).is_some() {
-                        let next = load(&mut b, locals, iteration.next())?;
-                        b.ins().store(
-                            MemFlags::new(),
-                            next,
-                            locals,
-                            offset(iteration.carrier().get() as usize)?,
-                        );
-                    } else {
-                        let hooks = hooks
-                            .as_ref()
-                            .ok_or_else(|| backend("missing managed latch hook"))?;
-                        let zero = b.ins().iconst(types::I64, 0);
-                        hooks.call(&mut b, index, 1, [zero; 2], error);
+                    if let mech_engine::native_artifact::NativeControlLoopRef::Iteration(
+                        iteration,
+                    ) = plan.iteration(id)
+                    {
+                        if plan.kind(iteration.carrier()).is_some() {
+                            let next = load(&mut b, locals, iteration.next())?;
+                            b.ins().store(
+                                MemFlags::new(),
+                                next,
+                                locals,
+                                offset(iteration.carrier().get() as usize)?,
+                            );
+                        } else {
+                            let hooks = hooks
+                                .as_ref()
+                                .ok_or_else(|| backend("missing managed latch hook"))?;
+                            let zero = b.ins().iconst(types::I64, 0);
+                            hooks.call(&mut b, index, 1, [zero; 2], error);
+                        }
                     }
                     let remaining = b.ins().iadd_imm(counter, -1);
                     b.ins().store(
@@ -499,6 +512,45 @@ pub(super) fn define_cfg<M: Module>(
                         locals,
                         offset(plan.value_count() + id)?,
                     );
+                }
+                NativeIterationAction::CollectionElement { iteration } => {
+                    let mech_engine::native_artifact::NativeControlLoopRef::Collection(data) =
+                        plan.iteration(*iteration as usize)
+                    else {
+                        return Err(backend("element hook outside collection loop"));
+                    };
+                    let hooks = hooks
+                        .as_ref()
+                        .ok_or_else(|| backend("missing collection element hook"))?;
+                    let zero = b.ins().iconst(types::I64, 0);
+                    hooks.collection(&mut b, index, [zero; 2], error)?;
+                    if let Some(output) = data.element().filter(|&value| plan.kind(value).is_some())
+                    {
+                        let value = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+                        b.ins().store(
+                            MemFlags::new(),
+                            value,
+                            locals,
+                            offset(output.get() as usize)?,
+                        );
+                    }
+                }
+                NativeIterationAction::CollectionBegin { .. }
+                | NativeIterationAction::CollectionFinish { .. }
+                | NativeIterationAction::CollectionPush { .. } => {
+                    let hooks = hooks
+                        .as_ref()
+                        .ok_or_else(|| backend("missing collection builder hook"))?;
+                    let zero = b.ins().iconst(types::I64, 0);
+                    let value = match block.action() {
+                        NativeIterationAction::CollectionPush { value, .. }
+                            if plan.kind(*value).is_some() =>
+                        {
+                            load(&mut b, locals, *value)?
+                        }
+                        _ => zero,
+                    };
+                    hooks.collection(&mut b, index, [value, zero], error)?;
                 }
             }
             match block.terminator() {
@@ -526,8 +578,7 @@ pub(super) fn define_cfg<M: Module>(
                                 } else {
                                     b.ins().iconst(types::I64, 0)
                                 };
-                                let zero = b.ins().iconst(types::I64, 0);
-                                hooks.call(&mut b, index, 2 + out as u64, [first, zero], error);
+                                hooks.output(&mut b, index, out, first, error)?;
                             }
                             set_origin(&mut b, frame, NO_NODE);
                             let status = b.ins().iconst(types::I64, super::abi::STATUS_OK as i64);
@@ -578,7 +629,7 @@ pub(super) fn define_cfg<M: Module>(
                         (plan.output_count() as u64)
                             .checked_mul(if plan.is_program() { 64 } else { 8 })
                             .and_then(|v| {
-                                v.checked_add((plan.iterations().len() as u64).checked_mul(8)?)
+                                v.checked_add((plan.iteration_count() as u64).checked_mul(8)?)
                             })
                             .and_then(|v| v.checked_add(256))
                             .ok_or_else(|| backend("iteration completion overflow"))?

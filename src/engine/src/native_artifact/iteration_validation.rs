@@ -3,7 +3,7 @@
 //! checked once as an acyclic graph, beginning with ancestors plus its carrier;
 //! previous-visit body locals are never part of that initial definition set.
 use super::{
-    NativeIterationAction as Action, NativeIterationArtifactPlan,
+    NativeControlLoopRef as Loop, NativeIterationAction as Action, NativeIterationArtifactPlan,
     NativeIterationTerminator as Terminator, NativeIterationValueScope as Scope,
     NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeMatchValue as Value,
     NativeScalarKind, NativeScalarValue,
@@ -12,6 +12,9 @@ use std::collections::VecDeque;
 
 pub(crate) trait ControlType: Eq {
     fn is_bool(&self) -> bool;
+    fn definition(&self) -> Option<&mech_core::Schema> {
+        None
+    }
 }
 impl ControlType for super::NativeScalarType {
     fn is_bool(&self) -> bool {
@@ -22,6 +25,9 @@ impl ControlType for super::NativeProgramType {
     fn is_bool(&self) -> bool {
         self.scalar_kind() == Some(NativeScalarKind::Bool)
     }
+    fn definition(&self) -> Option<&mech_core::Schema> {
+        Some(self.definition())
+    }
 }
 
 /// One definition/ownership analysis for both legacy scalar and mixed-value
@@ -30,7 +36,9 @@ pub(crate) trait ControlPlan {
     type Type: ControlType;
     fn values(&self) -> &[Self::Type];
     fn blocks(&self) -> &[super::NativeIterationBlock];
-    fn iterations(&self) -> &[super::NativeIterationLoop];
+    fn iteration_count(&self) -> usize;
+    fn iteration(&self, index: usize) -> Loop<'_>;
+    fn collections(&self) -> &[super::NativeProgramCollection];
     fn value_scopes(&self) -> &[Scope];
     fn entry(&self) -> u32;
     fn initialize(&self, initial: &mut [bool]) -> Result<(), &'static str>;
@@ -52,8 +60,11 @@ macro_rules! common_plan_view {
         fn blocks(&self) -> &[super::NativeIterationBlock] {
             <$plan>::blocks(self)
         }
-        fn iterations(&self) -> &[super::NativeIterationLoop] {
-            <$plan>::iterations(self)
+        fn iteration_count(&self) -> usize {
+            <$plan>::iterations(self).len()
+        }
+        fn iteration(&self, index: usize) -> Loop<'_> {
+            (&<$plan>::iterations(self)[index]).into()
         }
         fn value_scopes(&self) -> &[Scope] {
             <$plan>::value_scopes(self)
@@ -88,6 +99,9 @@ fn initialize_value<P: ControlPlan>(
 }
 impl ControlPlan for NativeIterationArtifactPlan {
     common_plan_view!(NativeIterationArtifactPlan, super::NativeScalarType);
+    fn collections(&self) -> &[super::NativeProgramCollection] {
+        &[]
+    }
     fn initialize(&self, initial: &mut [bool]) -> Result<(), &'static str> {
         for input in self.inputs() {
             initialize_value(self, input.value(), input.declaration().ty(), initial)?;
@@ -122,6 +136,9 @@ impl ControlPlan for NativeIterationArtifactPlan {
 }
 impl ControlPlan for super::NativeProgramArtifactPlan {
     common_plan_view!(super::NativeProgramArtifactPlan, super::NativeProgramType);
+    fn collections(&self) -> &[super::NativeProgramCollection] {
+        self.collections()
+    }
     fn initialize(&self, initial: &mut [bool]) -> Result<(), &'static str> {
         for input in self.inputs() {
             initialize_value(self, input.value(), input.ty(), initial)?;
@@ -178,7 +195,7 @@ fn scope_ancestor(plan: &impl ControlPlan, ancestor: Option<u32>, mut scope: Opt
         let Some(id) = scope else {
             return false;
         };
-        scope = plan.iterations()[id as usize].parent();
+        scope = plan.iteration(id as usize).parent();
     }
 }
 fn readable(plan: &impl ControlPlan, value: Value, scope: Option<u32>, block: usize) -> bool {
@@ -186,7 +203,7 @@ fn readable(plan: &impl ControlPlan, value: Value, scope: Option<u32>, block: us
         Some(Scope::Immutable { iteration }) => scope_ancestor(plan, *iteration, scope),
         Some(Scope::Carrier { iteration }) => {
             scope_ancestor(plan, Some(*iteration), scope)
-                || plan.iterations()[*iteration as usize].exit() as usize == block
+                || plan.iteration(*iteration as usize).exit() as usize == block
         }
         None => false,
     }
@@ -197,20 +214,22 @@ fn readable(plan: &impl ControlPlan, value: Value, scope: Option<u32>, block: us
 pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
     let blocks = plan.blocks();
     let count = plan.values().len();
+    let cells = count.checked_add(plan.collections().len()).ok_or(BAD)?;
     if plan.entry() as usize >= blocks.len()
         || plan.value_scopes().len() != count
         || blocks
             .len()
-            .checked_mul(count)
+            .checked_mul(cells)
             .is_none_or(|n| n > ANALYSIS_CELLS)
     {
         return Err(BAD);
     }
     let ty = |v: Value| plan.values().get(v.get() as usize).ok_or(BAD);
-    let mut initial = vec![false; count];
+    let mut initial = vec![false; cells];
     plan.initialize(&mut initial)?;
     let mut roles = vec![None; blocks.len()];
-    for (id, iteration) in plan.iterations().iter().enumerate() {
+    for id in 0..plan.iteration_count() {
+        let iteration = plan.iteration(id);
         if iteration
             .parent()
             .is_some_and(|parent| parent as usize >= id)
@@ -224,17 +243,19 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             if depth > crate::MAX_CONTROL_DEPTH {
                 return Err(BAD);
             }
-            parent = plan.iterations()[p as usize].parent();
+            parent = plan.iteration(p as usize).parent();
         }
-        if ty(iteration.seed())? != ty(iteration.carrier())?
-            || ty(iteration.next())? != ty(iteration.carrier())?
-            || ty(iteration.result())? != ty(iteration.carrier())?
-            || plan.value_scopes()[iteration.carrier().get() as usize]
-                != (Scope::Carrier {
-                    iteration: id as u32,
-                })
-        {
-            return Err(BAD);
+        if let Loop::Iteration(fold) = iteration {
+            if ty(fold.seed())? != ty(fold.carrier())?
+                || ty(fold.next())? != ty(fold.carrier())?
+                || ty(fold.result())? != ty(fold.carrier())?
+                || plan.value_scopes()[fold.carrier().get() as usize]
+                    != (Scope::Carrier {
+                        iteration: id as u32,
+                    })
+            {
+                return Err(BAD);
+            }
         }
         for (block, role) in [
             (iteration.initialize(), 0),
@@ -266,8 +287,17 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             || !matches!(latch.action(),Action::Latch { iteration:n } if *n == id as u32)
             || latch.terminator() != Terminator::Scalar(Term::Jump(iteration.header()))
             || exit.iteration() != iteration.parent()
-            || !matches!(exit.action(), Action::Scalar(Scalar::Copy { source,output })
-                if *source==iteration.carrier() && *output==iteration.result())
+            || !match iteration {
+                Loop::Iteration(fold) => {
+                    matches!(exit.action(), Action::Scalar(Scalar::Copy { source,output })
+                    if *source==fold.carrier() && *output==fold.result())
+                }
+                Loop::Collection(collection) => {
+                    matches!(exit.action(), Action::Scalar(Scalar::None))
+                        && matches!(blocks.get(collection.body() as usize).map(|block| block.action()),
+                        Some(Action::CollectionElement { iteration }) if *iteration == id as u32)
+                }
+            }
             || blocks
                 .get(iteration.body() as usize)
                 .ok_or(BAD)?
@@ -282,11 +312,12 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             Scope::Immutable { iteration } => *iteration,
             Scope::Carrier { iteration } => Some(*iteration),
         };
-        if owner.is_some_and(|n| n as usize >= plan.iterations().len()) {
+        if owner.is_some_and(|n| n as usize >= plan.iteration_count()) {
             return Err(BAD);
         }
         if let Scope::Carrier { iteration } = scope {
-            if plan.iterations()[*iteration as usize].carrier().get() as usize != id {
+            if !matches!(plan.iteration(*iteration as usize), Loop::Iteration(fold) if fold.carrier().get() as usize == id)
+            {
                 return Err(BAD);
             }
         }
@@ -296,7 +327,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
     for (id, block) in blocks.iter().enumerate() {
         if block
             .iteration()
-            .is_some_and(|n| n as usize >= plan.iterations().len())
+            .is_some_and(|n| n as usize >= plan.iteration_count())
         {
             return Err(BAD);
         }
@@ -308,10 +339,10 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             let next_block = blocks.get(next as usize).ok_or(BAD)?;
             let special = match roles.get(next as usize).copied().flatten() {
                 Some((loop_id, 1)) => {
-                    id == plan.iterations()[loop_id as usize].initialize() as usize
-                        || id == plan.iterations()[loop_id as usize].latch() as usize
+                    id == plan.iteration(loop_id as usize).initialize() as usize
+                        || id == plan.iteration(loop_id as usize).latch() as usize
                 }
-                Some((loop_id, 3)) => id == plan.iterations()[loop_id as usize].header() as usize,
+                Some((loop_id, 3)) => id == plan.iteration(loop_id as usize).header() as usize,
                 _ => block.iteration() == next_block.iteration(),
             };
             if !special {
@@ -324,6 +355,26 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             }
         }
         match block.action() {
+            Action::CollectionBegin { collection }
+            | Action::CollectionFinish { collection }
+            | Action::CollectionPush { collection, .. } => {
+                let collection = plan.collections().get(*collection as usize).ok_or(BAD)?;
+                let expected = match block.action() {
+                    Action::CollectionBegin { .. } => collection.begin(),
+                    Action::CollectionFinish { .. } => collection.finish(),
+                    _ => collection.push(),
+                };
+                if expected as usize != id {
+                    return Err(BAD);
+                }
+            }
+            Action::CollectionElement { iteration } => {
+                if *iteration as usize >= plan.iteration_count()
+                    || !matches!(plan.iteration(*iteration as usize), Loop::Collection(data) if data.body() as usize == id)
+                {
+                    return Err(BAD);
+                }
+            }
             Action::LibraryCall {
                 template,
                 operands,
@@ -361,6 +412,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             _ => {}
         }
     }
+    super::collection_validation::validate(plan)?;
     let mut visited = vec![false; blocks.len()];
     check_scope(plan, None, plan.entry(), initial, &roles, &mut visited)?;
     // Unreachable fail-closed Reject blocks still have checked structure/types;
@@ -446,10 +498,15 @@ fn check_scope(
                 known[ordinal] = true;
             }
             Action::Initialize { iteration } => {
-                let child = &plan.iterations()[*iteration as usize];
-                read(child.seed(), &known)?;
+                let child = plan.iteration(*iteration as usize);
                 let mut body_initial = known.clone();
-                body_initial[child.carrier().get() as usize] = true;
+                match child {
+                    Loop::Iteration(fold) => {
+                        read(fold.seed(), &known)?;
+                        body_initial[fold.carrier().get() as usize] = true;
+                    }
+                    Loop::Collection(collection) => read(collection.source(), &known)?,
+                }
                 // The header is not part of the body DAG; it owns the only
                 // backedge and always dispatches before a fresh body visit.
                 visited[child.header() as usize] = true;
@@ -461,10 +518,66 @@ fn check_scope(
                     roles,
                     visited,
                 )?;
-                known[child.carrier().get() as usize] = true;
+                if let Loop::Iteration(fold) = child {
+                    known[fold.carrier().get() as usize] = true;
+                }
             }
             Action::Latch { iteration } => {
-                read(plan.iterations()[*iteration as usize].next(), &known)?
+                if let Loop::Iteration(fold) = plan.iteration(*iteration as usize) {
+                    read(fold.next(), &known)?;
+                }
+                if known[plan.values().len()..] != initial[plan.values().len()..] {
+                    return Err(BAD);
+                }
+            }
+            Action::CollectionElement { iteration } => {
+                let Loop::Collection(collection) = plan.iteration(*iteration as usize) else {
+                    return Err(BAD);
+                };
+                read(collection.source(), &known)?;
+                if let Some(element) = collection.element() {
+                    let ordinal = element.get() as usize;
+                    if known[ordinal]
+                        || plan.value_scopes()[ordinal] != (Scope::Immutable { iteration: scope })
+                    {
+                        return Err(BAD);
+                    }
+                    known[ordinal] = true;
+                }
+            }
+            Action::CollectionBegin { collection } => {
+                let data = &plan.collections()[*collection as usize];
+                let offset = plan.values().len();
+                let active = known[offset..]
+                    .iter()
+                    .rposition(|live| *live)
+                    .map(|id| id as u32);
+                if active != data.parent_collection() || known[offset + *collection as usize] {
+                    return Err(BAD);
+                }
+                known[offset + *collection as usize] = true;
+            }
+            Action::CollectionPush { collection, value } => {
+                if known[plan.values().len()..].iter().rposition(|live| *live)
+                    != Some(*collection as usize)
+                {
+                    return Err(BAD);
+                }
+                read(*value, &known)?;
+            }
+            Action::CollectionFinish { collection } => {
+                let offset = plan.values().len();
+                if known[offset..].iter().rposition(|live| *live) != Some(*collection as usize) {
+                    return Err(BAD);
+                }
+                known[offset + *collection as usize] = false;
+                let output = plan.collections()[*collection as usize].output().get() as usize;
+                if known[output]
+                    || plan.value_scopes()[output] != (Scope::Immutable { iteration: scope })
+                {
+                    return Err(BAD);
+                }
+                known[output] = true;
             }
             Action::Scalar(action) => {
                 let output = match action {
@@ -501,6 +614,9 @@ fn check_scope(
                     read(right, &known)?;
                 }
                 Term::Complete => {
+                    if known[plan.values().len()..].iter().any(|live| *live) {
+                        return Err(BAD);
+                    }
                     for (output, ty) in plan.output_values() {
                         read(output, &known)?;
                         if plan.values()[output.get() as usize] != *ty {
@@ -527,7 +643,7 @@ fn check_scope(
 fn collapsed_successors(plan: &impl ControlPlan, id: usize) -> [Option<u32>; 2] {
     match plan.blocks()[id].action() {
         Action::Initialize { iteration } => {
-            [Some(plan.iterations()[*iteration as usize].exit()), None]
+            [Some(plan.iteration(*iteration as usize).exit()), None]
         }
         Action::Latch { .. } => [None, None],
         _ => match plan.blocks()[id].terminator() {

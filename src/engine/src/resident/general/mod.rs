@@ -19,6 +19,8 @@ pub(crate) mod native_collection_calls;
 ))]
 pub(crate) mod native_collection_templates;
 #[cfg(feature = "native-artifact")]
+pub(crate) mod native_comprehension_lowering;
+#[cfg(feature = "native-artifact")]
 pub(crate) mod native_lowering;
 #[cfg(feature = "native-artifact")]
 pub(crate) mod native_match_lowering;

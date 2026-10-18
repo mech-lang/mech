@@ -19,6 +19,9 @@ use mech_syntax::document::{
 #[path = "support/canonical_program_linked.rs"]
 mod linked_qualification;
 
+#[path = "support/canonical_program_comprehensions.rs"]
+mod collection_qualification;
+
 const ROOT: &str = "+> text\n+> sequence\n+> number\n+> map\nwords := text/lines(input<string>)\njoined := text/join(words, \",\")\nsize := sequence/length(joined)\nformatted := number/format(size, 0u64)\ncounts := map/histogram(words)\nkeys := map/keys(counts)\nvalues := map/values(counts)\nmore := size + 1u64\n";
 const LEXICAL: &str = "+> text\n+> sequence\n+> number\n+> map\nstep(x<string>) => (next<string>) :=\n  words := text/lines(x)\n  joined := text/join(words, \",\")\n  size := sequence/length(joined)\n  counts := map/histogram(words)\n  keys := map/keys(counts)\n  values := map/values(counts)\n  formatted := number/format(size + sequence/length(values), 0u64)\n  next := text/join(keys, formatted).\nseed<string> |2> step\n";
 fn artifacts(source: &str) -> ([ProgramArtifact; 2], usize) {
@@ -185,6 +188,25 @@ fn check(source: &str, named: &[(&str, ValueDataDraft)]) {
         assert_eq!(object.identity().bytes().len(), 192);
     }
 }
+#[test]
+fn generated_matrix_comprehensions_execute_each_native_body_and_filter() {
+    for source in [
+        "[value + 1u64 | value <- values<[u64]>]\n",
+        "[value * 2u64 | value <- values<[u64]>, value > 1u64]\n",
+        "+> text\n+> number\ntext/join([number/format(value + 1u64, 0u64) | value <- values<[u64]>], \",\")\n",
+    ] {
+        for values in [vec![1u64, 2, 3], vec![], vec![7]] {
+            check(
+                source,
+                &[(
+                    "values",
+                    ValueDataDraft::Matrix(values.into_iter().map(ValueDataDraft::U64).collect()),
+                )],
+            );
+        }
+    }
+}
+
 #[test]
 fn generated_root_calls_execute_all_seven_families_and_scalar_add() {
     check(

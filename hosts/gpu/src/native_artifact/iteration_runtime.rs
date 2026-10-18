@@ -83,7 +83,9 @@ fn charge(
 pub(super) trait VisitPlan {
     fn entry(&self) -> u32;
     fn visits(&self) -> &[super::iteration_abi::NativeIterationVisit];
-    fn iterations(&self) -> &[mech_engine::native_artifact::NativeIterationLoop];
+    #[cfg(feature = "canonical-native-program-runtime")]
+    fn iteration_count(&self) -> usize;
+    fn iteration(&self, index: usize) -> mech_engine::native_artifact::NativeControlLoopRef<'_>;
 }
 impl VisitPlan for NativeIterationDescriptor {
     fn entry(&self) -> u32 {
@@ -92,8 +94,12 @@ impl VisitPlan for NativeIterationDescriptor {
     fn visits(&self) -> &[super::iteration_abi::NativeIterationVisit] {
         &self.visits
     }
-    fn iterations(&self) -> &[mech_engine::native_artifact::NativeIterationLoop] {
-        &self.iterations
+    #[cfg(feature = "canonical-native-program-runtime")]
+    fn iteration_count(&self) -> usize {
+        self.iterations.len()
+    }
+    fn iteration(&self, index: usize) -> mech_engine::native_artifact::NativeControlLoopRef<'_> {
+        (&self.iterations[index]).into()
     }
 }
 pub(super) struct Context<'a, D: VisitPlan> {
@@ -141,14 +147,24 @@ impl<D: VisitPlan> Context<'_, D> {
         charge(&mut self.work, site.work, Some(site.origin))?;
         match site.progress {
             Progress::Initialize(iteration) => {
-                let data = &self.descriptor.iterations()[iteration as usize];
+                let data = self.descriptor.iteration(iteration as usize);
                 if self.current != data.parent() || self.progress[iteration as usize * 2 + 1] != 0 {
                     return Err(invalid(
                         "iteration initialized outside exact parent invocation",
                     ));
                 }
-                self.progress[iteration as usize * 2] = data.count();
-                self.progress[iteration as usize * 2 + 1] = 1;
+                match data {
+                    mech_engine::native_artifact::NativeControlLoopRef::Iteration(data) => {
+                        self.progress[iteration as usize * 2] = data.count();
+                        self.progress[iteration as usize * 2 + 1] = 1;
+                    }
+                    mech_engine::native_artifact::NativeControlLoopRef::Collection(_) => {
+                        // Only the exact admitted initializer helper may bind
+                        // a live collection's count before entering its header.
+                        self.progress[iteration as usize * 2] = 0;
+                        self.progress[iteration as usize * 2 + 1] = 2;
+                    }
+                }
                 self.current = Some(iteration);
             }
             Progress::Exit(iteration) => {
@@ -159,7 +175,7 @@ impl<D: VisitPlan> Context<'_, D> {
                     return Err(invalid("iteration exited before exact count"));
                 }
                 self.progress[iteration as usize * 2 + 1] = 0;
-                self.current = self.descriptor.iterations()[iteration as usize].parent();
+                self.current = self.descriptor.iteration(iteration as usize).parent();
                 if self.current != site.iteration {
                     return Err(invalid("iteration exit parent mismatch"));
                 }
@@ -173,7 +189,13 @@ impl<D: VisitPlan> Context<'_, D> {
                 }
                 self.progress[iteration as usize * 2] -= 1;
             }
-            Progress::Normal | Progress::Header(_) => {
+            Progress::Header(iteration) => {
+                if self.current != Some(iteration) || self.progress[iteration as usize * 2 + 1] != 1
+                {
+                    return Err(invalid("loop header before admitted live count"));
+                }
+            }
+            Progress::Normal => {
                 if self.current != site.iteration {
                     return Err(invalid("iteration visit outside lexical invocation"));
                 }
@@ -187,6 +209,32 @@ impl<D: VisitPlan> Context<'_, D> {
         self.previous = Some(id);
         self.completed = site.complete;
         self.visits = add(self.visits, 1)?;
+        Ok(())
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(super) fn bind_collection_count(
+        &mut self,
+        iteration: u32,
+        count: u64,
+    ) -> Result<(), NativeIterationExecutionError> {
+        if iteration as usize >= self.descriptor.iteration_count()
+            || !matches!(
+                self.descriptor.iteration(iteration as usize),
+                mech_engine::native_artifact::NativeControlLoopRef::Collection(_)
+            )
+            || self.current != Some(iteration)
+            || self
+                .previous
+                .map(|site| self.descriptor.visits()[site as usize].progress)
+                != Some(Progress::Initialize(iteration))
+            || self.progress[iteration as usize * 2 + 1] != 2
+        {
+            return Err(invalid("live count outside exact collection initializer"));
+        }
+        charge(&mut self.work, 32, None)?;
+        self.progress[iteration as usize * 2] = count;
+        self.progress[iteration as usize * 2 + 1] = 1;
         Ok(())
     }
 }
