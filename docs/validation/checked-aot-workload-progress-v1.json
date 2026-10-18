@@ -317,8 +317,50 @@
     "benchmark_samples": 0,
     "not_established": "Full125-million-base input, actual changed-source CLI/resource execution, whole-program canonical AOT, packed/streaming support, same-binary release trusted/secured timings, full-program binary/hot-path analysis, optimized/configurable checked AOT, clean review or complete green CI."
   },
+  "release_cli_resource_route_qualification": {
+    "as_of_utc": "2026-10-18T09:19:00Z",
+    "status": "PASS_SMALL_RELEASE_RESIDENT_HOST_CASES_NOT_AOT_OR_BENCHMARK",
+    "source_commit": "e072b15570cdccbc59bed91939151cb3b2c92478",
+    "source_tree": "991f39003b8c00720f3b947a8bc27c73b1ac64e6",
+    "clean_source_and_binary_unchanged_through_run": true,
+    "program": "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+    "program_sha256": "503a0a315d7b6e30de5d10561e865cd901883b8f32985fee9617f47cd02f4de0",
+    "build": {
+      "command": "cargo +nightly-2026-03-03 build --release --locked --offline -j1 -p mech --bin mech --no-default-features --features run,full_compiler,pretty_print",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v235-release-cli-build.log",
+      "log_sha256": "b1a58a24e4cde483bb1fdc264ea3d6c0927677882234f194d2e24e4a768a7055",
+      "exit_code": 0,
+      "binary_sha256": "c2f6b5fb9e203590bf8d1c1068c787f498f69d859f175fd55521ad6f3300ad08",
+      "preserved_binary": "tmp/pr-stack-evidence/mech-release-e072b155-c2f6b5fb.bin"
+    },
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-cli-route-v235.cjs",
+      "driver_sha256": "bf198d0237bb9c70fe3220fe4801c5226a48006327fd8e201fea696467b04624",
+      "local_receipt": "tmp/pr-stack-evidence/cli-route-v235-yAnYGJ/qualification.json",
+      "receipt_sha256": "c60e2c0bb7b9d2ea6b8147ab3a1d4ced777e7c0ee581fe4c3d9a097501527bd4",
+      "exit_code": 0,
+      "fresh_process_cases": 10,
+      "successful_cases": [
+        "Exact complete output for periodic4,100 and400-base inputs",
+        "Mixed-case CRLF input excludes a THREEX record",
+        "Selected terminal record without trailing newline",
+        "Fresh process produces exact output after all denial cases"
+      ],
+      "expected_denials": [
+        "Missing explicit stdin capability",
+        "Missing explicit stdout capability",
+        "Missing explicit source filesystem grant",
+        "4000 bases exceed unchanged65536 ComparisonWork allowance before application output"
+      ],
+      "oracle": "Independent JavaScript substring-count oracle, complete stdout including CLI prefix and final-value echo, empty success stderr and exit0. Every success reports require-resident, resident-external, requirements2, observations1, effects3, accepted1 and rejected0 at the same program revision.",
+      "boundary": "Actual fresh release CLI process loads config/source, admits explicit capabilities, reads real stdin, executes the unchanged complete ordinary algorithm with provider bindings and delivery expressions retained, flushes all stdout and exits. Default capability/cwd grants are disabled; no inherited MECH_* overrides, trusted bypass or quota changes."
+    },
+    "preceding_debug_result": "The independently qualified debug CLI passed4 bases but rejected100 bases at publication because turn_duration_ms requested1449 against the unchanged1000 limit. It was not retried with a relaxed timer; release qualification used the same program, grants and default limits.",
+    "benchmark_samples": 0,
+    "not_established": "Full125-million-base input, native whole-program AOT, canonical packed/streaming execution, same-binary trusted/secured timing, security overhead, full-program binary/hot-path analysis, optimized/configurable checked AOT, clean review or complete green CI."
+  },
   "remaining": [
-    "Extend beyond the qualified100/400-base original/decoded library cases to realistic full inputs and actual CLI/resource execution, retaining finite admission, atomicity and recovery.",
+    "Extend beyond the qualified100/400-base original/decoded library and real release CLI/resource cases to realistic full inputs, retaining finite admission, atomicity and recovery.",
     "Reduce actual general collection/histogram work; provide canonical packed and streaming operations for realistic full inputs.",
     "Complete canonical native control, collections and resource I/O for the entire workload, without the independent source-native compiler or whole-program interpreter fallback.",
     "Qualify full linked lifecycle and exact output, then measure the full workload in optimized checked AOT with explicit configuration and inspect its generated binary.",
