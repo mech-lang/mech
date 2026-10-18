@@ -136,7 +136,7 @@ fn other_cast_domains_and_computed_activation_stay_unsupported() {
         "answer<[f64]> := value<[u64]:1,1>\nanswer\n",
         "answer<string> := value<u64>\nanswer\n",
         "~answer<u64> := 0u64\nanswer\n",
-        "unused := 1u64/0u64\nanswer<f64> := value<u64>\nanswer\n",
+        "unused := 1u64 / 0u64\nanswer<f64> := value<u64>\nanswer\n",
     ] {
         for artifact in compile(source) {
             assert!(
