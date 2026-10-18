@@ -245,6 +245,11 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--list --ignored --exact", selection)
         self.assertIn(name + ": test$", selection)
         self.assertIn("--test canonical_artifact_iteration", execute)
+        evidence = "${{ runner.temp }}/canonical-iteration-evidence"
+        self.assertIn(f"MECH_CANONICAL_ITERATION_EVIDENCE_DIR: {evidence}", execute)
+        upload = next(step for step in steps if "Retain linked application evidence" in step)
+        self.assertIn("if: ${{ always() }}", upload)
+        self.assertIn(evidence, upload)
         self.assertIn("--ignored --exact", execute)
         self.assertIn(name, execute)
         self.assertIn("MECH_CANONICAL_ITERATION_SOURCE_COMMIT", execute)

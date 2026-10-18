@@ -770,6 +770,7 @@ jobs:
             ${{ runner.temp }}/canonical-native-evidence
             ${{ runner.temp }}/canonical-cast-evidence
             ${{ runner.temp }}/canonical-match-evidence
+            ${{ runner.temp }}/canonical-iteration-evidence
             ${{ runner.temp }}/canonical-cli-evidence
             ${{ runner.temp }}/native-host-evidence
             ${{ runner.temp }}/native-control-evidence
