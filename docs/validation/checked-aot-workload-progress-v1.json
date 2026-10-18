@@ -223,6 +223,53 @@
       "Clean review or complete green CI"
     ]
   },
+  "canonical_native_loop_linked_followup": {
+    "as_of_utc": "2026-10-18T07:37:41Z",
+    "status": "FOUR_KIND_SCALAR_LINKED_LIFECYCLE_QUALIFIED_FULL_PROGRAM_INCOMPLETE",
+    "source_commit": "7f272863bc65132c0159118a4803879e58991294",
+    "source_tree": "0a308ec2b82bffecf3c709afba9a79df3e3a7d16",
+    "source_immutable": "Clean exact source commit checked before/after; generated Object, bytecode, shell/build inputs and the executable were pinned and checked unchanged.",
+    "program_sha256": "879a05c0c1bf51217599ac6409386930a350c3874a64c1d730a72784f2648970",
+    "program_revision": "f46d88828d4483972c68068e612668572bdb70456c9254a2778ec570e41029a0",
+    "typed_ir_sha256": "12c1077dab5f2a5814e153ddcaef54cc40115b78ccde5c43f72f057cef03e0d4",
+    "object_sha256": "9c43fbfd9bab14115b02b37b818b524d6f6a57280b61a4328b13b63377f39e31",
+    "bytecode_sha256": "bde9ffb5d62d1c486f48dbab786fbff23caa8d8b4eec093b2442d62d4f9c22b9",
+    "resolved_lock_sha256": "5eaae2f68f2975d8720d1adad18569c9ddbc8e6060b528dd0dceb21d6c877fa5",
+    "binary_sha256": "f65f7adf1ac4530f459948ec6af31a1196bd2e5395cf6a98257a1dd8d3ec59ea",
+    "builds": 1,
+    "object_emissions": 2,
+    "original_decoded_generation_pins_equal": true,
+    "actual_linked_executables": 1,
+    "fresh_process_cases": 17,
+    "cases": "Three exact six-output successes, five work/completion/transport/stack/shared-budget denials, unsigned overflow, signed underflow, missing/extra inputs, malformed Bool/U64/I64/F64 inputs, and a successful exact-work boundary after the failures. Complete stdout/stderr and exit codes are retained. All calls use the same unchanged executable.",
+    "reference": "Original and decoded canonical resident and real JIT results agree; valid linked streams use independent literal output oracles, including values above2^53 and negative zero. Native-denial diagnostics match the JIT's same native policy; Object stack metadata supplies its own exact stack requirement.",
+    "compiled_units": {
+      "count": 114,
+      "source": "Actual Cargo compiler-artifact messages, including fresh units; not the union of optional metadata edges.",
+      "mech_crates_from_pinned_workspace": true,
+      "mech_source_parser_compiled": false,
+      "cranelift_compiled": false,
+      "host_features": ["canonical-native-runtime"],
+      "retained_build_stdout_sha256": "54d621a9e7a0093907070cb03d7bece58df2de0657b3700ee599342a81ffef28",
+      "retained_metadata_sha256": "5eda8ed937f27565744d4cfa6c66bbf9bef8e79fabb1feeeaf1b3701052cb9df"
+    },
+    "object_inspection": {
+      "tool": "otool -tV and nm -g, macOS AArch64",
+      "code_bytes": 2052,
+      "stack_bytes": 64,
+      "loop_backedges": ["0x6a0 -> 0x170", "0x5e4 -> 0x208", "0x52c -> 0x2b0", "0x47c -> 0x340"],
+      "native_arithmetic": "Unsigned adds/carry guard at0x638; signed subs/overflow guard at0x580; scalar fmul at0x4d8. Only the entry and digest-qualified identity are exported by the Object; it has no interpreter or arithmetic-helper imports. Indirect calls in the entry are the explicit admission callback.",
+      "remaining_optimization": "Unoptimized code retains per-visit admission calls and redundant moves. This inspection identifies structure, not a measured hot-path cost or security-overhead ratio. Full-program binary analysis and optimization remain required.",
+      "local_disassembly": "tmp/pr-stack-evidence/linked-iteration-v230/program-object-disassembly.txt",
+      "disassembly_sha256": "d55a0aac2c587187c6d48e89b568e088496190a4055e30045c1c50bdba913893"
+    },
+    "local_receipt": "tmp/pr-stack-evidence/linked-iteration-v230/qualification.json",
+    "receipt_sha256": "a308117c06c55c5b3c075151e1a133298d5609cb1b1fdf5b7c9d4433fad50c67",
+    "local_log": "tmp/pr-stack-evidence/checked-aot-v230-linked-iteration.log",
+    "log_sha256": "a622ea20411966e24f75a932d708ab4e1de3d5d23c4212181c4560e4061ff81c",
+    "benchmark_measurements": 0,
+    "not_established": "This is fixed scalar literal-loop qualification only. Native element-count matrices, aggregate carriers, comprehensions, FSM/lifecycle and resources, the full k-nucleotide workload, packed/streaming operations, release trusted/secured timings, optimized/configurable checked AOT, clean review and full CI remain unfinished."
+  },
   "remaining": [
     "Make the unchanged ordinary workload pass original and decoded artifacts at 100 and 400 bases with default limits, and retain denial/atomicity/recovery qualification.",
     "Reduce actual general collection/histogram work; provide canonical packed and streaming operations for realistic full inputs.",
