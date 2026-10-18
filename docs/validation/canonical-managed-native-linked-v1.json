@@ -156,7 +156,69 @@
     },
     "scope": "Frontend/reference admission correction only. Earlier linked/native performance results retain their original qualified source. Fresh exact-head review and CI remain required."
   },
+  "native_comprehension_and_broadcast_qualification": {
+    "status": "GENERATED_MATRIX_COMPREHENSIONS_AND_LINKED_FIXTURES_QUALIFIED_NOT_FULL_WORKLOAD",
+    "source_commit": "226450bd46395e8c9fd190c74ac34782c6aa1df1",
+    "source_tree": "c81f40f275168103dd697eb40a8e0e7f00a6d545",
+    "source_parent": "0b3d8044d53183720ccfbd786d7e0426f1b02983",
+    "qualified_31_file_patch_sha256": "a70ac5418082d9a52efecdf9b8fcfac17c767a20e83ec497112edbe9a60957a5",
+    "attribution": "The frozen precommit diff, staged diff and complete parent-to-source-commit diff match exactly. Actual standalone qualification uses the clean committed source above, unchanged through completion. Later receipt-only commits do not relabel that executed source or the older ABI4 evidence.",
+    "architecture": [
+      "The existing canonical ProgramArtifact, constructor-private typed native CFG and shared scalar emitter lower Matrix and MatrixPreserveShape comprehensions. Generated code owns generator loops, filters, body arithmetic, branches, nested literal folds and nested builders; no Rust helper evaluates the body or dispatches its graph.",
+      "Finite admitted helpers project one current element, bind a live generator count at its exact initializer, and stage an immutable result. Mutable builders are not language Values. The shared current-visit proof rejects stale elements/results, crossed lexical scopes and unfinished builders; the same invocation account owns native/library work and memory.",
+      "Closed Bool/U64/I64/F64/String yields, Matrix/Set/String sources, wildcard bindings and shape-preserving unary pattern-function lifting are supported. Genuinely partial/sticky Match, Set/composite/matrix-block outputs, element-wise counts and state/resources remain separate unfinished work.",
+      "Managed ABI5, typed IR2 and work policy2 explicitly bind the new actions, dynamic loops and builder metadata. Old managed Objects fail identity/version admission. Frozen scalar/control/iteration ABIs and scalar checked emitters remain unchanged."
+    ],
+    "prelink": {
+      "finished_utc": "2026-10-18T23:12:56Z",
+      "exit": 0,
+      "rust_methods": {"native_gpu_library": 32, "engine_current_visit_proof": 5, "retained_scalar_iteration": 11, "managed_program": 16, "total": 64},
+      "ci_contract_methods": 155,
+      "coverage": "Original/decoded resident and real JIT/Object comparisons include mapping/filtering, nested generators/builders/folds, wildcard, Unicode graphemes and String matrices, Bool/I64 extrema/F64 signed-zero/infinity/NaN bits and canonical String Set sources, including empty inputs. One compiled pattern lift preserves seven changing row/column/empty geometries. Nine injected protocol cases reject wrong/omitted/repeated visits and early exit. Late arithmetic and six typed dimension denials preserve published outputs, release workspace and recover on the same JIT.",
+      "other_gates": ["scalar-runtime-only feature build", "unsafe audit", "warning policy", "module layout", "format", "diff", "unchanged frozen source"],
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v358-native-comprehension-prelink.log", "sha256": "a1b15d4adb2c06890856b0249fffd4b51b066495618ec6d8603edf5d031b0365"},
+      "driver": {"path": "tmp/pr-stack-evidence/qualify-native-comprehension-prelink-v358.zsh", "sha256": "20da5984fd88a55dfeee950e7cf5a2303bd79d6ec80d3723485d487cb5d0ed91"},
+      "base_driver": {"path": "tmp/pr-stack-evidence/qualify-native-comprehension-prelink-v352.zsh", "sha256": "5cd0b7f1766551d5582614278e6193b6ba458b9522007a998966b37887e2c149", "invocation": "Only the log filename is replaced v352 to v358."}
+    },
+    "actual_linked": {
+      "finished_utc": "2026-10-18T23:17:12Z",
+      "exit": 0,
+      "profile": "nightly-2026-03-03; locked/offline, one serial build job, debug/test opt0 and debug0, assertions and overflow checks enabled, incremental disabled. Correctness builds, not performance builds.",
+      "explicit_methods_executed": 2,
+      "selection": "Each existing ignored qualifier is listed with --ignored --exact and required to select exactly one test before execution. The managed qualifier retains root/lexical fixtures and adds the String matrix comprehension; the unchanged scalar-loop qualifier also executes from this source.",
+      "executables": [
+        {"name": "root", "sha256": "23de13622bc572a95572bea979ae0036230118e75cfdfece90d0aecda0cbfe43", "cases": 13, "success_or_recovery": 4, "required_errors": 9, "compiled_unit_records": 114},
+        {"name": "lexical", "sha256": "1bb9e1b19445769798e7c9d145d7a137e1e566df00ab880c72a9442bdc2899aa", "cases": 15, "success_or_recovery": 7, "required_errors": 8, "compiled_unit_records": 114},
+        {"name": "collection", "sha256": "6542b1439ce0f86c72f6f1fe466da701ac65bc385061bc7121ac5c08ee34951b", "cases": 13, "success_or_recovery": 4, "required_errors": 9, "compiled_unit_records": 114},
+        {"name": "scalar-iteration", "sha256": "10b4880d959cfbb906417d1f848fabfc4b4eace215e69941a1954c7ed535cb80", "cases": 17, "success_or_recovery": 4, "required_errors": 13, "compiled_unit_records": 114}
+      ],
+      "total_process_cases": 58,
+      "success_or_recovery": 19,
+      "required_errors": 39,
+      "managed_coverage": "ASCII/empty/Unicode complete exported outputs agree with original/decoded resident and JIT results. Root and lexical calls retain all seven maintained families. The new comprehension exercises String projection, selected library calls, scalar arithmetic and a second-element division-by-zero after a staged first yield, with no stdout publication. Work, import/native-arena memory, call-work/temporary, malformed/missing/wrong-kind input and fresh-process recovery remain covered.",
+      "independently_reconciled_binary_and_generated_pins": 68,
+      "independently_reconciled_raw_process_streams": 116,
+      "runtime_closure": "Every recorded unit is reconciled with actual Cargo compiler-artifact messages and resolved package metadata. All actual messages are checked for forbidden compiler/source/JIT features; no mech-syntax or Cranelift unit is present. Unit records retain the first package/target/features tuple, including host/target duplicates, exactly as the qualifier does.",
+      "warnings": "Standalone selected-machine builds still emit existing unused-code/macro warnings. Workspace warning-policy checks pass; a warning-free standalone build is not claimed.",
+      "ci_contract_methods": 155,
+      "other_gates": ["managed-runtime-only feature build", "unsafe audit", "warning policy", "module layout", "format", "diff", "unchanged clean commit"],
+      "managed_receipt": {"path": "tmp/pr-stack-evidence/canonical-program-linked-v359/qualification.json", "sha256": "d9a3ce6d93c41e96b3b9b2a5928f3881bb393b2ffac51ec1b9eeaace7d55a842"},
+      "scalar_receipt": {"path": "tmp/pr-stack-evidence/canonical-iteration-linked-v359/qualification.json", "sha256": "762ec334c03c80b40e866fa1011b94589c42198ca79a1b53dfb3a1e6f9d2021f"},
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v359-native-comprehension-linked.log", "sha256": "95fcd6c2b4a483cc0a1a8e4313563a5a0c5d1566c2daaca14f3fd49794e9c44f"},
+      "driver": {"path": "tmp/pr-stack-evidence/qualify-native-comprehension-linked-v359.zsh", "sha256": "a7b0a3fbcb3b847d758c6888a9d3fb3f7f2eafc8aa7fa8c5ba95e054afdf5ba8"},
+      "read_only_reconciler": {"path": "tmp/pr-stack-evidence/reconcile-native-comprehension-linked-v359.js", "sha256": "9823e78bbaa4e2e55ab6ab37d28f8b071b9f5fd41e416823d01194e5ea6907bd"}
+    },
+    "retained_attempts": [
+      "v340 establishes the original native Comprehension rejection after resident execution. v344 qualifies metadata/current-visit proof. v345 safely rejects an old hardcoded output opcode colliding with the new collection opcode; the shared emitter now uses the versioned output base. v346 passes all nine then-existing managed methods.",
+      "v348 exposes a wildcard fixture using absence underscore instead of language wildcard star and a pattern-function lift rejected by the old blanket partial-Match guard. Correct syntax is retained, and only a provably exhaustive unguarded bind/wildcard can use total native lowering; a new genuinely-partial negative test remains.",
+      "v350 passes11scalar and14managed methods. v352 passes31native/5proof/11scalar/15managed methods, then detects two collection-only methods compiled unused in the scalar-only feature profile; the methods are feature-gated, with no warning suppression.",
+      "v354 protocol case7 produces the intended typed illegal-visit denial but the test expects a descriptor error; it now asserts the exact header/exit Visit, while all other protocol cases still require Descriptor. v355 passes32native/5proof/11scalar/15managed methods before rejecting an invalid duplicate-key Set draft during ordinary input finalization; the transport fixture is corrected to a valid canonical unique Set, not a relaxed runtime rule.",
+      "v357 passes all64Rust methods, scalar runtime build and155CI contracts, but warning policy rejects an undocumented too-many-arguments suppression. The suppression is removed entirely and immutable lowering arguments are grouped. The complete v358 rerun and clean-source v359 linked run pass. The read-only reconciler initially kept the last duplicate host/target artifact tuple instead of the qualifier's first; fixing the reconciler changes no product code, source or raw evidence."
+    ],
+    "new_benchmark_measurements": 0,
+    "remaining": "Complete production canonical resource/capability/publication integration, remaining native language constructs, all ten actual programs, full125M/all-seven-histogram language-level workload and same-binary secured/trusted release measurement/optimization. Fresh exact-head clean review and complete green CI are still required; no readiness or merge is authorized."
+  },
   "benchmark_measurements": 0,
-  "not_established": ["complete production canonical build route", "native resource-host lifecycle", "general native comprehensions/element-wise counts/state/FSM", "all ten idiomatic programs", "full-size canonical k-nucleotide", "new canonical native performance result", "complete final-head CI or clean review"],
+  "not_established": ["complete production canonical build route", "native resource-host lifecycle", "remaining native Set/composite/matrix-block comprehensions and element-wise counts/state/FSM", "all ten idiomatic programs", "full-size canonical k-nucleotide", "new canonical native performance result", "complete final-head CI or clean review"],
   "remaining_full_objective": "checked-aot-workload-progress-v1.json follow_up_roadmap remains required. The separate legacy-native I/O diagnostic is native-io-migration-timing-v1.json; its measurements do not qualify this canonical backend or resolve the independent source compiler."
 }
