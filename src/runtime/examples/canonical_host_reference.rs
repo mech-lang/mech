@@ -55,13 +55,12 @@ fn compile_source(
     config: mech_runtime::RuntimeConfig,
 ) -> Result<Vec<u8>, String> {
     let bytes = read_bounded(reader, config.limits.max_source_bytes)?;
-    let source = String::from_utf8(bytes).map_err(|error| error.to_string())?;
     let mut compiler = builder(Vec::new())?
         .config(config)
         .build_compiler()
         .map_err(diagnostic)?;
     Ok(compiler
-        .compile_canonical_source(&source)
+        .compile_canonical_source_bytes(&bytes)
         .map_err(diagnostic)?
         .bytecode()
         .to_vec())
@@ -344,6 +343,40 @@ mod tests {
             compile_source(Cursor::new(source), config).unwrap(),
             bytecode(source)
         );
+    }
+
+    #[test]
+    fn oversized_utf8_source_is_denied_before_decoding_a_truncated_character() {
+        for character in ["é", "界", "👋"] {
+            // The first64 bytes are ASCII; the next character needs2..4 bytes.
+            let source = format!("-- {}{character}\nanswer := 7\nanswer\n", "x".repeat(61));
+            assert!(!bytecode(&source).is_empty(), "valid complete source");
+            for limit in [64u64, 65, 66] {
+                let mut config = mech_runtime::RuntimeConfig::default();
+                config.limits.max_source_bytes = Some(limit);
+                let mut reader = Cursor::new(source.as_bytes());
+                let actual = compile_source(&mut reader, config.clone()).unwrap_err();
+                assert_eq!(reader.position(), limit + 1);
+                // The reader knows only the acquired prefix length, just like
+                // bounded bytecode loading. Compare ordinary admission for
+                // that same length, without requiring a valid UTF-8 prefix.
+                let expected = builder(Vec::new())
+                    .unwrap()
+                    .config(config)
+                    .build_compiler()
+                    .unwrap()
+                    .compile_canonical_source(&" ".repeat(limit as usize + 1))
+                    .err()
+                    .unwrap();
+                let budget = expected
+                    .kind_as::<mech_runtime::ResourceBudgetExceededError>()
+                    .unwrap();
+                assert_eq!(budget.resource, "source_bytes");
+                assert_eq!(budget.requested, limit + 1);
+                assert_eq!(budget.max, Some(limit));
+                assert_eq!(actual, diagnostic(expected), "{character:?}, limit={limit}");
+            }
+        }
     }
 
     #[test]

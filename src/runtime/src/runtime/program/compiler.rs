@@ -423,6 +423,23 @@ impl ProgramCompiler {
         self.compile_document(&document)
     }
 
+    /// Admit acquired source bytes before UTF-8 decoding, then use the same
+    /// canonical source entry point. File/stream callers remain responsible
+    /// for bounding acquisition; a limit+1 prefix may end inside a character.
+    pub fn compile_canonical_source_bytes(
+        &mut self,
+        source: &[u8],
+    ) -> MResult<ProgramCompilationProduct> {
+        super::super::limits::enforce_source_byte_limit(
+            self.max_source_bytes,
+            u64::try_from(source.len()).unwrap_or(u64::MAX),
+        )?;
+        let source = std::str::from_utf8(source).map_err(|error| {
+            canonical_compilation_error(format!("source is not valid UTF-8: {error}"))
+        })?;
+        self.compile_canonical_source(source)
+    }
+
     /// Compiles source for immediate artifact activation without returning or
     /// retaining a duplicate durable bytecode container.
     pub fn compile_source_artifact(

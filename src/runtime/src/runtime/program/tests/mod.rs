@@ -9839,6 +9839,44 @@ fn canonical_source_limits_cover_all_ordered_roots_and_direct_compiler_input() {
         large.len(),
         max,
     );
+    assert_source_limit(
+        compiler
+            .compile_canonical_source_bytes(large.as_bytes())
+            .err()
+            .unwrap(),
+        large.len(),
+        max,
+    );
+    // Byte admission also precedes decoding for an invalid acquired prefix.
+    let invalid = vec![0xff; max as usize + 1];
+    assert_source_limit(
+        compiler
+            .compile_canonical_source_bytes(&invalid)
+            .err()
+            .unwrap(),
+        invalid.len(),
+        max,
+    );
+    let error = compiler
+        .compile_canonical_source_bytes(&[0xff])
+        .err()
+        .unwrap();
+    assert!(
+        error
+            .kind_as::<super::compiler::CanonicalProgramCompilationError>()
+            .is_some()
+    );
+    let source = "answer := \"é👋\"\nanswer\n";
+    let recovered = compiler
+        .compile_canonical_source_bytes(source.as_bytes())
+        .unwrap();
+    assert_eq!(
+        recovered.bytecode(),
+        compiler
+            .compile_canonical_source(source)
+            .unwrap()
+            .bytecode()
+    );
 }
 
 #[test]
