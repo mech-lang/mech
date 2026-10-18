@@ -110,6 +110,7 @@ exact number of payload arguments. A pure pattern function can deliberately be
 partial, so a missing pattern produces a checked failed call:
 
 ```mech
++> number
 parse-input(count<u64>, raw<string>) => <u64>
   | (1u64, value) => number/parse-u64(value).
 

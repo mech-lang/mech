@@ -146,7 +146,7 @@ fn artifacts(source: &str) -> [ProgramArtifact; 2] {
     [original, decoded]
 }
 
-const STRICT_ONE: &str = "parse-input(count<u64>, raw<string>) => <u64>\n  | (1u64, value) => number/parse-u64(value).\n+> @args := cli/args\n+> @out := cli/stdout\n@out/text <- \"prefix\"\nn := parse-input(@args/count, @args/1)\n@out/text <- number/format(n, 0u64)\n";
+const STRICT_ONE: &str = "+> number\nparse-input(count<u64>, raw<string>) => <u64>\n  | (1u64, value) => number/parse-u64(value).\n+> @args := cli/args\n+> @out := cli/stdout\n@out/text <- \"prefix\"\nn := parse-input(@args/count, @args/1)\n@out/text <- number/format(n, 0u64)\n";
 
 #[test]
 fn strict_one_partial_pattern_accepts_one_and_aborts_missing_extra_and_parse_errors() {
@@ -237,7 +237,7 @@ fn failed_strict_load_can_recover_without_mutating_the_immutable_payload() {
 
 #[test]
 fn count_and_index_preserve_empty_unicode_and_flag_looking_payload_values() {
-    let source = "+> @args := cli/args\n+> @out := cli/stdout\n@out/line <- number/format(@args/count, 0u64)\n@out/text <- @args/1\n";
+    let source = "+> number\n+> @args := cli/args\n+> @out := cli/stdout\n@out/line <- number/format(@args/count, 0u64)\n@out/text <- @args/1\n";
     for artifact in artifacts(source) {
         for argument in ["", "héllo\r\n", "--once", "--runtime-info", "--"] {
             let backend = Snapshot::new(vec![OsString::from(argument)]);
@@ -255,7 +255,7 @@ fn count_and_index_preserve_empty_unicode_and_flag_looking_payload_values() {
 #[test]
 fn count_observes_non_unicode_arity_without_decoding_unrequested_extra_payloads() {
     use std::os::unix::ffi::OsStringExt;
-    let count_only = "+> @args := cli/args\n+> @out := cli/stdout\n@out/text <- number/format(@args/count, 0u64)\n";
+    let count_only = "+> number\n+> @args := cli/args\n+> @out := cli/stdout\n@out/text <- number/format(@args/count, 0u64)\n";
     for artifact in artifacts(count_only) {
         let backend = Snapshot::new(vec![
             OsString::from_vec(vec![0xff]),
