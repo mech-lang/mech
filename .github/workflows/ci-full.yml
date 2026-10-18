@@ -444,6 +444,44 @@ jobs:
           --no-default-features --features native,jit
           --test canonical_control --test canonical_publication --test canonical_shipped_ekf
           --test parallel_ekf --test particle_source -- --test-threads=1
+
+  native-cli-collision:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'memory') || contains(fromJSON(inputs.contract_families), 'numeric') }}
+    name: Native CLI kept-project collision
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_BUILD_JOBS: "1"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
+          fetch-depth: 0
+      - name: Record exact-ref checkout identity
+        env:
+          VALIDATION_KIND: exact-ref
+          REQUESTED_REF: ${{ inputs.validation_ref || github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Install CI and bundled native arithmetic build tools
+        run: |
+          if ! command -v rg >/dev/null 2>&1 || ! command -v cc >/dev/null 2>&1 || ! command -v make >/dev/null 2>&1 || ! command -v m4 >/dev/null 2>&1
+          then
+            sudo apt-get update \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+              -o Dir::Etc::sourceparts=-
+            sudo apt-get install --yes ripgrep build-essential m4
+          fi
+      - name: Fetch locked native CLI dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked
       - name: Check CLI kept-project collision before native build
         timeout-minutes: 25
         run: |
@@ -1643,6 +1681,7 @@ jobs:
       - managed-memory-fixed-profiles
       - managed-memory-miri
       - managed-memory-runtime
+      - native-cli-collision
       - memory-planner-contract
       - native-engine
       - native-hosted
@@ -1678,8 +1717,8 @@ jobs:
               'architecture': ['architecture-contracts', 'architecture-mutations'],
               'artifact': ['artifact-closure', 'bytecode-v1-format', 'bytecode-v1-values', 'bytecode-v1-determinism'],
               'language': ['cargo-language', 'canonical-applications'],
-              'memory': ['memory-planner-contract', 'managed-memory-runtime', 'managed-memory-miri'],
-              'numeric': ['function-system-contracts', 'engine-catalog', 'managed-memory-fixed-profiles', 'managed-memory-runtime', 'cargo-runtime'],
+              'memory': ['memory-planner-contract', 'managed-memory-runtime', 'managed-memory-miri', 'native-cli-collision'],
+              'numeric': ['function-system-contracts', 'engine-catalog', 'managed-memory-fixed-profiles', 'managed-memory-runtime', 'cargo-runtime', 'native-cli-collision'],
               'runtime': ['cargo-runtime', 'macos-runtime', 'windows-runtime-paths', 'windows-cli', 'dynamic-modules'],
               'cli': ['cargo-runtime', 'run-only', 'windows-cli-contracts', 'windows-cli'],
               'linkage': ['native-linkage-owners', 'native-linkage-surfaces', 'native-linkage', 'native-linkage-closures', 'catalog-closure'],

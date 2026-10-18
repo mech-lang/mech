@@ -133,6 +133,31 @@ def literal_assignment(source: str, name: str):
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_native_cli_collision_has_an_independent_required_cold_build_budget(self):
+        memory = job_block(FULL, "managed-memory-runtime")
+        collision = job_block(FULL, "native-cli-collision")
+        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", memory).group(1)), 75)
+        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", collision).group(1)), 30)
+        self.assertNotIn("cranelift_kept_project_collision_precedes_emission_and_output_writes", memory)
+        self.assertIn(FULL_CHECKOUT_REF, collision)
+        self.assertIn("Record exact-ref checkout identity", collision)
+        self.assertIn('CARGO_BUILD_JOBS: "1"', collision)
+        steps = job_steps(FULL, "native-cli-collision")
+        fetch = next(step for step in steps if "Fetch locked native CLI dependencies" in step)
+        execute = next(step for step in steps if "Check CLI kept-project collision before native build" in step)
+        self.assertIn("cargo +nightly-2026-03-03 fetch --locked", fetch)
+        self.assertIn("timeout-minutes: 25", execute)
+        self.assertLess(collision.index(fetch), collision.index(execute))
+        commands = [" ".join(line.split()) for line in execute.replace("\\\n", " ").splitlines()]
+        self.assertIn("cargo +nightly-2026-03-03 check --locked --offline -p mech --features cranelift_build", commands)
+        self.assertIn("cargo +nightly-2026-03-03 test --locked --offline -p mech --features cranelift_build --lib cli::commands::build::tests::cranelift_kept_project_collision_precedes_emission_and_output_writes -- --exact --test-threads=1", commands)
+        self.assertNotIn("--no-run", execute)
+        self.assertNotIn("--list", execute)
+        self.assertNotIn("continue-on-error", collision)
+        for family in ("memory", "numeric"):
+            self.assertIn(f"'{family}'", collision.splitlines()[0])
+        self.assertIn("- native-cli-collision", job_block(FULL, "cargo"))
+
     def test_native_linkage_workspace_lock_is_fetched_before_offline_installer_tests(self):
         block = job_block(FULL, "native-linkage-owners")
         steps = job_steps(FULL, "native-linkage-owners")
@@ -1034,6 +1059,11 @@ class FullWorkflowContractTests(unittest.TestCase):
                 for result in ("failure", "cancelled", "skipped", ""):
                     self.assertFalse(accepts([family], changes={selected_job: result}))
         self.assertTrue(accepts(["all"], in_caller=True))
+        for family in ("all", "memory", "numeric"):
+            for result in ("failure", "cancelled", "skipped", ""):
+                with self.subTest(family=family, collision=result):
+                    self.assertFalse(accepts([family], changes={"native-cli-collision": result}))
+            self.assertFalse(accepts([family], omitted="native-cli-collision"))
         self.assertFalse(accepts(["native"], in_caller=True, changes={"native-plan": "failure"}))
         self.assertFalse(accepts(["cli"], changes={"release-package-dry-run": "success"}))
         self.assertFalse(accepts(["cli"], omitted="native-engine"))
