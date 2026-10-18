@@ -64,11 +64,17 @@ pub(crate) enum NativeScalarOp {
     F64Le,
     F64Gt,
     F64Ge,
+    #[cfg(feature = "convert")]
     U64ToI64,
+    #[cfg(feature = "convert")]
     I64ToU64,
+    #[cfg(feature = "convert")]
     U64ToF64,
+    #[cfg(feature = "convert")]
     I64ToF64,
+    #[cfg(feature = "convert")]
     F64ToU64,
+    #[cfg(feature = "convert")]
     F64ToI64,
 }
 
@@ -87,8 +93,11 @@ impl NativeScalarSemantics {
         use NativeScalarKind::{Bool, F64, I64, U64};
         use NativeScalarOp::*;
         match self.op {
+            #[cfg(feature = "convert")]
             U64ToI64 | U64ToF64 => &[U64],
+            #[cfg(feature = "convert")]
             I64ToU64 | I64ToF64 => &[I64],
+            #[cfg(feature = "convert")]
             F64ToU64 | F64ToI64 => &[F64],
             BoolNot => &[Bool],
             BoolAnd | BoolOr | BoolXor | BoolEq | BoolNe => &[Bool, Bool],
@@ -106,15 +115,15 @@ impl NativeScalarSemantics {
     pub(crate) fn output(self) -> NativeScalarKind {
         use NativeScalarOp::*;
         match self.op {
-            U64Add | U64Sub | U64Mul | U64Div | U64Rem | I64ToU64 | F64ToU64 => {
-                NativeScalarKind::U64
-            }
-            I64Add | I64Sub | I64Mul | I64Div | I64Rem | I64Neg | U64ToI64 | F64ToI64 => {
-                NativeScalarKind::I64
-            }
-            F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt | U64ToF64 | I64ToF64 => {
-                NativeScalarKind::F64
-            }
+            #[cfg(feature = "convert")]
+            I64ToU64 | F64ToU64 => NativeScalarKind::U64,
+            #[cfg(feature = "convert")]
+            U64ToI64 | F64ToI64 => NativeScalarKind::I64,
+            #[cfg(feature = "convert")]
+            U64ToF64 | I64ToF64 => NativeScalarKind::F64,
+            U64Add | U64Sub | U64Mul | U64Div | U64Rem => NativeScalarKind::U64,
+            I64Add | I64Sub | I64Mul | I64Div | I64Rem | I64Neg => NativeScalarKind::I64,
+            F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt => NativeScalarKind::F64,
             _ => NativeScalarKind::Bool,
         }
     }
@@ -174,15 +183,16 @@ fn scalar_request(
     };
     // Casts retain their actual maintained KernelReported contract. This
     // operation-specific exception does not relax arithmetic certification.
-    let cast = matches!(
-        semantics.op,
+    let cast = match semantics.op {
+        #[cfg(feature = "convert")]
         NativeScalarOp::U64ToI64
-            | NativeScalarOp::I64ToU64
-            | NativeScalarOp::U64ToF64
-            | NativeScalarOp::I64ToF64
-            | NativeScalarOp::F64ToU64
-            | NativeScalarOp::F64ToI64
-    );
+        | NativeScalarOp::I64ToU64
+        | NativeScalarOp::U64ToF64
+        | NativeScalarOp::I64ToF64
+        | NativeScalarOp::F64ToU64
+        | NativeScalarOp::F64ToI64 => true,
+        _ => false,
+    };
     let change = if cast {
         ChangeDetectionPolicy::KernelReported
     } else {
