@@ -270,8 +270,55 @@
     "benchmark_measurements": 0,
     "not_established": "This is fixed scalar literal-loop qualification only. Native element-count matrices, aggregate carriers, comprehensions, FSM/lifecycle and resources, the full k-nucleotide workload, packed/streaming operations, release trusted/secured timings, optimized/configurable checked AOT, clean review and full CI remain unfinished."
   },
+  "resident_radix_run_and_frame_followup": {
+    "as_of_utc": "2026-10-18T08:15:16Z",
+    "status": "ORIGINAL_AND_DECODED_100_AND_400_BASE_LIBRARY_QUALIFICATION_PASSES_NOT_FULL_BENCHMARK",
+    "tested_base": "67811ac603d86a6e35668625f564dfb4269f6fce",
+    "tested_implementation_diff_sha256": "6806e63ece940d75251a221b0b628f79405f97c43d486653742f457f31557d02",
+    "source_files_sha256": {
+      "src/engine/src/intrinsics/map_ops.rs": "b1ec84588f612068db49df996de1c98cacb54df86c56bb3eb973ec60455722a0",
+      "src/engine/src/resident/map_ops.rs": "1525497c541361d4ccd7d583efeb03c1554eaba8574a491c555794967b88eedc",
+      "src/stdlib/tests/map_source.rs": "dba264eb9bfa9c8aa33d342a79dd0b1ec661cebf929ed2447781d495bd847110",
+      "src/stdlib/tests/knucleotide_record_source.rs": "0648f1607d63832047daa60aba0c80f77d73bf1e53757a5742e4f62469380b80"
+    },
+    "diagnostic": {
+      "result": "The unchanged 400-base original artifact requested ComparisonWork=65544/65536. The final rejected request came from memory node143; histogram node144 had already requested11859 and repeated numeric comparison nodes137/139 requested17451 each. Temporary per-node instrumentation was removed; budget.rs was restored to SHA2564c00f39d9ff6bf5e76ef892f694704fec519aae940daebb4c81a72f5c5d76f46.",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v231-resident-comparison-profile.log",
+      "instrumentation_limits_or_decisions_changed": false
+    },
+    "changes": [
+      "Iterative byte radix sorting retains equal-key run starts when terminal or singleton buckets are resolved. Its existing scratch buffer carries markers, then compacts to sorted run starts. Histogram construction no longer performs a second String-pair equality pass; only the reservation for that removed pass is eliminated.",
+      "All buffers and16*n+1024 setup/compaction work are admitted before allocation/use. Each visited range admits64*count+64 compute before reading any key. Two symbol passes, index copies, occupied-bitset scans, at most count bucket visits, marker writes and frame scheduling are bounded by that charge. Every frame has at least two keys, so cumulative frame charges are at most96*(bytes+n), within the previous complete worst-case bound. Singleton suffixes are not visited or billed as if scanned.",
+      "The same incremental ResidentBudgetMeter carries every admitted frame into final admission. Core canonical finalization, output equality, full memory/node/clone reservations, shared control accounting and default limits remain. Actual admission errors propagate unchanged; there is no refund, reset or independent allowance.",
+      "The stale merge-sort-derived denial input in map_source is replaced by an input exceeding the remaining real finalization comparison reservation. The test now checks the exact ComparisonWork denial, unchanged prior output and recovery. Managed admission/allocation failure injection remains exercised."
+    ],
+    "intermediate_run": {
+      "result": "Run markers alone removed the earlier comparison rejection, but the unchanged400-base case then requested ComputeWork=18034397/16777216. The intermediate map_source denial expectation also exposed the stale merge-sort boundary; neither failure was ignored.",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v232-radix-run-boundaries.log",
+      "log_sha256": "b3acc3c26bdf873e9d23d3b647e45f84f4524d8233742354d603fe942a0e40c5"
+    },
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-radix-run-boundaries-v233.zsh",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v233-radix-run-boundaries.log",
+      "log_sha256": "f51bc214655f238dbe63f08ebf75a1665de62facd68819339efb334cc73aa576",
+      "source_unchanged_through_run": true,
+      "serial_locked_offline_debug_tests": true,
+      "format_check": "PASS",
+      "engine_unit_methods": 743,
+      "integration_methods": { "knucleotide_record_source": 5, "map_source": 7, "map_keys_comprehensions": 3, "pure_text_managed": 4 },
+      "ci_contract_methods": 76,
+      "exit_code": 0,
+      "run_marker_coverage": "Independent sorted-key, boundary and BTreeMap count oracles cover empty, singleton, duplicate, prefix, NUL, Unicode, deterministic varied and40000-byte common-prefix cases. Admission callback tests reject before first/later key reads, then reuse the same scratch for a successful retry; singleton suffixes incur no later frame charge.",
+      "workload": "The complete knucleotide_record_source target passes. Both original and decoded artifacts produce exact independent output for4,100,400 and4 bases in sequence. Both reject4000 bases at the unchanged65536 ComparisonWork limit without advancing published epoch or changing output, then recover with exact mixed-case8-base output.",
+      "boundary": "Library execution of the actual ordinary algorithm with only provider bindings/delivery removed by the existing test helper. Actual CLI/resource lifecycle and full-program native execution are separate, still unqualified routes."
+    },
+    "default_limits_changed": false,
+    "benchmark_program_algorithm_changed": false,
+    "benchmark_samples": 0,
+    "not_established": "Full125-million-base input, actual changed-source CLI/resource execution, whole-program canonical AOT, packed/streaming support, same-binary release trusted/secured timings, full-program binary/hot-path analysis, optimized/configurable checked AOT, clean review or complete green CI."
+  },
   "remaining": [
-    "Make the unchanged ordinary workload pass original and decoded artifacts at 100 and 400 bases with default limits, and retain denial/atomicity/recovery qualification.",
+    "Extend beyond the qualified100/400-base original/decoded library cases to realistic full inputs and actual CLI/resource execution, retaining finite admission, atomicity and recovery.",
     "Reduce actual general collection/histogram work; provide canonical packed and streaming operations for realistic full inputs.",
     "Complete canonical native control, collections and resource I/O for the entire workload, without the independent source-native compiler or whole-program interpreter fallback.",
     "Qualify full linked lifecycle and exact output, then measure the full workload in optimized checked AOT with explicit configuration and inspect its generated binary.",

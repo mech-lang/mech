@@ -289,16 +289,22 @@ fn execute(
                 .checked_add(strings.get(index).len())
                 .ok_or(ResidentKernelError::InvalidShape)
         })?;
-        let work = primitives::string_radix_compute_bound(n, bytes)
+        // Retain the overflow proof for the complete worst case, but admit
+        // actual occupied frames incrementally instead of spending that whole
+        // allowance on singleton suffixes which the radix sort never reads.
+        primitives::string_radix_compute_bound(n, bytes)
             .ok_or(ResidentKernelError::InvalidShape)?;
-        // Radix distribution performs no String-pair comparisons. Reserve the
-        // complete byte/metadata work as compute. One equality pass groups the
-        // sorted keys: unequal lengths stop at metadata, equal lengths scan at
-        // most the current key's bytes. Save its run starts for construction,
-        // rather than comparing every key again while building the result.
-        let key_comparison_work = bytes
-            .checked_add(n)
+        let setup_work = n
+            .checked_mul(16)
+            .and_then(|v| v.checked_add(1_024))
             .ok_or(ResidentKernelError::InvalidShape)?;
+        meter.charge_compute_work(budget::checked_u64(setup_work)?)?;
+        // Radix distribution performs no String-pair comparisons. Admit the
+        // visited byte/metadata work as compute. The terminal and singleton
+        // radix buckets already identify equal-key runs; retain those markers
+        // instead of comparing every sorted String again. Finalization and
+        // publication equality keep their separate comparison reservations.
+        let key_comparison_work = 0;
         let scratch_bytes = n
             .checked_mul(
                 2 * core::mem::size_of::<usize>()
@@ -306,7 +312,7 @@ fn execute(
             )
             .and_then(|bytes| bytes.checked_add(primitives::STRING_RADIX_FIXED_BYTES))
             .ok_or(ResidentKernelError::InvalidShape)?;
-        PreparedKernel::new((), budget::resident_cost! { compute_work: work, comparison_work: key_comparison_work, temporary_bytes: scratch_bytes, ..budget::KernelCostEstimate::default() }).admit()?.into_plan();
+        PreparedKernel::new((), budget::resident_cost! { compute_work: meter.estimate().compute_work(), comparison_work: key_comparison_work, temporary_bytes: scratch_bytes, ..budget::KernelCostEstimate::default() }).admit()?.into_plan();
         order
             .try_reserve_exact(n)
             .map_err(|_| ResidentKernelError::InvalidShape)?;
@@ -324,20 +330,22 @@ fn execute(
             &mut scratch,
             &mut radix_frames,
             |index| strings.get(index),
+            |work| meter.charge_compute_work(work),
         )
-        .map_err(|_| ResidentKernelError::InvalidShape)?;
-        let mut count = 0usize;
+        .map_err(|error| match error {
+            primitives::StringRadixError::Admission(error) => error,
+            _ => ResidentKernelError::InvalidShape,
+        })?;
+        let count = primitives::compact_string_radix_runs(&mut scratch);
         let mut payload = 0usize;
-        let mut start = 0;
-        while start < n {
-            scratch[count] = start;
+        for &start in &scratch[..count] {
             payload = payload
                 .checked_add(strings.get(order[start]).len())
                 .ok_or(ResidentKernelError::InvalidShape)?;
-            start = primitives::run_end(&order, start, |index| strings.get(index));
-            count += 1;
         }
-        (count, payload, work, key_comparison_work, scratch_bytes)
+        // The same meter carries setup and every visited frame into the final
+        // admission; no refund/reset or second independent allowance exists.
+        (count, payload, 0, key_comparison_work, scratch_bytes)
     } else {
         let entries = source_map
             .ok_or(ResidentKernelError::InvalidInput)?
