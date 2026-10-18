@@ -65,8 +65,8 @@ fn ordinary_fixture() -> String {
         .collect::<Vec<_>>()
         .join("\n")
         + "\n";
-    assert_eq!(deliveries, 3);
-    source.push_str("(delivery-1, delivery-2, delivery-3)\n");
+    assert_eq!(deliveries, 1);
+    source.push_str("delivery-1\n");
     source
 }
 
@@ -127,19 +127,10 @@ fn check(source: &str, inputs: &[&str], expected: impl Fn(usize, &[Value])) {
 
 fn delivery_text(outputs: &[Value]) -> String {
     assert_eq!(outputs.len(), 1);
-    let ValueData::Tuple(deliveries) = outputs[0].data() else {
+    let ValueData::String(text) = outputs[0].data() else {
         panic!("{:?}", outputs[0])
     };
-    assert_eq!(deliveries.len(), 3);
-    deliveries
-        .iter()
-        .map(|value| {
-            let ValueData::String(text) = value else {
-                panic!("{value:?}")
-            };
-            text.as_ref()
-        })
-        .collect()
+    text.to_string()
 }
 
 #[test]
