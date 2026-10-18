@@ -3,12 +3,161 @@
 //! checked once as an acyclic graph, beginning with ancestors plus its carrier;
 //! previous-visit body locals are never part of that initial definition set.
 use super::{
-    NativeIterationAction as Action, NativeIterationArtifactPlan as Plan,
+    NativeIterationAction as Action, NativeIterationArtifactPlan,
     NativeIterationTerminator as Terminator, NativeIterationValueScope as Scope,
     NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeMatchValue as Value,
     NativeScalarKind, NativeScalarValue,
 };
 use std::collections::VecDeque;
+
+pub(crate) trait ControlType: Eq {
+    fn is_bool(&self) -> bool;
+}
+impl ControlType for super::NativeScalarType {
+    fn is_bool(&self) -> bool {
+        self.kind() == NativeScalarKind::Bool
+    }
+}
+impl ControlType for super::NativeProgramType {
+    fn is_bool(&self) -> bool {
+        self.scalar_kind() == Some(NativeScalarKind::Bool)
+    }
+}
+
+/// One definition/ownership analysis for both legacy scalar and mixed-value
+/// compiler views. Neither implementation evaluates values or chooses control.
+pub(crate) trait ControlPlan {
+    type Type: ControlType;
+    fn values(&self) -> &[Self::Type];
+    fn blocks(&self) -> &[super::NativeIterationBlock];
+    fn iterations(&self) -> &[super::NativeIterationLoop];
+    fn value_scopes(&self) -> &[Scope];
+    fn entry(&self) -> u32;
+    fn initialize(&self, initial: &mut [bool]) -> Result<(), &'static str>;
+    fn output_values(&self) -> Box<dyn Iterator<Item = (Value, &Self::Type)> + '_>;
+    fn library(
+        &self,
+        origin: super::NativeMatchOrigin,
+        template: &super::NativeProgramLibraryTemplate,
+        operands: &[Value],
+        output: Value,
+    ) -> Result<(), &'static str>;
+}
+macro_rules! common_plan_view {
+    ($plan:ty, $ty:ty) => {
+        type Type = $ty;
+        fn values(&self) -> &[Self::Type] {
+            <$plan>::values(self)
+        }
+        fn blocks(&self) -> &[super::NativeIterationBlock] {
+            <$plan>::blocks(self)
+        }
+        fn iterations(&self) -> &[super::NativeIterationLoop] {
+            <$plan>::iterations(self)
+        }
+        fn value_scopes(&self) -> &[Scope] {
+            <$plan>::value_scopes(self)
+        }
+        fn entry(&self) -> u32 {
+            <$plan>::entry(self)
+        }
+        fn output_values(&self) -> Box<dyn Iterator<Item = (Value, &Self::Type)> + '_> {
+            Box::new(
+                self.outputs()
+                    .iter()
+                    .map(|output| (output.value(), output.ty())),
+            )
+        }
+    };
+}
+fn initialize_value<P: ControlPlan>(
+    plan: &P,
+    value: Value,
+    ty: &P::Type,
+    initial: &mut [bool],
+) -> Result<(), &'static str> {
+    let id = value.get() as usize;
+    if plan.values().get(id) != Some(ty)
+        || plan.value_scopes().get(id) != Some(&Scope::Immutable { iteration: None })
+        || *initial.get(id).ok_or(BAD)?
+    {
+        return Err(BAD);
+    }
+    initial[id] = true;
+    Ok(())
+}
+impl ControlPlan for NativeIterationArtifactPlan {
+    common_plan_view!(NativeIterationArtifactPlan, super::NativeScalarType);
+    fn initialize(&self, initial: &mut [bool]) -> Result<(), &'static str> {
+        for input in self.inputs() {
+            initialize_value(self, input.value(), input.declaration().ty(), initial)?;
+        }
+        for constant in self.constants() {
+            let ty = self
+                .values()
+                .get(constant.value().get() as usize)
+                .ok_or(BAD)?;
+            let kind = match constant.scalar() {
+                NativeScalarValue::Bool(_) => NativeScalarKind::Bool,
+                NativeScalarValue::U64(_) => NativeScalarKind::U64,
+                NativeScalarValue::I64(_) => NativeScalarKind::I64,
+                NativeScalarValue::F64(_) => NativeScalarKind::F64,
+            };
+            if ty.kind() != kind {
+                return Err(BAD);
+            }
+            initialize_value(self, constant.value(), ty, initial)?;
+        }
+        Ok(())
+    }
+    fn library(
+        &self,
+        _: super::NativeMatchOrigin,
+        _: &super::NativeProgramLibraryTemplate,
+        _: &[Value],
+        _: Value,
+    ) -> Result<(), &'static str> {
+        Err(BAD) // Frozen scalar plans never acquire managed-call authority.
+    }
+}
+impl ControlPlan for super::NativeProgramArtifactPlan {
+    common_plan_view!(super::NativeProgramArtifactPlan, super::NativeProgramType);
+    fn initialize(&self, initial: &mut [bool]) -> Result<(), &'static str> {
+        for input in self.inputs() {
+            initialize_value(self, input.value(), input.ty(), initial)?;
+        }
+        for constant in self.constants() {
+            let ty = self
+                .values()
+                .get(constant.value().get() as usize)
+                .ok_or(BAD)?;
+            if ty.schema() != constant.constant().schema()
+                || ty.schema_key() != constant.constant().schema_key()
+            {
+                return Err(BAD);
+            }
+            initialize_value(self, constant.value(), ty, initial)?;
+        }
+        Ok(())
+    }
+    fn library(
+        &self,
+        origin: super::NativeMatchOrigin,
+        template: &super::NativeProgramLibraryTemplate,
+        operands: &[Value],
+        output: Value,
+    ) -> Result<(), &'static str> {
+        if template.origin() != origin || template.program_revision() != self.program_revision() {
+            return Err(BAD);
+        }
+        crate::resident::general::native_match_lowering::validate_library_types(
+            template,
+            operands,
+            output,
+            self.values(),
+        )
+    }
+}
 
 const BAD: &str = "invalid counted-loop ownership or current-visit definitions";
 const ANALYSIS_CELLS: usize = 16 * 1024 * 1024;
@@ -19,7 +168,7 @@ fn scalar_successors(term: Term) -> [Option<u32>; 2] {
         Term::Complete | Term::Reject => [None, None],
     }
 }
-fn scope_ancestor(plan: &Plan, ancestor: Option<u32>, mut scope: Option<u32>) -> bool {
+fn scope_ancestor(plan: &impl ControlPlan, ancestor: Option<u32>, mut scope: Option<u32>) -> bool {
     // Loop ids are pre-order; every parent must be earlier. The caller first
     // validates this property, so the walk cannot cycle.
     loop {
@@ -32,7 +181,7 @@ fn scope_ancestor(plan: &Plan, ancestor: Option<u32>, mut scope: Option<u32>) ->
         scope = plan.iterations()[id as usize].parent();
     }
 }
-fn readable(plan: &Plan, value: Value, scope: Option<u32>, block: usize) -> bool {
+fn readable(plan: &impl ControlPlan, value: Value, scope: Option<u32>, block: usize) -> bool {
     match plan.value_scopes().get(value.get() as usize) {
         Some(Scope::Immutable { iteration }) => scope_ancestor(plan, *iteration, scope),
         Some(Scope::Carrier { iteration }) => {
@@ -45,7 +194,7 @@ fn readable(plan: &Plan, value: Value, scope: Option<u32>, block: usize) -> bool
 
 /// Called before the opaque engine plan is returned, including runtime-only
 /// same-Object rederivation. No caller can construct or mutate a certified plan.
-pub(crate) fn validate(plan: &Plan) -> Result<(), &'static str> {
+pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
     let blocks = plan.blocks();
     let count = plan.values().len();
     if plan.entry() as usize >= blocks.len()
@@ -59,32 +208,7 @@ pub(crate) fn validate(plan: &Plan) -> Result<(), &'static str> {
     }
     let ty = |v: Value| plan.values().get(v.get() as usize).ok_or(BAD);
     let mut initial = vec![false; count];
-    for input in plan.inputs() {
-        let id = input.value().get() as usize;
-        if ty(input.value())? != input.declaration().ty()
-            || plan.value_scopes()[id] != (Scope::Immutable { iteration: None })
-            || initial[id]
-        {
-            return Err(BAD);
-        }
-        initial[id] = true;
-    }
-    for constant in plan.constants() {
-        let id = constant.value().get() as usize;
-        let kind = match constant.scalar() {
-            NativeScalarValue::Bool(_) => NativeScalarKind::Bool,
-            NativeScalarValue::U64(_) => NativeScalarKind::U64,
-            NativeScalarValue::I64(_) => NativeScalarKind::I64,
-            NativeScalarValue::F64(_) => NativeScalarKind::F64,
-        };
-        if ty(constant.value())?.kind() != kind
-            || plan.value_scopes()[id] != (Scope::Immutable { iteration: None })
-            || initial[id]
-        {
-            return Err(BAD);
-        }
-        initial[id] = true;
-    }
+    plan.initialize(&mut initial)?;
     let mut roles = vec![None; blocks.len()];
     for (id, iteration) in plan.iterations().iter().enumerate() {
         if iteration
@@ -200,6 +324,13 @@ pub(crate) fn validate(plan: &Plan) -> Result<(), &'static str> {
             }
         }
         match block.action() {
+            Action::LibraryCall {
+                template,
+                operands,
+                output,
+            } => {
+                plan.library(block.origin(), template, operands, *output)?;
+            }
             Action::Initialize { iteration } if roles[id] != Some((*iteration, 0)) => {
                 return Err(BAD);
             }
@@ -218,9 +349,7 @@ pub(crate) fn validate(plan: &Plan) -> Result<(), &'static str> {
             _ => {}
         }
         match block.terminator() {
-            Terminator::Scalar(Term::Branch { condition, .. })
-                if ty(condition)?.kind() != NativeScalarKind::Bool =>
-            {
+            Terminator::Scalar(Term::Branch { condition, .. }) if !ty(condition)?.is_bool() => {
                 return Err(BAD);
             }
             Terminator::Scalar(Term::LiteralBranch { left, right, .. })
@@ -247,7 +376,7 @@ pub(crate) fn validate(plan: &Plan) -> Result<(), &'static str> {
     Ok(())
 }
 fn check_scope(
-    plan: &Plan,
+    plan: &impl ControlPlan,
     scope: Option<u32>,
     entry: u32,
     initial: Vec<bool>,
@@ -302,6 +431,20 @@ fn check_scope(
             }
         };
         match block.action() {
+            Action::LibraryCall {
+                operands, output, ..
+            } => {
+                for &value in operands {
+                    read(value, &known)?;
+                }
+                let ordinal = output.get() as usize;
+                if known[ordinal]
+                    || plan.value_scopes()[ordinal] != (Scope::Immutable { iteration: scope })
+                {
+                    return Err(BAD);
+                }
+                known[ordinal] = true;
+            }
             Action::Initialize { iteration } => {
                 let child = &plan.iterations()[*iteration as usize];
                 read(child.seed(), &known)?;
@@ -358,9 +501,9 @@ fn check_scope(
                     read(right, &known)?;
                 }
                 Term::Complete => {
-                    for output in plan.outputs() {
-                        read(output.value(), &known)?;
-                        if plan.values()[output.value().get() as usize] != *output.ty() {
+                    for (output, ty) in plan.output_values() {
+                        read(output, &known)?;
+                        if plan.values()[output.get() as usize] != *ty {
                             return Err(BAD);
                         }
                     }
@@ -381,7 +524,7 @@ fn check_scope(
     }
     Ok(())
 }
-fn collapsed_successors(plan: &Plan, id: usize) -> [Option<u32>; 2] {
+fn collapsed_successors(plan: &impl ControlPlan, id: usize) -> [Option<u32>; 2] {
     match plan.blocks()[id].action() {
         Action::Initialize { iteration } => {
             [Some(plan.iterations()[*iteration as usize].exit()), None]

@@ -2,7 +2,7 @@
 //! Match and counted-loop views share selected witnesses, exact scalar types
 //! and lexical block lowering. Neither path parses source or executes values.
 use super::native_lowering::{
-    port_layout, public_kind, public_op, scalar_type, validate_scalar_slot_initializers,
+    port_layout, public_kind, public_op, scalar_type, validate_slot_initializers,
 };
 use super::{
     NodeClass, ResidentExternalAdmission, bind_operation_for_target, build_activation_schedule,
@@ -12,7 +12,9 @@ use crate::native_artifact::{
     NativeArtifactLoweringError, NativeInput, NativeIterationAction, NativeIterationBlock,
     NativeIterationLoop, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
     NativeMatchBlock, NativeMatchConstant, NativeMatchInput, NativeMatchOrigin, NativeMatchOutput,
-    NativeMatchTerminator, NativeMatchValue, NativeScalarKind, NativeScalarType, NativeScalarValue,
+    NativeMatchTerminator, NativeMatchValue, NativeProgramArtifactPlan, NativeProgramConstant,
+    NativeProgramInput, NativeProgramOutput, NativeProgramType, NativeScalarKind, NativeScalarType,
+    NativeScalarValue,
 };
 use crate::resident::native_semantics;
 use crate::{
@@ -113,19 +115,159 @@ fn origin(node: NodeId, block: Option<u32>, local: Option<u32>) -> NativeMatchOr
     NativeMatchOrigin { node, block, local }
 }
 
+fn program_type(
+    artifact: &ProgramArtifact,
+    id: mech_core::SchemaId,
+    managed: bool,
+) -> Result<NativeProgramType, Error> {
+    let definition = artifact
+        .schemas()
+        .get(id)
+        .cloned()
+        .ok_or(Error::UnsupportedSchema { schema: id })?;
+    let scalar = match scalar_type(artifact, id) {
+        Ok(ty) => Some(ty),
+        Err(_) if managed => None,
+        Err(error) => return Err(error),
+    };
+    Ok(NativeProgramType {
+        schema: id,
+        definition,
+        scalar,
+    })
+}
+
+pub(crate) fn validate_library_types(
+    template: &crate::native_artifact::NativeProgramLibraryTemplate,
+    operands: &[NativeMatchValue],
+    output: NativeMatchValue,
+    values: &[NativeProgramType],
+) -> Result<(), &'static str> {
+    let bad = "library call differs from its selected canonical types";
+    let mech_core::ResolvedOperationContract::Declared(contract) = template.contract() else {
+        return Err(bad);
+    };
+    if operands.len() != template.inputs().len()
+        || operands.len() != contract.inputs.len()
+        || contract.outputs.len() != 1
+    {
+        return Err(bad);
+    }
+    for ((&value, schema), port) in operands.iter().zip(template.inputs()).zip(&contract.inputs) {
+        let ty = values.get(value.get() as usize).ok_or(bad)?;
+        if ty.schema() != port.schema || ty.definition() != schema {
+            return Err(bad);
+        }
+    }
+    let ty = values.get(output.get() as usize).ok_or(bad)?;
+    if ty.schema() != contract.outputs[0].schema || ty.definition() != template.output() {
+        return Err(bad);
+    }
+    Ok(())
+}
+
+fn scalar_constant(
+    ty: &NativeScalarType,
+    constant: &mech_core::Value,
+) -> Result<NativeScalarValue, Error> {
+    match (ty.kind(), constant.data()) {
+        (NativeScalarKind::Bool, mech_core::ValueData::Bool(v)) => Ok(NativeScalarValue::Bool(*v)),
+        (NativeScalarKind::U64, mech_core::ValueData::U64(v)) => Ok(NativeScalarValue::U64(*v)),
+        (NativeScalarKind::I64, mech_core::ValueData::I64(v)) => Ok(NativeScalarValue::I64(*v)),
+        (NativeScalarKind::F64, mech_core::ValueData::F64(v)) => Ok(NativeScalarValue::F64(*v)),
+        _ => Err(Error::UnsupportedSchema {
+            schema: constant.schema(),
+        }),
+    }
+}
+
+fn scalar_plan(plan: NativeProgramArtifactPlan) -> Result<NativeIterationArtifactPlan, Error> {
+    for block in &plan.blocks {
+        if matches!(block.action(), NativeIterationAction::LibraryCall { .. }) {
+            return Err(unsupported(
+                block.origin().node(),
+                "managed library call in scalar plan",
+            ));
+        }
+    }
+    let values = plan
+        .values
+        .into_vec()
+        .into_iter()
+        .map(NativeProgramType::into_scalar)
+        .collect::<Result<Box<[_]>, _>>()?;
+    let constants = plan
+        .constants
+        .into_vec()
+        .into_iter()
+        .map(|constant| {
+            let ty = values
+                .get(constant.value.get() as usize)
+                .ok_or(Error::InvalidBinding { node: None })?;
+            Ok(NativeMatchConstant {
+                value: constant.value,
+                scalar: scalar_constant(ty, &constant.constant)?,
+            })
+        })
+        .collect::<Result<Box<[_]>, Error>>()?;
+    let inputs = plan
+        .inputs
+        .into_vec()
+        .into_iter()
+        .map(|input| {
+            Ok(NativeMatchInput {
+                declaration: NativeInput {
+                    input: input.input,
+                    slot: input.slot,
+                    name: input.name,
+                    ty: input.ty.into_scalar()?,
+                },
+                value: input.value,
+            })
+        })
+        .collect::<Result<Box<[_]>, Error>>()?;
+    let outputs = plan
+        .outputs
+        .into_vec()
+        .into_iter()
+        .map(|output| {
+            Ok(NativeMatchOutput {
+                output: output.output,
+                slot: output.slot,
+                name: output.name,
+                interactive_binding: output.interactive_binding,
+                value: output.value,
+                ty: output.ty.into_scalar()?,
+            })
+        })
+        .collect::<Result<Box<[_]>, Error>>()?;
+    Ok(NativeIterationArtifactPlan {
+        revision: plan.revision,
+        values,
+        constants,
+        inputs,
+        outputs,
+        value_scopes: plan.value_scopes,
+        blocks: plan.blocks,
+        iterations: plan.iterations,
+        entry: plan.entry,
+    })
+}
+
 struct Builder<'a> {
     artifact: &'a ProgramArtifact,
     catalog: &'a FunctionCatalog,
-    values: Vec<NativeScalarType>,
+    values: Vec<NativeProgramType>,
     constants: BTreeMap<ConstantId, NativeMatchValue>,
     blocks: Vec<NativeIterationBlock>,
     value_scopes: Vec<NativeIterationValueScope>,
     iterations: Vec<Option<NativeIterationLoop>>,
     current_iteration: Option<u32>,
     allow_iteration: bool,
+    allow_collections: bool,
 }
 impl Builder<'_> {
-    fn value(&mut self, ty: NativeScalarType) -> Result<NativeMatchValue, Error> {
+    fn value(&mut self, ty: NativeProgramType) -> Result<NativeMatchValue, Error> {
         // scalar_type validates exact Bool/U64/I64/F64 schema evidence. The
         // control transport, constants and literal emitter support all four;
         // primitives still require the actual selected private witness.
@@ -153,8 +295,11 @@ impl Builder<'_> {
     fn link(&mut self, from: u32, to: u32) {
         self.blocks[from as usize].terminator = NativeMatchTerminator::Jump(to).into();
     }
-    fn ty(&self, value: NativeMatchValue) -> &NativeScalarType {
+    fn ty(&self, value: NativeMatchValue) -> &NativeProgramType {
         &self.values[value.get() as usize]
+    }
+    fn type_for_schema(&self, id: mech_core::SchemaId) -> Result<NativeProgramType, Error> {
+        program_type(self.artifact, id, self.allow_collections)
     }
     fn primitive(
         &mut self,
@@ -164,10 +309,68 @@ impl Builder<'_> {
         arguments: &[NativeMatchValue],
         output: NativeMatchValue,
     ) -> Result<u32, Error> {
+        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        if self.allow_collections {
+            use crate::native_artifact::{
+                NativeProgramLibraryTemplate, native_collection_lexical_template,
+                native_collection_operation_template,
+            };
+            let template = match (at.block(), at.local()) {
+                (Some(block), Some(local)) => native_collection_lexical_template(
+                    self.artifact,
+                    at.node(),
+                    crate::ControlBlockId(block),
+                    local,
+                    self.catalog,
+                )
+                .map(NativeProgramLibraryTemplate::from_lexical),
+                (None, None) => {
+                    native_collection_operation_template(self.artifact, at.node(), self.catalog)
+                        .map(NativeProgramLibraryTemplate::from_root)
+                }
+                _ => {
+                    return Err(Error::InvalidBinding {
+                        node: Some(at.node()),
+                    });
+                }
+            };
+            match template {
+                Ok(template) => {
+                    validate_library_types(&template, arguments, output, &self.values).map_err(
+                        |_| Error::InvalidBinding {
+                            node: Some(at.node()),
+                        },
+                    )?;
+                    let id = self.block(at, NativeMatchAction::None)?;
+                    self.blocks[id as usize].action = NativeIterationAction::LibraryCall {
+                        template,
+                        operands: arguments.into(),
+                        output,
+                    };
+                    return Ok(id);
+                }
+                Err(error)
+                    if self.ty(output).scalar().is_none()
+                        || arguments
+                            .iter()
+                            .any(|&value| self.ty(value).scalar().is_none()) =>
+                {
+                    return Err(error);
+                }
+                Err(_) => {} // Scalar calls still require their actual scalar factory witness below.
+            }
+        }
         let layouts = arguments
             .iter()
-            .map(|&value| port_layout(self.ty(value)))
-            .collect::<Vec<_>>();
+            .map(|&value| {
+                self.ty(value)
+                    .scalar()
+                    .map(port_layout)
+                    .ok_or(Error::UnsupportedSchema {
+                        schema: self.ty(value).schema(),
+                    })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
         let (kernel, memory_plan) = bind_operation_for_target(
             self.artifact,
             self.catalog,
@@ -175,7 +378,9 @@ impl Builder<'_> {
             reference,
             contract,
             &layouts,
-            port_layout(self.ty(output)),
+            port_layout(self.ty(output).scalar().ok_or(Error::UnsupportedSchema {
+                schema: self.ty(output).schema(),
+            })?),
             ExecutionTarget::Native,
         )?;
         let semantics = native_semantics::validated_scalar(&kernel)
@@ -185,8 +390,8 @@ impl Builder<'_> {
                 .inputs()
                 .iter()
                 .zip(arguments)
-                .any(|(&kind, &arg)| public_kind(kind) != self.ty(arg).kind())
-            || public_kind(semantics.output()) != self.ty(output).kind()
+                .any(|(&kind, &arg)| Some(public_kind(kind)) != self.ty(arg).scalar_kind())
+            || Some(public_kind(semantics.output())) != self.ty(output).scalar_kind()
         {
             return Err(Error::WitnessTypeMismatch { node: at.node() });
         }
@@ -278,7 +483,7 @@ impl Builder<'_> {
                 .iter()
                 .map(|&value| self.read(value, block, &parameters, &locals, owner))
                 .collect::<Result<Vec<_>, _>>()?;
-            let result = self.value(scalar_type(self.artifact, operation.schema)?)?;
+            let result = self.value(self.type_for_schema(operation.schema)?)?;
             let (start, end) = match &operation.body {
                 ControlOperationBody::Operation {
                     operation,
@@ -323,7 +528,7 @@ impl Builder<'_> {
         let seed = *arguments
             .get(declaration.seed as usize)
             .ok_or(Error::InvalidBinding { node: Some(owner) })?;
-        let ty = scalar_type(self.artifact, declaration.carrier)?;
+        let ty = self.type_for_schema(declaration.carrier)?;
         if self.ty(seed) != &ty || self.ty(output) != &ty {
             return Err(Error::InvalidBinding { node: Some(owner) });
         }
@@ -484,7 +689,7 @@ impl Builder<'_> {
             let selected = if let Some(guard) = &arm.guard {
                 let (start, tail, condition) =
                     self.control_block(owner, declaration, guard, arguments, binding)?;
-                if self.ty(condition).kind() != NativeScalarKind::Bool {
+                if self.ty(condition).scalar_kind() != Some(NativeScalarKind::Bool) {
                     return Err(Error::InvalidBinding { node: Some(owner) });
                 }
                 self.blocks[tail as usize].terminator = NativeMatchTerminator::Branch {
@@ -500,6 +705,12 @@ impl Builder<'_> {
             self.blocks[test as usize].terminator = (if let Some(peer) = literal {
                 if self.ty(peer) != self.ty(scrutinee) {
                     return Err(Error::InvalidBinding { node: Some(owner) });
+                }
+                if self.ty(peer).scalar().is_none() {
+                    return Err(unsupported(
+                        owner,
+                        "managed literal equality requires native comparison",
+                    ));
                 }
                 NativeMatchTerminator::LiteralBranch {
                     left: scrutinee,
@@ -584,6 +795,30 @@ fn lower_scalar_control_artifact(
     catalog: &FunctionCatalog,
     allow_iteration: bool,
 ) -> Result<NativeIterationArtifactPlan, Error> {
+    scalar_plan(lower_control_artifact(
+        artifact,
+        catalog,
+        allow_iteration,
+        false,
+    )?)
+}
+
+/// Lower through the very same canonical Match/loop builder as scalar plans.
+/// Library actions retain actual selected root/lexical provenance. This view
+/// does not bind current geometry or execute a graph, and is not a full AOT claim.
+pub fn lower_native_program_artifact(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+) -> Result<NativeProgramArtifactPlan, Error> {
+    lower_control_artifact(artifact, catalog, true, true)
+}
+
+fn lower_control_artifact(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    allow_iteration: bool,
+    allow_collections: bool,
+) -> Result<NativeProgramArtifactPlan, Error> {
     if !artifact.requirements().is_empty()
         || !artifact.constraints().is_empty()
         || !artifact.compute_regions().is_empty()
@@ -592,7 +827,9 @@ fn lower_scalar_control_artifact(
             feature: "requirements, constraints or compute regions",
         });
     }
-    validate_scalar_slot_initializers(artifact)?;
+    validate_slot_initializers(artifact, allow_collections, |id| {
+        program_type(artifact, id, allow_collections).map(|_| ())
+    })?;
     for node in artifact.nodes() {
         if !matches!(
             &node.body,
@@ -622,20 +859,19 @@ fn lower_scalar_control_artifact(
         iterations: Vec::new(),
         current_iteration: None,
         allow_iteration,
+        allow_collections,
     };
     let mut sources = BTreeMap::new();
     let mut inputs = Vec::new();
     for input in artifact.inputs() {
-        let ty = scalar_type(artifact, input.schema)?;
+        let ty = builder.type_for_schema(input.schema)?;
         let value = builder.value(ty.clone())?;
         sources.insert(ArtifactSource::Slot(input.slot), value);
-        inputs.push(NativeMatchInput {
-            declaration: NativeInput {
-                input: input.input,
-                slot: input.slot,
-                name: input.name.clone(),
-                ty,
-            },
+        inputs.push(NativeProgramInput {
+            input: input.input,
+            slot: input.slot,
+            name: input.name.clone(),
+            ty,
             value,
         });
     }
@@ -648,28 +884,10 @@ fn lower_scalar_control_artifact(
             .constants()
             .get(id)
             .ok_or(Error::InvalidBinding { node: None })?;
-        let ty = scalar_type(artifact, constant.schema())?;
-        let scalar = match (ty.kind(), constant.data()) {
-            (NativeScalarKind::Bool, mech_core::ValueData::Bool(value)) => {
-                NativeScalarValue::Bool(*value)
-            }
-            (NativeScalarKind::U64, mech_core::ValueData::U64(value)) => {
-                NativeScalarValue::U64(*value)
-            }
-            (NativeScalarKind::I64, mech_core::ValueData::I64(value)) => {
-                NativeScalarValue::I64(*value)
-            }
-            (NativeScalarKind::F64, mech_core::ValueData::F64(value)) => {
-                NativeScalarValue::F64(*value)
-            }
-            _ => {
-                return Err(Error::UnsupportedSchema {
-                    schema: constant.schema(),
-                });
-            }
-        };
+        let ty = builder.type_for_schema(constant.schema())?;
         if constant.schema_key() != ty.schema_key()
-            || !constant.shape().parameter_values().is_empty()
+            || (!allow_collections && !constant.shape().parameter_values().is_empty())
+            || constant.validate_against(artifact.schemas()).is_err()
         {
             return Err(Error::UnsupportedSchema {
                 schema: constant.schema(),
@@ -678,7 +896,10 @@ fn lower_scalar_control_artifact(
         let value = builder.value(ty)?;
         builder.constants.insert(id, value);
         sources.insert(ArtifactSource::Constant(id), value);
-        constants.push(NativeMatchConstant { value, scalar });
+        constants.push(NativeProgramConstant {
+            value,
+            constant: constant.clone(),
+        });
     }
     let root_origin = origin(NodeId::new(0), None, None);
     let entry = builder.block(root_origin, NativeMatchAction::None)?;
@@ -695,10 +916,8 @@ fn lower_scalar_control_artifact(
             })
             .collect::<Result<Vec<_>, Error>>()?;
         let slot = node_output_slot(artifact, node_id)?;
-        let output = builder.value(scalar_type(
-            artifact,
-            artifact.slots()[slot.get() as usize].schema,
-        )?)?;
+        let output = builder
+            .value(builder.type_for_schema(artifact.slots()[slot.get() as usize].schema)?)?;
         let at = origin(node_id, None, None);
         let (start, end) = match &node.body {
             ExecutableNodeBody::Operation(operation) => {
@@ -736,11 +955,11 @@ fn lower_scalar_control_artifact(
             let value = *sources
                 .get(&source)
                 .ok_or(Error::InvalidBinding { node: None })?;
-            let ty = scalar_type(artifact, output.schema)?;
+            let ty = builder.type_for_schema(output.schema)?;
             if builder.ty(value) != &ty {
                 return Err(Error::InvalidBinding { node: None });
             }
-            Ok(NativeMatchOutput {
+            Ok(NativeProgramOutput {
                 output: output.output,
                 slot: output.source,
                 name: output.name.clone(),
@@ -750,7 +969,7 @@ fn lower_scalar_control_artifact(
             })
         })
         .collect::<Result<Vec<_>, Error>>()?;
-    let plan = NativeIterationArtifactPlan {
+    let plan = NativeProgramArtifactPlan {
         revision: artifact.revision(),
         inputs: inputs.into(),
         constants: constants.into(),
@@ -780,7 +999,7 @@ mod iteration_proof_tests {
         parse_canonical_document,
     };
     use std::sync::Arc;
-    fn plan(source: &str) -> NativeIterationArtifactPlan {
+    fn artifact(source: &str) -> (crate::ProgramArtifact, Arc<mech_core::FunctionCatalog>) {
         let parsed = parse_canonical_document(
             TextSnapshot::new(DocumentId(0x49545052), Revision(1), source).unwrap(),
             ParseConfig::default(),
@@ -797,7 +1016,39 @@ mod iteration_proof_tests {
             .unwrap()
             .compile_artifact()
             .unwrap();
+        (artifact, catalog)
+    }
+    fn plan(source: &str) -> NativeIterationArtifactPlan {
+        let (artifact, catalog) = artifact(source);
         lower_scalar_iteration_artifact(&artifact, &catalog).unwrap()
+    }
+    #[test]
+    fn mixed_current_visit_proof_rejects_stale_managed_carriers_and_cross_scope_edges() {
+        for count in [0, 25] {
+            let source = format!(
+                "identity(x<string>) => (next<string>) := next := x.\nouter(x<string>) => (next<string>) := next := x |3> identity.\nseed<string> |{count}> outer\n"
+            );
+            let (artifact, catalog) = artifact(&source);
+            let valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
+            valid.validate_current_visits().unwrap();
+            assert!(
+                valid.values()[valid.iterations()[0].carrier().get() as usize]
+                    .scalar()
+                    .is_none()
+            );
+            let mut previous = valid.clone();
+            previous.iterations[1].next = previous.iterations[1].result;
+            assert!(previous.validate_current_visits().is_err());
+            let mut cross_scope = valid.clone();
+            let child = &valid.iterations()[1];
+            cross_scope.blocks[child.latch() as usize].terminator =
+                NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(child.body()));
+            assert!(cross_scope.validate_current_visits().is_err());
+            let mut forged_scope = valid.clone();
+            forged_scope.value_scopes[child.carrier().get() as usize] =
+                NativeIterationValueScope::Immutable { iteration: Some(1) };
+            assert!(forged_scope.validate_current_visits().is_err());
+        }
     }
     #[test]
     fn iteration_current_visit_proof_accepts_nested_identity_and_zero_count() {

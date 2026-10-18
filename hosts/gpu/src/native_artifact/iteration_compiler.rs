@@ -183,6 +183,12 @@ fn validate(plan: &NativeIterationArtifactPlan) -> Result<(), NativeCompileError
         .map_err(|reason| NativeCompileError::InvalidPlan { node: None, reason })?;
     let ty = |value: NativeMatchValue| plan.values().get(value.get() as usize).ok_or_else(bad);
     for block in plan.blocks() {
+        if matches!(block.action(), NativeIterationAction::LibraryCall { .. }) {
+            return Err(NativeCompileError::InvalidPlan {
+                node: Some(block.origin().node()),
+                reason: "managed call requires native managed transport",
+            });
+        }
         if let NativeIterationAction::Scalar(NativeMatchAction::Primitive {
             op,
             operands,
@@ -376,6 +382,12 @@ fn define<M: Module>(
                 error,
             );
             match block.action() {
+                NativeIterationAction::LibraryCall { .. } => {
+                    return Err(NativeCompileError::InvalidPlan {
+                        node: Some(block.origin().node()),
+                        reason: "managed call requires native managed transport",
+                    });
+                }
                 NativeIterationAction::Scalar(action) => {
                     emit_scalar_action(&mut b, locals, action, error)?
                 }

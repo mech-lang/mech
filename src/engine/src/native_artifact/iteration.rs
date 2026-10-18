@@ -16,8 +16,20 @@ pub enum NativeIterationValueScope {
 #[derive(Clone, Debug)]
 pub enum NativeIterationAction {
     Scalar(NativeMatchAction),
-    Initialize { iteration: u32 },
-    Latch { iteration: u32 },
+    /// A selected maintained leaf at its exact canonical root/lexical site.
+    /// Managed program plans alone construct this action; frozen scalar plans
+    /// reject it rather than treating handles as integer arithmetic operands.
+    LibraryCall {
+        template: super::NativeProgramLibraryTemplate,
+        operands: Box<[NativeMatchValue]>,
+        output: NativeMatchValue,
+    },
+    Initialize {
+        iteration: u32,
+    },
+    Latch {
+        iteration: u32,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

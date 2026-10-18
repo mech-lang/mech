@@ -315,13 +315,21 @@ pub fn lower_pure_native_artifact(
 pub(super) fn validate_scalar_slot_initializers(
     artifact: &ProgramArtifact,
 ) -> Result<(), NativeArtifactLoweringError> {
+    validate_slot_initializers(artifact, false, |id| scalar_type(artifact, id).map(|_| ()))
+}
+
+pub(super) fn validate_slot_initializers(
+    artifact: &ProgramArtifact,
+    parameterized: bool,
+    check_schema: impl Fn(SchemaId) -> Result<(), NativeArtifactLoweringError>,
+) -> Result<(), NativeArtifactLoweringError> {
     for slot in artifact.slots() {
         if slot.role == SlotRole::State {
             return Err(NativeArtifactLoweringError::UnsupportedProgram {
                 feature: "state or initializers",
             });
         }
-        scalar_type(artifact, slot.schema)?;
+        check_schema(slot.schema)?;
         if let Some(initializer) = slot.initializer {
             // Canonical compilation materializes a direct constant result in
             // an Output alias with that same constant as its publication
@@ -352,7 +360,7 @@ pub(super) fn validate_scalar_slot_initializers(
                                     .schemas()
                                     .entry(slot.schema)
                                     .is_some_and(|schema| schema.key() == value.schema_key())
-                                && value.shape().parameter_values().is_empty()
+                                && (parameterized || value.shape().parameter_values().is_empty())
                         })
                 }
                 _ => false,

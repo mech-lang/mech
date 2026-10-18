@@ -32,6 +32,136 @@ values := map/values(counts)
 (formatted, keys, values)
 "#;
 
+#[test]
+fn mixed_native_control_lowering_preserves_all_seven_library_families_and_scalar_work() {
+    use mech_engine::native_artifact::{
+        NativeIterationAction, NativeMatchAction, NativeScalarOp, lower_native_program_artifact,
+    };
+    let source = SOURCE.replace("(formatted, keys, values)\n", "more := size + 1u64\n");
+    for artifact in artifacts(&source) {
+        let plan =
+            lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        plan.validate_current_visits().unwrap();
+        assert_eq!(plan.program_revision(), artifact.revision());
+        let mut names = Vec::new();
+        let mut scalar_add = false;
+        for block in plan.blocks() {
+            match block.action() {
+                NativeIterationAction::LibraryCall {
+                    template,
+                    operands,
+                    output,
+                } => {
+                    assert_eq!(template.origin(), block.origin());
+                    assert_eq!(template.program_revision(), artifact.revision());
+                    assert!(template.root().is_some());
+                    assert!(template.lexical().is_none());
+                    assert_eq!(operands.len(), template.inputs().len());
+                    assert_eq!(
+                        plan.values()[output.get() as usize].definition(),
+                        template.output()
+                    );
+                    names.push(template.primitive().name());
+                }
+                NativeIterationAction::Scalar(NativeMatchAction::Primitive {
+                    op: NativeScalarOp::U64Add,
+                    ..
+                }) => scalar_add = true,
+                _ => {}
+            }
+        }
+        names.sort();
+        assert_eq!(
+            names,
+            [
+                "map/histogram",
+                "map/keys",
+                "map/values",
+                "number/format",
+                "sequence/length",
+                "text/join",
+                "text/lines"
+            ]
+        );
+        assert!(scalar_add);
+        assert!(plan.values().iter().any(|ty| ty.scalar().is_none()));
+        assert!(
+            mech_engine::native_artifact::lower_scalar_iteration_artifact(
+                &artifact,
+                &mech_stdlib::source_catalog()
+            )
+            .is_err()
+        );
+    }
+}
+
+#[test]
+fn mixed_native_control_lowering_owns_managed_loop_carriers_and_lexical_leaf_calls() {
+    use mech_engine::native_artifact::{
+        NativeIterationAction, NativeIterationValueScope, lower_native_program_artifact,
+    };
+    let source = "+> sequence\n+> number\nstep(x<string>) => (next<string>) := next := (choose? | true => number/format(sequence/length(x), 0u64) | false => x).\nchoose := flag<bool>\nseed<string> |3> step\n";
+    for artifact in artifacts(source) {
+        let plan =
+            lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        plan.validate_current_visits().unwrap();
+        assert_eq!(plan.iterations().len(), 1);
+        let iteration = &plan.iterations()[0];
+        assert_eq!(iteration.count(), 3);
+        assert!(
+            plan.values()[iteration.carrier().get() as usize]
+                .scalar()
+                .is_none()
+        );
+        assert_eq!(
+            plan.value_scopes()[iteration.carrier().get() as usize],
+            NativeIterationValueScope::Carrier { iteration: 0 }
+        );
+        let calls = plan
+            .blocks()
+            .iter()
+            .filter_map(|block| {
+                let NativeIterationAction::LibraryCall { template, .. } = block.action() else {
+                    return None;
+                };
+                assert_eq!(block.iteration(), Some(0));
+                assert_eq!(template.origin(), block.origin());
+                let lexical = template.lexical().expect("actual lexical canonical site");
+                assert_eq!(Some(lexical.block().0), block.origin().block());
+                assert_eq!(Some(lexical.local()), block.origin().local());
+                assert!(template.root().is_none());
+                Some(template.primitive().name())
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(calls, ["sequence/length", "number/format"]);
+    }
+}
+
+#[test]
+fn mixed_native_control_lowering_never_uses_replacement_factories_as_authority() {
+    use mech_engine::native_artifact::lower_native_program_artifact;
+    let maintained = mech_stdlib::source_catalog();
+    let original = maintained
+        .resident_factory(&["sequence".into()], "length")
+        .unwrap();
+    let mut builder = FunctionCatalogBuilder::new();
+    builder
+        .insert_resident_factory_entry(original.clone().with_factory(replacement))
+        .unwrap();
+    let replaced = builder.build().unwrap();
+    for artifact in artifacts("+> sequence\nsequence/length(input<string>)\n") {
+        assert!(matches!(
+            lower_native_program_artifact(&artifact, &replaced),
+            Err(NativeArtifactLoweringError::MissingSemanticWitness { .. })
+        ));
+        lower_native_program_artifact(&artifact, &maintained)
+            .unwrap()
+            .validate_current_visits()
+            .unwrap();
+    }
+    assert_eq!(BINDS.load(Ordering::SeqCst), 0);
+}
+
 fn artifacts(source: &str) -> [ProgramArtifact; 2] {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x434f4c4c), Revision(1), source).unwrap(),
