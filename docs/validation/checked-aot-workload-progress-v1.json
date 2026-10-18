@@ -359,6 +359,43 @@
     "benchmark_samples": 0,
     "not_established": "Full125-million-base input, native whole-program AOT, canonical packed/streaming execution, same-binary trusted/secured timing, security overhead, full-program binary/hot-path analysis, optimized/configurable checked AOT, clean review or complete green CI."
   },
+  "selected_native_collection_template_qualification": {
+    "as_of_utc": "2026-10-18T09:56:19Z",
+    "status": "PASS_SELECTED_ROOT_AND_LEXICAL_METADATA_NOT_EXECUTION",
+    "qualified_source_commit": "a484c36f9",
+    "tested_base": "e072b15570cdccbc59bed91939151cb3b2c92478",
+    "tested_tracked_diff_sha256": "a0657dac42cb6531a02ec9f7e29ac9f6e73fa717e83695cd8720dba6144d16ae",
+    "new_source_files_sha256": {
+      "src/core/tests/resident_factory_lowering_attachment.rs": "12a5690e900bd7c982ad70a6d970ef4e0c7c0afa6959680a2fcc217c3e001914",
+      "src/engine/src/resident/native_collection_semantics.rs": "1e04a97d599356f26b522e5d7b91ec34d93ab5c325a51718992200ff1803c864",
+      "src/engine/src/resident/general/native_collection_templates.rs": "ffc2897397a98b6f0d3d7b1472878e70f31d409e28543dd61594e715a04b5c47",
+      "src/stdlib/tests/native_collection_templates.rs": "340fd8a06b7e99fe173fb5d10a398be919c16ffad0c0098be7fafca4accf4dad"
+    },
+    "changes": [
+      "Constructor-private selected-factory attachment is retained by unchanged clones and invalidated by every semantic/key/cost replacement, including replacement with the same public value. Public descriptive opcodes are not authority.",
+      "Seven maintained String/matrix/map leaves are certified at actual canonical root and lexical Match/Activation, comprehension and iteration sites. Lexical sources retain original block/local/parameter identities, actual symbolic schemas, exact contracts and selected factory provenance. No binder, preflight, executor, parser or value folding runs during template selection.",
+      "Resident-only builds do not allocate unused native factory attachments. Native opcode fields and their consumer are feature-gated without lint suppressions.",
+      "Resident radix helpers are feature-gated for resident/test builds; the fixed-workspace constant is resident-only. Iteration reuses the existing raw entry function-pointer type, while its three real compiler/runtime/linked unsafe boundaries have exact reviewed file-specific invariants. ABI versions and identities remain distinct."
+    ],
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-native-collection-ci-v240.zsh",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v240-native-collection-ci.log",
+      "log_sha256": "3aaf44e3895957f70939ff2bd57d076f9b56a101821c8bf5540e71ebcbe6ba5e",
+      "exit_code": 0,
+      "source_unchanged_through_run": true,
+      "format_warning_policy_unsafe_audit_and_negative_audit_fixtures": "PASS",
+      "ci_contract_methods": 77,
+      "core_factory_methods": 4,
+      "engine_unit_methods": 745,
+      "native_lowering_methods": 35,
+      "resident_integration_methods": 22,
+      "compile_checks": "All stdlib native-feature integration targets; nonresident engine full_runtime and stdlib full_compiler; resident-only engine full_runtime,resident-artifact.",
+      "negative_coverage": "Original/decoded artifacts reject replacement factories, forged public opcodes, altered contracts/schemas and fabricated lexical sites without invoking the replacement binder. Existing full workload denial/publication/recovery and constructor-replacement tests remain active."
+    },
+    "preceding_failures": "v237 exposed a mismatched turn-shaped versus fixed-shape Match test fixture; v239 exposed one remaining old public factory-field test access. Both were corrected, not ignored. Static inspection also found an unaudited conditional warning suppression, which was removed before the final full qualification.",
+    "ci_diagnosis": "Run39110851697 tested integration merge210336ea106084934c848f3c8a5f72b354f049d4, with parents89f417d5317981516666368c3f9f457ffe165138 ande072b15570cdccbc59bed91939151cb3b2c92478. The different68c02e42f7b0ca360fef82d45b55ae0ae911cfea exact-ref lines are contract-test fixture output, not the job checkout. That run failed the resident-disabled dead-code builds and iteration unsafe audit; local checks for both now pass. Remote CI on the correction is still required.",
+    "not_established": "These are selected-leaf templates, not complete mixed-value NativeHost call descriptors, runtime library calls, native comprehensions/FSM/resource I/O, whole-program AOT, full-size packed/streaming execution, benchmark timing, clean review or complete green CI."
+  },
   "remaining": [
     "Extend beyond the qualified100/400-base original/decoded library and real release CLI/resource cases to realistic full inputs, retaining finite admission, atomicity and recovery.",
     "Reduce actual general collection/histogram work; provide canonical packed and streaming operations for realistic full inputs.",
