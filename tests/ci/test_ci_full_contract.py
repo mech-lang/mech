@@ -133,6 +133,36 @@ def literal_assignment(source: str, name: str):
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_linked_applications_have_an_independent_required_cold_build_budget(self):
+        applications = job_block(FULL, "canonical-applications")
+        linked = job_block(FULL, "canonical-linked-applications")
+        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", applications).group(1)), 90)
+        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", linked).group(1)), 60)
+        self.assertEqual(applications.splitlines()[0], linked.splitlines()[0])
+        for setting in (
+            "RUSTUP_TOOLCHAIN: nightly-2026-03-03",
+            "CARGO_INCREMENTAL: 0", 'CARGO_PROFILE_DEV_DEBUG: "0"',
+            'CARGO_PROFILE_TEST_DEBUG: "0"', 'CARGO_BUILD_JOBS: "1"',
+            FULL_CHECKOUT_REF, "Record exact-ref checkout identity",
+        ):
+            self.assertIn(setting, applications)
+            self.assertIn(setting, linked)
+        self.assertNotIn("Qualify linked", applications)
+        steps = job_steps(FULL, "canonical-linked-applications")
+        fetch = next(step for step in steps if "Fetch locked application dependencies" in step)
+        admission = next(step for step in steps if "Execute activated native host I/O and application syntax" in step)
+        self.assertIn("cargo +nightly-2026-03-03 fetch --locked", fetch)
+        self.assertLess(linked.index(fetch), linked.index(admission))
+        upload = next(step for step in steps if "Retain linked application evidence" in step)
+        self.assertIn("if: ${{ always() }}", upload)
+        for evidence in (
+            "canonical-native-evidence", "canonical-cli-evidence", "native-host-evidence",
+            "native-control-evidence", "native-stdin-evidence",
+        ):
+            self.assertIn(f"${{{{ runner.temp }}}}/{evidence}", upload)
+        self.assertIn("- canonical-linked-applications", job_block(FULL, "cargo"))
+        self.assertNotIn("continue-on-error", linked)
+
     def test_native_cli_collision_has_an_independent_required_cold_build_budget(self):
         memory = job_block(FULL, "managed-memory-runtime")
         collision = job_block(FULL, "native-cli-collision")
@@ -201,7 +231,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             "applications", "tail_control", "native_artifact_lowering",
             "native_artifact_i64_lowering", "native_artifact_output_initializers",
             "canonical_artifact_native", "canonical_artifact_i64",
-            "canonical_cli_bytes", "native_host_io", "repeated_application",
+            "canonical_cli_bytes",
         ):
             self.assertIn(f"--test {target}", block)
         self.assertIn("--lib resident::native_semantics::tests", block)
@@ -219,7 +249,10 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn(f"--test {target}", cli_step)
         self.assertIn("-- --test-threads=1", cli_step)
         self.assertNotIn("--ignored", cli_step)
-        admission_step = next(step for step in job_steps(FULL, "canonical-applications")
+        linked = job_block(FULL, "canonical-linked-applications")
+        self.assertIn("RUSTUP_TOOLCHAIN: nightly-2026-03-03", linked)
+        self.assertNotIn("continue-on-error", linked)
+        admission_step = next(step for step in job_steps(FULL, "canonical-linked-applications")
                               if "Execute activated native host I/O and application syntax" in step)
         for target in (
             "native_host_io", "repeated_application", "native_host_application",
@@ -247,7 +280,7 @@ class FullWorkflowContractTests(unittest.TestCase):
              "one_linked_stdin_executable_preserves_unicode_snapshots_and_launch_policy",
              "MECH_NATIVE_STDIN_QUALIFICATION_DIRECTORY"),
         ):
-            step = next(step for step in job_steps(FULL, "canonical-applications")
+            step = next(step for step in job_steps(FULL, "canonical-linked-applications")
                         if f"--test {target} " in step and case in step
                         and "-- --ignored --exact" in step)
             self.assertIn("cargo +nightly-2026-03-03 test --locked --offline", step)
@@ -256,7 +289,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn("--test-threads=1", step)
             self.assertIn(evidence, step)
             if target in {"control_application", "native_stdin_application", "canonical_cli_application"}:
-                selection = next(selected for selected in job_steps(FULL, "canonical-applications")
+                selection = next(selected for selected in job_steps(FULL, "canonical-linked-applications")
                                  if f"--test {target} " in selected and case in selected
                                  and "-- --list --ignored --exact" in selected)
                 self.assertIn("cargo +nightly-2026-03-03 test --locked --offline", selection)
@@ -265,7 +298,7 @@ class FullWorkflowContractTests(unittest.TestCase):
                 self.assertNotIn("continue-on-error", selection)
                 self.assertNotIn("    if:", selection)
                 self.assertNotIn("    if:", step)
-                self.assertLess(block.index(selection), block.index(step))
+                self.assertLess(linked.index(selection), linked.index(step))
             if target in {"control_application", "native_stdin_application"}:
                 self.assertIn("--features native-build,native-io", step)
                 self.assertIn("--features native-build,native-io", selection)
@@ -275,11 +308,11 @@ class FullWorkflowContractTests(unittest.TestCase):
                 self.assertIn("--features standard-hosts,process-supervision", step)
                 self.assertIn("--features standard-hosts,process-supervision", selection)
                 self.assertIn("CLI_QUALIFICATION_TESTS", selection)
-        self.assertIn("MECH_CANONICAL_NATIVE_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", block)
-        self.assertIn("MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", block)
-        self.assertIn("uses: actions/upload-artifact@", block)
+        self.assertIn("MECH_CANONICAL_NATIVE_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", linked)
+        self.assertIn("MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", linked)
+        self.assertIn("uses: actions/upload-artifact@", linked)
         for evidence in ("native-control-evidence", "native-stdin-evidence"):
-            self.assertIn(f"${{{{ runner.temp }}}}/{evidence}", block)
+            self.assertIn(f"${{{{ runner.temp }}}}/{evidence}", linked)
 
     def test_canonical_source_and_native_registration_targets_are_selected(self):
         groups = (
@@ -1064,6 +1097,11 @@ class FullWorkflowContractTests(unittest.TestCase):
                 with self.subTest(family=family, collision=result):
                     self.assertFalse(accepts([family], changes={"native-cli-collision": result}))
             self.assertFalse(accepts([family], omitted="native-cli-collision"))
+        for family in ("all", "language", "native"):
+            for result in ("failure", "cancelled", "skipped", ""):
+                with self.subTest(family=family, linked=result):
+                    self.assertFalse(accepts([family], changes={"canonical-linked-applications": result}))
+            self.assertFalse(accepts([family], omitted="canonical-linked-applications"))
         self.assertFalse(accepts(["native"], in_caller=True, changes={"native-plan": "failure"}))
         self.assertFalse(accepts(["cli"], changes={"release-package-dry-run": "success"}))
         self.assertFalse(accepts(["cli"], omitted="native-engine"))

@@ -494,7 +494,7 @@ jobs:
 
   canonical-applications:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') || contains(fromJSON(inputs.contract_families), 'language') }}
-    name: Canonical applications and linked qualification
+    name: Canonical applications and native witnesses
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -572,6 +572,39 @@ jobs:
           --test canonical_cli_bytes --test canonical_resource_execution
           --test canonical_resource_planning --test canonical_map_features
           --test canonical_pure_text_features -- --test-threads=1
+
+  canonical-linked-applications:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') || contains(fromJSON(inputs.contract_families), 'language') }}
+    name: Linked application qualification
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_BUILD_JOBS: "1"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
+          fetch-depth: 0
+      - name: Record exact-ref checkout identity
+        env:
+          VALIDATION_KIND: exact-ref
+          REQUESTED_REF: ${{ inputs.validation_ref || github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
+      - name: Install pinned compiler and native arithmetic tools
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources -o Dir::Etc::sourceparts=-
+          sudo apt-get install --yes ripgrep build-essential m4
+      - name: Fetch locked application dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked
       - name: Execute activated native host I/O and application syntax
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
@@ -1669,6 +1702,7 @@ jobs:
       - bytecode-v1-format
       - bytecode-v1-values
       - canonical-applications
+      - canonical-linked-applications
       - cargo-features
       - cargo-language
       - cargo-runtime
@@ -1716,13 +1750,13 @@ jobs:
           groups = {
               'architecture': ['architecture-contracts', 'architecture-mutations'],
               'artifact': ['artifact-closure', 'bytecode-v1-format', 'bytecode-v1-values', 'bytecode-v1-determinism'],
-              'language': ['cargo-language', 'canonical-applications'],
+              'language': ['cargo-language', 'canonical-applications', 'canonical-linked-applications'],
               'memory': ['memory-planner-contract', 'managed-memory-runtime', 'managed-memory-miri', 'native-cli-collision'],
               'numeric': ['function-system-contracts', 'engine-catalog', 'managed-memory-fixed-profiles', 'managed-memory-runtime', 'cargo-runtime', 'native-cli-collision'],
               'runtime': ['cargo-runtime', 'macos-runtime', 'windows-runtime-paths', 'windows-cli', 'dynamic-modules'],
               'cli': ['cargo-runtime', 'run-only', 'windows-cli-contracts', 'windows-cli'],
               'linkage': ['native-linkage-owners', 'native-linkage-surfaces', 'native-linkage', 'native-linkage-closures', 'catalog-closure'],
-              'native': ['native-plan', 'native-engine', 'native-hosted', 'native-live', 'native-windows', 'native-macos', 'project-native', 'canonical-applications'],
+              'native': ['native-plan', 'native-engine', 'native-hosted', 'native-live', 'native-windows', 'native-macos', 'project-native', 'canonical-applications', 'canonical-linked-applications'],
               'browser': ['wasm-source-profile', 'wasm-bytecode-v1', 'project-browser'],
               'distribution': ['cargo-features', 'distribution-contracts', 'package-validation', 'release-package-dry-run'],
           }
