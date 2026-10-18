@@ -1,7 +1,7 @@
 {
   "schema": "mech.checked-aot-workload-progress.v1",
   "status": "INCOMPLETE_IMPLEMENTATION_NOT_BENCHMARK_QUALIFIED",
-  "latest_qualification": "lexical_native_library_binding_qualification",
+  "latest_qualification": "prepared_native_library_call_qualification",
   "pull_request": "https://github.com/mech-lang/mech/pull/905",
   "baseline": "c4190315672337f039efc743a970263627f75834",
   "reproduction": {
@@ -611,6 +611,39 @@
     "benchmark_program_algorithm_changed": false,
     "new_linked_execution_or_benchmark_samples": 0,
     "not_established": "Mixed managed control still needs actual shared native emission and admitted callbacks/transport, including pre-admitted live-shape binding and scalar/canonical construction. Comprehensions, FSM, element-count matrices and typed resource lifecycle still need native execution. General packed/streaming all-seven-histogram operations, the full125M workload, same-executable trusted/secured release timing, binary/hot-path/dependency analysis, optimization/configuration and final-head clean review/full green GitHub CI remain required."
+  },
+  "prepared_native_library_call_qualification": {
+    "as_of_utc": "2026-10-18T15:49:54Z",
+    "status": "PASS_PRE_ADMITTED_LIVE_LIBRARY_BINDING_NOT_GENERATED_PROGRAM_EXECUTION",
+    "qualified_source_commit": "e03fad5939d51566b5cc87e88912040ce83e7445",
+    "qualified_source_tree": "31716e211960d1803cd9b709af3ff6ba46fd4132",
+    "tested_base": "a6a806fda21def95b0d6cbd1019bc74c33bc4583",
+    "tested_tracked_diff_sha256": "7d86e16dbc4690c42b9dbaae5719b0c6f62e6ebf3a725dc57a4d9c1deef9d796",
+    "source_verification": "The final serial qualification froze the entire tracked diff, including the new prepared-call source, through terminal exit0. The committed binary diff matches this exact tested hash. The qualification document is added separately afterward.",
+    "implementation": [
+      "Compiler/setup preparation revalidates the genuine canonical site and current private-witness selection, then retains its exact template, immutable schemas and actual maintained factory. Live invocation performs no ProgramArtifact declaration search or FunctionCatalog lookup; admitted schema/plan/kernel construction still occurs.",
+      "Before constructing runtime argument/shape vectors, template/schema clones, plans or the kernel, invoke_current charges cached construction/retirement work and reserves the complete binding metadata envelope on the existing invocation account. The envelope shares the maintained call metadata model and a sealed-family structural plan-entry bound; numeric extents do not create plan entries, while arbitrary schema/rank metadata is covered by the full schema clone bound.",
+      "The same outer finite call scope covers binding AND the existing NativeCollectionCall invocation. Its nested work scope cannot renew the relative allowance. The still-live binding reservation is subtracted from the inner temporary policy, so coexistence counts toward both the per-call temporary cap and the shared memory account.",
+      "All leaf execution, same-account values, current geometry, actual NativeHost planning, private payload construction, ownership transfer, atomic publication and recovery remain in the existing shared binder/invocation implementation. No alternate graph executor, Rust scheduling loop, source compiler or scalar ABI change is introduced."
+    ],
+    "gate": {
+      "driver": "tmp/pr-stack-evidence/qualify-prepared-native-calls-v276.zsh",
+      "driver_sha256": "073984bd1a3d86309410004c79251609dc5dc3e82cb84af5b64d25531d8e6b2f",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v276-prepared-calls.log",
+      "log_sha256": "085a8c940cb76879e7c248aa8972c57a7274cfc699bd8fe548464630f10cfdd9",
+      "exit_code": 0,
+      "engine_unit_methods": 758,
+      "stdlib_integration_methods": { "native_collection_templates": 14, "native_artifact_iteration_lowering": 5, "native_artifact_match_lowering": 5, "knucleotide_record_source": 5, "map_source": 7, "map_keys_comprehensions": 3, "pure_text_managed": 4 },
+      "ci_contract_methods": 153,
+      "memory_planner_baseline_and_mutation_methods": 2,
+      "other_checks": "Formatting, compiler precheck, runtime-only/native/resident-only builds, unsafe/warning audits, source immutability and diff checks pass.",
+      "new_coverage": "Original/decoded root and lexical calls execute all seven maintained families through both existing and prepared paths. Repeated prepared use follows changed actual shapes. Binding that consumes the complete work allowance cannot refill it for the leaf. Separate checks deny before binding, deny when binding alone fits but binding plus invocation does not fit memory or temporary policy, retain prior output and recover on the same account. Unadmitted/foreign inputs and an independent nested work account are rejected. Actual NativeHost plan-entry counts satisfy the structural bound for all seven families at extents0/1/17/127."
+    },
+    "explicit_test_policy": "Prepared-path fixtures explicitly configure134217728 compute-work units and128MiB temporary capacity to cover conservative live binding; their enclosing account remains finite. This is not a change to any product default or a resident-limit qualification. Existing ordinary100/400-base and denial/recovery tests retain their original limits.",
+    "default_limits_changed": false,
+    "benchmark_program_algorithm_changed": false,
+    "new_linked_execution_or_benchmark_samples": 0,
+    "not_established": "The prepared entry point is not yet called by generated mixed native code. Shared CFG emission, admitted managed moves, scalar/canonical construction and constant ownership, comprehensions/FSM/element-count matrices/typed resource lifecycle, general packed/streaming all-seven-histogram support, full125M execution, same-binary trusted/secured release samples, binary/hot-path/dependency analysis and optimized/configurable checked AOT remain required. Metadata bounds are conservative and live binding is not cached; no performance improvement is claimed. Fresh final-head review and full GitHub CI remain required."
   },
   "remaining": [
     "Extend beyond the qualified100/400-base original/decoded library and real release CLI/resource cases to realistic full inputs, retaining finite admission, atomicity and recovery.",
