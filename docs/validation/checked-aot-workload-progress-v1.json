@@ -1,7 +1,7 @@
 {
   "schema": "mech.checked-aot-workload-progress.v1",
   "status": "INCOMPLETE_IMPLEMENTATION_NOT_BENCHMARK_QUALIFIED",
-  "latest_qualification": "native_comprehension_linked_qualification",
+  "latest_qualification": "collection_accounting_and_link_provenance_correction",
   "pull_request": "https://github.com/mech-lang/mech/pull/905",
   "baseline": "c4190315672337f039efc743a970263627f75834",
   "foundations_pr_scope": {
@@ -19,7 +19,7 @@
       {
         "order": 1,
         "name": "Qualify generated mixed execution through an actual linked process",
-        "current_state": "PR906 source226450bd46395e8c9fd190c74ac34782c6aa1df1 passes actual root/lexical/String-matrix-comprehension linked execution and the retained scalar-loop linked qualifier:4executables/58processcases, with original/decoded resident/JIT comparisons, typed denials and recovery,68pins/116raw streams independently reconciled. Runtime-only compiled closures exclude source/parser/codegen. See native_comprehension_linked_qualification and its exact receipt; this is not full production/resource/workload qualification.",
+        "current_state": "PR906 source77aec3f74060d1b7a570b687e1f3c63924f03fb3 fixes filtered wildcard cumulative compute and retained String temporary peaks;69Rust/155CI gates pass. Clean-source standalone qualification passes4executables/58runtimecases and9actual rejected build mutations plus restored build/recovery;68pins/116runtime streams/20build streams and9saved mutations independently reconcile. ManagedABI5/IR2/work3, scalar ABIs unchanged. Runtime-only compiled closures exclude source/parser/codegen. See collection_accounting_and_link_provenance_correction; full production/resource/workload qualification remains incomplete.",
         "completion_criteria": [
           "Build and actually execute mixed linked applications using the same canonical artifact, selected maintained root/lexical bindings, arena, current-visit checks, finite memory policy and single cumulative work account as JIT execution.",
           "Reconcile original/decoded resident, JIT and linked outputs, error ordering, denial atomicity and next-invocation recovery. Qualify linked metadata/provenance and mutation rejection rather than inferring them from Object metadata.",
@@ -845,6 +845,18 @@
     "not_established": "The complete target still needs native Set/composite/matrix-block outputs, element-wise counts, FSM/state and typed resource lifecycle plus remaining general library/projection/ownership/bigint/byte support. No full125M canonical native workload, new canonical timing, same-binary full security-overhead result, full-program optimization or complete current-head CI/review is established. Earlier default100/400success4000denial/recovery and legacy timing evidence retain their original executed source pins; they are not relabeled to this native foundation.",
     "benchmark_samples": 0,
     "readiness": "Keep draft and unmerged. The full follow_up_roadmap remains required, as do fixes/replies/resolutions for any new notes, fresh clean exact-head review and complete green CI."
+  },
+  "collection_accounting_and_link_provenance_correction": {
+    "pull_request": "https://github.com/mech-lang/mech/pull/906",
+    "source_commit": "77aec3f74060d1b7a570b687e1f3c63924f03fb3",
+    "source_tree": "a6f50cfbdd0d6bdbda546998b40057b49ba72348",
+    "finished_utc": "2026-10-18T23:50:27Z",
+    "receipt": "canonical-managed-native-linked-v1.json collection_accounting_and_link_provenance_correction",
+    "status": "CURRENT_REVIEW_FIXES_LOCALLY_QUALIFIED_FULL_OBJECTIVE_INCOMPLETE",
+    "corrections": "Every wildcard/bound generator visit reaches cumulative collection ComputeWork and the same native ledger. Temporary admission includes the prior String element through replacement allocation, and removes its retained charge only with actual generation-checked retirement; metered certified scope cleanup preserves ancestor captures and independent yields. Source metadata admission follows actual enlarged storage. Managed work policy3 rejects old2; ABI5/typedIR2 and scalar ABIs unchanged; default limits unchanged.",
+    "qualification": "Retained v368 before-fix log shows both new regressions wrongly succeed. After-fix original/decoded regressions check typed resource denial, unchanged publication, complete workspace return and sameJIT recovery. New nestedString/capture/alias/fold and private handle/ledger tests pass. Frozen prelink69Rust+155CI/statics, then clean-source4actual linked binaries/58runtimecases+9negativebuilds+restoredbuild/recovery+155CI/statics pass. Independent read-only reconciliation checks68binary/generatedpins,116runtime streams,9savedmutations,20build streams, current identity versions, restored hashes and actual runtime-only compiled closures.",
+    "benchmark_samples": 0,
+    "not_established": "Fresh exact-head clean review and complete GitHub CI; remaining native constructs and canonical capability-host/resource/publication integration; allten programs, full125M/all7native histogram workload; same-binary trusted/secured release timing, full-program profiling/optimization/configuration. Older evidence retains original sources. Keep draft/unmerged; entire follow_up_roadmap still required."
   },
   "remaining": ["Complete follow_up_roadmap in its stated order; the foundations correction does not discharge the full implementation/benchmark brief."],
   "benchmark_samples": 0

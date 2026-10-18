@@ -218,6 +218,80 @@
     "new_benchmark_measurements": 0,
     "remaining": "Complete production canonical resource/capability/publication integration, remaining native language constructs, all ten actual programs, full125M/all-seven-histogram language-level workload and same-binary secured/trusted release measurement/optimization. Fresh exact-head clean review and complete green CI are still required; no readiness or merge is authorized."
   },
+  "collection_accounting_and_link_provenance_correction": {
+    "status": "LOCALLY_QUALIFIED_CURRENT_REVIEW_FIXES_FRESH_REVIEW_AND_FULL_CI_REQUIRED",
+    "source_commit": "77aec3f74060d1b7a570b687e1f3c63924f03fb3",
+    "source_tree": "a6f50cfbdd0d6bdbda546998b40057b49ba72348",
+    "provenance_test_commit": "97193628b6858823aab4b6e4c3fbf23bdb3efea1",
+    "qualified_six_file_fix_patch_sha256": "cfa0d3c8e815c755ee8a87e962beea9af5de7aa47a83d1ca3263d7685b85ff0a",
+    "attribution": "The v370 prelink run uses provenance_test_commit plus the frozen six-file fix; its diff equals the staged and committed fix exactly. v373 builds and executes fresh standalone applications from the clean source_commit unchanged through terminal completion. Earlier qualifications retain their original sources, ABI/work policies and limits.",
+    "findings": [
+      {
+        "thread": "https://github.com/mech-lang/mech/pull/906#discussion_r4309247618",
+        "correction": "Every CollectionElement visit debits the active builder's cumulative ComputeWork through account, including wildcard/filter-discard visits. The same debit reaches the existing invocation-wide native/library ledger. No allowance is reset or refunded.",
+        "regression": "filtered_wildcard_visits_remain_cumulative_collection_compute derives the minimum finite one-element admission policy from typed denials, then requires4096filtered wildcard visits to fail with Collection/ComputeWork and required>limit. Original/decoded artifacts preserve prior publication, return all workspace and recover using the same JIT."
+      },
+      {
+        "thread": "https://github.com/mech-lang/mech/pull/906#discussion_r4309247625",
+        "correction": "Each source retains the exact arena handle and cached admitted retained-byte bound of its current String element. Temporary admission includes the old element plus the new construction envelope; replacement updates live_bytes only after put retires the old slot. The metered certified lexical-scope cleanup retires old local aliases and descendants without touching ancestor captures or the old element. Exit takes the exact saved generation before removing its charge. Metadata reservation includes the enlarged Source through size_of.",
+        "regression": "filtered_string_visits_admit_the_old_and_new_element_coexistence_peak admits one8192-byte String under its derived minimum finite temporary policy but requires the second filtered String to fail with Collection/TemporaryBytes and required>limit. Original/decoded prior outputs, complete memory return and same-JIT recovery are checked. Additional tests preserve nested String generator captures, yielded copies, nested collection results and literal-fold identity aliases; private retirement verifies stale handles and same-ledger isolation."
+      }
+    ],
+    "versions": {"managed_abi": 5, "typed_ir": 2, "work_policy": 3, "previous_work_policy_2_rejected": true, "frozen_scalar_abis_changed": false},
+    "default_limits_changed": false,
+    "reproduced_before_fix": {
+      "source": "97193628b6858823aab4b6e4c3fbf23bdb3efea1 plus test-only diff28be82cc1278f795a9b40da353d67b1a31700928829f197fd3a0cdbc889d3a0c",
+      "result": "Both new regression methods fail by returning Ok for the denied traversal/temporary peak; each first original-artifact case fails before its decoded counterpart is reached.",
+      "exit": 101,
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v368-collection-accounting-reproduction.log", "sha256": "5d3e12f382dc2bc396537a279c5e3aec9176be35b0dc34e6a21aadb82697d07e"}
+    },
+    "prelink": {
+      "finished_utc": "2026-10-18T23:46:14Z",
+      "exit": 0,
+      "rust_methods": {"native_gpu_library": 34, "engine_current_visit_proof": 5, "retained_scalar_iteration": 11, "managed_program": 19, "total": 69},
+      "ci_contract_methods": 155,
+      "other_gates": ["scalar-runtime-only feature build", "unsafe audit", "warning policy", "module layout", "format", "diff", "unchanged frozen source"],
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v370-collection-accounting-prelink.log", "sha256": "d71355b34460dd4896f5584c19f0b2ed8be42c99282e160d836f3ab6a1b33688"},
+      "driver": {"path": "tmp/pr-stack-evidence/qualify-pr906-collection-accounting-v370.zsh", "sha256": "f673f6c800f66f982076ad15eec89d474d54ffb65edfaae6d0cea172383fc5fe"},
+      "base_driver": {"path": "tmp/pr-stack-evidence/qualify-pr906-collection-accounting-v369.zsh", "sha256": "2c8eaee98fdce58c78066856a0575d9fe5b013524fa180023377dc79535d64a9", "invocation": "Only log filename replaced v369 to v370. v369's original compilation errors are retained; a missing reference and method visibility were corrected without removing a case or changing a limit."}
+    },
+    "linked_metadata_and_provenance": {
+      "safe_metadata_preparation": "The existing build-owned constructor uses the same extracted prepare_descriptor; safe metadata preparation alone grants no code/entry authority. Original/decoded actual Objects reject each of176 mutated semantic identity bytes, oldIR1/ABI4/work1and2, zero stack/code, changed artifact and missing selected catalog. Nonzero stack/code claims are not falsely claimed to be runtime-rederived; they require unchanged checked-Object build provenance.",
+      "actual_negative_build_cases": ["identity nonzero stack claim", "Object bytes", "bytecode", "source provenance", "manifest pin", "generated main", "build script", "toolchain file", "Cargo manifest"],
+      "actual_negative_build_count": 9,
+      "restored_build_count": 1,
+      "result": "Each owned mutation actually invokes Cargo and rejects with build-finished=false plus its precise build-pin diagnostic. Original generated bytes are restored and the prior executable remains byte-identical. The final restored build succeeds with the same executable hash, followed by the existing successful recovery process. These10build invocations are separate from the58runtime process cases and are not timings."
+    },
+    "actual_linked": {
+      "finished_utc": "2026-10-18T23:50:27Z",
+      "exit": 0,
+      "profile": "nightly-2026-03-03; locked/offline, serialj1, debug/testopt0/debug0, assertions and overflow checks enabled, incremental disabled. Correctness, not performance.",
+      "executables": [
+        {"name": "root", "sha256": "b3514f1607b3bfeccdbfb0b32603cf6039bebe0be4f61dd31021c7a0503e958e", "cases": 13, "success_or_recovery": 4, "required_errors": 9, "compiled_unit_records": 114},
+        {"name": "lexical", "sha256": "c9cb94c374c3d8f0a0dcb83c0380bd7f5b715f09cee015cd373acd399b938808", "cases": 15, "success_or_recovery": 7, "required_errors": 8, "compiled_unit_records": 114},
+        {"name": "collection", "sha256": "cadc77b3afe690ea5633a6a86ab6aa55aad7effba98218a61f8eaf406218d81b", "cases": 13, "success_or_recovery": 4, "required_errors": 9, "compiled_unit_records": 114},
+        {"name": "scalar-iteration", "sha256": "10b4880d959cfbb906417d1f848fabfc4b4eace215e69941a1954c7ed535cb80", "cases": 17, "success_or_recovery": 4, "required_errors": 13, "compiled_unit_records": 114}
+      ],
+      "total_runtime_process_cases": 58,
+      "success_or_recovery": 19,
+      "required_runtime_errors": 39,
+      "independently_reconciled_binary_and_generated_pins": 68,
+      "independently_reconciled_raw_runtime_streams": 116,
+      "independently_reconciled_saved_mutated_inputs": 9,
+      "independently_reconciled_raw_build_streams": 20,
+      "runtime_closure": "The retained verifier reconciles actual Cargo artifacts against resolved metadata, checks every compiler-artifact message and forbids parser/source compiler/Cranelift/JIT features. New reconciliation also verifies ABI5/IR2/work3 actual identity bytes, all9saved mutations/raw failed-build streams/diagnostics/restored inputs and the unchanged restored executable and recovery. Existing standalone unused-code warnings remain; warning-free compilation is not claimed.",
+      "ci_contract_methods": 155,
+      "other_gates": ["managed-runtime-only feature build", "unsafe audit", "warning policy", "module layout", "format", "diff", "unchanged clean source commit"],
+      "managed_receipt": {"path": "tmp/pr-stack-evidence/canonical-program-linked-v373/qualification.json", "sha256": "df9a8887e0653840efdf47bddf10421b741397698d5dcb2d368cb474bb936a5f"},
+      "scalar_receipt": {"path": "tmp/pr-stack-evidence/canonical-iteration-linked-v373/qualification.json", "sha256": "a570312dceb7917e2470f9c0ec2a4eb59c19ff95fc8f8979192fa0aa4d8d3220"},
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v373-native-comprehension-linked.log", "sha256": "de689c4913e09f1a3e631289025bd8f0a43fb5f2a4615c2a9100bbb1c011ba29"},
+      "driver": {"path": "tmp/pr-stack-evidence/qualify-pr906-accounting-and-provenance-linked-v373.zsh", "sha256": "4d6ab4efd02972f066c2de61f8ddc4cca338f65f9d149a2db21968291bd0657b"},
+      "base_driver": {"path": "tmp/pr-stack-evidence/qualify-native-comprehension-linked-v359.zsh", "sha256": "a7b0a3fbcb3b847d758c6888a9d3fb3f7f2eafc8aa7fa8c5ba95e054afdf5ba8", "invocation": "Only fresh log and both evidence directory suffixes replaced v359 to v373; exact-one ignored-test list/execute guards and all gates retained."},
+      "read_only_reconciler": {"path": "tmp/pr-stack-evidence/reconcile-pr906-accounting-and-provenance-linked-v373.js", "sha256": "7f88d75af83eba6f5665a67488cf61073c0c4b2a79a748da66ee9ea38ee90d0e", "argument": "77aec3f74060d1b7a570b687e1f3c63924f03fb3", "retained_verifier_sha256": "9823e78bbaa4e2e55ab6ab37d28f8b071b9f5fd41e416823d01194e5ea6907bd"}
+    },
+    "benchmark_measurements": 0,
+    "remaining": "Fresh clean exact-head review and complete GitHub CI, plus the full unchanged follow_up_roadmap: native language/resource/canonical production integration, all ten programs, full125M/all7canonical language-level workload and same-binary trusted/secured release measurements, profiling and optimization. No readiness or merge is authorized."
+  },
   "benchmark_measurements": 0,
   "not_established": ["complete production canonical build route", "native resource-host lifecycle", "remaining native Set/composite/matrix-block comprehensions and element-wise counts/state/FSM", "all ten idiomatic programs", "full-size canonical k-nucleotide", "new canonical native performance result", "complete final-head CI or clean review"],
   "remaining_full_objective": "checked-aot-workload-progress-v1.json follow_up_roadmap remains required. The separate legacy-native I/O diagnostic is native-io-migration-timing-v1.json; its measurements do not qualify this canonical backend or resolve the independent source compiler."
