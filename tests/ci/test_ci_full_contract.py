@@ -273,6 +273,11 @@ class FullWorkflowContractTests(unittest.TestCase):
         upload = next(step for step in linked if "Retain linked application evidence" in step)
         self.assertIn("if: ${{ always() }}", upload)
         self.assertIn("${{ runner.temp }}/canonical-program-evidence", upload)
+        reference = next(step for step in job_steps(FULL, "canonical-applications")
+                         if "Execute secured canonical reference bytecode admission" in step)
+        self.assertIn("--features full_compiler,resident-routing-source", reference)
+        self.assertIn("--example canonical_host_reference -- --test-threads=1", reference)
+        self.assertNotIn("--no-run", reference)
 
     def test_canonical_iteration_has_nonempty_exact_linked_qualification(self):
         steps = job_steps(FULL, "canonical-linked-applications")

@@ -1,11 +1,11 @@
 //! Secured resident reference for canonical hosted native qualification.
 //! Uses the existing runtime, real CLI provider and ordinary capability policy.
 //! This is not native AOT or an old-I/O-versus-secured benchmark result.
-use std::{ffi::OsString, path::Path};
+use std::{ffi::OsString, io::Read, path::Path};
 
 use mech_runtime::{
-    ConfigValue, HostInstanceConfig, ResidentDurabilityPolicy, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeProgramRoute,
+    ConfigValue, HostInstanceConfig, MechRuntime, ResidentDurabilityPolicy, RunResourceGrantConfig,
+    RuntimeBuilder, RuntimeProgramLoadOutcome, RuntimeProgramRoute,
 };
 use mech_terminal::{ArgumentSnapshotCliBackend, CliHostFactory, StdCliBackend};
 
@@ -34,6 +34,26 @@ fn builder(arguments: Vec<OsString>) -> Result<RuntimeBuilder, String> {
             provider: "cli".into(),
             settings: ConfigValue::Map(Default::default()),
         }))
+}
+
+fn load_bytecode(
+    runtime: &mut MechRuntime,
+    mut reader: impl Read,
+) -> Result<RuntimeProgramLoadOutcome, String> {
+    let mut bytecode = Vec::new();
+    match runtime.config().limits.max_source_bytes {
+        Some(limit) => reader
+            .take(limit.saturating_add(1))
+            .read_to_end(&mut bytecode),
+        None => reader.read_to_end(&mut bytecode),
+    }
+    .map_err(|error| error.to_string())?;
+    // The ordinary loader owns both size admission and decoding. Reading at
+    // most limit+1 also bounds acquisition before it reports an oversized
+    // input; an explicit unbounded runtime configuration remains unbounded.
+    runtime
+        .load_bytecode_program(&bytecode, ResidentDurabilityPolicy::Volatile)
+        .map_err(diagnostic)
 }
 
 fn run() -> Result<(), String> {
@@ -87,16 +107,12 @@ fn run() -> Result<(), String> {
             }
             let mut runtime = builder.build().map_err(diagnostic)?;
             let execution = (|| {
-                let bytecode = std::fs::read(bytecode).map_err(|error| error.to_string())?;
-                let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bytecode)
-                    .map_err(|error| format!("{error:?}"))?;
-                let revision = artifact.revision();
-                let loaded = runtime
-                    .load_compiled_program(artifact, ResidentDurabilityPolicy::Volatile)
-                    .map_err(diagnostic)?;
+                let input = std::fs::File::open(bytecode).map_err(|error| error.to_string())?;
+                let loaded = load_bytecode(&mut runtime, input)?;
                 let info = runtime.program_execution_info();
                 if loaded.route != RuntimeProgramRoute::ResidentExternal
-                    || info.program_revision != Some(revision)
+                    || info.program_revision.is_none()
+                    || info.program_revision != loaded.info.program_revision
                     || info.resident_rejected_turns != 0
                     || info.resident_accepted_turns == 0
                 {
@@ -144,5 +160,115 @@ fn main() {
     if let Err(error) = run() {
         eprintln!("{error}");
         std::process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    fn bytecode(source: &str) -> Vec<u8> {
+        builder(Vec::new())
+            .unwrap()
+            .build_compiler()
+            .unwrap()
+            .compile_canonical_source(source)
+            .unwrap()
+            .bytecode()
+            .to_vec()
+    }
+
+    fn runtime(limit: Option<u64>) -> MechRuntime {
+        let mut config = mech_runtime::RuntimeConfig::default();
+        config.limits.max_source_bytes = limit;
+        builder(Vec::new()).unwrap().config(config).build().unwrap()
+    }
+
+    #[test]
+    fn exact_limit_reference_matches_ordinary_bytecode_loading() {
+        let bytes = bytecode("answer := 7\nanswer\n");
+        let mut reference = runtime(Some(bytes.len() as u64));
+        let mut ordinary = runtime(Some(bytes.len() as u64));
+        let actual = load_bytecode(&mut reference, Cursor::new(&bytes)).unwrap();
+        let expected = ordinary
+            .load_bytecode_program(&bytes, ResidentDurabilityPolicy::Volatile)
+            .unwrap();
+        assert_eq!(actual.info.program_revision, expected.info.program_revision);
+        assert_eq!(actual.route, expected.route);
+        assert_eq!(
+            actual.initial_value.format_canonical_inline(),
+            expected.initial_value.format_canonical_inline()
+        );
+        reference.shutdown().unwrap();
+        ordinary.shutdown().unwrap();
+    }
+
+    #[test]
+    fn oversized_valid_bytecode_matches_denial_and_preserves_publication() {
+        let small = bytecode("answer := 7\nanswer\n");
+        let large = bytecode(&format!("answer := \"{}\"\nanswer\n", "x".repeat(256)));
+        mech_engine::decode_program_artifact_bytecode_v1(&large).unwrap();
+        let limit = large.len() as u64 - 1;
+        assert!(small.len() as u64 <= limit);
+        let mut reference = runtime(Some(limit));
+        let mut ordinary = runtime(Some(limit));
+        load_bytecode(&mut reference, Cursor::new(&small)).unwrap();
+        ordinary
+            .load_bytecode_program(&small, ResidentDurabilityPolicy::Volatile)
+            .unwrap();
+        let prior = reference.program_execution_info();
+        let prior_output = reference
+            .program_output_value()
+            .unwrap()
+            .unwrap()
+            .format_canonical_inline();
+        let mut input = Cursor::new(&large);
+        let actual = load_bytecode(&mut reference, &mut input).unwrap_err();
+        let expected = ordinary
+            .load_bytecode_program(&large, ResidentDurabilityPolicy::Volatile)
+            .unwrap_err();
+        assert!(
+            expected
+                .kind_as::<mech_runtime::ResourceBudgetExceededError>()
+                .is_some()
+        );
+        assert_eq!(actual, diagnostic(expected));
+        assert_eq!(input.position(), limit + 1);
+        assert_eq!(reference.program_execution_info(), prior);
+        assert_eq!(ordinary.program_execution_info(), prior);
+        assert_eq!(
+            reference
+                .program_output_value()
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            prior_output
+        );
+        reference.unload_active_program().unwrap();
+        let recovered = load_bytecode(&mut reference, Cursor::new(&small)).unwrap();
+        assert_eq!(recovered.info.program_revision, prior.program_revision);
+        reference.shutdown().unwrap();
+        ordinary.shutdown().unwrap();
+    }
+
+    #[test]
+    fn acquisition_stops_at_limit_plus_one_and_respects_explicit_none() {
+        let mut bounded = runtime(Some(64));
+        let mut input = Cursor::new(vec![b'x'; 1024 * 1024]);
+        let error = load_bytecode(&mut bounded, &mut input).unwrap_err();
+        assert!(error.contains("source_bytes"), "{error}");
+        assert_eq!(input.position(), 65);
+        assert_eq!(
+            bounded.program_execution_info().route,
+            RuntimeProgramRoute::None
+        );
+        bounded.shutdown().unwrap();
+        let bytes = bytecode("answer := 7\nanswer\n");
+        let mut unbounded = runtime(None);
+        let mut input = Cursor::new(&bytes);
+        load_bytecode(&mut unbounded, &mut input).unwrap();
+        assert_eq!(input.position(), bytes.len() as u64);
+        unbounded.shutdown().unwrap();
     }
 }
