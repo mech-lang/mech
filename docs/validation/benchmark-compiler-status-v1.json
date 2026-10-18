@@ -30,11 +30,12 @@
   },
   "cli_payload_continuation": {
     "branch": "codex/canonical-cli-payload-count",
-    "qualified_source_commit": "667589bed4dce3636b3b08abaca68948d89c6b0f",
+    "qualified_source_commit": "1bf3f731226f62df3bf5670bcaf327ff5011d9b8",
     "record": "canonical-cli-payload-count-v1.json",
     "status": "LOCAL_EXECUTION_PASSED_REVIEW_AND_FULL_CI_PENDING",
-    "result": "87Rust methods,144CI contracts, formatting and7architecture checks pass. Existing canonical source/decoded resident execution and actual launchers use the same terminal provider, immutable payload boundary/count, capability admission and transactional output. No new runtime authority or benchmark result.",
-    "remaining": "Fresh review and complete green CI for the new continuation. Native AOT resources and all-ten-workload lifecycle qualification remain unfinished. Keep draft/unmerged; explicit user approval is required for readiness/merge."
+    "result": "On clean1bf3f7312, all87Rust methods,144CI contracts, formatting,15architecture checks,10routing fixtures and unchanged standard/full distribution probes pass. CI-only77ce4f1e9 explicitly selects both provider targets; its exact workflow command passes35methods and all static contract checks pass. Product source/build inputs are unchanged between these pins. Canonical source/decoded resident sessions and actual launchers share one terminal provider, capability admission and transactional output. No native AOT resource or benchmark qualification.",
+    "remaining": "Fresh exact-head review and complete green CI for the published correction. The prior published b5120d8c8 had one review finding and two failed CI jobs; their causes, fixes and failed logs are retained in the receipt, not relabeled as a pass. Native AOT resources and all-ten-workload lifecycle qualification remain unfinished. Keep draft/unmerged; explicit user approval is required for readiness/merge.",
+    "ci_wiring_source_commit": "77ce4f1e92f3cde4b2489e2ada5df8322406f8a8"
   },
   "implemented_corrections_not_full_benchmark_qualification": {
     "record": "pr901-integration-corrections-v1.json",
@@ -78,9 +79,9 @@
     },
     {
       "feature": "Canonical CLI immutable payload boundary and typed count",
-      "source_commit": "667589bed4dce3636b3b08abaca68948d89c6b0f",
+      "source_commit": "1bf3f731226f62df3bf5670bcaf327ff5011d9b8",
       "evidence": "canonical-cli-payload-count-v1.json",
-      "result": "87localRust methods pass, including6original/decoded arity/count methods and31actual CLI methods. The5new actual payload methods launch39processes across bare source, explicit run and inline forms. Complete review/CI remains pending."
+      "result": "All87localRust methods pass on corrected source1bf3f7312, including6original/decoded arity/count methods and31actual CLI methods;5new payload methods launch39real processes. Both unchanged distribution probes pass. CI-only77ce4f1e9 additionally runs the exact combined provider command (35passed) and static contracts; tracked product source/build inputs are unchanged. Fresh final-head review/CI remains required."
     }
   ],
   "preserved_candidates": {
