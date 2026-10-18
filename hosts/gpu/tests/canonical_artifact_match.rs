@@ -456,6 +456,11 @@ fn all_six_selected_casts_compose_with_match_and_keep_errors_atomic() {
                 lower_scalar_match_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
             assert!(plan.blocks().iter().any(|block| matches!(block.action(),
                 NativeMatchAction::Primitive { op, .. } if *op == cast.op)));
+            assert!(
+                plan.outputs()
+                    .iter()
+                    .any(|output| output.ty().kind() == cast.output)
+            );
             let jit = JitMatchArtifact::compile(&plan).unwrap();
             for flag in [false, true] {
                 for value in cast_cases::samples(cast) {
