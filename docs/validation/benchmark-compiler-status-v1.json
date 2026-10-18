@@ -1,24 +1,32 @@
 {
   "schema": "mech.benchmark-compiler-status.v1",
-  "as_of_utc": "2026-10-17",
+  "as_of_utc": "2026-10-18",
   "status": "IN_PROGRESS_NOT_BENCHMARK_QUALIFIED",
   "integration": {
     "repository": "https://github.com/mech-lang/mech",
     "branch": "codex/idiomatic-native-programs",
     "pull_request": "https://github.com/mech-lang/mech/pull/901",
     "pull_request_status": "OPEN_DRAFT",
-    "current_correction_source_commit": "efe8046f8a33b3c29cd42864431f6cc1f1965201",
+    "current_correction_source_commit": "913c75d68c13b4c86fe9338c87dd9549faafe6bd",
     "current_correction_record": "pr901-integration-corrections-v1.json",
-    "current_qualification": "All46 retained application/text/retention/tail methods, including all10 original tail cases, pass on clean a0d000061 with optimization0/default thread stack. Two selected engine non-tail boundary methods also pass. The new host-stack repair requires fresh owner/runtime/source qualification: earlier832 runtime units and61 source-acceptance cases remain scoped to392a96e2e, not this later Rust source. Actual corrected browser execution, all five linked routes, fresh clean review and complete green CI remain pending. The following scalar receipts retain their historical source scope.",
+    "current_qualification": "Base PR901 remains draft at913c75d68, with all30 notes resolved and a fresh clean exact-head review. Actual corrected browser execution passes locally and in CI. All832 runtime units and61 source-acceptance cases pass on f02f9a884 with required OS notification access; failed sandbox receipts remain separate. All46 retained application/text/retention/tail methods, including all10 original tail cases, pass on a0d000061 with optimization0/default stack; later base changes preserve those Rust inputs. Full CI39079614374 and all5 linked workflow routes remain pending. The F64 follow-up has its own source-specific local receipt below; none of these base owner receipts are relabeled as F64 runs.",
     "qualified_source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
     "qualification_receipts_commit": "6ffc5e0e8febaf6b9718753e2037840548c5bd4d"
+  },
+  "canonical_native_f64_followup": {
+    "branch": "codex/canonical-artifact-f64",
+    "source_commit": "2641b289b04283978171d41e93f084fea47de77b",
+    "source_tree": "4abebd208c2eb65821a16ccb1843fbf26baf4a1a",
+    "record": "canonical-native-f64-v1.json",
+    "status": "DARWIN_ARM64_LOCAL_PASSED_REVIEW_AND_FULL_CI_REQUIRED",
+    "boundary": "Five scalar executables and102 actual process cases, including57 F64 cases, qualify ONE canonical-native route locally; not all5 workflow routes, all platforms, full native workloads or benchmark timing."
   },
   "runtime_authority": {
     "required_architecture": "One canonical source compiler and admitted executable artifact define Mech semantics. Resident execution, native JIT and native Object/AOT are execution backends of that artifact, not independent language implementations. Host adapters supply typed effects; they must not create a second language or bypass common capability admission and atomic publication contracts.",
     "current_gap": "The opt-in CLI build --backend cranelift still calls mech_gpu::native_build::emit_application with a source path. That route reparses source through native_sequence::ParsedSource and separate sequence/control/grid lowering. This is an unresolved competing compiler authority, not a supported permanent alternative architecture. Shared syntax normalization alone does not make its semantics canonical.",
     "observed_difference": "The source-native path rejects bracketed element-wise application counts that canonical resident execution supports. This establishes different accepted capability sets, not a reproduced same-program output mismatch.",
     "migration_required": "Move remaining source-native capabilities into canonical artifact lowering and typed host/resource admission, preserve differential resident/JIT/actually-linked AOT qualification, route production native building through the artifact, then remove the alternate source lowering. Unsupported artifact/backend combinations must fail explicitly without reparsing source or silently falling back. Renaming paths or documenting the gap does not complete this requirement.",
-    "qualified_boundary": "Only stateless Turn-only Bool/U64/I64 artifact-native execution is qualified by the recorded scalar receipts. Locally staged F64 remains uncompiled, unqualified and outside the published PR."
+    "qualified_boundary": "Base PR901's recorded scalar subset is stateless Turn-only Bool/U64/I64. This follow-up adds dense F64 and passes local Darwin arm64 resident/JIT/actually-linked qualification; its fresh review, cross-platform and full CI gates remain required. It does not complete native control/resources or retire alternate source lowering."
   },
   "implemented_corrections_not_full_benchmark_qualification": {
     "record": "pr901-integration-corrections-v1.json",
@@ -28,8 +36,8 @@
       "Join comparison accounting, shared map schema ownership, typed resource denials and retained original tail contracts are implemented; complete current-source qualification remains mandatory.",
       "Bracketed element-wise counts use canonical parsing, singleton broadcast or exact matrix geometry, one count evaluation, serial lane order and atomic publication. This does not establish native lowering or parallel execution.",
       "Replacement refresh preserves ordered reset/new/retained-state views and accepted observations; optional queries retain unpublished absence.",
-      "The latest review correction requires anonymous state identity to be unambiguous in both directions and makes bulk interactive listing omit unpublished observations while retaining unknown-name errors. All832 runtime units and61 source-acceptance cases pass on clean392a96e2e; actual browser, linked and full final-head CI qualification remains pending.",
-      "The original ten tail-control methods and36 other retained application/text/retention methods pass on a0d000061 after reducing recursive dispatcher host-stack use. The unchanged depth ceiling remains24; explicit source/decoded boundary/refusal/recovery tests use the default stack with optimization0. The browser pending-observation regression now uses root-scoped declarations in an independent document; its actual browser rerun remains pending."
+      "Anonymous state identity must be unambiguous in both directions; bulk listing omits unpublished observations while retaining unknown-name errors. All832 runtime units and61 source-acceptance cases pass on clean f02f9a884 with OS notification access. These base receipts do not qualify the later F64 source.",
+      "The original ten tail-control methods and36 other retained application/text/retention methods pass on a0d000061 after reducing recursive dispatcher host-stack use. The unchanged depth ceiling remains24; source/decoded boundary/refusal/recovery uses the default stack with optimization0. The independent root-scoped browser pending-observation fixture now passes local actual Chrome and913c75d68 CI, retaining the original compute fixture's exact queue/output oracles."
     ],
     "boundary": "Do not reapply preserved whole-file candidates over these newer corrections. Historical source-only gap descriptions in the original handoff are not the current implementation status."
   },
@@ -49,6 +57,13 @@
       "limits": "Stateless Turn-only scalar graph; not full workload support."
     },
     {
+      "feature": "Locally qualified canonical-artifact F64 scalar extension",
+      "source_commit": "2641b289b04283978171d41e93f084fea47de77b",
+      "evidence": "canonical-native-f64-v1.json",
+      "result": "On Darwin arm64,18 lowering and17 backend integration methods,7 private semantic and4 private ABI methods, runtime-only check,5 standalone scalar executables and102 process cases pass. All7 architecture guards,142 CI contracts,6 sharder methods and formatting pass.",
+      "limits": "Local platform qualification only; fresh review/full applicable CI remain required. Five scalar executables are not all5 distinct workflow routes. No full workloads or timings."
+    },
+    {
       "feature": "Full resource input schemas and actual observation geometry",
       "source_commit": "4ef7ef70455b153f51e9006201e6120dde9b1098",
       "result": "44 distinct runtime cases and8 retained CLI byte-stream cases passed. Native resource machine-code lowering remains separate."
@@ -59,18 +74,21 @@
     "commit": "69bbfb71e8f3e4b422aec2bed844bbb9bf9558b7",
     "status": "SOURCE_ONLY_UNRUN_UNLESS_SEPARATELY_QUALIFIED_ON_INTEGRATION_BRANCH",
     "composed_index": "native-scalar/composed-candidates-v1.json",
-    "next_layers": [
+    "composed_layers": [
       {
         "feature": "F64",
         "path": "native-scalar/f64/composed-i64-v1",
         "source_files": 21,
-        "baseline": "099e17b7b76e27c1426d4fa546eec66d03203f02"
-      },
+        "baseline": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+        "disposition": "Composed additively with newer corrections; local qualification on2641b289b is in canonical-native-f64-v1.json. Original archive remains historical source-only evidence."
+      }
+    ],
+    "next_layers": [
       {
         "feature": "checked numeric casts",
         "path": "native-scalar/casts/composed-i64-v1",
         "source_files": 14,
-        "baseline": "F64 composed layer; recompose after any F64 qualification fix."
+        "baseline": "Recompose on the current qualified F64 source, preserving its actual dense memory/private-witness corrections and subsequent test fixes; do not copy old whole files."
       }
     ],
     "other_features": [
@@ -91,7 +109,7 @@
     },
     {
       "requirement": "Complete canonical Cranelift AOT lowering",
-      "work": "F64, checked casts, computed activation/state, Match/Iteration, matrix/collection and resource execution. Migrate the older source-native compiler's capabilities onto this artifact path and retire its independent source lowering; do not preserve two semantic authorities. No whole-program interpreter fallback or benchmark-sized Rust bridge."
+      "work": "Finish F64 review/cross-platform/full CI qualification; implement checked casts, computed activation/state, Match/Iteration, matrix/collection and resource execution. Migrate the older source-native compiler's capabilities onto this artifact path and retire its independent source lowering; do not preserve two semantic authorities. No whole-program interpreter fallback or benchmark-sized Rust bridge."
     },
     {
       "requirement": "Close collection and ownership gaps",
@@ -111,7 +129,7 @@
     }
   ],
   "known_gaps": [
-    "Canonical native remains stateless Turn-only Bool/U64/I64; resident control, projection and bracketed-count corrections do not supply native lowering.",
+    "The locally tested artifact-native subset is stateless Turn-only Bool/U64/I64/F64; F64 still requires fresh review/full CI/other-platform qualification. Resident control, projection and bracketed-count corrections do not supply native control/resource lowering.",
     "Source CLI has no explicit parsed payload-vector boundary in current run options. Generated hosted applications already receive immutable payload OsStrings; preserve the custom factory seam.",
     "Pidigits source requires general bigint support. Replacing its algorithm with a Rust whole-program helper would not close that language gap.",
     "Archived native Match/Iteration control supports Bool/U64 only until wider scalar kinds, identities and transport are explicitly composed."
