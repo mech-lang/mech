@@ -9,14 +9,18 @@ use mech_core::{
     BoundCall, BoundResidentKernel, CallMemoryPlan, CallMemoryPlanningRequest, ExecutionTarget,
     FunctionCatalog, FunctionValueRepresentation, MemoryBudgetLimits, MemoryFootprintWitness,
     MemoryLifetime, MemoryPlanPoint, MemoryWitnessStage, NodeId, RegionAccessPlan,
-    ResidentKernelBindRequest, ResidentPortLayout, ResidentShape, ResidentValueKind,
-    ResolvedOperationContract, ResolvedOperationDescriptor, ResolvedValueDescriptor, Schema,
-    SchemaId, TargetMemoryProfile, physical_storage_descriptor, plan_call_memory,
+    ResidentKernelBindRequest, ResidentKernelFactory, ResidentPortLayout, ResidentShape,
+    ResidentValueKind, ResolvedOperationContract, ResolvedOperationDescriptor,
+    ResolvedValueDescriptor, Schema, SchemaId, TargetMemoryProfile, physical_storage_descriptor,
+    plan_call_memory,
 };
 
 #[path = "native_collection_invocation.rs"]
 mod invocation;
 pub use invocation::NativeCollectionInvocationError;
+#[path = "native_collection_prepared.rs"]
+mod prepared;
+pub use prepared::{NativePreparedLibraryCall, prepare_native_program_library_call};
 
 /// A constructor-private binding of one actual artifact call at its current
 /// shapes. The selected factory, canonical contracts, actual handle
@@ -143,6 +147,22 @@ pub fn bind_native_program_library_call(
     output_parameters: &[u64],
     limits: MemoryBudgetLimits,
 ) -> Result<NativeCollectionCall, Error> {
+    let current = current_template(artifact, template, catalog)?;
+    bind_selected(
+        artifact,
+        current,
+        catalog,
+        input_parameters,
+        output_parameters,
+        limits,
+    )
+}
+
+fn current_template(
+    artifact: &ProgramArtifact,
+    template: &NativeProgramLibraryTemplate,
+    catalog: &FunctionCatalog,
+) -> Result<NativeProgramLibraryTemplate, Error> {
     let origin = template.origin();
     let node = origin.node();
     if template.program_revision() != artifact.revision() {
@@ -166,14 +186,7 @@ pub fn bind_native_program_library_call(
     if &current != template {
         return Err(invalid(node));
     }
-    bind_selected(
-        artifact,
-        current,
-        catalog,
-        input_parameters,
-        output_parameters,
-        limits,
-    )
+    Ok(current)
 }
 
 fn bind_selected(
@@ -184,12 +197,24 @@ fn bind_selected(
     output_parameters: &[u64],
     limits: MemoryBudgetLimits,
 ) -> Result<NativeCollectionCall, Error> {
-    let node = template.origin().node();
-    if input_parameters.len() != template.inputs().len() {
-        return Err(invalid(node));
-    }
-    // NativeHost has no implicit quota. Require an explicit finite policy for
-    // every dimension consumed by these kernels; do not alter resident caps.
+    let key = template.selected_key();
+    let factory = catalog
+        .resident_factory(&key.module_path, &key.operation_name)
+        .ok_or(Error::MissingSemanticWitness {
+            node: template.origin().node(),
+        })?
+        .factory();
+    bind_current(
+        artifact.schemas(),
+        template,
+        factory,
+        input_parameters,
+        output_parameters,
+        limits,
+    )
+}
+
+fn finite_limits(node: NodeId, limits: MemoryBudgetLimits) -> Result<(), Error> {
     if [
         limits.max_output_elements,
         limits.max_output_bytes,
@@ -207,6 +232,24 @@ fn bind_selected(
             feature: "native collection calls require explicit finite limits",
         });
     }
+    Ok(())
+}
+
+fn bind_current(
+    schemas: &mech_core::SchemaTable,
+    template: NativeProgramLibraryTemplate,
+    factory: ResidentKernelFactory,
+    input_parameters: &[&[u64]],
+    output_parameters: &[u64],
+    limits: MemoryBudgetLimits,
+) -> Result<NativeCollectionCall, Error> {
+    let node = template.origin().node();
+    if input_parameters.len() != template.inputs().len() {
+        return Err(invalid(node));
+    }
+    // NativeHost has no implicit quota. Require an explicit finite policy for
+    // every dimension consumed by these kernels; do not alter resident caps.
+    finite_limits(node, limits)?;
     let ResolvedOperationContract::Declared(contract) = template.contract() else {
         return Err(invalid(node));
     };
@@ -278,26 +321,22 @@ fn bind_selected(
     .map_err(|error| Error::ResidentBinding {
         error: super::ResidentActivationError::ResidentMemoryPlanRejected { error },
     })?;
-    let key = template.selected_key();
-    let factory = catalog
-        .resident_factory(&key.module_path, &key.operation_name)
-        .ok_or(Error::MissingSemanticWitness { node })?;
     let request = ResidentKernelBindRequest {
         contract: template.contract(),
-        schemas: artifact.schemas(),
+        schemas,
         inputs: &inputs,
         output: output.clone(),
     };
-    let kernel = (factory.factory())(&request).map_err(|error| Error::ResidentBinding {
+    let kernel = factory(&request).map_err(|error| Error::ResidentBinding {
         error: super::ResidentActivationError::KernelBind { node, error },
     })?;
     let kernel = crate::resident::native_semantics::bind_call(kernel, &request, call);
     let invocation_metadata_bytes =
-        invocation::metadata_envelope(artifact.schemas(), &memory).ok_or_else(|| invalid(node))?;
+        invocation::metadata_envelope(schemas, &memory).ok_or_else(|| invalid(node))?;
     let schemas = kernel
         .shared_snapshot_schemas()
         .cloned()
-        .unwrap_or_else(|| std::sync::Arc::new(artifact.schemas().clone()));
+        .unwrap_or_else(|| std::sync::Arc::new(schemas.clone()));
     Ok(NativeCollectionCall {
         template,
         kernel,

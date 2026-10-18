@@ -7,7 +7,7 @@ use mech_engine::native_artifact::{
     NativeArtifactLoweringError, NativeCollectionLexicalSource, NativeCollectionPrimitive,
     bind_native_collection_lexical, bind_native_collection_operation,
     bind_native_program_library_call, native_collection_lexical_template,
-    native_collection_operation_template,
+    native_collection_operation_template, prepare_native_program_library_call,
 };
 use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
 use mech_syntax::document::{
@@ -217,6 +217,10 @@ fn retained_native_cfg_library_templates_bind_only_the_current_selected_site() {
                 let parameters = parameters.iter().map(Vec::as_slice).collect::<Vec<_>>();
                 let output = vec![0; template.output().dimension_parameters().len()];
                 for catalog in [maintained.as_ref(), &cloned] {
+                    let prepared =
+                        prepare_native_program_library_call(&artifact, template, catalog).unwrap();
+                    assert_eq!(prepared.template(), template);
+                    assert!(prepared.binding_metadata_bytes() > 0);
                     let call = bind_native_program_library_call(
                         &artifact,
                         template,
@@ -233,6 +237,29 @@ fn retained_native_cfg_library_templates_bind_only_the_current_selected_site() {
                         call.memory_plan().target.kind,
                         mech_core::MemoryTargetKind::NativeHost
                     );
+                    for extent in [0, 1, 17, 127] {
+                        let shapes = template
+                            .inputs()
+                            .iter()
+                            .map(|schema| vec![extent; schema.dimension_parameters().len()])
+                            .collect::<Vec<_>>();
+                        let shapes = shapes.iter().map(Vec::as_slice).collect::<Vec<_>>();
+                        let result = vec![extent; template.output().dimension_parameters().len()];
+                        let live = bind_native_program_library_call(
+                            &artifact, template, catalog, &shapes, &result, limits,
+                        )
+                        .unwrap();
+                        let ports =
+                            live.memory_plan().inputs.len() + live.memory_plan().outputs.len();
+                        let entries = live.memory_plan().allocations.len()
+                            + live.memory_plan().deferred_witnesses.len()
+                            + live.memory_plan().transactions.len();
+                        assert!(
+                            entries <= ports * 3 + 16,
+                            "sealed-family metadata bound: {} extent{extent}",
+                            template.primitive().name()
+                        );
+                    }
                 }
                 assert!(
                     bind_native_program_library_call(
@@ -246,6 +273,10 @@ fn retained_native_cfg_library_templates_bind_only_the_current_selected_site() {
                     .is_err()
                 );
                 if template.primitive() == NativeCollectionPrimitive::SequenceLength {
+                    assert!(matches!(
+                        prepare_native_program_library_call(&artifact, template, &replaced),
+                        Err(NativeArtifactLoweringError::MissingSemanticWitness { .. })
+                    ));
                     assert!(matches!(
                         bind_native_program_library_call(
                             &artifact,
@@ -591,103 +622,294 @@ fn native_leaf_invocation_runs_all_seven_real_factories_and_transfers_same_accou
         .unwrap()
         .limits;
     for artifact in [SOURCE, LEXICAL_ALL_SOURCE].into_iter().flat_map(artifacts) {
-        let memory = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
-        {
-            let work = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
-            let text_id = input_schema(&artifact, "text/lines", 0);
-            let text = admit_value(
-                scalar_value(
-                    &artifact,
-                    text_id,
-                    ValueDataDraft::String("one\ntwo\none".into()),
-                ),
-                &memory,
-            );
-            let separator = admit_value(
-                scalar_value(
-                    &artifact,
-                    input_schema(&artifact, "text/join", 1),
-                    ValueDataDraft::String(",".into()),
-                ),
-                &memory,
-            );
-            let precision = admit_value(
-                scalar_value(
-                    &artifact,
-                    input_schema(&artifact, "number/format", 1),
-                    ValueDataDraft::U64(0),
-                ),
-                &memory,
-            );
-            let invoke = |name: &str, inputs: &[Option<mech_core::Value>]| {
-                let mut output = None;
-                let call = call_for_values(&artifact, name, inputs, &output, limits);
-                call.invoke(inputs, &mut output, &work)
-                    .unwrap_or_else(|error| panic!("{name}: {error:?}"));
-                assert!(
-                    output
-                        .as_ref()
-                        .unwrap()
-                        .memory_budget_retained_bytes(&memory)
-                        .is_some()
+        for prepared_mode in [false, true] {
+            let memory = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
+            {
+                let work = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
+                let text_id = input_schema(&artifact, "text/lines", 0);
+                let text = admit_value(
+                    scalar_value(
+                        &artifact,
+                        text_id,
+                        ValueDataDraft::String("one\ntwo\none".into()),
+                    ),
+                    &memory,
                 );
-                output
-            };
-            let mut words = invoke("text/lines", &[Some(text.clone())]);
-            let joined = invoke("text/join", &[words.clone(), Some(separator.clone())]);
-            assert!(
-                matches!(joined.as_ref().unwrap().data(), ValueData::String(value) if value.as_ref() == "one,two,one")
-            );
-            let length = invoke("sequence/length", &[joined.clone()]);
-            assert!(matches!(
-                length.as_ref().unwrap().data(),
-                ValueData::U64(11)
-            ));
-            let formatted = invoke("number/format", &[length.clone(), Some(precision.clone())]);
-            assert!(
-                matches!(formatted.as_ref().unwrap().data(), ValueData::String(value) if value.as_ref() == "11")
-            );
-            let counts = invoke("map/histogram", &[words.clone()]);
-            let keys = invoke("map/keys", &[counts.clone()]);
-            let values = invoke("map/values", &[counts.clone()]);
-            let ValueData::Matrix(matrix) = keys.as_ref().unwrap().data() else {
-                panic!("keys matrix")
-            };
-            let SequenceView::String(keys) = matrix.elements() else {
-                panic!("String keys")
-            };
-            assert_eq!(
-                keys.iter().map(|value| value.as_ref()).collect::<Vec<_>>(),
-                ["one", "two"]
-            );
-            let ValueData::Matrix(matrix) = values.as_ref().unwrap().data() else {
-                panic!("count matrix")
-            };
-            let SequenceView::U64(values) = matrix.elements() else {
-                panic!("exact counts")
-            };
-            assert_eq!(values, [2, 1]);
+                let separator = admit_value(
+                    scalar_value(
+                        &artifact,
+                        input_schema(&artifact, "text/join", 1),
+                        ValueDataDraft::String(",".into()),
+                    ),
+                    &memory,
+                );
+                let precision = admit_value(
+                    scalar_value(
+                        &artifact,
+                        input_schema(&artifact, "number/format", 1),
+                        ValueDataDraft::U64(0),
+                    ),
+                    &memory,
+                );
+                let invoke = |name: &str, inputs: &[Option<mech_core::Value>]| {
+                    let mut output = None;
+                    let call = call_for_values(&artifact, name, inputs, &output, limits);
+                    let result = if prepared_mode {
+                        let prepared = prepare_native_program_library_call(
+                            &artifact,
+                            call.template(),
+                            &mech_stdlib::source_catalog(),
+                        )
+                        .unwrap();
+                        let mut native_limits = limits;
+                        // Explicit test policy for admitted live binding, not a
+                        // change to resident/native defaults or an unbounded cap.
+                        native_limits.max_compute_work = Some(128 * 1024 * 1024);
+                        native_limits.max_temporary_bytes = Some(128 * 1024 * 1024);
+                        prepared.invoke_current(inputs, &mut output, native_limits, &work)
+                    } else {
+                        call.invoke(inputs, &mut output, &work)
+                    };
+                    result.unwrap_or_else(|error| panic!("{name}: {error:?}"));
+                    assert!(
+                        output
+                            .as_ref()
+                            .unwrap()
+                            .memory_budget_retained_bytes(&memory)
+                            .is_some()
+                    );
+                    output
+                };
+                let mut words = invoke("text/lines", &[Some(text.clone())]);
+                let joined = invoke("text/join", &[words.clone(), Some(separator.clone())]);
+                assert!(
+                    matches!(joined.as_ref().unwrap().data(), ValueData::String(value) if value.as_ref() == "one,two,one")
+                );
+                let length = invoke("sequence/length", &[joined.clone()]);
+                assert!(matches!(
+                    length.as_ref().unwrap().data(),
+                    ValueData::U64(11)
+                ));
+                let formatted = invoke("number/format", &[length.clone(), Some(precision.clone())]);
+                assert!(
+                    matches!(formatted.as_ref().unwrap().data(), ValueData::String(value) if value.as_ref() == "11")
+                );
+                let counts = invoke("map/histogram", &[words.clone()]);
+                let keys = invoke("map/keys", &[counts.clone()]);
+                let values = invoke("map/values", &[counts.clone()]);
+                let ValueData::Matrix(matrix) = keys.as_ref().unwrap().data() else {
+                    panic!("keys matrix")
+                };
+                let SequenceView::String(keys) = matrix.elements() else {
+                    panic!("String keys")
+                };
+                assert_eq!(
+                    keys.iter().map(|value| value.as_ref()).collect::<Vec<_>>(),
+                    ["one", "two"]
+                );
+                let ValueData::Matrix(matrix) = values.as_ref().unwrap().data() else {
+                    panic!("count matrix")
+                };
+                let SequenceView::U64(values) = matrix.elements() else {
+                    panic!("exact counts")
+                };
+                assert_eq!(values, [2, 1]);
 
-            // Reuse a live binding across a changed data-dependent shape.
-            let args = [Some(text.clone())];
-            let lines = call_for_values(&artifact, "text/lines", &args, &words, limits);
-            let shorter = admit_value(
-                scalar_value(&artifact, text_id, ValueDataDraft::String("x\ny".into())),
-                &memory,
+                // Reuse a live binding across a changed data-dependent shape.
+                let args = [Some(text.clone())];
+                let lines = call_for_values(&artifact, "text/lines", &args, &words, limits);
+                let shorter = admit_value(
+                    scalar_value(&artifact, text_id, ValueDataDraft::String("x\ny".into())),
+                    &memory,
+                );
+                let before = work.used();
+                lines.invoke(&[Some(shorter)], &mut words, &work).unwrap();
+                let ValueData::Matrix(matrix) = words.as_ref().unwrap().data() else {
+                    panic!("words")
+                };
+                assert_eq!(matrix.elements().len(), 2);
+                assert!(work.used().0 > before.0);
+                if prepared_mode {
+                    let prepared = prepare_native_program_library_call(
+                        &artifact,
+                        lines.template(),
+                        &mech_stdlib::source_catalog(),
+                    )
+                    .unwrap();
+                    let mut native_limits = limits;
+                    native_limits.max_compute_work = Some(128 * 1024 * 1024);
+                    native_limits.max_temporary_bytes = Some(128 * 1024 * 1024);
+                    let one_line = admit_value(
+                        scalar_value(&artifact, text_id, ValueDataDraft::String("single".into())),
+                        &memory,
+                    );
+                    prepared
+                        .invoke_current(&[Some(one_line)], &mut words, native_limits, &work)
+                        .unwrap();
+                    let ValueData::Matrix(matrix) = words.as_ref().unwrap().data() else {
+                        panic!("live words")
+                    };
+                    assert_eq!(matrix.elements().len(), 1);
+                }
+            }
+            assert_eq!(
+                memory.used_bytes(),
+                0,
+                "all payload and invocation owners release"
             );
-            let before = work.used();
-            lines.invoke(&[Some(shorter)], &mut words, &work).unwrap();
-            let ValueData::Matrix(matrix) = words.as_ref().unwrap().data() else {
-                panic!("words")
-            };
-            assert_eq!(matrix.elements().len(), 2);
-            assert!(work.used().0 > before.0);
         }
-        assert_eq!(
-            memory.used_bytes(),
-            0,
-            "all payload and invocation owners release"
+    }
+}
+
+#[test]
+fn prepared_native_binding_is_pre_admitted_and_cannot_refill_the_leaf_allowance() {
+    use mech_core::{MemoryBudgetDimension, MemoryRuntimeError, ValueDataDraft};
+    use mech_engine::native_artifact::{
+        NativeCollectionInvocationError as Error, NativeIterationAction, NativeLibraryWorkBudget,
+        lower_native_program_artifact,
+    };
+    for artifact in artifacts("+> sequence\nsequence/length(input<string>)\n") {
+        let catalog = mech_stdlib::source_catalog();
+        let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        let template = plan
+            .blocks()
+            .iter()
+            .find_map(|block| match block.action() {
+                NativeIterationAction::LibraryCall { template, .. } => Some(template),
+                _ => None,
+            })
+            .unwrap();
+        let prepared = prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+        let memory = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let work = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
+        let input = admit_value(
+            scalar_value(
+                &artifact,
+                input_schema(&artifact, "sequence/length", 0),
+                ValueDataDraft::String("é🙂".into()),
+            ),
+            &memory,
         );
+        let args = [Some(input)];
+        let mut output = None;
+        let mut limits = mech_core::TargetMemoryProfile::current_resident_cpu()
+            .unwrap()
+            .limits;
+        limits.max_temporary_bytes = Some(128 * 1024 * 1024);
+        // Setup consumes this entire relative allowance. A fresh inner scope
+        // would incorrectly permit the otherwise tiny actual length call.
+        limits.max_compute_work = Some(prepared.binding_work());
+        let before_memory = memory.used_bytes();
+        assert!(matches!(
+            prepared.invoke_current(&args, &mut output, limits, &work),
+            Err(Error::Kernel(
+                mech_core::ResidentKernelError::ResourceLimit {
+                    dimension: MemoryBudgetDimension::ComputeWork,
+                    ..
+                }
+            ))
+        ));
+        assert!(output.is_none());
+        assert_eq!(memory.used_bytes(), before_memory);
+        assert_eq!(work.used().0, prepared.binding_work());
+        limits.max_compute_work = Some(128 * 1024 * 1024);
+        prepared
+            .invoke_current(&args, &mut output, limits, &work)
+            .unwrap();
+        assert!(matches!(
+            output.as_ref().unwrap().data(),
+            mech_core::ValueData::U64(2)
+        ));
+        let prior = output.as_ref().unwrap().clone();
+        let before_memory = memory.used_bytes();
+        let blocker = memory
+            .reserve_capacity(memory.limit_bytes() - before_memory)
+            .unwrap();
+        assert!(matches!(
+            prepared.invoke_current(&args, &mut output, limits, &work),
+            Err(Error::Memory(MemoryRuntimeError::BudgetExceeded { .. }))
+        ));
+        assert!(output.as_ref().unwrap().shares_frozen_storage(&prior));
+        drop(blocker);
+        assert_eq!(memory.used_bytes(), before_memory);
+        assert!(
+            !prepared
+                .invoke_current(&args, &mut output, limits, &work)
+                .unwrap()
+        );
+        let prior = output.as_ref().unwrap().clone();
+        // Enough memory for binding alone, but none left for invocation
+        // metadata. The binding reservation must remain alive across invoke.
+        let before_memory = memory.used_bytes();
+        let blocker = memory
+            .reserve_capacity(
+                memory.limit_bytes() - before_memory - prepared.binding_metadata_bytes(),
+            )
+            .unwrap();
+        assert!(matches!(
+            prepared.invoke_current(&args, &mut output, limits, &work),
+            Err(Error::Memory(MemoryRuntimeError::BudgetExceeded { .. }))
+        ));
+        assert!(output.as_ref().unwrap().shares_frozen_storage(&prior));
+        drop(blocker);
+        assert_eq!(memory.used_bytes(), before_memory);
+        // Likewise, each part fits this temporary cap separately, but their
+        // coexistence does not. Omitting the subtraction would publish here.
+        limits.max_temporary_bytes = Some(prepared.binding_metadata_bytes() + 1_024);
+        assert!(
+            matches!(prepared.invoke_current(&args, &mut output, limits, &work), Err(Error::Plan(mech_core::MemoryPlanError::TargetLimitExceeded { violation })) if violation.dimension == MemoryBudgetDimension::TemporaryBytes)
+        );
+        assert!(output.as_ref().unwrap().shares_frozen_storage(&prior));
+        assert_eq!(memory.used_bytes(), before_memory);
+        limits.max_temporary_bytes = Some(128 * 1024 * 1024);
+        let input_schema = input_schema(&artifact, "sequence/length", 0);
+        let unadmitted = [Some(scalar_value(
+            &artifact,
+            input_schema,
+            ValueDataDraft::String("x".into()),
+        ))];
+        assert_eq!(
+            prepared.invoke_current(&unadmitted, &mut output, limits, &work),
+            Err(Error::UnadmittedValue)
+        );
+        let foreign = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let foreign_args = [Some(admit_value(
+            scalar_value(&artifact, input_schema, ValueDataDraft::String("x".into())),
+            &foreign,
+        ))];
+        assert_eq!(
+            prepared.invoke_current(&foreign_args, &mut output, limits, &work),
+            Err(Error::UnadmittedValue)
+        );
+        assert!(output.as_ref().unwrap().shares_frozen_storage(&prior));
+        let independent = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
+        assert_eq!(
+            work.with_scope(|| prepared.invoke_current(&args, &mut output, limits, &independent))
+                .unwrap(),
+            Err(Error::Kernel(mech_core::ResidentKernelError::InvalidInput))
+        );
+        assert_eq!(independent.used(), (0, 0));
+        assert!(output.as_ref().unwrap().shares_frozen_storage(&prior));
+        drop(independent);
+        let before_memory = memory.used_bytes();
+        limits.max_temporary_bytes = Some(prepared.binding_metadata_bytes() - 1);
+        let blocker = memory
+            .reserve_capacity(memory.limit_bytes() - before_memory)
+            .unwrap();
+        assert!(
+            matches!(prepared.invoke_current(&args, &mut output, limits, &work), Err(Error::Plan(mech_core::MemoryPlanError::TargetLimitExceeded { violation })) if violation.dimension == MemoryBudgetDimension::TemporaryBytes)
+        );
+        assert!(output.is_some());
+        drop(blocker);
+        assert_eq!(memory.used_bytes(), before_memory);
+        let mut unlimited = limits;
+        unlimited.max_compute_work = None;
+        assert!(matches!(
+            prepared.invoke_current(&args, &mut output, unlimited, &work),
+            Err(Error::Binding(
+                NativeArtifactLoweringError::UnsupportedNode { .. }
+            ))
+        ));
     }
 }
 

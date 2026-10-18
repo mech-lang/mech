@@ -11,6 +11,7 @@ use mech_core::{
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum NativeCollectionInvocationError {
+    Binding(crate::native_artifact::NativeArtifactLoweringError),
     Kernel(ResidentKernelError),
     Plan(MemoryPlanError),
     Memory(MemoryRuntimeError),
@@ -55,6 +56,14 @@ pub(super) fn metadata_envelope(
             .checked_add(call.transactions.len())?,
     )
     .ok()?;
+    metadata_envelope_for(schemas, ports, entries)
+}
+
+pub(super) fn metadata_envelope_for(
+    schemas: &mech_core::SchemaTable,
+    ports: u64,
+    entries: u64,
+) -> Option<u64> {
     let schema_copies = ports.checked_mul(4)?.checked_add(4)?;
     schemas
         .clone_allocation_bound_bytes()?
