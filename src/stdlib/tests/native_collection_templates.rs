@@ -5,7 +5,8 @@ use mech_core::{
 };
 use mech_engine::native_artifact::{
     NativeArtifactLoweringError, NativeCollectionLexicalSource, NativeCollectionPrimitive,
-    bind_native_collection_operation, native_collection_lexical_template,
+    bind_native_collection_lexical, bind_native_collection_operation,
+    bind_native_program_library_call, native_collection_lexical_template,
     native_collection_operation_template,
 };
 use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
@@ -30,6 +31,24 @@ counts := map/histogram(words)
 keys := map/keys(counts)
 values := map/values(counts)
 (formatted, keys, values)
+"#;
+
+// Every maintained leaf is genuinely inside the canonical counted function,
+// not a root call relabelled with a lexical owner.
+const LEXICAL_ALL_SOURCE: &str = r#"+> text
++> sequence
++> number
++> map
+step(x<string>) => (next<string>) :=
+  words := text/lines(x)
+  joined := text/join(words, ",")
+  size := sequence/length(joined)
+  counts := map/histogram(words)
+  keys := map/keys(counts)
+  values := map/values(counts)
+  formatted := number/format(size + sequence/length(values), 0u64)
+  next := text/join(keys, formatted).
+seed<string> |2> step
 "#;
 
 #[test]
@@ -160,6 +179,90 @@ fn mixed_native_control_lowering_never_uses_replacement_factories_as_authority()
             .unwrap();
     }
     assert_eq!(BINDS.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn retained_native_cfg_library_templates_bind_only_the_current_selected_site() {
+    use mech_engine::native_artifact::{NativeIterationAction, lower_native_program_artifact};
+    let maintained = mech_stdlib::source_catalog();
+    let cloned = FunctionCatalogBuilder::from_catalog(&maintained)
+        .build()
+        .unwrap();
+    let original = maintained
+        .resident_factory(&["sequence".into()], "length")
+        .unwrap();
+    let mut builder = FunctionCatalogBuilder::new();
+    builder
+        .insert_resident_factory_entry(original.clone().with_factory(replacement))
+        .unwrap();
+    let replaced = builder.build().unwrap();
+    let limits = mech_core::TargetMemoryProfile::current_resident_cpu()
+        .unwrap()
+        .limits;
+    let root = SOURCE.replace("(formatted, keys, values)\n", "more := size + 1u64\n");
+    for source in [root.as_str(), LEXICAL_ALL_SOURCE] {
+        for artifact in artifacts(source) {
+            let plan = lower_native_program_artifact(&artifact, &maintained).unwrap();
+            let mut families = std::collections::BTreeSet::new();
+            for block in plan.blocks() {
+                let NativeIterationAction::LibraryCall { template, .. } = block.action() else {
+                    continue;
+                };
+                families.insert(template.primitive().name());
+                let parameters = template
+                    .inputs()
+                    .iter()
+                    .map(|schema| vec![2; schema.dimension_parameters().len()])
+                    .collect::<Vec<_>>();
+                let parameters = parameters.iter().map(Vec::as_slice).collect::<Vec<_>>();
+                let output = vec![0; template.output().dimension_parameters().len()];
+                for catalog in [maintained.as_ref(), &cloned] {
+                    let call = bind_native_program_library_call(
+                        &artifact,
+                        template,
+                        catalog,
+                        &parameters,
+                        &output,
+                        limits,
+                    )
+                    .unwrap();
+                    assert_eq!(call.template(), template);
+                    assert_eq!(call.template().origin(), block.origin());
+                    assert_eq!(call.memory_plan().bound_call, *call.bound_call());
+                    assert_eq!(
+                        call.memory_plan().target.kind,
+                        mech_core::MemoryTargetKind::NativeHost
+                    );
+                }
+                assert!(
+                    bind_native_program_library_call(
+                        &artifact,
+                        template,
+                        &maintained,
+                        &parameters,
+                        &output,
+                        mech_core::MemoryBudgetLimits::default()
+                    )
+                    .is_err()
+                );
+                if template.primitive() == NativeCollectionPrimitive::SequenceLength {
+                    assert!(matches!(
+                        bind_native_program_library_call(
+                            &artifact,
+                            template,
+                            &replaced,
+                            &parameters,
+                            &output,
+                            limits
+                        ),
+                        Err(NativeArtifactLoweringError::MissingSemanticWitness { .. })
+                    ));
+                }
+            }
+            assert_eq!(families.len(), 7, "{source}");
+        }
+    }
+    assert_eq!(BINDS.load(Ordering::SeqCst), 0, "replacement must not bind");
 }
 
 fn artifacts(source: &str) -> [ProgramArtifact; 2] {
@@ -296,7 +399,7 @@ fn actual_collection_calls_bind_native_host_handles_and_explicit_finite_policy()
             )
             .unwrap_or_else(|error| panic!("{}: {error:?}", template.primitive().name()));
             bound += 1;
-            assert_eq!(call.template().node(), node);
+            assert_eq!(call.template().origin().node(), node);
             assert_eq!(call.memory_plan().bound_call, *call.bound_call());
             assert_eq!(
                 call.memory_plan().target.kind,
@@ -357,10 +460,27 @@ fn actual_collection_calls_bind_native_host_handles_and_explicit_finite_policy()
 }
 
 fn input_schema(artifact: &ProgramArtifact, name: &str, ordinal: usize) -> mech_core::SchemaId {
-    let (node, _) = operations(artifact)
+    let root = operations(artifact)
         .into_iter()
-        .find(|(_, actual)| actual == name)
+        .find(|(_, actual)| actual == name);
+    let Some((node, _)) = root else {
+        let site = lexical_sites(artifact)
+            .into_iter()
+            .find(|site| site.name == name)
+            .unwrap();
+        let template = native_collection_lexical_template(
+            artifact,
+            site.owner,
+            site.block,
+            site.local,
+            &mech_stdlib::source_catalog(),
+        )
         .unwrap();
+        let mech_core::ResolvedOperationContract::Declared(contract) = template.contract() else {
+            panic!("declared lexical call")
+        };
+        return contract.inputs[ordinal].schema;
+    };
     let operation = artifact.nodes()[node.get() as usize]
         .as_operation()
         .unwrap();
@@ -405,29 +525,62 @@ fn call_for_values(
     output: &Option<mech_core::Value>,
     limits: mech_core::MemoryBudgetLimits,
 ) -> mech_engine::native_artifact::NativeCollectionCall {
-    let (node, _) = operations(artifact)
+    let root = operations(artifact)
         .into_iter()
-        .find(|(_, actual)| actual == name)
-        .unwrap();
+        .find(|(_, actual)| actual == name);
     let catalog = mech_stdlib::source_catalog();
-    let template = native_collection_operation_template(artifact, node, &catalog).unwrap();
     let parameters = inputs
         .iter()
         .map(|value| value.as_ref().unwrap().shape().parameter_values())
         .collect::<Vec<_>>();
+    let dimensions = if let Some((node, _)) = &root {
+        native_collection_operation_template(artifact, *node, &catalog)
+            .unwrap()
+            .output()
+            .dimension_parameters()
+            .len()
+    } else {
+        let site = lexical_sites(artifact)
+            .into_iter()
+            .find(|site| site.name == name)
+            .unwrap();
+        native_collection_lexical_template(artifact, site.owner, site.block, site.local, &catalog)
+            .unwrap()
+            .output()
+            .dimension_parameters()
+            .len()
+    };
     let output_parameters = output
         .as_ref()
         .map(|value| value.shape().parameter_values().to_vec())
-        .unwrap_or_else(|| vec![0; template.output().dimension_parameters().len()]);
-    bind_native_collection_operation(
-        artifact,
-        node,
-        &catalog,
-        &parameters,
-        &output_parameters,
-        limits,
-    )
-    .unwrap()
+        .unwrap_or_else(|| vec![0; dimensions]);
+    if let Some((node, _)) = root {
+        bind_native_collection_operation(
+            artifact,
+            node,
+            &catalog,
+            &parameters,
+            &output_parameters,
+            limits,
+        )
+        .unwrap()
+    } else {
+        let site = lexical_sites(artifact)
+            .into_iter()
+            .find(|site| site.name == name)
+            .unwrap();
+        bind_native_collection_lexical(
+            artifact,
+            site.owner,
+            site.block,
+            site.local,
+            &catalog,
+            &parameters,
+            &output_parameters,
+            limits,
+        )
+        .unwrap()
+    }
 }
 
 #[test]
@@ -437,7 +590,7 @@ fn native_leaf_invocation_runs_all_seven_real_factories_and_transfers_same_accou
     let limits = mech_core::TargetMemoryProfile::current_resident_cpu()
         .unwrap()
         .limits;
-    for artifact in artifacts(SOURCE) {
+    for artifact in [SOURCE, LEXICAL_ALL_SOURCE].into_iter().flat_map(artifacts) {
         let memory = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
         {
             let work = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
@@ -547,7 +700,7 @@ fn native_leaf_errors_and_memory_denials_preserve_output_and_recover_on_the_same
     let limits = mech_core::TargetMemoryProfile::current_resident_cpu()
         .unwrap()
         .limits;
-    for artifact in artifacts(SOURCE) {
+    for artifact in [SOURCE, LEXICAL_ALL_SOURCE].into_iter().flat_map(artifacts) {
         let memory = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
         let work = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
         let integer = input_schema(&artifact, "number/format", 1);
@@ -628,7 +781,7 @@ fn native_leaf_call_policy_cannot_be_lifted_by_a_larger_invocation_account() {
     use mech_engine::native_artifact::{
         NativeCollectionInvocationError as Error, NativeLibraryWorkBudget,
     };
-    for artifact in artifacts(SOURCE) {
+    for artifact in [SOURCE, LEXICAL_ALL_SOURCE].into_iter().flat_map(artifacts) {
         let memory = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
         let work = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
         let text = admit_value(

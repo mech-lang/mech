@@ -1,10 +1,10 @@
 //! Current-shape NativeHost bindings for the maintained individual leaves.
 //! This does not schedule a program or grant a generated visit permission.
 use super::native_collection_templates::{
-    NativeCollectionOperationTemplate, native_collection_operation_template,
+    native_collection_lexical_template, native_collection_operation_template,
 };
 use crate::ProgramArtifact;
-use crate::native_artifact::NativeArtifactLoweringError as Error;
+use crate::native_artifact::{NativeArtifactLoweringError as Error, NativeProgramLibraryTemplate};
 use mech_core::{
     BoundCall, BoundResidentKernel, CallMemoryPlan, CallMemoryPlanningRequest, ExecutionTarget,
     FunctionCatalog, FunctionValueRepresentation, MemoryBudgetLimits, MemoryFootprintWitness,
@@ -25,7 +25,7 @@ pub use invocation::NativeCollectionInvocationError;
 /// real turn plan and payload scope before entering the maintained leaf.
 #[derive(Clone, Debug)]
 pub struct NativeCollectionCall {
-    template: NativeCollectionOperationTemplate,
+    template: NativeProgramLibraryTemplate,
     kernel: BoundResidentKernel,
     memory: CallMemoryPlan,
     inputs: Box<[ResidentPortLayout]>,
@@ -34,7 +34,7 @@ pub struct NativeCollectionCall {
     invocation_metadata_bytes: u64,
 }
 impl NativeCollectionCall {
-    pub fn template(&self) -> &NativeCollectionOperationTemplate {
+    pub fn template(&self) -> &NativeProgramLibraryTemplate {
         &self.template
     }
     pub fn bound_call(&self) -> &BoundCall {
@@ -91,7 +91,100 @@ pub fn bind_native_collection_operation(
     output_parameters: &[u64],
     limits: MemoryBudgetLimits,
 ) -> Result<NativeCollectionCall, Error> {
-    let template = native_collection_operation_template(artifact, node, catalog)?;
+    let template = NativeProgramLibraryTemplate::from_root(native_collection_operation_template(
+        artifact, node, catalog,
+    )?);
+    bind_selected(
+        artifact,
+        template,
+        catalog,
+        input_parameters,
+        output_parameters,
+        limits,
+    )
+}
+
+/// Bind an individual leaf at its genuine lexical site, using the same
+/// NativeHost binding and invocation boundary as a root leaf. This is setup
+/// metadata, not permission to visit that site or a runtime graph dispatcher.
+pub fn bind_native_collection_lexical(
+    artifact: &ProgramArtifact,
+    owner: NodeId,
+    block: crate::ControlBlockId,
+    local: u32,
+    catalog: &FunctionCatalog,
+    input_parameters: &[&[u64]],
+    output_parameters: &[u64],
+    limits: MemoryBudgetLimits,
+) -> Result<NativeCollectionCall, Error> {
+    let template = NativeProgramLibraryTemplate::from_lexical(native_collection_lexical_template(
+        artifact, owner, block, local, catalog,
+    )?);
+    bind_selected(
+        artifact,
+        template,
+        catalog,
+        input_parameters,
+        output_parameters,
+        limits,
+    )
+}
+
+/// Bind a retained native CFG template only if the actual artifact site and
+/// current selected implementation still match it in full. Matching revision,
+/// operation name or types alone cannot authorize a stale/foreign call site.
+/// Like the root/lexical setup APIs, this allocates binding metadata; generated
+/// runtime callers must pre-admit that metadata rather than call it unmetered.
+pub fn bind_native_program_library_call(
+    artifact: &ProgramArtifact,
+    template: &NativeProgramLibraryTemplate,
+    catalog: &FunctionCatalog,
+    input_parameters: &[&[u64]],
+    output_parameters: &[u64],
+    limits: MemoryBudgetLimits,
+) -> Result<NativeCollectionCall, Error> {
+    let origin = template.origin();
+    let node = origin.node();
+    if template.program_revision() != artifact.revision() {
+        return Err(invalid(node));
+    }
+    let current = match (origin.block(), origin.local()) {
+        (None, None) => NativeProgramLibraryTemplate::from_root(
+            native_collection_operation_template(artifact, node, catalog)?,
+        ),
+        (Some(block), Some(local)) => {
+            NativeProgramLibraryTemplate::from_lexical(native_collection_lexical_template(
+                artifact,
+                node,
+                crate::ControlBlockId(block),
+                local,
+                catalog,
+            )?)
+        }
+        _ => return Err(invalid(node)),
+    };
+    if &current != template {
+        return Err(invalid(node));
+    }
+    bind_selected(
+        artifact,
+        current,
+        catalog,
+        input_parameters,
+        output_parameters,
+        limits,
+    )
+}
+
+fn bind_selected(
+    artifact: &ProgramArtifact,
+    template: NativeProgramLibraryTemplate,
+    catalog: &FunctionCatalog,
+    input_parameters: &[&[u64]],
+    output_parameters: &[u64],
+    limits: MemoryBudgetLimits,
+) -> Result<NativeCollectionCall, Error> {
+    let node = template.origin().node();
     if input_parameters.len() != template.inputs().len() {
         return Err(invalid(node));
     }

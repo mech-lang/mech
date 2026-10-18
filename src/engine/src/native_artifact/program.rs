@@ -111,7 +111,7 @@ impl NativeProgramOutput {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NativeProgramLibraryTemplate {
     origin: super::NativeMatchOrigin,
     revision: ProgramRevision,
@@ -123,7 +123,7 @@ pub struct NativeProgramLibraryTemplate {
     selected: SelectedLibrary,
 }
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 enum SelectedLibrary {
     Root(super::NativeCollectionOperationTemplate),
     Lexical(super::NativeCollectionLexicalTemplate),
@@ -152,6 +152,13 @@ impl NativeProgramLibraryTemplate {
         match &self.selected {
             SelectedLibrary::Root(t) => t.primitive(),
             SelectedLibrary::Lexical(t) => t.primitive(),
+        }
+    }
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    pub fn implementation_memory(&self) -> mech_core::ImplementationMemoryClass {
+        match &self.selected {
+            SelectedLibrary::Root(t) => t.implementation_memory(),
+            SelectedLibrary::Lexical(t) => t.implementation_memory(),
         }
     }
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]

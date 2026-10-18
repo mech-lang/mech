@@ -215,7 +215,7 @@ impl NativeCollectionCall {
         };
         let facts = live::facts_with(
             &self.memory,
-            self.template.node(),
+            self.template.origin().node(),
             &arguments,
             ResidentValueRef::Snapshot(core::slice::from_ref(output)),
             &self.schemas,
@@ -225,7 +225,7 @@ impl NativeCollectionCall {
         )?;
         // Compose the actual NativeHost call and its actual allocation family,
         // rather than fabricating a detached test plan or changing a CPU label.
-        let node = self.template.node();
+        let node = self.template.origin().node();
         let mut call = self.memory.clone();
         for allocation in &mut call.allocations {
             if let MemoryObjectOwner::NodeScratch { node: owner, .. } = &mut allocation.owner {

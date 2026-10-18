@@ -13,7 +13,7 @@ use mech_core::{
 /// and its symbolic canonical schemas. It is not permission to execute a call:
 /// native consumers must still derive current NativeHost descriptors, validate
 /// geometry, construct the exact BoundCall and admit storage/work before use.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NativeCollectionOperationTemplate {
     revision: ProgramRevision,
     node: NodeId,
@@ -22,7 +22,7 @@ pub struct NativeCollectionOperationTemplate {
     leaf: SelectedCollectionLeaf,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct SelectedCollectionLeaf {
     selected_key: ResidentOperationKey,
     primitive: NativeCollectionPrimitive,
@@ -75,7 +75,7 @@ pub enum NativeCollectionLexicalSource {
 /// A selected leaf inside the actual canonical Match/Activation, iteration or
 /// comprehension tree. Its constructor searches that tree; callers cannot
 /// substitute a fabricated block with a coincidentally equal block number.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NativeCollectionLexicalTemplate {
     revision: ProgramRevision,
     owner: NodeId,
