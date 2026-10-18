@@ -1,7 +1,11 @@
 //! Secured resident reference for canonical hosted native qualification.
 //! Uses the existing runtime, real CLI provider and ordinary capability policy.
 //! This is not native AOT or an old-I/O-versus-secured benchmark result.
-use std::{ffi::OsString, io::Read, path::Path};
+use std::{
+    ffi::OsString,
+    io::{Read, Write},
+    path::Path,
+};
 
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, MechRuntime, ResidentDurabilityPolicy, RunResourceGrantConfig,
@@ -36,18 +40,47 @@ fn builder(arguments: Vec<OsString>) -> Result<RuntimeBuilder, String> {
         }))
 }
 
-fn load_bytecode(
-    runtime: &mut MechRuntime,
-    mut reader: impl Read,
-) -> Result<RuntimeProgramLoadOutcome, String> {
-    let mut bytecode = Vec::new();
-    match runtime.config().limits.max_source_bytes {
-        Some(limit) => reader
-            .take(limit.saturating_add(1))
-            .read_to_end(&mut bytecode),
-        None => reader.read_to_end(&mut bytecode),
+fn read_bounded(mut reader: impl Read, max_source_bytes: Option<u64>) -> Result<Vec<u8>, String> {
+    let mut bytes = Vec::new();
+    match max_source_bytes {
+        Some(limit) => reader.take(limit.saturating_add(1)).read_to_end(&mut bytes),
+        None => reader.read_to_end(&mut bytes),
     }
     .map_err(|error| error.to_string())?;
+    Ok(bytes)
+}
+
+fn compile_source(
+    reader: impl Read,
+    config: mech_runtime::RuntimeConfig,
+) -> Result<Vec<u8>, String> {
+    let bytes = read_bounded(reader, config.limits.max_source_bytes)?;
+    let source = String::from_utf8(bytes).map_err(|error| error.to_string())?;
+    let mut compiler = builder(Vec::new())?
+        .config(config)
+        .build_compiler()
+        .map_err(diagnostic)?;
+    Ok(compiler
+        .compile_canonical_source(&source)
+        .map_err(diagnostic)?
+        .bytecode()
+        .to_vec())
+}
+
+fn write_new(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .map_err(|error| error.to_string())?;
+    file.write_all(bytes).map_err(|error| error.to_string())
+}
+
+fn load_bytecode(
+    runtime: &mut MechRuntime,
+    reader: impl Read,
+) -> Result<RuntimeProgramLoadOutcome, String> {
+    let bytecode = read_bounded(reader, runtime.config().limits.max_source_bytes)?;
     // The ordinary loader owns both size admission and decoding. Reading at
     // most limit+1 also bounds acquisition before it reports an oversized
     // input; an explicit unbounded runtime configuration remains unbounded.
@@ -65,21 +98,9 @@ fn run() -> Result<(), String> {
             if arguments.next().is_some() {
                 return Err("compile accepts SOURCE BYTECODE only".into());
             }
-            if Path::new(&destination).exists() {
-                return Err("refusing to overwrite bytecode".into());
-            }
-            let source = std::fs::read_to_string(source).map_err(|error| error.to_string())?;
-            let mut compiler = builder(Vec::new())?
-                .build_compiler()
-                .map_err(diagnostic)?;
-            let artifact = compiler
-                .compile_canonical_source(&source)
-                .map_err(diagnostic)?
-                .into_parts()
-                .0;
-            let bytecode = mech_engine::encode_program_artifact_bytecode_v1(&artifact)
-                .map_err(|error| format!("{error:?}"))?;
-            std::fs::write(destination, bytecode).map_err(|error| error.to_string())?;
+            let source = std::fs::File::open(source).map_err(|error| error.to_string())?;
+            let bytecode = compile_source(source, mech_runtime::RuntimeConfig::default())?;
+            write_new(Path::new(&destination), &bytecode)?;
             Ok(())
         }
         Some("run") => {
@@ -130,9 +151,6 @@ fn run() -> Result<(), String> {
             };
             if report != "-" {
                 let report = Path::new(&report);
-                if report.exists() {
-                    return Err("refusing to overwrite qualification report".into());
-                }
                 let document = serde_json::json!({
                     "schema": "mech.canonical-host-reference.v1",
                     "policy": "secured",
@@ -147,8 +165,7 @@ fn run() -> Result<(), String> {
                     "scope": "resident reference; ordinary runtime authority, provider, evaluator and publication policy",
                     "native_aot": false
                 });
-                std::fs::write(report, serde_json::to_vec_pretty(&document).unwrap())
-                    .map_err(|error| error.to_string())?;
+                write_new(report, &serde_json::to_vec_pretty(&document).unwrap())?;
             }
             Ok(())
         }
@@ -270,5 +287,124 @@ mod tests {
         load_bytecode(&mut unbounded, &mut input).unwrap();
         assert_eq!(input.position(), bytes.len() as u64);
         unbounded.shutdown().unwrap();
+    }
+
+    #[test]
+    fn source_acquisition_preserves_compiler_admission_and_utf8() {
+        let source = "answer := \"é👋\"\nanswer\n";
+        let mut config = mech_runtime::RuntimeConfig::default();
+        config.limits.max_source_bytes = Some(source.len() as u64);
+        let actual = compile_source(Cursor::new(source), config.clone()).unwrap();
+        let expected = builder(Vec::new())
+            .unwrap()
+            .config(config.clone())
+            .build_compiler()
+            .unwrap()
+            .compile_canonical_source(source)
+            .unwrap()
+            .bytecode()
+            .to_vec();
+        assert_eq!(actual, expected);
+
+        config.limits.max_source_bytes = Some(64);
+        let oversized = format!("-- {}\nanswer := 7\nanswer\n", "x".repeat(1024 * 1024));
+        let mut reader = Cursor::new(oversized.as_bytes());
+        let actual = compile_source(&mut reader, config.clone()).unwrap_err();
+        assert_eq!(reader.position(), 65);
+        let expected = builder(Vec::new())
+            .unwrap()
+            .config(config.clone())
+            .build_compiler()
+            .unwrap()
+            .compile_canonical_source(&oversized[..65])
+            .err()
+            .unwrap();
+        assert!(
+            expected
+                .kind_as::<mech_runtime::ResourceBudgetExceededError>()
+                .is_some()
+        );
+        assert_eq!(actual, diagnostic(expected));
+        assert!(compile_source(Cursor::new([0xff]), config.clone()).is_err());
+        config.limits.max_source_bytes = None;
+        let mut reader = Cursor::new(oversized.as_bytes());
+        let actual = compile_source(&mut reader, config.clone()).unwrap_err();
+        assert_eq!(reader.position(), oversized.len() as u64);
+        // None removes only the source-byte cap, not independent parser limits.
+        let expected = builder(Vec::new())
+            .unwrap()
+            .config(config.clone())
+            .build_compiler()
+            .unwrap()
+            .compile_canonical_source(&oversized)
+            .err()
+            .unwrap();
+        assert_eq!(actual, diagnostic(expected));
+        assert_eq!(
+            compile_source(Cursor::new(source), config).unwrap(),
+            bytecode(source)
+        );
+    }
+
+    #[test]
+    fn qualification_outputs_refuse_concurrent_creators_without_truncation() {
+        let directory = std::env::temp_dir().join(format!(
+            "mech-reference-outputs-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&directory).unwrap();
+        // Both bytecode and report publication call this same create-new writer.
+        for name in ["program.mecb", "report.json"] {
+            let destination = directory.join(name);
+            assert!(!destination.exists());
+            let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+            let workers = [b"first".as_slice(), b"second".as_slice()].map(|bytes| {
+                let barrier = barrier.clone();
+                let destination = destination.clone();
+                std::thread::spawn(move || {
+                    barrier.wait();
+                    (write_new(&destination, bytes), bytes)
+                })
+            });
+            let results = workers.map(|worker| worker.join().unwrap());
+            assert_eq!(
+                results.iter().filter(|(result, _)| result.is_ok()).count(),
+                1
+            );
+            let winner = results.iter().find(|(result, _)| result.is_ok()).unwrap();
+            assert_eq!(std::fs::read(&destination).unwrap(), winner.1);
+            assert!(write_new(&destination, b"replacement").is_err());
+            assert_eq!(std::fs::read(&destination).unwrap(), winner.1);
+            std::fs::remove_file(destination).unwrap();
+        }
+        std::fs::remove_dir(directory).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn qualification_outputs_refuse_dangling_symlinks() {
+        let directory = std::env::temp_dir().join(format!(
+            "mech-reference-symlinks-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&directory).unwrap();
+        for name in ["program.mecb", "report.json"] {
+            let destination = directory.join(name);
+            let target = directory.join(format!("{name}-target"));
+            std::os::unix::fs::symlink(&target, &destination).unwrap();
+            assert!(!destination.exists());
+            assert!(write_new(&destination, b"must not follow").is_err());
+            assert!(!target.exists());
+            std::fs::remove_file(destination).unwrap();
+        }
+        std::fs::remove_dir(directory).unwrap();
     }
 }

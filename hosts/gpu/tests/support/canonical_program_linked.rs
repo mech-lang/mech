@@ -1,8 +1,14 @@
 //! Actual managed-value linked processes; no timing or resource-host claim.
 use super::{LEXICAL, ROOT, artifacts_mode, equal, inputs, limits, reference_result};
 use mech_build::{CargoInvocation, parse_cargo_build_messages};
-use mech_core::{ManagedMemoryBudget, ValueDataDraft, snapshot::ValueDraft};
-use mech_gpu::native_artifact::{JitProgramArtifact, generate_linked_program_application};
+use mech_core::{
+    ManagedMemoryBudget, ValueDataDraft,
+    snapshot::{SnapshotValidationContext, ValueDraft},
+};
+use mech_gpu::native_artifact::{
+    JitProgramArtifact, NativeExecutionError, NativeProgramExecutionError, NativeValueError,
+    generate_linked_program_application,
+};
 use serde_json::{Value, json};
 use std::{
     collections::BTreeMap,
@@ -10,6 +16,7 @@ use std::{
     io::Cursor,
     path::{Path, PathBuf},
     process::Command,
+    sync::Arc,
 };
 
 #[path = "linked_process.rs"]
@@ -50,6 +57,29 @@ fn input_file(directory: &Path, label: &str, values: &[mech_core::Value]) -> Pat
     assert!(!path.exists());
     fs::write(&path, serde_json::to_vec(&drafts).unwrap()).unwrap();
     path
+}
+
+// Match the generated shell's public draft import and shared schema ownership,
+// so the limit below admits precisely the same input bytes in both processes.
+fn import_inputs(
+    artifact: &mech_engine::ProgramArtifact,
+    input: &Path,
+    memory: &ManagedMemoryBudget,
+) -> Vec<mech_core::Value> {
+    let drafts: Vec<ValueDraft> = serde_json::from_slice(&fs::read(input).unwrap()).unwrap();
+    let schemas = Arc::new(artifact.schemas().clone());
+    drafts
+        .into_iter()
+        .map(|draft| {
+            let value = draft
+                .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+                .unwrap();
+            let mut reservation = memory
+                .reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap())
+                .unwrap();
+            value.into_memory_budget(&mut reservation).unwrap()
+        })
+        .collect()
 }
 
 #[test]
@@ -229,6 +259,57 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
             }
         }
         let input = normal_input.unwrap();
+        let account = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let imported = import_inputs(&variants[0], &input, &account);
+        let input_bytes = account.used_bytes();
+        assert!(input_bytes > 0);
+        let plan = jit.descriptor().plan();
+        // Admit the input AND the native word transport; deny the following
+        // managed Value arena inside evaluate_into, not the shell's importer.
+        let words = plan.inputs().len()
+            + plan.values().len()
+            + 3 * plan.iterations().len()
+            + plan.outputs().len()
+            + 1;
+        let native_memory_limit = input_bytes + words as u64 * 8;
+        drop(imported);
+        assert_eq!(account.used_bytes(), 0);
+        let account = ManagedMemoryBudget::new(native_memory_limit);
+        let imported = import_inputs(&variants[0], &input, &account);
+        assert_eq!(account.used_bytes(), input_bytes);
+        let mut denied_outputs = vec![None; plan.outputs().len()];
+        let denial = jit
+            .evaluate_into(&imported, &mut denied_outputs, limits(), &account)
+            .unwrap_err();
+        assert!(
+            matches!(
+                &denial,
+                NativeProgramExecutionError::Value(NativeValueError::Base(
+                    NativeExecutionError::Memory {
+                        error: mech_core::MemoryRuntimeError::BudgetExceeded { .. }
+                    }
+                ))
+            ),
+            "{denial}"
+        );
+        assert!(denied_outputs.iter().all(Option::is_none));
+        assert_eq!(account.used_bytes(), input_bytes);
+        let selected = policy(
+            1_000_000_000,
+            native_memory_limit,
+            134_217_728,
+            128 * 1024 * 1024,
+        );
+        let result = bounded(
+            Command::new(&binary).args(&selected).arg(&input),
+            &directory,
+            "native-arena-memory-denial",
+            30,
+        );
+        assert!(!result.status.success());
+        assert!(result.stdout.is_empty());
+        assert_eq!(result.stderr, format!("{denial}\n").as_bytes());
+        cases.push(json!({"name":"native-arena-memory-denial","phase":"linked.evaluate_into managed Value arena admission","policy":selected,"input":input,"input_admitted_bytes":input_bytes,"word_transport_bytes":words * 8,"memory_limit":native_memory_limit,"stdout":"","stderr":String::from_utf8(result.stderr).unwrap(),"exit":result.status.code()}));
         for (label, selected, diagnostic) in [
             (
                 "work-denial",
@@ -236,7 +317,7 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
                 "Work",
             ),
             (
-                "memory-denial",
+                "input-import-memory-denial",
                 policy(1_000_000_000, 0, 134_217_728, 128 * 1024 * 1024),
                 "BudgetExceeded",
             ),
