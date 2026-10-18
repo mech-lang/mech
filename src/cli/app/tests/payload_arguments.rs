@@ -22,8 +22,8 @@ fn arguments(values: &[&str]) -> Vec<OsString> {
 #[test]
 fn explicit_and_bare_runs_have_the_same_exact_payload_boundary() {
     for prefix in [
-        vec!["mech", "run", "program.mec"],
-        vec!["mech", "program.mec"],
+        vec!["mech", "run", "./program.mec"],
+        vec!["mech", "./program.mec"],
     ] {
         let mut command = arguments(&prefix);
         command.extend(arguments(&[
@@ -37,7 +37,7 @@ fn explicit_and_bare_runs_have_the_same_exact_payload_boundary() {
         let (_, parsed) = parse(command);
         assert_eq!(
             parsed.input_mode,
-            RunInputMode::Paths(vec!["program.mec".into()])
+            RunInputMode::Paths(vec!["./program.mec".into()])
         );
         assert_eq!(
             parsed.payload_arguments,
