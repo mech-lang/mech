@@ -71,5 +71,12 @@ pub use general::{
     ResidentActivationPreflight, ResidentStructuralProbe, preflight_activation,
 };
 
+#[cfg(all(
+    test,
+    feature = "resident-artifact",
+    feature = "pure_text",
+    feature = "map_ops"
+))]
+mod canonical_text_tests;
 #[cfg(test)]
 mod tests;
