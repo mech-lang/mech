@@ -220,10 +220,7 @@ fn all_six_scalar_casts_match_actual_core_resident_and_jit_original_and_decoded(
                     NativeScalarValue::U64(0),
                     NativeScalarValue::F64(F64Bits::from_bits(0)),
                 ],
-                NativeScalarKind::F64 => [
-                    NativeScalarValue::U64(0),
-                    NativeScalarValue::I64(0),
-                ],
+                NativeScalarKind::F64 => [NativeScalarValue::U64(0), NativeScalarValue::I64(0)],
                 NativeScalarKind::Bool => unreachable!(),
             };
             for wrong in same_width_wrong_inputs {
