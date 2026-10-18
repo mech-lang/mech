@@ -237,6 +237,11 @@ name = "transactional_runtime"
 path = "examples/transactional_runtime.rs"
 required-features = ["runtime_default"]
 
+[[example]]
+name = "canonical_host_benchmark"
+path = "examples/canonical_host_benchmark.rs"
+required-features = ["full_compiler", "resident-routing-source", "runtime_bench_probes"]
+
 [[test]]
 name = "config_profile"
 path = "tests/config_profile.rs"

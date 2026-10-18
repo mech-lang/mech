@@ -30,6 +30,8 @@ use crate::{
 
 use super::*;
 
+#[cfg(feature = "runtime_bench_probes")]
+mod capability_benchmark;
 mod projection_refresh;
 mod published_inputs;
 

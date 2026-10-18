@@ -101,6 +101,15 @@ impl MechRuntime {
             };
             let key = RuntimeResourceKey::new(&resource.base_uri, &resource.path)?;
             let operation = RuntimeCapabilityOperation::from_name(resource.operation.clone())?;
+            #[cfg(feature = "runtime_bench_probes")]
+            if self.trust_resident_requirements_for_benchmark {
+                // Exact requirements still constrain binding and every live
+                // provider operation. This explicit benchmark host baseline
+                // skips only the capability lookup and its revalidation.
+                // The shared coordinator/evaluator/publication path is intact.
+                requirements.insert(canonical_application_requirement_bytes(requirement)?);
+                continue;
+            }
             let request = CapabilityRequest::from_keys(
                 &context.subject,
                 operation.name(),
