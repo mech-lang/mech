@@ -98,55 +98,7 @@ pub fn lower_pure_native_artifact(
             feature: "compute regions",
         });
     }
-    for slot in artifact.slots() {
-        if slot.role == SlotRole::State {
-            return Err(NativeArtifactLoweringError::UnsupportedProgram {
-                feature: "state or initializers",
-            });
-        }
-        scalar_type(artifact, slot.schema)?;
-        if let Some(initializer) = slot.initializer {
-            // Canonical compilation materializes a direct constant result in
-            // an Output alias with that same constant as its publication
-            // initializer. This is immutable output metadata, not retained
-            // State or an Activation computation. Admit only an exact alias
-            // of the same validated constant, using ordinary forwarding.
-            let same_constant_output = match (slot.role, slot.producer, initializer) {
-                (
-                    SlotRole::Output,
-                    ProducerReference::Output { output, .. },
-                    InitializerReference::Constant(constant),
-                ) => {
-                    let declaration_matches = artifact
-                        .outputs()
-                        .get(output.get() as usize)
-                        .is_some_and(|declaration| {
-                            declaration.output == output
-                                && declaration.source == slot.slot
-                                && declaration.schema == slot.schema
-                        });
-                    let source =
-                        forwarded_output_source(artifact, ArtifactSource::Slot(slot.slot))?;
-                    declaration_matches
-                        && source == ArtifactSource::Constant(constant)
-                        && artifact.constants().get(constant).is_some_and(|value| {
-                            value.schema() == slot.schema
-                                && artifact
-                                    .schemas()
-                                    .entry(slot.schema)
-                                    .is_some_and(|schema| schema.key() == value.schema_key())
-                                && value.shape().parameter_values().is_empty()
-                        })
-                }
-                _ => false,
-            };
-            if !same_constant_output {
-                return Err(NativeArtifactLoweringError::UnsupportedProgram {
-                    feature: "state or initializers",
-                });
-            }
-        }
-    }
+    validate_scalar_slot_initializers(artifact)?;
     for node in artifact.nodes() {
         let feature = match &node.body {
             ExecutableNodeBody::Operation(operation) => {
@@ -360,7 +312,62 @@ pub fn lower_pure_native_artifact(
     })
 }
 
-fn scalar_type(
+pub(super) fn validate_scalar_slot_initializers(
+    artifact: &ProgramArtifact,
+) -> Result<(), NativeArtifactLoweringError> {
+    for slot in artifact.slots() {
+        if slot.role == SlotRole::State {
+            return Err(NativeArtifactLoweringError::UnsupportedProgram {
+                feature: "state or initializers",
+            });
+        }
+        scalar_type(artifact, slot.schema)?;
+        if let Some(initializer) = slot.initializer {
+            // Canonical compilation materializes a direct constant result in
+            // an Output alias with that same constant as its publication
+            // initializer. This is immutable output metadata, not retained
+            // State or an Activation computation. Admit only an exact alias
+            // of the same validated constant, using ordinary forwarding.
+            let same_constant_output = match (slot.role, slot.producer, initializer) {
+                (
+                    SlotRole::Output,
+                    ProducerReference::Output { output, .. },
+                    InitializerReference::Constant(constant),
+                ) => {
+                    let declaration_matches = artifact
+                        .outputs()
+                        .get(output.get() as usize)
+                        .is_some_and(|declaration| {
+                            declaration.output == output
+                                && declaration.source == slot.slot
+                                && declaration.schema == slot.schema
+                        });
+                    let source =
+                        forwarded_output_source(artifact, ArtifactSource::Slot(slot.slot))?;
+                    declaration_matches
+                        && source == ArtifactSource::Constant(constant)
+                        && artifact.constants().get(constant).is_some_and(|value| {
+                            value.schema() == slot.schema
+                                && artifact
+                                    .schemas()
+                                    .entry(slot.schema)
+                                    .is_some_and(|schema| schema.key() == value.schema_key())
+                                && value.shape().parameter_values().is_empty()
+                        })
+                }
+                _ => false,
+            };
+            if !same_constant_output {
+                return Err(NativeArtifactLoweringError::UnsupportedProgram {
+                    feature: "state or initializers",
+                });
+            }
+        }
+    }
+    Ok(())
+}
+
+pub(super) fn scalar_type(
     artifact: &ProgramArtifact,
     id: SchemaId,
 ) -> Result<NativeScalarType, NativeArtifactLoweringError> {
@@ -392,7 +399,7 @@ fn scalar_type(
     })
 }
 
-fn port_layout(ty: &NativeScalarType) -> ResidentPortLayout {
+pub(super) fn port_layout(ty: &NativeScalarType) -> ResidentPortLayout {
     ResidentPortLayout {
         schema_id: ty.schema,
         schema_key: ty.schema_key,
@@ -421,7 +428,7 @@ fn resolved_value(
         .ok_or(NativeArtifactLoweringError::InvalidBinding { node })
 }
 
-fn public_kind(kind: native_semantics::NativeScalarKind) -> NativeScalarKind {
+pub(super) fn public_kind(kind: native_semantics::NativeScalarKind) -> NativeScalarKind {
     match kind {
         native_semantics::NativeScalarKind::Bool => NativeScalarKind::Bool,
         native_semantics::NativeScalarKind::U64 => NativeScalarKind::U64,
@@ -429,7 +436,7 @@ fn public_kind(kind: native_semantics::NativeScalarKind) -> NativeScalarKind {
         native_semantics::NativeScalarKind::F64 => NativeScalarKind::F64,
     }
 }
-fn public_op(op: native_semantics::NativeScalarOp) -> NativeScalarOp {
+pub(super) fn public_op(op: native_semantics::NativeScalarOp) -> NativeScalarOp {
     use native_semantics::NativeScalarOp as Private;
     match op {
         Private::U64Add => NativeScalarOp::U64Add,

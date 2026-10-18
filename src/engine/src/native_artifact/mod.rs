@@ -7,3 +7,9 @@ pub use crate::resident::general::native_lowering::{
     NativeArtifactLoweringError, NativeArtifactPlan, lower_pure_native_artifact,
 };
 pub use ir::*;
+
+mod control;
+pub use crate::resident::general::native_match_lowering::{
+    NativeMatchArtifactPlan, lower_scalar_match_artifact,
+};
+pub use control::*;
