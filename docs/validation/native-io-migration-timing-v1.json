@@ -44,6 +44,26 @@
     "secured_over_selected_historical": 1.3800138591734084,
     "secured_over_existing_trusted": 1.0034612642469238
   },
+  "fresh_same_machine_remeasurement": {
+    "reason": "Explicit user request to remeasure the old path locally rather than use the other machine's historical timing. Old labels identify the old program/I/O source, not an imported measurement.",
+    "machine": "The same Apple M1 described above; every retained sample below was freshly executed locally. No M3 timing enters these ratios.",
+    "binary_source_commit": "933117167d212ae7e13bcd0de83cad320603a7e2",
+    "frozen_checkout_commit": "ad21778a5cc997a88e54066825c28fe16ab93294",
+    "source_reconciliation": "Changes since the binary build affect only the resident reference example, its test flag, CI and documentation. Measured native/compiler/library sources and all three binary hashes remained unchanged; the rerun explicitly asserts the known binary pins.",
+    "method": "Same full input, release binaries, finite launch policies, runtime configuration and seven serial rotated-order samples per variant as the first measurement. Separate small-input/denial/recovery/full-output qualification is rerun. No compilation or other benchmark overlapped timing.",
+    "started_utc": "2026-10-18T20:22:08.238Z",
+    "finished_utc": "2026-10-18T20:22:45.165Z",
+    "old_selected_direct_io": {"samples": [0.97266525,0.969976167,0.974684291,1.02516675,0.96775575,0.97876275,0.975178041], "median_seconds": 0.974684291},
+    "existing_secured_host": {"samples": [1.336219416,1.339719333,1.32368925,1.331018458,1.334092625,1.333270083,1.338968959], "median_seconds": 1.334092625},
+    "old_unfused_direct_io": {"samples": [0.859219917,0.853887416,0.859315166,0.853510959,0.858358792,0.860458542,0.861530084], "median_seconds": 0.859219917},
+    "existing_trusted_host_same_binary": {"samples": [1.339498,1.333080417,1.32739025,1.34433175,1.327441875,1.333988709,1.336857833], "median_seconds": 1.333988709},
+    "secured_over_old_selected": 1.3687433329116823,
+    "secured_over_existing_trusted": 1.0000778987103107,
+    "qualification": {"process_cases": 41, "exact_output_successes": 37, "required_denied_or_invalid_launches": 4, "independently_reconciled_raw_streams": 82},
+    "measurement": {"path": "tmp/pr-stack-evidence/native-io-measurement-v321/measurement.json", "sha256": "fe1f4902b89d54e9912f221fd8bbc7a8b39c83284cfa40daf8ef83a3cf559560"},
+    "driver": {"path": "tmp/pr-stack-evidence/remeasure-local-native-io-v321.cjs", "sha256": "df7356fa3e8a4b95b20aaa106268ac6862616e79ed827deafe4b16272bfe2fbb", "method": "Pins and reuses the immutable v310 driver, changing only evidence location, provenance and stricter source/binary assertions"},
+    "scope": "Same legacy-native I/O migration diagnostic, not completed canonical whole-program AOT or an isolated capability-check cost. The first measurement is preserved above, not overwritten."
+  },
   "interpretation": [
     "On this M1, the complete secured host launch takes38.0percent longer than the selected historical direct-I/O launch on the same machine/input/compiler libraries.",
     "The existing same-binary secured/trusted medians differ by0.35percent, within observed sample variability. This run does not establish a significant isolated capability-kernel cost or prove that such checks are free.",

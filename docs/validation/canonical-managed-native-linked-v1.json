@@ -42,7 +42,7 @@
     {"name": "root", "sha256": "ca4c7dc9b30a6c4270146ae3edc667814f924aa6df94475debbd297ad35bdaef", "process_cases": 12, "success_or_recovery": 4, "required_denial_or_error": 8, "compiled_units": 114},
     {"name": "lexical", "sha256": "7838835161aa7845c7f4c362a980d5e3a5fcab66c2b9bb2baad02fbdec0e9fc4", "process_cases": 14, "success_or_recovery": 7, "required_denial_or_error": 7, "compiled_units": 114}
   ],
-  "failure_coverage": ["global work", "managed memory", "per-call compute", "per-call temporary memory", "invalid JSON transport", "missing input", "wrong input kind", "root late checked division", "fresh-process recovery with exact output"],
+  "failure_coverage": ["global work", "input-import managed memory (zero budget; native arena denial is qualified separately below)", "per-call compute", "per-call temporary memory", "invalid JSON transport", "missing input", "wrong input kind", "root late checked division", "fresh-process recovery with exact output"],
   "runtime_closure": {
     "mech_gpu_features": ["canonical-native-runtime", "canonical-native-program-runtime"],
     "source_compiler_or_cranelift_compiled_units": 0,
@@ -77,6 +77,61 @@
     "driver_sha256": "8621037dc702d9bc1089c270e2b8eaa0b0a3616e2c859ac40b2af65ef332e141",
     "retained_failed_attempt": "v315 ran all three methods: two passed; the third passed admission/atomicity checks but attempted recovery by loading into an already-active runtime. The test now verifies the prior output remains and explicitly unloads before loading again. No runtime invariant was weakened; the original failure is retained.",
     "scope": "This corrects only the secured resident reference. Native linked and I/O timing evidence retain their original qualified source933117167; the correction does not relabel or replace those results. Fresh exact-head review and CI are still required."
+  },
+  "source_output_and_linked_memory_review_corrections": {
+    "review_threads": ["PRRT_kwDOCJ6M-c6tuFex", "PRRT_kwDOCJ6M-c6tuFey", "PRRT_kwDOCJ6M-c6tuFez"],
+    "implementation_commit": "97fd19a771748cfbdef51a531e0bec030828cd0c",
+    "final_qualified_code_commit": "31c6052fd2c025b814385c4885df7aea97d47363",
+    "final_qualified_code_tree": "6af2e52b45e3551072c093d8b8a5a0a8a1056b9c",
+    "reference_corrections": [
+      "Source and bytecode share bounded acquisition: configured max_source_bytes+1 with saturating addition, or ordinary explicit None. Source is decoded as UTF-8 and passed to the ordinary compiler with that same configuration; bytecode retains the ordinary admitted loader.",
+      "Both bytecode and qualification-report output use OpenOptions create_new(true). Refusal is enforced at open, including concurrent creators and dangling symlinks, not by an earlier exists check."
+    ],
+    "reference_qualification": {
+      "source_before_patch": "ad21778a5cc997a88e54066825c28fe16ab93294",
+      "frozen_patch_sha256": "e7d0f7f1ff8e0df99a804d0943f685752eeee5a8e4d8178ab12fccc0a58cdc4b",
+      "committed_patch_reconciliation": "The complete two-file ad21778a5..97fd19a77 committed diff matches the qualified frozen patch exactly. The later31c6052fd commit changes only the linked memory test; the reference source remains identical.",
+      "executed_methods": 6,
+      "new_methods": ["source_acquisition_preserves_compiler_admission_and_utf8", "qualification_outputs_refuse_concurrent_creators_without_truncation", "qualification_outputs_refuse_dangling_symlinks"],
+      "coverage": "Exact Unicode source limit and bytecode equality with ordinary compilation; 1MiB source stops at65 bytes under a64-byte cap with the same ordinary admission error; invalid UTF-8; explicit None consumes the complete source but preserves independent parser limits; both output types refuse concurrent creators, existing files and Unix dangling symlinks. Retained bytecode admission/publication/recovery tests also pass.",
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v324-review-corrections.log", "sha256": "6a142140351573e3f34c1752452d308da91c813e1622eb711f7d27e5ef858893"},
+      "driver": {"path": "tmp/pr-stack-evidence/qualify-pr906-review-corrections-v323.zsh", "sha256": "a0bf7627717cdea657d5b8c2897d70b034f483b9f3cfd7442e06aefe6e1e0c33", "invocation": "Only log filename replaced v323 to v324"},
+      "finished_utc": "2026-10-18T20:34:45Z"
+    },
+    "linked_memory_correction": {
+      "prior_zero_budget_scope": "The original v307 zero-budget case rejected shell input import, not native evaluation. It is retained and renamed input-import-memory-denial; the earlier broad managed-memory coverage description is narrowed above.",
+      "mechanism": "Import the exact same drafts/shared schemas as the shell. Follow structured native transport admission requirements, including its managed metadata, until transport is admitted. Require a typed NativeProgramExecutionError::Value memory denial inside evaluate_into, unchanged output slots and released temporary reservations. The actual linked process must produce that exact JIT diagnostic and no stdout. No product limit is changed.",
+      "root": {"input_admitted_bytes": 3644, "word_transport_payload_bytes": 224, "transport_metadata_increment_bytes": 104, "memory_limit": 3972, "native_arena_required_bytes": 6004},
+      "lexical": {"input_admitted_bytes": 3928, "word_transport_payload_bytes": 224, "transport_metadata_increment_bytes": 104, "memory_limit": 4256, "native_arena_required_bytes": 6040},
+      "scope": "Native managed Value arena admission, not a claim that this one case independently tests every library/output allocation site. Ordinary errors, denied launches and subsequent fresh-process exact-output recovery remain covered."
+    },
+    "clean_source_qualification": {
+      "normal_managed_program_methods": 8,
+      "retained_scalar_iteration_methods": 11,
+      "explicit_linked_methods": 1,
+      "ci_contract_methods": 155,
+      "root_process_cases": 13,
+      "lexical_process_cases": 15,
+      "success_or_recovery_cases": 11,
+      "required_denial_or_error_cases": 17,
+      "independently_reconciled_binary_and_generated_input_pins": 34,
+      "independently_reconciled_raw_streams": 56,
+      "compiled_units_per_linked_application": 114,
+      "source_compiler_or_cranelift_compiled_units": 0,
+      "binary_hashes": "Identical to the original qualified root/lexical binaries above; production native/library sources did not change in these review corrections.",
+      "additional_checks": ["runtime-only native library", "reference example profile", "unsafe audit", "warning policy", "module layout", "format", "diff", "unchanged clean source"],
+      "qualification": {"path": "tmp/pr-stack-evidence/canonical-program-linked-v327/qualification.json", "sha256": "7a61d88bf7e29abbdf38451ea157ff4151dcd2797afce4f02f550e98496ac5e8"},
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v327-linked-managed-review.log", "sha256": "f90731471413f87fab9b4a5e212e498bde2fac2e765b42d33174d20c2e8c44f5"},
+      "driver": {"path": "tmp/pr-stack-evidence/qualify-linked-managed-review-v327.zsh", "sha256": "eb7fae1c498402f0288b4d4e668509bec6b9c56fdb93d2b26c556d3e35504f61"},
+      "reused_driver": {"path": "tmp/pr-stack-evidence/qualify-linked-managed-program-v305.zsh", "sha256": "6219c1c66db4430aeafeef1971c29caeaf90364f87c30d3818a45afd0e502ef8", "invocation": "Only log and fresh evidence directory replaced v305 to v327; explicit exact ignored-test selection and complete serial gates retained"},
+      "finished_utc": "2026-10-18T20:42:07Z",
+      "exit": 0
+    },
+    "retained_failed_attempts": [
+      "v323: five reference checks passed; the new explicit-None test incorrectly expected a1MiB comment to bypass the ordinary parser resource limit. The unchanged fixture now compares with the ordinary compiler error and verifies full acquisition; no parser limit was relaxed. v324 passed all six methods.",
+      "v325: retained and ordinary gates passed, then the new test's payload-only estimate rejected native transport metadata before the Value arena.31c6052fd follows the existing structured required-byte admission errors instead of guessing metadata overhead. The fresh v327 complete qualification passed."
+    ],
+    "remaining": "Fresh exact-head review and CI remain required. This does not complete canonical resource hosts, all ten programs or full-workload canonical AOT."
   },
   "benchmark_measurements": 0,
   "not_established": ["complete production canonical build route", "native resource-host lifecycle", "general native comprehensions/element-wise counts/state/FSM", "all ten idiomatic programs", "full-size canonical k-nucleotide", "new canonical native performance result", "complete final-head CI or clean review"],
