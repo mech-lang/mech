@@ -1,7 +1,7 @@
 {
   "schema": "mech.checked-aot-workload-progress.v1",
   "status": "INCOMPLETE_IMPLEMENTATION_NOT_BENCHMARK_QUALIFIED",
-  "latest_qualification": "native_library_invocation_qualification",
+  "latest_qualification": "mixed_native_control_lowering_qualification",
   "pull_request": "https://github.com/mech-lang/mech/pull/905",
   "baseline": "c4190315672337f039efc743a970263627f75834",
   "reproduction": {
@@ -536,6 +536,49 @@
     "default_limits_changed": false,
     "benchmark_program_algorithm_changed": false,
     "not_established": "The generated caller still needs actual current-visit mixed-value CFG/library calls, native comprehensions/FSM/typed resource lifecycle and whole-program canonical AOT. General packed/streaming all-seven-histogram execution, full125M workload, new linked lifecycle, same-binary trusted/secured timings, binary/hot-path/dependency analysis and optimized/configurable checked AOT remain unfinished. Local qualification does not establish fresh clean review or complete GitHub CI."
+  },
+  "mixed_native_control_lowering_qualification": {
+    "as_of_utc": "2026-10-18T14:21:24Z",
+    "status": "PASS_MIXED_CONTROL_LOWERING_AND_SHARED_PROOF_NOT_NATIVE_MIXED_EXECUTION",
+    "qualified_source_commit": "18644b5437ff07520dcbbb9b39e8612e1008cc6c",
+    "qualified_source_tree": "14965ab6cfc2733ce18aa0beef43bbf08ad88e88",
+    "tested_base": "373b748a42087ced4d310ccfd7cd09f5f43f8414",
+    "tested_tracked_diff_sha256": "c99d415bcec9101607a8a98a315959aea99f27e1de41eee982ac38c670bb0642",
+    "new_program_source_sha256": "0fadfa2e3c9f8be5eb716d32e43c3a53b4358e01e657b3946515227fe99d4444",
+    "source_verification": "Both serial gates freeze the same source. After commit, its binary diff excluding the separately pinned new program.rs exactly matches the tested tracked diff, and the new file hash matches too.",
+    "implementation": [
+      "NativeProgramArtifactPlan is an immutable compiler view of the existing canonical ProgramArtifact. The SAME native Match/iteration Builder now lowers scalar and managed values, rather than introducing another source compiler, serialized program format, graph lowerer or evaluator. Legacy scalar views convert through that same builder and preserve their strict scalar types.",
+      "Mixed types retain exact symbolic canonical schemas, real immutable constants and actual selected root/lexical library provenance. Managed String/matrix/map values are not mislabeled as integer words or one-by-one semantic shapes. All seven maintained library families can coexist with certified scalar arithmetic in the lowered graph.",
+      "One shared current-visit and structurally owned-loop proof checks both scalar and mixed views. Library operands must be current definitions; schema IDs, complete symbolic definitions, exact source site and revision are checked. Branch joins, nested managed carriers, ancestor captures and per-visit local definitions use the same ownership/definition analysis and existing depth/analysis bounds.",
+      "Scalar native interfaces do not gain managed transport implicitly: scalar-plan conversion, the scalar proof and scalar emission reject managed LibraryCall actions. Valid scalar CFG identity encodings and ABI1/2/3 are unchanged. There is no new mixed-value execution ABI or generated library-call execution in this commit."
+    ],
+    "lowering_and_proof_gate": {
+      "driver": "tmp/pr-stack-evidence/qualify-mixed-control-v263.zsh",
+      "driver_sha256": "0360e045bd0a84bc595ccb343070f437b0fb1477a8d346f6408e58e67ff23d36",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v263-mixed-control.log",
+      "log_sha256": "a4cc0d0fd8e7c71fa56360e5f038b82a5c1e850a0c4e3ff7f72d7d2358303a33",
+      "exit_code": 0,
+      "engine_unit_methods": 758,
+      "stdlib_integration_methods": { "native_collection_templates": 12, "native_artifact_iteration_lowering": 5, "native_artifact_match_lowering": 5 },
+      "ci_contract_methods": 151,
+      "other_checks": "Formatting, native-runtime-only and canonical-native compilation, unsafe/warning audits, diff check and source immutability pass.",
+      "new_coverage": "Original and decoded artifacts lower all seven actual library families plus scalar arithmetic; lexical length/format calls remain inside their real Match/iteration scope; managed String loop carriers and source-site identities are retained. Replacement factories are rejected without invoking their binders. The engine regression rejects stale managed results, forged carrier ownership and backedges bypassing the declared header, including nested zero-count cases."
+    },
+    "execution_compatibility_gate": {
+      "driver": "tmp/pr-stack-evidence/qualify-mixed-native-execution-v264.zsh",
+      "driver_sha256": "77958f50fbb30d6ff49a0ff8e533450b6fe208ff08c18dc49d2cd051ed8d7ec4",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v264-mixed-native-execution.log",
+      "log_sha256": "4a23e15c44e9ac195e90979a75e8b88ed9bb7c64a444192bbf23191e4c341c7b",
+      "exit_code": 0,
+      "private_native_methods": 26,
+      "native_execution_methods": { "scalar": 9, "i64": 4, "f64": 5, "casts": 4, "match": 9, "iteration": 11 },
+      "ordinary_workload_and_leaf_methods": { "knucleotide_record_source": 5, "map_source": 7, "map_keys_comprehensions": 3, "pure_text_managed": 4 },
+      "other_checks": "Resident-only compilation, formatting, diff check and exact source immutability pass. The unchanged ordinary100/400-base workload, exact original/decoded output, denial/publication/recovery behavior and all existing scalar native execution contracts remain green. Separately, the actual repository memory-planner baseline and synthetic-plan mutation regressions both pass (2 methods).",
+      "ignored_linked_qualifier": "The one explicit linked iteration process qualifier remains intentionally ignored in this default run. No new actual linked-process run or benchmark timing is credited."
+    },
+    "default_limits_changed": false,
+    "benchmark_program_algorithm_changed": false,
+    "not_established": "The new mixed control plan is NOT emitted or executed yet. Generated admitted library callbacks, current-geometry binding for lexical calls, managed transport through actual native control, element-count matrices, comprehensions, FSM and typed resource lifecycle remain required. General packed/streaming all-seven-histogram support, full125M execution, same-executable trusted/secured release samples, binary/hot-path/dependency analysis, optimization/configuration and complete exact-head GitHub CI/fresh review also remain unfinished."
   },
   "remaining": [
     "Extend beyond the qualified100/400-base original/decoded library and real release CLI/resource cases to realistic full inputs, retaining finite admission, atomicity and recovery.",
