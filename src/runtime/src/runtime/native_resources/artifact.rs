@@ -604,7 +604,11 @@ impl MechRuntime {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        CanonicalNativeResourceRunError, MechRuntime, NativeResourceBindingError,
+        PendingNativeTransaction, admit_text, invalid,
+    };
+    use mech_core::{MResult, Value};
     #[derive(Debug)]
     struct FailingParticipant {
         fail_prepare: bool,
