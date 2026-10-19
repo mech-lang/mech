@@ -229,7 +229,7 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
         let binary_pin = pin(&binary);
         assert_eq!(binary_pin, pin(&built_binary));
         let generated_template_tests = template_tests::qualify(
-            project.manifest_path(),
+            &project.manifest_path(),
             binary_name,
             &target,
             &directory,
