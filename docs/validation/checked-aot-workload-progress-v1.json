@@ -1,8 +1,9 @@
 {
   "schema": "mech.checked-aot-workload-progress.v1",
   "status": "INCOMPLETE_IMPLEMENTATION_NOT_BENCHMARK_QUALIFIED",
-  "latest_qualification": "collection_publication_accounting_and_runtime_ci",
-  "pull_request": "https://github.com/mech-lang/mech/pull/905",
+  "latest_qualification": "canonical_hosted_full_source_small_fixture_qualification",
+  "pull_request": "https://github.com/mech-lang/mech/pull/907",
+  "foundations_pull_request": "https://github.com/mech-lang/mech/pull/905",
   "baseline": "c4190315672337f039efc743a970263627f75834",
   "foundations_pr_scope": {
     "title": "Add canonical native control and collection foundations",
@@ -871,6 +872,15 @@
     "implemented": "Body-produced String is admitted through yield-draft copying without double charging source aliases; collection push/finish use the core prospective canonical matrix node count. Managedwork4 rejects old3; ABI6/IR2/scalarABIs/defaultlimits unchanged. Exact Owner9 CI failure now positively tests original/decoded live ranges and atomic denial/recovery while retaining closed oversized rejection.",
     "qualification": "Both new regressions fail before the fix and pass after. Frozen prelink134Rust/155CI and isolated profiles/statics pass. Clean committed source passes5actual linked executables/74runtimecases/9negativebuilds+restored build/recovery and155CI/statics;85pins/148runtime streams/20build streams independently reconcile. Zero new benchmark samples. Historical results remain attributed to their original sources.",
     "not_established": "Fresh exact-head clean review and full green GitHub CI remain required. The complete follow_up_roadmap, remaining language/resource/production integration, allten programs/full125M/all7histograms, same-binary secured/trusted release timing and optimization are unchanged requirements. Keep draft and unmerged."
+  },
+  "canonical_hosted_full_source_small_fixture_qualification": {
+    "source_commit": "f176277d87feeae4a66167d7e11eb2b731acc2a0",
+    "receipt": "canonical-hosted-native-linked-v1.json",
+    "status": "LOCALLY_LINKED_FULL_SOURCE_SMALL_FIXTURES_NOT_BENCHMARK_QUALIFIED",
+    "current_milestone_summary": "Generated mixed linked execution and the selected driverless String resource-hosted boundary now execute the complete original/decoded k-nucleotide source through real secured CLI providers. Production native-build migration, broader language/state support and full-input/performance milestones remain incomplete. Earlier milestone current_state and receipt entries are retained as historical checkpoints, not rewritten to the new identity.",
+    "qualification": "Clean committed source passes the actual ignored Object-linked qualifier:2artifact variants with identical binary pins,20runtime cases (6successes/14required errors),9generated-input build denials and restored build. ABI8/IR5/work11; every raw compiled unit excludes parser/compiler/JIT/source-native. Source is complete but fixtures are only four-base THREE and empty THREE. Zero benchmark samples.",
+    "accounting": "Exact one-entry per-site geometry binding reuse retains no arguments/results/permissions. Maintained invocation semantics, current-value measurements and finite cumulative account remain; ordinary fixture work743675194 is under unchanged1e9 fixture cap, not an elapsed timing.",
+    "not_established": "Full125M/all7histogram or allten-program execution, production CLI migration, persistent state/broader recursion/element-wise counts, trusted/secured release comparison, performance or fresh exact-head clean review/full green GitHub CI. Keep draft and unmerged; explicit user approval remains required."
   },
   "remaining": ["Complete follow_up_roadmap in its stated order; the foundations correction does not discharge the full implementation/benchmark brief."],
   "benchmark_samples": 0

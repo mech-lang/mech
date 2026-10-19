@@ -169,8 +169,8 @@ have historical standalone receipts for their recorded source identities;
 those receipts do not qualify the current complete hosted application. The
 current managed lowerer additionally supports selected shallow matrix/map
 access, canonical matrix-to-Set conversion and membership, shallow
-composite/enum values,
-String equality/concatenation, maintained sorting and sums, and tail-recursive
+composite/enum values, String equality/concatenation, maintained sorting and sums,
+and tail-recursive
 FSM control. The complete k-nucleotide source uses these language-level
 operations, not a workload-sized Rust helper.
 
@@ -181,14 +181,18 @@ results or provider permissions. A shape miss admits replacement work and finite
 policy before retiring the old prepaid binding, then acquires its replacement
 reservation before allocation; old/new binding allocations do not coexist.
 Every hit and miss uses the same cumulative ledger and finite policy. The
-managed Object pins
-include the ABI, typed-IR and work-policy identities; old work-policy receipts
+managed Object pins include the ABI, typed-IR and work-policy identities;
+old work-policy receipts
 must not be presented as qualification of changed accounting. Scalar/control
 legacy identities remain separate and unchanged.
 
 Implemented lowering and secured JIT correctness are not standalone execution
-or full-input performance qualification. Actual Object-linked execution and
-timing qualification for this revision are still pending. The real secured gate is
+or full-input performance qualification by themselves. Clean source
+`f176277d87feeae4a66167d7e11eb2b731acc2a0` passed actual secured Object-linked
+execution of the complete original/decoded k-nucleotide source on small fixtures;
+see [the exact-source receipt](../../docs/validation/canonical-hosted-native-linked-v1.json).
+This does not qualify standard-size input, timings or the production native-build
+CLI. The secured gate is
 `canonical_hosted_artifact`'s ignored test
 `linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned`.
 It builds and runs both complete original/decoded canonical artifacts with
