@@ -357,6 +357,68 @@
     "new_benchmark_measurements": 0,
     "remaining": "All requirements in follow_up_roadmap remain in scope, including remaining native operations/state/resources, canonical production integration, all ten actual programs, full125M/all7histogram execution, same-binary trusted/secured timings and optimization. Fresh exact-head review and complete green CI remain required. Keep draft and unmerged."
   },
+  "collection_publication_accounting_and_runtime_ci": {
+    "status": "LOCALLY_LINKED_QUALIFIED_FRESH_REVIEW_AND_FULL_CI_REQUIRED",
+    "source_commit": "7606c5c3768479a004e89e8f745eca9eed0dc1ae",
+    "source_tree": "ac731a1b1be4a60df6b890639acf8bf2b6096737",
+    "source_parent": "eac6b83d91e375232d078fcd1663d6ac19641415",
+    "complete_10_file_patch_sha256": "f8786bf7a8f7bc8acd7f96eff5b016324dfe102346e213f45a4341299d745c73",
+    "workspace_lock_sha256": "513c9718e6bf2ec13da10d56a2386a243d50a9285942ff874e0470c2fd556068",
+    "corrections": [
+      "Body-produced String ownership remains in the collection temporary peak until the yielded draft is cloned. Generation-checked exact-storage aliases of already charged source elements are not charged twice; the finite source-alias metadata scan is prepaid on the same cumulative collection/native account.",
+      "Both push and finish use the core prospective packed-matrix node count, shared with canonical String footprint calculation: String count+3, packed scalar3 even when empty. A core test compares20 actual canonical matrices across5element kinds and4counts, plus unsupported-kind and overflow cases.",
+      "Replace the obsolete Owner9 unsupported-live-Index-range expectation with actual original/decoded endpoint geometry, invalid/oversized denial, unchanged output/epoch and recovery. Retain the closed unrepresentable-cardinality rejection. No unsupported expectation is restored and no warning is suppressed."
+    ],
+    "identity": "Managed ABI6/typed IR2/work policy4; old work policy3 Objects are rejected. Frozen scalar ABIs and default limits are unchanged.",
+    "before_fix": {
+      "source_parent": "eac6b83d91e375232d078fcd1663d6ac19641415",
+      "exit": 101,
+      "result": "Both new regressions fail: a16-yield body-String case reaches a later checked arithmetic failure instead of denying the missing temporary coexistence peak; a one-element Bool matrix succeeds under2nodes although its canonical retained count is3. Earlier diagnostic fixtures were not credited as body-peak reproductions.",
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v418-pr906-publication-reproduction.log", "sha256": "29f940e06d0422de67b8246f6ee2951302a3568e39aab6e07084243214e512ab"}
+    },
+    "prelink": {
+      "finished_utc": "2026-10-19T02:40:07Z",
+      "exit": 0,
+      "rust_methods_passed": 134,
+      "ci_contract_methods_passed": 155,
+      "attribution": "Frozen parent plus tracked patch9ab79a240bd32f47e0cef872d4784c1fb15efc04c27f3820860ce11508742868 and new matrix_node_footprint_tests.rs SHA35195fce77e3ef8f5940bf2a9eadb7cd95bffb308d1d332f1ac0bb78d98aacce become the exact source_commit above. Core1/GPU69/scalar-loop11/managed33/stdlib2/native-template15/runtime-source3 pass. Both new P1 regressions execute on original and decoded artifacts. Two explicit standalone methods are ignored here and actually executed in the linked phase below.",
+      "profiles_and_gates": ["exact failed Owner9 runtime CI feature profile", "managed runtime-only", "scalar-only compiler", "unsafe audit", "warning policy", "module layout", "format", "diff", "frozen source"],
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v419-pr906-publication.log", "sha256": "9dbd06233f8eccc5a576024604c22027c9123883ae7f7ce466d5558f811034d7"},
+      "driver": {"path": "tmp/pr-stack-evidence/qualify-pr906-publication-v419.zsh", "sha256": "e26fc2d1cd8aee9b63feb1b71abd14bd6f8c1784fe11db8dcd7fb98c463fa12c"}
+    },
+    "actual_linked": {
+      "finished_utc": "2026-10-19T02:49:50Z",
+      "exit": 0,
+      "attribution": "Clean committed source_commit stays unchanged through exact-one managed and scalar standalone test execution, all gates, and independent raw-stream/pin reconciliation. Historical receipts retain their original sources and identities.",
+      "profile": "nightly-2026-03-03; locked/offline; serialj1; testopt0/debug0; assertions and overflow checks enabled; incremental disabled. Correctness, not timing.",
+      "executables": [
+        {"name": "root", "sha256": "dac5a60a52b8f18520a5af13c894131ff1bb40db1360d4c01fdb134ad576beda", "cases": 13, "success_or_recovery": 4, "required_errors": 9, "compiled_unit_records": 114},
+        {"name": "lexical", "sha256": "4f14af34228361f1095f013d9f40a0c230c180ab30ffc1f0e7c1368328c50f77", "cases": 15, "success_or_recovery": 7, "required_errors": 8, "compiled_unit_records": 114},
+        {"name": "collection", "sha256": "cc867aaa010048796fca030d7a38402313a48e440aaadaa3ca74678e9a806019", "cases": 13, "success_or_recovery": 4, "required_errors": 9, "compiled_unit_records": 114},
+        {"name": "windows", "sha256": "e07f23e0fe8104da15403ca096b6bac27717b1c0ae8f8de38e50d17b1c14a823", "cases": 16, "success_or_recovery": 6, "required_errors": 10, "compiled_unit_records": 114},
+        {"name": "scalar-iteration", "sha256": "9b59411db39aeccc586aa6c7914ab79ef72b894d6378db71436ab5496370cef2", "cases": 17, "success_or_recovery": 4, "required_errors": 13, "compiled_unit_records": 114}
+      ],
+      "total_runtime_process_cases": 74,
+      "independently_reconciled_binary_and_generated_pins": 85,
+      "independently_reconciled_raw_runtime_streams": 148,
+      "independently_reconciled_raw_build_streams": 20,
+      "independently_reconciled_saved_mutated_inputs": 9,
+      "restored_build_and_recovery_passed": true,
+      "runtime_closure": "Actual Cargo compiler-artifact messages reconcile against resolved metadata; runtime-only compiled closures exclude source/parser/Cranelift/JIT features. Existing selected-machine unused-code warnings remain; warning-free standalone builds are not claimed.",
+      "ci_contract_methods_passed": 155,
+      "other_gates": ["managed runtime-only", "unsafe audit", "warning policy", "module layout", "format", "diff", "unchanged clean source"],
+      "managed_receipt": {"path": "tmp/pr-stack-evidence/canonical-program-linked-v421/qualification.json", "sha256": "2e33d776a14cb6cb1d2efbbd905fcaa3c45bf893fe2fe74ea5df1981c9c69bfe"},
+      "scalar_receipt": {"path": "tmp/pr-stack-evidence/canonical-iteration-linked-v421/qualification.json", "sha256": "3b327c5d5eafa2c04be2a99377ea664053837fcf644a589a3739b7d34b42e23d"},
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v421-native-comprehension-linked.log", "sha256": "f05dd1bc67153376156abd19114494f57b717433cf6a2b92f08f202c51c53e89"},
+      "driver": {"path": "tmp/pr-stack-evidence/qualify-pr906-publication-linked-v421.zsh", "sha256": "a4e0cb438ed102f4ebd547d2873a2775f06e072dbe38ed1705a5002362227ba7"},
+      "base_driver": {"path": "tmp/pr-stack-evidence/qualify-native-comprehension-linked-v359.zsh", "sha256": "a7b0a3fbcb3b847d758c6888a9d3fb3f7f2eafc8aa7fa8c5ba95e054afdf5ba8"},
+      "read_only_reconciler": {"path": "tmp/pr-stack-evidence/reconcile-pr906-publication-linked-v421.js", "sha256": "9c375469bb88bb8b8d122c227ec402fe679c94afb923090a7636b1f0b6cd577a"}
+    },
+    "github_ci_correction": {"old_head": "eac6b83d91e375232d078fcd1663d6ac19641415", "run": 39186853780, "failed_job": 117851296762, "cause": "Obsolete live Index endpoint UnsupportedLayout assertion after live ranges were intentionally implemented.", "state": "Exact failed target passes locally. Full new-head GitHub CI and fresh clean review remain required."},
+    "default_limits_changed": false,
+    "new_benchmark_measurements": 0,
+    "remaining": "The full follow_up_roadmap remains required. Keep draft/unmerged pending fresh exact-head clean review, complete green CI and explicit user approval."
+  },
   "benchmark_measurements": 0,
   "not_established": ["complete production canonical build route", "native resource-host lifecycle", "remaining native Set/composite/matrix-block comprehensions and element-wise counts/state/FSM", "all ten idiomatic programs", "full-size canonical k-nucleotide", "new canonical native performance result", "complete final-head CI or clean review"],
   "remaining_full_objective": "checked-aot-workload-progress-v1.json follow_up_roadmap remains required. The separate legacy-native I/O diagnostic is native-io-migration-timing-v1.json; its measurements do not qualify this canonical backend or resolve the independent source compiler."
