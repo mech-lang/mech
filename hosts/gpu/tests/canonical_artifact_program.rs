@@ -31,6 +31,9 @@ mod range_qualification;
 #[path = "support/canonical_program_access.rs"]
 mod access_qualification;
 
+#[path = "support/canonical_program_nested_conversion.rs"]
+mod nested_conversion_qualification;
+
 #[path = "support/canonical_program_tail.rs"]
 mod tail_qualification;
 

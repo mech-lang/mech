@@ -234,6 +234,22 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertRegex(contracts, r"--test\s+native_collection_templates(?:\s|$)")
         self.assertIn("--lib resident::general::native_collection_templates::tests", contracts)
 
+    def test_recursive_conversion_funding_runs_in_both_source_profiles(self):
+        contracts = next(step for step in job_steps(FULL, "canonical-applications")
+                         if "Execute canonical native lowering and selected implementation witnesses" in step)
+        commands = contracts.replace("\\\n", " ")
+        self.assertIn("for profile in full_compiler full_source; do", commands)
+        self.assertIn('--features "$profile,native-artifact"', commands)
+        self.assertIn("--lib resident::set_conversion:: -- --test-threads=1", commands)
+        self.assertIn("--lib intrinsics::kind_conversion:: -- --test-threads=1", commands)
+        self.assertIn("--lib source_semantics::frontend::annotation_conversion_shape_tests:: -- --test-threads=1", commands)
+        self.assertNotIn("--no-run", commands)
+        self.assertNotIn("--list", commands)
+        architecture = job_block(FULL, "architecture-contracts")
+        for target in ("matrix_set_declared_conversion", "conversion_staging_bounds",
+                       "conversion_sort_work"):
+            self.assertRegex(architecture, rf"--test\s+{target}(?:\s|$)")
+
     def test_shared_snapshot_ownership_regression_is_nonempty_and_executed(self):
         step = next(step for step in job_steps(FULL, "managed-memory-runtime")
                     if "Execute bounded shared snapshot ownership regression" in step)

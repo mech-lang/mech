@@ -4,6 +4,10 @@
 //! backing remains private. Canonical snapshots are the only universal value
 //! representation exposed by this module.
 
+#[cfg(feature = "functions")]
+#[path = "cell_conversion_sort.rs"]
+mod conversion_sort;
+
 use crate::{
     CardinalitySpec, DimensionExpr, FloatWidth, FunctionMatrixElement,
     FunctionMatrixRepresentation, FunctionMatrixStoragePattern, FunctionRuntimeType,
@@ -1877,6 +1881,45 @@ impl ValueCell {
             shape_parameter_count,
             ..crate::CurrentMemoryFootprint::default()
         })
+    }
+
+    /// Reads the current immutable canonical root without cloning a Value,
+    /// shape, schema or payload. Planning retains actual borrowed-walk work;
+    /// packed logical populations are counted in O(1), including zero-byte
+    /// Atom lanes, while absent Option payloads are not visited.
+    #[cfg(feature = "functions")]
+    pub fn current_canonical_draft_population(&self) -> MResult<Option<(u64, u64)>> {
+        let storage = self.binding.storage()?;
+        let Some(canonical) = storage
+            .as_any()
+            .downcast_ref::<ManagedCanonicalCellStorage>()
+        else {
+            return Ok(None);
+        };
+        let mut work = 0u64;
+        let nodes = crate::conversion_draft_population(canonical.value.data(), |amount| {
+            work = work
+                .checked_add(amount)
+                .ok_or(crate::MemoryPlanError::ArithmeticOverflow {
+                    field: "current conversion population observation work",
+                })?;
+            Ok::<(), crate::MemoryPlanError>(())
+        })
+        .map_err(|error| {
+            let error = match error {
+                crate::ConversionPopulationError::ArithmeticOverflow => {
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "current expanded conversion population",
+                    }
+                }
+                crate::ConversionPopulationError::Observer(error) => error,
+                crate::ConversionPopulationError::InvalidValue => {
+                    crate::MemoryPlanError::UnsupportedStorageLayout
+                }
+            };
+            MechError::new(error, None).with_compiler_loc()
+        })?;
+        Ok(Some((nodes, work)))
     }
 
     /// Reads the current entry count of a published canonical Map without

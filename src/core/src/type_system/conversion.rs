@@ -51,6 +51,19 @@ pub enum ConversionStep {
     OptionPresent(Box<ConversionPlan>),
 }
 
+impl ConversionStep {
+    /// Shared structural classification; never a factory or execution permit.
+    pub fn contains_matrix_to_set(&self) -> bool {
+        match self {
+            Self::MatrixToSet(_) => true,
+            Self::MatrixElements(inner)
+            | Self::OptionPayload(inner)
+            | Self::OptionPresent(inner) => inner.step.contains_matrix_to_set(),
+            Self::Identity | Self::Scalar(_) => false,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ScalarConversion {
     Builtin {
@@ -515,6 +528,27 @@ fn promotion_candidates(
     candidates
 }
 
+#[path = "conversion_declared.rs"]
+mod declared;
+#[path = "conversion_population.rs"]
+mod population;
+#[path = "conversion_sort_work.rs"]
+mod sort_work;
+#[path = "conversion_staging.rs"]
+mod staging;
+pub use declared::{
+    conversion_output_shape, conversion_output_shape_for_data, conversion_target_schema_body,
+    execute_conversion_draft_with_schema,
+};
+pub use population::{ConversionPopulationError, conversion_draft_population};
+pub use sort_work::{
+    conversion_comparison_work, conversion_dense_comparison_work, conversion_sort_comparison_units,
+};
+pub use staging::{
+    ConversionSchemaStagingBound, conversion_materialization_phases,
+    conversion_option_present_depth, conversion_schema_staging_bound, conversion_staging_demand,
+};
+
 /// Executes a closed semantic conversion plan against canonical value data.
 ///
 /// Source evaluation and resident artifact execution share this storage-blind
@@ -523,6 +557,14 @@ fn promotion_candidates(
 pub fn execute_conversion_draft(
     draft: ValueDataDraft,
     step: &ConversionStep,
+) -> Result<ValueDataDraft, ConversionExecutionError> {
+    execute_conversion_draft_impl(draft, step, None)
+}
+
+fn execute_conversion_draft_impl(
+    draft: ValueDataDraft,
+    step: &ConversionStep,
+    target: Option<declared::DeclaredTarget<'_, '_>>,
 ) -> Result<ValueDataDraft, ConversionExecutionError> {
     match step {
         ConversionStep::Identity => Ok(draft),
@@ -533,10 +575,18 @@ pub fn execute_conversion_draft(
             let ValueDataDraft::Matrix(elements) = draft else {
                 return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
             };
+            let child = target
+                .map(|target| {
+                    let crate::SchemaBody::Matrix { element, .. } = target.body else {
+                        return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+                    };
+                    Ok(target.child(element))
+                })
+                .transpose()?;
             let converted = elements
                 .into_vec()
                 .into_iter()
-                .map(|element| execute_conversion_draft(element, &element_plan.step))
+                .map(|element| execute_conversion_draft_impl(element, &element_plan.step, child))
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(ValueDataDraft::Matrix(converted.into_boxed_slice()))
         }
@@ -544,11 +594,38 @@ pub fn execute_conversion_draft(
             let ValueDataDraft::Matrix(elements) = draft else {
                 return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
             };
+            let child = target
+                .map(|target| {
+                    let crate::SchemaBody::Set { element, .. } = target.body else {
+                        return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+                    };
+                    Ok(target.child(element))
+                })
+                .transpose()?;
             let converted = elements
                 .into_vec()
                 .into_iter()
-                .map(|element| execute_conversion_draft(element, &element_plan.step))
+                .map(|element| execute_conversion_draft_impl(element, &element_plan.step, child))
                 .collect::<Result<Vec<_>, _>>()?;
+            if let Some(target) = child {
+                // Inner conversions may have changed a Set-valued key's
+                // cardinality. Resolve that real data before outer key
+                // finalization, retaining the SAME declared Matrix axes.
+                let shape = crate::shape_for_value_components(
+                    target.root,
+                    converted.iter().map(|data| (target.body, data)),
+                    target.shape,
+                )
+                .map_err(|_| ConversionExecutionError::ConversionShapeMismatch)?;
+                let values = crate::snapshot::normalize_set_conversion_drafts_with_context(
+                    target.body,
+                    converted.into_boxed_slice(),
+                    &shape,
+                    target.context,
+                )
+                .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+                return Ok(ValueDataDraft::Set(values));
+            }
             let body = super::resolved_value::schema_body_from_resolved(
                 element_plan.target.kind(),
                 element_plan.target.dimension_parameters(),
@@ -583,20 +660,41 @@ pub fn execute_conversion_draft(
             .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
             Ok(ValueDataDraft::Set(values))
         }
-        ConversionStep::OptionPresent(payload_plan) => Ok(ValueDataDraft::Option(OptionDraft {
-            present: true,
-            value: Some(Box::new(execute_conversion_draft(
-                draft,
-                &payload_plan.step,
-            )?)),
-        })),
+        ConversionStep::OptionPresent(payload_plan) => {
+            let child = target
+                .map(|target| {
+                    let crate::SchemaBody::Option(element) = target.body else {
+                        return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+                    };
+                    Ok(target.child(element))
+                })
+                .transpose()?;
+            Ok(ValueDataDraft::Option(OptionDraft {
+                present: true,
+                value: Some(Box::new(execute_conversion_draft_impl(
+                    draft,
+                    &payload_plan.step,
+                    child,
+                )?)),
+            }))
+        }
         ConversionStep::OptionPayload(payload_plan) => {
             let ValueDataDraft::Option(option) = draft else {
                 return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
             };
+            let child = target
+                .map(|target| {
+                    let crate::SchemaBody::Option(element) = target.body else {
+                        return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+                    };
+                    Ok(target.child(element))
+                })
+                .transpose()?;
             let value = option
                 .value
-                .map(|value| execute_conversion_draft(*value, &payload_plan.step).map(Box::new))
+                .map(|value| {
+                    execute_conversion_draft_impl(*value, &payload_plan.step, child).map(Box::new)
+                })
                 .transpose()?;
             Ok(ValueDataDraft::Option(OptionDraft {
                 present: option.present,

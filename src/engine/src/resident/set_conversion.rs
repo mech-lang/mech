@@ -1,12 +1,23 @@
-//! Shape-changing conversion selects the shared core conversion plan. All
-//! draft/key/schema staging and bounded sort work are admitted before copying.
-use super::budget::{
-    PreparedKernel, ResidentBudgetMeter, checked_cost_product as mul, checked_cost_sum as sum,
-    checked_u64,
-};
+//! Shape-changing conversions use the shared schema-aware core executor.
+//! Every nested sort and draft/key/shape staging phase is admitted before copying.
+use super::budget::{PreparedKernel, ResidentBudgetMeter};
 use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
 use mech_core::*;
 use std::sync::Arc;
+
+#[path = "set_conversion_budget.rs"]
+mod cost;
+#[path = "set_conversion_stats.rs"]
+mod stats;
+
+#[cfg(all(
+    test,
+    feature = "native-artifact",
+    any(feature = "full_source", feature = "full_compiler"),
+    any(feature = "pure_text", feature = "map_ops")
+))]
+#[path = "set_conversion_output_tests.rs"]
+mod output_tests;
 
 pub(super) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
@@ -22,10 +33,42 @@ pub(super) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 
 struct Plan {
     conversion: ConversionPlan,
-    source: SchemaBody,
+    source_schema: SchemaId,
     source_key: SchemaKey,
+    source_shape: ShapeInstance,
     dense_shape: ResidentShape,
-    metadata_bytes: u64,
+    metadata: ConversionSchemaStagingBound,
+    phases: u64,
+}
+
+/// Symbolic semantic planning shared by the binder and native eligibility.
+/// No live value, fabricated shape, binder or execution is needed here.
+pub(crate) fn conversion_plan(
+    source: &Schema,
+    target: &Schema,
+) -> Result<ConversionPlan, ResidentKernelBindError> {
+    fn resolved(schema: &Schema) -> Result<ResolvedType, ResidentKernelBindError> {
+        let parameters = schema
+            .dimension_parameters()
+            .iter()
+            .enumerate()
+            .map(|(index, p)| DimensionParameterDeclaration {
+                id: DimensionParameterId::new(index as u32),
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: p.lifetime(),
+                lower_bound: p.lower_bound().clone(),
+                upper_bound: p.upper_bound().cloned(),
+            })
+            .collect::<Vec<_>>();
+        ResolvedType::from_schema_body(schema.body(), &parameters)
+            .map_err(|_| ResidentKernelBindError::UnsupportedLayout)
+    }
+    let conversion = plan_explicit_cast(&resolved(source)?, &resolved(target)?)
+        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+    if !conversion.step.contains_matrix_to_set() {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(conversion)
 }
 
 pub(super) fn bind(
@@ -65,38 +108,54 @@ pub(super) fn bind(
         .schemas
         .get(request.output.schema_id)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    if !matches!(source.body(), SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2)
-        || !matches!(target.body(), SchemaBody::Set { .. })
+    let snapshot =
+        input.kind == ResidentValueKind::Snapshot && input.shape == ResidentShape::SCALAR;
+    let dense = matches!(source.body(), SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2)
+        && matches!(
+            input.kind,
+            ResidentValueKind::F64
+                | ResidentValueKind::Bool
+                | ResidentValueKind::Index
+                | ResidentValueKind::String
+        );
+    if (!snapshot && !dense)
         || request.output.kind != ResidentValueKind::Snapshot
         || request.output.shape != ResidentShape::SCALAR
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let source_type = ResolvedType::from_schema(source, &input.shape_instance)
+    source
+        .instantiate_shape(
+            input
+                .shape_instance
+                .parameter_values()
+                .to_vec()
+                .into_boxed_slice(),
+        )
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let target_type = ResolvedType::from_schema(target, &request.output.shape_instance)
+    target
+        .instantiate_shape(
+            request
+                .output
+                .shape_instance
+                .parameter_values()
+                .to_vec()
+                .into_boxed_slice(),
+        )
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let conversion = plan_explicit_cast(&source_type, &target_type)
-        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    if !matches!(conversion.step, ConversionStep::MatrixToSet(_)) {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
-    // The temporary one-element schema/table builder derives from the target
-    // element, not a clone of the entire application schema arena. Include
-    // canonical byte buffers, descriptor normalization and vector growth.
-    let metadata_bytes = target
-        .body()
-        .clone_allocation_bound_bytes()
-        .and_then(|n| n.checked_mul(32))
-        .and_then(|n| n.checked_add(4096))
+    let conversion = conversion_plan(source, target)?;
+    let metadata = conversion_schema_staging_bound(source, target)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let phases = conversion_materialization_phases(&conversion.step);
     Ok(BoundResidentKernel::new(execute, Box::new([]))
         .with_retained_state(Arc::new(Plan {
             conversion,
-            source: source.body().clone(),
+            source_schema: input.schema_id,
             source_key: source.key(),
+            source_shape: input.shape_instance.clone(),
             dense_shape: input.shape,
-            metadata_bytes,
+            metadata,
+            phases,
         }))
         .with_snapshot_output(ResidentSnapshotOutput {
             schema: request.output.schema_id,
@@ -125,52 +184,9 @@ fn execute(
     let ResidentValueMut::Snapshot([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    let mut meter = ResidentBudgetMeter::default();
-    let (count, input_bytes, input_nodes, maximum_string) = match input {
-        ResidentValueRef::Snapshot([Some(value)]) => {
-            if value.schema_key() != plan.source_key {
-                return Err(ResidentKernelError::InvalidInput);
-            }
-            let ValueData::Matrix(matrix) = value.data() else {
-                return Err(ResidentKernelError::InvalidInput);
-            };
-            let footprint =
-                super::budget::measure_canonical_value_footprint(&mut meter, value, schemas)?;
-            meter.charge_compute_work(checked_u64(matrix.elements().len())?)?;
-            let longest = match matrix.elements() {
-                mech_core::snapshot::SequenceView::String(strings) => {
-                    strings.iter().map(|s| s.len() as u64).max().unwrap_or(0)
-                }
-                _ => footprint.retained_bytes,
-            };
-            (
-                matrix.elements().len(),
-                footprint.retained_bytes,
-                footprint.node_count,
-                longest,
-            )
-        }
-        ResidentValueRef::Snapshot(_) => return Err(ResidentKernelError::InvalidInput),
-        ResidentValueRef::String(values) => {
-            meter.charge_compute_work(mul(&[checked_u64(values.len())?, 2])?)?;
-            let bytes = values
-                .iter()
-                .try_fold(0u64, |n, value| n.checked_add(value.len() as u64))
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            (
-                values.len(),
-                bytes,
-                values.len() as u64,
-                values.iter().map(|s| s.len() as u64).max().unwrap_or(0),
-            )
-        }
-        values => (values.len(), mul(&[checked_u64(values.len())?, 16])?, 1, 0),
-    };
-    let n = checked_u64(count)?;
-    let previous = target
-        .as_ref()
-        .map(|v| super::budget::measure_canonical_value_footprint(&mut meter, v, schemas))
-        .transpose()?;
+    let source_schema = schemas
+        .get(plan.source_schema)
+        .ok_or(ResidentKernelError::InvalidInput)?;
     let output_schema = schemas
         .get(
             kernel
@@ -179,106 +195,59 @@ fn execute(
                 .schema,
         )
         .ok_or(ResidentKernelError::InvalidOutput)?;
-    let SchemaBody::Set { element, .. } = output_schema.body() else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    let SchemaBody::Matrix {
-        element: source_element,
-        ..
-    } = &plan.source
-    else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let string_cast =
-        element.as_ref() == &SchemaBody::String && source_element.as_ref() != &SchemaBody::String;
-    // 768 bytes covers every maintained scalar Display conversion, including
-    // both components of complex values and extreme subnormal spellings.
-    let payload = if string_cast {
-        mul(&[n, 768])?
-    } else {
-        input_bytes.max(mul(&[n, 32])?)
-    };
-    let key_work = match element.as_ref() {
-        SchemaBody::String => {
-            if string_cast {
-                768
-            } else {
-                maximum_string.max(1)
-            }
+    let mut meter = ResidentBudgetMeter::default();
+    let prepared = cost::prepare(
+        input,
+        target.as_ref(),
+        schemas,
+        source_schema,
+        output_schema,
+        plan,
+        &mut meter,
+    )?;
+    let canonicalization_work = PreparedKernel::new(prepared.canonicalization_work, prepared.cost)
+        .admit()?
+        .into_plan();
+
+    // Current source geometry, not a copied parameter ordinal or flat length,
+    // binds the real declared target. All allocations below are now admitted.
+    let source_shape = match input {
+        ResidentValueRef::Snapshot([Some(value)]) => {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            value.shape()
         }
-        SchemaBody::Bool
-        | SchemaBody::Index
-        | SchemaBody::Id
-        | SchemaBody::UnsignedInteger(_)
-        | SchemaBody::SignedInteger(_)
-        | SchemaBody::FloatingPoint(_) => 1,
-        _ => payload.max(1),
+        _ => &plan.source_shape,
     };
-    let comparisons = mul(&[n, 3, u64::from(count.max(1).ilog2()) + 1, key_work])?;
-    let staging = mul(&[
-        n,
-        (3 * core::mem::size_of::<ValueDataDraft>()
-            + 2 * core::mem::size_of::<ValueData>()
-            + core::mem::size_of::<mech_core::snapshot::CanonicalKeyValue>()) as u64,
-    ])?;
-    let previous_bytes = previous.map_or(0, |p| p.retained_bytes);
-    let publication = sum(&[previous_bytes, payload])?;
-    let measured = meter.estimate();
-    let cost = super::budget::resident_cost! {
-        comparison_work: sum(&[measured.comparison_work(), comparisons, publication])?,
-        compute_work: sum(&[measured.compute_work(), comparisons, publication, mul(&[payload, 4])?, mul(&[plan.metadata_bytes, n.checked_add(8).ok_or(ResidentKernelError::InvalidShape)?])?, mul(&[n, 32])?])?,
-        output_elements: count,
-        output_bytes: sum(&[payload, mul(&[n, core::mem::size_of::<mech_core::snapshot::CanonicalKeyValue>() as u64])?])?,
-        temporary_bytes: sum(&[input_bytes, previous_bytes, mul(&[payload, 5])?, staging, plan.metadata_bytes])?,
-        cloned_bytes: sum(&[input_bytes, mul(&[payload, 3])?])?,
-        retained_nodes: sum(&[mul(&[input_nodes, 4])?, previous.map_or(0, |p| p.node_count), mul(&[n, 4])?, 32])?,
-        ..super::budget::KernelCostEstimate::default()
-    };
-    PreparedKernel::new((), cost).admit()?.into_plan();
-    let draft = match input {
-        ResidentValueRef::Snapshot([Some(value)]) => value
-            .canonical_data_draft()
-            .map_err(|_| ResidentKernelError::InvalidInput)?,
-        ResidentValueRef::F64(values) => ValueDataDraft::Matrix(
-            super::composite::canonical_matrix_elements(values, plan.dense_shape, |v| {
-                Some(ValueDataDraft::F64(F64Bits::from_f64(*v)))
-            })
-            .ok_or(ResidentKernelError::InvalidShape)?,
-        ),
-        ResidentValueRef::Bool(values) => ValueDataDraft::Matrix(
-            super::composite::canonical_matrix_elements(values, plan.dense_shape, |v| {
-                (*v <= 1).then_some(ValueDataDraft::Bool(*v != 0))
-            })
-            .ok_or(ResidentKernelError::InvalidInput)?,
-        ),
-        ResidentValueRef::Index(values) => ValueDataDraft::Matrix(
-            super::composite::canonical_matrix_elements(values, plan.dense_shape, |v| {
-                Some(ValueDataDraft::Index(*v))
-            })
-            .ok_or(ResidentKernelError::InvalidShape)?,
-        ),
-        ResidentValueRef::String(values) => ValueDataDraft::Matrix(
-            super::composite::canonical_matrix_elements(values, plan.dense_shape, |v| {
-                Some(ValueDataDraft::String(v.clone()))
-            })
-            .ok_or(ResidentKernelError::InvalidShape)?,
-        ),
-        _ => return Err(ResidentKernelError::InvalidInput),
-    };
-    let data = execute_conversion_draft(draft, &plan.conversion.step)
-        .map_err(|_| ResidentKernelError::Arithmetic)?;
-    let shape = shape_for_value_data(output_schema, &data, &[], None)
+    let candidate_shape =
+        conversion_output_shape(source_schema, source_shape, output_schema, &plan.conversion)
+            .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let draft = input_draft(input, plan)?;
+    let canonicalization =
+        mech_core::snapshot::SnapshotCanonicalizationBudget::new(canonicalization_work);
+    let context = SnapshotValidationContext::with_shared_schemas(
+        kernel
+            .shared_snapshot_schemas()
+            .ok_or(ResidentKernelError::InvalidOutput)?,
+    )
+    .with_canonicalization_budget(&canonicalization);
+    let data = execute_conversion_draft_with_schema(
+        draft,
+        &plan.conversion,
+        output_schema,
+        &candidate_shape,
+        &context,
+    )
+    .map_err(|_| ResidentKernelError::Arithmetic)?;
+    let shape = conversion_output_shape_for_data(output_schema, &candidate_shape, &data)
         .map_err(|_| ResidentKernelError::InvalidShape)?;
     let next = ValueDraft {
         schema: kernel.snapshot_output().unwrap().schema,
         shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
         data,
     }
-    .finalize(&SnapshotValidationContext::with_shared_schemas(
-        kernel
-            .shared_snapshot_schemas()
-            .ok_or(ResidentKernelError::InvalidOutput)?,
-    ))
+    .finalize(&context)
     .map_err(|_| ResidentKernelError::InvalidOutput)?;
     let changed = target
         .as_ref()
@@ -288,4 +257,45 @@ fn execute(
         .unwrap_or(true);
     *target = Some(next);
     Ok(changed)
+}
+
+fn input_draft(
+    input: ResidentValueRef<'_>,
+    plan: &Plan,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    let invalid_dense = if matches!(input, ResidentValueRef::Bool(_)) {
+        ResidentKernelError::InvalidInput
+    } else {
+        ResidentKernelError::InvalidShape
+    };
+    let elements = match input {
+        ResidentValueRef::Snapshot([Some(value)]) => {
+            return value
+                .canonical_data_draft()
+                .map_err(|_| ResidentKernelError::InvalidInput);
+        }
+        ResidentValueRef::Snapshot(_) => return Err(ResidentKernelError::InvalidInput),
+        ResidentValueRef::F64(values) => {
+            super::composite::canonical_matrix_elements(values, plan.dense_shape, |v| {
+                Some(ValueDataDraft::F64(F64Bits::from_f64(*v)))
+            })
+        }
+        ResidentValueRef::Bool(values) => {
+            super::composite::canonical_matrix_elements(values, plan.dense_shape, |v| {
+                (*v <= 1).then_some(ValueDataDraft::Bool(*v != 0))
+            })
+        }
+        ResidentValueRef::Index(values) => {
+            super::composite::canonical_matrix_elements(values, plan.dense_shape, |v| {
+                Some(ValueDataDraft::Index(*v))
+            })
+        }
+        ResidentValueRef::String(values) => {
+            super::composite::canonical_matrix_elements(values, plan.dense_shape, |v| {
+                Some(ValueDataDraft::String(v.clone()))
+            })
+        }
+    }
+    .ok_or(invalid_dense)?;
+    Ok(ValueDataDraft::Matrix(elements))
 }

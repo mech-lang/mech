@@ -7,6 +7,10 @@ use crate::{
     SemanticModelError, ShapeInstance, exact_type_equal,
 };
 
+#[path = "conversion_axis_witness.rs"]
+mod conversion_axes;
+use conversion_axes::ConversionAxisWitnesses;
+
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, collections::BTreeSet, format, string::String, vec, vec::Vec};
 #[cfg(not(feature = "no_std"))]
@@ -985,13 +989,73 @@ pub fn shape_for_value_data(
         .map_err(TypeResolutionError::semantic)
 }
 
+/// Refreshes data-dependent extents of actual declared components while keeping
+/// the current schema's independently witnessed Matrix axes. This is only a
+/// prospective shape; canonical finalization still validates every component.
+#[doc(hidden)]
+pub fn shape_for_value_components<'a>(
+    schema: &Schema,
+    components: impl IntoIterator<Item = (&'a SchemaBody, &'a crate::snapshot::ValueDataDraft)>,
+    seed: &ShapeInstance,
+) -> Result<ShapeInstance, TypeResolutionError> {
+    let mut values = schema
+        .instantiate_shape(seed.parameter_values().to_vec().into_boxed_slice())
+        .map_err(TypeResolutionError::semantic)?
+        .parameter_values()
+        .to_vec();
+    // Record only axes of actual present Matrix data during the SAME pass.
+    // Always evaluate against the immutable seed, including when an earlier
+    // component has already assigned a shared cardinality parameter.
+    let mut axes = ConversionAxisWitnesses::new(seed.parameter_values());
+    for (body, data) in components {
+        assign_data_extent_witness_impl(body, data, &mut values, true, Some(&mut axes))?;
+    }
+    let shape = schema
+        .instantiate_shape(values.into_boxed_slice())
+        .map_err(TypeResolutionError::semantic)?;
+    axes.validate(shape.parameter_values())?;
+    Ok(shape)
+}
+
 fn assign_data_extent_witness(
     schema: &SchemaBody,
     data: &crate::snapshot::ValueDataDraft,
     values: &mut [u64],
 ) -> Result<(), TypeResolutionError> {
+    assign_data_extent_witness_impl(schema, data, values, false, None)
+}
+
+fn assign_data_extent_witness_impl<'a>(
+    schema: &'a SchemaBody,
+    data: &crate::snapshot::ValueDataDraft,
+    values: &mut [u64],
+    traverse_matrix: bool,
+    mut axes: Option<&mut ConversionAxisWitnesses<'a, '_>>,
+) -> Result<(), TypeResolutionError> {
     use crate::snapshot::ValueDataDraft;
     match (schema, data) {
+        (
+            SchemaBody::Matrix {
+                element,
+                dimensions,
+            },
+            ValueDataDraft::Matrix(elements),
+        ) if traverse_matrix => {
+            if let Some(axes) = axes.as_deref_mut() {
+                axes.record(dimensions)?;
+            }
+            // Matrix axes never come from flat payload length. Only inspect
+            // the actual nested elements for data-dependent cardinalities.
+            for data in elements {
+                assign_data_extent_witness_impl(
+                    element,
+                    data,
+                    values,
+                    traverse_matrix,
+                    axes.as_deref_mut(),
+                )?;
+            }
+        }
         (
             SchemaBody::Set {
                 element,
@@ -1001,7 +1065,13 @@ fn assign_data_extent_witness(
         ) => {
             assign_extent_witness(cardinality, elements.len() as u64, values)?;
             for element_data in elements {
-                assign_data_extent_witness(element, element_data, values)?;
+                assign_data_extent_witness_impl(
+                    element,
+                    element_data,
+                    values,
+                    traverse_matrix,
+                    axes.as_deref_mut(),
+                )?;
             }
         }
         (
@@ -1015,8 +1085,20 @@ fn assign_data_extent_witness(
             assign_extent_witness(cardinality, entries.len() as u64, values)?;
             for entry in entries {
                 if let [key_data, value_data] = entry.items.as_ref() {
-                    assign_data_extent_witness(key, key_data, values)?;
-                    assign_data_extent_witness(value, value_data, values)?;
+                    assign_data_extent_witness_impl(
+                        key,
+                        key_data,
+                        values,
+                        traverse_matrix,
+                        axes.as_deref_mut(),
+                    )?;
+                    assign_data_extent_witness_impl(
+                        value,
+                        value_data,
+                        values,
+                        traverse_matrix,
+                        axes.as_deref_mut(),
+                    )?;
                 }
             }
         }
@@ -1034,23 +1116,67 @@ fn assign_data_extent_witness(
             assign_extent_witness(row_extent, row_count, values)?;
             for (column, data) in columns.iter().zip(column_data) {
                 for value in &data.values {
-                    assign_data_extent_witness(&column.schema, value, values)?;
+                    assign_data_extent_witness_impl(
+                        &column.schema,
+                        value,
+                        values,
+                        traverse_matrix,
+                        axes.as_deref_mut(),
+                    )?;
                 }
             }
         }
         (SchemaBody::Option(element), ValueDataDraft::Option(option)) => {
             if let Some(data) = option.value.as_deref() {
-                assign_data_extent_witness(element, data, values)?;
+                assign_data_extent_witness_impl(
+                    element,
+                    data,
+                    values,
+                    traverse_matrix,
+                    axes.as_deref_mut(),
+                )?;
+            }
+        }
+        (SchemaBody::Enum { variants, .. }, ValueDataDraft::Enum(data)) if traverse_matrix => {
+            let variant = variants
+                .get(data.ordinal as usize)
+                .ok_or_else(|| invalid_rule("conversion enum ordinal is invalid"))?;
+            match (&variant.payload, data.payload.as_deref()) {
+                (Some(body), Some(data)) => assign_data_extent_witness_impl(
+                    body,
+                    data,
+                    values,
+                    traverse_matrix,
+                    axes.as_deref_mut(),
+                )?,
+                (None, None) => {}
+                _ => {
+                    return Err(invalid_rule(
+                        "conversion enum payload differs from its declaration",
+                    ));
+                }
             }
         }
         (SchemaBody::Tuple(elements), ValueDataDraft::Tuple(data)) => {
             for (element, data) in elements.iter().zip(data) {
-                assign_data_extent_witness(element, data, values)?;
+                assign_data_extent_witness_impl(
+                    element,
+                    data,
+                    values,
+                    traverse_matrix,
+                    axes.as_deref_mut(),
+                )?;
             }
         }
         (SchemaBody::Record(fields), ValueDataDraft::Record(data)) => {
             for (field, data) in fields.iter().zip(data) {
-                assign_data_extent_witness(&field.schema, &data.value, values)?;
+                assign_data_extent_witness_impl(
+                    &field.schema,
+                    &data.value,
+                    values,
+                    traverse_matrix,
+                    axes.as_deref_mut(),
+                )?;
             }
         }
         _ => {}

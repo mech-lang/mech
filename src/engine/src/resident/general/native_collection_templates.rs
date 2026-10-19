@@ -264,6 +264,8 @@ fn validate_schemas(
     {
         return false;
     }
+    #[cfg(feature = "convert")]
+    let declared_output = output;
     let output = output.body();
     if let NativeCollectionPrimitive::CompositePack(_) = primitive {
         return match output {
@@ -322,8 +324,7 @@ fn validate_schemas(
         }
         #[cfg(feature = "convert")]
         NativeCollectionPrimitive::MatrixToSetConversion => {
-            is_shallow_matrix(first)
-                && matches!(output, SchemaBody::Set { element, .. } if is_shallow_atomic(element))
+            crate::resident::set_conversion::conversion_plan(&inputs[0], declared_output).is_ok()
         }
         NativeCollectionPrimitive::MatrixScalarAccess => {
             let selector = inputs[1].body();

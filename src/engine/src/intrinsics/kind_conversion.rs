@@ -2,13 +2,42 @@
 //!
 //! Canonical source and native catalogs share this owner; no parser AST is accepted.
 
+#[cfg(all(
+    test,
+    feature = "convert",
+    feature = "matrix",
+    feature = "set",
+    feature = "enum",
+    feature = "string",
+    feature = "u8",
+    feature = "u16"
+))]
+#[path = "kind_conversion_set_tests.rs"]
+mod declared_set_tests;
+
+#[cfg(all(
+    test,
+    feature = "convert",
+    feature = "matrix",
+    feature = "set",
+    feature = "u8",
+    feature = "u16"
+))]
+#[path = "kind_conversion_shape_tests.rs"]
+mod declared_shape_tests;
+
 use crate::*;
+#[cfg(feature = "convert")]
+#[path = "kind_conversion_set_demand.rs"]
+mod set_demand;
 #[cfg(all(test, any(feature = "kind_annotation", feature = "convert")))]
 use mech_core::snapshot::ReifiedTypeDraft;
 #[cfg(all(test, feature = "convert"))]
 use mech_core::snapshot::{Complex64Bits, F32Bits, F64Bits, OptionDraft};
 #[cfg(any(feature = "kind_annotation", feature = "convert"))]
 use mech_core::snapshot::{ReifiedKind, ReifiedType};
+#[cfg(feature = "convert")]
+use set_demand::conversion_execution_demand;
 #[cfg(any(feature = "kind_annotation", feature = "convert"))]
 use std::collections::BTreeMap;
 
@@ -371,8 +400,15 @@ fn execute_conversion_plan(
     let draft = snapshot.canonical_data_draft().map_err(|error| {
         MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
     })?;
-    let converted =
-        execute_conversion_draft(draft, &plan.step).map_err(conversion_execution_error)?;
+    let mut pending = Some(draft);
+    let converted = if plan.step.contains_matrix_to_set() {
+        None
+    } else {
+        Some(
+            execute_conversion_draft(pending.take().unwrap(), &plan.step)
+                .map_err(conversion_execution_error)?,
+        )
+    };
     let current_extents = match target {
         SchemaBody::Matrix { .. }
         | SchemaBody::Set {
@@ -417,6 +453,36 @@ fn execute_conversion_plan(
         )
         .map_err(MechError::from)?;
     }
+    let converted = if let Some(converted) = converted {
+        converted
+    } else {
+        let arena = snapshot.schemas().ok_or_else(|| {
+            conversion_execution_error(ConversionExecutionError::ConversionPlanSourceMismatch)
+        })?;
+        let source_schema = snapshot.validate_against(&arena).map_err(|error| {
+            MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+        })?;
+        let candidate =
+            conversion_output_shape(source_schema, snapshot.shape(), descriptor.schema(), plan)
+                .map_err(conversion_execution_error)?;
+        let converted = execute_conversion_draft_with_schema(
+            pending.take().unwrap(),
+            plan,
+            descriptor.schema(),
+            &candidate,
+            &mech_core::snapshot::SnapshotValidationContext::new(&arena),
+        )
+        .map_err(conversion_execution_error)?;
+        let shape = conversion_output_shape_for_data(descriptor.schema(), &candidate, &converted)
+            .map_err(conversion_execution_error)?;
+        descriptor = mech_core::ResolvedValueDescriptor::new(
+            plan.target.clone(),
+            descriptor.schema().clone(),
+            shape,
+        )
+        .map_err(MechError::from)?;
+        converted
+    };
     ValueCell::from_resolved_descriptor_data(&descriptor, converted)
 }
 
@@ -424,8 +490,9 @@ fn execute_conversion_plan(
 fn execute_conversion_draft_from_snapshot(
     source: &ValueCell,
     snapshot: &mech_core::Value,
+    output: &ValueCell,
     plan: &ConversionPlan,
-) -> MResult<ValueDataDraft> {
+) -> MResult<(ValueDataDraft, Option<mech_core::ShapeInstance>)> {
     let live_type = source.resolved_type()?;
     if !exact_type_equal(&live_type, &plan.source) {
         return Err(conversion_execution_error(
@@ -435,7 +502,35 @@ fn execute_conversion_draft_from_snapshot(
     let draft = snapshot.canonical_data_draft().map_err(|error| {
         MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
     })?;
-    execute_conversion_draft(draft, &plan.step).map_err(conversion_execution_error)
+    if !plan.step.contains_matrix_to_set() {
+        return execute_conversion_draft(draft, &plan.step)
+            .map(|data| (data, None))
+            .map_err(conversion_execution_error);
+    }
+    // Borrow declared target metadata, never the old publication's shape.
+    let targets = output.retained_schema_table();
+    let target = targets.get(output.schema()).ok_or_else(|| {
+        conversion_execution_error(ConversionExecutionError::ConversionPlanSourceMismatch)
+    })?;
+    let sources = snapshot.schemas().ok_or_else(|| {
+        conversion_execution_error(ConversionExecutionError::ConversionPlanSourceMismatch)
+    })?;
+    let source_schema = snapshot.validate_against(&sources).map_err(|error| {
+        MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+    })?;
+    let candidate = conversion_output_shape(source_schema, snapshot.shape(), target, plan)
+        .map_err(conversion_execution_error)?;
+    let converted = execute_conversion_draft_with_schema(
+        draft,
+        plan,
+        target,
+        &candidate,
+        &mech_core::snapshot::SnapshotValidationContext::new(&targets),
+    )
+    .map_err(conversion_execution_error)?;
+    let shape = conversion_output_shape_for_data(target, &candidate, &converted)
+        .map_err(conversion_execution_error)?;
+    Ok((converted, Some(shape)))
 }
 
 #[cfg(feature = "convert")]
@@ -443,44 +538,7 @@ fn conversion_target_schema(
     source: &SchemaBody,
     step: &ConversionStep,
 ) -> Result<SchemaBody, ConversionExecutionError> {
-    Ok(match step {
-        ConversionStep::Identity => source.clone(),
-        ConversionStep::Scalar(ScalarConversion::Builtin { target, .. }) => target.schema_body(),
-        ConversionStep::MatrixElements(element_plan) => {
-            let SchemaBody::Matrix {
-                element,
-                dimensions,
-            } = source
-            else {
-                return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
-            };
-            SchemaBody::Matrix {
-                element: Box::new(conversion_target_schema(element, &element_plan.step)?),
-                dimensions: dimensions.clone(),
-            }
-        }
-        ConversionStep::MatrixToSet(element_plan) => {
-            let SchemaBody::Matrix { element, .. } = source else {
-                return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
-            };
-            SchemaBody::Set {
-                element: Box::new(conversion_target_schema(element, &element_plan.step)?),
-                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
-            }
-        }
-        ConversionStep::OptionPresent(payload_plan) => SchemaBody::Option(Box::new(
-            conversion_target_schema(source, &payload_plan.step)?,
-        )),
-        ConversionStep::OptionPayload(payload_plan) => {
-            let SchemaBody::Option(payload) = source else {
-                return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
-            };
-            SchemaBody::Option(Box::new(conversion_target_schema(
-                payload,
-                &payload_plan.step,
-            )?))
-        }
-    })
+    conversion_target_schema_body(source, step)
 }
 
 #[cfg(feature = "convert")]
@@ -498,8 +556,20 @@ fn prospective_conversion_output_footprint(
         return Ok(None);
     }
     let mut footprint = output.prospective_aggregate_memory_footprint([(source, 1)])?;
+    let converted_population = if plan.step.contains_matrix_to_set() {
+        Some(set_demand::conversion_publication_population(
+            source,
+            plan,
+            &mut footprint,
+        )?)
+    } else {
+        None
+    };
     if let Some(maximum_string_bytes) = conversion_string_payload_bound(&plan.step) {
-        let source_elements = source.current_memory_footprint()?.logical_elements;
+        let source_elements = match converted_population {
+            Some(population) => population,
+            None => source.current_memory_footprint()?.logical_elements,
+        };
         let string_payload = source_elements
             .checked_mul(maximum_string_bytes)
             .ok_or_else(|| {
@@ -715,8 +785,11 @@ fn stage_conversion_output(
             // published output's finalization reserve remains untouched.
             let snapshot = frame.snapshot_input_cell_with_construction(source, 0, construction)?;
             let next = construction.try_build_canonical_candidate_with(|construction| {
-                let converted = execute_conversion_draft_from_snapshot(source, &snapshot, plan)?;
-                if plan.source.dimension_parameters() == plan.target.dimension_parameters()
+                let (converted, current_shape) =
+                    execute_conversion_draft_from_snapshot(source, &snapshot, output, plan)?;
+                if let Some(shape) = current_shape {
+                    construction.try_rebuild_data_draft_with_shape(output, converted, &shape)
+                } else if plan.source.dimension_parameters() == plan.target.dimension_parameters()
                     && output.shape().parameter_values().len()
                         == snapshot.shape().parameter_values().len()
                 {
@@ -941,15 +1014,68 @@ fn runtime_kind_conversion_plan(output: &ValueCell, source: &ValueCell) -> MResu
     let plan = plan_explicit_cast(&source_type, &target_type).map_err(|error| {
         MechError::from(error.with_origin(TypeConstraintOrigin::new("convert/kind", None)))
     })?;
-    let target = output.closed_schema_body()?;
-    let expected = conversion_target_schema(&source.closed_schema_body()?, &plan.step)
-        .map_err(conversion_execution_error)?;
-    if expected != target {
-        return Err(conversion_execution_error(
-            ConversionExecutionError::ConversionShapeMismatch,
-        ));
+    if plan.step.contains_matrix_to_set() {
+        // The declared target carries nominal definitions and cardinality
+        // constraints. Reconstructing a generic Set body would discard them.
+        let _ = planned_conversion_output_shape(output, source, &plan)?;
+    } else {
+        let target = output.closed_schema_body()?;
+        let expected = conversion_target_schema(&source.closed_schema_body()?, &plan.step)
+            .map_err(conversion_execution_error)?;
+        if expected != target {
+            return Err(conversion_execution_error(
+                ConversionExecutionError::ConversionShapeMismatch,
+            ));
+        }
     }
     Ok(plan)
+}
+
+/// Metadata-only prospective geometry for the SAME declared conversion plan.
+/// The common closure validates the current source and real target schema;
+/// it never inspects payload, sorts keys or seeds axes from old publication.
+/// These schema/shape observations precede admission like the existing output
+/// planning hooks; their metadata coexistence/work belongs to the existing
+/// finite conversion staging bound, not an incremental payload permit.
+#[cfg(feature = "convert")]
+fn planned_conversion_output_shape(
+    output: &ValueCell,
+    source: &ValueCell,
+    plan: &ConversionPlan,
+) -> MResult<Option<mech_core::ShapeInstance>> {
+    if !plan.step.contains_matrix_to_set() {
+        return Ok(None);
+    }
+    let sources = source.retained_schema_table();
+    let targets = output.retained_schema_table();
+    let source_schema = sources.get(source.schema()).ok_or_else(|| {
+        conversion_execution_error(ConversionExecutionError::ConversionPlanSourceMismatch)
+    })?;
+    let target_schema = targets.get(output.schema()).ok_or_else(|| {
+        conversion_execution_error(ConversionExecutionError::ConversionPlanSourceMismatch)
+    })?;
+    conversion_output_shape(source_schema, &source.shape(), target_schema, plan)
+        .map(Some)
+        .map_err(conversion_execution_error)
+}
+
+#[cfg(feature = "convert")]
+fn current_conversion_target_body(
+    output: &ValueCell,
+    source: &ValueCell,
+    plan: &ConversionPlan,
+) -> MResult<SchemaBody> {
+    if let Some(shape) = planned_conversion_output_shape(output, source, plan)? {
+        let targets = output.retained_schema_table();
+        let target = targets.get(output.schema()).ok_or_else(|| {
+            conversion_execution_error(ConversionExecutionError::ConversionPlanSourceMismatch)
+        })?;
+        return target.closed_body(&shape).map_err(|_| {
+            conversion_execution_error(ConversionExecutionError::ConversionShapeMismatch)
+        });
+    }
+    conversion_target_schema(&source.closed_schema_body()?, &plan.step)
+        .map_err(conversion_execution_error)
 }
 
 #[cfg(feature = "convert")]
@@ -1019,11 +1145,18 @@ impl MechFunctionFactory for RuntimeReifiedKindConversion {
 
 #[cfg(feature = "convert")]
 impl MechFunctionImpl for RuntimeKindConversion {
+    fn planned_output_shapes(&self) -> MResult<Option<Box<[mech_core::ShapeInstance]>>> {
+        Ok(
+            planned_conversion_output_shape(self.output.cell(), self.source.cell(), &self.plan)?
+                .map(|shape| vec![shape].into_boxed_slice()),
+        )
+    }
+
     fn planned_execution_demand(
         &self,
         request: &mech_core::ExecutionDemandPlanningRequest<'_>,
     ) -> MResult<mech_core::PlannedExecutionDemand> {
-        conversion_input_reconstruction_demand(self.source.cell(), self.output.cell(), request)
+        conversion_execution_demand(self.source.cell(), self.output.cell(), &self.plan, request)
     }
 
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
@@ -1059,11 +1192,18 @@ impl MechFunctionImpl for RuntimeKindConversion {
 
 #[cfg(feature = "convert")]
 impl MechFunctionImpl for RuntimeReifiedKindConversion {
+    fn planned_output_shapes(&self) -> MResult<Option<Box<[mech_core::ShapeInstance]>>> {
+        Ok(
+            planned_conversion_output_shape(self.output.cell(), self.source.cell(), &self.plan)?
+                .map(|shape| vec![shape].into_boxed_slice()),
+        )
+    }
+
     fn planned_execution_demand(
         &self,
         request: &mech_core::ExecutionDemandPlanningRequest<'_>,
     ) -> MResult<mech_core::PlannedExecutionDemand> {
-        conversion_input_reconstruction_demand(self.source.cell(), self.output.cell(), request)
+        conversion_execution_demand(self.source.cell(), self.output.cell(), &self.plan, request)
     }
 
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
@@ -1080,9 +1220,8 @@ impl MechFunctionImpl for RuntimeReifiedKindConversion {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        let source_schema = self.source.cell().closed_schema_body()?;
-        let expected = conversion_target_schema(&source_schema, &self.plan.step)
-            .map_err(conversion_execution_error)?;
+        let expected =
+            current_conversion_target_body(self.output.cell(), self.source.cell(), &self.plan)?;
         let target = frame.snapshot_input_cell(self.target.cell(), 1)?;
         let constraints = runtime_reified_constraints(self.source.cell(), &target, &expected)?;
         constraints.validate_activation_witnesses(&self.reified_constraints)?;
@@ -3979,11 +4118,18 @@ impl CanonicalFunctionSpecializer for ConvertKind {
 
 #[cfg(feature = "convert")]
 impl MechFunctionImpl for PlannedTypeConversion {
+    fn planned_output_shapes(&self) -> MResult<Option<Box<[mech_core::ShapeInstance]>>> {
+        Ok(
+            planned_conversion_output_shape(&self.output, &self.source, &self.plan)?
+                .map(|shape| vec![shape].into_boxed_slice()),
+        )
+    }
+
     fn planned_execution_demand(
         &self,
         request: &mech_core::ExecutionDemandPlanningRequest<'_>,
     ) -> MResult<mech_core::PlannedExecutionDemand> {
-        conversion_input_reconstruction_demand(&self.source, &self.output, request)
+        conversion_execution_demand(&self.source, &self.output, &self.plan, request)
     }
 
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
@@ -3999,9 +4145,7 @@ impl MechFunctionImpl for PlannedTypeConversion {
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
         if let Some(target) = &self.reified_target {
-            let source_schema = self.source.closed_schema_body()?;
-            let expected = conversion_target_schema(&source_schema, &self.plan.step)
-                .map_err(conversion_execution_error)?;
+            let expected = current_conversion_target_body(&self.output, &self.source, &self.plan)?;
             let target = frame.snapshot_input_cell(target, 1)?;
             let constraints = runtime_reified_constraints(&self.source, &target, &expected)?;
             if let Some(initial) = &self.reified_constraints {

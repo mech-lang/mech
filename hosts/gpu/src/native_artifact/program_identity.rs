@@ -17,7 +17,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 5;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
 // exact live-geometry bindings within one invocation, retiring an old binding
 // before a shape miss rebuilds it. Every visit measures and executes fresh Values.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 11;
+// Policy12 funds recursive declared-schema conversion plans before binding and
+// their current-data staging before execution, including retained metadata nodes.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 12;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

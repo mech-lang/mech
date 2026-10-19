@@ -7,7 +7,9 @@ mod error;
 mod index;
 mod relations;
 mod set_conversion;
-pub(crate) use self::set_conversion::normalize_set_conversion_drafts;
+pub(crate) use self::set_conversion::{
+    normalize_set_conversion_drafts, normalize_set_conversion_drafts_with_context,
+};
 mod sequence;
 pub(crate) mod validation;
 mod views;

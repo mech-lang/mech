@@ -4,7 +4,7 @@ use super::error::{SnapshotPath, SnapshotPathSegment};
 use super::relations::{compare_key_data, normalized_key_data};
 use super::validation::{canonical_snapshot_data_draft, finalize_data};
 use super::{SnapshotValidationContext, SnapshotValueError, ValueData, ValueDataDraft};
-use crate::{Schema, SchemaTable};
+use crate::{Schema, SchemaBody, SchemaTable, ShapeInstance};
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, vec::Vec};
 #[cfg(not(feature = "no_std"))]
@@ -15,17 +15,59 @@ pub(crate) fn normalize_set_conversion_drafts(
     drafts: Box<[ValueDataDraft]>,
     schemas: &SchemaTable,
 ) -> Result<Box<[ValueDataDraft]>, SnapshotValueError> {
-    if !schema.is_keyable() {
+    normalize_set_conversion_drafts_impl(
+        schema.body(),
+        drafts,
+        ConversionShape::Declared(schema),
+        &SnapshotValidationContext::new(schemas),
+    )
+}
+
+pub(crate) fn normalize_set_conversion_drafts_with_context(
+    body: &SchemaBody,
+    drafts: Box<[ValueDataDraft]>,
+    shape: &ShapeInstance,
+    context: &SnapshotValidationContext<'_>,
+) -> Result<Box<[ValueDataDraft]>, SnapshotValueError> {
+    normalize_set_conversion_drafts_impl(body, drafts, ConversionShape::Current(shape), context)
+}
+
+enum ConversionShape<'a> {
+    Declared(&'a Schema),
+    Current(&'a ShapeInstance),
+}
+
+fn normalize_set_conversion_drafts_impl(
+    body: &SchemaBody,
+    drafts: Box<[ValueDataDraft]>,
+    authority: ConversionShape<'_>,
+    context: &SnapshotValidationContext<'_>,
+) -> Result<Box<[ValueDataDraft]>, SnapshotValueError> {
+    if !crate::schema::is_schema_body_keyable(body) {
         return Err(SnapshotValueError::SchemaNotKeyableV1);
     }
-    let context = SnapshotValidationContext::new(schemas);
-    let body = schema.body();
     let mut values = Vec::with_capacity(drafts.len());
     for (index, draft) in drafts.into_vec().into_iter().enumerate() {
-        let shape = crate::shape_for_value_data(schema, &draft, &[], None)
-            .map_err(|_| SnapshotValueError::SchemaNotKeyableV1)?;
+        let declared_shape;
+        let shape = match authority {
+            ConversionShape::Current(shape) => shape,
+            ConversionShape::Declared(schema) => {
+                // Constant matrix axes are already declared, not inferred from
+                // flat data length. Parameterized axes require the explicit
+                // current-shape API; no lower-bound geometry is guessed here.
+                declared_shape = if matches!(body, SchemaBody::Matrix { .. }) {
+                    schema
+                        .instantiate_shape(Box::new([]))
+                        .map_err(|_| SnapshotValueError::SchemaNotKeyableV1)?
+                } else {
+                    crate::shape_for_value_data(schema, &draft, &[], None)
+                        .map_err(|_| SnapshotValueError::SchemaNotKeyableV1)?
+                };
+                &declared_shape
+            }
+        };
         let path = SnapshotPath::root().child(SnapshotPathSegment::SetElement(index as u64));
-        let value = finalize_data(body, draft, &shape, &context, &path)?;
+        let value = finalize_data(body, draft, shape, context, &path)?;
         values.push(normalized_key_data(body, value)?);
     }
     // Bounded, allocation-free heapsort; no comparator-owned payload copies

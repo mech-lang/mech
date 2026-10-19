@@ -1,3 +1,16 @@
+#[path = "annotation_conversion_shape.rs"]
+mod annotation_conversion_shape;
+
+#[cfg(all(
+    test,
+    feature = "matrix",
+    feature = "set",
+    feature = "u8",
+    feature = "convert"
+))]
+#[path = "annotation_conversion_shape_tests.rs"]
+mod annotation_conversion_shape_tests;
+
 #[path = "application.rs"]
 mod application;
 use application::{PendingIteration, resolve_iteration};
@@ -7484,7 +7497,7 @@ impl SemanticBuilder {
         if source == target {
             return Ok(value);
         }
-        let operation = if matches!(plan.step, mech_core::ConversionStep::MatrixToSet(_)) {
+        let operation = if plan.step.contains_matrix_to_set() {
             "convert/set"
         } else {
             "convert/kind"
@@ -9116,10 +9129,19 @@ fn specialize_annotation_dimensions(
         .map_err(|failure| error(failure.to_string()))?;
     let expected = ResolvedType::from_schema_body(&expected.body, &expected.dimension_parameters)
         .map_err(|failure| error(failure.to_string()))?;
+    let mut parameters = expected.dimension_parameters().to_vec();
+    let input_shape = annotation_conversion_shape::input_shape(
+        actual.kind(),
+        &shape(expected.kind()),
+        &mut parameters,
+    )
+    .ok_or_else(|| {
+        error("annotation dimension count exceeds the canonical index range".to_owned())
+    })?;
     let scheme = mech_core::KindScheme::new(
         Box::new([]),
-        expected.dimension_parameters().to_vec().into_boxed_slice(),
-        InputKindScheme::Fixed(vec![shape(expected.kind())].into_boxed_slice()),
+        parameters.into_boxed_slice(),
+        InputKindScheme::Fixed(vec![input_shape].into_boxed_slice()),
         vec![expected.kind().clone()].into_boxed_slice(),
         Box::new([]),
     )

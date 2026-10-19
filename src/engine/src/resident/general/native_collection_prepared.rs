@@ -25,6 +25,7 @@ pub struct NativePreparedLibraryCall {
     factory: ResidentKernelFactory,
     binding_bytes: u64,
     binding_work: u64,
+    binding_nodes: u64,
     output_parameters: usize,
     input_keys: Box<[mech_core::SchemaKey]>,
     output_key: mech_core::SchemaKey,
@@ -68,7 +69,9 @@ pub fn prepare_native_program_library_call(
     let ports = (template.inputs().len() as u64)
         .checked_add(1)
         .ok_or_else(|| super::invalid(node))?;
-    // Only sealed shallow text/map/range/selection/conversion/constructor families reach here.
+    // The common envelope covers the original shallow selected families.
+    // Recursive convert/set additionally funds its SAME semantic plan trees
+    // with the shared schema-depth/evidence bound below, before bind_values.
     // Numeric ranges, positional matrix selection and scalar-key map lookup
     // contain at most rank-two scalar matrices or two atomic map children;
     // selector state has fixed metadata size. Shallow map/tuple/record packs
@@ -86,7 +89,7 @@ pub fn prepare_native_program_library_call(
         .checked_mul(3)
         .and_then(|n| n.checked_add(16))
         .ok_or_else(|| super::invalid(node))?;
-    let binding_bytes = metadata_envelope_for(
+    let common_binding_bytes = metadata_envelope_for(
         template
             .inputs()
             .iter()
@@ -95,11 +98,29 @@ pub fn prepare_native_program_library_call(
         entries,
     )
     .ok_or_else(|| super::invalid(node))?;
+    #[cfg(feature = "convert")]
+    let (conversion_bytes, binding_nodes, conversion_work) = if matches!(
+        template.primitive(),
+        crate::resident::native_collection_semantics::NativeCollectionPrimitive::MatrixToSetConversion
+    ) {
+        let bound =
+            mech_core::conversion_schema_staging_bound(&template.inputs()[0], template.output())
+                .ok_or_else(|| super::invalid(node))?;
+        (bound.plan_bytes, bound.plan_nodes, bound.plan_work)
+    } else {
+        (0, 0, 0)
+    };
+    #[cfg(not(feature = "convert"))]
+    let (conversion_bytes, binding_nodes, conversion_work) = (0, 0, 0);
+    let binding_bytes = common_binding_bytes
+        .checked_add(conversion_bytes)
+        .ok_or_else(|| super::invalid(node))?;
     // Covers construction/traversal and eventual complete metadata retirement
     // before either occurs, including error paths. Never a per-call refill.
     let binding_work = binding_bytes
         .checked_mul(8)
         .and_then(|n| n.checked_add(256))
+        .and_then(|n| n.checked_add(conversion_work))
         .ok_or_else(|| super::invalid(node))?;
     let output_parameters = template.output().dimension_parameters().len();
     // Schema::key encodes and hashes its whole tree. Retain immutable keys
@@ -139,6 +160,7 @@ pub fn prepare_native_program_library_call(
         factory,
         binding_bytes,
         binding_work,
+        binding_nodes,
         output_parameters,
         input_keys,
         output_key,
@@ -357,6 +379,7 @@ impl NativePreparedLibraryCall {
                         CurrentMemoryFootprint::default(),
                         ResourceDemand {
                             turn_peak_bytes: bytes,
+                            retained_nodes: self.binding_nodes,
                             ..ResourceDemand::default()
                         },
                         limits,
@@ -367,6 +390,13 @@ impl NativePreparedLibraryCall {
                             .max_temporary_bytes
                             .unwrap()
                             .checked_sub(bytes)
+                            .ok_or(MemoryPlanError::TargetAddressOverflow)?,
+                    );
+                    nested.max_retained_nodes = Some(
+                        limits
+                            .max_retained_nodes
+                            .unwrap()
+                            .checked_sub(self.binding_nodes)
                             .ok_or(MemoryPlanError::TargetAddressOverflow)?,
                     );
                     if let Some(binding) = cache.binding.as_mut() {
@@ -437,6 +467,7 @@ impl NativePreparedLibraryCall {
                     CurrentMemoryFootprint::default(),
                     ResourceDemand {
                         turn_peak_bytes: self.binding_bytes,
+                        retained_nodes: self.binding_nodes,
                         ..ResourceDemand::default()
                     },
                     limits,
@@ -451,6 +482,13 @@ impl NativePreparedLibraryCall {
                         .max_temporary_bytes
                         .unwrap()
                         .checked_sub(self.binding_bytes)
+                        .ok_or(MemoryPlanError::TargetAddressOverflow)?,
+                );
+                nested.max_retained_nodes = Some(
+                    limits
+                        .max_retained_nodes
+                        .unwrap()
+                        .checked_sub(self.binding_nodes)
                         .ok_or(MemoryPlanError::TargetAddressOverflow)?,
                 );
                 let call = self.bind_values(inputs, output, nested)?;
