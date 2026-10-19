@@ -223,7 +223,8 @@ jobs:
           python3 scripts/run-native-plan-stage.py --stage canonical-hosted-compile --timeout-secs 1080 \
             --record-test-executable canonical_hosted_artifact \
             --test-executable-file target/native-plan-logs/canonical-hosted-executable -- \
-            cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib -p mech-gpu \
+            cargo +nightly-2026-03-03 test --locked --offline \
+            -p mech-core -p mech-engine -p mech-runtime -p mech-stdlib -p mech-syntax -p mech-gpu \
             --no-default-features \
             --features mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-program-host \
             --test canonical_hosted_artifact --no-run --message-format=json-render-diagnostics

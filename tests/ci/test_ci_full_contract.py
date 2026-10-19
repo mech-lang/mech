@@ -1034,6 +1034,11 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertNotRegex(selected, r"(?m)^        if:")
         self.assertIn("--record-test-executable canonical_hosted_artifact", compile_step)
         self.assertIn("--test canonical_hosted_artifact --no-run --message-format=json-render-diagnostics", compile_step)
+        self.assertEqual(
+            re.findall(r"(?:^|\s)-p\s+(\S+)", compile_step.replace("\\\n", " ")),
+            ["mech-core", "mech-engine", "mech-runtime", "mech-stdlib", "mech-syntax", "mech-gpu"],
+        )
+        self.assertIn("--no-default-features", compile_step)
         self.assertIn("mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-program-host", compile_step)
         for selected in (execute, select, qualify):
             self.assertIn("--test-executable-file target/native-plan-logs/canonical-hosted-executable", selected)
