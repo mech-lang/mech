@@ -238,6 +238,9 @@ impl NativePreparedLibraryCall {
         // bounds and fixed cardinality constraints. Never silently retag it.
         mech_core::shape_for_resolved_extents(self.template.output(), &[1, count])
             .map_err(|_| InvokeError::Kernel(mech_core::ResidentKernelError::InvalidShape))?;
+        // Preserve the ordinary materializing range's physical Layout bound
+        // even when the certified source strategy never constructs its Matrix.
+        crate::resident::numeric::canonical_u64_range_selector_representation(count)?;
         Ok(count)
     }
 

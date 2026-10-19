@@ -5,6 +5,11 @@ use mech_core::snapshot::{
     MapEntryDraft, SnapshotCanonicalizationBudget, SnapshotValidationContext, ValueDataDraft,
     ValueDraft,
 };
+#[path = "program_histogram_finish_allocation.rs"]
+mod allocation;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_histogram_finish_allocation_tests.rs"]
+mod allocation_tests;
 impl State {
     pub(in crate::native_artifact) fn park_histogram(
         &mut self,
@@ -112,25 +117,26 @@ impl State {
         )?;
         self.histogram_account(ctx, id, payload, compute, finalization)?;
         let mut reservation = ctx.library.memory_budget().reserve_capacity(envelope)?;
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        allocation::observation::admitted(&ctx.library, envelope);
         let histogram = self.builders[id as usize]
             .as_ref()
             .unwrap()
             .histogram
             .as_ref()
             .unwrap();
-        let mut entries = Vec::new();
-        entries
-            .try_reserve_exact(histogram.entries.len())
-            .map_err(|_| invalid("Histogram result draft allocation"))?;
+        let mut entries = allocation::vector(
+            histogram.entries.len(),
+            allocation::Kind::Entries,
+            "Histogram result draft allocation",
+        )?;
         for entry in &histogram.entries {
-            let mut items = Vec::new();
-            items
-                .try_reserve_exact(2)
-                .map_err(|_| invalid("Histogram result item allocation"))?;
-            let mut key = String::new();
-            key.try_reserve_exact(entry.key.len())
-                .map_err(|_| invalid("Histogram result key allocation"))?;
-            key.push_str(&entry.key);
+            let mut items = allocation::vector(
+                2,
+                allocation::Kind::Items,
+                "Histogram result item allocation",
+            )?;
+            let key = allocation::key(&entry.key)?;
             items.push(ValueDataDraft::String(key));
             items.push(ValueDataDraft::U64(entry.count));
             entries.push(MapEntryDraft {

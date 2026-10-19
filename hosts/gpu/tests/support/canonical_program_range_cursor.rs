@@ -1,4 +1,6 @@
 //! Actual generated range cursors: canonical semantics and no Matrix fiction.
+#[path = "canonical_program_range_representation.rs"]
+mod representation;
 use super::{artifacts, equal, inputs, limits, reference, reference_result};
 use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
 use mech_engine::native_artifact::{
@@ -53,8 +55,8 @@ fn selected_range_cursor_preserves_terminal_empty_and_overflow_errors_and_recove
                     &[("start", Data::U64(start)), ("end", Data::U64(end))],
                     &memory,
                 );
-                // A huge valid exclusive range is a resource-denial case, not
-                // a semantic cardinality error; never ask the reference to allocate it.
+                // The target-relative physical Layout boundary is exercised by
+                // representation.rs without asking the reference to allocate it.
                 if start == 0 && end == u64::MAX && separator == ".." {
                     continue;
                 }

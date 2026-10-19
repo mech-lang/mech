@@ -331,3 +331,6 @@ fn preserved_control_checkpoint_edges_cannot_replay_root_sites() {
         assert!(control.visit(u64::from(descriptor.plan.entry())).is_err());
     }
 }
+
+#[path = "program_call_cache_allocation_tests.rs"]
+mod allocation_tests;

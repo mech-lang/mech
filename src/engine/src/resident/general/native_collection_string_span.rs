@@ -200,7 +200,6 @@ impl NativePreparedLibraryCall {
         // ordinary Range's rejection of empty/reversed unit ranges. No absent
         // endpoint is inspected after that original-site rejection.
         let count = self.selected_u64_range_cardinality(start, end)?;
-        crate::resident::numeric::canonical_u64_range_selector_representation(count)?;
         Ok(NativeSelectedStringSpanSelector {
             start,
             count,

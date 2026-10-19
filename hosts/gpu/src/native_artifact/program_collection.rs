@@ -20,6 +20,13 @@ use mech_engine::{
 
 #[path = "program_admitted_allocation.rs"]
 mod allocation;
+pub(super) fn admitted_capacity<T>(
+    values: Vec<T>,
+    count: usize,
+    reason: &'static str,
+) -> Result<Vec<T>, Error> {
+    allocation::exact_capacity(values, count, reason)
+}
 #[path = "program_collection_data.rs"]
 mod data;
 #[path = "program_histogram.rs"]

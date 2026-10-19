@@ -4,6 +4,9 @@
 use super::super::program_abi::{PHASE_ACTIVATION, PHASE_TURN, STATUS_ACTIVATED};
 use super::*;
 
+#[path = "program_call_cache_allocation.rs"]
+mod call_cache_allocation;
+
 #[cfg(test)]
 #[path = "program_observation_tests.rs"]
 mod observation_tests;
@@ -170,15 +173,6 @@ impl CallCacheLane {
                 .ok_or_else(|| invalid("call cache setup work overflow"))?,
         )?;
         let reservation = memory.reserve_capacity(bytes)?;
-        let mut entries = Vec::new();
-        entries.try_reserve_exact(count).map_err(|_| {
-            mech_core::MemoryRuntimeError::AllocationFailed {
-                object: None,
-                requested: bytes,
-                alignment: core::mem::align_of::<CallCacheEntry>() as u32,
-                space: mech_core::MemorySpace::Host,
-            }
-        })?;
         // NativeProgramDescriptor::prepare already ran BOTH canonical phase
         // and current-visit proofs. check_scope contracts each child loop to
         // initializer -> exit and rejects every remaining scope cycle. Thus
@@ -186,13 +180,14 @@ impl CallCacheLane {
         // Some covers counted, collection, tail and enclosing nested loops.
         // Phase resume retains the same previous/current/progress state and
         // cannot replay a root block. No new execution authority is created.
-        entries.extend(blocks.iter().map(|block| {
+        let entries = call_cache_allocation::allocate(count, bytes, |ordinal| {
+            let block = &blocks[ordinal];
             if block.iteration().is_none() {
                 CallCacheEntry::Once
             } else {
                 CallCacheEntry::Repeated(NativePreparedLibraryCallCache::default())
             }
-        }));
+        })?;
         Ok(Self {
             entries: entries.into_boxed_slice(),
             _reservation: reservation,
