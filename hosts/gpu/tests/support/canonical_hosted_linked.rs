@@ -265,11 +265,9 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
             let mut command = Command::new(&binary);
             command
                 .arg(&launch_path)
-                .arg(if expected.is_some() {
-                    report_path.as_os_str()
-                } else {
-                    std::ffi::OsStr::new("-")
-                })
+                // Request a fresh report even for denied cases, so their
+                // no-report assertion verifies failure publication ordering.
+                .arg(&report_path)
                 .arg("--");
             // Legacy source-native policy cannot grant authority to this route.
             command.env("MECH_NATIVE_SECURITY", "trusted");

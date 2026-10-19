@@ -14,8 +14,10 @@ fn bytes(hash: &mut Sha256, value: &[u8]) {
 pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 5;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
-// neither phase may renew the invocation's cumulative ledger.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 9;
+// neither phase may renew the invocation's cumulative ledger. Policy11 reuses
+// exact live-geometry bindings within one invocation, retiring an old binding
+// before a shape miss rebuilds it. Every visit measures and executes fresh Values.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 11;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

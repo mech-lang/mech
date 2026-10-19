@@ -334,7 +334,7 @@ mod tests {
             "sample := input<{kind}>\nmarker := seed<u64>\n@out/text <- sample\nsample\nmarker\n"
         );
         let parsed = parse_canonical_document(
-            TextSnapshot::new(DocumentId(0x5245534e), Revision(1), &source).unwrap(),
+            TextSnapshot::new(DocumentId(0x5245534e), Revision(1), source.as_str()).unwrap(),
             ParseConfig::default(),
         );
         assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
@@ -602,7 +602,7 @@ mod tests {
                         partial: false,
                         captures: Box::new([]),
                         arms: Box::new([ControlMatchArm {
-                            pattern: MatchPattern::Wildcard,
+                            pattern: MatchPattern::Bind,
                             guard: None,
                             body: ControlBlock {
                                 id: ControlBlockId(0),

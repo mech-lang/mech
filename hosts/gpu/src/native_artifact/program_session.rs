@@ -4,11 +4,66 @@
 use super::super::program_abi::{PHASE_ACTIVATION, PHASE_TURN, STATUS_ACTIVATED};
 use super::*;
 
+/// Empty per-site slots are native invocation metadata, not prebound calls.
+/// Their small fixed backing is admitted during setup; bound metadata is
+/// materialized and separately retained only when a generated site is visited.
+pub(super) struct CallCacheLane {
+    pub(super) entries: Box<[NativePreparedLibraryCallCache]>,
+    _reservation: mech_core::ManagedMemoryReservation,
+}
+impl CallCacheLane {
+    fn metadata_bytes(count: usize) -> Result<u64, NativeProgramExecutionError> {
+        amount(
+            count,
+            (core::mem::size_of::<NativePreparedLibraryCallCache>() as u64) * 2,
+            128,
+        )
+    }
+    fn new(
+        count: usize,
+        limit: u64,
+        memory: &ManagedMemoryBudget,
+        work: &mut NativeWorkMeter,
+    ) -> Result<Self, NativeProgramExecutionError> {
+        let bytes = Self::metadata_bytes(count)?;
+        if bytes > limit {
+            return Err(NativeExecutionError::TransportLimit {
+                required: bytes,
+                limit,
+            }
+            .into());
+        }
+        work.charge(
+            NativeExecutionPhase::Setup,
+            bytes
+                .checked_mul(8)
+                .and_then(|n| n.checked_add(128))
+                .ok_or_else(|| invalid("call cache setup work overflow"))?,
+        )?;
+        let reservation = memory.reserve_capacity(bytes)?;
+        let mut entries = Vec::new();
+        entries.try_reserve_exact(count).map_err(|_| {
+            mech_core::MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: bytes,
+                alignment: core::mem::align_of::<NativePreparedLibraryCallCache>() as u32,
+                space: mech_core::MemorySpace::Host,
+            }
+        })?;
+        entries.resize_with(count, NativePreparedLibraryCallCache::default);
+        Ok(Self {
+            entries: entries.into_boxed_slice(),
+            _reservation: reservation,
+        })
+    }
+}
+
 struct OwnedState<'a> {
     // Preserve collection-before-arena retirement ordering.
     collections: Option<collection::State>,
     arena: NativeValueArena<'a>,
     call_inputs: NativeTypedStorage<Option<Value>>,
+    call_caches: CallCacheLane,
     library: NativeLibraryWorkBudget,
     work: NativeWorkMeter,
     current: Option<u32>,
@@ -102,6 +157,7 @@ impl<'a> Prepared<'a> {
                 )
             })
             .and_then(|n| n.checked_add(collection::State::metadata_bytes(plan).ok()?))
+            .and_then(|n| n.checked_add(CallCacheLane::metadata_bytes(plan.blocks().len()).ok()?))
             .ok_or_else(|| invalid("combined transport overflow"))?;
         if bytes > limits.execution.max_transport_bytes {
             return Err(NativeExecutionError::TransportLimit {
@@ -156,6 +212,12 @@ impl<'a> Prepared<'a> {
             arena.put(constant.value().get(), &value, &mut work)?;
         }
         let collections = collection::State::new(descriptor, caps, memory, &mut work)?;
+        let call_caches = CallCacheLane::new(
+            plan.blocks().len(),
+            limits.execution.max_transport_bytes,
+            memory,
+            &mut work,
+        )?;
         Ok(Self {
             descriptor,
             storage,
@@ -169,6 +231,7 @@ impl<'a> Prepared<'a> {
                 collections,
                 arena,
                 call_inputs,
+                call_caches,
                 library,
                 work,
                 current: None,
@@ -392,6 +455,7 @@ impl<'a> Prepared<'a> {
             arguments: argument_pointer,
             argument_capacity: descriptor.max_library_inputs,
             call_inputs: state.call_inputs,
+            call_caches: state.call_caches,
             consumed: state.consumed,
             output_cursor: state.output_cursor,
             error: None,
@@ -505,6 +569,7 @@ impl<'a> Prepared<'a> {
             collections: context.collections,
             arena: context.arena,
             call_inputs: context.call_inputs,
+            call_caches: context.call_caches,
             library: context.library,
             work: context.control.work,
             current: context.control.current,

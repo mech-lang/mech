@@ -1505,12 +1505,14 @@ mod iteration_proof_tests {
         // views. Do not widen that scope merely to exercise the managed phase
         // proof; closed lexical work inside a Turn owner is covered by the
         // scalar JIT/Object integration suites instead.
-        let identity = "identity(x<u64>) => (next<u64>) := next := x.\n";
+        // A passthrough function is elided to its argument and creates no
+        // Activation owner. Keep a genuine closed control node in this test.
+        let choose = "choose(x<u64>) => (next<u64>) := next := (x? | 0u64 => 1u64 | * => x).\n";
         for (closed, supports_match) in [
-            ("fixed := identity(7u64)\n", true),
-            ("fixed := 7u64 |3> identity\n", false),
+            ("fixed := choose(7u64)\n", true),
+            ("fixed := 7u64 |3> choose\n", false),
         ] {
-            let source = format!("{identity}{closed}identity(seed<u64>)\n");
+            let source = format!("{choose}{closed}choose(seed<u64>)\n");
             let (artifact, catalog) = artifact(&source);
             let classes =
                 classify_nodes(&artifact, ResidentExternalAdmission::StructuralOnly).unwrap();
@@ -1537,7 +1539,9 @@ mod iteration_proof_tests {
 
     #[test]
     fn native_phase_proof_rejects_moved_checkpoints_and_fresh_reads_during_activation() {
-        let source = "identity(x<string>) => (out<string>) := out := x.\nclosed := identity(\"constant\")\nfresh := identity(input<string>)\nfresh\n";
+        // Identity passthroughs are folded to their argument. A real Match
+        // keeps the closed owner and fresh copy in the authoritative schedule.
+        let source = "choose(x<u64>) => (out<u64>) := out := (x? | 0u64 => 1u64 | * => x).\nclosed := choose(7u64)\nfresh := choose(input<u64>)\nfresh\n";
         let (artifact, catalog) = artifact(source);
         let valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
         valid.validate_current_visits().unwrap();
@@ -1570,7 +1574,7 @@ mod iteration_proof_tests {
                     _ => None,
                 }
             })
-            .expect("closed canonical identity copy");
+            .expect("closed canonical Match result copy");
         *action = input;
         assert!(fresh_read.validate_current_visits().is_err());
     }

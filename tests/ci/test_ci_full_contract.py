@@ -548,6 +548,7 @@ class FullWorkflowContractTests(unittest.TestCase):
                     "pure_text_source", "retention_work", "sequence_sort", "set_comprehension_operands",
                     "string_generators", "string_literal_match", "string_membership_comprehensions",
                     "string_selector_shapes", "text_operations", "u64_float_conversion_source",
+                    "underscore_addressing",
                 ),
             ),
             (
@@ -2156,6 +2157,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             "type_system_builtin",
             "type_system_solver",
             "type_system_conversion",
+            "matrix_set_conversion",
             "type_system_catalog",
             "type_system_source",
         ):

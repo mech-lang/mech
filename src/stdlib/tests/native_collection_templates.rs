@@ -19,6 +19,10 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 
+// Opt-in allocator observations, not timing or a smaller admission witness.
+#[path = "support/native_metadata_allocations.rs"]
+mod native_metadata_allocations;
+
 const SOURCE: &str = r#"+> text
 +> sequence
 +> number
@@ -1560,6 +1564,207 @@ fn prepared_native_binding_is_pre_admitted_and_cannot_refill_the_leaf_allowance(
 }
 
 #[test]
+fn invocation_owned_fixed_binding_cache_keeps_live_values_caps_and_ledger_identity() {
+    use mech_core::{ValueData, ValueDataDraft};
+    use mech_engine::native_artifact::{
+        NativeCollectionInvocationError as Error, NativeIterationAction, NativeLibraryWorkBudget,
+        NativePreparedLibraryCallCache, lower_native_program_artifact,
+    };
+    for artifact in artifacts("+> sequence\nsequence/length(input<string>)\n") {
+        let catalog = mech_stdlib::source_catalog();
+        let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        let template = plan
+            .blocks()
+            .iter()
+            .find_map(|block| match block.action() {
+                NativeIterationAction::LibraryCall { template, .. } => Some(template),
+                _ => None,
+            })
+            .unwrap();
+        let prepared = prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+        let other_site_owner =
+            prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+        let memory = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let work = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
+        let independent = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
+        let foreign = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let foreign_work =
+            NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &foreign).unwrap();
+        let schema = input_schema(&artifact, "sequence/length", 0);
+        let args = ["é🙂", "abc"].map(|text| {
+            [Some(admit_value(
+                scalar_value(&artifact, schema, ValueDataDraft::String(text.into())),
+                &memory,
+            ))]
+        });
+        let mech_core::ResolvedOperationContract::Declared(contract) = template.contract() else {
+            panic!("declared maintained call")
+        };
+        let wrong = [Some(admit_value(
+            scalar_value(
+                &artifact,
+                contract.outputs[0].schema,
+                ValueDataDraft::U64(99),
+            ),
+            &memory,
+        ))];
+        let mut limits = mech_core::TargetMemoryProfile::current_resident_cpu()
+            .unwrap()
+            .limits;
+        limits.max_compute_work = Some(128 * 1024 * 1024);
+        limits.max_temporary_bytes = Some(128 * 1024 * 1024);
+        let baseline = memory.used_bytes();
+        let mut cache = NativePreparedLibraryCallCache::default();
+        let mut output = None;
+        let mut denied = limits;
+        denied.max_temporary_bytes = Some(prepared.binding_metadata_bytes() - 1);
+        assert!(matches!(
+            prepared.invoke_current_cached(&mut cache, &args[0], &mut output, denied, &work),
+            Err(Error::Plan(mech_core::MemoryPlanError::TargetLimitExceeded { violation }))
+                if violation.dimension == mech_core::MemoryBudgetDimension::TemporaryBytes
+        ));
+        assert!(output.is_none());
+        assert_eq!(memory.used_bytes(), baseline);
+        // Failed first admission leaves this same slot empty and usable.
+        let start = work.used().0;
+        prepared
+            .invoke_current_cached(&mut cache, &args[0], &mut output, limits, &work)
+            .unwrap();
+        let first = work.used().0 - start;
+        assert!(matches!(output.as_ref().unwrap().data(), ValueData::U64(2)));
+        let start = work.used().0;
+        prepared
+            .invoke_current_cached(&mut cache, &args[1], &mut output, limits, &work)
+            .unwrap();
+        let repeated = work.used().0 - start;
+        assert!(matches!(output.as_ref().unwrap().data(), ValueData::U64(3)));
+        assert!(
+            first > repeated + prepared.binding_work() / 2,
+            "first={first}, repeated={repeated}, binding={}",
+            prepared.binding_work()
+        );
+        let prior = output.as_ref().unwrap().clone();
+        let retained = memory.used_bytes();
+        assert_eq!(
+            prepared.invoke_current_cached(&mut cache, &wrong, &mut output, limits, &work),
+            Err(Error::InvalidInput)
+        );
+        assert!(output.as_ref().unwrap().shares_frozen_storage(&prior));
+        assert_eq!(memory.used_bytes(), retained);
+        drop(prior);
+        // Dropping the result does not release the still-live bound metadata.
+        drop(output.take());
+        let retained = memory.used_bytes();
+        assert!(retained >= baseline + prepared.binding_metadata_bytes());
+        let mut changed = limits;
+        changed.max_output_elements = Some(limits.max_output_elements.unwrap() + 1);
+        for (owner, policy, ledger) in [
+            (&other_site_owner, limits, &work),
+            (&prepared, changed, &work),
+            (&prepared, limits, &independent),
+            (&prepared, limits, &foreign_work),
+        ] {
+            assert_eq!(
+                owner.invoke_current_cached(&mut cache, &args[0], &mut output, policy, ledger),
+                Err(Error::InvalidInput)
+            );
+            assert!(output.is_none());
+            assert_eq!(memory.used_bytes(), retained);
+        }
+        // The exact original ledger can still invoke the same maintained leaf.
+        prepared
+            .invoke_current_cached(&mut cache, &args[0], &mut output, limits, &work)
+            .unwrap();
+        assert!(matches!(output.as_ref().unwrap().data(), ValueData::U64(2)));
+        drop(output.take());
+        drop(cache);
+        assert_eq!(memory.used_bytes(), baseline);
+        drop((args, wrong, work, independent, foreign_work));
+        assert_eq!(memory.used_bytes(), 0);
+        assert_eq!(foreign.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn live_binding_cache_keys_absent_and_published_output_geometry_without_caching_values() {
+    use mech_core::{Value, ValueDataDraft as Data};
+    use mech_engine::native_artifact::{
+        NativeIterationAction, NativeLibraryWorkBudget, NativePreparedLibraryCallCache,
+        lower_native_program_artifact,
+    };
+    for artifact in artifacts("start<u64>..end<u64>\n") {
+        let catalog = mech_stdlib::source_catalog();
+        let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        let template = plan
+            .blocks()
+            .iter()
+            .find_map(|block| match block.action() {
+                NativeIterationAction::LibraryCall { template, .. } => Some(template),
+                _ => None,
+            })
+            .unwrap();
+        assert!(!template.output().dimension_parameters().is_empty());
+        let mech_core::ResolvedOperationContract::Declared(contract) = template.contract() else {
+            panic!("declared range")
+        };
+        let prepared = prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+        let memory = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let work = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
+        let args = [(1u64, 4u64), (3, 8), (5, 7)].map(|(start, end)| {
+            [start, end].map(|value| {
+                Some(admit_value(
+                    scalar_value(&artifact, contract.inputs[0].schema, Data::U64(value)),
+                    &memory,
+                ))
+            })
+        });
+        let mut limits = mech_core::TargetMemoryProfile::current_resident_cpu()
+            .unwrap()
+            .limits;
+        limits.max_compute_work = Some(128 * 1024 * 1024);
+        limits.max_temporary_bytes = Some(128 * 1024 * 1024);
+        let baseline = memory.used_bytes();
+        let mut cache = NativePreparedLibraryCallCache::default();
+        let mut output: Option<Value> = None;
+        let mut invoke = |index: usize, output: &mut Option<Value>| {
+            let start = work.used().0;
+            prepared
+                .invoke_current_cached(&mut cache, &args[index], output, limits, &work)
+                .unwrap();
+            work.used().0 - start
+        };
+        let check = |output: &Option<Value>, start: u64, end: u64| {
+            assert_eq!(
+                output.as_ref().unwrap().canonical_data_draft().unwrap(),
+                Data::Matrix((start..end).map(Data::U64).collect())
+            )
+        };
+        let first = invoke(0, &mut output);
+        check(&output, 1, 4);
+        drop(output.take());
+        let same_absent_signature = invoke(1, &mut output);
+        check(&output, 3, 8); // Different endpoints and length, same binding key.
+        assert!(first > same_absent_signature + prepared.binding_work() / 2);
+        let published_signature = invoke(2, &mut output);
+        check(&output, 5, 7); // Some prior length5 must not hit bound zero tape.
+        assert!(published_signature > same_absent_signature + prepared.binding_work() / 2);
+        drop(output.take());
+        let absent_again = invoke(0, &mut output);
+        check(&output, 1, 4); // None must not hit the prior length5 signature.
+        drop(output.take());
+        let hit_again = invoke(1, &mut output);
+        check(&output, 3, 8);
+        assert!(absent_again > hit_again + prepared.binding_work() / 2);
+        drop(invoke);
+        drop(output.take());
+        drop(cache);
+        assert_eq!(memory.used_bytes(), baseline);
+        drop((args, work));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
 fn prepared_matrix_format_derives_current_input_shape_without_or_after_publication() {
     use mech_core::{SchemaBody, ValueData, ValueDataDraft, ValueDraft};
     use mech_engine::native_artifact::{
@@ -1600,14 +1805,18 @@ fn prepared_matrix_format_derives_current_input_shape_without_or_after_publicati
             let schema_id = input_schema(&artifact, "number/format", 0);
             let schema = artifact.schemas().get(schema_id).unwrap();
             let mut output = None;
-            for columns in [3, 0, 1, 5] {
+            // A cache slot must not freeze parameterized matrix geometry.
+            let mut cache = mech_engine::native_artifact::NativePreparedLibraryCallCache::default();
+            let mut costs = Vec::new();
+            for (visit, columns) in [3, 3, 0, 1, 5, 3, 3].into_iter().enumerate() {
+                let offset = (visit as i64) * 10;
                 let shape = mech_core::shape_for_resolved_extents(schema, &[1, columns]).unwrap();
                 let value = ValueDraft {
                     schema: schema_id,
                     shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
                     data: ValueDataDraft::Matrix(
                         (0..columns)
-                            .map(|i| ValueDataDraft::I64(i as i64 + 1))
+                            .map(|i| ValueDataDraft::I64(i as i64 + 1 + offset))
                             .collect::<Vec<_>>()
                             .into_boxed_slice(),
                     ),
@@ -1617,14 +1826,17 @@ fn prepared_matrix_format_derives_current_input_shape_without_or_after_publicati
                 ))
                 .unwrap();
                 let input = admit_value(value, &memory);
+                let start = work.used().0;
                 prepared
-                    .invoke_current(
+                    .invoke_current_cached(
+                        &mut cache,
                         &[Some(input), Some(precision.clone())],
                         &mut output,
                         limits,
                         &work,
                     )
                     .unwrap();
+                costs.push(work.used().0 - start);
                 let value = output.as_ref().unwrap();
                 assert!(value.memory_budget_retained_bytes(&memory).is_some());
                 let SchemaBody::Matrix { dimensions, .. } = template.output().body() else {
@@ -1648,10 +1860,119 @@ fn prepared_matrix_format_derives_current_input_shape_without_or_after_publicati
                         .map(|value| value.as_ref())
                         .collect::<Vec<_>>(),
                     (1..=columns)
-                        .map(|value| value.to_string())
+                        .map(|value| (value as i64 + offset).to_string())
                         .collect::<Vec<_>>()
                 );
             }
+            assert!(costs[0] > costs[1] + prepared.binding_work() / 2);
+            assert!(costs[5] > costs[6] + prepared.binding_work() / 2);
+            // A concrete shape miss over a fixed cap may fail at re-binding
+            // or fresh turn admission, but cannot retain two bound plans or
+            // overwrite the previous publication. The same site/ledger/caps
+            // must recover when the earlier valid shape returns.
+            let mut bounded = limits;
+            bounded.max_output_elements = Some(3);
+            let make = |columns: u64| {
+                let shape = mech_core::shape_for_resolved_extents(schema, &[1, columns]).unwrap();
+                admit_value(
+                    ValueDraft {
+                        schema: schema_id,
+                        shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
+                        data: ValueDataDraft::Matrix(
+                            (0..columns)
+                                .map(|i| ValueDataDraft::I64(i as i64 + 1))
+                                .collect(),
+                        ),
+                    }
+                    .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                        artifact.schemas(),
+                    ))
+                    .unwrap(),
+                    &memory,
+                )
+            };
+            let good = [Some(make(2)), Some(precision.clone())];
+            let bad = [Some(make(4)), Some(precision.clone())];
+            let mut bounded_cache =
+                mech_engine::native_artifact::NativePreparedLibraryCallCache::default();
+            let mut bounded_output = None;
+            prepared
+                .invoke_current_cached(
+                    &mut bounded_cache,
+                    &good,
+                    &mut bounded_output,
+                    bounded,
+                    &work,
+                )
+                .unwrap();
+            let prior = bounded_output.as_ref().unwrap().clone();
+            let before = memory.used_bytes();
+            assert!(
+                prepared
+                    .invoke_current_cached(
+                        &mut bounded_cache,
+                        &bad,
+                        &mut bounded_output,
+                        bounded,
+                        &work,
+                    )
+                    .is_err()
+            );
+            assert!(
+                bounded_output
+                    .as_ref()
+                    .unwrap()
+                    .shares_frozen_storage(&prior)
+            );
+            assert!(memory.used_bytes() <= before);
+            let mut changed = bounded;
+            changed.max_output_elements = Some(4);
+            assert_eq!(
+                prepared.invoke_current_cached(
+                    &mut bounded_cache,
+                    &good,
+                    &mut bounded_output,
+                    changed,
+                    &work,
+                ),
+                Err(mech_engine::native_artifact::NativeCollectionInvocationError::InvalidInput)
+            );
+            // Release the comparison alias before a fresh equal publication;
+            // the maintained formatter may replace an equal immutable root.
+            drop(prior);
+            prepared
+                .invoke_current_cached(
+                    &mut bounded_cache,
+                    &good,
+                    &mut bounded_output,
+                    bounded,
+                    &work,
+                )
+                .unwrap();
+            assert_eq!(
+                bounded_output
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                ValueDataDraft::Matrix(
+                    ["1", "2"]
+                        .into_iter()
+                        .map(|text| ValueDataDraft::String(text.into()))
+                        .collect()
+                )
+            );
+            drop((
+                cache,
+                output,
+                bounded_cache,
+                bounded_output,
+                good,
+                bad,
+                precision,
+                work,
+            ));
+            assert_eq!(memory.used_bytes(), 0);
         }
     }
 }

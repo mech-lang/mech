@@ -142,6 +142,12 @@ fn tail_work_denial_after_managed_state_transitions_is_atomic_and_recovers() {
             &memory,
         );
         let mut output = vec![None; artifact.outputs().len()];
+        // Establish a prior root with the same retained shape before measuring:
+        // replacing an existing tuple/String legitimately prepays retirement,
+        // unlike the first invocation whose caller outputs are all empty.
+        jit.evaluate_into(&short, &mut output, limits(), &memory)
+            .unwrap();
+        equal(&artifact, &output, &reference(&artifact, &short));
         let report = jit
             .evaluate_into(&short, &mut output, limits(), &memory)
             .unwrap();

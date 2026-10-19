@@ -42,6 +42,7 @@ pub use crate::resident::general::native_collection_templates::{
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 pub use crate::resident::general::native_collection_calls::{
     NativeCollectionCall, NativeCollectionInvocationError, NativePreparedLibraryCall,
-    bind_native_collection_lexical, bind_native_collection_operation,
-    bind_native_program_library_call, prepare_native_program_library_call,
+    NativePreparedLibraryCallCache, bind_native_collection_lexical,
+    bind_native_collection_operation, bind_native_program_library_call,
+    prepare_native_program_library_call,
 };

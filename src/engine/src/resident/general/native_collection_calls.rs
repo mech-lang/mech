@@ -20,7 +20,9 @@ mod invocation;
 pub use invocation::NativeCollectionInvocationError;
 #[path = "native_collection_prepared.rs"]
 mod prepared;
-pub use prepared::{NativePreparedLibraryCall, prepare_native_program_library_call};
+pub use prepared::{
+    NativePreparedLibraryCall, NativePreparedLibraryCallCache, prepare_native_program_library_call,
+};
 
 /// A constructor-private binding of one actual artifact call at its current
 /// shapes. The selected factory, canonical contracts, actual handle

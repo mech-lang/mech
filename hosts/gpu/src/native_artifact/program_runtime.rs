@@ -18,7 +18,7 @@ use mech_core::{
 use mech_engine::native_artifact::{
     NativeCollectionInvocationError, NativeIterationAction, NativeIterationTerminator,
     NativeLibraryWorkBudget, NativeMatchAction, NativeMatchOrigin, NativeMatchTerminator,
-    NativeMatchValue, NativeScalarKind,
+    NativeMatchValue, NativePreparedLibraryCallCache, NativeScalarKind,
 };
 use std::ffi::c_void;
 
@@ -124,6 +124,7 @@ struct Context<'plan, 'visit> {
     arguments: *mut u64,
     argument_capacity: usize,
     call_inputs: NativeTypedStorage<Option<Value>>,
+    call_caches: session::CallCacheLane,
     consumed: bool,
     output_cursor: usize,
     error: Option<NativeProgramExecutionError>,
@@ -350,7 +351,8 @@ impl Context<'_, '_> {
                 .as_ref()
                 .ok_or_else(|| invalid("missing exact prepared selection"))?;
             let mut result = None;
-            let outcome = call.invoke_current(
+            let outcome = call.invoke_current_cached(
+                &mut self.call_caches.entries[site],
                 &self.call_inputs.values()[..operands.len()],
                 &mut result,
                 self.limits,
@@ -1191,6 +1193,8 @@ mod tests {
                 (16, 4u64),
                 (32, 7u64),
                 (32, 8u64),
+                (32, 9u64),
+                (32, 10u64),
                 (32, 1u64),
                 (32, 2u64),
                 (32, 3u64),

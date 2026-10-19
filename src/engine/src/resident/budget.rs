@@ -250,6 +250,12 @@ impl NativeLibraryWorkBudget {
         })
     }
 
+    /// Private identity check for invocation-owned prepared metadata. Equal
+    /// limits or an equal memory account cannot renew a different work ledger.
+    pub(crate) fn shares_account(&self, other: &Self) -> bool {
+        std::rc::Rc::ptr_eq(&self.account, &other.account)
+    }
+
     /// These are observations of this exact account, not caller-supplied cost
     /// certificates. The native owner reconciles its other work against them.
     pub fn used(&self) -> (u64, u64) {
