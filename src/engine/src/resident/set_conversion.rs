@@ -10,6 +10,17 @@ mod cost;
 #[path = "set_conversion_stats.rs"]
 mod stats;
 
+#[path = "set_conversion_closed.rs"]
+mod closed;
+#[cfg(all(test, any(feature = "full_source", feature = "full_compiler")))]
+pub(super) use closed::closed_scalar_setup_bytes;
+pub(crate) use closed::fold_closed;
+
+#[cfg(test)]
+thread_local! {
+    pub(super) static SOURCE_DRAFTS: core::cell::Cell<u64> = const { core::cell::Cell::new(0) };
+}
+
 #[cfg(all(
     test,
     feature = "native-artifact",
@@ -208,22 +219,6 @@ fn execute(
     let canonicalization_work = PreparedKernel::new(prepared.canonicalization_work, prepared.cost)
         .admit()?
         .into_plan();
-
-    // Current source geometry, not a copied parameter ordinal or flat length,
-    // binds the real declared target. All allocations below are now admitted.
-    let source_shape = match input {
-        ResidentValueRef::Snapshot([Some(value)]) => {
-            value
-                .validate_against(schemas)
-                .map_err(|_| ResidentKernelError::InvalidInput)?;
-            value.shape()
-        }
-        _ => &plan.source_shape,
-    };
-    let candidate_shape =
-        conversion_output_shape(source_schema, source_shape, output_schema, &plan.conversion)
-            .map_err(|_| ResidentKernelError::InvalidShape)?;
-    let draft = input_draft(input, plan)?;
     let canonicalization =
         mech_core::snapshot::SnapshotCanonicalizationBudget::new(canonicalization_work);
     let context = SnapshotValidationContext::with_shared_schemas(
@@ -232,23 +227,14 @@ fn execute(
             .ok_or(ResidentKernelError::InvalidOutput)?,
     )
     .with_canonicalization_budget(&canonicalization);
-    let data = execute_conversion_draft_with_schema(
-        draft,
-        &plan.conversion,
+    let next = materialize(
+        plan,
+        input,
+        source_schema,
+        kernel.snapshot_output().unwrap().schema,
         output_schema,
-        &candidate_shape,
         &context,
-    )
-    .map_err(|_| ResidentKernelError::Arithmetic)?;
-    let shape = conversion_output_shape_for_data(output_schema, &candidate_shape, &data)
-        .map_err(|_| ResidentKernelError::InvalidShape)?;
-    let next = ValueDraft {
-        schema: kernel.snapshot_output().unwrap().schema,
-        shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
-        data,
-    }
-    .finalize(&context)
-    .map_err(|_| ResidentKernelError::InvalidOutput)?;
+    )?;
     let changed = target
         .as_ref()
         .map(|old| old.snapshot_eq(schemas, &next, schemas).map(|same| !same))
@@ -257,6 +243,50 @@ fn execute(
         .unwrap_or(true);
     *target = Some(next);
     Ok(changed)
+}
+
+fn materialize(
+    plan: &Plan,
+    input: ResidentValueRef<'_>,
+    source_schema: &Schema,
+    output: SchemaId,
+    output_schema: &Schema,
+    context: &SnapshotValidationContext<'_>,
+) -> Result<Value, ResidentKernelError> {
+    // Current source geometry, not a copied parameter ordinal or flat length,
+    // binds the real declared target. All allocations below are now admitted.
+    let source_shape = match input {
+        ResidentValueRef::Snapshot([Some(value)]) => {
+            value
+                .validate_against(context.schemas())
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            value.shape()
+        }
+        _ => &plan.source_shape,
+    };
+    let candidate_shape =
+        conversion_output_shape(source_schema, source_shape, output_schema, &plan.conversion)
+            .map_err(|_| ResidentKernelError::InvalidShape)?;
+    #[cfg(test)]
+    SOURCE_DRAFTS.with(|count| count.set(count.get().saturating_add(1)));
+    let draft = input_draft(input, plan)?;
+    let data = execute_conversion_draft_with_schema(
+        draft,
+        &plan.conversion,
+        output_schema,
+        &candidate_shape,
+        context,
+    )
+    .map_err(|_| ResidentKernelError::Arithmetic)?;
+    let shape = conversion_output_shape_for_data(output_schema, &candidate_shape, &data)
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    ValueDraft {
+        schema: output,
+        shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
+        data,
+    }
+    .finalize(context)
+    .map_err(|_| ResidentKernelError::InvalidOutput)
 }
 
 fn input_draft(
