@@ -1,10 +1,11 @@
-//! Same-Object canonical native application with ordinary capability-secured CLI.
+//! Shared same-Object launcher; production is capability-secured.
 //! No source parsing, JIT, resident graph execution or source-native fallback.
 use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, Value};
 use mech_gpu::native_artifact::{
     LinkedProgramArtifact, NATIVE_PROGRAM_LINK_IDENTITY_BYTES,
     NativeExecutionLimits, NativeProgramExecutionLimits,
 };
+@BENCHMARK_POLICY_IMPORT@
 use mech_runtime::{
     CanonicalNativeResourceCompletion, CanonicalNativeResourceLimits,
     ConfigValue, HostInstanceConfig, NativeResourceBindingError,
@@ -35,6 +36,7 @@ struct LibraryLimits {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Launch {
+    @BENCHMARK_POLICY_FIELD@
     grants: Vec<Grant>,
     max_ports: usize,
     input_text_bytes: u64,
@@ -181,6 +183,7 @@ fn run() -> Result<(), String> {
         64 * 1024,
     )?;
     let launch: Launch = serde_json::from_slice(&launch_bytes).map_err(|error| error.to_string())?;
+    @BENCHMARK_POLICY_PARSE@
     launch.input_text_bytes.checked_add(1).ok_or("input acquisition cap overflows")?;
     let memory = ManagedMemoryBudget::new(launch.memory_bytes);
     let mut payload_arguments = bounded_arguments(arguments, launch.input_text_bytes, &memory)?;
@@ -255,6 +258,7 @@ fn run() -> Result<(), String> {
         std::mem::take(&mut payload_arguments.arguments),
     );
     let mut builder = RuntimeBuilder::new()
+        @BENCHMARK_POLICY_KERNEL@
         .host_factory(Box::new(CliHostFactory::with_backend(backend).map_err(diagnostic)?))
         .map_err(diagnostic)?
         .host_instance(HostInstanceConfig {
@@ -312,8 +316,8 @@ fn run() -> Result<(), String> {
     if report != "-" {
         let document = serde_json::json!({
             "schema": "mech.canonical-hosted-native-execution.v1",
-            "route": "canonical-artifact-program-object-secured-cli",
-            "policy": "secured",
+            "route": @HOSTED_ROUTE_LITERAL@,
+            "policy": @HOSTED_POLICY_EXPRESSION@,
             "program_revision": hex(artifact.revision().as_bytes()),
             "launch_sha256": hex(&Sha256::digest(&launch_bytes)),
             "native_aot": true,

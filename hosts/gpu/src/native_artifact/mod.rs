@@ -6,6 +6,8 @@
 mod abi;
 #[cfg(feature = "canonical-native")]
 mod application;
+#[cfg(feature = "canonical-native-benchmark-policy-runtime")]
+mod benchmark_policy;
 #[cfg(feature = "canonical-native")]
 mod compiler;
 mod identity;
@@ -20,6 +22,8 @@ pub use application::{
     GeneratedLinkedApplication, NativeApplicationError, generate_linked_application,
     validate_linked_application_binary_name,
 };
+#[cfg(feature = "canonical-native-benchmark-policy-runtime")]
+pub use benchmark_policy::{NativeBenchmarkCapabilityKernel, NativeBenchmarkPolicy};
 #[cfg(feature = "canonical-native")]
 pub use compiler::{
     JitArtifact, NativeCompileError, NativeCompileLimits, NativeObject, emit_object,
@@ -102,6 +106,8 @@ pub use iteration_identity::{
 };
 pub use iteration_linked::LinkedIterationArtifact;
 pub use iteration_runtime::{NativeIterationExecutionError, NativeIterationExecutionReport};
+#[cfg(feature = "canonical-native-benchmark-policy")]
+pub use program_application::generate_linked_benchmark_program_application;
 #[cfg(feature = "canonical-native-program-host")]
 pub use program_application::generate_linked_hosted_program_application;
 #[cfg(feature = "canonical-native-program")]

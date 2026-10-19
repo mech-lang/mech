@@ -1137,6 +1137,59 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn(f'("{label}", GGTA_INPUT,', fixture)
 
 
+    def test_same_binary_policy_job_is_required_explicit_nonempty_and_bounded(self):
+        native = job_block(NATIVE, "canonical-policy")
+        settings = native.split("    steps:\n", 1)[0]
+        self.assertNotRegex(settings, r"(?m)^    if:")
+        for forbidden in ("continue-on-error", "--skip", "CARGO_HOME"):
+            self.assertNotIn(forbidden, native)
+        self.assertIn("ref: ${{ inputs.validation_ref }}", native)
+        self.assertIn('test "$actual" = "$expected"', native)
+        self.assertIn('test "$actual" = "$CHECKOUT_SHA"', native)
+        steps = job_steps(NATIVE, "canonical-policy")
+        def named(name):
+            return next(step for step in steps if f"- name: {name}\n" in step)
+        compile_step = named("Compile benchmark policy contracts without execution")
+        self.assertIn("mech-gpu/canonical-native-benchmark-policy", compile_step)
+        self.assertIn("--record-test-executable canonical_hosted_artifact", compile_step)
+        self.assertIn("--no-run --message-format=json-render-diagnostics", compile_step)
+        kernel = named("Execute benchmark policy kernel contracts")
+        self.assertIn("--lib native_artifact::benchmark_policy::", kernel)
+        self.assertIn('[("13", "0", "0")]', kernel)
+        case = "linked::benchmark::complete_original_and_decoded_knucleotide_same_binary_policy_controls"
+        select = named("Verify linked benchmark policy selection is nonempty")
+        qualify = named("Qualify same-binary policies and secured production controls")
+        for step in (select, qualify):
+            self.assertIn("--test-executable-file target/native-plan-logs/canonical-policy-executable", step)
+            self.assertIn(case, step)
+            self.assertNotIn("cargo +", step)
+            self.assertNotRegex(step, r"(?m)^        if:")
+        self.assertIn("--list --ignored --exact", select)
+        self.assertIn(f'expected = "{case}: test"; assert lines.count(expected) == 1', select)
+        self.assertIn("--ignored --exact", qualify)
+        self.assertIn("MECH_CANONICAL_POLICY_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", qualify)
+        self.assertIn("MECH_CANONICAL_POLICY_EVIDENCE_DIR: ${{ runner.temp }}/canonical-policy-evidence", qualify)
+        self.assertGreaterEqual(int(re.search(r"--timeout-secs (\d+)", qualify).group(1)),
+                                3 * 900 + 3 * 120 + 2 * 300 + 51 * 120 + 10 * 120 + 4 * 15 + 300)
+        step_limits = []
+        for step in steps:
+            limit = re.search(r"(?m)^        timeout-minutes: ([1-9][0-9]*)$", step)
+            self.assertIsNotNone(limit, step)
+            step_limits.append(int(limit.group(1)))
+            if "python3 scripts/run-native-plan-stage.py" in step:
+                timeout = int(re.search(r"--timeout-secs (\d+)", step).group(1))
+                self.assertGreater(int(limit.group(1)) * 60, timeout + 30 + 5 + 15)
+        self.assertGreaterEqual(int(re.search(r"timeout-minutes: (\d+)", settings).group(1)), sum(step_limits) + 10)
+        upload = named("Retain benchmark policy diagnostics and qualification evidence")
+        for marker in ("if: always()", "target/native-plan-logs", "${{ runner.temp }}/canonical-policy-evidence", "if-no-files-found: error"):
+            self.assertIn(marker, upload)
+        for source, job in ((CI, "early-native-plan"), (FULL, "native-plan")):
+            self.assertIn("uses: ./.github/workflows/ci-native-plan.yml", job_block(source, job))
+        self.assertIn("- early-native-plan", job_block(CI, "pr-gate"))
+        self.assertIn("- native-plan", job_block(FULL, "cargo"))
+        production = job_block(NATIVE, "canonical-native-cli")
+        self.assertNotIn("canonical-native-benchmark-policy", production)
+
     def test_public_canonical_native_cli_is_required_and_runs_saved_exact_selections(self):
         native = job_block(NATIVE, "canonical-native-cli")
         settings = native.split("    steps:\n", 1)[0]

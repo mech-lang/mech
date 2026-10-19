@@ -16,6 +16,9 @@ use std::{
 #[path = "linked_process.rs"]
 mod process;
 use process::{assert_no_ambient_cargo_config, bounded, clean, closure, hash, pin, workspace};
+#[cfg(feature = "canonical-native-benchmark-policy")]
+#[path = "canonical_hosted_benchmark.rs"]
+mod benchmark;
 #[path = "canonical_hosted_full.rs"]
 mod full;
 #[path = "canonical_hosted_profile.rs"]

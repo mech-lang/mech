@@ -130,14 +130,16 @@ are documented in
 Recorded workload timings, compiler snapshots and optimization ledgers remain
 in the benchmark repository.
 
-That source-native route is legacy: it still uses independent source lowering
-and is not the completed canonical AOT route. The checked canonical artifact
-APIs now provide generated managed control, selected collection operations and
-a capability-secured resource-hosted application boundary. The generated
-standalone shell uses that boundary; the normal production native-build route
-has not been migrated to it. Production CLI migration, full-input execution
-and benchmark qualification remain unfinished. The legacy divergence is an
-unresolved migration, not a supported second semantic authority. See the recorded
+The `mech-native-*` test tools retain legacy independent source lowering; they
+are not the canonical AOT route. The public `mech build --backend cranelift`
+adapter now uses maintained canonical source compilation or explicitly
+source-unpaired `.mecb` decoding, then the same checked Object generator and
+capability-secured resource-hosted shell. It does not fall back to the legacy
+frontend or resident evaluator when lowering rejects a program. The default
+`--backend resident`, `mech run`, and `mech serve` remain resident products.
+Full-input execution, broader native coverage and benchmark qualification are
+still unfinished; the legacy tools are not a supported second semantic
+authority. See the recorded
 [`follow_up_roadmap`](../../docs/validation/checked-aot-workload-progress-v1.json)
 for migration context; current implemented and pending scope is detailed below.
 
@@ -244,6 +246,21 @@ the chosen profile. The receipt records the actual Cargo compiler profiles.
 The checked Cranelift Object still uses `opt_level=none`; a release shell is not
 a claim of optimized whole-program Mech code, full-size correctness or timing.
 
+The explicitly opt-in `canonical-native-benchmark-policy` generator feature
+adds `generate_linked_benchmark_program_application`, not another evaluator or
+production CLI option. Its runtime-only executable requires a launch JSON
+`benchmark_policy` of exactly `secured` or `trusted` and runs the same checked
+Object, phased session, CLI providers, finite budgets and lifecycle in either
+mode. Trusted mode bypasses capability-specific authorization decisions using
+real live, in-scope, unlimited-use grant identities; subjects, revocation,
+transaction scope and finite-use checks remain enforced. The experiment is not
+a measurement of all safety overhead and is not safe to ship as a secured
+production binary. No environment variable enables it in the production shell.
+The required `canonical-policy` CI job tests actual original/decoded
+same-binary controls and separately checks that the production binary rejects
+both the benchmark JSON field and the legacy trusted environment bypass.
+These controls alone are not full-input correctness or timing results.
+
 The optional full-input phase uses those same two release executables after
 all builds and pin-mutation/restoration checks finish. Add
 `MECH_CANONICAL_HOSTED_PROFILE=release` and
@@ -321,7 +338,7 @@ Persistent state, broader matrix/map/recursive operations, element-wise counts,
 all-ten-program coverage, standard-size input and whole-program optimization
 remain separate work. Release comparisons must follow exact-source
 correctness/admission qualification and identify the source, input, execution
-route and finite policy. This generated shell is secured-only; the legacy
+route and finite policy. The production generated shell is secured-only; the legacy
 trusted-mode environment setting does not change its grants. No timings of
 this language-level target are qualified yet. Older `sequence/packed-windows`
 timings are separately scoped migration diagnostics, not completion of this

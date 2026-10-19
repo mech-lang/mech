@@ -19,6 +19,9 @@ canonical-native-program = ["canonical-native-program-runtime", "canonical-nativ
 # Runtime-only capability bridge; no source-native sequence frontend or JIT.
 canonical-native-program-host-runtime = ["canonical-native-program-runtime", "runtime-host", "mech-runtime/resident-routing"]
 canonical-native-program-host = ["canonical-native-program", "canonical-native-program-host-runtime", "dep:mech-terminal"]
+# Explicit experiment only: never enabled by the production hosted CLI features.
+canonical-native-benchmark-policy-runtime = ["canonical-native-program-host-runtime"]
+canonical-native-benchmark-policy = ["canonical-native-program-host", "canonical-native-benchmark-policy-runtime"]
 native-build = ["sequence-cli", "fused-cli"]
 system-gmp = ["dep:gmp-mpfr-sys", "gmp-mpfr-sys/use-system-libs"]
 sequence-cli = ["aot", "dep:hashbrown", "dep:fxhash", "dep:rayon", "dep:memchr", "dep:regex", "dep:rug", "dep:mech-stdlib", "mech-stdlib/native-sequence"]

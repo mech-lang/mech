@@ -274,6 +274,111 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  # An explicit experiment in the SAME required reusable gate. This separate
+  # job does not lengthen the production CLI/hosted jobs or weaken their gates.
+  canonical-policy:
+    name: Same-binary native policy controls
+    runs-on: ubuntu-latest
+    # Serial Actions ceilings total 289 minutes; bounded orchestration headroom.
+    timeout-minutes: 305
+    env:
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        timeout-minutes: 2
+        with:
+          ref: ${{ inputs.validation_ref }}
+      - name: Record exact benchmark policy checkout
+        timeout-minutes: 2
+        env:
+          VALIDATION_REF: ${{ inputs.validation_ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        run: |
+          mkdir -p target/native-plan-logs
+          actual=$(git rev-parse HEAD)
+          expected=$(git rev-parse "$VALIDATION_REF^{commit}")
+          test "$actual" = "$expected"
+          test "$actual" = "$CHECKOUT_SHA"
+          git status --porcelain=v1 --untracked-files=all
+      - name: Install pinned policy compiler and process tools
+        timeout-minutes: 10
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources -o Dir::Etc::sourceparts=-
+          sudo apt-get install --yes strace ripgrep build-essential m4
+      - name: Verify policy Unix process targeting before generation
+        timeout-minutes: 3
+        run: |
+          python3 -B scripts/tests/test_probe_unix_kill_targeting.py
+          python3 scripts/probe-unix-kill-targeting.py
+      - name: Fetch locked benchmark policy dependencies
+        timeout-minutes: 10
+        run: cargo +nightly-2026-03-03 fetch --locked
+      - name: Compile benchmark policy contracts without execution
+        timeout-minutes: 20
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-policy-compile --timeout-secs 1080 \
+            --record-test-executable canonical_hosted_artifact \
+            --test-executable-file target/native-plan-logs/canonical-policy-executable -- \
+            cargo +nightly-2026-03-03 test --locked --offline \
+            -p mech-core -p mech-engine -p mech-runtime -p mech-stdlib -p mech-syntax -p mech-gpu \
+            --no-default-features \
+            --features mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-benchmark-policy \
+            --test canonical_hosted_artifact --no-run --message-format=json-render-diagnostics
+      - name: Execute benchmark policy kernel contracts
+        timeout-minutes: 30
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-policy-kernel --timeout-secs 1680 -- \
+            cargo +nightly-2026-03-03 test --locked --offline -j1 -p mech-gpu \
+            --no-default-features --features canonical-native-benchmark-policy \
+            --lib native_artifact::benchmark_policy:: -- --test-threads=1 --nocapture
+          python3 -c 'from pathlib import Path; import re; text = Path("target/native-plan-logs/canonical-policy-kernel.log").read_text(); assert re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text) == [("13", "0", "0")]'
+      - name: Execute benchmark generation and ordinary hosted contracts
+        timeout-minutes: 10
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-policy-contracts --timeout-secs 480 \
+            --test-executable-file target/native-plan-logs/canonical-policy-executable -- \
+            --test-threads=1 --nocapture
+      - name: Verify linked benchmark policy selection is nonempty
+        timeout-minutes: 3
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-policy-selection --timeout-secs 60 \
+            --test-executable-file target/native-plan-logs/canonical-policy-executable -- \
+            --list --ignored --exact \
+            linked::benchmark::complete_original_and_decoded_knucleotide_same_binary_policy_controls
+          python3 -c 'from pathlib import Path; lines = Path("target/native-plan-logs/canonical-policy-selection.log").read_text().splitlines(); expected = "linked::benchmark::complete_original_and_decoded_knucleotide_same_binary_policy_controls: test"; assert lines.count(expected) == 1, lines'
+      - name: Qualify same-binary policies and secured production controls
+        timeout-minutes: 194
+        env:
+          MECH_CANONICAL_POLICY_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_POLICY_EVIDENCE_DIR: ${{ runner.temp }}/canonical-policy-evidence
+        run: |
+          # Three builds/metadata checks, two generated-template suites, 51
+          # launches including production negatives, ten pin/recovery builds,
+          # and four source checks: 11040s ceilings plus 300s stage headroom.
+          python3 scripts/run-native-plan-stage.py --stage canonical-policy-linked --timeout-secs 11340 \
+            --test-executable-file target/native-plan-logs/canonical-policy-executable -- \
+            --ignored --exact \
+            linked::benchmark::complete_original_and_decoded_knucleotide_same_binary_policy_controls \
+            --test-threads=1 --nocapture
+      - name: Retain benchmark policy diagnostics and qualification evidence
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-policy-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/native-plan-logs
+            ${{ runner.temp }}/canonical-policy-evidence
+            !${{ runner.temp }}/canonical-policy-evidence/cargo-target/**
+          if-no-files-found: error
+          retention-days: 14
+
   # Same required reusable gate; this exercises the real public command,
   # not the direct generator harness. Builds run once before saved harnesses.
   canonical-native-cli:

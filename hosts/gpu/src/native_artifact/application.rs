@@ -162,7 +162,9 @@ pub(super) enum LinkedApplicationProfile {
     #[cfg(feature = "canonical-native-program")]
     ManagedProgram,
     #[cfg(feature = "canonical-native-program-host")]
-    HostedManagedProgram,
+    HostedManagedProgram {
+        benchmark_policy: bool,
+    },
 }
 
 pub(super) struct LinkedApplicationInputs<'a> {
@@ -254,8 +256,12 @@ pub(super) fn write_linked_application(
             "serde_json = \"1.0\"\n".to_owned(),
         ),
         #[cfg(feature = "canonical-native-program-host")]
-        LinkedApplicationProfile::HostedManagedProgram => (
-            "canonical-native-program-host-runtime",
+        LinkedApplicationProfile::HostedManagedProgram { benchmark_policy } => (
+            if benchmark_policy {
+                "canonical-native-benchmark-policy-runtime"
+            } else {
+                "canonical-native-program-host-runtime"
+            },
             ", features = [\"serde\"]",
             ", \"string\", \"pure_text\", \"map_ops\", \"access\", \"set\", \"tuple\", \"enum\", \"sequence_sort\"",
             format!(
@@ -329,7 +335,7 @@ incremental = false
         let mut runtime_features = runtime_features;
         if matches!(
             inputs.profile,
-            LinkedApplicationProfile::HostedManagedProgram
+            LinkedApplicationProfile::HostedManagedProgram { .. }
         ) {
             runtime_features.extend([
                 "mech-runtime/resident-routing".to_owned(),
