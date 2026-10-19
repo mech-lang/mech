@@ -10,6 +10,12 @@ use std::{cell::RefCell, rc::Rc, sync::Arc};
 mod string_projection;
 pub(in crate::resident) use string_projection::NativeProjectionIndexContext;
 
+#[path = "native_snapshot_footprint.rs"]
+mod snapshot_footprint;
+pub(in crate::resident) use snapshot_footprint::{
+    DataFootprintTransaction, borrowed_data_footprint,
+};
+
 #[derive(Debug)]
 struct Refined {
     base: Arc<TurnMemoryPlan>,
@@ -28,6 +34,8 @@ pub(crate) struct NativeTurnPlanCache {
     base: RefCell<Option<Arc<TurnMemoryPlan>>>,
     refined: RefCell<[Option<Refined>; REFINEMENTS]>,
     snapshot_index: crate::resident::text_index::snapshot::Slot,
+    data_footprints: snapshot_footprint::DataFootprints,
+    data_nodes: u64,
     limits: MemoryBudgetLimits,
     work: NativeLibraryWorkBudget,
     probe_work: u64,
@@ -41,13 +49,28 @@ impl NativeTurnPlanCache {
         (core::mem::size_of::<Self>() + 2 * core::mem::size_of::<usize>()) as u64
     }
 
-    pub(crate) fn retained_bytes(metadata: u64) -> Option<u64> {
+    pub(crate) fn retained_bytes(call: &CallMemoryPlan, metadata: u64) -> Option<u64> {
         // Separate bounded populations: reusable measured facts, one base
         // plan and the fixed refined lanes. Each uses the unchanged
         // full construction/coexistence envelope, not observed allocator peaks.
         metadata
             .checked_mul(2 + REFINEMENTS as u64)?
             .checked_add(Self::owner_bytes())
+            .and_then(|n| {
+                n.checked_add(snapshot_footprint::DataFootprints::bytes(
+                    call.inputs.len(),
+                )?)
+            })
+    }
+
+    pub(crate) fn retained_data_nodes(call: &CallMemoryPlan) -> Option<u64> {
+        snapshot_footprint::DataFootprints::nodes(call.inputs.len())
+    }
+
+    pub(crate) fn construction_owner_bytes(call: &CallMemoryPlan) -> Option<u64> {
+        Self::owner_bytes().checked_add(snapshot_footprint::DataFootprints::bytes(
+            call.inputs.len(),
+        )?)
     }
 
     pub(crate) fn new(
@@ -58,7 +81,7 @@ impl NativeTurnPlanCache {
         work: &NativeLibraryWorkBudget,
     ) -> Result<Rc<Self>, ResidentKernelError> {
         if reservation.capacity_bytes()
-            != Self::retained_bytes(metadata).ok_or(ResidentKernelError::InvalidShape)?
+            != Self::retained_bytes(call, metadata).ok_or(ResidentKernelError::InvalidShape)?
             || reservation.budget() != work.memory_budget()
         {
             return Err(ResidentKernelError::InvalidInput);
@@ -104,6 +127,8 @@ impl NativeTurnPlanCache {
             base: RefCell::new(None),
             refined: RefCell::new(std::array::from_fn(|_| None)),
             snapshot_index: Default::default(),
+            data_footprints: snapshot_footprint::DataFootprints::new(call),
+            data_nodes: Self::retained_data_nodes(call).ok_or(ResidentKernelError::InvalidShape)?,
             limits: call.target.limits,
             work: work.clone(),
             probe_work,
@@ -130,7 +155,10 @@ impl NativeTurnPlanCache {
             .unwrap_or(u64::MAX)
     }
     pub(crate) fn index_nodes(&self) -> u64 {
-        self.snapshot_index.nodes()
+        self.snapshot_index
+            .nodes()
+            .checked_add(self.data_nodes)
+            .unwrap_or(u64::MAX)
     }
     fn check_index_capacity(
         &self,
@@ -154,6 +182,7 @@ impl NativeTurnPlanCache {
         demand.retained_nodes = demand
             .retained_nodes
             .checked_add(nodes)
+            .and_then(|n| n.checked_add(self.data_nodes))
             .ok_or(ResidentKernelError::InvalidShape)?;
         if let Some(violation) = mech_core::evaluate_call_memory_budget(
             mech_core::MemoryObjectOwner::NodeOutput {
@@ -230,7 +259,7 @@ pub(super) fn retained_index_nodes() -> u64 {
         active
             .borrow()
             .as_ref()
-            .map_or(0, |cache| cache.snapshot_index.nodes())
+            .map_or(0, |cache| cache.index_nodes())
     })
 }
 pub(in crate::resident) fn prepared_snapshot_index(
@@ -341,6 +370,8 @@ mod tests {
             base: RefCell::new(None),
             refined: RefCell::new(std::array::from_fn(|_| None)),
             snapshot_index: Default::default(),
+            data_footprints: Default::default(),
+            data_nodes: 0,
             limits: MemoryBudgetLimits::default(),
             work: work.clone(),
             probe_work: 1,

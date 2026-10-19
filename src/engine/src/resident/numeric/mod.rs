@@ -16794,11 +16794,7 @@ fn snapshot_access_output_cost(
                     .ok_or(ResidentKernelError::InvalidShape)?,
                 None => 1,
             };
-            if u64::try_from(expected_count).map_or(true, |count| {
-                count > super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS
-            }) {
-                return Err(ResidentKernelError::InvalidShape);
-            }
+            super::budget::check_output_element_count(super::budget::checked_u64(expected_count)?)?;
             if plan.matrix_constructor.is_some() {
                 if expected_count != source_len {
                     return Err(ResidentKernelError::InvalidShape);
@@ -17371,7 +17367,7 @@ fn snapshot_access_from_source(
         .validate_against(schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
-    let source_footprint = super::budget::measure_borrowed_canonical_value_footprint(
+    let source_footprint = super::budget::measure_snapshot_access_source_footprint(
         &mut footprint_meter,
         source,
         schemas,

@@ -85,6 +85,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 10;
 // entry -> TextJoin strategy. Both original visits and complete owner pins
 // remain; only nonexistent key/result allocations and their copies disappear.
 // Canonical key planning/search and final append share maintained mechanics.
+// Policy20 reuses paid immutable DATA footprints within the same invocation;
+// every turn still validates its current finite limits and admission ledger.
 // Policy21 composes recursive declared-schema conversion binding and staging
 // with the collection strategies above. Present Matrix axes remain witnessed;
 // every invocation keeps fresh admission and atomic publication obligations.

@@ -52,6 +52,10 @@ impl std::fmt::Display for NativeCollectionInvocationError {
 }
 impl std::error::Error for NativeCollectionInvocationError {}
 
+#[cfg(all(test, any(feature = "full_source", feature = "full_compiler")))]
+#[path = "native_data_footprint_tests.rs"]
+mod data_footprint_tests;
+
 /// Only the constructor-private shallow maintained families reach this
 /// envelope. It conservatively covers planner coexistence, deep copies of
 /// the actual port descriptors, shared schema-arena wrappers, borrowed
@@ -263,22 +267,31 @@ impl NativeCollectionCall {
                             .ok_or(ResidentKernelError::InvalidShape)?,
                         0,
                     )?;
-                    let retained =
-                        NativeTurnPlanCache::retained_bytes(self.invocation_metadata_bytes)
-                            .ok_or(ResidentKernelError::InvalidShape)?;
+                    let retained = NativeTurnPlanCache::retained_bytes(
+                        &self.memory,
+                        self.invocation_metadata_bytes,
+                    )
+                    .ok_or(ResidentKernelError::InvalidShape)?;
                     let finite = match retained.checked_add(self.invocation_metadata_bytes) {
                         Some(peak) => match live::check_measurement_with_limits(
                             CurrentMemoryFootprint::default(),
                             ResourceDemand {
                                 turn_peak_bytes: peak,
+                                retained_nodes: NativeTurnPlanCache::retained_data_nodes(
+                                    &self.memory,
+                                )
+                                .ok_or(ResidentKernelError::InvalidShape)?,
                                 ..ResourceDemand::default()
                             },
                             self.memory.target.limits,
                         ) {
                             Ok(()) => true,
                             Err(MemoryPlanError::TargetLimitExceeded { violation })
-                                if violation.dimension
-                                    == mech_core::MemoryBudgetDimension::TemporaryBytes =>
+                                if matches!(
+                                    violation.dimension,
+                                    mech_core::MemoryBudgetDimension::TemporaryBytes
+                                        | mech_core::MemoryBudgetDimension::RetainedNodes
+                                ) =>
                             {
                                 false
                             }
@@ -313,7 +326,8 @@ impl NativeCollectionCall {
                     };
                     if let Some(headroom) = probe.as_mut() {
                         let reservation = headroom.split_capacity(retained)?;
-                        let owner = NativeTurnPlanCache::owner_bytes();
+                        let owner = NativeTurnPlanCache::construction_owner_bytes(&self.memory)
+                            .ok_or(ResidentKernelError::InvalidShape)?;
                         // Charge the complete unchanged construction/retirement
                         // envelope only when actually attempting cache creation.
                         work.charge(
@@ -458,6 +472,12 @@ impl NativeCollectionCall {
             .iter()
             .map(|value| ResidentValueRef::Snapshot(core::slice::from_ref(value)))
             .collect::<Vec<_>>();
+        // Pending DATA summaries are invisible to kernels until every fresh
+        // input, old publication, selector region and current budget succeeds.
+        let measurements = cache
+            .as_ref()
+            .map(|cache| cache.begin_data_measurements())
+            .transpose()?;
         let mut check = |footprint: CurrentMemoryFootprint, observed: ResourceDemand| {
             budget::observe_control_work(observed).map_err(measurement_error)?;
             let mut observed = observed;
@@ -468,27 +488,42 @@ impl NativeCollectionCall {
                 .ok_or(MemoryPlanError::TargetAddressOverflow)?;
             observed.retained_nodes = observed
                 .retained_nodes
+                .max(footprint.retained_nodes)
                 .checked_add(cache.as_ref().map_or(0, |cache| cache.index_nodes()))
                 .ok_or(MemoryPlanError::TargetAddressOverflow)?;
             live::check_measurement_with_limits(footprint, observed, self.memory.target.limits)
         };
-        let measure = |value: ResidentValueRef<'_>,
-                       descriptor: &mech_core::ResolvedValueDescriptor,
-                       schemas: &mech_core::SchemaTable,
-                       observed: &mut ResourceDemand| {
-            live::footprint_with_check(value, descriptor, schemas, observed, &mut check)
-        };
         let turn = if let Some(cache) = &cache {
             cache.with_facts(
                 |facts| -> Result<Arc<TurnMemoryPlan>, NativeCollectionInvocationError> {
-                    live::facts_with_into(
+                    live::facts_with_indexed_into(
                         &self.memory,
                         self.template.origin().node(),
                         &arguments,
                         ResidentValueRef::Snapshot(core::slice::from_ref(output)),
                         &self.schemas,
                         facts,
-                        measure,
+                        |ordinal, value, descriptor, schemas, observed| {
+                            if let Some(ordinal) = ordinal {
+                                let layout = self
+                                    .inputs
+                                    .get(ordinal)
+                                    .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
+                                live::footprint_with_data_check(
+                                    value,
+                                    descriptor,
+                                    observed,
+                                    &mut check,
+                                    measurements.as_ref().unwrap(),
+                                    ordinal,
+                                    layout.schema_key,
+                                )
+                            } else {
+                                live::footprint_with_check(
+                                    value, descriptor, schemas, observed, &mut check,
+                                )
+                            }
+                        },
                     )?;
                     let indices_closed = !crate::resident::text_index::has_index_scope()
                         && crate::resident::text_index::live_demand() == (0, 0);
@@ -515,13 +550,20 @@ impl NativeCollectionCall {
                 &arguments,
                 ResidentValueRef::Snapshot(core::slice::from_ref(output)),
                 &self.schemas,
-                measure,
+                |value, descriptor, schemas, observed| {
+                    live::footprint_with_check(value, descriptor, schemas, observed, &mut check)
+                },
             )?;
             Arc::new(self.plan_current(&facts)?)
         };
         if let Some(violation) = turn.budget_violations.first() {
             return Err(budget::resource_budget_error(violation).into());
         }
+        // Consume the entire optional transaction before the cache moves into
+        // execution, including the empty case. No extra cache owner is needed.
+        measurements
+            .into_iter()
+            .for_each(|transaction| transaction.commit());
         drop(arguments);
         let mut candidate = output.clone();
         let run = || {

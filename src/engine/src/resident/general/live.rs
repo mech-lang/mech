@@ -30,9 +30,128 @@ pub(super) fn footprint_with_check(
     work: &mut ResourceDemand,
     check: &mut impl FnMut(CurrentMemoryFootprint, ResourceDemand) -> Result<(), MemoryPlanError>,
 ) -> Result<CurrentMemoryFootprint, MemoryPlanError> {
+    footprint_impl(value, descriptor, work, check, InputDataMemo::None)
+}
+
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(super) fn footprint_with_data_check(
+    value: ResidentValueRef<'_>,
+    descriptor: &mech_core::ResolvedValueDescriptor,
+    work: &mut ResourceDemand,
+    check: &mut impl FnMut(CurrentMemoryFootprint, ResourceDemand) -> Result<(), MemoryPlanError>,
+    transaction: &crate::resident::budget::native_turn_plan_cache::DataFootprintTransaction<'_>,
+    ordinal: usize,
+    key: mech_core::SchemaKey,
+) -> Result<CurrentMemoryFootprint, MemoryPlanError> {
+    footprint_impl(
+        value,
+        descriptor,
+        work,
+        check,
+        InputDataMemo::Borrowed {
+            transaction,
+            ordinal,
+            key,
+        },
+    )
+}
+
+#[derive(Clone, Copy)]
+enum InputDataMemo<'a> {
+    None,
+    #[cfg(all(
+        feature = "native-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    ))]
+    Borrowed {
+        transaction:
+            &'a crate::resident::budget::native_turn_plan_cache::DataFootprintTransaction<'a>,
+        ordinal: usize,
+        key: mech_core::SchemaKey,
+    },
+    // Keep this local measurement adapter valid when native collections are
+    // disabled; it does not enable any native-cache module in those profiles.
+    #[cfg(not(all(
+        feature = "native-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    )))]
+    _Lifetime(core::marker::PhantomData<&'a ()>),
+}
+
+impl InputDataMemo<'_> {
+    fn header(self) -> Result<Option<(u64, mech_core::SchemaKey)>, MemoryPlanError> {
+        match self {
+            #[cfg(all(
+                feature = "native-artifact",
+                any(feature = "pure_text", feature = "map_ops")
+            ))]
+            Self::Borrowed {
+                transaction,
+                ordinal,
+                key,
+            } => Ok(Some((transaction.header(ordinal, key)?, key))),
+            _ => Ok(None),
+        }
+    }
+
+    fn measure(
+        self,
+        value: &Value,
+        body: &mech_core::SchemaBody,
+        mut consume: impl FnMut(mech_core::snapshot::ValueFootprint, u64) -> Result<(), MemoryPlanError>,
+    ) -> Result<(), MemoryPlanError> {
+        #[cfg(all(
+            feature = "native-artifact",
+            any(feature = "pure_text", feature = "map_ops")
+        ))]
+        if let Self::Borrowed {
+            transaction,
+            ordinal,
+            key,
+        } = self
+        {
+            return transaction.measure(ordinal, value, key, consume);
+        }
+        mech_core::snapshot::visit_canonical_data_work(body, value.data(), |chunk| {
+            consume(
+                mech_core::snapshot::ValueFootprint {
+                    encoded_bytes: chunk.encoded_bytes,
+                    retained_bytes: chunk.retained_bytes,
+                    node_count: chunk.node_count,
+                },
+                chunk.node_count.max(1),
+            )
+        })
+        .map_err(|error| match error {
+            mech_core::snapshot::CanonicalDataWorkError::Visitor(error) => error,
+            _ => MemoryPlanError::DescriptorMismatch,
+        })
+    }
+}
+
+fn footprint_impl(
+    value: ResidentValueRef<'_>,
+    descriptor: &mech_core::ResolvedValueDescriptor,
+    work: &mut ResourceDemand,
+    check: &mut impl FnMut(CurrentMemoryFootprint, ResourceDemand) -> Result<(), MemoryPlanError>,
+    memo: InputDataMemo<'_>,
+) -> Result<CurrentMemoryFootprint, MemoryPlanError> {
+    // Only a single native Snapshot input is a memo candidate. All other
+    // carriers and the prior publication retain the original measurement.
+    let memo = match value {
+        ResidentValueRef::Snapshot([Some(_)]) => memo,
+        _ => InputDataMemo::None,
+    };
+    let header = memo.header()?;
     let mut result = CurrentMemoryFootprint {
         logical_elements: value.len() as u64,
-        schema_bytes: descriptor.schema().canonical_bytes().len() as u64,
+        schema_bytes: header.map_or_else(
+            || descriptor.schema().canonical_bytes().len() as u64,
+            |(bytes, _)| bytes,
+        ),
         shape_parameter_count: descriptor.shape().parameter_values().len() as u64,
         ..CurrentMemoryFootprint::default()
     };
@@ -64,7 +183,14 @@ pub(super) fn footprint_with_check(
                 let schema = value
                     .validate_against(&owner)
                     .map_err(|_| MemoryPlanError::DescriptorMismatch)?;
-                if schema != descriptor.schema()
+                let schema_matches = if let Some((_, key)) = header {
+                    // The exact selected port key was frozen from this
+                    // descriptor; the current retained arena is checked fresh.
+                    entry.key() == key && value.schema_key() == key
+                } else {
+                    schema == descriptor.schema()
+                };
+                if !schema_matches
                     || !mech_core::shape_change_allowed(schema, descriptor.shape(), value.shape())
                 {
                     return Err(MemoryPlanError::DescriptorMismatch);
@@ -77,21 +203,14 @@ pub(super) fn footprint_with_check(
                     add(core::mem::size_of::<Value>() as u64, shape_bytes)?,
                 )?;
                 result.retained_nodes = add(result.retained_nodes, 1)?;
-                mech_core::snapshot::visit_canonical_data_work(
-                    schema.body(),
-                    value.data(),
-                    |chunk| {
-                        result.payload_bytes = add(result.payload_bytes, chunk.retained_bytes)?;
-                        result.encoded_bytes = add(result.encoded_bytes, chunk.encoded_bytes)?;
-                        result.retained_nodes = add(result.retained_nodes, chunk.node_count)?;
-                        work.work.compute = add(work.work.compute, chunk.node_count.max(1))?;
-                        check(result, *work)
-                    },
-                )
-                .map_err(|error| match error {
-                    mech_core::snapshot::CanonicalDataWorkError::Visitor(error) => error,
-                    _ => MemoryPlanError::DescriptorMismatch,
-                })?;
+                let consume = |chunk: mech_core::snapshot::ValueFootprint, compute| {
+                    result.payload_bytes = add(result.payload_bytes, chunk.retained_bytes)?;
+                    result.encoded_bytes = add(result.encoded_bytes, chunk.encoded_bytes)?;
+                    result.retained_nodes = add(result.retained_nodes, chunk.node_count)?;
+                    work.work.compute = add(work.work.compute, compute)?;
+                    check(result, *work)
+                };
+                memo.measure(value, schema.body(), consume)?;
             }
             if let [Some(value)] = values {
                 result.logical_elements = match value.data() {
@@ -210,6 +329,32 @@ pub(super) fn facts_with_into(
         &mut ResourceDemand,
     ) -> Result<CurrentMemoryFootprint, MemoryPlanError>,
 ) -> Result<(), MemoryPlanError> {
+    facts_with_indexed_into(
+        call,
+        node,
+        inputs,
+        published,
+        schemas,
+        facts,
+        |_, value, descriptor, schemas, demand| measure(value, descriptor, schemas, demand),
+    )
+}
+
+pub(super) fn facts_with_indexed_into(
+    call: &CallMemoryPlan,
+    node: NodeId,
+    inputs: &[ResidentValueRef<'_>],
+    published: ResidentValueRef<'_>,
+    schemas: &mech_core::SchemaTable,
+    facts: &mut TurnMemoryFacts,
+    mut measure: impl FnMut(
+        Option<usize>,
+        ResidentValueRef<'_>,
+        &mech_core::ResolvedValueDescriptor,
+        &mech_core::SchemaTable,
+        &mut ResourceDemand,
+    ) -> Result<CurrentMemoryFootprint, MemoryPlanError>,
+) -> Result<(), MemoryPlanError> {
     if inputs.len() != call.inputs.len() || call.outputs.len() != 1 {
         return Err(MemoryPlanError::DescriptorArityMismatch);
     }
@@ -217,6 +362,7 @@ pub(super) fn facts_with_into(
     facts.observed_demand = None;
     for (ordinal, (value, port)) in inputs.iter().zip(&call.inputs).enumerate() {
         let f = measure(
+            Some(ordinal),
             *value,
             &port.descriptor,
             schemas,
@@ -227,6 +373,7 @@ pub(super) fn facts_with_into(
             .insert((node, PortDirection::Input, ordinal as u16), f);
     }
     let current = measure(
+        None,
         published,
         &call.outputs[0].descriptor,
         schemas,

@@ -287,6 +287,23 @@ impl NativeLibraryWorkBudget {
         CONTROL_WORK.with(|active| active.borrow().is_some())
     }
 
+    /// A reusable measured summary requires a real paid native scope, not
+    /// merely an account installed beside an absent or foreign observer.
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    pub(in crate::resident) fn has_matching_active_scope(&self) -> bool {
+        CONTROL_WORK.with(|active| {
+            active
+                .borrow()
+                .as_ref()
+                .is_some_and(|current| std::rc::Rc::ptr_eq(current, &self.account))
+        }) && CONTROL_WORK_SCOPE.with(|active| {
+            active
+                .borrow()
+                .as_ref()
+                .is_some_and(|scope| std::rc::Rc::ptr_eq(&scope.total, &self.account))
+        })
+    }
+
     /// Generated scalar/control work and maintained leaf work debit this same
     /// account. This method never replaces the current invocation's account.
     pub fn charge(&self, compute: u64, comparison: u64) -> Result<(), ResidentKernelError> {
@@ -638,6 +655,47 @@ mod native_library_work_tests {
             Err(ResidentKernelError::InvalidInput)
         );
         assert_eq!(fresh.used(), (0, 0));
+    }
+
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[test]
+    fn reusable_measurement_requires_matching_account_and_paid_observer_scope() {
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let budget = NativeLibraryWorkBudget::new(8, 4, &memory).unwrap();
+        let other = NativeLibraryWorkBudget::new(8, 4, &memory).unwrap();
+        let cloned = budget.clone();
+        assert!(!budget.has_matching_active_scope());
+        budget
+            .with_scope(|| {
+                assert!(budget.has_matching_active_scope());
+                assert!(cloned.has_matching_active_scope());
+                assert!(!other.has_matching_active_scope());
+                {
+                    let _restore = ControlWorkScopeGuard(
+                        CONTROL_WORK_SCOPE.with(|active| active.replace(None)),
+                    );
+                    assert!(!budget.has_matching_active_scope());
+                    // Observing no scope is deliberately a no-op elsewhere;
+                    // that success must never authenticate a cached summary.
+                    observe_control_work(demand(100, 0)).unwrap();
+                    assert_eq!(budget.used(), (0, 0));
+                }
+                {
+                    let _restore = ControlWorkScopeGuard(CONTROL_WORK_SCOPE.with(|active| {
+                        active.replace(Some(ControlWorkScope {
+                            total: other.account.clone(),
+                            observed: ControlWork::default(),
+                        }))
+                    }));
+                    assert!(!budget.has_matching_active_scope());
+                    assert!(!other.has_matching_active_scope());
+                }
+                assert!(budget.has_matching_active_scope());
+            })
+            .unwrap();
+        assert!(!budget.has_matching_active_scope());
+        assert_eq!(budget.used(), (0, 0));
+        assert_eq!(other.used(), (0, 0));
     }
 
     #[test]
@@ -1478,6 +1536,70 @@ pub(crate) fn resource_budget_error(
     }
 }
 
+#[cfg(test)]
+thread_local! {
+    // Fixed scalar evidence only; no allocation or assertion in a callback.
+    static OUTPUT_ELEMENT_PREFLIGHT: std::cell::Cell<(u64, u64, u64)> =
+        const { std::cell::Cell::new((0, 0, 0)) };
+}
+
+/// Check prospective element count before a selected-cell walk or draft.
+/// This is only a current-policy guard, never a materialization permit.
+pub(crate) fn check_output_element_count(required: u64) -> Result<(), ResidentKernelError> {
+    let current = with_active_turn_plan(|active| {
+        active.as_ref().map(|plan| {
+            let limit = plan
+                .budget_limits
+                .max_output_elements
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            #[cfg(test)]
+            OUTPUT_ELEMENT_PREFLIGHT.with(|observed| {
+                observed.set((observed.get().0.saturating_add(1), required, limit));
+            });
+            if required <= limit {
+                return Ok(());
+            }
+            let demand = ResourceDemand {
+                output_elements: required,
+                ..ResourceDemand::default()
+            };
+            if let Some(violation) = mech_core::evaluate_call_memory_budget(
+                mech_core::MemoryObjectOwner::NodeOutput {
+                    node: plan.node,
+                    port: 0,
+                },
+                demand,
+                0,
+                0,
+                plan.budget_limits,
+            )
+            .first()
+            {
+                return Err(resource_budget_error(violation));
+            }
+            Err(ResidentKernelError::InvalidInput)
+        })
+    });
+    if let Some(result) = current {
+        return result;
+    }
+    // Closed/ordinary analysis has no selected current invocation policy.
+    // Preserve its historical default and error exactly.
+    if required > MAX_RESIDENT_OUTPUT_ELEMENTS {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(())
+}
+
+#[cfg(all(
+    test,
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops"),
+    any(feature = "full_source", feature = "full_compiler")
+))]
+#[path = "snapshot_output_element_tests.rs"]
+mod snapshot_output_element_tests;
+
 pub(crate) fn memory_plan_kernel_error(error: mech_core::MemoryPlanError) -> ResidentKernelError {
     match error {
         mech_core::MemoryPlanError::TargetLimitExceeded { violation } => {
@@ -2042,6 +2164,19 @@ pub(crate) fn measure_borrowed_canonical_value_footprint(
     measure_borrowed_canonical_value_footprint_with_proof(meter, value, schemas, &mut proof)
 }
 
+/// The snapshot-access source alone may reuse a complete DATA-only summary
+/// owned by the current native invocation. Current schema support, wrapper,
+/// shape and retained nodes are still measured/admitted here on every use.
+/// Ordinary execution and unsupported layouts retain the original visitor.
+pub(crate) fn measure_snapshot_access_source_footprint(
+    meter: &mut ResidentBudgetMeter,
+    value: &Value,
+    schemas: &SchemaTable,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    let mut proof = None;
+    measure_borrowed_value_footprint(meter, value, schemas, &mut proof, true)
+}
+
 /// Measures a borrowed value while reusing only the immutable schema-support
 /// proof. Concrete shape, retained nodes, and selected data are charged on
 /// every call.
@@ -2050,6 +2185,16 @@ pub(crate) fn measure_borrowed_canonical_value_footprint_with_proof(
     value: &Value,
     schemas: &SchemaTable,
     proof: &mut Option<BorrowedFootprintSchemaProof>,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    measure_borrowed_value_footprint(meter, value, schemas, proof, false)
+}
+
+fn measure_borrowed_value_footprint(
+    meter: &mut ResidentBudgetMeter,
+    value: &Value,
+    schemas: &SchemaTable,
+    proof: &mut Option<BorrowedFootprintSchemaProof>,
+    source_cache: bool,
 ) -> Result<ValueFootprint, ResidentKernelError> {
     meter.charge_compute_work(BORROWED_FOOTPRINT_METADATA_WORK)?;
     let entry = schemas
@@ -2075,6 +2220,26 @@ pub(crate) fn measure_borrowed_canonical_value_footprint_with_proof(
     }
     let shape_parameters = value.shape().parameter_values().len();
     meter.charge_retained_nodes(1)?;
+    #[cfg(all(
+        feature = "native-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    ))]
+    if source_cache
+        && let Some(data) =
+            native_turn_plan_cache::borrowed_data_footprint(value, entry.key(), |work| {
+                meter.charge_compute_work(work)
+            })?
+    {
+        // Reusing a successful immutable DATA measurement eliminates the
+        // visitor, not the source's full current retained-node obligation.
+        meter.charge_retained_nodes(data.node_count)?;
+        return projected_canonical_value_footprint(data, shape_parameters);
+    }
+    #[cfg(not(all(
+        feature = "native-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    )))]
+    let _ = source_cache;
     let data =
         measure_proven_borrowed_canonical_data_footprint(meter, schema.body(), value.data(), true)?;
     projected_canonical_value_footprint(data, shape_parameters)
@@ -2380,6 +2545,70 @@ mod tests {
                 mech_core::DimensionExpr::Constant(count as u64),
             ]),
         }
+    }
+
+    #[test]
+    fn snapshot_access_source_without_active_native_cache_keeps_original_visitor() {
+        use mech_core::{ValueDataDraft, snapshot::OptionDraft};
+
+        let empty =
+            borrowed_retention_value(SchemaBody::String, ValueDataDraft::String(String::new()));
+        let matrix = borrowed_retention_value(
+            borrowed_retention_matrix(SchemaBody::String, 3),
+            ValueDataDraft::Matrix(
+                vec![
+                    ValueDataDraft::String("e\u{301}👩‍👩‍👧‍👦".to_owned()),
+                    ValueDataDraft::String("é".repeat(40_000)),
+                    ValueDataDraft::String(String::new()),
+                ]
+                .into_boxed_slice(),
+            ),
+        );
+        let mut body = SchemaBody::Bool;
+        let mut data = ValueDataDraft::Bool(true);
+        for _ in 0..40 {
+            body = SchemaBody::Option(Box::new(body));
+            data = ValueDataDraft::Option(OptionDraft {
+                present: true,
+                value: Some(Box::new(data)),
+            });
+        }
+        let deep = borrowed_retention_value(body, data);
+        for (value, schemas) in [empty, matrix, deep] {
+            for compute in [128, 1_000_000] {
+                let mut original = ResidentBudgetMeter::for_closed_analysis(compute, 1_000_000);
+                let expected =
+                    measure_borrowed_canonical_value_footprint(&mut original, &value, &schemas);
+                let mut source = ResidentBudgetMeter::for_closed_analysis(compute, 1_000_000);
+                assert_eq!(
+                    measure_snapshot_access_source_footprint(&mut source, &value, &schemas),
+                    expected,
+                );
+                assert_eq!(source.estimate(), original.estimate());
+            }
+        }
+        let (number, number_owner) = borrowed_retention_value(
+            SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+            ValueDataDraft::U64(7),
+        );
+        let (text, text_owner) =
+            borrowed_retention_value(SchemaBody::String, ValueDataDraft::String("x".to_owned()));
+        assert_eq!(number.schema(), text.schema());
+        assert_ne!(number.schema_key(), text.schema_key());
+        assert_ne!(
+            number_owner.entry(number.schema()).unwrap().key(),
+            text.schema_key()
+        );
+        let mut original = ResidentBudgetMeter::for_closed_analysis(1_024, 1_024);
+        let expected =
+            measure_borrowed_canonical_value_footprint(&mut original, &text, &number_owner);
+        let mut source = ResidentBudgetMeter::for_closed_analysis(1_024, 1_024);
+        assert_eq!(
+            measure_snapshot_access_source_footprint(&mut source, &text, &number_owner),
+            expected,
+        );
+        assert_eq!(source.estimate(), original.estimate());
+        assert!(text.validate_against(&text_owner).is_ok());
     }
 
     #[test]

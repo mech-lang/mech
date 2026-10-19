@@ -134,7 +134,7 @@ fn same_base_facts_vary_candidate_utf8_bytes_reuse_current_permits_and_deny_atom
         let mut cache = NativePreparedLibraryCallCache::default();
         let mut output = None;
         let mut costs = Vec::new();
-        for (ordinal, expected) in [(0, "é"), (1, "A"), (1, "A"), (1, "A")] {
+        for (ordinal, expected) in [(0, "é"), (1, "A"), (1, "A"), (1, "A"), (1, "A")] {
             let start = work.used().0;
             prepared
                 .invoke_current_cached(&mut cache, &args[ordinal], &mut output, limits, &work)
@@ -145,11 +145,14 @@ fn same_base_facts_vary_candidate_utf8_bytes_reuse_current_permits_and_deny_atom
             );
             drop(output.take());
         }
+        // The new selector first pays for its cold immutable DATA footprint.
+        // Its next visit supplies the smaller, already measured DATA demand,
+        // so exact planning facts must change once more before a true hit.
         assert!(
-            costs[1] > costs[2] * 2,
-            "current exact demand phases must really hit: {costs:?}"
+            costs[1] > costs[3] * 2 && costs[2] > costs[3] * 2,
+            "both exact demand transitions must precede a real hit: {costs:?}"
         );
-        assert_eq!(costs[2], costs[3]);
+        assert_eq!(costs[3], costs[4]);
         drop(cache);
         assert_eq!(memory.used_bytes(), baseline);
         // Same finite cap and ledger throughout: a fresh one-byte result fits,
