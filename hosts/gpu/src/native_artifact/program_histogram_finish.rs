@@ -127,13 +127,13 @@ impl State {
             .unwrap();
         let mut entries = allocation::vector(
             histogram.entries.len(),
-            allocation::Kind::Entries,
+            allocation::HistogramAllocationSite::Entries,
             "Histogram result draft allocation",
         )?;
         for entry in &histogram.entries {
             let mut items = allocation::vector(
                 2,
-                allocation::Kind::Items,
+                allocation::HistogramAllocationSite::Items,
                 "Histogram result item allocation",
             )?;
             let key = allocation::key(&entry.key)?;

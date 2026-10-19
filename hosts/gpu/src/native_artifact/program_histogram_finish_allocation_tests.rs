@@ -1,6 +1,6 @@
 //! Deterministic capacity responses and actual original/decoded JIT recovery.
 use super::super::super::super::tests::{artifact_source, limits};
-use super::allocation::{self, Kind, observation};
+use super::allocation::{self, HistogramAllocationSite, observation};
 use super::*;
 use crate::native_artifact::{JitProgramArtifact, NativeExecutionError};
 use mech_core::{ManagedMemoryBudget, Value, ValueDataDraft as Data};
@@ -20,7 +20,12 @@ fn finish_buffers_reject_short_excess_and_nonempty_before_any_draft_fill() {
         if mode == "nonempty" {
             values.push(7);
         }
-        let result = allocation::vector_with(count, Kind::Entries, "test vector", |_| Ok(values));
+        let result = allocation::vector_with(
+            count,
+            HistogramAllocationSite::Entries,
+            "test vector",
+            |_| Ok(values),
+        );
         if mode == "exact" {
             let values = result.unwrap();
             assert!(values.is_empty());
@@ -30,7 +35,7 @@ fn finish_buffers_reject_short_excess_and_nonempty_before_any_draft_fill() {
         }
     }
     assert!(
-        allocation::vector::<u64>(0, Kind::Entries, "empty entries")
+        allocation::vector::<u64>(0, HistogramAllocationSite::Entries, "empty entries")
             .unwrap()
             .is_empty()
     );
@@ -68,7 +73,13 @@ fn finish_capacity_failure_drops_owners_under_claim_and_never_refunds_work() {
     let count = values.capacity() - 1;
     values.push(Probe(&observed, memory.clone()));
     assert!(
-        allocation::vector_with(count, Kind::Items, "test excess items", |_| Ok(values)).is_err()
+        allocation::vector_with(
+            count,
+            HistogramAllocationSite::Items,
+            "test excess items",
+            |_| Ok(values)
+        )
+        .is_err()
     );
     assert_eq!(observed.get(), baseline + 128);
     assert_eq!(memory.used_bytes(), baseline + 128);
@@ -85,10 +96,15 @@ fn finish_claim_exact_one_short_checks_before_allocator_and_without_retry() {
         let memory = ManagedMemoryBudget::new(limit);
         let allocations = Cell::new(0);
         let result = memory.reserve_capacity(128).map(|reservation| {
-            let values = allocation::vector_with::<u64>(0, Kind::Entries, "test empty", |_| {
-                allocations.set(allocations.get() + 1);
-                Ok(Vec::new())
-            })
+            let values = allocation::vector_with::<u64>(
+                0,
+                HistogramAllocationSite::Entries,
+                "test empty",
+                |_| {
+                    allocations.set(allocations.get() + 1);
+                    Ok(Vec::new())
+                },
+            )
             .unwrap();
             assert_eq!(memory.used_bytes(), 128);
             drop(values);
@@ -181,35 +197,35 @@ fn actual_histogram_finish_excess_at_every_owned_buffer_is_atomic_and_recovers()
         let baseline = memory.used_bytes();
         for (kind, ordinal, attempts, accepted, reason) in [
             (
-                Kind::Entries,
+                HistogramAllocationSite::Entries,
                 1,
                 [1, 0, 0],
                 [0, 0, 0],
                 "Histogram result draft allocation",
             ),
             (
-                Kind::Items,
+                HistogramAllocationSite::Items,
                 1,
                 [1, 1, 0],
                 [1, 0, 0],
                 "Histogram result item allocation",
             ),
             (
-                Kind::Key,
+                HistogramAllocationSite::Key,
                 1,
                 [1, 1, 1],
                 [1, 1, 0],
                 "Histogram result key allocation",
             ),
             (
-                Kind::Items,
+                HistogramAllocationSite::Items,
                 2,
                 [1, 2, 1],
                 [1, 1, 1],
                 "Histogram result item allocation",
             ),
             (
-                Kind::Key,
+                HistogramAllocationSite::Key,
                 2,
                 [1, 2, 2],
                 [1, 2, 1],

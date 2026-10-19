@@ -3,13 +3,17 @@ use super::super::super::allocation as admitted;
 use super::{Error, invalid};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum Kind {
+pub(super) enum HistogramAllocationSite {
     Entries,
     Items,
     Key,
 }
 
-pub(super) fn vector<T>(count: usize, kind: Kind, reason: &'static str) -> Result<Vec<T>, Error> {
+pub(super) fn vector<T>(
+    count: usize,
+    kind: HistogramAllocationSite,
+    reason: &'static str,
+) -> Result<Vec<T>, Error> {
     vector_with(count, kind, reason, |count| {
         #[cfg(all(test, feature = "canonical-native-program"))]
         let count = observation::requested(kind, count)?;
@@ -23,7 +27,7 @@ pub(super) fn vector<T>(count: usize, kind: Kind, reason: &'static str) -> Resul
 
 pub(super) fn vector_with<T>(
     count: usize,
-    _kind: Kind,
+    _kind: HistogramAllocationSite,
     reason: &'static str,
     allocate: impl FnOnce(usize) -> Result<Vec<T>, Error>,
 ) -> Result<Vec<T>, Error> {
@@ -50,7 +54,7 @@ pub(super) fn vector_with<T>(
 }
 
 pub(super) fn key(source: &str) -> Result<String, Error> {
-    let _kind = Kind::Key;
+    let _kind = HistogramAllocationSite::Key;
     key_with(source, |count| {
         #[cfg(all(test, feature = "canonical-native-program"))]
         let count = observation::requested(_kind, count)?;
@@ -73,14 +77,14 @@ pub(super) fn key_with(
         return Err(invalid("Histogram result key allocation"));
     }
     #[cfg(all(test, feature = "canonical-native-program"))]
-    observation::accepted(Kind::Key);
+    observation::accepted(HistogramAllocationSite::Key);
     text.push_str(source); // Exact byte capacity; this cannot grow the buffer.
     Ok(text)
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
 pub(super) mod observation {
-    use super::{Error, Kind, invalid};
+    use super::{Error, HistogramAllocationSite, invalid};
     use mech_engine::native_artifact::NativeLibraryWorkBudget;
     use std::cell::RefCell;
 
@@ -95,7 +99,7 @@ pub(super) mod observation {
         pub work_after: (u64, u64),
     }
     struct State {
-        target: Option<(Kind, u64)>,
+        target: Option<(HistogramAllocationSite, u64)>,
         fired: bool,
         work: Option<NativeLibraryWorkBudget>,
         record: Record,
@@ -110,7 +114,7 @@ pub(super) mod observation {
         }
     }
     pub(in super::super) fn with<R>(
-        target: Option<(Kind, u64)>,
+        target: Option<(HistogramAllocationSite, u64)>,
         invoke: impl FnOnce() -> R,
     ) -> (R, Record) {
         let previous = ACTIVE.with(|active| {
@@ -143,7 +147,7 @@ pub(super) mod observation {
             }
         });
     }
-    pub(super) fn requested(kind: Kind, count: usize) -> Result<usize, Error> {
+    pub(super) fn requested(kind: HistogramAllocationSite, count: usize) -> Result<usize, Error> {
         ACTIVE.with(|active| {
             let mut active = active.borrow_mut();
             let Some(state) = active.as_mut() else {
@@ -159,7 +163,7 @@ pub(super) mod observation {
             Ok(count)
         })
     }
-    pub(super) fn accepted(kind: Kind) {
+    pub(super) fn accepted(kind: HistogramAllocationSite) {
         ACTIVE.with(|active| {
             if let Some(state) = active.borrow_mut().as_mut() {
                 state.record.accepted[kind as usize] += 1;
