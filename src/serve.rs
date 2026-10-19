@@ -381,6 +381,8 @@ impl ServerSourceRegistry {
         shim: &str,
         generated_html_backing_paths: &[PathBuf],
     ) -> MResult<()> {
+        #[cfg(test)]
+        static_refresh_tests::WORKSPACE_VIEW_REBUILDS.with(|count| count.set(count.get() + 1));
         let stylesheets = stylesheets.into();
         let root = root.canonicalize()?;
         for key in self.workspace_keys.drain() {
@@ -1730,7 +1732,17 @@ fn poll_workspace_once(
         if sync_static_assets_from_watch_events(&mut candidate, root, &poll.events)? {
             println!("[Mech Server] Static assets updated from watch events.");
         }
-        if poll.refresh.is_some() {
+        // A watch event is not necessarily a language change. The workspace
+        // explicitly returns its previous snapshot for unchanged source hashes
+        // (for example an edited index.html). Rebuilding that snapshot here
+        // reparses/recompiles every served root synchronously on the HTTP loop.
+        // Keep static reloads and project overlays, but rebuild source views
+        // for every actual change, affected target or reported diagnostic.
+        if poll.refresh.as_ref().is_some_and(|refresh| {
+            !refresh.changes.is_empty()
+                || !refresh.affected_targets.is_empty()
+                || !refresh.refresh_diagnostics.is_empty()
+        }) {
             if let Some(snapshot) = session.snapshot() {
                 candidate.sync_workspace_snapshot(
                     root,
@@ -2299,6 +2311,10 @@ impl MechErrorKind for Utf8ConversionError {
         )
     }
 }
+
+#[cfg(test)]
+#[path = "serve/static_refresh_tests.rs"]
+mod static_refresh_tests;
 
 #[cfg(test)]
 mod tests {
