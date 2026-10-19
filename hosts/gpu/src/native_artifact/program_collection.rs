@@ -330,7 +330,18 @@ impl State {
                     (None, Some(ValueData::String(text))) => text.len() as u64,
                     _ => return Err(invalid("unsupported collected value kind")),
                 };
-                self.account(ctx, *collection, payload, add(mul(payload, 16)?, 128)?)?;
+                let alias_work = if owned.is_some() {
+                    add(mul(self.sources.len() as u64, 64)?, 32)?
+                } else {
+                    0
+                };
+                self.account(
+                    ctx,
+                    *collection,
+                    payload,
+                    add(add(mul(payload, 16)?, 128)?, alias_work)?,
+                )?;
+                let untracked_yield = self.untracked_yield_bytes(ctx, owned.as_ref())?;
                 let origin = plan.collections()[*collection as usize].origin();
                 let old_live = self.live_bytes;
                 let builder = self.builder(*collection)?;
@@ -372,13 +383,19 @@ impl State {
                 check(
                     origin,
                     Dimension::RetainedNodes,
-                    add(count as u64, 1)?,
+                    data::output_nodes(
+                        plan.values()
+                            [plan.collections()[*collection as usize].output().get() as usize]
+                            .definition()
+                            .body(),
+                        count as u64,
+                    )?,
                     ctx.limits.max_retained_nodes,
                 )?;
                 check(
                     origin,
                     Dimension::TemporaryBytes,
-                    add(old_live, extra)?,
+                    add(add(old_live, extra)?, untracked_yield)?,
                     ctx.limits.max_temporary_bytes,
                 )?;
                 // Covers relocation, eventual destruction and scalar/String packing.
@@ -460,7 +477,7 @@ impl State {
         check(
             definition.origin(),
             Dimension::RetainedNodes,
-            add(count, 1)?,
+            data::output_nodes(output.definition().body(), count)?,
             ctx.limits.max_retained_nodes,
         )?;
         let mut reservation = ctx.library.memory_budget().reserve_capacity(envelope)?;

@@ -519,3 +519,127 @@ fn filtered_string_visits_admit_the_old_and_new_element_coexistence_peak() {
         assert_eq!(memory.used_bytes(), 0);
     }
 }
+
+#[test]
+fn collection_publication_counts_a_body_string_while_its_yield_draft_is_copied() {
+    let source = "+> text\n+> number\n[text/join(words<[string]>, number/format(1u64 / divisor, 0u64)) | divisor <- divisors<[u64]>]\n";
+    // The final zero stops after16 successful pushes, before finalization can
+    // hide the push peak behind its larger construction envelope. The former
+    // check admitted exactly this backing but omitted the live body String.
+    const BYTES: usize = 256 * 1024;
+    const YIELDS: usize = 16;
+    for artifact in artifacts(source).0 {
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let named = |word: String, divisors: &[u64]| {
+            [
+                (
+                    "words",
+                    ValueDataDraft::Matrix(vec![ValueDataDraft::String(word)].into_boxed_slice()),
+                ),
+                ("divisors", numbers(divisors)),
+            ]
+        };
+        let small = inputs(&artifact, &named("x".into(), &[1]), &memory);
+        let mut divisors = vec![1; YIELDS];
+        divisors.push(0);
+        let large = inputs(&artifact, &named("x".repeat(BYTES), &divisors), &memory);
+        let mut policy = limits();
+        policy.library.max_temporary_bytes =
+            Some((YIELDS * (BYTES + core::mem::size_of::<ValueDataDraft>()) + 8192) as u64);
+        policy.library.max_output_bytes = Some(32 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&small, &mut output, policy, &memory)
+            .unwrap();
+        let prior = output
+            .iter()
+            .map(|v| v.as_ref().unwrap().clone())
+            .collect::<Vec<_>>();
+        let before = memory.used_bytes();
+        let result = jit.evaluate_into(&large, &mut output, policy, &memory);
+        assert!(
+            matches!(result, Err(NativeProgramExecutionError::Collection {
+            error: ResidentKernelError::ResourceLimit { dimension: Dimension::TemporaryBytes, required, limit, .. }, ..
+        }) if required > limit),
+            "body String was omitted before yield cloning: {result:?}"
+        );
+        assert_eq!(memory.used_bytes(), before);
+        equal(&artifact, &output, &prior);
+        jit.evaluate_into(&small, &mut output, policy, &memory)
+            .unwrap();
+        equal(&artifact, &output, &reference(&artifact, &small));
+        drop((output, prior, small, large));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn collection_publication_retained_nodes_match_the_canonical_matrix_footprint() {
+    for (kind, item) in [
+        ("bool", ValueDataDraft::Bool(true)),
+        ("u64", ValueDataDraft::U64(7)),
+        ("i64", ValueDataDraft::I64(-7)),
+        (
+            "f64",
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(-0.0)),
+        ),
+        ("string", ValueDataDraft::String("é🧑‍🚀".into())),
+    ] {
+        let source = format!("[value | value <- values<[{kind}]>]\n");
+        for artifact in artifacts(&source).0 {
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let mut output = vec![None; artifact.outputs().len()];
+            for count in [1usize, 0, 3] {
+                let args = inputs(
+                    &artifact,
+                    &[(
+                        "values",
+                        ValueDataDraft::Matrix(vec![item.clone(); count].into_boxed_slice()),
+                    )],
+                    &memory,
+                );
+                let expected = reference(&artifact, &args);
+                let nodes = expected
+                    .last()
+                    .unwrap()
+                    .retained_footprint(artifact.schemas())
+                    .unwrap()
+                    .node_count;
+                assert_eq!(
+                    nodes,
+                    if kind == "string" {
+                        count as u64 + 3
+                    } else {
+                        3
+                    }
+                );
+                jit.evaluate_into(&args, &mut output, limits(), &memory)
+                    .unwrap();
+                let prior = output
+                    .iter()
+                    .map(|v| v.as_ref().unwrap().clone())
+                    .collect::<Vec<_>>();
+                let before = memory.used_bytes();
+                let mut policy = limits();
+                policy.library.max_retained_nodes = Some(nodes - 1);
+                let result = jit.evaluate_into(&args, &mut output, policy, &memory);
+                assert!(
+                    matches!(result, Err(NativeProgramExecutionError::Collection {
+                    error: ResidentKernelError::ResourceLimit { dimension: Dimension::RetainedNodes, required, limit, .. }, ..
+                }) if required == nodes && limit == nodes - 1),
+                    "{kind}/{count}: {result:?}"
+                );
+                equal(&artifact, &output, &prior);
+                assert_eq!(memory.used_bytes(), before);
+                policy.library.max_retained_nodes = Some(nodes);
+                jit.evaluate_into(&args, &mut output, policy, &memory)
+                    .unwrap();
+                equal(&artifact, &output, &expected);
+            }
+            drop(output);
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}

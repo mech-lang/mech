@@ -6,6 +6,29 @@ use super::{Context, Error, State, add, invalid, mul};
 use mech_engine::native_artifact::{NativeControlLoop, NativeIterationValueScope};
 
 impl State {
+    /// A body-produced String is still retained by the arena and the owned
+    /// local while its draft is cloned into the builder. Source-element
+    /// aliases already have that allocation charged in live_bytes; compare
+    /// exact frozen storage through generation-checked handles, not equality.
+    pub(super) fn untracked_yield_bytes(
+        &self,
+        ctx: &mut Context<'_>,
+        value: Option<&mech_core::Value>,
+    ) -> Result<u64, Error> {
+        let Some(value) = value else { return Ok(0) };
+        for source in self.sources.iter().flatten() {
+            if let Some((handle, _)) = source.element {
+                let tracked = ctx.arena.get(handle, &mut ctx.control.work)?;
+                if value.shares_frozen_storage(tracked) {
+                    return Ok(0);
+                }
+            }
+        }
+        value
+            .memory_budget_retained_bytes(&ctx.library.memory_budget())
+            .ok_or_else(|| invalid("unadmitted body-produced collection value"))
+    }
+
     pub(super) fn retire_locals(
         &mut self,
         ctx: &mut Context<'_>,

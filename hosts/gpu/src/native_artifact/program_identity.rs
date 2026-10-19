@@ -12,7 +12,7 @@ fn bytes(hash: &mut Sha256, value: &[u8]) {
     hash.update(value);
 }
 pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 2;
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 3;
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 4;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

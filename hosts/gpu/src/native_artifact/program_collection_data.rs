@@ -3,6 +3,14 @@ use super::{Error, invalid};
 use mech_core::{Value, ValueData, snapshot::SequenceView};
 use mech_engine::native_artifact::NativeScalarKind;
 
+pub(super) fn output_nodes(schema: &mech_core::SchemaBody, count: u64) -> Result<u64, Error> {
+    let mech_core::SchemaBody::Matrix { element, .. } = schema else {
+        return Err(invalid("collected output is not a matrix"));
+    };
+    mech_core::snapshot::prospective_packed_matrix_node_count(element, count)
+        .ok_or_else(|| invalid("collected node footprint is not a supported packed matrix"))
+}
+
 pub(super) enum Element<'a> {
     Scalar(NativeScalarKind, u64),
     Text(&'a str),
