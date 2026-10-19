@@ -56,14 +56,14 @@ pub(super) fn attempt(
 ) -> Value {
     let before = inputs.check().and_then(|_| {
         if process::hash_file(&binary.path)? != binary.sha256 {
-            Err("qualified binary changed before invocation".into())
+            Err("binary changed before invocation".into())
         } else {
             Ok(())
         }
     });
     if let Err(error) = before {
-        return json!({"variant":binary.variant,"policy":mode.name(),"route":mode.route(),
-            "label":label,"ok":false,"process_started":false,"driver_error":error});
+        return mode.annotate(json!({"variant":binary.variant,
+            "label":label,"ok":false,"process_started":false,"driver_error":error}));
     }
     let capture = match process::invoke(
         &binary.path,
@@ -75,11 +75,11 @@ pub(super) fn attempt(
     ) {
         Ok(capture) => capture,
         Err(error) => {
-            return json!({"variant":binary.variant,"policy":mode.name(),"route":mode.route(),
+            return mode.annotate(json!({"variant":binary.variant,
             "label":label,"ok":false,"driver_error":error,
             "stdout_path":directory.join(format!("{label}.stdout")),
             "stderr_path":directory.join(format!("{label}.stderr")),
-            "report_path":directory.join(format!("{label}.report.json"))});
+            "report_path":directory.join(format!("{label}.report.json"))}));
         }
     };
     let mut issues = Vec::new();
@@ -141,10 +141,10 @@ pub(super) fn attempt(
             Value::Null
         }
     };
-    json!({"variant":binary.variant,"policy":mode.name(),"route":mode.route(),
+    mode.annotate(json!({"variant":binary.variant,
         "label":label,"ok":issues.is_empty(),"process_started":true,"exit":capture.exit,
         "deadline_exceeded":capture.timed_out,"status":capture.status,"issues":issues,
         "stdout_path":capture.stdout,"stderr_path":capture.stderr,"report_path":capture.report,
         "observed":observed,"binary":binary.path,"binary_sha256":binary.sha256,
-        "elapsed_ns":if timing {Some(capture.elapsed_ns)} else {None}})
+        "elapsed_ns":if timing {Some(capture.elapsed_ns)} else {None}}))
 }

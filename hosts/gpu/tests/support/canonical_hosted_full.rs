@@ -146,10 +146,6 @@ fn execute(
         "external_input_label":config.external_label, "external_label_is_size_authority":false,
         "input":inputs.input.evidence(&config.input.path), "oracle":inputs.oracle.evidence(&config.oracle.path),
         "launch":inputs.launch.evidence(&config.launch.path), "finite_scale_policy":policy,
-        "policy_launches": launches.iter().map(|(mode, inputs)| json!({
-            "policy":mode.name(),"route":mode.route(),
-            "launch":inputs.launch.evidence(&config.launch.path)})).collect::<Vec<_>>(),
-        "expected_qualification_trials":set.trials(),
         "small_gate_policy_unchanged":true, "rust_profile":"release",
         "object_optimization":"none", "whole_program_optimized":false,
         "complete_source_sha256":super::hash(super::FULL.as_bytes()),
@@ -158,13 +154,31 @@ fn execute(
         "successful_timed_samples":0,
         "timing_samples_definition":"published sample count only after the complete requested run qualifies; attempts/individual successes remain recorded on failure",
         "requested_samples_per_variant":config.samples, "deadline_seconds":config.deadline_seconds,
-        "requested_samples_per_variant_and_policy":config.samples,
-        "qualification_policy_order":set.modes().iter().map(|mode| mode.name()).collect::<Vec<_>>(),
-        "timing_policy_order":"selected policy order reverses on alternate rounds",
         "timing_scope":"serial spawn-through-observed-child-exit wall time incl CLI acquisition/output/report;1ms poll; excludes build, hashing and parent validation; not kernel timing",
         "cache_state":"integrity prehash and mandatory correctness runs deliberately warm executable/input filesystem caches; warm-cache fresh-process end-to-end wall time, not cold-cache or kernel timing",
         "no_overlap":"all owned build/pin-mutation jobs completed before this driver; samples require explicit operator SERIAL=1 attestation, not an ambient process-scan claim",
     });
+    if set != RunSet::Production {
+        receipt["policy_launches"] = json!(
+            launches
+                .iter()
+                .map(|(mode, trial)| json!({
+            "policy":mode.name(),"route":mode.route(),
+            "base_launch":inputs.launch.evidence(&config.launch.path),
+            "launch":trial.launch.evidence(&trial.launch.path)}))
+                .collect::<Vec<_>>()
+        );
+        receipt["expected_qualification_trials"] = json!(set.trials());
+        receipt["requested_samples_per_variant_and_policy"] = json!(config.samples);
+        receipt["qualification_policy_order"] = json!(
+            set.modes()
+                .iter()
+                .map(|mode| mode.name())
+                .collect::<Vec<_>>()
+        );
+        receipt["timing_policy_order"] =
+            json!("selected policy order reverses on alternate rounds");
+    }
     let mut qualified = Vec::new();
     for binary in &binaries {
         for (mode, inputs) in &launches {
@@ -189,7 +203,7 @@ fn execute(
     }
     receipt["qualification_passed"] = json!(may_time(&qualified, set));
     if !may_time(&qualified, set) {
-        if qualified.iter().all(|row| row["ok"] == true) {
+        if set != RunSet::Production && qualified.iter().all(|row| row["ok"] == true) {
             receipt["qualification_error"] =
                 json!("variant/policy coverage or native accounting differs");
         }
@@ -240,20 +254,12 @@ fn execute(
     receipt["ok"] = json!(true);
     receipt["qualified"] = json!(true);
     receipt["timing_samples"] = json!(samples.len());
-    let mut summary = Vec::new();
-    for binary in &binaries {
-        for mode in set.modes() {
-            let mut ns = samples
-                .iter()
-                .filter(|row| row["variant"] == binary.variant && row["policy"] == mode.name())
-                .map(|row| row["elapsed_ns"].as_u64().unwrap())
-                .collect::<Vec<_>>();
-            ns.sort_unstable();
-            summary.push(json!({"variant":binary.variant,"policy":mode.name(),"route":mode.route(),
-                "samples":ns.len(),"min_ns":ns.first(),"median_upper_ns":ns.get(ns.len()/2),"max_ns":ns.last()}));
-        }
-    }
-    receipt["timing_summary"] = json!(summary);
+    receipt["timing_summary"] = json!(
+        binaries
+            .iter()
+            .flat_map(|binary| set.summaries(binary.variant, &samples))
+            .collect::<Vec<_>>()
+    );
     save(directory, &receipt);
     Ok(receipt)
 }
@@ -315,3 +321,7 @@ fn run_for(profile: Profile, evidence: &Path, results: &[Value], set: RunSet) ->
 #[cfg(test)]
 #[path = "canonical_hosted_full_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "canonical_hosted_full_receipt_tests.rs"]
+mod receipt_tests;

@@ -1,6 +1,6 @@
 {
   "schema": "mech.canonical-knucleotide-policy-timing-10m.v1",
-  "status": "QUALIFIED_PRELIMINARY_10M_COMPARISON_STANDARD_125M_PENDING",
+  "status": "MEASURED_10M_INDEPENDENTLY_RECONCILED_DRIVER_FORMAT_LIMITATIONS_STANDARD125M_PENDING",
   "source": {
     "qualified_commit": "64a62bb8f178102aa70982f1195b372c0ad186f6",
     "parent_commit": "fb2a6d0a4482fe1221cfcb1231e2c6661e3ce400",
@@ -69,7 +69,7 @@
     "pin_restoration_build_exit": 0,
     "production_controls": 3,
     "large_correctness_processes_before_timing": 4,
-    "large_correctness": "Both original/decoded variants and both policies exit0, exact oracle bytes, empty stderr, correct route/revision/launch hash, native AOT only and completed shutdown. Native accounting agrees across all four before any sample, and was independently reconciled across all16 large runs afterward.",
+    "large_correctness": "Both original/decoded variants and both policies exit0, exact oracle bytes, empty stderr, correct route/revision/launch hash, native AOT only and completed shutdown. This historical driver's automatic accounting gate compared each policy pair, not all four rows. The independent subsequent audit established identical accounting across all 16 actual large runs; the stronger gate added afterward is not retroactively attributed to this driver.",
     "all_application_outcomes_including_samples": 71,
     "success_reports_independently_reconciled": 29,
     "generated_input_pins_reconciled": 24,
@@ -131,5 +131,15 @@
     "memory_directory": "knucleotide-10m-memory-inspection-v658/",
     "availability": "Raw generated projects, compiled-unit messages, streams, reports, immutable input copies, binaries, supervisor logs and auditor are local evidence, not all committed here. This receipt preserves exact reconstruction inputs and scoped results. All historical cohorts and qualification records remain unchanged."
   },
-  "remaining": "Standard125M input correctness, finite native/provider coexistence policy and full-size serial timings remain pending. Broader all-ten/optimization/publication scope is not complete. Require fresh review and full green CI for new pushed code; keep draft and unmerged for the user's decision."
+  "post_measurement_driver_review": {
+    "reviewed_head": "98b170ed4fd8944b3b4dfe7ff18d81c3fa349dab",
+    "findings": [
+      "The automatic four-process gate checked accounting only within each original/decoded policy pair. Actual recorded counters nevertheless match across all 16 runs, as the independent audit established.",
+      "Derived launch evidence incorrectly used the base launch as requested_path, despite its different bytes. The separately retained base launch and actual derived owned paths/hashes authenticate the executed files. Raw historical receipts are not rewritten to hide this format defect.",
+      "Comparison-only fields leaked into the production full-input v1 receipt. These measurements use the separate comparison schema, not that production format, but the prior production-format isolation claim was incorrect."
+    ],
+    "correction_scope": "Subsequent driver corrections in this PR compare all four rows with one baseline, make derived launch evidence self-authenticating with separate base provenance, and restore the legacy production initial/attempt/summary key sets. Three regressions first failed against the old driver; six added regressions pass after the fixes. These are driver-only corrections, not a change to this measured source, oracle, limits or native computation.",
+    "stopped_full_size_attempt": "The first standard125M attempt was intentionally stopped during its first release build when these notes arrived. No full-size application or timing ran. Its partial logs and cleanup error/manual process reconciliation are retained; it is not qualified full-size evidence."
+  },
+  "remaining": "Corrected-driver clean-source release/production-format qualification and standard125M input correctness, finite native/provider coexistence policy and full-size serial timings remain pending. Broader all-ten/optimization/publication scope is not complete. Require fresh review and full green CI for new pushed code; keep draft and unmerged for the user's decision."
 }

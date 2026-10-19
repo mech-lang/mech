@@ -137,6 +137,27 @@ fn comparison_requires_all_four_unique_correct_variant_policy_outcomes() {
 
 #[cfg(feature = "canonical-native-benchmark-policy")]
 #[test]
+fn review_regression_comparison_rejects_pairwise_agreement_without_four_way_accounting() {
+    let set = RunSet::BenchmarkComparison;
+    for pair in [[0, 1], [2, 3]] {
+        for field in [
+            "native_work",
+            "native_comparison_work",
+            "native_visits",
+            "native_transport_bytes",
+            "host_result_carrier_bytes",
+        ] {
+            let mut rows = complete();
+            for index in pair {
+                rows[index]["observed"]["report"][field] = json!(999);
+            }
+            assert!(!set.qualifies(&rows), "pair {pair:?}/{field}");
+        }
+    }
+}
+
+#[cfg(feature = "canonical-native-benchmark-policy")]
+#[test]
 fn comparison_launches_change_only_the_explicit_mode_and_share_frozen_payloads() {
     let temp = tempfile::tempdir().unwrap();
     let (base, value) = fixture(temp.path());

@@ -42,6 +42,13 @@ impl TrialPolicy {
             format!("{base}-{}", self.name())
         }
     }
+    pub(super) fn annotate(self, mut value: Value) -> Value {
+        if self != Self::ProductionSecured {
+            value["policy"] = json!(self.name());
+            value["route"] = json!(self.route());
+        }
+        value
+    }
 }
 impl RunSet {
     pub(super) fn modes(self) -> &'static [TrialPolicy] {
@@ -92,26 +99,42 @@ impl RunSet {
         if !complete || self == Self::Production {
             return complete;
         }
-        for pair in rows.chunks_exact(self.modes().len()) {
-            for field in [
-                "native_work",
-                "native_comparison_work",
-                "native_visits",
-                "native_transport_bytes",
-                "host_result_carrier_bytes",
-            ] {
-                let Some(expected) = pair[0]["observed"]["report"][field].as_u64() else {
-                    return false;
-                };
-                if pair
-                    .iter()
-                    .any(|row| row["observed"]["report"][field].as_u64() != Some(expected))
-                {
-                    return false;
-                }
+        for field in [
+            "native_work",
+            "native_comparison_work",
+            "native_visits",
+            "native_transport_bytes",
+            "host_result_carrier_bytes",
+        ] {
+            let Some(expected) = rows[0]["observed"]["report"][field].as_u64() else {
+                return false;
+            };
+            if rows
+                .iter()
+                .any(|row| row["observed"]["report"][field].as_u64() != Some(expected))
+            {
+                return false;
             }
         }
         true
+    }
+    pub(super) fn summaries(self, variant: u64, samples: &[Value]) -> Vec<Value> {
+        self.modes()
+            .iter()
+            .map(|mode| {
+                let mut ns = samples
+                    .iter()
+                    .filter(|row| {
+                        row["variant"] == variant
+                            && (self == Self::Production || row["policy"] == mode.name())
+                    })
+                    .map(|row| row["elapsed_ns"].as_u64().unwrap())
+                    .collect::<Vec<_>>();
+                ns.sort_unstable();
+                mode.annotate(json!({"variant":variant,"samples":ns.len(),
+                    "min_ns":ns.first(),"median_upper_ns":ns.get(ns.len()/2),"max_ns":ns.last()}))
+            })
+            .collect()
     }
     pub(super) fn launches(
         self,
