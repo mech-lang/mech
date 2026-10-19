@@ -155,6 +155,11 @@ owns capture, effect staging and commit, and raw pure evaluation refuses
 resource-bearing artifacts. Unsupported programs remain rejected. This entry
 contract is not a claim that whole-benchmark qualification is complete.
 
+The [preliminary 10-million-base k-nucleotide receipt](../../docs/validation/canonical-knucleotide-policy-timing-10m-v1.json)
+records actual original/decoded same-binary policy timings and exact-output
+qualification. It does not qualify the standard 125-million-base input, isolate
+all shared safety overhead, or establish a language ranking.
+
 The [canonical k-nucleotide source](tests/fixtures/native/knucleotide-idiomatic.mec)
 expresses record selection, overlapping String windows, frequency widths and
 queries in Mech, using comprehensions and general-purpose library primitives
