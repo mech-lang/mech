@@ -45,7 +45,7 @@ impl Fixture {
         .unwrap();
         let mut registry = ServerSourceRegistry::default();
         registry.set_document_controller(
-            Some(include_str!("../../include/document.js").to_string()),
+            Some(include_str!("../include/document.js").to_string()),
             Some("include/index.html".to_string()),
         );
         registry
@@ -53,7 +53,7 @@ impl Fixture {
                 &root,
                 session.snapshot().unwrap(),
                 "",
-                include_str!("../../include/index.html"),
+                include_str!("../include/index.html"),
                 &[],
             )
             .unwrap();
@@ -81,7 +81,7 @@ impl Fixture {
                 &self.events,
                 &self.root,
                 &HtmlStyleSheets::default(),
-                include_str!("../../include/index.html"),
+                include_str!("../include/index.html"),
                 &[],
                 None,
                 None,

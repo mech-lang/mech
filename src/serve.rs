@@ -2313,7 +2313,7 @@ impl MechErrorKind for Utf8ConversionError {
 }
 
 #[cfg(test)]
-#[path = "serve/static_refresh_tests.rs"]
+#[path = "serve_static_refresh_tests.rs"]
 mod static_refresh_tests;
 
 #[cfg(test)]
