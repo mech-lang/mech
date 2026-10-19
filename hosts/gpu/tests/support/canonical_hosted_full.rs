@@ -9,6 +9,8 @@ use std::{
 mod config;
 #[path = "canonical_hosted_full_process.rs"]
 mod process;
+#[path = "canonical_hosted_full_stages.rs"]
+mod stages;
 
 struct Binary {
     variant: u64,
@@ -227,6 +229,7 @@ fn execute(
     directory: &Path,
     results: &[Value],
     configuration: &std::ffi::OsStr,
+    stop_on_failure: bool,
 ) -> Result<Value, String> {
     if !profile.release() {
         return Err("full-input driver requires actual release qualifier binaries".into());
@@ -289,6 +292,11 @@ fn execute(
         ));
         receipt["qualification"] = json!(qualified);
         save(directory, &receipt); // Real exit/typed denial is durable BEFORE fail.
+        if stop_on_failure && qualified.last().is_some_and(|row| row["ok"] != true) {
+            receipt["qualification_passed"] = json!(false);
+            save(directory, &receipt);
+            return Ok(receipt);
+        }
     }
     receipt["qualification_passed"] = json!(may_time(&qualified));
     if !may_time(&qualified) {
@@ -354,6 +362,9 @@ fn execute(
 }
 /// Called only after BOTH builds and ALL pin-mutation/recovery builds ended.
 pub(super) fn run(profile: Profile, evidence: &Path, results: &[Value]) -> Value {
+    if let Some(receipt) = stages::run_if_configured(profile, evidence, results) {
+        return receipt;
+    }
     let Some(configuration) = env::var_os(config::ENV) else {
         return Value::Null;
     };
@@ -364,7 +375,7 @@ pub(super) fn run(profile: Profile, evidence: &Path, results: &[Value]) -> Value
         serde_json::to_vec_pretty(results).unwrap(),
     )
     .unwrap();
-    let receipt = execute(profile, &directory, results, &configuration).unwrap_or_else(|error| {
+    let receipt = execute(profile, &directory, results, &configuration, false).unwrap_or_else(|error| {
         json!({"schema":"mech.canonical-hosted-full-input-result.v1", "ok":false, "qualified":false,
             "preflight_error":error, "qualification":[], "samples":[], "timing_samples":0,
             "timing_attempts":0, "timed_process_starts_confirmed":0,

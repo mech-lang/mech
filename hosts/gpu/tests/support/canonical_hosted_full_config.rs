@@ -51,7 +51,7 @@ fn positive(value: &Value) -> Result<u64, String> {
     }
     Ok(n)
 }
-fn file(spec: FileSpec) -> Result<FileSpec, String> {
+pub(super) fn file(spec: FileSpec) -> Result<FileSpec, String> {
     if !spec.path.is_absolute()
         || spec.sha256.len() != 64
         || !spec

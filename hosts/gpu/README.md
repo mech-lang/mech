@@ -278,6 +278,39 @@ the explicit 1–3600-second deadline. Results live in
 `full-input/full-input-result.json` inside the evidence directory, including
 attempt/success counts if a later run fails.
 
+To qualify several explicitly pinned sizes with the **same two already-built
+release executables**, leave the single-config variable unset and instead set
+`MECH_CANONICAL_HOSTED_STAGED_INPUT_CONFIG=/absolute/stages.json`:
+
+```json
+{
+  "schema": "mech.canonical-hosted-staged-input-config.v1",
+  "stages": [
+    {"name": "medium", "configuration": {"path": "/absolute/medium.json", "sha256": "<64-lowercase-hex>"}},
+    {"name": "large", "configuration": {"path": "/absolute/large.json", "sha256": "<64-lowercase-hex>"}},
+    {"name": "full", "configuration": {"path": "/absolute/full.json", "sha256": "<64-lowercase-hex>"}}
+  ]
+}
+```
+
+Each referenced file uses the existing full-input configuration above, including
+its own pinned input/oracle/finite launch, deadline and sample count. There must
+be 1–3 stages with unique 1–32-character lowercase ASCII names (letters, digits,
+`-`, `_`) and distinct absolute config paths, including resolved symlink targets.
+All config bytes are pinned and parsed before the first process. Builds and pin
+controls run once, not once per size. The two configuration variables are
+mutually exclusive. Any nonzero sample count still requires
+`MECH_CANONICAL_HOSTED_TIMING_SERIAL=1` and no overlapping build/test workload.
+
+Stages run serially and stop on the first failed process, timeout or preflight
+check; the driver never retries with larger caps. Both variants must pass that
+stage's exact oracle qualification before its timing starts. Per-stage results
+are saved under `staged-input/<name>/full-input-result.json`; aggregate
+`staged-input/staged-input-result.json` retains actual attempts, confirmed/unknown
+starts, successes and skipped stages even on partial failure. Earlier successful
+samples do not make a partially failed staged run qualified. With neither
+configuration variable set, no additional runs occur.
+
 Integrity hashing and correctness runs deliberately warm filesystem caches.
 Samples measure serial warm-cache, fresh-process wall time including CLI I/O
 and report publication, excluding builds, hashing and parent validation—not
