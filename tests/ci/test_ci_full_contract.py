@@ -1169,8 +1169,9 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--ignored --exact", qualify)
         self.assertIn("MECH_CANONICAL_POLICY_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", qualify)
         self.assertIn("MECH_CANONICAL_POLICY_EVIDENCE_DIR: ${{ runner.temp }}/canonical-policy-evidence", qualify)
+        self.assertIn("MECH_CANONICAL_HOSTED_PROFILE: release", qualify)
         self.assertGreaterEqual(int(re.search(r"--timeout-secs (\d+)", qualify).group(1)),
-                                3 * 900 + 3 * 120 + 2 * 300 + 51 * 120 + 10 * 120 + 4 * 15 + 300)
+                                3 * 900 + 3 * 120 + 2 * 300 + 55 * 120 + 10 * 120 + 4 * 15 + 300)
         step_limits = []
         for step in steps:
             limit = re.search(r"(?m)^        timeout-minutes: ([1-9][0-9]*)$", step)

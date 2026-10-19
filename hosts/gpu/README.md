@@ -261,6 +261,17 @@ same-binary controls and separately checks that the production binary rejects
 both the benchmark JSON field and the legacy trusted environment bypass.
 These controls alone are not full-input correctness or timing results.
 
+That benchmark profile can use the same full-input or staged configuration
+below, with a base launch containing the unchanged two grants and finite caps
+but **no** `benchmark_policy` field. The driver freezes the common input,
+oracle and base policy, then derives two immutable launch files differing only
+in that field. Both original/decoded binaries must pass both modes' exact output,
+report and native-accounting checks before any samples start. Timing alternates
+policy order across rounds and reports each variant/policy separately. The
+production entry still runs secured-only; it cannot select the comparison.
+The required comparison CI uses release binaries and a four-process, zero-sample
+small-fixture driver control, not a full-size benchmark or CI timing run.
+
 The optional full-input phase uses those same two release executables after
 all builds and pin-mutation/restoration checks finish. Add
 `MECH_CANONICAL_HOSTED_PROFILE=release` and

@@ -1,5 +1,5 @@
 //! Optional bounded stages around the SAME already-built full-input runner.
-use super::{Path, PathBuf, Profile, Value, config, env, fs, json, process};
+use super::{Path, PathBuf, Profile, RunSet, Value, config, env, fs, json, process};
 #[path = "canonical_hosted_full_stages_config.rs"]
 mod staged_config;
 
@@ -83,6 +83,7 @@ fn execute(
     configuration: &std::ffi::OsStr,
     single: Option<&std::ffi::OsStr>,
     receipt: &mut Value,
+    set: RunSet,
 ) -> Result<(), String> {
     staged_config::exclusive(single, Some(configuration))?;
     if !profile.release() {
@@ -123,11 +124,12 @@ fn execute(
         let (inner, _) =
             config::load(Some(frozen.path.as_os_str()))?.ok_or("missing owned stage config")?;
         config::serial(inner.samples, env::var_os(config::SERIAL).as_deref())?;
-        let attempts = 2usize
+        let attempts = set
+            .trials()
             .checked_mul(1 + inner.samples)
             .ok_or("stage attempt overflow")?;
         requested_samples = requested_samples
-            .checked_add(2 * inner.samples)
+            .checked_add(set.trials() * inner.samples)
             .ok_or("sample count overflow")?;
         requested_deadline_seconds = requested_deadline_seconds
             .checked_add(
@@ -148,11 +150,11 @@ fn execute(
         save(directory, receipt);
     }
     receipt["requested_timing_attempts"] = json!(requested_samples);
-    receipt["maximum_process_attempts"] = json!(2 * prepared.len() + requested_samples);
+    receipt["maximum_process_attempts"] = json!(set.trials() * prepared.len() + requested_samples);
     receipt["sum_declared_process_deadlines_seconds"] = json!(requested_deadline_seconds);
     save(directory, receipt);
     // SAME result rows select the SAME two pinned binaries for every stage.
-    let _ = super::binaries(results)?;
+    let _ = super::binaries(results, set)?;
     for (index, stage) in prepared.iter().enumerate() {
         receipt["stages"][index]["status"] = json!("running");
         refresh(receipt);
@@ -164,13 +166,16 @@ fn execute(
                 results,
                 stage.configuration.path.as_os_str(),
                 true,
+                set,
             )
         });
-        let mut result = result.unwrap_or_else(|error| json!({
-            "schema":"mech.canonical-hosted-full-input-result.v1", "ok":false, "qualified":false,
-            "preflight_error":error, "qualification":[], "samples":[], "timing_attempts":0,
-            "timing_samples":0, "successful_timed_samples":0
-        }));
+        let mut result = result.unwrap_or_else(|error| {
+            json!({
+                "schema":set.result_schema(), "ok":false, "qualified":false,
+                "preflight_error":error, "qualification":[], "samples":[], "timing_attempts":0,
+                "timing_samples":0, "successful_timed_samples":0
+            })
+        });
         if let Err(error) = stage.configuration.check() {
             result["ok"] = json!(false);
             result["qualified"] = json!(false);
@@ -208,6 +213,7 @@ pub(super) fn run_if_configured(
     profile: Profile,
     evidence: &Path,
     results: &[Value],
+    set: RunSet,
 ) -> Option<Value> {
     let configuration = env::var_os(staged_config::ENV)?;
     let directory = evidence.join("staged-input");
@@ -217,7 +223,7 @@ pub(super) fn run_if_configured(
         serde_json::to_vec_pretty(results).unwrap(),
     )
     .unwrap();
-    let mut receipt = json!({"schema":"mech.canonical-hosted-staged-input-result.v1",
+    let mut receipt = json!({"schema":set.stage_schema(),
         "ok":false, "qualified":false, "requested_stages":null, "stages":[],
         "stages_attempted":0, "running_stages":0, "qualified_stages":0, "failed_stages":0, "skipped_stages":0,
         "qualification_attempts":0, "qualification_process_starts_confirmed":0,
@@ -236,6 +242,7 @@ pub(super) fn run_if_configured(
         &configuration,
         env::var_os(config::ENV).as_deref(),
         &mut receipt,
+        set,
     ) {
         receipt["preflight_error"] = json!(error);
         for stage in receipt["stages"].as_array_mut().unwrap() {

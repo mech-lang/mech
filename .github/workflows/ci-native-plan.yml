@@ -279,8 +279,8 @@ jobs:
   canonical-policy:
     name: Same-binary native policy controls
     runs-on: ubuntu-latest
-    # Serial Actions ceilings total 289 minutes; bounded orchestration headroom.
-    timeout-minutes: 305
+    # Serial Actions ceilings total 297 minutes; bounded orchestration headroom.
+    timeout-minutes: 315
     env:
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_BUILD_JOBS: "1"
@@ -353,15 +353,17 @@ jobs:
             linked::benchmark::complete_original_and_decoded_knucleotide_same_binary_policy_controls
           python3 -c 'from pathlib import Path; lines = Path("target/native-plan-logs/canonical-policy-selection.log").read_text().splitlines(); expected = "linked::benchmark::complete_original_and_decoded_knucleotide_same_binary_policy_controls: test"; assert lines.count(expected) == 1, lines'
       - name: Qualify same-binary policies and secured production controls
-        timeout-minutes: 194
+        timeout-minutes: 202
         env:
           MECH_CANONICAL_POLICY_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
           MECH_CANONICAL_POLICY_EVIDENCE_DIR: ${{ runner.temp }}/canonical-policy-evidence
+          MECH_CANONICAL_HOSTED_PROFILE: release
         run: |
-          # Three builds/metadata checks, two generated-template suites, 51
-          # launches including production negatives, ten pin/recovery builds,
-          # and four source checks: 11040s ceilings plus 300s stage headroom.
-          python3 scripts/run-native-plan-stage.py --stage canonical-policy-linked --timeout-secs 11340 \
+          # Three builds/metadata checks, two generated-template suites, 55
+          # launches including production negatives and four zero-sample scale
+          # driver protocol controls, ten pin/recovery builds and four source
+          # checks: 11520s ceilings plus 300s stage headroom. No CI timings.
+          python3 scripts/run-native-plan-stage.py --stage canonical-policy-linked --timeout-secs 11820 \
             --test-executable-file target/native-plan-logs/canonical-policy-executable -- \
             --ignored --exact \
             linked::benchmark::complete_original_and_decoded_knucleotide_same_binary_policy_controls \

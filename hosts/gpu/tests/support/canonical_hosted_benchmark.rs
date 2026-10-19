@@ -6,6 +6,8 @@ use mech_gpu::native_artifact::generate_linked_benchmark_program_application;
 mod build;
 #[path = "canonical_hosted_benchmark_cases.rs"]
 mod cases;
+#[path = "canonical_hosted_benchmark_driver.rs"]
+mod driver;
 #[path = "canonical_hosted_benchmark_production.rs"]
 mod production;
 
@@ -109,7 +111,7 @@ fn benchmark_generator_preserves_the_original_object_and_isolates_policy_control
 }
 
 #[test]
-#[ignore = "explicit clean-source same-binary policy qualification, not timing"]
+#[ignore = "explicit clean-source policy qualification; optional full-input phase"]
 fn complete_original_and_decoded_knucleotide_same_binary_policy_controls() {
     let profile =
         profile::Profile::parse(std::env::var_os("MECH_CANONICAL_HOSTED_PROFILE").as_deref())
@@ -191,7 +193,14 @@ fn complete_original_and_decoded_knucleotide_same_binary_policy_controls() {
         for (relative, expected) in project.pins() {
             assert_eq!(&pin(&project.root().join(relative)), expected);
         }
+        let revision = variants[index]
+            .revision()
+            .as_bytes()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
         results.push(json!({"variant":index, "binary":binary, "binary_sha256":binary_pin,
+            "rust_profile":profile.name(),"program_revision":revision,
             "runtime_units":units, "compiler_profiles":compiler_profiles, "cases":cases,
             "generated_template_tests":generated_template_tests, "pin_rejections":pin_rejections,
             "source_sha256":hash(FULL.as_bytes()), "bytecode_sha256":pin(&project.root().join("program.mecb")),
@@ -199,11 +208,25 @@ fn complete_original_and_decoded_knucleotide_same_binary_policy_controls() {
     }
     assert_eq!(results[0]["binary_sha256"], results[1]["binary_sha256"]);
     let production = production::qualify(&evidence, &target, &variants[0], &catalog, profile);
-    fs::write(evidence.join("benchmark-policy-result.json"), serde_json::to_vec_pretty(&json!({
+    let driver_control = driver::qualify(&evidence, &results, profile);
+    // Persist completed small controls before optional large work can fail.
+    let mut receipt = json!({
         "schema":"mech.canonical-native-benchmark-policy-qualification.v1", "source_commit":commit,
         "results":results, "production_control":production, "rust_profile":profile.name(), "object_optimization":"none", "whole_program_optimized":false,
-        "full_input":null, "timing_samples":0,
+        "driver_protocol_control":driver_control,"full_input":null,"timing_samples":0,
+        "full_phase_status":"not-completed",
         "scope":"complete original/decoded canonical artifacts; each identical executable runs both explicit policies through the same checked Object, real CLI provider and phased native lifecycle; trusted bypasses resource/operation matching, not all safety overhead"
-    })).unwrap()).unwrap();
+    });
+    let result_path = evidence.join("benchmark-policy-result.json");
+    fs::write(&result_path, serde_json::to_vec_pretty(&receipt).unwrap()).unwrap();
+    let full = full::run_comparison(profile, &evidence, &results);
+    receipt["timing_samples"] = json!(full["timing_samples"].as_u64().unwrap_or(0));
+    receipt["full_phase_status"] = json!(if full.is_null() {
+        "not-configured"
+    } else {
+        "qualified"
+    });
+    receipt["full_input"] = full;
+    fs::write(result_path, serde_json::to_vec_pretty(&receipt).unwrap()).unwrap();
     clean(&evidence, &commit, "after");
 }

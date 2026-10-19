@@ -1,6 +1,19 @@
 //! Pure report and qualification ordering tests; no child process is launched.
 use super::*;
 
+fn may_time(rows: &[Value]) -> bool {
+    super::may_time(rows, RunSet::Production)
+}
+fn report_issues(report: &Value, revision: &str, launch: &str, cap: u64) -> Vec<String> {
+    super::report_issues(
+        report,
+        revision,
+        launch,
+        cap,
+        TrialPolicy::ProductionSecured,
+    )
+}
+
 #[test]
 fn full_timing_requires_both_original_and_decoded_correctness_before_samples() {
     assert!(!may_time(&[]));
