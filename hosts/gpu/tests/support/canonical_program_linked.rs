@@ -97,6 +97,91 @@ fn windows_source() -> String {
     )
 }
 
+fn access_source() -> String {
+    format!(
+        r#"{ROOT}unique<{{string}}> := keys
+present := "a" ∈ unique
+absent := "never" ∉ unique
+count := (present? | true => counts{{"a"}} | false => 0u64)
+first := (size? | 0u64 => 0u64 | * => values[1u64])
+constructed := {{"live": more, "next": size + 2u64, "last": size + 3u64, "wider": size + 4u64}}
+constructed-value := constructed{{"next"}}
+packed := (count, first, present, absent)
+quotient := more / divisor<u64>
+"#
+    )
+}
+
+fn assert_access_oracle(
+    artifact: &mech_engine::ProgramArtifact,
+    expected: &[mech_core::Value],
+    case: &str,
+) {
+    let named = |name| {
+        let ordinal = artifact
+            .outputs()
+            .iter()
+            .position(|o| {
+                o.interactive_binding
+                    .as_ref()
+                    .is_some_and(|b| b.lexical_name == name)
+            })
+            .unwrap();
+        expected[ordinal].canonical_data_draft().unwrap()
+    };
+    let (keys, count, first, constructed) = match case {
+        "ordinary" => (&["a", "bb"][..], 2, 2, 8),
+        "empty" => (&[][..], 0, 0, 2),
+        "unicode" => (&["é", "👋"][..], 0, 2, 7),
+        _ => panic!("missing independent access oracle"),
+    };
+    assert_eq!(
+        named("unique"),
+        ValueDataDraft::Set(
+            keys.iter()
+                .map(|key| ValueDataDraft::String((*key).into()))
+                .collect()
+        )
+    );
+    assert_eq!(named("count"), ValueDataDraft::U64(count));
+    assert_eq!(named("first"), ValueDataDraft::U64(first));
+    assert_eq!(named("constructed-value"), ValueDataDraft::U64(constructed));
+    assert_eq!(
+        named("packed"),
+        ValueDataDraft::Tuple(
+            vec![
+                ValueDataDraft::U64(count),
+                ValueDataDraft::U64(first),
+                ValueDataDraft::Bool(case == "ordinary"),
+                ValueDataDraft::Bool(true)
+            ]
+            .into()
+        )
+    );
+}
+
+#[test]
+fn linked_access_fixture_checks_set_conversion_membership_lookup_and_general_construction() {
+    let source = access_source();
+    for (case, text) in [
+        ("ordinary", "a\nbb\na"),
+        ("empty", ""),
+        ("unicode", "é\n👋\né"),
+    ] {
+        let named = [
+            ("input", ValueDataDraft::String(text.into())),
+            ("divisor", ValueDataDraft::U64(1)),
+        ];
+        for artifact in artifacts_mode(&source, true).0 {
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = inputs(&artifact, &named, &memory);
+            let expected = reference_result(&artifact, &args).unwrap();
+            assert_access_oracle(&artifact, &expected, case);
+        }
+        super::check(&source, &named);
+    }
+}
+
 fn window_oracle(case: &str) -> mech_core::ValueDataDraft {
     let words: &[&str] = match case {
         "ordinary" => &["AB", "BB", "BA"],
@@ -267,6 +352,7 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
         ("lexical", lexical, "seed"),
         ("collection", collection_source(), "input"),
         ("windows", windows_source(), "input"),
+        ("access", access_source(), "input"),
     ] {
         let directory = evidence.join(name);
         fs::create_dir(&directory).unwrap();
@@ -389,6 +475,9 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
                 let expected = reference_result(&variants[0], &args).unwrap();
                 if name == "windows" {
                     assert_window_oracle(&variants[0], &expected, case);
+                }
+                if name == "access" {
+                    assert_access_oracle(&variants[0], &expected, case);
                 }
                 let mut output = vec![None; expected.len()];
                 let report = jit

@@ -36,6 +36,7 @@ pub(crate) fn element_supported(body: &SchemaBody) -> bool {
     matches!(
         body,
         SchemaBody::Bool
+            | SchemaBody::Index
             | SchemaBody::String
             | SchemaBody::UnsignedInteger(IntegerWidth::W64)
             | SchemaBody::SignedInteger(IntegerWidth::W64)

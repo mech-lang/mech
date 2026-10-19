@@ -139,6 +139,18 @@ migration, not a supported second semantic authority. See the single
 [`follow_up_roadmap`](../../docs/validation/checked-aot-workload-progress-v1.json)
 for the required canonical production/resource integration and qualification.
 
+Resource-hosted checked-native execution has one phased entry route. After
+the runtime admits every original requirement and provider contract,
+`prepare_hosted` executes the generated closed activation prefix and returns an
+owning session before any provider read. The runtime then captures observations;
+`resume_hosted_into` consumes that same session and transaction to run the fresh
+turn with the original arena, finite limits and cumulative work account. Both
+phases enter the same checked JIT or pinned Object CFG. The checkpoint is not
+another evaluator, resident instance or permission source: the runtime alone
+owns capture, effect staging and commit, and raw pure evaluation refuses
+resource-bearing artifacts. Unsupported programs remain rejected. This entry
+contract is not a claim that whole-benchmark qualification is complete.
+
 The [canonical k-nucleotide source](tests/fixtures/native/knucleotide-idiomatic.mec)
 expresses record selection, overlapping String windows, frequency widths and
 queries in Mech, using comprehensions and general-purpose library primitives

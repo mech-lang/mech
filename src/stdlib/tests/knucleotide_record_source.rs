@@ -95,7 +95,27 @@ fn check(source: &str, inputs: &[&str], expected: impl Fn(usize, &[Value])) {
             &mech_stdlib::source_catalog(),
             &ActivationFacts::default(),
         )
-        .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        .unwrap_or_else(|error| {
+            if let mech_engine::resident::ResidentActivationError::UnsupportedControlLayout {
+                node,
+            } = &error
+            {
+                eprintln!(
+                    "activation source owner: {:?}",
+                    source_map.nodes.get(node.get() as usize)
+                );
+            }
+            for (ordinal, entry) in artifact.schemas().entries().enumerate() {
+                if let Err(shape_error) = mech_core::shape_for_declared_lower_bounds(entry.schema())
+                {
+                    eprintln!(
+                        "unseedable schema {ordinal}: {shape_error:?}; {:?}",
+                        entry.schema()
+                    );
+                }
+            }
+            panic!("{source}: {error:?}")
+        });
         assert_eq!(instance.plan.inputs.len(), 1);
         let slot = instance.plan.inputs[0].slot;
         for (turn, text) in inputs.iter().enumerate() {
@@ -192,6 +212,19 @@ fn ordinary_program_produces_exact_knucleotide_output_after_record_selection() {
             ">THREE\r\nGGTA\r\n",
             ">THREE\nGGTA",
         ],
+        |_, outputs| assert_eq!(delivery_text(outputs), expected),
+    );
+}
+
+#[test]
+fn complete_ordinary_program_handles_empty_and_absent_records_without_empty_ranges() {
+    let expected = concat!(
+        "\n\n\n\n",
+        "0\tGGT\n0\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+    );
+    check(
+        &ordinary_fixture(),
+        &["", ">ONE\nAAAA\n", ">THREE", ">THREE\n", ">THREE\n>NEXT\n"],
         |_, outputs| assert_eq!(delivery_text(outputs), expected),
     );
 }

@@ -146,7 +146,7 @@ impl State {
     }
     fn account(
         &mut self,
-        ctx: &mut Context<'_>,
+        ctx: &mut Context<'_, '_>,
         id: u32,
         clones: u64,
         compute: u64,
@@ -174,7 +174,7 @@ impl State {
     }
     pub(super) fn helper(
         &mut self,
-        ctx: &mut Context<'_>,
+        ctx: &mut Context<'_, '_>,
         site: usize,
         word: u64,
     ) -> Result<Option<u64>, Error> {
@@ -261,8 +261,17 @@ impl State {
                     (Some(kind), data::Element::Scalar(actual, word)) if kind == actual => {
                         Some(word)
                     }
-                    (None, data::Element::Text(text)) => {
-                        let envelope = add(descriptor.scalar_bytes, mul(text.len() as u64, 4)?)?;
+                    (None, element @ (data::Element::Text(_) | data::Element::Index(_))) => {
+                        let ty = &plan.values()[output.get() as usize];
+                        let valid = matches!(
+                            (&element, ty.definition().body()),
+                            (data::Element::Text(_), mech_core::SchemaBody::String)
+                                | (data::Element::Index(_), mech_core::SchemaBody::Index)
+                        );
+                        if !valid {
+                            return Err(invalid("managed generator element schema differs"));
+                        }
+                        let envelope = add(descriptor.scalar_bytes, mul(bytes, 4)?)?;
                         check(
                             definition.origin(),
                             Dimension::TemporaryBytes,
@@ -272,10 +281,15 @@ impl State {
                         charge(&mut ctx.control.work, add(mul(envelope, 8)?, 128)?)?;
                         let mut reservation =
                             ctx.library.memory_budget().reserve_capacity(envelope)?;
+                        let data = match element {
+                            data::Element::Text(text) => ValueDataDraft::String(text.to_owned()),
+                            data::Element::Index(index) => ValueDataDraft::Index(index),
+                            _ => unreachable!("exact managed element variants selected above"),
+                        };
                         let value = ValueDraft {
-                            schema: plan.values()[output.get() as usize].schema(),
+                            schema: ty.schema(),
                             shape_values: Box::new([]),
-                            data: ValueDataDraft::String(text.to_owned()),
+                            data,
                         }
                         .finalize(&SnapshotValidationContext::with_shared_schemas(
                             &descriptor.schemas,
@@ -327,6 +341,7 @@ impl State {
                 let payload = match (ty.scalar_kind(), owned.as_ref().map(Value::data)) {
                     (Some(NativeScalarKind::Bool), _) => 1,
                     (Some(_), _) => 8,
+                    (None, Some(ValueData::Index(_))) => 8,
                     (None, Some(ValueData::String(text))) => text.len() as u64,
                     _ => return Err(invalid("unsupported collected value kind")),
                 };
@@ -444,7 +459,7 @@ impl State {
             _ => Err(invalid("collection helper outside a collection action")),
         }
     }
-    fn finish(&mut self, ctx: &mut Context<'_>, id: u32) -> Result<(), Error> {
+    fn finish(&mut self, ctx: &mut Context<'_, '_>, id: u32) -> Result<(), Error> {
         let descriptor = ctx.control.descriptor;
         let definition = &descriptor.plan.collections()[id as usize];
         let output = &descriptor.plan.values()[definition.output().get() as usize];

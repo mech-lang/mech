@@ -41,8 +41,14 @@ pub(crate) trait ControlPlan {
     fn collections(&self) -> &[super::NativeProgramCollection];
     fn value_scopes(&self) -> &[Scope];
     fn entry(&self) -> u32;
+    fn unavailable_before_turn(&self, _value: Value, _block: usize) -> bool {
+        false
+    }
     fn initialize(&self, initial: &mut [bool]) -> Result<(), &'static str>;
     fn output_values(&self) -> Box<dyn Iterator<Item = (Value, &Self::Type)> + '_>;
+    fn effect_values(&self) -> Box<dyn Iterator<Item = (Value, &Self::Type)> + '_> {
+        Box::new(std::iter::empty())
+    }
     fn library(
         &self,
         origin: super::NativeMatchOrigin,
@@ -139,9 +145,60 @@ impl ControlPlan for super::NativeProgramArtifactPlan {
     fn collections(&self) -> &[super::NativeProgramCollection] {
         self.collections()
     }
+    fn unavailable_before_turn(&self, value: Value, block: usize) -> bool {
+        self.blocks()[block].terminator() != Terminator::Scalar(Term::Complete)
+            && self
+                .activation_nodes()
+                .contains(&self.blocks()[block].origin().node())
+            && (self.inputs().iter().any(|input| input.value() == value)
+                || self
+                    .observations()
+                    .iter()
+                    .any(|input| input.value() == value))
+    }
     fn initialize(&self, initial: &mut [bool]) -> Result<(), &'static str> {
         for input in self.inputs() {
             initialize_value(self, input.value(), input.ty(), initial)?;
+        }
+        if self
+            .observations()
+            .windows(2)
+            .any(|pair| pair[0].slot().get() >= pair[1].slot().get())
+        {
+            return Err(BAD);
+        }
+        let plain_string = |ty: &super::NativeProgramType| {
+            ty.scalar().is_none()
+                && ty.definition().body() == &mech_core::SchemaBody::String
+                && ty.definition().dimension_parameters().is_empty()
+        };
+        for (ordinal, observation) in self.observations().iter().enumerate() {
+            if observation.ordinal() as usize != ordinal
+                || self
+                    .resource_requirements()
+                    .get(observation.requirement().get() as usize)
+                    != Some(observation.request())
+                || !plain_string(observation.ty())
+            {
+                return Err(BAD);
+            }
+            initialize_value(self, observation.value(), observation.ty(), initial)?;
+        }
+        let mut seen_effect_ordinals = vec![false; self.effects().len()];
+        for effect in self.effects() {
+            let Some(seen) = seen_effect_ordinals.get_mut(effect.ordinal() as usize) else {
+                return Err(BAD);
+            };
+            if std::mem::replace(seen, true)
+                || self
+                    .resource_requirements()
+                    .get(effect.requirement().get() as usize)
+                    != Some(effect.request())
+                || !plain_string(effect.ty())
+                || self.values().get(effect.value().get() as usize) != Some(effect.ty())
+            {
+                return Err(BAD);
+            }
         }
         for constant in self.constants() {
             let ty = self
@@ -156,6 +213,13 @@ impl ControlPlan for super::NativeProgramArtifactPlan {
             initialize_value(self, constant.value(), ty, initial)?;
         }
         Ok(())
+    }
+    fn effect_values(&self) -> Box<dyn Iterator<Item = (Value, &Self::Type)> + '_> {
+        Box::new(
+            self.effects()
+                .iter()
+                .map(|effect| (effect.value(), effect.ty())),
+        )
     }
     fn library(
         &self,
@@ -209,6 +273,40 @@ fn readable(plan: &impl ControlPlan, value: Value, scope: Option<u32>, block: us
     }
 }
 
+fn structural_body<'a>(
+    plan: &'a impl ControlPlan,
+    source: Value,
+    path: &[super::NativeStructuralStep],
+) -> Result<&'a mech_core::SchemaBody, &'static str> {
+    use super::NativeStructuralStep as Step;
+    use mech_core::SchemaBody;
+    if path.len() > crate::MAX_CONTROL_DEPTH {
+        return Err(BAD);
+    }
+    let schema = plan
+        .values()
+        .get(source.get() as usize)
+        .and_then(ControlType::definition)
+        .ok_or(BAD)?;
+    if !schema.dimension_parameters().is_empty() {
+        return Err(BAD);
+    }
+    let mut body = schema.body();
+    for step in path {
+        body = match (step, body) {
+            (Step::EnumPayload { ordinal }, SchemaBody::Enum { variants, .. }) => variants
+                .get(*ordinal as usize)
+                .and_then(|v| v.payload.as_ref())
+                .ok_or(BAD)?,
+            (Step::TupleItem { ordinal }, SchemaBody::Tuple(items)) => {
+                items.get(*ordinal as usize).ok_or(BAD)?
+            }
+            _ => return Err(BAD),
+        };
+    }
+    Ok(body)
+}
+
 /// Called before the opaque engine plan is returned, including runtime-only
 /// same-Object rederivation. No caller can construct or mutate a certified plan.
 pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
@@ -257,6 +355,44 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 return Err(BAD);
             }
         }
+        if let Loop::Tail(tail) = iteration {
+            if ty(tail.seed())? != ty(tail.carrier())?
+                || ty(tail.next())? != ty(tail.carrier())?
+                || ty(tail.returned())? != ty(tail.result())?
+                || plan.value_scopes()[tail.carrier().get() as usize]
+                    != (Scope::Carrier {
+                        iteration: id as u32,
+                    })
+                || plan.value_scopes()[tail.next().get() as usize]
+                    != (Scope::Immutable {
+                        iteration: Some(id as u32),
+                    })
+                || plan.value_scopes()[tail.returned().get() as usize]
+                    != (Scope::Immutable {
+                        iteration: Some(id as u32),
+                    })
+                || !matches!(
+                    ty(tail.carrier())?
+                        .definition()
+                        .map(mech_core::Schema::body),
+                    Some(mech_core::SchemaBody::Enum { .. })
+                )
+            {
+                return Err(BAD);
+            }
+            let finish = blocks.get(tail.finish() as usize).ok_or(BAD)?;
+            if finish.iteration() != Some(id as u32)
+                || !matches!(finish.action(), Action::Scalar(Scalar::None))
+                || finish.terminator() != Terminator::Scalar(Term::Jump(tail.exit()))
+                || roles
+                    .get_mut(tail.finish() as usize)
+                    .ok_or(BAD)?
+                    .replace((id as u32, 4))
+                    .is_some()
+            {
+                return Err(BAD);
+            }
+        }
         for (block, role) in [
             (iteration.initialize(), 0),
             (iteration.header(), 1),
@@ -278,11 +414,17 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             || header.iteration() != Some(id as u32)
             || !matches!(header.action(), Action::Scalar(Scalar::None))
             || header.terminator()
-                != (Terminator::Header {
-                    iteration: id as u32,
-                    body: iteration.body(),
-                    exit: iteration.exit(),
-                })
+                != match iteration {
+                    Loop::Tail(_) => Terminator::TailHeader {
+                        iteration: id as u32,
+                        body: iteration.body(),
+                    },
+                    _ => Terminator::Header {
+                        iteration: id as u32,
+                        body: iteration.body(),
+                        exit: iteration.exit(),
+                    },
+                }
             || latch.iteration() != Some(id as u32)
             || !matches!(latch.action(),Action::Latch { iteration:n } if *n == id as u32)
             || latch.terminator() != Terminator::Scalar(Term::Jump(iteration.header()))
@@ -296,6 +438,10 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                     matches!(exit.action(), Action::Scalar(Scalar::None))
                         && matches!(blocks.get(collection.body() as usize).map(|block| block.action()),
                         Some(Action::CollectionElement { iteration }) if *iteration == id as u32)
+                }
+                Loop::Tail(tail) => {
+                    matches!(exit.action(), Action::Scalar(Scalar::Copy { source, output })
+                        if *source == tail.returned() && *output == tail.result())
                 }
             }
             || blocks
@@ -316,8 +462,11 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             return Err(BAD);
         }
         if let Scope::Carrier { iteration } = scope {
-            if !matches!(plan.iteration(*iteration as usize), Loop::Iteration(fold) if fold.carrier().get() as usize == id)
-            {
+            if !match plan.iteration(*iteration as usize) {
+                Loop::Iteration(fold) => fold.carrier().get() as usize == id,
+                Loop::Tail(tail) => tail.carrier().get() as usize == id,
+                Loop::Collection(_) => false,
+            } {
                 return Err(BAD);
             }
         }
@@ -334,6 +483,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
         let successors = match block.terminator() {
             Terminator::Scalar(term) => scalar_successors(term),
             Terminator::Header { body, exit, .. } => [Some(body), Some(exit)],
+            Terminator::TailHeader { body, .. } => [Some(body), None],
         };
         for next in successors.into_iter().flatten() {
             let next_block = blocks.get(next as usize).ok_or(BAD)?;
@@ -342,7 +492,10 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                     id == plan.iteration(loop_id as usize).initialize() as usize
                         || id == plan.iteration(loop_id as usize).latch() as usize
                 }
-                Some((loop_id, 3)) => id == plan.iteration(loop_id as usize).header() as usize,
+                Some((loop_id, 3)) => match plan.iteration(loop_id as usize) {
+                    Loop::Tail(tail) => id == tail.finish() as usize,
+                    data => id == data.header() as usize,
+                },
                 _ => block.iteration() == next_block.iteration(),
             };
             if !special {
@@ -354,7 +507,44 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 return Err(BAD);
             }
         }
+        if let Terminator::TailHeader { iteration, .. } = block.terminator()
+            && (roles[id] != Some((iteration, 1))
+                || !matches!(plan.iteration(iteration as usize), Loop::Tail(_)))
+        {
+            return Err(BAD);
+        }
         match block.action() {
+            Action::Structural {
+                source,
+                path,
+                observation,
+                output,
+            } => {
+                use super::NativeStructuralObservation as Observation;
+                use mech_core::{IntegerWidth, SchemaBody};
+                let body = structural_body(plan, *source, path)?;
+                let target = ty(*output)?.definition().ok_or(BAD)?;
+                if !target.dimension_parameters().is_empty()
+                    || !match observation {
+                        Observation::U64 => {
+                            body == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
+                                && target.body() == body
+                        }
+                        Observation::EnumOrdinal { ordinal } => {
+                            matches!(body, SchemaBody::Enum { variants, .. } if (*ordinal as usize) < variants.len())
+                                && target.body() == &SchemaBody::Bool
+                        }
+                        Observation::StringEqual { peer } => {
+                            path.is_empty()
+                                && body == &SchemaBody::String
+                                && ty(*peer)? == ty(*source)?
+                                && target.body() == &SchemaBody::Bool
+                        }
+                    }
+                {
+                    return Err(BAD);
+                }
+            }
             Action::CollectionBegin { collection }
             | Action::CollectionFinish { collection }
             | Action::CollectionPush { collection, .. } => {
@@ -475,7 +665,11 @@ fn check_scope(
             }
         }
         let read = |v: Value, known: &[bool]| -> Result<(), &'static str> {
-            if known.get(v.get() as usize).copied().unwrap_or(false) && readable(plan, v, scope, id)
+            let tail_return = roles[id].is_some_and(|(loop_id, role)|
+                role == 3 && matches!(plan.iteration(loop_id as usize), Loop::Tail(tail) if tail.returned() == v));
+            if !plan.unavailable_before_turn(v, id)
+                && known.get(v.get() as usize).copied().unwrap_or(false)
+                && (readable(plan, v, scope, id) || tail_return)
             {
                 Ok(())
             } else {
@@ -483,6 +677,24 @@ fn check_scope(
             }
         };
         match block.action() {
+            Action::Structural {
+                source,
+                observation,
+                output,
+                ..
+            } => {
+                read(*source, &known)?;
+                if let super::NativeStructuralObservation::StringEqual { peer } = observation {
+                    read(*peer, &known)?;
+                }
+                let ordinal = output.get() as usize;
+                if known[ordinal]
+                    || plan.value_scopes()[ordinal] != (Scope::Immutable { iteration: scope })
+                {
+                    return Err(BAD);
+                }
+                known[ordinal] = true;
+            }
             Action::LibraryCall {
                 operands, output, ..
             } => {
@@ -506,6 +718,10 @@ fn check_scope(
                         body_initial[fold.carrier().get() as usize] = true;
                     }
                     Loop::Collection(collection) => read(collection.source(), &known)?,
+                    Loop::Tail(tail) => {
+                        read(tail.seed(), &known)?;
+                        body_initial[tail.carrier().get() as usize] = true;
+                    }
                 }
                 // The header is not part of the body DAG; it owns the only
                 // backedge and always dispatches before a fresh body visit.
@@ -521,10 +737,18 @@ fn check_scope(
                 if let Loop::Iteration(fold) = child {
                     known[fold.carrier().get() as usize] = true;
                 }
+                if let Loop::Tail(tail) = child {
+                    // Reaching the parent exit implies the unique child return
+                    // endpoint proved the returned value in this invocation.
+                    known[tail.returned().get() as usize] = true;
+                }
             }
             Action::Latch { iteration } => {
                 if let Loop::Iteration(fold) = plan.iteration(*iteration as usize) {
                     read(fold.next(), &known)?;
+                }
+                if let Loop::Tail(tail) = plan.iteration(*iteration as usize) {
+                    read(tail.next(), &known)?;
                 }
                 if known[plan.values().len()..] != initial[plan.values().len()..] {
                     return Err(BAD);
@@ -606,6 +830,15 @@ fn check_scope(
                 }
             }
         }
+        if let Some((loop_id, 4)) = roles[id] {
+            let Loop::Tail(tail) = plan.iteration(loop_id as usize) else {
+                return Err(BAD);
+            };
+            read(tail.returned(), &known)?;
+            if known[plan.values().len()..] != initial[plan.values().len()..] {
+                return Err(BAD);
+            }
+        }
         if let Terminator::Scalar(term) = block.terminator() {
             match term {
                 Term::Branch { condition, .. } => read(condition, &known)?,
@@ -617,7 +850,7 @@ fn check_scope(
                     if known[plan.values().len()..].iter().any(|live| *live) {
                         return Err(BAD);
                     }
-                    for (output, ty) in plan.output_values() {
+                    for (output, ty) in plan.output_values().chain(plan.effect_values()) {
                         read(output, &known)?;
                         if plan.values()[output.get() as usize] != *ty {
                             return Err(BAD);
@@ -641,6 +874,11 @@ fn check_scope(
     Ok(())
 }
 fn collapsed_successors(plan: &impl ControlPlan, id: usize) -> [Option<u32>; 2] {
+    if (0..plan.iteration_count()).any(|loop_id|
+        matches!(plan.iteration(loop_id), Loop::Tail(tail) if tail.finish() as usize == id))
+    {
+        return [None, None];
+    }
     match plan.blocks()[id].action() {
         Action::Initialize { iteration } => {
             [Some(plan.iteration(*iteration as usize).exit()), None]
@@ -649,6 +887,7 @@ fn collapsed_successors(plan: &impl ControlPlan, id: usize) -> [Option<u32>; 2] 
         _ => match plan.blocks()[id].terminator() {
             Terminator::Scalar(term) => scalar_successors(term),
             Terminator::Header { .. } => [None, None],
+            Terminator::TailHeader { .. } => [None, None],
         },
     }
 }

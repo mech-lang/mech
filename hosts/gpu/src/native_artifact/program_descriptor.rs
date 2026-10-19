@@ -1,4 +1,4 @@
-//! Same-artifact metadata for generated ABI6, not an evaluator.
+//! Same-artifact metadata for generated ABI8, not an evaluator.
 use super::{NativeValueSlot, iteration_abi::NativeIterationVisit};
 use mech_core::{FunctionCatalog, SchemaTable, Value};
 use mech_engine::{
@@ -19,6 +19,7 @@ pub struct NativeProgramDescriptor {
     pub(super) visits: Box<[NativeIterationVisit]>,
     pub(super) constant_bytes: Box<[u64]>,
     pub(super) scalar_bytes: u64,
+    pub(super) max_library_inputs: usize,
     pub(super) stack: u64,
     pub(super) code: u64,
     pub(super) identity: [u8; 32],
@@ -35,7 +36,7 @@ impl NativeProgramDescriptor {
             return Err("mixed canonical revision mismatch".into());
         }
         plan.validate_current_visits().map_err(str::to_owned)?;
-        let completion = (plan.outputs().len() as u64)
+        let completion = (plan.transport_output_count() as u64)
             .checked_mul(64)
             .and_then(|n| n.checked_add((plan.iterations().len() as u64).checked_mul(8)?))
             .and_then(|n| n.checked_add(256))
@@ -59,10 +60,21 @@ impl NativeProgramDescriptor {
                 _ => Ok(None),
             })
             .collect::<Result<Box<[_]>, _>>()?;
+        let max_library_inputs = plan
+            .blocks()
+            .iter()
+            .filter_map(|block| match block.action() {
+                NativeIterationAction::LibraryCall { operands, .. } => Some(operands.len()),
+                _ => None,
+            })
+            .max()
+            .unwrap_or(0);
         let types = plan
             .values()
             .iter()
-            .chain(plan.outputs().iter().map(|o| o.ty()))
+            .chain(
+                (0..plan.transport_output_count()).map(|index| plan.transport_output_type(index)),
+            )
             .map(|ty| NativeValueSlot {
                 schema: ty.schema(),
                 key: ty.schema_key(),
@@ -100,6 +112,7 @@ impl NativeProgramDescriptor {
             visits,
             constant_bytes,
             scalar_bytes,
+            max_library_inputs,
             stack,
             code,
             identity,

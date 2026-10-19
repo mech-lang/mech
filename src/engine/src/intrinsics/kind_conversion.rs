@@ -459,6 +459,15 @@ fn conversion_target_schema(
                 dimensions: dimensions.clone(),
             }
         }
+        ConversionStep::MatrixToSet(element_plan) => {
+            let SchemaBody::Matrix { element, .. } = source else {
+                return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+            };
+            SchemaBody::Set {
+                element: Box::new(conversion_target_schema(element, &element_plan.step)?),
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            }
+        }
         ConversionStep::OptionPresent(payload_plan) => SchemaBody::Option(Box::new(
             conversion_target_schema(source, &payload_plan.step)?,
         )),
@@ -539,6 +548,7 @@ fn conversion_string_payload_bound(step: &ConversionStep) -> Option<u64> {
             ..
         }) => *source,
         ConversionStep::MatrixElements(inner)
+        | ConversionStep::MatrixToSet(inner)
         | ConversionStep::OptionPayload(inner)
         | ConversionStep::OptionPresent(inner) => {
             return conversion_string_payload_bound(&inner.step);

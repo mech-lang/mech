@@ -44,23 +44,33 @@ pub fn prepare_native_program_library_call(
     let ports = (template.inputs().len() as u64)
         .checked_add(1)
         .ok_or_else(|| super::invalid(node))?;
-    // Only the sealed shallow text/map/range/selection/conversion families reach here.
-    // Numeric range elements and String selectors contain no schema children
-    // beyond a rank-two scalar matrix; selector state has fixed metadata size.
+    // Only sealed shallow text/map/range/selection/conversion/constructor families reach here.
+    // Numeric ranges, positional matrix selection and scalar-key map lookup
+    // contain at most rank-two scalar matrices or two atomic map children;
+    // selector state has fixed metadata size. Shallow map/tuple/record packs
+    // add one atomic input port per child, already included in `ports`.
     // Build/NoAdditionalScratch ranges add no implementation scratch entries;
     // CanonicalFinalize String selection/matrix conversion uses the same output entry family.
     // Tests assert the actual NativeHost plan stays within this entry bound.
     // Their deferred AnyValue planning has <=2 allocations/port, <=8 additional
     // output stage/scratch allocations, one transaction and one witness/port.
     // Reserve extra entry slack too. Numeric extents do not create plan
-    // entries; arbitrary matrix rank/schema trees are covered by the complete
-    // schema clone bound inside the common envelope (including Vec growth).
+    // entries; actual port schema trees (including tuple/record children and
+    // dimension expressions) retain their deep-clone bound inside the common
+    // envelope. Only the immutable full schema arena is shared.
     let entries = ports
         .checked_mul(3)
         .and_then(|n| n.checked_add(16))
         .ok_or_else(|| super::invalid(node))?;
-    let binding_bytes = metadata_envelope_for(artifact.schemas(), ports, entries)
-        .ok_or_else(|| super::invalid(node))?;
+    let binding_bytes = metadata_envelope_for(
+        template
+            .inputs()
+            .iter()
+            .chain(core::iter::once(template.output())),
+        ports,
+        entries,
+    )
+    .ok_or_else(|| super::invalid(node))?;
     // Covers construction/traversal and eventual complete metadata retirement
     // before either occurs, including error paths. Never a per-call refill.
     let binding_work = binding_bytes

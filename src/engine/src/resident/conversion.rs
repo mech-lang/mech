@@ -450,6 +450,7 @@ fn preflight_string_conversion(
 }
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    super::set_conversion::install(builder)?;
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     super::native_collection_semantics::register_conversion(builder)?;
     #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
@@ -610,6 +611,20 @@ fn bind_conversion(
     };
     let conversion = plan_explicit_cast(&source, conversion_target)
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+    // Shape-changing collection conversion has its own admitted factory and
+    // Declared-shape contract. Never run its sort under matrix-copy admission.
+    fn changes_collection(step: &mech_core::ConversionStep) -> bool {
+        match step {
+            mech_core::ConversionStep::MatrixToSet(_) => true,
+            mech_core::ConversionStep::MatrixElements(inner)
+            | mech_core::ConversionStep::OptionPayload(inner)
+            | mech_core::ConversionStep::OptionPresent(inner) => changes_collection(&inner.step),
+            _ => false,
+        }
+    }
+    if changes_collection(&conversion.step) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     let plan = ResidentConversionPlan {
         source: source_schema.body().clone(),
         source_layout: input.shape,
@@ -832,9 +847,9 @@ fn conversion_presence_depth(step: &mech_core::ConversionStep) -> u64 {
     use mech_core::ConversionStep;
     match step {
         ConversionStep::OptionPresent(inner) => 1 + conversion_presence_depth(&inner.step),
-        ConversionStep::MatrixElements(inner) | ConversionStep::OptionPayload(inner) => {
-            conversion_presence_depth(&inner.step)
-        }
+        ConversionStep::MatrixElements(inner)
+        | ConversionStep::MatrixToSet(inner)
+        | ConversionStep::OptionPayload(inner) => conversion_presence_depth(&inner.step),
         ConversionStep::Identity | ConversionStep::Scalar(_) => 0,
     }
 }
@@ -872,18 +887,20 @@ fn snapshot_presence_count(
             ValueData::Option(None) => Ok(0),
             _ => Err(ResidentKernelError::InvalidInput),
         },
-        ConversionStep::MatrixElements(inner) => match source {
-            ValueData::Matrix(matrix) => match matrix.elements() {
-                SequenceView::Values(values) => values.iter().try_fold(0, |count, value| {
-                    checked_cost_sum(&[count, snapshot_presence_count(&inner.step, value)?])
-                }),
-                values => checked_cost_product(&[
-                    checked_u64(values.len())?,
-                    conversion_presence_depth(&inner.step),
-                ]),
-            },
-            _ => Err(ResidentKernelError::InvalidInput),
-        },
+        ConversionStep::MatrixElements(inner) | ConversionStep::MatrixToSet(inner) => {
+            match source {
+                ValueData::Matrix(matrix) => match matrix.elements() {
+                    SequenceView::Values(values) => values.iter().try_fold(0, |count, value| {
+                        checked_cost_sum(&[count, snapshot_presence_count(&inner.step, value)?])
+                    }),
+                    values => checked_cost_product(&[
+                        checked_u64(values.len())?,
+                        conversion_presence_depth(&inner.step),
+                    ]),
+                },
+                _ => Err(ResidentKernelError::InvalidInput),
+            }
+        }
         ConversionStep::Identity | ConversionStep::Scalar(_) => Ok(0),
     }
 }

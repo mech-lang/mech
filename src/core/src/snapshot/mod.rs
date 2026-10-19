@@ -6,6 +6,8 @@ mod encoding;
 mod error;
 mod index;
 mod relations;
+mod set_conversion;
+pub(crate) use self::set_conversion::normalize_set_conversion_drafts;
 mod sequence;
 pub(crate) mod validation;
 mod views;

@@ -1,5 +1,5 @@
-//! Two physical carriers for the SAME maintained grapheme-selection kernel.
-//! No selector interpretation or String slicing is duplicated here.
+//! Scalar String transport/publication shared by maintained text kernels.
+//! No predicate, concatenation, selector or slicing semantics are duplicated here.
 use super::*;
 use mech_core::{Value, snapshot::ValueDataDraft};
 
@@ -7,12 +7,20 @@ pub(super) fn source<'a>(
     kernel: &BoundResidentKernel,
     input: ResidentValueRef<'a>,
 ) -> Result<&'a str, ResidentKernelError> {
+    source_at(kernel, input, 0)
+}
+
+pub(super) fn source_at<'a>(
+    kernel: &BoundResidentKernel,
+    input: ResidentValueRef<'a>,
+    index: usize,
+) -> Result<&'a str, ResidentKernelError> {
     match input {
         ResidentValueRef::String([text]) => Ok(text),
         ResidentValueRef::Snapshot([Some(value)]) => {
             let expected = kernel
                 .bound_call()
-                .and_then(|call| call.inputs().first())
+                .and_then(|call| call.inputs().get(index))
                 .ok_or(ResidentKernelError::InvalidInput)?;
             if expected.schema().body() != &SchemaBody::String
                 || value.schema_key() != expected.schema().key()

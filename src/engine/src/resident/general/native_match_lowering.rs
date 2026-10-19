@@ -13,8 +13,9 @@ use crate::native_artifact::{
     NativeIterationBlock, NativeIterationLoop, NativeIterationTerminator,
     NativeIterationValueScope, NativeMatchAction, NativeMatchBlock, NativeMatchConstant,
     NativeMatchInput, NativeMatchOrigin, NativeMatchOutput, NativeMatchTerminator,
-    NativeMatchValue, NativeProgramArtifactPlan, NativeProgramConstant, NativeProgramInput,
-    NativeProgramOutput, NativeProgramType, NativeScalarKind, NativeScalarType, NativeScalarValue,
+    NativeMatchValue, NativeProgramArtifactPlan, NativeProgramConstant, NativeProgramEffect,
+    NativeProgramInput, NativeProgramObservation, NativeProgramOutput, NativeProgramType,
+    NativeScalarKind, NativeScalarType, NativeScalarValue,
 };
 use crate::resident::native_semantics;
 use crate::{
@@ -23,6 +24,9 @@ use crate::{
 };
 use mech_core::{ConstantId, ExecutionTarget, FunctionCatalog, NodeId, ProgramRevision};
 use std::collections::BTreeMap;
+
+#[path = "native_resource_lowering.rs"]
+mod resource;
 
 #[derive(Clone, Debug)]
 pub struct NativeMatchArtifactPlan {
@@ -107,11 +111,11 @@ impl NativeIterationArtifactPlan {
     }
 }
 
-type Error = NativeArtifactLoweringError;
-fn unsupported(node: NodeId, feature: &'static str) -> Error {
+pub(super) type Error = NativeArtifactLoweringError;
+pub(super) fn unsupported(node: NodeId, feature: &'static str) -> Error {
     Error::UnsupportedNode { node, feature }
 }
-fn origin(node: NodeId, block: Option<u32>, local: Option<u32>) -> NativeMatchOrigin {
+pub(super) fn origin(node: NodeId, block: Option<u32>, local: Option<u32>) -> NativeMatchOrigin {
     NativeMatchOrigin { node, block, local }
 }
 
@@ -182,13 +186,24 @@ fn scalar_constant(
 }
 
 fn scalar_plan(plan: NativeProgramArtifactPlan) -> Result<NativeIterationArtifactPlan, Error> {
+    if !plan.resource_requirements.is_empty()
+        || !plan.observations.is_empty()
+        || !plan.effects.is_empty()
+    {
+        return Err(Error::UnsupportedProgram {
+            feature: "resource ports in a scalar plan",
+        });
+    }
     if !plan.collections.is_empty() {
         return Err(Error::UnsupportedProgram {
             feature: "managed collection in scalar plan",
         });
     }
     for block in &plan.blocks {
-        if matches!(block.action(), NativeIterationAction::LibraryCall { .. }) {
+        if matches!(
+            block.action(),
+            NativeIterationAction::LibraryCall { .. } | NativeIterationAction::Structural { .. }
+        ) {
             return Err(unsupported(
                 block.origin().node(),
                 "managed library call in scalar plan",
@@ -262,6 +277,9 @@ fn scalar_plan(plan: NativeProgramArtifactPlan) -> Result<NativeIterationArtifac
                 NativeControlLoop::Iteration(item) => Ok(item),
                 NativeControlLoop::Collection(_) => Err(Error::UnsupportedProgram {
                     feature: "managed collection loop in scalar plan",
+                }),
+                NativeControlLoop::Tail(_) => Err(Error::UnsupportedProgram {
+                    feature: "managed tail loop in scalar plan",
                 }),
             })
             .collect::<Result<Box<[_]>, _>>()?,
@@ -450,13 +468,13 @@ impl Builder<'_> {
         }
         .ok_or(Error::InvalidBinding { node: Some(owner) })
     }
-    fn control_block(
+    pub(super) fn control_block(
         &mut self,
         owner: NodeId,
         declaration: &MatchDeclaration,
         block: &ControlBlock,
         arguments: &[NativeMatchValue],
-        binding: Option<(u32, NativeMatchValue)>,
+        bindings: &BTreeMap<u32, NativeMatchValue>,
     ) -> Result<(u32, u32, NativeMatchValue), Error> {
         let scrutinee = *arguments
             .get(declaration.scrutinee as usize)
@@ -472,9 +490,7 @@ impl Builder<'_> {
                         .get(index as usize)
                         .and_then(|capture| arguments.get(capture.input as usize))
                         .copied(),
-                    ControlParameterSource::PatternBinding(local) => binding
-                        .filter(|(id, _)| *id == local)
-                        .map(|(_, value)| value),
+                    ControlParameterSource::PatternBinding(local) => bindings.get(&local).copied(),
                     ControlParameterSource::IterationCarrier => {
                         return Err(unsupported(owner, "Iteration-carried control parameter"));
                     }
@@ -661,6 +677,20 @@ impl Builder<'_> {
         arguments: &[NativeMatchValue],
         output: NativeMatchValue,
     ) -> Result<(u32, u32), Error> {
+        if self.allow_collections && super::native_tail_lowering::has_direct_recur(declaration) {
+            return self.tail_match(at, declaration, arguments, output);
+        }
+        self.matched_body(at, declaration, arguments, output, None)
+    }
+
+    pub(super) fn matched_body(
+        &mut self,
+        at: NativeMatchOrigin,
+        declaration: &MatchDeclaration,
+        arguments: &[NativeMatchValue],
+        output: NativeMatchValue,
+        tail: Option<(NativeMatchValue, u32)>,
+    ) -> Result<(u32, u32), Error> {
         let owner = at.node();
         // An unguarded binding/wildcard is exhaustive for the exact validated
         // scrutinee type. Such a partial declaration cannot read a previous
@@ -676,7 +706,7 @@ impl Builder<'_> {
                         | MatchPattern::Structural(crate::CollectionPattern::Bind { .. })
                 )
         });
-        if declaration.partial && !exhaustive {
+        if declaration.partial && !exhaustive && tail.is_none() {
             return Err(unsupported(owner, "partial or sticky Match"));
         }
         let scrutinee = *arguments
@@ -695,7 +725,7 @@ impl Builder<'_> {
         let mut test = entry;
         for arm in &declaration.arms {
             let next = self.block(at, NativeMatchAction::None)?;
-            let mut binding = None;
+            let mut bindings = BTreeMap::new();
             let literal = match &arm.pattern {
                 MatchPattern::Wildcard | MatchPattern::Bind => None,
                 MatchPattern::Literal(id) => Some(
@@ -709,7 +739,7 @@ impl Builder<'_> {
                     if *schema != self.ty(scrutinee).schema() {
                         return Err(Error::InvalidBinding { node: Some(owner) });
                     }
-                    binding = Some((*local, scrutinee));
+                    bindings.insert(*local, scrutinee);
                     None
                 }
                 MatchPattern::Structural(crate::CollectionPattern::Equal(
@@ -720,25 +750,52 @@ impl Builder<'_> {
                         .get(id)
                         .ok_or(Error::InvalidBinding { node: Some(owner) })?,
                 ),
+                MatchPattern::Structural(pattern) if self.allow_collections => {
+                    let selected =
+                        self.structural_pattern(at, pattern, scrutinee, test, next, &mut bindings)?;
+                    test = selected;
+                    None
+                }
                 _ => return Err(unsupported(owner, "aggregate or computed scalar pattern")),
             };
-            let (body, body_tail, yielded) =
-                self.control_block(owner, declaration, &arm.body, arguments, binding)?;
-            if self.ty(yielded) != self.ty(output) {
-                return Err(Error::InvalidBinding { node: Some(owner) });
-            }
-            let copy = self.block(
-                origin(owner, Some(arm.body.id.0), None),
-                NativeMatchAction::Copy {
-                    source: yielded,
-                    output,
-                },
-            )?;
-            self.link(body_tail, copy);
-            self.link(copy, join);
+            let body = if let Some((next_state, latch)) = tail
+                && let Some(prefix) = super::native_tail_lowering::tail_prefix(&arm.body)?
+            {
+                let (body, end, state) =
+                    self.control_block(owner, declaration, &prefix, arguments, &bindings)?;
+                if self.ty(state) != self.ty(next_state) {
+                    return Err(Error::InvalidBinding { node: Some(owner) });
+                }
+                let copy = self.block(
+                    origin(owner, Some(arm.body.id.0), None),
+                    NativeMatchAction::Copy {
+                        source: state,
+                        output: next_state,
+                    },
+                )?;
+                self.link(end, copy);
+                self.link(copy, latch);
+                body
+            } else {
+                let (body, body_tail, yielded) =
+                    self.control_block(owner, declaration, &arm.body, arguments, &bindings)?;
+                if self.ty(yielded) != self.ty(output) {
+                    return Err(Error::InvalidBinding { node: Some(owner) });
+                }
+                let copy = self.block(
+                    origin(owner, Some(arm.body.id.0), None),
+                    NativeMatchAction::Copy {
+                        source: yielded,
+                        output,
+                    },
+                )?;
+                self.link(body_tail, copy);
+                self.link(copy, join);
+                body
+            };
             let selected = if let Some(guard) = &arm.guard {
                 let (start, tail, condition) =
-                    self.control_block(owner, declaration, guard, arguments, binding)?;
+                    self.control_block(owner, declaration, guard, arguments, &bindings)?;
                 if self.ty(condition).scalar_kind() != Some(NativeScalarKind::Bool) {
                     return Err(Error::InvalidBinding { node: Some(owner) });
                 }
@@ -752,26 +809,32 @@ impl Builder<'_> {
             } else {
                 body
             };
-            self.blocks[test as usize].terminator = (if let Some(peer) = literal {
-                if self.ty(peer) != self.ty(scrutinee) {
-                    return Err(Error::InvalidBinding { node: Some(owner) });
-                }
-                if self.ty(peer).scalar().is_none() {
-                    return Err(unsupported(
-                        owner,
-                        "managed literal equality requires native comparison",
-                    ));
-                }
-                NativeMatchTerminator::LiteralBranch {
-                    left: scrutinee,
-                    right: peer,
-                    yes: selected,
-                    no: next,
-                }
+            if let Some(peer) = literal
+                && self.ty(peer).scalar().is_none()
+            {
+                self.managed_literal_branch(at, scrutinee, peer, test, selected, next)?;
             } else {
-                NativeMatchTerminator::Jump(selected)
-            })
-            .into();
+                self.blocks[test as usize].terminator = (if let Some(peer) = literal {
+                    if self.ty(peer) != self.ty(scrutinee) {
+                        return Err(Error::InvalidBinding { node: Some(owner) });
+                    }
+                    if self.ty(peer).scalar().is_none() {
+                        return Err(unsupported(
+                            owner,
+                            "managed literal equality requires native comparison",
+                        ));
+                    }
+                    NativeMatchTerminator::LiteralBranch {
+                        left: scrutinee,
+                        right: peer,
+                        yes: selected,
+                        no: next,
+                    }
+                } else {
+                    NativeMatchTerminator::Jump(selected)
+                })
+                .into();
+            }
             test = next;
         }
         // Keep a typed fail-closed terminal even though validated exhaustive
@@ -872,14 +935,17 @@ fn lower_control_artifact(
     allow_iteration: bool,
     allow_collections: bool,
 ) -> Result<NativeProgramArtifactPlan, Error> {
-    if !artifact.requirements().is_empty()
-        || !artifact.constraints().is_empty()
-        || !artifact.compute_regions().is_empty()
-    {
+    if !allow_collections && !artifact.requirements().is_empty() {
         return Err(Error::UnsupportedProgram {
-            feature: "requirements, constraints or compute regions",
+            feature: "resource ports in a scalar plan",
         });
     }
+    if !artifact.constraints().is_empty() || !artifact.compute_regions().is_empty() {
+        return Err(Error::UnsupportedProgram {
+            feature: "constraints or compute regions",
+        });
+    }
+    let resource_requirements = resource::requirements(artifact)?;
     validate_slot_initializers(artifact, allow_collections, |id| {
         program_type(artifact, id, allow_collections).map(|_| ())
     })?;
@@ -896,7 +962,13 @@ fn lower_control_artifact(
     let classes = classify_nodes(artifact, ResidentExternalAdmission::StructuralOnly)?;
     for node in artifact.nodes() {
         let class = classes[node.node.get() as usize];
-        if class != NodeClass::Turn && !(allow_collections && class == NodeClass::Activation) {
+        if class != NodeClass::Turn
+            && !(allow_collections
+                && matches!(
+                    class,
+                    NodeClass::Activation | NodeClass::Observation | NodeClass::External
+                ))
+        {
             return Err(unsupported(
                 node.node,
                 "Activation computation or external node",
@@ -904,6 +976,21 @@ fn lower_control_artifact(
         }
     }
     let schedule = build_activation_schedule(artifact, &classes)?;
+    // Identity follows the resident step table's original artifact-node
+    // order, while transport/commit order below follows the actual schedule.
+    let effect_ordinals = artifact
+        .nodes()
+        .iter()
+        .filter(|node| classes[node.node.get() as usize] == NodeClass::External)
+        .enumerate()
+        .map(|(ordinal, node)| {
+            u32::try_from(ordinal)
+                .map(|ordinal| (node.node, ordinal))
+                .map_err(|_| Error::InvalidBinding {
+                    node: Some(node.node),
+                })
+        })
+        .collect::<Result<BTreeMap<_, _>, _>>()?;
     let mut builder = Builder {
         artifact,
         catalog,
@@ -962,12 +1049,58 @@ fn lower_control_artifact(
     let root_origin = origin(NodeId::new(0), None, None);
     let entry = builder.block(root_origin, NativeMatchAction::None)?;
     let mut tail = entry;
+    let mut observations = Vec::new();
+    let mut effects = Vec::new();
+    let activation_nodes = artifact
+        .nodes()
+        .iter()
+        .filter(|node| {
+            allow_collections && classes[node.node.get() as usize] == NodeClass::Activation
+        })
+        .map(|node| node.node)
+        .collect::<Box<[_]>>();
+    let mut activation_boundary = None;
     // The same resident schedule places the entire closed activation DAG
     // before Turn nodes, including independent nodes whose artifact ordinals
     // are interleaved. Do not fold/execute those values during compilation or
     // put their work outside the invocation's cumulative native admission.
     for node_id in schedule.nodes.iter().copied() {
         let node = &artifact.nodes()[node_id.get() as usize];
+        if classes[node_id.get() as usize] == NodeClass::Observation {
+            // This node remains a requirement-bearing observation in the
+            // original artifact. The authorized host supplies its initial SSA
+            // value; no pure leaf, fake InputId or generated callback replaces it.
+            let site = resource::observation(artifact, node, &resource_requirements)?;
+            let ty = builder.type_for_schema(site.schema)?;
+            let value = builder.value(ty.clone())?;
+            if sources
+                .insert(ArtifactSource::Slot(site.slot), value)
+                .is_some()
+            {
+                return Err(Error::InvalidBinding {
+                    node: Some(node_id),
+                });
+            }
+            observations.push(NativeProgramObservation {
+                node: node_id,
+                requirement: site.requirement,
+                request: site.request,
+                slot: site.slot,
+                ty,
+                value,
+                ordinal: 0,
+            });
+            continue;
+        }
+        if allow_collections
+            && activation_boundary.is_none()
+            && classes[node_id.get() as usize] != NodeClass::Activation
+        {
+            let boundary = builder.block(root_origin, NativeMatchAction::None)?;
+            builder.link(tail, boundary);
+            tail = boundary;
+            activation_boundary = Some(boundary);
+        }
         let args = node_inputs(artifact, node_id)?
             .iter()
             .map(|&source| {
@@ -977,6 +1110,34 @@ fn lower_control_artifact(
                 })
             })
             .collect::<Result<Vec<_>, Error>>()?;
+        if classes[node_id.get() as usize] == NodeClass::External {
+            let site = resource::effect(artifact, node, &resource_requirements)?;
+            let [value] = args.as_slice() else {
+                return Err(Error::InvalidBinding {
+                    node: Some(node_id),
+                });
+            };
+            let ty = builder.type_for_schema(site.schema)?;
+            if builder.ty(*value) != &ty {
+                return Err(Error::InvalidBinding {
+                    node: Some(node_id),
+                });
+            }
+            effects.push(NativeProgramEffect {
+                node: node_id,
+                requirement: site.requirement,
+                request: site.request,
+                payload: site.payload,
+                ty,
+                value: *value,
+                ordinal: *effect_ordinals.get(&node_id).ok_or(Error::InvalidBinding {
+                    node: Some(node_id),
+                })?,
+            });
+            // A Send has NO application result slot. Its immutable payload is
+            // transported only after Complete, for the host's normal transaction.
+            continue;
+        }
         let slot = node_output_slot(artifact, node_id)?;
         let output = builder
             .value(builder.type_for_schema(artifact.slots()[slot.get() as usize].schema)?)?;
@@ -1009,6 +1170,12 @@ fn lower_control_artifact(
             });
         }
     }
+    if allow_collections && activation_boundary.is_none() {
+        let boundary = builder.block(root_origin, NativeMatchAction::None)?;
+        builder.link(tail, boundary);
+        tail = boundary;
+        activation_boundary = Some(boundary);
+    }
     let completion = builder.block(root_origin, NativeMatchAction::None)?;
     builder.link(tail, completion);
     builder.blocks[completion as usize].terminator = NativeMatchTerminator::Complete.into();
@@ -1034,8 +1201,19 @@ fn lower_control_artifact(
             })
         })
         .collect::<Result<Vec<_>, Error>>()?;
+    // Match the resident input-capture order, independently of source-node
+    // order. SSA identity is unaffected by this transport-only ordering.
+    observations.sort_by_key(|observation| observation.slot.get());
+    for (ordinal, observation) in observations.iter_mut().enumerate() {
+        observation.ordinal = u32::try_from(ordinal).map_err(|_| Error::InvalidBinding {
+            node: Some(observation.node),
+        })?;
+    }
     let plan = NativeProgramArtifactPlan {
         revision: artifact.revision(),
+        resource_requirements,
+        observations: observations.into(),
+        effects: effects.into(),
         inputs: inputs.into(),
         constants: constants.into(),
         values: builder.values.into(),
@@ -1053,10 +1231,18 @@ fn lower_control_artifact(
             .collect::<Result<Box<[_]>, _>>()?,
         outputs: outputs.into(),
         entry,
+        activation_nodes,
+        activation_boundary,
     };
     if allow_iteration {
-        crate::native_artifact::iteration_validation::validate(&plan)
-            .map_err(|_| Error::InvalidBinding { node: None })?;
+        let checked = if allow_collections {
+            plan.validate_current_visits()
+        } else {
+            // Frozen scalar views retain their original proof and acquire no
+            // managed phase boundary or generated phase dispatch.
+            crate::native_artifact::iteration_validation::validate(&plan)
+        };
+        checked.map_err(|_| Error::InvalidBinding { node: None })?;
     }
     Ok(plan)
 }
@@ -1127,6 +1313,268 @@ mod iteration_proof_tests {
             assert!(forged_scope.validate_current_visits().is_err());
         }
     }
+    #[cfg(all(
+        feature = "semantic-compiler",
+        feature = "resident-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    ))]
+    fn closed_tail_plans() -> Vec<NativeProgramArtifactPlan> {
+        // Real canonical enum packing and structural pattern sites. Bool is
+        // the actual result type, not an extra schema injected for this test.
+        let source = "#Once(n<u64>) => <bool>\n  | :Step(value<u64>)\n  | :Done(value<u64>).\n#Once(n) -> :Step(n)\n  :Step(value) -> :Done(value)\n  :Done(value) => true.\n#Once(input<u64>)\n";
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x5441494c), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+        let mut builder = mech_core::FunctionCatalogBuilder::new();
+        crate::install_intrinsic_runtime(&mut builder).unwrap();
+        crate::install_intrinsic_compiler_runtime(&mut builder).unwrap();
+        crate::install_intrinsic_resident(&mut builder).unwrap();
+        crate::install_intrinsic_source(&mut builder).unwrap();
+        let catalog = Arc::new(builder.build().unwrap());
+        let original = crate::CanonicalSourceFrontend
+            .compile_document_with_catalog(
+                &DocumentSyntax::cast(parsed.syntax()).unwrap(),
+                catalog.clone(),
+            )
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        let decoded = crate::decode_program_artifact_bytecode_v1(
+            &crate::encode_program_artifact_bytecode_v1(&original).unwrap(),
+        )
+        .unwrap();
+        [original, decoded]
+            .iter()
+            .map(|artifact| lower_native_program_artifact(artifact, &catalog).unwrap())
+            .collect()
+    }
+
+    #[cfg(all(
+        feature = "semantic-compiler",
+        feature = "resident-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    ))]
+    #[test]
+    fn tail_current_visit_proof_rejects_forged_roles_edges_and_stale_return_slots() {
+        for valid in closed_tail_plans() {
+            valid.validate_current_visits().unwrap();
+            assert_eq!(valid.iterations().len(), 1);
+            let NativeControlLoop::Tail(tail) = valid.iterations()[0].clone() else {
+                panic!("canonical synchronous transition must lower to Tail")
+            };
+            let mut forged = Vec::new();
+            let mut plan = valid.clone();
+            plan.blocks[tail.header() as usize].terminator = NativeIterationTerminator::Header {
+                iteration: 0,
+                body: tail.body(),
+                exit: tail.exit(),
+            };
+            forged.push(("invented counted header", plan));
+            let mut plan = valid.clone();
+            let NativeControlLoop::Tail(data) = &mut plan.iterations[0] else {
+                unreachable!()
+            };
+            std::mem::swap(&mut data.header, &mut data.latch);
+            forged.push(("reordered header/latch roles", plan));
+            let mut plan = valid.clone();
+            plan.blocks[tail.latch() as usize].terminator =
+                NativeMatchTerminator::Jump(tail.body()).into();
+            forged.push(("latch bypasses header", plan));
+            let mut plan = valid.clone();
+            plan.blocks[tail.latch() as usize].terminator =
+                NativeMatchTerminator::Jump(tail.exit()).into();
+            forged.push(("latch bypasses return definition", plan));
+            let mut plan = valid.clone();
+            plan.blocks[tail.finish() as usize].terminator =
+                NativeMatchTerminator::Jump(tail.header()).into();
+            forged.push(("return reenters header", plan));
+            let mut plan = valid.clone();
+            let NativeControlLoop::Tail(data) = &mut plan.iterations[0] else {
+                unreachable!()
+            };
+            data.returned = data.result;
+            forged.push(("previous outer result is not current return", plan));
+            let mut plan = valid.clone();
+            let NativeControlLoop::Tail(data) = &mut plan.iterations[0] else {
+                unreachable!()
+            };
+            data.next = data.seed;
+            forged.push(("initial seed is not current next state", plan));
+            let mut plan = valid.clone();
+            plan.value_scopes[tail.carrier().get() as usize] =
+                NativeIterationValueScope::Immutable { iteration: Some(0) };
+            forged.push(("carrier disguised as immutable local", plan));
+            for (value, label) in [
+                (tail.next(), "missing current next-state definition"),
+                (tail.returned(), "missing current return definition"),
+            ] {
+                let mut plan = valid.clone();
+                let block = plan
+                    .blocks
+                    .iter_mut()
+                    .find(|block| {
+                        matches!(block.action(), NativeIterationAction::Scalar(
+                        NativeMatchAction::Copy { output, .. }) if *output == value)
+                    })
+                    .expect("real canonical terminal copy");
+                block.action = NativeIterationAction::Scalar(NativeMatchAction::None);
+                forged.push((label, plan));
+            }
+            for (label, plan) in forged {
+                assert!(plan.validate_current_visits().is_err(), "{label}");
+            }
+        }
+    }
+
+    #[cfg(all(
+        feature = "semantic-compiler",
+        feature = "resident-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    ))]
+    #[test]
+    fn tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths() {
+        for valid in closed_tail_plans() {
+            let NativeControlLoop::Tail(tail) = &valid.iterations()[0] else {
+                unreachable!()
+            };
+            let mut foreign_nominal = valid.clone();
+            let ty = &mut foreign_nominal.values[tail.next().get() as usize];
+            let mech_core::SchemaBody::Enum { variants, .. } = ty.definition.body() else {
+                panic!("nominal enum state")
+            };
+            ty.definition = mech_core::SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: mech_core::SchemaBody::Enum {
+                    key: mech_core::NominalKey::from_bytes([0x7b; 32]),
+                    variants: variants.clone(),
+                },
+            }
+            .finalize()
+            .unwrap();
+            assert!(foreign_nominal.validate_current_visits().is_err());
+            let mut bad_tag = valid.clone();
+            let action = bad_tag
+                .blocks
+                .iter_mut()
+                .find_map(|block| match &mut block.action {
+                    NativeIterationAction::Structural { observation, .. }
+                        if matches!(
+                            observation,
+                            crate::native_artifact::NativeStructuralObservation::EnumOrdinal { .. }
+                        ) =>
+                    {
+                        Some(observation)
+                    }
+                    _ => None,
+                })
+                .expect("canonical enum tag observation");
+            *action = crate::native_artifact::NativeStructuralObservation::EnumOrdinal {
+                ordinal: u32::MAX,
+            };
+            assert!(bad_tag.validate_current_visits().is_err());
+            let mut bad_path = valid.clone();
+            let path = bad_path
+                .blocks
+                .iter_mut()
+                .find_map(|block| match &mut block.action {
+                    NativeIterationAction::Structural {
+                        path, observation, ..
+                    } if matches!(
+                        observation,
+                        crate::native_artifact::NativeStructuralObservation::U64
+                    ) =>
+                    {
+                        Some(path)
+                    }
+                    _ => None,
+                })
+                .expect("canonical U64 state binding");
+            *path = vec![crate::native_artifact::NativeStructuralStep::EnumPayload {
+                ordinal: u32::MAX,
+            }]
+            .into();
+            assert!(bad_path.validate_current_visits().is_err());
+        }
+    }
+
+    #[test]
+    fn frozen_scalar_views_still_reject_closed_root_calls_and_loops() {
+        // Root Activation owners have never belonged to the frozen scalar
+        // views. Do not widen that scope merely to exercise the managed phase
+        // proof; closed lexical work inside a Turn owner is covered by the
+        // scalar JIT/Object integration suites instead.
+        let identity = "identity(x<u64>) => (next<u64>) := next := x.\n";
+        for (closed, supports_match) in [
+            ("fixed := identity(7u64)\n", true),
+            ("fixed := 7u64 |3> identity\n", false),
+        ] {
+            let source = format!("{identity}{closed}identity(seed<u64>)\n");
+            let (artifact, catalog) = artifact(&source);
+            let classes =
+                classify_nodes(&artifact, ResidentExternalAdmission::StructuralOnly).unwrap();
+            assert!(classes.iter().any(|class| *class == NodeClass::Activation));
+            assert!(classes.iter().any(|class| *class == NodeClass::Turn));
+            assert!(matches!(
+                lower_scalar_iteration_artifact(&artifact, &catalog),
+                Err(Error::UnsupportedNode {
+                    feature: "Activation computation or external node",
+                    ..
+                })
+            ));
+            if supports_match {
+                assert!(matches!(
+                    lower_scalar_match_artifact(&artifact, &catalog),
+                    Err(Error::UnsupportedNode {
+                        feature: "Activation computation or external node",
+                        ..
+                    })
+                ));
+            }
+        }
+    }
+
+    #[test]
+    fn native_phase_proof_rejects_moved_checkpoints_and_fresh_reads_during_activation() {
+        let source = "identity(x<string>) => (out<string>) := out := x.\nclosed := identity(\"constant\")\nfresh := identity(input<string>)\nfresh\n";
+        let (artifact, catalog) = artifact(source);
+        let valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        valid.validate_current_visits().unwrap();
+        assert!(valid.has_activation());
+        let boundary = valid.activation_boundary().unwrap();
+        assert_ne!(boundary, valid.entry());
+        let mut missing = valid.clone();
+        missing.activation_boundary = None;
+        assert!(missing.validate_current_visits().is_err());
+        let mut early = valid.clone();
+        early.activation_boundary = Some(early.entry());
+        assert!(early.validate_current_visits().is_err());
+        let mut relabeled = valid.clone();
+        relabeled.activation_nodes = Box::new([]);
+        assert!(relabeled.validate_current_visits().is_err());
+        let mut fresh_read = valid.clone();
+        let input = fresh_read.inputs()[0].value();
+        let owners = fresh_read.activation_nodes().to_vec();
+        let action = fresh_read
+            .blocks
+            .iter_mut()
+            .find_map(|block| {
+                if !owners.contains(&block.origin().node()) {
+                    return None;
+                }
+                match &mut block.action {
+                    NativeIterationAction::Scalar(NativeMatchAction::Copy { source, .. }) => {
+                        Some(source)
+                    }
+                    _ => None,
+                }
+            })
+            .expect("closed canonical identity copy");
+        *action = input;
+        assert!(fresh_read.validate_current_visits().is_err());
+    }
+
     #[test]
     fn exhaustive_partial_function_matches_lower_but_genuinely_partial_matches_reject() {
         let (total, catalog) = artifact("pick(x<u64>) => <u64>\n  | x => x.\npick(seed<u64>)\n");

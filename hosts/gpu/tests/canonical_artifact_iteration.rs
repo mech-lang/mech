@@ -216,6 +216,16 @@ fn check(source: &str, named: &[(&str, NativeScalarValue)], expected: NativeScal
     }
 }
 #[test]
+fn scalar_iteration_turn_keeps_closed_lexical_loops_in_the_frozen_abi() {
+    use NativeScalarValue::U64;
+    // Each input-dependent root-loop visit executes its own lexical closed
+    // loop before the fresh addition, through the unchanged scalar validator.
+    let source = "step(x<u64>) => (next<u64>) := next := x + 1u64.\nrun(x<u64>) => (out<u64>) :=\n  fixed := 1u64 |3> step\n  out := x + fixed.\nseed<u64> |2> run\n";
+    check(source, &[("seed", U64(0))], U64(8));
+    check(source, &[("seed", U64(5))], U64(13));
+}
+
+#[test]
 fn exact_zero_and_over_twenty_four_counts_execute_real_loops() {
     use NativeScalarValue::U64;
     for count in [0, 1, 25, 64] {

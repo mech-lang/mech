@@ -332,7 +332,7 @@ fn bind_current(
     })?;
     let kernel = crate::resident::native_semantics::bind_call(kernel, &request, call);
     let invocation_metadata_bytes =
-        invocation::metadata_envelope(schemas, &memory).ok_or_else(|| invalid(node))?;
+        invocation::metadata_envelope(&memory).ok_or_else(|| invalid(node))?;
     let schemas = kernel
         .shared_snapshot_schemas()
         .cloned()

@@ -1003,6 +1003,73 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("if: always()", native)
         self.assertIn("retention-days: 14", native)
 
+    def test_secured_canonical_hosted_target_is_required_by_the_existing_native_gate(self):
+        native = job_block(NATIVE, "canonical-hosted")
+        settings = native.split("    steps:\n", 1)[0]
+        self.assertNotRegex(settings, r"(?m)^    if:")
+        self.assertNotIn("continue-on-error", native)
+        self.assertNotIn("--skip", native)
+        self.assertIn("timeout-minutes: 150", settings)
+        self.assertIn("RUSTUP_TOOLCHAIN: nightly-2026-03-03", settings)
+        self.assertIn('CARGO_BUILD_JOBS: "1"', settings)
+        self.assertIn('CARGO_INCREMENTAL: 0', settings)
+        self.assertIn("ref: ${{ inputs.validation_ref }}", native)
+        self.assertIn('test "$actual" = "$expected"', native)
+        self.assertIn('test "$actual" = "$CHECKOUT_SHA"', native)
+        # Both callers already aggregate the ENTIRE reusable workflow, not
+        # one child job. A failed new child therefore fails the existing gate.
+        for source, job in ((CI, "early-native-plan"), (FULL, "native-plan")):
+            self.assertIn("uses: ./.github/workflows/ci-native-plan.yml", job_block(source, job))
+        self.assertIn("- early-native-plan", job_block(CI, "pr-gate"))
+        self.assertIn("- native-plan", job_block(FULL, "cargo"))
+        steps = job_steps(NATIVE, "canonical-hosted")
+        def named(name):
+            return next(step for step in steps if f"- name: {name}\n" in step)
+        compile_step = named("Compile canonical hosted contracts without execution")
+        execute = named("Execute complete canonical hosted contracts")
+        select = named("Verify linked canonical hosted selection is nonempty")
+        qualify = named("Qualify original and decoded secured hosted standalone applications")
+        for selected in (compile_step, execute, select, qualify):
+            self.assertNotRegex(selected, r"(?m)^        if:")
+        self.assertIn("--record-test-executable canonical_hosted_artifact", compile_step)
+        self.assertIn("--test canonical_hosted_artifact --no-run --message-format=json-render-diagnostics", compile_step)
+        self.assertIn("mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-program-host", compile_step)
+        for selected in (execute, select, qualify):
+            self.assertIn("--test-executable-file target/native-plan-logs/canonical-hosted-executable", selected)
+            self.assertNotIn("cargo +", selected)
+        self.assertIn("--test-threads=1 --nocapture", execute)
+        self.assertNotIn("--ignored", execute)
+        self.assertNotIn("--exact", execute)
+        self.assertNotIn("--list", execute)
+        case = "linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned"
+        self.assertIn("--list --ignored --exact", select)
+        self.assertIn(case, select)
+        self.assertIn(f'expected = "{case}: test"; assert lines.count(expected) == 1', select)
+        self.assertIn("--ignored --exact", qualify)
+        self.assertIn(case, qualify)
+        self.assertIn("--test-threads=1 --nocapture", qualify)
+        self.assertIn("MECH_CANONICAL_HOSTED_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", qualify)
+        self.assertIn("MECH_CANONICAL_HOSTED_EVIDENCE_DIR: ${{ runner.temp }}/canonical-hosted-evidence", qualify)
+        self.assertNotIn("mkdir", qualify)  # the qualifier requires a fresh nonexistent child
+        self.assertNotIn("CARGO_HOME", native)  # preserve ambient-config refusal, not a hidden override
+        self.assertLess(steps.index(compile_step), steps.index(execute))
+        self.assertLess(steps.index(execute), steps.index(select))
+        self.assertLess(steps.index(select), steps.index(qualify))
+        self.assertGreater(int(re.search(r"--timeout-secs (\d+)", qualify).group(1)), 5700)
+        for selected in (compile_step, execute, select, qualify):
+            timeout = int(re.search(r"--timeout-secs (\d+)", selected).group(1))
+            actions = int(re.search(r"timeout-minutes: (\d+)", selected).group(1)) * 60
+            self.assertGreater(actions, timeout + 30 + 5 + 15)
+        retained = named("Retain canonical hosted diagnostics and qualification evidence")
+        self.assertIn("if: always()", retained)
+        self.assertIn("target/native-plan-logs", retained)
+        self.assertIn("${{ runner.temp }}/canonical-hosted-evidence", retained)
+        self.assertIn("retention-days: 14", retained)
+        fixture = (ROOT / "hosts/gpu/tests/support/canonical_hosted_linked.rs").read_text(encoding="utf-8")
+        self.assertIn("fn " + case.split("::")[-1] + "()", fixture)
+        self.assertIn("MECH_CANONICAL_HOSTED_SOURCE_COMMIT", fixture)
+        self.assertIn("MECH_CANONICAL_HOSTED_EVIDENCE_DIR", fixture)
+
     def test_planning_preparation_execution_and_deadlines_remain_separate(self):
         steps = job_steps(NATIVE, "native-plan")
         def named(name):

@@ -1,4 +1,4 @@
-//! Build-owned ABI6 binding. JIT and linked calls use one invocation boundary.
+//! Build-owned ABI8 binding. JIT and linked calls use one invocation boundary.
 use super::{
     NATIVE_PROGRAM_LINK_IDENTITY_BYTES, NativeLinkError, NativeProgramDescriptor,
     NativeProgramExecutionError, NativeProgramExecutionLimits, NativeProgramExecutionReport,
@@ -12,8 +12,26 @@ pub struct LinkedProgramArtifact {
     descriptor: NativeProgramDescriptor,
 }
 impl LinkedProgramArtifact {
+    /// Execute only generated closed activation before provider capture.
+    /// The opaque result borrows this checked code owner and can resume once,
+    /// with the SAME runtime transaction, limits, arena and cumulative ledger.
+    #[cfg(feature = "canonical-native-program-host-runtime")]
+    pub fn prepare_hosted<'a>(
+        &'a self,
+        admission: mech_runtime::CanonicalNativeResourceAdmission<'_>,
+        limits: NativeProgramExecutionLimits,
+        memory: &ManagedMemoryBudget,
+    ) -> Result<super::NativeProgramExecutionSession<'a>, NativeProgramExecutionError> {
+        super::program_runtime::prepare_hosted(
+            &self.descriptor,
+            super::program_runtime::CheckedEntry::Linked(self.entry),
+            admission,
+            limits,
+            memory,
+        )
+    }
     /// # Safety
-    /// The entry must be the process-lifetime ABI6 entry emitted by this crate's
+    /// The entry must be the process-lifetime ABI8 entry emitted by this crate's
     /// checked shared CFG definition, and identity its readonly symbol in the
     /// SAME unchanged Object. The build must verify source/Object/bytecode pins
     /// before linking. No retained pointers, unwinding, ambient effects, foreign

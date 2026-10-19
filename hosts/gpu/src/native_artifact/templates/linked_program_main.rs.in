@@ -60,7 +60,7 @@ fn run() -> Result<(), String> {
     // SAFETY: build.rs pins all generated inputs, including the exact Object.
     // The digest-qualified identity and entry are process-lifetime symbols
     // linked from that SAME unchanged checked emitter Object. The constructor
-    // verifies the current canonical artifact/selected bindings and ABI6 CFG.
+    // verifies the current canonical artifact/selected bindings and ABI8 CFG.
     let linked = unsafe {
         LinkedProgramArtifact::from_build_owned_entry(&artifact, &catalog, &LINKED_IDENTITY, linked_entry)
     }.map_err(|error| error.to_string())?;

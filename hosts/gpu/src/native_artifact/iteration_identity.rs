@@ -186,6 +186,7 @@ pub(super) fn typed_ir_sha256(plan: &NativeIterationArtifactPlan) -> [u8; 32] {
             // Such a plan is rejected by both engine proof and scalar emitter.
             // Keep it disjoint from every valid frozen scalar action encoding.
             NativeIterationAction::LibraryCall { .. }
+            | NativeIterationAction::Structural { .. }
             | NativeIterationAction::CollectionBegin { .. }
             | NativeIterationAction::CollectionElement { .. }
             | NativeIterationAction::CollectionPush { .. }
@@ -224,6 +225,7 @@ pub(super) fn typed_ir_sha256(plan: &NativeIterationArtifactPlan) -> [u8; 32] {
             }
         }
         match block.terminator() {
+            NativeIterationTerminator::TailHeader { .. } => hash.update([255]),
             NativeIterationTerminator::Scalar(terminator) => {
                 hash.update([0]);
                 match terminator {

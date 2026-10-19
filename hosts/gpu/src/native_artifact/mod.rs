@@ -101,6 +101,8 @@ pub use iteration_identity::{
 };
 pub use iteration_linked::LinkedIterationArtifact;
 pub use iteration_runtime::{NativeIterationExecutionError, NativeIterationExecutionReport};
+#[cfg(feature = "canonical-native-program-host")]
+pub use program_application::generate_linked_hosted_program_application;
 #[cfg(feature = "canonical-native-program")]
 pub use program_application::generate_linked_program_application;
 #[cfg(feature = "canonical-native-program")]
@@ -114,6 +116,8 @@ pub use program_identity::{
     NATIVE_PROGRAM_LINK_IDENTITY_BYTES, NATIVE_PROGRAM_TYPED_IR_VERSION,
     NATIVE_PROGRAM_WORK_POLICY_VERSION, NativeProgramObjectIdentity,
 };
+#[cfg(feature = "canonical-native-program-host-runtime")]
+pub use program_runtime::NativeProgramExecutionSession;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub use program_runtime::{
     NativeProgramExecutionError, NativeProgramExecutionLimits, NativeProgramExecutionReport,

@@ -420,7 +420,7 @@ fn collection_extent_is_dynamic(
         .is_some_and(|declaration| declaration.lifetime == crate::DimensionLifetime::Turn)
 }
 
-fn schema_body_from_resolved(
+pub(super) fn schema_body_from_resolved(
     kind: &KindExpr,
     declarations: &[DimensionParameterDeclaration],
 ) -> Result<SchemaBody, TypeResolutionError> {

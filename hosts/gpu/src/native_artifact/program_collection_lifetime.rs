@@ -12,7 +12,7 @@ impl State {
     /// exact frozen storage through generation-checked handles, not equality.
     pub(super) fn untracked_yield_bytes(
         &self,
-        ctx: &mut Context<'_>,
+        ctx: &mut Context<'_, '_>,
         value: Option<&mech_core::Value>,
     ) -> Result<u64, Error> {
         let Some(value) = value else { return Ok(0) };
@@ -31,7 +31,7 @@ impl State {
 
     pub(super) fn retire_locals(
         &mut self,
-        ctx: &mut Context<'_>,
+        ctx: &mut Context<'_, '_>,
         iteration: u32,
     ) -> Result<(), Error> {
         let plan = &ctx.control.descriptor.plan;
@@ -80,7 +80,7 @@ impl State {
 
     pub(in super::super) fn release_source(
         &mut self,
-        ctx: &mut Context<'_>,
+        ctx: &mut Context<'_, '_>,
         iteration: u32,
     ) -> Result<(), Error> {
         if self

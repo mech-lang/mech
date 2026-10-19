@@ -3,14 +3,17 @@ use mech_core::{
     ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
     OutputConstruction, RegionPolicy, ResidentKernelBindError, ResidentKernelBindRequest,
     ResidentKernelError, ResidentKernelInputs, ResidentKernelWorkAccounting, ResidentShape,
-    ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody,
-    ShapeRule, ValueData,
+    ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
+    ResolvedOperationContract, SchemaBody, ShapeRule, ValueData,
 };
 
 #[path = "text_selection_snapshot.rs"]
 mod snapshot_selection;
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_string_concat(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     builder.insert_resident_factory(
         ["string"],
         "concat",
@@ -381,6 +384,22 @@ pub(super) fn bind_string_not_equal(
     bind_string_scalar_comparison(request, string_not_equal)
 }
 
+fn scalar_string_layout(
+    request: &ResidentKernelBindRequest<'_>,
+    layout: &mech_core::ResidentPortLayout,
+) -> bool {
+    matches!(
+        layout.kind,
+        ResidentValueKind::String | ResidentValueKind::Snapshot
+    ) && layout.shape == ResidentShape::SCALAR
+        && layout.shape_instance.parameter_values().is_empty()
+        && request.schemas.get(layout.schema_id).is_some_and(|schema| {
+            schema.body() == &SchemaBody::String
+                && schema.dimension_parameters().is_empty()
+                && schema.key() == layout.schema_key
+        })
+}
+
 fn bind_string_scalar_comparison(
     request: &ResidentKernelBindRequest<'_>,
     executor: mech_core::ResidentKernelExecutor,
@@ -390,6 +409,7 @@ fn bind_string_scalar_comparison(
     };
     if contract.interaction != ExternalInteraction::Pure
         || contract.inputs.len() != 2
+        || request.inputs.len() != 2
         || contract.outputs.len() != 1
         || contract
             .inputs
@@ -399,11 +419,22 @@ fn bind_string_scalar_comparison(
                 port.schema != layout.schema_id
                     || port.access != AccessMode::Read
                     || port.delivery != DeliveryMode::Signal
-                    || layout.kind != ResidentValueKind::String
-                    || layout.shape != ResidentShape::SCALAR
+                    || !scalar_string_layout(request, layout)
             })
-        || request.output.kind != ResidentValueKind::Bool
+        || !matches!(
+            request.output.kind,
+            ResidentValueKind::Bool | ResidentValueKind::Snapshot
+        )
         || request.output.shape != ResidentShape::SCALAR
+        || !request.output.shape_instance.parameter_values().is_empty()
+        || !request
+            .schemas
+            .get(request.output.schema_id)
+            .is_some_and(|schema| {
+                schema.body() == &SchemaBody::Bool
+                    && schema.dimension_parameters().is_empty()
+                    && schema.key() == request.output.schema_key
+            })
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -420,61 +451,66 @@ fn bind_string_scalar_comparison(
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
-    Ok(BoundResidentKernel::new(executor, Box::new([]))
-        .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
+    Ok(super::set::membership_output::bind(
+        BoundResidentKernel::new(executor, Box::new([])),
+        request,
+    )
+    .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
 }
 
 fn string_equal(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let Some(ResidentValueRef::String([left])) = inputs.get(0) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let Some(ResidentValueRef::String([right])) = inputs.get(1) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let ResidentValueMut::Bool([target]) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    admit_scalar_string_comparison(left, right)?;
-    let next = u8::from(left == right);
-    let changed = *target != next;
-    *target = next;
-    Ok(changed)
+    let left = snapshot_selection::source_at(
+        kernel,
+        inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?,
+        0,
+    )?;
+    let right = snapshot_selection::source_at(
+        kernel,
+        inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?,
+        1,
+    )?;
+    admit_scalar_string_comparison(kernel, left, right)?;
+    super::set::membership_output::write(kernel, output, left == right)
 }
 
 fn string_not_equal(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let Some(ResidentValueRef::String([left])) = inputs.get(0) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let Some(ResidentValueRef::String([right])) = inputs.get(1) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let ResidentValueMut::Bool([target]) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    admit_scalar_string_comparison(left, right)?;
-    let next = u8::from(left != right);
-    let changed = *target != next;
-    *target = next;
-    Ok(changed)
+    let left = snapshot_selection::source_at(
+        kernel,
+        inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?,
+        0,
+    )?;
+    let right = snapshot_selection::source_at(
+        kernel,
+        inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?,
+        1,
+    )?;
+    admit_scalar_string_comparison(kernel, left, right)?;
+    super::set::membership_output::write(kernel, output, left != right)
 }
 
-fn admit_scalar_string_comparison(left: &str, right: &str) -> Result<(), ResidentKernelError> {
+fn admit_scalar_string_comparison(
+    kernel: &BoundResidentKernel,
+    left: &str,
+    right: &str,
+) -> Result<(), ResidentKernelError> {
     let comparison_work = left.len().max(right.len()).max(1);
+    let footprint = super::set::membership_output::footprint(kernel)?;
     super::budget::PreparedKernel::new(
         (),
         super::budget::resident_cost! {
             comparison_work,
             compute_work: comparison_work,
-            output_elements: 1,
-            output_bytes: core::mem::size_of::<u8>(),
+            output_elements: footprint.elements,
+            output_bytes: footprint.retained_bytes,
+            retained_nodes: footprint.retained_nodes,
             ..super::budget::KernelCostEstimate::default()
         },
     )
@@ -1052,7 +1088,7 @@ fn bind_string_all_assign(
     Ok(BoundResidentKernel::new(string_all_assign, Box::new([])))
 }
 
-fn bind_concat(
+pub(super) fn bind_concat(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let ResolvedOperationContract::Declared(contract) = request.contract else {
@@ -1070,8 +1106,7 @@ fn bind_concat(
                 port.schema != layout.schema_id
                     || port.access != AccessMode::Read
                     || port.delivery != DeliveryMode::Signal
-                    || layout.kind != ResidentValueKind::String
-                    || layout.shape != ResidentShape::SCALAR
+                    || !scalar_string_layout(request, layout)
             })
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
@@ -1086,40 +1121,51 @@ fn bind_concat(
             })
         || output.alias != AliasPolicy::NoAlias
         || output.change_detection != ChangeDetectionPolicy::ExactScalar
-        || request.output.kind != ResidentValueKind::String
-        || request.output.shape != ResidentShape::SCALAR
+        || !scalar_string_layout(request, &request.output)
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
-    Ok(BoundResidentKernel::new(concat, Box::new([]))
-        .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
+    let kernel = BoundResidentKernel::new(concat, Box::new([]));
+    let kernel = if request.output.kind == ResidentValueKind::Snapshot {
+        kernel
+            .with_snapshot_schemas(request.schemas.clone())
+            .with_snapshot_output(ResidentSnapshotOutput {
+                schema: request.output.schema_id,
+                schema_key: request.output.schema_key,
+                shape: request.output.shape_instance.clone(),
+                exact_cardinality: None,
+                maximum_cardinality: None,
+            })
+    } else {
+        kernel
+    };
+    Ok(kernel.with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
 }
 
 fn concat(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let Some(ResidentValueRef::String([left])) = inputs.get(0) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let Some(ResidentValueRef::String([right])) = inputs.get(1) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let ResidentValueMut::String([target]) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
+    let left = snapshot_selection::source_at(
+        kernel,
+        inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?,
+        0,
+    )?;
+    let right = snapshot_selection::source_at(
+        kernel,
+        inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?,
+        1,
+    )?;
     let length = left
         .len()
         .checked_add(right.len())
         .ok_or(ResidentKernelError::InvalidShape)?;
-    admit_string_materialization(1, length, length, length, target.len().max(length), 0, 0, 0)?;
+    snapshot_selection::admit(kernel, &output, length, length, 0)?;
     let mut next = String::with_capacity(length);
     next.push_str(left);
     next.push_str(right);
-    let changed = *target != next;
-    *target = next;
-    Ok(changed)
+    snapshot_selection::publish(kernel, output, next)
 }
 
 fn string_mask_assign(
@@ -1638,6 +1684,48 @@ mod tests {
             )
             .unwrap();
         assert_eq!(output[0], "Ze\u{301}Z");
+    }
+
+    #[test]
+    fn dense_scalar_text_adapters_need_no_bound_call_and_keep_raw_unicode_identity() {
+        for (left, right, same) in [
+            ("", "", true),
+            ("é", "e\u{301}", false),
+            ("🧑‍🚀", "🧑‍🚀", true),
+            ("", "x", false),
+        ] {
+            let inputs = Inputs([left.to_owned(), right.to_owned()]);
+            for (executor, expected) in [
+                (string_equal as mech_core::ResidentKernelExecutor, same),
+                (string_not_equal as mech_core::ResidentKernelExecutor, !same),
+            ] {
+                let kernel = BoundResidentKernel::new(executor, Box::new([]));
+                assert!(kernel.bound_call().is_none());
+                let mut output = [9_u8];
+                assert!(
+                    kernel
+                        .execute(&inputs, ResidentValueMut::Bool(&mut output))
+                        .unwrap()
+                );
+                assert_eq!(output, [u8::from(expected)]);
+                assert!(
+                    !kernel
+                        .execute(&inputs, ResidentValueMut::Bool(&mut output))
+                        .unwrap()
+                );
+            }
+            let kernel = BoundResidentKernel::new(concat, Box::new([]));
+            let mut output = [String::new()];
+            kernel
+                .execute(&inputs, ResidentValueMut::String(&mut output))
+                .unwrap();
+            assert_eq!(output[0], format!("{left}{right}"));
+            assert!(
+                !kernel
+                    .execute(&inputs, ResidentValueMut::String(&mut output))
+                    .unwrap()
+            );
+        }
     }
 
     #[test]

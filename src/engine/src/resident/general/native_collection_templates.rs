@@ -123,14 +123,31 @@ impl NativeCollectionLexicalTemplate {
 impl NativeCollectionPrimitive {
     pub const fn name(self) -> &'static str {
         match self {
+            Self::CompositePack(_) => "core/composite-pack",
+            Self::EnumPack => "core/enum-pack",
             Self::RangeExclusive => "range/exclusive",
             Self::RangeInclusive => "range/inclusive",
             Self::RangeIncrementExclusive => "range/exclusive-increment",
             Self::RangeIncrementInclusive => "range/inclusive-increment",
-            Self::StringScalarAccess => "access/scalar",
-            Self::StringRangeAccess | Self::StringAllAccess => "access/range",
+            Self::StringScalarAccess | Self::MatrixScalarAccess | Self::MapKeyAccess => {
+                "access/scalar"
+            }
+            Self::SetContains => "set/element-of",
+            Self::SetNotContains => "set/not-element-of",
+            Self::StringEqual => "compare/eq",
+            Self::StringNotEqual => "compare/neq",
+            Self::StringConcat => "string/concat",
+            Self::SumColumns => "stats/sum/column",
+            Self::SumRows => "stats/sum/row",
+            #[cfg(feature = "sequence_sort")]
+            Self::SortIndices => "sequence/sort-indices",
+            Self::StringRangeAccess | Self::StringAllAccess | Self::MatrixRangeAccess => {
+                "access/range"
+            }
             #[cfg(feature = "convert")]
             Self::MatrixConversion => "convert/kind",
+            #[cfg(feature = "convert")]
+            Self::MatrixToSetConversion => "convert/set",
             #[cfg(feature = "pure_text")]
             Self::TextLines => "text/lines",
             #[cfg(feature = "pure_text")]
@@ -149,10 +166,22 @@ impl NativeCollectionPrimitive {
     }
     pub const fn arity(self) -> usize {
         match self {
+            Self::CompositePack(arity) => arity,
+            #[cfg(feature = "sequence_sort")]
+            Self::SortIndices => 4,
             Self::RangeIncrementExclusive | Self::RangeIncrementInclusive => 3,
             Self::RangeExclusive
+            | Self::EnumPack
             | Self::RangeInclusive
             | Self::StringScalarAccess
+            | Self::MatrixScalarAccess
+            | Self::MapKeyAccess
+            | Self::SetContains
+            | Self::SetNotContains
+            | Self::StringEqual
+            | Self::StringNotEqual
+            | Self::StringConcat
+            | Self::MatrixRangeAccess
             | Self::StringRangeAccess => 2,
             #[cfg(feature = "pure_text")]
             Self::TextJoin | Self::NumberFormat => 2,
@@ -195,13 +224,20 @@ fn is_string_matrix(body: &SchemaBody, row: bool) -> bool {
 fn is_u64(body: &SchemaBody) -> bool {
     body == &SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
 }
-#[cfg(feature = "convert")]
-fn is_shallow_conversion_matrix(body: &SchemaBody) -> bool {
+fn is_shallow_atomic(body: &SchemaBody) -> bool {
+    matches!(
+        body,
+        SchemaBody::Bool
+            | SchemaBody::Index
+            | SchemaBody::String
+            | SchemaBody::UnsignedInteger(_)
+            | SchemaBody::SignedInteger(_)
+            | SchemaBody::FloatingPoint(_)
+    )
+}
+fn is_shallow_matrix(body: &SchemaBody) -> bool {
     matches!(body, SchemaBody::Matrix { element, dimensions }
-        if dimensions.len() == 2 && matches!(element.as_ref(),
-            SchemaBody::Bool | SchemaBody::Index | SchemaBody::String
-            | SchemaBody::UnsignedInteger(_) | SchemaBody::SignedInteger(_)
-            | SchemaBody::FloatingPoint(_)))
+        if dimensions.len() == 2 && is_shallow_atomic(element))
 }
 #[cfg(feature = "map_ops")]
 fn is_count_map(body: &SchemaBody) -> bool {
@@ -216,15 +252,154 @@ fn validate_schemas(
     if inputs.len() != primitive.arity() {
         return false;
     }
-    let first = inputs[0].body();
+    if matches!(
+        primitive,
+        NativeCollectionPrimitive::StringEqual
+            | NativeCollectionPrimitive::StringNotEqual
+            | NativeCollectionPrimitive::StringConcat
+    ) && (!output.dimension_parameters().is_empty()
+        || inputs
+            .iter()
+            .any(|input| !input.dimension_parameters().is_empty()))
+    {
+        return false;
+    }
     let output = output.body();
+    if let NativeCollectionPrimitive::CompositePack(_) = primitive {
+        return match output {
+            SchemaBody::Map { key, value, .. } => {
+                inputs.len() % 2 == 0
+                    && is_shallow_atomic(key)
+                    && is_shallow_atomic(value)
+                    && inputs.chunks_exact(2).all(|pair| {
+                        pair[0].body() == key.as_ref() && pair[1].body() == value.as_ref()
+                    })
+            }
+            SchemaBody::Tuple(elements) => {
+                elements.len() == inputs.len()
+                    && elements.iter().zip(inputs).all(|(element, input)| {
+                        is_shallow_atomic(element) && element == input.body()
+                    })
+            }
+            SchemaBody::Record(fields) => {
+                fields.len() == inputs.len()
+                    && fields.iter().zip(inputs).all(|(field, input)| {
+                        is_shallow_atomic(&field.schema) && &field.schema == input.body()
+                    })
+            }
+            _ => false,
+        };
+    }
+    let Some(first) = inputs.first().map(Schema::body) else {
+        return false;
+    };
     match primitive {
+        NativeCollectionPrimitive::CompositePack(_) => unreachable!("validated above"),
+        NativeCollectionPrimitive::EnumPack => {
+            fn state_payload(body: &SchemaBody) -> bool {
+                match body {
+                    SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64) => true,
+                    SchemaBody::Tuple(items) => items.iter().all(|item| {
+                        item == &SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
+                    }),
+                    _ => false,
+                }
+            }
+            first == &SchemaBody::Index
+                && inputs
+                    .iter()
+                    .all(|input| input.dimension_parameters().is_empty())
+                && state_payload(inputs[1].body())
+                && matches!(output, SchemaBody::Enum { variants, .. } if variants.iter()
+                    .any(|variant| variant.payload.as_ref() == Some(inputs[1].body())))
+        }
         NativeCollectionPrimitive::StringAllAccess => {
             first == &SchemaBody::String && output == &SchemaBody::String
         }
         #[cfg(feature = "convert")]
         NativeCollectionPrimitive::MatrixConversion => {
-            is_shallow_conversion_matrix(first) && is_shallow_conversion_matrix(output)
+            is_shallow_matrix(first) && is_shallow_matrix(output)
+        }
+        #[cfg(feature = "convert")]
+        NativeCollectionPrimitive::MatrixToSetConversion => {
+            is_shallow_matrix(first)
+                && matches!(output, SchemaBody::Set { element, .. } if is_shallow_atomic(element))
+        }
+        NativeCollectionPrimitive::MatrixScalarAccess => {
+            let selector = inputs[1].body();
+            let positional = mech_core::is_positional_selector_schema(selector)
+                || matches!(selector, SchemaBody::Matrix { element, dimensions }
+                    if dimensions.len() == 2 && mech_core::is_positional_selector_schema(element));
+            is_shallow_matrix(first)
+                && positional
+                && matches!(first, SchemaBody::Matrix { element, .. } if element.as_ref() == output)
+        }
+        NativeCollectionPrimitive::MatrixRangeAccess => {
+            let selector = inputs[1].body();
+            let positional = mech_core::is_positional_selector_schema(selector)
+                || matches!(selector, SchemaBody::Matrix { element, dimensions }
+                    if dimensions.len() == 2 && (mech_core::is_positional_selector_schema(element)
+                        || element.as_ref() == &SchemaBody::Bool));
+            is_shallow_matrix(first)
+                && is_shallow_matrix(output)
+                && positional
+                && matches!((first, output),
+                    (SchemaBody::Matrix { element, .. },
+                     SchemaBody::Matrix { element: output_element, .. }) if element == output_element)
+        }
+        NativeCollectionPrimitive::MapKeyAccess => {
+            matches!(first, SchemaBody::Map { key, value, .. }
+                if is_shallow_atomic(key) && is_shallow_atomic(value)
+                && inputs[1].body() == key.as_ref() && output == value.as_ref())
+        }
+        NativeCollectionPrimitive::SetContains | NativeCollectionPrimitive::SetNotContains => {
+            is_shallow_atomic(first)
+                && output == &SchemaBody::Bool
+                && matches!(inputs[1].body(), SchemaBody::Set { element, .. } if element.as_ref() == first)
+        }
+        NativeCollectionPrimitive::StringEqual | NativeCollectionPrimitive::StringNotEqual => {
+            first == &SchemaBody::String
+                && inputs[1].body() == &SchemaBody::String
+                && output == &SchemaBody::Bool
+        }
+        NativeCollectionPrimitive::StringConcat => {
+            first == &SchemaBody::String
+                && inputs[1].body() == &SchemaBody::String
+                && output == &SchemaBody::String
+        }
+        NativeCollectionPrimitive::SumColumns | NativeCollectionPrimitive::SumRows => {
+            match (first, output) {
+                (
+                    SchemaBody::Matrix {
+                        element,
+                        dimensions,
+                    },
+                    SchemaBody::Matrix {
+                        element: output_element,
+                        dimensions: output_dimensions,
+                    },
+                ) => {
+                    let reduced_axis =
+                        usize::from(primitive == NativeCollectionPrimitive::SumColumns);
+                    dimensions.len() == 2
+                        && output_dimensions.len() == 2
+                        && element == output_element
+                        && crate::resident::numeric::matrix_sum_element_supported(element)
+                        && output_dimensions[reduced_axis] == mech_core::DimensionExpr::Constant(1)
+                }
+                _ => false,
+            }
+        }
+        #[cfg(feature = "sequence_sort")]
+        NativeCollectionPrimitive::SortIndices => {
+            matches!(first, SchemaBody::Matrix { element, dimensions }
+                if is_u64(element) && dimensions.len() == 2)
+                && inputs[1].body() == &SchemaBody::String
+                && is_string_matrix(inputs[2].body(), false)
+                && inputs[3].body() == &SchemaBody::String
+                && matches!(output, SchemaBody::Matrix { element, dimensions }
+                    if element.as_ref() == &SchemaBody::Index && dimensions.len() == 2
+                    && dimensions[0] == mech_core::DimensionExpr::Constant(1))
         }
         NativeCollectionPrimitive::RangeExclusive
         | NativeCollectionPrimitive::RangeInclusive
@@ -363,19 +538,37 @@ fn select_leaf(
         .ok_or(Error::MissingSemanticWitness { node })?;
     let primitive = crate::resident::native_collection_semantics::primitive(entry)
         .ok_or(Error::MissingSemanticWitness { node })?;
-    // Both String gather and All are branches of the SAME maintained range
-    // factory. Specialize only after its private provenance was established.
-    let primitive =
-        if primitive == NativeCollectionPrimitive::StringRangeAccess && input_ids.len() == 1 {
-            NativeCollectionPrimitive::StringAllAccess
-        } else {
-            primitive
-        };
     let inputs = input_ids
         .iter()
         .map(|id| schema(artifact, *id))
         .collect::<Result<Box<[_]>, _>>()?;
     let output = schema(artifact, output_id)?;
+    // These are branches of the SAME maintained access factories, not new
+    // kernels. Specialize only after private factory provenance is established;
+    // the exact selected schemas/arity/contract still have to validate below.
+    let primitive = match primitive {
+        NativeCollectionPrimitive::CompositePack(_) => {
+            NativeCollectionPrimitive::CompositePack(input_ids.len())
+        }
+        NativeCollectionPrimitive::StringScalarAccess => match inputs.first().map(Schema::body) {
+            Some(SchemaBody::Matrix { .. }) => NativeCollectionPrimitive::MatrixScalarAccess,
+            Some(SchemaBody::Map { .. }) => NativeCollectionPrimitive::MapKeyAccess,
+            _ => primitive,
+        },
+        NativeCollectionPrimitive::StringRangeAccess
+            if input_ids.len() == 2
+                && matches!(
+                    inputs.first().map(Schema::body),
+                    Some(SchemaBody::Matrix { .. })
+                ) =>
+        {
+            NativeCollectionPrimitive::MatrixRangeAccess
+        }
+        NativeCollectionPrimitive::StringRangeAccess if input_ids.len() == 1 => {
+            NativeCollectionPrimitive::StringAllAccess
+        }
+        _ => primitive,
+    };
     if !validate_schemas(primitive, &inputs, &output) {
         return Err(Error::WitnessTypeMismatch { node });
     }
@@ -838,6 +1031,220 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn string_and_matrix_range_templates_require_exact_shallow_schema_relations() {
+        let schema = |body| {
+            mech_core::SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body,
+            }
+            .finalize()
+            .unwrap()
+        };
+        let matrix = |body| {
+            schema(SchemaBody::Matrix {
+                element: Box::new(body),
+                dimensions: Box::new([
+                    mech_core::DimensionExpr::Constant(1),
+                    mech_core::DimensionExpr::Constant(3),
+                ]),
+            })
+        };
+        let text = schema(SchemaBody::String);
+        let boolean = schema(SchemaBody::Bool);
+        let strings = matrix(SchemaBody::String);
+        for predicate in [
+            NativeCollectionPrimitive::StringEqual,
+            NativeCollectionPrimitive::StringNotEqual,
+        ] {
+            assert!(validate_schemas(
+                predicate,
+                &[text.clone(), text.clone()],
+                &boolean
+            ));
+            assert!(!validate_schemas(
+                predicate,
+                &[strings.clone(), text.clone()],
+                &boolean
+            ));
+            assert!(!validate_schemas(
+                predicate,
+                &[text.clone(), boolean.clone()],
+                &boolean
+            ));
+            assert!(!validate_schemas(
+                predicate,
+                &[text.clone(), text.clone()],
+                &text
+            ));
+        }
+        assert!(validate_schemas(
+            NativeCollectionPrimitive::StringConcat,
+            &[text.clone(), text.clone()],
+            &text
+        ));
+        assert!(!validate_schemas(
+            NativeCollectionPrimitive::StringConcat,
+            &[text.clone(), text.clone()],
+            &strings
+        ));
+        assert!(!validate_schemas(
+            NativeCollectionPrimitive::StringConcat,
+            &[text, boolean.clone()],
+            &strings
+        ));
+        let indices = matrix(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64));
+        let mask = matrix(SchemaBody::Bool);
+        let gather = NativeCollectionPrimitive::MatrixRangeAccess;
+        assert!(validate_schemas(
+            gather,
+            &[strings.clone(), indices.clone()],
+            &strings
+        ));
+        assert!(validate_schemas(gather, &[strings.clone(), mask], &strings));
+        assert!(!validate_schemas(
+            gather,
+            &[strings.clone(), boolean],
+            &strings
+        ));
+        assert!(!validate_schemas(
+            gather,
+            &[strings.clone(), indices.clone()],
+            &indices
+        ));
+        assert!(!validate_schemas(
+            gather,
+            &[strings.clone(), strings.clone()],
+            &strings
+        ));
+        let nested = matrix(SchemaBody::Tuple(Box::new([SchemaBody::String])));
+        assert!(!validate_schemas(
+            gather,
+            &[nested.clone(), indices],
+            &nested
+        ));
+    }
+
+    #[test]
+    fn reduction_templates_require_rank_two_identical_numeric_elements_and_reduced_axes() {
+        let schema = |body| {
+            mech_core::SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body,
+            }
+            .finalize()
+            .unwrap()
+        };
+        let matrix = |body, rows, columns| {
+            schema(SchemaBody::Matrix {
+                element: Box::new(body),
+                dimensions: Box::new([
+                    mech_core::DimensionExpr::Constant(rows),
+                    mech_core::DimensionExpr::Constant(columns),
+                ]),
+            })
+        };
+        let u64_body = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
+        let source = matrix(u64_body.clone(), 2, 3);
+        let column = matrix(u64_body.clone(), 2, 1);
+        let row = matrix(u64_body.clone(), 1, 3);
+        assert!(validate_schemas(
+            NativeCollectionPrimitive::SumColumns,
+            &[source.clone()],
+            &column
+        ));
+        assert!(validate_schemas(
+            NativeCollectionPrimitive::SumRows,
+            &[source.clone()],
+            &row
+        ));
+        assert!(!validate_schemas(
+            NativeCollectionPrimitive::SumColumns,
+            &[source.clone()],
+            &row
+        ));
+        assert!(!validate_schemas(
+            NativeCollectionPrimitive::SumRows,
+            &[source.clone()],
+            &column
+        ));
+        assert!(!validate_schemas(
+            NativeCollectionPrimitive::SumColumns,
+            &[source],
+            &matrix(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64), 2, 1)
+        ));
+        assert!(!validate_schemas(
+            NativeCollectionPrimitive::SumRows,
+            &[matrix(SchemaBody::String, 2, 3)],
+            &matrix(SchemaBody::String, 1, 3)
+        ));
+        assert!(!validate_schemas(
+            NativeCollectionPrimitive::SumRows,
+            &[schema(u64_body.clone())],
+            &matrix(u64_body, 1, 3)
+        ));
+    }
+
+    #[cfg(feature = "sequence_sort")]
+    #[test]
+    fn sort_templates_require_four_exact_ports_and_one_based_index_row_output() {
+        let schema = |body| {
+            mech_core::SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body,
+            }
+            .finalize()
+            .unwrap()
+        };
+        let matrix = |body, rows, columns| {
+            schema(SchemaBody::Matrix {
+                element: Box::new(body),
+                dimensions: Box::new([
+                    mech_core::DimensionExpr::Constant(rows),
+                    mech_core::DimensionExpr::Constant(columns),
+                ]),
+            })
+        };
+        let text = schema(SchemaBody::String);
+        let primary = matrix(
+            SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+            1,
+            3,
+        );
+        let secondary = matrix(SchemaBody::String, 1, 3);
+        let output = matrix(SchemaBody::Index, 1, 3);
+        let ports = [primary, text.clone(), secondary.clone(), text];
+        assert!(validate_schemas(
+            NativeCollectionPrimitive::SortIndices,
+            &ports,
+            &output
+        ));
+        assert!(!validate_schemas(
+            NativeCollectionPrimitive::SortIndices,
+            &ports[..3],
+            &output
+        ));
+        for ordinal in 0..4 {
+            let mut wrong = ports.clone();
+            wrong[ordinal] = schema(SchemaBody::Bool);
+            assert!(!validate_schemas(
+                NativeCollectionPrimitive::SortIndices,
+                &wrong,
+                &output
+            ));
+        }
+        assert!(!validate_schemas(
+            NativeCollectionPrimitive::SortIndices,
+            &ports,
+            &secondary
+        ));
+        assert!(!validate_schemas(
+            NativeCollectionPrimitive::SortIndices,
+            &ports,
+            &matrix(SchemaBody::Index, 3, 1)
+        ));
     }
 
     #[test]

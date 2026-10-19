@@ -27,6 +27,7 @@ pub use collection::*;
 mod collection_validation;
 pub(crate) mod iteration_validation;
 
+mod phase_validation;
 mod program;
 pub use crate::resident::general::native_match_lowering::lower_native_program_artifact;
 pub use program::*;

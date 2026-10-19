@@ -28,6 +28,12 @@ mod window_qualification;
 #[path = "support/canonical_program_ranges.rs"]
 mod range_qualification;
 
+#[path = "support/canonical_program_access.rs"]
+mod access_qualification;
+
+#[path = "support/canonical_program_tail.rs"]
+mod tail_qualification;
+
 #[path = "support/canonical_program_activation.rs"]
 mod activation_qualification;
 

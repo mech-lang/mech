@@ -7,18 +7,21 @@ use mech_core::snapshot::{
     SequenceView, SnapshotCanonicalizationBudget, SnapshotValidationContext,
 };
 use mech_core::{
-    BoundResidentKernel, FunctionCatalogBuilder, ImplementationMemoryClass, IntegerWidth, MResult,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
-    ResidentPortLayout, ResidentShape, ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut,
-    ResidentValueRef, ResolvedOperationContract, SchemaBody, SchemaId, SchemaKey, Value, ValueData,
-    ValueDataDraft, ValueDraft,
+    BoundResidentKernel, FunctionCatalogBuilder, IntegerWidth, MResult, ResidentKernelBindError,
+    ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
+    ResidentKernelWorkAccounting, ResidentPortLayout, ResidentShape, ResidentSnapshotOutput,
+    ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody,
+    SchemaId, SchemaKey, Value, ValueData, ValueDataDraft, ValueDraft,
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    return super::native_collection_semantics::register_sort(builder);
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     builder.insert_resident_factory(
         ["sequence"],
         "sort-indices",
-        ImplementationMemoryClass::CanonicalFinalize,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
         bind,
     )
 }
@@ -78,7 +81,10 @@ fn input_plan(
         }
         _ => {
             schema.body() == &SchemaBody::String
-                && layout.kind == ResidentValueKind::String
+                && matches!(
+                    layout.kind,
+                    ResidentValueKind::String | ResidentValueKind::Snapshot
+                )
                 && layout.shape == ResidentShape::SCALAR
         }
     };
@@ -113,7 +119,7 @@ struct Plan {
     inputs: [InputPlan; 4],
 }
 
-fn bind(
+pub(super) fn bind(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let ResolvedOperationContract::Declared(actual) = request.contract else {
@@ -189,7 +195,8 @@ fn bind(
             exact_cardinality: None,
             maximum_cardinality: None,
         })
-        .with_snapshot_schemas(request.schemas.clone()))
+        .with_snapshot_schemas(request.schemas.clone())
+        .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
 }
 
 fn snapshot<'a>(
@@ -252,6 +259,25 @@ fn strings<'a>(
     Ok(Strings::Canonical(values))
 }
 
+fn direction(
+    plan: &InputPlan,
+    input: ResidentValueRef<'_>,
+) -> Result<primitive::Direction, ResidentKernelError> {
+    let text = match input {
+        ResidentValueRef::String([value]) if plan.kind == ResidentValueKind::String => {
+            value.as_str()
+        }
+        value if plan.kind == ResidentValueKind::Snapshot => match snapshot(plan, value)?.data() {
+            ValueData::String(value) => value.as_ref(),
+            _ => return Err(ResidentKernelError::InvalidInput),
+        },
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    // Parsing compares only the exact three/four-byte spellings. All longer
+    // values reject by length; no payload-sized scan or temporary is needed.
+    primitive::Direction::parse(text).map_err(|_| ResidentKernelError::InvalidInput)
+}
+
 fn execute(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -277,16 +303,19 @@ fn execute(
     if primary.len() != secondary.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let direction = |position| {
-        let Some(ResidentValueRef::String([value])) = inputs.get(position) else {
-            return Err(ResidentKernelError::InvalidInput);
-        };
-        primitive::Direction::parse(value).map_err(|_| ResidentKernelError::InvalidInput)
-    };
-    let primary_order = direction(1)?;
-    let secondary_order = direction(3)?;
-    let n = primary.len();
     let mut meter = ResidentBudgetMeter::default();
+    // Prepay both constant-size direction checks before reading their bytes.
+    meter.charge_compute_work(16)?;
+    meter.charge_comparison_work(8)?;
+    let primary_order = direction(
+        &plan.inputs[1],
+        inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?,
+    )?;
+    let secondary_order = direction(
+        &plan.inputs[3],
+        inputs.get(3).ok_or(ResidentKernelError::InvalidInput)?,
+    )?;
+    let n = primary.len();
     // This first admission precedes even the String-length metadata pass.
     meter.charge_compute_work(budget::checked_u64(n)?)?;
     let mut payload = 0usize;

@@ -359,6 +359,535 @@ fn retained_native_cfg_library_templates_bind_only_the_current_selected_site() {
     assert_eq!(BINDS.load(Ordering::SeqCst), 0, "replacement must not bind");
 }
 
+#[test]
+fn matrix_and_map_selection_keep_private_factory_provenance_and_shallow_plan_bounds() {
+    use mech_engine::native_artifact::{NativeIterationAction, lower_native_program_artifact};
+    let catalog = mech_stdlib::source_catalog();
+    let source = "xs := values<[u64]>\nh := entries<{string:u64}>\nkey := query<string>\npos := position<u64>\nroot := xs[pos] + h{key}\nstep(x<u64>) => (out<u64>) := out := x + xs[pos] + h{key}.\nseed<u64> |2> step\n";
+    let limits = mech_core::TargetMemoryProfile::current_resident_cpu()
+        .unwrap()
+        .limits;
+    for artifact in artifacts(source) {
+        let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        let mut selected = std::collections::BTreeSet::new();
+        for block in plan.blocks() {
+            let NativeIterationAction::LibraryCall { template, .. } = block.action() else {
+                continue;
+            };
+            assert!(matches!(
+                template.primitive(),
+                NativeCollectionPrimitive::MatrixScalarAccess
+                    | NativeCollectionPrimitive::MapKeyAccess
+            ));
+            selected.insert((
+                template.root().is_some(),
+                format!("{:?}", template.primitive()),
+            ));
+            let prepared =
+                prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+            assert_eq!(prepared.template(), template);
+            for extent in [0, 1, 17, 127] {
+                let parameters = template
+                    .inputs()
+                    .iter()
+                    .map(|s| vec![extent; s.dimension_parameters().len()])
+                    .collect::<Vec<_>>();
+                let parameters = parameters.iter().map(Vec::as_slice).collect::<Vec<_>>();
+                let call = bind_native_program_library_call(
+                    &artifact,
+                    template,
+                    &catalog,
+                    &parameters,
+                    &[],
+                    limits,
+                )
+                .unwrap();
+                let plan = call.memory_plan();
+                let entries = plan.allocations.len()
+                    + plan.deferred_witnesses.len()
+                    + plan.transactions.len();
+                assert!(entries <= (plan.inputs.len() + plan.outputs.len()) * 3 + 16);
+            }
+            let key = template.selected_key();
+            let entry = catalog
+                .resident_factory(&key.module_path, &key.operation_name)
+                .unwrap();
+            let mut replaced = FunctionCatalogBuilder::new();
+            replaced
+                .insert_resident_factory_entry(entry.clone().with_factory(replacement))
+                .unwrap();
+            assert!(matches!(
+                prepare_native_program_library_call(
+                    &artifact,
+                    template,
+                    &replaced.build().unwrap()
+                ),
+                Err(NativeArtifactLoweringError::MissingSemanticWitness { .. })
+            ));
+        }
+        assert_eq!(
+            selected,
+            std::collections::BTreeSet::from([
+                (true, "MatrixScalarAccess".into()),
+                (false, "MatrixScalarAccess".into()),
+                (true, "MapKeyAccess".into()),
+                (false, "MapKeyAccess".into()),
+            ])
+        );
+    }
+}
+
+#[test]
+fn constructors_and_set_conversion_keep_selected_factories_and_bounded_plan_metadata() {
+    use mech_engine::native_artifact::{NativeIterationAction, lower_native_program_artifact};
+    let catalog = mech_stdlib::source_catalog();
+    let limits = mech_core::TargetMemoryProfile::current_resident_cpu()
+        .unwrap()
+        .limits;
+    let mut sources = vec![
+        "keys<{string}> := words<[string]>\nquery<string> ∈ keys\nquery ∉ keys\n".to_owned(),
+        "(base<u64> + 1u64, label<string>, flag<bool>, base * 2u64)\n".to_owned(),
+    ];
+    for count in [1, 2, 8, 64] {
+        let entries = (0..count)
+            .map(|i| format!("\"key{i}\": base<u64> + {i}u64"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        sources.push(format!(
+            "mapping := {{{entries}}}\nmapping{{query<string>}}\n"
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::new();
+    for source in sources {
+        for artifact in artifacts(&source) {
+            let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+            for block in plan.blocks() {
+                let NativeIterationAction::LibraryCall { template, .. } = block.action() else {
+                    continue;
+                };
+                seen.insert(format!("{:?}", template.primitive()));
+                let prepared =
+                    prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+                assert_eq!(prepared.template(), template);
+                for extent in [0, 1, 17, 127] {
+                    let parameters = template
+                        .inputs()
+                        .iter()
+                        .map(|s| vec![extent; s.dimension_parameters().len()])
+                        .collect::<Vec<_>>();
+                    let parameters = parameters.iter().map(Vec::as_slice).collect::<Vec<_>>();
+                    let output = vec![extent; template.output().dimension_parameters().len()];
+                    let call = bind_native_program_library_call(
+                        &artifact,
+                        template,
+                        &catalog,
+                        &parameters,
+                        &output,
+                        limits,
+                    )
+                    .unwrap();
+                    let memory = call.memory_plan();
+                    let entries = memory.allocations.len()
+                        + memory.deferred_witnesses.len()
+                        + memory.transactions.len();
+                    assert!(
+                        entries <= (memory.inputs.len() + memory.outputs.len()) * 3 + 16,
+                        "{:?} extent {extent}",
+                        template.primitive()
+                    );
+                }
+                let key = template.selected_key();
+                let entry = catalog
+                    .resident_factory(&key.module_path, &key.operation_name)
+                    .unwrap();
+                let mut replaced = FunctionCatalogBuilder::new();
+                replaced
+                    .insert_resident_factory_entry(entry.clone().with_factory(replacement))
+                    .unwrap();
+                assert!(matches!(
+                    prepare_native_program_library_call(
+                        &artifact,
+                        template,
+                        &replaced.build().unwrap()
+                    ),
+                    Err(NativeArtifactLoweringError::MissingSemanticWitness { .. })
+                ));
+            }
+        }
+    }
+    for expected in [
+        "MatrixToSetConversion",
+        "SetContains",
+        "SetNotContains",
+        "CompositePack(4)",
+        "CompositePack(16)",
+        "CompositePack(128)",
+    ] {
+        assert!(seen.contains(expected), "{expected}: {seen:?}");
+    }
+}
+
+#[cfg(feature = "sequence_sort")]
+#[test]
+fn sort_and_reductions_keep_actual_private_factories_at_root_and_lexical_sites() {
+    use mech_engine::native_artifact::{NativeIterationAction, lower_native_program_artifact};
+    let catalog = mech_stdlib::source_catalog();
+    let limits = mech_core::TargetMemoryProfile::current_resident_cpu()
+        .unwrap()
+        .limits;
+    let root = "+> sequence\n+> stats\nxs := values<[u64]>\nks := keys<[string]>\norder := sequence/sort-indices(xs, \"desc\", ks, \"asc\")\ncolumns := stats/sum/column(xs)\nrows := stats/sum/row(xs)\n";
+    let lexical = "+> sequence\n+> stats\nxs := values<[u64]>\nks := keys<[string]>\nstep(seed<u64>) => (out<u64>) :=\n  order := sequence/sort-indices(xs, \"desc\", ks, \"asc\")\n  columns := stats/sum/column(xs)\n  rows := stats/sum/row(xs)\n  out := seed + sequence/length(order) + sequence/length(columns) + sequence/length(rows).\nseed<u64> |2> step\n";
+    for source in [root, lexical] {
+        for artifact in artifacts(source) {
+            let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+            plan.validate_current_visits().unwrap();
+            let mut seen = std::collections::BTreeSet::new();
+            for block in plan.blocks() {
+                let NativeIterationAction::LibraryCall { template, .. } = block.action() else {
+                    continue;
+                };
+                if !matches!(
+                    template.primitive(),
+                    NativeCollectionPrimitive::SortIndices
+                        | NativeCollectionPrimitive::SumColumns
+                        | NativeCollectionPrimitive::SumRows
+                ) {
+                    continue;
+                }
+                seen.insert(template.primitive().name());
+                assert_eq!(template.root().is_some(), source == root);
+                assert_eq!(template.lexical().is_some(), source == lexical);
+                prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+                for extent in [0, 1, 17, 127] {
+                    let shapes = template
+                        .inputs()
+                        .iter()
+                        .map(|s| vec![extent; s.dimension_parameters().len()])
+                        .collect::<Vec<_>>();
+                    let refs = shapes.iter().map(Vec::as_slice).collect::<Vec<_>>();
+                    let result = vec![extent; template.output().dimension_parameters().len()];
+                    let call = bind_native_program_library_call(
+                        &artifact, template, &catalog, &refs, &result, limits,
+                    )
+                    .unwrap();
+                    let memory = call.memory_plan();
+                    assert!(
+                        memory.allocations.len()
+                            + memory.deferred_witnesses.len()
+                            + memory.transactions.len()
+                            <= (memory.inputs.len() + memory.outputs.len()) * 3 + 16
+                    );
+                }
+                let key = template.selected_key();
+                let entry = catalog
+                    .resident_factory(&key.module_path, &key.operation_name)
+                    .unwrap();
+                for altered in [
+                    entry.clone().with_factory(replacement),
+                    entry.clone().with_implementation_memory(
+                        mech_core::ImplementationMemoryClass::CanonicalFinalize,
+                    ),
+                ] {
+                    let mut replaced = FunctionCatalogBuilder::new();
+                    replaced.insert_resident_factory_entry(altered).unwrap();
+                    assert!(matches!(
+                        prepare_native_program_library_call(
+                            &artifact,
+                            template,
+                            &replaced.build().unwrap()
+                        ),
+                        Err(NativeArtifactLoweringError::MissingSemanticWitness { .. })
+                    ));
+                }
+            }
+            assert_eq!(
+                seen,
+                std::collections::BTreeSet::from([
+                    "sequence/sort-indices",
+                    "stats/sum/column",
+                    "stats/sum/row"
+                ])
+            );
+        }
+    }
+}
+
+#[cfg(feature = "sequence_sort")]
+#[test]
+fn prepared_sort_directions_and_numeric_sums_use_canonical_transport_and_recover() {
+    use mech_core::{ValueData, ValueDataDraft, ValueDraft, snapshot::SequenceView};
+    use mech_engine::native_artifact::NativeLibraryWorkBudget;
+    let source = "+> sequence\n+> stats\norder := sequence/sort-indices(counts<[u64]>, first-order<string>, keys<[string]>, second-order<string>)\ncolumns := stats/sum/column(matrix<[u64]:2,3>)\nrows := stats/sum/row(matrix)\n";
+    for artifact in artifacts(source) {
+        let memory = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let work = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
+        let mut limits = mech_core::TargetMemoryProfile::current_resident_cpu()
+            .unwrap()
+            .limits;
+        limits.max_compute_work = Some(128 * 1024 * 1024);
+        limits.max_temporary_bytes = Some(128 * 1024 * 1024);
+        let matrix =
+            |name: &str, ordinal: usize, rows: u64, columns: u64, data: Vec<ValueDataDraft>| {
+                let schema = input_schema(&artifact, name, ordinal);
+                let shape = mech_core::shape_for_resolved_extents(
+                    artifact.schemas().get(schema).unwrap(),
+                    &[rows, columns],
+                )
+                .unwrap();
+                admit_value(
+                    ValueDraft {
+                        schema,
+                        shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
+                        data: ValueDataDraft::Matrix(data.into_boxed_slice()),
+                    }
+                    .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                        artifact.schemas(),
+                    ))
+                    .unwrap(),
+                    &memory,
+                )
+            };
+        let order = |ordinal, text: &str| {
+            admit_value(
+                scalar_value(
+                    &artifact,
+                    input_schema(&artifact, "sequence/sort-indices", ordinal),
+                    ValueDataDraft::String(text.into()),
+                ),
+                &memory,
+            )
+        };
+        let mut output = None;
+        for count in [5, 0, 5] {
+            let primary = [
+                9_007_199_254_740_993,
+                9_007_199_254_740_992,
+                9_007_199_254_740_993,
+                9_007_199_254_740_993,
+                9_007_199_254_740_992,
+            ];
+            let keys = ["β", "b", "a", "a", "a"];
+            let args = [
+                Some(matrix(
+                    "sequence/sort-indices",
+                    0,
+                    1,
+                    count,
+                    primary[..count as usize]
+                        .iter()
+                        .copied()
+                        .map(ValueDataDraft::U64)
+                        .collect(),
+                )),
+                Some(order(1, "desc")),
+                Some(matrix(
+                    "sequence/sort-indices",
+                    2,
+                    1,
+                    count,
+                    keys[..count as usize]
+                        .iter()
+                        .map(|s| ValueDataDraft::String((*s).into()))
+                        .collect(),
+                )),
+                Some(order(3, "asc")),
+            ];
+            let call = call_for_values(&artifact, "sequence/sort-indices", &args, &output, limits);
+            let prepared = prepare_native_program_library_call(
+                &artifact,
+                call.template(),
+                &mech_stdlib::source_catalog(),
+            )
+            .unwrap();
+            prepared
+                .invoke_current(&args, &mut output, limits, &work)
+                .unwrap();
+            let ValueData::Matrix(value) = output.as_ref().unwrap().data() else {
+                panic!("matrix")
+            };
+            let SequenceView::Index(indices) = value.elements() else {
+                panic!("Index result")
+            };
+            assert_eq!(
+                indices,
+                if count == 0 {
+                    &[][..]
+                } else {
+                    &[3, 4, 1, 5, 2][..]
+                }
+            );
+            assert!(
+                !prepared
+                    .invoke_current(&args, &mut output, limits, &work)
+                    .unwrap()
+            );
+            let previous = output.clone().unwrap();
+            let mut invalid = args.clone();
+            invalid[1] = Some(order(1, "descending"));
+            assert!(
+                prepared
+                    .invoke_current(&invalid, &mut output, limits, &work)
+                    .is_err()
+            );
+            assert!(output.as_ref().unwrap().shares_frozen_storage(&previous));
+            assert!(
+                !prepared
+                    .invoke_current(&args, &mut output, limits, &work)
+                    .unwrap()
+            );
+        }
+        for (name, expected) in [
+            ("stats/sum/column", &[6, 15][..]),
+            ("stats/sum/row", &[5, 7, 9][..]),
+        ] {
+            let args = [Some(matrix(
+                name,
+                0,
+                2,
+                3,
+                (1..=6).map(ValueDataDraft::U64).collect(),
+            ))];
+            let mut output = None;
+            let call = call_for_values(&artifact, name, &args, &output, limits);
+            let prepared = prepare_native_program_library_call(
+                &artifact,
+                call.template(),
+                &mech_stdlib::source_catalog(),
+            )
+            .unwrap();
+            prepared
+                .invoke_current(&args, &mut output, limits, &work)
+                .unwrap();
+            let ValueData::Matrix(value) = output.as_ref().unwrap().data() else {
+                panic!("matrix")
+            };
+            let SequenceView::U64(sums) = value.elements() else {
+                panic!("U64 sums")
+            };
+            assert_eq!(sums, expected);
+            assert!(
+                !prepared
+                    .invoke_current(&args, &mut output, limits, &work)
+                    .unwrap()
+            );
+        }
+    }
+}
+
+#[test]
+fn text_and_matrix_range_leaves_keep_actual_private_factories_in_roots_and_loops() {
+    use mech_engine::native_artifact::{NativeIterationAction, lower_native_program_artifact};
+    let catalog = mech_stdlib::source_catalog();
+    let limits = mech_core::TargetMemoryProfile::current_resident_cpu()
+        .unwrap()
+        .limits;
+    let root = "left := lhs<string>\nright := rhs<string>\nsame := left == right\ndifferent := left != right\njoined := left + right\nxs := values<[string]>\nselected := xs[selectors<[u64]>]\n";
+    let lexical = "+> text\ntail := suffix<string>\nxs := values<[string]>\nindices := selectors<[u64]>\nstep(s<string>) => (out<string>) :=\n  same := s == tail\n  different := s != tail\n  selected := xs[indices]\n  out := text/join(selected, s + tail).\nseed<string> |2> step\n";
+    for source in [root, lexical] {
+        for artifact in artifacts(source) {
+            let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+            plan.validate_current_visits().unwrap();
+            let mut seen = std::collections::BTreeSet::new();
+            for block in plan.blocks() {
+                let NativeIterationAction::LibraryCall { template, .. } = block.action() else {
+                    continue;
+                };
+                if !matches!(
+                    template.primitive(),
+                    NativeCollectionPrimitive::StringEqual
+                        | NativeCollectionPrimitive::StringNotEqual
+                        | NativeCollectionPrimitive::StringConcat
+                        | NativeCollectionPrimitive::MatrixRangeAccess
+                ) {
+                    continue;
+                }
+                seen.insert(format!("{:?}", template.primitive()));
+                assert_eq!(template.root().is_some(), source == root);
+                assert_eq!(template.lexical().is_some(), source == lexical);
+                prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+                for extent in [0, 1, 17, 127] {
+                    let parameters = template
+                        .inputs()
+                        .iter()
+                        .map(|s| vec![extent; s.dimension_parameters().len()])
+                        .collect::<Vec<_>>();
+                    let refs = parameters.iter().map(Vec::as_slice).collect::<Vec<_>>();
+                    let result = vec![extent; template.output().dimension_parameters().len()];
+                    let call = bind_native_program_library_call(
+                        &artifact, template, &catalog, &refs, &result, limits,
+                    )
+                    .unwrap();
+                    let memory = call.memory_plan();
+                    assert!(
+                        memory.allocations.len()
+                            + memory.deferred_witnesses.len()
+                            + memory.transactions.len()
+                            <= (memory.inputs.len() + memory.outputs.len()) * 3 + 16
+                    );
+                }
+                let key = template.selected_key();
+                let entry = catalog
+                    .resident_factory(&key.module_path, &key.operation_name)
+                    .unwrap();
+                for altered in [
+                    entry.clone().with_factory(replacement),
+                    entry
+                        .clone()
+                        .with_implementation_memory(entry.implementation_memory()),
+                ] {
+                    let mut replaced = FunctionCatalogBuilder::new();
+                    replaced.insert_resident_factory_entry(altered).unwrap();
+                    assert!(matches!(
+                        prepare_native_program_library_call(
+                            &artifact,
+                            template,
+                            &replaced.build().unwrap()
+                        ),
+                        Err(NativeArtifactLoweringError::MissingSemanticWitness { .. })
+                    ));
+                }
+            }
+            assert_eq!(
+                seen,
+                std::collections::BTreeSet::from([
+                    "StringEqual".to_owned(),
+                    "StringNotEqual".to_owned(),
+                    "StringConcat".to_owned(),
+                    "MatrixRangeAccess".to_owned()
+                ])
+            );
+        }
+    }
+}
+
+#[test]
+fn string_entry_witnesses_do_not_replace_finished_scalar_comparison_seals() {
+    use mech_engine::native_artifact::{
+        NativeIterationAction, NativeMatchAction, NativeScalarOp, lower_native_program_artifact,
+    };
+    for (source, expected) in [
+        ("x<u64> == y<u64>\n", NativeScalarOp::U64Eq),
+        ("x<i64> != y<i64>\n", NativeScalarOp::I64Ne),
+        ("x<f64> == y<f64>\n", NativeScalarOp::F64Eq),
+        ("x<bool> != y<bool>\n", NativeScalarOp::BoolNe),
+    ] {
+        for artifact in artifacts(source) {
+            let plan =
+                lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            assert!(plan.blocks().iter().any(
+                |block| matches!(block.action(), NativeIterationAction::Scalar(
+                    NativeMatchAction::Primitive { op, .. }) if *op == expected)
+            ));
+            assert!(
+                !plan.blocks().iter().any(|block| matches!(
+                    block.action(),
+                    NativeIterationAction::LibraryCall { .. }
+                ))
+            );
+        }
+    }
+}
+
 fn artifacts(source: &str) -> [ProgramArtifact; 2] {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x434f4c4c), Revision(1), source).unwrap(),

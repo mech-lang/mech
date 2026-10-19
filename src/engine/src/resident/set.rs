@@ -21,6 +21,9 @@ use std::sync::Arc;
 
 const MAX_POWERSET_INPUT_CARDINALITY: usize = 16;
 
+#[path = "set_membership_output.rs"]
+pub(super) mod membership_output;
+
 #[cfg(test)]
 thread_local! {
     static EXPANSION_SOURCE_DRAFTS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
@@ -116,8 +119,18 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         canonical,
         bind_symmetric_difference,
     )?;
-    builder.insert_resident_factory(["set"], "element-of", no_scratch, bind_element_of)?;
-    builder.insert_resident_factory(["set"], "not-element-of", no_scratch, bind_not_element_of)?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_set_membership(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    {
+        builder.insert_resident_factory(["set"], "element-of", no_scratch, bind_element_of)?;
+        builder.insert_resident_factory(
+            ["set"],
+            "not-element-of",
+            no_scratch,
+            bind_not_element_of,
+        )?;
+    }
     builder.insert_resident_factory(["set"], "insert", canonical, bind_insert)?;
     builder.insert_resident_factory(["set"], "remove", canonical, bind_remove)?;
     Ok(())
@@ -515,13 +528,13 @@ fn bind_size(
         .with_snapshot_schemas(request.schemas.clone()))
 }
 
-fn bind_element_of(
+pub(super) fn bind_element_of(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_membership(request, element_of, element_of_schema_mismatch, true)
 }
 
-fn bind_not_element_of(
+pub(super) fn bind_not_element_of(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_membership(
@@ -548,15 +561,28 @@ fn bind_membership(
         || request.inputs[1].kind != ResidentValueKind::Snapshot
         || request.inputs[1].shape != ResidentShape::SCALAR
         || !is_set(request.schemas.get(request.inputs[1].schema_id))
-        || request.output.kind != ResidentValueKind::Bool
+        || !matches!(
+            request.output.kind,
+            ResidentValueKind::Bool | ResidentValueKind::Snapshot
+        )
         || request.output.shape != ResidentShape::SCALAR
+        || !request
+            .schemas
+            .get(request.output.schema_id)
+            .is_some_and(|schema| {
+                schema.body() == &SchemaBody::Bool && schema.dimension_parameters().is_empty()
+            })
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     if !element_schema_matches {
-        return Ok(BoundResidentKernel::new(mismatch_kernel, Box::new([])));
+        return Ok(membership_output::bind(
+            BoundResidentKernel::new(mismatch_kernel, Box::new([])),
+            request,
+        ));
     }
     if allow_borrowed_string
+        && request.output.kind == ResidentValueKind::Bool
         && request.inputs[0].kind == ResidentValueKind::String
         && request.schemas.get(request.inputs[0].schema_id).is_some_and(|schema| {
             schema.body() == &SchemaBody::String && schema.dimension_parameters().is_empty()
@@ -579,9 +605,17 @@ fn bind_membership(
             }))
             .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered));
     }
-    Ok(BoundResidentKernel::new(kernel, Box::new([]))
-        .with_snapshot_schemas(request.schemas.clone())
-        .with_retained_state(Arc::new(set_element_metadata(request, 0)?)))
+    Ok(membership_output::bind(
+        BoundResidentKernel::new(kernel, Box::new([]))
+            .with_snapshot_schemas(request.schemas.clone())
+            .with_retained_state(Arc::new(set_element_metadata(request, 0)?)),
+        request,
+    )
+    // Both maintained membership executors admit the recursive candidate/set
+    // traversal and lookup before doing it. Canonical Bool publication also
+    // admits its own construction. Classify only after the final bind setters,
+    // which intentionally invalidate a previous accounting classification.
+    .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
 }
 
 fn bind_mutation(
@@ -861,11 +895,7 @@ fn admit_set_candidate_operation(
     let Some(output_elements) = output_elements else {
         return PreparedMutationPlan::new(
             operation,
-            PublishedOutputFootprint {
-                elements: 1,
-                retained_bytes: checked_u64(core::mem::size_of::<u8>())?,
-                retained_nodes: 1,
-            },
+            membership_output::footprint(kernel)?,
             super::budget::MutationRetainedNodeFootprint {
                 current_persistent: current_persistent_nodes,
                 // `set_contains` clones and normalizes the candidate before
@@ -2014,16 +2044,6 @@ fn canonical_set_element_drafts(
         .map(Vec::into_boxed_slice)
 }
 
-fn write_membership(output: ResidentValueMut<'_>, next: bool) -> Result<bool, ResidentKernelError> {
-    let ResidentValueMut::Bool([target]) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    let next = u8::from(next);
-    let changed = *target != next;
-    *target = next;
-    Ok(changed)
-}
-
 // The plan is private and immutable; public kernel mutations invalidate the
 // final accounting classification, while unchanged genuine clones retain it.
 #[derive(Clone, Copy, Debug)]
@@ -2149,26 +2169,18 @@ fn element_of(
     let next = set
         .set_contains(schemas, element.value(), element.schemas(schemas))
         .map_err(|_| ResidentKernelError::InvalidInput)?;
-    write_membership(output, next)
+    membership_output::write(kernel, output, next)
 }
 
 fn element_of_schema_mismatch(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let ResidentValueMut::Bool(output) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    let [target] = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    let changed = *target != 0;
-    *target = 0;
-    Ok(changed)
+    membership_output::write(kernel, output, false)
 }
 
 fn not_element_of(
@@ -2187,23 +2199,18 @@ fn not_element_of(
     let next = set
         .set_contains(schemas, element.value(), element.schemas(schemas))
         .map_err(|_| ResidentKernelError::InvalidInput)?;
-    write_membership(output, !next)
+    membership_output::write(kernel, output, !next)
 }
 
 fn not_element_of_schema_mismatch(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let ResidentValueMut::Bool([target]) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    let changed = *target != 1;
-    *target = 1;
-    Ok(changed)
+    membership_output::write(kernel, output, true)
 }
 
 fn insert(
@@ -3864,8 +3871,31 @@ mod tests {
         );
         assert_eq!(
             bind_not_element_of(&request).unwrap().work_accounting(),
-            ResidentKernelWorkAccounting::Unclassified
+            ResidentKernelWorkAccounting::RuntimeMetered
         );
+        let snapshot_inputs = [
+            layout(text, ResidentValueKind::Snapshot),
+            layout(set, ResidentValueKind::Snapshot),
+        ];
+        let snapshot_request = ResidentKernelBindRequest {
+            inputs: &snapshot_inputs,
+            ..request
+        };
+        let snapshot_membership = bind_element_of(&snapshot_request).unwrap();
+        let snapshot_not_membership = bind_not_element_of(&snapshot_request).unwrap();
+        for bound in [&snapshot_membership, &snapshot_not_membership] {
+            assert_eq!(
+                bound.work_accounting(),
+                ResidentKernelWorkAccounting::RuntimeMetered
+            );
+            assert_eq!(
+                bound
+                    .clone()
+                    .with_snapshot_schemas(schemas.clone())
+                    .work_accounting(),
+                ResidentKernelWorkAccounting::Unclassified
+            );
+        }
         let make_set = |values: &[&str]| {
             ValueDraft {
                 schema: set,
@@ -3900,6 +3930,41 @@ mod tests {
                     .collect::<Vec<_>>()
             })
             .collect::<Vec<_>>();
+        for (which, set) in sets.iter().enumerate() {
+            let holder = [Some(set.clone())];
+            for (index, query) in queries.iter().enumerate() {
+                let candidate = [Some(
+                    ValueDraft {
+                        schema: text,
+                        shape_values: Box::new([]),
+                        data: ValueDataDraft::String(query.clone()),
+                    }
+                    .finalize(&SnapshotValidationContext::new(&schemas))
+                    .unwrap(),
+                )];
+                let inputs = Inputs(&[
+                    ResidentValueRef::Snapshot(&candidate),
+                    ResidentValueRef::Snapshot(&holder),
+                ]);
+                for (bound, expected) in [
+                    (&snapshot_membership, references[which][index]),
+                    (&snapshot_not_membership, !references[which][index]),
+                ] {
+                    let mut output = [u8::from(!expected)];
+                    assert!(
+                        bound
+                            .execute(&inputs, ResidentValueMut::Bool(&mut output))
+                            .unwrap()
+                    );
+                    assert_eq!(output, [u8::from(expected)]);
+                    assert!(
+                        !bound
+                            .execute(&inputs, ResidentValueMut::Bool(&mut output))
+                            .unwrap()
+                    );
+                }
+            }
+        }
         let mut turn = super::super::budget::detached_turn_plan(ResourceDemand::default()).unwrap();
         turn.budget_limits.max_temporary_bytes = Some(4096);
         turn.budget_limits.max_cloned_bytes = Some(0);

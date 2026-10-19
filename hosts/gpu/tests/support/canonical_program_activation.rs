@@ -108,3 +108,114 @@ fn closed_failure_is_not_run_by_compilation_and_precedes_an_earlier_turn_failure
         assert_eq!(memory.used_bytes(), 0);
     }
 }
+
+#[test]
+fn closed_activation_precedes_malformed_fresh_inputs_and_successful_plans_recover() {
+    use mech_gpu::native_artifact::{NativeExecutionError, NativeValueError};
+    let foreign = artifacts("foreign<string>\n").0.into_iter().next().unwrap();
+    for denominator in [0, 3] {
+        let fails_closed = denominator == 0;
+        let source = format!("live := 12u64 / divisor<u64>\nclosed := 9u64 / {denominator}u64\n");
+        for artifact in artifacts(&source).0 {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let closed = artifact.nodes().last().unwrap().node;
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let good = inputs(&artifact, &[("divisor", Data::U64(2))], &memory);
+            // Valid, admitted String ownership, but NOT this U64 input's type.
+            // Both schema identity and payload-kind validation are deferred
+            // until after generated closed activation has completed.
+            let wrong_kind = inputs(
+                &foreign,
+                &[("foreign", Data::String("malformed".into()))],
+                &memory,
+            );
+            let mut output = vec![Some(good[0].clone()); artifact.outputs().len()];
+            let expected = if fails_closed {
+                None
+            } else {
+                let expected = reference(&artifact, &good);
+                jit.evaluate_into(&good, &mut output, limits(), &memory)
+                    .unwrap();
+                equal(&artifact, &output, &expected);
+                Some(expected)
+            };
+            for (malformed, wrong_type) in [(&[][..], false), (wrong_kind.as_slice(), true)] {
+                let prior = output
+                    .iter()
+                    .map(|value| value.clone().unwrap())
+                    .collect::<Vec<_>>();
+                let before = memory.used_bytes();
+                let denied = jit
+                    .evaluate_into(malformed, &mut output, limits(), &memory)
+                    .unwrap_err();
+                if fails_closed {
+                    assert!(
+                        matches!(
+                            &denied,
+                            NativeProgramExecutionError::Control(
+                                NativeIterationExecutionError::Arithmetic { origin }
+                            ) if origin.node() == closed
+                        ),
+                        "{denied:?}"
+                    );
+                } else if wrong_type {
+                    assert!(
+                        matches!(
+                            &denied,
+                            NativeProgramExecutionError::Value(NativeValueError::TypeMismatch)
+                        ),
+                        "{denied:?}"
+                    );
+                } else {
+                    assert!(
+                        matches!(
+                            &denied,
+                            NativeProgramExecutionError::Base(
+                                NativeExecutionError::InvalidInputs {
+                                    expected: 1,
+                                    actual: 0
+                                }
+                            )
+                        ),
+                        "{denied:?}"
+                    );
+                }
+                equal(&artifact, &output, &prior);
+                assert_eq!(
+                    memory.used_bytes(),
+                    before,
+                    "failed invocation leaked native state"
+                );
+                if let Some(expected) = &expected {
+                    // SAME JIT and finite memory account, but a NEW invocation
+                    // with its own cumulative work ledger. No partial state
+                    // from the rejected fresh transport may survive.
+                    jit.evaluate_into(&good, &mut output, limits(), &memory)
+                        .unwrap();
+                    equal(&artifact, &output, expected);
+                }
+            }
+            if fails_closed {
+                // Fixing fresh input cannot repair immutable closed 9/0.
+                let prior = output
+                    .iter()
+                    .map(|value| value.clone().unwrap())
+                    .collect::<Vec<_>>();
+                let before = memory.used_bytes();
+                assert!(matches!(
+                    jit.evaluate_into(&good, &mut output, limits(), &memory),
+                    Err(NativeProgramExecutionError::Control(
+                        NativeIterationExecutionError::Arithmetic { origin }
+                    )) if origin.node() == closed
+                ));
+                equal(&artifact, &output, &prior);
+                assert_eq!(memory.used_bytes(), before);
+            }
+            drop(output);
+            drop(good);
+            drop(wrong_kind);
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}

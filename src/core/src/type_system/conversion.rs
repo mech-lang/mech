@@ -46,6 +46,7 @@ pub enum ConversionStep {
     Identity,
     Scalar(ScalarConversion),
     MatrixElements(Box<ConversionPlan>),
+    MatrixToSet(Box<ConversionPlan>),
     OptionPayload(Box<ConversionPlan>),
     OptionPresent(Box<ConversionPlan>),
 }
@@ -212,6 +213,30 @@ fn plan_conversion(
                 mode,
             )?))
         }
+        (
+            KindExpr::Matrix {
+                element: source_element,
+                ..
+            },
+            KindExpr::Set {
+                element: target_element,
+                ..
+            },
+        ) if mode == ConversionMode::Explicit => {
+            let source_element = ResolvedType::new(
+                *source_element.clone(),
+                source.dimension_parameters().to_vec().into_boxed_slice(),
+            )?;
+            let target_element = ResolvedType::new(
+                *target_element.clone(),
+                target.dimension_parameters().to_vec().into_boxed_slice(),
+            )?;
+            ConversionStep::MatrixToSet(Box::new(plan_conversion(
+                &source_element,
+                &target_element,
+                mode,
+            )?))
+        }
         (KindExpr::Option(source_payload), KindExpr::Option(target_payload)) => {
             let source_payload = ResolvedType::new(
                 *source_payload.clone(),
@@ -256,6 +281,7 @@ fn conversion_step_cost(step: &ConversionStep) -> Result<u32, TypeResolutionErro
             })
         }
         ConversionStep::MatrixElements(inner)
+        | ConversionStep::MatrixToSet(inner)
         | ConversionStep::OptionPayload(inner)
         | ConversionStep::OptionPresent(inner) => inner.cost.checked_add(1).ok_or_else(|| {
             TypeResolutionError::incompatible(
@@ -513,6 +539,49 @@ pub fn execute_conversion_draft(
                 .map(|element| execute_conversion_draft(element, &element_plan.step))
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(ValueDataDraft::Matrix(converted.into_boxed_slice()))
+        }
+        ConversionStep::MatrixToSet(element_plan) => {
+            let ValueDataDraft::Matrix(elements) = draft else {
+                return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+            };
+            let converted = elements
+                .into_vec()
+                .into_iter()
+                .map(|element| execute_conversion_draft(element, &element_plan.step))
+                .collect::<Result<Vec<_>, _>>()?;
+            let body = super::resolved_value::schema_body_from_resolved(
+                element_plan.target.kind(),
+                element_plan.target.dimension_parameters(),
+            )
+            .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+            let schema = crate::SchemaDraft {
+                body,
+                dimension_parameters: element_plan
+                    .target
+                    .dimension_parameters()
+                    .to_vec()
+                    .into_boxed_slice(),
+            }
+            .finalize()
+            .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+            let mut builder = crate::SchemaTableBuilder::new();
+            let handle = builder
+                .insert(schema)
+                .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+            let build = builder
+                .finish()
+                .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+            let id = build
+                .resolve(handle)
+                .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+            let schemas = build.into_parts().0;
+            let values = crate::snapshot::normalize_set_conversion_drafts(
+                schemas.get(id).expect("constructed element schema"),
+                converted.into_boxed_slice(),
+                &schemas,
+            )
+            .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+            Ok(ValueDataDraft::Set(values))
         }
         ConversionStep::OptionPresent(payload_plan) => Ok(ValueDataDraft::Option(OptionDraft {
             present: true,

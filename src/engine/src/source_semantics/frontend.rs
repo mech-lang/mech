@@ -18,6 +18,9 @@ mod document_lowering;
 #[path = "output_projection.rs"]
 mod output_projection;
 
+#[path = "underscore_addressing.rs"]
+mod underscore_addressing;
+
 use mech_core::snapshot::{
     Complex32Bits, Complex64Bits, EnumDraft, F32Bits, F64Bits, OptionDraft, ReifiedKind,
     ReifiedTypeDraft, SnapshotValidationContext,
@@ -4753,37 +4756,23 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(syntax),
             });
         };
-        let output_rule = resolved
-            .candidate_ids
-            .iter()
-            .map(|candidate| {
-                overloads
-                    .iter()
-                    .find(|overload| u64::from(overload.id) == *candidate)
-                    .and_then(|overload| overload.output_schema_rules.first())
-                    .cloned()
-                    .ok_or_else(|| {
-                        internal(
-                            SourceSemanticAnchor::for_node(syntax),
-                            format!(
-                                "maintained function {name} selected an unknown output-schema rule"
-                            ),
-                        )
-                    })
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        let Some(first_rule) = output_rule.first() else {
-            return Err(internal(
-                SourceSemanticAnchor::for_node(syntax),
-                format!("maintained function {name} selected no overload"),
-            ));
-        };
-        if output_rule.iter().any(|rule| rule != first_rule) {
-            return Err(internal(
-                SourceSemanticAnchor::for_node(syntax),
-                format!("maintained function {name} selected conflicting output-schema rules"),
-            ));
-        }
+        let first_rule =
+            crate::function::select_resolved_output_schema_rule(&declaration, &resolved).map_err(
+                |error| {
+                    let reason = match error {
+                    crate::function::ResolvedOutputSchemaRuleSelectionError::UnknownRule =>
+                        "selected an unknown output-schema rule",
+                    crate::function::ResolvedOutputSchemaRuleSelectionError::NoSelection =>
+                        "selected no overload",
+                    crate::function::ResolvedOutputSchemaRuleSelectionError::ConflictingRules =>
+                        "selected conflicting output-schema rules",
+                };
+                    internal(
+                        SourceSemanticAnchor::for_node(syntax),
+                        format!("maintained function {name} {reason}"),
+                    )
+                },
+            )?;
         let mut input_schemas = inputs
             .iter()
             .map(|input| self.schema_draft_of(*input))
@@ -4945,6 +4934,7 @@ impl SemanticBuilder {
 
     fn variable(&mut self, variable: &VariableSyntax) -> Result<PendingValue, SourceSemanticError> {
         let stem = self.required(variable.stem(), variable.syntax(), "a variable stem")?;
+        let identifier_stem = matches!(&stem, VariableStemSyntax::Identifier(_));
         let (name, syntax) = match stem {
             VariableStemSyntax::Identifier(value) => {
                 (node_text(value.syntax())?, value.syntax().clone())
@@ -4966,6 +4956,17 @@ impl SemanticBuilder {
                     variable.syntax(),
                     "source-semantics/incompatible-local-kind",
                     "local value does not satisfy its occurrence annotation",
+                )
+            });
+        }
+        if identifier_stem && let Some(value) = self.underscore_address(&name, variable.syntax())? {
+            return annotation.map_or(Ok(value), |expected| {
+                self.conform_schema_draft(
+                    value,
+                    &expected,
+                    variable.syntax(),
+                    "source-semantics/incompatible-local-kind",
+                    "addressed value does not satisfy its occurrence annotation",
                 )
             });
         }
@@ -7309,6 +7310,11 @@ impl SemanticBuilder {
         if let Some(value) = self.bindings.get(&name).copied() {
             return self.read_document_binding(value, node);
         }
+        if node.kind() == SyntaxKind::Identifier
+            && let Some(value) = self.underscore_address(&name, node)?
+        {
+            return Ok(value);
+        }
         self.require_function_local_binding(&name, node)?;
         if let Some(index) = self.input_by_name.get(&name) {
             return Ok(PendingValue::Input(*index));
@@ -7478,8 +7484,13 @@ impl SemanticBuilder {
         if source == target {
             return Ok(value);
         }
+        let operation = if matches!(plan.step, mech_core::ConversionStep::MatrixToSet(_)) {
+            "convert/set"
+        } else {
+            "convert/kind"
+        };
         Ok(self.emit_with_schema_draft(
-            "convert/kind",
+            operation,
             vec![value],
             target,
             syntax,

@@ -7,6 +7,7 @@ use super::{NativeIterationLoop, NativeMatchOrigin, NativeMatchValue};
 pub enum NativeControlLoop {
     Iteration(NativeIterationLoop),
     Collection(NativeCollectionLoop),
+    Tail(NativeTailLoop),
 }
 impl NativeControlLoop {
     pub fn as_ref(&self) -> NativeControlLoopRef<'_> {
@@ -16,6 +17,7 @@ impl NativeControlLoop {
         match self {
             Self::Iteration(value) => Some(value),
             Self::Collection(_) => None,
+            Self::Tail(_) => None,
         }
     }
 }
@@ -24,6 +26,7 @@ impl NativeControlLoop {
 pub enum NativeControlLoopRef<'a> {
     Iteration(&'a NativeIterationLoop),
     Collection(&'a NativeCollectionLoop),
+    Tail(&'a NativeTailLoop),
 }
 impl<'a> From<&'a NativeIterationLoop> for NativeControlLoopRef<'a> {
     fn from(value: &'a NativeIterationLoop) -> Self {
@@ -35,6 +38,7 @@ impl<'a> From<&'a NativeControlLoop> for NativeControlLoopRef<'a> {
         match value {
             NativeControlLoop::Iteration(value) => Self::Iteration(value),
             NativeControlLoop::Collection(value) => Self::Collection(value),
+            NativeControlLoop::Tail(value) => Self::Tail(value),
         }
     }
 }
@@ -44,6 +48,7 @@ macro_rules! common_loop_accessors {
             match self {
                 Self::Iteration(value) => value.$name(),
                 Self::Collection(value) => value.$name(),
+                Self::Tail(value) => value.$name(),
             }
         }
     )*};
@@ -91,6 +96,44 @@ impl NativeCollectionLoop {
         header -> u32,
         body -> u32,
         latch -> u32,
+        exit -> u32,
+    }
+}
+
+/// A closed synchronous canonical Match with exact final Recur(0) sites.
+/// The carried state and final result may have different canonical schemas.
+/// There is one generated backedge and one return edge, both structurally
+/// checked. Work admission, not a fabricated count, bounds execution.
+#[derive(Clone, Debug)]
+pub struct NativeTailLoop {
+    pub(crate) origin: NativeMatchOrigin,
+    pub(crate) parent: Option<u32>,
+    pub(crate) seed: NativeMatchValue,
+    pub(crate) carrier: NativeMatchValue,
+    pub(crate) next: NativeMatchValue,
+    pub(crate) returned: NativeMatchValue,
+    pub(crate) result: NativeMatchValue,
+    pub(crate) initialize: u32,
+    pub(crate) header: u32,
+    pub(crate) body: u32,
+    pub(crate) latch: u32,
+    pub(crate) finish: u32,
+    pub(crate) exit: u32,
+}
+impl NativeTailLoop {
+    field_accessors! {
+        origin -> NativeMatchOrigin,
+        parent -> Option<u32>,
+        seed -> NativeMatchValue,
+        carrier -> NativeMatchValue,
+        next -> NativeMatchValue,
+        returned -> NativeMatchValue,
+        result -> NativeMatchValue,
+        initialize -> u32,
+        header -> u32,
+        body -> u32,
+        latch -> u32,
+        finish -> u32,
         exit -> u32,
     }
 }

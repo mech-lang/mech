@@ -32,6 +32,8 @@ pub(crate) mod pure_text;
 pub(crate) mod sequence_sort;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod set;
+#[cfg(all(feature = "resident-artifact", feature = "convert"))]
+pub(crate) mod set_conversion;
 #[cfg(all(feature = "resident-artifact", feature = "table"))]
 pub(crate) mod table;
 #[cfg(feature = "resident-artifact")]
@@ -61,7 +63,8 @@ pub use general::{
     ResidentActivationOptions, ResidentContinuationScheduler, ResidentContinuationWakeup,
     ResidentExecutionError, ResidentExternalAdmission, ResidentExternalPublicationAuthority,
     ResidentIntegrityMode, ResidentTurnSummary, ResidentValueBorrow, StateMigrationMapping,
-    activate, activate_with_options, preflight_resident_target,
+    activate, activate_with_options, canonical_resource_activation_required,
+    canonical_resource_effect_order, preflight_resident_target,
 };
 
 #[cfg(feature = "resident-artifact")]

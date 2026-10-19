@@ -953,3 +953,139 @@ fn closed_outputs_import_dimension_bound_dependencies_before_their_dependents() 
         } if *id == DimensionParameterId::new(1)
     ));
 }
+
+#[test]
+fn prefix_matching_reuses_predicates_and_defers_unsupplied_arguments_and_outputs() {
+    let scheme = promoted_binary_scalar().unwrap();
+    let candidates = [TypeOverloadCandidate {
+        id: 7,
+        scheme: &scheme,
+    }];
+    let number = ResolvedType::new(BuiltinScalarKind::U64.kind_expr(), Box::new([])).unwrap();
+    let string = ResolvedType::new(BuiltinScalarKind::String.kind_expr(), Box::new([])).unwrap();
+    let origin = || TypeConstraintOrigin::new("completion/add", None);
+    assert_eq!(
+        match_type_overload_prefix(origin(), &candidates, core::slice::from_ref(&number))
+            .unwrap()
+            .as_ref(),
+        [7],
+    );
+    // The receiver's Number predicate is already decidable and MUST reject
+    // String, while the missing second Number argument/output remain unknown.
+    assert!(
+        match_type_overload_prefix(origin(), &candidates, core::slice::from_ref(&string),).is_err()
+    );
+    assert!(
+        resolve_type_overloads(origin(), &candidates, core::slice::from_ref(&number), None,)
+            .is_err()
+    );
+    assert!(
+        resolve_type_overloads(origin(), &candidates, &[number.clone(), number], None,).is_ok()
+    );
+
+    let output_from_missing = KindScheme::new(
+        vec![KindParameter {
+            id: KindParameterId::new(0),
+            upper_bound: None,
+        }]
+        .into_boxed_slice(),
+        Box::new([]),
+        InputKindScheme::Fixed(
+            vec![
+                BuiltinScalarKind::String.kind_expr(),
+                KindExpr::Parameter(KindParameterId::new(0)),
+            ]
+            .into_boxed_slice(),
+        ),
+        vec![KindExpr::Parameter(KindParameterId::new(0))].into_boxed_slice(),
+        vec![KindConstraint::Satisfies {
+            kind: KindExpr::Parameter(KindParameterId::new(0)),
+            predicate: BuiltinKindPredicate::Number,
+        }]
+        .into_boxed_slice(),
+    )
+    .unwrap();
+    let candidates = [TypeOverloadCandidate {
+        id: 8,
+        scheme: &output_from_missing,
+    }];
+    assert_eq!(
+        match_type_overload_prefix(origin(), &candidates, core::slice::from_ref(&string))
+            .unwrap()
+            .as_ref(),
+        [8],
+    );
+    assert!(
+        resolve_type_overloads(origin(), &candidates, &[string.clone(), string], None,).is_err()
+    );
+}
+
+#[test]
+fn prefix_matching_does_not_prematurely_rank_overloads() {
+    let receiver = BuiltinScalarKind::String.kind_expr();
+    let first = exact_binary(
+        receiver.clone(),
+        BuiltinScalarKind::U64.kind_expr(),
+        receiver.clone(),
+    )
+    .unwrap();
+    let second = exact_binary(receiver.clone(), receiver.clone(), receiver.clone()).unwrap();
+    let candidates = [
+        TypeOverloadCandidate {
+            id: 2,
+            scheme: &second,
+        },
+        TypeOverloadCandidate {
+            id: 1,
+            scheme: &first,
+        },
+    ];
+    let string = ResolvedType::new(receiver, Box::new([])).unwrap();
+    let number = ResolvedType::new(BuiltinScalarKind::U64.kind_expr(), Box::new([])).unwrap();
+    let origin = || TypeConstraintOrigin::new("completion/choose", None);
+    assert_eq!(
+        match_type_overload_prefix(origin(), &candidates, core::slice::from_ref(&string))
+            .unwrap()
+            .as_ref(),
+        [1, 2],
+    );
+    let selected = resolve_type_overloads(origin(), &candidates, &[string, number], None).unwrap();
+    assert_eq!(selected.candidate_ids.as_ref(), [1]);
+}
+
+#[test]
+fn prefix_matching_checks_known_shape_and_defers_missing_shape_relations() {
+    let d = |id| DimensionExpr::Parameter(DimensionParameterId::new(id));
+    let matrix = |rows| KindExpr::Matrix {
+        element: Box::new(BuiltinScalarKind::F64.kind_expr()),
+        dimensions: vec![rows, DimensionExpr::Constant(1)].into_boxed_slice(),
+    };
+    let scheme = KindScheme::new(
+        Box::new([]),
+        vec![
+            dimension(0, DimensionLifetime::Turn, Some(16)),
+            dimension(1, DimensionLifetime::Turn, Some(16)),
+        ]
+        .into_boxed_slice(),
+        InputKindScheme::Fixed(vec![matrix(d(0)), matrix(d(1))].into_boxed_slice()),
+        vec![BuiltinScalarKind::Bool.kind_expr()].into_boxed_slice(),
+        vec![KindConstraint::DimensionLessEqual(d(0), d(1))].into_boxed_slice(),
+    )
+    .unwrap();
+    let candidates = [TypeOverloadCandidate {
+        id: 3,
+        scheme: &scheme,
+    }];
+    let input =
+        |rows| ResolvedType::new(matrix(DimensionExpr::Constant(rows)), Box::new([])).unwrap();
+    let origin = || TypeConstraintOrigin::new("completion/shape", None);
+    assert_eq!(
+        match_type_overload_prefix(origin(), &candidates, &[input(8)])
+            .unwrap()
+            .as_ref(),
+        [3],
+    );
+    assert!(match_type_overload_prefix(origin(), &candidates, &[input(17)]).is_err());
+    assert!(resolve_type_overloads(origin(), &candidates, &[input(8), input(4)], None,).is_err());
+    assert!(resolve_type_overloads(origin(), &candidates, &[input(8), input(16)], None,).is_ok());
+}

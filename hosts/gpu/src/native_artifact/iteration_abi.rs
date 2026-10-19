@@ -144,6 +144,7 @@ pub(super) fn control_visits<'a>(
                 Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. },
             ) => ([Some(yes), Some(no)], false),
             Terminator::Header { body, exit, .. } => ([Some(body), Some(exit)], false),
+            Terminator::TailHeader { body, .. } => ([Some(body), None], false),
             Terminator::Scalar(Term::Complete) => ([None, None], true),
             Terminator::Scalar(Term::Reject) => ([None, None], false),
         };
@@ -151,6 +152,7 @@ pub(super) fn control_visits<'a>(
             (Action::Initialize { iteration }, _) => Progress::Initialize(*iteration),
             (Action::Latch { iteration }, _) => Progress::Latch(*iteration),
             (_, Terminator::Header { iteration, .. }) => Progress::Header(iteration),
+            (_, Terminator::TailHeader { iteration, .. }) => Progress::Header(iteration),
             _ => iterations
                 .clone()
                 .position(|v| v.exit() as usize == id)
@@ -168,6 +170,9 @@ pub(super) fn control_visits<'a>(
                 _ => 256,
             }
         };
+        let work = work
+            .checked_add(helper_operand_work(block.action())?)
+            .ok_or("iteration helper work overflow")?;
         visits.push(NativeIterationVisit {
             origin: block.origin(),
             successors,
@@ -180,4 +185,17 @@ pub(super) fn control_visits<'a>(
         });
     }
     Ok(visits)
+}
+
+// Variable-arity leaf transport emits one load/constant and store per operand,
+// with slack for address formation. Both emitted-code validation and runtime
+// current-visit admission use this same arity-derived bound. Scalar ABI3 has
+// no LibraryCall actions and therefore retains its existing work policy.
+pub(super) fn helper_operand_work(action: &Action) -> Result<u64, &'static str> {
+    match action {
+        Action::LibraryCall { operands, .. } => (operands.len() as u64)
+            .checked_mul(8)
+            .ok_or("iteration operand work overflow"),
+        _ => Ok(0),
+    }
 }

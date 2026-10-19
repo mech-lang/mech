@@ -7,7 +7,8 @@ use super::{
     NativeScalarType,
 };
 use mech_core::{
-    CellSlotId, InputId, OutputId, ProgramRevision, Schema, SchemaId, SchemaKey, Value,
+    ApplicationRequirementId, CellSlotId, ExecutionResourceRequest, InputId, NodeId, OutputId,
+    ProgramRevision, Schema, SchemaId, SchemaKey, Value,
 };
 
 /// Exact symbolic type. Managed dimensions are deliberately not replaced by
@@ -65,6 +66,78 @@ impl NativeProgramInput {
     }
     pub const fn value(&self) -> NativeMatchValue {
         self.value
+    }
+}
+
+/// An original root observation captured by the authorized host BEFORE native
+/// execution. This is transport metadata, never a native I/O callback or grant.
+#[derive(Clone, Debug)]
+pub struct NativeProgramObservation {
+    pub(crate) node: NodeId,
+    pub(crate) requirement: ApplicationRequirementId,
+    pub(crate) request: ExecutionResourceRequest,
+    pub(crate) slot: CellSlotId,
+    pub(crate) ty: NativeProgramType,
+    pub(crate) value: NativeMatchValue,
+    pub(crate) ordinal: u32,
+}
+impl NativeProgramObservation {
+    pub const fn node(&self) -> NodeId {
+        self.node
+    }
+    pub const fn requirement(&self) -> ApplicationRequirementId {
+        self.requirement
+    }
+    pub fn request(&self) -> &ExecutionResourceRequest {
+        &self.request
+    }
+    pub const fn slot(&self) -> CellSlotId {
+        self.slot
+    }
+    pub fn ty(&self) -> &NativeProgramType {
+        &self.ty
+    }
+    pub const fn value(&self) -> NativeMatchValue {
+        self.value
+    }
+    pub const fn ordinal(&self) -> u32 {
+        self.ordinal
+    }
+}
+
+/// An immutable payload selected at the original root Send site. Completion
+/// transports it to the authorized host; emitted computation performs no I/O.
+#[derive(Clone, Debug)]
+pub struct NativeProgramEffect {
+    pub(crate) node: NodeId,
+    pub(crate) requirement: ApplicationRequirementId,
+    pub(crate) request: ExecutionResourceRequest,
+    pub(crate) payload: crate::ArtifactSource,
+    pub(crate) ty: NativeProgramType,
+    pub(crate) value: NativeMatchValue,
+    pub(crate) ordinal: u32,
+}
+impl NativeProgramEffect {
+    pub const fn node(&self) -> NodeId {
+        self.node
+    }
+    pub const fn requirement(&self) -> ApplicationRequirementId {
+        self.requirement
+    }
+    pub fn request(&self) -> &ExecutionResourceRequest {
+        &self.request
+    }
+    pub const fn payload(&self) -> crate::ArtifactSource {
+        self.payload
+    }
+    pub fn ty(&self) -> &NativeProgramType {
+        &self.ty
+    }
+    pub const fn value(&self) -> NativeMatchValue {
+        self.value
+    }
+    pub const fn ordinal(&self) -> u32 {
+        self.ordinal
     }
 }
 
@@ -213,6 +286,9 @@ impl NativeProgramLibraryTemplate {
 #[derive(Clone, Debug)]
 pub struct NativeProgramArtifactPlan {
     pub(crate) revision: ProgramRevision,
+    pub(crate) resource_requirements: Box<[ExecutionResourceRequest]>,
+    pub(crate) observations: Box<[NativeProgramObservation]>,
+    pub(crate) effects: Box<[NativeProgramEffect]>,
     pub(crate) inputs: Box<[NativeProgramInput]>,
     pub(crate) constants: Box<[NativeProgramConstant]>,
     pub(crate) values: Box<[NativeProgramType]>,
@@ -222,6 +298,9 @@ pub struct NativeProgramArtifactPlan {
     pub(crate) collections: Box<[NativeProgramCollection]>,
     pub(crate) outputs: Box<[NativeProgramOutput]>,
     pub(crate) entry: u32,
+    // Derived from the SAME resident classification/schedule, not host input.
+    pub(crate) activation_nodes: Box<[NodeId]>,
+    pub(crate) activation_boundary: Option<u32>,
 }
 impl NativeProgramArtifactPlan {
     pub const fn program_revision(&self) -> ProgramRevision {
@@ -229,6 +308,55 @@ impl NativeProgramArtifactPlan {
     }
     pub fn inputs(&self) -> &[NativeProgramInput] {
         &self.inputs
+    }
+    /// ALL original requirements, including declarations without a live site.
+    /// Native transport selection never prunes an authorization obligation.
+    pub fn resource_requirements(&self) -> &[ExecutionResourceRequest] {
+        &self.resource_requirements
+    }
+    pub fn observations(&self) -> &[NativeProgramObservation] {
+        &self.observations
+    }
+    pub fn effects(&self) -> &[NativeProgramEffect] {
+        &self.effects
+    }
+    /// Ordinary program inputs keep their real InputIds. Captured observation
+    /// transport follows them without synthesizing application inputs.
+    pub fn transport_input_count(&self) -> usize {
+        self.inputs.len() + self.observations.len()
+    }
+    pub fn transport_input_value(&self, index: usize) -> NativeMatchValue {
+        if let Some(input) = self.inputs.get(index) {
+            input.value()
+        } else {
+            self.observations[index - self.inputs.len()].value()
+        }
+    }
+    pub fn transport_input_type(&self, index: usize) -> &NativeProgramType {
+        if let Some(input) = self.inputs.get(index) {
+            input.ty()
+        } else {
+            self.observations[index - self.inputs.len()].ty()
+        }
+    }
+    /// Ordinary outputs keep their real OutputIds. Deferred effect payloads
+    /// follow them only in the host transport, not as fake application outputs.
+    pub fn transport_output_count(&self) -> usize {
+        self.outputs.len() + self.effects.len()
+    }
+    pub fn transport_output_value(&self, index: usize) -> NativeMatchValue {
+        if let Some(output) = self.outputs.get(index) {
+            output.value()
+        } else {
+            self.effects[index - self.outputs.len()].value()
+        }
+    }
+    pub fn transport_output_type(&self, index: usize) -> &NativeProgramType {
+        if let Some(output) = self.outputs.get(index) {
+            output.ty()
+        } else {
+            self.effects[index - self.outputs.len()].ty()
+        }
     }
     pub fn constants(&self) -> &[NativeProgramConstant] {
         &self.constants
@@ -254,7 +382,20 @@ impl NativeProgramArtifactPlan {
     pub const fn entry(&self) -> u32 {
         self.entry
     }
+    /// Closed computation owners from the authoritative resident classifier.
+    pub fn activation_nodes(&self) -> &[NodeId] {
+        &self.activation_nodes
+    }
+    pub fn has_activation(&self) -> bool {
+        !self.activation_nodes.is_empty()
+    }
+    /// The one root-scope checkpoint, before its first fresh-turn visit.
+    /// Scalar compiler views deliberately have no phase boundary.
+    pub const fn activation_boundary(&self) -> Option<u32> {
+        self.activation_boundary
+    }
     pub fn validate_current_visits(&self) -> Result<(), &'static str> {
+        super::phase_validation::validate(self)?;
         super::iteration_validation::validate(self)
     }
 }
