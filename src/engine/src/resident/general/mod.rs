@@ -5438,11 +5438,12 @@ fn closed_producer_disposition(
     // These maintained pure operations have resident implementations, but no
     // bounded closed-value analysis owner yet. Record that limit explicitly;
     // recognizing a public spelling does not authorize an unimplemented fold.
-    if operation.module_path.as_ref() == ["map"]
-        && matches!(
-            operation.operation_name.as_str(),
-            "histogram" | "keys" | "values"
-        )
+    if operation.module_path.as_ref() == ["convert"] && operation.operation_name == "set"
+        || operation.module_path.as_ref() == ["map"]
+            && matches!(
+                operation.operation_name.as_str(),
+                "histogram" | "keys" | "values"
+            )
         || operation.module_path.as_ref() == ["number"]
             && matches!(operation.operation_name.as_str(), "format" | "parse-u64")
         || operation.module_path.as_ref() == ["sequence"]
@@ -22475,6 +22476,11 @@ mod shape_fact_tests {
         ];
         const DEFERRED_PRODUCERS: &[(&[&str], &str, ClosedProducerDisposition)] = &[
             (
+                &["convert"],
+                "set",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
                 &["map"],
                 "histogram",
                 ClosedProducerDisposition::DeferredPureValue,
@@ -22554,7 +22560,8 @@ mod shape_fact_tests {
                     | ["compare"]
                     | ["math"]
                     | ["math", "bessel"]
-            ) {
+            ) || cfg!(feature = "convert") && module_path == ["convert"]
+            {
                 let module_path = module_path
                     .iter()
                     .map(|segment| (*segment).to_owned())
