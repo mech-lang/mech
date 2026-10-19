@@ -18,6 +18,8 @@ use mech_engine::{
     },
 };
 
+#[path = "program_admitted_allocation.rs"]
+mod allocation;
 #[path = "program_collection_data.rs"]
 mod data;
 #[path = "program_histogram.rs"]
@@ -166,31 +168,22 @@ impl State {
         )?;
         charge(work, add(mul(bytes, 8)?, 256)?)?;
         let metadata = memory.reserve_capacity(bytes)?;
-        let mut sources = Vec::new();
-        sources
-            .try_reserve_exact(plan.iterations().len())
-            .map_err(|_| invalid("collection source metadata allocation"))?;
-        sources.resize_with(plan.iterations().len(), || None);
-        let mut prepared_ranges = Vec::new();
-        prepared_ranges
-            .try_reserve_exact(plan.iterations().len())
-            .map_err(|_| invalid("range source metadata allocation"))?;
-        prepared_ranges.resize_with(plan.iterations().len(), || None);
-        let mut builders = Vec::new();
-        builders
-            .try_reserve_exact(plan.collections().len())
-            .map_err(|_| invalid("collection builder metadata allocation"))?;
-        builders.resize_with(plan.collections().len(), || None);
-        let mut string_spans = Vec::new();
-        string_spans
-            .try_reserve_exact(plan.collections().len())
-            .map_err(|_| invalid("String span metadata allocation"))?;
-        string_spans.resize_with(plan.collections().len(), || None);
-        let mut string_maps = Vec::new();
-        string_maps
-            .try_reserve_exact(plan.collections().len())
-            .map_err(|_| invalid("String map projection metadata allocation"))?;
-        string_maps.resize_with(plan.collections().len(), || None);
+        let sources = allocation::metadata(
+            plan.iterations().len(),
+            "collection source metadata allocation",
+        )?;
+        let prepared_ranges =
+            allocation::metadata(plan.iterations().len(), "range source metadata allocation")?;
+        let builders = allocation::metadata(
+            plan.collections().len(),
+            "collection builder metadata allocation",
+        )?;
+        let string_spans =
+            allocation::metadata(plan.collections().len(), "String span metadata allocation")?;
+        let string_maps = allocation::metadata(
+            plan.collections().len(),
+            "String map projection metadata allocation",
+        )?;
         Ok(Some(Self {
             sources,
             prepared_ranges,
@@ -703,6 +696,11 @@ impl State {
                         .values
                         .try_reserve_exact(capacity - builder.values.len())
                         .map_err(|_| invalid("collection draft allocation"))?;
+                    builder.values = allocation::exact_capacity(
+                        core::mem::take(&mut builder.values),
+                        capacity,
+                        "collection draft exceeds admitted capacity",
+                    )?;
                 }
                 let data = match ty.scalar_kind() {
                     Some(NativeScalarKind::Bool) if word <= 1 => ValueDataDraft::Bool(word != 0),

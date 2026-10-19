@@ -60,6 +60,20 @@ impl Pending<'_> {
         Ok(())
     }
 }
+
+fn admitted_offsets(
+    data: Vec<usize>,
+    admitted_capacity: usize,
+) -> Result<Vec<usize>, ResidentKernelError> {
+    // try_reserve_exact may report more capacity than requested. Never retain
+    // an allocation larger than the prepaid index/projection capacity: reject
+    // it before offsets are filled or the cache entry can be published.
+    if data.capacity() != admitted_capacity {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(data)
+}
+
 impl Slot {
     pub(in crate::resident) fn bytes(&self) -> u64 {
         self.bytes.get()
@@ -189,7 +203,7 @@ impl Slot {
                 let mut data = Vec::new();
                 data.try_reserve_exact(capacity)
                     .map_err(|_| ResidentKernelError::InvalidShape)?;
-                Ok(data)
+                admitted_offsets(data, capacity)
             },
             || ResidentKernelError::InvalidShape,
         )?;

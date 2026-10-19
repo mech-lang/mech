@@ -262,12 +262,8 @@ impl State {
         )?;
         self.account(ctx, id, add(append, moved)?, compute)?;
         let mut replacement: Option<(String, ManagedMemoryReservation)> = if growing {
-            let reservation = ctx.library.memory_budget().reserve_capacity(capacity)?;
-            let mut text = String::new();
-            text.try_reserve_exact(
-                usize::try_from(capacity).map_err(|_| invalid("TextJoin capacity exceeds host"))?,
-            )
-            .map_err(|_| invalid("TextJoin backing allocation"))?;
+            let (mut text, reservation) =
+                super::allocation::text(capacity, &ctx.library.memory_budget())?;
             let previous = &self.builder(id)?.join.as_ref().unwrap().text;
             text.push_str(previous);
             Some((text, reservation))

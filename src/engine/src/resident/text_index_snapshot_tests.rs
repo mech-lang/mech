@@ -215,3 +215,77 @@ fn unicode_offset_growth_unwind_retires_partial_backing_and_same_slot_recovers()
     drop((index, slot, value, work));
     assert_eq!(memory.used_bytes(), 0);
 }
+
+#[test]
+fn synthetic_allocator_spare_capacity_is_rejected_before_index_publication() {
+    let memory = ManagedMemoryBudget::new(8 * 1024 * 1024);
+    let work = NativeLibraryWorkBudget::new(100_000_000, 1_000_000, &memory).unwrap();
+    let value = source("éA", &memory);
+    let baseline = memory.used_bytes();
+    let slot = Slot::default();
+    let header = Value::frozen_storage_identity_allocation_bytes()
+        + (core::mem::size_of::<CachedIndex>() + 2 * core::mem::size_of::<usize>()) as u64;
+    slot.building.set(true);
+    let mut pending = Pending {
+        slot: &slot,
+        reservation: Some(memory.reserve_capacity(0).unwrap()),
+        complete: false,
+    };
+    let memory_error = |_| ResidentKernelError::InvalidShape;
+    pending
+        .grow(header, 2, &mut unlimited, &memory_error)
+        .unwrap();
+    let before = work.used();
+    let result = PreparedGraphemeIndex::build_compact_with(
+        "éA",
+        |scan| work.charge(scan as u64, 0),
+        |requested| {
+            let offsets = requested as u64 * core::mem::size_of::<usize>() as u64;
+            work.charge(offsets * 8 + 256, 0)?;
+            pending.grow(header + offsets, 3, &mut unlimited, &memory_error)?;
+            // Deterministic stand-in for an allocator returning spare capacity;
+            // this does not depend on a particular platform allocator rounding.
+            let data = Vec::<usize>::with_capacity(requested + 1);
+            assert!(data.capacity() > requested);
+            admitted_offsets(data, requested)
+        },
+        || ResidentKernelError::InvalidShape,
+    );
+    assert!(matches!(result, Err(ResidentKernelError::InvalidShape)));
+    let charged = work.used();
+    assert!(charged.0 > before.0);
+    assert!(slot.entry.borrow().is_none());
+    drop(pending);
+    assert_eq!(slot.bytes(), 0);
+    assert_eq!(slot.nodes(), 0);
+    assert!(!slot.building.get());
+    assert_eq!(memory.used_bytes(), baseline);
+    assert_eq!(
+        work.used(),
+        charged,
+        "cleanup cannot refund paid scan/allocation work"
+    );
+    let index = slot.prepare(&value, &work, unlimited).unwrap();
+    assert_eq!(index.byte_range(0), Some(0..2));
+    assert_eq!(index.byte_range(1), Some(2..3));
+    assert!(
+        slot.entry
+            .borrow()
+            .as_ref()
+            .unwrap()
+            .identity
+            .matches(&value)
+    );
+    drop((index, slot, value, work));
+    assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
+fn offset_guard_accepts_only_the_actual_admitted_reported_capacity() {
+    let data = Vec::<usize>::with_capacity(4);
+    let actual = data.capacity();
+    let data = admitted_offsets(data, actual).unwrap();
+    assert!(data.is_empty());
+    assert_eq!(data.capacity(), actual);
+    assert!(admitted_offsets(Vec::new(), 1).is_err());
+}
