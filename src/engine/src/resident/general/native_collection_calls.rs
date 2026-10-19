@@ -21,7 +21,8 @@ pub use invocation::NativeCollectionInvocationError;
 #[path = "native_collection_prepared.rs"]
 mod prepared;
 pub use prepared::{
-    NativePreparedLibraryCall, NativePreparedLibraryCallCache, prepare_native_program_library_call,
+    NativePreparedLibraryCall, NativePreparedLibraryCallCache, NativeSelectedStringSpanSelector,
+    prepare_native_program_library_call,
 };
 
 /// A constructor-private binding of one actual artifact call at its current

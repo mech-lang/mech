@@ -10,6 +10,13 @@ use alloc::{boxed::Box, collections::BTreeMap, sync::Arc, vec, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, collections::BTreeMap, sync::Arc, vec, vec::Vec};
 
+/// A layout overflow is distinct from the caller denying the next prepaid visit.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SchemaAllocationBoundError<E> {
+    ArithmeticOverflow,
+    Precharge(E),
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SchemaHandle {
     ordinal: u32,
@@ -398,6 +405,62 @@ mod tests {
         assert!(closed.clone_allocation_bound_bytes().unwrap() <= retained);
         assert!(retained <= construction);
         assert!(closed.len() as u64 <= nodes);
+    }
+
+    #[test]
+    fn prepaid_clone_layout_matches_full_arena_and_stops_at_denied_contribution() {
+        let mut builder = SchemaTableBuilder::new();
+        builder.insert(schema(SchemaBody::String)).unwrap();
+        builder
+            .insert(schema(SchemaBody::Tuple(
+                vec![
+                    SchemaBody::Record(
+                        vec![SchemaField {
+                            name: "unrelated".into(),
+                            schema: SchemaBody::Option(Box::new(SchemaBody::Tuple(
+                                vec![SchemaBody::Bool; 2_048].into_boxed_slice(),
+                            ))),
+                        }]
+                        .into_boxed_slice(),
+                    ),
+                    SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::String),
+                        dimensions: vec![DimensionExpr::Constant(2)].into_boxed_slice(),
+                    },
+                ]
+                .into_boxed_slice(),
+            )))
+            .unwrap();
+        let table = builder.finish().unwrap().table;
+        let expected = table.clone_allocation_bound_bytes().unwrap();
+        let mut contributions = Vec::new();
+        assert_eq!(
+            table.clone_allocation_bound_bytes_with_precharge(|bytes| {
+                contributions.push(bytes);
+                Ok::<_, ()>(())
+            }),
+            Ok(expected)
+        );
+        assert_eq!(contributions.iter().sum::<u64>(), expected);
+        for denied in 0..contributions.len() {
+            let mut visits = 0;
+            let result = table.clone_allocation_bound_bytes_with_precharge(|bytes| {
+                let current = visits;
+                visits += 1;
+                assert_eq!(bytes, contributions[current]);
+                if current == denied {
+                    Err(current)
+                } else {
+                    Ok(())
+                }
+            });
+            assert_eq!(result, Err(SchemaAllocationBoundError::Precharge(denied)));
+            assert_eq!(
+                visits,
+                denied + 1,
+                "denial must stop before another contribution"
+            );
+        }
     }
 
     #[test]
@@ -899,14 +962,46 @@ impl SchemaTable {
     /// each concrete cloned schema allocation and the retained canonical byte
     /// buffer. Compact encodings are not a bound on Rust enum/node layouts.
     pub fn clone_allocation_bound_bytes(&self) -> Option<u64> {
-        let initial = (core::mem::size_of::<Self>() as u64)
-            .checked_add(arc_header_bytes::<SchemaEntry>())?
-            .checked_add(clone_slice_bytes::<SchemaEntry>(self.entries.len())?)?;
-        self.entries.iter().try_fold(initial, |total, entry| {
-            total
-                .checked_add(u64::try_from(entry.canonical_bytes.len()).ok()?)?
-                .checked_add(schema_clone_heap_bytes(&entry.schema)?)
-        })
+        self.clone_allocation_bound_bytes_with_precharge(
+            |_| Ok::<(), core::convert::Infallible>(()),
+        )
+        .ok()
+    }
+
+    /// Computes the same full-arena retained-layout bound, prepaying every
+    /// shallow allocation contribution before inspecting its children.
+    /// No schema, String, canonical buffer, or work authority is allocated.
+    /// Callback denial stops this traversal immediately and is not overflow.
+    #[doc(hidden)]
+    pub fn clone_allocation_bound_bytes_with_precharge<E>(
+        &self,
+        mut precharge: impl FnMut(u64) -> Result<(), E>,
+    ) -> Result<u64, SchemaAllocationBoundError<E>> {
+        let mut denied = None;
+        let mut charge = |bytes| match precharge(bytes) {
+            Ok(()) => Some(()),
+            Err(error) => {
+                denied = Some(error);
+                None
+            }
+        };
+        let measured = (|| {
+            let initial = (core::mem::size_of::<Self>() as u64)
+                .checked_add(arc_header_bytes::<SchemaEntry>())?
+                .checked_add(clone_slice_bytes::<SchemaEntry>(self.entries.len())?)?;
+            charge(initial)?;
+            self.entries.iter().try_fold(initial, |total, entry| {
+                let canonical = u64::try_from(entry.canonical_bytes.len()).ok()?;
+                charge(canonical)?;
+                total
+                    .checked_add(canonical)?
+                    .checked_add(schema_clone_heap_bytes_with(&entry.schema, &mut charge)?)
+            })
+        })();
+        match denied {
+            Some(error) => Err(SchemaAllocationBoundError::Precharge(error)),
+            None => measured.ok_or(SchemaAllocationBoundError::ArithmeticOverflow),
+        }
     }
 
     /// Construction/retirement metadata for a clone while another table
@@ -1508,23 +1603,42 @@ fn clone_slice_bytes<T>(len: usize) -> Option<u64> {
 }
 
 fn schema_clone_heap_bytes(schema: &Schema) -> Option<u64> {
+    schema_clone_heap_bytes_with(schema, &mut |_| Some(()))
+}
+
+fn schema_clone_heap_bytes_with(
+    schema: &Schema,
+    charge: &mut impl FnMut(u64) -> Option<()>,
+) -> Option<u64> {
     let parameters = clone_slice_bytes::<DimensionParameter>(schema.dimension_parameters.len())?;
+    charge(parameters)?;
     let parameters =
         schema
             .dimension_parameters
             .iter()
             .try_fold(parameters, |total, parameter| {
                 total
-                    .checked_add(dimension_clone_heap_bytes(parameter.lower_bound())?)?
+                    .checked_add(dimension_clone_heap_bytes_with(
+                        parameter.lower_bound(),
+                        charge,
+                    )?)?
                     .checked_add(match parameter.upper_bound() {
-                        Some(bound) => dimension_clone_heap_bytes(bound)?,
+                        Some(bound) => dimension_clone_heap_bytes_with(bound, charge)?,
                         None => 0,
                     })
             })?;
-    parameters.checked_add(body_clone_heap_bytes(&schema.body)?)
+    parameters.checked_add(body_clone_heap_bytes_with(&schema.body, charge)?)
 }
 
+#[cfg(test)]
 fn dimension_clone_heap_bytes(dimension: &DimensionExpr) -> Option<u64> {
+    dimension_clone_heap_bytes_with(dimension, &mut |_| Some(()))
+}
+
+fn dimension_clone_heap_bytes_with(
+    dimension: &DimensionExpr,
+    charge: &mut impl FnMut(u64) -> Option<()>,
+) -> Option<u64> {
     match dimension {
         DimensionExpr::Hole | DimensionExpr::Constant(_) | DimensionExpr::Parameter(_) => Some(0),
         DimensionExpr::Add(children)
@@ -1532,39 +1646,59 @@ fn dimension_clone_heap_bytes(dimension: &DimensionExpr) -> Option<u64> {
         | DimensionExpr::Min(children)
         | DimensionExpr::Max(children) => {
             let initial = clone_slice_bytes::<DimensionExpr>(children.len())?;
+            charge(initial)?;
             children.iter().try_fold(initial, |total, child| {
-                total.checked_add(dimension_clone_heap_bytes(child)?)
+                total.checked_add(dimension_clone_heap_bytes_with(child, charge)?)
             })
         }
     }
 }
 
-fn extent_clone_heap_bytes(extent: &CardinalitySpec) -> Option<u64> {
+fn extent_clone_heap_bytes_with(
+    extent: &CardinalitySpec,
+    charge: &mut impl FnMut(u64) -> Option<()>,
+) -> Option<u64> {
     match extent {
         CardinalitySpec::Exact(value)
         | CardinalitySpec::Dynamic {
             upper_bound: Some(value),
-        } => dimension_clone_heap_bytes(value),
+        } => dimension_clone_heap_bytes_with(value, charge),
         CardinalitySpec::Dynamic { upper_bound: None } => Some(0),
     }
 }
 
-fn fields_clone_heap_bytes(fields: &[SchemaField]) -> Option<u64> {
-    fields.iter().try_fold(
-        clone_slice_bytes::<SchemaField>(fields.len())?,
-        |total, field| {
-            total
-                .checked_add(u64::try_from(field.name.len()).ok()?)?
-                .checked_add(body_clone_heap_bytes(&field.schema)?)
-        },
-    )
+fn fields_clone_heap_bytes_with(
+    fields: &[SchemaField],
+    charge: &mut impl FnMut(u64) -> Option<()>,
+) -> Option<u64> {
+    let initial = clone_slice_bytes::<SchemaField>(fields.len())?;
+    charge(initial)?;
+    fields.iter().try_fold(initial, |total, field| {
+        let name = u64::try_from(field.name.len()).ok()?;
+        charge(name)?;
+        total
+            .checked_add(name)?
+            .checked_add(body_clone_heap_bytes_with(&field.schema, charge)?)
+    })
 }
 
-fn boxed_body_clone_bytes(body: &SchemaBody) -> Option<u64> {
-    (core::mem::size_of::<SchemaBody>() as u64).checked_add(body_clone_heap_bytes(body)?)
+fn boxed_body_clone_bytes_with(
+    body: &SchemaBody,
+    charge: &mut impl FnMut(u64) -> Option<()>,
+) -> Option<u64> {
+    let initial = core::mem::size_of::<SchemaBody>() as u64;
+    charge(initial)?;
+    initial.checked_add(body_clone_heap_bytes_with(body, charge)?)
 }
 
 fn body_clone_heap_bytes(body: &SchemaBody) -> Option<u64> {
+    body_clone_heap_bytes_with(body, &mut |_| Some(()))
+}
+
+fn body_clone_heap_bytes_with(
+    body: &SchemaBody,
+    charge: &mut impl FnMut(u64) -> Option<()>,
+) -> Option<u64> {
     match body {
         SchemaBody::IntegerInterval(_) => Some(0),
         SchemaBody::Dynamic
@@ -1581,46 +1715,55 @@ fn body_clone_heap_bytes(body: &SchemaBody) -> Option<u64> {
         | SchemaBody::ReifiedType => Some(0),
         SchemaBody::Enum { variants, .. } => {
             let initial = clone_slice_bytes::<super::EnumVariantSchema>(variants.len())?;
+            charge(initial)?;
             variants.iter().try_fold(initial, |total, variant| {
+                let name = u64::try_from(variant.name.len()).ok()?;
+                charge(name)?;
                 total
-                    .checked_add(u64::try_from(variant.name.len()).ok()?)?
+                    .checked_add(name)?
                     .checked_add(match &variant.payload {
-                        Some(payload) => body_clone_heap_bytes(payload)?,
+                        Some(payload) => body_clone_heap_bytes_with(payload, charge)?,
                         None => 0,
                     })
             })
         }
-        SchemaBody::Option(element) => boxed_body_clone_bytes(element),
-        SchemaBody::Tuple(elements) => elements.iter().try_fold(
-            clone_slice_bytes::<SchemaBody>(elements.len())?,
-            |total, element| total.checked_add(body_clone_heap_bytes(element)?),
-        ),
-        SchemaBody::Record(fields) => fields_clone_heap_bytes(fields),
+        SchemaBody::Option(element) => boxed_body_clone_bytes_with(element, charge),
+        SchemaBody::Tuple(elements) => {
+            let initial = clone_slice_bytes::<SchemaBody>(elements.len())?;
+            charge(initial)?;
+            elements.iter().try_fold(initial, |total, element| {
+                total.checked_add(body_clone_heap_bytes_with(element, charge)?)
+            })
+        }
+        SchemaBody::Record(fields) => fields_clone_heap_bytes_with(fields, charge),
         SchemaBody::Matrix {
             element,
             dimensions,
         } => {
-            let initial =
-                boxed_body_clone_bytes(element)?
-                    .checked_add(clone_slice_bytes::<DimensionExpr>(dimensions.len())?)?;
-            dimensions.iter().try_fold(initial, |total, dimension| {
-                total.checked_add(dimension_clone_heap_bytes(dimension)?)
-            })
+            let element = boxed_body_clone_bytes_with(element, charge)?;
+            let dimensions_bytes = clone_slice_bytes::<DimensionExpr>(dimensions.len())?;
+            charge(dimensions_bytes)?;
+            dimensions.iter().try_fold(
+                element.checked_add(dimensions_bytes)?,
+                |total, dimension| {
+                    total.checked_add(dimension_clone_heap_bytes_with(dimension, charge)?)
+                },
+            )
         }
-        SchemaBody::Table { columns, rows } => {
-            fields_clone_heap_bytes(columns)?.checked_add(extent_clone_heap_bytes(rows)?)
-        }
+        SchemaBody::Table { columns, rows } => fields_clone_heap_bytes_with(columns, charge)?
+            .checked_add(extent_clone_heap_bytes_with(rows, charge)?),
         SchemaBody::Set {
             element,
             cardinality,
-        } => boxed_body_clone_bytes(element)?.checked_add(extent_clone_heap_bytes(cardinality)?),
+        } => boxed_body_clone_bytes_with(element, charge)?
+            .checked_add(extent_clone_heap_bytes_with(cardinality, charge)?),
         SchemaBody::Map {
             key,
             value,
             cardinality,
-        } => boxed_body_clone_bytes(key)?
-            .checked_add(boxed_body_clone_bytes(value)?)?
-            .checked_add(extent_clone_heap_bytes(cardinality)?),
+        } => boxed_body_clone_bytes_with(key, charge)?
+            .checked_add(boxed_body_clone_bytes_with(value, charge)?)?
+            .checked_add(extent_clone_heap_bytes_with(cardinality, charge)?),
     }
 }
 

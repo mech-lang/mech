@@ -23,6 +23,18 @@ fn add(left: u64, right: u64) -> MemoryRuntimeResult<u64> {
         })
 }
 
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(in crate::resident) fn native_scope_metadata_bytes() -> u64 {
+    // Native calls use zero dense String trackers: only these two concrete
+    // Rc owners allocate. Reservation transfers themselves do not allocate.
+    (core::mem::size_of::<ResidentPayloadOwner>()
+        + core::mem::size_of::<ResidentPayloadAdmission>()
+        + 4 * core::mem::size_of::<usize>()) as u64
+}
+
 #[derive(Debug)]
 pub(crate) struct ResidentPayloadOwner {
     budget: ManagedMemoryBudget,
@@ -170,6 +182,14 @@ pub(crate) struct ResidentPayloadAdmission {
 }
 
 impl ResidentPayloadAdmission {
+    #[cfg(all(
+        feature = "native-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    ))]
+    pub(super) fn record_error(&self, error: MemoryRuntimeError) {
+        *self.last_error.borrow_mut() = Some(error);
+    }
+
     pub(crate) fn auxiliary_bytes(&self) -> u64 {
         self.auxiliary.get()
     }

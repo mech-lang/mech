@@ -28,6 +28,23 @@ mod window_qualification;
 #[path = "support/canonical_program_ranges.rs"]
 mod range_qualification;
 
+#[path = "support/canonical_program_range_cursor.rs"]
+mod range_cursor_qualification;
+
+#[path = "support/canonical_program_text_join_sink.rs"]
+mod text_join_sink_qualification;
+
+#[path = "support/canonical_program_histogram_query.rs"]
+mod histogram_query_qualification;
+
+#[path = "support/canonical_program_histogram_sink.rs"]
+mod histogram_sink_qualification;
+
+#[path = "support/canonical_program_string_map_entry.rs"]
+mod string_map_entry_qualification;
+#[path = "support/canonical_program_string_span.rs"]
+mod string_span_qualification;
+
 #[path = "support/canonical_program_access.rs"]
 mod access_qualification;
 
@@ -39,6 +56,9 @@ mod tail_qualification;
 
 #[path = "support/canonical_program_activation.rs"]
 mod activation_qualification;
+
+#[path = "support/canonical_program_retirement.rs"]
+mod retirement_qualification;
 
 const ROOT: &str = "+> text\n+> sequence\n+> number\n+> map\nwords := text/lines(input<string>)\njoined := text/join(words, \",\")\nsize := sequence/length(joined)\nformatted := number/format(size, 0u64)\ncounts := map/histogram(words)\nkeys := map/keys(counts)\nvalues := map/values(counts)\nmore := size + 1u64\n";
 const LEXICAL: &str = "+> text\n+> sequence\n+> number\n+> map\nstep(x<string>) => (next<string>) :=\n  words := text/lines(x)\n  joined := text/join(words, \",\")\n  size := sequence/length(joined)\n  counts := map/histogram(words)\n  keys := map/keys(counts)\n  values := map/values(counts)\n  formatted := number/format(size + sequence/length(values), 0u64)\n  next := text/join(keys, formatted).\nseed<string> |2> step\n";

@@ -181,17 +181,40 @@ pub(super) fn facts_with(
     inputs: &[ResidentValueRef<'_>],
     published: ResidentValueRef<'_>,
     schemas: &mech_core::SchemaTable,
-    mut measure: impl FnMut(
+    measure: impl FnMut(
         ResidentValueRef<'_>,
         &mech_core::ResolvedValueDescriptor,
         &mech_core::SchemaTable,
         &mut ResourceDemand,
     ) -> Result<CurrentMemoryFootprint, MemoryPlanError>,
 ) -> Result<TurnMemoryFacts, MemoryPlanError> {
+    let mut facts = TurnMemoryFacts::default();
+    facts_with_into(call, node, inputs, published, schemas, &mut facts, measure)?;
+    Ok(facts)
+}
+
+/// Same borrowed current-value measurements, reusing only fixed-key fact
+/// storage owned by one immutable binding. No previous numeric fact is used
+/// before every current input/publication has been measured successfully.
+pub(super) fn facts_with_into(
+    call: &CallMemoryPlan,
+    node: NodeId,
+    inputs: &[ResidentValueRef<'_>],
+    published: ResidentValueRef<'_>,
+    schemas: &mech_core::SchemaTable,
+    facts: &mut TurnMemoryFacts,
+    mut measure: impl FnMut(
+        ResidentValueRef<'_>,
+        &mech_core::ResolvedValueDescriptor,
+        &mech_core::SchemaTable,
+        &mut ResourceDemand,
+    ) -> Result<CurrentMemoryFootprint, MemoryPlanError>,
+) -> Result<(), MemoryPlanError> {
     if inputs.len() != call.inputs.len() || call.outputs.len() != 1 {
         return Err(MemoryPlanError::DescriptorArityMismatch);
     }
-    let mut facts = TurnMemoryFacts::default();
+    facts.additional_demand = ResourceDemand::default();
+    facts.observed_demand = None;
     for (ordinal, (value, port)) in inputs.iter().zip(&call.inputs).enumerate() {
         let f = measure(
             *value,
@@ -218,13 +241,13 @@ pub(super) fn facts_with(
         .insert((node, PortDirection::Output, 0), current);
     for (ordinal, output) in call.outputs.iter().enumerate() {
         if let RegionAccessPlan::Deferred(policy) = output.region {
-            let region = selected_region(policy, inputs, &output.value, &mut facts)?;
+            let region = selected_region(policy, inputs, &output.value, facts)?;
             facts
                 .resolved_regions
                 .insert((node, ordinal as u16), region);
         }
     }
-    Ok(facts)
+    Ok(())
 }
 
 fn selected_count(

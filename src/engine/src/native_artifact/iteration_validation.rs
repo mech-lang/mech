@@ -39,6 +39,16 @@ pub(crate) trait ControlPlan {
     fn iteration_count(&self) -> usize;
     fn iteration(&self, index: usize) -> Loop<'_>;
     fn collections(&self) -> &[super::NativeProgramCollection];
+    #[cfg(all(feature = "map_ops", feature = "convert"))]
+    fn scalar_constant(&self, _value: Value) -> Option<NativeScalarValue> {
+        None
+    }
+    fn lifecycle_barrier(&self, _block: usize) -> bool {
+        false
+    }
+    fn cursor_cells(&self) -> usize {
+        0
+    }
     fn value_scopes(&self) -> &[Scope];
     fn entry(&self) -> u32;
     fn unavailable_before_turn(&self, _value: Value, _block: usize) -> bool {
@@ -145,6 +155,24 @@ impl ControlPlan for super::NativeProgramArtifactPlan {
     fn collections(&self) -> &[super::NativeProgramCollection] {
         self.collections()
     }
+    #[cfg(all(feature = "map_ops", feature = "convert"))]
+    fn scalar_constant(&self, value: Value) -> Option<NativeScalarValue> {
+        let constant = self
+            .constants()
+            .iter()
+            .find(|constant| constant.value() == value)?;
+        match constant.constant().data() {
+            mech_core::ValueData::Bool(value) => Some(NativeScalarValue::Bool(*value)),
+            mech_core::ValueData::U64(value) => Some(NativeScalarValue::U64(*value)),
+            _ => None,
+        }
+    }
+    fn lifecycle_barrier(&self, block: usize) -> bool {
+        self.activation_boundary() == Some(block as u32)
+    }
+    fn cursor_cells(&self) -> usize {
+        self.iterations().len()
+    }
     fn unavailable_before_turn(&self, value: Value, block: usize) -> bool {
         self.blocks()[block].terminator() != Terminator::Scalar(Term::Complete)
             && self
@@ -242,12 +270,115 @@ impl ControlPlan for super::NativeProgramArtifactPlan {
 
 const BAD: &str = "invalid counted-loop ownership or current-visit definitions";
 const ANALYSIS_CELLS: usize = 16 * 1024 * 1024;
+fn cursor_cell(plan: &impl ControlPlan, iteration: u32) -> Result<usize, &'static str> {
+    if iteration as usize >= plan.cursor_cells()
+        || !matches!(plan.iteration(iteration as usize), Loop::Collection(data)
+            if matches!(data.source(), super::NativeCollectionSource::U64Range(_)))
+    {
+        return Err(BAD);
+    }
+    plan.values()
+        .len()
+        .checked_add(plan.collections().len())
+        .and_then(|n| n.checked_add(iteration as usize))
+        .ok_or(BAD)
+}
+fn result_cell(plan: &impl ControlPlan, collection: u32) -> Result<usize, &'static str> {
+    if !matches!(
+        plan.collections()
+            .get(collection as usize)
+            .map(|c| c.result()),
+        Some(
+            super::NativeCollectionResult::TextJoin(_)
+                | super::NativeCollectionResult::Histogram(_)
+                | super::NativeCollectionResult::GuardedHistogramQuery(_)
+        )
+    ) {
+        return Err(BAD);
+    }
+    plan.values()
+        .len()
+        .checked_add(plan.collections().len())
+        .and_then(|n| n.checked_add(plan.cursor_cells()))
+        .and_then(|n| n.checked_add(collection as usize))
+        .ok_or(BAD)
+}
 fn scalar_successors(term: Term) -> [Option<u32>; 2] {
     match term {
         Term::Jump(next) => [Some(next), None],
         Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. } => [Some(yes), Some(no)],
         Term::Complete | Term::Reject => [None, None],
     }
+}
+/// Two disjoint analysis cells encode Empty -> SelectorReady -> SpanReady ->
+/// Empty. Neither cell initializes an absent semantic language Value.
+fn string_span_cells(plan: &impl ControlPlan, collection: u32) -> Result<[usize; 2], &'static str> {
+    if plan
+        .collections()
+        .get(collection as usize)
+        .and_then(|c| c.string_span_projection())
+        .is_none()
+    {
+        return Err(BAD);
+    }
+    let first = plan
+        .values()
+        .len()
+        .checked_add(plan.collections().len())
+        .and_then(|n| n.checked_add(plan.cursor_cells()))
+        .and_then(|n| n.checked_add(plan.collections().len()))
+        .and_then(|n| {
+            n.checked_add(
+                plan.collections()[..collection as usize]
+                    .iter()
+                    .filter(|c| c.string_span_projection().is_some())
+                    .count()
+                    .checked_mul(2)?,
+            )
+        })
+        .ok_or(BAD)?;
+    Ok([first, first.checked_add(1).ok_or(BAD)?])
+}
+/// Separate Empty -> KeyReady -> EntryReady -> Empty cells. These never
+/// initialize either absent semantic String's ordinary known-Value bit.
+fn string_element_map_cells(
+    plan: &impl ControlPlan,
+    collection: u32,
+) -> Result<[usize; 2], &'static str> {
+    if plan
+        .collections()
+        .get(collection as usize)
+        .and_then(|c| c.string_element_map_projection())
+        .is_none()
+    {
+        return Err(BAD);
+    }
+    let first = plan
+        .values()
+        .len()
+        .checked_add(plan.collections().len())
+        .and_then(|n| n.checked_add(plan.cursor_cells()))
+        .and_then(|n| n.checked_add(plan.collections().len()))
+        .and_then(|n| {
+            n.checked_add(
+                plan.collections()
+                    .iter()
+                    .filter(|c| c.string_span_projection().is_some())
+                    .count()
+                    .checked_mul(2)?,
+            )
+        })
+        .and_then(|n| {
+            n.checked_add(
+                plan.collections()[..collection as usize]
+                    .iter()
+                    .filter(|c| c.string_element_map_projection().is_some())
+                    .count()
+                    .checked_mul(2)?,
+            )
+        })
+        .ok_or(BAD)?;
+    Ok([first, first.checked_add(1).ok_or(BAD)?])
 }
 fn scope_ancestor(plan: &impl ControlPlan, ancestor: Option<u32>, mut scope: Option<u32>) -> bool {
     // Loop ids are pre-order; every parent must be earlier. The caller first
@@ -312,7 +443,29 @@ fn structural_body<'a>(
 pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
     let blocks = plan.blocks();
     let count = plan.values().len();
-    let cells = count.checked_add(plan.collections().len()).ok_or(BAD)?;
+    let cells = count
+        .checked_add(plan.collections().len())
+        .and_then(|n| n.checked_add(plan.cursor_cells()))
+        .and_then(|n| n.checked_add(plan.collections().len()))
+        .and_then(|n| {
+            n.checked_add(
+                plan.collections()
+                    .iter()
+                    .filter(|c| c.string_span_projection().is_some())
+                    .count()
+                    .checked_mul(2)?,
+            )
+        })
+        .and_then(|n| {
+            n.checked_add(
+                plan.collections()
+                    .iter()
+                    .filter(|c| c.string_element_map_projection().is_some())
+                    .count()
+                    .checked_mul(2)?,
+            )
+        })
+        .ok_or(BAD)?;
     if plan.entry() as usize >= blocks.len()
         || plan.value_scopes().len() != count
         || blocks
@@ -572,6 +725,130 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             } => {
                 plan.library(block.origin(), template, operands, *output)?;
             }
+            Action::TextJoinFinish { collection } => {
+                let data = plan.collections().get(*collection as usize).ok_or(BAD)?;
+                let super::NativeCollectionResult::TextJoin(sink) = data.result() else {
+                    return Err(BAD);
+                };
+                if sink.consumer() as usize != id || block.iteration() != data.parent() {
+                    return Err(BAD);
+                }
+                plan.library(
+                    block.origin(),
+                    sink.template(),
+                    &[data.output(), sink.separator()],
+                    sink.output(),
+                )?;
+            }
+            Action::HistogramFinish { collection } => {
+                let data = plan.collections().get(*collection as usize).ok_or(BAD)?;
+                let super::NativeCollectionResult::Histogram(sink) = data.result() else {
+                    return Err(BAD);
+                };
+                if sink.consumer() as usize != id || block.iteration() != data.parent() {
+                    return Err(BAD);
+                }
+                plan.library(
+                    block.origin(),
+                    sink.template(),
+                    &[data.output()],
+                    sink.output(),
+                )?;
+            }
+            Action::HistogramQueryStep { collection, step } => {
+                let data = plan.collections().get(*collection as usize).ok_or(BAD)?;
+                let super::NativeCollectionResult::GuardedHistogramQuery(sink) = data.result()
+                else {
+                    return Err(BAD);
+                };
+                let step = sink.steps().get(*step as usize).ok_or(BAD)?;
+                if step.site() as usize != id || block.iteration() != data.parent() {
+                    return Err(BAD);
+                }
+                if let Some(template) = step.template() {
+                    plan.library(
+                        block.origin(),
+                        template,
+                        step.operands(),
+                        step.output().ok_or(BAD)?,
+                    )?;
+                } else {
+                    use super::NativeHistogramQueryStepKind as K;
+                    match step.kind() {
+                        K::Alias { .. } => {
+                            let [source] = step.operands() else {
+                                return Err(BAD);
+                            };
+                            if ty(*source)? != ty(step.output().ok_or(BAD)?)? {
+                                return Err(BAD);
+                            }
+                        }
+                        K::Cleanup if step.operands().is_empty() && step.output().is_none() => {}
+                        _ => return Err(BAD),
+                    }
+                }
+            }
+            Action::PrepareU64Range { iteration } => {
+                cursor_cell(plan, *iteration)?;
+                let Loop::Collection(data) = plan.iteration(*iteration as usize) else {
+                    return Err(BAD);
+                };
+                let super::NativeCollectionSource::U64Range(cursor) = data.source() else {
+                    return Err(BAD);
+                };
+                if cursor.prepare() as usize != id {
+                    return Err(BAD);
+                }
+                plan.library(
+                    block.origin(),
+                    cursor.template(),
+                    cursor.operands(),
+                    cursor.semantic_output(),
+                )?;
+            }
+            Action::PrepareStringSpanSelector { collection } => {
+                string_span_cells(plan, *collection)?;
+                let data = &plan.collections()[*collection as usize];
+                let p = data.string_span_projection().ok_or(BAD)?;
+                if p.range_site() as usize != id {
+                    return Err(BAD);
+                }
+                plan.library(
+                    block.origin(),
+                    p.range_template(),
+                    p.operands(),
+                    p.selector(),
+                )?;
+            }
+            Action::ProjectStringSpan { collection } => {
+                string_span_cells(plan, *collection)?;
+                let data = &plan.collections()[*collection as usize];
+                let p = data.string_span_projection().ok_or(BAD)?;
+                if p.selection_site() as usize != id {
+                    return Err(BAD);
+                }
+                plan.library(
+                    block.origin(),
+                    p.selection_template(),
+                    &[p.source(), p.selector()],
+                    p.output(),
+                )?;
+            }
+            Action::ProjectStringMapEntry { collection } => {
+                string_element_map_cells(plan, *collection)?;
+                let p = plan.collections()[*collection as usize]
+                    .string_element_map_projection()
+                    .ok_or(BAD)?;
+                if p.selection_site() as usize != id {
+                    return Err(BAD);
+                }
+                plan.library(
+                    block.origin(),
+                    p.selection_template(),
+                    &[p.map(), p.element()],
+                    p.output(),
+                )?;
+            }
             Action::Initialize { iteration } if roles[id] != Some((*iteration, 0)) => {
                 return Err(BAD);
             }
@@ -603,6 +880,11 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
         }
     }
     super::collection_validation::validate(plan)?;
+    super::text_join_sink::validate(plan)?;
+    super::guarded_histogram_query::validate(plan)?;
+    super::histogram_sink::validate(plan)?;
+    super::string_span_projection::validate(plan)?;
+    super::string_element_map_projection::validate(plan)?;
     let mut visited = vec![false; blocks.len()];
     check_scope(plan, None, plan.entry(), initial, &roles, &mut visited)?;
     // Unreachable fail-closed Reject blocks still have checked structure/types;
@@ -709,6 +991,75 @@ fn check_scope(
                 }
                 known[ordinal] = true;
             }
+            Action::PrepareU64Range { iteration } => {
+                let Loop::Collection(data) = plan.iteration(*iteration as usize) else {
+                    return Err(BAD);
+                };
+                let super::NativeCollectionSource::U64Range(cursor) = data.source() else {
+                    return Err(BAD);
+                };
+                for &value in cursor.operands() {
+                    read(value, &known)?;
+                }
+                let cell = cursor_cell(plan, *iteration)?;
+                if known[cell] || known[cursor.semantic_output().get() as usize] {
+                    return Err(BAD);
+                }
+                known[cell] = true;
+            }
+            Action::PrepareStringSpanSelector { collection } => {
+                let p = plan.collections()[*collection as usize]
+                    .string_span_projection()
+                    .ok_or(BAD)?;
+                for &value in p.operands() {
+                    read(value, &known)?;
+                }
+                let [selector, span] = string_span_cells(plan, *collection)?;
+                if known[selector]
+                    || known[span]
+                    || known[p.selector().get() as usize]
+                    || known[p.output().get() as usize]
+                    || known[plan.values().len()..plan.values().len() + plan.collections().len()]
+                        .iter()
+                        .rposition(|live| *live)
+                        != Some(*collection as usize)
+                {
+                    return Err(BAD);
+                }
+                known[selector] = true;
+            }
+            Action::ProjectStringSpan { collection } => {
+                let p = plan.collections()[*collection as usize]
+                    .string_span_projection()
+                    .ok_or(BAD)?;
+                read(p.source(), &known)?;
+                let [selector, span] = string_span_cells(plan, *collection)?;
+                if !known[selector]
+                    || known[span]
+                    || known[p.selector().get() as usize]
+                    || known[p.output().get() as usize]
+                {
+                    return Err(BAD);
+                }
+                known[selector] = false;
+                known[span] = true;
+            }
+            Action::ProjectStringMapEntry { collection } => {
+                let p = plan.collections()[*collection as usize]
+                    .string_element_map_projection()
+                    .ok_or(BAD)?;
+                read(p.map(), &known)?;
+                let [key, entry] = string_element_map_cells(plan, *collection)?;
+                if !known[key]
+                    || known[entry]
+                    || known[p.element().get() as usize]
+                    || known[p.output().get() as usize]
+                {
+                    return Err(BAD);
+                }
+                known[key] = false;
+                known[entry] = true;
+            }
             Action::Initialize { iteration } => {
                 let child = plan.iteration(*iteration as usize);
                 let mut body_initial = known.clone();
@@ -717,7 +1068,14 @@ fn check_scope(
                         read(fold.seed(), &known)?;
                         body_initial[fold.carrier().get() as usize] = true;
                     }
-                    Loop::Collection(collection) => read(collection.source(), &known)?,
+                    Loop::Collection(collection) => match collection.source() {
+                        super::NativeCollectionSource::Value(value) => read(*value, &known)?,
+                        super::NativeCollectionSource::U64Range(_) => {
+                            if !known[cursor_cell(plan, *iteration)?] {
+                                return Err(BAD);
+                            }
+                        }
+                    },
                     Loop::Tail(tail) => {
                         read(tail.seed(), &known)?;
                         body_initial[tail.carrier().get() as usize] = true;
@@ -742,6 +1100,13 @@ fn check_scope(
                     // endpoint proved the returned value in this invocation.
                     known[tail.returned().get() as usize] = true;
                 }
+                if let Loop::Collection(data) = child
+                    && matches!(data.source(), super::NativeCollectionSource::U64Range(_))
+                {
+                    // The unique loop exit consumes the prepared source. Body
+                    // backedges preserve it; a later lexical invocation starts empty.
+                    known[cursor_cell(plan, *iteration)?] = false;
+                }
             }
             Action::Latch { iteration } => {
                 if let Loop::Iteration(fold) = plan.iteration(*iteration as usize) {
@@ -758,7 +1123,14 @@ fn check_scope(
                 let Loop::Collection(collection) = plan.iteration(*iteration as usize) else {
                     return Err(BAD);
                 };
-                read(collection.source(), &known)?;
+                match collection.source() {
+                    super::NativeCollectionSource::Value(value) => read(*value, &known)?,
+                    super::NativeCollectionSource::U64Range(_) => {
+                        if !known[cursor_cell(plan, *iteration)?] {
+                            return Err(BAD);
+                        }
+                    }
+                }
                 if let Some(element) = collection.element() {
                     let ordinal = element.get() as usize;
                     if known[ordinal]
@@ -766,13 +1138,47 @@ fn check_scope(
                     {
                         return Err(BAD);
                     }
-                    known[ordinal] = true;
+                    if let Some(p) = plan.collections()[collection.collection() as usize]
+                        .string_element_map_projection()
+                    {
+                        let [key, entry] = string_element_map_cells(plan, collection.collection())?;
+                        if p.iteration() != *iteration
+                            || p.element() != element
+                            || known[key]
+                            || known[entry]
+                            || known[p.output().get() as usize]
+                            || known[plan.values().len()
+                                ..plan.values().len() + plan.collections().len()]
+                                .iter()
+                                .rposition(|live| *live)
+                                != Some(collection.collection() as usize)
+                        {
+                            return Err(BAD);
+                        }
+                        known[key] = true;
+                    } else {
+                        known[ordinal] = true;
+                    }
                 }
             }
             Action::CollectionBegin { collection } => {
                 let data = &plan.collections()[*collection as usize];
+                match data.result() {
+                    super::NativeCollectionResult::TextJoin(sink) => {
+                        read(sink.separator(), &known)?
+                    }
+                    super::NativeCollectionResult::GuardedHistogramQuery(sink) => {
+                        read(sink.query(), &known)?
+                    }
+                    _ => {}
+                }
+                if !matches!(data.result(), super::NativeCollectionResult::Materialized)
+                    && known[result_cell(plan, *collection)?]
+                {
+                    return Err(BAD);
+                }
                 let offset = plan.values().len();
-                let active = known[offset..]
+                let active = known[offset..offset + plan.collections().len()]
                     .iter()
                     .rposition(|live| *live)
                     .map(|id| id as u32);
@@ -782,26 +1188,146 @@ fn check_scope(
                 known[offset + *collection as usize] = true;
             }
             Action::CollectionPush { collection, value } => {
-                if known[plan.values().len()..].iter().rposition(|live| *live)
+                if known[plan.values().len()..plan.values().len() + plan.collections().len()]
+                    .iter()
+                    .rposition(|live| *live)
                     != Some(*collection as usize)
                 {
                     return Err(BAD);
                 }
-                read(*value, &known)?;
+                if let Some(p) = plan.collections()[*collection as usize].string_span_projection() {
+                    let [selector, span] = string_span_cells(plan, *collection)?;
+                    if *value != p.output()
+                        || known[selector]
+                        || !known[span]
+                        || known[p.selector().get() as usize]
+                        || known[p.output().get() as usize]
+                    {
+                        return Err(BAD);
+                    }
+                    known[span] = false;
+                } else if let Some(p) =
+                    plan.collections()[*collection as usize].string_element_map_projection()
+                {
+                    let [key, entry] = string_element_map_cells(plan, *collection)?;
+                    if *value != p.output()
+                        || known[key]
+                        || !known[entry]
+                        || known[p.element().get() as usize]
+                        || known[p.output().get() as usize]
+                    {
+                        return Err(BAD);
+                    }
+                    known[entry] = false;
+                } else {
+                    read(*value, &known)?;
+                }
             }
             Action::CollectionFinish { collection } => {
                 let offset = plan.values().len();
-                if known[offset..].iter().rposition(|live| *live) != Some(*collection as usize) {
+                if known[offset..offset + plan.collections().len()]
+                    .iter()
+                    .rposition(|live| *live)
+                    != Some(*collection as usize)
+                {
                     return Err(BAD);
                 }
                 known[offset + *collection as usize] = false;
-                let output = plan.collections()[*collection as usize].output().get() as usize;
+                if !matches!(
+                    plan.collections()[*collection as usize].result(),
+                    super::NativeCollectionResult::Materialized
+                ) {
+                    let cell = result_cell(plan, *collection)?;
+                    if known[cell] {
+                        return Err(BAD);
+                    }
+                    known[cell] = true;
+                    // No Matrix Value exists. The original semantic result is
+                    // deliberately NOT marked known.
+                } else {
+                    let output = plan.collections()[*collection as usize].output().get() as usize;
+                    if known[output]
+                        || plan.value_scopes()[output] != (Scope::Immutable { iteration: scope })
+                    {
+                        return Err(BAD);
+                    }
+                    known[output] = true;
+                }
+            }
+            Action::TextJoinFinish { collection } => {
+                let data = &plan.collections()[*collection as usize];
+                let super::NativeCollectionResult::TextJoin(sink) = data.result() else {
+                    return Err(BAD);
+                };
+                let cell = result_cell(plan, *collection)?;
+                if !known[cell] || known[data.output().get() as usize] {
+                    return Err(BAD);
+                }
+                read(sink.separator(), &known)?;
+                let output = sink.output().get() as usize;
                 if known[output]
                     || plan.value_scopes()[output] != (Scope::Immutable { iteration: scope })
                 {
                     return Err(BAD);
                 }
+                known[cell] = false;
                 known[output] = true;
+            }
+            Action::HistogramFinish { collection } => {
+                let data = &plan.collections()[*collection as usize];
+                let super::NativeCollectionResult::Histogram(sink) = data.result() else {
+                    return Err(BAD);
+                };
+                let cell = result_cell(plan, *collection)?;
+                if !known[cell] || known[data.output().get() as usize] {
+                    return Err(BAD);
+                }
+                let output = sink.output().get() as usize;
+                if known[output]
+                    || plan.value_scopes()[output] != (Scope::Immutable { iteration: scope })
+                {
+                    return Err(BAD);
+                }
+                known[cell] = false;
+                known[output] = true;
+            }
+            Action::HistogramQueryStep { collection, step } => {
+                use super::NativeHistogramQueryStepKind as K;
+                let data = &plan.collections()[*collection as usize];
+                let super::NativeCollectionResult::GuardedHistogramQuery(sink) = data.result()
+                else {
+                    return Err(BAD);
+                };
+                let step = sink.steps().get(*step as usize).ok_or(BAD)?;
+                let cell = result_cell(plan, *collection)?;
+                if !known[cell] || known[data.output().get() as usize] {
+                    return Err(BAD);
+                }
+                read(sink.query(), &known)?;
+                for value in step
+                    .operands()
+                    .iter()
+                    .filter(|value| **value != sink.query())
+                {
+                    if known[value.get() as usize] {
+                        return Err(BAD);
+                    }
+                }
+                if let Some(output) = step.output() {
+                    let output = output.get() as usize;
+                    if known[output]
+                        || plan.value_scopes()[output] != (Scope::Immutable { iteration: scope })
+                    {
+                        return Err(BAD);
+                    }
+                    if matches!(step.kind(), K::Membership | K::Lookup) {
+                        known[output] = true;
+                    }
+                    // Every other semantic result is deliberately left absent.
+                }
+                if matches!(step.kind(), K::Cleanup) {
+                    known[cell] = false;
+                }
             }
             Action::Scalar(action) => {
                 let output = match action {

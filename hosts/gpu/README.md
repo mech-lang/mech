@@ -176,11 +176,26 @@ operations, not a workload-sized Rust helper.
 
 Each native invocation still measures its current payloads and funds the same
 maintained kernels, fresh memory plans and atomic publication. Its bounded
-per-site binding cache holds only one exact geometry at a time, never arguments,
+per-site binding cache exists only for structurally repeatable loop-body sites.
+Canonical validation contracts nested loops and proves the remaining root CFG
+acyclic; the consuming activation/turn session continues that same path without
+replaying its prefix. Root-scope calls, including nested Match arms, therefore
+use the same maintained uncached leaf directly and retain no bound/planner cache.
+The full concrete once/repeated slot lane is still admitted before creation.
+Repeatable sites' binding cache holds only one exact geometry at a time, never arguments,
 results or provider permissions. A shape miss admits replacement work and finite
 policy before retiring the old prepaid binding, then acquires its replacement
 reservation before allocation; old/new binding allocations do not coexist.
 Every hit and miss uses the same cumulative ledger and finite policy. The
+same guarded binding may reuse immutable planning metadata only after matching
+the complete fresh payload facts. Snapshot String selection may additionally
+retain weak-storage-identity grapheme-index metadata, never the source payload.
+Compact byte ordinals are used only after canonical grapheme segmentation
+proves every grapheme has one byte, so CRLF and Unicode keep their usual meaning.
+Index construction and eventual retirement are prepaid; its independently
+reserved bytes and nodes remain part of every finite call admission. The
+maintained selector still reads the actual current String and selector and
+publishes through the same atomic output boundary. The
 managed Object pins include the ABI, typed-IR and work-policy identities;
 old work-policy receipts
 must not be presented as qualification of changed accounting. Scalar/control
@@ -198,7 +213,7 @@ CLI. The secured gate is
 It builds and runs both complete original/decoded canonical artifacts with
 ordinary CLI providers and grants, checks exact small-fixture and empty output,
 denials, post-commit delivery failure, generated-input mutation rejection and
-the actual runtime-only dependency closure. It records no timing samples.
+the actual runtime-only dependency closure. By default it records no timing samples.
 Object emission alone does not pass this gate.
 
 The qualifier requires an exact committed clean checkout, the pinned toolchain
@@ -222,6 +237,53 @@ cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib -p mech-gpu \
 ```
 
 These remain fresh stateless invocations, not persistent reactive applications.
+Set `MECH_CANONICAL_HOSTED_PROFILE=release` to qualify the release Rust shell and
+library code. The default is `debug`; other values are rejected. Both original
+and decoded builds, including pin-mutation rejection and restored builds, use
+the chosen profile. The receipt records the actual Cargo compiler profiles.
+The checked Cranelift Object still uses `opt_level=none`; a release shell is not
+a claim of optimized whole-program Mech code, full-size correctness or timing.
+
+The optional full-input phase uses those same two release executables after
+all builds and pin-mutation/restoration checks finish. Add
+`MECH_CANONICAL_HOSTED_PROFILE=release` and
+`MECH_CANONICAL_HOSTED_FULL_INPUT_CONFIG=/absolute/full-input.json` to the
+command above. With the configuration variable unset, there are no extra runs.
+The configuration has this shape; replace every path and expected SHA256:
+
+```json
+{
+  "schema": "mech.canonical-hosted-full-input-config.v1",
+  "input": {"path": "/absolute/input.fasta", "sha256": "<64-lowercase-hex>"},
+  "oracle": {"path": "/absolute/expected.stdout", "sha256": "<64-lowercase-hex>"},
+  "launch": {"path": "/absolute/full.launch.json", "sha256": "<64-lowercase-hex>"},
+  "deadline_seconds": 3600,
+  "samples": 0
+}
+```
+
+Paths must be absolute; hashes pin the exact bytes, not a benchmark-size label.
+Use a separately declared finite scale launch policy: the same grants and
+`max_ports` as the small gate, positive finite caps in every dimension, and
+input/output acquisition caps covering the actual input/oracle bytes. The
+driver does not raise small-gate caps or promise that the scale policy suffices.
+It freezes byte-identical owned input/oracle/launch files and checks exact
+stdout, empty stderr, route/revision/launch pins and completed shutdown for
+both original and decoded programs. Actual denials are saved before failure.
+
+`samples: 0` performs correctness only. For 1–20 samples per variant, also set
+`MECH_CANONICAL_HOSTED_TIMING_SERIAL=1` and ensure no other build/test workload
+overlaps timing. Both full correctness runs must pass first. Each process has
+the explicit 1–3600-second deadline. Results live in
+`full-input/full-input-result.json` inside the evidence directory, including
+attempt/success counts if a later run fails.
+
+Integrity hashing and correctness runs deliberately warm filesystem caches.
+Samples measure serial warm-cache, fresh-process wall time including CLI I/O
+and report publication, excluding builds, hashing and parent validation—not
+cold-cache or kernel time. This facility alone is not a full-size correctness
+or timing result.
+
 Persistent state, broader matrix/map/recursive operations, element-wise counts,
 all-ten-program coverage, standard-size input and whole-program optimization
 remain separate work. Release comparisons must follow exact-source

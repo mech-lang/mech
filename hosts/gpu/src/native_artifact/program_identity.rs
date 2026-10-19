@@ -11,15 +11,84 @@ fn bytes(hash: &mut Sha256, value: &[u8]) {
     word(hash, value.len() as u64);
     hash.update(value);
 }
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 5;
+fn selected_template(
+    hash: &mut Sha256,
+    template: &mech_engine::native_artifact::NativeProgramLibraryTemplate,
+) {
+    word(hash, template.origin().node().get() as u64);
+    word(hash, template.origin().block().map_or(u64::MAX, u64::from));
+    word(hash, template.origin().local().map_or(u64::MAX, u64::from));
+    hash.update(template.program_revision().as_bytes());
+    bytes(hash, template.primitive().name().as_bytes());
+    let key = template.selected_key();
+    word(hash, key.module_path.len() as u64);
+    for part in &key.module_path {
+        bytes(hash, part.as_bytes());
+    }
+    bytes(hash, key.operation_name.as_bytes());
+    word(hash, template.inputs().len() as u64);
+    for input in template.inputs() {
+        bytes(hash, &input.canonical_bytes());
+    }
+    bytes(hash, &template.output().canonical_bytes());
+    match template.contract().canonical_bytes() {
+        Ok(encoded) => {
+            hash.update([1]);
+            bytes(hash, &encoded);
+        }
+        Err(_) => hash.update([0]), // opaque invalid plans never reach execution
+    }
+    use mech_core::ImplementationMemoryClass as M;
+    let (tag, a, b) = match template.implementation_memory() {
+        M::NoAdditionalScratch => (0, 0, 0),
+        M::CloneInput { input } => (1, input, 0),
+        M::CanonicalCloneInput { input } => (2, input, 0),
+        M::AbiContiguousBridge { input, output } => (3, input, output),
+        M::ExternalMarshalling => (4, 0, 0),
+        M::MatrixSolve => (5, 0, 0),
+        M::CanonicalFinalize => (6, 0, 0),
+        M::CanonicalSortUnique => (7, 0, 0),
+    };
+    for number in [tag as u64, a as u64, b as u64] {
+        word(hash, number);
+    }
+}
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 10;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
 // exact live-geometry bindings within one invocation, retiring an old binding
 // before a shape miss rebuilds it. Every visit measures and executes fresh Values.
-// Policy12 funds recursive declared-schema conversion plans before binding and
-// their current-data staging before execution, including retained metadata nodes.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 12;
+// Policy12 replaces repeated managed lexical-scope discovery with exact
+// descriptor-derived retirement tables, admitted once on the same session.
+// Exact current facts may reuse admitted planning metadata (never values or
+// permits). Scalar String capture uses canonical shared-data ownership bounds.
+// Immutable String indices are weak-owner-bound, admitted independently, and
+// counted in every fresh call/permit; compact boundaries require segmentation.
+// Policy13/IR6 add an explicit selected U64 range source strategy. It preserves
+// every candidate/error boundary and admits fixed source state instead of a
+// nonexistent Matrix. ABI8's existing two-word collection helper wire is unchanged.
+// Policy14/IR7 admit selected TextJoin append sinks. The elided Matrix is
+// never initialized; its selected consumer alone publishes a canonical String.
+// Policy15/IR8 add selected String histogram sinks and guarded query demands.
+// No elided Matrix/Map/Set has a Value handle; scalar demand outputs retain
+// canonical ownership and every generated producer visit remains unchanged.
+// Policy16/IR9 add one private current-candidate unit-U64 String span. Both
+// original selected visits remain; the actual source owner and index stay
+// fully admitted until the existing sink consumes the checked byte range.
+// Policy17 proves immutable selected query-stage associations once in the
+// descriptor constructor, eliminating repeated deep equality and unused full
+// binder reservations. Every original stage keeps fixed header work, dynamic
+// generation/phase checks, comparisons and canonical scalar owner admission.
+// ABI8's two-word helper transport and IR9's selected control proof are unchanged.
+// Policy18/IR10 add a strict sole-use String element -> selected String map
+// entry -> TextJoin strategy. Both original visits and complete owner pins
+// remain; only nonexistent key/result allocations and their copies disappear.
+// Canonical key planning/search and final append share maintained mechanics.
+// Policy21 composes recursive declared-schema conversion binding and staging
+// with the collection strategies above. Present Matrix axes remain witnessed;
+// every invocation keeps fresh admission and atomic publication obligations.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 21;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -200,6 +269,35 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
             None => hash.update([0]),
         }
         match block.action() {
+            NativeIterationAction::PrepareStringSpanSelector { collection } => {
+                hash.update([14]);
+                word(&mut hash, u64::from(*collection));
+            }
+            NativeIterationAction::ProjectStringSpan { collection } => {
+                hash.update([15]);
+                word(&mut hash, u64::from(*collection));
+            }
+            NativeIterationAction::ProjectStringMapEntry { collection } => {
+                hash.update([16]);
+                word(&mut hash, u64::from(*collection));
+            }
+            NativeIterationAction::HistogramQueryStep { collection, step } => {
+                hash.update([12]);
+                word(&mut hash, *collection as u64);
+                word(&mut hash, *step as u64);
+            }
+            NativeIterationAction::HistogramFinish { collection } => {
+                hash.update([13]);
+                word(&mut hash, *collection as u64);
+            }
+            NativeIterationAction::TextJoinFinish { collection } => {
+                hash.update([11]);
+                word(&mut hash, *collection as u64);
+            }
+            NativeIterationAction::PrepareU64Range { iteration } => {
+                hash.update([9]);
+                word(&mut hash, u64::from(*iteration));
+            }
             NativeIterationAction::Structural {
                 source,
                 path,
@@ -421,7 +519,49 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
             mech_engine::native_artifact::NativeControlLoopRef::Collection(collection) => {
                 hash.update([1]);
                 word(&mut hash, collection.collection() as u64);
-                word(&mut hash, collection.source().get() as u64);
+                match collection.source() {
+                    mech_engine::native_artifact::NativeCollectionSource::Value(value) => {
+                        hash.update([0]);
+                        word(&mut hash, u64::from(value.get()));
+                    }
+                    mech_engine::native_artifact::NativeCollectionSource::U64Range(cursor) => {
+                        hash.update([1]);
+                        word(&mut hash, u64::from(cursor.prepare()));
+                        word(&mut hash, u64::from(cursor.semantic_output().get()));
+                        word(&mut hash, u64::from(cursor.before_collection_begin()));
+                        for value in cursor.operands() {
+                            word(&mut hash, u64::from(value.get()));
+                        }
+                        let template = cursor.template();
+                        hash.update(template.program_revision().as_bytes());
+                        bytes(&mut hash, template.primitive().name().as_bytes());
+                        let at = template.origin();
+                        word(&mut hash, u64::from(at.node().get()));
+                        for part in [at.block(), at.local()] {
+                            word(&mut hash, part.map_or(u64::MAX, u64::from));
+                        }
+                        word(&mut hash, template.inputs().len() as u64);
+                        for schema in template.inputs() {
+                            hash.update(schema.key().as_bytes());
+                        }
+                        hash.update(template.output().key().as_bytes());
+                        let selected = template.selected_key();
+                        word(&mut hash, selected.module_path.len() as u64);
+                        for part in &selected.module_path {
+                            bytes(&mut hash, part.as_bytes());
+                        }
+                        bytes(&mut hash, selected.operation_name.as_bytes());
+                        // The only eligible maintained factories have this
+                        // exact class; the engine proof rejects all others.
+                        word(
+                            &mut hash,
+                            u64::from(
+                                template.implementation_memory()
+                                    == mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+                            ),
+                        );
+                    }
+                }
                 match collection.element() {
                     Some(value) => {
                         hash.update([1]);
@@ -498,6 +638,157 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
             collection.finish(),
         ] {
             word(&mut hash, value as u64);
+        }
+        match collection.result() {
+            mech_engine::native_artifact::NativeCollectionResult::Materialized => hash.update([0]),
+            mech_engine::native_artifact::NativeCollectionResult::GuardedHistogramQuery(sink) => {
+                use mech_engine::native_artifact::{
+                    NativeHistogramQueryPhase as P, NativeHistogramQuerySetShape as S,
+                    NativeHistogramQueryStepKind as K,
+                };
+                hash.update([2]);
+                for value in [sink.query(), sink.match_result(), sink.zero()] {
+                    word(&mut hash, value.get() as u64);
+                }
+                hash.update([match sink.set_shape() {
+                    S::Dynamic => 0,
+                    S::FreeExact => 1,
+                }]);
+                for site in [sink.true_copy(), sink.false_copy()] {
+                    word(&mut hash, site as u64);
+                }
+                word(&mut hash, sink.bool_tests().len() as u64);
+                for &site in sink.bool_tests() {
+                    word(&mut hash, site as u64);
+                }
+                word(&mut hash, sink.steps().len() as u64);
+                for step in sink.steps() {
+                    word(&mut hash, step.site() as u64);
+                    let (tag, phase) = match step.kind() {
+                        K::Histogram => (0, 0),
+                        K::Keys => (1, 0),
+                        K::Set => (2, 0),
+                        K::Membership => (3, 0),
+                        K::Lookup => (4, 0),
+                        K::Cleanup => (5, 0),
+                        K::Alias { phase } => (
+                            6,
+                            match phase {
+                                P::ProducerReady => 0,
+                                P::HistogramReady => 1,
+                                P::KeysReady => 2,
+                                P::SetReady => 3,
+                                P::Guarded => 4,
+                                P::LookupRead => 5,
+                            },
+                        ),
+                    };
+                    hash.update([tag, phase]);
+                    word(&mut hash, step.operands().len() as u64);
+                    for value in step.operands() {
+                        word(&mut hash, value.get() as u64);
+                    }
+                    match step.output() {
+                        Some(value) => {
+                            hash.update([1]);
+                            word(&mut hash, value.get() as u64);
+                        }
+                        None => hash.update([0]),
+                    }
+                    match step.template() {
+                        Some(template) => {
+                            hash.update([1]);
+                            selected_template(&mut hash, template);
+                        }
+                        None => hash.update([0]),
+                    }
+                }
+            }
+            mech_engine::native_artifact::NativeCollectionResult::Histogram(sink) => {
+                hash.update([3]);
+                word(&mut hash, sink.consumer() as u64);
+                word(&mut hash, sink.output().get() as u64);
+                selected_template(&mut hash, sink.template());
+            }
+            mech_engine::native_artifact::NativeCollectionResult::TextJoin(sink) => {
+                hash.update([1]);
+                word(&mut hash, sink.consumer() as u64);
+                word(&mut hash, sink.separator().get() as u64);
+                word(&mut hash, sink.output().get() as u64);
+                let template = sink.template();
+                word(&mut hash, template.origin().node().get() as u64);
+                word(
+                    &mut hash,
+                    template.origin().block().map_or(u64::MAX, u64::from),
+                );
+                word(
+                    &mut hash,
+                    template.origin().local().map_or(u64::MAX, u64::from),
+                );
+                hash.update(template.program_revision().as_bytes());
+                bytes(&mut hash, template.primitive().name().as_bytes());
+                let key = template.selected_key();
+                word(&mut hash, key.module_path.len() as u64);
+                for part in &key.module_path {
+                    bytes(&mut hash, part.as_bytes());
+                }
+                bytes(&mut hash, key.operation_name.as_bytes());
+                word(&mut hash, template.inputs().len() as u64);
+                for input in template.inputs() {
+                    bytes(&mut hash, &input.canonical_bytes());
+                }
+                bytes(&mut hash, &template.output().canonical_bytes());
+                match template.contract().canonical_bytes() {
+                    Ok(encoded) => {
+                        hash.update([1]);
+                        bytes(&mut hash, &encoded);
+                    }
+                    Err(_) => hash.update([0]), // invalid private plans are rejected before entry
+                }
+                hash.update([6]); // exact CanonicalFinalize witness, checked by proof
+            }
+        }
+        match collection.string_span_projection() {
+            Some(projection) => {
+                hash.update([1]);
+                for site in [projection.range_site(), projection.selection_site()] {
+                    word(&mut hash, u64::from(site));
+                }
+                for value in [
+                    projection.operands()[0],
+                    projection.operands()[1],
+                    projection.source(),
+                    projection.selector(),
+                    projection.output(),
+                ] {
+                    word(&mut hash, u64::from(value.get()));
+                }
+                selected_template(&mut hash, projection.range_template());
+                selected_template(&mut hash, projection.selection_template());
+            }
+            None => hash.update([0]),
+        }
+        match collection.string_element_map_projection() {
+            Some(projection) => {
+                hash.update([1]);
+                for site in [
+                    projection.iteration(),
+                    projection.element_site(),
+                    projection.selection_site(),
+                ] {
+                    word(&mut hash, u64::from(site));
+                }
+                for value in [
+                    projection.source(),
+                    projection.map(),
+                    projection.element(),
+                    projection.output(),
+                ] {
+                    word(&mut hash, u64::from(value.get()));
+                }
+                selected_template(&mut hash, projection.selection_template());
+            }
+            None => hash.update([0]),
         }
         word(&mut hash, collection.generators().len() as u64);
         for &generator in collection.generators() {

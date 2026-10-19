@@ -1,6 +1,7 @@
 mod nested_assignment;
 mod promoted_assignment;
 mod selection_address;
+pub(in crate::resident) mod string_map_access;
 
 #[cfg(test)]
 use mech_core::PORTABLE_SELECTOR_INDEX_MAX as PORTABLE_INDEX_MAX;
@@ -15982,52 +15983,11 @@ fn map_access_entry_for_selector_with_meter(
             meter.charge_retained_nodes(1)?;
             8
         }
-        ResidentValueRef::String([value]) => {
-            let work = super::budget::checked_u64(value.len())?
-                .checked_add(8)
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            meter.charge_comparison_work(work)?;
-            meter.charge_retained_nodes(1)?;
-            work
-        }
+        ResidentValueRef::String([value]) => string_map_access::candidate_work(value, meter)?,
         _ => return Err(ResidentKernelError::InvalidInput),
     };
     if matches!(key_schema, SchemaBody::String) {
-        // Canonical keys are immutable. Finding their largest encoded length
-        // reads String headers, not their UTF-8 payloads. Reserve the complete
-        // binary-search path before its first comparison; neither a missing
-        // key nor a late hit can obtain a cheaper admission decision.
-        let mut largest_key_work = candidate_work;
-        let mut key_bytes = 0u64;
-        for entry in map.entries() {
-            meter.charge_compute_work(64)?;
-            let ValueData::String(text) = entry.key().data() else {
-                return Err(ResidentKernelError::InvalidInput);
-            };
-            let bytes = super::budget::checked_u64(text.len())?;
-            largest_key_work = largest_key_work.max(
-                bytes
-                    .checked_add(8)
-                    .ok_or(ResidentKernelError::InvalidShape)?,
-            );
-            key_bytes = key_bytes
-                .checked_add(bytes)
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            meter.charge_retained_nodes(1)?;
-        }
-        let comparisons = map
-            .entries()
-            .len()
-            .checked_ilog2()
-            .map_or(0, |height| u64::from(height) + 1);
-        meter.charge_comparison_work(
-            largest_key_work
-                .checked_mul(comparisons)
-                .ok_or(ResidentKernelError::InvalidShape)?,
-        )?;
-        // Preserve the existing conservative selector-storage reservation.
-        // This optimization changes only real traversal/comparison work.
-        meter.charge_selector_bytes(key_bytes)?;
+        return string_map_access::find_with_compare(map, candidate_work, meter, compare);
     } else {
         for entry in map.entries() {
             super::budget::charge_canonical_key_footprint(meter, key_schema, entry.key().data())?;
@@ -18109,6 +18069,79 @@ fn preflight_snapshot_arithmetic(
     )
 }
 
+// Physical representability shared by the ordinary materializing arithmetic
+// leaf and a certified elided U64 range selector. This is NOT a memory permit
+// or a charge for allocations that the selected strategy does not construct.
+fn snapshot_arithmetic_storage_geometry(
+    input_elements: usize,
+    output_elements: usize,
+    output_element: &SchemaBody,
+) -> Result<(u64, u64, u64), ResidentKernelError> {
+    let draft_elements = input_elements
+        .checked_add(output_elements)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let drafts = core::alloc::Layout::array::<ValueDataDraft>(draft_elements)
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let output = core::alloc::Layout::array::<ValueDataDraft>(output_elements)
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let encoded = output_elements
+        .checked_mul(
+            snapshot_fixed_element_encoded_bytes(output_element)
+                .ok_or(ResidentKernelError::InvalidOutput)?,
+        )
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    // The packed sequence/encoding must fit Rust's real allocation layout as
+    // well as usize/u64 arithmetic. Never let elision make a formerly
+    // unrepresentable public selector count appear representable.
+    core::alloc::Layout::array::<u8>(encoded).map_err(|_| ResidentKernelError::InvalidShape)?;
+    Ok((
+        super::budget::checked_u64(drafts.size())?,
+        super::budget::checked_u64(output.size())?,
+        super::budget::checked_u64(encoded)?,
+    ))
+}
+
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(super) fn canonical_u64_range_selector_representation(
+    count: u64,
+) -> Result<(), ResidentKernelError> {
+    let count = usize::try_from(count).map_err(|_| ResidentKernelError::InvalidShape)?;
+    snapshot_arithmetic_storage_geometry(
+        2,
+        count,
+        &SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+    )?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod arithmetic_storage_geometry_tests {
+    use super::*;
+
+    #[test]
+    fn elided_range_and_materializing_arithmetic_share_real_layout_limits() {
+        let element = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
+        let largest = isize::MAX as usize / core::mem::size_of::<ValueDataDraft>() - 2;
+        assert!(snapshot_arithmetic_storage_geometry(2, largest, &element).is_ok());
+        assert_eq!(
+            snapshot_arithmetic_storage_geometry(2, largest + 1, &element),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(
+            snapshot_arithmetic_storage_geometry(2, usize::MAX, &element),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        let (drafts, output, encoded) =
+            snapshot_arithmetic_storage_geometry(2, 3, &element).unwrap();
+        assert_eq!(drafts, 5 * core::mem::size_of::<ValueDataDraft>() as u64);
+        assert_eq!(output, 3 * core::mem::size_of::<ValueDataDraft>() as u64);
+        assert_eq!(encoded, 24);
+    }
+}
+
 fn preflight_snapshot_arithmetic_with_input_work(
     kernel: &BoundResidentKernel,
     schemas: &mech_core::SchemaTable,
@@ -18151,29 +18184,10 @@ fn preflight_snapshot_arithmetic_with_input_work(
         },
         _ => return Err(ResidentKernelError::InvalidOutput),
     };
-    let draft_elements = input_elements
-        .checked_add(output_elements)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    let draft_bytes = super::budget::checked_u64(
-        draft_elements
-            .checked_mul(core::mem::size_of::<ValueDataDraft>())
-            .ok_or(ResidentKernelError::InvalidShape)?,
-    )?;
-    let output_bytes = super::budget::checked_u64(
-        output_elements
-            .checked_mul(core::mem::size_of::<ValueDataDraft>())
-            .ok_or(ResidentKernelError::InvalidShape)?,
-    )?;
     // A borrowed binary operand is not unpacked into a whole draft vector.
     // Reserve every fixed-width read occurrence, including broadcasts, plus
     // the result draft. Keep the older conservative storage/node/clone bounds;
     // this change does not grant any extra memory authority.
-    let construction_work = match borrowed_input_read_work {
-        Some(reads) => output_bytes
-            .checked_add(super::budget::checked_u64(reads)?)
-            .ok_or(ResidentKernelError::InvalidShape)?,
-        None => draft_bytes,
-    };
     let output_metadata = kernel
         .snapshot_output()
         .ok_or(ResidentKernelError::InvalidOutput)?;
@@ -18186,16 +18200,18 @@ fn preflight_snapshot_arithmetic_with_input_work(
         SchemaBody::Matrix { element, .. } => (element.as_ref(), 3),
         scalar => (scalar, 2),
     };
-    let output_encoded_bytes = output_elements
-        .checked_mul(
-            snapshot_fixed_element_encoded_bytes(output_element)
-                .ok_or(ResidentKernelError::InvalidOutput)?,
-        )
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    let (draft_bytes, output_bytes, output_encoded_bytes) =
+        snapshot_arithmetic_storage_geometry(input_elements, output_elements, output_element)?;
+    let construction_work = match borrowed_input_read_work {
+        Some(reads) => output_bytes
+            .checked_add(super::budget::checked_u64(reads)?)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        None => draft_bytes,
+    };
     let output_footprint = ValueFootprint {
         // Fixed-width primitive matrices encode as the packed element
         // population; wrapper and packed-sequence visits use node_count.
-        encoded_bytes: super::budget::checked_u64(output_encoded_bytes)?,
+        encoded_bytes: output_encoded_bytes,
         retained_bytes: output_bytes,
         node_count: output_nodes,
     };

@@ -25,7 +25,15 @@ mod collection;
 pub use collection::*;
 
 mod collection_validation;
+mod fusion_semantics;
+pub(crate) mod guarded_histogram_query;
+pub(crate) mod histogram_sink;
 pub(crate) mod iteration_validation;
+pub(crate) mod range_cursor;
+pub(crate) mod string_element_map_projection;
+pub use string_element_map_projection::NativeStringElementMapProjection;
+pub(crate) mod string_span_projection;
+pub(crate) mod text_join_sink;
 
 mod phase_validation;
 mod program;
@@ -42,7 +50,7 @@ pub use crate::resident::general::native_collection_templates::{
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 pub use crate::resident::general::native_collection_calls::{
     NativeCollectionCall, NativeCollectionInvocationError, NativePreparedLibraryCall,
-    NativePreparedLibraryCallCache, bind_native_collection_lexical,
-    bind_native_collection_operation, bind_native_program_library_call,
-    prepare_native_program_library_call,
+    NativePreparedLibraryCallCache, NativeSelectedStringSpanSelector,
+    bind_native_collection_lexical, bind_native_collection_operation,
+    bind_native_program_library_call, prepare_native_program_library_call,
 };

@@ -1,13 +1,11 @@
 //! Original canonical artifacts through checked native bodies and real CLI services.
-use mech_core::{MResult, ManagedMemoryBudget, MechError, Schema, Value};
-use mech_engine::{ProgramArtifact, decode_program_artifact_bytecode_v1};
+use mech_core::{ManagedMemoryBudget, MechError};
 use mech_gpu::native_artifact::{
     JitProgramArtifact, NativeExecutionLimits, NativeProgramExecutionError,
     NativeProgramExecutionLimits, NativeProgramExecutionReport,
 };
 use mech_runtime::*;
-use mech_terminal::{CliBackend, CliHostFactory};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 const FULL: &str = include_str!("fixtures/native/knucleotide-idiomatic.mec");
 const ECHO: &str = "+> @in := cli/stdin\n+> @out := cli/stdout\n@out/text <- @in/text\n";
@@ -21,273 +19,55 @@ const GGTA_OUTPUT: &str = "G 50.000\nA 25.000\nT 25.000\n\nGG 33.333\nGT 33.333\
 const EMPTY_OUTPUT: &str =
     "\n\n\n\n0\tGGT\n0\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n";
 
-#[derive(Clone, Debug, Default)]
-struct Trace {
-    input: Vec<u8>,
-    reads: usize,
-    acquisitions: usize,
-    prepares: usize,
-    deliveries: usize,
-    flushes: usize,
-    output: String,
-    fail_flush: bool,
-    fail_read: bool,
-}
-#[derive(Clone, Debug)]
-struct Backend(Arc<Mutex<Trace>>);
-fn failure(message: &str) -> MechError {
-    MechError::new(
-        mech_core::GenericError {
-            msg: message.into(),
-        },
-        None,
-    )
-}
-impl CliBackend for Backend {
-    fn env_var(&self, _: &str) -> MResult<Option<String>> {
-        Ok(None)
-    }
-    fn stdin_bytes(&self) -> Option<MResult<Vec<u8>>> {
-        let mut trace = self.0.lock().unwrap();
-        trace.acquisitions += 1;
-        Some(if trace.fail_read {
-            Err(failure("controlled stdin acquisition failure"))
-        } else {
-            Ok(trace.input.clone())
-        })
-    }
-    fn stdin_text(&self) -> MResult<String> {
-        panic!("real CLI provider must use its cached raw-byte snapshot");
-    }
-    fn write_stdout(&mut self, text: &str) -> MResult<()> {
-        let mut trace = self.0.lock().unwrap();
-        trace.deliveries += 1;
-        trace.output.push_str(text);
-        trace.flushes += 1;
-        if trace.fail_flush {
-            return Err(failure("controlled stdout flush failure"));
-        }
-        Ok(())
-    }
-    fn write_stderr(&mut self, _: &str) -> MResult<()> {
-        Err(failure("unexpected application stderr send"))
-    }
-}
+#[path = "support/canonical_hosted_fixture.rs"]
+mod fixture;
+use fixture::{artifacts, bridge_limits, execute, limits, no_resident, quiet, runtime};
+#[test]
+fn larger_scalar_string_observation_uses_real_secured_capture_and_atomic_publication() {
+    let (variants, catalog) = artifacts(ECHO);
+    for artifact in variants {
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        for text in [String::new(), "é🧑‍🚀".into(), "éACGT".repeat(16_384)] {
+            let (mut runtime, trace) = runtime(text.as_bytes(), true);
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let report = execute(&mut runtime, &artifact, &jit, limits(), &memory).unwrap();
+            assert_eq!(trace.lock().unwrap().output, text);
+            assert_eq!(memory.used_bytes(), 0);
+            no_resident(&runtime);
+            runtime.shutdown().unwrap();
 
-// Transparent counters around the ACTUAL CLI provider/factory. Every semantic
-// contract, read/schema/cache rule, effect preparation and delivery is delegated.
-#[derive(Debug)]
-struct CountProvider {
-    inner: Box<dyn RuntimeResourceProvider>,
-    trace: Arc<Mutex<Trace>>,
-}
-impl RuntimeResourceProvider for CountProvider {
-    fn scheme(&self) -> &str {
-        self.inner.scheme()
-    }
-    fn base_uris(&self) -> Vec<String> {
-        self.inner.base_uris()
-    }
-    fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
-        self.inner.equivalent_base_uri_groups()
-    }
-    fn semantic_read_contract(&self) -> Option<&'static mech_core::OperationContractDeclaration> {
-        self.inner.semantic_read_contract()
-    }
-    fn semantic_write_contract(
-        &self,
-        intent: RuntimeResourceWriteIntent,
-    ) -> Option<&'static mech_core::OperationContractDeclaration> {
-        self.inner.semantic_write_contract(intent)
-    }
-    fn observation_requires_input_driver(&self, request: &RuntimeResourceReadRequest) -> bool {
-        self.inner.observation_requires_input_driver(request)
-    }
-    fn supports_resident_idempotency(&self, intent: RuntimeResourceWriteIntent) -> bool {
-        self.inner.supports_resident_idempotency(intent)
-    }
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
-        self.inner.plan_read(request)
-    }
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
-        self.trace.lock().unwrap().reads += 1;
-        self.inner.read(request)
-    }
-    fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
-        self.inner.preflight_write(request)
-    }
-    fn preflight_write_schema(
-        &self,
-        request: RuntimeResourceWritePreflightRequest,
-        schema: &Schema,
-    ) -> MResult<ResourceSchemaPreflight> {
-        self.inner.preflight_write_schema(request, schema)
-    }
-    fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
-        self.inner.plan_write(request)
-    }
-    fn prepare_write(
-        &self,
-        request: RuntimeResourceWriteRequest,
-    ) -> MResult<PreparedRuntimeEffect> {
-        self.trace.lock().unwrap().prepares += 1;
-        self.inner.prepare_write(request)
-    }
-}
-#[derive(Debug)]
-struct Factory {
-    inner: CliHostFactory<Backend>,
-    trace: Arc<Mutex<Trace>>,
-}
-impl RuntimeHostFactory for Factory {
-    fn provider_name(&self) -> &str {
-        self.inner.provider_name()
-    }
-    fn manifest(&self) -> &HostManifestConfig {
-        self.inner.manifest()
-    }
-    fn validate_settings(&self, name: &str, settings: &ConfigValue) -> MResult<()> {
-        self.inner.validate_settings(name, settings)
-    }
-    fn instantiate(&self, name: &str, settings: &ConfigValue) -> MResult<RuntimeHostInstallation> {
-        let mut installation = self.inner.instantiate(name, settings)?;
-        installation.resource_providers = installation
-            .resource_providers
-            .into_iter()
-            .map(|inner| {
-                Box::new(CountProvider {
-                    inner,
-                    trace: self.trace.clone(),
-                }) as Box<dyn RuntimeResourceProvider>
-            })
-            .collect();
-        Ok(installation)
-    }
-}
-fn builder(trace: Arc<Mutex<Trace>>, grants: bool) -> RuntimeBuilder {
-    let factory = Factory {
-        inner: CliHostFactory::with_backend(Backend(trace.clone())).unwrap(),
-        trace,
-    };
-    let mut builder = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_catalog())
-        .host_factory(Box::new(factory))
-        .unwrap()
-        .host_instance(HostInstanceConfig {
-            name: "cli".into(),
-            provider: "cli".into(),
-            settings: ConfigValue::Map(Default::default()),
-        });
-    if grants {
-        for (target, operation) in [("cli/stdin", "read"), ("cli/stdout", "write")] {
-            builder = builder.run_resource_grant(RunResourceGrantConfig {
-                target: target.into(),
-                operations: vec![operation.into()],
-                paths: vec!["text".into()],
-            });
+            let (mut runtime, trace) = self::runtime(text.as_bytes(), true);
+            let mut policy = limits();
+            policy.execution.max_work = report.work - 1;
+            assert!(matches!(
+                execute(&mut runtime, &artifact, &jit, policy, &memory),
+                Err(CanonicalNativeResourceRunError::BeforeCommit {
+                    phase: "native execution",
+                    ..
+                }),
+            ));
+            let snapshot = trace.lock().unwrap().clone();
+            assert_eq!(
+                (
+                    snapshot.reads,
+                    snapshot.acquisitions,
+                    snapshot.prepares,
+                    snapshot.deliveries
+                ),
+                (1, 1, 0, 0)
+            );
+            assert!(snapshot.output.is_empty());
+            assert_eq!(memory.used_bytes(), 0);
+            no_resident(&runtime);
+            runtime.shutdown().unwrap();
+
+            let (mut runtime, trace) = self::runtime(text.as_bytes(), true);
+            execute(&mut runtime, &artifact, &jit, limits(), &memory).unwrap();
+            assert_eq!(trace.lock().unwrap().output, text);
+            assert_eq!(memory.used_bytes(), 0);
+            runtime.shutdown().unwrap();
         }
     }
-    builder
-}
-fn artifacts(source: &str) -> (Vec<ProgramArtifact>, Arc<mech_core::FunctionCatalog>) {
-    let trace = Arc::new(Mutex::new(Trace::default()));
-    let mut compiler = builder(trace.clone(), false).build_compiler().unwrap();
-    let product = compiler.compile_canonical_source(source).unwrap();
-    let original = product.artifact().clone();
-    let decoded = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
-    assert_eq!(original.revision(), decoded.revision());
-    assert_eq!(original.requirements(), decoded.requirements());
-    quiet(&trace);
-    (vec![original, decoded], mech_stdlib::source_catalog())
-}
-fn runtime(input: &[u8], grants: bool) -> (MechRuntime, Arc<Mutex<Trace>>) {
-    let trace = Arc::new(Mutex::new(Trace {
-        input: input.into(),
-        ..Trace::default()
-    }));
-    (builder(trace.clone(), grants).build().unwrap(), trace)
-}
-fn quiet(trace: &Arc<Mutex<Trace>>) {
-    let trace = trace.lock().unwrap();
-    assert_eq!(
-        (
-            trace.reads,
-            trace.acquisitions,
-            trace.prepares,
-            trace.deliveries,
-            trace.flushes
-        ),
-        (0, 0, 0, 0, 0)
-    );
-    assert!(trace.output.is_empty());
-}
-fn no_resident(runtime: &MechRuntime) {
-    let info = runtime.program_execution_info();
-    assert_eq!(info.route, RuntimeProgramRoute::None);
-    assert!(info.program_revision.is_none());
-    assert_eq!(
-        (info.resident_accepted_turns, info.resident_rejected_turns),
-        (0, 0)
-    );
-}
-fn limits() -> NativeProgramExecutionLimits {
-    let mut library = mech_core::TargetMemoryProfile::current_resident_cpu()
-        .unwrap()
-        .limits;
-    library.max_output_elements = Some(1_000_000);
-    library.max_output_bytes = Some(128 * 1024 * 1024);
-    library.max_temporary_bytes = Some(128 * 1024 * 1024);
-    library.max_cloned_bytes = Some(128 * 1024 * 1024);
-    library.max_retained_nodes = Some(1_000_000);
-    library.max_compute_work = Some(134_217_728);
-    library.max_comparison_work = Some(1_000_000);
-    NativeProgramExecutionLimits {
-        execution: NativeExecutionLimits {
-            max_work: 1_000_000_000,
-            max_transport_bytes: 16 * 1024 * 1024,
-            max_native_stack_bytes: 1024 * 1024,
-        },
-        library,
-    }
-}
-fn bridge_limits() -> CanonicalNativeResourceLimits {
-    CanonicalNativeResourceLimits {
-        max_ports: 16,
-        max_input_text_bytes: 1024 * 1024,
-        max_output_text_bytes: 1024 * 1024,
-    }
-}
-fn execute(
-    runtime: &mut MechRuntime,
-    artifact: &ProgramArtifact,
-    jit: &JitProgramArtifact,
-    policy: NativeProgramExecutionLimits,
-    memory: &ManagedMemoryBudget,
-) -> Result<NativeProgramExecutionReport, CanonicalNativeResourceRunError> {
-    let plan = jit.descriptor().plan();
-    let mut outputs = vec![None; plan.transport_output_count()];
-    runtime.with_canonical_native_resources_phased(
-        artifact,
-        bridge_limits(),
-        |admission| {
-            jit.prepare_hosted(admission, policy, memory)
-                .map_err(|error| MechError::new(error, None))
-        },
-        |session, turn| {
-            let report = session
-                .resume_hosted_into(turn, &[], &mut outputs)
-                .map_err(|error| MechError::new(error, None))?;
-            let effects = outputs[plan.outputs().len()..]
-                .iter_mut()
-                .map(|value| value.take().expect("checked native completion"))
-                .collect::<Vec<_>>()
-                .into_boxed_slice();
-            Ok(CanonicalNativeResourceCompletion {
-                result: report,
-                effects,
-            })
-        },
-    )
 }
 
 #[test]
@@ -295,6 +75,110 @@ fn complete_knucleotide_original_and_decoded_run_through_actual_secured_cli() {
     let (variants, catalog) = artifacts(FULL);
     for artifact in variants {
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        assert_eq!(
+            jit.descriptor()
+                .plan()
+                .collections()
+                .iter()
+                .filter(|collection| collection.string_element_map_projection().is_some())
+                .count(),
+            1,
+            "unchanged full source must use its generic String element/map/TextJoin projection"
+        );
+        assert_eq!(
+            jit.descriptor()
+                .plan()
+                .collections()
+                .iter()
+                .filter(|collection| collection.string_span_projection().is_some())
+                .count(),
+            2,
+            "the complete unchanged secured source must really use both selected String span bodies"
+        );
+        // Both ordinary histogram call bodies must use the generic selected
+        // range strategy. Testing only a separate leaf cannot qualify FULL.
+        assert_eq!(
+            jit.descriptor()
+                .plan()
+                .iterations()
+                .iter()
+                .filter(|iteration| matches!(iteration,
+                    mech_engine::native_artifact::NativeControlLoop::Collection(generator)
+                        if matches!(generator.source(),
+                            mech_engine::native_artifact::NativeCollectionSource::U64Range(_))))
+                .count(),
+            2,
+            "the complete secured source must really use both range cursors"
+        );
+        assert!(
+            jit.descriptor()
+                .plan()
+                .collections()
+                .iter()
+                .filter(|collection| matches!(
+                    collection.result(),
+                    mech_engine::native_artifact::NativeCollectionResult::TextJoin(_)
+                ))
+                .count()
+                >= 4,
+            "the complete secured source must actually use the uppercase, formatting and outer join sinks"
+        );
+        let plan = jit.descriptor().plan();
+        let query = plan
+            .collections()
+            .iter()
+            .filter_map(|collection| {
+                if let mech_engine::native_artifact::NativeCollectionResult::GuardedHistogramQuery(
+                    sink,
+                ) = collection.result()
+                {
+                    Some((collection, sink))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            query.len(),
+            1,
+            "the unchanged full source must select its generic five-query demand body, including the18mer"
+        );
+        assert_eq!(
+            plan.collections()
+                .iter()
+                .filter(|collection| matches!(
+                    collection.result(),
+                    mech_engine::native_artifact::NativeCollectionResult::Histogram(_)
+                ))
+                .count(),
+            1,
+            "the separate two-width frequency body must retain its full histogram result"
+        );
+        let (collection, sink) = query[0];
+        let mech_engine::native_artifact::NativeControlLoop::Collection(generator) = &plan
+            .iterations()[collection
+            .parent()
+            .expect("query demand is inside its original outer generator")
+            as usize]
+        else {
+            panic!("query demand must keep its original five-query generator");
+        };
+        assert_eq!(
+            generator.element(),
+            Some(sink.query()),
+            "the query is the same immutable outer SSA, not a literal or recomputation"
+        );
+        let source = generator
+            .source()
+            .materialized_value()
+            .expect("query strings remain an ordinary Matrix");
+        assert!(
+            matches!(plan.values()[source.get() as usize].definition().body(),
+            mech_core::SchemaBody::Matrix { element, dimensions }
+                if element.as_ref() == &mech_core::SchemaBody::String
+                && dimensions.as_ref() == &[mech_core::DimensionExpr::Constant(1), mech_core::DimensionExpr::Constant(5)]),
+            "this actual unchanged source iterates all five query strings, not a one-query toy"
+        );
         assert_eq!(jit.descriptor().plan().resource_requirements().len(), 2);
         assert_eq!(
             jit.descriptor().plan().observations()[0].request().delivery,
@@ -324,6 +208,57 @@ fn complete_knucleotide_original_and_decoded_run_through_actual_secured_cli() {
             );
             assert_eq!(memory.used_bytes(), 0);
             runtime.shutdown().unwrap();
+        }
+    }
+}
+
+#[test]
+fn complete_knucleotide_selected_stages_100_400_keep_real_secured_host_lifecycle() {
+    let (variants, catalog) = artifacts(FULL);
+    for artifact in variants {
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        assert_eq!(
+            jit.descriptor()
+                .plan()
+                .collections()
+                .iter()
+                .filter(|c| c.string_span_projection().is_some())
+                .count(),
+            2
+        );
+        assert_eq!(jit.descriptor().plan().resource_requirements().len(), 2);
+        for repeats in [25usize, 100] {
+            // SAME unchanged 100/400-base gate and independent output formula.
+            let input = format!(
+                ">ONE\nAAAA\n>THREE timing\n{}\n>FOUR\nCC\n",
+                "GGTA".repeat(repeats)
+            );
+            let windows = 4 * repeats - 1;
+            let common = 100.0 * repeats as f64 / windows as f64;
+            let other = 100.0 * (repeats - 1) as f64 / windows as f64;
+            let expected = format!(
+                "G 50.000\nA 25.000\nT 25.000\n\nGG {common:.3}\nGT {common:.3}\nTA {common:.3}\nAG {other:.3}\n\n{repeats}\tGGT\n{repeats}\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n"
+            );
+            let (mut runtime, trace) = runtime(input.as_bytes(), true);
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let report = execute(&mut runtime, &artifact, &jit, limits(), &memory).unwrap();
+            assert!(report.visits > 0 && report.work <= limits().execution.max_work);
+            let snapshot = trace.lock().unwrap().clone();
+            assert_eq!(snapshot.output.as_bytes(), expected.as_bytes());
+            assert_eq!(
+                (
+                    snapshot.reads,
+                    snapshot.acquisitions,
+                    snapshot.prepares,
+                    snapshot.deliveries,
+                    snapshot.flushes
+                ),
+                (1, 1, 1, 1, 1)
+            );
+            no_resident(&runtime);
+            assert_eq!(memory.used_bytes(), 0);
+            runtime.shutdown().unwrap();
+            assert_eq!(memory.used_bytes(), 0);
         }
     }
 }
@@ -958,3 +893,6 @@ fn same_artifact_session_cannot_resume_with_a_different_admitted_transaction_tok
 
 #[path = "support/canonical_hosted_linked.rs"]
 mod linked;
+
+#[path = "support/canonical_hosted_scaling.rs"]
+mod scaling;

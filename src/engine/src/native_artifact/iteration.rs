@@ -32,6 +32,25 @@ pub enum NativeIterationAction {
         operands: Box<[NativeMatchValue]>,
         output: NativeMatchValue,
     },
+    /// Initialize an admitted non-Value source at its ORIGINAL range call.
+    /// The selected template and operands live on the exact generator.
+    PrepareU64Range {
+        iteration: u32,
+    },
+    /// Prepare a non-Value selector at its ORIGINAL selected range call.
+    PrepareStringSpanSelector {
+        collection: u32,
+    },
+    /// Pin the genuine source and prepare a checked non-Value byte span at
+    /// the ORIGINAL selected String selection; the next proved Push consumes it.
+    ProjectStringSpan {
+        collection: u32,
+    },
+    /// Select a non-Value String entry using the current borrowed generator
+    /// element at its ORIGINAL selected Map key access; the proved Push consumes it.
+    ProjectStringMapEntry {
+        collection: u32,
+    },
     CollectionBegin {
         collection: u32,
     },
@@ -43,6 +62,18 @@ pub enum NativeIterationAction {
         value: NativeMatchValue,
     },
     CollectionFinish {
+        collection: u32,
+    },
+    /// Finalize an admitted append sink at the ORIGINAL selected consumer.
+    TextJoinFinish {
+        collection: u32,
+    },
+    /// One proved original histogram/keys/set/guard/lookup/cleanup site.
+    HistogramQueryStep {
+        collection: u32,
+        step: u32,
+    },
+    HistogramFinish {
         collection: u32,
     },
     Initialize {

@@ -202,7 +202,15 @@ fn scalar_plan(plan: NativeProgramArtifactPlan) -> Result<NativeIterationArtifac
     for block in &plan.blocks {
         if matches!(
             block.action(),
-            NativeIterationAction::LibraryCall { .. } | NativeIterationAction::Structural { .. }
+            NativeIterationAction::LibraryCall { .. }
+                | NativeIterationAction::Structural { .. }
+                | NativeIterationAction::PrepareU64Range { .. }
+                | NativeIterationAction::PrepareStringSpanSelector { .. }
+                | NativeIterationAction::ProjectStringSpan { .. }
+                | NativeIterationAction::ProjectStringMapEntry { .. }
+                | NativeIterationAction::TextJoinFinish { .. }
+                | NativeIterationAction::HistogramFinish { .. }
+                | NativeIterationAction::HistogramQueryStep { .. }
         ) {
             return Err(unsupported(
                 block.origin().node(),
@@ -1209,7 +1217,7 @@ fn lower_control_artifact(
             node: Some(observation.node),
         })?;
     }
-    let plan = NativeProgramArtifactPlan {
+    let mut plan = NativeProgramArtifactPlan {
         revision: artifact.revision(),
         resource_requirements,
         observations: observations.into(),
@@ -1243,6 +1251,22 @@ fn lower_control_artifact(
             crate::native_artifact::iteration_validation::validate(&plan)
         };
         checked.map_err(|_| Error::InvalidBinding { node: None })?;
+    }
+    if allow_collections {
+        crate::native_artifact::range_cursor::lower(&mut plan)
+            .map_err(|_| Error::InvalidBinding { node: None })?;
+        crate::native_artifact::text_join_sink::lower(&mut plan)
+            .map_err(|_| Error::InvalidBinding { node: None })?;
+        crate::native_artifact::guarded_histogram_query::lower(&mut plan)
+            .map_err(|_| Error::InvalidBinding { node: None })?;
+        crate::native_artifact::histogram_sink::lower(&mut plan)
+            .map_err(|_| Error::InvalidBinding { node: None })?;
+        crate::native_artifact::string_span_projection::lower(&mut plan)
+            .map_err(|_| Error::InvalidBinding { node: None })?;
+        crate::native_artifact::string_element_map_projection::lower(&mut plan)
+            .map_err(|_| Error::InvalidBinding { node: None })?;
+        plan.validate_current_visits()
+            .map_err(|_| Error::InvalidBinding { node: None })?;
     }
     Ok(plan)
 }
@@ -1580,6 +1604,25 @@ mod iteration_proof_tests {
     }
 
     #[test]
+    fn root_scope_cycle_is_rejected_before_once_storage_is_derived() {
+        let source = "choose(x<u64>) => (out<u64>) := out := (x? | 0u64 => 1u64 | * => x).\nclosed := choose(7u64)\nfresh := choose(input<u64>)\nfresh\n";
+        let (artifact, catalog) = artifact(source);
+        let valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        valid.validate_current_visits().unwrap();
+        let boundary = valid.activation_boundary().unwrap();
+        assert!(valid.blocks()[boundary as usize].iteration().is_none());
+        let mut cyclic = valid.clone();
+        cyclic.blocks[boundary as usize].terminator =
+            NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(boundary));
+        // Exercise the root DAG proof itself, independently of phase checks.
+        assert_eq!(
+            crate::native_artifact::iteration_validation::validate(&cyclic),
+            Err("invalid counted-loop ownership or current-visit definitions")
+        );
+        assert!(cyclic.validate_current_visits().is_err());
+    }
+
+    #[test]
     fn exhaustive_partial_function_matches_lower_but_genuinely_partial_matches_reject() {
         let (total, catalog) = artifact("pick(x<u64>) => <u64>\n  | x => x.\npick(seed<u64>)\n");
         lower_native_program_artifact(&total, &catalog)
@@ -1616,7 +1659,8 @@ mod iteration_proof_tests {
         let NativeControlLoop::Collection(generator) = &mut self_source.iterations[1] else {
             panic!("collection loop")
         };
-        generator.source = generator.element.unwrap();
+        generator.source =
+            crate::native_artifact::NativeCollectionSource::Value(generator.element.unwrap());
         assert!(self_source.validate_current_visits().is_err());
         let mut skipped_element = valid.clone();
         let NativeControlLoop::Collection(generator) = &skipped_element.iterations[1] else {

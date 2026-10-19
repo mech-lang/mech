@@ -395,6 +395,7 @@ impl NativeProgramArtifactPlan {
         self.activation_boundary
     }
     pub fn validate_current_visits(&self) -> Result<(), &'static str> {
+        super::range_cursor::validate(self)?;
         super::phase_validation::validate(self)?;
         super::iteration_validation::validate(self)
     }

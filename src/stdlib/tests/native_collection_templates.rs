@@ -20,8 +20,15 @@ use std::sync::{
 };
 
 // Opt-in allocator observations, not timing or a smaller admission witness.
+#[path = "support/native_optional_plan_cache.rs"]
+mod native_optional_plan_cache;
+
+#[path = "support/native_exact_facts_plan_cache.rs"]
+mod native_exact_facts_plan_cache;
 #[path = "support/native_metadata_allocations.rs"]
 mod native_metadata_allocations;
+#[path = "support/native_snapshot_string_index.rs"]
+mod native_snapshot_string_index;
 
 const SOURCE: &str = r#"+> text
 +> sequence

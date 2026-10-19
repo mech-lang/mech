@@ -13,6 +13,12 @@ use crate::memory_planner::{
     try_admit_fixed_turn_memory,
 };
 
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+#[path = "native_turn_plan_cache.rs"]
+pub(crate) mod native_turn_plan_cache;
 #[path = "payload_budget.rs"]
 pub(crate) mod payload;
 
@@ -848,6 +854,21 @@ pub(crate) fn with_payload_admission<T>(
     execute()
 }
 
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(in crate::resident) fn record_native_index_memory_error(
+    error: mech_core::MemoryRuntimeError,
+) -> ResidentKernelError {
+    ACTIVE_PAYLOAD_ADMISSION.with(|active| {
+        if let Some(admission) = active.borrow().as_ref() {
+            admission.record_error(error);
+        }
+    });
+    ResidentKernelError::InvalidShape
+}
+
 fn admit_payload_plan(plan: &TurnMemoryPlan) -> Result<(), ResidentKernelError> {
     ACTIVE_PAYLOAD_ADMISSION.with(|active| {
         if let Some(admission) = active.borrow().as_ref() {
@@ -861,6 +882,23 @@ fn admit_payload_plan(plan: &TurnMemoryPlan) -> Result<(), ResidentKernelError> 
                     .turn_peak_bytes
                     .checked_add(admission.auxiliary_bytes())
                     .ok_or(ResidentKernelError::InvalidShape)?;
+                #[cfg(all(
+                    feature = "native-artifact",
+                    any(feature = "pure_text", feature = "map_ops")
+                ))]
+                {
+                    // Cache capacity is independently reserved on this exact
+                    // work/memory account. Count it in the finite call cap,
+                    // but do not reserve the same bytes a second time.
+                    demand.turn_peak_bytes = demand
+                        .turn_peak_bytes
+                        .checked_add(native_turn_plan_cache::retained_bytes())
+                        .ok_or(ResidentKernelError::InvalidShape)?;
+                    demand.retained_nodes = demand
+                        .retained_nodes
+                        .checked_add(native_turn_plan_cache::retained_index_nodes())
+                        .ok_or(ResidentKernelError::InvalidShape)?;
+                }
                 if let Some(violation) = mech_core::evaluate_call_memory_budget(
                     mech_core::MemoryObjectOwner::NodeOutput {
                         node: plan.node,
@@ -963,6 +1001,11 @@ pub(crate) fn with_resident_turn_plan<T>(
     execute: impl FnOnce() -> T,
 ) -> T {
     let previous = with_active_turn_plan(|active| active.replace(plan.into()));
+    #[cfg(all(
+        feature = "native-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    ))]
+    let _cache_guard = native_turn_plan_cache::suspend();
     let _guard = ActiveTurnPlanGuard(previous);
     let _work_scope = ControlWorkScopeGuard::enter();
     execute()
@@ -1217,6 +1260,17 @@ impl KernelCostEstimate {
                     _plan: active,
                     _demand: demand,
                 });
+            }
+            #[cfg(all(
+                feature = "native-artifact",
+                any(feature = "pure_text", feature = "map_ops")
+            ))]
+            if !super::text_index::has_index_scope()
+                && index_growth(&active)? == (0, 0)
+                && let Some(result) =
+                    native_turn_plan_cache::refine(&active, self.demand, final_output)
+            {
+                return result;
             }
             return apply_observed_turn_demand((*active).clone(), self.demand, final_output)
                 .map_err(memory_plan_kernel_error)

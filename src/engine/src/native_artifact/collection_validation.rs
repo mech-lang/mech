@@ -90,7 +90,12 @@ pub(super) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             let Loop::Collection(data) = plan.iteration(collection.generators()[0] as usize) else {
                 return Err(BAD);
             };
-            if !matches!(definition(data.source())?.body(), SchemaBody::Matrix { .. }) {
+            if data.source().materialized_value().is_none()
+                || !matches!(
+                    definition(data.source().semantic_value())?.body(),
+                    SchemaBody::Matrix { .. }
+                )
+            {
                 return Err(BAD);
             }
         }
@@ -106,7 +111,7 @@ pub(super) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
         if !collection.generators().contains(&(id as u32)) {
             return Err(BAD);
         }
-        let source = definition(data.source())?;
+        let source = definition(data.source().semantic_value())?;
         let element = match source.body() {
             SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => {
                 element.as_ref()

@@ -186,7 +186,15 @@ pub(super) fn validate(plan: &NativeIterationArtifactPlan) -> Result<(), NativeC
     for block in plan.blocks() {
         if matches!(
             block.action(),
-            NativeIterationAction::LibraryCall { .. } | NativeIterationAction::Structural { .. }
+            NativeIterationAction::LibraryCall { .. }
+                | NativeIterationAction::Structural { .. }
+                | NativeIterationAction::PrepareU64Range { .. }
+                | NativeIterationAction::PrepareStringSpanSelector { .. }
+                | NativeIterationAction::ProjectStringSpan { .. }
+                | NativeIterationAction::ProjectStringMapEntry { .. }
+                | NativeIterationAction::TextJoinFinish { .. }
+                | NativeIterationAction::HistogramQueryStep { .. }
+                | NativeIterationAction::HistogramFinish { .. }
         ) {
             return Err(NativeCompileError::InvalidPlan {
                 node: Some(block.origin().node()),
@@ -463,6 +471,47 @@ pub(super) fn define_cfg<M: Module>(
                 error,
             );
             match block.action() {
+                NativeIterationAction::PrepareStringSpanSelector { collection } => {
+                    #[cfg(feature = "canonical-native-program")]
+                    {
+                        let super::iteration_code_plan::CodePlan::Program(program) = plan else {
+                            return Err(backend("String span requires managed program transport"));
+                        };
+                        let projection = program.collections()[*collection as usize]
+                            .string_span_projection()
+                            .ok_or_else(|| backend("String span lacks selected proof"))?;
+                        let hooks = hooks
+                            .as_ref()
+                            .ok_or_else(|| backend("String span lacks managed hooks"))?;
+                        let first = load(&mut b, locals, projection.operands()[0])?;
+                        let second = load(&mut b, locals, projection.operands()[1])?;
+                        hooks.collection(&mut b, index, [first, second], error)?;
+                    }
+                    #[cfg(not(feature = "canonical-native-program"))]
+                    {
+                        let _ = collection;
+                        return Err(backend("String span requires managed program transport"));
+                    }
+                }
+                NativeIterationAction::PrepareU64Range { iteration } => {
+                    let mech_engine::native_artifact::NativeControlLoopRef::Collection(generator) =
+                        plan.iteration(*iteration as usize)
+                    else {
+                        return Err(backend("range preparation outside collection loop"));
+                    };
+                    let mech_engine::native_artifact::NativeCollectionSource::U64Range(cursor) =
+                        generator.source()
+                    else {
+                        return Err(backend("range preparation lacks selected cursor"));
+                    };
+                    let hooks = hooks
+                        .as_ref()
+                        .ok_or_else(|| backend("missing range preparation hooks"))?;
+                    let first = load(&mut b, locals, cursor.operands()[0])?;
+                    let second = load(&mut b, locals, cursor.operands()[1])?;
+                    hooks.collection(&mut b, index, [first, second], error)?;
+                    // No Matrix result word/handle is written or fabricated.
+                }
                 NativeIterationAction::Structural { output, .. } => {
                     let hooks = hooks
                         .as_ref()
@@ -628,6 +677,11 @@ pub(super) fn define_cfg<M: Module>(
                     }
                 }
                 NativeIterationAction::CollectionBegin { .. }
+                | NativeIterationAction::ProjectStringSpan { .. }
+                | NativeIterationAction::ProjectStringMapEntry { .. }
+                | NativeIterationAction::TextJoinFinish { .. }
+                | NativeIterationAction::HistogramQueryStep { .. }
+                | NativeIterationAction::HistogramFinish { .. }
                 | NativeIterationAction::CollectionFinish { .. }
                 | NativeIterationAction::CollectionPush { .. } => {
                     let hooks = hooks
@@ -643,6 +697,33 @@ pub(super) fn define_cfg<M: Module>(
                         _ => zero,
                     };
                     hooks.collection(&mut b, index, [value, zero], error)?;
+                    #[cfg(feature = "canonical-native-program")]
+                    if let NativeIterationAction::HistogramQueryStep { collection, step } =
+                        block.action()
+                    {
+                        let super::iteration_code_plan::CodePlan::Program(program) = plan else {
+                            return Err(backend(
+                                "histogram query requires managed program transport",
+                            ));
+                        };
+                        let mech_engine::native_artifact::NativeCollectionResult::GuardedHistogramQuery(sink) =
+                            program.collections()[*collection as usize].result() else {
+                            return Err(backend("histogram query compiler lacks selected proof"));
+                        };
+                        if let Some(output) = sink.steps()[*step as usize].output()
+                            && program.values()[output.get() as usize]
+                                .scalar_kind()
+                                .is_some()
+                        {
+                            let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+                            b.ins().store(
+                                MemFlags::new(),
+                                word,
+                                locals,
+                                offset(output.get() as usize)?,
+                            );
+                        }
+                    }
                 }
             }
             match block.terminator() {

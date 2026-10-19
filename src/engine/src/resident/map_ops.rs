@@ -294,13 +294,8 @@ fn execute(
         // instead of comparing every sorted String again. Finalization and
         // publication equality keep their separate comparison reservations.
         let key_comparison_work = 0;
-        let scratch_bytes = n
-            .checked_mul(
-                2 * core::mem::size_of::<usize>()
-                    + core::mem::size_of::<primitives::StringRadixFrame>(),
-            )
-            .and_then(|bytes| bytes.checked_add(primitives::STRING_RADIX_FIXED_BYTES))
-            .ok_or(ResidentKernelError::InvalidShape)?;
+        let scratch_bytes =
+            primitives::histogram_scratch_bytes(n).ok_or(ResidentKernelError::InvalidShape)?;
         PreparedKernel::new((), budget::resident_cost! { compute_work: meter.estimate().compute_work(), comparison_work: key_comparison_work, temporary_bytes: scratch_bytes, ..budget::KernelCostEstimate::default() }).admit()?.into_plan();
         order
             .try_reserve_exact(n)
@@ -417,18 +412,16 @@ fn execute(
         }
         _ => return Err(ResidentKernelError::InvalidOutput),
     };
-    let finalization_work = budget::checked_u64(payload)?
-        .checked_mul(3)
-        .and_then(|v| v.checked_add((count as u64).checked_mul(8)?))
-        .and_then(|v| v.checked_add(8))
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    let drafts = count
-        .checked_mul(
-            core::mem::size_of::<MapEntryDraft>()
-                + 2 * core::mem::size_of::<ValueDataDraft>()
-                + core::mem::size_of::<String>(),
-        )
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    let finalization_work = crate::intrinsics::map_ops::canonical_finalization_work(
+        budget::checked_u64(count)?,
+        budget::checked_u64(payload)?,
+    )
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    let drafts = usize::try_from(
+        crate::intrinsics::map_ops::canonical_draft_bytes(budget::checked_u64(count)?)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )
+    .map_err(|_| ResidentKernelError::InvalidShape)?;
     let temporary = (scratch_bytes as u64)
         .checked_add(shape_bytes as u64)
         .ok_or(ResidentKernelError::InvalidShape)?

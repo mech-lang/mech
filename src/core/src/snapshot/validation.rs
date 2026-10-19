@@ -11,6 +11,10 @@ use crate::{
 };
 use core::cell::{Cell, OnceCell};
 
+#[cfg(test)]
+#[path = "frozen_identity_tests.rs"]
+mod frozen_identity_tests;
+
 #[cfg(feature = "no_std")]
 use alloc::{
     boxed::Box,
@@ -328,6 +332,32 @@ pub struct Value {
     schemas: Option<Arc<SchemaTable>>,
 }
 
+/// Non-owning identity of one immutable canonical data allocation. The token
+/// neither retains a Value, its payload, nor its schema or budget owner.
+/// A live token does pin the complete Arc control-block/data shell after the
+/// last strong owner releases its contents; caches must admit that fixed shell.
+#[derive(Clone)]
+pub struct FrozenSnapshotIdentity {
+    data: Weak<FrozenSnapshotData>,
+}
+
+impl FrozenSnapshotIdentity {
+    /// Tests the same immutable data identity as Value::shares_frozen_storage.
+    /// The weak control block stays allocated until this token is dropped, so
+    /// equal payloads and later allocations cannot revive an old identity.
+    pub fn matches(&self, value: &Value) -> bool {
+        Weak::ptr_eq(&self.data, &Arc::downgrade(&value.root.data))
+    }
+}
+
+impl core::fmt::Debug for FrozenSnapshotIdentity {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("FrozenSnapshotIdentity")
+            .finish_non_exhaustive()
+    }
+}
+
 /// Detached immutable canonical ownership. Cloning a [`Value`] retains this
 /// root instead of recursively cloning its payload tree. The root contains no
 /// mutable memory domain, cell, or executor authority.
@@ -470,6 +500,25 @@ impl core::fmt::Debug for Value {
 }
 
 impl Value {
+    /// Creates an opaque weak identity without allocating or retaining payload.
+    pub fn frozen_storage_identity(&self) -> FrozenSnapshotIdentity {
+        FrozenSnapshotIdentity {
+            data: Arc::downgrade(&self.root.data),
+        }
+    }
+
+    /// Complete allocation pinned by a weak frozen identity after all strong
+    /// owners drop: concrete FrozenSnapshotData storage plus the Arc header
+    /// and target-specific padding. This excludes payload/schema allocations
+    /// already destroyed with the last strong owner, and excludes the inline
+    /// token itself, which its owning cache must admit in its own metadata.
+    pub const fn frozen_storage_identity_allocation_bytes() -> u64 {
+        Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<FrozenSnapshotData>(),
+            core::mem::align_of::<FrozenSnapshotData>(),
+        )
+    }
+
     #[doc(hidden)]
     pub fn shares_frozen_storage(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.root.data, &other.root.data)
@@ -893,6 +942,40 @@ impl Value {
             .entry(schema)
             .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema })?;
         let target_schema = target_entry.schema();
+        // Exact scalar String metadata needs no encoded-schema buffers or
+        // closed-body rebuild. Retained canonical bytes remain the authority.
+        // Require a supplied shared target owner so this path cannot allocate
+        // a schema-table clone before the caller's ownership admission.
+        if context.shared_schemas.get().is_some()
+            && source_schema.body() == &SchemaBody::String
+            && target_schema.body() == &SchemaBody::String
+            && source_schema.dimension_parameters().is_empty()
+            && target_schema.dimension_parameters().is_empty()
+            && self.shape.parameter_values().is_empty()
+            && shape.parameter_values().is_empty()
+        {
+            let source_entry = source_schemas
+                .entry(self.schema)
+                .expect("source schema was validated above");
+            if self.schema_key != target_entry.key()
+                || source_entry.canonical_bytes() != target_entry.canonical_bytes()
+            {
+                return Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch {
+                    key: self.schema_key,
+                });
+            }
+            if core::ptr::eq(source_schemas, schemas) && schema == self.schema {
+                return Ok(self.clone());
+            }
+            return Ok(Self {
+                schema,
+                schema_key: target_entry.key(),
+                shape: self.shape.clone(),
+                root: self.root.clone(),
+                resident_token: self.resident_token,
+                schemas: Some(context.try_clone_schemas()?),
+            });
+        }
         let exact_definition = self.schema_key == target_entry.key()
             && source_schema.canonical_bytes() == target_schema.canonical_bytes();
         let equivalent_at_shape =
@@ -5047,6 +5130,92 @@ mod tests {
                 .count(),
             1,
         );
+    }
+
+    #[test]
+    fn exact_shared_string_rebind_keeps_data_shape_and_target_arena() {
+        let string_schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::String,
+        }
+        .finalize()
+        .unwrap();
+        let mut source_builder = SchemaTableBuilder::new();
+        let source_handle = source_builder.insert(string_schema.clone()).unwrap();
+        source_builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Tuple(vec![SchemaBody::Bool; 2_048].into_boxed_slice()),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let source = source_builder.finish().unwrap();
+        let source_id = source.resolve(source_handle).unwrap();
+        let source = Arc::new(source.table);
+        let mut target_builder = SchemaTableBuilder::new();
+        target_builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Bool,
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let target_handle = target_builder.insert(string_schema).unwrap();
+        let target = target_builder.finish().unwrap();
+        let target_id = target.resolve(target_handle).unwrap();
+        let target = Arc::new(target.table);
+        for text in [String::new(), "é🧑‍🚀".into(), "ACGT".repeat(16_384)] {
+            let raw = ValueDraft {
+                schema: source_id,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::String(text.clone()),
+            }
+            .finalize(&SnapshotValidationContext::with_shared_schemas(&source))
+            .unwrap();
+            let rebound = raw
+                .rebind_with_context(
+                    target_id,
+                    raw.shape(),
+                    &SnapshotValidationContext::with_shared_schemas(&target),
+                )
+                .unwrap();
+            assert!(raw.shares_frozen_storage(&rebound));
+            assert!(Arc::ptr_eq(&raw.shape, &rebound.shape));
+            assert!(Arc::ptr_eq(&rebound.schemas().unwrap(), &target));
+            assert_eq!(rebound.schema(), target_id);
+            let ValueData::String(actual) = rebound.data() else {
+                panic!("String");
+            };
+            assert_eq!(actual.as_ref(), text.as_str());
+            let same = raw
+                .rebind_with_context(
+                    source_id,
+                    raw.shape(),
+                    &SnapshotValidationContext::with_shared_schemas(&source),
+                )
+                .unwrap();
+            assert!(Arc::ptr_eq(&raw.root, &same.root));
+            let budget = crate::ManagedMemoryBudget::new(1_000_000);
+            budget.inject_snapshot_import_failure_after(0);
+            let mut reservation = budget
+                .reserve_capacity(
+                    rebound.memory_budget_required_bytes().unwrap()
+                        + Value::memory_budget_claim_metadata_bytes(),
+                )
+                .unwrap();
+            assert!(matches!(
+                rebound.into_independent_memory_budget(&mut reservation),
+                Err(crate::MemoryRuntimeError::AllocationFailed { .. }),
+            ));
+            drop(reservation);
+            assert_eq!(budget.used_bytes(), 0);
+        }
     }
 
     #[test]

@@ -1,6 +1,7 @@
 //! The individual maintained-leaf boundary, not a program dispatcher.
 use super::NativeCollectionCall;
-use crate::memory_planner::{ProgramMemoryPlan, plan_turn_memory};
+use crate::memory_planner::{ProgramMemoryPlan, TurnMemoryFacts, TurnMemoryPlan, plan_turn_memory};
+use crate::resident::budget::native_turn_plan_cache::{NativeTurnPlanCache, with_cached_turn_plan};
 use crate::resident::budget::{self, NativeLibraryWorkBudget, payload::ResidentPayloadOwner};
 use crate::resident::general::{ResidentRegion, live};
 use mech_core::{
@@ -8,6 +9,17 @@ use mech_core::{
     MemoryRuntimeError, ResidentKernelError, ResidentKernelInputs, ResidentShape,
     ResidentValueKind, ResidentValueMut, ResidentValueRef, ResourceDemand, Value,
 };
+use std::{rc::Rc, sync::Arc};
+
+/// An optional optimization of this already-bound maintained leaf. A capacity
+/// refusal is sticky until the binding geometry itself is replaced.
+#[derive(Debug, Default)]
+pub(super) enum NativePlanCacheState {
+    #[default]
+    Cold,
+    Uncached,
+    Cached(Rc<NativeTurnPlanCache>),
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum NativeCollectionInvocationError {
@@ -69,6 +81,21 @@ pub(super) fn metadata_envelope_for<'a>(
     ports: u64,
     entries: u64,
 ) -> Option<u64> {
+    descriptor_envelope_for(schemas, ports)?.checked_add(
+        ports
+            .checked_add(entries)?
+            .checked_add(4)?
+            .checked_mul(2048)?
+            .checked_mul(16)?,
+    )
+}
+
+/// The unchanged descriptor/schema component, also charged on warm native
+/// plan hits. Split ownership, not a replacement price or smaller coefficient.
+pub(super) fn descriptor_envelope_for<'a>(
+    schemas: impl IntoIterator<Item = &'a mech_core::Schema>,
+    ports: u64,
+) -> Option<u64> {
     // SchemaTable::clone now shares its immutable entry allocation. However
     // Schema/ResolvedValueDescriptor/BoundCall/plan/template clones still own
     // their port-schema trees. Preserve their full heap/growth/coexistence
@@ -78,15 +105,7 @@ pub(super) fn metadata_envelope_for<'a>(
         |total, schema| total.checked_add(schema.clone_allocation_bound_bytes()?),
     )?;
     let schema_copies = ports.checked_mul(4)?.checked_add(4)?;
-    descriptors
-        .checked_mul(schema_copies)?
-        .checked_add(
-            ports
-                .checked_add(entries)?
-                .checked_add(4)?
-                .checked_mul(2048)?,
-        )?
-        .checked_mul(16)
+    descriptors.checked_mul(schema_copies)?.checked_mul(16)
 }
 
 #[cfg(test)]
@@ -200,7 +219,148 @@ impl NativeCollectionCall {
                 .limits
                 .max_comparison_work
                 .ok_or(NativeCollectionInvocationError::InvalidInput)?,
-            || self.invoke_scoped(inputs, output, work),
+            || self.invoke_scoped(inputs, output, work, None),
+        )?
+    }
+
+    pub(super) fn invoke_cached(
+        &self,
+        cache: &mut NativePlanCacheState,
+        inputs: &[Option<Value>],
+        output: &mut Option<Value>,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<bool, NativeCollectionInvocationError> {
+        work.with_call_limits(
+            self.memory
+                .target
+                .limits
+                .max_compute_work
+                .ok_or(NativeCollectionInvocationError::InvalidInput)?,
+            self.memory
+                .target
+                .limits
+                .max_comparison_work
+                .ok_or(NativeCollectionInvocationError::InvalidInput)?,
+            || {
+                if let NativePlanCacheState::Cached(current) = cache {
+                    if !current.validate(self.memory.target.limits, work) {
+                        return Err(NativeCollectionInvocationError::InvalidInput);
+                    }
+                }
+                if matches!(cache, NativePlanCacheState::Cold) {
+                    // Only fixed metadata is inspected by this one-time
+                    // optional-capacity decision. It never observes payload.
+                    let guard_bytes = (core::mem::size_of::<NativePlanCacheState>()
+                        + core::mem::size_of::<ResourceDemand>()
+                        + core::mem::size_of::<mech_core::MemoryBudgetLimits>()
+                        + core::mem::size_of::<mech_core::ManagedMemoryReservation>()
+                        + 3 * core::mem::size_of::<u64>())
+                        as u64;
+                    work.charge(
+                        guard_bytes
+                            .checked_mul(8)
+                            .and_then(|n| n.checked_add(256))
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        0,
+                    )?;
+                    let retained =
+                        NativeTurnPlanCache::retained_bytes(self.invocation_metadata_bytes)
+                            .ok_or(ResidentKernelError::InvalidShape)?;
+                    let finite = match retained.checked_add(self.invocation_metadata_bytes) {
+                        Some(peak) => match live::check_measurement_with_limits(
+                            CurrentMemoryFootprint::default(),
+                            ResourceDemand {
+                                turn_peak_bytes: peak,
+                                ..ResourceDemand::default()
+                            },
+                            self.memory.target.limits,
+                        ) {
+                            Ok(()) => true,
+                            Err(MemoryPlanError::TargetLimitExceeded { violation })
+                                if violation.dimension
+                                    == mech_core::MemoryBudgetDimension::TemporaryBytes =>
+                            {
+                                false
+                            }
+                            Err(error) => return Err(error.into()),
+                        },
+                        None => false,
+                    };
+                    let temporary = self
+                        .memory
+                        .target
+                        .limits
+                        .max_temporary_bytes
+                        .ok_or(NativeCollectionInvocationError::InvalidInput)?;
+                    // A reservation of C alone can fit yet starve the mandatory
+                    // current scope. Probe full C + the unchanged finite nested
+                    // temporary allowance + the two concrete scope Rc owners.
+                    // No code executes while these probe bytes are held.
+                    let probe_bytes = retained.checked_add(temporary).and_then(|n| {
+                        n.checked_add(budget::payload::native_scope_metadata_bytes())
+                    });
+                    let mut probe = if finite {
+                        match probe_bytes {
+                            Some(bytes) => match work.memory_budget().reserve_capacity(bytes) {
+                                Ok(reservation) => Some(reservation),
+                                Err(MemoryRuntimeError::BudgetExceeded { .. }) => None,
+                                Err(error) => return Err(error.into()),
+                            },
+                            None => None,
+                        }
+                    } else {
+                        None
+                    };
+                    if let Some(headroom) = probe.as_mut() {
+                        let reservation = headroom.split_capacity(retained)?;
+                        let owner = NativeTurnPlanCache::owner_bytes();
+                        // Charge the complete unchanged construction/retirement
+                        // envelope only when actually attempting cache creation.
+                        work.charge(
+                            self.invocation_metadata_bytes
+                                .checked_add(
+                                    owner
+                                        .checked_mul(8)
+                                        .and_then(|n| n.checked_add(256))
+                                        .ok_or(ResidentKernelError::InvalidShape)?,
+                                )
+                                .ok_or(ResidentKernelError::InvalidShape)?,
+                            0,
+                        )?;
+                        let descriptor_work = descriptor_envelope_for(
+                            self.memory
+                                .inputs
+                                .iter()
+                                .chain(&self.memory.outputs)
+                                .map(|p| p.descriptor.schema()),
+                            (self.memory.inputs.len() + self.memory.outputs.len()) as u64,
+                        )
+                        .ok_or(ResidentKernelError::InvalidShape)?;
+                        *cache = NativePlanCacheState::Cached(NativeTurnPlanCache::new(
+                            &self.memory,
+                            self.invocation_metadata_bytes,
+                            descriptor_work,
+                            reservation,
+                            work,
+                        )?);
+                    } else {
+                        *cache = NativePlanCacheState::Uncached;
+                    }
+                    // Unused headroom is not stored or credited to a payload.
+                    drop(probe);
+                }
+                let selected = match cache {
+                    NativePlanCacheState::Cached(current) => Some(current.clone()),
+                    NativePlanCacheState::Uncached => None,
+                    NativePlanCacheState::Cold => {
+                        return Err(NativeCollectionInvocationError::InvalidInput);
+                    }
+                };
+                // Same maintained planner/kernel, current facts, finite guards,
+                // cumulative ledger and atomic publication in both modes.
+                // No kernel or permit failure is intercepted or retried here.
+                self.invoke_scoped(inputs, output, work, selected)
+            },
         )?
     }
 
@@ -209,13 +369,19 @@ impl NativeCollectionCall {
         inputs: &[Option<Value>],
         output: &mut Option<Value>,
         work: &NativeLibraryWorkBudget,
+        cache: Option<Rc<NativeTurnPlanCache>>,
     ) -> Result<bool, NativeCollectionInvocationError> {
         if inputs.len() != self.inputs.len() {
             return Err(NativeCollectionInvocationError::InvalidInput);
         }
         // All traversal, temporary storage and retirement remain under this
         // exact cumulative account, including failed calls and repeated scopes.
-        work.charge(self.invocation_metadata_bytes, 0)?;
+        let warm = cache.as_ref().is_some_and(|cache| cache.has_base());
+        if warm {
+            cache.as_ref().unwrap().charge_probe()?;
+        } else {
+            work.charge(self.invocation_metadata_bytes, 0)?;
+        }
         let memory = work.memory_budget();
         for (input, layout) in inputs.iter().zip(&self.inputs) {
             let value = input
@@ -298,48 +464,78 @@ impl NativeCollectionCall {
             observed.turn_peak_bytes = observed
                 .turn_peak_bytes
                 .checked_add(self.invocation_metadata_bytes)
+                .and_then(|n| n.checked_add(cache.as_ref().map_or(0, |cache| cache.bytes())))
+                .ok_or(MemoryPlanError::TargetAddressOverflow)?;
+            observed.retained_nodes = observed
+                .retained_nodes
+                .checked_add(cache.as_ref().map_or(0, |cache| cache.index_nodes()))
                 .ok_or(MemoryPlanError::TargetAddressOverflow)?;
             live::check_measurement_with_limits(footprint, observed, self.memory.target.limits)
         };
-        let facts = live::facts_with(
-            &self.memory,
-            self.template.origin().node(),
-            &arguments,
-            ResidentValueRef::Snapshot(core::slice::from_ref(output)),
-            &self.schemas,
-            |value, descriptor, schemas, observed| {
-                live::footprint_with_check(value, descriptor, schemas, observed, &mut check)
-            },
-        )?;
-        // Compose the actual NativeHost call and its actual allocation family,
-        // rather than fabricating a detached test plan or changing a CPU label.
-        let node = self.template.origin().node();
-        let mut call = self.memory.clone();
-        for allocation in &mut call.allocations {
-            if let MemoryObjectOwner::NodeScratch { node: owner, .. } = &mut allocation.owner {
-                *owner = node;
-            }
-        }
-        let plan = ProgramMemoryPlan {
-            call_nodes: Box::new([node]),
-            allocations: call.allocations.clone(),
-            budget_limits: call.target.limits,
-            calls: Box::new([call]),
-            ..ProgramMemoryPlan::default()
+        let measure = |value: ResidentValueRef<'_>,
+                       descriptor: &mech_core::ResolvedValueDescriptor,
+                       schemas: &mech_core::SchemaTable,
+                       observed: &mut ResourceDemand| {
+            live::footprint_with_check(value, descriptor, schemas, observed, &mut check)
         };
-        let turn = plan_turn_memory(&plan, node, &facts)?;
+        let turn = if let Some(cache) = &cache {
+            cache.with_facts(
+                |facts| -> Result<Arc<TurnMemoryPlan>, NativeCollectionInvocationError> {
+                    live::facts_with_into(
+                        &self.memory,
+                        self.template.origin().node(),
+                        &arguments,
+                        ResidentValueRef::Snapshot(core::slice::from_ref(output)),
+                        &self.schemas,
+                        facts,
+                        measure,
+                    )?;
+                    let indices_closed = !crate::resident::text_index::has_index_scope()
+                        && crate::resident::text_index::live_demand() == (0, 0);
+                    if indices_closed && let Some(plan) = cache.matching_base(facts) {
+                        return Ok(plan);
+                    }
+                    // A warm miss pays the unchanged complete planner envelope
+                    // BEFORE old plans retire or replacement allocation begins.
+                    if warm {
+                        work.charge(self.invocation_metadata_bytes, 0)?;
+                    }
+                    cache.retire();
+                    let plan = Arc::new(self.plan_current(facts)?);
+                    if indices_closed {
+                        cache.remember_base(plan.clone());
+                    }
+                    Ok(plan)
+                },
+            )?
+        } else {
+            let facts = live::facts_with(
+                &self.memory,
+                self.template.origin().node(),
+                &arguments,
+                ResidentValueRef::Snapshot(core::slice::from_ref(output)),
+                &self.schemas,
+                measure,
+            )?;
+            Arc::new(self.plan_current(&facts)?)
+        };
         if let Some(violation) = turn.budget_violations.first() {
             return Err(budget::resource_budget_error(violation).into());
         }
         drop(arguments);
         let mut candidate = output.clone();
+        let run = || {
+            self.kernel.execute(
+                &Inputs(inputs),
+                ResidentValueMut::Snapshot(core::slice::from_mut(&mut candidate)),
+            )
+        };
         let result = budget::with_payload_admission(Some(scope.admission()), || {
-            budget::with_resident_turn_plan(turn, || {
-                self.kernel.execute(
-                    &Inputs(inputs),
-                    ResidentValueMut::Snapshot(core::slice::from_mut(&mut candidate)),
-                )
-            })
+            if let Some(cache) = cache {
+                with_cached_turn_plan(turn, cache, run)
+            } else {
+                budget::with_resident_turn_plan(turn, run)
+            }
         });
         let admission_error = scope.last_error();
         if result.is_err() || admission_error.is_some() {
@@ -366,5 +562,28 @@ impl NativeCollectionCall {
         }
         *output = candidate;
         Ok(changed)
+    }
+
+    fn plan_current(
+        &self,
+        facts: &TurnMemoryFacts,
+    ) -> Result<TurnMemoryPlan, NativeCollectionInvocationError> {
+        // Compose the actual NativeHost call and its actual allocation family,
+        // rather than fabricating a detached test plan or changing a CPU label.
+        let node = self.template.origin().node();
+        let mut call = self.memory.clone();
+        for allocation in &mut call.allocations {
+            if let MemoryObjectOwner::NodeScratch { node: owner, .. } = &mut allocation.owner {
+                *owner = node;
+            }
+        }
+        let plan = ProgramMemoryPlan {
+            call_nodes: Box::new([node]),
+            allocations: call.allocations.clone(),
+            budget_limits: call.target.limits,
+            calls: Box::new([call]),
+            ..ProgramMemoryPlan::default()
+        };
+        Ok(plan_turn_memory(&plan, node, facts)?)
     }
 }

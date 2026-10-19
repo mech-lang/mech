@@ -186,11 +186,18 @@ pub(super) fn typed_ir_sha256(plan: &NativeIterationArtifactPlan) -> [u8; 32] {
             // Such a plan is rejected by both engine proof and scalar emitter.
             // Keep it disjoint from every valid frozen scalar action encoding.
             NativeIterationAction::LibraryCall { .. }
+            | NativeIterationAction::PrepareU64Range { .. }
+            | NativeIterationAction::PrepareStringSpanSelector { .. }
+            | NativeIterationAction::ProjectStringSpan { .. }
+            | NativeIterationAction::ProjectStringMapEntry { .. }
             | NativeIterationAction::Structural { .. }
             | NativeIterationAction::CollectionBegin { .. }
             | NativeIterationAction::CollectionElement { .. }
             | NativeIterationAction::CollectionPush { .. }
-            | NativeIterationAction::CollectionFinish { .. } => hash.update([255]),
+            | NativeIterationAction::CollectionFinish { .. }
+            | NativeIterationAction::HistogramQueryStep { .. }
+            | NativeIterationAction::HistogramFinish { .. }
+            | NativeIterationAction::TextJoinFinish { .. } => hash.update([255]),
             NativeIterationAction::Scalar(action) => {
                 hash.update([0]);
                 match action {
