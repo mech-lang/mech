@@ -2516,6 +2516,16 @@ jobs:
         run: rm -rf src/wasm/pkg
 
       - name: Run headless Chrome WASM tests
+        # wasm-bindgen-test polls DOM output with execute/sync. Its synchronous
+        # Rust tests can share one browser task, so Chrome's default 30s script
+        # limit can expire before the runner can scrape any completed output.
+        # Keep explicit finite script/runner/step limits; never retry or filter
+        # tests to turn an unobserved result into a success.
+        timeout-minutes: 15
+        env:
+          WASM_BINDGEN_TEST_WEBDRIVER_JSON: ${{ github.workspace }}/tests/browser/wasm-bindgen-webdriver.json
+          WASM_BINDGEN_TEST_TIMEOUT: "180"
+          CHROMEDRIVER_ARGS: --verbose --log-path=${{ runner.temp }}/mech-project-browser-chromedriver.log
         run: |
           wasm-pack test \
             --headless \
@@ -2527,6 +2537,14 @@ jobs:
             --features "browser_project,set_union,set_element_of" \
             -- \
             --nocapture
+
+      - name: Retain headless WebDriver failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-browser-webdriver
+          path: ${{ runner.temp }}/mech-project-browser-chromedriver.log
+          if-no-files-found: warn
 
       - name: Smoke test formatted static document in Chrome
         run: |

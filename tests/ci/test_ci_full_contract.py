@@ -1486,6 +1486,37 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("smoke-served-resident-ekf-browser.sh", ekf_wgpu)
         self.assertNotIn("smoke-served-resident-nbody-browser.sh", compute)
 
+    def test_project_wasm_driver_and_runner_have_separate_finite_budgets(self):
+        steps = job_steps(FULL, "project-browser")
+        step = next(step for step in steps if "name: Run headless Chrome WASM tests" in step)
+        self.assertIn("timeout-minutes: 15", step)
+        self.assertIn(
+            "WASM_BINDGEN_TEST_WEBDRIVER_JSON: ${{ github.workspace }}/tests/browser/wasm-bindgen-webdriver.json",
+            step,
+        )
+        self.assertIn('WASM_BINDGEN_TEST_TIMEOUT: "180"', step)
+        self.assertIn(
+            "CHROMEDRIVER_ARGS: --verbose --log-path=${{ runner.temp }}/mech-project-browser-chromedriver.log",
+            step,
+        )
+        configuration = json.loads(
+            (ROOT / "tests/browser/wasm-bindgen-webdriver.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(configuration, {"timeouts": {"script": 120000}})
+        self.assertLess(configuration["timeouts"]["script"], 180 * 1000)
+        # Preserve the complete release browser suite and all existing flags.
+        command = shlex.split(step.split("        run: |\n", 1)[1].replace("\\\n", " "))
+        self.assertEqual(command, [
+            "wasm-pack", "test", "--headless", "--chrome", "--release", "src/wasm", "--lib",
+            "--no-default-features", "--features", "browser_project,set_union,set_element_of", "--", "--nocapture",
+        ])
+        self.assertNotIn("continue-on-error", step)
+        self.assertNotIn("retry", step.split("        run: |\n", 1)[1])
+        diagnostic = next(step for step in steps if "name: Retain headless WebDriver failure diagnostics" in step)
+        self.assertIn("if: failure()", diagnostic)
+        self.assertIn("uses: actions/upload-artifact@v4", diagnostic)
+        self.assertIn("path: ${{ runner.temp }}/mech-project-browser-chromedriver.log", diagnostic)
+
     def test_long_browser_canaries_use_progress_watchdogs_with_hard_caps(self):
         static_architecture = job_block(CI, "static-architecture")
         self.assertIn(
