@@ -149,7 +149,12 @@ now lowers scalar/String matrix comprehensions and shape-preserving unary
 pattern-function lifting to generated loops, including filters and nested
 generators. It uses the same artifact, current-visit proof, scalar emitter and
 invocation budgets; collection helpers project elements and stage results,
-never interpret body operations. This does not yet lower the complete benchmark:
+never interpret body operations. Maintained numeric ranges, String grapheme
+indexing/slicing, shallow matrix
+conversion and closed pure initialization are also locally qualified through
+actual standalone executables. These are fresh stateless invocations, not
+persistent reactive applications. This does not yet lower the complete benchmark:
+general matrix/map access and operations,
 Set/composite outputs, element-wise counts, resource/state integration and
 whole-program optimization/qualification remain required. Older `sequence/packed-windows`
 timings are separately scoped migration diagnostics, not completion of this

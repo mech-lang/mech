@@ -292,6 +292,71 @@
     "benchmark_measurements": 0,
     "remaining": "Fresh clean exact-head review and complete GitHub CI, plus the full unchanged follow_up_roadmap: native language/resource/canonical production integration, all ten programs, full125M/all7canonical language-level workload and same-binary trusted/secured release measurements, profiling and optimization. No readiness or merge is authorized."
   },
+  "native_ranges_string_selection_and_pure_activation": {
+    "status": "LOCALLY_LINKED_QUALIFIED_NOT_FULL_WORKLOAD_FRESH_REVIEW_AND_CI_REQUIRED",
+    "source_commit": "e7c0e8c224ae317eb85ad07f2bc8ed7cdd1d2ff9",
+    "source_tree": "2c207c7e0129a943edb9514ed9e35253dde6b51b",
+    "source_parent": "875f33d72dac201d7575dbd09582ae681f93dd08",
+    "qualified_31_file_patch_sha256": "9a8148a8ba785c171131cdf1fd06f90275f07f5b3da7c89790dfda02ca55ac9e",
+    "workspace_lock_sha256": "513c9718e6bf2ec13da10d56a2386a243d50a9285942ff874e0470c2fd556068",
+    "architecture": [
+      "Private witnesses select the actual maintained numeric range, String selection and matrix conversion factories. Exact schemas and selected contracts remain authoritative; names alone do not authorize native calls. The managed helper carries three typed operands for stepped ranges. Managed ABI6 rejects old ABI5 Objects; typed IR2/work policy3 and frozen scalar ABIs remain unchanged.",
+      "Canonical SnapshotString selection uses the maintained grapheme selection kernel, pre-admitted staging and ordinary snapshot publication. Closed pure activation computations execute through the same canonical schedule and generated CFG before each fresh stateless invocation turn. No compile-time value execution, retained reactive instance, whole-program interpreter, packed-windows bridge, streaming or fusion is claimed.",
+      "Ordinary resident root ranges now retain live geometry in snapshot shape seeds rather than incorrectly requiring fixed dense geometry. Original and decoded artifacts change extent, preserve output/epoch on invalid input and recover without replacing the program."
+    ],
+    "ci_correction": {
+      "failed_run": 39178354299,
+      "failed_job": 117834901148,
+      "cause": "Scalar-only canonical-native compilation reports unused Hooks::output under -Dwarnings. The method is only used by the managed-program emitter.",
+      "fix": "Gate the method itself with canonical-native-program and remove the unreachable non-program branch; no warning suppression.",
+      "qualification": "v407 passes the scalar-only compiler check, compiles and discovers exactly the previously failing canonical_artifact_application ignored test, and executes all31 normal managed-program methods. Discovery is not execution credit for the scalar-application linked test.",
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v407-native-program-feature-gate.log", "sha256": "f49093b8a5c2471d5777e4ba8486deb4979d5f64eebd15dce8211f84ccaa832a"},
+      "driver": {"path": "tmp/pr-stack-evidence/qualify-native-program-feature-gate-v407.zsh", "sha256": "8ffe204ee4f34641ec248365c66c61e25f6eb2e44576ad309e6aadd7ffe0e238"}
+    },
+    "broad_prelink": {
+      "finished_utc": "2026-10-19T01:28:16Z",
+      "exit": 0,
+      "rust_methods_passed": 1044,
+      "explicit_linked_methods_ignored": 2,
+      "ci_contract_methods": 155,
+      "scope": "Frozen source-parent plus patch cc6cc1c14003cdaecfc3e01153d5de88219d1b9d4045fa42c3f2618b0c0e0aad, before only the Hooks::output cfg correction above. Engine760/source-review45/GPU-library69/native integrations73/stdlib2/applications17/stdlib conformance68/tail-control10 pass. Four isolated runtime/resident profiles and static/format gates pass. This count is not a language coverage percentage or an exact post-cfg full-suite run.",
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v403-general-native-prelink.log", "sha256": "71017f952a7b3c8adb2d97926e2b391b5a01793aa3a87858db9b8fcf3dc4743b"},
+      "driver": {"path": "tmp/pr-stack-evidence/qualify-general-native-prelink-v403.zsh", "sha256": "0271b2544e25db7e163e65be788574d1b3bf989404456c81c48700af886cb420"}
+    },
+    "actual_linked": {
+      "finished_utc": "2026-10-19T01:43:19Z",
+      "exit": 0,
+      "attribution": "Clean committed source_commit remains unchanged through both exact-one ignored-test executions, all gates and independent reconciliation. The parent-to-commit patch equals the frozen v407 qualified patch exactly. Historical receipts keep their original source/ABI identities.",
+      "profile": "nightly-2026-03-03; locked/offline; serialj1; debug/testopt0/debug0; assertions and overflow checks enabled; incremental disabled. Correctness, not timing.",
+      "executables": [
+        {"name": "root", "sha256": "53ac8ba4fd5dd7922ebc24538de0fc08fdafedf64bba64e5ea80cda6fecf4008", "cases": 13, "success_or_recovery": 4, "required_errors": 9, "compiled_unit_records": 114},
+        {"name": "lexical", "sha256": "120d6833782498fe980afe39183fe79d680aad8703924168687d9b46f5133444", "cases": 15, "success_or_recovery": 7, "required_errors": 8, "compiled_unit_records": 114},
+        {"name": "collection", "sha256": "ccb0efefe624ee9c2bde4da5fd0a7ebac848fcbbd571372288f7482214dbca53", "cases": 13, "success_or_recovery": 4, "required_errors": 9, "compiled_unit_records": 114},
+        {"name": "windows", "sha256": "738c1133fab9bcfca7c7a2f529fbbbe86eee403790242fedcc26a6d075e161f6", "cases": 16, "success_or_recovery": 6, "required_errors": 10, "compiled_unit_records": 114},
+        {"name": "scalar-iteration", "sha256": "284c141b0017ac69617aa3920baa86aef9c92cddcd566dbc1c25f27a00cfb39f", "cases": 17, "success_or_recovery": 4, "required_errors": 13, "compiled_unit_records": 114}
+      ],
+      "total_runtime_process_cases": 74,
+      "success_or_recovery": 25,
+      "required_runtime_errors": 49,
+      "coverage": "Retained root/lexical/collection and scalar fixtures plus ordinary-language overlapping windows. ASCII/empty/Unicode/zero-width/oversized-width, closed stepped initialization, three-operand ranges, matrix conversion, String scalar/slice/all selection, late arithmetic and invalid range-step failure preserve atomic publication and recovery. Independent literal window and closed-range oracles supplement original/decoded resident and JIT comparisons.",
+      "independently_reconciled_binary_and_generated_pins": 85,
+      "independently_reconciled_raw_runtime_streams": 148,
+      "independently_reconciled_raw_build_streams": 20,
+      "independently_reconciled_saved_mutated_inputs": 9,
+      "restored_build_and_recovery_passed": true,
+      "runtime_closure": "All actual Cargo compiler-artifact messages reconcile against resolved metadata and exclude source/parser/Cranelift/JIT features. Each application records114 compiled units. Existing selected-machine unused-code warnings remain; warning-free standalone builds are not claimed.",
+      "ci_contract_methods": 155,
+      "other_gates": ["managed-runtime-only build", "unsafe audit", "warning policy", "module layout", "format", "diff", "unchanged clean source"],
+      "managed_receipt": {"path": "tmp/pr-stack-evidence/canonical-program-linked-v401/qualification.json", "sha256": "18fc09f048b538c54f4d96383938a96d78d93da3adb6110ba8d866ea976554e7"},
+      "scalar_receipt": {"path": "tmp/pr-stack-evidence/canonical-iteration-linked-v401/qualification.json", "sha256": "7c4981cb3fd79b4c1c1afac4bca4c705961643d1e91115b1130118ef554669fc"},
+      "log": {"path": "tmp/pr-stack-evidence/checked-aot-v401-native-comprehension-linked.log", "sha256": "7e4de2a1a25c3a4e4a77da7e9b065bf40891aad2c9d7a55addc60b9cc0a219ea"},
+      "driver": {"path": "tmp/pr-stack-evidence/qualify-native-windows-linked-v401.zsh", "sha256": "c0f991f6d4d4b324a7f9423f88ccc1bf600188ab5ceca9fb31942fcba2f547c5"},
+      "read_only_reconciler": {"path": "tmp/pr-stack-evidence/reconcile-native-windows-linked-v401.js", "sha256": "13b343eed721c70da38edb0b5d2a84e05c4d3cd8bb461feb9bc1160c39d0ffaf"}
+    },
+    "default_limits_changed": false,
+    "new_benchmark_measurements": 0,
+    "remaining": "All requirements in follow_up_roadmap remain in scope, including remaining native operations/state/resources, canonical production integration, all ten actual programs, full125M/all7histogram execution, same-binary trusted/secured timings and optimization. Fresh exact-head review and complete green CI remain required. Keep draft and unmerged."
+  },
   "benchmark_measurements": 0,
   "not_established": ["complete production canonical build route", "native resource-host lifecycle", "remaining native Set/composite/matrix-block comprehensions and element-wise counts/state/FSM", "all ten idiomatic programs", "full-size canonical k-nucleotide", "new canonical native performance result", "complete final-head CI or clean review"],
   "remaining_full_objective": "checked-aot-workload-progress-v1.json follow_up_roadmap remains required. The separate legacy-native I/O diagnostic is native-io-migration-timing-v1.json; its measurements do not qualify this canonical backend or resolve the independent source compiler."

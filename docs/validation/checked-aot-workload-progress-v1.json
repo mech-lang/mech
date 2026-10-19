@@ -1,7 +1,7 @@
 {
   "schema": "mech.checked-aot-workload-progress.v1",
   "status": "INCOMPLETE_IMPLEMENTATION_NOT_BENCHMARK_QUALIFIED",
-  "latest_qualification": "collection_accounting_and_link_provenance_correction",
+  "latest_qualification": "native_ranges_string_selection_and_pure_activation",
   "pull_request": "https://github.com/mech-lang/mech/pull/905",
   "baseline": "c4190315672337f039efc743a970263627f75834",
   "foundations_pr_scope": {
@@ -19,7 +19,7 @@
       {
         "order": 1,
         "name": "Qualify generated mixed execution through an actual linked process",
-        "current_state": "PR906 source77aec3f74060d1b7a570b687e1f3c63924f03fb3 fixes filtered wildcard cumulative compute and retained String temporary peaks;69Rust/155CI gates pass. Clean-source standalone qualification passes4executables/58runtimecases and9actual rejected build mutations plus restored build/recovery;68pins/116runtime streams/20build streams and9saved mutations independently reconcile. ManagedABI5/IR2/work3, scalar ABIs unchanged. Runtime-only compiled closures exclude source/parser/codegen. See collection_accounting_and_link_provenance_correction; full production/resource/workload qualification remains incomplete.",
+        "current_state": "PR906 source e7c0e8c224ae317eb85ad07f2bc8ed7cdd1d2ff9 adds maintained ranges/String selection/matrix conversion and generated closed pure activation; fixes the published scalar-only Hooks::output cfg failure. Clean-source standalone qualification passes5executables/74runtimecases and9actual rejected build mutations plus restored build/recovery;85pins/148runtime streams/20build streams independently reconcile. ManagedABI6/IR2/work3, scalar ABIs unchanged. Runtime-only compiled closures exclude source/parser/codegen. See native_ranges_string_selection_and_pure_activation; production/resource/workload qualification and fresh exact-head review/full CI remain incomplete.",
         "completion_criteria": [
           "Build and actually execute mixed linked applications using the same canonical artifact, selected maintained root/lexical bindings, arena, current-visit checks, finite memory policy and single cumulative work account as JIT execution.",
           "Reconcile original/decoded resident, JIT and linked outputs, error ordering, denial atomicity and next-invocation recovery. Qualify linked metadata/provenance and mutation rejection rather than inferring them from Object metadata.",
@@ -857,6 +857,13 @@
     "qualification": "Retained v368 before-fix log shows both new regressions wrongly succeed. After-fix original/decoded regressions check typed resource denial, unchanged publication, complete workspace return and sameJIT recovery. New nestedString/capture/alias/fold and private handle/ledger tests pass. Frozen prelink69Rust+155CI/statics, then clean-source4actual linked binaries/58runtimecases+9negativebuilds+restoredbuild/recovery+155CI/statics pass. Independent read-only reconciliation checks68binary/generatedpins,116runtime streams,9savedmutations,20build streams, current identity versions, restored hashes and actual runtime-only compiled closures.",
     "benchmark_samples": 0,
     "not_established": "Fresh exact-head clean review and complete GitHub CI; remaining native constructs and canonical capability-host/resource/publication integration; allten programs, full125M/all7native histogram workload; same-binary trusted/secured release timing, full-program profiling/optimization/configuration. Older evidence retains original sources. Keep draft/unmerged; entire follow_up_roadmap still required."
+  },
+  "native_ranges_string_selection_and_pure_activation": {
+    "source_commit": "e7c0e8c224ae317eb85ad07f2bc8ed7cdd1d2ff9",
+    "receipt": "canonical-managed-native-linked-v1.json native_ranges_string_selection_and_pure_activation",
+    "implemented": "Actual maintained range/String selection/matrix conversion leaves, ABI6 three-operand helper, canonical snapshot grapheme selection, live resident root range geometry and generated closed pure activation on fresh stateless invocations. Scalar-only Hooks::output cfg fixes published CI without suppressing warnings.",
+    "qualification": "Broad pre-cfg1044Rust/155CI plus4isolatedprofiles pass; post-cfg exact failing target compiles/discovers and31managed methods pass. Clean committed source passes5actual linked executables/74runtimecases,9negativebuildmutations/restored build/recovery and155CI/statics. Independently reconciled85pins/148runtime streams/20build streams. No product defaults changed; no benchmark samples.",
+    "not_established": "General matrix/map access and remaining operations, element-wise counts, persistent state/FSM, full capability hosts and canonical CLI migration, allten programs/full125M/all7histograms, same-binary secured/trusted release timings/optimization and fresh clean review/full green CI remain required. Keep draft/unmerged; the full follow_up_roadmap is unchanged."
   },
   "remaining": ["Complete follow_up_roadmap in its stated order; the foundations correction does not discharge the full implementation/benchmark brief."],
   "benchmark_samples": 0
