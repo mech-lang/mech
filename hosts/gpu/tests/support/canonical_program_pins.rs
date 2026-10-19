@@ -39,13 +39,18 @@ enum Mutation {
     AppendWhitespace,
     ManifestPin,
 }
-fn build(project: &GeneratedLinkedApplication, binary_name: &str, target: &Path) -> Command {
+fn build(
+    project: &GeneratedLinkedApplication,
+    binary_name: &str,
+    target: &Path,
+    release: bool,
+) -> Command {
     let mut command = CargoInvocation::build(
         project.manifest_path(),
         binary_name,
         None,
         target,
-        false,
+        release,
         true,
     )
     .unwrap()
@@ -64,6 +69,7 @@ pub(super) fn qualify(
     binary: &Path,
     target: &Path,
     directory: &Path,
+    release: bool,
 ) -> Value {
     let evidence = directory.join("pin-mutations");
     fs::create_dir(&evidence).unwrap();
@@ -155,7 +161,7 @@ pub(super) fn qualify(
         };
         fs::write(&restore.path, &changed).unwrap();
         let result = bounded(
-            &mut build(project, binary_name, target),
+            &mut build(project, binary_name, target, release),
             &evidence,
             label,
             120,
@@ -182,7 +188,7 @@ pub(super) fn qualify(
         rejections.push(json!({"name":label,"input":file,"original_sha256":original_pin,"mutated_input":retained,"mutated_sha256":changed_pin,"restored_sha256":pin(&project.root().join(file)),"diagnostic":diagnostic,"exit":result.status.code(),"stdout_sha256":hash(&result.stdout),"stderr_sha256":hash(&result.stderr)}));
     }
     let restored = bounded(
-        &mut build(project, binary_name, target),
+        &mut build(project, binary_name, target, release),
         &evidence,
         "restored-build",
         120,
@@ -192,16 +198,20 @@ pub(super) fn qualify(
         "{}",
         String::from_utf8_lossy(&restored.stderr)
     );
+    let restored_messages = parse_cargo_build_messages(Cursor::new(&restored.stdout)).unwrap();
+    assert_eq!(restored_messages.build_finished, Some(true));
+    let restored_binary = restored_messages
+        .select_binary(binary_name)
+        .unwrap()
+        .executable;
     assert_eq!(
-        parse_cargo_build_messages(Cursor::new(&restored.stdout))
-            .unwrap()
-            .build_finished,
-        Some(true)
+        restored_binary, binary,
+        "restored build selected a different executable/profile instead of the qualified binary"
     );
     assert_eq!(
         pin(binary),
         binary_pin,
         "restored build changed the qualified binary"
     );
-    json!({"rejections":rejections,"restored_build_exit":0,"binary_sha256_before_and_after":binary_pin,"restored_build_stdout_sha256":hash(&restored.stdout),"restored_build_stderr_sha256":hash(&restored.stderr)})
+    json!({"rejections":rejections,"rust_profile":if release {"release"} else {"debug"},"restored_executable":restored_binary,"restored_build_exit":0,"binary_sha256_before_and_after":binary_pin,"restored_build_stdout_sha256":hash(&restored.stdout),"restored_build_stderr_sha256":hash(&restored.stderr)})
 }

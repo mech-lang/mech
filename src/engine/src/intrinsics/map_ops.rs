@@ -81,7 +81,8 @@ pub(crate) fn sort_positions<'a>(
             let (mut left, mut right) = (start, middle);
             for output in &mut scratch[start..end] {
                 if left < middle
-                    && (right == end || key(order[left]).as_bytes() <= key(order[right]).as_bytes())
+                    && (right == end
+                        || histogram_key_order(key(order[left]), key(order[right])).is_le())
                 {
                     *output = order[left];
                     left += 1;
@@ -470,11 +471,43 @@ pub(crate) fn run_count<'a>(order: &[usize], key: impl Fn(usize) -> &'a str) -> 
     }
     count
 }
+/// Exact String key order used by the ordinary family and selected native sink.
+pub(crate) fn histogram_key_order(left: &str, right: &str) -> core::cmp::Ordering {
+    left.as_bytes().cmp(right.as_bytes())
+}
+
+pub(crate) fn increment_histogram_count(count: u64) -> Option<u64> {
+    count.checked_add(1)
+}
+
+/// The ordinary resident family and selected sink share these literal prices.
+#[cfg(feature = "resident-artifact")]
+pub(crate) fn canonical_finalization_work(count: u64, payload: u64) -> Option<u64> {
+    payload
+        .checked_mul(3)?
+        .checked_add(count.checked_mul(8)?)?
+        .checked_add(8)
+}
+
+#[cfg(feature = "resident-artifact")]
+pub(crate) fn canonical_draft_bytes(count: u64) -> Option<u64> {
+    count.checked_mul(
+        (core::mem::size_of::<MapEntryDraft>()
+            + 2 * core::mem::size_of::<mech_core::snapshot::ValueDataDraft>()
+            + core::mem::size_of::<String>()) as u64,
+    )
+}
+
+#[cfg(feature = "resident-artifact")]
+pub(crate) fn histogram_scratch_bytes(count: usize) -> Option<usize> {
+    count
+        .checked_mul(2 * core::mem::size_of::<usize>() + core::mem::size_of::<StringRadixFrame>())?
+        .checked_add(STRING_RADIX_FIXED_BYTES)
+}
+
 pub(crate) fn count_run(start: usize, end: usize) -> MResult<u64> {
     (start..end).try_fold(0u64, |count, _| {
-        count
-            .checked_add(1)
-            .ok_or_else(|| invalid("histogram count exceeds u64::MAX"))
+        increment_histogram_count(count).ok_or_else(|| invalid("histogram count exceeds u64::MAX"))
     })
 }
 

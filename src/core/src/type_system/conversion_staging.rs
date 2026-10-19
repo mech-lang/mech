@@ -53,8 +53,9 @@ fn dimension(value: &DimensionExpr) -> Option<Geometry> {
                 g.child(dimension(value)?)?;
             }
         }
-        // The exact published core unique-witness solver also searches a
-        // bare Parameter. Constants and parameter-free expressions do not.
+        // Conservatively reserve the parameter-bearing solver allowance even
+        // when a bare Parameter uses direct assignment. Constants and
+        // parameter-free expressions do not need that allowance.
         DimensionExpr::Parameter(_) => g.search = true,
         _ => {}
     }

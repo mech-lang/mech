@@ -140,6 +140,15 @@ impl<'a> NativeValueArena<'a> {
         })
     }
 
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(super) fn test_current_value(&self, slot: u32) -> Option<&Value> {
+        self.values.values().get(slot as usize)?.as_ref()
+    }
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(super) fn test_handle_value(&self, handle: NativeValueHandle) -> Option<&Value> {
+        self.values.values().get(self.index(handle).ok()?)?.as_ref()
+    }
+
     fn index(&self, handle: NativeValueHandle) -> Result<usize, NativeValueError> {
         let index = handle.slot as usize;
         if handle.domain != self.values.domain_id()
@@ -193,6 +202,56 @@ impl<'a> NativeValueArena<'a> {
             .and_then(Option::as_ref)
             .cloned()
             .ok_or(NativeValueError::StaleHandle)
+    }
+
+    /// Capture an existing current generation without publishing/replacing a
+    /// slot. Only the certified generated caller can obtain this handle.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(super) fn current_handle(
+        &self,
+        slot: u32,
+        work: &mut NativeWorkMeter,
+    ) -> Result<NativeValueHandle, NativeValueError> {
+        self.check_work(work)?;
+        work.charge(NativeExecutionPhase::Setup, 16)?;
+        let index = slot as usize;
+        if self
+            .values
+            .values()
+            .get(index)
+            .and_then(Option::as_ref)
+            .is_none()
+        {
+            return Err(NativeValueError::StaleHandle);
+        }
+        Ok(NativeValueHandle {
+            domain: self.values.domain_id(),
+            slot,
+            generation: self.generations.values()[index],
+        })
+    }
+
+    /// Constant-time ownership observation, never payload access or a value
+    /// read capability. Includes an old scalar until replacement actually drops it.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(super) fn current_retained_bytes(
+        &self,
+        slot: u32,
+        work: &mut NativeWorkMeter,
+    ) -> Result<Option<u64>, NativeValueError> {
+        self.check_work(work)?;
+        work.charge(NativeExecutionPhase::Setup, 16)?;
+        self.values
+            .values()
+            .get(slot as usize)
+            .ok_or(NativeValueError::InvalidSlot)?
+            .as_ref()
+            .map(|value| {
+                value
+                    .memory_budget_retained_bytes(&self.budget)
+                    .ok_or(NativeValueError::UnadmittedPayload)
+            })
+            .transpose()
     }
 
     /// Only the certified generated caller may retire a lexical local. Payload

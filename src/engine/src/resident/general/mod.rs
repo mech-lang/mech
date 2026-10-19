@@ -1,6 +1,12 @@
 //! Schema-driven activation for the pre-launch dense numeric resident profile.
 
 mod closed_comprehension;
+#[cfg(all(
+    test,
+    any(feature = "full_source", feature = "full_compiler"),
+    feature = "convert"
+))]
+mod closed_set_conversion_tests;
 mod comprehension;
 mod execution;
 mod iteration;
@@ -5409,6 +5415,7 @@ fn closed_producer_disposition(
             && operation.operation_name == "composite-pack")
         || closed_enum_pack_operation(operation)
         || (operation.module_path.as_ref() == ["convert"] && operation.operation_name == "kind")
+        || closed_set_conversion_operation(operation)
         || closed_present_option_operation(operation)
         || closed_string_concat_operation(operation)
         || closed_set_definition_operation(operation)
@@ -5438,12 +5445,11 @@ fn closed_producer_disposition(
     // These maintained pure operations have resident implementations, but no
     // bounded closed-value analysis owner yet. Record that limit explicitly;
     // recognizing a public spelling does not authorize an unimplemented fold.
-    if operation.module_path.as_ref() == ["convert"] && operation.operation_name == "set"
-        || operation.module_path.as_ref() == ["map"]
-            && matches!(
-                operation.operation_name.as_str(),
-                "histogram" | "keys" | "values"
-            )
+    if operation.module_path.as_ref() == ["map"]
+        && matches!(
+            operation.operation_name.as_str(),
+            "histogram" | "keys" | "values"
+        )
         || operation.module_path.as_ref() == ["number"]
             && matches!(operation.operation_name.as_str(), "format" | "parse-u64")
         || operation.module_path.as_ref() == ["sequence"]
@@ -5488,6 +5494,12 @@ fn closed_producer_disposition(
 
 fn closed_iterative_operand_producer(operation: &OperationReference) -> bool {
     closed_producer_disposition(operation) == Some(ClosedProducerDisposition::Value)
+}
+
+fn closed_set_conversion_operation(operation: &OperationReference) -> bool {
+    cfg!(feature = "convert")
+        && operation.module_path.as_ref() == ["convert"]
+        && operation.operation_name == "set"
 }
 
 fn closed_ekf_operation(
@@ -9256,6 +9268,65 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     &SnapshotValidationContext::new(artifact.schemas())
                         .with_canonicalization_budget(budget),
                 )
+            } else if closed_set_conversion_operation(operation.operation) {
+                #[cfg(not(feature = "convert"))]
+                return Ok(None);
+                #[cfg(feature = "convert")]
+                {
+                    let [input] = inputs.as_slice() else {
+                        return Ok(None);
+                    };
+                    let Some(source) = constant_comparison_operand_at_depth(
+                        artifact,
+                        node,
+                        *input,
+                        facts,
+                        next_depth,
+                        budget,
+                        analysis,
+                        allow_large_direct_dense,
+                    )?
+                    else {
+                        return Ok(None);
+                    };
+                    let Some(schemas) = analysis
+                        .schemas
+                        .admitted_schemas(artifact, &analysis.construction)
+                    else {
+                        return Ok(None);
+                    };
+                    let mut target_shape_error = None;
+                    let result = super::set_conversion::fold_closed(
+                        &schemas,
+                        &source.value,
+                        target_schema_id,
+                        || {
+                            slot_shape(artifact, slot, facts).map_err(|error| {
+                                target_shape_error = Some(error);
+                                ResidentKernelError::InvalidShape
+                            })
+                        },
+                        || analysis.construction.preparation_meter(),
+                        |cost| {
+                            if analysis.construction.charge_compute_with_comparison(
+                                cost.temporary_bytes(),
+                                cost.compute_work(),
+                                cost.comparison_work(),
+                            ) {
+                                Ok(())
+                            } else {
+                                Err(ResidentKernelError::InvalidShape)
+                            }
+                        },
+                    );
+                    if let Some(error) = target_shape_error {
+                        return Err(error);
+                    }
+                    let Ok(value) = result else {
+                        return Ok(None);
+                    };
+                    Ok(value)
+                }
             } else if operation.operation.module_path.as_ref() == ["convert"]
                 && operation.operation.operation_name == "kind"
             {
@@ -12515,6 +12586,11 @@ fn resident_slot_lifetime(
     }
 }
 
+#[cfg(test)]
+thread_local! {
+    static SLOT_SHAPE_PARAMETER_COPIES: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
 fn slot_shape(
     artifact: &ProgramArtifact,
     slot: CellSlotId,
@@ -12548,6 +12624,11 @@ fn slot_shape(
             .entry(declaration.schema)
             .expect("validated slot schema")
             .schema();
+        if shape.parameter_values().len() != schema.dimension_parameters().len() {
+            return Err(ResidentActivationError::UnresolvedShape { slot });
+        }
+        #[cfg(test)]
+        SLOT_SHAPE_PARAMETER_COPIES.with(|copies| copies.set(copies.get().saturating_add(1)));
         return schema
             .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
             .map_err(|_| ResidentActivationError::UnresolvedShape { slot });
@@ -12558,6 +12639,11 @@ fn slot_shape(
             .entry(declaration.schema)
             .expect("validated slot schema")
             .schema();
+        if shape.parameter_values().len() != schema.dimension_parameters().len() {
+            return Err(ResidentActivationError::UnresolvedShape { slot });
+        }
+        #[cfg(test)]
+        SLOT_SHAPE_PARAMETER_COPIES.with(|copies| copies.set(copies.get().saturating_add(1)));
         return schema
             .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
             .map_err(|_| ResidentActivationError::UnresolvedShape { slot });
@@ -15436,7 +15522,7 @@ mod shape_fact_tests {
         snapshot::{F32Bits, F64Bits, SnapshotValidationContext},
     };
 
-    #[cfg(feature = "full_source")]
+    #[cfg(any(feature = "full_source", feature = "full_compiler"))]
     pub(super) fn closed_collection_source(source: &str) -> ProgramArtifact {
         use mech_syntax::document::{
             AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
@@ -22382,6 +22468,8 @@ mod shape_fact_tests {
             (&["core"], "composite-pack"),
             (&["core"], "enum-pack"),
             (&["convert"], "kind"),
+            #[cfg(feature = "convert")]
+            (&["convert"], "set"),
             (&["option"], "some"),
             (&["string"], "concat"),
             (&["set"], "define"),
@@ -22475,11 +22563,6 @@ mod shape_fact_tests {
             (&["compare"], "gte"),
         ];
         const DEFERRED_PRODUCERS: &[(&[&str], &str, ClosedProducerDisposition)] = &[
-            (
-                &["convert"],
-                "set",
-                ClosedProducerDisposition::DeferredPureValue,
-            ),
             (
                 &["map"],
                 "histogram",

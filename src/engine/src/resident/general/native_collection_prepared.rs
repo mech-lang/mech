@@ -3,7 +3,9 @@
 use super::{
     Error, NativeCollectionCall, NativeProgramLibraryTemplate, bind_current, current_template,
     finite_limits,
-    invocation::{NativeCollectionInvocationError as InvokeError, metadata_envelope_for},
+    invocation::{
+        NativeCollectionInvocationError as InvokeError, NativePlanCacheState, metadata_envelope_for,
+    },
 };
 use crate::{
     ProgramArtifact,
@@ -14,6 +16,14 @@ use mech_core::{
     MemoryBudgetLimits, MemoryPlanError, ResidentKernelFactory, ResourceDemand, SchemaTable, Value,
 };
 use std::sync::Arc;
+
+#[path = "native_collection_histogram.rs"]
+mod histogram;
+#[path = "native_collection_string_map_entry.rs"]
+mod string_map_entry;
+#[path = "native_collection_string_span.rs"]
+mod string_span;
+pub use string_span::NativeSelectedStringSpanSelector;
 
 /// Compiler-owned selection/immutable schemas, not a bound runtime call or
 /// authority to enter its source site. No artifact/catalog traversal occurs
@@ -32,6 +42,8 @@ pub struct NativePreparedLibraryCall {
     lookup_work: u64,
     output_follows_input: bool,
     cache_identity: Arc<()>,
+    span_selector_metadata_bytes: u64,
+    span_selector_work: u64,
 }
 
 /// One owning native invocation's lazy per-site binding slot. This retains
@@ -45,10 +57,13 @@ pub struct NativePreparedLibraryCallCache {
 #[derive(Debug)]
 struct CachedBinding {
     // Retire all bound metadata before releasing its admitted capacity.
+    plans: NativePlanCacheState,
     call: Option<NativeCollectionCall>,
     identity: Arc<()>,
     limits: MemoryBudgetLimits,
     work: NativeLibraryWorkBudget,
+    projection_count: Option<u64>,
+    projection_index: crate::resident::text_index::snapshot::Slot,
     _reservation: ManagedMemoryReservation,
 }
 
@@ -154,6 +169,8 @@ pub fn prepare_native_program_library_call(
                     shape: mech_core::ShapeRule::SameAsInput { .. }
                 })
     );
+    let (span_selector_metadata_bytes, span_selector_work) =
+        string_span::selector_geometry_bounds(&template).ok_or_else(|| super::invalid(node))?;
     Ok(NativePreparedLibraryCall {
         template,
         schemas: Arc::new(artifact.schemas().clone()),
@@ -167,6 +184,8 @@ pub fn prepare_native_program_library_call(
         lookup_work,
         output_follows_input,
         cache_identity: Arc::new(()),
+        span_selector_metadata_bytes,
+        span_selector_work,
     })
 }
 
@@ -179,6 +198,84 @@ impl NativePreparedLibraryCall {
     }
     pub const fn binding_work(&self) -> u64 {
         self.binding_work
+    }
+
+    /// Constant-size selected range semantics for a certified native source
+    /// strategy, NOT a kernel invocation or a materialized Matrix. The caller
+    /// prepays binding_work and reserves binding_metadata_bytes on the SAME
+    /// invocation account before this schema/shape traversal or allocation.
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    pub fn selected_u64_range_cardinality(&self, start: u64, end: u64) -> Result<u64, InvokeError> {
+        use crate::native_artifact::NativeCollectionPrimitive as Primitive;
+        use mech_core::{IntegerWidth, SchemaBody, snapshot::ValueDataDraft};
+        let inclusive = match self.template.primitive() {
+            Primitive::RangeInclusive => true,
+            Primitive::RangeExclusive => false,
+            _ => return Err(InvokeError::InvalidInput),
+        };
+        let scalar = SchemaBody::UnsignedInteger(IntegerWidth::W64);
+        if self.template.inputs().len() != 2
+            || self
+                .template
+                .inputs()
+                .iter()
+                .any(|ty| !ty.dimension_parameters().is_empty() || ty.body() != &scalar)
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        let count = crate::resident::numeric::canonical_range_draft_cardinality(
+            &[ValueDataDraft::U64(start), ValueDataDraft::U64(end)],
+            inclusive,
+            false,
+        )
+        .filter(|count| *count != 0)
+        .ok_or(InvokeError::Kernel(
+            mech_core::ResidentKernelError::InvalidInput,
+        ))?;
+        let count = u64::try_from(count)
+            .map_err(|_| InvokeError::Kernel(mech_core::ResidentKernelError::InvalidShape))?;
+        // Exactly the ordinary range's shape resolver, including parameter
+        // bounds and fixed cardinality constraints. Never silently retag it.
+        mech_core::shape_for_resolved_extents(self.template.output(), &[1, count])
+            .map_err(|_| InvokeError::Kernel(mech_core::ResidentKernelError::InvalidShape))?;
+        // Preserve the ordinary materializing range's physical Layout bound
+        // even when the certified source strategy never constructs its Matrix.
+        crate::resident::numeric::canonical_u64_range_selector_representation(count)?;
+        Ok(count)
+    }
+
+    /// Maintained TextJoin mechanics after a constructor-private composed
+    /// strategy has prepaid the append/growth. Never invokes a fake Matrix.
+    pub fn selected_text_join_append(
+        &self,
+        target: &mut String,
+        separator: &str,
+        has_previous: bool,
+        value: &str,
+    ) -> Result<(), InvokeError> {
+        #[cfg(feature = "pure_text")]
+        if self.template.primitive() == crate::native_artifact::NativeCollectionPrimitive::TextJoin
+        {
+            // The native sink already prepaid fixed per-append metadata work.
+            // Fail before either push if its promised capacity is absent; this
+            // public selected helper must never allocate as an implicit repair.
+            let bytes = target
+                .len()
+                .checked_add(if has_previous { separator.len() } else { 0 })
+                .and_then(|n| n.checked_add(value.len()))
+                .ok_or(InvokeError::Kernel(
+                    mech_core::ResidentKernelError::InvalidShape,
+                ))?;
+            if bytes > target.capacity() {
+                return Err(InvokeError::Kernel(
+                    mech_core::ResidentKernelError::InvalidShape,
+                ));
+            }
+            crate::resident::text_ops::append_joined(target, separator, has_previous, value);
+            return Ok(());
+        }
+        let _ = (target, separator, has_previous, value);
+        Err(InvokeError::InvalidInput)
     }
 
     fn validate_values(
@@ -340,7 +437,8 @@ impl NativePreparedLibraryCall {
                 work.charge(self.lookup_work, 0)?;
                 let memory = work.memory_budget();
                 if let Some(binding) = cache.binding.as_ref() {
-                    if !Arc::ptr_eq(&binding.identity, &self.cache_identity)
+                    if binding.projection_count.is_some()
+                        || !Arc::ptr_eq(&binding.identity, &self.cache_identity)
                         || binding.limits != limits
                         || !binding.work.shares_account(work)
                         || binding._reservation.budget() != memory
@@ -404,6 +502,7 @@ impl NativePreparedLibraryCall {
                         // replacement work/temporary checks already succeeded.
                         // Retire the old prepaid call BEFORE any new allocation.
                         // Keep a funded guard if replacement admission fails.
+                        binding.plans = NativePlanCacheState::default();
                         drop(binding.call.take());
                         binding._reservation.resize_capacity(owner_bytes)?;
                         binding._reservation.resize_capacity(bytes)?;
@@ -418,24 +517,25 @@ impl NativePreparedLibraryCall {
                         let reservation = memory.reserve_capacity(bytes)?;
                         let call = self.bind_values(inputs, output, nested)?;
                         cache.binding = Some(Box::new(CachedBinding {
+                            plans: NativePlanCacheState::default(),
                             call: Some(call),
                             identity: self.cache_identity.clone(),
                             limits,
                             work: work.clone(),
+                            projection_count: None,
+                            projection_index: Default::default(),
                             _reservation: reservation,
                         }));
                     }
                 }
                 // The same maintained planner, current payload facts, bounded
                 // kernel, admission and atomic publication run on EVERY visit.
-                cache
-                    .binding
-                    .as_ref()
-                    .unwrap()
+                let binding = cache.binding.as_mut().unwrap();
+                binding
                     .call
                     .as_ref()
                     .ok_or(InvokeError::InvalidInput)?
-                    .invoke(inputs, output, work)
+                    .invoke_cached(&mut binding.plans, inputs, output, work)
             },
         )?
     }

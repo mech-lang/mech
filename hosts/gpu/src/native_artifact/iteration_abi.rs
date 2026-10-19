@@ -193,6 +193,7 @@ pub(super) fn control_visits<'a>(
 // no LibraryCall actions and therefore retains its existing work policy.
 pub(super) fn helper_operand_work(action: &Action) -> Result<u64, &'static str> {
     match action {
+        Action::PrepareU64Range { .. } | Action::PrepareStringSpanSelector { .. } => Ok(16),
         Action::LibraryCall { operands, .. } => (operands.len() as u64)
             .checked_mul(8)
             .ok_or("iteration operand work overflow"),

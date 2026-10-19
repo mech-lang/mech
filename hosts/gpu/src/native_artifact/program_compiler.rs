@@ -84,6 +84,12 @@ impl JitProgramArtifact {
     pub fn descriptor(&self) -> &NativeProgramDescriptor {
         &self.descriptor
     }
+    /// Tests may transparently observe the actual generated helper protocol;
+    /// this is not another evaluator and never exists in production builds.
+    #[cfg(test)]
+    pub(super) fn test_checked_entry(&self) -> Entry {
+        self.entry
+    }
     /// Evaluate one fresh, stateless invocation: closed pure activation DAG
     /// followed by one turn. No activation cache, state or suspended instance
     /// survives a call. Both phases share the same limits and atomic outputs.

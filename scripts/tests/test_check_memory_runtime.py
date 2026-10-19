@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import shutil
 import tempfile
 import unittest
@@ -42,6 +43,30 @@ class MemoryRuntimeCheckerTests(unittest.TestCase):
         source = path.read_text(encoding="utf-8")
         self.assertIn(old, source)
         self.write(root, relative, source.replace(old, new, 1))
+
+    def mutate_each_snapshot_rebind(self, old: str, new: str) -> None:
+        """Independently damage every fast/general occurrence, never just first."""
+        path = "src/core/src/snapshot/validation.rs"
+        source = (REPOSITORY / path).read_text(encoding="utf-8")
+        code = CHECKER.rust_code(source)
+        signatures = list(re.finditer(r"\bfn\s+rebind_with_context\b[^{;]*\{", code))
+        bodies = list(CHECKER.function_bodies(code, "rebind_with_context"))
+        self.assertTrue(signatures, "contextual rebind mutation target is missing")
+        self.assertEqual(len(signatures), len(bodies))
+        mutations = []
+        for signature, body in zip(signatures, bodies):
+            start = signature.end()
+            self.assertEqual(code[start:start + len(body)], body)
+            mutations.extend(
+                start + match.start()
+                for match in re.finditer(re.escape(old), code[start:start + len(body)])
+            )
+        self.assertTrue(mutations, f"rebind mutation anchor is missing: {old}")
+        for index, offset in enumerate(mutations):
+            with self.subTest(return_path=index + 1):
+                root = self.fixture()
+                self.write(root, path, source[:offset] + new + source[offset + len(old):])
+                self.assert_failure(root, "do not preserve shared frozen ownership")
 
     def assert_failure(self, root: Path, expected: str) -> None:
         found = CHECKER.failures(root)
@@ -546,34 +571,40 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         self.assert_failure(root, "do not refresh live and prospective footprints")
 
     def test_49_snapshot_rebind_must_keep_frozen_ownership(self):
-        root = self.fixture()
-        self.replace(
-            root,
-            "src/core/src/snapshot/validation.rs",
+        self.mutate_each_snapshot_rebind(
             "return Ok(self.clone());",
             "return Ok(rebuild_without_owner());",
         )
-        self.assert_failure(root, "do not preserve shared frozen ownership")
 
     def test_49b_snapshot_rebind_must_keep_the_admitted_shared_schema_owner(self):
-        root = self.fixture()
-        self.replace(
-            root,
-            "src/core/src/snapshot/validation.rs",
+        self.mutate_each_snapshot_rebind(
             "schemas: Some(context.try_clone_schemas()?),",
             "schemas: Some(Arc::new(context.schemas().clone())),",
         )
-        self.assert_failure(root, "do not preserve shared frozen ownership")
 
     def test_49c_snapshot_rebind_must_not_clone_the_local_schema_alias(self):
-        root = self.fixture()
-        self.replace(
-            root,
-            "src/core/src/snapshot/validation.rs",
+        self.mutate_each_snapshot_rebind(
             "schemas: Some(context.try_clone_schemas()?),",
             "schemas: Some(Arc::new(schemas.clone())),",
         )
-        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_49d_each_shared_rebind_return_must_keep_its_frozen_root(self):
+        self.mutate_each_snapshot_rebind(
+            "root: self.root.clone(),",
+            "root: rebuild_without_owner(),",
+        )
+
+    def test_49e_unknown_rebind_return_must_not_hide_behind_an_intact_branch(self):
+        self.mutate_each_snapshot_rebind(
+            "return Ok(self.clone());",
+            "return rebuild_without_owner();",
+        )
+
+    def test_49f_rebuilding_rebind_must_keep_contextual_finalization(self):
+        self.mutate_each_snapshot_rebind(
+            ".finalize(context)",
+            ".finalize_without_owner(context)",
+        )
 
     def test_50_payload_nodes_use_declared_not_allocator_capacity(self):
         root = self.fixture()

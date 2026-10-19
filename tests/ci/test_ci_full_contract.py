@@ -1512,13 +1512,13 @@ class FullWorkflowContractTests(unittest.TestCase):
     def test_architecture_mutations_are_bounded_parallel_shards(self):
         normal = job_block(CI, "static-mutations")
         full = job_block(FULL, "architecture-mutations")
-        for block, count, checkout in (
-            (normal, 6, "ref: ${{ github.sha }}"),
-            (full, 4, FULL_CHECKOUT_REF),
+        for block, count, checkout, deadline in (
+            (normal, 6, "ref: ${{ github.sha }}", 8),
+            (full, 4, FULL_CHECKOUT_REF, 12),
         ):
             with self.subTest(checkout=checkout):
                 self.assertIn(f"shard: {list(range(count))}", block)
-                self.assertIn("timeout-minutes: 8", block)
+                self.assertIn(f"timeout-minutes: {deadline}", block)
                 self.assertIn(f"--shard-count {count}", block)
                 self.assertIn("--shard-index ${{ matrix.shard }}", block)
                 self.assertIn("scripts/tests/test_check_memory_runtime.py", block)

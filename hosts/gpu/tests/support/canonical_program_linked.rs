@@ -753,6 +753,7 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
                 &binary,
                 &evidence.join("cargo-target"),
                 &directory,
+                false,
             )
         });
         let result = bounded(

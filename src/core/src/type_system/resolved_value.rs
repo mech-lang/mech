@@ -16,6 +16,10 @@ use alloc::{boxed::Box, collections::BTreeSet, format, string::String, vec, vec:
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, collections::BTreeSet, format, string::String, vec, vec::Vec};
 
+#[cfg(test)]
+#[path = "resolved_value_witness_tests.rs"]
+mod witness_tests;
+
 /// Semantic authority for constructing one resolved output schema. These
 /// rules are selected with the source overload and never by a runtime factory.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1330,6 +1334,12 @@ fn assign_unique_dimension_witness(
     let index = parameter.get() as usize;
     if index >= values.len() {
         return Err(invalid_rule(format!("unknown dimension {parameter:?}")));
+    }
+    // Identity witnesses need no monotone search. Keep the ordinary index
+    // check and final verifier; compound expressions use the same search below.
+    if matches!(expression, DimensionExpr::Parameter(actual) if *actual == parameter) {
+        values[index] = target;
+        return dimension_witness_mismatch(expression, target, values);
     }
     // A strictly increasing natural-valued expression has f(n) >= n. Search
     // the bounded interval using the canonical evaluator; overflow lies above

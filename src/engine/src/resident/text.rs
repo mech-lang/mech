@@ -651,8 +651,25 @@ fn canonical_string_selector_geometry(
     let schema = value
         .validate_against(schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
-    if !mech_core::shape_change_allowed(schema, &plan.shape, value.shape())
-        || (plan.activation_fixed_shape && value.shape() != &plan.shape)
+    let actual_count = match (schema.body(), value.data()) {
+        (SchemaBody::Matrix { .. }, ValueData::Matrix(matrix)) => matrix.elements().len(),
+        (SchemaBody::Matrix { .. }, _) => return Err(ResidentKernelError::InvalidInput),
+        _ => 1,
+    };
+    canonical_string_selector_shape_geometry(plan, schema, value.shape(), actual_count)
+}
+
+// The materializing Snapshot leaf and a selected non-Value range projection
+// use this SAME current-shape rule. A projection supplies the original range's
+// certified cardinality, not a made-up Snapshot selector or activation seed.
+fn canonical_string_selector_shape_geometry(
+    plan: &CanonicalStringSelectorPlan,
+    schema: &mech_core::Schema,
+    shape: &mech_core::ShapeInstance,
+    actual_count: usize,
+) -> Result<(usize, usize), ResidentKernelError> {
+    if !mech_core::shape_change_allowed(schema, &plan.shape, shape)
+        || (plan.activation_fixed_shape && shape != &plan.shape)
     {
         return Err(ResidentKernelError::InvalidShape);
     }
@@ -662,23 +679,196 @@ fn canonical_string_selector_geometry(
                 return Err(ResidentKernelError::InvalidShape);
             };
             let dimension = |axis| {
-                value
-                    .shape()
+                shape
                     .resolve_dimension(axis)
                     .ok()
                     .and_then(|value| usize::try_from(value).ok())
                     .ok_or(ResidentKernelError::InvalidShape)
             };
             let (rows, columns) = (dimension(rows)?, dimension(columns)?);
-            let ValueData::Matrix(matrix) = value.data() else {
-                return Err(ResidentKernelError::InvalidInput);
-            };
-            if rows.checked_mul(columns) != Some(matrix.elements().len()) {
+            if rows.checked_mul(columns) != Some(actual_count) {
                 return Err(ResidentKernelError::InvalidShape);
             }
             Ok((rows, columns))
         }
         _ => Ok((1, 1)),
+    }
+}
+
+fn canonical_string_selector_byte_range(
+    index: &crate::text_index::PreparedGraphemeIndex,
+    ordinal: usize,
+) -> Result<core::ops::Range<usize>, ResidentKernelError> {
+    index
+        .byte_range(ordinal)
+        .ok_or(ResidentKernelError::InvalidInput)
+}
+
+// Endpoint reduction is valid ONLY for a compiler-certified increasing unit
+// U64 selector. Both conversions use the ordinary Snapshot numeric selector
+// primitive, including portable u32 ordinals and InvalidInput error mapping.
+// The result is bytes in a caller-pinned real String, never a canonical Value.
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(in crate::resident) fn selected_u64_string_span(
+    kernel: &BoundResidentKernel,
+    start: u64,
+    count: u64,
+    index: &super::text_index::IndexUse,
+    charge: impl Fn(u64, u64) -> Result<(), ResidentKernelError>,
+) -> Result<core::ops::Range<usize>, ResidentKernelError> {
+    // The actual selected factory bound/validated the schema and current
+    // shape on the cached binding's miss. Its immutable exact-count key makes
+    // this a constant-size check, not a repeated Schema::key or deep traversal.
+    if kernel.parameters() != [2, 1, count] {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let count = usize::try_from(count).map_err(|_| ResidentKernelError::InvalidShape)?;
+    // No ordinal exists in an empty selection. The current maintained Range
+    // leaf rejects empty ranges before reaching here, but keep this primitive
+    // honest if a future selected producer can certify one.
+    if count == 0 {
+        return Ok(0..0);
+    }
+    // The ordinary selector scan prices two units per converted element.
+    // Here one or two actual endpoint conversions replace the two whole
+    // scans; no discarded selector payload or output copy is charged.
+    charge(if count == 1 { 2 } else { 4 }, 0)?;
+    selected_u64_string_span_endpoints(start, count, index)
+}
+
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(in crate::resident) fn validate_selected_u64_string_span_geometry(
+    kernel: &BoundResidentKernel,
+    shape: &mech_core::ShapeInstance,
+    count: u64,
+) -> Result<(), ResidentKernelError> {
+    let plan = kernel
+        .retained_state::<CanonicalStringSelectorPlan>()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let schema = kernel
+        .snapshot_schemas()
+        .and_then(|schemas| schemas.get(plan.schema))
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let count = usize::try_from(count).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let (rows, columns) = canonical_string_selector_shape_geometry(plan, schema, shape, count)?;
+    if rows != 1 || columns != count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(())
+}
+
+#[cfg(any(
+    test,
+    all(
+        feature = "native-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    )
+))]
+fn selected_u64_string_span_endpoints(
+    start: u64,
+    count: usize,
+    index: &crate::text_index::PreparedGraphemeIndex,
+) -> Result<core::ops::Range<usize>, ResidentKernelError> {
+    if count == 0 {
+        return Ok(0..0);
+    }
+    let convert = |ordinal| {
+        mech_core::canonical_positional_index(&ValueData::U64(ordinal), index.len())
+            .map_err(|_| ResidentKernelError::InvalidInput)
+    };
+    let first = convert(start)?;
+    let last = start
+        .checked_add(u64::try_from(count - 1).map_err(|_| ResidentKernelError::InvalidInput)?)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let last = if count == 1 { first } else { convert(last)? };
+    let first = canonical_string_selector_byte_range(index, first)?;
+    let last = canonical_string_selector_byte_range(index, last)?;
+    Ok(first.start..last.end)
+}
+
+#[cfg(test)]
+mod selected_string_span_leaf_tests {
+    use super::*;
+    use crate::text_index::PreparedGraphemeIndex;
+
+    fn index(source: &str) -> PreparedGraphemeIndex {
+        PreparedGraphemeIndex::build_with(
+            source,
+            |capacity| {
+                let mut offsets = Vec::new();
+                offsets
+                    .try_reserve_exact(capacity)
+                    .map_err(|_| ResidentKernelError::InvalidShape)?;
+                Ok(offsets)
+            },
+            || ResidentKernelError::InvalidShape,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn unit_u64_span_matches_canonical_snapshot_selector_order_for_unicode() {
+        for source in [
+            "",
+            "q",
+            "abcde",
+            "e\u{301}x",
+            "a\r\nb",
+            "👩‍🔬🇺🇸z",
+            "\u{301}\u{301}r",
+        ] {
+            let index = index(source);
+            for first in 0..index.len() {
+                for count in 1..=index.len() - first {
+                    let start = (first + 1) as u64;
+                    let span = selected_u64_string_span_endpoints(start, count, &index).unwrap();
+                    let mut ordinary = String::new();
+                    for ordinal in start..start + count as u64 {
+                        let selected = mech_core::canonical_positional_index(
+                            &ValueData::U64(ordinal),
+                            index.len(),
+                        )
+                        .map_err(|_| ResidentKernelError::InvalidInput)
+                        .unwrap();
+                        ordinary.push_str(
+                            &source
+                                [canonical_string_selector_byte_range(&index, selected).unwrap()],
+                        );
+                    }
+                    assert_eq!(&source[span], ordinary);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn unit_u64_span_preserves_snapshot_invalid_input_and_absent_endpoint_rules() {
+        let empty = index("");
+        let index = index("a\r\ne\u{301}👩‍🔬");
+        for (start, count) in [
+            (0, 1),
+            (1, 5),
+            (4, 2),
+            (u32::MAX as u64 + 1, 1),
+            (u64::MAX, 2),
+        ] {
+            assert_eq!(
+                selected_u64_string_span_endpoints(start, count, &index),
+                Err(ResidentKernelError::InvalidInput)
+            );
+        }
+        assert_eq!(selected_u64_string_span_endpoints(0, 0, &index), Ok(0..0));
+        assert_eq!(
+            selected_u64_string_span_endpoints(u64::MAX, 0, &index),
+            Ok(0..0)
+        );
+        assert_eq!(selected_u64_string_span_endpoints(1, 0, &empty), Ok(0..0));
     }
 }
 
@@ -901,10 +1091,8 @@ fn canonical_string_selection(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let source = snapshot_selection::source(
-        kernel,
-        inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?,
-    )?;
+    let source_value = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
+    let source = snapshot_selection::source(kernel, source_value)?;
     let [mode, rows, columns] = kernel.parameters() else {
         return Err(ResidentKernelError::InvalidShape);
     };
@@ -922,9 +1110,10 @@ fn canonical_string_selection(
     let selector_count = rows
         .checked_mul(columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let index = match inputs.get(0) {
-        Some(ResidentValueRef::String([text])) => super::text_index::prepared(text)?,
-        _ => super::text_index::prepared_snapshot(source)?,
+    let index = match source_value {
+        ResidentValueRef::String([text]) => super::text_index::prepared(text)?,
+        ResidentValueRef::Snapshot([Some(value)]) => super::text_index::prepared_snapshot(value)?,
+        _ => return Err(ResidentKernelError::InvalidInput),
     };
     let extent = index.len();
     let scan_work = selector_count
@@ -939,12 +1128,7 @@ fn canonical_string_selection(
             .checked_add(1)
             .ok_or(ResidentKernelError::InvalidShape)?;
         payload_bytes = payload_bytes
-            .checked_add(
-                source[index
-                    .byte_range(ordinal)
-                    .ok_or(ResidentKernelError::InvalidInput)?]
-                .len(),
-            )
+            .checked_add(source[canonical_string_selector_byte_range(&index, ordinal)?].len())
             .ok_or(ResidentKernelError::InvalidShape)?;
         Ok(())
     })?;
@@ -965,11 +1149,7 @@ fn canonical_string_selection(
     )?;
     let mut next = String::with_capacity(payload_bytes);
     visit_canonical_string_selector(selector, rows, columns, extent, |ordinal| {
-        next.push_str(
-            &source[index
-                .byte_range(ordinal)
-                .ok_or(ResidentKernelError::InvalidInput)?],
-        );
+        next.push_str(&source[canonical_string_selector_byte_range(&index, ordinal)?]);
         Ok(())
     })?;
     snapshot_selection::publish(kernel, output, next)

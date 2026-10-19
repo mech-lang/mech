@@ -4,27 +4,159 @@
 use super::super::program_abi::{PHASE_ACTIVATION, PHASE_TURN, STATUS_ACTIVATED};
 use super::*;
 
+#[path = "program_call_cache_allocation.rs"]
+mod call_cache_allocation;
+
+#[cfg(test)]
+#[path = "program_observation_tests.rs"]
+mod observation_tests;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_call_cache_tests.rs"]
+mod call_cache_tests;
+
+/// Native ownership admission for the selected zero-parameter String lane.
+/// Immutable payload sharing never substitutes for full capacity admission.
+fn import_string_observation(
+    value: &Value,
+    schema: mech_core::SchemaId,
+    schemas: &std::sync::Arc<mech_core::SchemaTable>,
+    target_schema_bytes: u64,
+    memory: &ManagedMemoryBudget,
+    work: &mut NativeWorkMeter,
+) -> Result<(Value, mech_core::ManagedMemoryReservation), NativeProgramExecutionError> {
+    work.check_memory_budget(memory)?;
+    let ValueData::String(text) = value.data() else {
+        return Err(invalid("captured native observation is not String"));
+    };
+    let source_schemas = value
+        .schemas()
+        .ok_or_else(|| invalid("captured String has no retained schema context"))?;
+    let source_schema = value
+        .validate_against(&source_schemas)
+        .map_err(NativeProgramExecutionError::Snapshot)?;
+    let target = schemas
+        .entry(schema)
+        .ok_or_else(|| invalid("captured native observation target schema is missing"))?;
+    if source_schema.body() != &mech_core::SchemaBody::String
+        || target.schema().body() != &mech_core::SchemaBody::String
+        || !source_schema.dimension_parameters().is_empty()
+        || !target.schema().dimension_parameters().is_empty()
+        || !value.shape().parameter_values().is_empty()
+        || value.schema_key() != target.key()
+    {
+        return Err(invalid("captured native observation schema differs"));
+    }
+    // Bound discovery itself consumes this SAME invocation ledger. The
+    // canonical traversal stops before a denied shallow contribution's children.
+    let source_schema_bytes = source_schemas
+        .clone_allocation_bound_bytes_with_precharge(|bytes| {
+            let debit = bytes
+                .checked_mul(8)
+                .ok_or_else(|| invalid("observation schema measurement work overflows"))?;
+            work.charge(NativeExecutionPhase::Setup, debit)
+                .map_err(NativeProgramExecutionError::from)
+        })
+        .map_err(|error| match error {
+            mech_core::SchemaAllocationBoundError::Precharge(error) => error,
+            mech_core::SchemaAllocationBoundError::ArithmeticOverflow => {
+                invalid("observation source schema ownership bound overflows")
+            }
+        })?;
+    let payload_bytes =
+        u64::try_from(text.len()).map_err(|_| invalid("observation String length exceeds u64"))?;
+    let footprint =
+        mech_core::snapshot::prospective_string_value_footprint(0, false, 1, payload_bytes)
+            .map_err(|_| invalid("observation String ownership bound overflows"))?;
+    // The canonical owner bound includes one schema Arc header. Admit both
+    // full source/target arenas plus the second header, even when they alias.
+    let second_schema_header = mech_core::SchemaTable::clone_metadata_allocation_bound_bytes()
+        .checked_sub(core::mem::size_of::<mech_core::SchemaTable>() as u64)
+        .ok_or_else(|| invalid("observation schema owner layout is invalid"))?;
+    let bound = [
+        footprint.retained_bytes,
+        Value::canonical_owner_allocation_bytes(),
+        source_schema_bytes,
+        target_schema_bytes,
+        second_schema_header,
+        Value::memory_budget_claim_metadata_bytes(),
+    ]
+    .into_iter()
+    .try_fold(0_u64, |total, bytes| {
+        total
+            .checked_add(bytes)
+            .ok_or_else(|| invalid("observation import ownership bound overflows"))
+    })?;
+    // Measurement already paid 8 * source_schema_bytes; the cumulative total
+    // remains exactly 8 * bound + 128. Existing arena retirement is separate.
+    let remaining = bound
+        .checked_sub(source_schema_bytes)
+        .and_then(|n| n.checked_mul(8))
+        .and_then(|n| n.checked_add(128))
+        .ok_or_else(|| invalid("observation import work overflows"))?;
+    work.charge(NativeExecutionPhase::Setup, remaining)?;
+    let mut reservation = memory.reserve_capacity(bound)?;
+    // These checks select the allocation-free canonical String sharing path.
+    // The context's target owner is cloned only after full admission above.
+    let rebound = value
+        .rebind_with_context(
+            schema,
+            value.shape(),
+            &SnapshotValidationContext::with_shared_schemas(schemas),
+        )
+        .map_err(NativeProgramExecutionError::Snapshot)?;
+    let owned = rebound.into_independent_memory_budget(&mut reservation)?;
+    Ok((owned, reservation))
+}
+
+/// A private storage choice, not permission to visit or invoke a site.
+/// The validated root-scope DAG visits a Once site at most once across the
+/// SAME activation/turn invocation. Only a structurally owned loop can repeat.
+pub(super) enum CallCacheEntry {
+    Once,
+    Repeated(NativePreparedLibraryCallCache),
+}
+impl CallCacheEntry {
+    pub(super) fn invoke(
+        &mut self,
+        call: &mech_engine::native_artifact::NativePreparedLibraryCall,
+        inputs: &[Option<Value>],
+        output: &mut Option<Value>,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<bool, NativeCollectionInvocationError> {
+        match self {
+            Self::Once => call.invoke_current(inputs, output, limits, work),
+            Self::Repeated(cache) => {
+                call.invoke_current_cached(cache, inputs, output, limits, work)
+            }
+        }
+    }
+}
+
 /// Empty per-site slots are native invocation metadata, not prebound calls.
-/// Their small fixed backing is admitted during setup; bound metadata is
-/// materialized and separately retained only when a generated site is visited.
+/// Their complete concrete backing is admitted during setup. Once slots have
+/// no cache owner; repeated slots separately admit lazy bound metadata.
 pub(super) struct CallCacheLane {
-    pub(super) entries: Box<[NativePreparedLibraryCallCache]>,
+    pub(super) entries: Box<[CallCacheEntry]>,
     _reservation: mech_core::ManagedMemoryReservation,
 }
 impl CallCacheLane {
     fn metadata_bytes(count: usize) -> Result<u64, NativeProgramExecutionError> {
         amount(
             count,
-            (core::mem::size_of::<NativePreparedLibraryCallCache>() as u64) * 2,
+            (core::mem::size_of::<CallCacheEntry>() as u64) * 2,
             128,
         )
     }
     fn new(
-        count: usize,
+        descriptor: &NativeProgramDescriptor,
         limit: u64,
         memory: &ManagedMemoryBudget,
         work: &mut NativeWorkMeter,
     ) -> Result<Self, NativeProgramExecutionError> {
+        let blocks = descriptor.plan.blocks();
+        let count = blocks.len();
         let bytes = Self::metadata_bytes(count)?;
         if bytes > limit {
             return Err(NativeExecutionError::TransportLimit {
@@ -41,16 +173,21 @@ impl CallCacheLane {
                 .ok_or_else(|| invalid("call cache setup work overflow"))?,
         )?;
         let reservation = memory.reserve_capacity(bytes)?;
-        let mut entries = Vec::new();
-        entries.try_reserve_exact(count).map_err(|_| {
-            mech_core::MemoryRuntimeError::AllocationFailed {
-                object: None,
-                requested: bytes,
-                alignment: core::mem::align_of::<NativePreparedLibraryCallCache>() as u32,
-                space: mech_core::MemorySpace::Host,
+        // NativeProgramDescriptor::prepare already ran BOTH canonical phase
+        // and current-visit proofs. check_scope contracts each child loop to
+        // initializer -> exit and rejects every remaining scope cycle. Thus
+        // None is a once-only root DAG site, including nested Match arms;
+        // Some covers counted, collection, tail and enclosing nested loops.
+        // Phase resume retains the same previous/current/progress state and
+        // cannot replay a root block. No new execution authority is created.
+        let entries = call_cache_allocation::allocate(count, bytes, |ordinal| {
+            let block = &blocks[ordinal];
+            if block.iteration().is_none() {
+                CallCacheEntry::Once
+            } else {
+                CallCacheEntry::Repeated(NativePreparedLibraryCallCache::default())
             }
         })?;
-        entries.resize_with(count, NativePreparedLibraryCallCache::default);
         Ok(Self {
             entries: entries.into_boxed_slice(),
             _reservation: reservation,
@@ -139,6 +276,7 @@ impl<'a> Prepared<'a> {
             .and_then(|n| n.checked_add(plan.transport_output_count()))
             .and_then(|n| n.checked_add(1))
             .and_then(|n| n.checked_add(descriptor.max_library_inputs.max(1)))
+            .and_then(|n| n.checked_add(descriptor.retirements.words().len()))
             .ok_or_else(|| invalid("transport count overflow"))?;
         let bytes = transport_bytes(words)?
             .checked_add(amount(
@@ -181,8 +319,17 @@ impl<'a> Prepared<'a> {
             caps.max_comparison_work.unwrap(),
             memory,
         )?;
-        let storage =
+        let mut storage =
             NativeWordStorage::new(words, limits.execution.max_transport_bytes, Some(memory))?;
+        // The exact table occupies the disjoint final lane of this SAME
+        // admitted typed arena; no new runtime plan or unowned metadata pool.
+        // Initialization was prepaid above; fund its copy before touching it.
+        work.charge(
+            NativeExecutionPhase::Setup,
+            amount(descriptor.retirements.words().len(), 16, 128)?,
+        )?;
+        storage.values_mut()[words - descriptor.retirements.words().len()..]
+            .copy_from_slice(descriptor.retirements.words());
         let mut arena = NativeValueArena::new(
             &descriptor.types,
             limits.execution.max_transport_bytes,
@@ -213,7 +360,7 @@ impl<'a> Prepared<'a> {
         }
         let collections = collection::State::new(descriptor, caps, memory, &mut work)?;
         let call_caches = CallCacheLane::new(
-            plan.blocks().len(),
+            descriptor,
             limits.execution.max_transport_bytes,
             memory,
             &mut work,
@@ -323,35 +470,19 @@ impl<'a> Prepared<'a> {
                 .checked_add(ordinal)
                 .ok_or_else(|| invalid("observation ordinal overflow"))?;
             let ty = plan.transport_input_type(index);
-            let ValueData::String(text) = value.data() else {
-                return Err(invalid("captured native observation is not String"));
-            };
             if ty.definition().body() != &mech_core::SchemaBody::String
-                || value.schema_key() != ty.schema_key()
+                || !ty.definition().dimension_parameters().is_empty()
             {
                 return Err(invalid("captured native observation schema differs"));
             }
-            let bound = amount(text.len(), 4, descriptor.scalar_bytes)?;
-            state.work.charge(
-                NativeExecutionPhase::Setup,
-                bound
-                    .checked_mul(8)
-                    .and_then(|n| n.checked_add(128))
-                    .ok_or_else(|| invalid("observation import work overflow"))?,
+            let (owned, _reservation) = import_string_observation(
+                value,
+                ty.schema(),
+                &descriptor.schemas,
+                descriptor.observation_schema_bytes,
+                &self.memory,
+                &mut state.work,
             )?;
-            let mut reservation = self.memory.reserve_capacity(bound)?;
-            let shape = ty
-                .definition()
-                .instantiate_shape(Box::new([]))
-                .map_err(|error| NativeProgramExecutionError::Snapshot(error.into()))?;
-            let rebound = value
-                .rebind_with_context(
-                    ty.schema(),
-                    &shape,
-                    &SnapshotValidationContext::with_shared_schemas(&descriptor.schemas),
-                )
-                .map_err(NativeProgramExecutionError::Snapshot)?;
-            let owned = rebound.into_independent_memory_budget(&mut reservation)?;
             state.arena.put(
                 plan.transport_input_value(index).get(),
                 &owned,
@@ -382,17 +513,33 @@ impl<'a> Prepared<'a> {
         observations: &[Value],
         outputs: &mut [Option<Value>],
     ) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError> {
-        self.import_turn(inputs, observations, outputs)?;
+        let imported = self.import_turn(inputs, observations, outputs);
+        #[cfg(all(
+            test,
+            feature = "canonical-native-program",
+            feature = "canonical-native-program-host-runtime"
+        ))]
+        if let Some(state) = &self.state {
+            setup_work_diagnostic::checkpoint(state.work.used());
+        }
+        imported?;
         self.run(entry, PHASE_TURN)?;
         let state = self
             .state
             .as_mut()
             .ok_or_else(|| invalid("consumed native state"))?;
-        state.arena.publish_range(
+        let published = state.arena.publish_range(
             self.descriptor.plan.values().len(),
             outputs,
             &mut state.work,
-        )?;
+        );
+        #[cfg(all(
+            test,
+            feature = "canonical-native-program",
+            feature = "canonical-native-program-host-runtime"
+        ))]
+        setup_work_diagnostic::checkpoint(state.work.used());
+        published?;
         Ok(NativeProgramExecutionReport {
             work: state.work.used(),
             comparison_work: state.library.used().1,
@@ -420,9 +567,16 @@ impl<'a> Prepared<'a> {
         let transition_work = amount(plan.iterations().len(), 32, 512)?
             .checked_add(amount(plan.collections().len(), 32, 0)?)
             .ok_or_else(|| invalid("native phase work overflow"))?;
-        state
+        let transitioned = state
             .work
-            .charge(NativeExecutionPhase::Setup, transition_work)?;
+            .charge(NativeExecutionPhase::Setup, transition_work);
+        #[cfg(all(
+            test,
+            feature = "canonical-native-program",
+            feature = "canonical-native-program-host-runtime"
+        ))]
+        setup_work_diagnostic::checkpoint(state.work.used());
+        transitioned?;
         let (input_words, rest) = self
             .storage
             .values_mut()
@@ -430,13 +584,17 @@ impl<'a> Prepared<'a> {
         let (values, rest) = rest.split_at_mut(self.locals);
         let (progress_words, rest) = rest.split_at_mut(self.progress);
         let (output_words, rest) = rest.split_at_mut(plan.transport_output_count());
-        let (result, arguments) = rest.split_at_mut(1);
+        let (result, rest) = rest.split_at_mut(1);
+        let (arguments, retirements) = rest.split_at_mut(descriptor.max_library_inputs.max(1));
         let input_pointer = input_words.as_ptr();
         let local_pointer = values.as_mut_ptr();
         let output_pointer = output_words.as_mut_ptr();
         let result_pointer = result.as_mut_ptr();
         let argument_pointer = arguments.as_mut_ptr();
         let mut context = Context {
+            // Native frame pointers/capacities name only the earlier lanes.
+            // This immutable final lane is private to the checked callback.
+            retirements,
             control: Control {
                 descriptor,
                 progress: progress_words,
@@ -482,6 +640,12 @@ impl<'a> Prepared<'a> {
             phase,
         };
         let status = entry(&mut frame);
+        #[cfg(all(
+            test,
+            feature = "canonical-native-program",
+            feature = "canonical-native-program-host-runtime"
+        ))]
+        setup_work_diagnostic::checkpoint(context.control.work.used());
         if let Some(error) = context.error.take() {
             return Err(error);
         }

@@ -406,6 +406,16 @@ fn texts<'a>(
         _ => Err(ResidentKernelError::InvalidInput),
     }
 }
+/// Common append mechanics for ordinary TextJoin and a proved native sink.
+/// The caller MUST admit/reserve complete capacity before either push. Ordinary
+/// TextJoin already computes/reserves its whole payload; the selected native
+/// wrapper checks each incremental prefix before entering these same mechanics.
+pub(crate) fn append_joined(target: &mut String, separator: &str, has_previous: bool, value: &str) {
+    if has_previous {
+        target.push_str(separator);
+    }
+    target.push_str(value);
+}
 fn execute_join(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -549,10 +559,7 @@ fn execute_join(
         .try_reserve_exact(payload)
         .map_err(|_| ResidentKernelError::InvalidShape)?;
     for index in 0..strings.len() {
-        if index != 0 {
-            joined.push_str(separator);
-        }
-        joined.push_str(strings.get(index));
+        append_joined(&mut joined, separator, index != 0, strings.get(index));
     }
     let changed = previous != Some(joined.as_str());
     match output {

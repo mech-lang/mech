@@ -1,4 +1,4 @@
-//! Explicit clean-source standalone qualification, not a benchmark/timing claim.
+//! Explicit clean-source qualification; full-input timing is separately opt-in.
 use super::{EMPTY_OUTPUT, FULL, GGTA_INPUT, GGTA_OUTPUT, artifacts};
 use mech_build::process::ContainedChild;
 use mech_build::{CargoInvocation, parse_cargo_build_messages};
@@ -16,6 +16,10 @@ use std::{
 #[path = "linked_process.rs"]
 mod process;
 use process::{assert_no_ambient_cargo_config, bounded, clean, closure, hash, pin, workspace};
+#[path = "canonical_hosted_full.rs"]
+mod full;
+#[path = "canonical_hosted_profile.rs"]
+mod profile;
 #[path = "canonical_program_pins.rs"]
 mod provenance;
 #[path = "canonical_hosted_template_tests.rs"]
@@ -105,8 +109,11 @@ fn closed_stdout(binary: &Path, launch: &Path, input: &Path, directory: &Path) -
 }
 
 #[test]
-#[ignore = "explicit clean-source actual hosted standalone qualification; no timings"]
+#[ignore = "explicit clean-source hosted qualification; optional explicit full-input phase"]
 fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned() {
+    let profile =
+        profile::Profile::parse(std::env::var_os("MECH_CANONICAL_HOSTED_PROFILE").as_deref())
+            .unwrap();
     let commit = std::env::var("MECH_CANONICAL_HOSTED_SOURCE_COMMIT")
         .expect("exact immutable source commit required");
     let evidence = PathBuf::from(
@@ -180,17 +187,10 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
         );
         let metadata: Value = serde_json::from_slice(&metadata_output.stdout).unwrap();
         let target = evidence.join("cargo-target");
-        let mut command = CargoInvocation::build(
-            project.manifest_path(),
-            binary_name,
-            None,
-            &target,
-            false,
-            true,
-        )
-        .unwrap()
-        .with_current_dir(isolated)
-        .command();
+        let mut command = profile
+            .invocation(&project.manifest_path(), binary_name, &target)
+            .with_current_dir(isolated)
+            .command();
         command
             .env("CARGO_INCREMENTAL", "0")
             .env("CARGO_PROFILE_DEV_DEBUG", "0")
@@ -224,6 +224,7 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
         assert!(units.iter().any(|unit| unit["name"] == "mech-runtime"));
         assert!(units.iter().any(|unit| unit["name"] == "mech-terminal"));
         let built_binary = messages.select_binary(binary_name).unwrap().executable;
+        let compiler_profiles = profile.audit(&built.stdout, &built_binary);
         let binary = directory.join("native-executable");
         fs::copy(&built_binary, &binary).unwrap();
         let binary_pin = pin(&binary);
@@ -233,9 +234,15 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
             binary_name,
             &target,
             &directory,
-            false,
+            profile.release(),
         );
         assert_eq!(binary_pin, pin(&built_binary));
+        let revision = variants[variant]
+            .revision()
+            .as_bytes()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
         let mut cases = Vec::new();
         for (label, input, expected) in [
             ("ordinary", GGTA_INPUT, Some(GGTA_OUTPUT)),
@@ -335,12 +342,6 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
                     ),
                     (Some(2), Some(1), Some(1))
                 );
-                let revision = variants[variant]
-                    .revision()
-                    .as_bytes()
-                    .iter()
-                    .map(|byte| format!("{byte:02x}"))
-                    .collect::<String>();
                 assert_eq!(report["program_revision"], revision);
             } else {
                 assert!(
@@ -397,27 +398,42 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
             "postcommit_delivery_failure":true, "stderr_sha256":hash(&broken.stderr),
             "binary_sha256":binary_pin}));
         let pin_rejections = if variant == 0 {
-            provenance::qualify(project, binary_name, &built_binary, &target, &directory)
+            provenance::qualify(
+                project,
+                binary_name,
+                &built_binary,
+                &target,
+                &directory,
+                profile.release(),
+            )
         } else {
             Value::Null
         };
         assert_eq!(pin(&binary), binary_pin);
         results.push(json!({
             "variant":variant, "binary":binary, "binary_sha256":binary_pin,
+            "program_revision":revision,
             "runtime_units":units, "cases":cases, "pin_rejections":pin_rejections,
             "generated_template_tests":generated_template_tests,
+            "rust_profile":profile.name(), "compiler_profiles":compiler_profiles,
             "source_sha256":hash(FULL.as_bytes()),
             "bytecode_sha256":pin(&project.root().join("program.mecb")),
             "object_sha256":pin(&project.root().join("program.o")),
             "identity_sha256":pin(&project.root().join("object-identity.bin")),
         }));
     }
+    for (path, expected) in &all_pins {
+        assert_eq!(&pin(path), expected);
+    }
+    let full_result = full::run(profile, &evidence, &results);
     for (path, expected) in all_pins {
         assert_eq!(pin(&path), expected);
     }
     fs::write(evidence.join("hosted-linked-result.json"), serde_json::to_vec_pretty(&json!({
         "schema":"mech.canonical-hosted-linked-qualification.v1",
-        "source_commit":commit, "results":results, "timing_samples":0,
+        "source_commit":commit, "results":results, "timing_samples":full_result["timing_samples"].as_u64().unwrap_or(0),
+        "full_input":full_result,
+        "rust_profile":profile.name(), "object_optimization":"none", "whole_program_optimized":false,
         "scope":"actual full original/decoded canonical artifacts; same checked phased Object route with activation before capture and same-session resume, real CLI provider/capability system, no parser/JIT/resident body",
     })).unwrap()).unwrap();
     clean(&evidence, &commit, "after");
