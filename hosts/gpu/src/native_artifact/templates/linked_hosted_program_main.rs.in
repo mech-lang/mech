@@ -1,6 +1,6 @@
 //! Same-Object canonical native application with ordinary capability-secured CLI.
 //! No source parsing, JIT, resident graph execution or source-native fallback.
-use mech_core::{ManagedMemoryBudget, Value};
+use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, Value};
 use mech_gpu::native_artifact::{
     LinkedProgramArtifact, NATIVE_PROGRAM_LINK_IDENTITY_BYTES,
     NativeExecutionLimits, NativeProgramExecutionLimits,
@@ -15,7 +15,7 @@ use mech_terminal::{
 };
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
-use std::{ffi::{OsStr, c_void}, io::{Read, Write}, path::Path};
+use std::{ffi::{OsStr, OsString, c_void}, io::{Read, Write}, path::Path};
 
 unsafe extern "C" {
     #[link_name = "mech_canonical_program_entry_v1"]
@@ -59,6 +59,75 @@ fn bounded(mut reader: impl Read, limit: u64) -> Result<Vec<u8>, String> {
 }
 fn io_error(reason: impl Into<String>) -> mech_core::MechError {
     mech_core::MechError::new(NativeResourceBindingError { reason: reason.into() }, None)
+}
+
+// Keep the charge alive until the runtime (and therefore its backend) drops.
+// Fields drop in order: a not-yet-transferred Vec must retire before its charge.
+struct PayloadArguments {
+    arguments: Vec<OsString>,
+    _reservation: ManagedMemoryReservation,
+}
+fn argument_carrier_bytes(count: usize) -> Result<u64, String> {
+    // Vec -> Arc<[OsString]> moves payload owners but allocates a second header
+    // array while the Vec allocation is still live. Include Arc's strong/weak
+    // counters and its padding to the element alignment on this pinned target.
+    let align = std::mem::align_of::<OsString>();
+    let arc_header = std::mem::size_of::<[usize; 2]>().checked_add(align - 1)
+        .map(|bytes| bytes & !(align - 1)).ok_or("payload argument header overflows")?;
+    count.checked_mul(std::mem::size_of::<OsString>())
+        .and_then(|bytes| bytes.checked_mul(2))
+        .and_then(|bytes| bytes.checked_add(arc_header))
+        .and_then(|bytes| u64::try_from(bytes).ok())
+        .ok_or_else(|| "payload argument carriers overflow".into())
+}
+fn reserve_argument_headers(snapshot: &mut Vec<OsString>, count: usize) -> Result<(), String> {
+    snapshot.try_reserve_exact(count).map_err(diagnostic)?;
+    // Exact reservation is a minimum, not a promise about allocator rounding.
+    // Never retain header capacity beyond the prepaid Vec/Arc peak.
+    if snapshot.capacity() != count {
+        return Err("payload argument header allocation exceeds admitted capacity".into());
+    }
+    Ok(())
+}
+fn bounded_arguments(
+    arguments: impl ExactSizeIterator<Item = OsString>,
+    limit: u64,
+    memory: &ManagedMemoryBudget,
+) -> Result<PayloadArguments, String> {
+    // Rust/platform argv acquisition is outside this application's account.
+    // Bound and fund our retained snapshot before allocation/ownership transfer;
+    // do not claim that the preexisting OS/Rust argv source is RSS-budgeted.
+    let count = arguments.len();
+    let carrier_bytes = argument_carrier_bytes(count)?;
+    let mut reservation = memory.reserve_capacity(carrier_bytes)
+        .map_err(|error| format!("payload argument snapshot memory: {error:?}"))?;
+    let mut snapshot = Vec::new();
+    reserve_argument_headers(&mut snapshot, count)?;
+    let mut bytes = 0u64;
+    let mut capacity_bytes = 0u64;
+    for argument in arguments {
+        if snapshot.len() >= count {
+            return Err("payload argument count changed during acquisition".into());
+        }
+        bytes = bytes.checked_add(u64::try_from(argument.as_encoded_bytes().len())
+            .map_err(|_| "payload argument length overflows")?)
+            .ok_or("payload argument aggregate length overflows")?;
+        if bytes > limit {
+            return Err("payload arguments exceed their finite aggregate acquisition cap".into());
+        }
+        capacity_bytes = capacity_bytes.checked_add(u64::try_from(argument.capacity())
+            .map_err(|_| "payload argument capacity overflows")?)
+            .ok_or("payload argument aggregate capacity overflows")?;
+        let retained = carrier_bytes.checked_add(capacity_bytes)
+            .ok_or("payload argument snapshot size overflows")?;
+        reservation.resize_capacity(retained)
+            .map_err(|error| format!("payload argument snapshot memory: {error:?}"))?;
+        snapshot.push(argument);
+    }
+    if snapshot.len() != count {
+        return Err("payload argument count changed during acquisition".into());
+    }
+    Ok(PayloadArguments { arguments: snapshot, _reservation: reservation })
 }
 
 /// Only acquisition is specialized. Authorization, resource identity, Unicode
@@ -107,7 +176,8 @@ fn run() -> Result<(), String> {
     )?;
     let launch: Launch = serde_json::from_slice(&launch_bytes).map_err(|error| error.to_string())?;
     launch.input_text_bytes.checked_add(1).ok_or("input acquisition cap overflows")?;
-    let payload_arguments = arguments.collect::<Vec<_>>();
+    let memory = ManagedMemoryBudget::new(launch.memory_bytes);
+    let mut payload_arguments = bounded_arguments(arguments, launch.input_text_bytes, &memory)?;
     let bytecode = include_bytes!("../program.mecb");
     if hex(&Sha256::digest(bytecode)) != "@BYTECODE_SHA256@" {
         return Err("embedded canonical bytecode identity mismatch".into());
@@ -136,7 +206,6 @@ fn run() -> Result<(), String> {
     if !linked.descriptor().plan().inputs().is_empty() {
         return Err("hosted application has unbound ordinary turn inputs".into());
     }
-    let memory = ManagedMemoryBudget::new(launch.memory_bytes);
     let mut library = mech_core::TargetMemoryProfile::current_resident_cpu()
         .map_err(diagnostic)?.limits;
     library.max_output_elements = Some(launch.library.output_elements);
@@ -172,7 +241,8 @@ fn run() -> Result<(), String> {
     effect_values.try_reserve_exact(effect_count).map_err(diagnostic)?;
 
     let backend = ArgumentSnapshotCliBackend::new(
-        BoundedStdin { limit: launch.input_text_bytes }, payload_arguments,
+        BoundedStdin { limit: launch.input_text_bytes },
+        std::mem::take(&mut payload_arguments.arguments),
     );
     let mut builder = RuntimeBuilder::new()
         .host_factory(Box::new(CliHostFactory::with_backend(backend).map_err(diagnostic)?))
@@ -250,8 +320,9 @@ fn run() -> Result<(), String> {
             "native_transport_bytes": native.transport_bytes,
             "host_result_carrier_bytes": carrier_bytes,
             "input_acquisition_byte_cap": launch.input_text_bytes,
+            "payload_argument_snapshot_reserved_bytes": payload_arguments._reservation.capacity_bytes(),
             "shutdown": "completed",
-            "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; input acquisition has explicit cap, native memory/work account does not claim provider cache bytes"
+            "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account"
         });
         write_new(Path::new(&report), &serde_json::to_vec_pretty(&document).unwrap())?;
     }
@@ -273,5 +344,132 @@ mod tests {
         assert_eq!(bounded(std::io::Cursor::new(b""), 0).unwrap(), b"");
         assert!(bounded(std::io::Cursor::new(b"x"), 0).is_err());
         assert!(bounded(std::io::Cursor::new(b""), u64::MAX).is_err());
+    }
+
+    #[test]
+    fn payload_aggregate_cap_preserves_unicode_and_empty_arguments() {
+        let memory = ManagedMemoryBudget::new(4096);
+        let arguments = || vec![OsString::from("é"), OsString::new(), OsString::from("abc")];
+        let exact = bounded_arguments(arguments().into_iter(), 5, &memory).unwrap();
+        assert_eq!(exact.arguments, arguments());
+        assert_eq!(exact._reservation.budget(), memory);
+        drop(exact);
+        assert_eq!(memory.used_bytes(), 0);
+        let error = bounded_arguments(arguments().into_iter(), 4, &memory).err().unwrap();
+        assert!(error.contains("finite aggregate acquisition cap"));
+        assert_eq!(memory.used_bytes(), 0);
+        let empty = bounded_arguments(Vec::new().into_iter(), 0, &memory).unwrap();
+        assert!(empty.arguments.is_empty());
+        drop(empty);
+        let empty_argument = bounded_arguments(vec![OsString::new()].into_iter(), 0, &memory).unwrap();
+        assert_eq!(empty_argument.arguments, [OsString::new()]);
+        drop(empty_argument);
+        assert_eq!(memory.used_bytes(), 0);
+    }
+
+    #[test]
+    fn payload_header_denial_precedes_iteration_and_limits_many_empty_arguments() {
+        let count = 32;
+        let header_bytes = argument_carrier_bytes(count).unwrap();
+        let memory = ManagedMemoryBudget::new(header_bytes - 1);
+        let reads = std::cell::Cell::new(0);
+        let arguments = vec![OsString::new(); count].into_iter().inspect(|_| reads.set(reads.get() + 1));
+        let error = bounded_arguments(arguments, 0, &memory).err().unwrap();
+        assert!(error.contains("payload argument snapshot memory: BudgetExceeded"));
+        assert_eq!(reads.get(), 0);
+        assert_eq!(memory.used_bytes(), 0);
+        assert!(argument_carrier_bytes(usize::MAX).is_err());
+        // Deterministic allocator-rounding witness through the same guard:
+        // already spare header capacity must not be silently retained.
+        let mut spare = Vec::with_capacity(count + 1);
+        let error = reserve_argument_headers(&mut spare, count).unwrap_err();
+        assert_eq!(error, "payload argument header allocation exceeds admitted capacity");
+    }
+
+    #[test]
+    fn payload_aggregate_denial_stops_before_unused_later_arguments() {
+        let memory = ManagedMemoryBudget::new(4096);
+        let reads = std::cell::Cell::new(0);
+        let arguments = ["a", "unused large argument", "never acquired"].map(OsString::from)
+            .into_iter().inspect(|_| reads.set(reads.get() + 1));
+        let error = bounded_arguments(arguments, 1, &memory).err().unwrap();
+        assert!(error.contains("finite aggregate acquisition cap"));
+        assert_eq!(reads.get(), 2);
+        assert_eq!(memory.used_bytes(), 0);
+    }
+
+    fn arguments_with_spare_capacity() -> Vec<OsString> {
+        let mut first = OsString::with_capacity(1024);
+        first.push("x");
+        let mut second = OsString::with_capacity(2048);
+        second.push("é");
+        vec![first, second]
+    }
+
+    #[test]
+    fn payload_memory_exact_and_one_short_include_capacity_and_vec_arc_peak() {
+        let arguments = arguments_with_spare_capacity();
+        let required = argument_carrier_bytes(arguments.len()).unwrap()
+            + arguments.iter().map(|argument| argument.capacity() as u64).sum::<u64>();
+        assert!(required > argument_carrier_bytes(2).unwrap() + 3);
+        let memory = ManagedMemoryBudget::new(required);
+        let exact = bounded_arguments(arguments.into_iter(), 3, &memory).unwrap();
+        assert_eq!(exact._reservation.capacity_bytes(), required);
+        assert_eq!(memory.used_bytes(), required);
+        assert!(memory.reserve_capacity(1).is_err());
+        assert_eq!(memory.used_bytes(), required);
+        drop(exact);
+        assert_eq!(memory.used_bytes(), 0);
+        let short = ManagedMemoryBudget::new(required - 1);
+        let error = bounded_arguments(arguments_with_spare_capacity().into_iter(), 3, &short).err().unwrap();
+        let expected = format!("payload argument snapshot memory: {:?}", mech_core::MemoryRuntimeError::BudgetExceeded {
+            operation: None, requested: required, limit: required - 1,
+        });
+        assert_eq!(error, expected);
+        assert_eq!(short.used_bytes(), 0);
+        let recovered = bounded_arguments(arguments_with_spare_capacity().into_iter(), 3, &memory).unwrap();
+        drop(recovered);
+        assert_eq!(memory.used_bytes(), 0);
+    }
+
+    #[test]
+    fn payload_backend_keeps_ordinary_indices_count_and_charge_lifetime() {
+        let memory = ManagedMemoryBudget::new(4096);
+        let mut snapshot = bounded_arguments(
+            ["", "é", "--"].map(OsString::from).into_iter(), 4, &memory,
+        ).unwrap();
+        let reserved = snapshot._reservation.capacity_bytes();
+        let backend = ArgumentSnapshotCliBackend::new(
+            BoundedStdin { limit: 0 }, std::mem::take(&mut snapshot.arguments),
+        );
+        assert_eq!(backend.argument_count().unwrap(), 3);
+        assert_eq!(backend.argument(0).unwrap(), None);
+        assert_eq!(backend.argument(1).unwrap(), Some(OsString::new()));
+        assert_eq!(backend.argument(2).unwrap(), Some(OsString::from("é")));
+        assert_eq!(backend.argument(3).unwrap(), Some(OsString::from("--")));
+        assert_eq!(backend.argument(4).unwrap(), None);
+        assert_eq!(memory.used_bytes(), reserved);
+        drop(backend);
+        assert_eq!(memory.used_bytes(), reserved);
+        drop(snapshot);
+        assert_eq!(memory.used_bytes(), 0);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn payload_snapshot_does_not_decode_or_normalize_raw_os_arguments() {
+        use std::os::unix::ffi::{OsStrExt, OsStringExt};
+        let memory = ManagedMemoryBudget::new(4096);
+        let raw = vec![0xff, b'x'];
+        let mut snapshot = bounded_arguments(
+            vec![OsString::from_vec(raw.clone())].into_iter(), 2, &memory,
+        ).unwrap();
+        let backend = ArgumentSnapshotCliBackend::new(
+            BoundedStdin { limit: 0 }, std::mem::take(&mut snapshot.arguments),
+        );
+        assert_eq!(backend.argument(1).unwrap().unwrap().as_os_str().as_bytes(), raw);
+        drop(backend);
+        drop(snapshot);
+        assert_eq!(memory.used_bytes(), 0);
     }
 }

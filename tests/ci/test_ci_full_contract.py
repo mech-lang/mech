@@ -1061,7 +1061,14 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertLess(steps.index(compile_step), steps.index(execute))
         self.assertLess(steps.index(execute), steps.index(select))
         self.assertLess(steps.index(select), steps.index(qualify))
-        self.assertGreater(int(re.search(r"--timeout-secs (\d+)", qualify).group(1)), 5700)
+        # Two variants each run twelve input cases plus closed stdout. Include
+        # the unused-argv acquisition/memory denials without shortening any
+        # existing child bound to fit the enclosing supervisor.
+        inner_ceilings = 2 * 900 + 2 * 120 + 26 * 120 + 10 * 120 + 4 * 15
+        self.assertGreaterEqual(
+            int(re.search(r"--timeout-secs (\d+)", qualify).group(1)),
+            inner_ceilings + 300,
+        )
         for selected in (compile_step, execute, select, qualify):
             timeout = int(re.search(r"--timeout-secs (\d+)", selected).group(1))
             actions = int(re.search(r"timeout-minutes: (\d+)", selected).group(1)) * 60
@@ -1075,6 +1082,12 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("fn " + case.split("::")[-1] + "()", fixture)
         self.assertIn("MECH_CANONICAL_HOSTED_SOURCE_COMMIT", fixture)
         self.assertIn("MECH_CANONICAL_HOSTED_EVIDENCE_DIR", fixture)
+        for label in (
+            "unused-arguments-exact-cap",
+            "unused-arguments-over-cap",
+            "argument-header-memory-denial",
+        ):
+            self.assertIn(f'("{label}", GGTA_INPUT,', fixture)
 
     def test_hosted_job_deadline_covers_every_serial_step_and_cleanup(self):
         settings = job_block(NATIVE, "canonical-hosted").split("    steps:\n", 1)[0]

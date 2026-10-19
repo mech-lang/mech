@@ -230,6 +230,9 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
         for (label, input, expected) in [
             ("ordinary", GGTA_INPUT, Some(GGTA_OUTPUT)),
             ("exact-input-cap", GGTA_INPUT, Some(GGTA_OUTPUT)),
+            ("unused-arguments-exact-cap", GGTA_INPUT, Some(GGTA_OUTPUT)),
+            ("unused-arguments-over-cap", GGTA_INPUT, None),
+            ("argument-header-memory-denial", GGTA_INPUT, None),
             (
                 "empty",
                 b">THREE\n>FOUR\nA\n".as_slice(),
@@ -253,6 +256,10 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
                 "work-denial" => policy["work"] = json!(1),
                 "input-cap-denial" => policy["input_text_bytes"] = json!(3),
                 "exact-input-cap" => policy["input_text_bytes"] = json!(input.len()),
+                "unused-arguments-exact-cap" | "unused-arguments-over-cap" => {
+                    policy["input_text_bytes"] = json!(input.len());
+                }
+                "argument-header-memory-denial" => policy["memory_bytes"] = json!(0),
                 "overflow-input-cap" => policy["input_text_bytes"] = json!(u64::MAX),
                 _ => (),
             }
@@ -269,6 +276,18 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
                 // no-report assertion verifies failure publication ordering.
                 .arg(&report_path)
                 .arg("--");
+            // FULL reads stdin, not @args: even UNUSED payload arguments must
+            // pass aggregate acquisition and same-account snapshot admission.
+            let payload_arguments = match label {
+                "unused-arguments-exact-cap" | "unused-arguments-over-cap" => {
+                    let first = input.len() / 2;
+                    let extra = usize::from(label == "unused-arguments-over-cap");
+                    vec!["x".repeat(first), "y".repeat(input.len() - first + extra)]
+                }
+                "argument-header-memory-denial" => vec![String::new(), String::new()],
+                _ => Vec::new(),
+            };
+            command.args(&payload_arguments);
             // Legacy source-native policy cannot grant authority to this route.
             command.env("MECH_NATIVE_SECURITY", "trusted");
             let output = with_input(&mut command, &directory, label, &input_path);
@@ -326,6 +345,17 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
                             .contains("NativeProgramExecutionError")
                     );
                 }
+                if label == "unused-arguments-over-cap" {
+                    assert!(String::from_utf8_lossy(&output.stderr).contains(
+                        "payload arguments exceed their finite aggregate acquisition cap"
+                    ));
+                }
+                if label == "argument-header-memory-denial" {
+                    assert!(
+                        String::from_utf8_lossy(&output.stderr)
+                            .contains("payload argument snapshot memory: BudgetExceeded")
+                    );
+                }
             }
             assert_eq!(
                 pin(&binary),
@@ -336,6 +366,7 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
                 "label":label, "accepted":expected.is_some(),
                 "input_sha256":hash(input), "launch_sha256":hash(&policy_bytes),
                 "stdout_sha256":hash(&output.stdout), "stderr_sha256":hash(&output.stderr),
+                "payload_arguments":payload_arguments,
                 "binary_sha256":binary_pin,
             }));
         }
