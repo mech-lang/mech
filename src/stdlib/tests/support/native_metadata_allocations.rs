@@ -20,11 +20,20 @@ use std::{
 // Reuse the existing successful test-suite allocator delegate and scoped
 // allocation request/byte counters; add only an opt-in peak observer here.
 #[path = "../../../core/tests/support/allocation_probe.rs"]
-#[allow(
-    dead_code,
-    reason = "reuses the byte-counting API; the older count-only API is not needed here"
-)]
 mod allocation_probe;
+
+#[test]
+fn shared_probe_count_only_window_resets_before_byte_window() {
+    let (data, requests) = allocation_probe::measured(|| Vec::<u8>::with_capacity(64));
+    assert!(requests > 0);
+    assert!(data.capacity() >= 64);
+    drop(data);
+    let (data, requests, bytes) =
+        allocation_probe::measured_with_bytes(|| Vec::<u8>::with_capacity(64));
+    assert!(requests > 0);
+    assert!(bytes >= 64);
+    assert!(data.capacity() >= 64);
+}
 
 struct NativeMetadataAllocator;
 #[global_allocator]

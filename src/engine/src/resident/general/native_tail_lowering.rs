@@ -232,7 +232,6 @@ impl Builder<'_> {
         )
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn structural_walk(
         &mut self,
         at: NativeMatchOrigin,
