@@ -1010,7 +1010,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertNotRegex(settings, r"(?m)^    if:")
         self.assertNotIn("continue-on-error", native)
         self.assertNotIn("--skip", native)
-        self.assertIn("timeout-minutes: 150", settings)
+        self.assertRegex(settings, r"(?m)^    timeout-minutes: [1-9][0-9]*$")
         self.assertIn("RUSTUP_TOOLCHAIN: nightly-2026-03-03", settings)
         self.assertIn('CARGO_BUILD_JOBS: "1"', settings)
         self.assertIn('CARGO_INCREMENTAL: 0', settings)
@@ -1075,6 +1075,18 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("fn " + case.split("::")[-1] + "()", fixture)
         self.assertIn("MECH_CANONICAL_HOSTED_SOURCE_COMMIT", fixture)
         self.assertIn("MECH_CANONICAL_HOSTED_EVIDENCE_DIR", fixture)
+
+    def test_hosted_job_deadline_covers_every_serial_step_and_cleanup(self):
+        settings = job_block(NATIVE, "canonical-hosted").split("    steps:\n", 1)[0]
+        job_limit = re.search(r"(?m)^    timeout-minutes: ([1-9][0-9]*)$", settings)
+        self.assertIsNotNone(job_limit)
+        step_limits = []
+        for step in job_steps(NATIVE, "canonical-hosted"):
+            # Checkout and always-run upload also need explicit finite bounds.
+            limit = re.search(r"(?m)^        timeout-minutes: ([1-9][0-9]*)$", step)
+            self.assertIsNotNone(limit, step)
+            step_limits.append(int(limit.group(1)))
+        self.assertGreaterEqual(int(job_limit.group(1)), sum(step_limits) + 10)
 
     def test_planning_preparation_execution_and_deadlines_remain_separate(self):
         steps = job_steps(NATIVE, "native-plan")

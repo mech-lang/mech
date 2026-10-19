@@ -175,7 +175,9 @@ jobs:
   canonical-hosted:
     name: Canonical hosted native applications
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    # All serial step ceilings total 170 minutes; reserve ten more for
+    # orchestration so no valid inner deadline is cut short by this job.
+    timeout-minutes: 180
     env:
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_BUILD_JOBS: "1"
@@ -185,6 +187,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
+        timeout-minutes: 2
         with:
           ref: ${{ inputs.validation_ref }}
       - name: Record exact canonical hosted checkout
@@ -259,6 +262,7 @@ jobs:
             --test-threads=1 --nocapture
       - name: Retain canonical hosted diagnostics and qualification evidence
         if: always()
+        timeout-minutes: 5
         uses: actions/upload-artifact@v4
         with:
           name: canonical-hosted-${{ github.run_id }}-${{ github.run_attempt }}
