@@ -230,7 +230,10 @@ jobs:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'architecture') }}
     name: Architecture mutation qualification (${{ matrix.shard }})
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    # Four outer shards each run two workers. A passing 453s shard plus
+    # checkout/tool setup exceeded the old eight-minute job ceiling; leave
+    # bounded setup/cleanup headroom without dropping tests or changing shards.
+    timeout-minutes: 12
     strategy:
       fail-fast: false
       matrix:
