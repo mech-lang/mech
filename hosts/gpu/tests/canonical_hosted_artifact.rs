@@ -896,3 +896,6 @@ mod linked;
 
 #[path = "support/canonical_hosted_scaling.rs"]
 mod scaling;
+
+#[path = "support/canonical_hosted_zero_resources.rs"]
+mod zero_resources;

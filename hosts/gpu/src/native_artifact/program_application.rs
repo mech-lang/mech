@@ -71,13 +71,8 @@ pub fn generate_linked_hosted_program_application(
     }
     // Metadata only: exact contracts, original Live observations, Snapshot sends
     // and shared canonical effect order. No provider/input is observed here.
-    let ports = mech_runtime::CanonicalNativeResourcePlan::select(artifact, usize::MAX)
+    let _ports = mech_runtime::CanonicalNativeResourcePlan::select(artifact, usize::MAX)
         .map_err(|error| NativeApplicationError::Encoding(format!("{error:?}")))?;
-    if ports.requirements().is_empty() {
-        return Err(NativeApplicationError::Invalid(
-            "hosted application requires original canonical resource requirements",
-        ));
-    }
     let object =
         super::emit_program_object(artifact, catalog).map_err(NativeApplicationError::Compile)?;
     let bytecode = encode_program_artifact_bytecode_v1(artifact)

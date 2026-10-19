@@ -233,7 +233,7 @@ standard = false
 cross_cutting = false
 
 [owners.native-products]
-paths = ["src/cli/commands/build.rs", "src/cli/app/**", "src/cli/runtime_plan.rs", "src/cli/host_factories.rs", "tests/mech_build.rs", "tests/catalog_closure.rs", "tests/fixtures/native-*/**", "machines/*/src/catalog.rs", "machines/*/build.rs"]
+paths = ["src/cli/commands/build.rs", "src/cli/commands/build_cranelift.rs", "src/cli/commands/build_cranelift_tests.rs", "tests/canonical_native_build.rs", "tests/support/canonical_native_build.rs", "src/cli/app/**", "src/cli/runtime_plan.rs", "src/cli/host_factories.rs", "tests/mech_build.rs", "tests/catalog_closure.rs", "tests/fixtures/native-*/**", "machines/*/src/catalog.rs", "machines/*/build.rs"]
 exclude_paths = ["*.md", "LICENSE"]
 families = ["native", "linkage", "artifact"]
 command = []

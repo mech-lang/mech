@@ -38,9 +38,12 @@ pub use bundle::{
     CANONICAL_PROGRAM_BUNDLE_VERSION, CanonicalDependencySource, CanonicalProgramBundle,
 };
 #[cfg(feature = "resident-routing-source")]
-pub use compiler::ProgramCompiler;
-#[cfg(feature = "resident-routing-source")]
 pub(crate) use compiler::ProgramCompilerView;
+#[cfg(feature = "resident-routing-source")]
+pub use compiler::{
+    CanonicalCompilationSource, CanonicalCompilationSources, ProgramCompiler,
+    RetainedCanonicalCompilation,
+};
 #[cfg(feature = "compute")]
 pub use compiler::{ComputeRegionCompilation, MixedProgramCompilation};
 #[cfg(feature = "resident-external")]

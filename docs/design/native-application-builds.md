@@ -264,9 +264,9 @@ does not perform native analysis or invoke Cargo; plan emit does not generate
 a project; Cargo-project emit generates and locks a project without building
 an executable.
 
-## Canonical machine-code and experimental source routes
+## Canonical machine-code builds
 
-The `mech-gpu` canonical native adapter consumes `ProgramArtifact` through
+The `mech-gpu` scalar canonical native API consumes `ProgramArtifact` through
 `lower_pure_native_artifact`, using private semantic witnesses from the actual
 selected resident binders. Its immutable typed IR supports stateless Turn
 operations on `Bool`, `U64`, and `I64`. It rejects resources, constraints,
@@ -282,15 +282,54 @@ Object emission alone is not linked execution evidence. The explicit linked
 application qualification builds and executes generated applications and is
 invoked by the full CI workflow.
 
-The optional CLI `--backend cranelift` route still calls the separate
-source-to-sequence/control/grid implementation in `hosts/gpu/src/native_build.rs`.
-It requires `cranelift_build`, emits only native applications for the current
-host, and rejects resident host configuration, `--debug`, and `--trace`.
-`--scalar` and `--fp-contract-loop` are specific to this route. It retains
-capabilities outside the canonical native scalar slice, including floating
-point/vector kernels, collections, control flow, and standalone I/O. Migration
-must transfer those capabilities and their behavioral tests to artifact-based
-lowering before removing the corresponding source frontends.
+The optional public `--backend cranelift` build consumes the larger checked
+canonical program path, `generate_linked_hosted_program_application`. It uses
+the same retained `ProgramArtifact`, exact compilation catalog and admitted
+source-document owners as ordinary source compilation. It does not retry the
+legacy sequence/control/grid frontends or resident execution on rejection.
+Raw `.mecb` inputs are canonically decoded against the current standard catalog
+and explicitly marked **source-unpaired**; they acquire no claimed source owner.
+
+This opt-in requires `cranelift_build`, a local workspace dependency tree, native
+emit and the current supported host. Linked binary names must be 1–64 ASCII
+letters, digits or hyphens, starting with a letter; they are never sanitized.
+It rejects `--target`, other emit modes, `--scalar`, `--fp-contract-loop`,
+`--debug`, `--trace` and runtime configuration (including discovered config;
+use `--no-config`). Default resident builds and their bytecode remain unchanged.
+The generated runtime-only binary uses the existing explicit launch contract:
+
+```text
+mech --no-config build program.mec --backend cranelift --name app \
+  --workspace-root /absolute/path/to/mech --keep-project --offline --out ./app
+./app launch.json report.json -- [PAYLOAD_ARGUMENTS...]
+```
+
+The launch JSON alone supplies grants and execution/resource/acquisition limits;
+compiler planning uses empty CLI grants and does not embed launch authority.
+The same runtime admits original requirements, executes generated closed
+activation, captures provider inputs, resumes the same native session and
+validates/commits effects. There is no runtime parser, JIT or resident body.
+The current shell installs the CLI provider only, supports stateless String
+Live observations/Snapshot sends and no ordinary turn inputs, and rejects
+unsupported programs or providers rather than falling back. Root values are
+not implicitly printed; only explicit resource effects can write output.
+A program with no resources needs no grants and remains on this same shell.
+
+`--keep-project` retains the exact pinned Object/bytecode/identity and Cargo
+project. Its `application.mec` is a JSON provenance-only bundle, not executable
+Mech source: ordered accepted roots/dependencies carry URI, revision, nominal
+origin/package and exact UTF-8 bytes. Packaging does not reopen source files.
+Building uses the shared frozen workspace lock seed, isolated pinned Cargo,
+`--locked` and Cargo's exact reported executable. The native program's supported
+slice is selected by the maintained artifact compiler, not by benchmark names.
+A release Cargo profile does not itself change the emitted Object's optimization
+setting. Emission/build metadata alone is not execution or timing evidence.
+
+This adapter implements the secured launch contract only. Setting the legacy
+`MECH_NATIVE_SECURITY=trusted` environment variable does not bypass grants.
+A controlled same-body trusted/secured lifecycle comparison, full-input suite
+qualification and benchmark publication remain separate outstanding work; this
+CLI integration does not complete them or establish new timing results.
 
 Mixed `@compute`, `@cpu`, and `@gpu` applications use the separate
 `mech-compute` backend/session contract. Their physical CPU and wgpu executors

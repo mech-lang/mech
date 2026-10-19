@@ -114,11 +114,11 @@ fn workspace_resolution_patches(workspace: &Path) -> Result<String, NativeApplic
     Ok(result)
 }
 
-pub(super) fn prepare_destination(
-    workspace: &Path,
-    directory: &Path,
+/// The exact shared name grammar for every generated linked application.
+/// This validates a name only; it creates no project or source/entry authority.
+pub fn validate_linked_application_binary_name(
     binary_name: &str,
-) -> Result<PathBuf, NativeApplicationError> {
+) -> Result<(), NativeApplicationError> {
     if binary_name.is_empty()
         || binary_name.len() > 64
         || !binary_name
@@ -128,6 +128,15 @@ pub(super) fn prepare_destination(
     {
         return Err(NativeApplicationError::Invalid("invalid binary name"));
     }
+    Ok(())
+}
+
+pub(super) fn prepare_destination(
+    workspace: &Path,
+    directory: &Path,
+    binary_name: &str,
+) -> Result<PathBuf, NativeApplicationError> {
+    validate_linked_application_binary_name(binary_name)?;
     let workspace = workspace.canonicalize()?;
     if !workspace.join("hosts/gpu/Cargo.toml").is_file()
         || !workspace.join("src/stdlib/Cargo.toml").is_file()

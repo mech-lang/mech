@@ -1136,6 +1136,118 @@ class FullWorkflowContractTests(unittest.TestCase):
         ):
             self.assertIn(f'("{label}", GGTA_INPUT,', fixture)
 
+
+    def test_public_canonical_native_cli_is_required_and_runs_saved_exact_selections(self):
+        native = job_block(NATIVE, "canonical-native-cli")
+        settings = native.split("    steps:\n", 1)[0]
+        self.assertNotRegex(settings, r"(?m)^    if:")
+        for forbidden in ("continue-on-error", "--skip", "--no-default-features", "CARGO_HOME"):
+            self.assertNotIn(forbidden, native)
+        self.assertIn("RUSTUP_TOOLCHAIN: nightly-2026-03-03", settings)
+        self.assertIn('CARGO_BUILD_JOBS: "1"', settings)
+        self.assertIn("ref: ${{ inputs.validation_ref }}", native)
+        self.assertIn('test "$actual" = "$expected"', native)
+        self.assertIn('test "$actual" = "$CHECKOUT_SHA"', native)
+        for source, job in ((CI, "early-native-plan"), (FULL, "native-plan")):
+            self.assertIn("uses: ./.github/workflows/ci-native-plan.yml", job_block(source, job))
+        self.assertIn("- early-native-plan", job_block(CI, "pr-gate"))
+        self.assertIn("- native-plan", job_block(FULL, "cargo"))
+        self.assertIn("native-cli-collision", FULL)  # existing collision coverage is additive
+        steps = job_steps(NATIVE, "canonical-native-cli")
+        def named(name):
+            return next(step for step in steps if f"- name: {name}\n" in step)
+        lib = named("Compile public canonical CLI unit contracts without execution")
+        public = named("Compile public canonical CLI process contracts without execution")
+        for step in (lib, public):
+            self.assertIn("cargo +nightly-2026-03-03 test --locked --offline -j1 -p mech", step)
+            self.assertIn("--features full_compiler,cranelift_build", step)
+            self.assertIn("--no-run --message-format=json-render-diagnostics", step)
+        self.assertIn("--record-test-executable mech", lib)
+        self.assertIn("--lib", lib)
+        self.assertIn("--record-test-executable canonical_native_build", public)
+        self.assertIn("--test canonical_native_build", public)
+        units = named("Execute public canonical CLI unit contracts")
+        qualify = named("Qualify all public canonical CLI secured process cases")
+        unit_selection = named("Verify public canonical CLI unit selection is exact")
+        public_selection = named("Verify public canonical CLI process selection is exact")
+        for step in (unit_selection, units):
+            self.assertIn("--test-executable-file target/native-plan-logs/canonical-cli-lib-executable", step)
+            self.assertIn("cli::commands::build::cranelift::tests::", step)
+        for step in (public_selection, qualify):
+            self.assertIn("--test-executable-file target/native-plan-logs/canonical-cli-public-executable", step)
+        self.assertIn("--list cli::commands::build::cranelift::tests::", unit_selection)
+        self.assertIn("check_canonical_cli_ci.py unit-selection", unit_selection)
+        self.assertIn("--list --ignored", public_selection)
+        self.assertIn("check_canonical_cli_ci.py public-selection", public_selection)
+        self.assertIn("--ignored --test-threads=1 --nocapture", qualify)
+        self.assertNotIn("--exact", qualify)
+        for step in (unit_selection, units, public_selection, qualify):
+            self.assertNotIn("cargo +", step)
+            self.assertNotRegex(step, r"(?m)^        if:")
+        self.assertIn("--test-threads=1 --nocapture", units)
+        self.assertNotIn("--ignored", units)
+        ordered = (lib, public, named("Pin exact saved public CLI executables"),
+                   unit_selection, units, public_selection, qualify,
+                   named("Verify public canonical CLI completion and immutable pins"))
+        self.assertEqual([steps.index(step) for step in ordered],
+                         sorted(steps.index(step) for step in ordered))
+        self.assertEqual(native.count("python3 scripts/run-native-plan-stage.py"), 6)
+
+    def test_public_canonical_cli_evidence_checks_counts_pins_and_all_process_outcomes(self):
+        native = job_block(NATIVE, "canonical-native-cli")
+        checker = (ROOT / "scripts/check_canonical_cli_ci.py").read_text(encoding="utf-8")
+        self.assertIn("len(names) == len(expected) and set(names) == expected", checker)
+        self.assertIn('passed_count(log_dir / "canonical-cli-unit-contracts.log", 5)', checker)
+        self.assertIn('passed_count(log_dir / "canonical-cli-public-qualification.log", 3)', checker)
+        for required in ('"owned_group_cleanup") == "complete"', '"command_exit_status") == 0',
+                         '"reason") == "exit"', 'target.get("kind") == ["bin"]',
+                         'message.get("reason") == "compiler-artifact"',
+                         'digest(path) == entry["sha256"]', "verify_pins(log_dir)",
+                         "len(directories) == 3", "len(receipts) == len(expected)",
+                         'receipt.get("state") == "completed"', 'receipt.get("success") is success',
+                         'receipt[f"{stream}_sha256"]'):
+            self.assertIn(required, checker)
+        self.assertIn('scripts/tests/test_canonical_cli_ci.py', native)
+        self.assertIn("MECH_CANONICAL_CLI_EVIDENCE_DIR: ${{ runner.temp }}/canonical-cli-evidence", native)
+        self.assertIn('test ! -e "$RUNNER_TEMP/canonical-cli-evidence"', native)
+        self.assertIn("sha256sum Cargo.toml Cargo.lock", native)
+        self.assertIn("sha256sum --check target/native-plan-logs/canonical-cli-source.sha256", native)
+        self.assertIn('test "$(git rev-parse HEAD)" = "$CHECKOUT_SHA"', native)
+        for path in ("src/cli/commands/build_cranelift.rs",
+                     "hosts/gpu/Cargo.toml",
+                     "src/cli/commands/build_cranelift_tests.rs", "tests/canonical_native_build.rs",
+                     "tests/support/canonical_native_build.rs",
+                     "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+                     "src/runtime/src/runtime/program/compiler_retained_input.rs",
+                     "src/build/src/cargo/command.rs"):
+            self.assertIn(path, native)
+        steps = job_steps(NATIVE, "canonical-native-cli")
+        verify = next(step for step in steps if "- name: Verify public canonical CLI completion and immutable pins\n" in step)
+        upload = next(step for step in steps if "- name: Retain public canonical CLI diagnostics and process evidence\n" in step)
+        self.assertIn("if: always()", verify)
+        self.assertIn("check_canonical_cli_ci.py complete", verify)
+        for text in ("if: always()", "target/native-plan-logs", "${{ runner.temp }}/canonical-cli-evidence",
+                     "if-no-files-found: error", "retention-days: 14"):
+            self.assertIn(text, upload)
+
+    def test_public_canonical_cli_deadlines_cover_inner_cases_and_every_serial_step(self):
+        native = job_block(NATIVE, "canonical-native-cli")
+        settings = native.split("    steps:\n", 1)[0]
+        step_limits = []
+        for step in job_steps(NATIVE, "canonical-native-cli"):
+            limit = re.search(r"(?m)^        timeout-minutes: ([1-9][0-9]*)$", step)
+            self.assertIsNotNone(limit, step)
+            step_limits.append(int(limit.group(1)))
+            if "python3 scripts/run-native-plan-stage.py" in step:
+                timeout = int(re.search(r"--timeout-secs (\d+)", step).group(1))
+                self.assertGreater(int(limit.group(1)) * 60, timeout + 30 + 5 + 15)
+        job_limit = int(re.search(r"(?m)^    timeout-minutes: ([1-9][0-9]*)$", settings).group(1))
+        self.assertGreaterEqual(job_limit, sum(step_limits) + 10)
+        qualify = next(step for step in job_steps(NATIVE, "canonical-native-cli")
+                       if "- name: Qualify all public canonical CLI secured process cases\n" in step)
+        inner = (120 + 2 * 1800 + 4 * 120) + (1800 + 2 * 120) + (1800 + 120)
+        self.assertGreaterEqual(int(re.search(r"--timeout-secs (\d+)", qualify).group(1)), inner + 300)
+
     def test_hosted_job_deadline_covers_every_serial_step_and_cleanup(self):
         settings = job_block(NATIVE, "canonical-hosted").split("    steps:\n", 1)[0]
         job_limit = re.search(r"(?m)^    timeout-minutes: ([1-9][0-9]*)$", settings)

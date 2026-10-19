@@ -18,6 +18,7 @@ pub use abi::{NATIVE_ARTIFACT_ABI_VERSION, NATIVE_ARTIFACT_ENTRY_SYMBOL, NativeA
 #[cfg(feature = "canonical-native")]
 pub use application::{
     GeneratedLinkedApplication, NativeApplicationError, generate_linked_application,
+    validate_linked_application_binary_name,
 };
 #[cfg(feature = "canonical-native")]
 pub use compiler::{
