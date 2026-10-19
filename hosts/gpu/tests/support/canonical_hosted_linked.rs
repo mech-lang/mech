@@ -18,6 +18,8 @@ mod process;
 use process::{assert_no_ambient_cargo_config, bounded, clean, closure, hash, pin, workspace};
 #[path = "canonical_program_pins.rs"]
 mod provenance;
+#[path = "canonical_hosted_template_tests.rs"]
+mod template_tests;
 
 fn launch() -> Value {
     json!({
@@ -226,6 +228,14 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
         fs::copy(&built_binary, &binary).unwrap();
         let binary_pin = pin(&binary);
         assert_eq!(binary_pin, pin(&built_binary));
+        let generated_template_tests = template_tests::qualify(
+            project.manifest_path(),
+            binary_name,
+            &target,
+            &directory,
+            false,
+        );
+        assert_eq!(binary_pin, pin(&built_binary));
         let mut cases = Vec::new();
         for (label, input, expected) in [
             ("ordinary", GGTA_INPUT, Some(GGTA_OUTPUT)),
@@ -395,6 +405,7 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
         results.push(json!({
             "variant":variant, "binary":binary, "binary_sha256":binary_pin,
             "runtime_units":units, "cases":cases, "pin_rejections":pin_rejections,
+            "generated_template_tests":generated_template_tests,
             "source_sha256":hash(FULL.as_bytes()),
             "bytecode_sha256":pin(&project.root().join("program.mecb")),
             "object_sha256":pin(&project.root().join("program.o")),

@@ -89,6 +89,12 @@ fn reserve_argument_headers(snapshot: &mut Vec<OsString>, count: usize) -> Resul
     }
     Ok(())
 }
+fn exact_capacity<T>(values: Vec<T>, count: usize, reason: &'static str) -> Result<Vec<T>, String> {
+    // The finite host-carrier bound funds count headers, not a minimum-sized
+    // allocation. Drop excess backing here before it can reach the runtime.
+    if values.capacity() != count { return Err(reason.into()); }
+    Ok(values)
+}
 fn bounded_arguments(
     arguments: impl ExactSizeIterator<Item = OsString>,
     limit: u64,
@@ -236,9 +242,13 @@ fn run() -> Result<(), String> {
     }
     let mut candidates = Vec::new();
     candidates.try_reserve_exact(count).map_err(diagnostic)?;
+    let mut candidates = exact_capacity(candidates, count,
+        "host output carrier allocation exceeds admitted capacity")?;
     candidates.resize_with(count, || None);
     let mut effect_values = Vec::new();
     effect_values.try_reserve_exact(effect_count).map_err(diagnostic)?;
+    let mut effect_values = exact_capacity(effect_values, effect_count,
+        "host effect carrier allocation exceeds admitted capacity")?;
 
     let backend = ArgumentSnapshotCliBackend::new(
         BoundedStdin { limit: launch.input_text_bytes },
@@ -365,6 +375,38 @@ mod tests {
         assert_eq!(empty_argument.arguments, [OsString::new()]);
         drop(empty_argument);
         assert_eq!(memory.used_bytes(), 0);
+    }
+
+    #[test]
+    fn result_carriers_reject_spare_capacity_and_drop_before_live_claim() {
+        struct Probe<'a> {
+            memory: &'a ManagedMemoryBudget,
+            dropped: &'a std::cell::Cell<usize>,
+        }
+        impl Drop for Probe<'_> {
+            fn drop(&mut self) {
+                assert_eq!(self.memory.used_bytes(), 128);
+                self.dropped.set(self.dropped.get() + 1);
+            }
+        }
+        let memory = ManagedMemoryBudget::new(256);
+        let claim = memory.reserve_capacity(128).unwrap();
+        let dropped = std::cell::Cell::new(0);
+        let mut values = Vec::with_capacity(3);
+        values.push(Probe { memory: &memory, dropped: &dropped });
+        // A deterministic spare-capacity response, independent of allocator
+        // rounding behavior, passes through the SAME production owned guard.
+        let error = exact_capacity(values, 2, "carrier capacity").err().unwrap();
+        assert_eq!(error, "carrier capacity");
+        assert_eq!(dropped.get(), 1);
+        assert_eq!(memory.used_bytes(), 128);
+        drop(claim);
+        assert_eq!(memory.used_bytes(), 0);
+        let values = Vec::<u64>::with_capacity(4);
+        let actual = values.capacity();
+        assert_eq!(exact_capacity(values, actual, "carrier capacity").unwrap().capacity(), actual);
+        assert!(exact_capacity(Vec::<u64>::new(), 1, "carrier capacity").is_err());
+        assert!(exact_capacity(Vec::<u64>::new(), 0, "carrier capacity").unwrap().is_empty());
     }
 
     #[test]

@@ -1064,7 +1064,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         # Two variants each run twelve input cases plus closed stdout. Include
         # the unused-argv acquisition/memory denials without shortening any
         # existing child bound to fit the enclosing supervisor.
-        inner_ceilings = 2 * 900 + 2 * 120 + 26 * 120 + 10 * 120 + 4 * 15
+        inner_ceilings = 2 * 900 + 2 * 120 + 2 * 300 + 26 * 120 + 10 * 120 + 4 * 15
         self.assertGreaterEqual(
             int(re.search(r"--timeout-secs (\d+)", qualify).group(1)),
             inner_ceilings + 300,
@@ -1082,6 +1082,11 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("fn " + case.split("::")[-1] + "()", fixture)
         self.assertIn("MECH_CANONICAL_HOSTED_SOURCE_COMMIT", fixture)
         self.assertIn("MECH_CANONICAL_HOSTED_EVIDENCE_DIR", fixture)
+        self.assertIn("template_tests::qualify(", fixture)
+        generated = (ROOT / "hosts/gpu/tests/support/canonical_hosted_template_tests.rs").read_text(encoding="utf-8")
+        self.assertIn("CargoInvocation::test_binary(", generated)
+        self.assertIn('"generated-template-tests", 300', generated)
+        self.assertIn("suite_passed(&output.stdout)", generated)
         for label in (
             "unused-arguments-exact-cap",
             "unused-arguments-over-cap",

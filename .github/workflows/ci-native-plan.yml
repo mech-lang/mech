@@ -175,9 +175,9 @@ jobs:
   canonical-hosted:
     name: Canonical hosted native applications
     runs-on: ubuntu-latest
-    # All serial step ceilings total 182 minutes; reserve thirteen more for
+    # All serial step ceilings total 192 minutes; reserve thirteen more for
     # orchestration so no valid inner deadline is cut short by this job.
-    timeout-minutes: 195
+    timeout-minutes: 205
     env:
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_BUILD_JOBS: "1"
@@ -246,16 +246,17 @@ jobs:
             linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned
           python3 -c 'from pathlib import Path; lines = Path("target/native-plan-logs/canonical-hosted-selection.log").read_text().splitlines(); expected = "linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned: test"; assert lines.count(expected) == 1, lines'
       - name: Qualify original and decoded secured hosted standalone applications
-        timeout-minutes: 117
+        timeout-minutes: 127
         env:
           MECH_CANONICAL_HOSTED_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
           MECH_CANONICAL_HOSTED_EVIDENCE_DIR: ${{ runner.temp }}/canonical-hosted-evidence
         run: |
           # Existing inner bounds: 2x900s initial builds, 2x120s metadata,
+          # 2x300s actual generated-template test suites,
           # 26x120s launches, 10x120s pin/recovery builds and 4x15s git checks.
-          # 6420s total ceilings leave 300s inside this stage for generation,
+          # 7020s total ceilings leave 300s inside this stage for generation,
           # supervision and cleanup; the Actions step leaves another 300s.
-          python3 scripts/run-native-plan-stage.py --stage canonical-hosted-linked --timeout-secs 6720 \
+          python3 scripts/run-native-plan-stage.py --stage canonical-hosted-linked --timeout-secs 7320 \
             --test-executable-file target/native-plan-logs/canonical-hosted-executable -- \
             --ignored --exact \
             linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned \
