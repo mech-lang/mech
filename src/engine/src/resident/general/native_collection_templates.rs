@@ -123,6 +123,14 @@ impl NativeCollectionLexicalTemplate {
 impl NativeCollectionPrimitive {
     pub const fn name(self) -> &'static str {
         match self {
+            Self::RangeExclusive => "range/exclusive",
+            Self::RangeInclusive => "range/inclusive",
+            Self::RangeIncrementExclusive => "range/exclusive-increment",
+            Self::RangeIncrementInclusive => "range/inclusive-increment",
+            Self::StringScalarAccess => "access/scalar",
+            Self::StringRangeAccess | Self::StringAllAccess => "access/range",
+            #[cfg(feature = "convert")]
+            Self::MatrixConversion => "convert/kind",
             #[cfg(feature = "pure_text")]
             Self::TextLines => "text/lines",
             #[cfg(feature = "pure_text")]
@@ -141,6 +149,11 @@ impl NativeCollectionPrimitive {
     }
     pub const fn arity(self) -> usize {
         match self {
+            Self::RangeIncrementExclusive | Self::RangeIncrementInclusive => 3,
+            Self::RangeExclusive
+            | Self::RangeInclusive
+            | Self::StringScalarAccess
+            | Self::StringRangeAccess => 2,
             #[cfg(feature = "pure_text")]
             Self::TextJoin | Self::NumberFormat => 2,
             _ => 1,
@@ -182,6 +195,14 @@ fn is_string_matrix(body: &SchemaBody, row: bool) -> bool {
 fn is_u64(body: &SchemaBody) -> bool {
     body == &SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
 }
+#[cfg(feature = "convert")]
+fn is_shallow_conversion_matrix(body: &SchemaBody) -> bool {
+    matches!(body, SchemaBody::Matrix { element, dimensions }
+        if dimensions.len() == 2 && matches!(element.as_ref(),
+            SchemaBody::Bool | SchemaBody::Index | SchemaBody::String
+            | SchemaBody::UnsignedInteger(_) | SchemaBody::SignedInteger(_)
+            | SchemaBody::FloatingPoint(_)))
+}
 #[cfg(feature = "map_ops")]
 fn is_count_map(body: &SchemaBody) -> bool {
     crate::intrinsics::map_ops::is_count_map(body)
@@ -198,6 +219,40 @@ fn validate_schemas(
     let first = inputs[0].body();
     let output = output.body();
     match primitive {
+        NativeCollectionPrimitive::StringAllAccess => {
+            first == &SchemaBody::String && output == &SchemaBody::String
+        }
+        #[cfg(feature = "convert")]
+        NativeCollectionPrimitive::MatrixConversion => {
+            is_shallow_conversion_matrix(first) && is_shallow_conversion_matrix(output)
+        }
+        NativeCollectionPrimitive::RangeExclusive
+        | NativeCollectionPrimitive::RangeInclusive
+        | NativeCollectionPrimitive::RangeIncrementExclusive
+        | NativeCollectionPrimitive::RangeIncrementInclusive => {
+            crate::resident::numeric::is_range_snapshot_element(first)
+                && inputs.iter().all(|input| input.body() == first)
+                && matches!(output, SchemaBody::Matrix { element, dimensions }
+                    if element.as_ref() == first && dimensions.len() == 2
+                    && dimensions[0] == mech_core::DimensionExpr::Constant(1))
+        }
+        NativeCollectionPrimitive::StringScalarAccess
+        | NativeCollectionPrimitive::StringRangeAccess => {
+            let scalar = primitive == NativeCollectionPrimitive::StringScalarAccess;
+            let selector = inputs[1].body();
+            let selector_supported = match selector {
+                SchemaBody::Matrix {
+                    element,
+                    dimensions,
+                } => {
+                    dimensions.len() == 2
+                        && ((!scalar && element.as_ref() == &SchemaBody::Bool)
+                            || mech_core::is_positional_selector_schema(element))
+                }
+                body => mech_core::is_positional_selector_schema(body),
+            };
+            first == &SchemaBody::String && output == &SchemaBody::String && selector_supported
+        }
         #[cfg(feature = "pure_text")]
         NativeCollectionPrimitive::TextLines => {
             first == &SchemaBody::String && is_string_matrix(output, true)
@@ -308,6 +363,14 @@ fn select_leaf(
         .ok_or(Error::MissingSemanticWitness { node })?;
     let primitive = crate::resident::native_collection_semantics::primitive(entry)
         .ok_or(Error::MissingSemanticWitness { node })?;
+    // Both String gather and All are branches of the SAME maintained range
+    // factory. Specialize only after its private provenance was established.
+    let primitive =
+        if primitive == NativeCollectionPrimitive::StringRangeAccess && input_ids.len() == 1 {
+            NativeCollectionPrimitive::StringAllAccess
+        } else {
+            primitive
+        };
     let inputs = input_ids
         .iter()
         .map(|id| schema(artifact, *id))

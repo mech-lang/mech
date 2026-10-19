@@ -600,6 +600,11 @@ jobs:
             --lib resident::general::native_match_lowering::iteration_proof_tests -- --test-threads=1
           cargo +nightly-2026-03-03 check --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-runtime --lib
+      - name: Execute secured canonical reference bytecode admission
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-runtime
+          --no-default-features --features full_compiler,resident-routing-source
+          --example canonical_host_reference -- --test-threads=1
       - name: Execute canonical CLI byte and resource contracts
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-build
@@ -612,7 +617,10 @@ jobs:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') || contains(fromJSON(inputs.contract_families), 'language') }}
     name: Linked application qualification
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # Each qualification builds isolated generated applications. A cold Linux
+    # run exhausted one hour during Match, before iteration, managed programs
+    # and resident CLI qualification. Keep a finite allowance for the full job.
+    timeout-minutes: 240
     env:
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_INCREMENTAL: 0
@@ -758,6 +766,24 @@ jobs:
           --test canonical_artifact_iteration -- --ignored --exact
           linked_qualification::one_linked_iteration_executable_preserves_exact_typed_loops_and_denials
           --test-threads=1
+      - name: Verify linked canonical managed program selection is nonempty
+        run: |
+          set -euo pipefail
+          PROGRAM_QUALIFICATION_TESTS=$(cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-program \
+            --test canonical_artifact_program -- --list --ignored --exact \
+            linked_qualification::linked_managed_programs_preserve_canonical_outputs_errors_and_denials)
+          test "$(printf '%s\n' "$PROGRAM_QUALIFICATION_TESTS" | rg -c '^linked_qualification::linked_managed_programs_preserve_canonical_outputs_errors_and_denials: test$')" -eq 1
+      - name: Qualify linked canonical managed programs
+        env:
+          MECH_CANONICAL_PROGRAM_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_PROGRAM_EVIDENCE_DIR: ${{ runner.temp }}/canonical-program-evidence
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
+          --no-default-features --features canonical-native-program
+          --test canonical_artifact_program -- --ignored --exact
+          linked_qualification::linked_managed_programs_preserve_canonical_outputs_errors_and_denials
+          --test-threads=1
       - name: Verify linked canonical resident CLI selection is nonempty
         env:
           MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
@@ -789,6 +815,7 @@ jobs:
             ${{ runner.temp }}/canonical-cast-evidence
             ${{ runner.temp }}/canonical-match-evidence
             ${{ runner.temp }}/canonical-iteration-evidence
+            ${{ runner.temp }}/canonical-program-evidence
             ${{ runner.temp }}/canonical-cli-evidence
             ${{ runner.temp }}/native-host-evidence
             ${{ runner.temp }}/native-control-evidence
@@ -2492,6 +2519,16 @@ jobs:
         run: rm -rf src/wasm/pkg
 
       - name: Run headless Chrome WASM tests
+        # wasm-bindgen-test polls DOM output with execute/sync. Its synchronous
+        # Rust tests can share one browser task, so Chrome's default 30s script
+        # limit can expire before the runner can scrape any completed output.
+        # Keep explicit finite script/runner/step limits; never retry or filter
+        # tests to turn an unobserved result into a success.
+        timeout-minutes: 15
+        env:
+          WASM_BINDGEN_TEST_WEBDRIVER_JSON: ${{ github.workspace }}/tests/browser/wasm-bindgen-webdriver.json
+          WASM_BINDGEN_TEST_TIMEOUT: "180"
+          CHROMEDRIVER_ARGS: --verbose --log-path=${{ runner.temp }}/mech-project-browser-chromedriver.log
         run: |
           wasm-pack test \
             --headless \
@@ -2503,6 +2540,14 @@ jobs:
             --features "browser_project,set_union,set_element_of" \
             -- \
             --nocapture
+
+      - name: Retain headless WebDriver failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-browser-webdriver
+          path: ${{ runner.temp }}/mech-project-browser-chromedriver.log
+          if-no-files-found: warn
 
       - name: Smoke test formatted static document in Chrome
         run: |

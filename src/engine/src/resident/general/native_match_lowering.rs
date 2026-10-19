@@ -9,12 +9,12 @@ use super::{
     classify_nodes, forwarded_output_source, node_inputs, node_output_slot,
 };
 use crate::native_artifact::{
-    NativeArtifactLoweringError, NativeInput, NativeIterationAction, NativeIterationBlock,
-    NativeIterationLoop, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
-    NativeMatchBlock, NativeMatchConstant, NativeMatchInput, NativeMatchOrigin, NativeMatchOutput,
-    NativeMatchTerminator, NativeMatchValue, NativeProgramArtifactPlan, NativeProgramConstant,
-    NativeProgramInput, NativeProgramOutput, NativeProgramType, NativeScalarKind, NativeScalarType,
-    NativeScalarValue,
+    NativeArtifactLoweringError, NativeControlLoop, NativeInput, NativeIterationAction,
+    NativeIterationBlock, NativeIterationLoop, NativeIterationTerminator,
+    NativeIterationValueScope, NativeMatchAction, NativeMatchBlock, NativeMatchConstant,
+    NativeMatchInput, NativeMatchOrigin, NativeMatchOutput, NativeMatchTerminator,
+    NativeMatchValue, NativeProgramArtifactPlan, NativeProgramConstant, NativeProgramInput,
+    NativeProgramOutput, NativeProgramType, NativeScalarKind, NativeScalarType, NativeScalarValue,
 };
 use crate::resident::native_semantics;
 use crate::{
@@ -182,6 +182,11 @@ fn scalar_constant(
 }
 
 fn scalar_plan(plan: NativeProgramArtifactPlan) -> Result<NativeIterationArtifactPlan, Error> {
+    if !plan.collections.is_empty() {
+        return Err(Error::UnsupportedProgram {
+            feature: "managed collection in scalar plan",
+        });
+    }
     for block in &plan.blocks {
         if matches!(block.action(), NativeIterationAction::LibraryCall { .. }) {
             return Err(unsupported(
@@ -249,25 +254,38 @@ fn scalar_plan(plan: NativeProgramArtifactPlan) -> Result<NativeIterationArtifac
         outputs,
         value_scopes: plan.value_scopes,
         blocks: plan.blocks,
-        iterations: plan.iterations,
+        iterations: plan
+            .iterations
+            .into_vec()
+            .into_iter()
+            .map(|item| match item {
+                NativeControlLoop::Iteration(item) => Ok(item),
+                NativeControlLoop::Collection(_) => Err(Error::UnsupportedProgram {
+                    feature: "managed collection loop in scalar plan",
+                }),
+            })
+            .collect::<Result<Box<[_]>, _>>()?,
         entry: plan.entry,
     })
 }
 
-struct Builder<'a> {
-    artifact: &'a ProgramArtifact,
-    catalog: &'a FunctionCatalog,
-    values: Vec<NativeProgramType>,
-    constants: BTreeMap<ConstantId, NativeMatchValue>,
-    blocks: Vec<NativeIterationBlock>,
-    value_scopes: Vec<NativeIterationValueScope>,
-    iterations: Vec<Option<NativeIterationLoop>>,
-    current_iteration: Option<u32>,
-    allow_iteration: bool,
-    allow_collections: bool,
+pub(super) struct Builder<'a> {
+    pub(super) artifact: &'a ProgramArtifact,
+    pub(super) catalog: &'a FunctionCatalog,
+    pub(super) values: Vec<NativeProgramType>,
+    pub(super) constants: BTreeMap<ConstantId, NativeMatchValue>,
+    pub(super) blocks: Vec<NativeIterationBlock>,
+    pub(super) value_scopes: Vec<NativeIterationValueScope>,
+    pub(super) iterations: Vec<Option<NativeControlLoop>>,
+    pub(super) collections: Vec<Option<crate::native_artifact::NativeProgramCollection>>,
+    pub(super) current_iteration: Option<u32>,
+    pub(super) current_collection: Option<u32>,
+    pub(super) loop_depth: usize,
+    pub(super) allow_iteration: bool,
+    pub(super) allow_collections: bool,
 }
 impl Builder<'_> {
-    fn value(&mut self, ty: NativeProgramType) -> Result<NativeMatchValue, Error> {
+    pub(super) fn value(&mut self, ty: NativeProgramType) -> Result<NativeMatchValue, Error> {
         // scalar_type validates exact Bool/U64/I64/F64 schema evidence. The
         // control transport, constants and literal emitter support all four;
         // primitives still require the actual selected private witness.
@@ -280,7 +298,11 @@ impl Builder<'_> {
             });
         Ok(NativeMatchValue(id))
     }
-    fn block(&mut self, at: NativeMatchOrigin, action: NativeMatchAction) -> Result<u32, Error> {
+    pub(super) fn block(
+        &mut self,
+        at: NativeMatchOrigin,
+        action: NativeMatchAction,
+    ) -> Result<u32, Error> {
         let id = u32::try_from(self.blocks.len()).map_err(|_| Error::InvalidBinding {
             node: Some(at.node()),
         })?;
@@ -292,16 +314,19 @@ impl Builder<'_> {
         });
         Ok(id)
     }
-    fn link(&mut self, from: u32, to: u32) {
+    pub(super) fn link(&mut self, from: u32, to: u32) {
         self.blocks[from as usize].terminator = NativeMatchTerminator::Jump(to).into();
     }
-    fn ty(&self, value: NativeMatchValue) -> &NativeProgramType {
+    pub(super) fn ty(&self, value: NativeMatchValue) -> &NativeProgramType {
         &self.values[value.get() as usize]
     }
-    fn type_for_schema(&self, id: mech_core::SchemaId) -> Result<NativeProgramType, Error> {
+    pub(super) fn type_for_schema(
+        &self,
+        id: mech_core::SchemaId,
+    ) -> Result<NativeProgramType, Error> {
         program_type(self.artifact, id, self.allow_collections)
     }
-    fn primitive(
+    pub(super) fn primitive(
         &mut self,
         at: NativeMatchOrigin,
         reference: &crate::OperationReference,
@@ -463,7 +488,7 @@ impl Builder<'_> {
             .collect::<Result<Vec<_>, Error>>()?;
         self.lower_block(owner, block, parameters)
     }
-    fn lower_block(
+    pub(super) fn lower_block(
         &mut self,
         owner: NodeId,
         block: &ControlBlock,
@@ -496,6 +521,9 @@ impl Builder<'_> {
                 ControlOperationBody::Iteration(nested) if self.allow_iteration => {
                     self.iteration(at, nested, &args, result)?
                 }
+                ControlOperationBody::Comprehension(nested) if self.allow_collections => {
+                    self.comprehension(at, nested, &args, result)?
+                }
                 _ => return Err(unsupported(owner, "non-Match scalar control operation")),
             };
             self.link(tail, start);
@@ -505,7 +533,7 @@ impl Builder<'_> {
         let yielded = self.read(block.yield_value, block, &parameters, &locals, owner)?;
         Ok((entry, tail, yielded))
     }
-    fn iteration(
+    pub(super) fn iteration(
         &mut self,
         at: NativeMatchOrigin,
         declaration: &crate::IterationDeclaration,
@@ -515,6 +543,12 @@ impl Builder<'_> {
         let owner = at.node();
         if !self.allow_iteration {
             return Err(unsupported(owner, "counted iteration in Match-only plan"));
+        }
+        if self.loop_depth > crate::MAX_CONTROL_DEPTH {
+            return Err(unsupported(
+                owner,
+                "native loop nesting exceeds control depth",
+            ));
         }
         let count = match declaration.count {
             crate::IterationCount::Literal(count) => count,
@@ -548,6 +582,7 @@ impl Builder<'_> {
         self.blocks[initialize as usize].action =
             NativeIterationAction::Initialize { iteration: id };
         self.current_iteration = Some(id);
+        self.loop_depth += 1;
         let body_result: Result<_, Error> = (|| {
             let carrier = self.value(ty)?;
             self.value_scopes[carrier.get() as usize] =
@@ -587,6 +622,7 @@ impl Builder<'_> {
             Ok((carrier, header, body, next, latch))
         })();
         self.current_iteration = parent;
+        self.loop_depth -= 1;
         let (carrier, header, body, next, latch) = body_result?;
         let exit = self.block(
             at,
@@ -601,7 +637,7 @@ impl Builder<'_> {
             exit,
         };
         self.link(initialize, header);
-        self.iterations[id as usize] = Some(NativeIterationLoop {
+        self.iterations[id as usize] = Some(NativeControlLoop::Iteration(NativeIterationLoop {
             origin: at,
             count,
             parent,
@@ -614,11 +650,11 @@ impl Builder<'_> {
             body,
             latch,
             exit,
-        });
+        }));
         Ok((initialize, exit))
     }
 
-    fn matched(
+    pub(super) fn matched(
         &mut self,
         at: NativeMatchOrigin,
         declaration: &MatchDeclaration,
@@ -626,7 +662,21 @@ impl Builder<'_> {
         output: NativeMatchValue,
     ) -> Result<(u32, u32), Error> {
         let owner = at.node();
-        if declaration.partial {
+        // An unguarded binding/wildcard is exhaustive for the exact validated
+        // scrutinee type. Such a partial declaration cannot read a previous
+        // result, so it uses ordinary total CFG lowering. Genuinely partial
+        // (sticky) Match still requires persistent-state support and rejects.
+        let exhaustive = declaration.arms.iter().any(|arm| {
+            arm.guard.is_none()
+                && matches!(
+                    &arm.pattern,
+                    MatchPattern::Wildcard
+                        | MatchPattern::Bind
+                        | MatchPattern::Structural(crate::CollectionPattern::Wildcard)
+                        | MatchPattern::Structural(crate::CollectionPattern::Bind { .. })
+                )
+        });
+        if declaration.partial && !exhaustive {
             return Err(unsupported(owner, "partial or sticky Match"));
         }
         let scrutinee = *arguments
@@ -804,8 +854,11 @@ fn lower_scalar_control_artifact(
 }
 
 /// Lower through the very same canonical Match/loop builder as scalar plans.
-/// Library actions retain actual selected root/lexical provenance. This view
-/// does not bind current geometry or execute a graph, and is not a full AOT claim.
+/// Library actions retain actual selected root/lexical provenance. A fresh
+/// invocation executes closed pure activation computations before its turn,
+/// in the canonical activation schedule. This is not a retained reactive
+/// instance: state, triggered activation scopes and external lifecycle remain
+/// separate lowering work. Selection never binds geometry or executes values.
 pub fn lower_native_program_artifact(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
@@ -835,13 +888,15 @@ fn lower_control_artifact(
             &node.body,
             ExecutableNodeBody::Operation(_) | ExecutableNodeBody::Match(_)
         ) && !(allow_iteration && matches!(&node.body, ExecutableNodeBody::Iteration(_)))
+            && !(allow_collections && matches!(&node.body, ExecutableNodeBody::Comprehension(_)))
         {
             return Err(unsupported(node.node, "non-Match control or lifecycle"));
         }
     }
     let classes = classify_nodes(artifact, ResidentExternalAdmission::StructuralOnly)?;
     for node in artifact.nodes() {
-        if classes[node.node.get() as usize] != NodeClass::Turn {
+        let class = classes[node.node.get() as usize];
+        if class != NodeClass::Turn && !(allow_collections && class == NodeClass::Activation) {
             return Err(unsupported(
                 node.node,
                 "Activation computation or external node",
@@ -857,7 +912,10 @@ fn lower_control_artifact(
         blocks: Vec::new(),
         value_scopes: Vec::new(),
         iterations: Vec::new(),
+        collections: Vec::new(),
         current_iteration: None,
+        current_collection: None,
+        loop_depth: 0,
         allow_iteration,
         allow_collections,
     };
@@ -904,6 +962,10 @@ fn lower_control_artifact(
     let root_origin = origin(NodeId::new(0), None, None);
     let entry = builder.block(root_origin, NativeMatchAction::None)?;
     let mut tail = entry;
+    // The same resident schedule places the entire closed activation DAG
+    // before Turn nodes, including independent nodes whose artifact ordinals
+    // are interleaved. Do not fold/execute those values during compilation or
+    // put their work outside the invocation's cumulative native admission.
     for node_id in schedule.nodes.iter().copied() {
         let node = &artifact.nodes()[node_id.get() as usize];
         let args = node_inputs(artifact, node_id)?
@@ -933,6 +995,9 @@ fn lower_control_artifact(
             ExecutableNodeBody::Match(control) => builder.matched(at, control, &args, output)?,
             ExecutableNodeBody::Iteration(control) if allow_iteration => {
                 builder.iteration(at, control, &args, output)?
+            }
+            ExecutableNodeBody::Comprehension(control) if allow_collections => {
+                builder.comprehension(at, control, &args, output)?
             }
             _ => unreachable!("node class checked before construction"),
         };
@@ -978,6 +1043,11 @@ fn lower_control_artifact(
         value_scopes: builder.value_scopes.into(),
         iterations: builder
             .iterations
+            .into_iter()
+            .map(|item| item.ok_or(Error::InvalidBinding { node: None }))
+            .collect::<Result<Box<[_]>, _>>()?,
+        collections: builder
+            .collections
             .into_iter()
             .map(|item| item.ok_or(Error::InvalidBinding { node: None }))
             .collect::<Result<Box<[_]>, _>>()?,
@@ -1032,15 +1102,22 @@ mod iteration_proof_tests {
             let valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
             valid.validate_current_visits().unwrap();
             assert!(
-                valid.values()[valid.iterations()[0].carrier().get() as usize]
+                valid.values()[valid.iterations()[0]
+                    .as_iteration()
+                    .unwrap()
+                    .carrier()
+                    .get() as usize]
                     .scalar()
                     .is_none()
             );
             let mut previous = valid.clone();
-            previous.iterations[1].next = previous.iterations[1].result;
+            let NativeControlLoop::Iteration(previous_loop) = &mut previous.iterations[1] else {
+                panic!("literal loop")
+            };
+            previous_loop.next = previous_loop.result;
             assert!(previous.validate_current_visits().is_err());
             let mut cross_scope = valid.clone();
-            let child = &valid.iterations()[1];
+            let child = valid.iterations()[1].as_iteration().unwrap();
             cross_scope.blocks[child.latch() as usize].terminator =
                 NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(child.body()));
             assert!(cross_scope.validate_current_visits().is_err());
@@ -1050,6 +1127,60 @@ mod iteration_proof_tests {
             assert!(forged_scope.validate_current_visits().is_err());
         }
     }
+    #[test]
+    fn exhaustive_partial_function_matches_lower_but_genuinely_partial_matches_reject() {
+        let (total, catalog) = artifact("pick(x<u64>) => <u64>\n  | x => x.\npick(seed<u64>)\n");
+        lower_native_program_artifact(&total, &catalog)
+            .unwrap()
+            .validate_current_visits()
+            .unwrap();
+        let (partial, catalog) =
+            artifact("pick(x<u64>) => <u64>\n  | 0u64 => 1u64.\npick(seed<u64>)\n");
+        assert!(matches!(
+            lower_native_program_artifact(&partial, &catalog),
+            Err(Error::UnsupportedNode {
+                feature: "partial or sticky Match",
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn collection_current_visit_proof_rejects_uninitialized_elements_and_stale_outputs() {
+        let (artifact, catalog) = artifact("[x | x <- values<[u64]>, y <- values]\n");
+        let valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        valid.validate_current_visits().unwrap();
+        assert_eq!(valid.collections().len(), 1);
+        assert_eq!(valid.iterations().len(), 2);
+        let mut stale_output = valid.clone();
+        let output = stale_output.collections[0].output;
+        let push = stale_output.collections[0].push as usize;
+        stale_output.blocks[push].action = NativeIterationAction::CollectionPush {
+            collection: 0,
+            value: output,
+        };
+        assert!(stale_output.validate_current_visits().is_err());
+        let mut self_source = valid.clone();
+        let NativeControlLoop::Collection(generator) = &mut self_source.iterations[1] else {
+            panic!("collection loop")
+        };
+        generator.source = generator.element.unwrap();
+        assert!(self_source.validate_current_visits().is_err());
+        let mut skipped_element = valid.clone();
+        let NativeControlLoop::Collection(generator) = &skipped_element.iterations[1] else {
+            panic!("collection loop")
+        };
+        skipped_element.blocks[generator.body as usize].action =
+            NativeIterationAction::Scalar(NativeMatchAction::None);
+        assert!(skipped_element.validate_current_visits().is_err());
+        let mut cyclic_builder = valid.clone();
+        cyclic_builder.collections[0].parent_collection = Some(0);
+        assert!(cyclic_builder.validate_current_visits().is_err());
+        let mut premature_finish = valid.clone();
+        premature_finish.collections[0].finish = premature_finish.collections[0].begin;
+        assert!(premature_finish.validate_current_visits().is_err());
+    }
+
     #[test]
     fn iteration_current_visit_proof_accepts_nested_identity_and_zero_count() {
         for count in [0, 1, 25, u64::MAX] {

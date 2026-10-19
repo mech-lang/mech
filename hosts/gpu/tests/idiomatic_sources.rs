@@ -39,6 +39,6 @@ fn knucleotide_target_is_canonical_code_with_named_output_arrows() {
     assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
     let syntax = parsed.syntax();
     assert!(assert_named_function_arrows(&syntax) > 0);
-    assert_eq!(count(&syntax, SyntaxKind::ContextSend), 3);
-    assert_eq!(count(&syntax, SyntaxKind::MatrixComprehension), 4);
+    assert_eq!(count(&syntax, SyntaxKind::ContextSend), 1);
+    assert_eq!(count(&syntax, SyntaxKind::MatrixComprehension), 5);
 }

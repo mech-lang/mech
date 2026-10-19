@@ -1,4 +1,4 @@
-//! Managed ABI4 invocation. This boundary never evaluates a graph: generated
+//! Managed ABI6 invocation. This boundary never evaluates a graph: generated
 //! blocks choose every successor and run every scalar/counter instruction.
 use super::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
@@ -6,7 +6,7 @@ use super::abi::{
 use super::iteration_abi::STATUS_REJECT;
 use super::iteration_runtime::{Context as Control, NativeIterationExecutionError};
 use super::memory::{NativeWordStorage, transport_bytes};
-use super::program_abi::{Frame, LIBRARY, MOVE, OUTPUT_BASE, VERSION};
+use super::program_abi::{COLLECTION, Frame, LIBRARY, MOVE, OUTPUT_BASE, VERSION};
 use super::{
     NativeExecutionError, NativeExecutionLimits, NativeExecutionPhase, NativeProgramDescriptor,
     NativeValueArena, NativeValueError, NativeWorkMeter,
@@ -22,6 +22,9 @@ use mech_engine::native_artifact::{
 };
 use std::ffi::c_void;
 
+#[path = "program_collection.rs"]
+mod collection;
+
 #[derive(Debug)]
 pub enum NativeProgramExecutionError {
     Base(NativeExecutionError),
@@ -30,6 +33,10 @@ pub enum NativeProgramExecutionError {
     Library {
         origin: NativeMatchOrigin,
         error: NativeCollectionInvocationError,
+    },
+    Collection {
+        origin: NativeMatchOrigin,
+        error: mech_core::ResidentKernelError,
     },
     Snapshot(mech_core::snapshot::SnapshotValueError),
 }
@@ -91,6 +98,9 @@ fn bits(value: &Value, kind: NativeScalarKind) -> Result<u64, NativeProgramExecu
 }
 struct Context<'a> {
     control: Control<'a, NativeProgramDescriptor>,
+    // Sources are cheap shared roots from the arena; drop collection state
+    // first, while that arena still owns their prepaid retirement obligation.
+    collections: Option<collection::State>,
     arena: NativeValueArena<'a>,
     library: NativeLibraryWorkBudget,
     limits: MemoryBudgetLimits,
@@ -107,11 +117,11 @@ impl Context<'_> {
                 (*source, *output)
             }
             NativeIterationAction::Initialize { iteration } => {
-                let i = &plan.iterations()[*iteration as usize];
+                let i = plan.iterations()[*iteration as usize].as_iteration()?;
                 (i.seed(), i.carrier())
             }
             NativeIterationAction::Latch { iteration } => {
-                let i = &plan.iterations()[*iteration as usize];
+                let i = plan.iterations()[*iteration as usize].as_iteration()?;
                 (i.next(), i.carrier())
             }
             _ => return None,
@@ -125,7 +135,14 @@ impl Context<'_> {
         matches!(
             self.control.descriptor.plan.blocks()[site].action(),
             NativeIterationAction::LibraryCall { .. }
+                | NativeIterationAction::CollectionBegin { .. }
+                | NativeIterationAction::CollectionElement { .. }
+                | NativeIterationAction::CollectionPush { .. }
+                | NativeIterationAction::CollectionFinish { .. }
         ) || self.needs_move(site).is_some()
+            || matches!(self.control.descriptor.plan.blocks()[site].action(),
+                NativeIterationAction::Initialize { iteration }
+                if matches!(self.control.descriptor.plan.iterations()[*iteration as usize], mech_engine::native_artifact::NativeControlLoop::Collection(_)))
     }
     fn scalar(
         &mut self,
@@ -169,7 +186,7 @@ impl Context<'_> {
         &mut self,
         site: u64,
         operation: u64,
-        args: [u64; 2],
+        args: [u64; 3],
     ) -> Result<Option<u64>, NativeProgramExecutionError> {
         if self.control.previous.map(u64::from) != Some(site) {
             return Err(invalid("helper outside exact admitted visit"));
@@ -189,7 +206,7 @@ impl Context<'_> {
             if operands.len() > args.len() {
                 return Err(invalid("library helper arity"));
             }
-            let mut inputs: [Option<Value>; 2] = [None, None];
+            let mut inputs: [Option<Value>; 3] = [None, None, None];
             for (index, &operand) in operands.iter().enumerate() {
                 inputs[index] = Some(
                     if descriptor.plan.values()[operand.get() as usize]
@@ -239,6 +256,19 @@ impl Context<'_> {
                 .put(output.get(), &value, &mut self.control.work)?;
             self.consumed = true;
             Ok(None)
+        } else if operation == COLLECTION {
+            if self.consumed {
+                return Err(invalid("duplicate collection helper"));
+            }
+            let mut state = self
+                .collections
+                .take()
+                .ok_or_else(|| invalid("collection helper without state"))?;
+            let result = state.helper(self, site, args[0]);
+            self.collections = Some(state);
+            let result = result?;
+            self.consumed = true;
+            Ok(result)
         } else {
             if operation != OUTPUT_BASE + self.output_cursor as u64
                 || (self.action_required(site) && !self.consumed)
@@ -278,6 +308,30 @@ impl Context<'_> {
             return Err(invalid("entry omitted current required helper"));
         }
         self.control.visit(site)?;
+        let descriptor = self.control.descriptor;
+        if let super::iteration_abi::Progress::Exit(iteration) =
+            descriptor.visits[site as usize].progress
+            && matches!(
+                descriptor.plan.iterations()[iteration as usize],
+                mech_engine::native_artifact::NativeControlLoop::Collection(_)
+            )
+        {
+            let mut state = self
+                .collections
+                .take()
+                .ok_or_else(|| invalid("collection exit without state"))?;
+            let result = state.release_source(self, iteration);
+            self.collections = Some(state);
+            result?;
+        }
+        if self.control.completed
+            && self
+                .collections
+                .as_ref()
+                .is_some_and(|state| !state.is_complete())
+        {
+            return Err(invalid("completion with an active collection builder"));
+        }
         self.consumed = false;
         Ok(())
     }
@@ -306,6 +360,7 @@ unsafe extern "C" fn helper(
     operation: u64,
     first: u64,
     second: u64,
+    third: u64,
     result: *mut u64,
 ) -> u64 {
     if context.is_null() {
@@ -319,7 +374,7 @@ unsafe extern "C" fn helper(
     let outcome = if result.is_null() || result != context.result {
         Err(invalid("helper result pointer mismatch"))
     } else {
-        context.helper(site, operation, [first, second])
+        context.helper(site, operation, [first, second, third])
     };
     match outcome {
         Ok(word) => {
@@ -410,6 +465,7 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
     )?;
     let bytes = word_bytes
         .checked_add(arena_bytes)
+        .and_then(|n| n.checked_add(collection::State::metadata_bytes(plan).ok()?))
         .ok_or_else(|| invalid("combined transport overflow"))?;
     if bytes > limits.execution.max_transport_bytes {
         return Err(NativeExecutionError::TransportLimit {
@@ -473,6 +529,7 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
             .into_independent_memory_budget(&mut reservation)?;
         arena.put(constant.value().get(), &value, &mut work)?;
     }
+    let collections = collection::State::new(descriptor, caps, memory, &mut work)?;
     let (input_words, rest) = storage.values_mut().split_at_mut(inputs.len());
     let (values, rest) = rest.split_at_mut(locals);
     let (progress_words, rest) = rest.split_at_mut(progress);
@@ -497,6 +554,7 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
             visits: 0,
             error: None,
         },
+        collections,
         arena,
         library,
         limits: caps,
@@ -599,13 +657,11 @@ mod tests {
     };
 
     fn artifact() -> mech_engine::ProgramArtifact {
+        artifact_source("+> sequence\nsequence/length(seed<string>)\n")
+    }
+    fn artifact_source(source: &str) -> mech_engine::ProgramArtifact {
         let parsed = parse_canonical_document(
-            TextSnapshot::new(
-                DocumentId(0x50524f54),
-                Revision(1),
-                "+> sequence\nsequence/length(seed<string>)\n",
-            )
-            .unwrap(),
+            TextSnapshot::new(DocumentId(0x50524f54), Revision(1), source).unwrap(),
             ParseConfig::default(),
         );
         mech_engine::CanonicalSourceFrontend
@@ -698,16 +754,24 @@ mod tests {
                         // skipping the required leaf to test protocol denial.
                         return unsafe { (frame.base.admit_next)(frame.base.context, next as u64) };
                     }
-                    // SAFETY: arguments remain within the retained ABI4 boundary;
+                    // SAFETY: arguments remain within the retained ABI6 boundary;
                     // wrong metadata/pointer is rejected before dereference.
                     let status = unsafe {
-                        (frame.helper)(frame.base.context, actual_site, operation, 0, 0, result)
+                        (frame.helper)(frame.base.context, actual_site, operation, 0, 0, 0, result)
                     };
                     if mode == 3 {
                         assert_eq!(status, STATUS_OK);
                         // SAFETY: same live context/result lane, deliberate repeat.
                         unsafe {
-                            (frame.helper)(frame.base.context, actual_site, operation, 0, 0, result)
+                            (frame.helper)(
+                                frame.base.context,
+                                actual_site,
+                                operation,
+                                0,
+                                0,
+                                0,
+                                result,
+                            )
                         }
                     } else {
                         status
@@ -795,7 +859,206 @@ mod tests {
         assert_eq!((library.used(), memory.used_bytes()), before);
     }
     #[test]
-    fn abi4_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
+    fn collection_protocol_denies_forged_omitted_repeated_and_early_visits_atomically() {
+        let artifact = artifact_source("[letter | letter <- seed<string>]\n");
+        let jit =
+            super::super::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog())
+                .unwrap();
+        let descriptor = jit.descriptor();
+        let collection = &descriptor.plan.collections()[0];
+        let mech_engine::native_artifact::NativeControlLoop::Collection(generator) =
+            &descriptor.plan.iterations()[collection.generators()[0] as usize]
+        else {
+            panic!("collection generator")
+        };
+        for mode in 0..9 {
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = [input(&artifact, &memory)];
+            let mut outputs = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut outputs, limits(), &memory)
+                .unwrap();
+            let prior = outputs[0]
+                .as_ref()
+                .unwrap()
+                .canonical_snapshot_bytes(artifact.schemas())
+                .unwrap();
+            let retained = memory.used_bytes();
+            let error = execute(
+                descriptor,
+                |raw| {
+                    // SAFETY: execute retains this initialized exclusive frame,
+                    // callback context and disjoint result lane until return.
+                    let frame = unsafe { &mut *raw };
+                    let admit = |site| {
+                        // SAFETY: the same live private callback/context; only
+                        // visit metadata is varied, never pointer ownership.
+                        unsafe { (frame.base.admit_next)(frame.base.context, site as u64) }
+                    };
+                    let invoke = |site, operation, result| {
+                        // SAFETY: retained private helper/context; a deliberately
+                        // wrong result pointer is checked before dereference.
+                        unsafe {
+                            (frame.helper)(
+                                frame.base.context,
+                                site as u64,
+                                operation,
+                                0,
+                                0,
+                                0,
+                                result,
+                            )
+                        }
+                    };
+                    let next = |site: u32| {
+                        let NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(next)) =
+                            descriptor.plan.blocks()[site as usize].terminator()
+                        else {
+                            panic!("straight-line collection setup")
+                        };
+                        next
+                    };
+                    let mut site = descriptor.plan.entry();
+                    loop {
+                        assert_eq!(admit(site), STATUS_OK);
+                        if site == collection.begin() {
+                            break;
+                        }
+                        site = next(site);
+                    }
+                    match mode {
+                        0 => return invoke(site + 1, COLLECTION, frame.result),
+                        1 => return invoke(site, MOVE, frame.result),
+                        2 => return invoke(site, COLLECTION, frame.result.wrapping_add(1)),
+                        4 => return admit(next(site)),
+                        _ => {}
+                    }
+                    assert_eq!(invoke(site, COLLECTION, frame.result), STATUS_OK);
+                    if mode == 3 {
+                        return invoke(site, COLLECTION, frame.result);
+                    }
+                    loop {
+                        site = next(site);
+                        assert_eq!(admit(site), STATUS_OK);
+                        if site == generator.initialize() {
+                            break;
+                        }
+                    }
+                    if mode == 5 {
+                        return admit(generator.header());
+                    }
+                    assert_eq!(invoke(site, COLLECTION, frame.result), STATUS_OK);
+                    if mode == 6 {
+                        return invoke(site, COLLECTION, frame.result);
+                    }
+                    assert_eq!(admit(generator.header()), STATUS_OK);
+                    if mode == 7 {
+                        return admit(generator.exit());
+                    }
+                    assert_eq!(admit(generator.body()), STATUS_OK);
+                    admit(next(generator.body()))
+                },
+                &args,
+                &mut outputs,
+                limits(),
+                &memory,
+            )
+            .unwrap_err();
+            if mode == 7 {
+                assert!(
+                    matches!(error, NativeProgramExecutionError::Control(
+                        NativeIterationExecutionError::Visit { previous: Some(previous), actual }
+                    ) if previous == generator.header() && actual == u64::from(generator.exit())),
+                    "mode {mode}: {error:?}"
+                );
+            } else {
+                assert!(
+                    matches!(
+                        error,
+                        NativeProgramExecutionError::Base(NativeExecutionError::Descriptor { .. })
+                    ),
+                    "mode {mode}: {error:?}"
+                );
+            }
+            assert_eq!(memory.used_bytes(), retained, "mode {mode}");
+            assert_eq!(
+                outputs[0]
+                    .as_ref()
+                    .unwrap()
+                    .canonical_snapshot_bytes(artifact.schemas())
+                    .unwrap(),
+                prior,
+                "mode {mode}"
+            );
+            jit.evaluate_into(&args, &mut outputs, limits(), &memory)
+                .unwrap();
+            assert_eq!(
+                outputs[0]
+                    .as_ref()
+                    .unwrap()
+                    .canonical_snapshot_bytes(artifact.schemas())
+                    .unwrap(),
+                prior
+            );
+        }
+    }
+    #[test]
+    fn managed_link_metadata_rederives_semantics_and_rejects_mutations_without_an_entry() {
+        let source = "+> text\n+> sequence\n+> number\nwords := text/lines(seed<string>)\ntext/join([number/format(sequence/length(word), 0u64) | word <- words], \",\")\n";
+        let original = artifact_source(source);
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
+        )
+        .unwrap();
+        let different = artifact_source(&source.replace("0u64", "1u64"));
+        let catalog = mech_stdlib::source_catalog();
+        let empty = mech_core::FunctionCatalogBuilder::new().build().unwrap();
+        let prepare = super::super::program_linked::prepare_descriptor;
+        for artifact in [original, decoded] {
+            let object = super::super::emit_program_object(&artifact, &catalog).unwrap();
+            let identity = *object.identity().bytes();
+            let descriptor = prepare(&artifact, &catalog, &identity).unwrap();
+            assert_eq!(
+                descriptor.typed_ir_sha256(),
+                object.descriptor().typed_ir_sha256()
+            );
+            for offset in 0..identity.len() {
+                // These two nonzero resource claims require build-owned Object
+                // provenance, tested by the real linked pin-mutation qualifier.
+                // They are not falsely treated as runtime-rederived semantics.
+                if (112..128).contains(&offset) {
+                    continue;
+                }
+                let mut mutated = identity;
+                mutated[offset] ^= 1;
+                assert!(
+                    prepare(&artifact, &catalog, &mutated).is_err(),
+                    "identity byte {offset}"
+                );
+            }
+            for (offset, old) in [
+                (16, 1u64),
+                (24, 4u64),
+                (24, 5u64),
+                (32, 1u64),
+                (32, 2u64),
+                (32, 3u64),
+                (112, 0u64),
+                (120, 0u64),
+            ] {
+                let mut mutated = identity;
+                mutated[offset..offset + 8].copy_from_slice(&old.to_le_bytes());
+                assert!(
+                    prepare(&artifact, &catalog, &mutated).is_err(),
+                    "identity field {offset}"
+                );
+            }
+            assert!(prepare(&different, &catalog, &identity).is_err());
+            assert!(prepare(&artifact, &empty, &identity).is_err());
+        }
+    }
+    #[test]
+    fn abi6_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
+        assert_eq!(VERSION, 6);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);
         assert_eq!(
             core::mem::offset_of!(Frame, helper),

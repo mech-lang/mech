@@ -813,6 +813,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register_no_additional_scratch(builder, &["compare"], "gte", bind_semantic_greater_equal)?;
     register_no_additional_scratch(builder, &["compare"], "seq", bind_strict_equal)?;
     register_no_additional_scratch(builder, &["compare"], "sneq", bind_strict_not_equal)?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_string_access(builder, true)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     register_canonical_finalize(builder, &["access"], "scalar", bind_semantic_scalar_access)?;
     register_canonical_finalize(builder, &["access"], "column", bind_snapshot_access)?;
     register_canonical_finalize(builder, &["access"], "rows", bind_semantic_rows_access)?;
@@ -823,6 +826,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         bind_semantic_columns_access,
     )?;
     register_no_additional_scratch(builder, &["access"], "index", bind_scalar_index)?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_string_access(builder, false)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     register_canonical_finalize(builder, &["access"], "range", bind_semantic_range_access)?;
     register_canonical_finalize(
         builder,
@@ -955,20 +961,25 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     nested_selection!("mul", 2);
     nested_selection!("div", 3);
     nested_selection!("pow", 5);
-    register_no_additional_scratch(builder, &["range"], "exclusive", bind_range_exclusive)?;
-    register_no_additional_scratch(
-        builder,
-        &["range"],
-        "exclusive-increment",
-        bind_range_increment_exclusive,
-    )?;
-    register_no_additional_scratch(builder, &["range"], "inclusive", bind_range_inclusive)?;
-    register_no_additional_scratch(
-        builder,
-        &["range"],
-        "inclusive-increment",
-        bind_range_increment_inclusive,
-    )?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_ranges(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    {
+        register_no_additional_scratch(builder, &["range"], "exclusive", bind_range_exclusive)?;
+        register_no_additional_scratch(
+            builder,
+            &["range"],
+            "exclusive-increment",
+            bind_range_increment_exclusive,
+        )?;
+        register_no_additional_scratch(builder, &["range"], "inclusive", bind_range_inclusive)?;
+        register_no_additional_scratch(
+            builder,
+            &["range"],
+            "inclusive-increment",
+            bind_range_increment_inclusive,
+        )?;
+    }
     register_no_additional_scratch(builder, &["combinatorics"], "n-choose-k", bind_n_choose_k)?;
     register_no_additional_scratch(builder, &["stats", "sum"], "column", bind_sum_columns)?;
     register_no_additional_scratch(builder, &["stats", "sum"], "row", bind_sum_rows)?;
@@ -5276,7 +5287,7 @@ fn bind_vertical(
     bind_matrix_constructor(request, false)
 }
 
-fn bind_range_inclusive(
+pub(super) fn bind_range_inclusive(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_build(request, 2, &["range"], "inclusive-output")?;
@@ -5296,7 +5307,7 @@ fn bind_range_inclusive(
     bind_snapshot_range(request, true, false)
 }
 
-fn bind_range_exclusive(
+pub(super) fn bind_range_exclusive(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_build(request, 2, &["range"], "exclusive-output")?;
@@ -5316,7 +5327,7 @@ fn bind_range_exclusive(
     bind_snapshot_range(request, false, false)
 }
 
-fn bind_range_increment_inclusive(
+pub(super) fn bind_range_increment_inclusive(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_build(request, 3, &["range"], "inclusive-increment-output")?;
@@ -5343,7 +5354,7 @@ fn bind_range_increment_inclusive(
     bind_snapshot_range(request, true, true)
 }
 
-fn bind_range_increment_exclusive(
+pub(super) fn bind_range_increment_exclusive(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_build(request, 3, &["range"], "exclusive-increment-output")?;
@@ -5408,7 +5419,7 @@ fn bind_index_range(
     )
 }
 
-fn is_range_snapshot_element(body: &SchemaBody) -> bool {
+pub(super) fn is_range_snapshot_element(body: &SchemaBody) -> bool {
     matches!(
         body,
         SchemaBody::Index
@@ -5855,7 +5866,7 @@ fn bind_snapshot_scalar_index(
     )
 }
 
-fn bind_semantic_scalar_access(
+pub(super) fn bind_semantic_scalar_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_scalar_access_1d(request)
@@ -6015,7 +6026,7 @@ fn bind_all_elements_range(
     )
 }
 
-fn bind_semantic_range_access(
+pub(super) fn bind_semantic_range_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_all_elements_range(request)
@@ -20185,7 +20196,7 @@ fn snapshot_numeric_element_count(value: &mech_core::Value) -> Result<usize, Res
     }
 }
 
-fn write_snapshot_data_with_work_budget(
+pub(super) fn write_snapshot_data_with_work_budget(
     kernel: &BoundResidentKernel,
     output: ResidentValueMut<'_>,
     data: ValueDataDraft,

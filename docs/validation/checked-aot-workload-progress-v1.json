@@ -1,13 +1,13 @@
 {
   "schema": "mech.checked-aot-workload-progress.v1",
   "status": "INCOMPLETE_IMPLEMENTATION_NOT_BENCHMARK_QUALIFIED",
-  "latest_qualification": "registration_and_current_geometry_review_corrections",
+  "latest_qualification": "collection_publication_accounting_and_runtime_ci",
   "pull_request": "https://github.com/mech-lang/mech/pull/905",
   "baseline": "c4190315672337f039efc743a970263627f75834",
   "foundations_pr_scope": {
     "title": "Add canonical native control and collection foundations",
     "delivered": "Reduced redundant resident comparison/collection work; checked canonical scalar arithmetic/casts, Match and scalar literal loops; admitted typed managed-value storage and one cumulative native/library account; selected maintained root/lexical collection binding; generated mixed JIT control through the shared emitter/current-visit checker. The ownership correction bounds deregistration and exact same-owner reuse independently of later foreign imports.",
-    "boundary": "This is not completed production canonical AOT or a benchmark-qualified workload. Generated mixed execution is implemented, but a newly linked mixed-entry process is not yet qualified. The independent raw-source native fallback chain remains unresolved, not an accepted second canonical runtime authority.",
+    "boundary": "PR905 foundations are not completed production canonical AOT or a benchmark-qualified workload. The subsequent PR906 continuation qualifies actual linked mixed programs and native matrix comprehensions as recorded below; those results do not establish full resource integration or the benchmark. The independent raw-source native fallback chain remains unresolved, not an accepted second canonical runtime authority.",
     "remaining_work": "follow_up_roadmap",
     "change_policy": "After the concrete ownership correction and accurate scope/evidence, stop adding compiler features to PR905. Handle corrective review/CI findings through existing gates. Do not mark ready or merge without explicit user approval; no new PR is authorized by this roadmap."
   },
@@ -19,7 +19,7 @@
       {
         "order": 1,
         "name": "Qualify generated mixed execution through an actual linked process",
-        "current_state": "Generated root/lexical calls, managed carriers and scalar control execute through the shared JIT/Object emitter. Object identity and runtime-only linked entry APIs exist; Object emission is not linked-process execution credit.",
+        "current_state": "PR906 source7606c5c3768479a004e89e8f745eca9eed0dc1ae corrects body-String temporary coexistence and canonical matrix node admission, and replaces the obsolete runtime live-range rejection with positive original/decoded geometry/denial/recovery checks. Frozen prelink134Rust/155CI and exact failed runtime target pass; clean-source5actual executables/74runtimecases/9negativebuilds+restored recovery pass. Independent reconciliation checks85pins/148runtime streams/20build streams. ManagedABI6/IR2/work4; scalar ABIs/default limits unchanged. Runtime-only closures exclude source/parser/codegen. See collection_publication_accounting_and_runtime_ci; production/resource/full-workload and fresh exact-head review/full green CI remain incomplete.",
         "completion_criteria": [
           "Build and actually execute mixed linked applications using the same canonical artifact, selected maintained root/lexical bindings, arena, current-visit checks, finite memory policy and single cumulative work account as JIT execution.",
           "Reconcile original/decoded resident, JIT and linked outputs, error ordering, denial atomicity and next-invocation recovery. Qualify linked metadata/provenance and mutation rejection rather than inferring them from Object metadata.",
@@ -831,6 +831,46 @@
     "benchmark_algorithm_changed": false,
     "new_linked_executions_or_benchmark_samples": 0,
     "not_established": "Fresh final-head review and complete GitHub CI; full linked mixed/native-resource and workload qualification; old bypassing-I/O versus existing secured-path performance or full native security overhead. The full objective remains follow_up_roadmap."
+  },
+  "native_comprehension_linked_qualification": {
+    "pull_request": "https://github.com/mech-lang/mech/pull/906",
+    "source_commit": "226450bd46395e8c9fd190c74ac34782c6aa1df1",
+    "source_tree": "c81f40f275168103dd697eb40a8e0e7f00a6d545",
+    "finished_utc": "2026-10-18T23:17:12Z",
+    "receipt": "canonical-managed-native-linked-v1.json native_comprehension_and_broadcast_qualification",
+    "status": "NATIVE_MATRIX_COMPREHENSION_FOUNDATION_QUALIFIED_FULL_OBJECTIVE_INCOMPLETE",
+    "implemented": "Generated Matrix/MatrixPreserveShape mapping, filters, nested generators/builders/literal folds and shape-preserving unary pattern-function application. Closed Bool/U64/I64/F64/String yields and Matrix/Set/String sources use the existing canonical artifact, shared current-visit proof/emitter, admitted transport and one cumulative native/library work/memory account. Helpers never evaluate the body. ManagedABI5/typedIR2/workPolicy2 are explicit; scalar ABIs remain unchanged.",
+    "executed": "64Rust conformance/protocol/proof methods, scalar and managed runtime-only builds,4actual linked executables/58processcases (19success/recovery,39required errors),155CIcontracts and static gates. The read-only reconciliation checks68binary/generated pins,116complete process streams and actual runtime compiled-unit records against Cargo output.",
+    "language_level_target": "The current knucleotide-idiomatic.mec defines overlapping String windows and histogram composition in Mech, maps frequency widths and queries using comprehensions, and emits one joined result. General map/histogram, slicing, joining and sorting remain library primitives. Packing/streaming/fusion/parallelism must be compiler optimizations over those semantics, not an external whole-program implementation.",
+    "not_established": "The complete target still needs native Set/composite/matrix-block outputs, element-wise counts, FSM/state and typed resource lifecycle plus remaining general library/projection/ownership/bigint/byte support. No full125M canonical native workload, new canonical timing, same-binary full security-overhead result, full-program optimization or complete current-head CI/review is established. Earlier default100/400success4000denial/recovery and legacy timing evidence retain their original executed source pins; they are not relabeled to this native foundation.",
+    "benchmark_samples": 0,
+    "readiness": "Keep draft and unmerged. The full follow_up_roadmap remains required, as do fixes/replies/resolutions for any new notes, fresh clean exact-head review and complete green CI."
+  },
+  "collection_accounting_and_link_provenance_correction": {
+    "pull_request": "https://github.com/mech-lang/mech/pull/906",
+    "source_commit": "77aec3f74060d1b7a570b687e1f3c63924f03fb3",
+    "source_tree": "a6f50cfbdd0d6bdbda546998b40057b49ba72348",
+    "finished_utc": "2026-10-18T23:50:27Z",
+    "receipt": "canonical-managed-native-linked-v1.json collection_accounting_and_link_provenance_correction",
+    "status": "CURRENT_REVIEW_FIXES_LOCALLY_QUALIFIED_FULL_OBJECTIVE_INCOMPLETE",
+    "corrections": "Every wildcard/bound generator visit reaches cumulative collection ComputeWork and the same native ledger. Temporary admission includes the prior String element through replacement allocation, and removes its retained charge only with actual generation-checked retirement; metered certified scope cleanup preserves ancestor captures and independent yields. Source metadata admission follows actual enlarged storage. Managed work policy3 rejects old2; ABI5/typedIR2 and scalar ABIs unchanged; default limits unchanged.",
+    "qualification": "Retained v368 before-fix log shows both new regressions wrongly succeed. After-fix original/decoded regressions check typed resource denial, unchanged publication, complete workspace return and sameJIT recovery. New nestedString/capture/alias/fold and private handle/ledger tests pass. Frozen prelink69Rust+155CI/statics, then clean-source4actual linked binaries/58runtimecases+9negativebuilds+restoredbuild/recovery+155CI/statics pass. Independent read-only reconciliation checks68binary/generatedpins,116runtime streams,9savedmutations,20build streams, current identity versions, restored hashes and actual runtime-only compiled closures.",
+    "benchmark_samples": 0,
+    "not_established": "Fresh exact-head clean review and complete GitHub CI; remaining native constructs and canonical capability-host/resource/publication integration; allten programs, full125M/all7native histogram workload; same-binary trusted/secured release timing, full-program profiling/optimization/configuration. Older evidence retains original sources. Keep draft/unmerged; entire follow_up_roadmap still required."
+  },
+  "native_ranges_string_selection_and_pure_activation": {
+    "source_commit": "e7c0e8c224ae317eb85ad07f2bc8ed7cdd1d2ff9",
+    "receipt": "canonical-managed-native-linked-v1.json native_ranges_string_selection_and_pure_activation",
+    "implemented": "Actual maintained range/String selection/matrix conversion leaves, ABI6 three-operand helper, canonical snapshot grapheme selection, live resident root range geometry and generated closed pure activation on fresh stateless invocations. Scalar-only Hooks::output cfg fixes published CI without suppressing warnings.",
+    "qualification": "Broad pre-cfg1044Rust/155CI plus4isolatedprofiles pass; post-cfg exact failing target compiles/discovers and31managed methods pass. Clean committed source passes5actual linked executables/74runtimecases,9negativebuildmutations/restored build/recovery and155CI/statics. Independently reconciled85pins/148runtime streams/20build streams. No product defaults changed; no benchmark samples.",
+    "not_established": "General matrix/map access and remaining operations, element-wise counts, persistent state/FSM, full capability hosts and canonical CLI migration, allten programs/full125M/all7histograms, same-binary secured/trusted release timings/optimization and fresh clean review/full green CI remain required. Keep draft/unmerged; the full follow_up_roadmap is unchanged."
+  },
+  "collection_publication_accounting_and_runtime_ci": {
+    "source_commit": "7606c5c3768479a004e89e8f745eca9eed0dc1ae",
+    "receipt": "canonical-managed-native-linked-v1.json collection_publication_accounting_and_runtime_ci",
+    "implemented": "Body-produced String is admitted through yield-draft copying without double charging source aliases; collection push/finish use the core prospective canonical matrix node count. Managedwork4 rejects old3; ABI6/IR2/scalarABIs/defaultlimits unchanged. Exact Owner9 CI failure now positively tests original/decoded live ranges and atomic denial/recovery while retaining closed oversized rejection.",
+    "qualification": "Both new regressions fail before the fix and pass after. Frozen prelink134Rust/155CI and isolated profiles/statics pass. Clean committed source passes5actual linked executables/74runtimecases/9negativebuilds+restored build/recovery and155CI/statics;85pins/148runtime streams/20build streams independently reconcile. Zero new benchmark samples. Historical results remain attributed to their original sources.",
+    "not_established": "Fresh exact-head clean review and full green GitHub CI remain required. The complete follow_up_roadmap, remaining language/resource/production integration, allten programs/full125M/all7histograms, same-binary secured/trusted release timing and optimization are unchanged requirements. Keep draft and unmerged."
   },
   "remaining": ["Complete follow_up_roadmap in its stated order; the foundations correction does not discharge the full implementation/benchmark brief."],
   "benchmark_samples": 0

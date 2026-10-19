@@ -51,6 +51,35 @@ step(x<string>) => (next<string>) :=
 seed<string> |2> step
 "#;
 
+const RANGE_SELECTION_SOURCE: &str = r#"exclusive := start<u64>..end<u64>
+inclusive := start..=end
+stepped := start..increment<u64>..end
+stepped-inclusive := start..increment..=end
+text := input<string>
+at := text[position<u64>]
+gather := text[indices<[u64]>]
+all := text[:]
+converted<[f64]> := numbers<[u64]>
+"#;
+
+const LEXICAL_RANGE_SELECTION_SOURCE: &str = r#"lower := start<u64>
+upper := end<u64>
+stride := increment<u64>
+offset := position<u64>
+selectors := indices<[u64]>
+values := numbers<[u64]>
+step(s<string>) => (next<string>) :=
+  exclusive := lower..upper
+  inclusive := lower..=upper
+  stepped := lower..stride..upper
+  stepped-inclusive := lower..stride..=upper
+  at := s[offset]
+  gather := s[selectors]
+  converted<[f64]> := values
+  next := s[:].
+seed<string> |2> step
+"#;
+
 #[test]
 fn mixed_native_control_lowering_preserves_all_seven_library_families_and_scalar_work() {
     use mech_engine::native_artifact::{
@@ -125,7 +154,9 @@ fn mixed_native_control_lowering_owns_managed_loop_carriers_and_lexical_leaf_cal
             lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
         plan.validate_current_visits().unwrap();
         assert_eq!(plan.iterations().len(), 1);
-        let iteration = &plan.iterations()[0];
+        let iteration = plan.iterations()[0]
+            .as_iteration()
+            .expect("the declared literal loop, not a collection generator");
         assert_eq!(iteration.count(), 3);
         assert!(
             plan.values()[iteration.carrier().get() as usize]
@@ -200,15 +231,22 @@ fn retained_native_cfg_library_templates_bind_only_the_current_selected_site() {
         .unwrap()
         .limits;
     let root = SOURCE.replace("(formatted, keys, values)\n", "more := size + 1u64\n");
-    for source in [root.as_str(), LEXICAL_ALL_SOURCE] {
+    for source in [
+        root.as_str(),
+        LEXICAL_ALL_SOURCE,
+        RANGE_SELECTION_SOURCE,
+        LEXICAL_RANGE_SELECTION_SOURCE,
+    ] {
         for artifact in artifacts(source) {
             let plan = lower_native_program_artifact(&artifact, &maintained).unwrap();
             let mut families = std::collections::BTreeSet::new();
+            let mut primitives = std::collections::BTreeSet::new();
             for block in plan.blocks() {
                 let NativeIterationAction::LibraryCall { template, .. } = block.action() else {
                     continue;
                 };
                 families.insert(template.primitive().name());
+                primitives.insert(format!("{:?}", template.primitive()));
                 let parameters = template
                     .inputs()
                     .iter()
@@ -289,8 +327,33 @@ fn retained_native_cfg_library_templates_bind_only_the_current_selected_site() {
                         Err(NativeArtifactLoweringError::MissingSemanticWitness { .. })
                     ));
                 }
+                let key = template.selected_key();
+                let original = maintained
+                    .resident_factory(&key.module_path, &key.operation_name)
+                    .unwrap();
+                let mut replacement_catalog = FunctionCatalogBuilder::new();
+                replacement_catalog
+                    .insert_resident_factory_entry(original.clone().with_factory(replacement))
+                    .unwrap();
+                let replacement_catalog = replacement_catalog.build().unwrap();
+                assert!(
+                    matches!(
+                        prepare_native_program_library_call(
+                            &artifact,
+                            template,
+                            &replacement_catalog
+                        ),
+                        Err(NativeArtifactLoweringError::MissingSemanticWitness { .. })
+                    ),
+                    "replacement gained {} authority",
+                    template.primitive().name()
+                );
             }
             assert_eq!(families.len(), 7, "{source}");
+            // Whole-String [:] is already an identity in the canonical
+            // frontend (prepare_selection_schema), not an eighth call. Keep
+            // that source case and require all seven actual selected families.
+            assert_eq!(primitives.len(), 7, "{source}: {primitives:?}");
         }
     }
     assert_eq!(BINDS.load(Ordering::SeqCst), 0, "replacement must not bind");

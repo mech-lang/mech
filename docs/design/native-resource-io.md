@@ -87,3 +87,13 @@ output delivery and shutdown. Both modes use the same executable hash and input.
 Compiler and browser work must stop during timing collection. Existing timings
 retain their original source and artifact provenance; revised source programs
 require their own qualification and measurements.
+
+The [full-input I/O migration diagnostic](../validation/native-io-migration-timing-v1.json)
+compares the preserved packed k-nucleotide source's direct process I/O with an
+I/O-only rewrite using this existing host. It records actual release samples,
+independent exact output, denied launches and separate memory/Object inspection.
+That diagnostic uses the older source-based sequence compiler; it does not
+qualify the canonical production build route or its whole-program accounting.
+The separate [canonical managed linked qualification](../validation/canonical-managed-native-linked-v1.json)
+executes runtime-only canonical Objects, but has not integrated resource hosts
+or qualified the complete benchmark workload. Neither result closes that gap.

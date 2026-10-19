@@ -82,9 +82,12 @@ sequence := text/join([uppercase{char} | char <- record], "")
 
 queries := ["GGT" "GGTA" "GGTATT" "GGTATTTTAATT" "GGTATTTTAATTTATAGT"]
 
-@out/text <- frequencies(histogram(sequence, 1u64))
-@out/text <- frequencies(histogram(sequence, 2u64))
-@out/text <- text/join([
+frequency-text := text/join([
+  frequencies(histogram(sequence, width))
+  | width <- [1u64 2u64]
+], "")
+query-text := text/join([
   lookup(histogram(sequence, sequence/length(query)), query)
   | query <- queries
 ], "")
+@out/text <- frequency-text + query-text

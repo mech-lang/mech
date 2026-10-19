@@ -24,6 +24,19 @@ pub enum NativeIterationAction {
         operands: Box<[NativeMatchValue]>,
         output: NativeMatchValue,
     },
+    CollectionBegin {
+        collection: u32,
+    },
+    CollectionElement {
+        iteration: u32,
+    },
+    CollectionPush {
+        collection: u32,
+        value: NativeMatchValue,
+    },
+    CollectionFinish {
+        collection: u32,
+    },
     Initialize {
         iteration: u32,
     },

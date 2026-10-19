@@ -188,8 +188,7 @@ pub fn prospective_string_value_footprint(
         .and_then(|bytes| bytes.checked_add(payload_bytes))
         .ok_or(ValueFootprintError::ArithmeticOverflow)?;
     let node_count = if matrix {
-        element_count
-            .checked_add(3)
+        prospective_packed_matrix_node_count(&SchemaBody::String, element_count)
             .ok_or(ValueFootprintError::ArithmeticOverflow)?
     } else {
         2
@@ -199,6 +198,25 @@ pub fn prospective_string_value_footprint(
         retained_bytes,
         node_count,
     })
+}
+
+/// Canonical Value, Matrix and packed-sequence containers are three nodes,
+/// even for an empty matrix. Packed String sequences additionally own one
+/// String node per element. Recursive/composite sequences need their own
+/// schema-directed prospective traversal rather than this shallow witness.
+pub fn prospective_packed_matrix_node_count(element: &SchemaBody, count: u64) -> Option<u64> {
+    match element {
+        SchemaBody::String => count.checked_add(3),
+        SchemaBody::Bool
+        | SchemaBody::Index
+        | SchemaBody::Id
+        | SchemaBody::UnsignedInteger(_)
+        | SchemaBody::SignedInteger(_)
+        | SchemaBody::FloatingPoint(_)
+        | SchemaBody::Complex(_)
+        | SchemaBody::Rational64 => Some(3),
+        _ => None,
+    }
 }
 
 impl Sha256SnapshotSink {

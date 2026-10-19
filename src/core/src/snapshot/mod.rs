@@ -26,8 +26,8 @@ pub use self::draft::{
 pub use self::encoding::{
     CanonicalDataWork, CanonicalDataWorkError, ValueFootprint, ValueFootprintError,
     canonical_data_payload_len, canonical_data_retained_footprint,
-    canonical_sequence_element_retained_footprint, prospective_string_value_footprint,
-    visit_canonical_data_work,
+    canonical_sequence_element_retained_footprint, prospective_packed_matrix_node_count,
+    prospective_string_value_footprint, visit_canonical_data_work,
 };
 pub use self::error::{
     SchemaDataKind, SnapshotPath, SnapshotPathSegment, SnapshotValueError, ValueDataKind,
@@ -55,3 +55,6 @@ mod composite_constructor_tests;
 
 #[cfg(test)]
 mod matrix_constructor_tests;
+
+#[cfg(test)]
+mod matrix_node_footprint_tests;

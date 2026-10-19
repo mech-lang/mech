@@ -1,7 +1,7 @@
 //! Thin canonical Match route over the common pinned workspace generator.
 use super::application::{
-    GeneratedLinkedApplication, LinkedApplicationInputs, NativeApplicationError,
-    prepare_destination, render_main, write_linked_application,
+    GeneratedLinkedApplication, LinkedApplicationInputs, LinkedApplicationProfile,
+    NativeApplicationError, prepare_destination, render_main, write_linked_application,
 };
 use super::emit_match_object;
 use mech_core::FunctionCatalog;
@@ -35,6 +35,7 @@ pub fn generate_linked_match_application(
         directory,
         binary_name,
         LinkedApplicationInputs {
+            profile: LinkedApplicationProfile::Scalar,
             source_provenance,
             bytecode,
             object: object.bytes(),

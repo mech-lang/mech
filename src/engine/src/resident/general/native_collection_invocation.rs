@@ -40,7 +40,7 @@ impl std::fmt::Display for NativeCollectionInvocationError {
 }
 impl std::error::Error for NativeCollectionInvocationError {}
 
-/// Only the constructor-private seven shallow maintained families reach this
+/// Only the constructor-private shallow maintained families reach this
 /// envelope. It conservatively covers planner coexistence, descriptor/schema
 /// copies, borrowed argument tapes and BTree facts; it is not a payload bound.
 /// Runtime admission reserves it before any of those objects are constructed.

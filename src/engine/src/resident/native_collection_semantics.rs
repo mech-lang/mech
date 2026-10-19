@@ -12,6 +12,16 @@ use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NativeCollectionPrimitive {
+    RangeExclusive,
+    RangeInclusive,
+    RangeIncrementExclusive,
+    RangeIncrementInclusive,
+    StringScalarAccess,
+    StringRangeAccess,
+    #[cfg(feature = "native-artifact")]
+    StringAllAccess,
+    #[cfg(feature = "convert")]
+    MatrixConversion,
     #[cfg(feature = "pure_text")]
     TextLines,
     #[cfg(feature = "pure_text")]
@@ -26,6 +36,81 @@ pub enum NativeCollectionPrimitive {
     StringMapKeys,
     #[cfg(feature = "map_ops")]
     StringMapValues,
+}
+
+pub(super) fn register_ranges(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    let factories: [(&str, ResidentKernelFactory, NativeCollectionPrimitive); 4] = [
+        (
+            "exclusive",
+            super::numeric::bind_range_exclusive,
+            NativeCollectionPrimitive::RangeExclusive,
+        ),
+        (
+            "inclusive",
+            super::numeric::bind_range_inclusive,
+            NativeCollectionPrimitive::RangeInclusive,
+        ),
+        (
+            "exclusive-increment",
+            super::numeric::bind_range_increment_exclusive,
+            NativeCollectionPrimitive::RangeIncrementExclusive,
+        ),
+        (
+            "inclusive-increment",
+            super::numeric::bind_range_increment_inclusive,
+            NativeCollectionPrimitive::RangeIncrementInclusive,
+        ),
+    ];
+    for (name, factory, primitive) in factories {
+        register(
+            builder,
+            "range",
+            name,
+            ImplementationMemoryClass::NoAdditionalScratch,
+            factory,
+            primitive,
+        )?;
+    }
+    Ok(())
+}
+
+pub(super) fn register_string_access(
+    builder: &mut FunctionCatalogBuilder,
+    scalar: bool,
+) -> MResult<()> {
+    let (name, factory, primitive): (_, ResidentKernelFactory, _) = if scalar {
+        (
+            "scalar",
+            super::numeric::bind_semantic_scalar_access,
+            NativeCollectionPrimitive::StringScalarAccess,
+        )
+    } else {
+        (
+            "range",
+            super::numeric::bind_semantic_range_access,
+            NativeCollectionPrimitive::StringRangeAccess,
+        )
+    };
+    register(
+        builder,
+        "access",
+        name,
+        ImplementationMemoryClass::CanonicalFinalize,
+        factory,
+        primitive,
+    )
+}
+
+#[cfg(feature = "convert")]
+pub(super) fn register_conversion(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register(
+        builder,
+        "convert",
+        "kind",
+        ImplementationMemoryClass::CanonicalFinalize,
+        super::conversion::bind_kind_conversion,
+        NativeCollectionPrimitive::MatrixConversion,
+    )
 }
 
 #[cfg(feature = "native-artifact")]

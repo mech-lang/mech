@@ -1,4 +1,4 @@
-//! ABI4 facade over the SAME canonical iteration CFG definition pass.
+//! ABI6 facade over the SAME canonical iteration CFG definition pass.
 use super::compiler::{backend, host_supported};
 use super::iteration_code_plan::CodePlan;
 use super::program_abi::{ENTRY, Entry, VERSION};
@@ -52,7 +52,7 @@ impl JitProgramArtifact {
         let descriptor = NativeProgramDescriptor::prepare(artifact, catalog, plan, stack, code)
             .map_err(backend)?;
         module.finalize_definitions().map_err(backend)?;
-        // SAFETY: define_cfg emits exactly the private ABI4 signature, and
+        // SAFETY: define_cfg emits exactly the private ABI6 signature, and
         // this owner retains the module for every synchronous invocation.
         let entry = unsafe {
             std::mem::transmute::<*const u8, Entry>(module.get_finalized_function(function))
@@ -66,6 +66,9 @@ impl JitProgramArtifact {
     pub fn descriptor(&self) -> &NativeProgramDescriptor {
         &self.descriptor
     }
+    /// Evaluate one fresh, stateless invocation: closed pure activation DAG
+    /// followed by one turn. No activation cache, state or suspended instance
+    /// survives a call. Both phases share the same limits and atomic outputs.
     pub fn evaluate_into(
         &self,
         inputs: &[Value],
@@ -76,7 +79,7 @@ impl JitProgramArtifact {
         super::program_runtime::execute(
             &self.descriptor,
             |frame| {
-                // SAFETY: this owner retains the exact checked ABI4 entry.
+                // SAFETY: this owner retains the exact checked ABI6 entry.
                 unsafe { (self.entry)(frame) }
             },
             inputs,
@@ -101,6 +104,22 @@ impl NativeProgramObject {
     }
     pub fn identity(&self) -> &NativeProgramObjectIdentity {
         &self.identity
+    }
+    pub fn metadata(&self) -> serde_json::Value {
+        serde_json::json!({
+            "schema": "mech.canonical-managed-program-object.v1",
+            "abi_version": VERSION,
+            "entry_symbol": ENTRY,
+            "work_policy_version": super::program_identity::NATIVE_PROGRAM_WORK_POLICY_VERSION,
+            "typed_ir_sha256": super::identity::hex(self.descriptor.typed_ir_sha256()),
+            "identity_symbol": self.identity.symbol(),
+            "target_tag": super::identity::host_target_tag(),
+            "program_revision": super::identity::hex(self.descriptor.plan().program_revision().as_bytes()),
+            "stack_bytes": self.descriptor.stack_bytes(),
+            "code_bytes": self.descriptor.code_bytes(),
+            "object_bytes": self.bytes.len(),
+            "linked": false, "executed": false, "timing_samples": 0,
+        })
     }
 }
 pub fn emit_program_object(

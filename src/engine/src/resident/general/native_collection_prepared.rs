@@ -44,8 +44,13 @@ pub fn prepare_native_program_library_call(
     let ports = (template.inputs().len() as u64)
         .checked_add(1)
         .ok_or_else(|| super::invalid(node))?;
-    // Only the seven sealed families can reach this constructor. Their
-    // deferred AnyValue planning has <=2 allocations/port, <=8 additional
+    // Only the sealed shallow text/map/range/selection/conversion families reach here.
+    // Numeric range elements and String selectors contain no schema children
+    // beyond a rank-two scalar matrix; selector state has fixed metadata size.
+    // Build/NoAdditionalScratch ranges add no implementation scratch entries;
+    // CanonicalFinalize String selection/matrix conversion uses the same output entry family.
+    // Tests assert the actual NativeHost plan stays within this entry bound.
+    // Their deferred AnyValue planning has <=2 allocations/port, <=8 additional
     // output stage/scratch allocations, one transaction and one witness/port.
     // Reserve extra entry slack too. Numeric extents do not create plan
     // entries; arbitrary matrix rank/schema trees are covered by the complete

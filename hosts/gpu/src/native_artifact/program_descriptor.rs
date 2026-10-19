@@ -1,4 +1,4 @@
-//! Same-artifact metadata for generated ABI4, not an evaluator.
+//! Same-artifact metadata for generated ABI6, not an evaluator.
 use super::{NativeValueSlot, iteration_abi::NativeIterationVisit};
 use mech_core::{FunctionCatalog, SchemaTable, Value};
 use mech_engine::{
@@ -40,10 +40,13 @@ impl NativeProgramDescriptor {
             .and_then(|n| n.checked_add((plan.iterations().len() as u64).checked_mul(8)?))
             .and_then(|n| n.checked_add(256))
             .ok_or("program completion overflow")?;
-        let visits =
-            super::iteration_abi::control_visits(plan.blocks(), plan.iterations(), completion)
-                .map_err(str::to_owned)?
-                .into();
+        let visits = super::iteration_abi::control_visits(
+            plan.blocks(),
+            plan.iterations().iter().map(Into::into),
+            completion,
+        )
+        .map_err(str::to_owned)?
+        .into();
         let calls = plan
             .blocks()
             .iter()
@@ -122,7 +125,10 @@ impl super::iteration_runtime::VisitPlan for NativeProgramDescriptor {
     fn visits(&self) -> &[NativeIterationVisit] {
         &self.visits
     }
-    fn iterations(&self) -> &[mech_engine::native_artifact::NativeIterationLoop] {
-        self.plan.iterations()
+    fn iteration_count(&self) -> usize {
+        self.plan.iterations().len()
+    }
+    fn iteration(&self, index: usize) -> mech_engine::native_artifact::NativeControlLoopRef<'_> {
+        self.plan.iterations()[index].as_ref()
     }
 }

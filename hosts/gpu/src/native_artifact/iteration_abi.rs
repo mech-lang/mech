@@ -73,7 +73,11 @@ impl NativeIterationDescriptor {
             .and_then(|n| n.checked_add((plan.iterations().len() as u64).checked_mul(8)?))
             .and_then(|n| n.checked_add(256))
             .ok_or("iteration completion overflow")?;
-        let visits = control_visits(plan.blocks(), plan.iterations(), completion)?;
+        let visits = control_visits(
+            plan.blocks(),
+            plan.iterations().iter().map(Into::into),
+            completion,
+        )?;
         Ok(Self {
             entry: plan.entry(),
             revision: plan.program_revision(),
@@ -127,9 +131,9 @@ impl NativeIterationDescriptor {
     }
 }
 
-pub(super) fn control_visits(
+pub(super) fn control_visits<'a>(
     blocks: &[mech_engine::native_artifact::NativeIterationBlock],
-    iterations: &[NativeIterationLoop],
+    iterations: impl Iterator<Item = mech_engine::native_artifact::NativeControlLoopRef<'a>> + Clone,
     completion: u64,
 ) -> Result<Vec<NativeIterationVisit>, &'static str> {
     let mut visits = Vec::with_capacity(blocks.len());
@@ -148,7 +152,7 @@ pub(super) fn control_visits(
             (Action::Latch { iteration }, _) => Progress::Latch(*iteration),
             (_, Terminator::Header { iteration, .. }) => Progress::Header(iteration),
             _ => iterations
-                .iter()
+                .clone()
                 .position(|v| v.exit() as usize == id)
                 .map(|v| Progress::Exit(v as u32))
                 .unwrap_or(Progress::Normal),

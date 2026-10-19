@@ -168,7 +168,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         applications = job_block(FULL, "canonical-applications")
         linked = job_block(FULL, "canonical-linked-applications")
         self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", applications).group(1)), 90)
-        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", linked).group(1)), 60)
+        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", linked).group(1)), 240)
         self.assertEqual(applications.splitlines()[0], linked.splitlines()[0])
         for setting in (
             "RUSTUP_TOOLCHAIN: nightly-2026-03-03",
@@ -258,6 +258,26 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--features functions", contracts)
         self.assertIn("--features full_compiler,native-artifact", contracts)
         self.assertNotIn("--no-run", contracts)
+        linked = job_steps(FULL, "canonical-linked-applications")
+        selection = next(step for step in linked if "Verify linked canonical managed program selection is nonempty" in step)
+        execute = next(step for step in linked if "Qualify linked canonical managed programs" in step)
+        name = "linked_qualification::linked_managed_programs_preserve_canonical_outputs_errors_and_denials"
+        self.assertIn("--list --ignored --exact", selection)
+        self.assertIn(name + ": test$", selection)
+        self.assertIn("--features canonical-native-program", execute)
+        self.assertIn("--test canonical_artifact_program", execute)
+        self.assertIn("--ignored --exact", execute)
+        self.assertIn(name, execute)
+        self.assertIn("MECH_CANONICAL_PROGRAM_SOURCE_COMMIT", execute)
+        self.assertIn("MECH_CANONICAL_PROGRAM_EVIDENCE_DIR", execute)
+        upload = next(step for step in linked if "Retain linked application evidence" in step)
+        self.assertIn("if: ${{ always() }}", upload)
+        self.assertIn("${{ runner.temp }}/canonical-program-evidence", upload)
+        reference = next(step for step in job_steps(FULL, "canonical-applications")
+                         if "Execute secured canonical reference bytecode admission" in step)
+        self.assertIn("--features full_compiler,resident-routing-source", reference)
+        self.assertIn("--example canonical_host_reference -- --test-threads=1", reference)
+        self.assertNotIn("--no-run", reference)
 
     def test_canonical_iteration_has_nonempty_exact_linked_qualification(self):
         steps = job_steps(FULL, "canonical-linked-applications")
@@ -1465,6 +1485,37 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("smoke-served-resident-ekf-browser.sh", ekf_cpu)
         self.assertIn("smoke-served-resident-ekf-browser.sh", ekf_wgpu)
         self.assertNotIn("smoke-served-resident-nbody-browser.sh", compute)
+
+    def test_project_wasm_driver_and_runner_have_separate_finite_budgets(self):
+        steps = job_steps(FULL, "project-browser")
+        step = next(step for step in steps if "name: Run headless Chrome WASM tests" in step)
+        self.assertIn("timeout-minutes: 15", step)
+        self.assertIn(
+            "WASM_BINDGEN_TEST_WEBDRIVER_JSON: ${{ github.workspace }}/tests/browser/wasm-bindgen-webdriver.json",
+            step,
+        )
+        self.assertIn('WASM_BINDGEN_TEST_TIMEOUT: "180"', step)
+        self.assertIn(
+            "CHROMEDRIVER_ARGS: --verbose --log-path=${{ runner.temp }}/mech-project-browser-chromedriver.log",
+            step,
+        )
+        configuration = json.loads(
+            (ROOT / "tests/browser/wasm-bindgen-webdriver.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(configuration, {"timeouts": {"script": 120000}})
+        self.assertLess(configuration["timeouts"]["script"], 180 * 1000)
+        # Preserve the complete release browser suite and all existing flags.
+        command = shlex.split(step.split("        run: |\n", 1)[1].replace("\\\n", " "))
+        self.assertEqual(command, [
+            "wasm-pack", "test", "--headless", "--chrome", "--release", "src/wasm", "--lib",
+            "--no-default-features", "--features", "browser_project,set_union,set_element_of", "--", "--nocapture",
+        ])
+        self.assertNotIn("continue-on-error", step)
+        self.assertNotIn("retry", step.split("        run: |\n", 1)[1])
+        diagnostic = next(step for step in steps if "name: Retain headless WebDriver failure diagnostics" in step)
+        self.assertIn("if: failure()", diagnostic)
+        self.assertIn("uses: actions/upload-artifact@v4", diagnostic)
+        self.assertIn("path: ${{ runner.temp }}/mech-project-browser-chromedriver.log", diagnostic)
 
     def test_long_browser_canaries_use_progress_watchdogs_with_hard_caps(self):
         static_architecture = job_block(CI, "static-architecture")

@@ -147,7 +147,15 @@ pub(super) fn prepare_destination(
     Ok(workspace)
 }
 
+#[derive(Clone, Copy)]
+pub(super) enum LinkedApplicationProfile {
+    Scalar,
+    #[cfg(feature = "canonical-native-program")]
+    ManagedProgram,
+}
+
 pub(super) struct LinkedApplicationInputs<'a> {
+    pub profile: LinkedApplicationProfile,
     pub source_provenance: &'a [u8],
     pub bytecode: Vec<u8>,
     pub object: &'a [u8],
@@ -201,6 +209,7 @@ pub fn generate_linked_application(
         directory,
         binary_name,
         LinkedApplicationInputs {
+            profile: LinkedApplicationProfile::Scalar,
             source_provenance,
             bytecode,
             object: object.bytes(),
@@ -224,6 +233,16 @@ pub(super) fn write_linked_application(
     let workspace_text = workspace.to_str().ok_or(NativeApplicationError::Invalid(
         "workspace path is not Unicode",
     ))?;
+    let (gpu_feature, core_features, library_features, dependencies) = match inputs.profile {
+        LinkedApplicationProfile::Scalar => ("canonical-native-runtime", "", "", ""),
+        #[cfg(feature = "canonical-native-program")]
+        LinkedApplicationProfile::ManagedProgram => (
+            "canonical-native-program-runtime",
+            ", features = [\"serde\"]",
+            ", \"string\", \"pure_text\", \"map_ops\"",
+            "serde_json = \"1.0\"\n",
+        ),
+    };
     let mut cargo = format!(
         r#"[package]
 name = {name}
@@ -233,12 +252,12 @@ publish = false
 build = "build.rs"
 [workspace]
 [dependencies]
-mech-core = {{ path = {core}, default-features = false }}
+mech-core = {{ path = {core}, default-features = false{core_features} }}
 mech-engine = {{ path = {engine}, default-features = false, features = ["native-artifact"] }}
-mech-gpu = {{ path = {gpu}, default-features = false, features = ["canonical-native-runtime"] }}
-mech-stdlib = {{ path = {stdlib}, default-features = false, features = ["std", "native-plan", "bool", "u64", "i64", "f64", "convert", "math_sqrt", "math_neg", "math_add", "math_sub", "math_mul", "math_div", "math_mod", "compare_default", "logic_default"] }}
+mech-gpu = {{ path = {gpu}, default-features = false, features = ["{gpu_feature}"] }}
+mech-stdlib = {{ path = {stdlib}, default-features = false, features = ["std", "native-plan", "bool", "u64", "i64", "f64", "convert", "math_sqrt", "math_neg", "math_add", "math_sub", "math_mul", "math_div", "math_mod", "compare_default", "logic_default"{library_features}] }}
 sha2 = {{ version = "0.11.0", default-features = false }}
-[build-dependencies]
+{dependencies}[build-dependencies]
 sha2 = {{ version = "0.11.0", default-features = false }}
 serde_json = "1.0"
 [profile.dev]
@@ -285,7 +304,7 @@ incremental = false
         "typed_ir_sha256": super::identity::hex(inputs.typed_ir_sha256),
         "object": inputs.object_metadata, "pins": pins,
         "source_is_provenance_only": true,
-        "runtime_features": ["mech-gpu/canonical-native-runtime", "mech-engine/native-artifact", "mech-stdlib/native-plan"],
+        "runtime_features": [format!("mech-gpu/{gpu_feature}"), "mech-engine/native-artifact".to_owned(), "mech-stdlib/native-plan".to_owned()],
         "linked": false, "executed": false, "timing_samples": 0,
     });
     files.insert(
