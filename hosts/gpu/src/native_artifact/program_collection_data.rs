@@ -13,6 +13,8 @@ pub(super) fn output_nodes(schema: &mech_core::SchemaBody, count: u64) -> Result
 
 pub(super) enum Element<'a> {
     Scalar(NativeScalarKind, u64),
+    // Index keeps its canonical identity; it is not U64 arithmetic transport.
+    Index(u64),
     Text(&'a str),
 }
 impl Element<'_> {
@@ -20,6 +22,7 @@ impl Element<'_> {
         match self {
             Self::Scalar(NativeScalarKind::Bool, _) => 1,
             Self::Scalar(_, _) => 8,
+            Self::Index(_) => 8,
             Self::Text(text) => text.len() as u64,
         }
     }
@@ -36,6 +39,7 @@ pub(super) fn count(value: &Value) -> Result<u64, Error> {
 fn scalar(value: &ValueData) -> Result<Element<'_>, Error> {
     Ok(match value {
         ValueData::Bool(value) => Element::Scalar(NativeScalarKind::Bool, u64::from(*value)),
+        ValueData::Index(value) => Element::Index(*value),
         ValueData::U64(value) => Element::Scalar(NativeScalarKind::U64, *value),
         ValueData::I64(value) => Element::Scalar(NativeScalarKind::I64, *value as u64),
         ValueData::F64(value) => Element::Scalar(NativeScalarKind::F64, value.bits()),
@@ -52,6 +56,11 @@ pub(super) fn element(
         usize::try_from(ordinal).map_err(|_| invalid("generator index exceeds address range"))?;
     let item = match value.data() {
         ValueData::Matrix(matrix) => match matrix.elements() {
+            SequenceView::Index(values) => Element::Index(
+                *values
+                    .get(index)
+                    .ok_or_else(|| invalid("generator index"))?,
+            ),
             SequenceView::Bool(values) => Element::Scalar(
                 NativeScalarKind::Bool,
                 u64::from(

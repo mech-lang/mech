@@ -686,6 +686,9 @@ struct SnapshotAccessPlan {
     source_dimensions: Option<(usize, usize)>,
     output_dimensions: Option<(usize, usize)>,
     output_dimensions_dynamic: bool,
+    // Orientation is semantic schema evidence, not inferred from a transient
+    // 1x1/empty output seed. Positional linear gathers preserve either vector.
+    linear_gather_row: bool,
     output_geometry: ResolvedAccessGeometry,
     aggregate_ordinal: Option<usize>,
     output_schema: SchemaId,
@@ -805,8 +808,15 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register_no_additional_scratch(builder, &["logic"], "or", bind_semantic_bool_or)?;
     register_no_additional_scratch(builder, &["logic"], "xor", bind_semantic_bool_xor)?;
     register_no_additional_scratch(builder, &["logic"], "not", bind_bool_not)?;
-    register_no_additional_scratch(builder, &["compare"], "eq", bind_semantic_equal)?;
-    register_no_additional_scratch(builder, &["compare"], "neq", bind_semantic_not_equal)?;
+    // The entry witness describes only the exact String branch. Numeric
+    // scalar binders keep their separate finished-kernel semantic seals.
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_string_comparisons(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    {
+        register_no_additional_scratch(builder, &["compare"], "eq", bind_semantic_equal)?;
+        register_no_additional_scratch(builder, &["compare"], "neq", bind_semantic_not_equal)?;
+    }
     register_no_additional_scratch(builder, &["compare"], "lt", bind_semantic_less)?;
     register_no_additional_scratch(builder, &["compare"], "lte", bind_semantic_less_equal)?;
     register_no_additional_scratch(builder, &["compare"], "gt", bind_semantic_greater)?;
@@ -814,7 +824,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register_no_additional_scratch(builder, &["compare"], "seq", bind_strict_equal)?;
     register_no_additional_scratch(builder, &["compare"], "sneq", bind_strict_not_equal)?;
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
-    super::native_collection_semantics::register_string_access(builder, true)?;
+    super::native_collection_semantics::register_access(builder, true)?;
     #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     register_canonical_finalize(builder, &["access"], "scalar", bind_semantic_scalar_access)?;
     register_canonical_finalize(builder, &["access"], "column", bind_snapshot_access)?;
@@ -827,7 +837,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     )?;
     register_no_additional_scratch(builder, &["access"], "index", bind_scalar_index)?;
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
-    super::native_collection_semantics::register_string_access(builder, false)?;
+    super::native_collection_semantics::register_access(builder, false)?;
     #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     register_canonical_finalize(builder, &["access"], "range", bind_semantic_range_access)?;
     register_canonical_finalize(
@@ -981,8 +991,13 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         )?;
     }
     register_no_additional_scratch(builder, &["combinatorics"], "n-choose-k", bind_n_choose_k)?;
-    register_no_additional_scratch(builder, &["stats", "sum"], "column", bind_sum_columns)?;
-    register_no_additional_scratch(builder, &["stats", "sum"], "row", bind_sum_rows)?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_sums(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    {
+        register_no_additional_scratch(builder, &["stats", "sum"], "column", bind_sum_columns)?;
+        register_no_additional_scratch(builder, &["stats", "sum"], "row", bind_sum_rows)?;
+    }
 
     register_no_additional_scratch(builder, &["ekf"], "trigonometric-state", bind_ekf_trig)?;
     register_no_additional_scratch(builder, &["ekf"], "motion-jacobian", bind_ekf_motion)?;
@@ -2182,7 +2197,7 @@ fn bind_f64_equal(
     })
 }
 
-fn bind_semantic_equal(
+pub(super) fn bind_semantic_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_equal(request)
@@ -2543,7 +2558,7 @@ fn bind_snapshot_equality(
     Ok(bound(executor, Vec::<u64>::new())?.with_snapshot_schemas(request.schemas.clone()))
 }
 
-fn bind_semantic_not_equal(
+pub(super) fn bind_semantic_not_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_not_equal(request)
@@ -3810,7 +3825,7 @@ fn bind_semantic_transpose(
     bind_transpose(request).or_else(|_| super::text::bind_string_transpose(request))
 }
 
-fn bind_sum_columns(
+pub(super) fn bind_sum_columns(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_full_write(
@@ -3834,7 +3849,7 @@ fn bind_sum_columns(
     bind_snapshot_sum(request, true)
 }
 
-fn bind_sum_rows(
+pub(super) fn bind_sum_rows(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_full_write(
@@ -4465,6 +4480,71 @@ fn resident_shape_from_dimensions(
     })
 }
 
+fn linear_gather_output_is_row(request: &ResidentKernelBindRequest<'_>) -> bool {
+    request
+        .schemas
+        .get(request.output.schema_id)
+        .is_some_and(|schema| {
+            matches!(schema.body(), SchemaBody::Matrix { dimensions, .. }
+            if dimensions.len() == 2
+                && dimensions[0] == mech_core::DimensionExpr::Constant(1))
+        })
+}
+
+fn validate_linear_gather_geometry(
+    request: &ResidentKernelBindRequest<'_>,
+    dimensions: Option<(usize, usize)>,
+    selector_count: usize,
+    logical: bool,
+    source_count: Option<usize>,
+) -> Result<ResolvedAccessGeometry, ResidentKernelBindError> {
+    let (rows, columns) = dimensions.ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let SchemaBody::Matrix {
+        dimensions: axes, ..
+    } = schema.body()
+    else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if axes.len() != 2 {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let row = linear_gather_output_is_row(request);
+    let (fixed_axis, count_axis, count) = if row { (0, 1, columns) } else { (1, 0, rows) };
+    if axes[fixed_axis] != mech_core::DimensionExpr::Constant(1)
+        || if row { rows != 1 } else { columns != 1 }
+        // A mask's population may vary, but its length always addresses the
+        // complete actual source axis whenever that geometry is known.
+        || (logical && source_count.is_some_and(|source| source != selector_count))
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let dynamic_count = request.output.kind == ResidentValueKind::Snapshot
+        && request.output.shape == ResidentShape::SCALAR
+        && !request.output.activation_fixed_shape
+        && !schema.dimension_parameters().is_empty()
+        && !matches!(axes[count_axis], mech_core::DimensionExpr::Constant(_));
+    // Only a genuinely parameterized Snapshot result may use the current
+    // empty/previous-output seed. Fixed outputs, dense buffers and committed
+    // activation-fixed geometry retain the exact old cardinality checks.
+    if !dynamic_count
+        && if logical {
+            count > selector_count
+        } else {
+            count != selector_count
+        }
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(ResolvedAccessGeometry {
+        logical_output_rows: rows,
+        logical_output_columns: columns,
+    })
+}
+
 fn validate_snapshot_access_geometry(
     request: &ResidentKernelBindRequest<'_>,
     source_dimensions: Option<(usize, usize)>,
@@ -4546,23 +4626,13 @@ fn validate_snapshot_access_geometry(
                     logical_output_columns: 1,
                 }
             }
-            ResolvedSelectionMode::LinearGather => {
-                let (output_rows, output_columns) =
-                    output_dimensions.ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-                if output_columns != 1
-                    || if first_logical {
-                        first_count != source_cardinality || output_rows > first_count
-                    } else {
-                        output_rows != first_count
-                    }
-                {
-                    return Err(ResidentKernelBindError::UnsupportedLayout);
-                }
-                ResolvedAccessGeometry {
-                    logical_output_rows: output_rows,
-                    logical_output_columns: 1,
-                }
-            }
+            ResolvedSelectionMode::LinearGather => validate_linear_gather_geometry(
+                request,
+                output_dimensions,
+                first_count,
+                first_logical,
+                Some(source_cardinality),
+            )?,
             ResolvedSelectionMode::Rows => {
                 let (output_rows, output_columns) =
                     output_dimensions.ok_or(ResidentKernelBindError::UnsupportedLayout)?;
@@ -4654,23 +4724,13 @@ fn validate_snapshot_access_geometry(
                             logical_output_columns: 1,
                         }
                     }
-                    ResolvedSelectionMode::LinearGather => {
-                        let (output_rows, output_columns) =
-                            output_dimensions.ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-                        if output_columns != 1
-                            || if first_logical {
-                                output_rows > first_count
-                            } else {
-                                output_rows != first_count
-                            }
-                        {
-                            return Err(ResidentKernelBindError::UnsupportedLayout);
-                        }
-                        ResolvedAccessGeometry {
-                            logical_output_rows: output_rows,
-                            logical_output_columns: 1,
-                        }
-                    }
+                    ResolvedSelectionMode::LinearGather => validate_linear_gather_geometry(
+                        request,
+                        output_dimensions,
+                        first_count,
+                        first_logical,
+                        None,
+                    )?,
                     ResolvedSelectionMode::Rows => {
                         let (output_rows, output_columns) =
                             output_dimensions.ok_or(ResidentKernelBindError::UnsupportedLayout)?;
@@ -6005,6 +6065,7 @@ fn bind_all_elements_range(
         source_dimensions: fixed_geometry.then_some((rows, columns)),
         output_dimensions: Some((count, 1)),
         output_dimensions_dynamic: !fixed_geometry,
+        linear_gather_row: false,
         output_geometry: ResolvedAccessGeometry {
             logical_output_rows: count,
             logical_output_columns: 1,
@@ -6225,6 +6286,7 @@ fn bind_dense_source_snapshot_access_mode(
         // population, rather than its lower-bound placeholder, determines the
         // result axes at execution.
         output_dimensions_dynamic: true,
+        linear_gather_row: linear_gather_output_is_row(request),
         output_geometry,
         aggregate_ordinal: None,
         output_schema: request.output.schema_id,
@@ -6479,6 +6541,7 @@ fn bind_snapshot_access_mode(
         source_dimensions,
         output_dimensions,
         output_dimensions_dynamic,
+        linear_gather_row: linear_gather_output_is_row(request),
         output_geometry,
         aggregate_ordinal,
         output_schema: request.output.schema_id,
@@ -16725,14 +16788,18 @@ fn snapshot_access_output_cost(
             } else {
                 match plan.matrix_mode {
                     Some(ResolvedSelectionMode::LinearScalar) => None,
-                    Some(ResolvedSelectionMode::LinearGather) => Some((
-                        if plan.selectors.is_empty() {
+                    Some(ResolvedSelectionMode::LinearGather) => {
+                        let count = if plan.selectors.is_empty() {
                             source_len
                         } else {
                             selector_access_count(selector(0)?, source_len)?
-                        },
-                        1,
-                    )),
+                        };
+                        Some(if plan.linear_gather_row {
+                            (1, count)
+                        } else {
+                            (count, 1)
+                        })
+                    }
                     Some(ResolvedSelectionMode::Rows) => {
                         Some((selector_access_count(selector(0)?, rows)?, columns))
                     }
@@ -29275,6 +29342,9 @@ mod tests {
 
     #[test]
     fn access_binders_reject_same_cardinality_wrong_output_dimensions() {
+        // A declared row vector is now also valid for linear gathering.
+        // The invalid gather case below uses the wrong count, while Rows,
+        // Columns, Rectangle and table-axis checks stay exact.
         let matrix = |element, rows, columns| SchemaBody::Matrix {
             element: Box::new(element),
             dimensions: vec![
@@ -29436,7 +29506,7 @@ mod tests {
                 ResolvedSelectionMode::LinearGather,
                 vec![*selector_2x1],
                 *selector_2x1,
-                *snapshot_1x2,
+                *snapshot_2x2,
             ),
             (
                 ResolvedSelectionMode::Rows,
@@ -29844,6 +29914,7 @@ mod tests {
             // individual axes do not.
             output_dimensions: Some((1, 4)),
             output_dimensions_dynamic: false,
+            linear_gather_row: false,
             output_geometry: ResolvedAccessGeometry {
                 logical_output_rows: 1,
                 logical_output_columns: 4,
@@ -29866,6 +29937,213 @@ mod tests {
                 &mut super::super::budget::ResidentBudgetMeter::default(),
             ),
             Err(ResidentKernelError::InvalidShape),
+        ));
+    }
+
+    #[test]
+    fn snapshot_linear_gather_preserves_declared_vectors_and_only_defers_dynamic_snapshot_count() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, SchemaDraft, SchemaTableBuilder,
+        };
+        let matrix = |element, rows, columns| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![
+                DimensionExpr::Constant(rows),
+                DimensionExpr::Constant(columns),
+            ]
+            .into(),
+        };
+        let dynamic = |row| {
+            SchemaDraft {
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime: DimensionLifetime::Turn,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: Some(DimensionExpr::Constant(8)),
+                }]
+                .into(),
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::String),
+                    dimensions: if row {
+                        vec![
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        ]
+                    } else {
+                        vec![
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                            DimensionExpr::Constant(1),
+                        ]
+                    }
+                    .into(),
+                },
+            }
+            .finalize()
+            .unwrap()
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let source = builder
+            .insert(test_schema(matrix(SchemaBody::String, 1, 4)))
+            .unwrap();
+        let selector = builder
+            .insert(test_schema(matrix(
+                SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+                1,
+                2,
+            )))
+            .unwrap();
+        let wrong_mask = builder
+            .insert(test_schema(matrix(SchemaBody::Bool, 1, 3)))
+            .unwrap();
+        let fixed_output = builder
+            .insert(test_schema(matrix(SchemaBody::String, 1, 1)))
+            .unwrap();
+        let row_output = builder.insert(dynamic(true)).unwrap();
+        let column_output = builder.insert(dynamic(false)).unwrap();
+        let built = builder.finish().unwrap();
+        let source = built.resolve(source).unwrap();
+        let selector = built.resolve(selector).unwrap();
+        let wrong_mask = built.resolve(wrong_mask).unwrap();
+        let fixed_output = built.resolve(fixed_output).unwrap();
+        let row_output = built.resolve(row_output).unwrap();
+        let column_output = built.resolve(column_output).unwrap();
+        let (schemas, _) = built.into_parts();
+        let source_value = Some(test_value(
+            &schemas,
+            source,
+            ValueDataDraft::Matrix(
+                ["a", "b", "c", "d"]
+                    .into_iter()
+                    .map(|text| ValueDataDraft::String(text.to_owned()))
+                    .collect::<Vec<_>>()
+                    .into(),
+            ),
+        ));
+        let selector_value = Some(test_value(
+            &schemas,
+            selector,
+            ValueDataDraft::Matrix([ValueDataDraft::U64(2), ValueDataDraft::U64(4)].into()),
+        ));
+        let source_layout = test_layout(
+            &schemas,
+            source,
+            ResidentValueKind::Snapshot,
+            ResidentShape::SCALAR,
+        );
+        let selector_layout = test_layout(
+            &schemas,
+            selector,
+            ResidentValueKind::Snapshot,
+            ResidentShape::SCALAR,
+        );
+        let contract = |output, selector| {
+            test_contract(
+                &[source, selector],
+                output,
+                OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                AccessMode::Write,
+                AliasPolicy::NoAlias,
+                ChangeDetectionPolicy::KernelReported,
+            )
+        };
+        let output_layout = |output, fixed| {
+            let schema = schemas.get(output).unwrap();
+            mech_core::ResidentPortLayout {
+                schema_id: output,
+                schema_key: schema.key(),
+                kind: ResidentValueKind::Snapshot,
+                shape: ResidentShape::SCALAR,
+                shape_instance: schema
+                    .instantiate_shape(vec![0; schema.dimension_parameters().len()].into())
+                    .unwrap(),
+                activation_fixed_shape: fixed,
+                resolved_selector: None,
+            }
+        };
+        for (output_schema, expected) in [(row_output, [1, 2]), (column_output, [2, 1])] {
+            let binding = contract(output_schema, selector);
+            let kernel = bind_snapshot_access_mode(
+                &ResidentKernelBindRequest {
+                    contract: &binding,
+                    schemas: &schemas,
+                    inputs: &[source_layout.clone(), selector_layout.clone()],
+                    output: output_layout(output_schema, false),
+                },
+                Some(ResolvedSelectionMode::LinearGather),
+            )
+            .unwrap();
+            let mut output = None;
+            kernel
+                .execute(
+                    &Inputs(&[
+                        ResidentValueRef::Snapshot(core::slice::from_ref(&source_value)),
+                        ResidentValueRef::Snapshot(core::slice::from_ref(&selector_value)),
+                    ]),
+                    ResidentValueMut::Snapshot(core::slice::from_mut(&mut output)),
+                )
+                .unwrap();
+            let output = output.unwrap();
+            let SchemaBody::Matrix { dimensions, .. } = schemas.get(output_schema).unwrap().body()
+            else {
+                panic!()
+            };
+            assert_eq!(
+                dimensions
+                    .iter()
+                    .map(|axis| output.shape().resolve_dimension(axis).unwrap())
+                    .collect::<Vec<_>>(),
+                expected
+            );
+            let ValueData::Matrix(matrix) = output.data() else {
+                panic!()
+            };
+            let SequenceView::String(values) = matrix.elements() else {
+                panic!()
+            };
+            assert_eq!(
+                values.iter().map(|text| text.as_ref()).collect::<Vec<_>>(),
+                ["b", "d"]
+            );
+        }
+        for output_schema in [row_output, column_output, fixed_output] {
+            let binding = contract(output_schema, selector);
+            assert!(matches!(
+                bind_snapshot_access_mode(
+                    &ResidentKernelBindRequest {
+                        contract: &binding,
+                        schemas: &schemas,
+                        inputs: &[source_layout.clone(), selector_layout.clone()],
+                        output: output_layout(output_schema, true),
+                    },
+                    Some(ResolvedSelectionMode::LinearGather)
+                ),
+                Err(ResidentKernelBindError::UnsupportedLayout)
+            ));
+        }
+        let binding = contract(row_output, wrong_mask);
+        assert!(matches!(
+            bind_snapshot_access_mode(
+                &ResidentKernelBindRequest {
+                    contract: &binding,
+                    schemas: &schemas,
+                    inputs: &[
+                        source_layout,
+                        test_layout(
+                            &schemas,
+                            wrong_mask,
+                            ResidentValueKind::Snapshot,
+                            ResidentShape::SCALAR,
+                        )
+                    ],
+                    output: output_layout(row_output, false),
+                },
+                Some(ResolvedSelectionMode::LinearGather)
+            ),
+            Err(ResidentKernelBindError::UnsupportedLayout)
         ));
     }
 

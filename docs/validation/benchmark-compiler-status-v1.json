@@ -1,13 +1,16 @@
 {
   "schema": "mech.benchmark-compiler-status.v1",
-  "as_of_utc": "2026-10-18",
+  "as_of_utc": "2026-10-19",
   "status": "IMPLEMENTING_CHECKED_AOT_BENCHMARK_NOT_QUALIFIED",
   "checked_aot_benchmark_followup": {
-    "branch": "codex/canonical-checked-aot-benchmark",
+    "branch": "codex/canonical-native-access",
     "status": "OPEN_DRAFT_IMPLEMENTATION_IN_PROGRESS",
-    "pull_request": "https://github.com/mech-lang/mech/pull/905",
+    "pull_request": "https://github.com/mech-lang/mech/pull/907",
+    "foundations_branch": "codex/canonical-checked-aot-benchmark",
+    "foundations_pull_request": "https://github.com/mech-lang/mech/pull/905",
     "progress_record": "checked-aot-workload-progress-v1.json",
-    "planned_pull_request_base": "codex/canonical-artifact-casts",
+    "planned_pull_request_base": "codex/canonical-benchmark-host-path",
+    "foundations_pull_request_base": "codex/canonical-artifact-casts",
     "preserved_pr904_head": "89f417d5317981516666368c3f9f457ffe165138",
     "preserved_cli_prerequisite": "4e7fe599f56ec7adb8e1d983c5786cf9907596a1",
     "preserved_pending_match_source": "dbf8ae7a6edae85801517c00ecf1c21ec027ab8e",
@@ -19,7 +22,8 @@
       "Optimize the checked AOT path and expose explicit configuration while preserving checked semantics and existing default limits.",
       "Publish an accurately scoped new stacked draft PR, resolve its reviews and obtain complete applicable green CI; no readiness or merge without explicit user approval."
     ],
-    "qualification": "The unchanged ordinary100/400-base workload passes original/decoded artifacts and actual release CLI/resource qualification with unchanged defaults;4000 bases still exceeds the65536 comparison allowance without publication and recovers. The separately pinned scalar-loop source retains17 actual linked process cases, not full-program AOT. Shared canonical text/map leaves now compose on canonical transport. The shared native/library work account passes754 engine units and23 integrations; its final GPU memory-identity guard passes24 private native methods,39 existing native execution methods, a runtime-only build, audits and77 CI contracts. Generated library calls, mixed native control/comprehensions/FSM/resources, full125M packed/streaming execution, comparable trusted/secured timing, full binary optimization/configuration and complete green CI/fresh review remain required. Exact source/diff/log/binary pins and source-specific limitations are in checked-aot-workload-progress-v1.json. No whole-program resident or older source-native compiler is substituted."
+    "historical_qualification": "The unchanged ordinary100/400-base workload passes original/decoded artifacts and actual release CLI/resource qualification with unchanged defaults;4000 bases still exceeds the65536 comparison allowance without publication and recovers. The separately pinned scalar-loop source retains17 actual linked process cases, not full-program AOT. Shared canonical text/map leaves now compose on canonical transport. The shared native/library work account passes754 engine units and23 integrations; its final GPU memory-identity guard passes24 private native methods,39 existing native execution methods, a runtime-only build, audits and77 CI contracts. Generated library calls, mixed native control/comprehensions/FSM/resources, full125M packed/streaming execution, comparable trusted/secured timing, full binary optimization/configuration and complete green CI/fresh review remain required. Exact source/diff/log/binary pins and source-specific limitations are in checked-aot-workload-progress-v1.json. No whole-program resident or older source-native compiler is substituted.",
+    "qualification": "Current locally qualified continuation: PR907 clean source f176277d87feeae4a66167d7e11eb2b731acc2a0 executes complete original/decoded k-nucleotide canonical artifacts as secured Object-linked processes with real CLI capability/provider services, selected collections and tail FSM control.20small-fixture process cases and9pin-mutation build denials pass; parser/JIT/source-native/resident-body execution is excluded. See canonical-hosted-native-linked-v1.json and the latest_qualification in checked-aot-workload-progress-v1.json. This does not qualify standard125M input, allten programs, production native-build migration, persistent state/broader support, trusted/secured release timings, fresh clean review or complete exact-head green CI. Zero new benchmark samples; historical_qualification retains the earlier checkpoint rather than being relabeled."
   },
   "integration": {
     "repository": "https://github.com/mech-lang/mech",

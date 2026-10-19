@@ -203,6 +203,10 @@ jobs:
             --test type_system_builtin \
             --test type_system_solver \
             --test type_system_conversion \
+            --test matrix_set_conversion \
+            --test matrix_set_declared_conversion \
+            --test conversion_staging_bounds \
+            --test conversion_sort_work \
             --test type_system_catalog
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features full_compiler \
@@ -554,7 +558,8 @@ jobs:
           --test sequence_sort --test set_comprehension_operands
           --test string_generators --test string_literal_match
           --test string_membership_comprehensions --test string_selector_shapes
-          --test text_operations --test u64_float_conversion_source -- --test-threads=1
+          --test text_operations --test u64_float_conversion_source
+          --test underscore_addressing -- --test-threads=1
       - name: Execute source assignment and fixed-shape specialization contracts
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib
@@ -577,6 +582,24 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_compiler,native-artifact \
             --lib resident::general::native_collection_templates::tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact \
+            --lib resident::set_conversion:: -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact \
+            --lib intrinsics::kind_conversion:: -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact \
+            --lib source_semantics::frontend::annotation_conversion_shape_tests:: -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_source,native-artifact \
+            --lib resident::set_conversion:: -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_source,native-artifact \
+            --lib intrinsics::kind_conversion:: -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_source,native-artifact \
+            --lib source_semantics::frontend::annotation_conversion_shape_tests:: -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native \
             --test canonical_artifact_native --test canonical_artifact_i64 --test canonical_artifact_f64 \

@@ -12,16 +12,35 @@ use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NativeCollectionPrimitive {
+    CompositePack(usize),
+    EnumPack,
     RangeExclusive,
     RangeInclusive,
     RangeIncrementExclusive,
     RangeIncrementInclusive,
     StringScalarAccess,
+    #[cfg(feature = "native-artifact")]
+    MatrixScalarAccess,
+    #[cfg(feature = "native-artifact")]
+    MatrixRangeAccess,
+    #[cfg(feature = "native-artifact")]
+    MapKeyAccess,
+    SetContains,
+    SetNotContains,
+    StringEqual,
+    StringNotEqual,
+    StringConcat,
+    SumColumns,
+    SumRows,
+    #[cfg(feature = "sequence_sort")]
+    SortIndices,
     StringRangeAccess,
     #[cfg(feature = "native-artifact")]
     StringAllAccess,
     #[cfg(feature = "convert")]
     MatrixConversion,
+    #[cfg(feature = "convert")]
+    MatrixToSetConversion,
     #[cfg(feature = "pure_text")]
     TextLines,
     #[cfg(feature = "pure_text")]
@@ -36,6 +55,28 @@ pub enum NativeCollectionPrimitive {
     StringMapKeys,
     #[cfg(feature = "map_ops")]
     StringMapValues,
+}
+
+pub(super) fn register_composite_pack(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register(
+        builder,
+        "core",
+        "composite-pack",
+        ImplementationMemoryClass::CanonicalFinalize,
+        super::composite::bind_composite_pack,
+        NativeCollectionPrimitive::CompositePack(0),
+    )
+}
+
+pub(super) fn register_enum_pack(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register(
+        builder,
+        "core",
+        "enum-pack",
+        ImplementationMemoryClass::CanonicalFinalize,
+        super::composite::bind_enum_pack,
+        NativeCollectionPrimitive::EnumPack,
+    )
 }
 
 pub(super) fn register_ranges(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
@@ -74,10 +115,7 @@ pub(super) fn register_ranges(builder: &mut FunctionCatalogBuilder) -> MResult<(
     Ok(())
 }
 
-pub(super) fn register_string_access(
-    builder: &mut FunctionCatalogBuilder,
-    scalar: bool,
-) -> MResult<()> {
+pub(super) fn register_access(builder: &mut FunctionCatalogBuilder, scalar: bool) -> MResult<()> {
     let (name, factory, primitive): (_, ResidentKernelFactory, _) = if scalar {
         (
             "scalar",
@@ -113,6 +151,104 @@ pub(super) fn register_conversion(builder: &mut FunctionCatalogBuilder) -> MResu
     )
 }
 
+#[cfg(feature = "convert")]
+pub(super) fn register_set_conversion(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register(
+        builder,
+        "convert",
+        "set",
+        ImplementationMemoryClass::CanonicalSortUnique,
+        super::set_conversion::bind,
+        NativeCollectionPrimitive::MatrixToSetConversion,
+    )
+}
+
+pub(super) fn register_set_membership(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register(
+        builder,
+        "set",
+        "element-of",
+        ImplementationMemoryClass::NoAdditionalScratch,
+        super::set::bind_element_of,
+        NativeCollectionPrimitive::SetContains,
+    )?;
+    register(
+        builder,
+        "set",
+        "not-element-of",
+        ImplementationMemoryClass::NoAdditionalScratch,
+        super::set::bind_not_element_of,
+        NativeCollectionPrimitive::SetNotContains,
+    )
+}
+
+pub(super) fn register_string_comparisons(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register(
+        builder,
+        "compare",
+        "eq",
+        ImplementationMemoryClass::NoAdditionalScratch,
+        super::numeric::bind_semantic_equal,
+        NativeCollectionPrimitive::StringEqual,
+    )?;
+    register(
+        builder,
+        "compare",
+        "neq",
+        ImplementationMemoryClass::NoAdditionalScratch,
+        super::numeric::bind_semantic_not_equal,
+        NativeCollectionPrimitive::StringNotEqual,
+    )
+}
+
+pub(super) fn register_string_concat(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register(
+        builder,
+        "string",
+        "concat",
+        ImplementationMemoryClass::NoAdditionalScratch,
+        super::text::bind_concat,
+        NativeCollectionPrimitive::StringConcat,
+    )
+}
+
+pub(super) fn register_sums(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    for (name, factory, primitive) in [
+        (
+            "column",
+            super::numeric::bind_sum_columns as ResidentKernelFactory,
+            NativeCollectionPrimitive::SumColumns,
+        ),
+        (
+            "row",
+            super::numeric::bind_sum_rows as ResidentKernelFactory,
+            NativeCollectionPrimitive::SumRows,
+        ),
+    ] {
+        register_path(
+            builder,
+            &["stats", "sum"],
+            name,
+            ImplementationMemoryClass::NoAdditionalScratch,
+            factory,
+            primitive,
+        )?;
+    }
+    Ok(())
+}
+
+#[cfg(feature = "sequence_sort")]
+pub(super) fn register_sort(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register(
+        builder,
+        "sequence",
+        "sort-indices",
+        ImplementationMemoryClass::CanonicalFinalize,
+        super::sequence_sort::bind,
+        NativeCollectionPrimitive::SortIndices,
+    )
+}
+
 #[cfg(feature = "native-artifact")]
 struct FactoryWitness {
     primitive: NativeCollectionPrimitive,
@@ -126,8 +262,22 @@ fn register(
     factory: ResidentKernelFactory,
     primitive: NativeCollectionPrimitive,
 ) -> MResult<()> {
-    let key = ResidentOperationKey::new(Box::new([module.into()]), name.into())
-        .expect("maintained collection registration has a valid key");
+    register_path(builder, &[module], name, memory, factory, primitive)
+}
+
+fn register_path(
+    builder: &mut FunctionCatalogBuilder,
+    module: &[&str],
+    name: &str,
+    memory: ImplementationMemoryClass,
+    factory: ResidentKernelFactory,
+    primitive: NativeCollectionPrimitive,
+) -> MResult<()> {
+    let key = ResidentOperationKey::new(
+        module.iter().map(|part| (*part).into()).collect(),
+        name.into(),
+    )
+    .expect("maintained collection registration has a valid key");
     let entry = ResidentKernelFactoryEntry::new(key, memory, factory);
     // No native consumer exists in a resident-only build. Keep the actual
     // factory unchanged without allocating unused native evidence there.

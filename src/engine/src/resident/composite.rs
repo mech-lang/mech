@@ -1,11 +1,10 @@
 use mech_core::snapshot::{EnumDraft, F64Bits, MatrixValue};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
-    DeliveryMode, DimensionExpr, ExternalInteraction, FunctionCatalogBuilder,
-    ImplementationMemoryClass, MResult, OutputConstruction, ResidentKernelBindError,
-    ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs, ResidentShape,
-    ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody,
-    ShapeInstance, ShapeRule, ValueData, ValueDataDraft,
+    DeliveryMode, DimensionExpr, ExternalInteraction, FunctionCatalogBuilder, MResult,
+    OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
+    ResidentKernelInputs, ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
+    ResolvedOperationContract, SchemaBody, ShapeInstance, ShapeRule, ValueData, ValueDataDraft,
 };
 use std::sync::Arc;
 
@@ -54,6 +53,7 @@ struct CompositeTablePlan {
 
 #[derive(Clone, Debug)]
 struct EnumPackPlan {
+    ordinal: mech_core::ResidentPortLayout,
     payload: CompositeChildPlan,
     accepted_ordinals: Box<[(u32, bool)]>,
     output: mech_core::ResidentPortLayout,
@@ -81,16 +81,22 @@ fn cardinality_accepts(
 }
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_composite_pack(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     builder.insert_resident_factory(
         ["core"],
         "composite-pack",
-        ImplementationMemoryClass::CanonicalFinalize,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
         bind_composite_pack,
     )?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_enum_pack(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     builder.insert_resident_factory(
         ["core"],
         "enum-pack",
-        ImplementationMemoryClass::CanonicalFinalize,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
         bind_enum_pack,
     )?;
     Ok(())
@@ -313,7 +319,7 @@ fn composite_child_layout_supported(
         }
 }
 
-fn bind_composite_pack(
+pub(super) fn bind_composite_pack(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let ResolvedOperationContract::Declared(contract) = request.contract else {
@@ -386,7 +392,7 @@ fn bind_composite_pack(
     Ok(BoundResidentKernel::new(composite_pack, Box::new([])).with_retained_state(Arc::new(plan)))
 }
 
-fn bind_enum_pack(
+pub(super) fn bind_enum_pack(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let ResolvedOperationContract::Declared(contract) = request.contract else {
@@ -441,7 +447,10 @@ fn bind_enum_pack(
                     || port.delivery != DeliveryMode::Signal
             })
         || ordinal_schema.body() != &SchemaBody::Index
-        || ordinal.kind != ResidentValueKind::Index
+        || !matches!(
+            ordinal.kind,
+            ResidentValueKind::Index | ResidentValueKind::Snapshot
+        )
         || ordinal.shape != ResidentShape::SCALAR
         || !composite_child_layout_supported(request, payload)
         || request.output.kind != ResidentValueKind::Snapshot
@@ -463,6 +472,7 @@ fn bind_enum_pack(
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
     let plan = EnumPackPlan {
+        ordinal: ordinal.clone(),
         payload: CompositeChildPlan {
             matrix_dimensions: None,
             input_is_matrix,
@@ -609,13 +619,35 @@ fn enum_pack(
     if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let Some(ResidentValueRef::Index([ordinal])) = inputs.get(0) else {
-        return Err(ResidentKernelError::InvalidInput);
+    let ordinal = match inputs.get(0) {
+        Some(ResidentValueRef::Index([ordinal])) => *ordinal,
+        Some(ResidentValueRef::Snapshot([Some(value)]))
+            if value.schema() == plan.ordinal.schema_id
+                && value.schema_key() == plan.ordinal.schema_key
+                && value.shape().parameter_values().is_empty() =>
+        {
+            let ValueData::Index(ordinal) = value.data() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            *ordinal
+        }
+        _ => return Err(ResidentKernelError::InvalidInput),
     };
     let ordinal = ordinal
         .checked_sub(1)
         .and_then(|ordinal| u32::try_from(ordinal).ok())
         .ok_or(ResidentKernelError::InvalidInput)?;
+    // Accepted-variant metadata is bounded by the canonical enum definition;
+    // admit the complete scan before inspecting it, including failure paths.
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            compute_work: plan.accepted_ordinals.len(),
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
     let dynamic = plan
         .accepted_ordinals
         .iter()
@@ -1499,6 +1531,7 @@ mod tests {
         let local = Arc::new(local_build.table);
         let source = layout(&local, local_dynamic, ResidentValueKind::Snapshot);
         let plan = EnumPackPlan {
+            ordinal: layout(&local, local_index, ResidentValueKind::Index),
             payload: CompositeChildPlan {
                 matrix_dimensions: None,
                 input_is_matrix: false,

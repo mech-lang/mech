@@ -16,6 +16,14 @@ pub enum NativeIterationValueScope {
 #[derive(Clone, Debug)]
 pub enum NativeIterationAction {
     Scalar(NativeMatchAction),
+    /// A schema-checked structural observation. This never dispatches an arm
+    /// or evaluates a control body; emitted code owns every branch.
+    Structural {
+        source: NativeMatchValue,
+        path: Box<[NativeStructuralStep]>,
+        observation: NativeStructuralObservation,
+        output: NativeMatchValue,
+    },
     /// A selected maintained leaf at its exact canonical root/lexical site.
     /// Managed program plans alone construct this action; frozen scalar plans
     /// reject it rather than treating handles as integer arithmetic operands.
@@ -48,11 +56,30 @@ pub enum NativeIterationAction {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NativeIterationTerminator {
     Scalar(NativeMatchTerminator),
+    /// A work-metered synchronous tail loop has no invented iteration count.
+    /// Its body either reaches the unique latch or the unique return site.
+    TailHeader {
+        iteration: u32,
+        body: u32,
+    },
     Header {
         iteration: u32,
         body: u32,
         exit: u32,
     },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NativeStructuralStep {
+    EnumPayload { ordinal: u32 },
+    TupleItem { ordinal: u32 },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NativeStructuralObservation {
+    EnumOrdinal { ordinal: u32 },
+    U64,
+    StringEqual { peer: NativeMatchValue },
 }
 
 impl From<NativeMatchTerminator> for NativeIterationTerminator {

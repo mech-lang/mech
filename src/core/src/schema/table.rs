@@ -6,9 +6,9 @@ use crate::{
 };
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, collections::BTreeMap, vec, vec::Vec};
+use alloc::{boxed::Box, collections::BTreeMap, sync::Arc, vec, vec::Vec};
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, collections::BTreeMap, vec, vec::Vec};
+use std::{boxed::Box, collections::BTreeMap, sync::Arc, vec, vec::Vec};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SchemaHandle {
@@ -30,7 +30,9 @@ pub struct SchemaTableBuild {
 
 #[derive(Clone, Debug)]
 pub struct SchemaTable {
-    entries: Box<[SchemaEntry]>,
+    // An arena is immutable after construction. Bindings and snapshots keep
+    // the same IDs/bytes without copying every unrelated schema per leaf.
+    entries: Arc<[SchemaEntry]>,
 }
 
 #[derive(Clone, Debug)]
@@ -134,7 +136,7 @@ impl SchemaTableBuilder {
         }
         Ok(SchemaTableBuild {
             table: SchemaTable {
-                entries: entries.into_boxed_slice(),
+                entries: entries.into(),
             },
             remap: remap.into_boxed_slice(),
             handle_keys,
@@ -250,8 +252,8 @@ mod tests {
         );
 
         let mut collision = extension.clone();
-        collision.entries[0].key = base.entries[0].key;
-        collision.entries[0].canonical_bytes = Box::new([1]);
+        Arc::make_mut(&mut collision.entries)[0].key = base.entries[0].key;
+        Arc::make_mut(&mut collision.entries)[0].canonical_bytes = Box::new([1]);
         assert!(matches!(
             base.extend_preserving_ids_preallocated(&collision),
             Err(SemanticModelError::SchemaKeyCollision { .. })
@@ -410,6 +412,7 @@ mod tests {
         let table = builder.finish().unwrap().table;
         let entry = &table.entries[0];
         let expected = (core::mem::size_of::<SchemaTable>()
+            + arc_header_bytes::<SchemaEntry>() as usize
             + core::mem::size_of::<SchemaEntry>()
             + CHILDREN * core::mem::size_of::<SchemaBody>()
             + entry.canonical_bytes.len()) as u64;
@@ -422,6 +425,45 @@ mod tests {
             "compact Bool tags do not bound the cloned SchemaBody slice"
         );
         assert_eq!(table.clone().clone_allocation_bound_bytes(), Some(expected));
+    }
+
+    #[test]
+    fn immutable_table_clones_share_entries_but_keep_full_retention_witnesses() {
+        let mut builder = SchemaTableBuilder::new();
+        let original = schema(SchemaBody::Tuple(
+            vec![SchemaBody::Bool; 2_048].into_boxed_slice(),
+        ));
+        let handle = builder.insert(original.clone()).unwrap();
+        let build = builder.finish().unwrap();
+        let id = build.resolve(handle).unwrap();
+        let table = build.table;
+        let copied = table.clone();
+        assert!(Arc::ptr_eq(&table.entries, &copied.entries));
+        assert_eq!(table.get(id), copied.get(id));
+        assert_eq!(
+            table.entry(id).unwrap().canonical_bytes(),
+            copied.entry(id).unwrap().canonical_bytes()
+        );
+        assert_eq!(
+            table.clone_allocation_bound_bytes(),
+            copied.clone_allocation_bound_bytes()
+        );
+        assert!(
+            table.clone_allocation_bound_bytes().unwrap()
+                > SchemaTable::clone_metadata_allocation_bound_bytes()
+        );
+        drop(table);
+        assert_eq!(copied.get(id), Some(&original));
+
+        let mut extension = SchemaTableBuilder::new();
+        extension.insert(schema(SchemaBody::String)).unwrap();
+        let extended = copied
+            .extend_preserving_ids(&extension.finish().unwrap().table)
+            .unwrap();
+        assert!(!Arc::ptr_eq(&copied.entries, &extended.entries));
+        assert_eq!(extended.get(id), copied.get(id));
+        assert_eq!(copied.len(), 1);
+        assert_eq!(extended.len(), 2);
     }
 
     #[test]
@@ -664,7 +706,7 @@ impl SchemaTable {
             }
         }
         Ok(Self {
-            entries: entries.into_boxed_slice(),
+            entries: entries.into(),
         })
     }
 
@@ -714,7 +756,7 @@ impl SchemaTable {
             }
         }
         Ok(Self {
-            entries: entries.into_boxed_slice(),
+            entries: entries.into(),
         })
     }
 
@@ -737,7 +779,7 @@ impl SchemaTable {
             retain_component_children(&entry.schema, entry.schema.body(), &mut entries)?;
         }
         Ok(Self {
-            entries: entries.into_boxed_slice(),
+            entries: entries.into(),
         })
     }
 
@@ -793,7 +835,7 @@ impl SchemaTable {
             return Err(SemanticModelError::SchemaIdExhausted);
         }
         Ok(Self {
-            entries: entries.into_boxed_slice(),
+            entries: entries.into(),
         })
     }
 
@@ -850,20 +892,39 @@ impl SchemaTable {
         })
     }
 
-    /// Checked allocation witness for an independently owned clone of this
-    /// canonical schema context. It includes the table header, entry slice,
+    /// Conservative full-retention witness for this canonical schema context.
+    /// Clones share immutable entries, but canonical payload ownership must
+    /// still fund the entire retained arena, not just a cheap Arc handle.
+    /// It includes the table header, shared entry allocation and Arc header,
     /// each concrete cloned schema allocation and the retained canonical byte
     /// buffer. Compact encodings are not a bound on Rust enum/node layouts.
     pub fn clone_allocation_bound_bytes(&self) -> Option<u64> {
-        let initial =
-            (core::mem::size_of::<Self>() as u64)
-                .checked_add(clone_slice_bytes::<SchemaEntry>(self.entries.len())?)?;
+        let initial = (core::mem::size_of::<Self>() as u64)
+            .checked_add(arc_header_bytes::<SchemaEntry>())?
+            .checked_add(clone_slice_bytes::<SchemaEntry>(self.entries.len())?)?;
         self.entries.iter().try_fold(initial, |total, entry| {
             total
                 .checked_add(u64::try_from(entry.canonical_bytes.len()).ok()?)?
                 .checked_add(schema_clone_heap_bytes(&entry.schema)?)
         })
     }
+
+    /// Construction/retirement metadata for a clone while another table
+    /// retains its immutable entries. Includes an optional Arc<Table> wrapper;
+    /// it MUST NOT replace the full arena witness in payload ownership or in
+    /// a new/extended/component-closed arena's construction admission.
+    #[doc(hidden)]
+    pub const fn clone_metadata_allocation_bound_bytes() -> u64 {
+        core::mem::size_of::<Self>() as u64 + arc_header_bytes::<Self>()
+    }
+}
+
+const fn arc_header_bytes<T>() -> u64 {
+    // ArcInner's two counters precede data aligned for T. Include padding,
+    // including on targets whose schema enums align more strictly than usize.
+    let alignment = core::mem::align_of::<T>();
+    let counters = 2 * core::mem::size_of::<usize>();
+    ((counters + alignment - 1) / alignment * alignment) as u64
 }
 
 fn retain_component(
@@ -1388,6 +1449,7 @@ fn component_closure_cost_for_roots_with_budget(
 
     let root_count = roots.map_or(table.entries.len(), <[SchemaId]>::len);
     let mut retained = (core::mem::size_of::<SchemaTable>() as u64)
+        .checked_add(arc_header_bytes::<SchemaEntry>())?
         .checked_add(clone_slice_bytes::<SchemaEntry>(root_count)?)?;
     let mut maximum_component = 0_u64;
     let mut count = u64::try_from(root_count).ok()?;

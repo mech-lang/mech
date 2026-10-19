@@ -16,6 +16,9 @@ canonical-native-runtime = ["mech-engine/native-artifact"]
 canonical-native = ["canonical-native-runtime", "aot", "dep:toml_edit"]
 canonical-native-program-runtime = ["canonical-native-runtime", "mech-engine/pure_text", "mech-engine/map_ops", "mech-engine/convert", "dep:grapheme"]
 canonical-native-program = ["canonical-native-program-runtime", "canonical-native"]
+# Runtime-only capability bridge; no source-native sequence frontend or JIT.
+canonical-native-program-host-runtime = ["canonical-native-program-runtime", "runtime-host", "mech-runtime/resident-routing"]
+canonical-native-program-host = ["canonical-native-program", "canonical-native-program-host-runtime", "dep:mech-terminal"]
 native-build = ["sequence-cli", "fused-cli"]
 system-gmp = ["dep:gmp-mpfr-sys", "gmp-mpfr-sys/use-system-libs"]
 sequence-cli = ["aot", "dep:hashbrown", "dep:fxhash", "dep:rayon", "dep:memchr", "dep:regex", "dep:rug", "dep:mech-stdlib", "mech-stdlib/native-sequence"]
@@ -167,3 +170,7 @@ required-features = ["canonical-native"]
 [[test]]
 name = "canonical_artifact_program"
 required-features = ["canonical-native-program"]
+
+[[test]]
+name = "canonical_hosted_artifact"
+required-features = ["canonical-native-program-host"]

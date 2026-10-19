@@ -10,6 +10,10 @@ pub(super) struct Hooks {
     function: Value,
     context: Value,
     pub result: Value,
+    #[cfg(feature = "canonical-native-program")]
+    arguments: Value,
+    #[cfg(feature = "canonical-native-program")]
+    argument_capacity: Value,
 }
 impl Hooks {
     pub fn load<M: Module>(
@@ -40,7 +44,17 @@ impl Hooks {
                 frame,
                 core::mem::offset_of!(super::program_abi::Frame, result),
             );
-            for pointer in [function, result] {
+            let arguments = super::compiler::frame_load(
+                b,
+                frame,
+                core::mem::offset_of!(super::program_abi::Frame, arguments),
+            );
+            let argument_capacity = super::compiler::frame_load(
+                b,
+                frame,
+                core::mem::offset_of!(super::program_abi::Frame, argument_capacity),
+            );
+            for pointer in [function, result, arguments] {
                 let valid = b.ins().icmp_imm(IntCC::NotEqual, pointer, 0);
                 guard(b, valid, error, super::abi::STATUS_ABI);
             }
@@ -54,7 +68,60 @@ impl Hooks {
                 function,
                 context,
                 result,
+                arguments,
+                argument_capacity,
             }))
+        }
+    }
+    pub fn library(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        site: usize,
+        operands: &[mech_engine::native_artifact::NativeMatchValue],
+        locals: Value,
+        is_scalar: impl Fn(mech_engine::native_artifact::NativeMatchValue) -> bool,
+        error: Block,
+    ) -> Result<(), NativeCompileError> {
+        #[cfg(feature = "canonical-native-program")]
+        {
+            let count = b.ins().iconst(types::I64, operands.len() as i64);
+            let valid = b.ins().icmp(
+                IntCC::UnsignedGreaterThanOrEqual,
+                self.argument_capacity,
+                count,
+            );
+            guard(b, valid, error, super::abi::STATUS_ABI);
+            for (index, &operand) in operands.iter().enumerate() {
+                let value = if is_scalar(operand) {
+                    super::control_compiler::load(b, locals, operand)?
+                } else {
+                    // Managed operands are fetched from their exact generation
+                    // in the canonical Value arena, never from native pointers.
+                    b.ins().iconst(types::I64, 0)
+                };
+                b.ins().store(
+                    cranelift_codegen::ir::MemFlags::new(),
+                    value,
+                    self.arguments,
+                    super::compiler::offset(index)?,
+                );
+            }
+            let zero = b.ins().iconst(types::I64, 0);
+            self.call(
+                b,
+                site,
+                super::program_abi::LIBRARY,
+                [self.arguments, count, zero],
+                error,
+            );
+            Ok(())
+        }
+        #[cfg(not(feature = "canonical-native-program"))]
+        {
+            let _ = (b, site, operands, locals, is_scalar, error);
+            Err(super::compiler::backend(
+                "library operand ABI is not enabled",
+            ))
         }
     }
     pub fn call(

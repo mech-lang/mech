@@ -144,12 +144,15 @@ fn grammar_correction_ledger_is_well_formed_and_applied_to_the_canonical_grammar
             "correction {:?} has an empty required field",
             fields[0]
         );
-        if matches!(fields[0], "IMPORT-001" | "MATCH-001" | "COUNT-001") {
+        if matches!(
+            fields[0],
+            "IMPORT-001" | "MATCH-001" | "COUNT-001" | "ADDRESS-001"
+        ) {
             assert_eq!(fields[2], "applied");
             applied.insert(fields[0]);
         }
     }
-    let expected = BTreeSet::from(["IMPORT-001", "MATCH-001", "COUNT-001"]);
+    let expected = BTreeSet::from(["IMPORT-001", "MATCH-001", "COUNT-001", "ADDRESS-001"]);
     assert_eq!(applied, expected);
     assert_eq!(ids, expected);
 
@@ -162,4 +165,8 @@ fn grammar_correction_ledger_is_well_formed_and_applied_to_the_canonical_grammar
     assert!(rules.contains("application-operator"));
     assert!(rules.contains("application-stage"));
     assert!(has_count_choice_and_stage(&specification));
+    assert_eq!(
+        canonical_rule_body(&specification, "identifier").as_deref(),
+        Some("(alpha-token|emoji),*(alpha-token|digit-token|underscore|identifier-symbol|emoji)")
+    );
 }

@@ -1,11 +1,11 @@
-//! Managed ABI6 invocation. This boundary never evaluates a graph: generated
+//! Managed ABI8 invocation. This boundary never evaluates a graph: generated
 //! blocks choose every successor and run every scalar/counter instruction.
 use super::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
 };
 use super::iteration_abi::STATUS_REJECT;
 use super::iteration_runtime::{Context as Control, NativeIterationExecutionError};
-use super::memory::{NativeWordStorage, transport_bytes};
+use super::memory::{NativeTypedStorage, NativeWordStorage, transport_bytes};
 use super::program_abi::{COLLECTION, Frame, LIBRARY, MOVE, OUTPUT_BASE, VERSION};
 use super::{
     NativeExecutionError, NativeExecutionLimits, NativeExecutionPhase, NativeProgramDescriptor,
@@ -18,14 +18,20 @@ use mech_core::{
 use mech_engine::native_artifact::{
     NativeCollectionInvocationError, NativeIterationAction, NativeIterationTerminator,
     NativeLibraryWorkBudget, NativeMatchAction, NativeMatchOrigin, NativeMatchTerminator,
-    NativeMatchValue, NativeScalarKind,
+    NativeMatchValue, NativePreparedLibraryCallCache, NativeScalarKind,
 };
 use std::ffi::c_void;
 
 #[path = "program_collection.rs"]
 mod collection;
+#[path = "program_session.rs"]
+mod session;
+#[cfg(feature = "canonical-native-program-host-runtime")]
+pub(super) use session::CheckedEntry;
+#[cfg(feature = "canonical-native-program-host-runtime")]
+pub use session::NativeProgramExecutionSession;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum NativeProgramExecutionError {
     Base(NativeExecutionError),
     Control(NativeIterationExecutionError),
@@ -66,6 +72,16 @@ impl std::fmt::Display for NativeProgramExecutionError {
     }
 }
 impl std::error::Error for NativeProgramExecutionError {}
+// Preserve the complete typed native failure when crossing the ordinary
+// runtime transaction bridge; callers can inspect this exact enum in MechError.
+impl mech_core::MechErrorKind for NativeProgramExecutionError {
+    fn name(&self) -> &str {
+        "NativeProgramExecutionError"
+    }
+    fn message(&self) -> String {
+        self.to_string()
+    }
+}
 #[derive(Clone, Copy, Debug)]
 pub struct NativeProgramExecutionLimits {
     pub execution: NativeExecutionLimits,
@@ -96,20 +112,25 @@ fn bits(value: &Value, kind: NativeScalarKind) -> Result<u64, NativeProgramExecu
         _ => Err(invalid("canonical scalar payload/type mismatch")),
     }
 }
-struct Context<'a> {
-    control: Control<'a, NativeProgramDescriptor>,
+struct Context<'plan, 'visit> {
+    control: Control<'visit, NativeProgramDescriptor>,
     // Sources are cheap shared roots from the arena; drop collection state
     // first, while that arena still owns their prepaid retirement obligation.
     collections: Option<collection::State>,
-    arena: NativeValueArena<'a>,
+    arena: NativeValueArena<'plan>,
     library: NativeLibraryWorkBudget,
     limits: MemoryBudgetLimits,
     result: *mut u64,
+    arguments: *mut u64,
+    argument_capacity: usize,
+    call_inputs: NativeTypedStorage<Option<Value>>,
+    call_caches: session::CallCacheLane,
     consumed: bool,
     output_cursor: usize,
     error: Option<NativeProgramExecutionError>,
+    activation_phase: bool,
 }
-impl Context<'_> {
+impl Context<'_, '_> {
     fn needs_move(&self, site: usize) -> Option<(NativeMatchValue, NativeMatchValue)> {
         let plan = &self.control.descriptor.plan;
         let pair = match plan.blocks()[site].action() {
@@ -117,12 +138,26 @@ impl Context<'_> {
                 (*source, *output)
             }
             NativeIterationAction::Initialize { iteration } => {
-                let i = plan.iterations()[*iteration as usize].as_iteration()?;
-                (i.seed(), i.carrier())
+                match plan.iterations()[*iteration as usize].as_ref() {
+                    mech_engine::native_artifact::NativeControlLoopRef::Iteration(i) => {
+                        (i.seed(), i.carrier())
+                    }
+                    mech_engine::native_artifact::NativeControlLoopRef::Tail(i) => {
+                        (i.seed(), i.carrier())
+                    }
+                    _ => return None,
+                }
             }
             NativeIterationAction::Latch { iteration } => {
-                let i = plan.iterations()[*iteration as usize].as_iteration()?;
-                (i.next(), i.carrier())
+                match plan.iterations()[*iteration as usize].as_ref() {
+                    mech_engine::native_artifact::NativeControlLoopRef::Iteration(i) => {
+                        (i.next(), i.carrier())
+                    }
+                    mech_engine::native_artifact::NativeControlLoopRef::Tail(i) => {
+                        (i.next(), i.carrier())
+                    }
+                    _ => return None,
+                }
             }
             _ => return None,
         };
@@ -135,6 +170,7 @@ impl Context<'_> {
         matches!(
             self.control.descriptor.plan.blocks()[site].action(),
             NativeIterationAction::LibraryCall { .. }
+                | NativeIterationAction::Structural { .. }
                 | NativeIterationAction::CollectionBegin { .. }
                 | NativeIterationAction::CollectionElement { .. }
                 | NativeIterationAction::CollectionPush { .. }
@@ -193,7 +229,88 @@ impl Context<'_> {
         }
         let site = site as usize;
         let descriptor = self.control.descriptor;
-        if operation == LIBRARY {
+        if operation == 0xffff_ffff_ffff_fff0 {
+            if self.consumed || args != [0; 3] {
+                return Err(invalid("duplicate or malformed structural observation"));
+            }
+            let NativeIterationAction::Structural {
+                source,
+                path,
+                observation,
+                ..
+            } = descriptor.plan.blocks()[site].action()
+            else {
+                return Err(invalid(
+                    "structural helper outside its exact canonical site",
+                ));
+            };
+            use mech_engine::native_artifact::{
+                NativeStructuralObservation as Observation, NativeStructuralStep as Step,
+            };
+            let work = (path.len() as u64)
+                .checked_mul(32)
+                .and_then(|n| n.checked_add(64))
+                .ok_or_else(|| invalid("structural observation work overflow"))?;
+            self.control.work.charge(
+                NativeExecutionPhase::Node(descriptor.plan.blocks()[site].origin().node()),
+                work,
+            )?;
+            let root = self
+                .arena
+                .copy_current(source.get(), &mut self.control.work)?;
+            let mut data = root.data();
+            for step in path {
+                data = match (step, data) {
+                    (Step::EnumPayload { ordinal }, ValueData::Enum(value))
+                        if value.ordinal() == *ordinal =>
+                    {
+                        value
+                            .payload()
+                            .ok_or_else(|| invalid("structural enum has no payload"))?
+                    }
+                    (Step::TupleItem { ordinal }, ValueData::Tuple(values)) => values
+                        .get(*ordinal as usize)
+                        .ok_or_else(|| invalid("structural tuple index"))?,
+                    _ => {
+                        return Err(invalid(
+                            "structural observation path differs from its admitted schema",
+                        ));
+                    }
+                };
+            }
+            let word = match (observation, data) {
+                (Observation::U64, ValueData::U64(value)) => *value,
+                (Observation::EnumOrdinal { ordinal }, ValueData::Enum(value)) => {
+                    u64::from(value.ordinal() == *ordinal)
+                }
+                (Observation::StringEqual { peer }, ValueData::String(left)) => {
+                    let peer = self
+                        .arena
+                        .copy_current(peer.get(), &mut self.control.work)?;
+                    let ValueData::String(right) = peer.data() else {
+                        return Err(invalid("structural String peer has another kind"));
+                    };
+                    let work = u64::try_from(left.len().max(right.len()))
+                        .map_err(|_| invalid("structural String comparison work overflow"))?;
+                    // Both finite cumulative compute and comparison accounts
+                    // admit the complete worst-case raw-byte equality first.
+                    self.library.charge(work, work).map_err(|error| {
+                        NativeProgramExecutionError::Collection {
+                            origin: descriptor.plan.blocks()[site].origin(),
+                            error,
+                        }
+                    })?;
+                    u64::from(left == right)
+                }
+                _ => {
+                    return Err(invalid(
+                        "structural result differs from its exact native kind",
+                    ));
+                }
+            };
+            self.consumed = true;
+            Ok(Some(word))
+        } else if operation == LIBRARY {
             if self.consumed {
                 return Err(invalid("duplicate library helper"));
             }
@@ -203,34 +320,49 @@ impl Context<'_> {
             else {
                 return Err(invalid("library helper outside selected call"));
             };
-            if operands.len() > args.len() {
-                return Err(invalid("library helper arity"));
+            if args[0] != self.arguments as u64
+                || args[1] != operands.len() as u64
+                || args[2] != 0
+                || operands.len() > self.argument_capacity
+            {
+                return Err(invalid("library helper operand lane mismatch"));
             }
-            let mut inputs: [Option<Value>; 3] = [None, None, None];
+            // SAFETY: execute owns and initializes this disjoint word lane,
+            // registers its exact pointer/capacity above, and retains it for
+            // the synchronous entry. Native code is suspended in this callback;
+            // no Rust reference to the lane survives across native writes.
+            let words = unsafe { core::slice::from_raw_parts(self.arguments, operands.len()) };
             for (index, &operand) in operands.iter().enumerate() {
-                inputs[index] = Some(
-                    if descriptor.plan.values()[operand.get() as usize]
-                        .scalar_kind()
-                        .is_some()
-                    {
-                        self.scalar(operand, args[index])?
-                    } else {
-                        self.arena
-                            .copy_current(operand.get(), &mut self.control.work)?
-                    },
-                );
+                let value = if descriptor.plan.values()[operand.get() as usize]
+                    .scalar_kind()
+                    .is_some()
+                {
+                    self.scalar(operand, words[index])?
+                } else {
+                    if words[index] != 0 {
+                        return Err(invalid("managed operand has a native payload"));
+                    }
+                    self.arena
+                        .copy_current(operand.get(), &mut self.control.work)?
+                };
+                self.call_inputs.values_mut()[index] = Some(value);
             }
             let call = descriptor.calls[site]
                 .as_ref()
                 .ok_or_else(|| invalid("missing exact prepared selection"))?;
             let mut result = None;
-            call.invoke_current(
-                &inputs[..operands.len()],
+            let outcome = call.invoke_current_cached(
+                &mut self.call_caches.entries[site],
+                &self.call_inputs.values()[..operands.len()],
                 &mut result,
                 self.limits,
                 &self.library,
-            )
-            .map_err(|error| NativeProgramExecutionError::Library {
+            );
+            // Every scalar/imported owner prepaid retirement before insertion.
+            // Clear both successful and failed calls without retaining an old
+            // call's owners while the next site is being constructed.
+            self.call_inputs.values_mut()[..operands.len()].fill(None);
+            outcome.map_err(|error| NativeProgramExecutionError::Library {
                 origin: descriptor.plan.blocks()[site].origin(),
                 error,
             })?;
@@ -254,6 +386,13 @@ impl Context<'_> {
                 .copy_current(source.get(), &mut self.control.work)?;
             self.arena
                 .put(output.get(), &value, &mut self.control.work)?;
+            if let NativeIterationAction::Latch { iteration } =
+                descriptor.plan.blocks()[site].action()
+                && let mech_engine::native_artifact::NativeControlLoop::Tail(tail) =
+                    &descriptor.plan.iterations()[*iteration as usize]
+            {
+                self.retire_tail_locals(*iteration, tail.carrier())?;
+            }
             self.consumed = true;
             Ok(None)
         } else if operation == COLLECTION {
@@ -277,16 +416,15 @@ impl Context<'_> {
             {
                 return Err(invalid("typed output outside exact completion order"));
             }
-            let out = descriptor
-                .plan
-                .outputs()
-                .get(self.output_cursor)
-                .ok_or_else(|| invalid("extra typed output"))?;
-            let value = if out.ty().scalar_kind().is_some() {
-                self.scalar(out.value(), args[0])?
+            if self.output_cursor >= descriptor.plan.transport_output_count() {
+                return Err(invalid("extra typed output"));
+            }
+            let out = descriptor.plan.transport_output_value(self.output_cursor);
+            let ty = descriptor.plan.transport_output_type(self.output_cursor);
+            let value = if ty.scalar_kind().is_some() {
+                self.scalar(out, args[0])?
             } else {
-                self.arena
-                    .copy_current(out.value().get(), &mut self.control.work)?
+                self.arena.copy_current(out.get(), &mut self.control.work)?
             };
             let target = descriptor
                 .plan
@@ -301,6 +439,19 @@ impl Context<'_> {
         }
     }
     fn visit(&mut self, site: u64) -> Result<(), NativeProgramExecutionError> {
+        if self.activation_phase
+            && self
+                .control
+                .descriptor
+                .plan
+                .activation_boundary()
+                .map(u64::from)
+                == Some(site)
+        {
+            return Err(invalid(
+                "activation checkpoint must return before its fresh visit",
+            ));
+        }
         if let Some(previous) = self.control.previous
             && self.action_required(previous as usize)
             && !self.consumed
@@ -309,6 +460,14 @@ impl Context<'_> {
         }
         self.control.visit(site)?;
         let descriptor = self.control.descriptor;
+        if let super::iteration_abi::Progress::Exit(iteration) =
+            descriptor.visits[site as usize].progress
+            && let mech_engine::native_artifact::NativeControlLoop::Tail(tail) =
+                &descriptor.plan.iterations()[iteration as usize]
+        {
+            // Keep only the final return until the following generated copy.
+            self.retire_tail_locals(iteration, tail.returned())?;
+        }
         if let super::iteration_abi::Progress::Exit(iteration) =
             descriptor.visits[site as usize].progress
             && matches!(
@@ -335,6 +494,48 @@ impl Context<'_> {
         self.consumed = false;
         Ok(())
     }
+
+    fn retire_tail_locals(
+        &mut self,
+        iteration: u32,
+        keep: NativeMatchValue,
+    ) -> Result<(), NativeProgramExecutionError> {
+        let plan = &self.control.descriptor.plan;
+        let scan = (plan.values().len() as u64)
+            .checked_mul(
+                (plan.iterations().len() as u64)
+                    .checked_add(1)
+                    .and_then(|n| n.checked_mul(16))
+                    .ok_or_else(|| invalid("tail scope work overflow"))?,
+            )
+            .and_then(|n| n.checked_add(64))
+            .ok_or_else(|| invalid("tail scope work overflow"))?;
+        self.control
+            .work
+            .charge(NativeExecutionPhase::Setup, scan)?;
+        for (slot, scope) in plan.value_scopes().iter().enumerate() {
+            if slot == keep.get() as usize || plan.values()[slot].scalar_kind().is_some() {
+                continue;
+            }
+            let mut owner = match scope {
+                mech_engine::native_artifact::NativeIterationValueScope::Immutable {
+                    iteration,
+                } => *iteration,
+                mech_engine::native_artifact::NativeIterationValueScope::Carrier { iteration } => {
+                    Some(*iteration)
+                }
+            };
+            while let Some(id) = owner {
+                if id == iteration {
+                    self.arena
+                        .retire_current(slot as u32, &mut self.control.work)?;
+                    break;
+                }
+                owner = plan.iterations()[id as usize].as_ref().parent();
+            }
+        }
+        Ok(())
+    }
 }
 unsafe extern "C" fn admit(context: *mut c_void, site: u64) -> u64 {
     if context.is_null() {
@@ -342,7 +543,7 @@ unsafe extern "C" fn admit(context: *mut c_void, site: u64) -> u64 {
     }
     // SAFETY: execute retains this invocation context and disjoint backing for
     // the synchronous private entry; no pointer escapes the call.
-    let context = unsafe { &mut *context.cast::<Context<'_>>() };
+    let context = unsafe { &mut *context.cast::<Context<'_, '_>>() };
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
@@ -367,7 +568,7 @@ unsafe extern "C" fn helper(
         return STATUS_ABI;
     }
     // SAFETY: the private entry receives only execute's retained context.
-    let context = unsafe { &mut *context.cast::<Context<'_>>() };
+    let context = unsafe { &mut *context.cast::<Context<'_, '_>>() };
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
@@ -393,7 +594,7 @@ unsafe extern "C" fn helper(
         }
     }
 }
-pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
+pub(super) fn execute<F: FnMut(*mut Frame) -> u64>(
     descriptor: &NativeProgramDescriptor,
     entry: F,
     inputs: &[Value],
@@ -401,251 +602,106 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
     limits: NativeProgramExecutionLimits,
     memory: &ManagedMemoryBudget,
 ) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError> {
-    let plan = &descriptor.plan;
-    if inputs.len() != plan.inputs().len() {
-        return Err(NativeExecutionError::InvalidInputs {
-            expected: plan.inputs().len(),
-            actual: inputs.len(),
-        }
-        .into());
-    }
-    if outputs.len() != plan.outputs().len() {
-        return Err(NativeExecutionError::InvalidOutputs {
-            expected: plan.outputs().len(),
-            actual: outputs.len(),
-        }
-        .into());
-    }
-    if descriptor.stack > limits.execution.max_native_stack_bytes {
-        return Err(NativeExecutionError::StackLimit {
-            required: descriptor.stack,
-            limit: limits.execution.max_native_stack_bytes,
-        }
-        .into());
-    }
-    let caps = limits.library;
-    if [
-        caps.max_output_elements,
-        caps.max_output_bytes,
-        caps.max_temporary_bytes,
-        caps.max_cloned_bytes,
-        caps.max_retained_nodes,
-        caps.max_compute_work,
-        caps.max_comparison_work,
-    ]
-    .iter()
-    .any(Option::is_none)
-    {
+    // A raw immutable Value slice is not resource authority, even when every
+    // resource result could be supplied as a lookalike typed input.
+    if !descriptor.plan.resource_requirements().is_empty() {
         return Err(invalid(
-            "native program requires seven finite library dimensions",
+            "hosted native plan requires a runtime-issued turn token",
         ));
     }
-    let locals = plan
-        .values()
-        .len()
-        .checked_add(plan.iterations().len())
-        .ok_or_else(|| invalid("local count overflow"))?;
-    let progress = plan
-        .iterations()
-        .len()
-        .checked_mul(2)
-        .ok_or_else(|| invalid("progress count overflow"))?;
-    let words = inputs
-        .len()
-        .checked_add(locals)
-        .and_then(|n| n.checked_add(progress))
-        .and_then(|n| n.checked_add(outputs.len()))
-        .and_then(|n| n.checked_add(1))
-        .ok_or_else(|| invalid("transport count overflow"))?;
-    let word_bytes = transport_bytes(words)?;
-    let arena_bytes = amount(
-        descriptor.types.len(),
-        (core::mem::size_of::<Option<Value>>() + 8) as u64,
-        0,
-    )?;
-    let bytes = word_bytes
-        .checked_add(arena_bytes)
-        .and_then(|n| n.checked_add(collection::State::metadata_bytes(plan).ok()?))
-        .ok_or_else(|| invalid("combined transport overflow"))?;
-    if bytes > limits.execution.max_transport_bytes {
-        return Err(NativeExecutionError::TransportLimit {
-            required: bytes,
-            limit: limits.execution.max_transport_bytes,
-        }
-        .into());
-    }
-    let mut work = NativeWorkMeter::new(limits.execution.max_work)?;
-    work.charge(NativeExecutionPhase::Setup, amount(words, 4, 256)?)?;
-    let library = work.shared_library_budget(
-        NativeExecutionPhase::Setup,
-        caps.max_comparison_work.unwrap(),
-        memory,
-    )?;
-    let mut storage =
-        NativeWordStorage::new(words, limits.execution.max_transport_bytes, Some(memory))?;
-    let mut arena = NativeValueArena::new(
-        &descriptor.types,
-        limits.execution.max_transport_bytes,
-        memory,
-        &mut work,
-    )?;
-    // Validate/prepay prior roots before entry; publication itself cannot fail
-    // halfway through replacing caller-visible output slots.
-    for (value, ty) in outputs
-        .iter()
-        .zip(plan.outputs())
-        .filter_map(|(value, ty)| value.as_ref().map(|v| (v, ty.ty())))
+    execute_prepared(descriptor, entry, inputs, &[], outputs, limits, memory)
+}
+
+#[cfg(feature = "canonical-native-program-host-runtime")]
+fn verify_hosted_plan(
+    descriptor: &NativeProgramDescriptor,
+    revision: mech_core::ProgramRevision,
+    bound: &mech_runtime::CanonicalNativeResourcePlan,
+) -> Result<(), NativeProgramExecutionError> {
+    use mech_runtime::CanonicalNativeResourceAction as Action;
+    let selected = &descriptor.plan;
+    if revision != selected.program_revision()
+        || bound.requirements() != selected.resource_requirements()
+        || bound.observations().len() != selected.observations().len()
+        || bound.effects().len() != selected.effects().len()
     {
-        if value.schema() != ty.schema() || value.schema_key() != ty.schema_key() {
-            return Err(NativeValueError::TypeMismatch.into());
-        }
-        let retained = value
-            .memory_budget_retained_bytes(memory)
-            .ok_or(NativeValueError::UnadmittedPayload)?;
-        let retirement = retained
-            .checked_mul(4)
-            .and_then(|n| n.checked_add(32))
-            .ok_or_else(|| invalid("output retirement overflow"))?;
-        work.charge(NativeExecutionPhase::Setup, retirement)?;
+        return Err(invalid(
+            "runtime turn differs from canonical native resource plan",
+        ));
     }
-    for (value, input) in inputs.iter().zip(plan.inputs()) {
-        arena.put(input.value().get(), value, &mut work)?;
-    }
-    for (constant, &bound) in plan.constants().iter().zip(&descriptor.constant_bytes) {
-        work.charge(
-            NativeExecutionPhase::Setup,
-            bound
-                .checked_mul(8)
-                .and_then(|n| n.checked_add(128))
-                .ok_or_else(|| invalid("constant admission work overflow"))?,
-        )?;
-        let mut reservation = memory.reserve_capacity(bound)?;
-        // A raw constant may already have arbitrarily many foreign imports.
-        // Its precharged full bound pays for an independent wrapper; never
-        // search those other accounts under this invocation's finite work cap.
-        let value = constant
-            .constant()
-            .clone()
-            .into_independent_memory_budget(&mut reservation)?;
-        arena.put(constant.value().get(), &value, &mut work)?;
-    }
-    let collections = collection::State::new(descriptor, caps, memory, &mut work)?;
-    let (input_words, rest) = storage.values_mut().split_at_mut(inputs.len());
-    let (values, rest) = rest.split_at_mut(locals);
-    let (progress_words, rest) = rest.split_at_mut(progress);
-    let (output_words, result) = rest.split_at_mut(outputs.len());
-    for ((word, value), input) in input_words.iter_mut().zip(inputs).zip(plan.inputs()) {
-        if let Some(kind) = input.ty().scalar_kind() {
-            *word = bits(value, kind)?;
+    for (bound, native) in bound.observations().iter().zip(selected.observations()) {
+        if bound.node() != native.node()
+            || bound.requirement() != native.requirement()
+            || bound.request() != native.request()
+            || bound.schema() != native.ty().schema()
+            || bound.schema_key() != native.ty().schema_key()
+            || bound.action()
+                != (Action::Observation {
+                    output: native.slot(),
+                })
+        {
+            return Err(invalid(
+                "runtime observation differs from exact native site",
+            ));
         }
     }
-    let input_pointer = input_words.as_ptr();
-    let local_pointer = values.as_mut_ptr();
-    let output_pointer = output_words.as_mut_ptr();
-    let result_pointer = result.as_mut_ptr();
-    let mut context = Context {
-        control: Control {
-            descriptor,
-            progress: progress_words,
-            current: None,
-            previous: None,
-            completed: false,
-            work,
-            visits: 0,
-            error: None,
-        },
-        collections,
-        arena,
-        library,
-        limits: caps,
-        result: result_pointer,
-        consumed: false,
-        output_cursor: 0,
-        error: None,
-    };
-    let context_pointer = (&mut context as *mut Context<'_>).cast::<c_void>();
-    let mut frame = Frame {
-        base: NativeEntryFrame {
-            version: VERSION,
-            input_count: inputs.len() as u64,
-            local_count: locals as u64,
-            output_count: outputs.len() as u64,
-            inputs: input_pointer,
-            locals: local_pointer,
-            outputs: output_pointer,
-            context: context_pointer,
-            admit_next: admit,
-            error_node: NO_NODE,
-        },
-        helper,
-        result: result_pointer,
-    };
-    let status = entry(&mut frame);
-    if let Some(error) = context.error.take() {
-        return Err(error);
-    }
-    let f = &frame.base;
-    if f.version != VERSION
-        || f.input_count != inputs.len() as u64
-        || f.local_count != locals as u64
-        || f.output_count != outputs.len() as u64
-        || f.inputs != input_pointer
-        || f.locals != local_pointer
-        || f.outputs != output_pointer
-        || f.context != context_pointer
-        || f.admit_next as usize != admit as *const () as usize
-        || frame.helper as usize != helper as *const () as usize
-        || frame.result != result_pointer
-    {
-        return Err(invalid("program entry changed immutable frame"));
-    }
-    match status {
-        STATUS_OK => {
-            if !context.control.completed
-                || f.error_node != NO_NODE
-                || context.output_cursor != outputs.len()
-                || context
-                    .control
-                    .previous
-                    .is_some_and(|site| context.action_required(site as usize) && !context.consumed)
-            {
-                return Err(invalid("program omitted atomic completion"));
-            }
+    for (bound, native) in bound.effects().iter().zip(selected.effects()) {
+        if bound.node() != native.node()
+            || bound.requirement() != native.requirement()
+            || bound.request() != native.request()
+            || bound.schema() != native.ty().schema()
+            || bound.schema_key() != native.ty().schema_key()
+            || bound.action()
+                != (Action::Effect {
+                    payload: native.payload(),
+                    ordinal: native.ordinal(),
+                })
+        {
+            return Err(invalid("runtime effect differs from exact native site"));
         }
-        STATUS_ARITHMETIC | STATUS_REJECT => {
-            let id = context
-                .control
-                .previous
-                .ok_or_else(|| invalid("program failure before visit"))?;
-            let site = &descriptor.visits[id as usize];
-            if f.error_node != id as u64 {
-                return Err(invalid("program failure origin mismatch"));
-            }
-            return Err(if status == STATUS_ARITHMETIC && site.arithmetic {
-                NativeIterationExecutionError::Arithmetic {
-                    origin: site.origin,
-                }
-                .into()
-            } else if status == STATUS_REJECT && site.reject {
-                NativeIterationExecutionError::Unmatched {
-                    origin: site.origin,
-                }
-                .into()
-            } else {
-                invalid("program failure status outside matching action")
-            });
-        }
-        _ => return Err(NativeExecutionError::InvalidStatus { status }.into()),
     }
-    context
-        .arena
-        .publish_range(plan.values().len(), outputs, &mut context.control.work)?;
-    Ok(NativeProgramExecutionReport {
-        work: context.control.work.used(),
-        comparison_work: context.library.used().1,
-        visits: context.control.visits,
-        transport_bytes: bytes,
-    })
+    Ok(())
+}
+
+#[cfg(feature = "canonical-native-program-host-runtime")]
+fn verify_hosted_turn(
+    descriptor: &NativeProgramDescriptor,
+    turn: &mech_runtime::CanonicalNativeResourceTurn<'_>,
+) -> Result<(), NativeProgramExecutionError> {
+    verify_hosted_plan(descriptor, turn.program_revision(), turn.plan())?;
+    if turn.observations().len() != descriptor.plan.observations().len() {
+        return Err(invalid(
+            "captured observation count differs from exact native plan",
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(feature = "canonical-native-program-host-runtime")]
+pub(super) fn prepare_hosted<'a>(
+    descriptor: &'a NativeProgramDescriptor,
+    entry: CheckedEntry,
+    admission: mech_runtime::CanonicalNativeResourceAdmission<'_>,
+    limits: NativeProgramExecutionLimits,
+    memory: &ManagedMemoryBudget,
+) -> Result<NativeProgramExecutionSession<'a>, NativeProgramExecutionError> {
+    NativeProgramExecutionSession::prepare(descriptor, entry, admission, limits, memory)
+}
+
+// Ordinary pure evaluation drives the SAME generated phases internally.
+// Fresh input/output transport begins only after closed activation succeeds.
+fn execute_prepared<F: FnMut(*mut Frame) -> u64>(
+    descriptor: &NativeProgramDescriptor,
+    mut entry: F,
+    inputs: &[Value],
+    observations: &[Value],
+    outputs: &mut [Option<Value>],
+    limits: NativeProgramExecutionLimits,
+    memory: &ManagedMemoryBudget,
+) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError> {
+    let mut prepared = session::Prepared::new(descriptor, limits, memory)?;
+    prepared.activate(&mut entry)?;
+    prepared.finish(&mut entry, inputs, observations, outputs)
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
@@ -700,8 +756,25 @@ mod tests {
             .unwrap();
         value.into_memory_budget(&mut reservation).unwrap()
     }
+    // Protocol-forgery fixtures below have no closed operations. Simulate only
+    // their empty entry/checkpoint before injecting a malformed TURN sequence.
+    fn checkpoint_empty_activation(
+        frame: &mut Frame,
+        descriptor: &NativeProgramDescriptor,
+    ) -> bool {
+        if frame.phase != super::super::program_abi::PHASE_ACTIVATION {
+            return false;
+        }
+        assert!(!descriptor.plan.has_activation());
+        assert_eq!(
+            unsafe { (frame.base.admit_next)(frame.base.context, descriptor.plan.entry() as u64) },
+            STATUS_OK
+        );
+        frame.base.error_node = u64::from(descriptor.plan.activation_boundary().unwrap());
+        true
+    }
     fn reach_call(frame: &mut Frame, descriptor: &NativeProgramDescriptor) -> u32 {
-        let mut site = descriptor.plan.entry();
+        let mut site = descriptor.plan.activation_boundary().unwrap();
         loop {
             // SAFETY: injected tests use execute's retained callback and frame.
             assert_eq!(
@@ -726,7 +799,7 @@ mod tests {
         let jit =
             super::super::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog())
                 .unwrap();
-        for mode in 0..5 {
+        for mode in 0..9 {
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
             let args = [input(&artifact, &memory)];
             let retained = memory.used_bytes();
@@ -737,6 +810,9 @@ mod tests {
                     // SAFETY: execute owns this initialized live frame throughout
                     // the synchronous injected test entry; backing stays disjoint.
                     let frame = unsafe { &mut *raw };
+                    if checkpoint_empty_activation(frame, jit.descriptor()) {
+                        return super::super::program_abi::STATUS_ACTIVATED;
+                    }
                     let site = reach_call(frame, jit.descriptor());
                     let (actual_site, operation, result) = match mode {
                         0 => (site as u64 + 1, LIBRARY, frame.result),
@@ -754,10 +830,38 @@ mod tests {
                         // skipping the required leaf to test protocol denial.
                         return unsafe { (frame.base.admit_next)(frame.base.context, next as u64) };
                     }
-                    // SAFETY: arguments remain within the retained ABI6 boundary;
+                    let first = if mode == 5 {
+                        frame.arguments.wrapping_add(1) as u64
+                    } else {
+                        frame.arguments as u64
+                    };
+                    let arity = match jit.descriptor().plan.blocks()[site as usize].action() {
+                        NativeIterationAction::LibraryCall { operands, .. } => {
+                            operands.len() as u64
+                        }
+                        _ => unreachable!(),
+                    };
+                    let second = if mode == 6 { arity + 1 } else { arity };
+                    let third = u64::from(mode == 7);
+                    if mode == 8 {
+                        // SAFETY: this is the owned, initialized first operand
+                        // word of text/lines; managed operands must be zero.
+                        unsafe {
+                            *frame.arguments = 1;
+                        }
+                    }
+                    // SAFETY: arguments remain within the retained ABI8 boundary;
                     // wrong metadata/pointer is rejected before dereference.
                     let status = unsafe {
-                        (frame.helper)(frame.base.context, actual_site, operation, 0, 0, 0, result)
+                        (frame.helper)(
+                            frame.base.context,
+                            actual_site,
+                            operation,
+                            first,
+                            second,
+                            third,
+                            result,
+                        )
                     };
                     if mode == 3 {
                         assert_eq!(status, STATUS_OK);
@@ -767,8 +871,8 @@ mod tests {
                                 frame.base.context,
                                 actual_site,
                                 operation,
-                                0,
-                                0,
+                                first,
+                                second,
                                 0,
                                 result,
                             )
@@ -794,6 +898,48 @@ mod tests {
             assert_eq!(memory.used_bytes(), retained);
         }
     }
+    #[test]
+    fn phase_protocol_rejects_forged_early_checkpoint_completion_and_frame_phase() {
+        let artifact = artifact();
+        let jit =
+            super::super::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog())
+                .unwrap();
+        for mode in 0..4 {
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = [input(&artifact, &memory)];
+            let before = memory.used_bytes();
+            let mut output = vec![None; artifact.outputs().len()];
+            let result = execute(
+                jit.descriptor(),
+                |raw| {
+                    // SAFETY: the test receives this synchronous owned frame only.
+                    let frame = unsafe { &mut *raw };
+                    let boundary = jit.descriptor().plan.activation_boundary().unwrap();
+                    if mode == 0 {
+                        frame.phase = super::super::program_abi::PHASE_TURN;
+                    } else if mode == 1 {
+                        return STATUS_OK;
+                    } else if mode == 2 {
+                        // No admitted activation entry, despite a forged origin.
+                        frame.base.error_node = u64::from(boundary);
+                    } else {
+                        return unsafe {
+                            (frame.base.admit_next)(frame.base.context, u64::from(boundary))
+                        };
+                    }
+                    super::super::program_abi::STATUS_ACTIVATED
+                },
+                &args,
+                &mut output,
+                limits(),
+                &memory,
+            );
+            assert!(result.is_err(), "forged phase mode {mode}");
+            assert!(output.iter().all(Option::is_none));
+            assert_eq!(memory.used_bytes(), before);
+        }
+    }
+
     #[test]
     fn setup_denies_before_entry_and_before_foreign_payload_type_scan() {
         let artifact = artifact();
@@ -889,6 +1035,9 @@ mod tests {
                     // SAFETY: execute retains this initialized exclusive frame,
                     // callback context and disjoint result lane until return.
                     let frame = unsafe { &mut *raw };
+                    if checkpoint_empty_activation(frame, descriptor) {
+                        return super::super::program_abi::STATUS_ACTIVATED;
+                    }
                     let admit = |site| {
                         // SAFETY: the same live private callback/context; only
                         // visit metadata is varied, never pointer ownership.
@@ -917,7 +1066,7 @@ mod tests {
                         };
                         next
                     };
-                    let mut site = descriptor.plan.entry();
+                    let mut site = descriptor.plan.activation_boundary().unwrap();
                     loop {
                         assert_eq!(admit(site), STATUS_OK);
                         if site == collection.begin() {
@@ -1039,9 +1188,17 @@ mod tests {
                 (16, 1u64),
                 (24, 4u64),
                 (24, 5u64),
+                (24, 6u64),
+                (24, 7u64),
+                (16, 4u64),
+                (32, 7u64),
+                (32, 8u64),
+                (32, 9u64),
+                (32, 10u64),
                 (32, 1u64),
                 (32, 2u64),
                 (32, 3u64),
+                (32, 4u64),
                 (112, 0u64),
                 (120, 0u64),
             ] {
@@ -1057,8 +1214,8 @@ mod tests {
         }
     }
     #[test]
-    fn abi6_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 6);
+    fn abi8_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
+        assert_eq!(VERSION, 8);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);
         assert_eq!(
             core::mem::offset_of!(Frame, helper),
@@ -1067,6 +1224,22 @@ mod tests {
         assert_eq!(
             core::mem::offset_of!(Frame, result),
             core::mem::size_of::<NativeEntryFrame>() + 8
+        );
+        assert_eq!(
+            core::mem::offset_of!(Frame, arguments),
+            core::mem::size_of::<NativeEntryFrame>() + 16
+        );
+        assert_eq!(
+            core::mem::offset_of!(Frame, argument_capacity),
+            core::mem::size_of::<NativeEntryFrame>() + 24
+        );
+        assert_eq!(
+            core::mem::offset_of!(Frame, phase),
+            core::mem::size_of::<NativeEntryFrame>() + 32
+        );
+        assert_eq!(
+            core::mem::size_of::<Frame>(),
+            core::mem::size_of::<NativeEntryFrame>() + 40
         );
     }
 }

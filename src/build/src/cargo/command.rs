@@ -49,6 +49,47 @@ impl CargoInvocation {
         release: bool,
         offline: bool,
     ) -> MResult<Self> {
+        Self::binary(
+            "build",
+            manifest_path,
+            binary_name,
+            target,
+            target_dir,
+            release,
+            offline,
+        )
+    }
+
+    /// Compile and execute the Rust tests of a generated binary using the same
+    /// pinned, locked command policy as its production build.
+    pub fn test_binary(
+        manifest_path: impl AsRef<Path>,
+        binary_name: &str,
+        target: Option<&str>,
+        target_dir: impl AsRef<Path>,
+        release: bool,
+        offline: bool,
+    ) -> MResult<Self> {
+        Self::binary(
+            "test",
+            manifest_path,
+            binary_name,
+            target,
+            target_dir,
+            release,
+            offline,
+        )
+    }
+
+    fn binary(
+        action: &'static str,
+        manifest_path: impl AsRef<Path>,
+        binary_name: &str,
+        target: Option<&str>,
+        target_dir: impl AsRef<Path>,
+        release: bool,
+        offline: bool,
+    ) -> MResult<Self> {
         validate_project_binary_name(binary_name)?;
         if let Some(target) = target {
             validate_project_target_triple(target)?;
@@ -56,7 +97,7 @@ impl CargoInvocation {
 
         let mut arguments = vec![
             OsString::from(format!("+{NATIVE_RUST_TOOLCHAIN}")),
-            OsString::from("build"),
+            OsString::from(action),
             OsString::from("--manifest-path"),
             manifest_path.as_ref().as_os_str().to_owned(),
             OsString::from("--bin"),
@@ -555,6 +596,10 @@ checksum = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
             assert!(
                 CargoInvocation::build("Cargo.toml", binary, None, "target", false, false).is_err()
             );
+            assert!(
+                CargoInvocation::test_binary("Cargo.toml", binary, None, "target", false, false)
+                    .is_err()
+            );
         }
         for target in ["x86_64;touch-owned", "$(whoami)", "--target=x"] {
             assert!(
@@ -568,6 +613,51 @@ checksum = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
                 )
                 .is_err()
             );
+            assert!(
+                CargoInvocation::test_binary(
+                    "Cargo.toml",
+                    "safe-app",
+                    Some(target),
+                    "target",
+                    false,
+                    false,
+                )
+                .is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn generated_binary_tests_share_every_build_flag_and_command_policy() {
+        for (release, offline, target) in [
+            (false, false, None),
+            (true, true, Some("x86_64-unknown-linux-gnu")),
+        ] {
+            let build = CargoInvocation::build(
+                "project/Cargo.toml",
+                "native-app",
+                target,
+                "target/generated",
+                release,
+                offline,
+            )
+            .unwrap();
+            let tests = CargoInvocation::test_binary(
+                "project/Cargo.toml",
+                "native-app",
+                target,
+                "target/generated",
+                release,
+                offline,
+            )
+            .unwrap();
+            let mut expected = arguments(&build);
+            expected[1] = "test".into();
+            assert_eq!(arguments(&tests), expected);
+            let isolated = Path::new("project-isolation");
+            let command = tests.with_current_dir(isolated).command();
+            assert_eq!(command.get_program(), "cargo");
+            assert_eq!(command.get_current_dir(), Some(isolated));
         }
     }
 

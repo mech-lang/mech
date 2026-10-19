@@ -152,6 +152,8 @@ pub(super) enum LinkedApplicationProfile {
     Scalar,
     #[cfg(feature = "canonical-native-program")]
     ManagedProgram,
+    #[cfg(feature = "canonical-native-program-host")]
+    HostedManagedProgram,
 }
 
 pub(super) struct LinkedApplicationInputs<'a> {
@@ -234,13 +236,24 @@ pub(super) fn write_linked_application(
         "workspace path is not Unicode",
     ))?;
     let (gpu_feature, core_features, library_features, dependencies) = match inputs.profile {
-        LinkedApplicationProfile::Scalar => ("canonical-native-runtime", "", "", ""),
+        LinkedApplicationProfile::Scalar => ("canonical-native-runtime", "", "", String::new()),
         #[cfg(feature = "canonical-native-program")]
         LinkedApplicationProfile::ManagedProgram => (
             "canonical-native-program-runtime",
             ", features = [\"serde\"]",
             ", \"string\", \"pure_text\", \"map_ops\"",
-            "serde_json = \"1.0\"\n",
+            "serde_json = \"1.0\"\n".to_owned(),
+        ),
+        #[cfg(feature = "canonical-native-program-host")]
+        LinkedApplicationProfile::HostedManagedProgram => (
+            "canonical-native-program-host-runtime",
+            ", features = [\"serde\"]",
+            ", \"string\", \"pure_text\", \"map_ops\", \"access\", \"set\", \"tuple\", \"enum\", \"sequence_sort\"",
+            format!(
+                "serde_json = \"1.0\"\nserde = {{ version = \"1.0\", features = [\"derive\"] }}\nmech-runtime = {{ path = {}, default-features = false, features = [\"runtime\", \"string\", \"resident-routing\"] }}\nmech-terminal = {{ path = {}, default-features = false, features = [\"provider\"] }}\n",
+                json_string(&format!("{workspace_text}/src/runtime")),
+                json_string(&format!("{workspace_text}/hosts/terminal")),
+            ),
         ),
     };
     let mut cargo = format!(
@@ -297,6 +310,25 @@ incremental = false
         );
     pins.insert("build.rs".into(), digest(build.as_bytes()));
     files.insert("build.rs".into(), build.into_bytes());
+    let runtime_features = vec![
+        format!("mech-gpu/{gpu_feature}"),
+        "mech-engine/native-artifact".to_owned(),
+        "mech-stdlib/native-plan".to_owned(),
+    ];
+    #[cfg(feature = "canonical-native-program-host")]
+    let runtime_features = {
+        let mut runtime_features = runtime_features;
+        if matches!(
+            inputs.profile,
+            LinkedApplicationProfile::HostedManagedProgram
+        ) {
+            runtime_features.extend([
+                "mech-runtime/resident-routing".to_owned(),
+                "mech-terminal/provider".to_owned(),
+            ]);
+        }
+        runtime_features
+    };
     let metadata = json!({
         "schema": inputs.manifest_schema,
         "route": inputs.route,
@@ -304,7 +336,7 @@ incremental = false
         "typed_ir_sha256": super::identity::hex(inputs.typed_ir_sha256),
         "object": inputs.object_metadata, "pins": pins,
         "source_is_provenance_only": true,
-        "runtime_features": [format!("mech-gpu/{gpu_feature}"), "mech-engine/native-artifact".to_owned(), "mech-stdlib/native-plan".to_owned()],
+        "runtime_features": runtime_features,
         "linked": false, "executed": false, "timing_samples": 0,
     });
     files.insert(

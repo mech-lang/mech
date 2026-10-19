@@ -24,6 +24,8 @@ pub(crate) mod native_comprehension_lowering;
 pub(crate) mod native_lowering;
 #[cfg(feature = "native-artifact")]
 pub(crate) mod native_match_lowering;
+#[cfg(feature = "native-artifact")]
+mod native_tail_lowering;
 
 pub use execution::*;
 
@@ -4902,6 +4904,9 @@ fn closed_conversion_presence_count(
         ConversionStep::OptionPayload(inner) => {
             closed_conversion_presence_count(&inner.step, element_count)
         }
+        // Sorting/deduplication is executed by the admitted conversion
+        // factory, never by this closed matrix-copy analysis path.
+        ConversionStep::MatrixToSet(_) => None,
         ConversionStep::Identity | ConversionStep::Scalar(_) => Some(0),
     }
 }
@@ -5433,11 +5438,12 @@ fn closed_producer_disposition(
     // These maintained pure operations have resident implementations, but no
     // bounded closed-value analysis owner yet. Record that limit explicitly;
     // recognizing a public spelling does not authorize an unimplemented fold.
-    if operation.module_path.as_ref() == ["map"]
-        && matches!(
-            operation.operation_name.as_str(),
-            "histogram" | "keys" | "values"
-        )
+    if operation.module_path.as_ref() == ["convert"] && operation.operation_name == "set"
+        || operation.module_path.as_ref() == ["map"]
+            && matches!(
+                operation.operation_name.as_str(),
+                "histogram" | "keys" | "values"
+            )
         || operation.module_path.as_ref() == ["number"]
             && matches!(operation.operation_name.as_str(), "format" | "parse-u64")
         || operation.module_path.as_ref() == ["sequence"]
@@ -14677,6 +14683,36 @@ fn build_activation_schedule(
     })
 }
 
+/// Reports whether this original artifact has closed computations that the
+/// canonical resident path executes BEFORE observing provider inputs. Metadata
+/// only: uses the SAME classifier, never binds or evaluates a graph. Hosted
+/// native lowering and legacy bridge guards share this classification.
+pub fn canonical_resource_activation_required(
+    artifact: &ProgramArtifact,
+) -> Result<bool, ResidentActivationError> {
+    let classes = classify_nodes(artifact, ResidentExternalAdmission::StructuralOnly)?;
+    Ok(classes.iter().any(|class| *class == NodeClass::Activation))
+}
+
+/// Analyze the original artifact's effect order using the SAME canonical
+/// classification/dependency schedule as resident activation. This metadata
+/// neither binds providers nor grants authority, observes values, or executes
+/// any program body. Effect ordinals remain original artifact-node identities;
+/// callers must not replace them with positions in this returned schedule.
+pub fn canonical_resource_effect_order(
+    artifact: &ProgramArtifact,
+) -> Result<Box<[NodeId]>, ResidentActivationError> {
+    let classes = classify_nodes(artifact, ResidentExternalAdmission::StructuralOnly)?;
+    let schedule = build_activation_schedule(artifact, &classes)?;
+    Ok(schedule
+        .nodes
+        .into_vec()
+        .into_iter()
+        .filter(|node| classes[node.get() as usize] == NodeClass::External)
+        .collect::<Vec<_>>()
+        .into_boxed_slice())
+}
+
 fn stable_topological_order(downstream: &[Vec<usize>], keys: &[u32]) -> Option<Vec<usize>> {
     let mut indegree = vec![0_usize; downstream.len()];
     for children in downstream {
@@ -22440,6 +22476,11 @@ mod shape_fact_tests {
         ];
         const DEFERRED_PRODUCERS: &[(&[&str], &str, ClosedProducerDisposition)] = &[
             (
+                &["convert"],
+                "set",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
                 &["map"],
                 "histogram",
                 ClosedProducerDisposition::DeferredPureValue,
@@ -22519,7 +22560,8 @@ mod shape_fact_tests {
                     | ["compare"]
                     | ["math"]
                     | ["math", "bessel"]
-            ) {
+            ) || cfg!(feature = "convert") && module_path == ["convert"]
+            {
                 let module_path = module_path
                     .iter()
                     .map(|segment| (*segment).to_owned())

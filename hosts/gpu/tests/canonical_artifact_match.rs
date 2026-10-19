@@ -211,6 +211,17 @@ fn check(source: &str, named: &[(&str, NativeScalarValue)], expected: NativeScal
     }
 }
 #[test]
+fn scalar_match_turn_keeps_closed_lexical_calls_in_the_frozen_abi() {
+    use NativeScalarValue::U64;
+    // The only root owner depends on seed. The literal identity call remains
+    // lexical work before the fresh Match/arithmetic; it is not an admitted
+    // root Activation computation or a managed prepare/resume boundary.
+    let source = "identity(x<u64>) => (next<u64>) := next := x.\nrun(x<u64>) => (out<u64>) :=\n  fixed := identity(7u64)\n  out := (x? | 0u64 => fixed | * => x + fixed).\nrun(seed<u64>)\n";
+    check(source, &[("seed", U64(0))], U64(7));
+    check(source, &[("seed", U64(5))], U64(12));
+}
+
+#[test]
 fn scalar_matches_preserve_literals_bindings_and_raw_u64_values() {
     use NativeScalarValue::{Bool, U64};
     let source =

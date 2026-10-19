@@ -123,8 +123,15 @@ impl<D: VisitPlan> Context<'_, D> {
                 Some(previous) => {
                     let prior = &self.descriptor.visits()[previous as usize];
                     if let Progress::Header(iteration) = prior.progress {
-                        let remaining = self.progress[iteration as usize * 2];
-                        id == prior.successors[usize::from(remaining == 0)]
+                        if matches!(
+                            self.descriptor.iteration(iteration as usize),
+                            mech_engine::native_artifact::NativeControlLoopRef::Tail(_)
+                        ) {
+                            id == prior.successors[0]
+                        } else {
+                            let remaining = self.progress[iteration as usize * 2];
+                            id == prior.successors[usize::from(remaining == 0)]
+                        }
                     } else {
                         id.is_some() && prior.successors.contains(&id)
                     }
@@ -164,6 +171,10 @@ impl<D: VisitPlan> Context<'_, D> {
                         self.progress[iteration as usize * 2] = 0;
                         self.progress[iteration as usize * 2 + 1] = 2;
                     }
+                    mech_engine::native_artifact::NativeControlLoopRef::Tail(_) => {
+                        self.progress[iteration as usize * 2] = 0;
+                        self.progress[iteration as usize * 2 + 1] = 1;
+                    }
                 }
                 self.current = Some(iteration);
             }
@@ -181,13 +192,19 @@ impl<D: VisitPlan> Context<'_, D> {
                 }
             }
             Progress::Latch(iteration) => {
+                let tail = matches!(
+                    self.descriptor.iteration(iteration as usize),
+                    mech_engine::native_artifact::NativeControlLoopRef::Tail(_)
+                );
                 if self.current != Some(iteration)
                     || self.progress[iteration as usize * 2 + 1] != 1
-                    || self.progress[iteration as usize * 2] == 0
+                    || (!tail && self.progress[iteration as usize * 2] == 0)
                 {
                     return Err(invalid("iteration latch outside active body"));
                 }
-                self.progress[iteration as usize * 2] -= 1;
+                if !tail {
+                    self.progress[iteration as usize * 2] -= 1;
+                }
             }
             Progress::Header(iteration) => {
                 if self.current != Some(iteration) || self.progress[iteration as usize * 2 + 1] != 1

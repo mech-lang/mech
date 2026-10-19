@@ -28,6 +28,15 @@ mod window_qualification;
 #[path = "support/canonical_program_ranges.rs"]
 mod range_qualification;
 
+#[path = "support/canonical_program_access.rs"]
+mod access_qualification;
+
+#[path = "support/canonical_program_nested_conversion.rs"]
+mod nested_conversion_qualification;
+
+#[path = "support/canonical_program_tail.rs"]
+mod tail_qualification;
+
 #[path = "support/canonical_program_activation.rs"]
 mod activation_qualification;
 
@@ -219,6 +228,193 @@ fn generated_matrix_comprehensions_execute_each_native_body_and_filter() {
                 )],
             );
         }
+    }
+}
+
+#[test]
+fn repeated_native_leaf_visits_reuse_only_binding_and_drop_it_with_the_invocation() {
+    let mut costs = Vec::new();
+    for count in [1, 4] {
+        let source = format!(
+            "step(s<string>) => (out<string>) := out := s + \"x\".\nseed<string> |{count}> step\n"
+        );
+        for artifact in artifacts(&source).0 {
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = inputs(
+                &artifact,
+                &[("seed", ValueDataDraft::String("é".into()))],
+                &memory,
+            );
+            let ordinary = reference(&artifact, &args);
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let object = emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            assert_eq!(
+                object.descriptor().typed_ir_sha256(),
+                jit.descriptor().typed_ir_sha256()
+            );
+            let mut output = vec![None; artifact.outputs().len()];
+            // Warm the prior output so denial/recovery comparisons have the
+            // same caller-visible retirement obligations as the measured call.
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            let report = jit
+                .evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            equal(&artifact, &output, &ordinary);
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                ValueDataDraft::String(format!("é{}", "x".repeat(count)))
+            );
+            let prior = output
+                .iter()
+                .map(|value| value.clone().unwrap())
+                .collect::<Vec<_>>();
+            let retained = memory.used_bytes();
+            let mut denied = limits();
+            denied.execution.max_work = report.work - 1;
+            assert!(
+                jit.evaluate_into(&args, &mut output, denied, &memory)
+                    .is_err()
+            );
+            equal(&artifact, &output, &prior);
+            assert_eq!(memory.used_bytes(), retained);
+            // Release the comparison's old publication before replacing it;
+            // otherwise this test itself retains a second successful root.
+            drop(prior);
+            let recovered = jit
+                .evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            assert_eq!(recovered.work, report.work);
+            equal(&artifact, &output, &ordinary);
+            assert_eq!(memory.used_bytes(), retained);
+            costs.push((count, report.work));
+            drop((args, output));
+            // No cache survives a successful, denied, or recovered invocation.
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+    for decoded in 0..2 {
+        let once = costs[decoded].1;
+        let repeated = costs[decoded + 2].1;
+        assert!(
+            repeated < once * 2,
+            "immutable binding was rebuilt per visit: once={once}, repeated={repeated}"
+        );
+    }
+}
+
+#[test]
+fn repeated_native_parameterized_leaf_visits_reuse_exact_shapes_and_recompute_values() {
+    let mut costs = Vec::new();
+    for count in [1, 4] {
+        let source = format!(
+            "+> sequence\nstep(x<u64>) => (next<u64>) :=\n  values := 1u64..4u64\n  next := x + sequence/length(values).\nseed<u64> |{count}> step\n"
+        );
+        for artifact in artifacts(&source).0 {
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = inputs(&artifact, &[("seed", ValueDataDraft::U64(5))], &memory);
+            let ordinary = reference(&artifact, &args);
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let object = emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            assert_eq!(
+                jit.descriptor().typed_ir_sha256(),
+                object.descriptor().typed_ir_sha256()
+            );
+            let mut output = vec![None; artifact.outputs().len()];
+            let report = jit
+                .evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            equal(&artifact, &output, &ordinary);
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                ValueDataDraft::U64(5 + 3 * count)
+            );
+            costs.push(report.work);
+            drop((args, output));
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+    for decoded in 0..2 {
+        assert!(
+            costs[decoded + 2] < costs[decoded] * 2,
+            "parameterized leaf binding rebuilt per visit: {:?}",
+            costs
+        );
+    }
+}
+
+#[test]
+fn native_unselected_leaf_does_not_bind_and_selected_denial_recovers_lazily() {
+    let source = "pick(s<string>, take<bool>) => (out<string>) := out := (take? | true => s + \"x\" | false => s).\npick(input<string>, flag<bool>)\n";
+    for artifact in artifacts(source).0 {
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let no = inputs(
+            &artifact,
+            &[
+                ("input", ValueDataDraft::String("untouched".into())),
+                ("flag", ValueDataDraft::Bool(false)),
+            ],
+            &memory,
+        );
+        let yes = inputs(
+            &artifact,
+            &[
+                ("input", ValueDataDraft::String("untouched".into())),
+                ("flag", ValueDataDraft::Bool(true)),
+            ],
+            &memory,
+        );
+        let ordinary = reference(&artifact, &no);
+        let mut policy = limits();
+        // Positive finite allowance permits invocation setup, but cannot fund
+        // even lookup/binding of the actual selected concat call.
+        policy.library.max_compute_work = Some(1);
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&no, &mut output, policy, &memory)
+            .unwrap();
+        equal(&artifact, &output, &ordinary);
+        let prior = output
+            .iter()
+            .map(|value| value.clone().unwrap())
+            .collect::<Vec<_>>();
+        let retained = memory.used_bytes();
+        assert!(matches!(
+            jit.evaluate_into(&yes, &mut output, policy, &memory),
+            Err(
+                mech_gpu::native_artifact::NativeProgramExecutionError::Library {
+                    error: mech_engine::native_artifact::NativeCollectionInvocationError::Kernel(
+                        mech_core::ResidentKernelError::ResourceLimit {
+                            dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                            ..
+                        }
+                    ),
+                    ..
+                }
+            )
+        ));
+        equal(&artifact, &output, &prior);
+        assert_eq!(memory.used_bytes(), retained);
+        jit.evaluate_into(&no, &mut output, policy, &memory)
+            .unwrap();
+        equal(&artifact, &output, &ordinary);
+        assert_eq!(memory.used_bytes(), retained);
+        drop((no, yes, output, prior));
+        assert_eq!(memory.used_bytes(), 0);
     }
 }
 

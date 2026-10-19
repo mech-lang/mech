@@ -1,4 +1,4 @@
-//! ABI6 facade over the SAME canonical iteration CFG definition pass.
+//! ABI8 facade over the SAME canonical iteration CFG definition pass.
 use super::compiler::{backend, host_supported};
 use super::iteration_code_plan::CodePlan;
 use super::program_abi::{ENTRY, Entry, VERSION};
@@ -18,6 +18,24 @@ pub struct JitProgramArtifact {
     descriptor: NativeProgramDescriptor,
 }
 impl JitProgramArtifact {
+    /// Execute only generated closed activation before provider capture.
+    /// The opaque result borrows this checked code owner and can resume once,
+    /// with the SAME runtime transaction, limits, arena and cumulative ledger.
+    #[cfg(feature = "canonical-native-program-host-runtime")]
+    pub fn prepare_hosted<'a>(
+        &'a self,
+        admission: mech_runtime::CanonicalNativeResourceAdmission<'_>,
+        limits: NativeProgramExecutionLimits,
+        memory: &ManagedMemoryBudget,
+    ) -> Result<super::NativeProgramExecutionSession<'a>, NativeProgramExecutionError> {
+        super::program_runtime::prepare_hosted(
+            &self.descriptor,
+            super::program_runtime::CheckedEntry::Jit(self.entry),
+            admission,
+            limits,
+            memory,
+        )
+    }
     pub fn compile(
         artifact: &ProgramArtifact,
         catalog: &FunctionCatalog,
@@ -52,7 +70,7 @@ impl JitProgramArtifact {
         let descriptor = NativeProgramDescriptor::prepare(artifact, catalog, plan, stack, code)
             .map_err(backend)?;
         module.finalize_definitions().map_err(backend)?;
-        // SAFETY: define_cfg emits exactly the private ABI6 signature, and
+        // SAFETY: define_cfg emits exactly the private ABI8 signature, and
         // this owner retains the module for every synchronous invocation.
         let entry = unsafe {
             std::mem::transmute::<*const u8, Entry>(module.get_finalized_function(function))
@@ -79,7 +97,7 @@ impl JitProgramArtifact {
         super::program_runtime::execute(
             &self.descriptor,
             |frame| {
-                // SAFETY: this owner retains the exact checked ABI6 entry.
+                // SAFETY: this owner retains the exact checked ABI8 entry.
                 unsafe { (self.entry)(frame) }
             },
             inputs,
@@ -111,6 +129,12 @@ impl NativeProgramObject {
             "abi_version": VERSION,
             "entry_symbol": ENTRY,
             "work_policy_version": super::program_identity::NATIVE_PROGRAM_WORK_POLICY_VERSION,
+            "typed_ir_version": super::program_identity::NATIVE_PROGRAM_TYPED_IR_VERSION,
+            "requirements": self.descriptor.plan().resource_requirements().len(),
+            "observations": self.descriptor.plan().observations().len(),
+            "effects": self.descriptor.plan().effects().len(),
+            "transport_inputs": self.descriptor.plan().transport_input_count(),
+            "transport_outputs": self.descriptor.plan().transport_output_count(),
             "typed_ir_sha256": super::identity::hex(self.descriptor.typed_ir_sha256()),
             "identity_symbol": self.identity.symbol(),
             "target_tag": super::identity::host_target_tag(),

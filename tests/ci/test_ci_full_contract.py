@@ -234,6 +234,48 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertRegex(contracts, r"--test\s+native_collection_templates(?:\s|$)")
         self.assertIn("--lib resident::general::native_collection_templates::tests", contracts)
 
+    def test_recursive_conversion_funding_runs_in_both_source_profiles(self):
+        contracts = next(step for step in job_steps(FULL, "canonical-applications")
+                         if "Execute canonical native lowering and selected implementation witnesses" in step)
+        # The ownership inventory deliberately admits only straight-line shell.
+        # Keep both actual profiles literal so one loop cannot hide this step's
+        # sixteen neighboring integration-target selections from that inventory.
+        block = contracts.split("run: |\n", 1)[1].replace("\\\n", " ")
+        commands = [shlex.split(line) for line in block.splitlines() if line.strip()]
+        self.assertTrue(commands)
+        self.assertTrue(all(command[0] == "cargo" for command in commands))
+        filters = (
+            "resident::set_conversion::",
+            "intrinsics::kind_conversion::",
+            "source_semantics::frontend::annotation_conversion_shape_tests::",
+        )
+        selected = []
+        for command in commands:
+            if "--lib" not in command or command.index("--lib") + 1 == len(command):
+                continue
+            selection = command[command.index("--lib") + 1]
+            if selection not in filters:
+                continue
+            self.assertEqual(command[:3], ["cargo", "+nightly-2026-03-03", "test"])
+            self.assertEqual(command[command.index("-p") + 1], "mech-engine")
+            self.assertEqual(command.count("--features"), 1)
+            features = command[command.index("--features") + 1]
+            self.assertIn("--no-default-features", command)
+            self.assertIn("--locked", command)
+            self.assertIn("--offline", command)
+            self.assertEqual(command[command.index("--") + 1:], ["--test-threads=1"])
+            self.assertNotIn("--no-run", command)
+            self.assertNotIn("--list", command)
+            selected.append((features, selection))
+        self.assertCountEqual(selected, [
+            (f"{profile},native-artifact", selection)
+            for profile in ("full_compiler", "full_source") for selection in filters
+        ])
+        architecture = job_block(FULL, "architecture-contracts")
+        for target in ("matrix_set_declared_conversion", "conversion_staging_bounds",
+                       "conversion_sort_work"):
+            self.assertRegex(architecture, rf"--test\s+{target}(?:\s|$)")
+
     def test_shared_snapshot_ownership_regression_is_nonempty_and_executed(self):
         step = next(step for step in job_steps(FULL, "managed-memory-runtime")
                     if "Execute bounded shared snapshot ownership regression" in step)
@@ -548,6 +590,7 @@ class FullWorkflowContractTests(unittest.TestCase):
                     "pure_text_source", "retention_work", "sequence_sort", "set_comprehension_operands",
                     "string_generators", "string_literal_match", "string_membership_comprehensions",
                     "string_selector_shapes", "text_operations", "u64_float_conversion_source",
+                    "underscore_addressing",
                 ),
             ),
             (
@@ -1002,6 +1045,108 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("target/bytecode-v1-fixtures/owner-runner/logs", native)
         self.assertIn("if: always()", native)
         self.assertIn("retention-days: 14", native)
+
+    def test_secured_canonical_hosted_target_is_required_by_the_existing_native_gate(self):
+        native = job_block(NATIVE, "canonical-hosted")
+        settings = native.split("    steps:\n", 1)[0]
+        self.assertNotRegex(settings, r"(?m)^    if:")
+        self.assertNotIn("continue-on-error", native)
+        self.assertNotIn("--skip", native)
+        self.assertRegex(settings, r"(?m)^    timeout-minutes: [1-9][0-9]*$")
+        self.assertIn("RUSTUP_TOOLCHAIN: nightly-2026-03-03", settings)
+        self.assertIn('CARGO_BUILD_JOBS: "1"', settings)
+        self.assertIn('CARGO_INCREMENTAL: 0', settings)
+        self.assertIn("ref: ${{ inputs.validation_ref }}", native)
+        self.assertIn('test "$actual" = "$expected"', native)
+        self.assertIn('test "$actual" = "$CHECKOUT_SHA"', native)
+        # Both callers already aggregate the ENTIRE reusable workflow, not
+        # one child job. A failed new child therefore fails the existing gate.
+        for source, job in ((CI, "early-native-plan"), (FULL, "native-plan")):
+            self.assertIn("uses: ./.github/workflows/ci-native-plan.yml", job_block(source, job))
+        self.assertIn("- early-native-plan", job_block(CI, "pr-gate"))
+        self.assertIn("- native-plan", job_block(FULL, "cargo"))
+        steps = job_steps(NATIVE, "canonical-hosted")
+        def named(name):
+            return next(step for step in steps if f"- name: {name}\n" in step)
+        compile_step = named("Compile canonical hosted contracts without execution")
+        execute = named("Execute complete canonical hosted contracts")
+        select = named("Verify linked canonical hosted selection is nonempty")
+        qualify = named("Qualify original and decoded secured hosted standalone applications")
+        for selected in (compile_step, execute, select, qualify):
+            self.assertNotRegex(selected, r"(?m)^        if:")
+        self.assertIn("--record-test-executable canonical_hosted_artifact", compile_step)
+        self.assertIn("--test canonical_hosted_artifact --no-run --message-format=json-render-diagnostics", compile_step)
+        self.assertEqual(
+            re.findall(r"(?:^|\s)-p\s+(\S+)", compile_step.replace("\\\n", " ")),
+            ["mech-core", "mech-engine", "mech-runtime", "mech-stdlib", "mech-syntax", "mech-gpu"],
+        )
+        self.assertIn("--no-default-features", compile_step)
+        self.assertIn("mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-program-host", compile_step)
+        for selected in (execute, select, qualify):
+            self.assertIn("--test-executable-file target/native-plan-logs/canonical-hosted-executable", selected)
+            self.assertNotIn("cargo +", selected)
+        self.assertIn("--test-threads=1 --nocapture", execute)
+        self.assertNotIn("--ignored", execute)
+        self.assertNotIn("--exact", execute)
+        self.assertNotIn("--list", execute)
+        case = "linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned"
+        self.assertIn("--list --ignored --exact", select)
+        self.assertIn(case, select)
+        self.assertIn(f'expected = "{case}: test"; assert lines.count(expected) == 1', select)
+        self.assertIn("--ignored --exact", qualify)
+        self.assertIn(case, qualify)
+        self.assertIn("--test-threads=1 --nocapture", qualify)
+        self.assertIn("MECH_CANONICAL_HOSTED_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", qualify)
+        self.assertIn("MECH_CANONICAL_HOSTED_EVIDENCE_DIR: ${{ runner.temp }}/canonical-hosted-evidence", qualify)
+        self.assertNotIn("mkdir", qualify)  # the qualifier requires a fresh nonexistent child
+        self.assertNotIn("CARGO_HOME", native)  # preserve ambient-config refusal, not a hidden override
+        self.assertLess(steps.index(compile_step), steps.index(execute))
+        self.assertLess(steps.index(execute), steps.index(select))
+        self.assertLess(steps.index(select), steps.index(qualify))
+        # Two variants each run twelve input cases plus closed stdout. Include
+        # the unused-argv acquisition/memory denials without shortening any
+        # existing child bound to fit the enclosing supervisor.
+        inner_ceilings = 2 * 900 + 2 * 120 + 2 * 300 + 26 * 120 + 10 * 120 + 4 * 15
+        self.assertGreaterEqual(
+            int(re.search(r"--timeout-secs (\d+)", qualify).group(1)),
+            inner_ceilings + 300,
+        )
+        for selected in (compile_step, execute, select, qualify):
+            timeout = int(re.search(r"--timeout-secs (\d+)", selected).group(1))
+            actions = int(re.search(r"timeout-minutes: (\d+)", selected).group(1)) * 60
+            self.assertGreater(actions, timeout + 30 + 5 + 15)
+        retained = named("Retain canonical hosted diagnostics and qualification evidence")
+        self.assertIn("if: always()", retained)
+        self.assertIn("target/native-plan-logs", retained)
+        self.assertIn("${{ runner.temp }}/canonical-hosted-evidence", retained)
+        self.assertIn("retention-days: 14", retained)
+        fixture = (ROOT / "hosts/gpu/tests/support/canonical_hosted_linked.rs").read_text(encoding="utf-8")
+        self.assertIn("fn " + case.split("::")[-1] + "()", fixture)
+        self.assertIn("MECH_CANONICAL_HOSTED_SOURCE_COMMIT", fixture)
+        self.assertIn("MECH_CANONICAL_HOSTED_EVIDENCE_DIR", fixture)
+        self.assertIn("template_tests::qualify(", fixture)
+        generated = (ROOT / "hosts/gpu/tests/support/canonical_hosted_template_tests.rs").read_text(encoding="utf-8")
+        self.assertIn("CargoInvocation::test_binary(", generated)
+        self.assertIn('"generated-template-tests", 300', generated)
+        self.assertIn("suite_passed(&output.stdout)", generated)
+        for label in (
+            "unused-arguments-exact-cap",
+            "unused-arguments-over-cap",
+            "argument-header-memory-denial",
+        ):
+            self.assertIn(f'("{label}", GGTA_INPUT,', fixture)
+
+    def test_hosted_job_deadline_covers_every_serial_step_and_cleanup(self):
+        settings = job_block(NATIVE, "canonical-hosted").split("    steps:\n", 1)[0]
+        job_limit = re.search(r"(?m)^    timeout-minutes: ([1-9][0-9]*)$", settings)
+        self.assertIsNotNone(job_limit)
+        step_limits = []
+        for step in job_steps(NATIVE, "canonical-hosted"):
+            # Checkout and always-run upload also need explicit finite bounds.
+            limit = re.search(r"(?m)^        timeout-minutes: ([1-9][0-9]*)$", step)
+            self.assertIsNotNone(limit, step)
+            step_limits.append(int(limit.group(1)))
+        self.assertGreaterEqual(int(job_limit.group(1)), sum(step_limits) + 10)
 
     def test_planning_preparation_execution_and_deadlines_remain_separate(self):
         steps = job_steps(NATIVE, "native-plan")
@@ -2089,6 +2234,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             "type_system_builtin",
             "type_system_solver",
             "type_system_conversion",
+            "matrix_set_conversion",
             "type_system_catalog",
             "type_system_source",
         ):

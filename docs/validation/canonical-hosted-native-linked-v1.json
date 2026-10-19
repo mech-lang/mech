@@ -1,0 +1,103 @@
+{
+  "schema": "mech.canonical-hosted-native-linked.v1",
+  "status": "LOCALLY_LINKED_FULL_SOURCE_SMALL_FIXTURES_NOT_BENCHMARK_QUALIFIED",
+  "pull_request": "https://github.com/mech-lang/mech/pull/907",
+  "source_commit": "f176277d87feeae4a66167d7e11eb2b731acc2a0",
+  "source_tree": "a77d2feeb753a09b9b81a6db42e1ac0bb2286dc3",
+  "source_parent": "c0cc9a4f51ecc179663421f4c11b9056e34fc3c1",
+  "workspace_lock_sha256": "513c9718e6bf2ec13da10d56a2386a243d50a9285942ff874e0470c2fd556068",
+  "clean_checkout_before_and_after": true,
+  "attribution": "Actual execution used this committed clean source unchanged throughout. Later receipt-only commits are not relabeled as the tested source. Historical scalar/managed receipts retain their original source and policy identities.",
+  "route": "canonical-artifact-program-object-secured-cli",
+  "linked": true,
+  "executed": true,
+  "benchmark_measurements": 0,
+  "timing_samples": 0,
+  "target": {"architecture": "aarch64", "os": "macos", "pointer_width": 64, "endianness": "little"},
+  "identity": {"managed_abi": 8, "typed_ir": 5, "work_policy": 11, "identity_bytes": 192, "legacy_scalar_identities_changed": false},
+  "source": {
+    "path": "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+    "sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+    "scope": "Complete ordinary source, including original resource requirements, read, algorithm and send; ordinary compilation to original and bytecode-decoded ProgramArtifact variants. No source/resource stripping, fake output or workload-sized Rust helper.",
+    "program_revision": "b8fc2215f30b15a08031b2b46f87ef8fc01eb52d0a0ee1a6d53341757e78deba",
+    "typed_ir_sha256": "0910e99f8eee71cb16819575661908f83692ecd286abc67f637a44d165f8e717",
+    "requirements": 2,
+    "observations": 1,
+    "effects": 1
+  },
+  "qualification": {
+    "started_utc": "2026-10-19T05:40:00Z",
+    "finished_utc": "2026-10-19T05:42:18Z",
+    "exit": 0,
+    "toolchain": "nightly-2026-03-03",
+    "profile": "Locked/offline serial correctness builds; debug/test opt0, debug0, assertions and overflow checks enabled, incremental disabled. Not release performance builds.",
+    "test": "canonical_hosted_artifact::linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned",
+    "selection": "Fresh Cargo compiler-artifact executable record, then exact ignored method execution: 1 passed, 0 failed, 0 ignored, 0 measured, 14 filtered out. This run does not add execution credit for the 14 normal methods.",
+    "artifact_variants": 2,
+    "linked_executable_copies": 2,
+    "distinct_executable_sha256_values": 1,
+    "runtime_process_cases": 20,
+    "success_cases": 6,
+    "required_error_cases": 14,
+    "negative_generated_input_builds": 9,
+    "restored_build": "passed; original binary hash unchanged",
+    "supervision": "Serial owned-process-group supervision; outer qualification deadline6000s, inner initial builds900s and launches/pin cases120s, bounded cleanup. Stage elapsed durations are supervision evidence, not benchmark samples."
+  },
+  "fixture_policy": {
+    "work": 1000000000,
+    "memory_bytes": 268435456,
+    "transport_bytes": 16777216,
+    "native_stack_bytes": 1048576,
+    "max_ports": 16,
+    "input_text_bytes": 1048576,
+    "output_text_bytes": 1048576,
+    "library": {"compute_work": 134217728, "comparison_work": 1000000, "temporary_bytes": 134217728, "output_bytes": 134217728, "cloned_bytes": 134217728, "output_elements": 1000000, "retained_nodes": 1000000},
+    "scope": "Explicit finite fixture policy, unchanged by this qualification; not a claim that these are product defaults or a full-input policy. Input acquisition has its own cap; native memory accounting does not claim provider-cache bytes."
+  },
+  "coverage": [
+    "Each artifact variant runs the same 33-byte FASTA fixture with a four-base THREE record GGTA, exact-input acquisition cap, and a 15-byte fixture with an empty THREE record. Complete literal independent output oracles match; source completeness is not standard-input coverage.",
+    "Missing read/write grants reject even with MECH_NATIVE_SECURITY=trusted. Work=1, input-cap3, overflowing input cap and invalid UTF-8 reject with empty stdout and no requested success report.",
+    "A closed real stdout pipe reports CommittedWithFailures, preserving post-commit delivery-failure classification rather than claiming rollback.",
+    "Each accepted report records admit-activate-capture-resume, native_aot=true, secured policy, no source parser/JIT/resident body, original revision and completed shutdown. Observations/effects use the shared CLI capability/provider/transaction services.",
+    "Nine generated-input mutations reject: identity stack claim, Object, bytecode, source provenance, manifest pins, main, build script, toolchain and Cargo manifest. All inputs restore and the restored build preserves the binary."
+  ],
+  "artifacts": {
+    "both_variants_have_identical_pins": true,
+    "bytecode_sha256": "8afdf9b1aa249f526269f1fa3fa8934417b87c20f1ab94e4a18d24ee8dcf726a",
+    "object_sha256": "07b4253add952eb765f8a1f3392e3361b91a4c8c51df1153313c37151de92e39",
+    "identity_sha256": "cccb13ebe2a0f7a2bdef78a806095f29147d47449a6a87d3bdf698a3ffa276e0",
+    "binary_sha256": "2807e8d6f22cbb5cd13f342de0ed05455b9d67aad3f0885b8bbf394dbbecccbf",
+    "emission_metadata": "Generated manifests remain linked=false/executed=false/timing_samples=0; this separate actual-process receipt establishes linking and execution."
+  },
+  "runtime_closure": {
+    "raw_compiler_artifact_messages_per_variant": 134,
+    "distinct_package_target_feature_records_per_variant": 133,
+    "deduplication": "Shared closure helper retains the first package/full-target/feature record; one serde_json host/target occurrence differs only in output filenames. Complete raw compiler messages are retained and every message is checked.",
+    "mech_gpu_features": ["canonical-native-program-host-runtime", "canonical-native-program-runtime", "canonical-native-runtime", "runtime-host"],
+    "source_parser_or_cranelift_units": 0,
+    "compiler_or_source_native_features": 0,
+    "authority": "Runtime-only installation of the same maintained native-plan/resident contract witnesses and shared capability services; no resident body evaluation or second source compiler. Actual compiled units, not just the manifest dependency list, establish the closure.",
+    "warnings": "Existing selected-machine unused-code warnings remain; warning-free standalone compilation is not claimed."
+  },
+  "accounted_work_not_timings": {
+    "ordinary_and_exact_cap_per_variant": 743675194,
+    "empty_per_variant": 452440855,
+    "scope": "Cumulative native work units under the unchanged1e9 fixture cap; these are not nanoseconds, elapsed durations, speedups or language rankings."
+  },
+  "local_evidence": {
+    "root": "tmp/pr-stack-evidence/",
+    "receipt": {"path": "canonical-hosted-linked-v468/hosted-linked-result.json", "sha256": "6ac635a11868817fe7e73d05222b09604cd672fe2ff8e4d12d786d2e228bee2a"},
+    "log": {"path": "checked-aot-v468-clean-hosted-linked.log", "sha256": "39706e2d27a5824bd7f74469a34b939b22ecddbe2e39ccf31b5686142217692b"},
+    "driver": {"path": "qualify-clean-hosted-linked-v468.zsh", "sha256": "7f49d5f2711e3ad14f8215cce89cfd9a53192984beb073f933fded9c949bb1d4"},
+    "compile_summary": {"path": "canonical-hosted-driver-v468/hosted-compile-record.summary.json", "sha256": "6320bc203339c51bf9121aa9666174f0795fe3cf201725092d8cb8e9fb31796c"},
+    "execution_summary": {"path": "canonical-hosted-driver-v468/hosted-linked-qualification.summary.json", "sha256": "54ee94a3484ebb119b83637c6fc8a80f3b7eca50fbc6fdc4dccd732a2c8b6682"},
+    "read_only_reconciler": {"path": "audit-canonical-hosted-linked-v468.js", "sha256": "04e553d23d0b2b16197078fbba55c2612381b9d1c5a1e5690a8978dddf7d96d0", "status": "passed", "generated_input_pins": 16, "runtime_streams": 38, "pin_build_streams": 20, "accepted_reports": 6},
+    "availability": "Full projects, raw compiler units, process streams, mutations and binaries remain local evidence, not committed products. Reproduce using the maintained qualifier and README instructions from source_commit; required canonical-hosted CI generates and uploads its own fresh evidence."
+  },
+  "not_established": [
+    "Standard FASTA N=25000000 / THREE125000000 bases, all seven nontrivial full-size histograms, other nine programs or whole-program optimization.",
+    "Production native-build CLI migration, persistent resource/state lifecycle, non-tail recursion or element-wise counts beyond currently selected support.",
+    "Trusted/secured same-binary performance comparison: this generated application is secured-only and ignores the legacy trusted environment for authority. No release timings or new performance/ranking claim.",
+    "Fresh exact-head clean review or complete green GitHub CI; local qualification does not authorize readiness or merge."
+  ]
+}

@@ -55,6 +55,13 @@ pub use self::builder::RuntimeBuilder;
 #[doc(hidden)]
 pub use self::cost_probe::{RuntimeCostSnapshot, reset_runtime_costs, runtime_cost_snapshot};
 pub use self::errors::*;
+#[cfg(all(feature = "string", feature = "resident-routing"))]
+pub use self::native_resources::{
+    CanonicalNativeResourceAction, CanonicalNativeResourceAdmission,
+    CanonicalNativeResourceCompletion, CanonicalNativeResourceInvocation,
+    CanonicalNativeResourceLimits, CanonicalNativeResourcePlan, CanonicalNativeResourceRunError,
+    CanonicalNativeResourceSite, CanonicalNativeResourceTurn,
+};
 #[cfg(feature = "string")]
 pub use self::native_resources::{NativeResourceBindingError, NativeResourceBindings};
 #[cfg(feature = "resident-external")]

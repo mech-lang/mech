@@ -10,12 +10,12 @@ histogram(s<string>, width<u64>) => (counts<{string:u64}>) :=
   n := sequence/length(s)
   words := [
     s[(i + 1u64)..=(i + width)]
-    | i <- 0u64..n, width > 0u64, width <= n - i
+    | i <- 0u64..=n, width > 0u64, width <= n - i
   ]
   counts := map/histogram(words).
 
 frequencies(h<{string:u64}>) => (output<string>) :=
-  keys := map/keys(h)
+  keys := h_keys
   counts := map/values(h)
   order := sequence/sort-indices(counts, "desc", keys, "asc")
   values<[f64]> := counts
@@ -27,7 +27,7 @@ frequencies(h<{string:u64}>) => (output<string>) :=
   output := text/join(lines, "\n") + "\n\n".
 
 lookup(counts<{string:u64}>, query<string>) => (output<string>) :=
-  keys := {key | key <- map/keys(counts)}
+  keys<{string}> := counts_keys
   count := (query ∈ keys)?
     | true => counts{query}
     | false => 0u64.

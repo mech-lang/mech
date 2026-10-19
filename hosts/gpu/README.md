@@ -132,12 +132,26 @@ in the benchmark repository.
 
 That source-native route is legacy: it still uses independent source lowering
 and is not the completed canonical AOT route. The checked canonical artifact
-APIs provide scalar/control and managed collection foundations, including
-generated mixed execution, but production CLI integration and full-workload
-benchmark qualification remain unfinished. This divergence is an unresolved
-migration, not a supported second semantic authority. See the single
+APIs now provide generated managed control, selected collection operations and
+a capability-secured resource-hosted application boundary. The generated
+standalone shell uses that boundary; the normal production native-build route
+has not been migrated to it. Production CLI migration, full-input execution
+and benchmark qualification remain unfinished. The legacy divergence is an
+unresolved migration, not a supported second semantic authority. See the recorded
 [`follow_up_roadmap`](../../docs/validation/checked-aot-workload-progress-v1.json)
-for the required canonical production/resource integration and qualification.
+for migration context; current implemented and pending scope is detailed below.
+
+Resource-hosted checked-native execution has one phased entry route. After
+the runtime admits every original requirement and provider contract,
+`prepare_hosted` executes the generated closed activation prefix and returns an
+owning session before any provider read. The runtime then captures observations;
+`resume_hosted_into` consumes that same session and transaction to run the fresh
+turn with the original arena, finite limits and cumulative work account. Both
+phases enter the same checked JIT or pinned Object CFG. The checkpoint is not
+another evaluator, resident instance or permission source: the runtime alone
+owns capture, effect staging and commit, and raw pure evaluation refuses
+resource-bearing artifacts. Unsupported programs remain rejected. This entry
+contract is not a claim that whole-benchmark qualification is complete.
 
 The [canonical k-nucleotide source](tests/fixtures/native/knucleotide-idiomatic.mec)
 expresses record selection, overlapping String windows, frequency widths and
@@ -150,12 +164,70 @@ pattern-function lifting to generated loops, including filters and nested
 generators. It uses the same artifact, current-visit proof, scalar emitter and
 invocation budgets; collection helpers project elements and stage results,
 never interpret body operations. Maintained numeric ranges, String grapheme
-indexing/slicing, shallow matrix
-conversion and closed pure initialization are also locally qualified through
-actual standalone executables. These are fresh stateless invocations, not
-persistent reactive applications. This does not yet lower the complete benchmark:
-general matrix/map access and operations,
-Set/composite outputs, element-wise counts, resource/state integration and
-whole-program optimization/qualification remain required. Older `sequence/packed-windows`
+indexing/slicing, shallow matrix conversion and closed pure initialization
+have historical standalone receipts for their recorded source identities;
+those receipts do not qualify the current complete hosted application. The
+current managed lowerer additionally supports selected shallow matrix/map
+access, canonical matrix-to-Set conversion and membership, shallow
+composite/enum values, String equality/concatenation, maintained sorting and sums,
+and tail-recursive
+FSM control. The complete k-nucleotide source uses these language-level
+operations, not a workload-sized Rust helper.
+
+Each native invocation still measures its current payloads and funds the same
+maintained kernels, fresh memory plans and atomic publication. Its bounded
+per-site binding cache holds only one exact geometry at a time, never arguments,
+results or provider permissions. A shape miss admits replacement work and finite
+policy before retiring the old prepaid binding, then acquires its replacement
+reservation before allocation; old/new binding allocations do not coexist.
+Every hit and miss uses the same cumulative ledger and finite policy. The
+managed Object pins include the ABI, typed-IR and work-policy identities;
+old work-policy receipts
+must not be presented as qualification of changed accounting. Scalar/control
+legacy identities remain separate and unchanged.
+
+Implemented lowering and secured JIT correctness are not standalone execution
+or full-input performance qualification by themselves. Clean source
+`f176277d87feeae4a66167d7e11eb2b731acc2a0` passed actual secured Object-linked
+execution of the complete original/decoded k-nucleotide source on small fixtures;
+see [the exact-source receipt](../../docs/validation/canonical-hosted-native-linked-v1.json).
+This does not qualify standard-size input, timings or the production native-build
+CLI. The secured gate is
+`canonical_hosted_artifact`'s ignored test
+`linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned`.
+It builds and runs both complete original/decoded canonical artifacts with
+ordinary CLI providers and grants, checks exact small-fixture and empty output,
+denials, post-commit delivery failure, generated-input mutation rejection and
+the actual runtime-only dependency closure. It records no timing samples.
+Object emission alone does not pass this gate.
+
+The qualifier requires an exact committed clean checkout, the pinned toolchain
+and offline dependencies, no ambient Cargo configuration, and an absolute
+evidence directory that does not already exist. Keep generated projects, build
+outputs and evidence outside the checkout; a fresh child of a temporary
+directory works. Run it serially after correctness gates, or use the required
+`canonical-hosted` job in the existing native-plan workflow:
+
+```sh
+MECH_CANONICAL_HOSTED_SOURCE_COMMIT="$(git rev-parse HEAD)" \
+MECH_CANONICAL_HOSTED_EVIDENCE_DIR="$(mktemp -d)/hosted" \
+CARGO_TARGET_DIR="$(mktemp -d)/target" \
+CARGO_BUILD_JOBS=1 \
+cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib -p mech-gpu \
+  --no-default-features \
+  --features mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-program-host \
+  --test canonical_hosted_artifact \
+  linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned \
+  -- --ignored --exact --test-threads=1 --nocapture
+```
+
+These remain fresh stateless invocations, not persistent reactive applications.
+Persistent state, broader matrix/map/recursive operations, element-wise counts,
+all-ten-program coverage, standard-size input and whole-program optimization
+remain separate work. Release comparisons must follow exact-source
+correctness/admission qualification and identify the source, input, execution
+route and finite policy. This generated shell is secured-only; the legacy
+trusted-mode environment setting does not change its grants. No timings of
+this language-level target are qualified yet. Older `sequence/packed-windows`
 timings are separately scoped migration diagnostics, not completion of this
-language-level target.
+target.

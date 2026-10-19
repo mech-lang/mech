@@ -20,7 +20,9 @@ mod invocation;
 pub use invocation::NativeCollectionInvocationError;
 #[path = "native_collection_prepared.rs"]
 mod prepared;
-pub use prepared::{NativePreparedLibraryCall, prepare_native_program_library_call};
+pub use prepared::{
+    NativePreparedLibraryCall, NativePreparedLibraryCallCache, prepare_native_program_library_call,
+};
 
 /// A constructor-private binding of one actual artifact call at its current
 /// shapes. The selected factory, canonical contracts, actual handle
@@ -332,7 +334,7 @@ fn bind_current(
     })?;
     let kernel = crate::resident::native_semantics::bind_call(kernel, &request, call);
     let invocation_metadata_bytes =
-        invocation::metadata_envelope(schemas, &memory).ok_or_else(|| invalid(node))?;
+        invocation::metadata_envelope(&memory).ok_or_else(|| invalid(node))?;
     let schemas = kernel
         .shared_snapshot_schemas()
         .cloned()

@@ -47,6 +47,13 @@ impl<'a> CodePlan<'a> {
             Self::Program(p) => p.entry(),
         }
     }
+    pub fn activation_boundary(self) -> Option<u32> {
+        match self {
+            Self::Scalar(_) => None,
+            #[cfg(feature = "canonical-native-program")]
+            Self::Program(plan) => plan.activation_boundary(),
+        }
+    }
     pub fn value_count(self) -> usize {
         match self {
             Self::Scalar(p) => p.values().len(),
@@ -58,14 +65,14 @@ impl<'a> CodePlan<'a> {
         match self {
             Self::Scalar(p) => p.inputs().len(),
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(p) => p.inputs().len(),
+            Self::Program(p) => p.transport_input_count(),
         }
     }
     pub fn output_count(self) -> usize {
         match self {
             Self::Scalar(p) => p.outputs().len(),
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(p) => p.outputs().len(),
+            Self::Program(p) => p.transport_output_count(),
         }
     }
     pub fn constant_count(self) -> usize {
@@ -89,14 +96,14 @@ impl<'a> CodePlan<'a> {
         match self {
             Self::Scalar(p) => p.inputs()[index].value(),
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(p) => p.inputs()[index].value(),
+            Self::Program(p) => p.transport_input_value(index),
         }
     }
     #[cfg(feature = "canonical-native-program")]
     pub fn output(self, index: usize) -> NativeMatchValue {
         match self {
             Self::Scalar(p) => p.outputs()[index].value(),
-            Self::Program(p) => p.outputs()[index].value(),
+            Self::Program(p) => p.transport_output_value(index),
         }
     }
     pub fn constant(

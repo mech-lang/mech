@@ -171,6 +171,7 @@ fn successors(term: NativeIterationTerminator) -> [Option<u32>; 2] {
             | NativeMatchTerminator::LiteralBranch { yes, no, .. },
         ) => [Some(yes), Some(no)],
         NativeIterationTerminator::Header { body, exit, .. } => [Some(body), Some(exit)],
+        NativeIterationTerminator::TailHeader { body, .. } => [Some(body), None],
         _ => [None, None],
     }
 }
@@ -183,7 +184,10 @@ pub(super) fn validate(plan: &NativeIterationArtifactPlan) -> Result<(), NativeC
         .map_err(|reason| NativeCompileError::InvalidPlan { node: None, reason })?;
     let ty = |value: NativeMatchValue| plan.values().get(value.get() as usize).ok_or_else(bad);
     for block in plan.blocks() {
-        if matches!(block.action(), NativeIterationAction::LibraryCall { .. }) {
+        if matches!(
+            block.action(),
+            NativeIterationAction::LibraryCall { .. } | NativeIterationAction::Structural { .. }
+        ) {
             return Err(NativeCompileError::InvalidPlan {
                 node: Some(block.origin().node()),
                 reason: "managed call requires native managed transport",
@@ -342,7 +346,42 @@ pub(super) fn define_cfg<M: Module>(
             user_context,
             error,
         )?;
+        #[cfg(feature = "canonical-native-program")]
+        let program_phase = if plan.is_program() {
+            let phase = frame_load(
+                &mut b,
+                frame,
+                core::mem::offset_of!(super::program_abi::Frame, phase),
+            );
+            let valid = b.ins().icmp_imm(
+                IntCC::UnsignedLessThanOrEqual,
+                phase,
+                super::program_abi::PHASE_TURN as i64,
+            );
+            guard(&mut b, valid, error, STATUS_ABI);
+            Some(phase)
+        } else {
+            None
+        };
+        #[cfg(not(feature = "canonical-native-program"))]
+        let program_phase: Option<cranelift_codegen::ir::Value> = None;
+        let resume_block = if let Some(phase) = program_phase {
+            let initialize = b.create_block();
+            let resume = b.create_block();
+            let is_resume = b.ins().icmp_imm(IntCC::Equal, phase, 1);
+            b.ins().brif(is_resume, resume, &[], initialize, &[]);
+            b.switch_to_block(initialize);
+            Some(resume)
+        } else {
+            None
+        };
         for index in 0..plan.input_count() {
+            // Managed sessions import all fresh inputs directly into their
+            // certified scalar lanes AFTER activation/capture. ABI3 retains
+            // its original initialization below.
+            if plan.is_program() {
+                continue;
+            }
             let value = plan.input(index);
             if plan.kind(value).is_none() {
                 continue;
@@ -386,6 +425,16 @@ pub(super) fn define_cfg<M: Module>(
             .collect::<Vec<_>>();
         b.ins()
             .jump(blocks[plan.entry() as usize].expect("reachable entry"), &[]);
+        if let Some(resume) = resume_block {
+            b.switch_to_block(resume);
+            let boundary = plan
+                .activation_boundary()
+                .ok_or_else(|| backend("managed plan has no activation checkpoint"))?;
+            b.ins().jump(
+                blocks[boundary as usize].expect("reachable checkpoint"),
+                &[],
+            );
+        }
         for (index, block) in plan.blocks().iter().enumerate() {
             if !reachable[index] {
                 continue;
@@ -393,6 +442,18 @@ pub(super) fn define_cfg<M: Module>(
             b.switch_to_block(blocks[index].expect("reachable block"));
             let before = b.func.dfg.num_insts();
             set_origin(&mut b, frame, index as u64);
+            if plan.activation_boundary() == Some(index as u32) {
+                let phase =
+                    program_phase.ok_or_else(|| backend("checkpoint without managed phase"))?;
+                let checkpoint = b.create_block();
+                let turn = b.create_block();
+                let fresh = b.ins().icmp_imm(IntCC::Equal, phase, 0);
+                b.ins().brif(fresh, checkpoint, &[], turn, &[]);
+                b.switch_to_block(checkpoint);
+                let status = b.ins().iconst(types::I64, 5);
+                b.ins().return_(&[status]);
+                b.switch_to_block(turn);
+            }
             admit(
                 &mut b,
                 callback_signature,
@@ -402,22 +463,34 @@ pub(super) fn define_cfg<M: Module>(
                 error,
             );
             match block.action() {
+                NativeIterationAction::Structural { output, .. } => {
+                    let hooks = hooks
+                        .as_ref()
+                        .ok_or_else(|| backend("structural observation without managed hooks"))?;
+                    let zero = b.ins().iconst(types::I64, 0);
+                    hooks.call(&mut b, index, 0xffff_ffff_ffff_fff0, [zero; 3], error);
+                    let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+                    b.ins().store(
+                        MemFlags::new(),
+                        word,
+                        locals,
+                        offset(output.get() as usize)?,
+                    );
+                }
                 NativeIterationAction::LibraryCall {
                     operands, output, ..
                 } => {
                     let hooks = hooks
                         .as_ref()
                         .ok_or_else(|| backend("missing mixed call hooks"))?;
-                    let mut args = [b.ins().iconst(types::I64, 0); 3];
-                    if operands.len() > args.len() {
-                        return Err(backend("unsupported library arity"));
-                    }
-                    for (index, &operand) in operands.iter().enumerate() {
-                        if plan.kind(operand).is_some() {
-                            args[index] = load(&mut b, locals, operand)?;
-                        }
-                    }
-                    hooks.call(&mut b, index, 0, args, error);
+                    hooks.library(
+                        &mut b,
+                        index,
+                        operands,
+                        locals,
+                        |operand| plan.kind(operand).is_some(),
+                        error,
+                    )?;
                     if plan.kind(*output).is_some() {
                         let value = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
                         b.ins().store(
@@ -471,47 +544,66 @@ pub(super) fn define_cfg<M: Module>(
                             hooks.collection(&mut b, index, [zero; 2], error)?;
                             b.ins().load(types::I64, MemFlags::new(), hooks.result, 0)
                         }
+                        mech_engine::native_artifact::NativeControlLoopRef::Tail(_) => {
+                            let hooks = hooks
+                                .as_ref()
+                                .ok_or_else(|| backend("missing tail initializer hook"))?;
+                            let zero = b.ins().iconst(types::I64, 0);
+                            hooks.call(&mut b, index, 1, [zero; 3], error);
+                            zero
+                        }
                     };
                     let slot = plan.value_count() + *iteration as usize;
                     b.ins().store(MemFlags::new(), count, locals, offset(slot)?);
                 }
                 NativeIterationAction::Latch { iteration } => {
-                    let id = *iteration as usize;
-                    let counter = b.ins().load(
-                        types::I64,
-                        MemFlags::new(),
-                        locals,
-                        offset(plan.value_count() + id)?,
-                    );
-                    let nonzero = b.ins().icmp_imm(IntCC::NotEqual, counter, 0);
-                    guard(&mut b, nonzero, error, STATUS_ABI);
-                    if let mech_engine::native_artifact::NativeControlLoopRef::Iteration(
-                        iteration,
-                    ) = plan.iteration(id)
-                    {
-                        if plan.kind(iteration.carrier()).is_some() {
-                            let next = load(&mut b, locals, iteration.next())?;
-                            b.ins().store(
-                                MemFlags::new(),
-                                next,
-                                locals,
-                                offset(iteration.carrier().get() as usize)?,
-                            );
-                        } else {
-                            let hooks = hooks
-                                .as_ref()
-                                .ok_or_else(|| backend("missing managed latch hook"))?;
-                            let zero = b.ins().iconst(types::I64, 0);
-                            hooks.call(&mut b, index, 1, [zero; 3], error);
+                    if matches!(
+                        plan.iteration(*iteration as usize),
+                        mech_engine::native_artifact::NativeControlLoopRef::Tail(_)
+                    ) {
+                        let hooks = hooks
+                            .as_ref()
+                            .ok_or_else(|| backend("missing tail latch hook"))?;
+                        let zero = b.ins().iconst(types::I64, 0);
+                        hooks.call(&mut b, index, 1, [zero; 3], error);
+                    } else {
+                        let id = *iteration as usize;
+                        let counter = b.ins().load(
+                            types::I64,
+                            MemFlags::new(),
+                            locals,
+                            offset(plan.value_count() + id)?,
+                        );
+                        let nonzero = b.ins().icmp_imm(IntCC::NotEqual, counter, 0);
+                        guard(&mut b, nonzero, error, STATUS_ABI);
+                        if let mech_engine::native_artifact::NativeControlLoopRef::Iteration(
+                            iteration,
+                        ) = plan.iteration(id)
+                        {
+                            if plan.kind(iteration.carrier()).is_some() {
+                                let next = load(&mut b, locals, iteration.next())?;
+                                b.ins().store(
+                                    MemFlags::new(),
+                                    next,
+                                    locals,
+                                    offset(iteration.carrier().get() as usize)?,
+                                );
+                            } else {
+                                let hooks = hooks
+                                    .as_ref()
+                                    .ok_or_else(|| backend("missing managed latch hook"))?;
+                                let zero = b.ins().iconst(types::I64, 0);
+                                hooks.call(&mut b, index, 1, [zero; 3], error);
+                            }
                         }
+                        let remaining = b.ins().iadd_imm(counter, -1);
+                        b.ins().store(
+                            MemFlags::new(),
+                            remaining,
+                            locals,
+                            offset(plan.value_count() + id)?,
+                        );
                     }
-                    let remaining = b.ins().iadd_imm(counter, -1);
-                    b.ins().store(
-                        MemFlags::new(),
-                        remaining,
-                        locals,
-                        offset(plan.value_count() + id)?,
-                    );
                 }
                 NativeIterationAction::CollectionElement { iteration } => {
                     let mech_engine::native_artifact::NativeControlLoopRef::Collection(data) =
@@ -554,6 +646,10 @@ pub(super) fn define_cfg<M: Module>(
                 }
             }
             match block.terminator() {
+                NativeIterationTerminator::TailHeader { body, .. } => {
+                    b.ins()
+                        .jump(blocks[body as usize].expect("reachable tail body"), &[]);
+                }
                 NativeIterationTerminator::Scalar(terminator) => match plan {
                     super::iteration_code_plan::CodePlan::Scalar(p) => emit_scalar_terminator(
                         &mut b,
@@ -638,6 +734,11 @@ pub(super) fn define_cfg<M: Module>(
                     }
                 }
             };
+            let bound = bound
+                .checked_add(
+                    super::iteration_abi::helper_operand_work(block.action()).map_err(backend)?,
+                )
+                .ok_or_else(|| backend("iteration operand work overflow"))?;
             if emitted.checked_add(128).is_none_or(|total| total > bound) {
                 return Err(NativeCompileError::InvalidPlan {
                     node: Some(block.origin().node()),

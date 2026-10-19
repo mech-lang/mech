@@ -41,13 +41,11 @@ impl std::fmt::Display for NativeCollectionInvocationError {
 impl std::error::Error for NativeCollectionInvocationError {}
 
 /// Only the constructor-private shallow maintained families reach this
-/// envelope. It conservatively covers planner coexistence, descriptor/schema
-/// copies, borrowed argument tapes and BTree facts; it is not a payload bound.
+/// envelope. It conservatively covers planner coexistence, deep copies of
+/// the actual port descriptors, shared schema-arena wrappers, borrowed
+/// argument tapes and BTree facts; it is not a canonical payload bound.
 /// Runtime admission reserves it before any of those objects are constructed.
-pub(super) fn metadata_envelope(
-    schemas: &mech_core::SchemaTable,
-    call: &mech_core::CallMemoryPlan,
-) -> Option<u64> {
+pub(super) fn metadata_envelope(call: &mech_core::CallMemoryPlan) -> Option<u64> {
     let ports = u64::try_from(call.inputs.len().checked_add(call.outputs.len())?).ok()?;
     let entries = u64::try_from(
         call.allocations
@@ -56,17 +54,31 @@ pub(super) fn metadata_envelope(
             .checked_add(call.transactions.len())?,
     )
     .ok()?;
-    metadata_envelope_for(schemas, ports, entries)
+    metadata_envelope_for(
+        call.inputs
+            .iter()
+            .chain(&call.outputs)
+            .map(|port| port.descriptor.schema()),
+        ports,
+        entries,
+    )
 }
 
-pub(super) fn metadata_envelope_for(
-    schemas: &mech_core::SchemaTable,
+pub(super) fn metadata_envelope_for<'a>(
+    schemas: impl IntoIterator<Item = &'a mech_core::Schema>,
     ports: u64,
     entries: u64,
 ) -> Option<u64> {
+    // SchemaTable::clone now shares its immutable entry allocation. However
+    // Schema/ResolvedValueDescriptor/BoundCall/plan/template clones still own
+    // their port-schema trees. Preserve their full heap/growth/coexistence
+    // envelope; do not replace every schema-related allocation with Arc size.
+    let descriptors = schemas.into_iter().try_fold(
+        mech_core::SchemaTable::clone_metadata_allocation_bound_bytes(),
+        |total, schema| total.checked_add(schema.clone_allocation_bound_bytes()?),
+    )?;
     let schema_copies = ports.checked_mul(4)?.checked_add(4)?;
-    schemas
-        .clone_allocation_bound_bytes()?
+    descriptors
         .checked_mul(schema_copies)?
         .checked_add(
             ports
@@ -75,6 +87,60 @@ pub(super) fn metadata_envelope_for(
                 .checked_mul(2048)?,
         )?
         .checked_mul(16)
+}
+
+#[cfg(test)]
+mod metadata_tests {
+    use super::metadata_envelope_for;
+    use mech_core::{SchemaBody, SchemaDraft, SchemaTableBuilder};
+
+    fn schema(body: SchemaBody) -> mech_core::Schema {
+        SchemaDraft {
+            body,
+            dimension_parameters: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    #[test]
+    fn binding_envelope_tracks_real_descriptor_clones_not_unrelated_arena_entries() {
+        let port = schema(SchemaBody::String);
+        let mut builder = SchemaTableBuilder::new();
+        builder.insert(port.clone()).unwrap();
+        let small = builder.clone().finish().unwrap().table;
+        builder
+            .insert(schema(SchemaBody::Tuple(
+                vec![SchemaBody::Bool; 2_048].into_boxed_slice(),
+            )))
+            .unwrap();
+        let large = builder.finish().unwrap().table;
+        assert!(
+            large.clone_allocation_bound_bytes().unwrap()
+                > small.clone_allocation_bound_bytes().unwrap()
+        );
+        let small_port = small
+            .entries()
+            .find(|entry| entry.schema() == &port)
+            .unwrap()
+            .schema();
+        let large_port = large
+            .entries()
+            .find(|entry| entry.schema() == &port)
+            .unwrap()
+            .schema();
+        assert_eq!(
+            metadata_envelope_for([small_port], 1, 19),
+            metadata_envelope_for([large_port], 1, 19)
+        );
+        let wide = schema(SchemaBody::Tuple(
+            vec![SchemaBody::Bool; 2_048].into_boxed_slice(),
+        ));
+        let base = metadata_envelope_for([&port], 1, 19).unwrap();
+        let grown = metadata_envelope_for([&wide], 1, 19).unwrap();
+        assert!(grown - base >= wide.clone_allocation_bound_bytes().unwrap());
+        assert!(metadata_envelope_for([&port], u64::MAX, 19).is_none());
+    }
 }
 
 struct Inputs<'a>(&'a [Option<Value>]);

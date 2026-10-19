@@ -514,6 +514,12 @@ pub struct FunctionSpecializerEntry {
 }
 
 impl FunctionSpecializerEntry {
+    /// All registered semantic contract variants, for descriptive tooling.
+    /// Returning metadata does not select a contract or authorize execution.
+    pub fn operation_contracts(&self) -> &[OperationContractDeclaration] {
+        &self.operation_contracts
+    }
+
     fn operation_contract_for_output_shape(
         &self,
         input_count: usize,

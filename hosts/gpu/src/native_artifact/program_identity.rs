@@ -1,4 +1,4 @@
-//! Explicit program IR/ABI6 identity. No Debug or pointer serialization.
+//! Explicit program IR/ABI8 identity. No Debug or pointer serialization.
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
     NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind,
@@ -11,8 +11,15 @@ fn bytes(hash: &mut Sha256, value: &[u8]) {
     word(hash, value.len() as u64);
     hash.update(value);
 }
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 2;
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 4;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 5;
+// Shared immutable schema arenas and the admitted two-phase entry protocol
+// change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
+// neither phase may renew the invocation's cumulative ledger. Policy11 reuses
+// exact live-geometry bindings within one invocation, retiring an old binding
+// before a shape miss rebuilds it. Every visit measures and executes fresh Values.
+// Policy12 funds recursive declared-schema conversion plans before binding and
+// their current-data staging before execution, including retained metadata nodes.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 12;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -33,10 +40,10 @@ impl NativeProgramObjectIdentity {
             (32, NATIVE_PROGRAM_WORK_POLICY_VERSION),
             (112, d.stack_bytes()),
             (120, d.code_bytes()),
-            (128, p.inputs().len() as u64),
+            (128, p.transport_input_count() as u64),
             (136, p.values().len() as u64),
             (144, p.blocks().len() as u64),
-            (152, p.outputs().len() as u64),
+            (152, p.transport_output_count() as u64),
             (160, p.entry() as u64),
             (168, p.iterations().len() as u64),
             (176, p.constants().len() as u64),
@@ -87,6 +94,14 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
         word(&mut hash, ty.schema().get() as u64);
         hash.update(ty.schema_key().as_bytes());
     }
+    word(
+        &mut hash,
+        plan.activation_boundary().map_or(u64::MAX, u64::from),
+    );
+    word(&mut hash, plan.activation_nodes().len() as u64);
+    for node in plan.activation_nodes() {
+        word(&mut hash, u64::from(node.get()));
+    }
     word(&mut hash, plan.inputs().len() as u64);
     for input in plan.inputs() {
         word(&mut hash, input.input().get() as u64);
@@ -94,6 +109,68 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
         bytes(&mut hash, input.name().as_bytes());
         word(&mut hash, input.value().get() as u64);
     }
+    // Retain complete original resource authority obligations, including unused
+    // declarations. Observation/effect SSA transport is explicit compiler
+    // metadata, not a synthetic application input/output or a resource opcode.
+    word(&mut hash, plan.resource_requirements().len() as u64);
+    for request in plan.resource_requirements() {
+        for field in [
+            &request.base_uri,
+            &request.path,
+            &request.context_name,
+            &request.operation,
+        ] {
+            bytes(&mut hash, field.as_bytes());
+        }
+        hash.update([match request.intent {
+            mech_core::ResourceIntent::Read => 0,
+            mech_core::ResourceIntent::Send => 1,
+            mech_core::ResourceIntent::Assign => 2,
+        }]);
+        hash.update([match request.delivery {
+            mech_core::ResourceDelivery::Snapshot => 0,
+            mech_core::ResourceDelivery::Live => 1,
+        }]);
+    }
+    word(&mut hash, plan.observations().len() as u64);
+    for observation in plan.observations() {
+        for field in [
+            observation.node().get(),
+            observation.requirement().get(),
+            observation.slot().get(),
+            observation.ordinal(),
+            observation.value().get(),
+            observation.ty().schema().get(),
+        ] {
+            word(&mut hash, u64::from(field));
+        }
+        hash.update(observation.ty().schema_key().as_bytes());
+    }
+    word(&mut hash, plan.effects().len() as u64);
+    for effect in plan.effects() {
+        for field in [
+            effect.node().get(),
+            effect.requirement().get(),
+            effect.ordinal(),
+            effect.value().get(),
+            effect.ty().schema().get(),
+        ] {
+            word(&mut hash, u64::from(field));
+        }
+        hash.update(effect.ty().schema_key().as_bytes());
+        match effect.payload() {
+            mech_engine::ArtifactSource::Slot(slot) => {
+                hash.update([0]);
+                word(&mut hash, u64::from(slot.get()));
+            }
+            mech_engine::ArtifactSource::Constant(constant) => {
+                hash.update([1]);
+                word(&mut hash, u64::from(constant.get()));
+            }
+        }
+    }
+    word(&mut hash, plan.transport_input_count() as u64);
+    word(&mut hash, plan.transport_output_count() as u64);
     word(&mut hash, plan.constants().len() as u64);
     for constant in plan.constants() {
         word(&mut hash, constant.value().get() as u64);
@@ -123,6 +200,50 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
             None => hash.update([0]),
         }
         match block.action() {
+            NativeIterationAction::Structural {
+                source,
+                path,
+                observation,
+                output,
+            } => {
+                hash.update([8]);
+                word(&mut hash, source.get() as u64);
+                word(&mut hash, output.get() as u64);
+                word(&mut hash, path.len() as u64);
+                for step in path {
+                    match step {
+                        mech_engine::native_artifact::NativeStructuralStep::EnumPayload {
+                            ordinal,
+                        } => {
+                            hash.update([0]);
+                            word(&mut hash, *ordinal as u64);
+                        }
+                        mech_engine::native_artifact::NativeStructuralStep::TupleItem {
+                            ordinal,
+                        } => {
+                            hash.update([1]);
+                            word(&mut hash, *ordinal as u64);
+                        }
+                    }
+                }
+                match observation {
+                    mech_engine::native_artifact::NativeStructuralObservation::U64 => {
+                        hash.update([0])
+                    }
+                    mech_engine::native_artifact::NativeStructuralObservation::EnumOrdinal {
+                        ordinal,
+                    } => {
+                        hash.update([1]);
+                        word(&mut hash, *ordinal as u64);
+                    }
+                    mech_engine::native_artifact::NativeStructuralObservation::StringEqual {
+                        peer,
+                    } => {
+                        hash.update([2]);
+                        word(&mut hash, peer.get() as u64);
+                    }
+                }
+            }
             // Commit the maintained selection as well as operand slots.
             NativeIterationAction::LibraryCall {
                 template,
@@ -208,6 +329,11 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
             }
         }
         match block.terminator() {
+            NativeIterationTerminator::TailHeader { iteration, body } => {
+                hash.update([2]);
+                word(&mut hash, iteration as u64);
+                word(&mut hash, body as u64);
+            }
             NativeIterationTerminator::Scalar(terminator) => {
                 hash.update([0]);
                 match terminator {
@@ -303,6 +429,19 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
                     }
                     None => hash.update([0]),
                 }
+            }
+            mech_engine::native_artifact::NativeControlLoopRef::Tail(tail) => {
+                hash.update([2]);
+                for value in [
+                    tail.seed(),
+                    tail.carrier(),
+                    tail.next(),
+                    tail.returned(),
+                    tail.result(),
+                ] {
+                    word(&mut hash, value.get() as u64);
+                }
+                word(&mut hash, tail.finish() as u64);
             }
         }
         for id in [

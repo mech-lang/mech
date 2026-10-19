@@ -168,3 +168,108 @@ jobs:
             target/bytecode-v1-fixtures/owner-runner/logs
           if-no-files-found: error
           retention-days: 14
+
+  # This is part of the SAME reusable workflow required by early-native-plan
+  # and the full native-plan gate. Keeping a separate serial job avoids
+  # extending or sharing the existing planning owner's deadlines/cache.
+  canonical-hosted:
+    name: Canonical hosted native applications
+    runs-on: ubuntu-latest
+    # All serial step ceilings total 192 minutes; reserve thirteen more for
+    # orchestration so no valid inner deadline is cut short by this job.
+    timeout-minutes: 205
+    env:
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        timeout-minutes: 2
+        with:
+          ref: ${{ inputs.validation_ref }}
+      - name: Record exact canonical hosted checkout
+        timeout-minutes: 2
+        env:
+          VALIDATION_REF: ${{ inputs.validation_ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        run: |
+          mkdir -p target/native-plan-logs
+          actual=$(git rev-parse HEAD)
+          expected=$(git rev-parse "$VALIDATION_REF^{commit}")
+          {
+            echo "requested_ref=$VALIDATION_REF"
+            echo "expected_sha=$expected"
+            echo "checkout_sha=$actual"
+          } | tee target/native-plan-logs/00-hosted-checkout.log
+          test "$actual" = "$expected"
+          test "$actual" = "$CHECKOUT_SHA"
+      - name: Install pinned hosted compiler and process tools
+        timeout-minutes: 10
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources -o Dir::Etc::sourceparts=-
+          sudo apt-get install --yes strace ripgrep build-essential m4
+      - name: Verify hosted Unix process targeting before generation
+        timeout-minutes: 3
+        run: |
+          python3 -B scripts/tests/test_probe_unix_kill_targeting.py
+          python3 scripts/probe-unix-kill-targeting.py
+      - name: Fetch locked canonical hosted dependencies
+        timeout-minutes: 10
+        run: cargo +nightly-2026-03-03 fetch --locked
+      - name: Compile canonical hosted contracts without execution
+        timeout-minutes: 20
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-hosted-compile --timeout-secs 1080 \
+            --record-test-executable canonical_hosted_artifact \
+            --test-executable-file target/native-plan-logs/canonical-hosted-executable -- \
+            cargo +nightly-2026-03-03 test --locked --offline \
+            -p mech-core -p mech-engine -p mech-runtime -p mech-stdlib -p mech-syntax -p mech-gpu \
+            --no-default-features \
+            --features mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-program-host \
+            --test canonical_hosted_artifact --no-run --message-format=json-render-diagnostics
+      - name: Execute complete canonical hosted contracts
+        timeout-minutes: 10
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-hosted-contracts --timeout-secs 480 \
+            --test-executable-file target/native-plan-logs/canonical-hosted-executable -- \
+            --test-threads=1 --nocapture
+      - name: Verify linked canonical hosted selection is nonempty
+        timeout-minutes: 3
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-hosted-selection --timeout-secs 60 \
+            --test-executable-file target/native-plan-logs/canonical-hosted-executable -- \
+            --list --ignored --exact \
+            linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned
+          python3 -c 'from pathlib import Path; lines = Path("target/native-plan-logs/canonical-hosted-selection.log").read_text().splitlines(); expected = "linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned: test"; assert lines.count(expected) == 1, lines'
+      - name: Qualify original and decoded secured hosted standalone applications
+        timeout-minutes: 127
+        env:
+          MECH_CANONICAL_HOSTED_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_HOSTED_EVIDENCE_DIR: ${{ runner.temp }}/canonical-hosted-evidence
+        run: |
+          # Existing inner bounds: 2x900s initial builds, 2x120s metadata,
+          # 2x300s actual generated-template test suites,
+          # 26x120s launches, 10x120s pin/recovery builds and 4x15s git checks.
+          # 7020s total ceilings leave 300s inside this stage for generation,
+          # supervision and cleanup; the Actions step leaves another 300s.
+          python3 scripts/run-native-plan-stage.py --stage canonical-hosted-linked --timeout-secs 7320 \
+            --test-executable-file target/native-plan-logs/canonical-hosted-executable -- \
+            --ignored --exact \
+            linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned \
+            --test-threads=1 --nocapture
+      - name: Retain canonical hosted diagnostics and qualification evidence
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-hosted-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/native-plan-logs
+            ${{ runner.temp }}/canonical-hosted-evidence
+            !${{ runner.temp }}/canonical-hosted-evidence/cargo-target/**
+          if-no-files-found: error
+          retention-days: 14
