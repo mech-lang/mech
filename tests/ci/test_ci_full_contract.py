@@ -237,14 +237,40 @@ class FullWorkflowContractTests(unittest.TestCase):
     def test_recursive_conversion_funding_runs_in_both_source_profiles(self):
         contracts = next(step for step in job_steps(FULL, "canonical-applications")
                          if "Execute canonical native lowering and selected implementation witnesses" in step)
-        commands = contracts.replace("\\\n", " ")
-        self.assertIn("for profile in full_compiler full_source; do", commands)
-        self.assertIn('--features "$profile,native-artifact"', commands)
-        self.assertIn("--lib resident::set_conversion:: -- --test-threads=1", commands)
-        self.assertIn("--lib intrinsics::kind_conversion:: -- --test-threads=1", commands)
-        self.assertIn("--lib source_semantics::frontend::annotation_conversion_shape_tests:: -- --test-threads=1", commands)
-        self.assertNotIn("--no-run", commands)
-        self.assertNotIn("--list", commands)
+        # The ownership inventory deliberately admits only straight-line shell.
+        # Keep both actual profiles literal so one loop cannot hide this step's
+        # sixteen neighboring integration-target selections from that inventory.
+        block = contracts.split("run: |\n", 1)[1].replace("\\\n", " ")
+        commands = [shlex.split(line) for line in block.splitlines() if line.strip()]
+        self.assertTrue(commands)
+        self.assertTrue(all(command[0] == "cargo" for command in commands))
+        filters = (
+            "resident::set_conversion::",
+            "intrinsics::kind_conversion::",
+            "source_semantics::frontend::annotation_conversion_shape_tests::",
+        )
+        selected = []
+        for command in commands:
+            if "--lib" not in command or command.index("--lib") + 1 == len(command):
+                continue
+            selection = command[command.index("--lib") + 1]
+            if selection not in filters:
+                continue
+            self.assertEqual(command[:3], ["cargo", "+nightly-2026-03-03", "test"])
+            self.assertEqual(command[command.index("-p") + 1], "mech-engine")
+            self.assertEqual(command.count("--features"), 1)
+            features = command[command.index("--features") + 1]
+            self.assertIn("--no-default-features", command)
+            self.assertIn("--locked", command)
+            self.assertIn("--offline", command)
+            self.assertEqual(command[command.index("--") + 1:], ["--test-threads=1"])
+            self.assertNotIn("--no-run", command)
+            self.assertNotIn("--list", command)
+            selected.append((features, selection))
+        self.assertCountEqual(selected, [
+            (f"{profile},native-artifact", selection)
+            for profile in ("full_compiler", "full_source") for selection in filters
+        ])
         architecture = job_block(FULL, "architecture-contracts")
         for target in ("matrix_set_declared_conversion", "conversion_staging_bounds",
                        "conversion_sort_work"):
