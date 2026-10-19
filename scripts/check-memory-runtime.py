@@ -220,6 +220,60 @@ def matched_block_end(source: str, match: re.Match[str] | None) -> int | None:
     return None
 
 
+def frozen_rebind_returns_preserve_ownership(body: str, schema_owner: str) -> bool:
+    """Check every explicit shared-success return, not one surviving marker.
+
+    This is a deliberately closed ownership inventory, not a Rust type checker.
+    Unknown return forms fail closed and must be reviewed when the API changes.
+    """
+    def compact(source: str) -> str:
+        return re.sub(r"\s+", "", source)
+
+    expected = {
+        "schema": "schema",
+        "schema_key": "target_entry.key()",
+        "shape": "self.shape.clone()",
+        "root": "self.root.clone()",
+        "resident_token": "self.resident_token",
+        "schemas": compact(schema_owner.split(":", 1)[1]),
+    }
+    clones = shared = 0
+    for returned in re.finditer(r"\breturn\b", body):
+        call = re.match(r"return\s+(Ok|Err)\s*\(", body[returned.start():])
+        if call is None:
+            return False
+        start = returned.start() + call.end()
+        depth = 1
+        end = start
+        while end < len(body) and depth:
+            if body[end] == "(":
+                depth += 1
+            elif body[end] == ")":
+                depth -= 1
+            end += 1
+        if depth or re.match(r"\s*;", body[end:]) is None:
+            return False
+        if call.group(1) == "Err":
+            continue
+        value = compact(body[start:end - 1])
+        if value == "self.clone()":
+            clones += 1
+            continue
+        if not value.startswith("Self{") or not value.endswith("}"):
+            return False
+        fields = [field for field in value[5:-1].split(",") if field]
+        actual = {}
+        for field in fields:
+            name, separator, expression = field.partition(":")
+            if name in actual:
+                return False
+            actual[name] = expression if separator else name
+        if actual != expected:
+            return False
+        shared += 1
+    return clones > 0 and shared > 0
+
+
 def rust_files(root: Path, entries: tuple[str, ...]):
     seen: set[Path] = set()
     for entry in entries:
@@ -423,11 +477,7 @@ def failures(root: Path) -> list[str]:
         found.append("scalar matrix or table finalization bypasses packed construction")
     rebinds = list(function_bodies(snapshot, "rebind"))
     contextual_rebinds = list(function_bodies(snapshot, "rebind_with_context"))
-    rebind_ownership = (
-        contextual_rebinds[0]
-        if contextual_rebinds
-        else (rebinds[0] if rebinds else "")
-    )
+    rebind_ownership = contextual_rebinds or rebinds
     admitted_schema_owner = (
         "schemas: Some(context.try_clone_schemas()?)"
         if contextual_rebinds
@@ -438,10 +488,19 @@ def failures(root: Path) -> list[str]:
     if (
         "FrozenSnapshotData" not in snapshot
         or not rebinds
-        or "return Ok(self.clone())" not in rebind_ownership
-        or "root: self.root.clone()" not in snapshot
-        or "schema_body_contains_dynamic" not in rebind_ownership
-        or admitted_schema_owner not in rebind_ownership
+        or not rebind_ownership
+        or any(
+            "schema_body_contains_dynamic" not in body
+            or not frozen_rebind_returns_preserve_ownership(body, admitted_schema_owner)
+            for body in rebind_ownership
+        )
+        or any(
+            not re.sub(r"\s+", "", body).endswith(
+                "self.rebound_draft_after_validation("
+                "schema,shape,source_schema,target_schema,context)?.finalize(context)"
+            )
+            for body in contextual_rebinds
+        )
     ):
         found.append("canonical snapshots do not preserve shared frozen ownership")
     if (
