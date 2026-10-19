@@ -617,7 +617,10 @@ jobs:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') || contains(fromJSON(inputs.contract_families), 'language') }}
     name: Linked application qualification
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # Each qualification builds isolated generated applications. A cold Linux
+    # run exhausted one hour during Match, before iteration, managed programs
+    # and resident CLI qualification. Keep a finite allowance for the full job.
+    timeout-minutes: 240
     env:
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_INCREMENTAL: 0
