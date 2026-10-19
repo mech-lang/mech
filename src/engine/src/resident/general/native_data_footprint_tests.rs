@@ -281,3 +281,6 @@ fn data_memo_rejects_unpaid_partial_and_later_denied_measurement_transactions() 
 
 #[path = "native_data_footprint_boundary_tests.rs"]
 mod boundary_tests;
+
+#[path = "native_data_footprint_allocation_tests.rs"]
+mod allocation_tests;

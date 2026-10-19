@@ -122,13 +122,16 @@ impl NativeTurnPlanCache {
             .and_then(|n| n.checked_add(256))
             .and_then(|n| n.checked_add(descriptor_work))
             .ok_or(ResidentKernelError::InvalidShape)?;
+        let data_nodes =
+            Self::retained_data_nodes(call).ok_or(ResidentKernelError::InvalidShape)?;
+        let data_footprints = snapshot_footprint::DataFootprints::new(call)?;
         Ok(Rc::new(Self {
             facts: RefCell::new(TurnMemoryFacts::default()),
             base: RefCell::new(None),
             refined: RefCell::new(std::array::from_fn(|_| None)),
             snapshot_index: Default::default(),
-            data_footprints: snapshot_footprint::DataFootprints::new(call),
-            data_nodes: Self::retained_data_nodes(call).ok_or(ResidentKernelError::InvalidShape)?,
+            data_footprints,
+            data_nodes,
             limits: call.target.limits,
             work: work.clone(),
             probe_work,

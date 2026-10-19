@@ -6,6 +6,9 @@ use mech_core::{
 };
 use std::cell::Cell;
 
+#[path = "native_snapshot_slots.rs"]
+mod slots;
+
 #[derive(Debug)]
 struct Entry {
     identity: FrozenSnapshotIdentity,
@@ -52,23 +55,25 @@ impl DataFootprints {
             .checked_add(u64::from(inputs != 0))
     }
 
-    pub(super) fn new(call: &CallMemoryPlan) -> Self {
-        Self {
-            slots: RefCell::new(
-                call.inputs
-                    .iter()
-                    .map(|port| Slot {
-                        key: port.descriptor.schema().key(),
-                        schema_bytes: port.descriptor.schema().canonical_bytes().len() as u64,
-                        ready: None,
-                        pending: None,
-                    })
-                    .collect(),
-            ),
+    pub(super) fn new(call: &CallMemoryPlan) -> Result<Self, ResidentKernelError> {
+        // The enclosing cache reservation already covers EXACTLY this many
+        // Slot carriers and both weak-shell populations. Check the allocator's
+        // actual capacity before any descriptor/Slot initialization.
+        let slots = slots::allocate(call.inputs.len(), |ordinal| {
+            let port = &call.inputs[ordinal];
+            Slot {
+                key: port.descriptor.schema().key(),
+                schema_bytes: port.descriptor.schema().canonical_bytes().len() as u64,
+                ready: None,
+                pending: None,
+            }
+        })?;
+        Ok(Self {
+            slots: RefCell::new(slots),
             building: Cell::new(false),
             #[cfg(test)]
             observations: Cell::new((0, 0, 0)),
-        }
+        })
     }
 
     fn probe_work() -> Result<u64, ResidentKernelError> {
