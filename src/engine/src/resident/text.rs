@@ -7,6 +7,9 @@ use mech_core::{
     ShapeRule, ValueData,
 };
 
+#[path = "text_selection_snapshot.rs"]
+mod snapshot_selection;
+
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     builder.insert_resident_factory(
         ["string"],
@@ -655,9 +658,15 @@ fn bind_canonical_string_selection(
     };
     if (scalar && request.inputs.len() != 2)
         || (!scalar && !matches!(request.inputs.len(), 1 | 2))
-        || source.kind != ResidentValueKind::String
+        || !matches!(
+            source.kind,
+            ResidentValueKind::String | ResidentValueKind::Snapshot
+        )
         || source.shape != ResidentShape::SCALAR
-        || request.output.kind != ResidentValueKind::String
+        || !matches!(
+            request.output.kind,
+            ResidentValueKind::String | ResidentValueKind::Snapshot
+        )
         || request.output.shape != ResidentShape::SCALAR
         || !request
             .schemas
@@ -694,11 +703,28 @@ fn bind_canonical_string_selection(
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
+    let finish = |mut kernel: BoundResidentKernel| {
+        if request.output.kind == ResidentValueKind::Snapshot {
+            kernel = kernel.with_snapshot_output(mech_core::ResidentSnapshotOutput {
+                schema: request.output.schema_id,
+                schema_key: request.output.schema_key,
+                shape: request.output.shape_instance.clone(),
+                exact_cardinality: None,
+                maximum_cardinality: None,
+            });
+        }
+        if source.kind == ResidentValueKind::Snapshot
+            || request.output.kind == ResidentValueKind::Snapshot
+        {
+            kernel = kernel.with_snapshot_schemas(request.schemas.clone());
+        }
+        kernel.with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered)
+    };
     let Some(selector) = request.inputs.get(1) else {
-        return Ok(
-            BoundResidentKernel::new(canonical_string_selection, Box::new([0, 0, 0]))
-                .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered),
-        );
+        return Ok(finish(BoundResidentKernel::new(
+            canonical_string_selection,
+            Box::new([0, 0, 0]),
+        )));
     };
     let schema = request
         .schemas
@@ -760,7 +786,7 @@ fn bind_canonical_string_selection(
                 activation_fixed_shape: selector.activation_fixed_shape,
             }));
     }
-    Ok(kernel.with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
+    Ok(finish(kernel))
 }
 
 // Dense resident matrices store columns contiguously, whereas canonical
@@ -839,32 +865,17 @@ fn canonical_string_selection(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let Some(ResidentValueRef::String([source])) = inputs.get(0) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let ResidentValueMut::String([target]) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
+    let source = snapshot_selection::source(
+        kernel,
+        inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?,
+    )?;
     let [mode, rows, columns] = kernel.parameters() else {
         return Err(ResidentKernelError::InvalidShape);
     };
     if *mode == 0 {
-        admit_string_materialization(
-            1,
-            source.len(),
-            source.len(),
-            source.len(),
-            target.len().max(source.len()),
-            1,
-            0,
-            0,
-        )?;
-        let next = source.clone();
-        let changed = *target != next;
-        if changed {
-            *target = next;
-        }
-        return Ok(changed);
+        snapshot_selection::admit(kernel, &output, source.len(), source.len(), 0)?;
+        let next = source.to_owned();
+        return snapshot_selection::publish(kernel, output, next);
     }
     let selector = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
     let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
@@ -875,7 +886,10 @@ fn canonical_string_selection(
     let selector_count = rows
         .checked_mul(columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let index = super::text_index::prepared(source)?;
+    let index = match inputs.get(0) {
+        Some(ResidentValueRef::String([text])) => super::text_index::prepared(text)?,
+        _ => super::text_index::prepared_snapshot(source)?,
+    };
     let extent = index.len();
     let scan_work = selector_count
         .checked_mul(2)
@@ -906,15 +920,12 @@ fn canonical_string_selection(
         .ok_or(ResidentKernelError::InvalidShape)?;
     // Repeated graphemes each contribute their full UTF-8 payload. Keep the
     // span table in the peak demand while staging the complete new String.
-    admit_string_materialization(
-        1,
-        payload_bytes,
+    snapshot_selection::admit(
+        kernel,
+        &output,
         payload_bytes,
         compute_work,
-        target.len().max(payload_bytes),
-        1,
         index.scratch_bytes,
-        0,
     )?;
     let mut next = String::with_capacity(payload_bytes);
     visit_canonical_string_selector(selector, rows, columns, extent, |ordinal| {
@@ -925,11 +936,7 @@ fn canonical_string_selection(
         );
         Ok(())
     })?;
-    let changed = *target != next;
-    if changed {
-        *target = next;
-    }
-    Ok(changed)
+    snapshot_selection::publish(kernel, output, next)
 }
 
 fn validate_string_axis_zero_assignment(

@@ -22,6 +22,15 @@ mod linked_qualification;
 #[path = "support/canonical_program_comprehensions.rs"]
 mod collection_qualification;
 
+#[path = "support/canonical_program_windows.rs"]
+mod window_qualification;
+
+#[path = "support/canonical_program_ranges.rs"]
+mod range_qualification;
+
+#[path = "support/canonical_program_activation.rs"]
+mod activation_qualification;
+
 const ROOT: &str = "+> text\n+> sequence\n+> number\n+> map\nwords := text/lines(input<string>)\njoined := text/join(words, \",\")\nsize := sequence/length(joined)\nformatted := number/format(size, 0u64)\ncounts := map/histogram(words)\nkeys := map/keys(counts)\nvalues := map/values(counts)\nmore := size + 1u64\n";
 const LEXICAL: &str = "+> text\n+> sequence\n+> number\n+> map\nstep(x<string>) => (next<string>) :=\n  words := text/lines(x)\n  joined := text/join(words, \",\")\n  size := sequence/length(joined)\n  counts := map/histogram(words)\n  keys := map/keys(counts)\n  values := map/values(counts)\n  formatted := number/format(size + sequence/length(values), 0u64)\n  next := text/join(keys, formatted).\nseed<string> |2> step\n";
 fn artifacts(source: &str) -> ([ProgramArtifact; 2], usize) {
@@ -172,7 +181,13 @@ fn check(source: &str, named: &[(&str, ValueDataDraft)]) {
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let args = inputs(&artifact, named, &memory);
         let ordinary = reference(&artifact, &args);
-        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog())
+            .unwrap_or_else(|error| {
+                panic!(
+                    "native compilation failed for {source}: {error:?}\nnodes: {:#?}",
+                    artifact.nodes()
+                )
+            });
         let mut output = vec![None; artifact.outputs().len()];
         let report = jit
             .evaluate_into(&args, &mut output, limits(), &memory)

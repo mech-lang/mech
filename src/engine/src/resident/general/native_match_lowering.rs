@@ -854,8 +854,11 @@ fn lower_scalar_control_artifact(
 }
 
 /// Lower through the very same canonical Match/loop builder as scalar plans.
-/// Library actions retain actual selected root/lexical provenance. This view
-/// does not bind current geometry or execute a graph, and is not a full AOT claim.
+/// Library actions retain actual selected root/lexical provenance. A fresh
+/// invocation executes closed pure activation computations before its turn,
+/// in the canonical activation schedule. This is not a retained reactive
+/// instance: state, triggered activation scopes and external lifecycle remain
+/// separate lowering work. Selection never binds geometry or executes values.
 pub fn lower_native_program_artifact(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
@@ -892,7 +895,8 @@ fn lower_control_artifact(
     }
     let classes = classify_nodes(artifact, ResidentExternalAdmission::StructuralOnly)?;
     for node in artifact.nodes() {
-        if classes[node.node.get() as usize] != NodeClass::Turn {
+        let class = classes[node.node.get() as usize];
+        if class != NodeClass::Turn && !(allow_collections && class == NodeClass::Activation) {
             return Err(unsupported(
                 node.node,
                 "Activation computation or external node",
@@ -958,6 +962,10 @@ fn lower_control_artifact(
     let root_origin = origin(NodeId::new(0), None, None);
     let entry = builder.block(root_origin, NativeMatchAction::None)?;
     let mut tail = entry;
+    // The same resident schedule places the entire closed activation DAG
+    // before Turn nodes, including independent nodes whose artifact ordinals
+    // are interleaved. Do not fold/execute those values during compilation or
+    // put their work outside the invocation's cumulative native admission.
     for node_id in schedule.nodes.iter().copied() {
         let node = &artifact.nodes()[node_id.get() as usize];
         let args = node_inputs(artifact, node_id)?

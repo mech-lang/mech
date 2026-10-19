@@ -90,6 +90,83 @@ fn collection_source() -> String {
     )
 }
 
+fn windows_source() -> String {
+    format!(
+        "{}windowed := windows(input<string>, width<u64>)\nclosed-range := 1u64..2u64..=5u64\nexclusive := 1u64..stop<u64>\ninclusive := 1u64..=stop\nstepped := 1u64..increment<u64>..stop\nstepped-inclusive := 1u64..increment..=stop\nconverted<[f64]> := stepped\ninput-length := sequence/length(input)\nfirst := (input-length? | 0u64 => \"\" | * => input[1u64])\ncopy := input[:]\nquotient := 1u64 / divisor<u64>\n",
+        super::window_qualification::WINDOWS_FUNCTION
+    )
+}
+
+fn window_oracle(case: &str) -> mech_core::ValueDataDraft {
+    let words: &[&str] = match case {
+        "ordinary" => &["AB", "BB", "BA"],
+        "unicode" => &["é🧑‍🚀", "🧑‍🚀é"],
+        "empty" | "zero-width" | "oversized-width" => &[],
+        _ => panic!("missing independent window oracle"),
+    };
+    ValueDataDraft::Matrix(
+        words
+            .iter()
+            .map(|word| ValueDataDraft::String((*word).into()))
+            .collect(),
+    )
+}
+
+fn assert_window_oracle(
+    artifact: &mech_engine::ProgramArtifact,
+    expected: &[mech_core::Value],
+    case: &str,
+) {
+    // Interactive publication includes both document results and named
+    // bindings; their ordinal is not the source declaration's position.
+    let named = |name| {
+        let index = artifact
+            .outputs()
+            .iter()
+            .position(|output| {
+                output
+                    .interactive_binding
+                    .as_ref()
+                    .is_some_and(|binding| binding.lexical_name == name)
+            })
+            .unwrap_or_else(|| panic!("missing named output {name}"));
+        expected[index].canonical_data_draft().unwrap()
+    };
+    assert_eq!(named("windowed"), window_oracle(case));
+    assert_eq!(
+        named("closed-range"),
+        ValueDataDraft::Matrix([1, 3, 5].map(ValueDataDraft::U64).into())
+    );
+}
+
+#[test]
+fn linked_window_fixture_executes_general_ranges_selection_and_conversion() {
+    let source = windows_source();
+    for (case, text, width) in [
+        ("ordinary", "ABBA", 2),
+        ("unicode", "é🧑‍🚀é", 2),
+        ("empty", "", 2),
+        ("zero-width", "ABBA", 0),
+        ("oversized-width", "ABBA", 5),
+    ] {
+        let named = [
+            ("input", ValueDataDraft::String(text.into())),
+            ("width", ValueDataDraft::U64(width)),
+            ("stop", ValueDataDraft::U64(6)),
+            ("increment", ValueDataDraft::U64(2)),
+            ("divisor", ValueDataDraft::U64(1)),
+        ];
+        let (variants, _) = artifacts_mode(&source, true);
+        for artifact in &variants {
+            let account = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = inputs(artifact, &named, &account);
+            let expected = reference_result(artifact, &args).unwrap();
+            assert_window_oracle(artifact, &expected, case);
+        }
+        super::check(&source, &named);
+    }
+}
+
 #[test]
 fn linked_collection_fixture_checks_each_body_and_discards_a_partial_result() {
     let (variants, _) = artifacts_mode(&collection_source(), true);
@@ -189,6 +266,7 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
         ("root", root, "input"),
         ("lexical", lexical, "seed"),
         ("collection", collection_source(), "input"),
+        ("windows", windows_source(), "input"),
     ] {
         let directory = evidence.join(name);
         fs::create_dir(&directory).unwrap();
@@ -274,11 +352,22 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
         let jit = JitProgramArtifact::compile(&variants[0], &catalog).unwrap();
         let mut cases = Vec::new();
         let mut normal_input = None;
-        for (case, text) in [
-            ("ordinary", "a\nbb\na"),
-            ("empty", ""),
-            ("unicode", "é\n👋\né"),
-        ] {
+        let normal = if name == "windows" {
+            vec![
+                ("ordinary", "ABBA", 2),
+                ("empty", "", 2),
+                ("unicode", "é🧑‍🚀é", 2),
+                ("zero-width", "ABBA", 0),
+                ("oversized-width", "ABBA", 5),
+            ]
+        } else {
+            vec![
+                ("ordinary", "a\nbb\na", 2),
+                ("empty", "", 2),
+                ("unicode", "é\n👋\né", 2),
+            ]
+        };
+        for (case, text, width) in normal {
             for choose in [false, true] {
                 if name != "lexical" && !choose {
                     continue;
@@ -291,10 +380,16 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
                         ValueDataDraft::U64(u64::from(name != "collection")),
                     ),
                     ("flag", ValueDataDraft::Bool(choose)),
+                    ("width", ValueDataDraft::U64(width)),
+                    ("stop", ValueDataDraft::U64(6)),
+                    ("increment", ValueDataDraft::U64(2)),
                 ];
                 let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
                 let args = inputs(&variants[0], &named, &memory);
                 let expected = reference_result(&variants[0], &args).unwrap();
+                if name == "windows" {
+                    assert_window_oracle(&variants[0], &expected, case);
+                }
                 let mut output = vec![None; expected.len()];
                 let report = jit
                     .evaluate_into(&args, &mut output, limits(), &memory)
@@ -493,6 +588,9 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
                     "divisor",
                     ValueDataDraft::U64(u64::from(name == "collection")),
                 ),
+                ("width", ValueDataDraft::U64(2)),
+                ("stop", ValueDataDraft::U64(6)),
+                ("increment", ValueDataDraft::U64(2)),
             ];
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
             let args = inputs(&variants[0], &named, &memory);
@@ -519,6 +617,45 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
             assert!(result.stdout.is_empty());
             assert_eq!(result.stderr, expected.as_bytes());
             cases.push(json!({"name":"late-arithmetic","policy":standard,"input":input,"stdout":"","stderr":expected,"exit":result.status.code()}));
+        }
+        if name == "windows" {
+            let named = [
+                (input_name, ValueDataDraft::String("ABBA".into())),
+                ("width", ValueDataDraft::U64(2)),
+                ("stop", ValueDataDraft::U64(6)),
+                ("increment", ValueDataDraft::U64(0)),
+                ("divisor", ValueDataDraft::U64(1)),
+            ];
+            let account = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = inputs(&variants[0], &named, &account);
+            for artifact in &variants {
+                let account = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let values = inputs(artifact, &named, &account);
+                assert!(
+                    reference_result(artifact, &values)
+                        .unwrap_err()
+                        .contains("InvalidInput")
+                );
+            }
+            let mut output = vec![None; variants[0].outputs().len()];
+            let expected = jit
+                .evaluate_into(&args, &mut output, limits(), &account)
+                .unwrap_err()
+                .to_string()
+                + "\n";
+            assert!(expected.contains("InvalidInput"));
+            assert!(output.iter().all(Option::is_none));
+            let input = input_file(&directory, "invalid-range-step", &args);
+            let result = bounded(
+                Command::new(&binary).args(&standard).arg(&input),
+                &directory,
+                "invalid-range-step",
+                30,
+            );
+            assert!(!result.status.success());
+            assert!(result.stdout.is_empty());
+            assert_eq!(result.stderr, expected.as_bytes());
+            cases.push(json!({"name":"invalid-range-step","policy":standard,"input":input,"stdout":"","stderr":expected,"exit":result.status.code()}));
         }
         let provenance_build = (name == "collection").then(|| {
             provenance::qualify(

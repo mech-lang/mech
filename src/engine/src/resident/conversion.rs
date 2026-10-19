@@ -450,6 +450,9 @@ fn preflight_string_conversion(
 }
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_conversion(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     builder.insert_resident_factory(
         ["convert"],
         "kind",
@@ -506,7 +509,7 @@ fn native_scalar_cast(
     })
 }
 
-fn bind_kind_conversion(
+pub(super) fn bind_kind_conversion(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_conversion(request, false)

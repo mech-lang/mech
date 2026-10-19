@@ -3313,14 +3313,6 @@ fn classify_nodes(
     Ok(classes.into_boxed_slice())
 }
 
-fn operation_requires_activation_fixed_range_shape(operation: &OperationReference) -> bool {
-    operation.module_path.as_ref() == ["range"]
-        && matches!(
-            operation.operation_name.as_str(),
-            "exclusive" | "exclusive-increment" | "inclusive" | "inclusive-increment"
-        )
-}
-
 fn source_schema_and_shape(
     artifact: &ProgramArtifact,
     source: ArtifactSource,
@@ -3395,6 +3387,9 @@ fn source_has_activation_shape_fact(
             }
             None => false,
         };
+    }
+    if slot_has_runtime_shape_seed(artifact, slot, facts) {
+        return false;
     }
     if facts.slot_shapes.contains_key(&slot) {
         return true;
@@ -11266,6 +11261,21 @@ fn complete_activation_shape_facts_with_analysis(
             .schemas()
             .get(artifact.slots()[output.get() as usize].schema)
             .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?;
+        if class != NodeClass::Activation
+            && node.operation.resolved_range_mode().is_some()
+            && !output_schema.dimension_parameters().is_empty()
+        {
+            // A live range owns a per-turn canonical matrix, not a variable
+            // number of physical arena lanes. Supplied geometry is an initial
+            // seed, never proof that live endpoints stay invariant. Alias
+            // layout/fixedness follow this same producer through the helpers.
+            let seed = facts.slot_shapes.remove(&output).unwrap_or(
+                mech_core::shape_for_declared_lower_bounds(output_schema)
+                    .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?,
+            );
+            facts.slot_shape_seeds.entry(output).or_insert(seed);
+            facts.resident_snapshot_slots.insert(output);
+        }
         if node.operation.module_path.as_ref() == ["logic"]
             || (node.operation.module_path.as_ref() == ["core"]
                 && node.operation.operation_name == "assign"
@@ -12598,6 +12608,9 @@ fn slot_has_activation_fixed_shape(
             None => false,
         };
     }
+    if slot_has_runtime_shape_seed(artifact, slot, facts) {
+        return false;
+    }
     if facts.slot_shapes.contains_key(&slot) {
         return true;
     }
@@ -12620,6 +12633,19 @@ fn slot_has_activation_fixed_shape(
         } => slot_has_activation_fixed_shape(artifact, source, facts),
         _ => artifact.slot_shape_hint(slot).is_some(),
     }
+}
+
+fn slot_has_runtime_shape_seed(
+    artifact: &ProgramArtifact,
+    slot: CellSlotId,
+    facts: &ActivationFacts,
+) -> bool {
+    let Ok(ArtifactSource::Slot(source)) =
+        forwarded_output_source(artifact, ArtifactSource::Slot(slot))
+    else {
+        return false;
+    };
+    facts.slot_shape_seeds.contains_key(&source)
 }
 
 fn value_layout(
@@ -13227,13 +13253,12 @@ fn build_plan(
             OutputConstruction::ReadModifyWrite { base_input, .. } => Some(base_input as usize),
             _ => None,
         };
-        // Resident storage has a fixed physical extent for the lifetime of an
-        // activated plan. A range whose endpoints depend on turn inputs or
-        // mutable state can legitimately change cardinality in the source
-        // runtime, so reject that target capability before a bytecode-backed
-        // instance is emitted instead of failing on a later execution turn.
+        // Dense arena lanes still require fixed physical geometry. Live
+        // ranges now use one admitted Snapshot lane with current shape in the
+        // value; keep this guard against accidentally selecting dense storage.
         if class != NodeClass::Activation
-            && operation_requires_activation_fixed_range_shape(&node.operation)
+            && node.operation.resolved_range_mode().is_some()
+            && output.region.kind != ResidentValueKind::Snapshot
         {
             return Err(ResidentActivationError::KernelBind {
                 node: node.node,

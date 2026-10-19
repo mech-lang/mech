@@ -45,7 +45,7 @@ impl Hooks {
                 guard(b, valid, error, super::abi::STATUS_ABI);
             }
             let mut signature = module.make_signature();
-            signature.params = vec![cranelift_codegen::ir::AbiParam::new(types::I64); 6];
+            signature.params = vec![cranelift_codegen::ir::AbiParam::new(types::I64); 7];
             signature
                 .returns
                 .push(cranelift_codegen::ir::AbiParam::new(types::I64));
@@ -62,7 +62,7 @@ impl Hooks {
         b: &mut FunctionBuilder<'_>,
         site: usize,
         operation: u64,
-        args: [Value; 2],
+        args: [Value; 3],
         error: Block,
     ) {
         let site = b.ins().iconst(types::I64, site as i64);
@@ -70,7 +70,15 @@ impl Hooks {
         let call = b.ins().call_indirect(
             self.signature,
             self.function,
-            &[self.context, site, operation, args[0], args[1], self.result],
+            &[
+                self.context,
+                site,
+                operation,
+                args[0],
+                args[1],
+                args[2],
+                self.result,
+            ],
         );
         let status = b.inst_results(call)[0];
         let valid = b
@@ -87,7 +95,14 @@ impl Hooks {
     ) -> Result<(), NativeCompileError> {
         #[cfg(feature = "canonical-native-program")]
         {
-            self.call(b, site, super::program_abi::COLLECTION, args, error);
+            let zero = b.ins().iconst(types::I64, 0);
+            self.call(
+                b,
+                site,
+                super::program_abi::COLLECTION,
+                [args[0], args[1], zero],
+                error,
+            );
             Ok(())
         }
         #[cfg(not(feature = "canonical-native-program"))]
@@ -96,6 +111,7 @@ impl Hooks {
             Err(super::compiler::backend("collection ABI is not enabled"))
         }
     }
+    #[cfg(feature = "canonical-native-program")]
     pub fn output(
         &self,
         b: &mut FunctionBuilder<'_>,
@@ -104,21 +120,11 @@ impl Hooks {
         value: Value,
         error: Block,
     ) -> Result<(), NativeCompileError> {
-        #[cfg(feature = "canonical-native-program")]
-        {
-            let operation = super::program_abi::OUTPUT_BASE
-                .checked_add(ordinal as u64)
-                .ok_or_else(|| super::compiler::backend("output helper ordinal overflow"))?;
-            let zero = b.ins().iconst(types::I64, 0);
-            self.call(b, site, operation, [value, zero], error);
-            Ok(())
-        }
-        #[cfg(not(feature = "canonical-native-program"))]
-        {
-            let _ = (b, site, ordinal, value, error);
-            Err(super::compiler::backend(
-                "managed output ABI is not enabled",
-            ))
-        }
+        let operation = super::program_abi::OUTPUT_BASE
+            .checked_add(ordinal as u64)
+            .ok_or_else(|| super::compiler::backend("output helper ordinal overflow"))?;
+        let zero = b.ins().iconst(types::I64, 0);
+        self.call(b, site, operation, [value, zero, zero], error);
+        Ok(())
     }
 }

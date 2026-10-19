@@ -1,5 +1,5 @@
 //! Actual generated collection bodies, geometry, ownership and atomic failure.
-use super::{artifacts, check, equal, inputs, limits, reference};
+use super::{artifacts, check, equal, inputs, limits, reference, reference_result};
 use mech_core::{
     ManagedMemoryBudget, MemoryBudgetDimension as Dimension, ResidentKernelError, Value,
     ValueDataDraft,
@@ -12,6 +12,95 @@ use mech_gpu::native_artifact::{
 
 fn numbers(values: &[u64]) -> ValueDataDraft {
     ValueDataDraft::Matrix(values.iter().copied().map(ValueDataDraft::U64).collect())
+}
+
+#[test]
+fn generated_dynamic_ranges_feed_ordinary_comprehensions() {
+    let (variants, _) = artifacts("[i + 1u64 | i <- 0u64..count<u64>]\n");
+    for artifact in variants {
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let mut output: Vec<Option<Value>> = vec![None; artifact.outputs().len()];
+        for count in [1u64, 0, 5] {
+            let args = inputs(&artifact, &[("count", ValueDataDraft::U64(count))], &memory);
+            if count == 0 {
+                // Existing canonical ranges reject empty output. Keep that
+                // error, prior publication and next-invocation recovery too.
+                assert!(reference_result(&artifact, &args).is_err());
+                let prior = output
+                    .iter()
+                    .map(|v| v.as_ref().unwrap().clone())
+                    .collect::<Vec<_>>();
+                let before = memory.used_bytes();
+                assert!(matches!(
+                    jit.evaluate_into(&args, &mut output, limits(), &memory),
+                    Err(NativeProgramExecutionError::Library { .. })
+                ));
+                assert_eq!(memory.used_bytes(), before);
+                equal(&artifact, &output, &prior);
+            } else {
+                jit.evaluate_into(&args, &mut output, limits(), &memory)
+                    .unwrap();
+                equal(&artifact, &output, &reference(&artifact, &args));
+            }
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn general_mech_window_function_compiles_without_a_window_helper() {
+    // The inclusive candidate range remains nonempty even for n=0. Positive
+    // width and the fit filter reject the final candidate before any slice.
+    let source = format!(
+        "{}windows(input<string>, width<u64>)\n",
+        super::window_qualification::WINDOWS_FUNCTION
+    );
+    let (variants, _) = artifacts(&source);
+    for artifact in &variants {
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        for (text, width, expected) in [
+            ("ABBA", 2, vec!["AB", "BB", "BA"]),
+            ("ABBA", 0, vec![]),
+            ("ABBA", 5, vec![]),
+            ("", 2, vec![]),
+            ("é🧑‍🚀é", 2, vec!["é🧑‍🚀", "🧑‍🚀é"]),
+        ] {
+            let args = inputs(
+                artifact,
+                &[
+                    ("input", ValueDataDraft::String(text.into())),
+                    ("width", ValueDataDraft::U64(width)),
+                ],
+                &memory,
+            );
+            let ordinary = reference(artifact, &args);
+            let ValueDataDraft::Matrix(values) =
+                ordinary.last().unwrap().canonical_data_draft().unwrap()
+            else {
+                panic!("window output must be a String matrix");
+            };
+            let actual = values
+                .iter()
+                .map(|value| match value {
+                    ValueDataDraft::String(text) => text.as_str(),
+                    _ => panic!("window element must be a String"),
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(actual, expected);
+        }
+        assert_eq!(memory.used_bytes(), 0);
+    }
+    for (text, width) in [("ABBA", 2), ("ABBA", 0), ("ABBA", 5), ("", 2), ("é🧑‍🚀é", 2)] {
+        check(
+            &source,
+            &[
+                ("input", ValueDataDraft::String(text.into())),
+                ("width", ValueDataDraft::U64(width)),
+            ],
+        );
+    }
 }
 
 #[test]

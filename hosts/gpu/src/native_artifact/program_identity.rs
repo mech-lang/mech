@@ -1,4 +1,4 @@
-//! Explicit program IR/ABI5 identity. No Debug or pointer serialization.
+//! Explicit program IR/ABI6 identity. No Debug or pointer serialization.
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
     NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind,
@@ -123,7 +123,7 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
             None => hash.update([0]),
         }
         match block.action() {
-            // ABI5 commits the maintained selection as well as operand slots.
+            // Commit the maintained selection as well as operand slots.
             NativeIterationAction::LibraryCall {
                 template,
                 operands,

@@ -408,8 +408,8 @@ pub(super) fn define_cfg<M: Module>(
                     let hooks = hooks
                         .as_ref()
                         .ok_or_else(|| backend("missing mixed call hooks"))?;
-                    let mut args = [b.ins().iconst(types::I64, 0); 2];
-                    if operands.len() > 2 {
+                    let mut args = [b.ins().iconst(types::I64, 0); 3];
+                    if operands.len() > args.len() {
                         return Err(backend("unsupported library arity"));
                     }
                     for (index, &operand) in operands.iter().enumerate() {
@@ -436,7 +436,7 @@ pub(super) fn define_cfg<M: Module>(
                             .as_ref()
                             .ok_or_else(|| backend("missing managed move hook"))?;
                         let zero = b.ins().iconst(types::I64, 0);
-                        hooks.call(&mut b, index, 1, [zero; 2], error);
+                        hooks.call(&mut b, index, 1, [zero; 3], error);
                     } else {
                         emit_scalar_action(&mut b, locals, action, error)?;
                     }
@@ -459,7 +459,7 @@ pub(super) fn define_cfg<M: Module>(
                                     .as_ref()
                                     .ok_or_else(|| backend("missing managed carrier hook"))?;
                                 let zero = b.ins().iconst(types::I64, 0);
-                                hooks.call(&mut b, index, 1, [zero; 2], error);
+                                hooks.call(&mut b, index, 1, [zero; 3], error);
                             }
                             b.ins().iconst(types::I64, iteration.count() as i64)
                         }
@@ -502,7 +502,7 @@ pub(super) fn define_cfg<M: Module>(
                                 .as_ref()
                                 .ok_or_else(|| backend("missing managed latch hook"))?;
                             let zero = b.ins().iconst(types::I64, 0);
-                            hooks.call(&mut b, index, 1, [zero; 2], error);
+                            hooks.call(&mut b, index, 1, [zero; 3], error);
                         }
                     }
                     let remaining = b.ins().iadd_imm(counter, -1);

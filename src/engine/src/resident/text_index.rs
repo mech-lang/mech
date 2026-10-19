@@ -474,6 +474,20 @@ impl std::ops::Deref for IndexUse {
 /// A miss creates only byte offsets. It never clones or normalizes the source.
 pub(super) fn prepared(source: &String) -> Result<IndexUse, ResidentKernelError> {
     let (selected, lookup_work) = selected_scope(source)?;
+    prepare(source, selected, lookup_work)
+}
+
+/// Immutable snapshot text has no dense-String lexical read identity. Share
+/// the same admitted segmentation, without fabricating a memo lookup or copy.
+pub(super) fn prepared_snapshot(source: &str) -> Result<IndexUse, ResidentKernelError> {
+    prepare(source, None, 0)
+}
+
+fn prepare(
+    source: &str,
+    selected: Option<(Rc<RefCell<Scope>>, usize)>,
+    lookup_work: usize,
+) -> Result<IndexUse, ResidentKernelError> {
     if let Some((scope, slot)) = &selected {
         if let Some(index) = &scope.borrow().entries[*slot].index {
             return Ok(IndexUse {

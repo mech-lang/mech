@@ -1,4 +1,4 @@
-//! Managed ABI5 invocation. This boundary never evaluates a graph: generated
+//! Managed ABI6 invocation. This boundary never evaluates a graph: generated
 //! blocks choose every successor and run every scalar/counter instruction.
 use super::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
@@ -186,7 +186,7 @@ impl Context<'_> {
         &mut self,
         site: u64,
         operation: u64,
-        args: [u64; 2],
+        args: [u64; 3],
     ) -> Result<Option<u64>, NativeProgramExecutionError> {
         if self.control.previous.map(u64::from) != Some(site) {
             return Err(invalid("helper outside exact admitted visit"));
@@ -206,7 +206,7 @@ impl Context<'_> {
             if operands.len() > args.len() {
                 return Err(invalid("library helper arity"));
             }
-            let mut inputs: [Option<Value>; 2] = [None, None];
+            let mut inputs: [Option<Value>; 3] = [None, None, None];
             for (index, &operand) in operands.iter().enumerate() {
                 inputs[index] = Some(
                     if descriptor.plan.values()[operand.get() as usize]
@@ -360,6 +360,7 @@ unsafe extern "C" fn helper(
     operation: u64,
     first: u64,
     second: u64,
+    third: u64,
     result: *mut u64,
 ) -> u64 {
     if context.is_null() {
@@ -373,7 +374,7 @@ unsafe extern "C" fn helper(
     let outcome = if result.is_null() || result != context.result {
         Err(invalid("helper result pointer mismatch"))
     } else {
-        context.helper(site, operation, [first, second])
+        context.helper(site, operation, [first, second, third])
     };
     match outcome {
         Ok(word) => {
@@ -753,16 +754,24 @@ mod tests {
                         // skipping the required leaf to test protocol denial.
                         return unsafe { (frame.base.admit_next)(frame.base.context, next as u64) };
                     }
-                    // SAFETY: arguments remain within the retained ABI5 boundary;
+                    // SAFETY: arguments remain within the retained ABI6 boundary;
                     // wrong metadata/pointer is rejected before dereference.
                     let status = unsafe {
-                        (frame.helper)(frame.base.context, actual_site, operation, 0, 0, result)
+                        (frame.helper)(frame.base.context, actual_site, operation, 0, 0, 0, result)
                     };
                     if mode == 3 {
                         assert_eq!(status, STATUS_OK);
                         // SAFETY: same live context/result lane, deliberate repeat.
                         unsafe {
-                            (frame.helper)(frame.base.context, actual_site, operation, 0, 0, result)
+                            (frame.helper)(
+                                frame.base.context,
+                                actual_site,
+                                operation,
+                                0,
+                                0,
+                                0,
+                                result,
+                            )
                         }
                     } else {
                         status
@@ -889,7 +898,15 @@ mod tests {
                         // SAFETY: retained private helper/context; a deliberately
                         // wrong result pointer is checked before dereference.
                         unsafe {
-                            (frame.helper)(frame.base.context, site as u64, operation, 0, 0, result)
+                            (frame.helper)(
+                                frame.base.context,
+                                site as u64,
+                                operation,
+                                0,
+                                0,
+                                0,
+                                result,
+                            )
                         }
                     };
                     let next = |site: u32| {
@@ -1021,6 +1038,7 @@ mod tests {
             for (offset, old) in [
                 (16, 1u64),
                 (24, 4u64),
+                (24, 5u64),
                 (32, 1u64),
                 (32, 2u64),
                 (112, 0u64),
@@ -1038,8 +1056,8 @@ mod tests {
         }
     }
     #[test]
-    fn abi5_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 5);
+    fn abi6_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
+        assert_eq!(VERSION, 6);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);
         assert_eq!(
             core::mem::offset_of!(Frame, helper),
