@@ -1,5 +1,5 @@
 //! Strict selected String histogram/keys/identity-set/lazy-count certificate.
-use super::super::fusion_semantics::Read;
+use super::super::fusion_semantics::{Read, SemanticActions};
 use super::super::iteration_validation::{ControlPlan, ControlType};
 use super::super::{
     NativeGuardedHistogramQuery as Sink, NativeHistogramQueryPhase as Phase,
@@ -16,7 +16,7 @@ fn plain(plan: &impl ControlPlan, value: Value, body: &mech_core::SchemaBody) ->
 }
 fn aliases(
     plan: &impl ControlPlan,
-    actions: &[Action],
+    actions: &SemanticActions<'_>,
     uses: &[Vec<Read>],
     mut value: Value,
     phase: Phase,
@@ -43,7 +43,7 @@ fn aliases(
     }
     None
 }
-fn call(actions: &[Action], site: u32, kind: Kind) -> Option<Step> {
+fn call(actions: &SemanticActions<'_>, site: u32, kind: Kind) -> Option<Step> {
     let Action::LibraryCall {
         template,
         operands,
@@ -80,7 +80,7 @@ fn same_scope(plan: &impl ControlPlan, site: u32, parent: Option<u32>) -> bool {
 }
 fn skip_none(
     plan: &impl ControlPlan,
-    actions: &[Action],
+    actions: &SemanticActions<'_>,
     mut site: u32,
     parent: Option<u32>,
 ) -> Option<u32> {
@@ -127,7 +127,7 @@ struct Guard {
 }
 fn guard(
     plan: &impl ControlPlan,
-    actions: &[Action],
+    actions: &SemanticActions<'_>,
     start: u32,
     condition: Value,
     parent: Option<u32>,
@@ -171,7 +171,7 @@ fn guard(
 }
 fn arm_copy(
     plan: &impl ControlPlan,
-    actions: &[Action],
+    actions: &SemanticActions<'_>,
     start: u32,
     source: Value,
     parent: Option<u32>,
@@ -265,7 +265,7 @@ pub(super) fn schema_certificate(
 
 pub(super) fn candidate(
     plan: &impl ControlPlan,
-    actions: &[Action],
+    actions: &SemanticActions<'_>,
     uses: &[Vec<Read>],
     id: usize,
 ) -> Option<Sink> {

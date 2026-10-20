@@ -2,9 +2,9 @@
 //! Every selected semantic read is inventoried once in fusion_semantics.
 #[cfg(not(all(feature = "map_ops", feature = "convert")))]
 use super::NativeGuardedHistogramQuery as Sink;
-#[cfg(not(all(feature = "map_ops", feature = "convert")))]
-use super::fusion_semantics::Read;
 use super::fusion_semantics::reads;
+#[cfg(not(all(feature = "map_ops", feature = "convert")))]
+use super::fusion_semantics::{Read, SemanticActions};
 pub(crate) use super::fusion_semantics::{semantic_actions, semantic_use_counts};
 use super::iteration_validation::ControlPlan;
 use super::{
@@ -18,7 +18,12 @@ mod selected;
 #[cfg(all(feature = "map_ops", feature = "convert"))]
 use selected::candidate;
 #[cfg(not(all(feature = "map_ops", feature = "convert")))]
-fn candidate(_: &impl ControlPlan, _: &[Action], _: &[Vec<Read>], _: usize) -> Option<Sink> {
+fn candidate(
+    _: &impl ControlPlan,
+    _: &SemanticActions<'_>,
+    _: &[Vec<Read>],
+    _: usize,
+) -> Option<Sink> {
     None
 }
 
@@ -50,7 +55,7 @@ pub(super) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
     Ok(())
 }
 pub(crate) fn lower(plan: &mut Plan) -> Result<(), &'static str> {
-    let actions = semantic_actions(plan)?;
+    let actions = semantic_actions(plan)?.into_owned();
     let uses = reads(plan, &actions)?;
     for id in 0..plan.collections.len() {
         if !matches!(plan.collections[id].result(), ResultKind::Materialized) {

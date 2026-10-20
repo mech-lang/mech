@@ -205,7 +205,7 @@ fn candidate(
     plan: &impl ControlPlan,
     collection: usize,
     counts: &[usize],
-    actions: &[Action],
+    actions: &super::fusion_semantics::SemanticActions<'_>,
 ) -> Option<Projection> {
     use super::NativeCollectionPrimitive as Primitive;
     use mech_core::{DimensionExpr, IntegerWidth, SchemaBody};
@@ -332,12 +332,17 @@ fn candidate(
 }
 
 #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
-fn candidate(_: &impl ControlPlan, _: usize, _: &[usize], _: &[Action]) -> Option<Projection> {
+fn candidate(
+    _: &impl ControlPlan,
+    _: usize,
+    _: &[usize],
+    _: &super::fusion_semantics::SemanticActions<'_>,
+) -> Option<Projection> {
     None
 }
 
 pub(crate) fn lower(plan: &mut Plan) -> Result<(), &'static str> {
-    let actions = super::fusion_semantics::semantic_actions(plan)?;
+    let actions = super::fusion_semantics::semantic_actions(plan)?.into_owned();
     let counts = super::fusion_semantics::semantic_use_counts(plan)?;
     for collection in 0..plan.collections.len() {
         let Some(projection) = candidate(plan, collection, &counts, &actions) else {

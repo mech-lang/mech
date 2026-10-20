@@ -9,17 +9,50 @@ use super::{
 };
 use std::borrow::Cow;
 const BAD: &str = "invalid native fusion semantic read inventory";
+/// An immutable semantic view. Ordinary instructions stay borrowed while
+/// virtual consumers own their checked expansion. Mutating passes explicitly
+/// detach an owned snapshot before rewriting their plan.
+pub(crate) struct SemanticActions<'a>(Vec<Cow<'a, Action>>);
+impl SemanticActions<'_> {
+    pub(crate) fn len(&self) -> usize {
+        self.0.len()
+    }
+    pub(crate) fn get(&self, index: usize) -> Option<&Action> {
+        self.0.get(index).map(Cow::as_ref)
+    }
+    pub(crate) fn iter(&self) -> impl ExactSizeIterator<Item = &Action> {
+        self.0.iter().map(Cow::as_ref)
+    }
+    pub(crate) fn into_owned(self) -> SemanticActions<'static> {
+        SemanticActions(
+            self.0
+                .into_iter()
+                .map(|action| Cow::Owned(action.into_owned()))
+                .collect(),
+        )
+    }
+}
+impl std::ops::Index<usize> for SemanticActions<'_> {
+    type Output = Action;
+    fn index(&self, index: usize) -> &Self::Output {
+        self.get(index)
+            .expect("native semantic action index out of bounds")
+    }
+}
 /// Reconstruct semantic actions only; never construct missing language Values.
 /// All result strategies share this use inventory so one pass cannot hide an
 /// escaping read from a later pass.
-pub(crate) fn semantic_actions(plan: &impl ControlPlan) -> Result<Vec<Action>, &'static str> {
+pub(crate) fn semantic_actions(
+    plan: &impl ControlPlan,
+) -> Result<SemanticActions<'_>, &'static str> {
     plan.blocks()
         .iter()
-        .map(|block| semantic_action(plan, block.action()).map(Cow::into_owned))
-        .collect()
+        .map(|block| semantic_action(plan, block.action()))
+        .collect::<Result<Vec<_>, _>>()
+        .map(SemanticActions)
 }
 /// Immutable readers borrow ordinary actions; rewriting passes still request
-/// the owned snapshot above. Virtual actions use the same checked expansion.
+/// an owned snapshot. Virtual actions use the same checked expansion.
 fn semantic_action<'a>(
     plan: &impl ControlPlan,
     action: &'a Action,
@@ -130,7 +163,7 @@ pub(super) enum Read {
 }
 pub(super) fn reads(
     plan: &impl ControlPlan,
-    actions: &[Action],
+    actions: &SemanticActions<'_>,
 ) -> Result<Vec<Vec<Read>>, &'static str> {
     let mut all = vec![Vec::new(); plan.values().len()];
     visit_reads(

@@ -79,7 +79,7 @@ fn candidate(
     plan: &impl ControlPlan,
     id: usize,
     counts: &[usize],
-    actions: &[Action],
+    actions: &super::fusion_semantics::SemanticActions<'_>,
 ) -> Option<NativeStringElementMapProjection> {
     use super::iteration_validation::ControlType;
     use super::{
@@ -198,13 +198,13 @@ fn candidate(
     _: &impl ControlPlan,
     _: usize,
     _: &[usize],
-    _: &[Action],
+    _: &super::fusion_semantics::SemanticActions<'_>,
 ) -> Option<NativeStringElementMapProjection> {
     None
 }
 
 pub(crate) fn lower(plan: &mut Plan) -> Result<(), &'static str> {
-    let actions = super::fusion_semantics::semantic_actions(plan)?;
+    let actions = super::fusion_semantics::semantic_actions(plan)?.into_owned();
     let counts = super::fusion_semantics::semantic_use_counts(plan)?;
     for id in 0..plan.collections.len() {
         let Some(projection) = candidate(plan, id, &counts, &actions) else {

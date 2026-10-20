@@ -195,7 +195,11 @@ fn select(plan: &Plan, id: u32) -> Option<NativeWindowRegion> {
         matches!(block.action(),
         Action::LibraryCall { template, operands, output }
             if *output == length && operands.as_ref() == [projection.source()]
-                && template.primitive() == Primitive::SequenceLength
+                && match template.primitive() {
+                    #[cfg(feature = "pure_text")]
+                    Primitive::SequenceLength => true,
+                    _ => false,
+                }
                 && block.iteration() != Some(*iteration))
     }) {
         return None;

@@ -52,7 +52,7 @@ fn plans(source: &str) -> [Plan; 2] {
 }
 
 fn expanded_counts(plan: &Plan) -> Result<Vec<usize>, &'static str> {
-    Ok(reads(plan, &semantic_actions(plan)?)?
+    Ok(reads(plan, &semantic_actions(plan)?.into_owned())?
         .into_iter()
         .map(|uses| uses.len())
         .collect())
@@ -80,17 +80,26 @@ fn streamed_counts_match_owned_inventory_for_original_and_decoded_fusions() {
         for plan in &variants {
             plan.validate_current_visits().unwrap();
             assert_eq!(semantic_use_counts(plan), expanded_counts(plan), "{source}");
-            for block in plan.blocks() {
+            let inventory = semantic_actions(plan).unwrap();
+            assert_eq!(inventory.len(), plan.blocks().len());
+            assert_eq!(
+                reads(plan, &inventory),
+                reads(plan, &semantic_actions(plan).unwrap().into_owned())
+            );
+            for (site, block) in plan.blocks().iter().enumerate() {
                 let action = block.action();
                 let semantic = semantic_action(plan, action).unwrap();
                 if let Some(kind) = virtual_kind(action) {
                     selected.insert(kind);
                     assert!(matches!(semantic, Cow::Owned(_)), "{kind}");
+                    assert!(matches!(inventory.0[site], Cow::Owned(_)), "{kind}");
                 } else {
                     let Cow::Borrowed(borrowed) = semantic else {
                         panic!("ordinary instruction was cloned: {action:?}");
                     };
                     assert!(std::ptr::eq(borrowed, action));
+                    assert!(matches!(inventory.0[site], Cow::Borrowed(_)));
+                    assert!(std::ptr::eq(&inventory[site], action));
                     borrowed_library |= matches!(action, Action::LibraryCall { .. });
                     borrowed_range |= matches!(action, Action::PrepareU64Range { .. });
                 }
@@ -119,6 +128,33 @@ fn streamed_counts_match_owned_inventory_for_original_and_decoded_fusions() {
         "an ordinary library call must be borrowed"
     );
     assert!(borrowed_range, "an ordinary range action must be borrowed");
+}
+
+#[test]
+fn owned_semantic_snapshot_detaches_before_plan_rewriting() {
+    for mut plan in plans(SOURCES.last().unwrap()) {
+        let snapshot = semantic_actions(&plan).unwrap().into_owned();
+        assert!(
+            snapshot
+                .0
+                .iter()
+                .all(|action| matches!(action, Cow::Owned(_)))
+        );
+        let original_reads = reads(&plan, &snapshot).unwrap();
+        let site = plan
+            .blocks()
+            .iter()
+            .position(|block| matches!(block.action(), Action::LibraryCall { .. }))
+            .unwrap();
+        assert!(!std::ptr::eq(&snapshot[site], plan.blocks()[site].action()));
+        plan.blocks[site].action = Action::Scalar(Scalar::None);
+        assert!(matches!(snapshot[site], Action::LibraryCall { .. }));
+        assert_eq!(reads(&plan, &snapshot).unwrap(), original_reads);
+        assert_ne!(
+            reads(&plan, &semantic_actions(&plan).unwrap()).unwrap(),
+            original_reads
+        );
+    }
 }
 
 #[test]

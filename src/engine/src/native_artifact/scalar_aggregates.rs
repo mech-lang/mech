@@ -263,7 +263,7 @@ impl Plan {
         let Ok(actions) = super::fusion_semantics::semantic_actions(self) else {
             return NativeScalarAggregates::default();
         };
-        for action in &actions {
+        for action in actions.iter() {
             match action {
                 Action::Scalar(Scalar::Copy { source, output }) => {
                     defined[output.get() as usize] = true;
