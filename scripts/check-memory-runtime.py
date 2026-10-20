@@ -234,7 +234,6 @@ def frozen_rebind_returns_preserve_ownership(body: str, schema_owner: str) -> bo
         "schema_key": "target_entry.key()",
         "shape": "self.shape.clone()",
         "root": "self.root.clone()",
-        "resident_token": "self.resident_token",
         "schemas": compact(schema_owner.split(":", 1)[1]),
     }
     clones = shared = 0
@@ -485,8 +484,31 @@ def failures(root: Path) -> list[str]:
     )
     frozen_data = balanced_body(snapshot, "FrozenSnapshotData")
     frozen_storage = balanced_body(snapshot, "FrozenSnapshotStorage")
+    value_layout = balanced_body(snapshot, "Value")
+    receipt_tokens = list(function_bodies(snapshot, "resident_token"))
+    plain_finalizers = list(function_bodies(snapshot, "finalized_value"))
+    # The receipt cache moved inside the shared data owner. Rebinds must keep
+    # that owner, not copy or manufacture an independent token. Retain the
+    # closed return-field inventory above and check the new owner explicitly.
+    shared_receipt_cache = (
+        frozen_data is not None
+        and "resident_token:SharedOwnershipCell<u64>" in re.sub(r"\s+", "", frozen_data)
+        and value_layout is not None
+        and not re.search(r"\bresident_token\s*:", value_layout)
+        and len(receipt_tokens) == 1
+        and re.sub(r"\s+", "", receipt_tokens[0]).startswith(
+            "*self.root.data.resident_token.get_or_init(||{"
+        )
+        and len(plain_finalizers) == 1
+        and len(finalized_values) == 1
+        and all(
+            "resident_token:SharedOwnershipCell::new()" in re.sub(r"\s+", "", body)
+            for body in [plain_finalizers[0], finalized_values[0]]
+        )
+    )
     if (
         "FrozenSnapshotData" not in snapshot
+        or not shared_receipt_cache
         or not rebinds
         or not rebind_ownership
         or any(

@@ -75,6 +75,36 @@ class MemoryRuntimeCheckerTests(unittest.TestCase):
     def test_00_repository_fixture_passes(self):
         self.assertEqual(CHECKER.failures(self.fixture()), [])
 
+    def test_00b_receipt_cache_must_live_on_the_shared_data_owner(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "resident_token: SharedOwnershipCell<u64>", "resident_token: u64")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_00c_receipt_cache_must_not_be_an_independent_value_field(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "pub struct Value {", "pub struct Value {\n    resident_token: u64,")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_00d_receipt_lookup_must_use_the_actual_owner_cache(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "*self.root.data.resident_token.get_or_init", "*SharedOwnershipCell::new().get_or_init")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_00e_each_finalizer_must_initialize_a_fresh_owner_cache(self):
+        path = "src/core/src/snapshot/validation.rs"
+        source = (REPOSITORY / path).read_text(encoding="utf-8")
+        anchor = "resident_token: SharedOwnershipCell::new()"
+        positions = [match.start() for match in re.finditer(re.escape(anchor), source)]
+        self.assertEqual(len(positions), 2)
+        for index, offset in enumerate(positions):
+            with self.subTest(finalizer=index):
+                root = self.fixture()
+                self.write(root, path, source[:offset] + "resident_token: SharedOwnershipCell::from(0)" + source[offset + len(anchor):])
+                self.assert_failure(root, "do not preserve shared frozen ownership")
+
     def test_01_runtime_receipt_serialization_fails(self):
         root = self.fixture()
         self.append(
