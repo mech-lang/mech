@@ -296,6 +296,15 @@ alphabet-specific helper. The exact-binary profile reduces query self samples
 from20.64% to7.13%; histogram counting, text-line processing and remaining
 footprint checks are larger targets now. It remains1.92x old direct/1.40x old
 secured, not completion or an isolated measurement of security overhead.
+Using the existing shared CR-absence scanner in the remaining String-map binder
+then [measures **1.8122s original /1.8230s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-string-map-crlf-standard125m-v1.json),
+another3.2% less original wall time. All eight outputs are exact, with unchanged
+accounting, finite limits and one-round publication. The full scan is still
+prepaid; isolated CR, CRLF, NUL and Unicode keep their original behavior. No new
+helper or authority is introduced. This remains1.86x old direct/1.36x old secured.
+Histogram counting, whole-input footprint checks and intermediate line
+materialization remain larger generic optimization targets; the performance
+goal is still active.
 Correct output, review and CI do not
 establish completion of this performance requirement.
 
