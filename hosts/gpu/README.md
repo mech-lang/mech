@@ -157,23 +157,23 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [latest paired full-size comparison](../../docs/validation/canonical-knucleotide-paired-legacy-standard125m-v1.json)
-remeasures both retained binaries on the same M1 and 125-million-base input:
+The [latest matched comparison](../../docs/validation/canonical-knucleotide-streamed-startup-v1.json)
+remeasures three binaries on the same M1 at both input sizes:
 
-| Implementation | Median |
-| --- | ---: |
-| Legacy direct-I/O compiled body | 0.9760 s |
-| Canonical secured native application | 0.9528 s |
+| Implementation | 10M bases | 125M bases |
+| --- | ---: | ---: |
+| Legacy direct-I/O compiled body | 0.0921 s | 0.9749 s |
+| Secured application before startup refactor | 0.1078 s | 0.9906 s |
+| Secured application with streamed analysis | 0.0979 s | 0.9739 s |
 
-Eight alternating paired rounds use the same timing observer and file capture;
-all eighteen correctness/timed outputs match exactly. The secured application
-is faster in every pair, about 2.4% at the medians, under unchanged grants and
-finite limits. Its source is pinned to `61bd12d439`.
-The [separate original/bytecode qualification](../../docs/validation/canonical-knucleotide-line-count-standard125m-v1.json)
-produces identical binaries and records 0.9859/0.9997 s with the earlier observer;
-those samples are not mixed into the paired comparison.
-Historical measurements, profiles and failures remain in the
-[validation evidence](../../docs/validation), rather than a running changelog here.
+Twelve balanced rounds per size use the same observer and regular-file capture;
+all 78 correctness/timed outputs match. Streaming semantic-use analysis removes
+about 10 ms at 10M, leaving a 5.8 ms (6.3%) gap. Full125M is approximately tied
+with legacy; overlapping sample ranges do not establish a 0.1% advantage.
+The measured source is pinned to `f7161344dc`. Grants, finite limits and
+accounting are unchanged. Original and decoded builds are byte-identical.
+Historical measurements, profiles and preserved failures remain in the
+[validation evidence](../../docs/validation).
 
 IR19/work policy29 retain one canonical compiler and **one host round** for
 capture, effect staging and atomic commit. Generic proofs lower closed control,
@@ -192,11 +192,13 @@ without changing canonical bytes or billing.
 ASCII String maps batch bounded lookups while retaining scalar first-error
 behavior. Both maintained text-line paths share a vectorizable byte count;
 ordinary iteration still constructs every genuine String owner.
+Startup use-count analysis borrows ordinary instruction descriptions and counts
+their reads directly; it retains all checks and owned snapshots for rewriting.
 
-The paired result meets the legacy speed target for this workload. It is a
-whole-implementation comparison, not isolated permission-check cost, a general
-language ranking or an optimization ceiling. Fresh review and green CI remain
-required; keep the PR draft and unmerged until the user directs otherwise.
+The smaller-input gap remains open. These are whole-implementation comparisons,
+not isolated permission-check costs, a language ranking or an optimization
+ceiling. Fresh review and green CI remain required; keep the PR draft and
+unmerged until the user directs otherwise.
 
 The [canonical k-nucleotide source](tests/fixtures/native/knucleotide-idiomatic.mec)
 expresses record selection, overlapping String windows, frequency widths and
