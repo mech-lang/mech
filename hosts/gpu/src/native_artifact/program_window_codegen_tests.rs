@@ -2,7 +2,12 @@ use super::*;
 use cranelift_module::default_libcall_names;
 use std::{hint::black_box, time::Instant};
 
-type Entry = unsafe extern "C" fn(*const u8, u64, *const u8, u64, u64) -> u64;
+type Entry = unsafe extern "C" fn(u64, u64, u64, u64, u64) -> u64;
+
+#[path = "program_window_histogram_reference.rs"]
+mod histogram_reference;
+#[path = "program_window_histogram_tests.rs"]
+mod histogram_tests;
 struct Compiled {
     entry: Entry,
     _module: cranelift_jit::JITModule,
@@ -23,20 +28,33 @@ impl Compiled {
         Self::build(true)
     }
     fn build(force_scalar: bool) -> Self {
+        Self::build_region(force_scalar, false)
+    }
+    fn histogram(reference: bool) -> Self {
+        Self::build_region(reference, true)
+    }
+    fn build_region(reference: bool, histogram: bool) -> Self {
         let catalog = mech_stdlib::source_catalog();
         let mut compiler = mech_runtime::RuntimeBuilder::new()
             .function_catalog(catalog.clone())
             .build_compiler()
             .unwrap();
-        let product = compiler
-            .compile_canonical_source(include_str!("../../tests/fixtures/native/window-query.mec"))
-            .unwrap();
+        let source = if histogram {
+            include_str!("../../tests/fixtures/native/window-histogram.mec")
+        } else {
+            include_str!("../../tests/fixtures/native/window-query.mec")
+        };
+        let product = compiler.compile_canonical_source(source).unwrap();
         let plan = mech_engine::native_artifact::lower_native_program_artifact(
             product.artifact(),
             &catalog,
         )
         .unwrap();
-        let regions = plan.window_query_regions();
+        let regions = if histogram {
+            plan.window_histogram_regions()
+        } else {
+            plan.window_query_regions()
+        };
         assert_eq!(regions.len(), 1);
         let builder = cranelift_jit::JITBuilder::with_flags(
             &[("opt_level", "speed"), ("preserve_frame_pointers", "true")],
@@ -44,7 +62,9 @@ impl Compiled {
         )
         .unwrap();
         let mut module = cranelift_jit::JITModule::new(builder);
-        let (id, ir, _, _) = if force_scalar {
+        let (id, ir, _, _) = if histogram && reference {
+            define_with(&mut module, &regions[0], histogram_reference::emit)
+        } else if reference {
             define_impl(&mut module, &regions[0], false)
         } else {
             define(&mut module, &regions[0])
@@ -73,10 +93,33 @@ impl Compiled {
         // or allocation escapes. This wrapper is test-only, NOT a runtime route.
         unsafe {
             (self.entry)(
-                source.as_ptr(),
+                source.as_ptr() as u64,
                 source.len() as u64,
-                query.as_ptr(),
+                query.as_ptr() as u64,
                 query.len() as u64,
+                width,
+            )
+        }
+    }
+
+    fn histogram_count(&self, source: &AsciiSource<'_>, width: u64, bins: &mut [u64]) -> u64 {
+        assert!(width <= 2);
+        let source = source.0;
+        let active = width > 0 && width <= source.len() as u64;
+        let cells = if active { 1usize << (width * 7) } else { 0 };
+        assert_eq!(bins.len(), cells);
+        // SAFETY: this is the exact emitted five-word signature. The code
+        // owner and immutable ASCII/no-CRLF String outlive the call. The
+        // actual initialized mutable bins slice is disjoint from that String
+        // and has every possible base-128 cell. Source/load bounds are proved
+        // by active starts; neither loan escapes. Callers zero bins outside
+        // timing. This test wrapper is not a runtime route or admission permit.
+        unsafe {
+            (self.entry)(
+                source.as_ptr() as u64,
+                source.len() as u64,
+                bins.as_mut_ptr() as u64,
+                bins.len() as u64,
                 width,
             )
         }

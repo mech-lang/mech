@@ -31,6 +31,20 @@ fn define_impl<M: Module>(
     region: &NativeWindowRegion,
     vectorized: bool,
 ) -> Result<(FuncId, String, u64, u64), NativeCompileError> {
+    define_with(module, region, |b| {
+        if region.query().is_none() {
+            histogram::emit(b);
+        } else {
+            query::emit(b, vectorized);
+        }
+    })
+}
+
+fn define_with<M: Module>(
+    module: &mut M,
+    region: &NativeWindowRegion,
+    emit: impl FnOnce(&mut FunctionBuilder<'_>),
+) -> Result<(FuncId, String, u64, u64), NativeCompileError> {
     let mut signature = module.make_signature();
     signature.params = vec![AbiParam::new(types::I64); 5];
     signature.returns.push(AbiParam::new(types::I64));
@@ -43,11 +57,7 @@ fn define_impl<M: Module>(
     let mut fb = FunctionBuilderContext::new();
     {
         let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
-        if region.query().is_none() {
-            histogram::emit(&mut b);
-        } else {
-            query::emit(&mut b, vectorized);
-        }
+        emit(&mut b);
         b.seal_all_blocks();
         b.finalize();
     }
