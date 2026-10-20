@@ -241,6 +241,16 @@ keeping the same counters, grants and finite limits, and includes the aggregate
 source-gate correction. It skips pair scans only when no CR exists; CRLF and
 Unicode semantics remain. The result is still5.27x old direct, so query matching,
 canonical construction/checking and safe partitioning remain performance work.
+Generic bounded word comparisons in the same proved query region then
+[measure **4.1191s original /4.1230s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-query-word-standard125m-v1.json),
+three samples each and all eight outputs exact. This removes another19.8% of
+wall time with unchanged counters, owners, grants, limits and one-round atomic
+publication. Short keys use masked word loads only inside the actual source,
+with byte tails; long keys check an eight-byte prefix before their remainder.
+No workload-specific helper or alternate execution authority is introduced.
+The result is still4.23x old direct; canonical construction/checking and safe
+partitioning remain unfinished. The timing is attributed to its measured
+revision, separately from the following lint-only emitter refactor and CI.
 Correct output, review and CI do not
 establish completion of this performance requirement.
 

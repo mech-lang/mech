@@ -117,9 +117,13 @@ pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     let offset = b.block_params(outer)[0];
     let count = b.block_params(outer)[1];
     b.ins().jump(compare, &[zero.into()]);
-    emit_bytes(
-        b, compare, equal, matched, advance, source, query, offset, count, width,
-    );
+    ByteLoop {
+        compare,
+        equal,
+        matched,
+        advance,
+    }
+    .emit(b, source, query, offset, count, width);
     b.switch_to_block(advance);
     let count = b.block_params(advance)[0];
     advance_window(b, offset, count, last, outer, done);
@@ -164,9 +168,13 @@ fn emit_wide(
     b.switch_to_block(prefix);
     let more = b.ins().icmp_imm(IntCC::UnsignedGreaterThan, width, 8);
     b.ins().brif(more, compare, &[eight.into()], matched, &[]);
-    emit_bytes(
-        b, compare, equal, matched, advance, source, query, offset, count, width,
-    );
+    ByteLoop {
+        compare,
+        equal,
+        matched,
+        advance,
+    }
+    .emit(b, source, query, offset, count, width);
     b.switch_to_block(advance);
     let count = b.block_params(advance)[0];
     advance_window(b, offset, count, last, outer, done);
@@ -174,35 +182,45 @@ fn emit_wide(
 
 // Every caller establishes 0 <= index < width and offset <= length - width.
 // Thus offset + index < length and index < query_length, without overflow.
-#[allow(clippy::too_many_arguments)]
-fn emit_bytes(
-    b: &mut FunctionBuilder<'_>,
+struct ByteLoop {
     compare: Block,
     equal: Block,
     matched: Block,
     advance: Block,
-    source: Value,
-    query: Value,
-    offset: Value,
-    count: Value,
-    width: Value,
-) {
-    b.switch_to_block(compare);
-    let index = b.block_params(compare)[0];
-    let position = b.ins().iadd(offset, index);
-    let source_address = b.ins().iadd(source, position);
-    let query_address = b.ins().iadd(query, index);
-    let left = b.ins().load(types::I8, MemFlags::new(), source_address, 0);
-    let right = b.ins().load(types::I8, MemFlags::new(), query_address, 0);
-    let same = b.ins().icmp(IntCC::Equal, left, right);
-    b.ins().brif(same, equal, &[], advance, &[count.into()]);
-    b.switch_to_block(equal);
-    let next = b.ins().iadd_imm(index, 1);
-    let more = b.ins().icmp(IntCC::UnsignedLessThan, next, width);
-    b.ins().brif(more, compare, &[next.into()], matched, &[]);
-    b.switch_to_block(matched);
-    let incremented = b.ins().iadd_imm(count, 1);
-    b.ins().jump(advance, &[incremented.into()]);
+}
+impl ByteLoop {
+    fn emit(
+        self,
+        b: &mut FunctionBuilder<'_>,
+        source: Value,
+        query: Value,
+        offset: Value,
+        count: Value,
+        width: Value,
+    ) {
+        let Self {
+            compare,
+            equal,
+            matched,
+            advance,
+        } = self;
+        b.switch_to_block(compare);
+        let index = b.block_params(compare)[0];
+        let position = b.ins().iadd(offset, index);
+        let source_address = b.ins().iadd(source, position);
+        let query_address = b.ins().iadd(query, index);
+        let left = b.ins().load(types::I8, MemFlags::new(), source_address, 0);
+        let right = b.ins().load(types::I8, MemFlags::new(), query_address, 0);
+        let same = b.ins().icmp(IntCC::Equal, left, right);
+        b.ins().brif(same, equal, &[], advance, &[count.into()]);
+        b.switch_to_block(equal);
+        let next = b.ins().iadd_imm(index, 1);
+        let more = b.ins().icmp(IntCC::UnsignedLessThan, next, width);
+        b.ins().brif(more, compare, &[next.into()], matched, &[]);
+        b.switch_to_block(matched);
+        let incremented = b.ins().iadd_imm(count, 1);
+        b.ins().jump(advance, &[incremented.into()]);
+    }
 }
 
 fn advance_window(
