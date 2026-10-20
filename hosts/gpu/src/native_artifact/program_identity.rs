@@ -53,9 +53,9 @@ fn selected_template(
         word(hash, number);
     }
 }
-// IR15 adds native words for proved nonescaping scalar aggregates.
+// IR16 adds owner-bound private String views and their generated operations.
 // Exclusive window selectors retain their distinct ordinary CFG semantics.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 15;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 16;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -100,7 +100,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 15;
 // Policy24 prepays byte-map table/output and one complete String map loop.
 // Policy25 admits private aggregate words once in the session's transport;
 // no repeated canonical heap ownership is created for those unobservable values.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 25;
+// Policy26 admits String owner tables once; bounded native equality charges
+// the same cumulative comparison ledger and each generated visit covers its code.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 26;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

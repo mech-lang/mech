@@ -34,6 +34,7 @@ pub struct NativeProgramDescriptor {
     pub(super) window_regions: Box<[mech_engine::native_artifact::NativeWindowRegion]>,
     pub(super) string_map_regions: Box<[mech_engine::native_artifact::NativeStringMapRegion]>,
     pub(super) scalar_aggregates: mech_engine::native_artifact::NativeScalarAggregates,
+    pub(super) borrowed_strings: super::program_borrowed_layout::Layout,
     pub(super) stack: u64,
     pub(super) code: u64,
     pub(super) identity: [u8; 32],
@@ -56,13 +57,20 @@ impl NativeProgramDescriptor {
             .and_then(|n| n.checked_add((plan.iterations().len() as u64).checked_mul(8)?))
             .and_then(|n| n.checked_add(256))
             .ok_or("program completion overflow")?;
-        let visits = super::iteration_abi::control_visits(
+        let borrowed_strings = super::program_borrowed_layout::Layout::derive(&plan)?;
+        let mut visits = super::iteration_abi::control_visits(
             plan.blocks(),
             plan.iterations().iter().map(Into::into),
             completion,
         )
-        .map_err(str::to_owned)?
-        .into();
+        .map_err(str::to_owned)?;
+        for (site, visit) in visits.iter_mut().enumerate() {
+            visit.work = visit
+                .work
+                .checked_add(borrowed_strings.extra_work(site)?)
+                .ok_or("borrowed String visit work overflow")?;
+        }
+        let visits = visits.into();
         let calls = plan
             .blocks()
             .iter()
@@ -175,6 +183,14 @@ impl NativeProgramDescriptor {
                 } else {
                     5
                 },
+            )
+            .max(
+                borrowed_strings
+                    .regions
+                    .iter()
+                    .map(|r| r.capture_words())
+                    .max()
+                    .unwrap_or(0),
             );
         let types = plan
             .values()
@@ -227,6 +243,7 @@ impl NativeProgramDescriptor {
             window_regions,
             string_map_regions,
             scalar_aggregates,
+            borrowed_strings,
             stack,
             code,
             identity,

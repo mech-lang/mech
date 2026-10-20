@@ -54,6 +54,10 @@ mod scalar_aggregates;
 pub use scalar_aggregates::{
     NativeAggregateWord, NativeScalarAggregateAction, NativeScalarAggregates,
 };
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+mod borrowed_strings;
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+pub use borrowed_strings::{NativeBorrowedStringAction, NativeBorrowedStringRegion};
 
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 pub use crate::resident::general::native_collection_templates::{

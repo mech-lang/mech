@@ -287,10 +287,22 @@ pub(super) fn define_cfg<M: Module>(
     let aggregate_words = aggregates.words();
     #[cfg(not(feature = "canonical-native-program"))]
     let aggregate_words = 0;
+    #[cfg(feature = "canonical-native-program")]
+    let borrowed = match plan {
+        super::iteration_code_plan::CodePlan::Program(program) => {
+            super::program_borrowed_layout::Layout::derive(program).map_err(backend)?
+        }
+        _ => Default::default(),
+    };
+    #[cfg(feature = "canonical-native-program")]
+    let borrowed_words = borrowed.words;
+    #[cfg(not(feature = "canonical-native-program"))]
+    let borrowed_words = 0;
     let local_count = plan
         .value_count()
         .checked_add(plan.iteration_count())
         .and_then(|n| n.checked_add(aggregate_words))
+        .and_then(|n| n.checked_add(borrowed_words))
         .ok_or_else(|| backend("iteration local count overflow"))?;
     offset(local_count)?;
     offset(plan.input_count())?;
@@ -556,6 +568,21 @@ pub(super) fn define_cfg<M: Module>(
                         error,
                     )?;
             }
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(hooks) = &hooks {
+                super::program_compiler::borrowed_codegen::prepare(
+                    &mut b, locals, &borrowed, index, hooks, error,
+                )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
+            let borrowed_join = super::program_compiler::borrowed_codegen::emit(
+                &mut b,
+                locals,
+                &borrowed,
+                index,
+                hooks.as_ref(),
+                error,
+            )?;
             #[cfg(feature = "canonical-native-program")]
             let aggregate = super::program_compiler::scalar_aggregates::emit(
                 &mut b,
@@ -836,6 +863,11 @@ pub(super) fn define_cfg<M: Module>(
                     }
                 }
             }
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(joined) = borrowed_join {
+                b.ins().jump(joined, &[]);
+                b.switch_to_block(joined);
+            }
             match block.terminator() {
                 NativeIterationTerminator::TailHeader { body, .. } => {
                     b.ins()
@@ -930,6 +962,10 @@ pub(super) fn define_cfg<M: Module>(
                     super::iteration_abi::helper_operand_work(block.action()).map_err(backend)?,
                 )
                 .ok_or_else(|| backend("iteration operand work overflow"))?;
+            #[cfg(feature = "canonical-native-program")]
+            let bound = bound
+                .checked_add(borrowed.extra_work(index).map_err(backend)?)
+                .ok_or_else(|| backend("borrowed String instruction work overflow"))?;
             if emitted.checked_add(128).is_none_or(|total| total > bound) {
                 return Err(NativeCompileError::InvalidPlan {
                     node: Some(block.origin().node()),

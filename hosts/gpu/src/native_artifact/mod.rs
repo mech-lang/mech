@@ -77,6 +77,8 @@ mod iteration_runtime;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_abi;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod program_borrowed_layout;
+#[cfg(feature = "canonical-native-program-runtime")]
 mod program_descriptor;
 #[cfg(feature = "canonical-native")]
 mod program_hooks;

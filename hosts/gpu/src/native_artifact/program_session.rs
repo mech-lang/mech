@@ -264,6 +264,7 @@ impl<'a> Prepared<'a> {
             .len()
             .checked_add(plan.iterations().len())
             .and_then(|n| n.checked_add(descriptor.scalar_aggregates.words()))
+            .and_then(|n| n.checked_add(descriptor.borrowed_strings.words))
             .ok_or_else(|| invalid("local count overflow"))?;
         let progress = plan
             .iterations()
@@ -620,6 +621,7 @@ impl<'a> Prepared<'a> {
             error: None,
             activation_phase: phase == PHASE_ACTIVATION,
             window_region: None,
+            borrowed_strings: None,
         };
         let context_pointer = (&mut context as *mut Context<'_, '_>).cast::<c_void>();
         let mut frame = Frame {
@@ -651,7 +653,7 @@ impl<'a> Prepared<'a> {
         if let Some(error) = context.error.take() {
             return Err(error);
         }
-        if context.window_region.is_some() {
+        if context.window_region.is_some() || context.borrowed_strings.is_some() {
             return Err(invalid("native entry returned with compiled String loans"));
         }
         let f = &frame.base;

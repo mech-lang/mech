@@ -23,6 +23,8 @@ use mech_engine::native_artifact::{
 };
 use std::ffi::c_void;
 
+#[path = "program_borrowed_strings.rs"]
+mod borrowed;
 #[path = "program_collection.rs"]
 mod collection;
 #[path = "program_session.rs"]
@@ -129,6 +131,7 @@ struct Context<'plan, 'visit> {
     // Sources are cheap shared roots from the arena; drop collection state
     // first, while that arena still owns their prepaid retirement obligation.
     collections: Option<collection::State>,
+    borrowed_strings: Option<borrowed::State>,
     arena: NativeValueArena<'plan>,
     library: NativeLibraryWorkBudget,
     limits: MemoryBudgetLimits,
@@ -144,6 +147,21 @@ struct Context<'plan, 'visit> {
     window_region: Option<(u32, u64)>,
 }
 impl Context<'_, '_> {
+    fn write_borrowed_word(
+        &mut self,
+        index: usize,
+        word: u64,
+    ) -> Result<(), NativeProgramExecutionError> {
+        if self.arguments.is_null() || index >= self.argument_capacity {
+            return Err(invalid("borrowed String capture lane is too small"));
+        }
+        // SAFETY: the owning session registers this exact admitted lane.
+        // Generated code is suspended; no reference survives this callback.
+        unsafe {
+            *self.arguments.add(index) = word;
+        }
+        Ok(())
+    }
     fn write_window_arguments(
         &mut self,
         words: [u64; 5],
@@ -159,6 +177,9 @@ impl Context<'_, '_> {
         Ok(())
     }
     fn needs_move(&self, site: usize) -> Option<(NativeMatchValue, NativeMatchValue)> {
+        if self.borrowed_action(site).is_some() {
+            return None;
+        }
         if self
             .control
             .descriptor
@@ -203,6 +224,9 @@ impl Context<'_, '_> {
             .then_some(pair)
     }
     fn action_required(&self, site: usize) -> bool {
+        if self.borrowed_action(site).is_some() {
+            return false;
+        }
         if self
             .control
             .descriptor
@@ -283,6 +307,15 @@ impl Context<'_, '_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         collection::before_span_helper(self, site)?;
         let descriptor = self.control.descriptor;
+        if operation == super::program_abi::BORROWED_STRINGS_PREPARE {
+            return self.prepare_borrowed_strings(site, args);
+        }
+        if operation == super::program_abi::BORROWED_STRING_FAILURE {
+            return self.borrowed_string_failure(site, args);
+        }
+        if self.borrowed_action(site).is_some() {
+            return Err(invalid("ordinary helper at native borrowed String site"));
+        }
         if descriptor.scalar_aggregates.action(site).is_some() {
             return Err(invalid("helper at native-only aggregate site"));
         }
@@ -564,6 +597,26 @@ impl Context<'_, '_> {
         }
         self.control.visit(site)?;
         let descriptor = self.control.descriptor;
+        if let Some(mech_engine::native_artifact::NativeBorrowedStringAction::Equal { .. }) =
+            self.borrowed_action(index)
+        {
+            self.library.charge(32, 32).map_err(|error| {
+                NativeProgramExecutionError::Collection {
+                    origin: block.origin(),
+                    error,
+                }
+            })?;
+        }
+        if let super::iteration_abi::Progress::Exit(iteration) = descriptor.visits[index].progress
+            && self.borrowed_strings.as_ref().is_some_and(|state| {
+                descriptor.borrowed_strings.regions[state.region]
+                    .proof
+                    .iteration()
+                    == iteration
+            })
+        {
+            self.borrowed_strings = None;
+        }
         if let super::iteration_abi::Progress::Exit(iteration) =
             descriptor.visits[site as usize].progress
             && matches!(

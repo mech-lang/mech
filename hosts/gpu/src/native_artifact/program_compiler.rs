@@ -12,6 +12,8 @@ use cranelift_object::{ObjectBuilder, ObjectModule};
 use mech_core::{FunctionCatalog, ManagedMemoryBudget, Value};
 use mech_engine::{ProgramArtifact, native_artifact::lower_native_program_artifact};
 
+#[path = "program_borrowed_codegen.rs"]
+pub(super) mod borrowed_codegen;
 #[path = "program_scalar_aggregates.rs"]
 pub(super) mod scalar_aggregates;
 #[path = "program_string_map_codegen.rs"]
@@ -160,6 +162,7 @@ impl NativeProgramObject {
             "compiled_window_histogram_regions": self.descriptor.window_regions.iter().filter(|region| region.query().is_none()).count(),
             "compiled_string_map_regions": self.descriptor.string_map_regions.len(),
             "unboxed_scalar_aggregate_values": self.descriptor.scalar_aggregates.value_count(),
+            "borrowed_string_regions": self.descriptor.borrowed_strings.regions.len(),
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }

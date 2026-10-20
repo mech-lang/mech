@@ -54,6 +54,8 @@ mod access_qualification;
 #[path = "support/canonical_program_nested_conversion.rs"]
 mod nested_conversion_qualification;
 
+#[path = "support/canonical_program_borrowed_strings.rs"]
+mod borrowed_string_qualification;
 #[path = "support/canonical_program_tail.rs"]
 mod tail_qualification;
 

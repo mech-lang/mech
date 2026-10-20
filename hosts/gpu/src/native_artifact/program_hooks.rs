@@ -11,7 +11,7 @@ pub(super) struct Hooks {
     context: Value,
     pub result: Value,
     #[cfg(feature = "canonical-native-program")]
-    arguments: Value,
+    pub(super) arguments: Value,
     #[cfg(feature = "canonical-native-program")]
     argument_capacity: Value,
 }
