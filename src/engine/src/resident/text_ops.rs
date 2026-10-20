@@ -275,7 +275,7 @@ fn execute_lines(
     )
     .admit()?
     .into_plan();
-    let count = text.lines().count();
+    let count = primitives::line_count(text);
     let shape = mech_core::shape_for_resolved_extents(schema, &[1, budget::checked_u64(count)?])
         .map_err(|_| ResidentKernelError::InvalidShape)?;
     let prospective = prospective_string_value_footprint(

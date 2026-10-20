@@ -6,6 +6,9 @@ use super::{artifacts, equal, inputs, limits, reference, reference_result};
 use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
 use mech_gpu::native_artifact::JitProgramArtifact;
 
+#[path = "canonical_program_text_line_count.rs"]
+mod line_count;
+
 #[test]
 fn compact_text_lines_admits_real_workspace_and_preserves_denial_atomicity() {
     let source = "+> text\ntext/lines(input<string>)\n";
