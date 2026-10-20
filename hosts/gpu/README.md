@@ -327,6 +327,23 @@ kernel improvements of23.6%/30.7% are diagnostics, not whole-program timings.
 The exact-binary profile reduces histogram self samples from17.91% to13.29%;
 remaining line processing and selection/materialization are generic targets.
 This remains1.63x old direct/1.19x old secured; the performance goal is active.
+Shared ASCII/CRLF representation proofs then
+[measure **1.4388s original /1.4285s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-outlined-text-scan-standard125m-v1.json),
+another9.4% less original wall time. A safe byte reduction combines ASCII and
+CR-absence checks; isolated CR still gets the exact pair check, and Unicode
+keeps canonical segmentation. The reduction is a separate small compiled leaf
+so its vectorization survives the grapheme counter's different flag consumers.
+The actual measured executable's disassembly confirms vector loads/comparisons
+and the counter's call to that leaf. All eight outputs, preceding accounting
+counters, owners, grants, finite limits and one-round publication are unchanged.
+The first candidate regressed to2.0416s despite its fast isolated guard; its
+exact-binary profile exposed a scalar counter loop. That candidate and its
+evidence remain recorded, not accepted as progress or substituted for timings.
+The current result remains1.48x old direct/1.08x the legacy capability-host
+baseline. That1.3341s baseline used the old packed body with capability-controlled
+I/O; it did not establish canonical whole-program work/memory guarantees and
+is not an irreducible security cost. All ratios compare whole implementations,
+not isolated permission-check overhead. The performance goal remains active.
 Correct output, review and CI do not
 establish completion of this performance requirement.
 
