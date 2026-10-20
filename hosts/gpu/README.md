@@ -137,9 +137,9 @@ source-unpaired `.mecb` decoding, then the same checked Object generator and
 capability-secured resource-hosted shell. It does not fall back to the legacy
 frontend or resident evaluator when lowering rejects a program. The default
 `--backend resident`, `mech run`, and `mech serve` remain resident products.
-Full-input execution, broader native coverage and benchmark qualification are
-still unfinished; the legacy tools are not a supported second semantic
-authority. See the recorded
+The complete canonical k-nucleotide application is qualified below; broader
+native coverage remains unfinished. The legacy tools are not a supported second
+semantic authority. See the recorded
 [`follow_up_roadmap`](../../docs/validation/checked-aot-workload-progress-v1.json)
 for migration context; current implemented and pending scope is detailed below.
 
@@ -157,19 +157,19 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [latest qualified full-size measurement](../../docs/validation/canonical-knucleotide-concrete-sinks-standard125m-v1.json)
+The [latest qualified full-size measurement](../../docs/validation/canonical-knucleotide-packed-ranges-standard125m-v1.json)
 uses the same M1 and 125-million-base input:
 
 | Implementation | Median |
 | --- | ---: |
 | Legacy direct-I/O compiled body | 0.9747 s |
-| Canonical secured native application | 1.1012 s |
-| Same canonical artifact after bytecode round-trip | 1.1108 s |
+| Canonical secured native application | 1.0238 s |
+| Same canonical artifact after bytecode round-trip | 1.0312 s |
 
 Each canonical median uses three fresh-process samples; both correctness runs
 and all six timed outputs match exactly under unchanged grants and finite
-limits. These timings are pinned to source `9ab5f47a1`, including concrete
-canonical encoding sinks and the selected-join optimization.
+limits. These timings are pinned to source `60fe04d2d`, including directly packed
+numeric ranges, concrete encoding sinks and selected-join optimization.
 Historical measurements, profiles and failures remain in the
 [validation evidence](../../docs/validation), rather than a running changelog here.
 
@@ -181,17 +181,17 @@ before entry, and unsupported representations keep their ordinary canonical
 operations. Histogram banks reserve their complete scratch/result peak
 atomically and fall back to serial layout if that admission loses headroom.
 
-A sole-use String-matrix selection immediately consumed by `text/join` now
-retains its genuine source/selector owners instead of copying an intermediate
-Matrix. Both original calls remain: selection validates indices and declared
-shape, then the consumer admits the final String before copying. The same
-canonical encoder now retains its concrete sink type, allowing length-only
-measurement to avoid indirect byte writes without changing encoding or billing.
+Eligible String selection/join retains genuine owners without an intermediate
+Matrix; validation and consumer admission remain. Numeric ranges fill the
+existing canonical packed buffers directly, avoiding draft cloning and
+repacking. All thirteen numeric kinds keep the original arithmetic, shape,
+admission and publication rules. Concrete encoding sinks remove indirect writes
+without changing canonical bytes or billing.
 
-The qualified result remains about 13% slower than legacy direct I/O. These are
+The qualified result remains about 5% slower than legacy direct I/O. These are
 whole-implementation comparisons, not isolated permission-check costs or a
-security speed floor. Remaining work targets materialization and native
-computation; correct output, review and CI alone do not complete that goal.
+security speed floor. Remaining profile targets are text-line construction,
+ASCII scans and native counting; review and CI alone do not complete the goal.
 
 The [canonical k-nucleotide source](tests/fixtures/native/knucleotide-idiomatic.mec)
 expresses record selection, overlapping String windows, frequency widths and
