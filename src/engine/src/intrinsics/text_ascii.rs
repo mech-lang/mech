@@ -3,7 +3,10 @@
 pub(super) const NON_ASCII: u8 = 0x80;
 pub(super) const CARRIAGE_RETURN: u8 = 1;
 
-#[inline]
+// Keep one compiled reduction boundary: when inlined into grapheme counting,
+// separate high-bit/CR users can turn the reduction into multiple live-outs
+// that LLVM leaves scalar. Callers interpret the returned flags afterwards.
+#[inline(never)]
 pub(super) fn flags(text: &str) -> u8 {
     // A full reduction (not an early-exit byte search) lets the compiler use
     // ordinary vector instructions. Only actual String bytes are borrowed;
