@@ -11,6 +11,10 @@ use crate::{
 };
 use core::cell::{Cell, OnceCell};
 
+#[path = "string_matrix.rs"]
+mod string_matrix;
+pub use string_matrix::StringMatrixSnapshotConstructor;
+
 #[cfg(test)]
 #[path = "frozen_identity_tests.rs"]
 mod frozen_identity_tests;

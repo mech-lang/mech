@@ -671,3 +671,5 @@ fn generated_arithmetic_denial_after_a_library_call_keeps_prior_typed_roots() {
 }
 #[path = "support/canonical_program_closed_tail.rs"]
 mod closed_tail_qualification;
+#[path = "support/canonical_program_string_matrix.rs"]
+mod string_matrix_qualification;
