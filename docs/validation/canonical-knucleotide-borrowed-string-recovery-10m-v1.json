@@ -1,0 +1,109 @@
+{
+  "schema": "mech.canonical-knucleotide-borrowed-string-recovery.v1",
+  "status": "PARTIAL_RECOVERY_STILL_PERFORMANCE_BLOCKING",
+  "measured_source_commit": "32b4696a823c5971e02ff4314fbd108757ea933f",
+  "platform": "same Apple M1 as retained old/new 10M measurements",
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "input": {
+    "fasta_n": 2000000,
+    "three_bases": 10000000,
+    "bytes": 20333411,
+    "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b",
+    "oracle_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+  },
+  "unchanged_launch_sha256": "ec79f588345186db7f8646e52158d494628c6eb69b94ebdb269ddcf5dbe1c87a",
+  "measurement": {
+    "route": "canonical-artifact-program-object-secured-cli",
+    "policy": "secured",
+    "rust_optimization": "3",
+    "object_optimization": "speed",
+    "abi": 8,
+    "typed_ir": 16,
+    "work_policy": 26,
+    "binary_sha256_both_variants": "a648be96c2fb606abc199f7111cf56132e4a26eb95e6ca900cba357748e5a03f",
+    "object_sha256_both_variants": "85214f0a033bb776573eb9e6a11ece687dd75cd2a8b1f27172f5805421e41f36",
+    "identity_sha256_both_variants": "3490069d97cad3f4c6946d5e3eecb168a3a055ab5ccbd7f4848f1b0c842351c9",
+    "raw_samples_ns": {
+      "original": [
+        2761554125
+      ],
+      "decoded": [
+        2762977125
+      ]
+    },
+    "large_correctness_processes": 2,
+    "successful_timing_samples": 2,
+    "exact_output_all_four_processes": true,
+    "native_visits_all_four": 13000661,
+    "native_work_all_four": 126152142318,
+    "native_comparison_work_all_four": 440695494,
+    "native_transport_bytes": 33528,
+    "observations": 1,
+    "effects": 1,
+    "jit": false,
+    "source_parser": false,
+    "resident_body_evaluation": false,
+    "borrowed_string_regions": 1,
+    "unboxed_scalar_aggregate_values": 17,
+    "scope": "Warm-cache fresh-process spawn through observed child exit, including CLI input/output/report; 1ms exit polling. Build, hashes and parent validation excluded. One sample per variant, not a multi-sample median or final qualification."
+  },
+  "same_input_baselines_seconds": {
+    "old_selected_direct_median_of_7": 0.092041625,
+    "old_secured_host_median_of_7": 0.123658291,
+    "initial_canonical_secured_median_of_3": 73.536783875,
+    "previous_scalar_aggregate_original_single_sample": 6.972941875
+  },
+  "comparison": {
+    "speedup_from_previous_sample": 2.5250064128292253,
+    "slowdown_against_old_direct_median": 30.00331779235753,
+    "visits_removed": 0
+  },
+  "implementation": [
+    "Same-plan semantic-use escape proof selects private String components inside root Tail FSMs, rooted in immutable Matrix<String> captures. No benchmark, name, source hash or alphabet matching.",
+    "The existing native session pins genuine admitted matrix/literal owners once and validates ASCII/no-CRLF representation. Generated code performs matrix lookup, String length, scalar/fixed-range selection, copy and bounded raw equality using private pointer/length words. Unsupported representations use the same canonical CFG.",
+    "All capture/table/native-word capacity is finite and charged on the same invocation ledger. Private views cannot escape. Bounds failures materialize only the failing source and invoke the original selected canonical leaf; no failure continuation can publish.",
+    "IR16/work26 commits representation and work changes. Bounded equality has dynamic-instruction funding and cumulative comparison admission. ONE host round remains; 13 million per-operation control visits remain and are not presented as the required final architecture."
+  ],
+  "verification": {
+    "generated": "107 tests passed and two explicit diagnostics ignored in v734; one new zero-cap denial assertion initially hit an earlier canonical binding. v735 corrects that test to target and assert the native equality origin, and passes. 108 unique executed generated-program cases passing across those runs; production unchanged.",
+    "hosted": "Both complete actual secured-host cases passed in v736; original/decoded and 100/400-base stages. Four retirement/identity tests passed in v737.",
+    "guards": "Production routing, unsafe boundaries, Rust module layout, native build analysis layout, format/diff passed.",
+    "measurement": "v738 actual supervisor exit0, owned cleanup complete,373.8085s total build/qualification duration (not sample time). Frozen source/harness/input/oracle/launch pins unchanged. v739 physical audit independently reconciles four raw streams/reports, source/bytecode/manifests, binary/Object identities and strict root release profiles."
+  },
+  "fresh_profile": {
+    "kind": "Exact measured binary, same input/launch/oracle; CPU sampling diagnostic, not timing sample",
+    "main_thread_stacks": 2051,
+    "helper_callbacks_percent": 83.3252072159922,
+    "per_operation_admission_percent": 10.336421257922964,
+    "compiled_window_loops_percent": 5.168210628961482,
+    "compiled_map_loop_percent": 0.24378352023403219,
+    "text_execute_length_inclusive_percent": 43.63725012189176,
+    "grapheme_iterator_inclusive_percent": 49.098000975134084,
+    "caveat": "Inclusive functions overlap. Sample proportions are not exact causal wall time; optimized inlining, deduplicated symbols and ancestor categories limit attribution. Helpers include real computation, not exclusively security overhead.",
+    "next": "Target whole-pipeline representation and loop lowering: propagate String length/representation facts instead of repeated whole-string grapheme scans; eliminate unobserved line-matrix and intermediate materialization where escape proofs permit; compile closed FSM traversal without per-operation callbacks; reuse/adapt packed/SIMD kernels and proven partitioning from the old backend. Do not expect tuning the already-small counting loops alone to close30x."
+  },
+  "local_evidence": {
+    "root": "tmp/pr-stack-evidence/",
+    "full_result": {
+      "path": "borrowed-string-recovery-10m-release-v738/full-input/full-input-result.json",
+      "sha256": "eb6a194be39f99b9626dceadc43c76a71f0a4c0bc9d306b4a2b6684c50e86ad1"
+    },
+    "linked_result": {
+      "path": "borrowed-string-recovery-10m-release-v738/hosted-linked-result.json",
+      "sha256": "352fad5a269a56b77a79d52ecf2cebdb9791600ad5ba44f09016ce7f9cadd8d2"
+    },
+    "audit": {
+      "path": "audit-borrowed-string-recovery-v739-result.json",
+      "sha256": "7c56f5123bd14249d5d91779fe77b7e9c7a94d3494561203e3bddce02e61fae6"
+    },
+    "profile": {
+      "path": "borrowed-string-recovery-cpu-profile-v740/profile-analysis.json",
+      "sha256": "b30ccfa72f7eabc19f3583f6e046715a9867a03921b4e3105788939fe328c684"
+    },
+    "raw_profile": {
+      "path": "borrowed-string-recovery-cpu-profile-v740/sample.txt",
+      "sha256": "c46547739d2b402bf3a87cbdce26e8bcc537a63412d4dbd8fe556a581c1f592e"
+    }
+  },
+  "remaining": "About30x old same-input direct median. Old benchmark used four partitions, compact counters and a different packed-operation lowering, so this is the entire implementation gap, not isolated capability overhead. Full125M remains unqualified after the earlier temporary-memory denial; no cap increase, changed oracle, ranking, ready or merge."
+}
