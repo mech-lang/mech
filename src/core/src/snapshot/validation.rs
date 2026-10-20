@@ -15,6 +15,9 @@ use core::cell::{Cell, OnceCell};
 mod string_matrix;
 pub use string_matrix::StringMatrixSnapshotConstructor;
 
+#[path = "numeric_matrix.rs"]
+mod numeric_matrix;
+
 #[cfg(test)]
 #[path = "frozen_identity_tests.rs"]
 mod frozen_identity_tests;

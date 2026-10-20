@@ -1,3 +1,4 @@
+mod compact_range;
 mod compact_string_access;
 mod nested_assignment;
 mod promoted_assignment;
@@ -14867,21 +14868,15 @@ fn range_snapshot(
         .and_then(|call| call.inputs().first())
         .ok_or(ResidentKernelError::InvalidInput)?
         .schema();
-    let elements = canonical_range_draft_values(
+    let next = compact_range::construct(
+        kernel,
         &values[..expected_inputs],
         input_schema.body(),
         inclusive,
         incremented,
         count,
     )?;
-    let output_shape = resolved_snapshot_output_shape(kernel, 1, count)?;
-    write_snapshot_data_for_shape_with_work_budget(
-        kernel,
-        output,
-        &output_shape,
-        ValueDataDraft::Matrix(elements.into_boxed_slice()),
-        Some(0),
-    )
+    write_snapshot_value(kernel, output, next)
 }
 
 fn n_choose_k(
@@ -20370,6 +20365,14 @@ fn write_snapshot_data_for_shape_with_work_budget(
         data,
         canonicalization_work_limit,
     )?;
+    write_snapshot_value(kernel, output, next)
+}
+
+fn write_snapshot_value(
+    kernel: &BoundResidentKernel,
+    output: ResidentValueMut<'_>,
+    next: mech_core::Value,
+) -> Result<bool, ResidentKernelError> {
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
