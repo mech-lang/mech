@@ -316,6 +316,17 @@ their exact old denial and paid prefix. All eight outputs and preceding
 accounting counters match; grants, finite limits and one round are unchanged.
 The live-facts subtree falls from11.96% to1.61% of sampled stacks. It remains
 1.71x old direct/1.25x old secured, not completion or isolated security overhead.
+Bounded histogram batching then
+[measures **1.5888s original /1.6029s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-histogram-batches-standard125m-v1.json),
+another4.8% less original wall time. Width dispatch moves outside the loop;
+eight legal starts reuse overlapping source bytes. Counter updates remain
+sequential, preserving repeated and overlapping keys. Source bounds, scalar
+tails, ASCII/no-CRLF checks, admitted scratch, accounting, finite limits and
+one-round publication are unchanged. All eight outputs are exact. Isolated
+kernel improvements of23.6%/30.7% are diagnostics, not whole-program timings.
+The exact-binary profile reduces histogram self samples from17.91% to13.29%;
+remaining line processing and selection/materialization are generic targets.
+This remains1.63x old direct/1.19x old secured; the performance goal is active.
 Correct output, review and CI do not
 establish completion of this performance requirement.
 
