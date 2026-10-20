@@ -1,12 +1,15 @@
-use super::*;
+use super::{ProgramCompiler, RetainedCanonicalCompilation, RetainedSourceCollector};
 use crate::{
-    FileSourceResolver, InMemorySourceResolver, ResolvedSource, RuntimeBuilder, SourceResolver,
+    FileSourceResolver, InMemorySourceResolver, ModuleBuildOptions, ResolvedSource, RuntimeBuilder,
+    SourceRequest, SourceResolver,
 };
+use mech_core::{FunctionCatalog, MResult};
 use std::{
+    cell::RefCell,
     fs,
     path::PathBuf,
     sync::{
-        Mutex,
+        Arc, Mutex,
         atomic::{AtomicUsize, Ordering},
     },
 };
