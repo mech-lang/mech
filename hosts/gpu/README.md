@@ -164,7 +164,7 @@ Performance qualification is currently **blocked**: the [same-input comparison
 and CPU profile](../../docs/validation/canonical-knucleotide-performance-regression-v1.json)
 show roughly 799x slower execution than the old selected direct-I/O version
 before compiler recovery. That lowering repeatedly entered native visit guards
-and runtime helpers inside the computation. IR14/work policy24 lower proved
+and runtime helpers inside the computation. IR15/work policy25 lower proved
 ordinary window/query and one/two-character ASCII histogram comprehensions to
 callback-free native loops, retaining real owners and admitting finite work and
 scratch before entry. Unsupported representations keep canonical semantics in
@@ -173,15 +173,20 @@ took 34.255s after query lowering. The [histogram lowering remeasurement and fre
 profiles](../../docs/validation/canonical-knucleotide-histogram-recovery-10m-v1.json)
 took 17.150s original / 17.159s decoded. The subsequent [String map/join
 remeasurement and CPU profile](../../docs/validation/canonical-knucleotide-string-map-recovery-10m-v1.json)
-took **9.635s original / 9.629s decoded** on the same 10M input, unchanged source
-and finite policy (one sample each, all exact output). This remains about **105x**
-the old direct-I/O median. The compiler proves a closed character-map/join loop
+took 9.635s original / 9.629s decoded. Keeping nonescaping scalar tuple/enum
+state in admitted native words then [measured **6.973s for both variants**](../../docs/validation/canonical-knucleotide-scalar-aggregate-recovery-10m-v1.json)
+on the same 10M input, unchanged source and finite policy (one sample each,
+all exact output). This remains about **76x** the old direct-I/O median.
+The compiler proves a closed character-map/join loop
 and builds its byte lookup table from the program's actual Map, not fixed DNA
 values. Unsupported representations retain the ordinary canonical CFG.
-Another 60 million operation visits were removed; 13 million remain.
-The fresh profile puts all three compiled loop families together below 1.5% of
-samples; repeated record traversal String operations and managed state still
-dominate. Helpers include real computation as well as bookkeeping.
+The map step removed another 60 million operation visits; 13 million remain.
+Native aggregate storage removes repeated heap packing/observation helpers,
+not those remaining control visits. Observable/unsupported aggregate values
+retain canonical storage. The fresh profile puts the compiled window/map loops
+together around 2.1% of samples; repeated record traversal String operations,
+matrix access and ownership bookkeeping still dominate. Helpers include real
+computation as well as bookkeeping.
 The runtime owns **one round** for capture, staging and atomic commit; a native
 region is not a new security round. The first standard-size trial also failed temporary-memory
 admission before any timing samples. Correct output, review and CI do not

@@ -1,0 +1,113 @@
+{
+  "schema": "mech.canonical-knucleotide-scalar-aggregate-recovery.v1",
+  "status": "PARTIAL_RECOVERY_STILL_PERFORMANCE_BLOCKING",
+  "measured_source_commit": "a64f676e61a7528f9f68c6a531f39c7c20d5c8c3",
+  "platform": "same Apple M1 as the retained local old/new 10M comparison",
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "input": {
+    "fasta_n": 2000000,
+    "three_bases": 10000000,
+    "bytes": 20333411,
+    "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b",
+    "oracle_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+  },
+  "unchanged_launch_sha256": "ec79f588345186db7f8646e52158d494628c6eb69b94ebdb269ddcf5dbe1c87a",
+  "measurement": {
+    "route": "canonical-artifact-program-object-secured-cli",
+    "policy": "secured",
+    "rust_optimization": "3",
+    "object_optimization": "speed",
+    "abi": 8,
+    "typed_ir": 15,
+    "work_policy": 25,
+    "binary_sha256_both_variants": "703b36edf616824479f1e00dae65295c22627dc3557016876dbedb28b03cfa0e",
+    "object_sha256_both_variants": "c7adf046cdda9336c5fa6303d6ceb4e9d857abd96fb40d5618fb877a2a1d4fdc",
+    "identity_sha256_both_variants": "76c3e4a5e5da19d442525fde7956491aae8239bce3ecf44fc01b014405515324",
+    "raw_samples_ns": {
+      "original": [
+        6972941875
+      ],
+      "decoded": [
+        6973464667
+      ]
+    },
+    "large_correctness_processes": 2,
+    "successful_timing_samples": 2,
+    "exact_output_all_four_processes": true,
+    "native_visits_all_four": 13000661,
+    "native_work_all_four": 413370794595,
+    "native_comparison_work_all_four": 438028767,
+    "observations": 1,
+    "effects": 1,
+    "source_parser": false,
+    "jit": false,
+    "resident_body_evaluation": false,
+    "scope": "Warm-cache fresh-process spawn through observed child exit, including CLI input/output/report; 1ms exit polling. Build, hashes and parent validation excluded. One sample per variant, not a multi-sample median or final qualification.",
+    "unboxed_scalar_aggregate_values": 17
+  },
+  "same_input_baselines_seconds": {
+    "old_selected_direct_median_of_7": 0.092041625,
+    "old_secured_host_median_of_7": 0.123658291,
+    "prior_canonical_original_secured_median_of_3": 73.536783875,
+    "previous_window_query_original_secured_single_sample": 34.255289333,
+    "previous_histogram_original_secured_single_sample": 17.149854292,
+    "previous_string_map_original_secured_single_sample": 9.635080917
+  },
+  "comparison": {
+    "speedup_from_previous_string_map_sample": 1.38178133271762,
+    "slowdown_against_old_direct_median": 75.75856983185597,
+    "visits_removed_from_previous": 0
+  },
+  "implementation": [
+    "Escape analysis over canonical selected operations and reconstructed semantic reads keeps entire connected nonescaping U64 tuple/enum components in native words. It does not recognize FSM names, benchmark source or input hashes.",
+    "Actual selected CompositePack/EnumPack semantics, constant one-based constructor ordinals and canonical zero-based tags determine native layout. Generated code copies fields, packs fixed words and observes guarded enum payloads directly; unsupported or observable components keep canonical Value storage.",
+    "Full invocation word storage is reserved in the existing native session. Native aggregate values have no heap retirement obligations; other managed loop locals still retire after the generated tail latch. Native instructions retain current visit work bounds.",
+    "Original/decoded full fixture selects 17 aggregate values. State width 32 and reordered fields are tested; width 33 stays canonical. Externally visible results preserve canonical representation.",
+    "ONE host round remains. This step removes repeated aggregate helper/allocation costs but does NOT yet eliminate the 13 million per-operation control visits or remaining managed String calls."
+  ],
+  "fresh_profiles": {
+    "scope": "Exact retained executable, same input/launch/oracle; CPU stack-sampling diagnostic, NOT a timing sample. Actual output matched.",
+    "current_6_97s": {
+      "main_thread_stacks": 5374,
+      "runtime_helper_percent": 92.59397097134351,
+      "per_operation_admission_percent": 4.670636397469297,
+      "compiled_window_loops_percent": 1.9724599925567547,
+      "compiled_string_map_loop_percent": 0.11164867882396724,
+      "maintained_library_category_percent": 78.84257536285821,
+      "grapheme_iterator_inclusive_percent": 28.340156308150352,
+      "text_length_inclusive_percent": 23.669519910681057
+    },
+    "caveat": "Helpers include real computation as well as bookkeeping. Percentages are sample proportions, not exact causal wall-time attribution. Inclusive functions overlap; ancestor categories are disjoint but heuristic. Inlining/deduplicated symbols limit detail.",
+    "next": "Remaining selected String length/selection and matrix element access dominate record traversal, including repeated payload/schema/ownership work. Prioritize native borrowed representations and reuse/adapt existing byte kernels where canonical semantics permit; remove per-operation boundary costs, not just optimize the now-small counting loops."
+  },
+  "verification": {
+    "regressions": "102 executed generated-program tests passed with two explicitly ignored diagnostics; one additional width-boundary/permutation test passed (2/32/33 fields, original/decoded/reference, zero/multiple transitions); both complete actual secured-host cases passed; four exact retirement/identity tests passed. Finite work denial preserves prior output and recovers.",
+    "guards": "Production routing, unsafe boundaries, Rust module layout, native build analysis layout, format and diff checks passed.",
+    "qualification": "Actual pinned release harness passed, all source/input/harness pins unchanged; owned process cleanup complete. 391.343s total qualification/build duration is not a benchmark sample.",
+    "physical_audit": "v726 independently reconciles all four raw streams/reports, exact output, binaries, object identities, manifest pins, read-only owned inputs, root Rust release profiles and measured samples."
+  },
+  "local_evidence": {
+    "root": "tmp/pr-stack-evidence/",
+    "full_result": {
+      "path": "scalar-aggregate-recovery-10m-release-v725/full-input/full-input-result.json",
+      "sha256": "845ba3529320dbcb62cedce04cb4ab116c897537178757f746d10761900b80eb"
+    },
+    "linked_result": {
+      "path": "scalar-aggregate-recovery-10m-release-v725/hosted-linked-result.json",
+      "sha256": "26de4f24a61a81535d9a9afdb7eeca2ad33f88f7daab12280811808ad25ecf22"
+    },
+    "audit": {
+      "path": "audit-scalar-aggregate-recovery-v726-result.json",
+      "sha256": "52937203d402e8f59cacc02c4319ffb38167b92fb44df84286a0d26e124c78c8"
+    },
+    "profile": {
+      "path": "scalar-aggregate-recovery-cpu-profile-v727/profile-analysis.json",
+      "sha256": "f809ec3b196521863922675bddbbb93cb97a5563c5e3966b0570bbe42472a939"
+    },
+    "raw_profile": {
+      "path": "scalar-aggregate-recovery-cpu-profile-v727/sample.txt",
+      "sha256": "2b6c5c382fcbf7cafe6094652df030c2e2b7032517128fc8cb231b5fb305eeeb"
+    }
+  },
+  "remaining": "Still roughly 76x old same-input direct I/O; 13 million per-operation visits remain. Full125M remains unqualified after the prior fixed temporary-memory denial. No cap increase, changed oracle, language ranking, next benchmark, automatic ready or merge."
+}
