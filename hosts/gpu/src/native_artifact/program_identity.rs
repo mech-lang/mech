@@ -53,7 +53,9 @@ fn selected_template(
         word(hash, number);
     }
 }
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 11;
+// IR12 pins strict inclusive-window region selection; an exclusive selector
+// must retain its different length and possible empty-range error semantics.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 12;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

@@ -144,7 +144,8 @@ fn select(plan: &Plan, id: u32) -> Option<NativeWindowQueryRegion> {
         return None;
     };
     let projection = collection.string_span_projection()?;
-    if !unrestricted_selector(projection.range_template().output())
+    if projection.range_template().primitive() != Primitive::RangeInclusive
+        || !unrestricted_selector(projection.range_template().output())
         || !unrestricted_selector(projection.selection_template().inputs().get(1)?)
     {
         return None;
@@ -167,6 +168,11 @@ fn select(plan: &Plan, id: u32) -> Option<NativeWindowQueryRegion> {
     {
         return None;
     }
+    // The original selected 0..=length preparation still executes before
+    // this region and checks the U64 selector's physical Layout for length+1.
+    // Every inner inclusive range has 0 < width <= length elements, so the
+    // SAME representation bound is already proved; unrestricted_selector
+    // also proves its geometry cannot fail. No per-window shape binder needed.
     let length = range.operands()[1];
     let index = generator.element()?;
     // Length must be the SAME selected String's maintained sequence length,
