@@ -164,19 +164,24 @@ Performance qualification is currently **blocked**: the [same-input comparison
 and CPU profile](../../docs/validation/canonical-knucleotide-performance-regression-v1.json)
 show roughly 799x slower execution than the old selected direct-I/O version
 before compiler recovery. That lowering repeatedly entered native visit guards
-and runtime helpers inside the computation. IR13/work policy23 lower proved
+and runtime helpers inside the computation. IR14/work policy24 lower proved
 ordinary window/query and one/two-character ASCII histogram comprehensions to
 callback-free native loops, retaining real owners and admitting finite work and
 scratch before entry. Unsupported representations keep canonical semantics in
 the same compiler. The [first complete secured remeasurement](../../docs/validation/canonical-knucleotide-window-recovery-10m-v1.json)
 took 34.255s after query lowering. The [histogram lowering remeasurement and fresh
 profiles](../../docs/validation/canonical-knucleotide-histogram-recovery-10m-v1.json)
-took **17.150s original / 17.159s decoded** on the same 10M input, unchanged source
-and finite policy (one sample each, all exact output). This remains about **186x**
-the old direct-I/O median. Another 280 million operation visits were removed;
-73 million remain, with uppercase mapping and record traversal still expensive.
-The new profile puts both compiled window bodies together below 1% of samples;
-runtime helpers still dominate, including real computation and bookkeeping.
+took 17.150s original / 17.159s decoded. The subsequent [String map/join
+remeasurement and CPU profile](../../docs/validation/canonical-knucleotide-string-map-recovery-10m-v1.json)
+took **9.635s original / 9.629s decoded** on the same 10M input, unchanged source
+and finite policy (one sample each, all exact output). This remains about **105x**
+the old direct-I/O median. The compiler proves a closed character-map/join loop
+and builds its byte lookup table from the program's actual Map, not fixed DNA
+values. Unsupported representations retain the ordinary canonical CFG.
+Another 60 million operation visits were removed; 13 million remain.
+The fresh profile puts all three compiled loop families together below 1.5% of
+samples; repeated record traversal String operations and managed state still
+dominate. Helpers include real computation as well as bookkeeping.
 The runtime owns **one round** for capture, staging and atomic commit; a native
 region is not a new security round. The first standard-size trial also failed temporary-memory
 admission before any timing samples. Correct output, review and CI do not
