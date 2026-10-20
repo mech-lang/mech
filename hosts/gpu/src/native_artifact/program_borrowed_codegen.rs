@@ -119,6 +119,9 @@ pub(in crate::native_artifact) fn emit(
     let output = action.output();
     let mut view = None;
     match *action {
+        // Its complete semantic use set is represented by FixedRange actions.
+        // No fake Matrix handle is created; non-native inputs take the call below.
+        Action::ConstantRange { .. } => {}
         Action::MatrixElement { source, index, .. } => {
             let [table, count] = pair(b, locals, layout, source)?;
             let index = load(b, locals, index)?;

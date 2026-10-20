@@ -176,6 +176,38 @@ impl Context<'_, '_> {
             return Err(invalid("String failure outside selected library leaf"));
         };
         let state = self.borrowed_strings.take().unwrap();
+        if matches!(action, Action::FixedRange { .. }) {
+            // On a failure only, reconstruct an elided selector through its
+            // actual maintained leaf so the original String leaf can report
+            // its exact error. This does not change generated control progress.
+            let selector = operands[1];
+            self.control.work.charge(
+                NativeExecutionPhase::Setup,
+                amount(
+                    descriptor.borrowed_strings.regions[state.region]
+                        .proof
+                        .actions()
+                        .len(),
+                    64,
+                    128,
+                )?,
+            )?;
+            let restore = descriptor.borrowed_strings.regions[state.region]
+                .proof
+                .actions()
+                .iter()
+                .find_map(|(range_site, action)| match action {
+                    Action::ConstantRange {
+                        first,
+                        last,
+                        output,
+                    } if *output == selector => Some((*range_site as usize, *first, *last)),
+                    _ => None,
+                });
+            if let Some((range_site, first, last)) = restore {
+                self.restore_borrowed_selector(range_site, [first, last])?;
+            }
+        }
         if !matches!(action, Action::MatrixElement { .. }) {
             let source = match action {
                 Action::ScalarSelect { source, .. } | Action::FixedRange { source, .. } => source,
@@ -263,5 +295,46 @@ impl Context<'_, '_> {
             Err(error) => Err(error),
             Ok(_) => Err(invalid("borrowed bounds failure unexpectedly succeeded")),
         }
+    }
+
+    fn restore_borrowed_selector(&mut self, site: usize, words: [u64; 2]) -> Result<(), Error> {
+        let descriptor = self.control.descriptor;
+        self.control.work.charge(
+            NativeExecutionPhase::Setup,
+            amount(self.call_inputs.values().len(), 16, 128)?,
+        )?;
+        let NativeIterationAction::LibraryCall {
+            operands, output, ..
+        } = descriptor.plan.blocks()[site].action()
+        else {
+            return Err(invalid("elided String selector lost its selected call"));
+        };
+        if operands.len() != 2 || self.call_inputs.values().iter().any(Option::is_some) {
+            return Err(invalid("elided String selector has stale call owners"));
+        }
+        for (i, &operand) in operands.iter().enumerate() {
+            let value = self.scalar(operand, words[i])?;
+            self.call_inputs.values_mut()[i] = Some(value);
+        }
+        let call = descriptor.calls[site]
+            .as_ref()
+            .ok_or_else(|| invalid("elided String selector lost its prepared leaf"))?;
+        let mut result = None;
+        let outcome = self.call_caches.entries[site].invoke(
+            call,
+            &self.call_inputs.values()[..2],
+            &mut result,
+            self.limits,
+            &self.library,
+        );
+        self.call_inputs.values_mut()[..2].fill(None);
+        outcome.map_err(|error| Error::Library {
+            origin: descriptor.plan.blocks()[site].origin(),
+            error,
+        })?;
+        let result = result.ok_or_else(|| invalid("elided String selector omitted its result"))?;
+        self.arena
+            .put(output.get(), &result, &mut self.control.work)?;
+        Ok(())
     }
 }

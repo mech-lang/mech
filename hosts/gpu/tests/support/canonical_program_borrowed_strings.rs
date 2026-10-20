@@ -67,6 +67,15 @@ fn complete_idiomatic_record_scan_has_a_closed_borrowed_string_component() {
         );
         let region = &regions[0];
         assert_eq!(region.matrices().len(), 1);
+        assert_eq!(
+            region
+                .actions()
+                .iter()
+                .filter(|(_, action)| matches!(action, View::ConstantRange { .. }))
+                .count(),
+            1,
+            "the repeated private prefix selector must not allocate a Matrix"
+        );
         for wanted in ["matrix", "length", "scalar", "range", "equal"] {
             assert!(
                 region.actions().iter().any(|(_, a)| match (wanted, a) {
@@ -79,6 +88,52 @@ fn complete_idiomatic_record_scan_has_a_closed_borrowed_string_component() {
                 }),
                 "missing {wanted}: {region:?}"
             );
+        }
+    }
+}
+
+#[test]
+fn constant_selector_elision_requires_its_complete_semantic_use_set() {
+    for (body, expected) in [
+        ("found := line[r] == \"abc\".", 1),
+        (
+            "n := sequence/length(r)\n  found := (n? | 3u64 => line[r] == \"abc\" | * => false).",
+            0,
+        ),
+    ] {
+        let source = scan("inspect(lines[i])").replacen("+> sequence\n", &format!(
+            "+> sequence\ninspect(line<string>) => (found<bool>) :=\n  r := 1u64..=3u64\n  {body}\n"), 1);
+        for artifact in artifacts(&source).0 {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let regions = jit.descriptor().plan().borrowed_string_regions();
+            assert_eq!(regions.len(), 1, "String view proof must still apply");
+            assert_eq!(
+                regions[0]
+                    .actions()
+                    .iter()
+                    .filter(|(_, action)| matches!(action, View::ConstantRange { .. }))
+                    .count(),
+                expected,
+                "{source}"
+            );
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            for text in ["abc", "xyz", "🧑‍🚀ab", "\r\nab"] {
+                let args = inputs(
+                    &artifact,
+                    &[(
+                        "input",
+                        Data::Matrix(vec![Data::String(text.into())].into()),
+                    )],
+                    &memory,
+                );
+                let ordinary = reference(&artifact, &args);
+                let mut output = vec![None; artifact.outputs().len()];
+                jit.evaluate_into(&args, &mut output, limits(), &memory)
+                    .unwrap();
+                equal(&artifact, &output, &ordinary);
+            }
+            assert_eq!(memory.used_bytes(), 0);
         }
     }
 }
@@ -133,6 +188,7 @@ fn native_string_bounds_fail_atomically_and_keep_the_selected_leaf_origin() {
         "lines[i][0u64] == \"x\"",
         "lines[i][4u64] == \"x\"",
         "lines[i][1u64..=4u64] == \"xxxx\"",
+        "lines[i][18446744073709551614u64..=18446744073709551615u64] == \"xx\"",
         "lines[i + 1u64] == \"x\"",
     ] {
         for artifact in artifacts(&scan(body)).0 {
@@ -174,6 +230,10 @@ fn native_string_bounds_fail_atomically_and_keep_the_selected_leaf_origin() {
             );
             assert!(output.iter().all(Option::is_none));
             assert_eq!(memory.used_bytes(), before);
+            let empty = inputs(&artifact, &[("input", Data::Matrix(Box::new([])))], &memory);
+            jit.evaluate_into(&empty, &mut output, limits(), &memory)
+                .unwrap();
+            equal(&artifact, &output, &reference(&artifact, &empty));
         }
     }
 }

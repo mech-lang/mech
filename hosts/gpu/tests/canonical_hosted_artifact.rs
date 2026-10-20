@@ -80,6 +80,18 @@ fn complete_knucleotide_original_and_decoded_run_through_actual_secured_cli() {
             1,
             "the complete record scanner must select owner-bound native String reads"
         );
+        assert_eq!(
+            jit.descriptor().plan().borrowed_string_regions()[0]
+                .actions()
+                .iter()
+                .filter(|(_, action)| matches!(
+                    action,
+                    mech_engine::native_artifact::NativeBorrowedStringAction::ConstantRange { .. }
+                ))
+                .count(),
+            1,
+            "the actual hosted source must elide its private constant selector"
+        );
         assert!(
             jit.descriptor().plan().scalar_aggregates().value_count() > 0,
             "the complete source must use native scalar FSM state, not repeated heap packing"

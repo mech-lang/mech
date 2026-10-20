@@ -9,8 +9,18 @@ use super::{
 };
 use mech_core::{SchemaBody, ValueData};
 
+#[path = "borrowed_string_selectors.rs"]
+mod selectors;
+
 #[derive(Clone, Debug)]
 pub enum NativeBorrowedStringAction {
+    /// No selector Value is needed when every read is a proved native fixed
+    /// String slice. The ordinary branch still executes the original call.
+    ConstantRange {
+        first: u64,
+        last: u64,
+        output: Value,
+    },
     MatrixElement {
         source: Value,
         index: Value,
@@ -45,7 +55,8 @@ pub enum NativeBorrowedStringAction {
 impl NativeBorrowedStringAction {
     pub fn output(&self) -> Value {
         match *self {
-            Self::MatrixElement { output, .. }
+            Self::ConstantRange { output, .. }
+            | Self::MatrixElement { output, .. }
             | Self::Copy { output, .. }
             | Self::Length { output, .. }
             | Self::ScalarSelect { output, .. }
@@ -55,7 +66,7 @@ impl NativeBorrowedStringAction {
     }
     fn view_inputs(&self) -> Vec<Value> {
         match *self {
-            Self::MatrixElement { .. } => Vec::new(),
+            Self::ConstantRange { .. } | Self::MatrixElement { .. } => Vec::new(),
             Self::Equal {
                 source, literal, ..
             } => vec![source, literal],
@@ -66,7 +77,10 @@ impl NativeBorrowedStringAction {
         }
     }
     fn produces_view(&self) -> bool {
-        !matches!(self, Self::Length { .. } | Self::Equal { .. })
+        !matches!(
+            self,
+            Self::ConstantRange { .. } | Self::Length { .. } | Self::Equal { .. }
+        )
     }
 }
 #[derive(Clone, Debug)]
@@ -119,9 +133,9 @@ fn u64_constant(plan: &Plan, value: Value) -> Option<u64> {
     })
 }
 fn fixed_range(plan: &Plan, selector: Value) -> Option<(u64, u64)> {
-    // The original selected range call is NOT elided by this proof. Its shape
-    // and failures still precede String selection. Only its constant geometry
-    // is used to emit a borrowed slice rather than a copied String result.
+    // This predicate proves only constant geometry. The separate selector pass
+    // may elide the range on the native branch after proving ALL its reads;
+    // otherwise the original selected range call still executes unchanged.
     let (first, last) = plan.blocks().iter().find_map(|block| {
         let Action::LibraryCall {
             template,
@@ -361,6 +375,7 @@ fn region(
     if matrices.is_empty() {
         return None;
     }
+    selectors::append(plan, iteration, reads, &mut kept);
     Some(NativeBorrowedStringRegion {
         iteration,
         matrices: matrices.into(),
