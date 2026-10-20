@@ -284,6 +284,18 @@ loops and remaining whole-input preflight. This is still2.20x old direct/1.61x
 old secured, not completion. An initial oversized benchmark label failed
 configuration preflight before any full-size process; the receipt distinguishes
 that failure from the fresh successful run without changing source or policy.
+Generic bounded AArch64 query vectorization then
+[measures **1.8717s original /1.8762s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-query-simd-standard125m-v1.json),
+another12.6% less original wall time. All eight outputs are exact and the
+preceding accounting counters and finite launch limits are unchanged. Generated
+vector batches scan eight legal starts, with every load bounded by the actual
+source and scalar tails; other targets retain scalar lowering. Existing
+owner/representation proofs, grants, exact errors and one-round atomic
+publication are unchanged. This is generic query instruction selection, not an
+alphabet-specific helper. The exact-binary profile reduces query self samples
+from20.64% to7.13%; histogram counting, text-line processing and remaining
+footprint checks are larger targets now. It remains1.92x old direct/1.40x old
+secured, not completion or an isolated measurement of security overhead.
 Correct output, review and CI do not
 establish completion of this performance requirement.
 
