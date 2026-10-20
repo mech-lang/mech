@@ -6,6 +6,7 @@ type Entry = unsafe extern "C" fn(*const u8, u64, *const u8, u64, u64) -> u64;
 struct Compiled {
     entry: Entry,
     _module: cranelift_jit::JITModule,
+    ir: String,
 }
 struct AsciiSource<'a>(&'a str);
 impl<'a> AsciiSource<'a> {
@@ -16,6 +17,12 @@ impl<'a> AsciiSource<'a> {
 }
 impl Compiled {
     fn new() -> Self {
+        Self::build(false)
+    }
+    fn scalar() -> Self {
+        Self::build(true)
+    }
+    fn build(force_scalar: bool) -> Self {
         let catalog = mech_stdlib::source_catalog();
         let mut compiler = mech_runtime::RuntimeBuilder::new()
             .function_catalog(catalog.clone())
@@ -37,7 +44,12 @@ impl Compiled {
         )
         .unwrap();
         let mut module = cranelift_jit::JITModule::new(builder);
-        let (id, ir, _, _) = define(&mut module, &regions[0]).unwrap();
+        let (id, ir, _, _) = if force_scalar {
+            define_impl(&mut module, &regions[0], false)
+        } else {
+            define(&mut module, &regions[0])
+        }
+        .unwrap();
         assert!(
             !ir.contains("call ") && !ir.contains("call_indirect"),
             "{ir}"
@@ -50,6 +62,7 @@ impl Compiled {
         Self {
             entry,
             _module: module,
+            ir,
         }
     }
     fn count(&self, source: &AsciiSource<'_>, width: u64, query: &str) -> u64 {
@@ -182,6 +195,75 @@ fn compiled_query_word_scan_matches_arbitrary_ascii_and_query_lengths() {
 }
 
 #[test]
+fn vector_queries_match_scalar_and_reference_at_every_batch_and_word_boundary() {
+    let compiled = Compiled::new();
+    let scalar = Compiled::scalar();
+    assert!(!scalar.ir.contains("shuffle"));
+    if cfg!(all(target_arch = "aarch64", target_endian = "little")) {
+        assert!(compiled.ir.contains("shuffle") && compiled.ir.contains("i64x2"));
+        assert!(compiled.ir.contains("load.i8x16"));
+    }
+    for ir in [&compiled.ir, &scalar.ir] {
+        assert!(!ir.contains("call ") && !ir.contains("call_indirect"));
+        assert!(!ir.contains("notrap") && !ir.contains("aligned") && !ir.contains("can_move"));
+    }
+    for len in 0..=96usize {
+        let storage = (0..len + 7)
+            .map(|i| [0, b'A', b'Z', 127, b'A'][i % 5])
+            .collect::<Vec<_>>();
+        let storage = String::from_utf8(storage).unwrap();
+        for alignment in 0..8 {
+            let source = &storage[alignment..alignment + len];
+            let loan = AsciiSource::borrow(source).unwrap();
+            for width in 0..=40usize {
+                let query = if width > 0 && width <= len {
+                    &source[len - width..]
+                } else {
+                    ""
+                };
+                let expected = reference(source, width as u64, query);
+                assert_eq!(
+                    compiled.count(&loan, width as u64, query),
+                    expected,
+                    "vector len={len} alignment={alignment} width={width}"
+                );
+                assert_eq!(scalar.count(&loan, width as u64, query), expected);
+            }
+        }
+    }
+}
+
+#[test]
+fn vector_wide_prefix_hits_keep_all_lanes_dense_overlaps_and_late_mismatches() {
+    let compiled = Compiled::new();
+    let scalar = Compiled::scalar();
+    for width in [8usize, 9, 12, 15, 16, 17, 18, 24, 32, 65, 140] {
+        let source = "A".repeat(512);
+        let query = "A".repeat(width);
+        let loan = AsciiSource::borrow(&source).unwrap();
+        let expected = (source.len() - width + 1) as u64;
+        assert_eq!(compiled.count(&loan, width as u64, &query), expected);
+        assert_eq!(scalar.count(&loan, width as u64, &query), expected);
+        for lane in 0..8 {
+            let mut source = source.as_bytes().to_vec();
+            source[128 + lane + width - 1] = b'B';
+            let source = String::from_utf8(source).unwrap();
+            let mut query = query.as_bytes().to_vec();
+            query[width - 1] = b'B';
+            let query = String::from_utf8(query).unwrap();
+            let loan = AsciiSource::borrow(&source).unwrap();
+            assert_eq!(reference(&source, width as u64, &query), 1);
+            assert_eq!(
+                compiled.count(&loan, width as u64, &query),
+                1,
+                "width={width} hit_lane={lane}"
+            );
+            assert_eq!(scalar.count(&loan, width as u64, &query), 1);
+        }
+    }
+}
+
+#[test]
 #[ignore = "manual machine-code kernel diagnostic; NOT full secure program timings"]
 fn measure_compiled_window_query_kernel_only() {
     let input_path =
@@ -205,6 +287,7 @@ fn measure_compiled_window_query_kernel_only() {
     source.make_ascii_uppercase();
     assert_eq!(source.len(), 10_000_000);
     let compiled = Compiled::new();
+    let scalar = Compiled::scalar();
     let source_loan = AsciiSource::borrow(&source).unwrap();
     let queries = [
         "GGT",
@@ -227,19 +310,30 @@ fn measure_compiled_window_query_kernel_only() {
             compiled.count(&source_loan, query.len() as u64, query),
             wanted
         );
+        assert_eq!(
+            scalar.count(&source_loan, query.len() as u64, query),
+            wanted
+        );
     }
     let mut rows = Vec::new();
     for round in 0..7 {
         for (index, query) in queries.iter().enumerate() {
-            let start = Instant::now();
-            let count = compiled.count(
-                black_box(&source_loan),
-                query.len() as u64,
-                black_box(query),
-            );
-            let elapsed_ns = start.elapsed().as_nanos();
-            assert_eq!(count, expected[index]);
-            rows.push(serde_json::json!({"round":round,"query":query,"count":count,"elapsed_ns":elapsed_ns}));
+            let variants = if round % 2 == 0 {
+                [("selected", &compiled), ("scalar", &scalar)]
+            } else {
+                [("scalar", &scalar), ("selected", &compiled)]
+            };
+            for (lowering, code) in variants {
+                let start = Instant::now();
+                let count = code.count(
+                    black_box(&source_loan),
+                    query.len() as u64,
+                    black_box(query),
+                );
+                let elapsed_ns = start.elapsed().as_nanos();
+                assert_eq!(count, expected[index]);
+                rows.push(serde_json::json!({"round":round,"query":query,"lowering":lowering,"count":count,"elapsed_ns":elapsed_ns}));
+            }
         }
     }
     eprintln!(
@@ -247,6 +341,7 @@ fn measure_compiled_window_query_kernel_only() {
         serde_json::json!({
         "scope":"isolated shared-emitter kernel; ASCII loan validated once outside samples; NOT secure end-to-end performance or recovered-original-body qualification",
         "source_bases":source.len(),"object_opt_level":"speed","samples":rows,
+        "comparison":"same executable and input; target-selected lowering versus scalar; alternating order; excludes host/capabilities and is NOT full-program timing",
         "runtime_callbacks_in_emitted_body":0,"production_wired":true})
     );
 }

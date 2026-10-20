@@ -4,7 +4,19 @@
 use super::*;
 use cranelift_codegen::ir::{Block, Endianness, Value};
 
-pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
+#[path = "program_window_query_simd.rs"]
+mod simd;
+
+#[derive(Clone, Copy)]
+struct WindowValues {
+    source: Value,
+    length: Value,
+    query: Value,
+    width: Value,
+    last: Value,
+}
+
+pub(super) fn emit(b: &mut FunctionBuilder<'_>, vectorized: bool) {
     let entry = b.create_block();
     let empty = b.create_block();
     let select = b.create_block();
@@ -42,6 +54,13 @@ pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     b.ins().return_(&[zero]);
     b.switch_to_block(select);
     let last = b.ins().isub(length, width);
+    let window = WindowValues {
+        source,
+        length,
+        query,
+        width,
+        last,
+    };
     let large = b
         .ins()
         .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, width, 8);
@@ -51,7 +70,7 @@ pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     // eight-byte reads are inside the actual immutable owners, even for an
     // unaligned final window. No aligned/can_move/notrap flags are asserted.
     b.switch_to_block(wide);
-    emit_wide(b, source, query, width, last, zero, done);
+    emit_wide(b, window, zero, done, vectorized);
 
     b.switch_to_block(short);
     let fits_word = b
@@ -91,7 +110,12 @@ pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     let all = b.ins().iconst(types::I64, -1);
     let mask = b.ins().ushr(all, shift);
     let last_word = b.ins().iadd_imm(length, -8);
-    b.ins().jump(bulk, &[zero.into(), zero.into()]);
+    let (offset, count) = if vectorized {
+        simd::short(b, window, key, mask, zero)
+    } else {
+        (zero, zero)
+    };
+    b.ins().jump(bulk, &[offset.into(), count.into()]);
     b.switch_to_block(bulk);
     let offset = b.block_params(bulk)[0];
     let count = b.block_params(bulk)[1];
@@ -138,13 +162,18 @@ fn little() -> MemFlags {
 
 fn emit_wide(
     b: &mut FunctionBuilder<'_>,
-    source: Value,
-    query: Value,
-    width: Value,
-    last: Value,
+    window: WindowValues,
     zero: Value,
     done: Block,
+    vectorized: bool,
 ) {
+    let WindowValues {
+        source,
+        query,
+        width,
+        last,
+        ..
+    } = window;
     let outer = b.create_block();
     let prefix = b.create_block();
     let compare = b.create_block();
@@ -157,7 +186,33 @@ fn emit_wide(
     b.append_block_param(advance, types::I64);
     let key = b.ins().load(types::I64, little(), query, 0);
     let eight = b.ins().iconst(types::I64, 8);
-    b.ins().jump(outer, &[zero.into(), zero.into()]);
+    let (offset, count) = if vectorized {
+        let medium = b.create_block();
+        let long = b.create_block();
+        let joined = b.create_block();
+        b.append_block_param(joined, types::I64);
+        b.append_block_param(joined, types::I64);
+        let two_words = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, width, 16);
+        b.ins().brif(two_words, medium, &[], long, &[]);
+        b.switch_to_block(medium);
+        let (offset, count) = simd::two_words(b, window, key, zero);
+        b.ins().jump(joined, &[offset.into(), count.into()]);
+        b.switch_to_block(long);
+        let (offset, count) = simd::wide_prefix(b, window, key, zero);
+        b.ins().jump(joined, &[offset.into(), count.into()]);
+        b.switch_to_block(joined);
+        (b.block_params(joined)[0], b.block_params(joined)[1])
+    } else {
+        (zero, zero)
+    };
+    let remains = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, offset, last);
+    b.ins().brif(
+        remains,
+        outer,
+        &[offset.into(), count.into()],
+        done,
+        &[count.into()],
+    );
     b.switch_to_block(outer);
     let offset = b.block_params(outer)[0];
     let count = b.block_params(outer)[1];
