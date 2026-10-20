@@ -5,6 +5,9 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::NativeStringMapRegion;
 
+#[path = "program_string_map_batches.rs"]
+mod batches;
+
 pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
     region: &NativeStringMapRegion,
@@ -34,8 +37,8 @@ pub(in crate::native_artifact) fn define<M: Module>(
         b.switch_to_block(entry);
         let args = b.block_params(entry).to_vec();
         let (source, length, table, output) = (args[0], args[1], args[2], args[3]);
-        let zero = b.ins().iconst(types::I64, 0);
-        b.ins().jump(header, &[zero.into()]);
+        let offset = batches::emit(&mut b, source, length, table, output);
+        b.ins().jump(header, &[offset.into()]);
         b.switch_to_block(header);
         let index = b.block_params(header)[0];
         let more = b.ins().icmp(IntCC::UnsignedLessThan, index, length);

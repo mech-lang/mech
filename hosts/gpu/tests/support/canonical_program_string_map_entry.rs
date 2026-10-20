@@ -11,6 +11,9 @@ use mech_gpu::native_artifact::{
 
 const SOURCE: &str = "+> text\n+> map\ntext/join([(entries<{string:string}>){piece} | piece <- source<string>], separator<string>)\n";
 
+#[path = "canonical_program_string_map_batches.rs"]
+mod batches;
+
 #[test]
 fn compiled_byte_map_has_constant_visits_and_keeps_missing_key_atomic() {
     for artifact in artifacts(SOURCE).0 {
