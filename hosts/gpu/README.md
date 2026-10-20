@@ -234,6 +234,13 @@ revision had a separate aggregate-source workspace review finding; the follow-up
 requires a String-matrix source as well as result and keeps aggregate fallbacks'
 generic workspace. Its binder/planner regression and119 generated/37 hosted
 tests pass; the timing remains attributed to the measured revision, not the fix.
+The subsequent shared CRLF-absence optimization
+[measures **5.1364s original /5.1331s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-crlf-absence-standard125m-v1.json),
+three samples each and all eight outputs exact. This cuts wall time11.2% while
+keeping the same counters, grants and finite limits, and includes the aggregate
+source-gate correction. It skips pair scans only when no CR exists; CRLF and
+Unicode semantics remain. The result is still5.27x old direct, so query matching,
+canonical construction/checking and safe partitioning remain performance work.
 Correct output, review and CI do not
 establish completion of this performance requirement.
 
