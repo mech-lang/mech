@@ -10,19 +10,36 @@ fn oracle(text: &str) -> usize {
 #[test]
 fn ascii_length_matches_segmenter_for_every_byte_pair_and_scan_boundary() {
     let count = mech_engine::intrinsics::text_graphemes::count;
+    let has_crlf = mech_engine::intrinsics::text_graphemes::has_crlf;
     assert_eq!(count(""), 0);
     for a in 0..=127u8 {
         for b in 0..=127u8 {
             let bytes = [a, b];
             let text = core::str::from_utf8(&bytes).unwrap();
             assert_eq!(count(text), oracle(text), "{bytes:?}");
+            assert_eq!(has_crlf(text), bytes == *b"\r\n", "{bytes:?}");
         }
     }
-    for width in [1, 2, 15, 16, 17, 31, 32, 33, 63, 64, 65, 1023, 1024] {
-        for suffix in ["\r\n", "\r\r\n", "\n\r", "\0\t\x7f", "a\r\nb"] {
+    for width in [
+        1, 2, 15, 16, 17, 31, 32, 33, 63, 64, 65, 1023, 1024, 4095, 4096,
+    ] {
+        for suffix in [
+            "", "\r", "\n", "\rX", "\r\n", "\r\r\n", "\n\r", "\0\t\x7f", "a\r\nb",
+        ] {
             let text = format!("{}{suffix}{}", "x".repeat(width), "y".repeat(width));
             assert_eq!(count(&text), oracle(&text), "width {width}, {suffix:?}");
+            assert_eq!(
+                has_crlf(&text),
+                text.as_bytes().windows(2).any(|pair| pair == b"\r\n")
+            );
         }
+    }
+    for text in ["é", "é\r\nz", "é\rX", "\r🧑‍🚀", "🧑‍🚀\r\n"] {
+        assert_eq!(count(text), oracle(text));
+        assert_eq!(
+            has_crlf(text),
+            text.as_bytes().windows(2).any(|pair| pair == b"\r\n")
+        );
     }
 }
 
