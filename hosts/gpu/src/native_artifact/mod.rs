@@ -89,6 +89,8 @@ mod program_linked;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_runtime;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod program_selected_join_layout;
+#[cfg(feature = "canonical-native-program-runtime")]
 mod program_tail_layout;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_window_histogram_layout;

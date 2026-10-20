@@ -36,6 +36,7 @@ pub struct NativeProgramDescriptor {
     pub(super) scalar_aggregates: mech_engine::native_artifact::NativeScalarAggregates,
     pub(super) borrowed_strings: super::program_borrowed_layout::Layout,
     pub(super) closed_tails: super::program_tail_layout::Layout,
+    pub(super) selected_joins: super::program_selected_join_layout::Layout,
     pub(super) stack: u64,
     pub(super) code: u64,
     pub(super) identity: [u8; 32],
@@ -59,12 +60,16 @@ impl NativeProgramDescriptor {
             .and_then(|n| n.checked_add(256))
             .ok_or("program completion overflow")?;
         let borrowed_strings = super::program_borrowed_layout::Layout::derive(&plan)?;
+        let selected_joins = super::program_selected_join_layout::Layout::derive(&plan)?;
         let mut visits = super::iteration_abi::control_visits(
             plan.blocks(),
             plan.iterations().iter().map(Into::into),
             completion,
         )
         .map_err(str::to_owned)?;
+        selected_joins
+            .fund_visit_checks(&mut visits)
+            .map_err(str::to_owned)?;
         for (site, visit) in visits.iter_mut().enumerate() {
             visit.work = visit
                 .work
@@ -259,6 +264,7 @@ impl NativeProgramDescriptor {
             scalar_aggregates,
             borrowed_strings,
             closed_tails,
+            selected_joins,
             stack,
             code,
             identity,

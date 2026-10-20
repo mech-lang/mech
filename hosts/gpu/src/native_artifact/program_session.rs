@@ -624,6 +624,7 @@ impl<'a> Prepared<'a> {
             window_region: None,
             borrowed_strings: None,
             closed_tail: None,
+            selected_join: None,
         };
         let context_pointer = (&mut context as *mut Context<'_, '_>).cast::<c_void>();
         let mut frame = Frame {
@@ -658,6 +659,7 @@ impl<'a> Prepared<'a> {
         if context.window_region.is_some()
             || context.borrowed_strings.is_some()
             || context.closed_tail.is_some()
+            || context.selected_join.is_some()
         {
             return Err(invalid("native entry returned with compiled String loans"));
         }

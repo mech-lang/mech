@@ -34,6 +34,9 @@ mod range_cursor_qualification;
 #[path = "support/canonical_program_text_join_sink.rs"]
 mod text_join_sink_qualification;
 
+#[path = "support/canonical_program_selected_join.rs"]
+mod selected_join_qualification;
+
 #[path = "support/canonical_program_histogram_query.rs"]
 mod histogram_query_qualification;
 

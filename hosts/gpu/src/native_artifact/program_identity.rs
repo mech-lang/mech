@@ -54,9 +54,9 @@ fn selected_template(
         word(hash, number);
     }
 }
-// IR18 adds compiler-proved closed Tail regions with native finite fuel.
+// IR19 adds owner-bound selected Matrix<String> -> TextJoin regions.
 // Exclusive window selectors retain their distinct ordinary CFG semantics.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 18;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 19;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -107,7 +107,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 18;
 // failure-only reconstruction retain the original selected maintained leaves.
 // Policy28 funds one acyclic Tail traversal before native execution and
 // reconciles its finite cumulative fuel before every callback/region exit.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 28;
+// Policy29 preserves both original selection/join visits while charging their
+// private metadata and complete canonical String construction on the same ledger.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 29;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -822,6 +824,21 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
         word(&mut hash, output.slot().get() as u64);
         bytes(&mut hash, output.name().as_bytes());
         word(&mut hash, output.value().get() as u64);
+    }
+    let joins = plan.selected_text_joins();
+    word(&mut hash, joins.len() as u64);
+    for join in joins {
+        word(&mut hash, u64::from(join.selection()));
+        word(&mut hash, u64::from(join.consumer()));
+        for value in [
+            join.source(),
+            join.selector(),
+            join.selected(),
+            join.separator(),
+            join.output(),
+        ] {
+            word(&mut hash, u64::from(value.get()));
+        }
     }
     hash.finalize().into()
 }

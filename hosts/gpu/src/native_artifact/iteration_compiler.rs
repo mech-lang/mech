@@ -309,6 +309,10 @@ pub(super) fn define_cfg<M: Module>(
                 0,
             )
             .map_err(backend)?;
+            super::program_selected_join_layout::Layout::derive(program)
+                .map_err(backend)?
+                .fund_visit_checks(&mut visits)
+                .map_err(backend)?;
             for (site, visit) in visits.iter_mut().enumerate() {
                 visit.work = visit
                     .work

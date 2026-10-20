@@ -2,6 +2,8 @@ mod compact_string_access;
 mod nested_assignment;
 mod promoted_assignment;
 mod selected_string_footprint;
+#[cfg(all(feature = "native-artifact", feature = "pure_text"))]
+pub(in crate::resident) mod selected_string_matrix;
 mod selection_address;
 pub(in crate::resident) mod string_map_access;
 

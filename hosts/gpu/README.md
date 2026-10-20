@@ -155,212 +155,42 @@ owns capture, effect staging and commit, and raw pure evaluation refuses
 resource-bearing artifacts. Unsupported programs remain rejected. This entry
 contract is not a claim that whole-benchmark qualification is complete.
 
-The [preliminary 10-million-base k-nucleotide receipt](../../docs/validation/canonical-knucleotide-policy-timing-10m-v1.json)
-records actual original/decoded same-binary policy timings and exact-output
-qualification. It does not qualify the standard 125-million-base input, isolate
-all shared safety overhead, or establish a language ranking.
+### Canonical k-nucleotide performance
 
-Performance qualification is currently **blocked**: the [same-input comparison
-and CPU profile](../../docs/validation/canonical-knucleotide-performance-regression-v1.json)
-show roughly 799x slower execution than the old selected direct-I/O version
-before compiler recovery. That lowering repeatedly entered native visit guards
-and runtime helpers inside the computation. IR18/work policy28 lower proved
-ordinary window/query and one/two-character ASCII histogram comprehensions to
-callback-free native loops, retaining real owners and admitting finite work and
-scratch before entry. Unsupported representations keep canonical semantics in
-the same compiler. The [first complete secured remeasurement](../../docs/validation/canonical-knucleotide-window-recovery-10m-v1.json)
-took 34.255s after query lowering. The [histogram lowering remeasurement and fresh
-profiles](../../docs/validation/canonical-knucleotide-histogram-recovery-10m-v1.json)
-took 17.150s original / 17.159s decoded. The subsequent [String map/join
-remeasurement and CPU profile](../../docs/validation/canonical-knucleotide-string-map-recovery-10m-v1.json)
-took 9.635s original / 9.629s decoded. Keeping nonescaping scalar tuple/enum
-state in admitted native words then [measured 6.973s for both variants](../../docs/validation/canonical-knucleotide-scalar-aggregate-recovery-10m-v1.json).
-Owner-bound native String views in the record FSM then [measured 2.762s original /
-2.763s decoded](../../docs/validation/canonical-knucleotide-borrowed-string-recovery-10m-v1.json)
-on the same 10M input, unchanged source and finite policy (one sample each,
-all four correctness/timing processes exact). Shared ASCII grapheme counting
-reduced this to 1.491s / 1.488s. Eliding proved private constant range allocations
-now [measures **0.768s for both variants**](../../docs/validation/canonical-knucleotide-private-selector-recovery-10m-v1.json)
-(three samples each, plus two correctness processes; all eight exact).
-That revision remains **8.34x** the old direct-I/O median. Its diagnostic reuses the pinned
-release binaries with a synchronous Node exit observer; preceding canonical
-timings used Rust's 1ms polling. The original release test rejected an overlong
-experiment label before any large-input run; its failure is preserved, not
-relabeled as passing. Source, input, oracle and finite policy are unchanged.
-The compiler proves a closed character-map/join loop
-and builds its byte lookup table from the program's actual Map, not fixed DNA
-values. Unsupported representations retain the ordinary canonical CFG.
-The map step removed another 60 million operation visits; 13 million remain.
-Native aggregate storage and private String views remove repeated packing and
-selected String helpers. Closed native Tail control now
-[measures **0.497s for both variants**](../../docs/validation/canonical-knucleotide-closed-tail-recovery-10m-v1.json)
-(three samples each and two correctness processes; all eight exact), with
-admission visits reduced from13,000,661 to474. It proves an acyclic body after
-removing the declared latch edge and consumes finite native fuel for each
-traversal. Entry/exit reconcile the same account; insufficient fuel returns to
-the ordinary checked header. Conservative full-body admission increases charged
-work versus the previous path-specific visits; no limit is increased or renewed.
-This remains **5.40x** the old same-input direct median. Real matrix/literal
-owners remain pinned; unsupported representations and escaping values retain
-canonical storage. Shared text length uses ASCII byte scans with exact CRLF
-handling and retains the canonical segmenter for non-ASCII. Private constant
-selectors are elided only after every semantic use is proved; failing String
-bounds still use the original selected leaf and cannot publish.
-The fresh exact-binary profile has225 main-thread stacks: window/map loops
-around49.3% and runtime helper subtrees around46.7%, with no sampled admission
-callback. Next targets are compiled query comparisons, repeated representation
-scans and Matrix selection/finalization, followed by packed/SIMD kernels and
-safe partitioning. Unobserved intermediates remain candidates for elision.
-Sampling percentages are not exact causal wall time; helpers include computation
-as well as bookkeeping. Counting-loop tuning alone cannot close the remaining gap.
-The runtime owns **one round** for capture, staging and atomic commit; a native
-region is not a new security round. Checked compact String-matrix construction
-removes TextLines' generic draft/repacking arrays; its finite preflight and
-ordinary publication staging remain. Its implementation declaration must match
-that lifecycle too: retaining the old generic finalizer declaration still
-reserved2.392GB. After correcting the declaration, both standard125M variants
-pass TextLines and fail later at Matrix range selection:1.592GB temporary
-required versus1.073GB available, before any timing sample. A retained-binary
-[10M remeasurement is **0.4956s original /0.4965s decoded**](../../docs/validation/canonical-knucleotide-compact-string-memory-progress-v1.json),
-three samples each and all eight outputs exact. This Node synchronous diagnostic
-is essentially unchanged CPU time, not a new speedup; it remains5.38x old direct.
-Compact String-matrix selection now
-[qualifies the full125M input at **5.7841s original /5.7844s decoded**](../../docs/validation/canonical-knucleotide-secured-standard125m-v1.json),
-three samples each after both correctness gates, all eight outputs exact,
-474 native admission visits and the same finite standard-size policy. This is
-still5.93x the same-machine old direct125M median0.9747s, not a recovered
-performance goal or an isolated security-overhead measurement. The measured
-revision had a separate aggregate-source workspace review finding; the follow-up
-requires a String-matrix source as well as result and keeps aggregate fallbacks'
-generic workspace. Its binder/planner regression and119 generated/37 hosted
-tests pass; the timing remains attributed to the measured revision, not the fix.
-The subsequent shared CRLF-absence optimization
-[measures **5.1364s original /5.1331s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-crlf-absence-standard125m-v1.json),
-three samples each and all eight outputs exact. This cuts wall time11.2% while
-keeping the same counters, grants and finite limits, and includes the aggregate
-source-gate correction. It skips pair scans only when no CR exists; CRLF and
-Unicode semantics remain. The result is still5.27x old direct, so query matching,
-canonical construction/checking and safe partitioning remain performance work.
-Generic bounded word comparisons in the same proved query region then
-[measure **4.1191s original /4.1230s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-query-word-standard125m-v1.json),
-three samples each and all eight outputs exact. This removes another19.8% of
-wall time with unchanged counters, owners, grants, limits and one-round atomic
-publication. Short keys use masked word loads only inside the actual source,
-with byte tails; long keys check an eight-byte prefix before their remainder.
-No workload-specific helper or alternate execution authority is introduced.
-The result is still4.23x old direct; canonical construction/checking and safe
-partitioning remain unfinished. The timing is attributed to its measured
-revision, separately from the following lint-only emitter refactor and CI.
-Exact on-demand resident receipt tokens then
-[measure **2.7095s original /2.7274s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-demand-token-standard125m-v1.json),
-three samples each and all eight outputs exact: another34.2% less wall time.
-The hash algorithm and canonical identities are unchanged; the admitted immutable
-owner caches its fingerprint only when requested. Native execution does not use
-this resident receipt token. Validation, grants, finite launch limits and atomic
-one-round publication remain. Actual accounting reflects the changed private
-value/cache layout, so the counters are not claimed unchanged. The exact-binary
-profile samples no token hashing; planning checks and compiled window loops are
-the next targets. This remains2.78x old direct, not a completed performance goal.
-Whole-scan admission for proven packed String-matrix metadata then
-[measures **2.3992s original /2.4013s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-metadata-scan-standard125m-v1.json),
-another11.5% less original wall time. All eight outputs are exact, and the
-preceding work/comparison/visit/transport/carrier counters and finite policy
-limits are unchanged. The real immutable cell count funds the entire metadata
-walk once; the existing core footprint visitor still computes sizes. Tight
-budgets keep the old incremental denial and paid-work prefix, and this grants
-no payload, allocation or publication authority. The exact-binary profile now
-points to selected-cell footprint checks and compiled counting loops. This is
-still2.46x old direct/1.80x old secured, not a completed performance goal.
-The same principle applied to proved non-repeating String selections then
-[measures **2.1424s original /2.1392s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-selected-string-scan-standard125m-v1.json),
-another10.7% less original wall time. All eight outputs are exact and the
-preceding accounting counters and finite launch limits are unchanged. The
-existing source measurement is tied to the actual source; existing selector
-validation proves monotone distinct indices and pins those immutable views.
-Metadata is prepaid once, Core still measures sizes, and exact copy work is
-charged before ordinary final admission. Tight or unproved cases keep their
-old denial and paid-work prefix. The profile now points to compiled counting
-loops and remaining whole-input preflight. This is still2.20x old direct/1.61x
-old secured, not completion. An initial oversized benchmark label failed
-configuration preflight before any full-size process; the receipt distinguishes
-that failure from the fresh successful run without changing source or policy.
-Generic bounded AArch64 query vectorization then
-[measures **1.8717s original /1.8762s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-query-simd-standard125m-v1.json),
-another12.6% less original wall time. All eight outputs are exact and the
-preceding accounting counters and finite launch limits are unchanged. Generated
-vector batches scan eight legal starts, with every load bounded by the actual
-source and scalar tails; other targets retain scalar lowering. Existing
-owner/representation proofs, grants, exact errors and one-round atomic
-publication are unchanged. This is generic query instruction selection, not an
-alphabet-specific helper. The exact-binary profile reduces query self samples
-from20.64% to7.13%; histogram counting, text-line processing and remaining
-footprint checks are larger targets now. It remains1.92x old direct/1.40x old
-secured, not completion or an isolated measurement of security overhead.
-Using the existing shared CR-absence scanner in the remaining String-map binder
-then [measures **1.8122s original /1.8230s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-string-map-crlf-standard125m-v1.json),
-another3.2% less original wall time. All eight outputs are exact, with unchanged
-accounting, finite limits and one-round publication. The full scan is still
-prepaid; isolated CR, CRLF, NUL and Unicode keep their original behavior. No new
-helper or authority is introduced. This remains1.86x old direct/1.36x old secured.
-Histogram counting, whole-input footprint checks and intermediate line
-materialization remain larger generic optimization targets; the performance
-goal is still active.
-Whole-scan live-facts metadata admission then
-[measures **1.6690s original /1.6801s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-native-live-metadata-standard125m-v1.json),
-another7.9% less original wall time. The exact-binary profile attributes the old
-scans to line count, record selection and join inputs. Genuine packed String
-owners prove the fixed metadata count; a pure full-scan preview must fit the
-existing control/node/call limits before exact work is prepaid. Core still
-measures actual sizes and normal final admission remains. Tight cases keep
-their exact old denial and paid prefix. All eight outputs and preceding
-accounting counters match; grants, finite limits and one round are unchanged.
-The live-facts subtree falls from11.96% to1.61% of sampled stacks. It remains
-1.71x old direct/1.25x old secured, not completion or isolated security overhead.
-Bounded histogram batching then
-[measures **1.5888s original /1.6029s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-histogram-batches-standard125m-v1.json),
-another4.8% less original wall time. Width dispatch moves outside the loop;
-eight legal starts reuse overlapping source bytes. Counter updates remain
-sequential, preserving repeated and overlapping keys. Source bounds, scalar
-tails, ASCII/no-CRLF checks, admitted scratch, accounting, finite limits and
-one-round publication are unchanged. All eight outputs are exact. Isolated
-kernel improvements of23.6%/30.7% are diagnostics, not whole-program timings.
-The exact-binary profile reduces histogram self samples from17.91% to13.29%;
-remaining line processing and selection/materialization are generic targets.
-This remains1.63x old direct/1.19x old secured; the performance goal is active.
-Shared ASCII/CRLF representation proofs then
-[measure **1.4388s original /1.4285s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-outlined-text-scan-standard125m-v1.json),
-another9.4% less original wall time. A safe byte reduction combines ASCII and
-CR-absence checks; isolated CR still gets the exact pair check, and Unicode
-keeps canonical segmentation. The reduction is a separate small compiled leaf
-so its vectorization survives the grapheme counter's different flag consumers.
-The actual measured executable's disassembly confirms vector loads/comparisons
-and the counter's call to that leaf. All eight outputs, preceding accounting
-counters, owners, grants, finite limits and one-round publication are unchanged.
-The first candidate regressed to2.0416s despite its fast isolated guard; its
-exact-binary profile exposed a scalar counter loop. That candidate and its
-evidence remain recorded, not accepted as progress or substituted for timings.
-The current result remains1.48x old direct/1.08x the legacy capability-host
-baseline. That1.3341s baseline used the old packed body with capability-controlled
-I/O; it did not establish canonical whole-program work/memory guarantees and
-is not an irreducible security cost. All ratios compare whole implementations,
-not isolated permission-check overhead. The performance goal remains active.
-Admitted private histogram banks then
-[measure **1.3523s original /1.3574s decoded** at the same 125M input](../../docs/validation/canonical-knucleotide-histogram-banks-standard125m-v1.json),
-another 6.0% less original wall time. Longer width-one histograms distribute
-updates across four disjoint counter banks and reduce them once in native code.
-The complete scratch/result coexistence peak is reserved atomically before
-allocating banks; lost shared-account headroom falls back to the serial layout.
-Result construction transfers its share of that reservation. Existing
-whole-region work bounds cover initialization, counting, reduction and
-materialization. All eight outputs and the preceding
-accounting counters match under unchanged grants, limits and one host round.
-The exact-binary profile reduces histogram self samples from 16.04% to 9.19%;
-line copying, query counting and snapshot measurement remain targets.
-This is 1.39x the legacy direct result and 1.014x the legacy capability-host
-result. These are whole-implementation ratios, not isolated security overhead
-or proof that a nearby baseline is statistically different.
-Correct output, review and CI do not
-establish completion of this performance requirement.
+The [latest qualified full-size measurement](../../docs/validation/canonical-knucleotide-histogram-banks-standard125m-v1.json)
+uses the same M1 and 125-million-base input:
+
+| Implementation | Median |
+| --- | ---: |
+| Legacy direct-I/O compiled body | 0.9747 s |
+| Canonical secured native application | 1.3523 s |
+| Same canonical artifact after bytecode round-trip | 1.3574 s |
+
+Each canonical median uses three fresh-process samples; both correctness runs
+and all six timed outputs match exactly under unchanged grants and finite
+limits. These timings are pinned to source `97d331b8`, not a measurement of
+the subsequent reservation correction or selected-join optimization.
+Historical measurements, profiles and failures remain in the
+[validation evidence](../../docs/validation), rather than a running changelog here.
+
+IR19/work policy29 retain one canonical compiler and **one host round** for
+capture, effect staging and atomic commit. Generic proofs lower closed control,
+String mapping, overlapping-window queries and eligible histograms to native
+loops. Real owners remain pinned, complete region work and scratch are admitted
+before entry, and unsupported representations keep their ordinary canonical
+operations. Histogram banks reserve their complete scratch/result peak
+atomically and fall back to serial layout if that admission loses headroom.
+
+A sole-use String-matrix selection immediately consumed by `text/join` now
+retains its genuine source/selector owners instead of copying an intermediate
+Matrix. Both original calls remain: selection validates indices and declared
+shape, then the consumer admits the final String before copying. Its full-size
+performance has not yet been measured.
+
+The qualified result remains about 39% slower than legacy direct I/O. These are
+whole-implementation comparisons, not isolated permission-check costs or a
+security speed floor. Remaining work targets materialization and native
+computation; correct output, review and CI alone do not complete that goal.
 
 The [canonical k-nucleotide source](tests/fixtures/native/knucleotide-idiomatic.mec)
 expresses record selection, overlapping String windows, frequency widths and

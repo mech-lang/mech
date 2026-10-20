@@ -29,6 +29,8 @@ mod borrowed;
 mod closed_tail;
 #[path = "program_collection.rs"]
 mod collection;
+#[path = "program_selected_join.rs"]
+mod selected_join;
 #[path = "program_session.rs"]
 mod session;
 #[path = "program_window_round.rs"]
@@ -135,6 +137,7 @@ struct Context<'plan, 'visit> {
     collections: Option<collection::State>,
     borrowed_strings: Option<borrowed::State>,
     closed_tail: Option<closed_tail::State>,
+    selected_join: Option<selected_join::State>,
     arena: NativeValueArena<'plan>,
     library: NativeLibraryWorkBudget,
     limits: MemoryBudgetLimits,
@@ -447,6 +450,10 @@ impl Context<'_, '_> {
             // the synchronous entry. Native code is suspended in this callback;
             // no Rust reference to the lane survives across native writes.
             let words = unsafe { core::slice::from_raw_parts(self.arguments, operands.len()) };
+            if self.selected_join_call(site, words)? {
+                self.consumed = true;
+                return Ok(None);
+            }
             for (index, &operand) in operands.iter().enumerate() {
                 let value = if descriptor.plan.values()[operand.get() as usize]
                     .scalar_kind()
@@ -612,6 +619,7 @@ impl Context<'_, '_> {
             .blocks()
             .get(index)
             .ok_or_else(|| invalid("program visit site outside descriptor"))?;
+        self.validate_selected_join_boundary(index)?;
         if let Some(state) = &self.collections {
             state.validate_span_boundary(block.action())?;
         }

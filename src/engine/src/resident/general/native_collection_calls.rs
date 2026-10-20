@@ -20,6 +20,8 @@ mod invocation;
 pub use invocation::NativeCollectionInvocationError;
 #[path = "native_collection_prepared.rs"]
 mod prepared;
+#[cfg(feature = "pure_text")]
+pub use prepared::NativeSelectedStringMatrix;
 pub use prepared::{
     NativePreparedLibraryCall, NativePreparedLibraryCallCache, NativeSelectedStringSpanSelector,
     prepare_native_program_library_call,

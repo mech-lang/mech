@@ -134,6 +134,14 @@ fn charge(work: &mut NativeWorkMeter, amount: u64) -> Result<(), Error> {
     work.charge(Phase::Setup, amount).map_err(Into::into)
 }
 impl State {
+    pub(super) fn retained_demand(&self) -> Result<mech_core::ResourceDemand, Error> {
+        Ok(mech_core::ResourceDemand {
+            turn_peak_bytes: self.live_bytes,
+            retained_nodes: self.retained_nodes()?,
+            ..mech_core::ResourceDemand::default()
+        })
+    }
+
     pub(super) fn metadata_bytes(plan: &NativeProgramArtifactPlan) -> Result<u64, Error> {
         if plan.collections().is_empty() {
             return Ok(0);

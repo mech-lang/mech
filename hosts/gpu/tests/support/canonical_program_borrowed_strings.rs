@@ -65,6 +65,11 @@ fn complete_idiomatic_record_scan_has_a_closed_borrowed_string_component() {
             1,
             "actual canonical record FSM must be recognized"
         );
+        assert_eq!(
+            plan.selected_text_joins().len(),
+            1,
+            "the actual selected record must have one nonescaping join consumer"
+        );
         let object = emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
         assert_eq!(
             object.metadata()["closed_tail_regions"],

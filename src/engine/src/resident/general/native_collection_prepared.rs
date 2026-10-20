@@ -24,6 +24,11 @@ mod string_map_entry;
 #[path = "native_collection_string_span.rs"]
 mod string_span;
 pub use string_span::NativeSelectedStringSpanSelector;
+#[cfg(feature = "pure_text")]
+#[path = "native_collection_selected_join.rs"]
+mod selected_join;
+#[cfg(feature = "pure_text")]
+pub use selected_join::NativeSelectedStringMatrix;
 
 /// Compiler-owned selection/immutable schemas, not a bound runtime call or
 /// authority to enter its source site. No artifact/catalog traversal occurs
@@ -44,6 +49,8 @@ pub struct NativePreparedLibraryCall {
     cache_identity: Arc<()>,
     span_selector_metadata_bytes: u64,
     span_selector_work: u64,
+    #[cfg(feature = "pure_text")]
+    selection_shape_bounds: (u64, u64),
 }
 
 /// One owning native invocation's lazy per-site binding slot. This retains
@@ -171,6 +178,15 @@ pub fn prepare_native_program_library_call(
     );
     let (span_selector_metadata_bytes, span_selector_work) =
         string_span::selector_geometry_bounds(&template).ok_or_else(|| super::invalid(node))?;
+    #[cfg(feature = "pure_text")]
+    let selection_shape_bounds = if template.primitive()
+        == crate::native_artifact::NativeCollectionPrimitive::MatrixRangeAccess
+    {
+        string_span::selector_schema_geometry_bounds(template.output())
+            .ok_or_else(|| super::invalid(node))?
+    } else {
+        (0, 0)
+    };
     Ok(NativePreparedLibraryCall {
         template,
         schemas: Arc::new(artifact.schemas().clone()),
@@ -186,6 +202,8 @@ pub fn prepare_native_program_library_call(
         cache_identity: Arc::new(()),
         span_selector_metadata_bytes,
         span_selector_work,
+        #[cfg(feature = "pure_text")]
+        selection_shape_bounds,
     })
 }
 
