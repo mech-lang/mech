@@ -305,6 +305,17 @@ helper or authority is introduced. This remains1.86x old direct/1.36x old secure
 Histogram counting, whole-input footprint checks and intermediate line
 materialization remain larger generic optimization targets; the performance
 goal is still active.
+Whole-scan live-facts metadata admission then
+[measures **1.6690s original /1.6801s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-native-live-metadata-standard125m-v1.json),
+another7.9% less original wall time. The exact-binary profile attributes the old
+scans to line count, record selection and join inputs. Genuine packed String
+owners prove the fixed metadata count; a pure full-scan preview must fit the
+existing control/node/call limits before exact work is prepaid. Core still
+measures actual sizes and normal final admission remains. Tight cases keep
+their exact old denial and paid prefix. All eight outputs and preceding
+accounting counters match; grants, finite limits and one round are unchanged.
+The live-facts subtree falls from11.96% to1.61% of sampled stacks. It remains
+1.71x old direct/1.25x old secured, not completion or isolated security overhead.
 Correct output, review and CI do not
 establish completion of this performance requirement.
 
