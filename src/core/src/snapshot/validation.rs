@@ -19,6 +19,10 @@ pub use string_matrix::StringMatrixSnapshotConstructor;
 #[path = "frozen_identity_tests.rs"]
 mod frozen_identity_tests;
 
+#[cfg(test)]
+#[path = "resident_token_tests.rs"]
+mod resident_token_tests;
+
 #[cfg(feature = "no_std")]
 use alloc::{
     boxed::Box,
@@ -332,7 +336,6 @@ pub struct Value {
     schema_key: SchemaKey,
     shape: Arc<ShapeInstance>,
     root: Arc<FrozenSnapshotStorage>,
-    resident_token: u64,
     schemas: Option<Arc<SchemaTable>>,
 }
 
@@ -412,6 +415,11 @@ impl SnapshotBudgetRegistration {
 #[derive(Debug)]
 struct FrozenSnapshotData {
     data: ValueData,
+    // This receipt fingerprint is not validation, ownership or capability
+    // authority. Retain its exact deterministic algorithm, but walk payloads
+    // only if a receipt requests it. The admitted immutable owner contains the
+    // complete once-cell; initialization neither allocates nor changes data.
+    resident_token: SharedOwnershipCell<u64>,
     // The same immutable shape owner is shared by every ordinary Value clone.
     // Physical and imported-root tickets retain its real allocation as part
     // of this data owner, rather than charging a detached metadata copy.
@@ -976,7 +984,6 @@ impl Value {
                 schema_key: target_entry.key(),
                 shape: self.shape.clone(),
                 root: self.root.clone(),
-                resident_token: self.resident_token,
                 schemas: Some(context.try_clone_schemas()?),
             });
         }
@@ -1015,7 +1022,6 @@ impl Value {
                     schema_key: target_entry.key(),
                     shape: self.shape.clone(),
                     root: self.root.clone(),
-                    resident_token: self.resident_token,
                     schemas: Some(context.try_clone_schemas()?),
                 });
             }
@@ -1110,12 +1116,21 @@ impl Value {
         canonical_data_to_draft(schema.body(), &self.root.data.data, &SnapshotPath::root())
     }
 
-    /// Compact deterministic token computed when the finalized value is
-    /// constructed. Resident receipts use it without consulting schemas or
-    /// re-encoding immutable payloads during a turn.
+    /// Compact deterministic receipt token, computed at most once per immutable
+    /// owner on demand. The exact hash algorithm is unchanged. Construction and
+    /// import work bounds remain conservative for the complete payload walk;
+    /// callers must retain those bounds even when a token is never requested.
+    /// No schema lookup, encoding, allocation or authority is introduced here.
     #[doc(hidden)]
-    pub const fn resident_token(&self) -> u64 {
-        self.resident_token
+    pub fn resident_token(&self) -> u64 {
+        *self.root.data.resident_token.get_or_init(|| {
+            let mut token = token_bytes(RESIDENT_TOKEN_SEED, self.schema_key.as_bytes());
+            token = token_word(token, self.shape.parameter_values().len() as u64);
+            for value in self.shape.parameter_values() {
+                token = token_word(token, *value);
+            }
+            token_data(token, &self.root.data.data)
+        })
     }
 
     pub fn validate_against<'a>(
@@ -2448,12 +2463,6 @@ fn finalized_value(
     data: ValueData,
     schemas: Option<Arc<SchemaTable>>,
 ) -> Value {
-    let mut resident_token = token_bytes(RESIDENT_TOKEN_SEED, schema_key.as_bytes());
-    resident_token = token_word(resident_token, shape.parameter_values().len() as u64);
-    for value in shape.parameter_values() {
-        resident_token = token_word(resident_token, *value);
-    }
-    resident_token = token_data(resident_token, &data);
     let shape = Arc::new(shape);
     Value {
         schema,
@@ -2462,13 +2471,13 @@ fn finalized_value(
         root: Arc::new(FrozenSnapshotStorage {
             data: Arc::new(FrozenSnapshotData {
                 data,
+                resident_token: SharedOwnershipCell::new(),
                 shape,
                 ownership: SharedOwnershipCell::new(),
                 budget_imports: SnapshotBudgetRegistry::default(),
             }),
             memory_budget: None,
         }),
-        resident_token,
         schemas,
     }
 }
@@ -2481,18 +2490,13 @@ fn finalized_value_with_construction(
     schemas: Option<Arc<SchemaTable>>,
     context: &SnapshotValidationContext<'_>,
 ) -> Result<Value, SnapshotValueError> {
-    let mut resident_token = token_bytes(RESIDENT_TOKEN_SEED, schema_key.as_bytes());
-    resident_token = token_word(resident_token, shape.parameter_values().len() as u64);
-    for value in shape.parameter_values() {
-        resident_token = token_word(resident_token, *value);
-    }
-    resident_token = token_data(resident_token, &data);
     // Final Arc allocations are directly owned by the immutable tree. They
     // consume the admitted finalization byte allowance, not mutable-envelope
     // block registrations, and cannot grow that registry during construction.
     let shape = context.try_arc(shape)?;
     let data = context.try_arc(FrozenSnapshotData {
         data,
+        resident_token: SharedOwnershipCell::new(),
         shape: shape.clone(),
         ownership: SharedOwnershipCell::new(),
         budget_imports: SnapshotBudgetRegistry::default(),
@@ -2506,7 +2510,6 @@ fn finalized_value_with_construction(
         schema_key,
         shape,
         root,
-        resident_token,
         schemas,
     })
 }
