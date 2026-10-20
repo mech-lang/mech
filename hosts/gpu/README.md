@@ -157,19 +157,19 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [latest qualified full-size measurement](../../docs/validation/canonical-knucleotide-selected-join-standard125m-v1.json)
+The [latest qualified full-size measurement](../../docs/validation/canonical-knucleotide-concrete-sinks-standard125m-v1.json)
 uses the same M1 and 125-million-base input:
 
 | Implementation | Median |
 | --- | ---: |
 | Legacy direct-I/O compiled body | 0.9747 s |
-| Canonical secured native application | 1.1491 s |
-| Same canonical artifact after bytecode round-trip | 1.1518 s |
+| Canonical secured native application | 1.1012 s |
+| Same canonical artifact after bytecode round-trip | 1.1108 s |
 
 Each canonical median uses three fresh-process samples; both correctness runs
 and all six timed outputs match exactly under unchanged grants and finite
-limits. These timings are pinned to source `26ef5423d`, including the
-selected-join optimization and complete histogram-bank reservation.
+limits. These timings are pinned to source `9ab5f47a1`, including concrete
+canonical encoding sinks and the selected-join optimization.
 Historical measurements, profiles and failures remain in the
 [validation evidence](../../docs/validation), rather than a running changelog here.
 
@@ -184,10 +184,11 @@ atomically and fall back to serial layout if that admission loses headroom.
 A sole-use String-matrix selection immediately consumed by `text/join` now
 retains its genuine source/selector owners instead of copying an intermediate
 Matrix. Both original calls remain: selection validates indices and declared
-shape, then the consumer admits the final String before copying. This reduces
-full-size median time by 15% from the preceding 1.3523-second result.
+shape, then the consumer admits the final String before copying. The same
+canonical encoder now retains its concrete sink type, allowing length-only
+measurement to avoid indirect byte writes without changing encoding or billing.
 
-The qualified result remains about 18% slower than legacy direct I/O. These are
+The qualified result remains about 13% slower than legacy direct I/O. These are
 whole-implementation comparisons, not isolated permission-check costs or a
 security speed floor. Remaining work targets materialization and native
 computation; correct output, review and CI alone do not complete that goal.
