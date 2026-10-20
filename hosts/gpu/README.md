@@ -348,10 +348,11 @@ Admitted private histogram banks then
 [measure **1.3523s original /1.3574s decoded** at the same 125M input](../../docs/validation/canonical-knucleotide-histogram-banks-standard125m-v1.json),
 another 6.0% less original wall time. Longer width-one histograms distribute
 updates across four disjoint counter banks and reduce them once in native code.
-The complete scratch/result coexistence peak must fit before choosing banks;
-tight headroom keeps the serial native layout. Actual scratch is reserved before
-allocation, and existing whole-region work bounds cover initialization,
-counting, reduction and materialization. All eight outputs and the preceding
+The complete scratch/result coexistence peak is reserved atomically before
+allocating banks; lost shared-account headroom falls back to the serial layout.
+Result construction transfers its share of that reservation. Existing
+whole-region work bounds cover initialization, counting, reduction and
+materialization. All eight outputs and the preceding
 accounting counters match under unchanged grants, limits and one host round.
 The exact-binary profile reduces histogram self samples from 16.04% to 9.19%;
 line copying, query counting and snapshot measurement remain targets.

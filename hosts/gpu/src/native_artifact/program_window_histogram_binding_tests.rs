@@ -10,14 +10,20 @@ use std::cell::Cell;
 #[derive(Clone, Copy, Debug)]
 struct Record {
     cells: usize,
-    bytes: u64,
+    reserved_bytes: u64,
     work: u64,
 }
 thread_local! {
     static LAST: Cell<Option<Record>> = const { Cell::new(None) };
 }
-pub(super) fn record(cells: usize, bytes: u64, work: u64) {
-    LAST.with(|slot| slot.set(Some(Record { cells, bytes, work })));
+pub(super) fn record(cells: usize, reserved_bytes: u64, work: u64) {
+    LAST.with(|slot| {
+        slot.set(Some(Record {
+            cells,
+            reserved_bytes,
+            work,
+        }))
+    });
 }
 fn take() -> Record {
     LAST.with(|slot| slot.take())
@@ -94,7 +100,13 @@ fn actual_banks_keep_results_and_finite_denial_is_atomic_with_owner_cleanup() {
             .unwrap();
         exact(&outputs, 1031);
         let expanded = take();
-        assert_eq!((expanded.cells, expanded.bytes), (512, 4096));
+        assert_eq!(
+            (expanded.cells, expanded.reserved_bytes),
+            (
+                512,
+                super::layout::banked_peak(size_of::<super::Entry>() as u64).unwrap()
+            )
+        );
         let previous = outputs.clone();
         let before = memory.used_bytes();
         let mut denied = limits();
@@ -146,12 +158,79 @@ fn actual_scratch_extents_follow_threshold_and_keep_the_same_logical_map() {
             } else {
                 512
             };
+            assert_eq!(record.cells, expected);
             assert_eq!(
-                (record.cells, record.bytes),
-                (expected, (expected * 8) as u64)
+                record.reserved_bytes,
+                if expected == 512 {
+                    super::layout::banked_peak(size_of::<super::Entry>() as u64).unwrap()
+                } else {
+                    (expected * 8) as u64
+                }
             );
             drop((outputs, args));
             assert_eq!(memory.used_bytes(), 0);
         }
+    }
+}
+
+#[test]
+fn bank_admission_losing_shared_headroom_retries_serial_without_leaking() {
+    let entry = size_of::<super::Entry>() as u64;
+    let peak = super::layout::banked_peak(entry).unwrap();
+    for remaining in [1023, 1024, peak - 1] {
+        let memory = ManagedMemoryBudget::new(peak);
+        let preferred = super::layout::prefer_banks(1, 1024, 0, None, peak, entry);
+        assert!(preferred);
+        // Deterministic competing execution between the preference snapshot and
+        // actual reservation. It shares the genuine account, not a mock quota.
+        let competitor = memory.clone().reserve_capacity(peak - remaining).unwrap();
+        let result = super::reserve_layout(&memory, 128, preferred);
+        if remaining < 1024 {
+            assert!(matches!(
+                result,
+                Err(super::Error::Base(
+                    crate::native_artifact::NativeExecutionError::Memory {
+                        error: mech_core::MemoryRuntimeError::BudgetExceeded { .. }
+                    }
+                ))
+            ));
+            assert_eq!(memory.used_bytes(), peak - remaining);
+        } else {
+            let (cells, reservation) = result.unwrap();
+            assert_eq!((cells, reservation.capacity_bytes()), (128, 1024));
+            assert_eq!(memory.used_bytes(), peak - remaining + 1024);
+            drop(reservation);
+            assert_eq!(memory.used_bytes(), peak - remaining);
+        }
+        drop(competitor);
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn banked_result_transfers_reserved_peak_even_when_shared_account_is_full() {
+    let entry = size_of::<super::Entry>() as u64;
+    let peak = super::layout::banked_peak(entry).unwrap();
+    for distinct in [1, 13, 128] {
+        let memory = ManagedMemoryBudget::new(peak + 17);
+        let (cells, reservation) = super::reserve_layout(&memory, 128, true).unwrap();
+        assert_eq!((cells, reservation.capacity_bytes()), (512, peak));
+        let mut bins = super::Bins {
+            values: vec![0; cells],
+            width: 1,
+            _reservation: reservation,
+        };
+        let competitor = memory.clone().reserve_capacity(17).unwrap();
+        assert!(memory.reserve_capacity(1).is_err());
+        let result_bytes = distinct * (entry + 1);
+        let result = bins.reserve_result(&memory, result_bytes).unwrap();
+        assert_eq!(memory.used_bytes(), peak + 17);
+        assert_eq!(result.capacity_bytes(), result_bytes);
+        assert_eq!(bins._reservation.capacity_bytes(), peak - result_bytes);
+        drop(bins);
+        assert_eq!(memory.used_bytes(), result_bytes + 17);
+        drop(result);
+        drop(competitor);
+        assert_eq!(memory.used_bytes(), 0);
     }
 }

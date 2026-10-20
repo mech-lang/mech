@@ -1,7 +1,7 @@
 //! Admitted storage for compiler-emitted dense windows; no source loop here.
 use super::*;
 use crate::native_artifact::program_window_histogram_layout as layout;
-use mech_core::ValueData;
+use mech_core::{ManagedMemoryBudget, MemoryRuntimeError, ValueData};
 use mech_engine::native_artifact::NativeWindowRegion;
 
 pub(super) struct Bins {
@@ -11,6 +11,31 @@ pub(super) struct Bins {
 }
 
 impl Bins {
+    fn result_capacity(&self) -> Result<u64, Error> {
+        self._reservation
+            .capacity_bytes()
+            .checked_sub(mul(self.values.capacity() as u64, size_of::<u64>() as u64)?)
+            .ok_or_else(|| invalid("compiled Histogram scratch exceeds reservation"))
+    }
+
+    fn reserve_result(
+        &mut self,
+        memory: &ManagedMemoryBudget,
+        backing: u64,
+    ) -> Result<ManagedMemoryReservation, Error> {
+        let available = self.result_capacity()?;
+        if available != 0 {
+            if backing > available {
+                return Err(invalid("compiled Histogram result exceeds banked envelope"));
+            }
+            // Transfer already admitted backing; shared account activity cannot
+            // steal this capacity between the native scan and materialization.
+            Ok(self._reservation.split_capacity(backing)?)
+        } else {
+            Ok(memory.reserve_capacity(backing)?)
+        }
+    }
+
     fn counts(&self) -> Result<&[u64], Error> {
         let logical = if self.values.is_empty() {
             0
@@ -21,6 +46,26 @@ impl Bins {
             .get(..logical)
             .ok_or_else(|| invalid("compiled Histogram logical extent"))
     }
+}
+
+fn reserve_layout(
+    memory: &ManagedMemoryBudget,
+    cells: usize,
+    banked: bool,
+) -> Result<(usize, ManagedMemoryReservation), Error> {
+    if banked {
+        let peak = layout::banked_peak(size_of::<Entry>() as u64)
+            .ok_or_else(|| invalid("compiled Histogram banked envelope overflow"))?;
+        match memory.reserve_capacity(peak) {
+            Ok(reservation) => return Ok((layout::BANKED_CELLS, reservation)),
+            // The earlier headroom observation is not an allocation permit.
+            // Losing this race must not rule out the ordinary serial layout.
+            Err(MemoryRuntimeError::BudgetExceeded { .. }) => {}
+            Err(error) => return Err(error.into()),
+        }
+    }
+    let bytes = mul(cells as u64, size_of::<u64>() as u64)?;
+    Ok((cells, memory.reserve_capacity(bytes)?))
 }
 
 impl State {
@@ -85,24 +130,25 @@ impl State {
             .ok_or_else(|| invalid("compiled Histogram source is unadmitted"))?;
         let temporary_base = add(self.live_bytes, source_bytes)?;
         let memory = ctx.library.memory_budget();
-        let physical_cells = if layout::prefer_banks(
+        let banked = layout::prefer_banks(
             width,
             accepted,
             temporary_base,
             ctx.limits.max_temporary_bytes,
             memory.limit_bytes().saturating_sub(memory.used_bytes()),
             size_of::<Entry>() as u64,
-        ) {
-            layout::BANKED_CELLS
+        );
+        let peak = if banked {
+            layout::banked_peak(size_of::<Entry>() as u64)
+                .ok_or_else(|| invalid("compiled Histogram banked envelope overflow"))?
         } else {
-            cells
+            mul(cells as u64, size_of::<u64>() as u64)?
         };
-        let bytes = mul(physical_cells as u64, size_of::<u64>() as u64)?;
         resource(
             ctx,
             id,
             Dimension::TemporaryBytes,
-            add(temporary_base, bytes)?,
+            add(temporary_base, peak)?,
             ctx.limits.max_temporary_bytes,
         )?;
         resource(
@@ -123,9 +169,10 @@ impl State {
         // Final canonical Map validation retains its existing finite accounting.
         let work = add(add(mul(accepted, 32)?, mul(cells as u64, 1024)?)?, 1024)?;
         self.histogram_account(ctx, id, 0, work, 0)?;
-        let reservation = memory.reserve_capacity(bytes)?;
+        let (physical_cells, reservation) = reserve_layout(&memory, cells, banked)?;
+        let reserved_bytes = reservation.capacity_bytes();
         #[cfg(all(test, feature = "canonical-native-program"))]
-        tests::record(physical_cells, bytes, ctx.library.used().0);
+        tests::record(physical_cells, reserved_bytes, ctx.library.used().0);
         let mut values = Vec::new();
         values
             .try_reserve_exact(physical_cells)
@@ -148,7 +195,7 @@ impl State {
             width: width as usize,
             _reservation: reservation,
         });
-        self.live_bytes = add(self.live_bytes, bytes)?;
+        self.live_bytes = add(self.live_bytes, reserved_bytes)?;
         // The actual immutable source and actual mutable scratch allocation
         // remain owned across the synchronous native call. No Rust reference
         // to the scratch spans generated writes; no other callback may run.
@@ -192,7 +239,8 @@ impl State {
             return Err(invalid("compiled Histogram scratch count mismatch"));
         }
         let width = bins.width;
-        let scratch_bytes = bins._reservation.capacity_bytes();
+        let held_bytes = bins._reservation.capacity_bytes();
+        let reserved_result = bins.result_capacity()?;
         let payload = mul(distinct, width as u64)?;
         let vector_bytes = mul(distinct, size_of::<Entry>() as u64)?;
         let backing = add(vector_bytes, payload)?;
@@ -205,11 +253,22 @@ impl State {
             ctx,
             id,
             Dimension::TemporaryBytes,
-            add(add(self.live_bytes, source_bytes)?, backing)?,
+            add(
+                add(self.live_bytes, source_bytes)?,
+                backing.saturating_sub(reserved_result),
+            )?,
             ctx.limits.max_temporary_bytes,
         )?;
         self.histogram_account(ctx, id, payload, 0, 0)?;
-        let mut reservation = ctx.library.memory_budget().reserve_capacity(backing)?;
+        let mut bins = self
+            .builder(id)?
+            .histogram
+            .as_mut()
+            .unwrap()
+            .compiled_bins
+            .take()
+            .unwrap();
+        let mut reservation = bins.reserve_result(&ctx.library.memory_budget(), backing)?;
         let key_reservation = reservation.split_capacity(payload)?;
         let mut entries = Vec::new();
         entries
@@ -218,14 +277,6 @@ impl State {
         if entries.capacity() > distinct as usize {
             return Err(invalid("compiled Histogram entries exceed admitted layout"));
         }
-        let bins = self
-            .builder(id)?
-            .histogram
-            .as_mut()
-            .unwrap()
-            .compiled_bins
-            .take()
-            .unwrap();
         for (index, count) in bins.counts()?.iter().copied().enumerate() {
             if count == 0 {
                 continue;
@@ -253,7 +304,7 @@ impl State {
         histogram.key_reservation = key_reservation;
         self.live_bytes = add(
             self.live_bytes
-                .checked_sub(scratch_bytes)
+                .checked_sub(held_bytes)
                 .ok_or_else(|| invalid("compiled Histogram scratch accounting"))?,
             backing,
         )?;

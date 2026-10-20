@@ -4,10 +4,18 @@ pub(super) const BANKS: usize = 4;
 pub(super) const BANKED_CELLS: usize = SINGLE_CELLS * BANKS;
 const MIN_BANKED_STARTS: u64 = 1024;
 
+pub(super) fn banked_peak(entry_bytes: u64) -> Option<u64> {
+    entry_bytes
+        .checked_add(1)
+        .and_then(|entry| entry.checked_mul(SINGLE_CELLS as u64))
+        .and_then(|entries| entries.checked_add((BANKED_CELLS * size_of::<u64>()) as u64))
+}
+
 /// This is a preference, never an allocation permit. The caller must reserve
-/// the selected actual capacity before allocation. Include the worst possible
-/// Entry/key backing while scratch is live, so choosing banks cannot crowd out
-/// the old layout's successful finish. Overflow simply declines the variant.
+/// the complete banked peak atomically before allocation, falling back to the
+/// serial layout if another account user consumes the observed headroom.
+/// Include the worst possible Entry/key backing while scratch is live.
+/// Overflow simply declines the variant.
 pub(super) fn prefer_banks(
     width: u64,
     accepted: u64,
@@ -19,11 +27,7 @@ pub(super) fn prefer_banks(
     if width != 1 || accepted < MIN_BANKED_STARTS {
         return false;
     }
-    let Some(backing) = entry_bytes
-        .checked_add(1)
-        .and_then(|entry| entry.checked_mul(SINGLE_CELLS as u64))
-        .and_then(|entries| entries.checked_add((BANKED_CELLS * size_of::<u64>()) as u64))
-    else {
+    let Some(backing) = banked_peak(entry_bytes) else {
         return false;
     };
     backing <= memory_remaining
