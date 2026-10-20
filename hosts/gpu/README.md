@@ -157,20 +157,21 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [latest matched comparison](../../docs/validation/canonical-knucleotide-streamed-startup-v1.json)
+The [latest matched comparison](../../docs/validation/canonical-knucleotide-borrowed-startup-v1.json)
 remeasures three binaries on the same M1 at both input sizes:
 
 | Implementation | 10M bases | 125M bases |
 | --- | ---: | ---: |
-| Legacy direct-I/O compiled body | 0.0921 s | 0.9749 s |
-| Secured application before startup refactor | 0.1078 s | 0.9906 s |
-| Secured application with streamed analysis | 0.0979 s | 0.9739 s |
+| Legacy direct-I/O compiled body | 0.0921 s | 0.9744 s |
+| Secured application before borrowed inventories | 0.0979 s | 0.9743 s |
+| Secured application with borrowed inventories | 0.0923 s | 0.9692 s |
 
 Twelve balanced rounds per size use the same observer and regular-file capture;
-all 78 correctness/timed outputs match. Streaming semantic-use analysis removes
-about 10 ms at 10M, leaving a 5.8 ms (6.3%) gap. Full125M is approximately tied
-with legacy; overlapping sample ranges do not establish a 0.1% advantage.
-The measured source is pinned to `f7161344dc`. Grants, finite limits and
+all 78 correctness/timed outputs match. Borrowing read-only instruction
+inventories removes another 5.6 ms at 10M versus the remeasured prior secured
+build. The remaining median difference from legacy is 0.17 ms (0.19%): practical
+parity at both sizes, not a demonstrated speed advantage or irreducible penalty.
+The measured source is pinned to `2a5cd26fbc`. Grants, finite limits and
 accounting are unchanged. Original and decoded builds are byte-identical.
 Historical measurements, profiles and preserved failures remain in the
 [validation evidence](../../docs/validation).
@@ -192,10 +193,11 @@ without changing canonical bytes or billing.
 ASCII String maps batch bounded lookups while retaining scalar first-error
 behavior. Both maintained text-line paths share a vectorizable byte count;
 ordinary iteration still constructs every genuine String owner.
-Startup use-count analysis borrows ordinary instruction descriptions and counts
-their reads directly; it retains all checks and owned snapshots for rewriting.
+Startup use-count analysis streams semantic reads. Other read-only analyses
+borrow ordinary instruction descriptions too; all checks, virtual expansions
+and explicitly owned snapshots for rewriting remain.
 
-The smaller-input gap remains open. These are whole-implementation comparisons,
+These are whole-implementation comparisons,
 not isolated permission-check costs, a language ranking or an optimization
 ceiling. Fresh review and green CI remain required; keep the PR draft and
 unmerged until the user directs otherwise.
