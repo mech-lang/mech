@@ -41,7 +41,7 @@ impl State {
         // reading any bytes. ASCII alone is insufficient: CRLF is one grapheme.
         let scan = add(mul(text.len() as u64, 64)?, 256)?;
         self.query_account(ctx, id, 0, scan, 0, 0)?;
-        if !text.is_ascii() || mech_engine::intrinsics::text_graphemes::has_crlf(text) {
+        if !mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(text) {
             return Ok(None);
         }
         if text.len() as u64 != length {

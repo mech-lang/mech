@@ -11,6 +11,7 @@ fn oracle(text: &str) -> usize {
 fn ascii_length_matches_segmenter_for_every_byte_pair_and_scan_boundary() {
     let count = mech_engine::intrinsics::text_graphemes::count;
     let has_crlf = mech_engine::intrinsics::text_graphemes::has_crlf;
+    let ascii_without_crlf = mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf;
     assert_eq!(count(""), 0);
     for a in 0..=127u8 {
         for b in 0..=127u8 {
@@ -18,6 +19,7 @@ fn ascii_length_matches_segmenter_for_every_byte_pair_and_scan_boundary() {
             let text = core::str::from_utf8(&bytes).unwrap();
             assert_eq!(count(text), oracle(text), "{bytes:?}");
             assert_eq!(has_crlf(text), bytes == *b"\r\n", "{bytes:?}");
+            assert_eq!(ascii_without_crlf(text), bytes != *b"\r\n", "{bytes:?}");
         }
     }
     for width in [
@@ -32,10 +34,12 @@ fn ascii_length_matches_segmenter_for_every_byte_pair_and_scan_boundary() {
                 has_crlf(&text),
                 text.as_bytes().windows(2).any(|pair| pair == b"\r\n")
             );
+            assert_eq!(ascii_without_crlf(&text), !has_crlf(&text));
         }
     }
     for text in ["é", "é\r\nz", "é\rX", "\r🧑‍🚀", "🧑‍🚀\r\n"] {
         assert_eq!(count(text), oracle(text));
+        assert!(!ascii_without_crlf(text));
         assert_eq!(
             has_crlf(text),
             text.as_bytes().windows(2).any(|pair| pair == b"\r\n")

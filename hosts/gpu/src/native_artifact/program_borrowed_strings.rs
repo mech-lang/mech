@@ -119,8 +119,7 @@ impl Context<'_, '_> {
                     self.control
                         .work
                         .charge(NativeExecutionPhase::Setup, amount(text.len(), 4, 32)?)?;
-                    active &=
-                        text.is_ascii() && !mech_engine::intrinsics::text_graphemes::has_crlf(text);
+                    active &= mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(text);
                     table.values_mut()[cursor] = text.as_ptr() as u64;
                     table.values_mut()[cursor + 1] = text.len() as u64;
                     cursor += 2;
@@ -141,8 +140,7 @@ impl Context<'_, '_> {
                     return Err(invalid("String literal owner kind differs"));
                 };
                 if text.len() > 32
-                    || !text.is_ascii()
-                    || mech_engine::intrinsics::text_graphemes::has_crlf(text)
+                    || !mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(text)
                 {
                     return Err(invalid("String literal representation differs from proof"));
                 }
