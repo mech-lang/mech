@@ -48,6 +48,7 @@ fn selected_template(
         M::MatrixSolve => (5, 0, 0),
         M::CanonicalFinalize => (6, 0, 0),
         M::CanonicalSortUnique => (7, 0, 0),
+        M::PackedStringMatrixOrCanonicalFinalize => (8, 0, 0),
     };
     for number in [tag as u64, a as u64, b as u64] {
         word(hash, number);
@@ -389,6 +390,7 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
                     M::MatrixSolve => (5, 0, 0),
                     M::CanonicalFinalize => (6, 0, 0),
                     M::CanonicalSortUnique => (7, 0, 0),
+                    M::PackedStringMatrixOrCanonicalFinalize => (8, 0, 0),
                 };
                 for n in [tag, a as u64, b as u64] {
                     word(&mut hash, n);

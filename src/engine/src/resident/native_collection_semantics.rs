@@ -133,7 +133,11 @@ pub(super) fn register_access(builder: &mut FunctionCatalogBuilder, scalar: bool
         builder,
         "access",
         name,
-        ImplementationMemoryClass::CanonicalFinalize,
+        if scalar {
+            ImplementationMemoryClass::CanonicalFinalize
+        } else {
+            ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize
+        },
         factory,
         primitive,
     )

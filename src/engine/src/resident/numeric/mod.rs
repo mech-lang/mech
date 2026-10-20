@@ -1,3 +1,4 @@
+mod compact_string_access;
 mod nested_assignment;
 mod promoted_assignment;
 mod selection_address;
@@ -17498,9 +17499,14 @@ fn snapshot_access_from_source(
         .index_elements
         .checked_mul(core::mem::size_of::<usize>())
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let compact_strings = snapshot_output && compact_string_access::supports(kernel, source, plan);
     let output_draft_bytes = output_cost
         .count
-        .checked_mul(core::mem::size_of::<ValueDataDraft>())
+        .checked_mul(if compact_strings {
+            core::mem::size_of::<Box<str>>()
+        } else {
+            core::mem::size_of::<ValueDataDraft>()
+        })
         .ok_or(ResidentKernelError::InvalidShape)?;
     let selector_vector_bytes = plan
         .selectors
@@ -17570,6 +17576,48 @@ fn snapshot_access_from_source(
     )?
     .admit()?
     .into_plan();
+    if compact_strings {
+        let selectors = plan
+            .selectors
+            .iter()
+            .enumerate()
+            .map(|(index, layout)| {
+                selector_value(
+                    schemas,
+                    layout,
+                    inputs
+                        .get(index + 1)
+                        .ok_or(ResidentKernelError::InvalidInput)?,
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let next = compact_string_access::construct(
+            kernel,
+            source,
+            source_schema.body(),
+            &selectors,
+            plan,
+            &output_cost,
+            resolved_output_shape
+                .as_ref()
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )?;
+        let ResidentValueMut::Snapshot([target]) = output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        let changed = target
+            .as_ref()
+            .map(|previous| {
+                previous
+                    .snapshot_eq(schemas, &next, schemas)
+                    .map(|same| !same)
+            })
+            .transpose()
+            .map_err(|_| ResidentKernelError::InvalidOutput)?
+            .unwrap_or(true);
+        *target = Some(next);
+        return Ok(changed);
+    }
     if let Some(constructor) = &plan.matrix_constructor {
         let (rows, columns) = plan
             .source_dimensions

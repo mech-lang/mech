@@ -2,7 +2,7 @@ use mech_core::snapshot::*;
 use mech_core::{DimensionExpr, IntegerWidth, SchemaBody, SchemaDraft, SchemaTableBuilder};
 use std::sync::Arc;
 
-use super::{artifacts, equal, inputs, limits, reference};
+use super::{artifacts, equal, inputs, limits, reference, reference_result};
 use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
 use mech_gpu::native_artifact::JitProgramArtifact;
 
@@ -50,6 +50,188 @@ fn compact_text_lines_admits_real_workspace_and_preserves_denial_atomicity() {
         equal(&artifact, &output, &ordinary);
         drop((args, output, prior));
         assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn compact_string_matrix_slice_keeps_live_selectors_and_constrained_workspace() {
+    let source = "+> text\nwords := text/lines(input<string>)\nwords[first<u64>..end<u64>]\n";
+    // Keep the same4MiB cap, including its independently reserved binding
+    // metadata. Five thousand cells fit compactly but not as generic drafts.
+    let text = format!("{}\n", "é\0x".repeat(15)).repeat(5_000);
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+        let mut caps = limits();
+        caps.library.max_temporary_bytes = Some(4 * 1024 * 1024);
+        caps.library.max_comparison_work = Some(16 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for (first, end) in [(1, 5_001), (2, 4_001), (1, 1), (5_000, 5_001)] {
+            let args = inputs(
+                &artifact,
+                &[
+                    ("input", Data::String(text.clone())),
+                    ("first", Data::U64(first)),
+                    ("end", Data::U64(end)),
+                ],
+                &memory,
+            );
+            let ordinary = reference_result(&artifact, &args);
+            if first == end {
+                // Preserve this existing selected range leaf's empty-range
+                // denial before reaching matrix selection, not a new empty
+                // Matrix value or partial publication from this optimization.
+                assert!(ordinary.unwrap_err().contains("error: InvalidInput"));
+                let prior = output
+                    .iter()
+                    .map(|v| v.clone().unwrap())
+                    .collect::<Vec<_>>();
+                let retained = memory.used_bytes();
+                let error = jit
+                    .evaluate_into(&args, &mut output, caps, &memory)
+                    .unwrap_err();
+                assert!(matches!(error,
+                    mech_gpu::native_artifact::NativeProgramExecutionError::Library {
+                        origin,
+                        error: mech_engine::native_artifact::NativeCollectionInvocationError::Kernel(
+                            mech_core::ResidentKernelError::InvalidInput),
+                    } if origin.node().get() == 1));
+                equal(&artifact, &output, &prior);
+                assert_eq!(memory.used_bytes(), retained);
+                continue;
+            }
+            let ordinary = ordinary
+                .unwrap_or_else(|error| panic!("slice {first}..{end} resident result: {error}"));
+            jit.evaluate_into(&args, &mut output, caps, &memory)
+                .unwrap();
+            equal(&artifact, &output, &ordinary);
+        }
+        let prior = output
+            .iter()
+            .map(|v| v.clone().unwrap())
+            .collect::<Vec<_>>();
+        let args = inputs(
+            &artifact,
+            &[
+                ("input", Data::String(text.clone())),
+                ("first", Data::U64(1)),
+                ("end", Data::U64(5_002)),
+            ],
+            &memory,
+        );
+        let retained = memory.used_bytes();
+        assert!(
+            jit.evaluate_into(&args, &mut output, caps, &memory)
+                .is_err()
+        );
+        equal(&artifact, &output, &prior);
+        assert_eq!(memory.used_bytes(), retained);
+        drop((args, output, prior));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn compact_string_memory_class_keeps_other_finalizer_and_publication_obligations() {
+    use mech_core::{
+        AllocationRole, CurrentMemoryFootprint, ImplementationMemoryClass as Class, PortDirection,
+    };
+    use mech_engine::native_artifact::{NativeIterationAction, bind_native_program_library_call};
+    use std::collections::BTreeMap;
+    // Synthetic footprint witnesses exercise declaration derivation only;
+    // they are never used to authorize an executing kernel or a timing.
+    for (source, compact) in [
+        ("values := input<[string]>\nvalues[indices<[u64]>]\n", true),
+        ("values := input<[u64]>\nvalues[indices<[u64]>]\n", false),
+        ("values := input<string>\nvalues[indices<[u64]>]\n", false),
+    ] {
+        for artifact in artifacts(source).0 {
+            let catalog = mech_stdlib::source_catalog();
+            let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let template = jit
+                .descriptor()
+                .plan()
+                .blocks()
+                .iter()
+                .find_map(|block| match block.action() {
+                    NativeIterationAction::LibraryCall { template, .. } => Some(template),
+                    _ => None,
+                })
+                .unwrap();
+            let parameters = template
+                .inputs()
+                .iter()
+                .map(|schema| vec![2; schema.dimension_parameters().len()])
+                .collect::<Vec<_>>();
+            let parameters = parameters.iter().map(Vec::as_slice).collect::<Vec<_>>();
+            let output = vec![2; template.output().dimension_parameters().len()];
+            let call = bind_native_program_library_call(
+                &artifact,
+                template,
+                &catalog,
+                &parameters,
+                &output,
+                limits().library,
+            )
+            .unwrap();
+            let selected = call.memory_plan();
+            assert_eq!(
+                selected.implementation_memory,
+                Class::PackedStringMatrixOrCanonicalFinalize
+            );
+            let mut facts = BTreeMap::new();
+            for (direction, ports) in [
+                (PortDirection::Input, &selected.inputs),
+                (PortDirection::Output, &selected.outputs),
+            ] {
+                for (index, port) in ports.iter().enumerate() {
+                    facts.insert(
+                        (direction, index as u16),
+                        CurrentMemoryFootprint {
+                            logical_elements: if matches!(
+                                port.descriptor.schema().body(),
+                                SchemaBody::Matrix { .. }
+                            ) {
+                                2
+                            } else {
+                                1
+                            },
+                            payload_bytes: 1024,
+                            encoded_bytes: 512,
+                            retained_nodes: 5,
+                            schema_bytes: port.descriptor.schema().canonical_bytes().len() as u64,
+                            shape_parameter_count: port.descriptor.shape().parameter_values().len()
+                                as u64,
+                            ..CurrentMemoryFootprint::default()
+                        },
+                    );
+                }
+            }
+            let new = mech_core::resolve_deferred_call_memory(selected, &facts).unwrap();
+            let mut ordinary = selected.clone();
+            ordinary.implementation_memory = Class::CanonicalFinalize;
+            let ordinary = mech_core::resolve_deferred_call_memory(&ordinary, &facts).unwrap();
+            assert_eq!(new.transactions, ordinary.transactions);
+            assert_eq!(new.demand.work, ordinary.demand.work);
+            if compact {
+                assert!(
+                    !new.allocations
+                        .iter()
+                        .any(|a| a.role == AllocationRole::ConstructionWorkspace)
+                );
+                assert_eq!(
+                    ordinary
+                        .allocations
+                        .iter()
+                        .filter(|a| a.role == AllocationRole::ConstructionWorkspace)
+                        .count(),
+                    2
+                );
+            } else {
+                assert_eq!(new.allocations, ordinary.allocations);
+                assert_eq!(new.demand, ordinary.demand);
+            }
+        }
     }
 }
 

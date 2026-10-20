@@ -214,10 +214,17 @@ safe partitioning. Unobserved intermediates remain candidates for elision.
 Sampling percentages are not exact causal wall time; helpers include computation
 as well as bookkeeping. Counting-loop tuning alone cannot close the remaining gap.
 The runtime owns **one round** for capture, staging and atomic commit; a native
-region is not a new security round. A fresh standard125M trial with the same
-retained executable and prior finite limits still fails TextLines temporary
-admission:2.392GB required versus1.073GB available, before any timing sample.
-Temporary construction must be removed while preserving those limits.
+region is not a new security round. Checked compact String-matrix construction
+removes TextLines' generic draft/repacking arrays; its finite preflight and
+ordinary publication staging remain. Its implementation declaration must match
+that lifecycle too: retaining the old generic finalizer declaration still
+reserved2.392GB. After correcting the declaration, both standard125M variants
+pass TextLines and fail later at Matrix range selection:1.592GB temporary
+required versus1.073GB available, before any timing sample. A retained-binary
+[10M remeasurement is **0.4956s original /0.4965s decoded**](../../docs/validation/canonical-knucleotide-compact-string-memory-progress-v1.json),
+three samples each and all eight outputs exact. This Node synchronous diagnostic
+is essentially unchanged CPU time, not a new speedup; it remains5.38x old direct.
+Compact String-matrix selection is being qualified without raising the policy.
 Correct output, review and CI do not
 establish completion of this performance requirement.
 

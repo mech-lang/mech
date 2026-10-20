@@ -1823,8 +1823,20 @@ fn derive_scratch_allocations(
             )?;
         }
         ImplementationMemoryClass::CanonicalFinalize
+        | ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize
         | ImplementationMemoryClass::CanonicalSortUnique => {
             for (ordinal, output) in outputs.iter().enumerate() {
+                if request.implementation_memory
+                    == ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize
+                    && request.output_storage[ordinal].slot == PlannedSlotKind::CanonicalValueHandle
+                    && matches!(output.descriptor.schema().body(), SchemaBody::Matrix { element, .. }
+                        if element.as_ref() == &SchemaBody::String)
+                {
+                    // No generic draft/finalizer exists on this checked path.
+                    // Actual compact construction is still pre-admitted by
+                    // the kernel; ordinary transaction staging is untouched.
+                    continue;
+                }
                 let footprint =
                     known_footprint(request.output_witnesses[ordinal])?.unwrap_or_default();
                 // Draft and frozen finalization are separate coexistence
@@ -2096,6 +2108,7 @@ fn apply_implementation_demand(
                 checked_add(demand.work.compute, work, "matrix solve compute work")?;
         }
         ImplementationMemoryClass::CanonicalFinalize
+        | ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize
         | ImplementationMemoryClass::CanonicalSortUnique => {
             let contribution = canonical_footprint_demand(
                 request.implementation_memory,
