@@ -251,6 +251,16 @@ No workload-specific helper or alternate execution authority is introduced.
 The result is still4.23x old direct; canonical construction/checking and safe
 partitioning remain unfinished. The timing is attributed to its measured
 revision, separately from the following lint-only emitter refactor and CI.
+Exact on-demand resident receipt tokens then
+[measure **2.7095s original /2.7274s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-demand-token-standard125m-v1.json),
+three samples each and all eight outputs exact: another34.2% less wall time.
+The hash algorithm and canonical identities are unchanged; the admitted immutable
+owner caches its fingerprint only when requested. Native execution does not use
+this resident receipt token. Validation, grants, finite launch limits and atomic
+one-round publication remain. Actual accounting reflects the changed private
+value/cache layout, so the counters are not claimed unchanged. The exact-binary
+profile samples no token hashing; planning checks and compiled window loops are
+the next targets. This remains2.78x old direct, not a completed performance goal.
 Correct output, review and CI do not
 establish completion of this performance requirement.
 
