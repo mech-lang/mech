@@ -188,13 +188,17 @@ fn compact_string_memory_class_keeps_other_finalizer_and_publication_obligations
                     facts.insert(
                         (direction, index as u16),
                         CurrentMemoryFootprint {
-                            logical_elements: if matches!(
-                                port.descriptor.schema().body(),
-                                SchemaBody::Matrix { .. }
-                            ) {
-                                2
-                            } else {
-                                1
+                            logical_elements: match port.descriptor.schema().body() {
+                                SchemaBody::Matrix { dimensions, .. } => dimensions
+                                    .iter()
+                                    .map(|dimension| {
+                                        port.descriptor
+                                            .shape()
+                                            .resolve_dimension(dimension)
+                                            .unwrap()
+                                    })
+                                    .product(),
+                                _ => 1,
                             },
                             payload_bytes: 1024,
                             encoded_bytes: 512,
@@ -233,6 +237,154 @@ fn compact_string_memory_class_keeps_other_finalizer_and_publication_obligations
             }
         }
     }
+}
+
+#[test]
+fn matrix_valued_aggregate_range_keeps_generic_workspace() {
+    use mech_core::*;
+    let matrix = |element, columns| SchemaBody::Matrix {
+        element: Box::new(element),
+        dimensions: Box::new([DimensionExpr::Constant(1), DimensionExpr::Constant(columns)]),
+    };
+    let strings = matrix(SchemaBody::String, 2);
+    let mut builder = SchemaTableBuilder::new();
+    let handles = [
+        SchemaBody::Tuple(Box::new([strings.clone(), strings.clone()])),
+        matrix(SchemaBody::UnsignedInteger(IntegerWidth::W64), 1),
+        strings,
+    ]
+    .into_iter()
+    .map(|body| {
+        builder
+            .insert(
+                SchemaDraft {
+                    body,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap()
+    })
+    .collect::<Vec<_>>();
+    let built = builder.finish().unwrap();
+    let ids = handles
+        .into_iter()
+        .map(|handle| built.resolve(handle).unwrap())
+        .collect::<Vec<_>>();
+    let (schemas, _) = built.into_parts();
+    let layouts = ids
+        .iter()
+        .map(|id| ResidentPortLayout {
+            schema_id: *id,
+            schema_key: schemas.get(*id).unwrap().key(),
+            kind: ResidentValueKind::Snapshot,
+            shape: ResidentShape::SCALAR,
+            shape_instance: schemas
+                .get(*id)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
+            activation_fixed_shape: true,
+            resolved_selector: None,
+        })
+        .collect::<Vec<_>>();
+    let contract = ResolvedOperationContract::Declared(DeclaredOperationContract {
+        inputs: ids[..2]
+            .iter()
+            .map(|schema| ResolvedInputPort {
+                schema: *schema,
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            })
+            .collect(),
+        outputs: Box::new([ResolvedOutputPort {
+            schema: ids[2],
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]),
+        interaction: ExternalInteraction::Pure,
+    });
+    let key =
+        ResidentOperationKey::new(Box::new(["access".to_owned()]), "range".to_owned()).unwrap();
+    let catalog = mech_stdlib::source_catalog();
+    let factory = catalog
+        .resident_factory(&key.module_path, &key.operation_name)
+        .unwrap();
+    assert_eq!(
+        factory.implementation_memory(),
+        ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize
+    );
+    // The maintained binder accepts a homogeneous tuple of String matrices
+    // and a singleton matrix selector, although current source syntax rejects
+    // that selector kind for tuples. Test the real public binder boundary,
+    // not an invented native template or an alternate source evaluator.
+    let kernel = (factory.factory())(&ResidentKernelBindRequest {
+        contract: &contract,
+        schemas: &schemas,
+        inputs: &layouts[..2],
+        output: layouts[2].clone(),
+    })
+    .expect("actual registered aggregate range fallback must bind");
+    assert!(kernel.snapshot_output().is_some());
+    let descriptor = |index: usize| {
+        ResolvedValueDescriptor::from_schema(
+            schemas.get(ids[index]).unwrap().clone(),
+            layouts[index].shape_instance.clone(),
+        )
+        .unwrap()
+    };
+    let call = BoundCall::artifact_operation(
+        ResolvedOperationDescriptor::from_resolved_contract("access/range", &contract).unwrap(),
+        Box::new([descriptor(0), descriptor(1)]),
+        Box::new([descriptor(2)]),
+        key,
+    )
+    .unwrap();
+    let target = TargetMemoryProfile::current_resident_cpu().unwrap();
+    let storage = physical_storage_descriptor(
+        FunctionValueRepresentation::AnyValue,
+        &target,
+        MemoryLifetime::Turn {
+            first: MemoryPlanPoint::new(0),
+            last: MemoryPlanPoint::new(1),
+        },
+    );
+    // Concrete synthetic planner witnesses only: no plan here is used to
+    // authorize execution or to claim a detached performance qualification.
+    let footprint = |count| {
+        MemoryFootprintWitness::Known(CurrentMemoryFootprint {
+            logical_elements: count,
+            payload_bytes: 1024,
+            encoded_bytes: 512,
+            retained_nodes: 5,
+            ..CurrentMemoryFootprint::default()
+        })
+    };
+    let plan = |class| {
+        plan_call_memory(CallMemoryPlanningRequest {
+            bound_call: &call,
+            input_storage: &[storage.clone(), storage.clone()],
+            output_storage: &[storage.clone()],
+            input_witnesses: &[footprint(1), footprint(1)],
+            output_witnesses: &[footprint(2)],
+            published_output_witnesses: &[footprint(2)],
+            implementation_memory: class,
+            target: &target,
+            regions: &[RegionAccessPlan::WholeValue],
+        })
+        .unwrap()
+    };
+    let guarded = plan(ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize);
+    let ordinary = plan(ImplementationMemoryClass::CanonicalFinalize);
+    assert_eq!(guarded.allocations, ordinary.allocations);
+    assert_eq!(guarded.demand, ordinary.demand);
+    assert_eq!(guarded.transactions, ordinary.transactions);
 }
 
 #[test]

@@ -1,0 +1,79 @@
+{
+  "schema": "mech.canonical-knucleotide-secured-standard125m.v1",
+  "status": "FULL_INPUT_CORRECTNESS_AND_TIMING_QUALIFIED_PERFORMANCE_STILL_BLOCKING",
+  "measured_source_commit": "ffd79e3e7046beac5eebcc7b18a4b99176982369",
+  "platform": "Same Apple M1 as the retained direct-I/O125M baseline",
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "input": {
+    "fasta_n": 25000000,
+    "three_bases": 125000000,
+    "bytes": 254166745,
+    "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+    "oracle_bytes": 259,
+    "oracle_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+  },
+  "unchanged_standard_launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+  "measurement": {
+    "route": "canonical-artifact-program-object-secured-cli",
+    "policy": "secured",
+    "scope": "Serial warm-cache fresh-process spawn through observed child exit including CLI acquisition/output/report; standard Rust1ms exit polling. Build, integrity hashing and parent validation excluded. Not kernel timing or cold-cache latency.",
+    "rust_optimization": "3",
+    "object_optimization": "speed",
+    "abi": 8,
+    "typed_ir": 18,
+    "work_policy": 28,
+    "original_samples_ns": [5788242000, 5782551250, 5784091208],
+    "decoded_samples_ns": [5775553000, 5822627625, 5784442250],
+    "original_median_seconds": 5.784091208,
+    "decoded_median_seconds": 5.784442250,
+    "correctness_processes": 2,
+    "timing_samples": 6,
+    "all_eight_exact_output": true,
+    "original_and_decoded_binaries_identical": true,
+    "both_binary_sha256": "2efb6a7726cf8fa9004ff7aaadfcb913b5bca63052a89b0d7d0ba66eeb7f40e4",
+    "both_object_sha256": "4b855e3903dfeaa2b5a6f29e9e87e9153d270a12bd2f76302a24c171b9759f1c",
+    "both_identity_sha256": "f76d7fe35cf80c344a5746a9a956af8a75931fd30b3f23fc41afa24e48485598",
+    "program_revision": "c214b6092e5dd6d7a38c5f28a1f74a8df03df2263c517bc4d5b493740faa5a23",
+    "native_visits": 474,
+    "native_work": 672132962183,
+    "native_comparison_work": 6041696358,
+    "native_transport_bytes": 33552,
+    "host_result_carrier_bytes": 216,
+    "input_acquisition_byte_cap": 254166745,
+    "observations": 1,
+    "effects": 1,
+    "native_aot": true,
+    "jit": false,
+    "source_parser": false,
+    "resident_body_evaluation": false,
+    "shutdown": "completed"
+  },
+  "same_machine_same_input_baselines_seconds": {
+    "old_direct_median": 0.974684291,
+    "old_secured_host_median": 1.334092625
+  },
+  "comparison": {
+    "slowdown_against_old_direct": 5.934322797041982,
+    "slowdown_against_old_secured": 4.335599417619148,
+    "scope": "Whole implementation comparison, not isolated capability overhead. The old body used packed lowering, compact counters and four partitions. Do not compare this125M duration directly with10M durations."
+  },
+  "implementation": [
+    "The canonical source still expresses FASTA record selection, windows, histograms, formatting and queries in Mech. No workload/name/hash/alphabet specialization or whole benchmark helper.",
+    "Checked compact String-matrix construction removes TextLines generic drafts/repacking and aligns its implementation-memory declaration with its explicit finite preflight.",
+    "Matrix selection preserves existing selector/index/shape validation and finite PreparedMutationPlan admission, then builds canonical String storage directly. Other element/storage paths retain their ordinary construction.",
+    "One capability-authorized host round still performs capture, compiled computation, output staging and atomic commit. Genuine admitted owners and cumulative finite work/memory remain; no per-base Rust admission callbacks."
+  ],
+  "verification": {
+    "measured_revision": "v783:118 generated and37 hosted tests passed;2 explicit ignored diagnostics each. Routing/layout/native-build-layout/unsafe/format/diff checks pass.",
+    "full_release": "v780:both original/decoded full125M correctness gates passed before any samples;3 timings each; all8 outputs exact and counters equal. Frozen source/input/oracle/launch/harness pins remained unchanged. Supervisor exit0 and owned cleanup complete445.326338s (build/qualification total, not sample time).",
+    "physical_audit": "v787 independently rehashes raw outputs/reports, source/input/oracle/launch and manifests, binary/Object/identity pins, validates actual root release profiles and complete report/counter agreement, recomputes all medians and parses back the emitted audit JSON.",
+    "full_result_sha256": "2d33948bd511485fbd08bf9eeaa848e91a1715dbc90248814b2fd4cc1d8528ea",
+    "linked_result_sha256": "b1bc7365d7eedd1847c3f5cea62f25f8f000d812805eaa9cd150b48756d65fe6",
+    "audit_sha256": "383b26c4aece64e71ff89159d5363b26c37c4fd78690fedafcdaa0bef7300e34",
+    "review_caveat": "Measured ffd79 had a P2 finding: workspace elision must also qualify the matrix source so aggregate-field fallbacks retain generic finalization workspace. The subsequent source-matrix guard correction passes v789:119 generated and37 hosted tests, including an actual registered tuple-field range binder and matching core-planner fallback allocation/work/transaction regression. Current source syntax rejects tuple matrix selectors, so this API regression does not invent new source support or native execution authority. The timing remains attributed to ffd79, not the corrected follow-up, and does not establish PR readiness."
+  },
+  "outstanding": [
+    "Retain the aggregate-source regression, obtain a fresh clean review and green CI for the corrected follow-up; never ready or merge without the user.",
+    "Reduce the remaining5.93x full-input performance gap with generic query packing and representation-scan optimizations, then safely partition proved computation. Reprofile and remeasure meaningful changes; the compiler performance goal remains active."
+  ]
+}

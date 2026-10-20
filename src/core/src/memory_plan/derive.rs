@@ -1829,10 +1829,15 @@ fn derive_scratch_allocations(
                 if request.implementation_memory
                     == ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize
                     && request.output_storage[ordinal].slot == PlannedSlotKind::CanonicalValueHandle
+                    && inputs.first().is_some_and(|source|
+                        matches!(source.descriptor.schema().body(), SchemaBody::Matrix { element, .. }
+                            if element.as_ref() == &SchemaBody::String))
                     && matches!(output.descriptor.schema().body(), SchemaBody::Matrix { element, .. }
                         if element.as_ref() == &SchemaBody::String)
                 {
-                    // No generic draft/finalizer exists on this checked path.
+                    // The range binder's matrix-to-matrix path uses compact
+                    // construction. Aggregate-field access with the same
+                    // output type still needs its generic draft/finalizer.
                     // Actual compact construction is still pre-admitted by
                     // the kernel; ordinary transaction staging is untouched.
                     continue;

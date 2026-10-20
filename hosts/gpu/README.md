@@ -224,7 +224,16 @@ required versus1.073GB available, before any timing sample. A retained-binary
 [10M remeasurement is **0.4956s original /0.4965s decoded**](../../docs/validation/canonical-knucleotide-compact-string-memory-progress-v1.json),
 three samples each and all eight outputs exact. This Node synchronous diagnostic
 is essentially unchanged CPU time, not a new speedup; it remains5.38x old direct.
-Compact String-matrix selection is being qualified without raising the policy.
+Compact String-matrix selection now
+[qualifies the full125M input at **5.7841s original /5.7844s decoded**](../../docs/validation/canonical-knucleotide-secured-standard125m-v1.json),
+three samples each after both correctness gates, all eight outputs exact,
+474 native admission visits and the same finite standard-size policy. This is
+still5.93x the same-machine old direct125M median0.9747s, not a recovered
+performance goal or an isolated security-overhead measurement. The measured
+revision had a separate aggregate-source workspace review finding; the follow-up
+requires a String-matrix source as well as result and keeps aggregate fallbacks'
+generic workspace. Its binder/planner regression and119 generated/37 hosted
+tests pass; the timing remains attributed to the measured revision, not the fix.
 Correct output, review and CI do not
 establish completion of this performance requirement.
 
