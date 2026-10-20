@@ -1,12 +1,12 @@
 //! Bind real canonical roots and fund the complete loop BEFORE its native body.
 use super::*;
-use mech_engine::native_artifact::NativeWindowQueryRegion;
+use mech_engine::native_artifact::NativeWindowRegion;
 
 impl State {
     pub(in crate::native_artifact::program_runtime) fn prepare_compiled_window(
         &mut self,
         ctx: &mut Context<'_, '_>,
-        region: &NativeWindowQueryRegion,
+        region: &NativeWindowRegion,
         width: u64,
         length: u64,
     ) -> Result<Option<([u64; 5], u64)>, Error> {

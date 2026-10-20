@@ -152,7 +152,8 @@ impl NativeProgramObject {
             "code_bytes": self.descriptor.code_bytes(),
             "object_bytes": self.bytes.len(),
             "object_optimization": "speed",
-            "compiled_window_query_regions": self.descriptor.window_regions.len(),
+            "compiled_window_query_regions": self.descriptor.window_regions.iter().filter(|region| region.query().is_some()).count(),
+            "compiled_window_histogram_regions": self.descriptor.window_regions.iter().filter(|region| region.query().is_none()).count(),
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }

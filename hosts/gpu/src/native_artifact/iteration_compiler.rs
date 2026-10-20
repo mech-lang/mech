@@ -289,7 +289,7 @@ pub(super) fn define_cfg<M: Module>(
     #[cfg(feature = "canonical-native-program")]
     let window_functions = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
         program
-            .window_query_regions()
+            .window_regions()
             .into_iter()
             .map(|region| {
                 let (function, _, stack, code) =

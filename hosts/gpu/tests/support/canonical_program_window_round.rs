@@ -4,6 +4,108 @@ use mech_engine::native_artifact::NativeCollectionResult;
 use mech_gpu::native_artifact::JitProgramArtifact;
 
 const QUERY: &str = include_str!("../fixtures/native/window-query.mec");
+const HISTOGRAM: &str = include_str!("../fixtures/native/window-histogram.mec");
+
+#[test]
+fn compiled_histogram_has_constant_visits_and_matches_canonical_maps() {
+    use super::{equal, inputs, limits, reference};
+    use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
+    for artifact in artifacts(HISTOGRAM).0 {
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        assert_eq!(jit.descriptor().plan().window_histogram_regions().len(), 1);
+        let mut outputs = vec![None; artifact.outputs().len()];
+        let all_ascii: String = (0..128u8).map(char::from).collect();
+        for width in [0, 1, 2, 3, u64::MAX] {
+            let mut short = None;
+            for text in [
+                "ABABA",
+                "ABABABABABABABABABABA",
+                "",
+                "A",
+                "a\0a\0a",
+                "\rA\n\r",
+                "A\r\nA\r\n",
+                "ééé",
+                "ééé",
+                "🧑‍🚀🧑‍🚀",
+            ]
+            .into_iter()
+            .chain(all_ascii.as_bytes().chunks(16).map(|bytes| {
+                // Exercise every ASCII byte within the reference evaluator's
+                // finite default comparison allowance for each separate case.
+                std::str::from_utf8(bytes).unwrap()
+            })) {
+                let args = inputs(
+                    &artifact,
+                    &[
+                        ("input", Data::String(text.into())),
+                        ("width", Data::U64(width)),
+                    ],
+                    &memory,
+                );
+                let report = jit
+                    .evaluate_into(&args, &mut outputs, limits(), &memory)
+                    .unwrap();
+                equal(&artifact, &outputs, &reference(&artifact, &args));
+                if text == "ABABA" {
+                    short = Some(report.visits);
+                }
+                if text == "ABABABABABABABABABABA" && width <= 2 {
+                    assert_eq!(
+                        Some(report.visits),
+                        short,
+                        "Histogram must not callback per window"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn compiled_histogram_finite_budget_denial_preserves_outputs_and_recovers() {
+    use super::{inputs, limits};
+    use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
+    for artifact in artifacts(HISTOGRAM).0 {
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let args = inputs(
+            &artifact,
+            &[
+                ("input", Data::String("ABACADABACAD".into())),
+                ("width", Data::U64(2)),
+            ],
+            &memory,
+        );
+        let mut outputs = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&args, &mut outputs, limits(), &memory)
+            .unwrap();
+        let previous = outputs.clone();
+        let before = memory.used_bytes();
+        let mut denied = limits();
+        denied.library.max_compute_work = Some(1_000_000);
+        let error = jit
+            .evaluate_into(&args, &mut outputs, denied, &memory)
+            .unwrap_err();
+        assert!(format!("{error:?}").contains("ComputeWork"), "{error:?}");
+        for (actual, old) in outputs.iter().zip(&previous) {
+            assert!(
+                actual
+                    .as_ref()
+                    .unwrap()
+                    .shares_frozen_storage(old.as_ref().unwrap())
+            );
+        }
+        assert_eq!(
+            memory.used_bytes(),
+            before,
+            "failed region must release scratch and loans"
+        );
+        jit.evaluate_into(&args, &mut outputs, limits(), &memory)
+            .unwrap();
+    }
+}
 
 #[test]
 fn compiled_region_uses_constant_visits_and_preserves_all_string_semantics() {

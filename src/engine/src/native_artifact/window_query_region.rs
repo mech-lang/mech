@@ -1,4 +1,4 @@
-//! Compiler proof of a closed ordinary Mech window/query loop. This metadata
+//! Compiler proof of a closed ordinary Mech window/histogram or query loop. This metadata
 //! neither executes a loop nor grants a runtime visit/round permission.
 use super::{
     NativeCollectionPrimitive as Primitive, NativeCollectionResult, NativeCollectionSource,
@@ -12,16 +12,16 @@ use super::{
 /// after binding its exact String owners and selector geometry at entry.
 /// It must still implement the selected semantics and finite round policy.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct NativeWindowQueryRegion {
+pub struct NativeWindowRegion {
     collection: u32,
     iteration: u32,
     source: Value,
     length: Value,
     width: Value,
-    query: Value,
+    query: Option<Value>,
     sites: Box<[u32]>,
 }
-impl NativeWindowQueryRegion {
+impl NativeWindowRegion {
     pub const fn collection(&self) -> u32 {
         self.collection
     }
@@ -37,7 +37,7 @@ impl NativeWindowQueryRegion {
     pub const fn width(&self) -> Value {
         self.width
     }
-    pub const fn query(&self) -> Value {
+    pub const fn query(&self) -> Option<Value> {
         self.query
     }
     /// Exactly the inner loop sites proved below, including guard-false/latch
@@ -50,11 +50,23 @@ impl NativeWindowQueryRegion {
 impl Plan {
     /// Compilation-only selection. An unsupported body remains ordinary CFG;
     /// no alternative parser, evaluator or runtime policy is selected here.
-    pub fn window_query_regions(&self) -> Vec<NativeWindowQueryRegion> {
+    pub fn window_regions(&self) -> Vec<NativeWindowRegion> {
         self.collections()
             .iter()
             .enumerate()
             .filter_map(|(id, _)| select(self, u32::try_from(id).ok()?))
+            .collect()
+    }
+    pub fn window_query_regions(&self) -> Vec<NativeWindowRegion> {
+        self.window_regions()
+            .into_iter()
+            .filter(|region| region.query.is_some())
+            .collect()
+    }
+    pub fn window_histogram_regions(&self) -> Vec<NativeWindowRegion> {
+        self.window_regions()
+            .into_iter()
+            .filter(|region| region.query.is_none())
             .collect()
     }
 }
@@ -138,10 +150,12 @@ fn unrestricted_selector(schema: &mech_core::Schema) -> bool {
         if id.get() == 0 && parameter.lower_bound() == &D::Constant(0)
             && parameter.upper_bound().is_none())
 }
-fn select(plan: &Plan, id: u32) -> Option<NativeWindowQueryRegion> {
+fn select(plan: &Plan, id: u32) -> Option<NativeWindowRegion> {
     let collection = plan.collections().get(id as usize)?;
-    let NativeCollectionResult::GuardedHistogramQuery(query) = collection.result() else {
-        return None;
+    let query = match collection.result() {
+        NativeCollectionResult::GuardedHistogramQuery(query) => Some(query.query()),
+        NativeCollectionResult::Histogram(_) => None,
+        _ => return None,
     };
     let projection = collection.string_span_projection()?;
     if projection.range_template().primitive() != Primitive::RangeInclusive
@@ -287,13 +301,13 @@ fn select(plan: &Plan, id: u32) -> Option<NativeWindowQueryRegion> {
         return None;
     }
     cursor.visited.sort_unstable();
-    Some(NativeWindowQueryRegion {
+    Some(NativeWindowRegion {
         collection: id,
         iteration: *iteration,
         source: projection.source(),
         length,
         width,
-        query: query.query(),
+        query,
         sites: cursor.visited.into_boxed_slice(),
     })
 }

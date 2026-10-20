@@ -39,7 +39,11 @@ impl Context<'_, '_> {
             .collections
             .take()
             .ok_or_else(|| invalid("compiled window has no collection state"))?;
-        let result = state.prepare_compiled_window(self, region, args[0], args[1]);
+        let result = if region.query().is_some() {
+            state.prepare_compiled_window(self, region, args[0], args[1])
+        } else {
+            state.prepare_compiled_histogram(self, region, args[0], args[1])
+        };
         self.collections = Some(state);
         let Some((words, accepted)) = result? else {
             // Same compiler/CFG handles representations not covered by this
@@ -80,7 +84,11 @@ impl Context<'_, '_> {
             .collections
             .take()
             .ok_or_else(|| invalid("compiled window lost its state"))?;
-        let result = state.finish_compiled_window(collection, accepted, args[0]);
+        let result = if region.query().is_some() {
+            state.finish_compiled_window(collection, accepted, args[0])
+        } else {
+            state.finish_compiled_histogram(self, collection, accepted, args[0])
+        };
         self.collections = Some(state);
         result?;
         // Only this closed, compiler-proved region may exhaust its own finite

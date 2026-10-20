@@ -81,6 +81,11 @@ fn complete_knucleotide_original_and_decoded_run_through_actual_secured_cli() {
             "the full five-query program must use the same compiled window body"
         );
         assert_eq!(
+            jit.descriptor().plan().window_histogram_regions().len(),
+            1,
+            "both frequency widths must use the same compiled Histogram body"
+        );
+        assert_eq!(
             jit.descriptor()
                 .plan()
                 .collections()

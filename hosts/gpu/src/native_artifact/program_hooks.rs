@@ -21,7 +21,7 @@ impl Hooks {
         &self,
         b: &mut FunctionBuilder<'_>,
         site: usize,
-        region: &mech_engine::native_artifact::NativeWindowQueryRegion,
+        region: &mech_engine::native_artifact::NativeWindowRegion,
         function: cranelift_codegen::ir::FuncRef,
         locals: Value,
         counter_slot: usize,

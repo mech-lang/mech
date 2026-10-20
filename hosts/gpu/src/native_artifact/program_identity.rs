@@ -53,9 +53,9 @@ fn selected_template(
         word(hash, number);
     }
 }
-// IR12 pins strict inclusive-window region selection; an exclusive selector
-// must retain its different length and possible empty-range error semantics.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 12;
+// IR13 adds bounded dense histogram code to the same closed inclusive-window
+// proof. Exclusive selectors retain their distinct ordinary CFG semantics.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 13;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -96,7 +96,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 12;
 // Their finite byte/compare/instruction bound is charged before entry, not
 // by visiting each operation. Existing activation, capture and atomic commit
 // remain ONE round. Genuine String owners are loaned only across that body.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 22;
+// Policy23 prepays a complete native histogram region and finite dense scratch.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 23;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
