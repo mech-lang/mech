@@ -104,6 +104,84 @@ fn compiled_window_query_loop_keeps_overlaps_and_has_no_runtime_callbacks() {
 }
 
 #[test]
+fn compiled_query_words_cover_short_tails_wide_prefixes_and_unaligned_bounds() {
+    let compiled = Compiled::new();
+    for len in [
+        0, 1, 2, 3, 6, 7, 8, 9, 15, 16, 17, 18, 19, 31, 32, 33, 63, 64, 65, 4095, 4096, 4097,
+    ] {
+        for byte in [0, b'A', 127] {
+            let storage = String::from_utf8(vec![byte; len + 7]).unwrap();
+            for alignment in 0..8 {
+                let source = &storage[alignment..alignment + len];
+                let loan = AsciiSource::borrow(source).unwrap();
+                for width in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 16, 18, 19, 32, 33, 65] {
+                    let query = String::from_utf8(vec![byte; width]).unwrap();
+                    assert_eq!(
+                        compiled.count(&loan, width as u64, &query),
+                        reference(source, width as u64, &query),
+                        "len={len} alignment={alignment} byte={byte} width={width}"
+                    );
+                    if width > 0 {
+                        let mut miss = query.into_bytes();
+                        // Match the entire word prefix but differ at the last
+                        // byte: the wide path must still compare its remainder.
+                        miss[width - 1] ^= 1;
+                        let miss = String::from_utf8(miss).unwrap();
+                        assert_eq!(
+                            compiled.count(&loan, width as u64, &miss),
+                            reference(source, width as u64, &miss)
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn compiled_query_word_scan_matches_arbitrary_ascii_and_query_lengths() {
+    let compiled = Compiled::new();
+    let mut state = 0x9e37_79b9_7f4a_7c15u64;
+    for case in 0..512usize {
+        let len = case % 131;
+        let bytes = (0..len)
+            .map(|_| {
+                state ^= state << 13;
+                state ^= state >> 7;
+                state ^= state << 17;
+                let byte = (state & 127) as u8;
+                // Only CRLF pairs, not arbitrary ASCII, invalidate the loan.
+                if byte == b'\r' { b'\n' } else { byte }
+            })
+            .collect::<Vec<_>>();
+        let source = String::from_utf8(bytes).unwrap();
+        let loan = AsciiSource::borrow(&source).unwrap();
+        for width in 1..=35usize {
+            let start = if width <= len {
+                case % (len - width + 1)
+            } else {
+                0
+            };
+            let query = if width <= len {
+                &source[start..start + width]
+            } else {
+                ""
+            };
+            for supplied_width in [0, width as u64, width as u64 + 1, u64::MAX] {
+                assert_eq!(
+                    compiled.count(&loan, supplied_width, query),
+                    reference(&source, supplied_width, query),
+                    "case={case} width={supplied_width} query={query:?}"
+                );
+            }
+            // A non-ASCII key must not become an ASCII match merely because
+            // its byte length equals the native width.
+            assert_eq!(compiled.count(&loan, 2, "é"), 0);
+        }
+    }
+}
+
+#[test]
 #[ignore = "manual machine-code kernel diagnostic; NOT full secure program timings"]
 fn measure_compiled_window_query_kernel_only() {
     let input_path =

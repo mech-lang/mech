@@ -130,6 +130,19 @@ fn compiled_region_uses_constant_visits_and_preserves_all_string_semantics() {
             ("🧑‍🚀🧑‍🚀", 1, "🧑‍🚀"),
             ("AAAAA", 2, "é"),
             ("AAAAA", 2, "not present"),
+            ("ABCDEFGHABCDEFGH", 8, "ABCDEFGH"),
+            ("ABCDEFGHIABCDEFGHI", 9, "ABCDEFGHI"),
+            ("ABCDEFGH0ABCDEFGH1", 9, "ABCDEFGH1"),
+            (
+                "0123456789ABCDEFGH0123456789ABCDEFGH",
+                18,
+                "0123456789ABCDEFGH",
+            ),
+            (
+                "\0\u{7f}\0\u{7f}\0\u{7f}\0\u{7f}\0",
+                7,
+                "\0\u{7f}\0\u{7f}\0\u{7f}\0",
+            ),
         ] {
             let args = inputs(
                 &artifact,
