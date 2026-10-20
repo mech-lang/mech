@@ -53,9 +53,9 @@ fn selected_template(
         word(hash, number);
     }
 }
-// IR14 adds closed String map/join regions after IR13's dense histograms.
+// IR15 adds native words for proved nonescaping scalar aggregates.
 // Exclusive window selectors retain their distinct ordinary CFG semantics.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 14;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 15;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -98,7 +98,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 14;
 // remain ONE round. Genuine String owners are loaned only across that body.
 // Policy23 prepays a complete native histogram region and finite dense scratch.
 // Policy24 prepays byte-map table/output and one complete String map loop.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 24;
+// Policy25 admits private aggregate words once in the session's transport;
+// no repeated canonical heap ownership is created for those unobservable values.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 25;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

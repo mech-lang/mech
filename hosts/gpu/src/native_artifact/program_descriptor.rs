@@ -33,6 +33,7 @@ pub struct NativeProgramDescriptor {
     // from another artifact or rebind one to a different selected factory.
     pub(super) window_regions: Box<[mech_engine::native_artifact::NativeWindowRegion]>,
     pub(super) string_map_regions: Box<[mech_engine::native_artifact::NativeStringMapRegion]>,
+    pub(super) scalar_aggregates: mech_engine::native_artifact::NativeScalarAggregates,
     pub(super) stack: u64,
     pub(super) code: u64,
     pub(super) identity: [u8; 32],
@@ -158,6 +159,7 @@ impl NativeProgramDescriptor {
         validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
         let window_regions = plan.window_regions().into_boxed_slice();
         let string_map_regions = plan.string_map_regions().into_boxed_slice();
+        let scalar_aggregates = plan.scalar_aggregates();
         let max_library_inputs = plan
             .blocks()
             .iter()
@@ -224,6 +226,7 @@ impl NativeProgramDescriptor {
             max_library_inputs,
             window_regions,
             string_map_regions,
+            scalar_aggregates,
             stack,
             code,
             identity,

@@ -29,6 +29,7 @@ impl RetirementTables {
             return Err("retirement scope count differs from values");
         }
         let iterations = plan.iterations().len();
+        let aggregates = plan.scalar_aggregates();
         let ranges = iterations
             .checked_mul(KINDS.len())
             .ok_or("retirement range count overflow")?;
@@ -47,7 +48,7 @@ impl RetirementTables {
         // Two O(values * lexical depth) passes avoid a compile-time
         // values-by-all-loops scan and allocate one exact final table capacity.
         for slot in 0..plan.values().len() {
-            Self::each_range(plan, slot, |range| {
+            Self::each_range(plan, &aggregates, slot, |range| {
                 words[range] = words[range]
                     .checked_add(1)
                     .ok_or("retirement slot count overflow")?;
@@ -75,7 +76,7 @@ impl RetirementTables {
         for slot in 0..plan.values().len() {
             let ordinal =
                 u64::from(u32::try_from(slot).map_err(|_| "retirement slot exceeds u32")?);
-            Self::each_range(plan, slot, |range| {
+            Self::each_range(plan, &aggregates, slot, |range| {
                 let offset =
                     usize::try_from(next[range]).map_err(|_| "retirement cursor exceeds host")?;
                 let end =
@@ -103,10 +104,11 @@ impl RetirementTables {
 
     fn each_range(
         plan: &NativeProgramArtifactPlan,
+        aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
         slot: usize,
         mut visit: impl FnMut(usize) -> Result<(), &'static str>,
     ) -> Result<(), &'static str> {
-        if plan.values()[slot].scalar_kind().is_some() {
+        if plan.values()[slot].scalar_kind().is_some() || aggregates.slot_at(slot).is_some() {
             return Ok(());
         }
         let mut owner = match plan.value_scopes()[slot] {

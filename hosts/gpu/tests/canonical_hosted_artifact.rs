@@ -75,6 +75,10 @@ fn complete_knucleotide_original_and_decoded_run_through_actual_secured_cli() {
     let (variants, catalog) = artifacts(FULL);
     for artifact in variants {
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        assert!(
+            jit.descriptor().plan().scalar_aggregates().value_count() > 0,
+            "the complete source must use native scalar FSM state, not repeated heap packing"
+        );
         assert_eq!(
             jit.descriptor().plan().window_query_regions().len(),
             1,

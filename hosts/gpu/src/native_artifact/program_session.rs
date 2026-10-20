@@ -263,6 +263,7 @@ impl<'a> Prepared<'a> {
             .values()
             .len()
             .checked_add(plan.iterations().len())
+            .and_then(|n| n.checked_add(descriptor.scalar_aggregates.words()))
             .ok_or_else(|| invalid("local count overflow"))?;
         let progress = plan
             .iterations()

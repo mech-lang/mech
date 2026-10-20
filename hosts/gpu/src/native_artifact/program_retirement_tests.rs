@@ -48,6 +48,7 @@ fn exact_retirement_sets_keep_captures_current_elements_and_tail_returns() {
             .unwrap();
             plan.validate_current_visits().unwrap();
             let tables = RetirementTables::derive(&plan).unwrap();
+            let aggregates = plan.scalar_aggregates();
             for (iteration, control) in plan.iterations().iter().enumerate() {
                 for kind in KINDS {
                     let slots = tables
@@ -59,6 +60,7 @@ fn exact_retirement_sets_keep_captures_current_elements_and_tail_returns() {
                         let slot = slot as usize;
                         assert!(slot < plan.values().len());
                         assert!(plan.values()[slot].scalar_kind().is_none());
+                        assert!(aggregates.slot_at(slot).is_none());
                         assert!(
                             !plan
                                 .inputs()
@@ -94,6 +96,9 @@ fn exact_retirement_sets_keep_captures_current_elements_and_tail_returns() {
                         .iter()
                         .enumerate()
                         .filter_map(|(slot, scope)| {
+                            if aggregates.slot_at(slot).is_some() {
+                                return None;
+                            }
                             if plan.values()[slot].scalar_kind().is_some()
                                 || keep.is_some_and(|value| value.get() as usize == slot)
                             {
@@ -148,7 +153,10 @@ fn exact_retirement_sets_keep_captures_current_elements_and_tail_returns() {
                             .slots(tables.words(), iteration as u32, RetirementKind::TailExit)
                             .unwrap();
                         assert!(latch.contains(&u64::from(data.returned().get())));
-                        assert!(exit.contains(&u64::from(data.carrier().get())));
+                        assert_eq!(
+                            exit.contains(&u64::from(data.carrier().get())),
+                            aggregates.slot(data.carrier()).is_none()
+                        );
                     }
                     NativeControlLoop::Iteration(_) => {}
                 }

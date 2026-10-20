@@ -278,9 +278,19 @@ pub(super) fn define_cfg<M: Module>(
         plan.value_count() as u64,
         limits.max_nodes.saturating_mul(8),
     )?;
+    #[cfg(feature = "canonical-native-program")]
+    let aggregates = match plan {
+        super::iteration_code_plan::CodePlan::Program(program) => program.scalar_aggregates(),
+        _ => Default::default(),
+    };
+    #[cfg(feature = "canonical-native-program")]
+    let aggregate_words = aggregates.words();
+    #[cfg(not(feature = "canonical-native-program"))]
+    let aggregate_words = 0;
     let local_count = plan
         .value_count()
         .checked_add(plan.iteration_count())
+        .and_then(|n| n.checked_add(aggregate_words))
         .ok_or_else(|| backend("iteration local count overflow"))?;
     offset(local_count)?;
     offset(plan.input_count())?;
@@ -441,6 +451,8 @@ pub(super) fn define_cfg<M: Module>(
             }
         }
         let callback_signature = b.import_signature(callback_signature);
+        #[cfg(feature = "canonical-native-program")]
+        super::program_compiler::scalar_aggregates::constants(&mut b, locals, &aggregates)?;
         let mut reachable = vec![false; plan.blocks().len()];
         let mut pending = vec![plan.entry() as usize];
         while let Some(id) = pending.pop() {
@@ -544,7 +556,23 @@ pub(super) fn define_cfg<M: Module>(
                         error,
                     )?;
             }
+            #[cfg(feature = "canonical-native-program")]
+            let aggregate = super::program_compiler::scalar_aggregates::emit(
+                &mut b,
+                locals,
+                &aggregates,
+                index,
+                error,
+            )?;
+            #[cfg(not(feature = "canonical-native-program"))]
+            let aggregate = false;
             match block.action() {
+                _ if aggregate
+                    && !matches!(
+                        block.action(),
+                        NativeIterationAction::Initialize { .. }
+                            | NativeIterationAction::Latch { .. }
+                    ) => {}
                 NativeIterationAction::PrepareStringSpanSelector { collection } => {
                     #[cfg(feature = "canonical-native-program")]
                     {
@@ -642,7 +670,9 @@ pub(super) fn define_cfg<M: Module>(
                         mech_engine::native_artifact::NativeControlLoopRef::Iteration(
                             iteration,
                         ) => {
-                            if plan.kind(iteration.carrier()).is_some() {
+                            if aggregate {
+                                // The fixed-width carrier words were copied above.
+                            } else if plan.kind(iteration.carrier()).is_some() {
                                 let value = load(&mut b, locals, iteration.seed())?;
                                 b.ins().store(
                                     MemFlags::new(),
@@ -668,11 +698,13 @@ pub(super) fn define_cfg<M: Module>(
                             b.ins().load(types::I64, MemFlags::new(), hooks.result, 0)
                         }
                         mech_engine::native_artifact::NativeControlLoopRef::Tail(_) => {
-                            let hooks = hooks
-                                .as_ref()
-                                .ok_or_else(|| backend("missing tail initializer hook"))?;
                             let zero = b.ins().iconst(types::I64, 0);
-                            hooks.call(&mut b, index, 1, [zero; 3], error);
+                            if !aggregate {
+                                hooks
+                                    .as_ref()
+                                    .ok_or_else(|| backend("missing tail initializer hook"))?
+                                    .call(&mut b, index, 1, [zero; 3], error);
+                            }
                             zero
                         }
                     };
@@ -684,11 +716,13 @@ pub(super) fn define_cfg<M: Module>(
                         plan.iteration(*iteration as usize),
                         mech_engine::native_artifact::NativeControlLoopRef::Tail(_)
                     ) {
-                        let hooks = hooks
-                            .as_ref()
-                            .ok_or_else(|| backend("missing tail latch hook"))?;
-                        let zero = b.ins().iconst(types::I64, 0);
-                        hooks.call(&mut b, index, 1, [zero; 3], error);
+                        if !aggregate {
+                            let hooks = hooks
+                                .as_ref()
+                                .ok_or_else(|| backend("missing tail latch hook"))?;
+                            let zero = b.ins().iconst(types::I64, 0);
+                            hooks.call(&mut b, index, 1, [zero; 3], error);
+                        }
                     } else {
                         let id = *iteration as usize;
                         let counter = b.ins().load(
@@ -703,7 +737,9 @@ pub(super) fn define_cfg<M: Module>(
                             iteration,
                         ) = plan.iteration(id)
                         {
-                            if plan.kind(iteration.carrier()).is_some() {
+                            if aggregate {
+                                // Copy was emitted above; counted-loop progress is unchanged.
+                            } else if plan.kind(iteration.carrier()).is_some() {
                                 let next = load(&mut b, locals, iteration.next())?;
                                 b.ins().store(
                                     MemFlags::new(),

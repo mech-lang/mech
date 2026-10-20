@@ -159,6 +159,15 @@ impl Context<'_, '_> {
         Ok(())
     }
     fn needs_move(&self, site: usize) -> Option<(NativeMatchValue, NativeMatchValue)> {
+        if self
+            .control
+            .descriptor
+            .scalar_aggregates
+            .action(site)
+            .is_some()
+        {
+            return None;
+        }
         let plan = &self.control.descriptor.plan;
         let pair = match plan.blocks()[site].action() {
             NativeIterationAction::Scalar(NativeMatchAction::Copy { source, output }) => {
@@ -194,6 +203,15 @@ impl Context<'_, '_> {
             .then_some(pair)
     }
     fn action_required(&self, site: usize) -> bool {
+        if self
+            .control
+            .descriptor
+            .scalar_aggregates
+            .action(site)
+            .is_some()
+        {
+            return false;
+        }
         matches!(
             self.control.descriptor.plan.blocks()[site].action(),
             NativeIterationAction::LibraryCall { .. }
@@ -265,6 +283,9 @@ impl Context<'_, '_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         collection::before_span_helper(self, site)?;
         let descriptor = self.control.descriptor;
+        if descriptor.scalar_aggregates.action(site).is_some() {
+            return Err(invalid("helper at native-only aggregate site"));
+        }
         if operation == super::program_abi::WINDOW_PREPARE {
             self.prepare_window_region(site, args)
         } else if operation == super::program_abi::WINDOW_FINISH {
@@ -508,6 +529,26 @@ impl Context<'_, '_> {
             && !self.consumed
         {
             return Err(invalid("entry omitted current required helper"));
+        }
+        // A native aggregate latch has no managed move callback. Retire the
+        // OTHER managed loop locals after that generated copy, before the next
+        // visit, exactly as the managed latch used to do. Aggregate words own
+        // no heap payload and are absent from the retirement inventory.
+        if let Some(previous) = self.control.previous
+            && self
+                .control
+                .descriptor
+                .scalar_aggregates
+                .action(previous as usize)
+                .is_some()
+            && let NativeIterationAction::Latch { iteration } =
+                self.control.descriptor.plan.blocks()[previous as usize].action()
+            && matches!(
+                self.control.descriptor.plan.iterations()[*iteration as usize],
+                mech_engine::native_artifact::NativeControlLoop::Tail(_)
+            )
+        {
+            self.retire_tail_locals(*iteration, RetirementKind::TailLatch)?;
         }
         let index =
             usize::try_from(site).map_err(|_| invalid("program visit site outside descriptor"))?;

@@ -48,6 +48,12 @@ pub use window_query_region::NativeWindowRegion;
 mod string_map_region;
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 pub use string_map_region::NativeStringMapRegion;
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+mod scalar_aggregates;
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+pub use scalar_aggregates::{
+    NativeAggregateWord, NativeScalarAggregateAction, NativeScalarAggregates,
+};
 
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 pub use crate::resident::general::native_collection_templates::{
