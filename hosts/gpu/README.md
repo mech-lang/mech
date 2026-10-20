@@ -157,19 +157,21 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [latest qualified full-size measurement](../../docs/validation/canonical-knucleotide-packed-ranges-standard125m-v1.json)
-uses the same M1 and 125-million-base input:
+The [latest paired full-size comparison](../../docs/validation/canonical-knucleotide-paired-legacy-standard125m-v1.json)
+remeasures both retained binaries on the same M1 and 125-million-base input:
 
 | Implementation | Median |
 | --- | ---: |
-| Legacy direct-I/O compiled body | 0.9747 s |
-| Canonical secured native application | 1.0238 s |
-| Same canonical artifact after bytecode round-trip | 1.0312 s |
+| Legacy direct-I/O compiled body | 0.9760 s |
+| Canonical secured native application | 0.9528 s |
 
-Each canonical median uses three fresh-process samples; both correctness runs
-and all six timed outputs match exactly under unchanged grants and finite
-limits. These timings are pinned to source `60fe04d2d`, including directly packed
-numeric ranges, concrete encoding sinks and selected-join optimization.
+Eight alternating paired rounds use the same timing observer and file capture;
+all eighteen correctness/timed outputs match exactly. The secured application
+is faster in every pair, about 2.4% at the medians, under unchanged grants and
+finite limits. Its source is pinned to `61bd12d439`.
+The [separate original/bytecode qualification](../../docs/validation/canonical-knucleotide-line-count-standard125m-v1.json)
+produces identical binaries and records 0.9859/0.9997 s with the earlier observer;
+those samples are not mixed into the paired comparison.
 Historical measurements, profiles and failures remain in the
 [validation evidence](../../docs/validation), rather than a running changelog here.
 
@@ -187,11 +189,14 @@ existing canonical packed buffers directly, avoiding draft cloning and
 repacking. All thirteen numeric kinds keep the original arithmetic, shape,
 admission and publication rules. Concrete encoding sinks remove indirect writes
 without changing canonical bytes or billing.
+ASCII String maps batch bounded lookups while retaining scalar first-error
+behavior. Both maintained text-line paths share a vectorizable byte count;
+ordinary iteration still constructs every genuine String owner.
 
-The qualified result remains about 5% slower than legacy direct I/O. These are
-whole-implementation comparisons, not isolated permission-check costs or a
-security speed floor. Remaining profile targets are text-line construction,
-ASCII scans and native counting; review and CI alone do not complete the goal.
+The paired result meets the legacy speed target for this workload. It is a
+whole-implementation comparison, not isolated permission-check cost, a general
+language ranking or an optimization ceiling. Fresh review and green CI remain
+required; keep the PR draft and unmerged until the user directs otherwise.
 
 The [canonical k-nucleotide source](tests/fixtures/native/knucleotide-idiomatic.mec)
 expresses record selection, overlapping String windows, frequency widths and
