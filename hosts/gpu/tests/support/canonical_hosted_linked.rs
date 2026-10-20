@@ -436,7 +436,7 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
         "schema":"mech.canonical-hosted-linked-qualification.v1",
         "source_commit":commit, "results":results, "timing_samples":full_result["timing_samples"].as_u64().unwrap_or(0),
         "full_input":full_result,
-        "rust_profile":profile.name(), "object_optimization":"none", "whole_program_optimized":false,
+        "rust_profile":profile.name(), "object_optimization":"speed", "whole_program_optimized":false,
         "scope":"actual full original/decoded canonical artifacts; same checked phased Object route with activation before capture and same-session resume, real CLI provider/capability system, no parser/JIT/resident body",
     })).unwrap()).unwrap();
     clean(&evidence, &commit, "after");

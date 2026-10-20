@@ -1,6 +1,7 @@
 {
   "schema": "mech.canonical-knucleotide-policy-timing-10m.v1",
-  "status": "MEASURED_10M_INDEPENDENTLY_RECONCILED_DRIVER_FORMAT_LIMITATIONS_STANDARD125M_PENDING",
+  "status": "MEASURED_10M_DRIVER_FORMAT_LIMITATIONS_BLOCKING_PERFORMANCE_REGRESSION_STANDARD125M_FAILED_ADMISSION",
+  "subsequent_performance_qualification": "canonical-knucleotide-performance-regression-v1.json records the actual same-input legacy remeasurement, CPU profile and failed corrected-driver125M attempt. This historical receipt's raw timings, source, policy and oracle are unchanged. It is correctness/measurement evidence, not successful performance qualification.",
   "source": {
     "qualified_commit": "64a62bb8f178102aa70982f1195b372c0ad186f6",
     "parent_commit": "fb2a6d0a4482fe1221cfcb1231e2c6661e3ce400",
@@ -141,5 +142,5 @@
     "correction_scope": "Subsequent driver corrections in this PR compare all four rows with one baseline, make derived launch evidence self-authenticating with separate base provenance, and restore the legacy production initial/attempt/summary key sets. Three regressions first failed against the old driver; six added regressions pass after the fixes. These are driver-only corrections, not a change to this measured source, oracle, limits or native computation.",
     "stopped_full_size_attempt": "The first standard125M attempt was intentionally stopped during its first release build when these notes arrived. No full-size application or timing ran. Its partial logs and cleanup error/manual process reconciliation are retained; it is not qualified full-size evidence."
   },
-  "remaining": "Corrected-driver clean-source release/production-format qualification and standard125M input correctness, finite native/provider coexistence policy and full-size serial timings remain pending. Broader all-ten/optimization/publication scope is not complete. Require fresh review and full green CI for new pushed code; keep draft and unmerged for the user's decision."
+  "remaining": "Corrected-driver clean-source release/production-format qualification passed subsequently. The first actual corrected-driver125M trial failed TemporaryBytes admission before timings; full-size correctness/timings remain unqualified. The same-input comparison shows a blocking whole-implementation performance regression. Restore fast compiled computation within ONE canonical security round before expanding to another benchmark. Broader all-ten/publication scope is not complete. Require fresh review and full green CI for new pushed code; keep draft and unmerged for the user's decision."
 }

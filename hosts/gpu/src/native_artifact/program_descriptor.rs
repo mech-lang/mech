@@ -29,6 +29,9 @@ pub struct NativeProgramDescriptor {
     pub(super) scalar_bytes: u64,
     pub(super) observation_schema_bytes: u64,
     pub(super) max_library_inputs: usize,
+    // Derived from this SAME immutable plan; callers cannot inject a region
+    // from another artifact or rebind one to a different selected factory.
+    pub(super) window_regions: Box<[mech_engine::native_artifact::NativeWindowQueryRegion]>,
     pub(super) stack: u64,
     pub(super) code: u64,
     pub(super) identity: [u8; 32],
@@ -152,6 +155,7 @@ impl NativeProgramDescriptor {
             })
             .collect::<Result<Box<[_]>, _>>()?;
         validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
+        let window_regions = plan.window_query_regions().into_boxed_slice();
         let max_library_inputs = plan
             .blocks()
             .iter()
@@ -160,7 +164,8 @@ impl NativeProgramDescriptor {
                 _ => None,
             })
             .max()
-            .unwrap_or(0);
+            .unwrap_or(0)
+            .max(if window_regions.is_empty() { 0 } else { 5 });
         let types = plan
             .values()
             .iter()
@@ -209,6 +214,7 @@ impl NativeProgramDescriptor {
             scalar_bytes,
             observation_schema_bytes,
             max_library_inputs,
+            window_regions,
             stack,
             code,
             identity,

@@ -212,7 +212,7 @@ fn complete_original_and_decoded_knucleotide_same_binary_policy_controls() {
     // Persist completed small controls before optional large work can fail.
     let mut receipt = json!({
         "schema":"mech.canonical-native-benchmark-policy-qualification.v1", "source_commit":commit,
-        "results":results, "production_control":production, "rust_profile":profile.name(), "object_optimization":"none", "whole_program_optimized":false,
+        "results":results, "production_control":production, "rust_profile":profile.name(), "object_optimization":"speed", "whole_program_optimized":false,
         "driver_protocol_control":driver_control,"full_input":null,"timing_samples":0,
         "full_phase_status":"not-completed",
         "scope":"complete original/decoded canonical artifacts; each identical executable runs both explicit policies through the same checked Object, real CLI provider and phased native lifecycle; trusted bypasses resource/operation matching, not all safety overhead"

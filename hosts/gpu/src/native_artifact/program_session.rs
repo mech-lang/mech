@@ -618,6 +618,7 @@ impl<'a> Prepared<'a> {
             output_cursor: state.output_cursor,
             error: None,
             activation_phase: phase == PHASE_ACTIVATION,
+            window_region: None,
         };
         let context_pointer = (&mut context as *mut Context<'_, '_>).cast::<c_void>();
         let mut frame = Frame {
@@ -648,6 +649,9 @@ impl<'a> Prepared<'a> {
         setup_work_diagnostic::checkpoint(context.control.work.used());
         if let Some(error) = context.error.take() {
             return Err(error);
+        }
+        if context.window_region.is_some() {
+            return Err(invalid("native entry returned with compiled String loans"));
         }
         let f = &frame.base;
         if f.version != VERSION

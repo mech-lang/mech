@@ -147,7 +147,7 @@ fn execute(
         "input":inputs.input.evidence(&config.input.path), "oracle":inputs.oracle.evidence(&config.oracle.path),
         "launch":inputs.launch.evidence(&config.launch.path), "finite_scale_policy":policy,
         "small_gate_policy_unchanged":true, "rust_profile":"release",
-        "object_optimization":"none", "whole_program_optimized":false,
+        "object_optimization":"speed", "whole_program_optimized":false,
         "complete_source_sha256":super::hash(super::FULL.as_bytes()),
         "qualification":[], "samples":[], "timing_samples":0, "timing_attempts":0,
         "timed_process_starts_confirmed":0, "timed_process_starts_unknown":0,

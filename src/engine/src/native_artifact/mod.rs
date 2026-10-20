@@ -41,6 +41,11 @@ pub use crate::resident::general::native_match_lowering::lower_native_program_ar
 pub use program::*;
 
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+mod window_query_region;
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+pub use window_query_region::NativeWindowQueryRegion;
+
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
 pub use crate::resident::general::native_collection_templates::{
     NativeCollectionLexicalSource, NativeCollectionLexicalTemplate,
     NativeCollectionOperationTemplate, NativeCollectionPrimitive,

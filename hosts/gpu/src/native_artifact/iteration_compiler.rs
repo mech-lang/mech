@@ -286,6 +286,20 @@ pub(super) fn define_cfg<M: Module>(
     offset(plan.input_count())?;
     offset(plan.output_count())?;
     plan.validate()?;
+    #[cfg(feature = "canonical-native-program")]
+    let window_functions = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+        program
+            .window_query_regions()
+            .into_iter()
+            .map(|region| {
+                let (function, _, stack, code) =
+                    super::program_compiler::window_codegen::define(module, &region)?;
+                Ok((region, function, stack, code))
+            })
+            .collect::<Result<Vec<_>, NativeCompileError>>()?
+    } else {
+        Vec::new()
+    };
     let mut signature_entry = module.make_signature();
     signature_entry.params.push(AbiParam::new(types::I64));
     signature_entry.returns.push(AbiParam::new(types::I64));
@@ -470,6 +484,29 @@ pub(super) fn define_cfg<M: Module>(
                 index,
                 error,
             );
+            #[cfg(feature = "canonical-native-program")]
+            if let NativeIterationTerminator::Header {
+                iteration, exit, ..
+            } = block.terminator()
+                && let Some((region, function, _, _)) = window_functions
+                    .iter()
+                    .find(|(region, ..)| region.iteration() == iteration)
+            {
+                let function = module.declare_func_in_func(*function, b.func);
+                hooks
+                    .as_ref()
+                    .ok_or_else(|| backend("compiled window has no owner hooks"))?
+                    .window_region(
+                        &mut b,
+                        index,
+                        region,
+                        function,
+                        locals,
+                        plan.value_count() + iteration as usize,
+                        blocks[exit as usize].expect("reachable window exit"),
+                        error,
+                    )?;
+            }
             match block.action() {
                 NativeIterationAction::PrepareStringSpanSelector { collection } => {
                     #[cfg(feature = "canonical-native-program")]
@@ -843,6 +880,22 @@ pub(super) fn define_cfg<M: Module>(
         })?;
     let stack = compiled_stack_bytes(&compiled.buffer)?;
     let code = compiled.code_info().total_size as u64;
+    #[cfg(feature = "canonical-native-program")]
+    let (stack, code) = (
+        stack
+            .checked_add(
+                window_functions
+                    .iter()
+                    .map(|(_, _, stack, _)| *stack)
+                    .max()
+                    .unwrap_or(0),
+            )
+            .ok_or_else(|| backend("compiled region stack overflow"))?,
+        window_functions
+            .iter()
+            .try_fold(code, |total, (_, _, _, code)| total.checked_add(*code))
+            .ok_or_else(|| backend("compiled region code overflow"))?,
+    );
     limit("Iteration stack", stack, limits.max_stack_bytes)?;
     limit("Iteration code", code, limits.max_code_bytes)?;
     Ok((function, stack, code))

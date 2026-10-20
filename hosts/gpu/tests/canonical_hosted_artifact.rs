@@ -76,6 +76,11 @@ fn complete_knucleotide_original_and_decoded_run_through_actual_secured_cli() {
     for artifact in variants {
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         assert_eq!(
+            jit.descriptor().plan().window_query_regions().len(),
+            1,
+            "the full five-query program must use the same compiled window body"
+        );
+        assert_eq!(
             jit.descriptor()
                 .plan()
                 .collections()

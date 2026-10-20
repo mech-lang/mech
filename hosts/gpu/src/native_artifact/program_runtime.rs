@@ -27,6 +27,8 @@ use std::ffi::c_void;
 mod collection;
 #[path = "program_session.rs"]
 mod session;
+#[path = "program_window_round.rs"]
+mod window_round;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub(super) use session::CheckedEntry;
 #[cfg(feature = "canonical-native-program-host-runtime")]
@@ -139,8 +141,23 @@ struct Context<'plan, 'visit> {
     output_cursor: usize,
     error: Option<NativeProgramExecutionError>,
     activation_phase: bool,
+    window_region: Option<(u32, u64)>,
 }
 impl Context<'_, '_> {
+    fn write_window_arguments(
+        &mut self,
+        words: [u64; 5],
+    ) -> Result<(), NativeProgramExecutionError> {
+        if self.arguments.is_null() || self.argument_capacity < words.len() {
+            return Err(invalid("compiled region argument lane is too small"));
+        }
+        // SAFETY: the owning session registers this exact disjoint five-word
+        // lane. Generated code is suspended in this callback, and the loaned
+        // canonical owners in call_inputs outlive its subsequent native read.
+        unsafe { core::slice::from_raw_parts_mut(self.arguments, words.len()) }
+            .copy_from_slice(&words);
+        Ok(())
+    }
     fn needs_move(&self, site: usize) -> Option<(NativeMatchValue, NativeMatchValue)> {
         let plan = &self.control.descriptor.plan;
         let pair = match plan.blocks()[site].action() {
@@ -248,7 +265,13 @@ impl Context<'_, '_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         collection::before_span_helper(self, site)?;
         let descriptor = self.control.descriptor;
-        if operation == 0xffff_ffff_ffff_fff0 {
+        if operation == super::program_abi::WINDOW_PREPARE {
+            self.prepare_window_region(site, args)
+        } else if operation == super::program_abi::WINDOW_FINISH {
+            self.finish_window_region(site, args)
+        } else if self.window_region.is_some() {
+            Err(invalid("helper while compiled String loans are active"))
+        } else if operation == 0xffff_ffff_ffff_fff0 {
             if self.consumed || args != [0; 3] {
                 return Err(invalid("duplicate or malformed structural observation"));
             }
@@ -460,6 +483,9 @@ impl Context<'_, '_> {
         }
     }
     fn visit(&mut self, site: u64) -> Result<(), NativeProgramExecutionError> {
+        if self.window_region.is_some() {
+            return Err(invalid("compiled String loans escaped their region"));
+        }
         if self.activation_phase
             && self
                 .control

@@ -160,6 +160,21 @@ records actual original/decoded same-binary policy timings and exact-output
 qualification. It does not qualify the standard 125-million-base input, isolate
 all shared safety overhead, or establish a language ranking.
 
+Performance qualification is currently **blocked**: the [same-input comparison
+and CPU profile](../../docs/validation/canonical-knucleotide-performance-regression-v1.json)
+show roughly 799x slower execution than the old selected direct-I/O version
+before compiler recovery. That lowering repeatedly entered native visit guards
+and runtime helpers inside the computation. IR11/work policy22 now lower proved
+ordinary window/query comprehensions to a callback-free native loop, retaining
+real String owners and admitting the finite loop bound before entry. Unsupported
+representations keep canonical semantics in the same compiler. This is a partial
+recovery, not restored whole-program performance: other hot loops still use
+callbacks, and complete secured release timings must be measured again. The
+runtime still owns **one round** for capture, staging and atomic commit; a native
+region is not a new security round. The first standard-size trial also failed temporary-memory
+admission before any timing samples. Correct output, review and CI do not
+establish completion of this performance requirement.
+
 The [canonical k-nucleotide source](tests/fixtures/native/knucleotide-idiomatic.mec)
 expresses record selection, overlapping String windows, frequency widths and
 queries in Mech, using comprehensions and general-purpose library primitives

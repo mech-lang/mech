@@ -37,6 +37,9 @@ mod text_join_sink_qualification;
 #[path = "support/canonical_program_histogram_query.rs"]
 mod histogram_query_qualification;
 
+#[path = "support/canonical_program_window_round.rs"]
+mod window_round_qualification;
+
 #[path = "support/canonical_program_histogram_sink.rs"]
 mod histogram_sink_qualification;
 

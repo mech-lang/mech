@@ -12,6 +12,9 @@ use cranelift_object::{ObjectBuilder, ObjectModule};
 use mech_core::{FunctionCatalog, ManagedMemoryBudget, Value};
 use mech_engine::{ProgramArtifact, native_artifact::lower_native_program_artifact};
 
+#[path = "program_window_codegen.rs"]
+pub(super) mod window_codegen;
+
 pub struct JitProgramArtifact {
     _module: cranelift_jit::JITModule,
     entry: Entry,
@@ -51,7 +54,7 @@ impl JitProgramArtifact {
         let plan = lower_native_program_artifact(artifact, catalog).map_err(backend)?;
         let builder = cranelift_jit::JITBuilder::with_flags(
             &[
-                ("opt_level", "none"),
+                ("opt_level", "speed"),
                 ("is_pic", "true"),
                 ("preserve_frame_pointers", "true"),
                 ("unwind_info", "true"),
@@ -148,6 +151,8 @@ impl NativeProgramObject {
             "stack_bytes": self.descriptor.stack_bytes(),
             "code_bytes": self.descriptor.code_bytes(),
             "object_bytes": self.bytes.len(),
+            "object_optimization": "speed",
+            "compiled_window_query_regions": self.descriptor.window_regions.len(),
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }
@@ -167,7 +172,7 @@ pub fn emit_program_object_with_limits(
     let plan = lower_native_program_artifact(artifact, catalog).map_err(backend)?;
     let mut flags = settings::builder();
     for (key, value) in [
-        ("opt_level", "none"),
+        ("opt_level", "speed"),
         ("is_pic", "true"),
         ("preserve_frame_pointers", "true"),
         ("unwind_info", "true"),

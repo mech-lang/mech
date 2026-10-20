@@ -9,6 +9,9 @@ use mech_engine::native_artifact::{
     NativeHistogramQueryStepKind as Step, NativeMatchValue,
 };
 
+#[path = "program_window_binding.rs"]
+mod compiled_window;
+
 pub(super) struct Builder {
     // Retire the captured root before the enclosing admitted metadata lane.
     query: Value,

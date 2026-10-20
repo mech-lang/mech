@@ -53,7 +53,7 @@ fn selected_template(
         word(hash, number);
     }
 }
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 10;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 11;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -90,7 +90,11 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 10;
 // Policy21 composes recursive declared-schema conversion binding and staging
 // with the collection strategies above. Present Matrix axes remain witnessed;
 // every invocation keeps fresh admission and atomic publication obligations.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 21;
+// Policy22/IR11 emit closed canonical window-query loops as native regions.
+// Their finite byte/compare/instruction bound is charged before entry, not
+// by visiting each operation. Existing activation, capture and atomic commit
+// remain ONE round. Genuine String owners are loaned only across that body.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 22;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
