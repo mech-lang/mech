@@ -1,6 +1,7 @@
 mod compact_string_access;
 mod nested_assignment;
 mod promoted_assignment;
+mod selected_string_footprint;
 mod selection_address;
 pub(in crate::resident) mod string_map_access;
 
@@ -16667,6 +16668,7 @@ fn snapshot_access_output_cost(
     plan: &SnapshotAccessPlan,
     inputs: &dyn ResidentKernelInputs,
     meter: &mut super::budget::ResidentBudgetMeter,
+    source_measurement: Option<&selected_string_footprint::SourceMeasurement<'_>>,
 ) -> Result<SnapshotAccessOutputCost, ResidentKernelError> {
     let selector = |index: usize| {
         inputs
@@ -16744,6 +16746,19 @@ fn snapshot_access_output_cost(
             if elements.len() != source_len {
                 return Err(ResidentKernelError::InvalidShape);
             }
+            let packed_strings = matches!(element.as_ref(), SchemaBody::String)
+                && matches!(elements, SequenceView::String(_))
+                && source_measurement.is_some();
+            let mut summaries = [None, None];
+            let mut count_selector = |index: usize, upper: usize| {
+                if packed_strings {
+                    let summary = selected_string_footprint::summarize(selector(index)?, upper)?;
+                    summaries[index] = Some(summary);
+                    Ok(summary.count)
+                } else {
+                    selector_access_count(selector(index)?, upper)
+                }
+            };
             let resolved_output_dimensions = if plan.matrix_constructor.is_some() {
                 plan.output_dimensions
             } else {
@@ -16753,7 +16768,7 @@ fn snapshot_access_output_cost(
                         let count = if plan.selectors.is_empty() {
                             source_len
                         } else {
-                            selector_access_count(selector(0)?, source_len)?
+                            count_selector(0, source_len)?
                         };
                         Some(if plan.linear_gather_row {
                             (1, count)
@@ -16761,17 +16776,12 @@ fn snapshot_access_output_cost(
                             (count, 1)
                         })
                     }
-                    Some(ResolvedSelectionMode::Rows) => {
-                        Some((selector_access_count(selector(0)?, rows)?, columns))
-                    }
+                    Some(ResolvedSelectionMode::Rows) => Some((count_selector(0, rows)?, columns)),
                     Some(ResolvedSelectionMode::Columns) => {
-                        Some((rows, selector_access_count(selector(0)?, columns)?))
+                        Some((rows, count_selector(0, columns)?))
                     }
                     Some(ResolvedSelectionMode::Rectangle) => {
-                        let selected = (
-                            selector_access_count(selector(0)?, rows)?,
-                            selector_access_count(selector(1)?, columns)?,
-                        );
+                        let selected = (count_selector(0, rows)?, count_selector(1, columns)?);
                         if plan.output_dimensions.is_none() {
                             if selected != (1, 1) {
                                 return Err(ResidentKernelError::InvalidShape);
@@ -16828,20 +16838,46 @@ fn snapshot_access_output_cost(
             }
             let mut footprint = ValueFootprint::zero();
             let mut finalization_work = 0_u64;
+            // Keep the exact already-validated immutable selector references
+            // with their proof; do not re-fetch a possibly different carrier.
+            let selector = |index: usize| {
+                summaries
+                    .get(index)
+                    .and_then(|summary| summary.map(|summary| summary.value()))
+                    .or_else(|| inputs.get(index + 1))
+                    .ok_or(ResidentKernelError::InvalidInput)
+            };
+            let whole_scan = packed_strings
+                && selected_string_footprint::try_begin(
+                    meter,
+                    source,
+                    source_measurement,
+                    expected_count,
+                    plan,
+                    (rows, columns),
+                    &summaries,
+                )?;
+            let mut visit_cell = |index: usize| {
+                if whole_scan {
+                    selected_string_footprint::add_cell(&mut footprint, element, elements, index)
+                } else {
+                    selected_sequence_footprint_with_finalization(
+                        &mut footprint,
+                        &mut finalization_work,
+                        meter,
+                        element,
+                        elements,
+                        index,
+                    )
+                }
+            };
             let (count, index_elements) = match plan.matrix_mode {
                 Some(ResolvedSelectionMode::LinearScalar) => {
                     let mut count = 0usize;
                     selector_for_each_access_index(selector(0)?, source_len, |linear| {
                         let row = linear % rows;
                         let column = linear / rows;
-                        selected_sequence_footprint_with_finalization(
-                            &mut footprint,
-                            &mut finalization_work,
-                            meter,
-                            element,
-                            elements,
-                            row * columns + column,
-                        )?;
+                        visit_cell(row * columns + column)?;
                         count = count
                             .checked_add(1)
                             .ok_or(ResidentKernelError::InvalidShape)?;
@@ -16854,14 +16890,7 @@ fn snapshot_access_output_cost(
                     let mut visit = |linear: usize| {
                         let row = linear % rows;
                         let column = linear / rows;
-                        selected_sequence_footprint_with_finalization(
-                            &mut footprint,
-                            &mut finalization_work,
-                            meter,
-                            element,
-                            elements,
-                            row * columns + column,
-                        )?;
+                        visit_cell(row * columns + column)?;
                         count = count
                             .checked_add(1)
                             .ok_or(ResidentKernelError::InvalidShape)?;
@@ -16883,14 +16912,7 @@ fn snapshot_access_output_cost(
                         .ok_or(ResidentKernelError::InvalidShape)?;
                     selector_for_each_access_index(selector(0)?, rows, |row| {
                         for column in 0..columns {
-                            selected_sequence_footprint_with_finalization(
-                                &mut footprint,
-                                &mut finalization_work,
-                                meter,
-                                element,
-                                elements,
-                                row * columns + column,
-                            )?;
+                            visit_cell(row * columns + column)?;
                         }
                         Ok(())
                     })?;
@@ -16908,14 +16930,7 @@ fn snapshot_access_output_cost(
                         .ok_or(ResidentKernelError::InvalidShape)?;
                     for row in 0..rows {
                         selector_for_each_access_index(selector(0)?, columns, |column| {
-                            selected_sequence_footprint_with_finalization(
-                                &mut footprint,
-                                &mut finalization_work,
-                                meter,
-                                element,
-                                elements,
-                                row * columns + column,
-                            )
+                            visit_cell(row * columns + column)
                         })?;
                     }
                     (
@@ -16932,14 +16947,7 @@ fn snapshot_access_output_cost(
                         .ok_or(ResidentKernelError::InvalidShape)?;
                     selector_for_each_access_index(selector(0)?, rows, |row| {
                         selector_for_each_access_index(selector(1)?, columns, |column| {
-                            selected_sequence_footprint_with_finalization(
-                                &mut footprint,
-                                &mut finalization_work,
-                                meter,
-                                element,
-                                elements,
-                                row * columns + column,
-                            )
+                            visit_cell(row * columns + column)
                         })
                     })?;
                     (
@@ -16953,6 +16961,11 @@ fn snapshot_access_output_cost(
             };
             if count != expected_count {
                 return Err(ResidentKernelError::InvalidShape);
+            }
+            if whole_scan {
+                // Metadata was prepaid. Debit only the measured copy work,
+                // before the existing final candidate/allocation admission.
+                meter.charge_compute_work(footprint.retained_bytes)?;
             }
             Ok(SnapshotAccessOutputCost {
                 footprint,
@@ -17368,11 +17381,9 @@ fn snapshot_access_from_source(
         .validate_against(schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
-    let source_footprint = super::budget::measure_snapshot_access_source_footprint(
-        &mut footprint_meter,
-        source,
-        schemas,
-    )?;
+    let source_measurement =
+        selected_string_footprint::measure_source(&mut footprint_meter, source, schemas)?;
+    let source_footprint = source_measurement.footprint();
     let snapshot_output = matches!(&output, ResidentValueMut::Snapshot(_));
     let dense_string_current_bytes = match &output {
         ResidentValueMut::String(values) => values.iter().try_fold(0_u64, |total, value| {
@@ -17450,6 +17461,7 @@ fn snapshot_access_from_source(
         plan,
         inputs,
         &mut footprint_meter,
+        Some(&source_measurement),
     )?;
     // Resolve parameterized result axes before admission. This validates
     // fixed axes independently even when a compensating axis would preserve
@@ -29995,6 +30007,7 @@ mod tests {
                 &plan,
                 &Inputs(&inputs),
                 &mut super::super::budget::ResidentBudgetMeter::default(),
+                None,
             ),
             Err(ResidentKernelError::InvalidShape),
         ));

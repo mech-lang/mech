@@ -2353,26 +2353,37 @@ impl ResidentBudgetMeter {
     /// Prepay a fixed-count metadata scan, never payload work, allocation or
     /// publication. The preview uses the same authorities as ordinary charges
     /// and is side-effect free; a rejected preview is only a fast-path miss.
-    fn try_charge_borrowed_metadata_scan(
+    pub(super) fn try_charge_borrowed_metadata_scan(
         &mut self,
         nodes: u64,
         retain_nodes: bool,
     ) -> Result<bool, ResidentKernelError> {
+        let Some(work) = nodes.checked_mul(BORROWED_FOOTPRINT_METADATA_WORK) else {
+            return Ok(false);
+        };
+        let Some(next) = self.preview_compute_and_nodes(work, if retain_nodes { nodes } else { 0 })
+        else {
+            return Ok(false);
+        };
+        self.charge(|cost| {
+            *cost = next;
+            Ok(())
+        })?;
+        Ok(true)
+    }
+
+    /// Eligibility, not a permit or debit. A caller may use a conservative
+    /// bound to prove a prepaid metadata scan can finish, then charge only
+    /// the exact measured copy work before ordinary candidate admission.
+    pub(super) fn can_charge_compute_and_nodes(&self, compute: u64, nodes: u64) -> bool {
+        self.preview_compute_and_nodes(compute, nodes).is_some()
+    }
+
+    fn preview_compute_and_nodes(&self, compute: u64, nodes: u64) -> Option<KernelCostEstimate> {
         let mut next = self.accumulated;
-        let Some(compute) = nodes
-            .checked_mul(BORROWED_FOOTPRINT_METADATA_WORK)
-            .and_then(|work| next.compute_work().checked_add(work))
-        else {
-            return Ok(false);
-        };
-        let Some(retained) =
-            next.retained_nodes()
-                .checked_add(if retain_nodes { nodes } else { 0 })
-        else {
-            return Ok(false);
-        };
-        next.set_compute_work(compute)?;
-        next.set_retained_nodes(retained);
+        next.set_compute_work(next.compute_work().checked_add(compute)?)
+            .ok()?;
+        next.set_retained_nodes(next.retained_nodes().checked_add(nodes)?);
         let fits = if let Some((compute, comparison)) = self.analysis_allowance {
             next.check_analysis_limits().is_ok()
                 && next.compute_work() <= compute
@@ -2385,13 +2396,9 @@ impl ResidentBudgetMeter {
                 && next.check_planning_limits().is_ok()
         };
         if !fits {
-            return Ok(false);
+            return None;
         }
-        self.charge(|cost| {
-            *cost = next;
-            Ok(())
-        })?;
-        Ok(true)
+        Some(next)
     }
 
     /// Explicit borrowed measurement outside a turn. Default meters retain
