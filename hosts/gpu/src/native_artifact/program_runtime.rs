@@ -25,6 +25,8 @@ use std::ffi::c_void;
 
 #[path = "program_borrowed_strings.rs"]
 mod borrowed;
+#[path = "program_tail_runtime.rs"]
+mod closed_tail;
 #[path = "program_collection.rs"]
 mod collection;
 #[path = "program_session.rs"]
@@ -132,6 +134,7 @@ struct Context<'plan, 'visit> {
     // first, while that arena still owns their prepaid retirement obligation.
     collections: Option<collection::State>,
     borrowed_strings: Option<borrowed::State>,
+    closed_tail: Option<closed_tail::State>,
     arena: NativeValueArena<'plan>,
     library: NativeLibraryWorkBudget,
     limits: MemoryBudgetLimits,
@@ -300,6 +303,15 @@ impl Context<'_, '_> {
         operation: u64,
         args: [u64; 3],
     ) -> Result<Option<u64>, NativeProgramExecutionError> {
+        if operation == super::program_abi::CLOSED_TAIL_END {
+            let site = usize::try_from(site).map_err(|_| invalid("closed Tail site overflow"))?;
+            return self.end_closed_tail(site, args);
+        }
+        if self.closed_tail.is_some() {
+            return Err(invalid(
+                "ordinary helper while closed Tail fuel is outstanding",
+            ));
+        }
         if self.control.previous.map(u64::from) != Some(site) {
             return Err(invalid("helper outside exact admitted visit"));
         }
@@ -307,6 +319,9 @@ impl Context<'_, '_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         collection::before_span_helper(self, site)?;
         let descriptor = self.control.descriptor;
+        if operation == super::program_abi::CLOSED_TAIL_BEGIN {
+            return self.begin_closed_tail(site, args);
+        }
         if operation == super::program_abi::BORROWED_STRINGS_PREPARE {
             return self.prepare_borrowed_strings(site, args);
         }
@@ -541,6 +556,11 @@ impl Context<'_, '_> {
         }
     }
     fn visit(&mut self, site: u64) -> Result<(), NativeProgramExecutionError> {
+        if self.closed_tail.is_some() {
+            return Err(invalid(
+                "ordinary visit while closed Tail fuel is outstanding",
+            ));
+        }
         if self.window_region.is_some() {
             return Err(invalid("compiled String loans escaped their region"));
         }

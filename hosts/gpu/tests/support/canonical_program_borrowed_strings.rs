@@ -65,6 +65,12 @@ fn complete_idiomatic_record_scan_has_a_closed_borrowed_string_component() {
             1,
             "actual canonical record FSM must be recognized"
         );
+        let object = emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        assert_eq!(
+            object.metadata()["closed_tail_regions"],
+            1,
+            "the complete record FSM must eliminate per-operation control callbacks"
+        );
         let region = &regions[0];
         assert_eq!(region.matrices().len(), 1);
         assert_eq!(

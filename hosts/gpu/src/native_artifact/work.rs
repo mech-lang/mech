@@ -20,6 +20,29 @@ mod tests {
     use super::*;
 
     #[test]
+    fn closed_tail_fuel_observes_the_same_spent_account_and_declines_nested_scopes() {
+        let memory = ManagedMemoryBudget::new(4096);
+        let mut work = NativeWorkMeter::new(1000).unwrap();
+        work.charge(NativeExecutionPhase::Setup, 7).unwrap();
+        let library = work
+            .shared_library_budget(NativeExecutionPhase::Setup, 100, &memory)
+            .unwrap();
+        assert_eq!(library.unscoped_remaining(), Some((929, 100)));
+        library.charge(29, 3).unwrap();
+        assert_eq!(library.clone().unscoped_remaining(), Some((900, 97)));
+        library
+            .with_scope(|| {
+                assert_eq!(library.unscoped_remaining(), None);
+                work.charge(NativeExecutionPhase::Completion, 10).unwrap();
+            })
+            .unwrap();
+        assert_eq!(library.unscoped_remaining(), Some((890, 97)));
+        library.restrict(500, 50).unwrap();
+        assert_eq!(library.unscoped_remaining(), Some((390, 47)));
+        assert_eq!(work.used(), 110);
+    }
+
+    #[test]
     fn repeated_phases_share_one_limit_and_denial_does_not_reset_it() {
         let mut work = NativeWorkMeter::new(100).unwrap();
         work.charge(NativeExecutionPhase::Setup, 35).unwrap();

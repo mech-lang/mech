@@ -18,6 +18,8 @@ pub(super) mod borrowed_codegen;
 pub(super) mod scalar_aggregates;
 #[path = "program_string_map_codegen.rs"]
 pub(super) mod string_map_codegen;
+#[path = "program_tail_codegen.rs"]
+pub(super) mod tail_codegen;
 #[path = "program_window_codegen.rs"]
 pub(super) mod window_codegen;
 
@@ -163,6 +165,7 @@ impl NativeProgramObject {
             "compiled_string_map_regions": self.descriptor.string_map_regions.len(),
             "unboxed_scalar_aggregate_values": self.descriptor.scalar_aggregates.value_count(),
             "borrowed_string_regions": self.descriptor.borrowed_strings.regions.len(),
+            "closed_tail_regions": self.descriptor.closed_tails.regions.len(),
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }

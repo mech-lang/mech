@@ -270,6 +270,32 @@ impl NativeLibraryWorkBudget {
         (state.used.compute, state.used.comparison)
     }
 
+    /// Observe finite fuel for synchronous, callback-free generated code.
+    /// Nested maintained-call scopes must use their ordinary accounting path.
+    /// This neither reserves nor renews work: the owner must reconcile actual
+    /// debits to this SAME account before any helper or publication can occur.
+    pub fn unscoped_remaining(&self) -> Option<(u64, u64)> {
+        if CONTROL_WORK.with(|v| v.borrow().is_some())
+            || CONTROL_WORK_SCOPE.with(|v| v.borrow().is_some())
+        {
+            return None;
+        }
+        let root = CONTROL_ROOT_LIMITS
+            .with(|v| v.get())
+            .unwrap_or((u64::MAX, u64::MAX));
+        let state = self.account.borrow();
+        Some((
+            state
+                .compute_limit
+                .min(root.0)
+                .checked_sub(state.used.compute)?,
+            state
+                .comparison_limit
+                .min(root.1)
+                .checked_sub(state.used.comparison)?,
+        ))
+    }
+
     /// Identity of the account that admitted this ledger's actual backing.
     /// A mixed invocation must keep its values and work metadata together.
     pub fn memory_budget(&self) -> mech_core::ManagedMemoryBudget {

@@ -76,6 +76,13 @@ fn complete_knucleotide_original_and_decoded_run_through_actual_secured_cli() {
     for artifact in variants {
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         assert_eq!(
+            mech_gpu::native_artifact::emit_program_object(&artifact, &catalog)
+                .unwrap()
+                .metadata()["closed_tail_regions"],
+            1,
+            "the actual secured artifact must select callback-free Tail control"
+        );
+        assert_eq!(
             jit.descriptor().plan().borrowed_string_regions().len(),
             1,
             "the complete record scanner must select owner-bound native String reads"

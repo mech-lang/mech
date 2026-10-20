@@ -35,6 +35,7 @@ pub struct NativeProgramDescriptor {
     pub(super) string_map_regions: Box<[mech_engine::native_artifact::NativeStringMapRegion]>,
     pub(super) scalar_aggregates: mech_engine::native_artifact::NativeScalarAggregates,
     pub(super) borrowed_strings: super::program_borrowed_layout::Layout,
+    pub(super) closed_tails: super::program_tail_layout::Layout,
     pub(super) stack: u64,
     pub(super) code: u64,
     pub(super) identity: [u8; 32],
@@ -69,6 +70,14 @@ impl NativeProgramDescriptor {
                 .work
                 .checked_add(borrowed_strings.extra_work(site)?)
                 .ok_or("borrowed String visit work overflow")?;
+        }
+        let closed_tails =
+            super::program_tail_layout::Layout::derive(&plan, &borrowed_strings, &visits)?;
+        for (site, visit) in visits.iter_mut().enumerate() {
+            visit.work = visit
+                .work
+                .checked_add(closed_tails.extra_work(site))
+                .ok_or("closed Tail work overflow")?;
         }
         let visits = visits.into();
         let calls = plan
@@ -191,7 +200,12 @@ impl NativeProgramDescriptor {
                     .map(|r| r.capture_words())
                     .max()
                     .unwrap_or(0),
-            );
+            )
+            .max(if closed_tails.regions.is_empty() {
+                0
+            } else {
+                2
+            });
         let types = plan
             .values()
             .iter()
@@ -244,6 +258,7 @@ impl NativeProgramDescriptor {
             string_map_regions,
             scalar_aggregates,
             borrowed_strings,
+            closed_tails,
             stack,
             code,
             identity,

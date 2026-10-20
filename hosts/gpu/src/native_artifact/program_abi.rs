@@ -19,6 +19,8 @@ pub(super) const STRING_MAP_PREPARE: u64 = u64::MAX - 3;
 pub(super) const STRING_MAP_FINISH: u64 = u64::MAX - 4;
 pub(super) const BORROWED_STRINGS_PREPARE: u64 = u64::MAX - 5;
 pub(super) const BORROWED_STRING_FAILURE: u64 = u64::MAX - 6;
+pub(super) const CLOSED_TAIL_BEGIN: u64 = u64::MAX - 7;
+pub(super) const CLOSED_TAIL_END: u64 = u64::MAX - 8;
 pub(super) type Helper =
     unsafe extern "C" fn(*mut c_void, u64, u64, u64, u64, u64, *mut u64) -> u64;
 #[repr(C)]

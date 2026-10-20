@@ -669,3 +669,5 @@ fn generated_arithmetic_denial_after_a_library_call_keeps_prior_typed_roots() {
         equal(&artifact, &output, &prior);
     }
 }
+#[path = "support/canonical_program_closed_tail.rs"]
+mod closed_tail_qualification;

@@ -67,16 +67,19 @@ pub(in crate::native_artifact) fn prepare(
 }
 fn bounds(
     b: &mut FunctionBuilder,
+    locals: Value,
+    closed: &super::super::program_tail_layout::Layout,
     valid: Value,
     hooks: &Hooks,
     site: usize,
     args: [Value; 3],
     error: Block,
-) {
+) -> Result<(), NativeCompileError> {
     let good = b.create_block();
     let fail = b.create_block();
     b.ins().brif(valid, good, &[], fail, &[]);
     b.switch_to_block(fail);
+    super::tail_codegen::failure(b, locals, closed, site, hooks, error)?;
     hooks.call(
         b,
         site,
@@ -90,6 +93,7 @@ fn bounds(
         .iconst(types::I64, super::super::abi::STATUS_ABI as i64);
     b.ins().jump(error, &[status.into()]);
     b.switch_to_block(good);
+    Ok(())
 }
 /// Emit the native branch, leaving the builder in the ordinary fallback arm.
 /// The caller joins BOTH arms before emitting the original CFG terminator.
@@ -97,6 +101,7 @@ pub(in crate::native_artifact) fn emit(
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &Layout,
+    closed: &super::super::program_tail_layout::Layout,
     site: usize,
     hooks: Option<&Hooks>,
     error: Block,
@@ -127,7 +132,16 @@ pub(in crate::native_artifact) fn emit(
             let index = load(b, locals, index)?;
             let offset = b.ins().iadd_imm(index, -1);
             let valid = b.ins().icmp(IntCC::UnsignedLessThan, offset, count);
-            bounds(b, valid, hooks, site, [zero, zero, index], error);
+            bounds(
+                b,
+                locals,
+                closed,
+                valid,
+                hooks,
+                site,
+                [zero, zero, index],
+                error,
+            )?;
             let offset = b.ins().ishl_imm(offset, 4);
             let row = b.ins().iadd(table, offset);
             view = Some([
@@ -147,7 +161,16 @@ pub(in crate::native_artifact) fn emit(
             let index = load(b, locals, index)?;
             let offset = b.ins().iadd_imm(index, -1);
             let valid = b.ins().icmp(IntCC::UnsignedLessThan, offset, length);
-            bounds(b, valid, hooks, site, [pointer, length, index], error);
+            bounds(
+                b,
+                locals,
+                closed,
+                valid,
+                hooks,
+                site,
+                [pointer, length, index],
+                error,
+            )?;
             view = Some([b.ins().iadd(pointer, offset), b.ins().iconst(types::I64, 1)]);
         }
         Action::FixedRange {
@@ -161,7 +184,16 @@ pub(in crate::native_artifact) fn emit(
             let valid = b
                 .ins()
                 .icmp(IntCC::UnsignedGreaterThanOrEqual, length, last_word);
-            bounds(b, valid, hooks, site, [pointer, length, zero], error);
+            bounds(
+                b,
+                locals,
+                closed,
+                valid,
+                hooks,
+                site,
+                [pointer, length, zero],
+                error,
+            )?;
             view = Some([
                 b.ins().iadd_imm(pointer, (first - 1) as i64),
                 b.ins().iconst(types::I64, (last - first + 1) as i64),

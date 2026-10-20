@@ -1,0 +1,170 @@
+//! Closed native Tail regions derived from the canonical CFG and representation
+//! proofs. One acyclic body traversal has a finite conservative instruction cost.
+use super::{iteration_abi::NativeIterationVisit, program_borrowed_layout};
+use mech_engine::native_artifact::{
+    NativeBorrowedStringAction as View, NativeControlLoop, NativeIterationAction as Action,
+    NativeMatchAction as Scalar, NativeProgramArtifactPlan, NativeTailLoop,
+};
+
+pub(super) const OVERHEAD: u64 = 512;
+#[derive(Debug)]
+pub(super) struct Region {
+    pub iteration: u32,
+    pub tail: NativeTailLoop,
+    pub borrowed: Option<usize>,
+    pub words: usize,
+    pub compute: u64,
+    pub comparison: u64,
+}
+#[derive(Debug, Default)]
+pub(super) struct Layout {
+    pub regions: Vec<Region>,
+    pub sites: Vec<Option<usize>>,
+    pub initializers: Vec<Option<usize>>,
+    pub exits: Vec<Option<usize>>,
+    pub words: usize,
+}
+impl Layout {
+    pub fn derive(
+        plan: &NativeProgramArtifactPlan,
+        borrowed: &program_borrowed_layout::Layout,
+        visits: &[NativeIterationVisit],
+    ) -> Result<Self, &'static str> {
+        let mut layout = Self {
+            sites: vec![None; plan.blocks().len()],
+            initializers: vec![None; plan.blocks().len()],
+            exits: vec![None; plan.blocks().len()],
+            ..Self::default()
+        };
+        let aggregates = plan.scalar_aggregates();
+        let base = plan
+            .values()
+            .len()
+            .checked_add(plan.iterations().len())
+            .and_then(|n| n.checked_add(aggregates.words()))
+            .and_then(|n| n.checked_add(borrowed.words))
+            .ok_or("Tail word count overflow")?;
+        for (iteration, control) in plan.iterations().iter().enumerate() {
+            let NativeControlLoop::Tail(tail) = control else {
+                continue;
+            };
+            if tail.parent().is_some() || aggregates.action(tail.initialize() as usize).is_none() {
+                continue;
+            }
+            let mut sites = Vec::new();
+            let mut seen = vec![false; plan.blocks().len()];
+            let mut pending = vec![tail.header()];
+            let mut closed = true;
+            while let Some(site) = pending.pop() {
+                if site == tail.exit() || seen[site as usize] {
+                    continue;
+                }
+                seen[site as usize] = true;
+                let block = &plan.blocks()[site as usize];
+                let native = aggregates.action(site as usize).is_some()
+                    || borrowed.action(site as usize).is_some()
+                    || matches!(
+                        block.action(),
+                        Action::Scalar(Scalar::None | Scalar::Primitive { .. })
+                    )
+                    || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
+                        if plan.values()[output.get() as usize].scalar_kind().is_some());
+                if block.iteration() != Some(iteration as u32)
+                    || !native
+                    || plan.activation_boundary() == Some(site)
+                {
+                    closed = false;
+                    break;
+                }
+                for next in visits[site as usize].successors.into_iter().flatten() {
+                    if next == tail.exit() && site != tail.finish() {
+                        closed = false;
+                    }
+                    pending.push(next);
+                }
+                sites.push(site);
+            }
+            if !closed || !seen[tail.finish() as usize] || !seen[tail.latch() as usize] {
+                continue;
+            }
+            // Removing the sole declared latch backedge must make the region a
+            // DAG. Then summing every block bounds any one header-to-boundary path.
+            let mut incoming = vec![0usize; plan.blocks().len()];
+            for &site in &sites {
+                for next in visits[site as usize].successors.into_iter().flatten() {
+                    if next != tail.exit() && !(site == tail.latch() && next == tail.header()) {
+                        incoming[next as usize] += 1;
+                    }
+                }
+            }
+            let mut ready = sites
+                .iter()
+                .copied()
+                .filter(|s| incoming[*s as usize] == 0)
+                .collect::<Vec<_>>();
+            let mut count = 0;
+            while let Some(site) = ready.pop() {
+                count += 1;
+                for next in visits[site as usize].successors.into_iter().flatten() {
+                    if next == tail.exit() || (site == tail.latch() && next == tail.header()) {
+                        continue;
+                    }
+                    incoming[next as usize] -= 1;
+                    if incoming[next as usize] == 0 {
+                        ready.push(next);
+                    }
+                }
+            }
+            if count != sites.len() {
+                continue;
+            }
+            let mut compute = 1024u64;
+            let mut comparison = 0u64;
+            for &site in &sites {
+                compute = compute
+                    .checked_add(visits[site as usize].work)
+                    .and_then(|n| n.checked_add(OVERHEAD))
+                    .ok_or("Tail body work overflow")?;
+                if matches!(
+                    borrowed.action(site as usize),
+                    Some((_, View::Equal { .. }))
+                ) {
+                    compute = compute
+                        .checked_add(32)
+                        .ok_or("Tail equality work overflow")?;
+                    comparison = comparison
+                        .checked_add(32)
+                        .ok_or("Tail comparison work overflow")?;
+                }
+            }
+            let index = layout.regions.len();
+            for site in sites {
+                layout.sites[site as usize] = Some(index);
+            }
+            layout.initializers[tail.initialize() as usize] = Some(index);
+            layout.exits[tail.exit() as usize] = Some(index);
+            layout.regions.push(Region {
+                iteration: iteration as u32,
+                tail: tail.clone(),
+                borrowed: borrowed.initializers[tail.initialize() as usize],
+                words: base
+                    .checked_add(layout.words)
+                    .ok_or("Tail words overflow")?,
+                compute,
+                comparison,
+            });
+            layout.words = layout.words.checked_add(3).ok_or("Tail words overflow")?;
+        }
+        Ok(layout)
+    }
+    pub fn extra_work(&self, site: usize) -> u64 {
+        if self.sites.get(site).copied().flatten().is_some()
+            || self.initializers.get(site).copied().flatten().is_some()
+            || self.exits.get(site).copied().flatten().is_some()
+        {
+            OVERHEAD
+        } else {
+            0
+        }
+    }
+}

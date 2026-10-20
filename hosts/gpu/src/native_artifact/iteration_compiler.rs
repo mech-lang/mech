@@ -298,11 +298,38 @@ pub(super) fn define_cfg<M: Module>(
     let borrowed_words = borrowed.words;
     #[cfg(not(feature = "canonical-native-program"))]
     let borrowed_words = 0;
+    #[cfg(feature = "canonical-native-program")]
+    let closed = match plan {
+        super::iteration_code_plan::CodePlan::Program(program) => {
+            // No completion block belongs to a closed Tail. Its completion
+            // envelope is irrelevant to the body bound, not a second work policy.
+            let mut visits = super::iteration_abi::control_visits(
+                program.blocks(),
+                program.iterations().iter().map(Into::into),
+                0,
+            )
+            .map_err(backend)?;
+            for (site, visit) in visits.iter_mut().enumerate() {
+                visit.work = visit
+                    .work
+                    .checked_add(borrowed.extra_work(site).map_err(backend)?)
+                    .ok_or_else(|| backend("Tail visit cost overflow"))?;
+            }
+            super::program_tail_layout::Layout::derive(program, &borrowed, &visits)
+                .map_err(backend)?
+        }
+        _ => Default::default(),
+    };
+    #[cfg(feature = "canonical-native-program")]
+    let closed_words = closed.words;
+    #[cfg(not(feature = "canonical-native-program"))]
+    let closed_words = 0;
     let local_count = plan
         .value_count()
         .checked_add(plan.iteration_count())
         .and_then(|n| n.checked_add(aggregate_words))
         .and_then(|n| n.checked_add(borrowed_words))
+        .and_then(|n| n.checked_add(closed_words))
         .ok_or_else(|| backend("iteration local count overflow"))?;
     offset(local_count)?;
     offset(plan.input_count())?;
@@ -495,7 +522,11 @@ pub(super) fn define_cfg<M: Module>(
                 &[],
             );
         }
+        let body_error = b.create_block();
+        b.append_block_param(body_error, types::I64);
+        b.set_cold_block(body_error);
         for (index, block) in plan.blocks().iter().enumerate() {
+            let error = body_error;
             if !reachable[index] {
                 continue;
             }
@@ -514,6 +545,14 @@ pub(super) fn define_cfg<M: Module>(
                 b.ins().return_(&[status]);
                 b.switch_to_block(turn);
             }
+            #[cfg(feature = "canonical-native-program")]
+            let admission_join = if let Some(hooks) = &hooks {
+                super::program_compiler::tail_codegen::admission(
+                    &mut b, locals, &closed, index, hooks, error,
+                )?
+            } else {
+                None
+            };
             admit(
                 &mut b,
                 callback_signature,
@@ -522,6 +561,11 @@ pub(super) fn define_cfg<M: Module>(
                 index,
                 error,
             );
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(joined) = admission_join {
+                b.ins().jump(joined, &[]);
+                b.switch_to_block(joined);
+            }
             #[cfg(feature = "canonical-native-program")]
             if let NativeIterationTerminator::Header {
                 iteration, exit, ..
@@ -579,6 +623,7 @@ pub(super) fn define_cfg<M: Module>(
                 &mut b,
                 locals,
                 &borrowed,
+                &closed,
                 index,
                 hooks.as_ref(),
                 error,
@@ -868,6 +913,12 @@ pub(super) fn define_cfg<M: Module>(
                 b.ins().jump(joined, &[]);
                 b.switch_to_block(joined);
             }
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(hooks) = &hooks {
+                super::program_compiler::tail_codegen::prepare(
+                    &mut b, locals, &closed, index, hooks, error,
+                )?;
+            }
             match block.terminator() {
                 NativeIterationTerminator::TailHeader { body, .. } => {
                     b.ins()
@@ -965,6 +1016,7 @@ pub(super) fn define_cfg<M: Module>(
             #[cfg(feature = "canonical-native-program")]
             let bound = bound
                 .checked_add(borrowed.extra_work(index).map_err(backend)?)
+                .and_then(|n| n.checked_add(closed.extra_work(index)))
                 .ok_or_else(|| backend("borrowed String instruction work overflow"))?;
             if emitted.checked_add(128).is_none_or(|total| total > bound) {
                 return Err(NativeCompileError::InvalidPlan {
@@ -973,6 +1025,16 @@ pub(super) fn define_cfg<M: Module>(
                 });
             }
         }
+        b.switch_to_block(body_error);
+        let status = b.block_params(body_error)[0];
+        #[cfg(feature = "canonical-native-program")]
+        if let Some(hooks) = &hooks {
+            let site = frame_load(&mut b, frame, core::mem::offset_of!(Frame, error_node));
+            super::program_compiler::tail_codegen::abort(
+                &mut b, locals, &closed, site, hooks, error,
+            )?;
+        }
+        b.ins().jump(error, &[status.into()]);
         b.switch_to_block(error);
         let status = b.block_params(error)[0];
         b.ins().return_(&[status]);

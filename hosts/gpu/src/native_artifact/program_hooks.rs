@@ -246,6 +246,16 @@ impl Hooks {
         error: Block,
     ) {
         let site = b.ins().iconst(types::I64, site as i64);
+        self.call_at(b, site, operation, args, error);
+    }
+    pub fn call_at(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        site: Value,
+        operation: u64,
+        args: [Value; 3],
+        error: Block,
+    ) {
         let operation = b.ins().iconst(types::I64, operation as i64);
         let call = b.ins().call_indirect(
             self.signature,
