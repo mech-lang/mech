@@ -164,7 +164,7 @@ Performance qualification is currently **blocked**: the [same-input comparison
 and CPU profile](../../docs/validation/canonical-knucleotide-performance-regression-v1.json)
 show roughly 799x slower execution than the old selected direct-I/O version
 before compiler recovery. That lowering repeatedly entered native visit guards
-and runtime helpers inside the computation. IR16/work policy26 lower proved
+and runtime helpers inside the computation. IR17/work policy27 lower proved
 ordinary window/query and one/two-character ASCII histogram comprehensions to
 callback-free native loops, retaining real owners and admitting finite work and
 scratch before entry. Unsupported representations keep canonical semantics in
@@ -175,11 +175,19 @@ took 17.150s original / 17.159s decoded. The subsequent [String map/join
 remeasurement and CPU profile](../../docs/validation/canonical-knucleotide-string-map-recovery-10m-v1.json)
 took 9.635s original / 9.629s decoded. Keeping nonescaping scalar tuple/enum
 state in admitted native words then [measured 6.973s for both variants](../../docs/validation/canonical-knucleotide-scalar-aggregate-recovery-10m-v1.json).
-Owner-bound native String views in the record FSM now [measure **2.762s original /
-2.763s decoded**](../../docs/validation/canonical-knucleotide-borrowed-string-recovery-10m-v1.json)
+Owner-bound native String views in the record FSM then [measured 2.762s original /
+2.763s decoded](../../docs/validation/canonical-knucleotide-borrowed-string-recovery-10m-v1.json)
 on the same 10M input, unchanged source and finite policy (one sample each,
-all four correctness/timing processes exact). This remains about **30x** the old
-direct-I/O median; it is not completion or an isolated security-overhead result.
+all four correctness/timing processes exact). Shared ASCII grapheme counting
+reduced this to 1.491s / 1.488s. Eliding proved private constant range allocations
+now [measures **0.768s for both variants**](../../docs/validation/canonical-knucleotide-private-selector-recovery-10m-v1.json)
+(three samples each, plus two correctness processes; all eight exact).
+This remains **8.34x** the old direct-I/O median; it is not completion or an
+isolated security-overhead result. The latest diagnostic reuses the pinned
+release binaries with a synchronous Node exit observer; preceding canonical
+timings used Rust's 1ms polling. The original release test rejected an overlong
+experiment label before any large-input run; its failure is preserved, not
+relabeled as passing. Source, input, oracle and finite policy are unchanged.
 The compiler proves a closed character-map/join loop
 and builds its byte lookup table from the program's actual Map, not fixed DNA
 values. Unsupported representations retain the ordinary canonical CFG.
@@ -187,12 +195,16 @@ The map step removed another 60 million operation visits; 13 million remain.
 Native aggregate storage and private String views remove repeated packing and
 selected String helpers, not those remaining control visits. Real matrix/literal
 owners remain pinned; unsupported representations and escaping values retain
-canonical storage. The fresh profile puts window/map loops around 5.4% of samples,
-runtime helper subtrees around 83.3%, and admission callbacks around 10.3%.
-Remaining text-length calls still scan Unicode graphemes (43.6% inclusive).
-The next target is whole-pipeline representation/loop lowering: reuse proved
-length facts, avoid unobserved intermediate materialization, remove per-operation
-callbacks, and reuse/adapt existing packed/SIMD kernels and safe partitioning.
+canonical storage. Shared text length uses ASCII byte scans with exact CRLF
+handling and retains the canonical segmenter for non-ASCII. Private constant
+selectors are elided only after every semantic use is proved; failing String
+bounds still use the original selected leaf and cannot publish.
+The fresh exact-binary profile has 442 main-thread stacks: window/map loops
+around 25.3%, runtime helper subtrees around 35.1%, and admission callbacks
+around 35.7%. Next, compile closed FSM control without per-operation callbacks
+while retaining finite cumulative fuel; address generic collection access and
+repeated representation scans, then reuse/adapt existing packed/SIMD kernels
+and safe partitioning. Unobserved intermediates remain candidates for elision.
 Sampling percentages are not exact causal wall time; helpers include computation
 as well as bookkeeping. Counting-loop tuning alone cannot close the remaining gap.
 The runtime owns **one round** for capture, staging and atomic commit; a native
