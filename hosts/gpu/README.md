@@ -271,6 +271,19 @@ budgets keep the old incremental denial and paid-work prefix, and this grants
 no payload, allocation or publication authority. The exact-binary profile now
 points to selected-cell footprint checks and compiled counting loops. This is
 still2.46x old direct/1.80x old secured, not a completed performance goal.
+The same principle applied to proved non-repeating String selections then
+[measures **2.1424s original /2.1392s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-selected-string-scan-standard125m-v1.json),
+another10.7% less original wall time. All eight outputs are exact and the
+preceding accounting counters and finite launch limits are unchanged. The
+existing source measurement is tied to the actual source; existing selector
+validation proves monotone distinct indices and pins those immutable views.
+Metadata is prepaid once, Core still measures sizes, and exact copy work is
+charged before ordinary final admission. Tight or unproved cases keep their
+old denial and paid-work prefix. The profile now points to compiled counting
+loops and remaining whole-input preflight. This is still2.20x old direct/1.61x
+old secured, not completion. An initial oversized benchmark label failed
+configuration preflight before any full-size process; the receipt distinguishes
+that failure from the fresh successful run without changing source or policy.
 Correct output, review and CI do not
 establish completion of this performance requirement.
 
