@@ -13,6 +13,9 @@ use crate::memory_planner::{
     try_admit_fixed_turn_memory,
 };
 
+#[cfg(test)]
+#[path = "borrowed_metadata_scan_tests.rs"]
+mod borrowed_metadata_scan_tests;
 #[cfg(all(
     feature = "native-artifact",
     any(feature = "pure_text", feature = "map_ops")
@@ -587,11 +590,11 @@ impl Drop for ControlWorkScopeGuard {
     }
 }
 
-fn charge_control_account(
-    account: &mut ControlWorkAccount,
+fn checked_control_account_work(
+    account: &ControlWorkAccount,
     compute: u64,
     comparison: u64,
-) -> Result<(), ResidentKernelError> {
+) -> Result<ControlWork, ResidentKernelError> {
     let (root_compute, root_comparison) = CONTROL_ROOT_LIMITS
         .with(|active| active.get())
         .unwrap_or((u64::MAX, u64::MAX));
@@ -624,9 +627,39 @@ fn charge_control_account(
             });
         }
     }
-    account.used.compute = compute;
-    account.used.comparison = comparison;
+    Ok(ControlWork {
+        compute,
+        comparison,
+    })
+}
+
+fn charge_control_account(
+    account: &mut ControlWorkAccount,
+    compute: u64,
+    comparison: u64,
+) -> Result<(), ResidentKernelError> {
+    account.used = checked_control_account_work(account, compute, comparison)?;
     Ok(())
+}
+
+// Eligibility only: a failed whole-scan preview must not spend work or change
+// the observer high-water mark before the original incremental path runs.
+fn preview_control_work(demand: ResourceDemand) -> Result<(), ResidentKernelError> {
+    CONTROL_WORK_SCOPE.with(|active| {
+        let active = active.borrow();
+        let Some(scope) = active.as_ref() else {
+            return Ok(());
+        };
+        checked_control_account_work(
+            &scope.total.borrow(),
+            demand.work.compute.saturating_sub(scope.observed.compute),
+            demand
+                .work
+                .comparison
+                .saturating_sub(scope.observed.comparison),
+        )
+        .map(drop)
+    })
 }
 
 pub(crate) fn observe_control_work(demand: ResourceDemand) -> Result<(), ResidentKernelError> {
@@ -1374,6 +1407,10 @@ impl KernelCostEstimate {
     // publication. Complete candidate facts still require `turn_plan`.
     fn check_planning_progress(self) -> Result<(), ResidentKernelError> {
         observe_control_work(self.demand)?;
+        self.check_planning_limits()
+    }
+
+    fn check_planning_limits(self) -> Result<(), ResidentKernelError> {
         let result = with_active_turn_plan(|active| {
             active.as_ref().map(|plan| {
                 check_turn_planning_progress(plan, self.demand)
@@ -2131,17 +2168,36 @@ fn measure_proven_borrowed_canonical_data_footprint(
     data: &ValueData,
     retain_nodes: bool,
 ) -> Result<ValueFootprint, ResidentKernelError> {
+    // A packed String matrix has exactly one matrix chunk, one sequence chunk
+    // and one chunk per cell. Its immutable, actual slice length therefore
+    // proves the entire metadata scan's work before any cell is visited.
+    // Unsupported layouts and tight budgets retain the incremental visitor,
+    // including its first-denied requirement and already-spent work prefix.
+    let whole_scan = if let (SchemaBody::Matrix { element, .. }, ValueData::Matrix(matrix)) =
+        (schema, data)
+        && matches!(element.as_ref(), SchemaBody::String)
+        && let SequenceView::String(strings) = matrix.elements()
+        && let Some(nodes) = u64::try_from(strings.len())
+            .ok()
+            .and_then(|count| count.checked_add(2))
+    {
+        meter.try_charge_borrowed_metadata_scan(nodes, retain_nodes)?
+    } else {
+        false
+    };
     let mut footprint = ValueFootprint::zero();
     mech_core::snapshot::visit_canonical_data_work(schema, data, |chunk| {
         // The core visitor reports retained/encoded sizes before descent. For
         // the proven schema branches it reads lengths and container metadata;
         // packed numeric bytes and String UTF-8 payloads are not traversed.
-        meter.charge_compute_work(checked_cost_product(&[
-            BORROWED_FOOTPRINT_METADATA_WORK,
-            chunk.node_count.max(1),
-        ])?)?;
-        if retain_nodes {
-            meter.charge_retained_nodes(chunk.node_count)?;
+        if !whole_scan {
+            meter.charge_compute_work(checked_cost_product(&[
+                BORROWED_FOOTPRINT_METADATA_WORK,
+                chunk.node_count.max(1),
+            ])?)?;
+            if retain_nodes {
+                meter.charge_retained_nodes(chunk.node_count)?;
+            }
         }
         footprint = footprint
             .checked_add(ValueFootprint {
@@ -2294,6 +2350,50 @@ impl<P> AdmittedMutationPlan<P> {
 }
 
 impl ResidentBudgetMeter {
+    /// Prepay a fixed-count metadata scan, never payload work, allocation or
+    /// publication. The preview uses the same authorities as ordinary charges
+    /// and is side-effect free; a rejected preview is only a fast-path miss.
+    fn try_charge_borrowed_metadata_scan(
+        &mut self,
+        nodes: u64,
+        retain_nodes: bool,
+    ) -> Result<bool, ResidentKernelError> {
+        let mut next = self.accumulated;
+        let Some(compute) = nodes
+            .checked_mul(BORROWED_FOOTPRINT_METADATA_WORK)
+            .and_then(|work| next.compute_work().checked_add(work))
+        else {
+            return Ok(false);
+        };
+        let Some(retained) =
+            next.retained_nodes()
+                .checked_add(if retain_nodes { nodes } else { 0 })
+        else {
+            return Ok(false);
+        };
+        next.set_compute_work(compute)?;
+        next.set_retained_nodes(retained);
+        let fits = if let Some((compute, comparison)) = self.analysis_allowance {
+            next.check_analysis_limits().is_ok()
+                && next.compute_work() <= compute
+                && next.comparison_work() <= comparison
+        } else {
+            // A preview must not enter the detached test-only admission path,
+            // which can observe work. Production scans require a real turn.
+            with_active_turn_plan(|active| active.is_some())
+                && preview_control_work(next.demand).is_ok()
+                && next.check_planning_limits().is_ok()
+        };
+        if !fits {
+            return Ok(false);
+        }
+        self.charge(|cost| {
+            *cost = next;
+            Ok(())
+        })?;
+        Ok(true)
+    }
+
     /// Explicit borrowed measurement outside a turn. Default meters retain
     /// their turn-only authority in both production and test builds.
     pub(crate) fn for_closed_analysis(compute: u64, comparison: u64) -> Self {
