@@ -58,6 +58,8 @@ mod nested_conversion_qualification;
 mod borrowed_string_qualification;
 #[path = "support/canonical_program_tail.rs"]
 mod tail_qualification;
+#[path = "support/canonical_program_text_length.rs"]
+mod text_length_qualification;
 
 #[path = "support/canonical_program_activation.rs"]
 mod activation_qualification;
