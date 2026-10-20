@@ -9,7 +9,7 @@ use mech_syntax::document::{
     parse_canonical_document,
 };
 
-fn variants() -> [ProgramArtifact; 2] {
+pub(super) fn variants() -> [ProgramArtifact; 2] {
     let source = "words := input<[string]>\nwords[position<u64>]\n";
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x44415441), Revision(0), source).unwrap(),
@@ -34,7 +34,7 @@ fn catalog() -> mech_core::FunctionCatalog {
     builder.build().unwrap()
 }
 
-fn admitted(value: Value, memory: &ManagedMemoryBudget) -> Value {
+pub(super) fn admitted(value: Value, memory: &ManagedMemoryBudget) -> Value {
     let mut reservation = memory
         .reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap())
         .unwrap();
@@ -44,6 +44,14 @@ fn admitted(value: Value, memory: &ManagedMemoryBudget) -> Value {
 fn fixture(
     artifact: &ProgramArtifact,
     memory: &ManagedMemoryBudget,
+) -> (NativeCollectionCall, [Option<Value>; 2]) {
+    fixture_with_len(artifact, memory, 64)
+}
+
+pub(super) fn fixture_with_len(
+    artifact: &ProgramArtifact,
+    memory: &ManagedMemoryBudget,
+    length: u64,
 ) -> (NativeCollectionCall, [Option<Value>; 2]) {
     let catalog = catalog();
     let template = artifact.nodes().iter().find_map(|node| {
@@ -56,13 +64,13 @@ fn fixture(
     let source_id = contract.inputs[0].schema;
     let selector_id = contract.inputs[1].schema;
     let source_shape =
-        mech_core::shape_for_resolved_extents(template.inputs().first().unwrap(), &[1, 64])
+        mech_core::shape_for_resolved_extents(template.inputs().first().unwrap(), &[1, length])
             .unwrap();
     let source = ValueDraft {
         schema: source_id,
         shape_values: source_shape.parameter_values().to_vec().into_boxed_slice(),
         data: ValueDataDraft::Matrix(
-            (0..64)
+            (0..length)
                 .map(|i| {
                     ValueDataDraft::String(
                         match i % 3 {

@@ -644,7 +644,9 @@ fn charge_control_account(
 
 // Eligibility only: a failed whole-scan preview must not spend work or change
 // the observer high-water mark before the original incremental path runs.
-fn preview_control_work(demand: ResourceDemand) -> Result<(), ResidentKernelError> {
+pub(in crate::resident) fn preview_control_work(
+    demand: ResourceDemand,
+) -> Result<(), ResidentKernelError> {
     CONTROL_WORK_SCOPE.with(|active| {
         let active = active.borrow();
         let Some(scope) = active.as_ref() else {
