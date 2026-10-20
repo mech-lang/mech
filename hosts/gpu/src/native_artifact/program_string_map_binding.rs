@@ -64,7 +64,7 @@ impl State {
             return Err(invalid("compiled String map source kind"));
         };
         self.account(ctx, id, 0, add(mul(text.len() as u64, 64)?, 256)?)?;
-        if !text.is_ascii() || text.as_bytes().windows(2).any(|pair| pair == b"\r\n") {
+        if !text.is_ascii() || mech_engine::intrinsics::text_graphemes::has_crlf(text) {
             return Ok(None);
         }
         if text.len() as u64 != remaining {
