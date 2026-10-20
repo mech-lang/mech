@@ -294,7 +294,11 @@ pub(super) fn register_text(builder: &mut FunctionCatalogBuilder) -> MResult<()>
         builder,
         "text",
         "lines",
-        ImplementationMemoryClass::CanonicalFinalize,
+        // The checked compact String constructor consumes its owned cells;
+        // there is no generic draft/repacking finalizer workspace. The leaf
+        // admits its complete actual container, payload and shape scratch
+        // before allocation; the common planner still stages publication.
+        ImplementationMemoryClass::NoAdditionalScratch,
         super::text_ops::bind_lines,
         NativeCollectionPrimitive::TextLines,
     )?;

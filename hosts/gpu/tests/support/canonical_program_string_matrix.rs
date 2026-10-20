@@ -2,6 +2,57 @@ use mech_core::snapshot::*;
 use mech_core::{DimensionExpr, IntegerWidth, SchemaBody, SchemaDraft, SchemaTableBuilder};
 use std::sync::Arc;
 
+use super::{artifacts, equal, inputs, limits, reference};
+use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
+use mech_gpu::native_artifact::JitProgramArtifact;
+
+#[test]
+fn compact_text_lines_admits_real_workspace_and_preserves_denial_atomicity() {
+    let source = "+> text\ntext/lines(input<string>)\n";
+    // The old generic draft/finalizer contract alone reserves >4MiB for
+    // these cells. The compact constructor and publication fit that cap.
+    let text = format!("{}\n", "x".repeat(60)).repeat(10_000);
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+        let args = inputs(&artifact, &[("input", Data::String(text.clone()))], &memory);
+        let ordinary = reference(&artifact, &args);
+        let mut caps = limits();
+        caps.library.max_temporary_bytes = Some(4 * 1024 * 1024);
+        caps.library.max_comparison_work = Some(16 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&args, &mut output, caps, &memory)
+            .unwrap();
+        equal(&artifact, &output, &ordinary);
+        let prior = output
+            .iter()
+            .map(|v| v.clone().unwrap())
+            .collect::<Vec<_>>();
+        let retained = memory.used_bytes();
+        for dimension in 0..5 {
+            let mut denied = caps;
+            match dimension {
+                0 => denied.library.max_temporary_bytes = Some(0),
+                1 => denied.library.max_output_bytes = Some(0),
+                2 => denied.library.max_cloned_bytes = Some(0),
+                3 => denied.library.max_retained_nodes = Some(0),
+                _ => denied.library.max_compute_work = Some(0),
+            }
+            assert!(
+                jit.evaluate_into(&args, &mut output, denied, &memory)
+                    .is_err()
+            );
+            equal(&artifact, &output, &prior);
+            assert_eq!(memory.used_bytes(), retained);
+        }
+        jit.evaluate_into(&args, &mut output, caps, &memory)
+            .unwrap();
+        equal(&artifact, &output, &ordinary);
+        drop((args, output, prior));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
 #[test]
 fn compact_string_matrices_match_validated_drafts_and_move_the_payloads() {
     let mut builder = SchemaTableBuilder::new();
@@ -97,12 +148,32 @@ fn compact_string_matrices_match_validated_drafts_and_move_the_payloads() {
             .map(|_| Box::<str>::from("cell"))
             .collect::<Vec<_>>()
             .into_boxed_slice();
-        assert!(
+        let compact_error =
             StringMatrixSnapshotConstructor::bind(ids[0], shape(ids[0]), Arc::clone(&schemas))
                 .unwrap()
                 .construct(strings)
-                .is_err()
-        );
+                .unwrap_err();
+        let ordinary_error = ValueDraft {
+            schema: ids[0],
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                (0..count)
+                    .map(|_| ValueDataDraft::String("cell".into()))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+        .unwrap_err();
+        assert_eq!(compact_error, ordinary_error);
+        assert!(matches!(
+            compact_error,
+            SnapshotValueError::PayloadCardinalityMismatchV1 {
+                path,
+                expected: 4,
+                actual,
+            } if path == SnapshotPath::root() && actual == count as u64
+        ));
     }
     assert!(
         StringMatrixSnapshotConstructor::bind(ids[3], shape(ids[3]), Arc::clone(&schemas)).is_err()

@@ -56,13 +56,7 @@ impl StringMatrixSnapshotConstructor {
     /// Consume exactly the admitted owned sequence; no per-cell generic draft,
     /// temporary ValueData array, payload clone or unchecked dynamic cell.
     pub fn construct(self, strings: Box<[Box<str>]>) -> Result<Value, SnapshotValueError> {
-        if strings.len() != self.count {
-            return Err(SnapshotValueError::AggregateArityMismatchV1 {
-                path: SnapshotPath::root(),
-                expected: self.count as u64,
-                actual: strings.len() as u64,
-            });
-        }
+        ensure_cardinality(&SnapshotPath::root(), self.count as u64, strings.len())?;
         Ok(finalized_value(
             self.schema,
             self.key,
