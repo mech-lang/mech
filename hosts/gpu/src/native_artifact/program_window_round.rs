@@ -2,6 +2,8 @@
 //! No loop evaluation, provider access, renewed budget or transaction here.
 use super::{Context, NativeProgramExecutionError as Error, invalid};
 use mech_engine::native_artifact::NativeControlLoop;
+#[path = "program_string_map_round.rs"]
+mod string_map;
 
 impl Context<'_, '_> {
     pub(super) fn prepare_window_region(

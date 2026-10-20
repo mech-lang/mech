@@ -44,6 +44,10 @@ pub use program::*;
 mod window_query_region;
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 pub use window_query_region::NativeWindowRegion;
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+mod string_map_region;
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+pub use string_map_region::NativeStringMapRegion;
 
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 pub use crate::resident::general::native_collection_templates::{

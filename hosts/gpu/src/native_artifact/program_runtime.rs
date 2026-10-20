@@ -269,6 +269,10 @@ impl Context<'_, '_> {
             self.prepare_window_region(site, args)
         } else if operation == super::program_abi::WINDOW_FINISH {
             self.finish_window_region(site, args)
+        } else if operation == super::program_abi::STRING_MAP_PREPARE {
+            self.prepare_string_map_region(site, args)
+        } else if operation == super::program_abi::STRING_MAP_FINISH {
+            self.finish_string_map_region(site, args)
         } else if self.window_region.is_some() {
             Err(invalid("helper while compiled String loans are active"))
         } else if operation == 0xffff_ffff_ffff_fff0 {

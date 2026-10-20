@@ -300,6 +300,20 @@ pub(super) fn define_cfg<M: Module>(
     } else {
         Vec::new()
     };
+    #[cfg(feature = "canonical-native-program")]
+    let map_functions = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+        program
+            .string_map_regions()
+            .into_iter()
+            .map(|region| {
+                let (function, stack, code) =
+                    super::program_compiler::string_map_codegen::define(module, &region)?;
+                Ok((region, function, stack, code))
+            })
+            .collect::<Result<Vec<_>, NativeCompileError>>()?
+    } else {
+        Vec::new()
+    };
     let mut signature_entry = module.make_signature();
     signature_entry.params.push(AbiParam::new(types::I64));
     signature_entry.returns.push(AbiParam::new(types::I64));
@@ -504,6 +518,29 @@ pub(super) fn define_cfg<M: Module>(
                         locals,
                         plan.value_count() + iteration as usize,
                         blocks[exit as usize].expect("reachable window exit"),
+                        error,
+                    )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
+            if let NativeIterationTerminator::Header {
+                iteration, exit, ..
+            } = block.terminator()
+                && let Some((region, function, _, _)) = map_functions
+                    .iter()
+                    .find(|(region, ..)| region.iteration() == iteration)
+            {
+                let function = module.declare_func_in_func(*function, b.func);
+                hooks
+                    .as_ref()
+                    .ok_or_else(|| backend("compiled String map has no owner hooks"))?
+                    .string_map_region(
+                        &mut b,
+                        index,
+                        region,
+                        function,
+                        locals,
+                        plan.value_count() + iteration as usize,
+                        blocks[exit as usize].expect("reachable map exit"),
                         error,
                     )?;
             }
@@ -887,13 +924,16 @@ pub(super) fn define_cfg<M: Module>(
                 window_functions
                     .iter()
                     .map(|(_, _, stack, _)| *stack)
+                    .chain(map_functions.iter().map(|(_, _, stack, _)| *stack))
                     .max()
                     .unwrap_or(0),
             )
             .ok_or_else(|| backend("compiled region stack overflow"))?,
         window_functions
             .iter()
-            .try_fold(code, |total, (_, _, _, code)| total.checked_add(*code))
+            .map(|(_, _, _, code)| *code)
+            .chain(map_functions.iter().map(|(_, _, _, code)| *code))
+            .try_fold(code, |total, code| total.checked_add(code))
             .ok_or_else(|| backend("compiled region code overflow"))?,
     );
     limit("Iteration stack", stack, limits.max_stack_bytes)?;

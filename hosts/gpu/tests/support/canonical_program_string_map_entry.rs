@@ -10,6 +10,131 @@ use mech_gpu::native_artifact::{
 };
 
 const SOURCE: &str = "+> text\n+> map\ntext/join([(entries<{string:string}>){piece} | piece <- source<string>], separator<string>)\n";
+
+#[test]
+fn compiled_byte_map_has_constant_visits_and_keeps_missing_key_atomic() {
+    for artifact in artifacts(SOURCE).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        assert_eq!(jit.descriptor().plan().string_map_regions().len(), 1);
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        let mut short_visits = None;
+        for (text, entries, separator) in [
+            ("ababa", vec![("a", "A"), ("b", "B")], ""),
+            (
+                "ababababababababababababa",
+                vec![("a", "A"), ("b", "B")],
+                "",
+            ),
+            ("aa?", vec![("a", "A")], ""),
+            ("", vec![], ""),
+            ("a\0a", vec![("a", "\0"), ("\0", "a")], ""),
+            ("éé", vec![("é", "A")], ""),
+            ("\r\nA", vec![("\r\n", "L"), ("A", "a")], ""),
+            ("aa", vec![("a", "é")], ""),
+            ("aa", vec![("a", "")], ""),
+            ("aa", vec![("a", "A")], "|"),
+            ("\u{7f}\u{7f}", vec![("\u{7f}", "\r")], ""),
+        ] {
+            let args = inputs(
+                &artifact,
+                &[
+                    ("source", Data::String(text.into())),
+                    ("entries", dictionary(&entries)),
+                    ("separator", Data::String(separator.into())),
+                ],
+                &memory,
+            );
+            let expected = reference_result(&artifact, &args);
+            let previous = output.clone();
+            let before = memory.used_bytes();
+            let actual = jit.evaluate_into(&args, &mut output, limits(), &memory);
+            match expected {
+                Ok(expected) => {
+                    let report = actual.unwrap();
+                    equal(&artifact, &output, &expected);
+                    if text == "ababa" {
+                        short_visits = Some(report.visits);
+                    }
+                    if text == "ababababababababababababa" {
+                        assert_eq!(Some(report.visits), short_visits);
+                    }
+                }
+                Err(expected) => {
+                    assert!(expected.contains("InvalidInput"), "{expected}");
+                    let error = actual.unwrap_err();
+                    let projection = jit
+                        .descriptor()
+                        .plan()
+                        .collections()
+                        .iter()
+                        .find_map(|c| c.string_element_map_projection())
+                        .unwrap();
+                    assert!(
+                        matches!(error, NativeProgramExecutionError::Library { origin,
+                        error:NativeCollectionInvocationError::Kernel(ResidentKernelError::InvalidInput) }
+                        if origin==projection.selection_template().origin()),
+                        "{error:?}"
+                    );
+                    for (current, old) in output.iter().zip(&previous) {
+                        assert!(
+                            current
+                                .as_ref()
+                                .unwrap()
+                                .shares_frozen_storage(old.as_ref().unwrap())
+                        );
+                    }
+                    assert_eq!(
+                        memory.used_bytes(),
+                        before,
+                        "failed native map must release scratch/loans"
+                    );
+                }
+            }
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn compiled_byte_map_finite_work_denial_preserves_outputs_and_recovers() {
+    for artifact in artifacts(SOURCE).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let args = inputs(
+            &artifact,
+            &[
+                ("source", Data::String("ab".repeat(1000))),
+                ("entries", dictionary(&[("a", "A"), ("b", "B")])),
+                ("separator", Data::String("".into())),
+            ],
+            &memory,
+        );
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+        let previous = output.clone();
+        let before = memory.used_bytes();
+        let mut denied = limits();
+        denied.library.max_compute_work = Some(200_000);
+        let error = jit
+            .evaluate_into(&args, &mut output, denied, &memory)
+            .unwrap_err();
+        assert!(format!("{error:?}").contains("ComputeWork"), "{error:?}");
+        for (current, old) in output.iter().zip(&previous) {
+            assert!(
+                current
+                    .as_ref()
+                    .unwrap()
+                    .shares_frozen_storage(old.as_ref().unwrap())
+            );
+        }
+        assert_eq!(memory.used_bytes(), before);
+        jit.evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+    }
+}
 fn dictionary(entries: &[(&str, &str)]) -> Data {
     Data::Map(
         entries

@@ -12,6 +12,8 @@ use cranelift_object::{ObjectBuilder, ObjectModule};
 use mech_core::{FunctionCatalog, ManagedMemoryBudget, Value};
 use mech_engine::{ProgramArtifact, native_artifact::lower_native_program_artifact};
 
+#[path = "program_string_map_codegen.rs"]
+pub(super) mod string_map_codegen;
 #[path = "program_window_codegen.rs"]
 pub(super) mod window_codegen;
 
@@ -154,6 +156,7 @@ impl NativeProgramObject {
             "object_optimization": "speed",
             "compiled_window_query_regions": self.descriptor.window_regions.iter().filter(|region| region.query().is_some()).count(),
             "compiled_window_histogram_regions": self.descriptor.window_regions.iter().filter(|region| region.query().is_none()).count(),
+            "compiled_string_map_regions": self.descriptor.string_map_regions.len(),
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }

@@ -86,6 +86,11 @@ fn complete_knucleotide_original_and_decoded_run_through_actual_secured_cli() {
             "both frequency widths must use the same compiled Histogram body"
         );
         assert_eq!(
+            jit.descriptor().plan().string_map_regions().len(),
+            1,
+            "uppercase map/join must use the same generic compiled byte-map body"
+        );
+        assert_eq!(
             jit.descriptor()
                 .plan()
                 .collections()

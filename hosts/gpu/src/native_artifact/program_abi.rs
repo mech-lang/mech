@@ -15,6 +15,8 @@ pub(super) const OUTPUT_BASE: u64 = 3;
 // Private compiled-region loans within the SAME turn, not new transactions.
 pub(super) const WINDOW_PREPARE: u64 = u64::MAX - 1;
 pub(super) const WINDOW_FINISH: u64 = u64::MAX - 2;
+pub(super) const STRING_MAP_PREPARE: u64 = u64::MAX - 3;
+pub(super) const STRING_MAP_FINISH: u64 = u64::MAX - 4;
 pub(super) type Helper =
     unsafe extern "C" fn(*mut c_void, u64, u64, u64, u64, u64, *mut u64) -> u64;
 #[repr(C)]

@@ -17,6 +17,62 @@ pub(super) struct Hooks {
 }
 impl Hooks {
     #[cfg(feature = "canonical-native-program")]
+    pub fn string_map_region(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        site: usize,
+        region: &mech_engine::native_artifact::NativeStringMapRegion,
+        function: cranelift_codegen::ir::FuncRef,
+        locals: Value,
+        counter_slot: usize,
+        exit: Block,
+        error: Block,
+    ) -> Result<(), NativeCompileError> {
+        use super::compiler::offset;
+        use super::program_abi::{STRING_MAP_FINISH, STRING_MAP_PREPARE};
+        use cranelift_codegen::ir::MemFlags;
+        let enough = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, self.argument_capacity, 5);
+        guard(b, enough, error, super::abi::STATUS_ABI);
+        let remaining = b
+            .ins()
+            .load(types::I64, MemFlags::new(), locals, offset(counter_slot)?);
+        let collection = b.ins().iconst(types::I64, region.collection() as i64);
+        let zero = b.ins().iconst(types::I64, 0);
+        self.call(
+            b,
+            site,
+            STRING_MAP_PREPARE,
+            [remaining, collection, zero],
+            error,
+        );
+        let ready = b.ins().load(types::I64, MemFlags::new(), self.result, 0);
+        let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
+        let native = b.create_block();
+        let ordinary = b.create_block();
+        b.ins().brif(ready, native, &[], ordinary, &[]);
+        b.switch_to_block(native);
+        let words = (0..5)
+            .map(|index| {
+                Ok(b.ins()
+                    .load(types::I64, MemFlags::new(), self.arguments, offset(index)?))
+            })
+            .collect::<Result<Vec<_>, NativeCompileError>>()?;
+        let call = b.ins().call(function, &words);
+        let processed = b.inst_results(call)[0];
+        self.call(
+            b,
+            site,
+            STRING_MAP_FINISH,
+            [processed, collection, zero],
+            error,
+        );
+        b.ins().jump(exit, &[]);
+        b.switch_to_block(ordinary);
+        Ok(())
+    }
+    #[cfg(feature = "canonical-native-program")]
     pub fn window_region(
         &self,
         b: &mut FunctionBuilder<'_>,

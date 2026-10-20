@@ -71,13 +71,13 @@ impl Plan {
     }
 }
 
-struct Cursor<'a> {
-    plan: &'a Plan,
-    iteration: u32,
-    visited: Vec<u32>,
+pub(super) struct Cursor<'a> {
+    pub(super) plan: &'a Plan,
+    pub(super) iteration: u32,
+    pub(super) visited: Vec<u32>,
 }
 impl Cursor<'_> {
-    fn action(&mut self, mut site: u32) -> Option<(u32, &Action, End)> {
+    pub(super) fn action(&mut self, mut site: u32) -> Option<(u32, &Action, End)> {
         loop {
             if self.visited.contains(&site) {
                 return None;
@@ -113,7 +113,7 @@ impl Cursor<'_> {
         (*op == wanted).then(|| (operands.clone(), *output, end))
     }
 }
-fn jump(end: End) -> Option<u32> {
+pub(super) fn jump(end: End) -> Option<u32> {
     if let End::Scalar(Branch::Jump(next)) = end {
         Some(next)
     } else {
