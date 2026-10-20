@@ -261,6 +261,16 @@ one-round publication remain. Actual accounting reflects the changed private
 value/cache layout, so the counters are not claimed unchanged. The exact-binary
 profile samples no token hashing; planning checks and compiled window loops are
 the next targets. This remains2.78x old direct, not a completed performance goal.
+Whole-scan admission for proven packed String-matrix metadata then
+[measures **2.3992s original /2.4013s decoded** at the same125M input](../../docs/validation/canonical-knucleotide-metadata-scan-standard125m-v1.json),
+another11.5% less original wall time. All eight outputs are exact, and the
+preceding work/comparison/visit/transport/carrier counters and finite policy
+limits are unchanged. The real immutable cell count funds the entire metadata
+walk once; the existing core footprint visitor still computes sizes. Tight
+budgets keep the old incremental denial and paid-work prefix, and this grants
+no payload, allocation or publication authority. The exact-binary profile now
+points to selected-cell footprint checks and compiled counting loops. This is
+still2.46x old direct/1.80x old secured, not a completed performance goal.
 Correct output, review and CI do not
 establish completion of this performance requirement.
 
