@@ -28,6 +28,36 @@ fn prior(output: &[Option<Value>]) -> Vec<Value> {
 }
 
 #[test]
+fn inferred_map_values_in_function_locals_match_explicit_calls_after_native_lowering() {
+    for projection in ["h_values", "map/values(h)"] {
+        let source = format!(
+            "+> map\nproject(h<{{string:u64}}>) => (out<[u64]>) := out := {projection}.\nproject({{\"b\": 2u64, \"a\": 1u64}})\n"
+        );
+        for artifact in artifacts(&source).0 {
+            let memory = ManagedMemoryBudget::new(16 * 1024 * 1024);
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let mut output = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&[], &mut output, limits(), &memory)
+                .unwrap();
+            equal(&artifact, &output, &reference(&artifact, &[]));
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Matrix(vec![Data::U64(1), Data::U64(2)].into_boxed_slice())
+            );
+            drop(output);
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}
+
+#[test]
 fn selected_histogram_sink_preserves_raw_keys_empty_unicode_nul_and_counts() {
     for artifact in artifacts("+> map\nmap/histogram([part | part <- source<[string]>])\n").0 {
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);

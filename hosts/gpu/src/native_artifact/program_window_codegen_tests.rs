@@ -107,11 +107,13 @@ impl Compiled {
         let source = source.0;
         let active = width > 0 && width <= source.len() as u64;
         let cells = if active { 1usize << (width * 7) } else { 0 };
-        assert_eq!(bins.len(), cells);
+        assert!(bins.len() == cells || (width == 1 && active && bins.len() == 4 * cells));
         // SAFETY: this is the exact emitted five-word signature. The code
         // owner and immutable ASCII/no-CRLF String outlive the call. The
         // actual initialized mutable bins slice is disjoint from that String
-        // and has every possible base-128 cell. Source/load bounds are proved
+        // and has every possible base-128 cell, optionally in four disjoint
+        // banks for width one. Its actual extent selects the emitted variant.
+        // Source/load bounds are proved
         // by active starts; neither loan escapes. Callers zero bins outside
         // timing. This test wrapper is not a runtime route or admission permit.
         unsafe {

@@ -16,16 +16,23 @@ fn reference(source: &str, width: usize) -> Vec<u64> {
 }
 
 fn check(code: &Compiled, source: &str, width: usize, expected: &[u64]) {
+    check_layout(code, source, width, expected, expected.len());
+    if width == 1 && !expected.is_empty() {
+        check_layout(code, source, width, expected, 4 * expected.len());
+    }
+}
+
+fn check_layout(code: &Compiled, source: &str, width: usize, expected: &[u64], cells: usize) {
     let source = AsciiSource::borrow(source).unwrap();
     let guard = 0xcafeba98_76543210;
-    let mut storage = vec![0; expected.len() + 2];
+    let mut storage = vec![0; cells + 2];
     storage[0] = guard;
-    storage[expected.len() + 1] = guard;
-    let accepted = code.histogram_count(&source, width as u64, &mut storage[1..expected.len() + 1]);
+    storage[cells + 1] = guard;
+    let accepted = code.histogram_count(&source, width as u64, &mut storage[1..cells + 1]);
     assert_eq!(accepted, expected.iter().sum::<u64>());
     assert_eq!(&storage[1..expected.len() + 1], expected);
     assert_eq!(storage[0], guard);
-    assert_eq!(storage[expected.len() + 1], guard);
+    assert_eq!(storage[cells + 1], guard);
 }
 
 #[test]
@@ -107,22 +114,29 @@ fn measure_compiled_histogram_kernel_only() {
         let expected = reference(&source, width);
         check(&selected, &source, width, &expected);
         check(&scalar, &source, width, &expected);
-        let mut bins = vec![0; expected.len()];
         for round in 0..7 {
             let variants = if round % 2 == 0 {
-                [("selected", &selected), ("scalar", &scalar)]
+                [
+                    ("banked", &selected, if width == 1 { 4 } else { 1 }),
+                    ("serial", &selected, 1),
+                    ("scalar", &scalar, 1),
+                ]
             } else {
-                [("scalar", &scalar), ("selected", &selected)]
+                [
+                    ("scalar", &scalar, 1),
+                    ("serial", &selected, 1),
+                    ("banked", &selected, if width == 1 { 4 } else { 1 }),
+                ]
             };
-            for (lowering, code) in variants {
+            for (lowering, code, banks) in variants {
                 // Allocation,zeroing,source/oracle preparation and full-bin
                 // comparisons are outside these kernel-only intervals.
-                bins.fill(0);
+                let mut bins = vec![0; expected.len() * banks];
                 let start = Instant::now();
                 let count =
                     code.histogram_count(black_box(&loan), width as u64, black_box(&mut bins));
                 let elapsed_ns = start.elapsed().as_nanos();
-                assert_eq!(bins, expected);
+                assert_eq!(&bins[..expected.len()], expected);
                 assert_eq!(count, source.len() as u64 - width as u64 + 1);
                 samples.push(serde_json::json!({"round":round,"width":width,"lowering":lowering,"count":count,"all_bins_exact":true,"elapsed_ns":elapsed_ns}));
             }
@@ -133,7 +147,7 @@ fn measure_compiled_histogram_kernel_only() {
         serde_json::json!({
             "scope":"Same executable/raw emitted kernel,NOT secured program timing or isolated capability overhead;source prep,allocation,zeroing,host,capabilities,output,accounting and commit excluded",
             "source_bases":source.len(),"samples":samples,"runtime_callbacks_in_emitted_body":0,
-            "scratch_layout_changed":false,"object_opt_level":"speed","production_wired":true
+            "scratch_layout_changed":true,"object_opt_level":"speed","production_wired":true
         })
     );
 }

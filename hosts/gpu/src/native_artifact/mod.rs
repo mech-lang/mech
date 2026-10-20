@@ -91,6 +91,8 @@ mod program_runtime;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_tail_layout;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod program_window_histogram_layout;
+#[cfg(feature = "canonical-native-program-runtime")]
 pub use program_linked::LinkedProgramArtifact;
 #[cfg(feature = "canonical-native-program")]
 mod program_application;

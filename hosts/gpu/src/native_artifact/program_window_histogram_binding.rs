@@ -1,5 +1,6 @@
 //! Admitted storage for compiler-emitted dense windows; no source loop here.
 use super::*;
+use crate::native_artifact::program_window_histogram_layout as layout;
 use mech_core::ValueData;
 use mech_engine::native_artifact::NativeWindowRegion;
 
@@ -7,6 +8,19 @@ pub(super) struct Bins {
     values: Vec<u64>,
     width: usize,
     _reservation: ManagedMemoryReservation,
+}
+
+impl Bins {
+    fn counts(&self) -> Result<&[u64], Error> {
+        let logical = if self.values.is_empty() {
+            0
+        } else {
+            1usize << (self.width * 7)
+        };
+        self.values
+            .get(..logical)
+            .ok_or_else(|| invalid("compiled Histogram logical extent"))
+    }
 }
 
 impl State {
@@ -66,15 +80,29 @@ impl State {
         } else {
             1usize << (width as usize * 7)
         };
-        let bytes = mul(cells as u64, size_of::<u64>() as u64)?;
         let source_bytes = source
             .memory_budget_retained_bytes(&ctx.library.memory_budget())
             .ok_or_else(|| invalid("compiled Histogram source is unadmitted"))?;
+        let temporary_base = add(self.live_bytes, source_bytes)?;
+        let memory = ctx.library.memory_budget();
+        let physical_cells = if layout::prefer_banks(
+            width,
+            accepted,
+            temporary_base,
+            ctx.limits.max_temporary_bytes,
+            memory.limit_bytes().saturating_sub(memory.used_bytes()),
+            size_of::<Entry>() as u64,
+        ) {
+            layout::BANKED_CELLS
+        } else {
+            cells
+        };
+        let bytes = mul(physical_cells as u64, size_of::<u64>() as u64)?;
         resource(
             ctx,
             id,
             Dimension::TemporaryBytes,
-            add(add(self.live_bytes, source_bytes)?, bytes)?,
+            add(temporary_base, bytes)?,
             ctx.limits.max_temporary_bytes,
         )?;
         resource(
@@ -86,25 +114,33 @@ impl State {
         )?;
         // Covers native byte loads/count updates, scratch initialization and
         // drop, and BOTH bounded materialization scans and per-key allocation.
+        // Four banks still fit this existing envelope: each start needs <32
+        // primitive operations, and each logical cell adds four zero stores,
+        // four reduction loads, three adds and one store (<32 with control).
+        // That leaves >992 of the 1024 units per logical cell for the unchanged
+        // two materialization scans and single Entry/key allocation. No extra
+        // key allocations or per-start callbacks are introduced.
         // Final canonical Map validation retains its existing finite accounting.
         let work = add(add(mul(accepted, 32)?, mul(cells as u64, 1024)?)?, 1024)?;
         self.histogram_account(ctx, id, 0, work, 0)?;
-        let reservation = ctx.library.memory_budget().reserve_capacity(bytes)?;
+        let reservation = memory.reserve_capacity(bytes)?;
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        tests::record(physical_cells, bytes, ctx.library.used().0);
         let mut values = Vec::new();
         values
-            .try_reserve_exact(cells)
+            .try_reserve_exact(physical_cells)
             .map_err(|_| invalid("compiled Histogram scratch allocation"))?;
-        if values.capacity() > cells {
+        if values.capacity() > physical_cells {
             return Err(invalid(
                 "compiled Histogram scratch exceeds admitted layout",
             ));
         }
-        values.resize(cells, 0);
+        values.resize(physical_cells, 0);
         let words = [
             text.as_ptr() as u64,
             length,
             values.as_mut_ptr() as u64,
-            cells as u64,
+            physical_cells as u64,
             width,
         ];
         self.builder(id)?.histogram.as_mut().unwrap().compiled_bins = Some(Bins {
@@ -148,7 +184,7 @@ impl State {
         let mut total = 0u64;
         // This fixed-size scan was prepaid before the native body. It does
         // not revisit source windows or charge once per source operation.
-        for &count in &bins.values {
+        for &count in bins.counts()? {
             distinct += u64::from(count != 0);
             total = add(total, count)?;
         }
@@ -190,7 +226,7 @@ impl State {
             .compiled_bins
             .take()
             .unwrap();
-        for (index, count) in bins.values.iter().copied().enumerate() {
+        for (index, count) in bins.counts()?.iter().copied().enumerate() {
             if count == 0 {
                 continue;
             }
@@ -224,3 +260,7 @@ impl State {
         Ok(())
     }
 }
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_window_histogram_binding_tests.rs"]
+mod tests;

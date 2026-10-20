@@ -1,6 +1,7 @@
 //! Native dense counting for one/two-grapheme windows of a proved ASCII source.
 //! Scratch and source loans are admitted before entry; no callbacks in the loop.
 use super::*;
+use crate::native_artifact::program_window_histogram_layout::{BANKED_CELLS, BANKS, SINGLE_CELLS};
 use cranelift_codegen::ir::Value;
 
 pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
@@ -8,6 +9,8 @@ pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     let valid = b.create_block();
     let empty = b.create_block();
     let one = b.create_block();
+    let serial = b.create_block();
+    let banked = b.create_block();
     let pair = b.create_block();
     b.append_block_params_for_function_params(entry);
     b.switch_to_block(entry);
@@ -28,9 +31,17 @@ pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     let single = b.ins().icmp_imm(IntCC::Equal, width, 1);
     b.ins().brif(single, one, &[], pair, &[]);
     b.switch_to_block(one);
-    emit_width(b, source, bins, accepted, 1);
+    // The fourth word is the actual admitted extent, not a guessed capacity.
+    // Old 128-cell callers retain the serial body; only exact 512-cell loans
+    // can select four disjoint banks. The five-word ABI is unchanged.
+    let expanded = b.ins().icmp_imm(IntCC::Equal, args[3], BANKED_CELLS as i64);
+    b.ins().brif(expanded, banked, &[], serial, &[]);
+    b.switch_to_block(serial);
+    emit_width(b, source, bins, accepted, 1, false);
+    b.switch_to_block(banked);
+    emit_width(b, source, bins, accepted, 1, true);
     b.switch_to_block(pair);
-    emit_width(b, source, bins, accepted, 2);
+    emit_width(b, source, bins, accepted, 2, false);
 }
 
 fn emit_width(
@@ -39,6 +50,7 @@ fn emit_width(
     bins: Value,
     accepted: Value,
     width: usize,
+    banked: bool,
 ) {
     let bulk = b.create_block();
     let tail_check = b.create_block();
@@ -68,10 +80,36 @@ fn emit_width(
     let keys = (0..8)
         .map(|i| key(b, &bytes[i..i + width]))
         .collect::<Vec<_>>();
-    // Repeated keys MUST see preceding updates. Do not load all old counts
-    // first: that would lose increments on homogeneous/overlapping windows.
-    for key in keys {
-        increment(b, bins, key);
+    if banked {
+        for group in keys.chunks_exact(BANKS) {
+            // Each group touches one cell in each disjoint bank, even when
+            // every key repeats. Finish these stores before the NEXT group
+            // reads the same banks: group 0 and group 1 can alias.
+            let cells = group
+                .iter()
+                .enumerate()
+                .map(|(bank, &key)| {
+                    let offset = b.ins().ishl_imm(key, 3);
+                    let base = b.ins().iadd_imm(bins, (bank * SINGLE_CELLS * 8) as i64);
+                    b.ins().iadd(base, offset)
+                })
+                .collect::<Vec<_>>();
+            let counts = cells
+                .iter()
+                .map(|&cell| {
+                    let old = b.ins().load(types::I64, MemFlags::new(), cell, 0);
+                    b.ins().iadd_imm(old, 1)
+                })
+                .collect::<Vec<_>>();
+            for (cell, count) in cells.into_iter().zip(counts) {
+                b.ins().store(MemFlags::new(), count, cell, 0);
+            }
+        }
+    } else {
+        // Repeated keys MUST see preceding updates within the same bank.
+        for key in keys {
+            increment(b, bins, key);
+        }
     }
     let next = b.ins().iadd_imm(offset, 8);
     let more = b
@@ -95,7 +133,40 @@ fn emit_width(
     let more = b.ins().icmp(IntCC::UnsignedLessThan, next, accepted);
     b.ins().brif(more, tail, &[next.into()], done, &[]);
     b.switch_to_block(done);
+    if banked {
+        reduce_banks(b, bins);
+    }
     b.ins().return_(&[accepted]);
+}
+
+fn reduce_banks(b: &mut FunctionBuilder<'_>, bins: Value) {
+    let reduce = b.create_block();
+    let done = b.create_block();
+    b.append_block_param(reduce, types::I64);
+    let zero = b.ins().iconst(types::I64, 0);
+    b.ins().jump(reduce, &[zero.into()]);
+    b.switch_to_block(reduce);
+    let offset = b.block_params(reduce)[0];
+    let cell = b.ins().iadd(bins, offset);
+    let mut count = b.ins().load(types::I64, MemFlags::new(), cell, 0);
+    for bank in 1..BANKS {
+        let part = b.ins().load(
+            types::I64,
+            MemFlags::new(),
+            cell,
+            (bank * SINGLE_CELLS * 8) as i32,
+        );
+        count = b.ins().iadd(count, part);
+    }
+    // Every source byte contributed exactly once, so even the sum <= length.
+    // Only this logical prefix is materialized; the private banks are dropped.
+    b.ins().store(MemFlags::new(), count, cell, 0);
+    let next = b.ins().iadd_imm(offset, 8);
+    let more = b
+        .ins()
+        .icmp_imm(IntCC::UnsignedLessThan, next, (SINGLE_CELLS * 8) as i64);
+    b.ins().brif(more, reduce, &[next.into()], done, &[]);
+    b.switch_to_block(done);
 }
 
 fn load_byte(b: &mut FunctionBuilder<'_>, address: Value, offset: i32) -> Value {
