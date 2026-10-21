@@ -143,7 +143,7 @@ semantic authority. See the recorded
 [`follow_up_roadmap`](../../docs/validation/checked-aot-workload-progress-v1.json)
 for migration context; current implemented and pending scope is detailed below.
 
-Resource-hosted checked-native execution has one phased entry route. After
+Resource-hosted checked-native execution shares one admission/commit pipeline. After
 the runtime admits every original requirement and provider contract,
 `prepare_hosted` executes the generated closed activation prefix and returns an
 owning session before any provider read. The runtime then captures observations;
@@ -191,9 +191,12 @@ capture still retains 254.2 MB; line geometry and the selected sequence also
 remain. Proved streaming through the existing authorized resource and further
 host trimming remain unfinished. The compiler now derives EOF-dependent count,
 current-visit bounds and future-range retention proofs from the full original
-graph, including the original and decoded k-nucleotide program. These are
-prerequisites only: chunk delivery and native resume are not implemented yet,
-so the footprint above has not improved from these proofs.
+graph, including the original and decoded k-nucleotide program. A bounded UTF-8
+chunk adapter now uses the same provider, read-authorization and transaction
+gates, with explicit one-shot host opt-in; ordinary cached/mixed reads are
+unchanged. Incremental native continuation and retention-driven discard remain
+unfinished. The shipped session still uses snapshots and rejects scoped text,
+so these prerequisites do not improve the measured footprint above.
 The [buffer-reuse receipt](../../docs/validation/canonical-knucleotide-owned-string-footprint-v1.json)
 retains the previous ownership measurement. Capacity shrinking may still
 reallocate backing; this is not a universal zero-copy guarantee.

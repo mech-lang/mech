@@ -18,6 +18,10 @@ use crate::{
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
 };
 
+#[cfg(all(feature = "runtime", feature = "string", feature = "resident-routing"))]
+#[path = "resource_text_delivery.rs"]
+mod text_delivery;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeResourceReadRequest {
     pub base_uri: String,
@@ -139,6 +143,48 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
     }
 
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
+
+    /// Effect-free opt-in for a dedicated one-shot text source. Ordinary
+    /// providers keep their immutable cached-snapshot semantics. Returning
+    /// true is a host lifecycle promise, not another capability or URI.
+    #[cfg(all(feature = "runtime", feature = "string"))]
+    fn supports_single_use_text_capture(&self, _request: &RuntimeResourceReadRequest) -> bool {
+        false
+    }
+
+    /// Lend the authorized one-shot reader exactly once, synchronously. Do not
+    /// read before/after `capture`, retain it, or replay it on failure. The
+    /// runtime owns UTF-8 validation, byte caps, scratch, error ordering and the
+    /// receiver; this method grants no authority to run Mech or publish effects.
+    #[cfg(all(feature = "runtime", feature = "string"))]
+    fn with_single_use_text_reader(
+        &self,
+        _request: RuntimeResourceReadRequest,
+        _capture: &mut dyn FnMut(&mut dyn std::io::Read) -> MResult<()>,
+    ) -> MResult<()> {
+        Err(MechError::new(
+            crate::NativeResourceBindingError {
+                reason: "provider does not support dedicated one-shot text capture".into(),
+            },
+            None,
+        ))
+    }
+
+    /// Map capture failures to this provider's ordinary diagnostic vocabulary.
+    /// Native-consumer failures never pass through this hook or lose their kind.
+    #[cfg(all(feature = "runtime", feature = "string"))]
+    fn text_capture_error(
+        &self,
+        _request: &RuntimeResourceReadRequest,
+        error: crate::RuntimeTextCaptureError<std::convert::Infallible>,
+    ) -> MechError {
+        MechError::new(
+            crate::NativeResourceBindingError {
+                reason: error.to_string(),
+            },
+            None,
+        )
+    }
 
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
         Err(MechError::new(

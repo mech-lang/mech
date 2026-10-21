@@ -837,6 +837,11 @@ impl<'a> NativeProgramExecutionSession<'a> {
             ));
         }
         verify_hosted_turn(self.prepared.descriptor, &turn)?;
+        if turn.text_capture().is_some() {
+            return Err(invalid(
+                "snapshot native session cannot consume scoped text capture",
+            ));
+        }
         let Self {
             prepared,
             mut entry,

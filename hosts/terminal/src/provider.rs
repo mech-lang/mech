@@ -70,6 +70,37 @@ pub trait CliBackend: std::fmt::Debug {
     fn stdin_bytes(&self) -> Option<MResult<Vec<u8>>> {
         None
     }
+    /// Explicit host promise: this backend is dedicated to ONE native capture
+    /// followed by shutdown, not reusable/mixed snapshot observations. Ordinary
+    /// CLI backends remain false and retain their existing immutable cache.
+    fn supports_single_use_stdin_text_capture(&self) -> bool {
+        false
+    }
+    /// Synchronously lend that one source; do not observe it outside `capture`.
+    /// The shared runtime, not this backend, validates chunks and bounds reads.
+    fn with_single_use_stdin_text_reader(
+        &self,
+        _capture: &mut dyn FnMut(&mut dyn Read) -> MResult<()>,
+    ) -> MResult<()> {
+        Err(cli_error(
+            "cli://stdin".into(),
+            "one-shot text capture is unavailable",
+        ))
+    }
+    fn text_capture_error(
+        &self,
+        resource: &str,
+        error: mech_runtime::RuntimeTextCaptureError<std::convert::Infallible>,
+    ) -> MechError {
+        use mech_runtime::RuntimeTextCaptureError as Error;
+        let reason = match error {
+            Error::Acquisition(error) => error.to_string(),
+            Error::InputLimit { .. } => "input exceeds its finite acquisition cap".into(),
+            Error::InvalidUtf8 { .. } => "standard input is not valid UTF-8".into(),
+            Error::Consumer(never) => match never {},
+        };
+        cli_error(resource.into(), reason)
+    }
     fn write_stdout(&mut self, text: &str) -> MResult<()>;
     fn write_stderr(&mut self, text: &str) -> MResult<()>;
     /// Deliver raw bytes without decoding or adding a suffix. Implementations
@@ -133,6 +164,22 @@ impl<B: CliBackend> CliBackend for ArgumentSnapshotCliBackend<B> {
 
     fn stdin_bytes(&self) -> Option<MResult<Vec<u8>>> {
         self.backend.stdin_bytes()
+    }
+    fn supports_single_use_stdin_text_capture(&self) -> bool {
+        self.backend.supports_single_use_stdin_text_capture()
+    }
+    fn with_single_use_stdin_text_reader(
+        &self,
+        capture: &mut dyn FnMut(&mut dyn Read) -> MResult<()>,
+    ) -> MResult<()> {
+        self.backend.with_single_use_stdin_text_reader(capture)
+    }
+    fn text_capture_error(
+        &self,
+        resource: &str,
+        error: mech_runtime::RuntimeTextCaptureError<std::convert::Infallible>,
+    ) -> MechError {
+        self.backend.text_capture_error(resource, error)
     }
 
     fn write_stdout(&mut self, text: &str) -> MResult<()> {
@@ -231,6 +278,9 @@ enum CliStdinAcquisition {
     // Future byte reads borrow that backing; no duplicate raw buffer is kept.
     Decoded,
     LegacyText,
+    // Only an explicitly dedicated backend may opt in. No partial snapshot is
+    // cached, and a failed/successful exclusive acquisition is never replayed.
+    SingleUseText,
 }
 
 #[derive(Debug, Default)]
@@ -366,6 +416,64 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
         ]
     }
 
+    fn supports_single_use_text_capture(&self, request: &RuntimeResourceReadRequest) -> bool {
+        if !self.matches_base(&request.base_uri, "stdin")
+            || request.path != "text"
+            || validate_stdin_read(request).is_err()
+        {
+            return false;
+        }
+        let Ok(snapshot) = self.stdin_snapshot.lock() else {
+            return false;
+        };
+        snapshot.acquisition.is_none()
+            && self
+                .backend
+                .lock()
+                .is_ok_and(|backend| backend.supports_single_use_stdin_text_capture())
+    }
+
+    fn with_single_use_text_reader(
+        &self,
+        request: RuntimeResourceReadRequest,
+        capture: &mut dyn FnMut(&mut dyn Read) -> MResult<()>,
+    ) -> MResult<()> {
+        validate_stdin_read(&request)?;
+        if !self.matches_base(&request.base_uri, "stdin") || request.path != "text" {
+            return Err(cli_error(
+                request.base_uri,
+                "one-shot capture requires stdin text",
+            ));
+        }
+        let mut snapshot = self
+            .stdin_snapshot
+            .lock()
+            .map_err(|_| cli_error(request.base_uri.clone(), "CLI stdin snapshot lock poisoned"))?;
+        let backend = self
+            .backend
+            .lock()
+            .map_err(|_| cli_error(request.base_uri.clone(), "CLI backend lock poisoned"))?;
+        if snapshot.acquisition.is_some() || !backend.supports_single_use_stdin_text_capture() {
+            return Err(cli_error(
+                request.base_uri,
+                "stdin is not a fresh dedicated text source",
+            ));
+        }
+        snapshot.acquisition = Some(Ok(CliStdinAcquisition::SingleUseText));
+        backend.with_single_use_stdin_text_reader(capture)
+    }
+
+    fn text_capture_error(
+        &self,
+        request: &RuntimeResourceReadRequest,
+        error: mech_runtime::RuntimeTextCaptureError<std::convert::Infallible>,
+    ) -> MechError {
+        match self.backend.lock() {
+            Ok(backend) => backend.text_capture_error(&request.base_uri, error),
+            Err(_) => cli_error(request.base_uri.clone(), "CLI backend lock poisoned"),
+        }
+    }
+
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if self.matches_base(&request.base_uri, "env") {
             validate_env_key(&request.path)?;
@@ -473,6 +581,10 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                         Ok(value.clone())
                     }
                 }
+                Ok(CliStdinAcquisition::SingleUseText) => Err(cli_error(
+                    request.base_uri.clone(),
+                    "dedicated stdin text capture already consumed its one acquisition",
+                )),
                 Ok(CliStdinAcquisition::LegacyText) if request.path == "bytes" => bytes
                     .get_or_insert_with(|| {
                         Err(cli_error(
