@@ -469,6 +469,14 @@ pub(super) fn define_cfg<M: Module>(
         };
         #[cfg(not(feature = "canonical-native-program"))]
         let program_phase: Option<cranelift_codegen::ir::Value> = None;
+        #[cfg(feature = "canonical-native-program")]
+        let prefix_facts = prefix.as_ref().map(|_| {
+            super::program_compiler::prefix_codegen::EntryFacts::load(
+                &mut b,
+                frame,
+                program_phase.expect("managed prefix phase"),
+            )
+        });
         let resume_block = if let Some(phase) = program_phase {
             let initialize = b.create_block();
             let resume = b.create_block();
@@ -560,22 +568,14 @@ pub(super) fn define_cfg<M: Module>(
                     .ins()
                     .icmp_imm(IntCC::Equal, target, i64::from(region.tail.exit()));
                 guard(&mut b, at_exit, error, STATUS_ABI);
-                let eof = frame_load(
-                    &mut b,
-                    frame,
-                    core::mem::offset_of!(super::program_abi::Frame, input_eof),
-                );
-                let final_input = b.ins().icmp_imm(IntCC::Equal, eof, 1);
-                guard(&mut b, final_input, error, STATUS_ABI);
+                let facts = prefix_facts.expect("managed prefix entry facts");
+                guard(&mut b, facts.final_input, error, STATUS_ABI);
                 b.ins().jump(
                     blocks[region.tail.exit() as usize].expect("reachable scan exit"),
                     &[],
                 );
                 b.switch_to_block(scan_or_snapshot);
-                let is_prefix =
-                    b.ins()
-                        .icmp_imm(IntCC::Equal, phase, super::program_abi::PHASE_PREFIX as i64);
-                b.ins().brif(is_prefix, dispatch, &[], snapshot, &[]);
+                b.ins().brif(facts.is_prefix, dispatch, &[], snapshot, &[]);
                 b.switch_to_block(dispatch);
                 let target = frame_load(
                     &mut b,
@@ -640,9 +640,8 @@ pub(super) fn define_cfg<M: Module>(
             {
                 super::program_compiler::prefix_codegen::gate(
                     &mut b,
-                    frame,
                     locals,
-                    program_phase.expect("managed prefix phase"),
+                    prefix_facts.expect("managed prefix entry facts"),
                     region,
                     &borrowed,
                     &closed,
@@ -664,9 +663,8 @@ pub(super) fn define_cfg<M: Module>(
             {
                 super::program_compiler::prefix_codegen::scanned(
                     &mut b,
-                    frame,
                     locals,
-                    program_phase.expect("managed prefix phase"),
+                    prefix_facts.expect("managed prefix entry facts"),
                     region,
                     &borrowed,
                     &closed,
@@ -837,11 +835,10 @@ pub(super) fn define_cfg<M: Module>(
                     )?;
                     if plan.kind(*output).is_some() {
                         #[cfg(feature = "canonical-native-program")]
-                        let count_join = program_phase.and_then(|phase| {
+                        let count_join = prefix_facts.and_then(|facts| {
                             super::program_compiler::prefix_codegen::count_store(
                                 &mut b,
-                                frame,
-                                phase,
+                                facts,
                                 prefix.as_ref(),
                                 index,
                             )
@@ -862,12 +859,11 @@ pub(super) fn define_cfg<M: Module>(
                 }
                 NativeIterationAction::Scalar(action) => {
                     #[cfg(feature = "canonical-native-program")]
-                    let count_action = if let Some(phase) = program_phase {
+                    let count_action = if let Some(facts) = prefix_facts {
                         super::program_compiler::prefix_codegen::count_action(
                             &mut b,
-                            frame,
                             locals,
-                            phase,
+                            facts,
                             prefix.as_ref(),
                             index,
                             action,

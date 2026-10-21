@@ -230,6 +230,49 @@ fn emitted_scanner_preserves_carrier_and_one_ledger_across_header_pauses() {
 }
 
 #[test]
+fn entry_facts_refresh_after_repeated_empty_and_growing_prefixes() {
+    for artifact in artifacts(source()) {
+        let jit = super::super::super::JitProgramArtifact::compile(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+        )
+        .unwrap();
+        let descriptor = jit.descriptor();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let inputs = [input(
+            descriptor,
+            "skip\nopen\nA\nB\nclose\nafter\n",
+            &memory,
+        )];
+        let mut outputs = vec![None; descriptor.plan.transport_output_count()];
+        let mut entry = jit.test_generated_entry();
+        let mut prepared = Prepared::new(descriptor, limits(), &memory).unwrap();
+        prepared.activate(&mut entry).unwrap();
+        prepared.import_turn(&inputs, &[], &outputs).unwrap();
+        let mut previous = None;
+        for available in [0, 0, 1, 1, 2, 4, 4, 6, 6] {
+            prepared.run_prefix(&mut entry, available, false).unwrap();
+            assert_unloaned(&prepared);
+            let current = carrier(&prepared);
+            if let Some((prior_available, prior_state)) = &previous {
+                if *prior_available == available {
+                    assert_eq!(*prior_state, current, "unchanged prefix cannot advance");
+                }
+            }
+            previous = Some((available, current));
+            assert!(outputs.iter().all(Option::is_none));
+        }
+        // The final entry has the same physical availability but a new EOF
+        // fact, and must finish rather than reuse the previous pending bundle.
+        prepared.run_prefix(&mut entry, 6, true).unwrap();
+        prepared.publish(&mut outputs).unwrap();
+        assert_eq!(output_text(&outputs), "A|B");
+        drop((outputs, inputs));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
 fn emitted_frontier_drives_storage_discard_without_a_rust_scanner() {
     use mech_engine::native_artifact::NativeCollectionPrimitive;
 

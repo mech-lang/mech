@@ -46,3 +46,21 @@ fn combined_ascii_crlf_scan_keeps_every_tail_alignment_and_unicode_fallback() {
         }
     }
 }
+
+#[test]
+fn independent_masks_do_not_mix_low_bits_cr_and_non_ascii_across_batches() {
+    for length in [0, 1, 63, 64, 65, 127, 128, 129, 4095, 4096, 4097] {
+        for fill in ["\0", "\u{7f}", "a", "\r"] {
+            let padding = fill.repeat(length);
+            check(&padding);
+            for text in [
+                format!("é{padding}\r"),
+                format!("\r{padding}é"),
+                format!("é{padding}\r\n"),
+                format!("\r{padding}\0\né"),
+            ] {
+                check(&text);
+            }
+        }
+    }
+}

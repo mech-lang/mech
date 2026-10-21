@@ -99,6 +99,87 @@ fn producer_ascii_proof_preserves_cell_qualification_and_exact_window_work() {
 }
 
 #[test]
+fn cached_payload_preserves_exact_window_debits_across_fragmentation_and_retention() {
+    fn check_windows(
+        owner: &NativeTextLineChunks,
+        ledger: &NativeLibraryWorkBudget,
+        memory: &ManagedMemoryBudget,
+        lines: &[&str],
+        first: u64,
+        end: u64,
+    ) {
+        let retained = memory.used_bytes();
+        for start in first..=end {
+            for stop in start..=end {
+                let count = stop - start;
+                let expected = &lines[(start - 1) as usize..(stop - 1) as usize];
+                let payload = expected.iter().map(|line| line.len() as u64).sum::<u64>();
+                assert_eq!(owner.window_payload_bytes(start, stop).unwrap(), payload);
+                let before = ledger.used().0;
+                let window = owner.borrow_window(start, stop).unwrap();
+                let claim_bytes = count * core::mem::size_of::<[u64; 2]>() as u64
+                    + core::mem::size_of::<NativeTextLineWindow<'_>>() as u64
+                    + 128;
+                assert_eq!(
+                    ledger.used().0 - before,
+                    count * 256 + 4096 + payload * 4 + claim_bytes * 8 + 128,
+                    "the cached and partial-edge paths must retain the exact original charges"
+                );
+                assert_eq!(window.rows().len(), expected.len());
+                assert_eq!(
+                    window.is_ascii(),
+                    expected.iter().all(|line| line.is_ascii())
+                );
+                for (offset, line) in expected.iter().enumerate() {
+                    assert_eq!(window.line(start + offset as u64), Some(*line));
+                }
+                drop(window);
+                assert_eq!(memory.used_bytes(), retained);
+            }
+        }
+    }
+
+    for source in ["", "\n", "\r\n", "a\r\r\n", "é\r\n猫\nlast\r", "a\n\nb\n"] {
+        let lines = source.lines().collect::<Vec<_>>();
+        for split in (0..=source.len()).filter(|index| source.is_char_boundary(*index)) {
+            let memory = ManagedMemoryBudget::new(1024 * 1024);
+            let ledger = work(&memory);
+            let mut owner = store(&ledger, limits());
+            owner.push(&source[..split]).unwrap();
+            owner.push(&source[split..]).unwrap();
+            let facts = owner.finish().unwrap();
+            assert_eq!(facts.lines(), lines.len() as u64);
+            let end = facts.lines() + 1;
+            check_windows(&owner, &ledger, &memory, &lines, 1, end);
+            if lines.len() >= 3 {
+                owner.retain_from(2).unwrap();
+                check_windows(&owner, &ledger, &memory, &lines, 2, end);
+                owner.retain_range(2, end - 1).unwrap();
+                check_windows(&owner, &ledger, &memory, &lines, 2, end - 1);
+            }
+            drop((owner, ledger));
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}
+
+#[test]
+fn immutable_exact_offset_backing_keeps_its_allocation() {
+    // Offsets checks both capacity and length before this conversion. There
+    // is no spare capacity to shrink and no second live backing allocation.
+    for count in [1, 3, 1024] {
+        let mut values = Vec::<u32>::new();
+        values.try_reserve_exact(count).unwrap();
+        assert_eq!(values.capacity(), count);
+        values.extend(0..count as u32);
+        let pointer = values.as_ptr();
+        let boxed = values.into_boxed_slice();
+        assert_eq!(boxed.as_ptr(), pointer);
+        assert_eq!(boxed.len(), count);
+    }
+}
+
+#[test]
 fn many_completed_lines_do_not_force_a_full_input_pointer_table() {
     let memory = ManagedMemoryBudget::new(1024 * 1024);
     let ledger = work(&memory);

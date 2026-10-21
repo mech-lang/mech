@@ -87,6 +87,45 @@ fn original_and_decoded_scans_keep_only_the_current_or_future_range_start() {
 }
 
 #[test]
+fn every_deferred_comparison_requires_the_current_row_index() {
+    for index in ["i + 1u64", "i + 2u64", "first", "1u64"] {
+        let source = scan().replace(
+            "| i > count -> :Ready(first, count + 1u64)\n",
+            &format!(
+                "| i > count -> :Ready(first, count + 1u64)\n    | {index} > count -> :Ready(first, i)\n"
+            ),
+        );
+        for plan in plans(&source) {
+            let read = plan.text_line_read_frontiers();
+            assert_eq!(read.len(), 1, "{source}");
+            assert!(
+                read[0].count().guards().len() > 2,
+                "extra comparison must remain live"
+            );
+            assert!(
+                plan.text_line_retention_frontiers().is_empty(),
+                "a current-row read does not prove availability of {index}"
+            );
+        }
+    }
+}
+
+#[test]
+fn equivalent_current_index_comparisons_remain_streamable() {
+    for index in ["i", "i + 0u64", "0u64 + i"] {
+        let source = scan().replace(
+            "| i > count -> :Ready(first, count + 1u64)\n",
+            &format!(
+                "| i > count -> :Ready(first, count + 1u64)\n    | {index} > count -> :Ready(first, i)\n"
+            ),
+        );
+        for plan in plans(&source) {
+            assert_eq!(plan.text_line_retention_frontiers().len(), 1, "{source}");
+        }
+    }
+}
+
+#[test]
 fn ordinal_arithmetic_is_checked_and_never_combines_two_dynamic_words() {
     let current = Word {
         atom: Some(Atom::State(1, 2)),
@@ -106,6 +145,33 @@ fn ordinal_arithmetic_is_checked_and_never_combines_two_dynamic_words() {
         .plus(Word::constant(1))
         .is_none()
     );
+}
+
+#[test]
+fn every_live_retention_seed_is_positive_and_transfers_cannot_reintroduce_zero() {
+    for source in [
+        scan().replace(
+            "#Locate(rows, count) -> :Skip(1u64)",
+            "#Locate(rows, count) -> :Take(0u64, 1u64)",
+        ),
+        scan().replace(":Take(first, i + 1u64)", ":Take(0u64, i + 1u64)"),
+    ] {
+        for plan in plans(&source) {
+            assert_eq!(plan.text_line_read_frontiers().len(), 1, "{source}");
+            assert!(plan.text_line_retention_frontiers().is_empty(), "{source}");
+        }
+    }
+    for source in [
+        scan().replace(
+            "#Locate(rows, count) -> :Skip(1u64)",
+            "#Locate(rows, count) -> :Take(1u64, 1u64)",
+        ),
+        scan().replace(":Take(first, i + 1u64)", ":Take(first + 0u64, i + 1u64)"),
+    ] {
+        for plan in plans(&source) {
+            assert_eq!(plan.text_line_retention_frontiers().len(), 1, "{source}");
+        }
+    }
 }
 
 #[test]

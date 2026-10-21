@@ -56,7 +56,10 @@ fn selected_template(
 }
 // IR25 pins deferred final counts, bounded scan progress and the unvisited
 // EOF exit boundary before captured-source consumers acquire ownership.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 25;
+// IR26 keeps a returned range open until its requested endpoint is physically
+// available. The frontier itself is unchanged, so its old hash cannot safely
+// authenticate Objects emitted before the corrected retention instructions.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 26;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

@@ -8,12 +8,15 @@ pub(super) const CARRIAGE_RETURN: u8 = 1;
 // that LLVM leaves scalar. Callers interpret the returned flags afterwards.
 #[inline(never)]
 pub(super) fn flags(text: &str) -> u8 {
-    // A full reduction (not an early-exit byte search) lets the compiler use
-    // ordinary vector instructions. Only actual String bytes are borrowed;
-    // no unaligned/wide pointer reads, target assumptions or extra scratch.
-    text.as_bytes().iter().fold(0, |status, &byte| {
-        status | (byte & NON_ASCII) | u8::from(byte == b'\r')
-    })
+    // Keep raw byte bits and all-bits comparison masks in separate reductions.
+    // Mask/normalize their final totals once, not every vector lane. The CR
+    // term is exactly zero or 0xff; wrapping subtraction is intentional.
+    // Only actual String bytes are borrowed, with no target-specific reads,
+    // extra allocation, early exit, or change to the caller's scan admission.
+    let (raw, cr) = text.as_bytes().iter().fold((0u8, 0u8), |(raw, cr), &byte| {
+        (raw | byte, cr | 0u8.wrapping_sub(u8::from(byte == b'\r')))
+    });
+    (raw & NON_ASCII) | u8::from(cr != 0)
 }
 
 /// Exact CRLF recognition, including Unicode, isolated CR and NUL. Callers

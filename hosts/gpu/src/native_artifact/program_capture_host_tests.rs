@@ -488,6 +488,244 @@ fn unicode_suspension_keeps_canonical_cells_and_finishes_in_the_same_authorized_
 }
 
 #[test]
+fn extra_count_lookahead_uses_snapshot_before_one_byte_delivery() {
+    let source = hosted_scan().replace(
+        "| i > count -> :Ready(first, count + 1u64)\n",
+        "| i > count -> :Ready(first, count + 1u64)\n    | i + 1u64 > count -> :Ready(first, i)\n",
+    );
+    let input = b"open\nA\nclose\nB\nC\n";
+    let (artifacts, catalog) = fixture::artifacts(&source);
+    for artifact in artifacts {
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let memory = ManagedMemoryBudget::new(TEST_MEMORY_LIMIT);
+        let (mut snapshot, reference) = runtime(input, false, None);
+        execute(
+            &mut snapshot,
+            &artifact,
+            &jit,
+            fixture::limits(),
+            input.len() as u64,
+            &reference,
+            &memory,
+        )
+        .unwrap();
+        assert_eq!(reference.lock().unwrap().output, "A");
+        snapshot.shutdown().unwrap();
+
+        // This provider offers capture and returns exactly one byte per read.
+        // Before the proof fix, capture saved STATUS_ABI as soon as row i was
+        // available but the added count comparison needed row i + 1.
+        let (mut offered, trace) = runtime(input, true, None);
+        execute(
+            &mut offered,
+            &artifact,
+            &jit,
+            fixture::limits(),
+            input.len() as u64,
+            &trace,
+            &memory,
+        )
+        .unwrap();
+        assert!(jit.descriptor().prefix.is_none());
+        let trace = trace.lock().unwrap();
+        assert_eq!((trace.captures, trace.snapshots, trace.writes), (0, 1, 1));
+        assert_eq!(trace.output, reference.lock().unwrap().output);
+        assert_eq!(trace.position, input.len());
+        assert!(!trace.body_failed_before_eof);
+        assert_eq!(trace.first_failure_position, None);
+        assert_eq!(memory.used_bytes(), 0);
+        drop(trace);
+        fixture::no_resident(&offered);
+        offered.shutdown().unwrap();
+    }
+}
+
+#[test]
+fn returned_forward_endpoints_wait_for_real_rows_in_original_and_decoded_capture() {
+    let input = b"open\nA\nclose\nB\nC\n";
+    for (transition, expected) in [
+        (":Ready(first, i + 2u64)", "A|close|B"),
+        (":Ready(first, i + 1u64)", "A|close"),
+        (":Ready(i + 2u64, i + 3u64)", "C"),
+        (":Ready(i + 2u64, i + 2u64)", ""),
+        (":Ready(i + 3u64, i + 2u64)", ""),
+    ] {
+        let source = hosted_scan().replace(":Ready(first, i)", transition);
+        let (artifacts, catalog) = fixture::artifacts(&source);
+        for artifact in artifacts {
+            let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            assert!(jit.descriptor().prefix.is_some(), "{transition}");
+            let memory = ManagedMemoryBudget::new(TEST_MEMORY_LIMIT);
+            let (mut ordinary, reference) = fixture::runtime(input, true);
+            fixture::execute(&mut ordinary, &artifact, &jit, fixture::limits(), &memory).unwrap();
+            assert_eq!(reference.lock().unwrap().output, expected);
+            fixture::no_resident(&ordinary);
+            ordinary.shutdown().unwrap();
+            // The provider physically returns one byte per read. The closing
+            // row arrives before either forward-looking endpoint is available.
+            let (mut streaming, trace) = runtime(input, true, None);
+            execute(
+                &mut streaming,
+                &artifact,
+                &jit,
+                fixture::limits(),
+                input.len() as u64,
+                &trace,
+                &memory,
+            )
+            .unwrap();
+            let trace = trace.lock().unwrap();
+            assert_eq!((trace.captures, trace.snapshots, trace.writes), (1, 0, 1));
+            assert_eq!(trace.position, input.len());
+            assert_eq!(trace.output, expected);
+            assert!(!trace.body_failed_before_eof);
+            assert_eq!(memory.used_bytes(), 0);
+            drop(trace);
+            fixture::no_resident(&streaming);
+            streaming.shutdown().unwrap();
+        }
+    }
+}
+
+#[test]
+fn unavailable_terminal_endpoint_preserves_eof_selector_error_and_source_priority() {
+    let source = hosted_scan().replace(":Ready(first, i)", ":Ready(first, i + 2u64)");
+    let input = b"open\nA\nclose\n";
+    let (artifacts, catalog) = fixture::artifacts(&source);
+    for artifact in artifacts {
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        assert!(jit.descriptor().prefix.is_some());
+        let memory = ManagedMemoryBudget::new(TEST_MEMORY_LIMIT);
+        let (mut ordinary, reference) = fixture::runtime(input, true);
+        let error = fixture::execute(&mut ordinary, &artifact, &jit, fixture::limits(), &memory)
+            .unwrap_err();
+        let CanonicalNativeResourceRunError::BeforeCommit {
+            phase: "native execution",
+            error,
+            ..
+        } = error
+        else {
+            panic!("ordinary reference must fail at its maintained selector");
+        };
+        let expected = error.kind_as::<NativeProgramExecutionError>().unwrap();
+        assert!(
+            matches!(
+                expected,
+                NativeProgramExecutionError::Library {
+                    error: mech_engine::native_artifact::NativeCollectionInvocationError::Kernel(
+                        mech_core::ResidentKernelError::InvalidInput
+                    ),
+                    ..
+                }
+            ),
+            "{expected:?}"
+        );
+        let expected = format!("{expected:?}");
+        assert!(reference.lock().unwrap().output.is_empty());
+        ordinary.shutdown().unwrap();
+        for fail_at in [None, Some(input.len())] {
+            let (mut streaming, trace) = runtime(input, true, fail_at);
+            let error = execute(
+                &mut streaming,
+                &artifact,
+                &jit,
+                fixture::limits(),
+                input.len() as u64,
+                &trace,
+                &memory,
+            )
+            .unwrap_err();
+            let CanonicalNativeResourceRunError::BeforeCommit { phase, error, .. } = error else {
+                panic!("failure must remain before atomic publication");
+            };
+            if fail_at.is_some() {
+                assert_eq!(phase, "capture");
+                assert!(
+                    error
+                        .kind_as::<mech_terminal::CliResourceProviderError>()
+                        .is_some()
+                );
+            } else {
+                assert_eq!(phase, "native execution");
+                let actual = error.kind_as::<NativeProgramExecutionError>().unwrap();
+                assert_eq!(
+                    format!("{actual:?}"),
+                    expected,
+                    "preserve the maintained native selector's exact origin and error"
+                );
+            }
+            let trace = trace.lock().unwrap();
+            assert_eq!((trace.captures, trace.snapshots, trace.writes), (1, 0, 0));
+            assert_eq!(trace.position, input.len());
+            assert!(!trace.body_failed_before_eof);
+            assert!(trace.output.is_empty());
+            assert_eq!(memory.used_bytes(), 0);
+            drop(trace);
+            fixture::no_resident(&streaming);
+            streaming.shutdown().unwrap();
+        }
+    }
+}
+
+#[test]
+fn zero_live_retention_seed_preserves_successful_empty_original_and_decoded_execution() {
+    let source = hosted_scan()
+        .replace(
+            "#Locate(rows, count) -> :Skip(1u64)",
+            "#Locate(rows, count) -> :Take(0u64, 1u64)",
+        )
+        .replace(
+            "| i > count -> :Ready(first, count + 1u64)",
+            "| i > count -> :Ready(first, first)",
+        );
+    let (artifacts, catalog) = fixture::artifacts(&source);
+    for artifact in artifacts {
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let memory = ManagedMemoryBudget::new(TEST_MEMORY_LIMIT);
+        let (mut snapshot, reference) = runtime(b"", false, None);
+        execute(
+            &mut snapshot,
+            &artifact,
+            &jit,
+            fixture::limits(),
+            0,
+            &reference,
+            &memory,
+        )
+        .unwrap();
+        assert_eq!(reference.lock().unwrap().writes, 1);
+        assert!(reference.lock().unwrap().output.is_empty());
+        snapshot.shutdown().unwrap();
+
+        // The complete program returns an empty range without selecting row
+        // zero. An unproved initial retention coordinate must not instead
+        // save a permanent failure during the zero-available native entry.
+        let (mut offered, trace) = runtime(b"", true, None);
+        execute(
+            &mut offered,
+            &artifact,
+            &jit,
+            fixture::limits(),
+            0,
+            &trace,
+            &memory,
+        )
+        .unwrap();
+        assert!(jit.descriptor().prefix.is_none());
+        let trace = trace.lock().unwrap();
+        assert_eq!((trace.captures, trace.snapshots, trace.writes), (0, 1, 1));
+        assert!(trace.output.is_empty());
+        assert_eq!(trace.position, 0);
+        assert!(!trace.body_failed_before_eof);
+        assert_eq!(trace.first_failure_position, None);
+        assert_eq!(memory.used_bytes(), 0);
+        drop(trace);
+        fixture::no_resident(&offered);
+        offered.shutdown().unwrap();
+    }
+}
+
+#[test]
 fn unsupported_proof_provider_or_work_bound_selects_snapshot_before_acquisition() {
     for (source, input, offered, tight) in [
         (ECHO.to_owned(), INPUT, true, false),

@@ -4,14 +4,23 @@
 /// line's contents, not its cardinality; other Unicode separators are ordinary
 /// payload, and LF cannot occur inside a multibyte UTF-8 code point.
 ///
-/// Callers admit the complete byte scan before entering. Keeping this simple
-/// reduction out of the construction loop lets LLVM vectorize it independently.
+/// Callers admit the complete byte scan before entering. Bounded partial sums
+/// keep the byte predicates narrow instead of widening every lane to usize.
 #[inline(never)]
 pub(crate) fn count(text: &str) -> usize {
     let bytes = text.as_bytes();
     let delimiters = bytes
-        .iter()
-        .map(|&byte| usize::from(byte == b'\n'))
+        .chunks(128)
+        .map(|chunk| {
+            // At most 128 zero-or-one terms: neither an intermediate nor the
+            // final u8 sum can wrap, including a chunk made entirely of LF.
+            // Only the bounded scalar total widens; no target-specific code,
+            // input-class dispatch, extra allocation or wider byte read.
+            chunk
+                .iter()
+                .map(|&byte| u8::from(byte == b'\n'))
+                .sum::<u8>() as usize
+        })
         .sum::<usize>();
     // If the suffix exists, its final non-LF byte means delimiters < len.
     // The sum therefore cannot overflow for any valid slice.
@@ -80,6 +89,23 @@ mod tests {
                     );
                 }
             }
+        }
+    }
+
+    #[test]
+    fn narrow_batches_never_wrap_dense_delimiters_or_lose_unterminated_tails() {
+        for length in [127, 128, 129, 255, 256, 257, 32768, 65535, 65536, 131071] {
+            let mut text = "\n".repeat(length);
+            assert_eq!(count(&text), length);
+            text.push('x');
+            assert_eq!(count(&text), length + 1);
+            text.push('\r');
+            assert_eq!(count(&text), length + 1);
+            text.push('\n');
+            assert_eq!(count(&text), length + 1);
+            text.push('é');
+            assert_eq!(count(&text), length + 2);
+            assert_eq!(count(&text), text.lines().count());
         }
     }
 }

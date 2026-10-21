@@ -13,13 +13,58 @@ use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntC
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::NativeMatchAction;
 
+#[cfg(test)]
+#[path = "program_prefix_codegen_tests.rs"]
+mod tests;
+
+/// Per-entry SSA facts. The owning session keeps these frame fields immutable
+/// across every callback, but ordinary local stores can obscure that property
+/// from alias analysis. Load once before activation/resume diverge; a later
+/// synchronous continuation gets a fresh bundle, never a cached source count.
+#[derive(Clone, Copy)]
+pub(in crate::native_artifact) struct EntryFacts {
+    pub is_prefix: Value,
+    pub final_input: Value,
+    pending_count: Value,
+    available: Value,
+}
+impl EntryFacts {
+    pub fn load(b: &mut FunctionBuilder, frame: Value, phase: Value) -> Self {
+        let eof = b.ins().load(
+            types::I64,
+            MemFlags::new(),
+            frame,
+            core::mem::offset_of!(program_abi::Frame, input_eof) as i32,
+        );
+        let available = b.ins().load(
+            types::I64,
+            MemFlags::new(),
+            frame,
+            core::mem::offset_of!(program_abi::Frame, available_lines) as i32,
+        );
+        let is_prefix = b
+            .ins()
+            .icmp_imm(IntCC::Equal, phase, program_abi::PHASE_PREFIX as i64);
+        let final_input = b.ins().icmp_imm(IntCC::Equal, eof, 1);
+        // Keep the original distinct tests: malformed EOF values are neither
+        // successful EOF nor an unfinished count. Do not fold this to !final.
+        let unfinished = b.ins().icmp_imm(IntCC::Equal, eof, 0);
+        let pending_count = b.ins().band(is_prefix, unfinished);
+        Self {
+            is_prefix,
+            final_input,
+            pending_count,
+            available,
+        }
+    }
+}
+
 /// Branch around an unfinished count definition. The owner installs all of
 /// the proved identical count slots from final source facts before EOF entry;
 /// no prefix length or placeholder becomes a language value in the meantime.
 pub(in crate::native_artifact) fn count_store(
     b: &mut FunctionBuilder,
-    frame: Value,
-    phase: Value,
+    facts: EntryFacts,
     region: Option<&Region>,
     site: usize,
 ) -> Option<Block> {
@@ -34,26 +79,12 @@ pub(in crate::native_artifact) fn count_store(
     {
         return None;
     }
-    let pending = count_pending(b, frame, phase);
     let ordinary = b.create_block();
     let joined = b.create_block();
-    b.ins().brif(pending, joined, &[], ordinary, &[]);
+    b.ins()
+        .brif(facts.pending_count, joined, &[], ordinary, &[]);
     b.switch_to_block(ordinary);
     Some(joined)
-}
-
-fn count_pending(b: &mut FunctionBuilder, frame: Value, phase: Value) -> Value {
-    let prefix = b
-        .ins()
-        .icmp_imm(IntCC::Equal, phase, program_abi::PHASE_PREFIX as i64);
-    let eof = b.ins().load(
-        types::I64,
-        MemFlags::new(),
-        frame,
-        core::mem::offset_of!(program_abi::Frame, input_eof) as i32,
-    );
-    let unfinished = b.ins().icmp_imm(IntCC::Equal, eof, 0);
-    b.ins().band(prefix, unfinished)
 }
 
 /// The count proof covers every numeric read. Before EOF, identity aliases
@@ -61,9 +92,8 @@ fn count_pending(b: &mut FunctionBuilder, frame: Value, phase: Value) -> Value {
 /// `index > final_count` predicate false. All other reads await the EOF edge.
 pub(in crate::native_artifact) fn count_action(
     b: &mut FunctionBuilder,
-    frame: Value,
     locals: Value,
-    phase: Value,
+    facts: EntryFacts,
     region: Option<&Region>,
     site: usize,
     action: &NativeMatchAction,
@@ -80,25 +110,19 @@ pub(in crate::native_artifact) fn count_action(
     if comparison.is_none() && !count.aliases().contains(&(site as u32)) {
         return Ok(false);
     }
-    let pending = count_pending(b, frame, phase);
     let unfinished = b.create_block();
     let ordinary = b.create_block();
     let joined = b.create_block();
-    b.ins().brif(pending, unfinished, &[], ordinary, &[]);
+    b.ins()
+        .brif(facts.pending_count, unfinished, &[], ordinary, &[]);
     b.switch_to_block(unfinished);
     if let Some(comparison) = comparison {
         let index = super::super::control_compiler::load(b, locals, comparison.index())?;
-        let available = b.ins().load(
-            types::I64,
-            MemFlags::new(),
-            frame,
-            core::mem::offset_of!(program_abi::Frame, available_lines) as i32,
-        );
         // The proved original header must have paused before an unavailable
         // index reaches this site. Check that invariant without loading count.
         let covered = b
             .ins()
-            .icmp(IntCC::UnsignedLessThanOrEqual, index, available);
+            .icmp(IntCC::UnsignedLessThanOrEqual, index, facts.available);
         guard(b, covered, error, STATUS_ABI);
         let false_ = b.ins().iconst(types::I64, 0);
         b.ins().store(
@@ -143,9 +167,8 @@ pub(in crate::native_artifact) fn resume(
 /// owning session can release external row loans before final range consumers.
 pub(in crate::native_artifact) fn scanned(
     b: &mut FunctionBuilder,
-    frame: Value,
     locals: Value,
-    phase: Value,
+    facts: EntryFacts,
     region: &Region,
     borrowed: &program_borrowed_layout::Layout,
     closed: &program_tail_layout::Layout,
@@ -154,19 +177,9 @@ pub(in crate::native_artifact) fn scanned(
 ) -> Result<(), NativeCompileError> {
     let finish = b.create_block();
     let proceed = b.create_block();
-    let prefix = b
-        .ins()
-        .icmp_imm(IntCC::Equal, phase, program_abi::PHASE_PREFIX as i64);
-    b.ins().brif(prefix, finish, &[], proceed, &[]);
+    b.ins().brif(facts.is_prefix, finish, &[], proceed, &[]);
     b.switch_to_block(finish);
-    let eof = b.ins().load(
-        types::I64,
-        MemFlags::new(),
-        frame,
-        core::mem::offset_of!(program_abi::Frame, input_eof) as i32,
-    );
-    let final_input = b.ins().icmp_imm(IntCC::Equal, eof, 1);
-    guard(b, final_input, error, STATUS_ABI);
+    guard(b, facts.final_input, error, STATUS_ABI);
     let zero = b.ins().iconst(types::I64, 0);
     let layout = &borrowed.regions[region.borrowed];
     for word in layout.ready..layout.end {
@@ -195,9 +208,8 @@ pub(in crate::native_artifact) fn scanned(
 
 pub(in crate::native_artifact) fn gate(
     b: &mut FunctionBuilder,
-    frame: Value,
     locals: Value,
-    phase: Value,
+    facts: EntryFacts,
     region: &Region,
     borrowed: &program_borrowed_layout::Layout,
     closed: &program_tail_layout::Layout,
@@ -207,26 +219,11 @@ pub(in crate::native_artifact) fn gate(
     let prefix = b.create_block();
     let evaluate = b.create_block();
     let proceed = b.create_block();
-    let prefix_phase = b
-        .ins()
-        .icmp_imm(IntCC::Equal, phase, program_abi::PHASE_PREFIX as i64);
-    b.ins().brif(prefix_phase, prefix, &[], proceed, &[]);
+    b.ins().brif(facts.is_prefix, prefix, &[], proceed, &[]);
     b.switch_to_block(prefix);
-    let eof = b.ins().load(
-        types::I64,
-        MemFlags::new(),
-        frame,
-        core::mem::offset_of!(program_abi::Frame, input_eof) as i32,
-    );
-    let finished = b.ins().icmp_imm(IntCC::Equal, eof, 1);
-    b.ins().brif(finished, proceed, &[], evaluate, &[]);
+    b.ins().brif(facts.final_input, proceed, &[], evaluate, &[]);
     b.switch_to_block(evaluate);
-    let available = b.ins().load(
-        types::I64,
-        MemFlags::new(),
-        frame,
-        core::mem::offset_of!(program_abi::Frame, available_lines) as i32,
-    );
+    let available = facts.available;
     let ordinal = b
         .ins()
         .load(types::I64, MemFlags::new(), locals, offset(region.carrier)?);
@@ -287,10 +284,19 @@ pub(in crate::native_artifact) fn gate(
             let nonempty = b.ins().icmp(IntCC::UnsignedLessThan, first, end);
             // Both unordered and equal returned endpoints mean an empty
             // result under the original nonempty guard. Never revive bytes.
+            let first = b.ins().select(nonempty, first, one);
+            let end = b.ins().select(nonempty, end, one);
+            // Liveness proves the lower bound, not endpoint availability.
+            // Keep a forward-looking range open until its actual cells arrive.
+            // EOF still takes the ordinary selected access path, including its
+            // original out-of-range error when the requested end never arrives.
+            let complete = b
+                .ins()
+                .icmp(IntCC::UnsignedLessThanOrEqual, end, completed_end);
             (
-                b.ins().select(nonempty, first, one),
-                b.ins().select(nonempty, end, one),
-                one,
+                b.ins().umin(first, completed_end),
+                b.ins().select(complete, end, zero),
+                b.ins().select(complete, one, zero),
             )
         } else {
             let mut first = None;

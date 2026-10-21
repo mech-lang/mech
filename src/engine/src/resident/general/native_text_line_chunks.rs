@@ -43,6 +43,39 @@ struct Chunk {
     bytes: Bytes,
     offsets: Option<Offsets>,
 }
+// Rust does not guarantee Box/Vec/Option aggregate layouts. Preserve the
+// existing directory-capacity and source-work debits on EACH compiled target;
+// a layout change needs build-time review, never a new runtime capture panic.
+const _: () = {
+    #[allow(
+        dead_code,
+        reason = "legacy field layouts are inspected at compile time to preserve admitted directory capacity"
+    )]
+    struct UncachedOffsets {
+        values: Vec<u32>,
+        _claim: Claim,
+    }
+    #[allow(
+        dead_code,
+        reason = "legacy field layouts are inspected at compile time to preserve admitted directory capacity"
+    )]
+    struct UncachedChunk {
+        first: u64,
+        bytes: Bytes,
+        offsets: Option<UncachedOffsets>,
+    }
+    assert!(core::mem::size_of::<Offsets>() == core::mem::size_of::<UncachedOffsets>());
+    assert!(core::mem::align_of::<Offsets>() == core::mem::align_of::<UncachedOffsets>());
+    assert!(
+        core::mem::size_of::<Option<Offsets>>() == core::mem::size_of::<Option<UncachedOffsets>>()
+    );
+    assert!(
+        core::mem::align_of::<Option<Offsets>>()
+            == core::mem::align_of::<Option<UncachedOffsets>>()
+    );
+    assert!(core::mem::size_of::<Chunk>() == core::mem::size_of::<UncachedChunk>());
+    assert!(core::mem::align_of::<Chunk>() == core::mem::align_of::<UncachedChunk>());
+};
 impl Chunk {
     fn count(&self) -> u64 {
         self.offsets
@@ -67,6 +100,21 @@ impl Chunk {
         } else {
             (index == 0).then_some(self.bytes.text.as_str())
         }
+    }
+    fn payload_bytes(&self, first: u64, end: u64) -> Option<u64> {
+        if first == self.first && end == self.end() {
+            return Some(
+                self.offsets
+                    .as_ref()
+                    .map_or(self.bytes.text.len(), |offsets| offsets.payload_bytes)
+                    as u64,
+            );
+        }
+        // A partial edge chunk keeps the original exact cell inspection.
+        // No delimiter-inclusive upper bound changes the work debit.
+        (first..end).try_fold(0u64, |payload, ordinal| {
+            payload.checked_add(self.line(ordinal)?.len() as u64)
+        })
     }
 }
 
@@ -379,14 +427,15 @@ impl NativeTextLineChunks {
                 .lines
                 .checked_add(count as u64)
                 .ok_or(InvokeError::InvalidInput)?;
+            let payload_bytes = complete.len() - count - crlf;
             self.facts.payload = self
                 .facts
                 .payload
-                .checked_add((complete.len() - count - crlf) as u64)
+                .checked_add(payload_bytes as u64)
                 .ok_or(InvokeError::InvalidInput)?;
             if self.upper.is_none() {
                 let bytes = Bytes::copy(complete, &self.account)?;
-                let offsets = Offsets::new(complete, count, &self.account)?;
+                let offsets = Offsets::new(complete, count, payload_bytes, &self.account)?;
                 self.push_chunk(Chunk {
                     first,
                     bytes,

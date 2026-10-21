@@ -500,6 +500,20 @@ fn frontier(
         }
         *index = Some(field);
     }
+    // The generated header waits for the current read ordinal, not arbitrary
+    // count-comparison operands. Every comparison that can be deferred must
+    // name that SAME state field with no lookahead. Otherwise an additional
+    // `i + 1 > count` could reach its original comparison before row i + 1
+    // exists and turn an ordinary pause into a permanent native ABI failure.
+    // Reuse the all-definitions symbol proof; unproved relations retain the
+    // complete-snapshot strategy before any source acquisition occurs.
+    for guard in read.count().guards() {
+        let word = symbols.scalar(guard.index())?;
+        let (state, field) = word.state()?;
+        if word.add != 0 || indices.get(state as usize).copied().flatten() != Some(field) {
+            return None;
+        }
+    }
     let mut ranges = vec![None; variants.len()];
     for returned in symbols.alternatives(tail.returned())? {
         let a = *returned.get(result_fields.0)?;
@@ -597,8 +611,12 @@ fn frontier(
             if seed[index].atom.is_some() || seed[index].add == 0 {
                 return None;
             }
+            // Every live retention ordinal is one-based, not only the read
+            // index. The liveness induction above admits only checked
+            // nonnegative additions from included current-state fields, so
+            // positive seeds keep all later open/nonempty bounds positive.
             for field in 1..width {
-                if keep[state][field] && seed[field].atom.is_some() {
+                if keep[state][field] && (seed[field].atom.is_some() || seed[field].add == 0) {
                     return None;
                 }
             }

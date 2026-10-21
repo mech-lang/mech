@@ -48,13 +48,7 @@ impl NativeTextLineChunks {
                 .and_then(|work| work.checked_add(4096))
                 .ok_or(InvokeError::InvalidInput)?,
         )?;
-        let mut payload = 0u64;
-        self.visit_window_cells(first, end, |text| {
-            payload = payload
-                .checked_add(text.len() as u64)
-                .ok_or(InvokeError::InvalidInput)?;
-            Ok(())
-        })?;
+        let payload = self.window_payload_bytes(first, end)?;
         self.account
             .debit(payload.checked_mul(4).ok_or(InvokeError::InvalidInput)?)?;
         let bytes = (count as u64)
@@ -99,6 +93,29 @@ impl NativeTextLineChunks {
             ascii,
             _claim: claim,
         })
+    }
+
+    fn window_payload_bytes(&self, first: u64, end: u64) -> Result<u64, InvokeError> {
+        let start = self.chunks.partition_point(|chunk| chunk.end() <= first);
+        let finish = self.chunks.partition_point(|chunk| chunk.first < end);
+        let mut seen = 0u64;
+        let mut payload = 0u64;
+        for chunk in self.chunks.range(start..finish) {
+            let first = first.max(chunk.first);
+            let end = end.min(chunk.end());
+            payload = payload
+                .checked_add(
+                    chunk
+                        .payload_bytes(first, end)
+                        .ok_or(InvokeError::InvalidInput)?,
+                )
+                .ok_or(InvokeError::InvalidInput)?;
+            seen += end - first;
+        }
+        if seen != end - first {
+            return Err(InvokeError::InvalidInput);
+        }
+        Ok(payload)
     }
 
     fn visit_window_cells(

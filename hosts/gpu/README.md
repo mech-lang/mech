@@ -158,44 +158,43 @@ contract is not a claim that whole-benchmark qualification is complete.
 ### Canonical k-nucleotide performance
 
 The [streaming timing and footprint receipt](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
-records a matched M1 comparison. The latest helper changes are pinned diagnostic
-measurements, not a fresh clean-source qualification. Sizes use decimal MB; peak
-RSS comes from separate process-memory runs.
+records the latest matched M1 diagnostic. Full-size streaming is now comparable
+in speed to retained secured execution, with 43.3% lower peak RSS. The 10M case
+still regresses by 4.35%; performance preservation across both sizes is unfinished.
 
 | Implementation | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Retained secured snapshot (`c0271df4f`) | 0.0681 s | 0.6305 s | 506.5 MB | 6.84 MB |
-| Initial secured streaming (`7227f2356`) | 0.0903 s | 0.8805 s | 287.3 MB | 7.14 MB |
-| Streaming with profiled helper fixes (diagnostic) | 0.0777 s | 0.7112 s | 287.4 MB | 7.10 MB |
+| Retained secured snapshot | 0.06885 s | 0.65041 s | 506.5 MB | 6.843 MB |
+| Previous streaming (v1139) | 0.07329 s | 0.65815 s | 287.3 MB | 7.095 MB |
+| Current streaming (v1142) | 0.07184 s | 0.64141 s | 287.3 MB | 7.095 MB |
 
-Twelve balanced timing rounds and three separate peak-memory runs per binary and
-size include startup, the complete secured round and report publication. All
-96 outputs and complete security reports match; these are not isolated capability
-overhead measurements. The helper fixes remove repeated chunk searches, per-line
-ASCII scans and general CRLF substring searches without changing any work debit.
-They improve full-size streaming by 19.2%, but it remains 12.8% slower than retained
-secured execution: the performance-first requirement is **not met**. In the
-preceding matched batch, legacy direct I/O measured 0.9756 s / 228.9 MB / 3.16 MB.
-The roughly 200 MB/3.16 MB footprint target remains unfinished.
+Twelve balanced timing rounds per binary and size include startup, one complete
+secured round and report publication; three separate runs measure peak RSS.
+All 98 outputs and complete security reports match their expected results.
+Sizes use decimal MB. The 125M timing ranges overlap, so this is **not proof of a
+1.4% speedup**. Earlier approximately 0.639-second secured results remain valid;
+the table uses controls remeasured in this same batch. These are pinned
+dirty-source diagnostics, not final clean-source qualification or isolated
+capability-overhead measurements.
 
-The current ABI12/IR25/work-policy35 implementation connects bounded UTF-8
-capture to the same authorized CLI resource and one runtime transaction. General
-count, progress and retention proofs let the generated Mech scanner consume
-packed line windows and discard dead prefixes without a complete input String
-or line-matrix snapshot. Final count and shape admission wait for successful
-EOF; input/source failures precede saved speculative body failures. No partial
-count is published as a language value and no Rust workload scanner is added.
+The current ABI12/IR26/work-policy35 implementation streams bounded UTF-8 line
+windows through the same authorized CLI resource and one runtime transaction.
+The generated Mech scanner discards proved-dead prefixes; the final join releases
+consumed chunks. Genuine count/shape admission waits for successful EOF, and
+source failures precede saved body failures. No partial count, Rust workload
+scanner or second evaluator is introduced; unsupported proofs use the existing
+snapshot storage strategy.
 
-After the generated scanner ends, its row loans are cleared before the final
-join. A unique, contiguous selection releases consumed chunks while constructing
-the result. Shared or reordered selections retain ordinary join semantics.
-Unsupported capture proofs/providers/budgets use the existing snapshot storage
-strategy, not another evaluator. Both strategies retain the original finite
-limits, selected factories, cumulative ledger and atomic publication.
+The latest general optimizations hoist entry-stable facts, maintain exact retained
+payload totals, use bounded line-count sums and reduce ASCII/CR masks separately.
+They do not loosen work accounting or cache permissions. Review fixes defer
+forward-range sealing until its endpoint arrives and reject unproved count
+lookahead or zero live retention seeds before capture. Stale IR25 objects are
+rejected; original and decoded IR26 builds produce identical executable bytes.
 
-Recovering the remaining runtime regression, further host size reduction, fresh
-clean-source qualification, clean review and green CI remain outstanding. The PR
-stays draft and unmerged until the user directs otherwise.
+The 10M regression, roughly 200 MB/3.16 MB reference footprint target, fresh
+clean-source qualification, clean review and green CI remain outstanding.
+The PR stays draft and unmerged until the user directs otherwise.
 
 ### Canonical native architecture and limits
 

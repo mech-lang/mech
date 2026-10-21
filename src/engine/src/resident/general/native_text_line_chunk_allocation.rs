@@ -194,11 +194,17 @@ impl Bytes {
     }
 }
 pub(super) struct Offsets {
-    pub values: Vec<u32>,
+    pub values: Box<[u32]>,
+    pub payload_bytes: usize,
     _claim: Claim,
 }
 impl Offsets {
-    pub fn new(text: &str, count: usize, account: &Rc<Account>) -> Result<Self, InvokeError> {
+    pub fn new(
+        text: &str,
+        count: usize,
+        payload_bytes: usize,
+        account: &Rc<Account>,
+    ) -> Result<Self, InvokeError> {
         let bytes = count
             .checked_mul(core::mem::size_of::<u32>())
             .ok_or(InvokeError::InvalidInput)?;
@@ -218,8 +224,14 @@ impl Offsets {
         if values.len() != count {
             return Err(InvokeError::InvalidInput);
         }
+        // Both exact-capacity checks above precede this conversion: the same
+        // allocation becomes immutable, without a shrink/reallocation peak.
+        // Cache the producer's already resolved LF/CRLF payload cardinality
+        // in place of Vec's now-redundant capacity word. Chunk checks the full
+        // enclosing layout at compile time, not during source acquisition.
         Ok(Self {
-            values,
+            values: values.into_boxed_slice(),
+            payload_bytes,
             _claim: claim,
         })
     }

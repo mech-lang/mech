@@ -4,6 +4,18 @@
     {
       "directive": "allow",
       "expires_release": "0.5.0",
+      "expiry_condition": "Remove when a versioned source-accounting change retires the pre-cache directory layout compatibility witness.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 2,
+      "owner": "Canonical native text capture",
+      "path": "src/engine/src/resident/general/native_text_line_chunks.rs",
+      "production_or_test": "production",
+      "reason": "legacy field layouts are inspected at compile time to preserve admitted directory capacity"
+    },
+    {
+      "directive": "allow",
+      "expires_release": "0.5.0",
       "expiry_condition": "Remove when optional native lowering and witness tests share a feature-gated seal-reader module.",
       "introduced_release": "0.4.0",
       "lint": "dead_code",

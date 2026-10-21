@@ -680,9 +680,11 @@ impl<'a> Prepared<'a> {
                 prefix::validate_window(
                     self.descriptor,
                     Some(prefix::Input {
-                        resume_site: self.descriptor.plan.activation_boundary().ok_or_else(
-                            || invalid("prefix lacks exact resume boundary"),
-                        )?,
+                        resume_site: self
+                            .descriptor
+                            .plan
+                            .activation_boundary()
+                            .ok_or_else(|| invalid("prefix lacks exact resume boundary"))?,
                         available,
                         eof,
                     }),
