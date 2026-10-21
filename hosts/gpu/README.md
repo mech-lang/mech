@@ -157,26 +157,41 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [latest matched comparison](../../docs/validation/canonical-knucleotide-ci-portability-v1.json)
-remeasures three binaries on the same M1 at both input sizes:
+The [current timing and footprint receipt](../../docs/validation/canonical-knucleotide-host-footprint-v1.json)
+compares three retained binaries on the same M1. Memory and executable sizes
+below use decimal MB; peak RSS comes from separate process-memory runs.
 
-| Implementation | 10M bases | 125M bases |
-| --- | ---: | ---: |
-| Legacy direct-I/O compiled body | 0.0915 s | 0.9748 s |
-| Previous secured application (`2a5cd26fbc`) | 0.0923 s | 0.9709 s |
-| Current measured secured application (`cb52cb9dc`) | 0.0924 s | 0.9715 s |
+| Implementation | 10M bases | 125M bases | 125M peak RSS | Executable |
+| --- | ---: | ---: | ---: | ---: |
+| Legacy direct I/O | 0.0916 s | 0.9756 s | 187.0 MB | 3.16 MB |
+| Previous secured application (`cb52cb9dc`) | 0.0920 s | 0.9608 s | 1,206.7 MB | 17.82 MB |
+| Current secured application (`fb47118f0`) | 0.0907 s | 0.9280 s | 964.8 MB | 12.89 MB |
 
-Twelve balanced rounds per size use the same observer and regular-file capture;
-all 78 correctness/timed outputs and 52 secured reports match. The runtime-only
-metadata portability correction shows no clear regression against the previous
-secured build. Against legacy, the secured median is 0.91 ms (1.00%) higher at
-10M and 3.37 ms (0.35%) lower at 125M. This is near-legacy performance, not a
-demonstrated full-size speed advantage or an isolated security-cost measurement.
-The measured source is pinned to `cb52cb9dc`; subsequent documentation-only
-changes are not relabeled as measurements. Grants, finite limits, accounting
-and emitted machine instructions are unchanged. Original and decoded builds
-are byte-identical. The earlier [borrowed-startup result](../../docs/validation/canonical-knucleotide-borrowed-startup-v1.json)
-and other historical evidence retain their original revision and session pins.
+Twelve balanced timing rounds per size retain all 78 outputs and 52 secured
+reports; every output and report matches. Six separate memory runs per binary
+and size retain both peak RSS and the distinct OS memory-footprint metric.
+The current build beats the previous secured build in all twelve paired rounds
+at both sizes. These measurements compare complete implementations on this
+machine; they do not isolate capability-check costs or establish an optimization
+ceiling. The [previous receipt](../../docs/validation/canonical-knucleotide-ci-portability-v1.json)
+retains its own measurements and source pins.
+
+The provider releases redundant raw stdin backing after successful text capture,
+preserving exact mixed byte/text reads and invalid-UTF-8 behavior. Detached host
+Strings move through the existing canonical finalizer without a temporary
+mutable cell and snapshot copy. Generated release workspaces strip symbols at
+speed optimization level 3. Grants, finite limits and accounting are unchanged.
+Original and decoded builds are byte-identical. The emitted Mech instructions
+differ only in constant-slot immediates induced by standalone nominal identity;
+the receipt records the exact constant bijection, instruction remaps and unchanged
+relocations.
+
+The executable contains its host and libraries and runs without Rust installed.
+The current application builder still invokes Cargo to compile its generated
+Rust launcher. Cranelift emits the Mech object without invoking rustc; a future
+prebuilt host package could remove the per-application Rust build while retaining
+the native linker and target-system dependencies. That distribution path is not
+implemented here.
 
 IR19/work policy29 retain one canonical compiler and **one host round** for
 capture, effect staging and atomic commit. Generic proofs lower closed control,
