@@ -157,38 +157,42 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [latest qualified timing and footprint receipt](../../docs/validation/canonical-knucleotide-catalog-footprint-v1.json)
+The [latest qualified timing and footprint receipt](../../docs/validation/canonical-knucleotide-private-lines-footprint-v1.json)
 compares three retained binaries on the same M1. Memory and executable sizes
 below use decimal MB; peak RSS comes from separate process-memory runs.
 
 | Implementation | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Legacy direct I/O | 0.0918 s | 0.9784 s | 180.9 MB | 3.16 MB |
-| Previous secured application (`fb47118f0`) | 0.0910 s | 0.9311 s | 952.6 MB | 12.89 MB |
-| Latest qualified secured application (`b9b4a105f`) | 0.0897 s | 0.9238 s | 950.1 MB | 7.47 MB |
+| Legacy direct I/O | 0.0920 s | 0.9750 s | 213.1 MB | 3.16 MB |
+| Previous secured application (`b9b4a105f`) | 0.0897 s | 0.9229 s | 958.1 MB | 7.47 MB |
+| Latest qualified secured application (`0402f8222`) | 0.0724 s | 0.6642 s | 616.1 MB | 7.52 MB |
 
 Twelve balanced timing rounds per size retain all 78 outputs and 52 secured
-reports; every output and report matches. Six separate memory runs per binary
+reports; outputs match the oracle and reports match their own qualified build.
+The new private storage has explicitly versioned accounting, not old counters.
+Six separate memory runs per binary
 and size retain both peak RSS and the distinct OS memory-footprint metric.
-The current build beats the previous secured build in twelve paired rounds at
-10M and ten at 125M. It beats the legacy binary in all twelve at both sizes.
+The current build beats both the previous secured build and the legacy binary
+in all twelve paired rounds at both sizes.
 These measurements compare complete implementations on this
 machine; they do not isolate capability-check costs or establish an optimization
-ceiling. The [previous receipt](../../docs/validation/canonical-knucleotide-host-footprint-v1.json)
+ceiling. The [previous receipt](../../docs/validation/canonical-knucleotide-catalog-footprint-v1.json)
 retains its own measurements and source pins.
 
-Memory and executable size remain unfinished: the reference is roughly
-180–200 MB peak RSS and 3.16 MB, not the current secured footprint. Removing
-unused bytecode factories primarily trims linked code, not input materialization;
-the 10M peak RSS actually rises from 115.1 to 119.0 MB in this diagnostic.
-Further reductions must preserve speed and the same capability, validation and
-accounting rules.
+Memory and executable size remain unfinished: the target is roughly 200 MB peak
+RSS and 3.16 MB, not the current secured footprint. Legacy RSS varies across
+diagnostics (previously 180.9 MB, 213.1 MB here). Private lines cut matched secured
+125M RSS by 35.7% and 10M RSS from 115.7 to 93.7 MB, but add about 0.05 MB of code.
+Further reductions must preserve speed, capabilities, validation and finite
+same-account accounting. Whole-input capture alone still retains 254.2 MB;
+general streaming fusion and additional host trimming remain unfinished.
 
 The provider releases redundant raw stdin backing after successful text capture,
 preserving exact mixed byte/text reads and invalid-UTF-8 behavior. Detached host
 Strings move through the existing canonical finalizer without a temporary
 mutable cell and snapshot copy. Generated release workspaces strip symbols at
-speed optimization level 3. Grants, finite limits and accounting are unchanged.
+speed optimization level 3. Grants and finite limits remain unchanged; new
+private-line accounting is distinguished by IR20/work policy30.
 Canonical linked launchers register only the canonical factory surface; the
 unused legacy bytecode factory catalog is not needed to validate their Objects.
 Original and decoded builds are byte-identical. The emitted Mech instructions
@@ -224,8 +228,7 @@ Complete-use proofs additionally allow private ASCII `text/lines` results to
 retain one admitted input owner and line index, shared by native scanners and
 selected joins. No canonical Matrix is fabricated. Unicode or escaping matrices
 keep ordinary construction; fallback does not renew the call allowance.
-This removes line copies, not whole-input capture: streaming remains unfinished,
-and the older timing receipt above does not qualify this new layout.
+This removes line copies, not whole-input capture: streaming remains unfinished.
 Startup use-count analysis streams semantic reads. Other read-only analyses
 borrow ordinary instruction descriptions too; all checks, virtual expansions
 and explicitly owned snapshots for rewriting remain.
