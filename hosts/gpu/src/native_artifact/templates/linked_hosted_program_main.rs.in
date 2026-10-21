@@ -294,6 +294,7 @@ fn run() -> Result<(), String> {
         |session, chunk| session.capture_chunk(chunk)
             .map_err(|error| mech_core::MechError::new(error, None)),
         |session, turn| {
+            let captured_lines = turn.text_capture().is_some();
             let report = session.resume_hosted_into(turn, &[], &mut candidates)
                 .map_err(|error| mech_core::MechError::new(error, None))?;
             let first_effect = candidates.len().checked_sub(effect_count)
@@ -303,7 +304,7 @@ fn run() -> Result<(), String> {
                     .ok_or_else(|| io_error("native completion omitted an effect payload"))?);
             }
             Ok(CanonicalNativeResourceCompletion {
-                result: report,
+                result: (report, captured_lines),
                 effects: effect_values.into_boxed_slice(),
             })
         },
@@ -317,7 +318,7 @@ fn run() -> Result<(), String> {
         && route.resident_rejected_turns == 0;
     let shutdown = runtime.shutdown().map_err(diagnostic);
     let execution = execution.map_err(diagnostic);
-    let native = match (execution, shutdown) {
+    let (native, captured_lines) = match (execution, shutdown) {
         (Ok(native), Ok(())) => native,
         (Err(error), Ok(())) | (Ok(_), Err(error)) => return Err(error),
         (Err(error), Err(cleanup)) => return Err(format!("{error}; shutdown: {cleanup}")),
@@ -332,6 +333,7 @@ fn run() -> Result<(), String> {
             "launch_sha256": hex(&Sha256::digest(&launch_bytes)),
             "native_aot": true,
             "hosted_phases": "admit-activate-capture-resume",
+            "input_storage": if captured_lines { "bounded-lines" } else { "snapshot" },
             "source_parser": false,
             "jit": false,
             "resident_body_evaluation": false,

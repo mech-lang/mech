@@ -6,6 +6,10 @@ use crate::native_artifact::JitProgramArtifact;
 use mech_engine::native_artifact::NativeLibraryWorkBudget;
 
 fn run_windowed(jit: &JitProgramArtifact, text: &str) {
+    run_windowed_delivery(jit, text, true);
+}
+
+fn run_windowed_delivery(jit: &JitProgramArtifact, text: &str, incremental: bool) {
     let descriptor = jit.descriptor();
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
     assert_eq!(descriptor.plan.transport_input_count(), 1);
@@ -52,6 +56,9 @@ fn run_windowed(jit: &JitProgramArtifact, text: &str) {
     for character in text.chars() {
         let mut bytes = [0; 4];
         owner.push(character.encode_utf8(&mut bytes)).unwrap();
+        if !incremental {
+            continue;
+        }
         let available = owner.available_lines().unwrap();
         let first = if sealed.is_some() {
             available + 1
@@ -124,6 +131,16 @@ fn run_windowed(jit: &JitProgramArtifact, text: &str) {
 }
 
 #[test]
+fn first_eof_window_runs_source_before_installing_final_count() {
+    for artifact in call_cache_tests::artifacts(source()) {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        for text in ["", "open\nA\nclose\n", "open\n猫\nclose\n"] {
+            run_windowed_delivery(&jit, text, false);
+        }
+    }
+}
+
+#[test]
 fn completed_utf8_cells_feed_emitted_windows_and_drop_every_loan_before_discard() {
     for artifact in call_cache_tests::artifacts(source()) {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
@@ -188,7 +205,7 @@ fn foreign_producer_or_work_ledger_and_false_extent_fail_before_native_entry() {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let other_jit =
             JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
-        for mode in 0..4 {
+        for mode in 0..7 {
             let descriptor = jit.descriptor();
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
             let inputs = [string_value(
@@ -202,12 +219,12 @@ fn foreign_producer_or_work_ledger_and_false_extent_fail_before_native_entry() {
             let mut prepared = Prepared::new(descriptor, limits(), &memory).unwrap();
             prepared.activate(&mut entry).unwrap();
             prepared.import_turn(&inputs, &[], &outputs).unwrap();
-            let library = if mode == 1 {
+            let library = if mode == 1 || mode == 5 {
                 NativeLibraryWorkBudget::new(1 << 40, 1 << 32, &memory).unwrap()
             } else {
                 prepared.state.as_ref().unwrap().library.clone()
             };
-            let source_descriptor = if mode == 0 {
+            let source_descriptor = if mode == 0 || mode == 4 {
                 other_jit.descriptor()
             } else {
                 descriptor
@@ -227,19 +244,28 @@ fn foreign_producer_or_work_ledger_and_false_extent_fail_before_native_entry() {
                 .prepare_text_line_chunks(128, 128, limits().library, &library)
                 .unwrap();
             owner.push("open\nA\nclose\n").unwrap();
+            if mode >= 4 {
+                owner.finish().unwrap();
+            }
             let window = owner.borrow_window(1, 4).unwrap();
+            let before = library.used();
             let mut calls = 0;
             let result = prepared.run_prefix_window(
                 &mut |frame| {
                     calls += 1;
                     entry(frame)
                 },
-                if mode == 2 { 2 } else { 3 },
-                mode == 3,
+                if mode == 2 || mode == 6 { 2 } else { 3 },
+                mode >= 3,
                 Some(&window),
             );
             assert!(result.is_err(), "mode {mode}");
             assert_eq!(calls, 0);
+            assert_eq!(
+                library.used(),
+                before,
+                "invalid window must not debit or refill work"
+            );
             assert!(outputs.iter().all(Option::is_none));
             drop(window);
             drop((prepared, owner, library, inputs, outputs));

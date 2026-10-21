@@ -671,6 +671,32 @@ impl<'a> Prepared<'a> {
         {
             return Err(invalid("invalid, regressing or completed native prefix"));
         }
+        if eof && self.prefix.is_none() {
+            if let Some(window) = window {
+                // Reject a false EOF extent, producer or account before even
+                // the snapshot prelude can enter native code. Binding debits
+                // the existing source account; it creates no new allowance.
+                let state = self.state.as_ref().unwrap();
+                prefix::validate_window(
+                    self.descriptor,
+                    Some(prefix::Input {
+                        resume_site: self.descriptor.plan.activation_boundary().ok_or_else(
+                            || invalid("prefix lacks exact resume boundary"),
+                        )?,
+                        available,
+                        eof,
+                    }),
+                    window,
+                    &state.library,
+                )?;
+            }
+            // A snapshot driver can receive EOF before its first window (in
+            // particular for empty input). Execute the original source/length
+            // visits and stop at the zero-available header before inspecting
+            // their genuine final geometry. No count slot is initialized by
+            // this pre-EOF entry, and no finished window is mislabelled pending.
+            self.run_prefix_window(entry, 0, false, None)?;
+        }
         let resume_site = self
             .paused
             .or(self.descriptor.plan.activation_boundary())
