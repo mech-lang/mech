@@ -64,9 +64,9 @@ fn emitted_scanner_uses_no_matrix_and_preserves_owner_over_activation_and_errors
             let catalog = mech_stdlib::source_catalog();
             let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
             let identity = *object.identity().bytes();
-            assert_eq!(u64::from_le_bytes(identity[16..24].try_into().unwrap()), 20);
-            assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 30);
-            for (offset, preceding) in [(16, 19u64), (32, 29u64)] {
+            assert_eq!(u64::from_le_bytes(identity[16..24].try_into().unwrap()), 21);
+            assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 31);
+            for (offset, preceding) in [(16, 20u64), (32, 30u64)] {
                 let mut stale = identity;
                 stale[offset..offset + 8].copy_from_slice(&preceding.to_le_bytes());
                 assert!(

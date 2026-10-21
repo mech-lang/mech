@@ -13,6 +13,7 @@ pub struct NativeStringMapRegion {
     source: NativeMatchValue,
     map: NativeMatchValue,
     selection_site: u32,
+    owned_source_slots: Box<[NativeMatchValue]>,
 }
 impl NativeStringMapRegion {
     pub const fn collection(&self) -> u32 {
@@ -29,6 +30,12 @@ impl NativeStringMapRegion {
     }
     pub const fn selection_site(&self) -> u32 {
         self.selection_site
+    }
+    /// Complete last-use proof for the source and already-consumed Copy
+    /// ancestors. Only matching CURRENT frozen owners may be retired; the
+    /// runtime must still establish actual exclusive data ownership.
+    pub fn owned_source_slots(&self) -> &[NativeMatchValue] {
+        &self.owned_source_slots
     }
 }
 impl Plan {
@@ -125,5 +132,96 @@ fn select(plan: &Plan, id: u32) -> Option<NativeStringMapRegion> {
         source: projection.source(),
         map: projection.map(),
         selection_site: projection.selection_site(),
+        owned_source_slots: owned_source_slots(plan, *iteration, projection.source()),
     })
+}
+
+// This is not payload/source recognition. It uses the same complete original
+// semantic inventory as all fusion passes, including cold/output/effect reads.
+fn owned_source_slots(
+    plan: &Plan,
+    iteration: u32,
+    source: NativeMatchValue,
+) -> Box<[NativeMatchValue]> {
+    use super::fusion_semantics::{Read, reads, semantic_actions};
+    use super::{NativeIterationValueScope as Scope, NativeMatchTerminator as Term};
+    let Some(NativeControlLoop::Collection(generator)) = plan.iterations().get(iteration as usize)
+    else {
+        return Box::new([]);
+    };
+    // A lexical read executed again by a parent loop is NOT a final use.
+    if generator.parent().is_some()
+        || plan.value_scopes().get(source.get() as usize)
+            != Some(&Scope::Immutable { iteration: None })
+    {
+        return Box::new([]);
+    }
+    let Ok(actions) = semantic_actions(plan) else {
+        return Box::new([]);
+    };
+    let Ok(reads) = reads(plan, &actions) else {
+        return Box::new([]);
+    };
+    if !matches!(
+        reads.get(source.get() as usize).map(Vec::as_slice),
+        Some([Read::Other])
+    ) {
+        return Box::new([]);
+    }
+    // Numeric block order is not execution order. An ancestor is consumable
+    // only when none of its reads is reachable after this generator begins.
+    let mut future = vec![false; plan.blocks().len()];
+    let mut pending = vec![generator.header()];
+    while let Some(site) = pending.pop() {
+        let Some(block) = plan.blocks().get(site as usize) else {
+            return Box::new([]);
+        };
+        if core::mem::replace(&mut future[site as usize], true) {
+            continue;
+        }
+        let successors = match block.terminator() {
+            End::Scalar(Term::Jump(next)) => [Some(next), None],
+            End::Scalar(Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. }) => {
+                [Some(yes), Some(no)]
+            }
+            End::Scalar(Term::Complete | Term::Reject) => [None, None],
+            End::Header { body, exit, .. } => [Some(body), Some(exit)],
+            End::TailHeader { body, .. } => [Some(body), None],
+        };
+        pending.extend(successors.into_iter().flatten());
+    }
+    let mut eligible = vec![false; plan.values().len()];
+    eligible[source.get() as usize] = true;
+    let mut slots = vec![source];
+    loop {
+        let before = slots.len();
+        for action in actions.iter() {
+            let Action::Scalar(Scalar::Copy {
+                source: ancestor, ..
+            }) = action
+            else {
+                continue;
+            };
+            let index = ancestor.get() as usize;
+            if eligible[index]
+                || plan.value_scopes().get(index) != Some(&Scope::Immutable { iteration: None })
+            {
+                continue;
+            }
+            if !reads[index].is_empty() && reads[index].iter().all(|read| {
+                let Read::Action(site) = read else { return false; };
+                !future[*site as usize]
+                    && matches!(actions.get(*site as usize), Some(Action::Scalar(Scalar::Copy { output, .. }))
+                        if eligible[output.get() as usize])
+            }) {
+                eligible[index] = true;
+                slots.push(*ancestor);
+            }
+        }
+        if slots.len() == before {
+            break;
+        }
+    }
+    slots.sort_unstable_by_key(|value| value.get());
+    slots.into_boxed_slice()
 }

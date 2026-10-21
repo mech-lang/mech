@@ -26,6 +26,10 @@ mod frozen_identity_tests;
 #[path = "resident_token_tests.rs"]
 mod resident_token_tests;
 
+#[path = "owned_string.rs"]
+mod owned_string;
+pub use owned_string::{OwnedSnapshotBytes, OwnedSnapshotString, StringOwnershipTransfer};
+
 #[cfg(feature = "no_std")]
 use alloc::{
     boxed::Box,
@@ -471,8 +475,11 @@ impl FrozenSnapshotData {
     }
 }
 
-impl Drop for FrozenSnapshotStorage {
-    fn drop(&mut self) {
+impl FrozenSnapshotStorage {
+    // Shared by ordinary destruction and consuming ownership transfer. Only
+    // unlink here: the caller keeps the charge alive until backing is retired
+    // or transferred. Ordinary field-drop order remains data before charge.
+    fn unlink_budget_registration(&self) {
         let Some(ownership) = &self.memory_budget else {
             return;
         };
@@ -499,6 +506,12 @@ impl Drop for FrozenSnapshotStorage {
         });
         // This wrapper still owns the registration Arc. Its admitted node is
         // freed outside the registry gate during normal field destruction.
+    }
+}
+
+impl Drop for FrozenSnapshotStorage {
+    fn drop(&mut self) {
+        self.unlink_budget_registration();
     }
 }
 

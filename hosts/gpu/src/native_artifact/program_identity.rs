@@ -54,9 +54,9 @@ fn selected_template(
         word(hash, number);
     }
 }
-// IR20 adds complete-use, owner-bound private text/lines matrix regions.
+// IR21 pins complete-use String ownership transfer and consumed-copy slots.
 // Exclusive window selectors retain their distinct ordinary CFG semantics.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 20;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 21;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -112,7 +112,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 20;
 // Policy30 admits private line geometry and its immutable String owner instead
 // of copied line payloads. Original producer/length/selection visits remain;
 // Unicode fallback inherits the same original call's already-spent allowance.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 30;
+// Policy31 funds exact current-alias retirement and ownership handoff before
+// a closed String map loop; copied/shared fallback stays on the same ledger.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 31;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -194,6 +196,23 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
     word(&mut hash, plan.activation_nodes().len() as u64);
     for node in plan.activation_nodes() {
         word(&mut hash, u64::from(node.get()));
+    }
+    let string_maps = plan.string_map_regions();
+    word(&mut hash, string_maps.len() as u64);
+    for region in string_maps {
+        for field in [
+            region.collection(),
+            region.iteration(),
+            region.source().get(),
+            region.map().get(),
+            region.selection_site(),
+        ] {
+            word(&mut hash, u64::from(field));
+        }
+        word(&mut hash, region.owned_source_slots().len() as u64);
+        for value in region.owned_source_slots() {
+            word(&mut hash, u64::from(value.get()));
+        }
     }
     word(&mut hash, plan.inputs().len() as u64);
     for input in plan.inputs() {

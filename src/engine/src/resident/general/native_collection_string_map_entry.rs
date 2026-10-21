@@ -7,7 +7,13 @@ use crate::resident::{
 };
 use mech_core::{
     MemoryBudgetLimits, ResidentKernelError, ResourceDemand, SchemaBody, Value, ValueData,
+    snapshot::OwnedSnapshotBytes,
 };
+
+enum KeyOwner<'a> {
+    Frozen(&'a Value),
+    Owned(&'a OwnedSnapshotBytes),
+}
 
 struct BorrowedBudget<'a, 'b> {
     context: &'a NativeProjectionIndexContext<'b>,
@@ -59,6 +65,47 @@ impl NativePreparedLibraryCall {
         work: &NativeLibraryWorkBudget,
         coexistence: ResourceDemand,
     ) -> Result<usize, InvokeError> {
+        self.selected_string_map_entry_owner(
+            source,
+            KeyOwner::Frozen(key_owner),
+            key_bytes,
+            limits,
+            work,
+            coexistence,
+        )
+    }
+
+    /// Same selected lookup and budget leaf, after a compiler-proved last-use
+    /// transfer. The actual owned String carries its same-account charge; no
+    /// canonical Value is fabricated for mutable native-loop backing.
+    pub fn selected_owned_string_map_entry(
+        &self,
+        source: &Value,
+        key_owner: &OwnedSnapshotBytes,
+        key_bytes: core::ops::Range<usize>,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<usize, InvokeError> {
+        self.selected_string_map_entry_owner(
+            source,
+            KeyOwner::Owned(key_owner),
+            key_bytes,
+            limits,
+            work,
+            coexistence,
+        )
+    }
+
+    fn selected_string_map_entry_owner(
+        &self,
+        source: &Value,
+        key_owner: KeyOwner<'_>,
+        key_bytes: core::ops::Range<usize>,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<usize, InvokeError> {
         use crate::native_artifact::NativeCollectionPrimitive as Primitive;
         finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
         if self.template.primitive() != Primitive::MapKeyAccess
@@ -93,21 +140,32 @@ impl NativePreparedLibraryCall {
                     || source.schema_key() != self.input_keys[0]
                     || source.shape().parameter_values().len()
                         != self.template.inputs()[0].dimension_parameters().len()
-                    || !key_owner.shape().parameter_values().is_empty()
+                    || matches!(&key_owner, KeyOwner::Frozen(value) if !value.shape().parameter_values().is_empty())
+                    || matches!(&key_owner, KeyOwner::Owned(value) if value.schema_key() != self.input_keys[1])
                 {
                     return Err(InvokeError::InvalidInput);
                 }
                 if source.memory_budget_retained_bytes(&memory).is_none()
-                    || key_owner.memory_budget_retained_bytes(&memory).is_none()
+                    || match &key_owner {
+                        KeyOwner::Frozen(value) => value.memory_budget_retained_bytes(&memory).is_none(),
+                        KeyOwner::Owned(value) => value.memory_budget() != memory
+                            || value.retained_capacity_bytes() < value.as_bytes().len() as u64,
+                    }
                 {
                     return Err(InvokeError::UnadmittedValue);
                 }
-                let (ValueData::Map(map), ValueData::String(key)) =
-                    (source.data(), key_owner.data())
-                else {
+                let ValueData::Map(map) = source.data() else {
                     return Err(InvokeError::InvalidInput);
                 };
+                let key: &[u8] = match &key_owner {
+                    KeyOwner::Frozen(value) => match value.data() {
+                        ValueData::String(key) => key.as_bytes(),
+                        _ => return Err(InvokeError::InvalidInput),
+                    },
+                    KeyOwner::Owned(value) => value.as_bytes(),
+                };
                 let key = key.get(key_bytes).ok_or(InvokeError::InvalidInput)?;
+                let key = core::str::from_utf8(key).map_err(|_| InvokeError::InvalidInput)?;
                 let mut meter = BorrowedBudget {
                     context: &context,
                     bytes: 0,

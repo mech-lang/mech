@@ -280,6 +280,32 @@ impl<'a> NativeValueArena<'a> {
         Ok(())
     }
 
+    /// Retirement only, not an ownership/last-use proof. The generated caller
+    /// supplies its immutable complete-use inventory and retains `owner` while
+    /// matching current frozen allocations. A later generation is never swept.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(super) fn retire_current_matching(
+        &mut self,
+        slot: u32,
+        owner: &Value,
+        work: &mut NativeWorkMeter,
+    ) -> Result<(), NativeValueError> {
+        self.check_work(work)?;
+        work.charge(NativeExecutionPhase::Setup, 16)?;
+        let value = self
+            .values
+            .values()
+            .get(slot as usize)
+            .ok_or(NativeValueError::InvalidSlot)?;
+        if value
+            .as_ref()
+            .is_some_and(|value| value.shares_frozen_storage(owner))
+        {
+            self.retire_current(slot, work)?;
+        }
+        Ok(())
+    }
+
     #[cfg(feature = "canonical-native-program-runtime")]
     pub(super) fn publish_range(
         &self,

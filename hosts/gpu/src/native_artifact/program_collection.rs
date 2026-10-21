@@ -64,6 +64,9 @@ struct Source {
 enum SourceBacking {
     Value(Value),
     U64Range { start: u64 },
+    // Only the closed compiled String-map region may consume this source.
+    // Its complete same-length result remains in the charged map buffer.
+    ConsumedString,
 }
 #[derive(Clone, Copy)]
 struct PreparedRange {
@@ -488,6 +491,9 @@ impl State {
                 let backing = source.backing.clone();
                 let (element, next) = match &backing {
                     SourceBacking::Value(value) => data::element(value, index, source.byte_offset)?,
+                    SourceBacking::ConsumedString => {
+                        return Err(invalid("consumed String source revisited"));
+                    }
                     SourceBacking::U64Range { start } => (
                         data::Element::Scalar(
                             NativeScalarKind::U64,

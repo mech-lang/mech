@@ -160,6 +160,7 @@ pub(in super::super) fn before_stage(
                                 !value.shares_frozen_storage(owner)
                             }
                             super::super::SourceBacking::U64Range { .. } => true,
+                            super::super::SourceBacking::ConsumedString => true,
                         });
                 let witness = distinct && aliases == 1 && no_call_alias && no_source_alias;
                 LAST_PIN_WITNESS.with(|slot| slot.set(witness));

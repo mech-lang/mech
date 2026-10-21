@@ -2,9 +2,14 @@
 use super::*;
 use mech_engine::native_artifact::NativeStringMapRegion;
 
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_string_map_owned_tests.rs"]
+mod owned_tests;
+
 pub(super) struct Buffer {
     table: Vec<u16>,
     bytes: Vec<u8>,
+    owned: Option<mech_core::snapshot::OwnedSnapshotBytes>,
     reservation: ManagedMemoryReservation,
 }
 impl State {
@@ -97,13 +102,57 @@ impl State {
         let map_bytes = map_owner
             .memory_budget_retained_bytes(&memory)
             .ok_or_else(|| invalid("unadmitted String map root"))?;
-        let scratch = add(remaining, 256)?;
+        let length = text.len();
+        let (source, mut owned) = if region.owned_source_slots().is_empty() {
+            (Some(source), None)
+        } else {
+            // These are complete-use-proved slots, not an arena-wide alias
+            // sweep. Retire only this CURRENT frozen allocation and invalidate
+            // its handles before trying to consume its sole remaining owner.
+            charge(
+                &mut ctx.control.work,
+                super::super::super::amount(region.owned_source_slots().len(), 64, 512)?,
+            )?;
+            for value in region.owned_source_slots() {
+                ctx.arena
+                    .retire_current_matching(value.get(), &source, &mut ctx.control.work)?;
+            }
+            let initialized = self.sources[region.iteration() as usize].as_mut().unwrap();
+            let backing = core::mem::replace(
+                &mut initialized.backing,
+                super::super::SourceBacking::ConsumedString,
+            );
+            initialized.handle = None;
+            drop(backing);
+            match source.try_into_owned_string(&memory)? {
+                mech_core::snapshot::StringOwnershipTransfer::Owned(owned) => {
+                    (None, Some(owned.into_bytes()))
+                }
+                mech_core::snapshot::StringOwnershipTransfer::Unavailable(value) => {
+                    // Other genuine owners (inputs, imports, captured aliases)
+                    // keep the immutable route. Restore its new current handle;
+                    // no source bytes or frozen identity changed on rejection.
+                    let handle =
+                        ctx.arena
+                            .put(region.source().get(), &value, &mut ctx.control.work)?;
+                    let initialized = self.sources[region.iteration() as usize].as_mut().unwrap();
+                    initialized.backing = super::super::SourceBacking::Value(value.clone());
+                    initialized.handle = Some(handle);
+                    (Some(value), None)
+                }
+            }
+        };
+        let backing = owned
+            .as_ref()
+            .map_or(remaining, |owner| owner.retained_capacity_bytes());
+        let scratch = add(backing, 256)?;
+        let outside_source = if owned.is_some() { 0 } else { source_bytes };
         resource(
             ctx,
             id,
             Dimension::TemporaryBytes,
             add(
-                add(add(self.live_bytes, source_bytes)?, map_bytes)?,
+                add(add(self.live_bytes, outside_source)?, map_bytes)?,
                 scratch,
             )?,
             ctx.limits.max_temporary_bytes,
@@ -124,10 +173,11 @@ impl State {
             footprint.retained_bytes,
             ctx.limits.max_output_bytes,
         )?;
-        // Full source scan, table scans, zero-fill, emitted loop, UTF8
-        // validation and failure cleanup are prepaid on the same finite meter.
+        // One conservative work bound covers the source/table scans, optional
+        // zero-fill, emitted loop, UTF8 validation and failure cleanup. Reuse
+        // does not create or renew any per-operation/round work allowance.
         self.account(ctx, id, remaining, add(mul(remaining, 64)?, 4096)?)?;
-        let reservation = memory.reserve_capacity(scratch)?;
+        let reservation = memory.reserve_capacity(if owned.is_some() { 256 } else { scratch })?;
         let mut table = Vec::new();
         table
             .try_reserve_exact(128)
@@ -147,28 +197,51 @@ impl State {
             }
         }
         let mut bytes = Vec::new();
-        bytes
-            .try_reserve_exact(text.len())
-            .map_err(|_| invalid("compiled String map output allocation"))?;
-        if bytes.capacity() > text.len() {
-            return Err(invalid("compiled String map output capacity"));
+        if owned.is_none() {
+            bytes
+                .try_reserve_exact(length)
+                .map_err(|_| invalid("compiled String map output allocation"))?;
+            if bytes.capacity() > length {
+                return Err(invalid("compiled String map output capacity"));
+            }
+            bytes.resize(length, 0);
         }
-        bytes.resize(text.len(), 0);
-        let words = [
-            text.as_ptr() as u64,
-            remaining,
-            table.as_ptr() as u64,
-            bytes.as_mut_ptr() as u64,
-            0,
-        ];
+        // The aliasing case derives BOTH pointers from the exclusive mutable
+        // byte slice. No immutable String/Value loan remains across execution.
+        let (input, output) = if let Some(owner) = owned.as_mut() {
+            let pointer = owner.as_mut_bytes().as_mut_ptr() as u64;
+            (pointer, pointer)
+        } else {
+            let Some(ValueData::String(text)) = source.as_ref().map(Value::data) else {
+                return Err(invalid("compiled String map lost frozen source"));
+            };
+            (text.as_ptr() as u64, bytes.as_mut_ptr() as u64)
+        };
+        let words = [input, remaining, table.as_ptr() as u64, output, 0];
         self.builder(id)?.join.as_mut().unwrap().compiled_map = Some(Buffer {
             table,
             bytes,
+            owned,
             reservation,
         });
         self.live_bytes = add(self.live_bytes, scratch)?;
-        ctx.call_inputs.values_mut()[0] = Some(source);
+        ctx.call_inputs.values_mut()[0] = source;
         ctx.call_inputs.values_mut()[1] = Some(map_owner);
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        owned_tests::observe(
+            ctx,
+            region,
+            input == output,
+            self.builder(id)?
+                .join
+                .as_ref()
+                .unwrap()
+                .compiled_map
+                .as_ref()
+                .unwrap()
+                .owned
+                .is_some(),
+        );
         Ok(Some(words))
     }
 
@@ -183,10 +256,7 @@ impl State {
         if processed < accepted {
             // Preserve the actual selected missing-key error and origin. This
             // is one error call after the loop, never a per-character helper.
-            let source = ctx.call_inputs.values()[0]
-                .as_ref()
-                .ok_or_else(|| invalid("lost map source loan"))?
-                .clone();
+            let source = ctx.call_inputs.values()[0].clone();
             let map = ctx.call_inputs.values()[1]
                 .as_ref()
                 .ok_or_else(|| invalid("lost map root loan"))?
@@ -200,8 +270,14 @@ impl State {
                 self.live_bytes,
                 add(
                     source
-                        .memory_budget_retained_bytes(&ctx.library.memory_budget())
-                        .ok_or_else(|| invalid("unadmitted map source"))?,
+                        .as_ref()
+                        .map(|source| {
+                            source
+                                .memory_budget_retained_bytes(&ctx.library.memory_budget())
+                                .ok_or_else(|| invalid("unadmitted map source"))
+                        })
+                        .transpose()?
+                        .unwrap_or(0),
                     map.memory_budget_retained_bytes(&ctx.library.memory_budget())
                         .ok_or_else(|| invalid("unadmitted map root"))?,
                 )?,
@@ -227,14 +303,31 @@ impl State {
                 ..Default::default()
             };
             let before = ctx.library.used();
-            let result = selected.selected_string_map_entry(
-                &map,
-                &source,
-                processed as usize..processed as usize + 1,
-                ctx.limits,
-                &ctx.library,
-                coexistence,
-            );
+            let result = if let Some(source) = source.as_ref() {
+                selected.selected_string_map_entry(
+                    &map,
+                    source,
+                    processed as usize..processed as usize + 1,
+                    ctx.limits,
+                    &ctx.library,
+                    coexistence,
+                )
+            } else {
+                let owner = self.builders[id as usize]
+                    .as_ref()
+                    .and_then(|builder| builder.join.as_ref())
+                    .and_then(|join| join.compiled_map.as_ref())
+                    .and_then(|buffer| buffer.owned.as_ref())
+                    .ok_or_else(|| invalid("lost owned map source"))?;
+                selected.selected_owned_string_map_entry(
+                    &map,
+                    owner,
+                    processed as usize..processed as usize + 1,
+                    ctx.limits,
+                    &ctx.library,
+                    coexistence,
+                )
+            };
             let after = ctx.library.used();
             let builder = self.builder(id)?;
             builder.compute = add(
@@ -269,11 +362,30 @@ impl State {
         let Buffer {
             table,
             bytes,
+            owned,
             mut reservation,
         } = join
             .compiled_map
             .take()
             .ok_or_else(|| invalid("compiled String map lost scratch"))?;
+        let bytes = if let Some(owner) = owned {
+            let (bytes, charge) = owner.into_parts();
+            // Source ownership was checked on this SAME account, and scratch
+            // arithmetic was checked before either allocation or handoff.
+            if charge.budget() != reservation.budget()
+                || charge
+                    .capacity_bytes()
+                    .checked_add(reservation.capacity_bytes())
+                    .is_none()
+            {
+                drop(bytes);
+                return Err(invalid("owned map source charge changed"));
+            }
+            reservation.merge_capacity(charge)?;
+            bytes
+        } else {
+            bytes
+        };
         if bytes.len() as u64 != accepted || processed != accepted {
             return Err(invalid("compiled String map output count"));
         }
