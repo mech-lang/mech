@@ -285,7 +285,7 @@ build = "build.rs"
 [workspace]
 [dependencies]
 mech-core = {{ path = {core}, default-features = false{core_features} }}
-mech-engine = {{ path = {engine}, default-features = false, features = ["native-artifact", "std", "bool", "u64", "i64", "f64", "convert", "math_sqrt", "math_neg", "math_add", "math_sub", "math_mul", "math_div", "math_mod", "compare_default", "logic_default"{engine_features}] }}
+mech-engine = {{ path = {engine}, default-features = false, features = ["native-artifact", "convert"{engine_features}] }}
 mech-gpu = {{ path = {gpu}, default-features = false, features = ["{gpu_feature}"] }}
 sha2 = {{ version = "0.11.0", default-features = false }}
 {dependencies}[build-dependencies]
