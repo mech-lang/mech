@@ -68,8 +68,14 @@ impl Account {
     pub fn used(&self) -> u64 {
         self.used.get()
     }
+    pub fn shares_work(&self, work: &NativeLibraryWorkBudget) -> bool {
+        self.work.shares_account(work)
+    }
     pub fn peak(&self) -> u64 {
         self.peak.get()
+    }
+    pub fn spent(&self) -> u64 {
+        self.spent.get()
     }
     pub fn debit(&self, work: u64) -> Result<(), InvokeError> {
         let spent = self

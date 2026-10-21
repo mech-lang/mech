@@ -1,4 +1,4 @@
-//! Managed ABI10 invocation. This boundary never evaluates a graph: generated
+//! Managed ABI11 invocation. This boundary never evaluates a graph: generated
 //! blocks choose every successor and run every scalar/counter instruction.
 use super::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
@@ -195,6 +195,8 @@ struct Context<'plan, 'visit> {
     activation_phase: bool,
     window_region: Option<(u32, u64)>,
     prefix: Option<prefix::State>,
+    // The borrow pins real UTF-8 backing for this synchronous entry only.
+    line_window: Option<&'visit mech_engine::native_artifact::NativeTextLineWindow<'visit>>,
 }
 impl Context<'_, '_> {
     fn write_borrowed_word(
@@ -3412,7 +3414,7 @@ mod tests {
                             *frame.arguments = 1;
                         }
                     }
-                    // SAFETY: arguments remain within the retained ABI10 boundary;
+                    // SAFETY: arguments remain within the retained ABI11 boundary;
                     // wrong metadata/pointer is rejected before dereference.
                     let status = unsafe {
                         (frame.helper)(
@@ -4231,8 +4233,8 @@ mod tests {
         }
     }
     #[test]
-    fn abi10_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 10);
+    fn abi11_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
+        assert_eq!(VERSION, 11);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);
         assert_eq!(
             core::mem::offset_of!(Frame, helper),

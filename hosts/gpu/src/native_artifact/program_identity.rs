@@ -1,4 +1,4 @@
-//! Explicit program IR/ABI10 identity. No Debug or pointer serialization.
+//! Explicit program IR/ABI11 identity. No Debug or pointer serialization.
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
     NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind,
@@ -54,8 +54,8 @@ fn selected_template(
         word(hash, number);
     }
 }
-// IR23 pins emitted retention coordinates from the proved carrier fields.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 23;
+// IR24 pins explicit row-window bases and owning producer/ledger binding.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 24;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -115,7 +115,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 23;
 // a closed String map loop; copied/shared fallback stays on the same ledger.
 // Policy32 funds header pauses/re-entry on the SAME cumulative account.
 // Policy33 funds emitted retention min/range rules on that same account.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 33;
+// Policy34 binds line-store/window debits to the existing shared program ledger.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 34;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

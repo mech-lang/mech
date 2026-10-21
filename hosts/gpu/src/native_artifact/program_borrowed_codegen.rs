@@ -159,8 +159,16 @@ pub(in crate::native_artifact) fn emit(
         Action::ConstantRange { .. } => {}
         Action::MatrixElement { source, index, .. } => {
             let [table, count] = pair(b, locals, layout, source)?;
+            let first = b.ins().load(
+                types::I64,
+                MemFlags::new(),
+                locals,
+                offset(layout.slot(source) + 2)?,
+            );
             let index = load(b, locals, index)?;
-            let offset = b.ins().iadd_imm(index, -1);
+            // Subtract the genuine global ordinal, never bias the table pointer
+            // outside its allocation. Underflow also fails this unsigned bound.
+            let offset = b.ins().isub(index, first);
             let valid = b.ins().icmp(IntCC::UnsignedLessThan, offset, count);
             bounds(
                 b,

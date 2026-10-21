@@ -14,7 +14,7 @@ use mech_core::{
 mod chunks;
 #[path = "native_collection_line_reads.rs"]
 mod reads;
-pub use chunks::{NativeTextLineCaptureFacts, NativeTextLineChunks};
+pub use chunks::{NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineWindow};
 
 /// Immutable owner and exact native pointer/length rows. Only the maintained
 /// prepared factory can construct it; the original scalar String stays alive
@@ -128,7 +128,28 @@ impl NativePreparedLibraryCall {
         {
             return Err(InvokeError::InvalidInput);
         }
-        chunks::prepare(input_limit, max_fragment, limits, work, self.lookup_work)
+        chunks::prepare(
+            input_limit,
+            max_fragment,
+            limits,
+            work,
+            self.lookup_work,
+            Some(self.cache_identity.clone()),
+        )
+    }
+
+    /// Bind a synchronous loan to this exact selected producer and invocation.
+    /// The loan contains real completed cells, not a canonical partial Matrix.
+    pub fn bind_text_line_window(
+        &self,
+        window: &NativeTextLineWindow<'_>,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<u64, InvokeError> {
+        if self.template.primitive() != crate::native_artifact::NativeCollectionPrimitive::TextLines
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        window.bind(&self.cache_identity, work)
     }
     pub fn text_line_matrix_or_canonical(
         &self,

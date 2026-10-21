@@ -35,7 +35,7 @@ mod text_lines;
 #[cfg(feature = "pure_text")]
 pub use text_lines::{
     NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineMatrix,
-    NativeTextLineMatrixChoice,
+    NativeTextLineMatrixChoice, NativeTextLineWindow,
 };
 
 /// Compiler-owned selection/immutable schemas, not a bound runtime call or

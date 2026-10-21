@@ -5,7 +5,56 @@ use super::super::{NativeExecutionPhase, program_abi};
 use super::{
     Context, NativeProgramDescriptor, NativeProgramExecutionError as Error, amount, invalid,
 };
-use mech_engine::native_artifact::NativeMatchValue;
+use mech_engine::native_artifact::{
+    NativeLibraryWorkBudget, NativeMatchValue, NativeTextLineWindow,
+};
+
+pub(super) fn validate_window(
+    descriptor: &NativeProgramDescriptor,
+    input: Option<Input>,
+    window: &NativeTextLineWindow<'_>,
+    work: &NativeLibraryWorkBudget,
+) -> Result<(), Error> {
+    let input = input.ok_or_else(|| invalid("line window outside continuation entry"))?;
+    let region = descriptor
+        .prefix
+        .as_ref()
+        .ok_or_else(|| invalid("line window lacks exact scan proof"))?;
+    let source = region.frontier.read().count().lines();
+    if descriptor.borrowed_strings.regions[region.borrowed]
+        .proof
+        .matrices()
+        != [source.matrix()]
+        || window.available_lines() != input.available
+        || window.final_facts().is_some() != input.eof
+    {
+        return Err(invalid(
+            "line window differs from exact completed source prefix",
+        ));
+    }
+    let site = source.producer() as usize;
+    descriptor.calls[site]
+        .as_ref()
+        .ok_or_else(|| invalid("line window producer absent"))?
+        .bind_text_line_window(window, work)
+        .map_err(|error| Error::Library {
+            origin: descriptor.plan.blocks()[site].origin(),
+            error,
+        })?;
+    Ok(())
+}
+
+impl<'plan, 'visit> Context<'plan, 'visit> {
+    pub(super) fn prefix_line_window(
+        &self,
+        matrix: NativeMatchValue,
+    ) -> Option<&'visit NativeTextLineWindow<'visit>> {
+        let region = self.control.descriptor.prefix.as_ref()?;
+        (region.frontier.read().count().lines().matrix() == matrix)
+            .then_some(self.line_window)
+            .flatten()
+    }
+}
 
 #[derive(Clone, Copy)]
 pub(super) struct Input {

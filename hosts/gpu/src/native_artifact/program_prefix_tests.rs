@@ -3,11 +3,11 @@
 use super::*;
 use call_cache_tests::artifacts;
 
-fn source() -> &'static str {
+pub(super) fn source() -> &'static str {
     "+> text\n+> sequence\n#Locate(rows<[string]>, count<u64>) => <(u64,u64)>\n  | :Skip(i<u64>)\n  | :Take(first<u64>, i<u64>)\n  | :Ready(first<u64>, last<u64>).\n#Locate(rows, count) -> :Skip(1u64)\n  :Skip(i)\n    | i > count -> :Ready(1u64, 1u64)\n    | rows[i] == \"open\" -> :Take(i + 1u64, i + 1u64)\n    | * -> :Skip(i + 1u64)\n  :Take(first, i)\n    | i > count -> :Ready(first, count + 1u64)\n    | rows[i] == \"close\" -> :Ready(first, i)\n    | * -> :Take(first, i + 1u64)\n  :Ready(first, last) => (first, last).\nrows := text/lines(input<string>)\nbounds := #Locate(rows, sequence/length(rows))\nresult := bounds?\n  | (first, last), first < last => text/join(rows[first..last], \"|\")\n  | * => \"\".\nresult\n"
 }
 
-fn limits() -> NativeProgramExecutionLimits {
+pub(super) fn limits() -> NativeProgramExecutionLimits {
     NativeProgramExecutionLimits {
         execution: NativeExecutionLimits {
             max_work: 1_000_000_000,
@@ -27,7 +27,7 @@ fn input(descriptor: &NativeProgramDescriptor, text: &str, memory: &ManagedMemor
     )
 }
 
-fn string_value(
+pub(super) fn string_value(
     descriptor: &NativeProgramDescriptor,
     schema: mech_core::SchemaId,
     text: &str,
@@ -59,7 +59,7 @@ fn carrier(prepared: &Prepared<'_>) -> Vec<u64> {
     prepared.storage.values()[first..first + width].to_vec()
 }
 
-fn assert_unloaned(prepared: &Prepared<'_>) {
+pub(super) fn assert_unloaned(prepared: &Prepared<'_>) {
     let region = prepared.descriptor.prefix.as_ref().unwrap();
     let layout = &prepared.descriptor.borrowed_strings.regions[region.borrowed];
     let first = prepared.descriptor.plan.transport_input_count();

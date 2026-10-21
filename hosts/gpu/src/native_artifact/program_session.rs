@@ -19,6 +19,9 @@ mod call_cache_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_prefix_tests.rs"]
 mod prefix_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_prefix_window_tests.rs"]
+mod prefix_window_tests;
 
 /// Native ownership admission for the selected zero-parameter String lane.
 /// Immutable payload sharing never substitutes for full capacity admission.
@@ -230,6 +233,7 @@ pub(super) struct Prepared<'a> {
     prefix: Option<prefix::Input>,
     paused: Option<u32>,
     retention: Option<prefix::Retention>,
+    window_work_seen: u64,
 }
 
 impl<'a> Prepared<'a> {
@@ -401,6 +405,7 @@ impl<'a> Prepared<'a> {
             prefix: None,
             paused: None,
             retention: None,
+            window_work_seen: 0,
             state: Some(OwnedState {
                 collections,
                 line_matrices,
@@ -596,6 +601,17 @@ impl<'a> Prepared<'a> {
         available: u64,
         eof: bool,
     ) -> Result<(), NativeProgramExecutionError> {
+        self.run_prefix_window(entry, available, eof, None)
+    }
+
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    fn run_prefix_window<F: FnMut(*mut Frame) -> u64>(
+        &mut self,
+        entry: &mut F,
+        available: u64,
+        eof: bool,
+        window: Option<&mech_engine::native_artifact::NativeTextLineWindow<'_>>,
+    ) -> Result<(), NativeProgramExecutionError> {
         if !self.activated
             || self.descriptor.prefix.is_none()
             || self.state.as_ref().is_none_or(|state| state.completed)
@@ -614,13 +630,22 @@ impl<'a> Prepared<'a> {
             available,
             eof,
         });
-        self.run(entry, PHASE_PREFIX)
+        self.run_with_window(entry, PHASE_PREFIX, window)
     }
 
     fn run<F: FnMut(*mut Frame) -> u64>(
         &mut self,
         entry: &mut F,
         phase: u64,
+    ) -> Result<(), NativeProgramExecutionError> {
+        self.run_with_window(entry, phase, None)
+    }
+
+    fn run_with_window<F: FnMut(*mut Frame) -> u64>(
+        &mut self,
+        entry: &mut F,
+        phase: u64,
+        line_window: Option<&mech_engine::native_artifact::NativeTextLineWindow<'_>>,
     ) -> Result<(), NativeProgramExecutionError> {
         let descriptor = self.descriptor;
         let plan = &descriptor.plan;
@@ -648,6 +673,18 @@ impl<'a> Prepared<'a> {
             .state
             .take()
             .ok_or_else(|| invalid("consumed native state"))?;
+        if let Some(window) = line_window {
+            prefix::validate_window(descriptor, prefix_input, window, &state.library)?;
+            let spent = window.producer_compute_work();
+            if spent < self.window_work_seen {
+                return Err(invalid("line window work regressed"));
+            }
+            // NativeWorkMeter already owns this SAME shared library account.
+            // Framing/row-loan debits are included immediately, not billed twice.
+            self.window_work_seen = spent;
+        } else if self.window_work_seen != 0 {
+            return Err(invalid("line window continuation lost its owning source"));
+        }
         let checkpoint_work = if prefix_input.is_some() {
             amount(prefix::checkpoint_words(descriptor)?, 16, 256)?
         } else {
@@ -726,6 +763,7 @@ impl<'a> Prepared<'a> {
             closed_tail: None,
             selected_join: None,
             prefix: prefix_input.map(|input| prefix::State::new(input, self.retention)),
+            line_window,
         };
         let context_pointer = (&mut context as *mut Context<'_, '_>).cast::<c_void>();
         let mut frame = Frame {

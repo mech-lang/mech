@@ -72,11 +72,6 @@ pub(in crate::native_artifact) fn gate(
         .load(types::I64, MemFlags::new(), locals, offset(region.carrier)?);
     let mut known = b.ins().iconst(types::I8, 0);
     let mut pending = b.ins().iconst(types::I8, 0);
-    let zero = b.ins().iconst(types::I64, 0);
-    let one = b.ins().iconst(types::I64, 1);
-    let mut keep_first = zero;
-    let mut keep_end = zero;
-    let mut keep_closed = zero;
     for state in region.frontier.states() {
         let matches = b
             .ins()
@@ -97,6 +92,23 @@ pub(in crate::native_artifact) fn gate(
             matches
         };
         pending = b.ins().bor(pending, waiting);
+    }
+    guard(b, known, error, STATUS_ABI);
+    let pause = b.create_block();
+    b.ins().brif(pending, pause, &[], proceed, &[]);
+    b.switch_to_block(pause);
+    // Retention is needed only when a chunk is exhausted. Keep these loads,
+    // min/range calculations and selections out of the per-line hot path.
+    let zero = b.ins().iconst(types::I64, 0);
+    let one = b.ins().iconst(types::I64, 1);
+    let completed_end = b.ins().iadd(available, one);
+    let mut keep_first = zero;
+    let mut keep_end = zero;
+    let mut keep_closed = zero;
+    for state in region.frontier.states() {
+        let matches = b
+            .ins()
+            .icmp_imm(IntCC::Equal, ordinal, i64::from(state.ordinal()));
         // The SAME emitted carrier determines storage liveness. The runtime
         // receives coordinates only; it never interprets a Mech state/tag.
         let (first, end, closed) = if let Some((first, end)) = state.returned_range() {
@@ -132,7 +144,12 @@ pub(in crate::native_artifact) fn gate(
                 first = Some(first.map_or(word, |prior| b.ins().umin(prior, word)));
             }
             (
-                first.ok_or_else(|| super::super::compiler::backend("empty retention frontier"))?,
+                b.ins().umin(
+                    first.ok_or_else(|| {
+                        super::super::compiler::backend("empty retention frontier")
+                    })?,
+                    completed_end,
+                ),
                 zero,
                 zero,
             )
@@ -141,10 +158,6 @@ pub(in crate::native_artifact) fn gate(
         keep_end = b.ins().select(matches, end, keep_end);
         keep_closed = b.ins().select(matches, closed, keep_closed);
     }
-    guard(b, known, error, STATUS_ABI);
-    let pause = b.create_block();
-    b.ins().brif(pending, pause, &[], proceed, &[]);
-    b.switch_to_block(pause);
     let site = region.tail.header() as usize;
     super::tail_codegen::pause(b, locals, closed, site, hooks, error)?;
     let layout = &borrowed.regions[region.borrowed];

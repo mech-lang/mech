@@ -8,7 +8,7 @@ fn prepare(
     limits: MemoryBudgetLimits,
     work: &NativeLibraryWorkBudget,
 ) -> Result<NativeTextLineChunks, InvokeError> {
-    super::prepare(input_limit, max_fragment, limits, work, 0)
+    super::prepare(input_limit, max_fragment, limits, work, 0, None)
 }
 
 fn limits() -> MemoryBudgetLimits {

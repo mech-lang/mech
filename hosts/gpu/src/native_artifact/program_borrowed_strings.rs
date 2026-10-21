@@ -7,6 +7,15 @@ use super::{Context, NativeProgramExecutionError as Error, amount, invalid};
 use mech_core::{Value, ValueData, snapshot::SequenceView};
 use mech_engine::native_artifact::{NativeBorrowedStringAction as Action, NativeIterationAction};
 
+#[cfg(all(test, feature = "canonical-native-program"))]
+thread_local! {
+    static WINDOW_CAPTURE: std::cell::Cell<Option<(u64, u64, u64)>> = const { std::cell::Cell::new(None) };
+}
+#[cfg(all(test, feature = "canonical-native-program"))]
+pub(super) fn take_window_capture() -> Option<(u64, u64, u64)> {
+    WINDOW_CAPTURE.with(std::cell::Cell::take)
+}
+
 pub(super) struct State {
     pub region: usize,
     pub active: bool,
@@ -54,7 +63,7 @@ impl Context<'_, '_> {
         if self.control.current != Some(region.proof.iteration()) {
             return Err(invalid("borrowed String preparation outside current loop"));
         }
-        let count = region.capture_words() / 2;
+        let count = region.proof.matrices().len() + region.proof.literals().len();
         let memory = self.library.memory_budget();
         let limit = self
             .limits
@@ -75,6 +84,11 @@ impl Context<'_, '_> {
             .chain(region.proof.literals())
             .enumerate()
         {
+            let window = if i < region.proof.matrices().len() {
+                self.prefix_line_window(*value)
+            } else {
+                None
+            };
             let lines = if i < region.proof.matrices().len() {
                 self.line_matrix(*value).cloned()
             } else {
@@ -106,7 +120,13 @@ impl Context<'_, '_> {
                         .ok_or_else(|| invalid("borrowed String capture is not admitted"))?,
                 )
                 .ok_or_else(|| invalid("borrowed String owner footprint overflow"))?;
-            if i < region.proof.matrices().len() && lines.is_none() {
+            if let Some(window) = window {
+                active &= window.is_ascii();
+                source_bytes = source_bytes
+                    .checked_add(window.retained_capacity_bytes())
+                    .ok_or_else(|| invalid("borrowed line window footprint overflow"))?;
+            }
+            if i < region.proof.matrices().len() && lines.is_none() && window.is_none() {
                 if let Some(strings) = texts(&owner) {
                     rows = rows
                         .checked_add(strings.len())
@@ -145,7 +165,11 @@ impl Context<'_, '_> {
             .iter()
             .enumerate()
         {
-            if self.line_matrix(region.proof.matrices()[i]).is_some() {
+            if self.line_matrix(region.proof.matrices()[i]).is_some()
+                || self
+                    .prefix_line_window(region.proof.matrices()[i])
+                    .is_some()
+            {
                 continue;
             }
             if let Some(strings) = texts(owner.as_ref().unwrap()) {
@@ -164,10 +188,13 @@ impl Context<'_, '_> {
             }
         }
         let mut offset = 0;
+        let mut capture = 0;
         for (i, owner) in owners.values().iter().enumerate() {
             let owner = owner.as_ref().unwrap();
             let (pointer, length) = if i < region.proof.matrices().len() {
-                if let Some(lines) = self.line_matrix(region.proof.matrices()[i]) {
+                if let Some(window) = self.prefix_line_window(region.proof.matrices()[i]) {
+                    (window.rows().as_ptr() as u64, window.rows().len() as u64)
+                } else if let Some(lines) = self.line_matrix(region.proof.matrices()[i]) {
                     // The Context/session pins this exact immutable table across
                     // the native scanner; its real String owner is also pinned
                     // in owners. No second pointer table or Matrix is allocated.
@@ -190,8 +217,23 @@ impl Context<'_, '_> {
                 }
                 (text.as_ptr() as u64, text.len() as u64)
             };
-            self.write_borrowed_word(i * 2, pointer)?;
-            self.write_borrowed_word(i * 2 + 1, length)?;
+            self.write_borrowed_word(capture, pointer)?;
+            self.write_borrowed_word(capture + 1, length)?;
+            capture += 2;
+            if i < region.proof.matrices().len() {
+                let first = self
+                    .prefix_line_window(region.proof.matrices()[i])
+                    .map_or(1, |window| window.first());
+                self.write_borrowed_word(capture, first)?;
+                #[cfg(all(test, feature = "canonical-native-program"))]
+                if self
+                    .prefix_line_window(region.proof.matrices()[i])
+                    .is_some()
+                {
+                    WINDOW_CAPTURE.with(|capture| capture.set(Some((pointer, length, first))));
+                }
+                capture += 1;
+            }
         }
         self.borrowed_strings = Some(State {
             region: ordinal,

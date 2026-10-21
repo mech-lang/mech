@@ -1,8 +1,8 @@
-//! Mixed-value ABI10 carries admitted retention coordinates at header pauses without
+//! Mixed-value ABI11 carries an explicit global first ordinal for row windows without
 //! changing the frozen scalar-frame prefix. Older Objects fail admission.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 10;
+pub(super) const VERSION: u64 = 11;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
 pub(super) const PHASE_PREFIX: u64 = 2;

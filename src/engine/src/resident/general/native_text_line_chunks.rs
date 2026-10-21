@@ -4,11 +4,14 @@
 //! preserve source admissions/error order before executing any final consumer.
 use super::{InvokeError, NativeLibraryWorkBudget};
 use mech_core::{ManagedMemoryReservation, MemoryBudgetLimits};
-use std::{collections::VecDeque, rc::Rc};
+use std::{collections::VecDeque, rc::Rc, sync::Arc};
 
 #[path = "native_text_line_chunk_allocation.rs"]
 mod allocation;
 use allocation::{Account, Bytes, Claim, Offsets};
+#[path = "native_text_line_window.rs"]
+mod window;
+pub use window::NativeTextLineWindow;
 #[cfg(test)]
 #[path = "native_text_line_chunk_tests.rs"]
 mod native_text_line_chunk_tests;
@@ -83,6 +86,7 @@ pub struct NativeTextLineChunks {
     pending: Pending,
     slots: Option<Claim>,
     account: Rc<Account>,
+    producer: Option<Arc<()>>,
     input_limit: u64,
     max_fragment: usize,
     facts: NativeTextLineCaptureFacts,
@@ -99,6 +103,7 @@ pub(super) fn prepare(
     limits: MemoryBudgetLimits,
     work: &NativeLibraryWorkBudget,
     lookup_work: u64,
+    producer: Option<Arc<()>>,
 ) -> Result<NativeTextLineChunks, InvokeError> {
     if input_limit >= usize::MAX as u64 || max_fragment == 0 || max_fragment > u32::MAX as usize {
         return Err(InvokeError::InvalidInput);
@@ -114,6 +119,7 @@ pub(super) fn prepare(
         pending: Pending::default(),
         slots: None,
         account,
+        producer,
         input_limit,
         max_fragment,
         facts: NativeTextLineCaptureFacts {

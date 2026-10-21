@@ -195,15 +195,19 @@ current-visit bounds and future-range retention proofs from the full original
 graph, including the original and decoded k-nucleotide program. A bounded UTF-8
 chunk adapter now uses the same provider, read-authorization and transaction
 gates, with explicit one-shot host opt-in; ordinary cached/mixed reads are
-unchanged. ABI10/IR23/work-policy33 adds a private emitted header continuation:
+unchanged. ABI11/IR24/work-policy34 adds a private emitted header continuation:
 the original Mech scanner pauses before the next traversal, reconciles its fuel,
 clears borrowed pointer lanes and resumes its actual carrier on the same ledger.
 It waits for EOF even after finding the selected range. Qualification first uses
 genuine complete snapshots; no prefix length masquerades as a canonical count.
 The selected producer now owns packed UTF-8 chunks and four-byte line offsets;
 generated carrier instructions report monotonic retention coordinates without
-a Rust scanner. Storage tests bound live discarded-prefix capacity independently
-of total input. Production wiring and EOF producer-admission/error-order
+a Rust scanner. Synchronous row loans use an explicit global first ordinal;
+their source stays borrowed until native entry returns and framing/window work
+directly uses the same program account. Original/decoded scanner tests read
+those actual packed rows, including Unicode fallback and forward jumps.
+Storage tests bound live discarded-prefix capacity independently of total input.
+Production wiring and EOF producer-admission/error-order
 preservation remain unfinished. The shipped session still uses snapshots and rejects
 scoped text, so these prerequisites do not improve the measured footprint above.
 The [buffer-reuse receipt](../../docs/validation/canonical-knucleotide-owned-string-footprint-v1.json)

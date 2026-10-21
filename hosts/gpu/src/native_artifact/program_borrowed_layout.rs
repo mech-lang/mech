@@ -24,7 +24,7 @@ impl RegionLayout {
         self.slots[value.get() as usize].expect("proved borrowed String slot")
     }
     pub fn capture_words(&self) -> usize {
-        (self.proof.matrices().len() + self.proof.literals().len()) * 2
+        self.proof.matrices().len() * 3 + self.proof.literals().len() * 2
     }
 }
 #[derive(Debug, Default)]
@@ -57,17 +57,20 @@ impl Layout {
             #[cfg(feature = "canonical-native-program")]
             let captures = next;
             let mut slots = vec![None; plan.values().len()];
-            for &value in proof
-                .matrices()
-                .iter()
-                .chain(proof.literals())
-                .chain(proof.values())
-            {
+            for (&value, words) in proof.matrices().iter().map(|value| (value, 3)).chain(
+                proof
+                    .literals()
+                    .iter()
+                    .chain(proof.values())
+                    .map(|value| (value, 2)),
+            ) {
                 if slots[value.get() as usize].is_some() {
                     return Err("overlapping borrowed String storage");
                 }
                 slots[value.get() as usize] = Some(next);
-                next = next.checked_add(2).ok_or("borrowed String pair overflow")?;
+                next = next
+                    .checked_add(words)
+                    .ok_or("borrowed String view overflow")?;
             }
             for (action, (site, _)) in proof.actions().iter().enumerate() {
                 layout.actions[*site as usize] = Some((ordinal, action));

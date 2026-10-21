@@ -601,6 +601,9 @@ jobs:
             --lib native_text_line_chunk_tests -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_compiler,native-artifact \
+            --lib native_text_line_window_tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact \
             --lib resident::set_conversion:: -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_compiler,native-artifact \
@@ -631,6 +634,9 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program \
             --lib native_artifact::program_runtime::session::prefix_tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-program \
+            --lib native_artifact::program_runtime::session::prefix_window_tests -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program \
             --lib native_artifact::program_runtime::prefix::retention_tests -- --test-threads=1

@@ -27,7 +27,7 @@ pub use prepared::{
 #[cfg(feature = "pure_text")]
 pub use prepared::{
     NativeSelectedStringMatrix, NativeTextLineCaptureFacts, NativeTextLineChunks,
-    NativeTextLineMatrix, NativeTextLineMatrixChoice,
+    NativeTextLineMatrix, NativeTextLineMatrixChoice, NativeTextLineWindow,
 };
 
 /// A constructor-private binding of one actual artifact call at its current
