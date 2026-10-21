@@ -1,5 +1,9 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
 #![feature(where_clause_attrs)]
+#![cfg_attr(
+    all(feature = "native-artifact", feature = "pure_text"),
+    feature(portable_simd)
+)]
 
 #[cfg(all(feature = "no_std", not(feature = "std")))]
 #[macro_use]

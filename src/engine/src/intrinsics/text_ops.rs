@@ -6,6 +6,11 @@ use std::sync::LazyLock;
 #[path = "text_line_count.rs"]
 mod text_line_count;
 pub(crate) use text_line_count::count as line_count;
+#[cfg(feature = "native-artifact")]
+#[path = "text_line_offsets.rs"]
+mod text_line_offsets;
+#[cfg(feature = "native-artifact")]
+pub(crate) use text_line_offsets::try_for_each_lf;
 
 pub(crate) fn invalid(message: &'static str) -> MechError {
     MechError::new(

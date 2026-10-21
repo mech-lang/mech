@@ -216,11 +216,15 @@ impl Offsets {
         if values.capacity() != count {
             return Err(InvokeError::InvalidInput);
         }
-        // Use the standard String delimiter search (including its optimized
-        // ASCII search), not a scalar Rust branch for every input byte.
-        for (index, _) in text.match_indices('\n') {
+        // Enumerate the already admitted scan in byte blocks, keeping the
+        // producer's exact allocation and portable offset representation.
+        crate::intrinsics::text_ops::try_for_each_lf(text, |index| {
+            if values.len() == count {
+                return Err(InvokeError::InvalidInput);
+            }
             values.push(u32::try_from(index).map_err(|_| InvokeError::InvalidInput)?);
-        }
+            Ok(())
+        })?;
         if values.len() != count {
             return Err(InvokeError::InvalidInput);
         }
@@ -236,3 +240,7 @@ impl Offsets {
         })
     }
 }
+
+#[cfg(test)]
+#[path = "native_text_line_offset_tests.rs"]
+mod line_offset_tests;
