@@ -78,6 +78,19 @@ fn original_and_decoded_closed_program_generate_same_hosted_object_and_pins() {
         assert_eq!(decoded.revision(), artifact.revision());
         assert!(decoded.requirements().is_empty());
         let main = fs::read_to_string(project.root().join("src/main.rs")).unwrap();
+        let manifest = fs::read_to_string(project.manifest_path())
+            .unwrap()
+            .parse::<toml_edit::DocumentMut>()
+            .unwrap();
+        assert_eq!(
+            manifest["profile"]["release"]["strip"].as_str(),
+            Some("symbols")
+        );
+        assert_eq!(
+            manifest["profile"]["release"]["opt-level"].as_integer(),
+            Some(3)
+        );
+        assert_eq!(manifest["profile"]["dev"]["debug"].as_integer(), Some(0));
         assert!(main.contains("with_canonical_native_resources_phased"));
         assert!(main.contains("linked.prepare_hosted"));
         assert!(main.contains("resume_hosted_into"));

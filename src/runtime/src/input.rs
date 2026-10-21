@@ -9,6 +9,10 @@ use mech_core::{SchemaBody, snapshot::SequenceView, structures::Matrix as ValueM
 
 pub const DEFAULT_HOST_INPUT_CAPACITY: usize = 1024;
 
+#[cfg(feature = "string")]
+#[path = "input_string.rs"]
+mod string;
+
 /// Detached host or compiler-initialization value.
 ///
 /// Matrix variants use Mech's logical row-major order. Exact nalgebra
@@ -70,7 +74,7 @@ impl RuntimeHostInputValue {
                 ));
             }
             #[cfg(feature = "string")]
-            RuntimeHostInputValue::String(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::String(value) => return string::snapshot(value),
             #[cfg(not(feature = "string"))]
             RuntimeHostInputValue::String(_) => {
                 return Err(input_error(

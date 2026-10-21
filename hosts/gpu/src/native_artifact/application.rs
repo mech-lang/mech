@@ -291,6 +291,10 @@ serde_json = "1.0"
 [profile.dev]
 debug = 0
 incremental = false
+[profile.release]
+# Remove symbol tables while retaining the normal speed optimization level.
+strip = "symbols"
+opt-level = 3
 "#,
         name = json_string(binary_name),
         core = json_string(&format!("{workspace_text}/src/core")),
