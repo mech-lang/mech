@@ -157,39 +157,42 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [latest qualified timing and footprint receipt](../../docs/validation/canonical-knucleotide-owned-string-footprint-v1.json)
+The [latest qualified timing and footprint receipt](../../docs/validation/canonical-knucleotide-capture-transfer-footprint-v1.json)
 compares three retained binaries in one matched M1 batch. Sizes use decimal MB;
 peak RSS comes from separate process-memory runs.
 
 | Implementation | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Legacy direct I/O | 0.0921 s | 0.9776 s | 204.8 MB | 3.16 MB |
-| Previous secured application (`fc85cc37b`) | 0.0717 s | 0.6619 s | 607.5 MB | 6.81 MB |
-| Latest qualified secured application (`7f5475450`) | 0.0712 s | 0.6527 s | 568.5 MB | 6.83 MB |
+| Legacy direct I/O | 0.0922 s | 0.9763 s | 195.4 MB | 3.16 MB |
+| Previous secured application (`7f5475450`) | 0.0721 s | 0.6587 s | 585.5 MB | 6.83 MB |
+| Latest qualified secured application (`c0271df4f`) | 0.0701 s | 0.6391 s | 482.3 MB | 6.84 MB |
 
 Complete-use and ownership proofs now let the existing emitted ASCII map loop
 reuse a last-use String's charged backing. Shared/external owners, cold consumers,
 parent-loop reuse, Unicode and unsupported representations retain their ordinary
 canonical paths. A mutable buffer is never presented as an immutable Value;
-UTF8 is revalidated before publishing a new frozen identity. The Mech source and
-generated instructions are unchanged. IR21/work policy31 pins the ownership
-handoff and its same-ledger charges; grants and one-round publication are unchanged.
+UTF8 is revalidated before publishing a new frozen identity. The provider now
+also transfers acquired UTF8 backing through the same canonical String constructor
+as ordinary values. Construction failures restore the original bytes; repeated
+mixed reads and cached diagnostics are preserved. The Mech source and native
+computation (modulo proved constant-slot renaming) are unchanged. IR21/work
+policy31, native counters, grants and one-round publication remain unchanged.
 
 Twelve balanced timing rounds per size retain 78 outputs and 52 secured reports;
 six separate memory runs per binary and size retain RSS and the distinct OS
-footprint metric. At 125M this change is 1.4% faster in the matched batch
-(12/12 paired rounds), reduces median peak RSS by 39.0 MB, and adds 16,944 executable
+footprint metric. At 125M this change is 3.0% faster in the matched batch
+(12/12 paired rounds), reduces median peak RSS by 103.1 MB, and adds 15,888 executable
 bytes. These are whole-implementation measurements, not isolated capability costs
 or an optimization ceiling. Fresh review and green CI remain required; keep the
 PR draft and unmerged until the user directs otherwise.
 
-The roughly 200 MB/3.16 MB footprint target is **not achieved**. The provider still
-copies raw input while constructing text; whole-input capture retains 254.2 MB,
-and line geometry also remains. Removing capture copies, proved streaming through
-the existing authorized resource and further host trimming remain unfinished.
-Streaming is not implemented by this change. The
-[factory-linkage receipt](../../docs/validation/canonical-knucleotide-selected-factories-footprint-v1.json)
-retains the previous packaging measurement.
+The roughly 200 MB/3.16 MB footprint target is **not achieved**. Whole-input
+capture still retains 254.2 MB; line geometry and the selected sequence also
+remain. Proved streaming through the existing authorized resource and further
+host trimming remain unfinished. Streaming is not implemented by this change.
+The [buffer-reuse receipt](../../docs/validation/canonical-knucleotide-owned-string-footprint-v1.json)
+retains the previous ownership measurement. Capacity shrinking may still
+reallocate backing; this is not a universal zero-copy guarantee.
 
 ### Canonical native architecture and limits
 
