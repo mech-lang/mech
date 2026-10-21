@@ -1,25 +1,24 @@
 {
   "schema": "mech.canonical-knucleotide-streaming-footprint.v1",
-  "status": "MEASURED_TWO_SIZE_RUNTIME_PARITY_FOOTPRINT_UNFINISHED",
-  "qualification_kind": "HOST_ONLY_FOUR_FILE_PATCH_RETAINED_OBJECT_NOT_CLEAN_QUALIFICATION",
-  "diagnostic_label": "v1144",
+  "status": "CLEAN_QUALIFIED_TWO_SIZE_RUNTIME_PARITY_FOOTPRINT_UNFINISHED",
+  "qualification_kind": "FRESH_CLEAN_SOURCE_ORIGINAL_AND_DECODED_DEFAULT_PROFILE",
+  "measurement_label": "v1145",
+  "source_commit": "3470ea678111865140b9aa5008f90b645eeff300",
   "measured_utc": {
-    "started": "2026-10-21T20:13:46.401Z",
-    "finished": "2026-10-21T20:14:25.506Z"
+    "started": "2026-10-21T20:35:07.546Z",
+    "finished": "2026-10-21T20:35:51.667Z"
   },
   "assessment": {
-    "ten_m": "Near parity with retained secured execution in this matched batch: 0.068642396 versus 0.068913917 seconds. The candidate wins 11 of 12 paired rounds; this small difference is not a universal speedup claim.",
-    "full125m": "The candidate measures 0.632705958 versus 0.6488789585 seconds for the retained secured control, with 287670272 versus 482295808 peak resident bytes. It wins all 12 paired rounds against that control in this batch; earlier approximately 0.639-second secured timings remain valid historical observations.",
-    "runtime_scope": "No runtime regression is observed at either of these two tested sizes in this batch. This is not general performance acceptance or fresh clean-source qualification.",
-    "ten_m_ratio_of_medians": 0.9960599975763965,
-    "ten_m_median_paired_ratio": 0.9945758117365209,
-    "full125m_ratio_of_medians": 0.9750754739568273,
-    "full125m_median_paired_ratio": 0.9761443198796025,
-    "full125m_peak_rss_reduction_percent": 40.3539762883446,
-    "candidate_executable_bytes": 7063168,
+    "ten_m": "Near parity with retained secured execution: 0.068333833 versus 0.068391333 seconds, with 7 of 12 paired rounds faster. Do not interpret this approximately 0.084% median difference as a reliable speedup.",
+    "full125m": "Fresh default-profile execution measures 0.6267824375 seconds versus 0.643116208 for retained secured execution and 0.9726336045 for the authenticated tuned legacy direct-I/O binary. It is faster in all 12 paired rounds against each control in this batch.",
+    "footprint": "Peak RSS at 125M is 287293440 bytes for fresh streaming, 506511360 for retained secured and 178782208 for tuned legacy in this batch. Executables are 7063168, 6842992 and 3159168 bytes respectively. The approximately 200 MB/3.16 MB footprint target remains unmet.",
+    "ten_m_ratio_of_medians": 0.9991592501932957,
+    "full125m_ratio_of_medians": 0.9746021476417213,
+    "full125m_over_legacy_ratio_of_medians": 0.6444178307228124,
+    "full125m_peak_rss_reduction_percent": 43.27996118389132,
     "reference_footprint_target_met": false,
-    "production_qualification_complete": false,
-    "interpretation": "The diagnostic recovers the previously measured 10M slowdown while retaining full-size streaming performance. The approximately 200 MB/3.16 MB reference footprint target remains unmet: current full-size RSS is 287.67 MB and the executable is 7.063 MB (decimal units). These results do not authorize readiness or merge."
+    "clean_default_profile_qualification_complete": true,
+    "interpretation": "No additional runtime optimization was implemented between v1144 and v1145. The same effective opt-level-3/ThinLTO configuration now comes from the generated default, with fresh original/decoded artifacts. The 0.6268 versus earlier 0.6327-second result is a new batch observation, not an extra optimization benefit. The earlier approximately 0.639-second secured baseline remains valid historical evidence. This three-implementation comparison is not an isolated capability-overhead measurement or general language ranking; qualification does not authorize readiness or merge."
   },
   "hardware": {
     "architecture": "arm64",
@@ -27,6 +26,7 @@
     "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90",
     "power_source": "Now drawing from 'AC Power'"
   },
+  "hardware_provenance": "Established same-M1 machine context from the prior matched batches. The v1145 observer pins binaries, inputs, policy and idle checks; it does not record a new hardware probe.",
   "inputs_and_oracles": [
     {
       "label": "10m",
@@ -104,8 +104,8 @@
     "typed_ir_version": 26,
     "work_policy_version": 35,
     "streaming": "One admitted CLI text observation feeds generated Mech scanner continuations through bounded UTF-8 line windows. Proven dead prefixes and consumed final-join chunks are released. EOF admits genuine full count/shape and original producer/length semantics before saved body failures. Same capability/provider/transaction authority and cumulative finite ledger; no Rust workload scanner.",
-    "current_host_change": "Derive the complete line-retention frontier inventory once during descriptor preparation and share that same freshly derived inventory with prefix layout and typed-IR identity hashing. Preserve unsupported/multiple-frontier handling, complete identity serialization, capture eligibility, all resource limits and work debits.",
-    "measured_packaging": "Use the explicit Cargo command-line override profile.release.lto=\"thin\" for the Rust host/libraries only. The pinned v1142 generated Cargo.toml, build.rs, source, bytecode, object identity and Cranelift program.o remain unchanged. Both the v1143 streaming control and v1144 candidate use this same override, opt-level 3, normal unwind and unchanged default codegen units.",
+    "descriptor_preparation": "Derive the complete line-retention frontier inventory once during descriptor preparation and share that same freshly derived inventory with prefix layout and typed-IR identity hashing. Preserve unsupported/multiple-frontier handling, complete identity serialization, capture eligibility, all resource limits and work debits.",
+    "packaging": "Generated normal release profile uses ThinLTO, opt-level 3 and symbol stripping with unchanged default unwind/codegen units. No CLI/profile environment override. The Mech source is compiled through the maintained Cranelift Object route; ThinLTO optimizes linked Rust host/libraries, not the already-native Mech Object.",
     "retained_optimizations": [
       "Hoist only invocation-stable prefix/EOF/availability facts into generated entry SSA values; preserve mutable local/work loads and all semantic guards.",
       "Cache exact full-chunk payload totals in immutable offset backing and sum chunks once per window, retaining ordinary cell inspection at partial edges. Ownership, reservations and cumulative charges remain unchanged.",
@@ -117,354 +117,229 @@
       "Require every deferred count comparison to use the proved current row index; unproved lookahead or unrelated expressions select the existing snapshot strategy before acquisition.",
       "Reject zero-valued live retention seed fields so unsupported seeds select the existing snapshot strategy instead of creating an invalid capture frontier."
     ],
-    "unchanged": "The original v1142 nominal revision, Object, bytecode and identity are retained exactly, not normalized or regenerated. All 96 outputs and complete security reports match v1142 verbatim, including work counters and bounded-lines storage. One observation, one effect and one secured round retain the same capability/provider/transaction authority and finite policy.",
-    "default_profile_adoption": "Adopting ThinLTO as the generated default and freshly qualifying that later change are separate work. This receipt measures the explicit command-line override on the retained project, not a new default-profile generated application."
+    "identity_and_accounting": "Fresh source compilation supplies its actual new nominal revision from the generated manifest. At both sizes the fresh complete report equals v1144 with only that known revision changed. Every repeated fresh/decoded execution must match this full report exactly, including work counters, bounded-lines storage, one observation/effect and the unchanged finite policy. No counter normalization or security relaxation."
   },
   "method": {
-    "timing": "12 serial rounds per size, all six orders twice. Descriptors open before monotonic timing; spawn through exit includes startup and secured report publication. One separate correctness/warmup per variant/size. Hashing/report checks outside timing.",
-    "memory": "3 separate fresh-process RSS samples per variant/size using macOS /usr/bin/time -l. First three cyclic orders put each variant in every position once; wrapper elapsed time receives no timing credit.",
-    "interference": "Reject active compilers, relevant tests, benchmarks and profilers before and after every process.",
-    "counters": "Every complete report, including the nominal program revision, must equal the retained per-size v1142 report for the corresponding implementation. No field normalization. Both streaming variants must report bounded-lines input storage; security fields are separately checked against the unchanged finite policy.",
-    "provenance": "Four-file descriptor-frontier-reuse host patch with an explicitly selected profile-matched streaming control. Exact prior v1142 generated manifest, source, bytecode, identity, program.o and resolved dependencies are preserved. No Mech regeneration, feature change, size-optimization level, panic strategy change or fresh original/decoded build claim. Diagnostic only, not clean-source qualification."
+    "timing": "12 serial rounds per size, all six orders twice; monotonic spawn-to-exit wall time with descriptors opened before timing. Includes startup and complete execution, including one secured round and report publication for secured variants. Warmups and hashing outside timing.",
+    "memory": "3 separate macOS time -l RSS runs per variant/size; not used as timing samples.",
+    "policy": "Fresh default and retained secured use the exact finite launch. Legacy direct I/O is an explicitly unsecured historical control; it does not emit a security report.",
+    "identity": "Fresh source compilation has a new actual nominal revision. Before timing, every fresh report must equal the v1144 report with only that known revision substituted, and both fresh original/decoded125M reports already match it. Repeated runs match full reports exactly; no counter normalization.",
+    "scope": "Same-M1 same-input comparison, not an isolated capability-overhead experiment or general language ranking.",
+    "interference": "The observer checks for active compilers, relevant tests, benchmarks and profilers before and after every process and verifies all immutable pins before/after the batch.",
+    "legacy_environment": "The explicitly unsecured legacy control uses the exact seven-variable tuned environment authenticated by native-io-measurement-v321/measurement.json; fresh and retained secured controls receive no MECH tuning overrides.",
+    "units": "Seconds, bytes and decimal MB. RSS samples are separate fresh processes and receive no timing credit."
   },
   "current_matched_batch": {
     "10m": {
-      "variants": {
-        "secured-retained": {
-          "executable_bytes": 6842992,
-          "timing_samples_ns": [
-            72614625,
-            68894375,
-            68741458,
-            69118042,
-            68873375,
-            69053208,
-            68899375,
-            68962875,
-            70262875,
-            68912667,
-            68915167,
-            68738750
-          ],
-          "median_seconds": 0.068913917,
-          "minimum_seconds": 0.06873875,
-          "maximum_seconds": 0.072614625,
-          "peak_rss_samples_bytes": [
-            55869440,
-            55869440,
-            67715072
-          ],
-          "median_peak_rss_bytes": 55869440,
-          "median_peak_footprint_bytes": 40076224
-        },
-        "streaming-thinlto-v1143": {
-          "executable_bytes": 7063136,
-          "timing_samples_ns": [
-            71422500,
-            71159125,
-            71010792,
-            71081833,
-            70937666,
-            71102917,
-            71166084,
-            71040042,
-            71337708,
-            71379625,
-            70933041,
-            71263542
-          ],
-          "median_seconds": 0.071131021,
-          "minimum_seconds": 0.070933041,
-          "maximum_seconds": 0.0714225,
-          "peak_rss_samples_bytes": [
-            31031296,
-            31031296,
-            31031296
-          ],
-          "median_peak_rss_bytes": 31031296,
-          "median_peak_footprint_bytes": 16892736
-        },
-        "streaming-frontier-v1144": {
-          "executable_bytes": 7063168,
-          "timing_samples_ns": [
-            70408542,
-            68536875,
-            68560834,
-            68651917,
-            68808792,
-            68662417,
-            68279750,
-            68570042,
-            68616750,
-            68760250,
-            68918459,
-            68632875
-          ],
-          "median_seconds": 0.068642396,
-          "minimum_seconds": 0.06827975,
-          "maximum_seconds": 0.070408542,
-          "peak_rss_samples_bytes": [
-            31031296,
-            31424512,
-            33538048
-          ],
-          "median_peak_rss_bytes": 31424512,
-          "median_peak_footprint_bytes": 17482752
-        }
+      "legacy-direct": {
+        "median_seconds": 0.0916314375,
+        "minimum_seconds": 0.091271791,
+        "maximum_seconds": 0.093258667,
+        "timing_samples_ns": [
+          93258667,
+          92375916,
+          92056250,
+          91416750,
+          91314584,
+          91639250,
+          91623625,
+          92203667,
+          91271791,
+          91325792,
+          91472625,
+          92196167
+        ],
+        "executable_bytes": 3159168,
+        "median_peak_rss_bytes": 55083008,
+        "peak_rss_samples_bytes": [
+          55083008,
+          54870016,
+          55345152
+        ]
       },
-      "diagnostic_over_selected_control": 0.9650135065543343,
-      "diagnostic_over_retained": 0.9960599975763965,
-      "paired": {
-        "secured-retained": {
-          "rounds": 12,
-          "median_ratio": 0.9945758117365209,
-          "median_delta_ms": -0.3741455,
-          "faster_rounds": 11,
-          "minimum_ratio": 0.9696193018968287,
-          "maximum_ratio": 1.0000477688750287,
-          "ratios": [
-            0.9696193018968287,
-            0.9948108971160563,
-            0.997372415347955,
-            0.9932561023647053,
-            0.9990622936657307,
-            0.9943407263569854,
-            0.9910068124710856,
-            0.9943037032606312,
-            0.9765719094187364,
-            0.9977882585795148,
-            1.0000477688750287,
-            0.9984597479587569
-          ],
-          "deltas_ms": [
-            -2.206083,
-            -0.3575,
-            -0.180624,
-            -0.466125,
-            -0.064583,
-            -0.390791,
-            -0.619625,
-            -0.392833,
-            -1.646125,
-            -0.152417,
-            0.003292,
-            -0.105875
-          ]
-        },
-        "streaming-thinlto-v1143": {
-          "rounds": 12,
-          "median_ratio": 0.9653648349455457,
-          "median_delta_ms": -2.459979,
-          "faster_rounds": 12,
-          "minimum_ratio": 0.9594422815227546,
-          "maximum_ratio": 0.9858033812874094,
-          "ratios": [
-            0.9858033812874094,
-            0.9631494906661654,
-            0.9654987934791658,
-            0.9658152315796358,
-            0.9699895116368785,
-            0.9656765136653958,
-            0.9594422815227546,
-            0.9652308764119255,
-            0.961858068106141,
-            0.9633036037945002,
-            0.9715988209218325,
-            0.963085374005126
-          ],
-          "deltas_ms": [
-            -1.013958,
-            -2.62225,
-            -2.449958,
-            -2.429916,
-            -2.128874,
-            -2.4405,
-            -2.886334,
-            -2.47,
-            -2.720958,
-            -2.619375,
-            -2.014582,
-            -2.630667
-          ]
-        }
+      "secured-retained": {
+        "median_seconds": 0.068391333,
+        "minimum_seconds": 0.068096833,
+        "maximum_seconds": 0.069648667,
+        "timing_samples_ns": [
+          68096833,
+          68389333,
+          68580500,
+          68301334,
+          68393333,
+          68148000,
+          69648667,
+          68490750,
+          68351250,
+          68650750,
+          68567041,
+          68366625
+        ],
+        "executable_bytes": 6842992,
+        "median_peak_rss_bytes": 55869440,
+        "peak_rss_samples_bytes": [
+          55869440,
+          55869440,
+          55869440
+        ]
       },
-      "candidate_executable_bytes_over_selected_control": 1.00000453056546
+      "fresh-default": {
+        "median_seconds": 0.068333833,
+        "minimum_seconds": 0.068061,
+        "maximum_seconds": 0.068671583,
+        "timing_samples_ns": [
+          68244167,
+          68315666,
+          68310083,
+          68397625,
+          68537875,
+          68484958,
+          68671583,
+          68507666,
+          68247666,
+          68061000,
+          68341458,
+          68326208
+        ],
+        "executable_bytes": 7063168,
+        "median_peak_rss_bytes": 31031296,
+        "peak_rss_samples_bytes": [
+          31031296,
+          31031296,
+          31637504
+        ]
+      }
     },
     "125m": {
-      "variants": {
-        "secured-retained": {
-          "executable_bytes": 6842992,
-          "timing_samples_ns": [
-            645237875,
-            646817625,
-            647493459,
-            653288875,
-            656717750,
-            641742750,
-            652921625,
-            641718416,
-            650264458,
-            652310625,
-            646506500,
-            652930542
-          ],
-          "median_seconds": 0.6488789585,
-          "minimum_seconds": 0.641718416,
-          "maximum_seconds": 0.65671775,
-          "peak_rss_samples_bytes": [
-            482164736,
-            482295808,
-            506511360
-          ],
-          "median_peak_rss_bytes": 482295808,
-          "median_peak_footprint_bytes": 466896704
-        },
-        "streaming-thinlto-v1143": {
-          "executable_bytes": 7063136,
-          "timing_samples_ns": [
-            636203791,
-            639222000,
-            637501708,
-            649060583,
-            641137958,
-            633931458,
-            635427542,
-            646108041,
-            635102291,
-            636278666,
-            636721042,
-            635438250
-          ],
-          "median_seconds": 0.636499854,
-          "minimum_seconds": 0.633931458,
-          "maximum_seconds": 0.649060583,
-          "peak_rss_samples_bytes": [
-            287440896,
-            287293440,
-            290619392
-          ],
-          "median_peak_rss_bytes": 287440896,
-          "median_peak_footprint_bytes": 164447424
-        },
-        "streaming-frontier-v1144": {
-          "executable_bytes": 7063168,
-          "timing_samples_ns": [
-            631023458,
-            632176334,
-            646257625,
-            633690667,
-            632683333,
-            630611333,
-            634500958,
-            630864334,
-            632728583,
-            633604500,
-            632000042,
-            636558000
-          ],
-          "median_seconds": 0.632705958,
-          "minimum_seconds": 0.630611333,
-          "maximum_seconds": 0.646257625,
-          "peak_rss_samples_bytes": [
-            288210944,
-            287670272,
-            287293440
-          ],
-          "median_peak_rss_bytes": 287670272,
-          "median_peak_footprint_bytes": 164431040
-        }
+      "legacy-direct": {
+        "median_seconds": 0.9726336045,
+        "minimum_seconds": 0.964005584,
+        "maximum_seconds": 0.977394875,
+        "timing_samples_ns": [
+          969312333,
+          964911459,
+          970928792,
+          973367959,
+          971899250,
+          977346833,
+          975719167,
+          964005584,
+          977394875,
+          975869375,
+          969863709,
+          974291708
+        ],
+        "executable_bytes": 3159168,
+        "median_peak_rss_bytes": 178782208,
+        "peak_rss_samples_bytes": [
+          170213376,
+          185712640,
+          178782208
+        ]
       },
-      "diagnostic_over_selected_control": 0.9940394393240505,
-      "diagnostic_over_retained": 0.9750754739568273,
-      "paired": {
-        "secured-retained": {
-          "rounds": 12,
-          "median_ratio": 0.9761443198796025,
-          "median_delta_ms": -15.506916499999999,
-          "faster_rounds": 12,
-          "minimum_ratio": 0.9634022119852859,
-          "maximum_ratio": 0.9980913567807949,
-          "ratios": [
-            0.9779702687167892,
-            0.9773641124884314,
-            0.9980913567807949,
-            0.9700007014507939,
-            0.9634022119852859,
-            0.9826543938361594,
-            0.9717873228658953,
-            0.9830859116251387,
-            0.9730327026423455,
-            0.9713232863560975,
-            0.977561775480989,
-            0.9749245272707736
-          ],
-          "deltas_ms": [
-            -14.214417,
-            -14.641291,
-            -1.235834,
-            -19.598208,
-            -24.034417,
-            -11.131417,
-            -18.420667,
-            -10.854082,
-            -17.535875,
-            -18.706125,
-            -14.506458,
-            -16.372542
-          ]
-        },
-        "streaming-thinlto-v1143": {
-          "rounds": 12,
-          "median_ratio": 0.993674046784754,
-          "median_delta_ms": -4.0205625000000005,
-          "faster_rounds": 10,
-          "minimum_ratio": 0.9763197513413012,
-          "maximum_ratio": 1.0137347349663886,
-          "ratios": [
-            0.9918574314185437,
-            0.9889777479498515,
-            1.0137347349663886,
-            0.9763197513413012,
-            0.9868130955366083,
-            0.994762643566428,
-            0.9985417944002182,
-            0.9764068761992083,
-            0.9962624792358055,
-            0.9957971779616449,
-            0.99258545000308,
-            1.0017621696522045
-          ],
-          "deltas_ms": [
-            -5.180333,
-            -7.045666,
-            8.755917,
-            -15.369916,
-            -8.454625,
-            -3.320125,
-            -0.926584,
-            -15.243707,
-            -2.373708,
-            -2.674166,
-            -4.721,
-            1.11975
-          ]
-        }
+      "secured-retained": {
+        "median_seconds": 0.643116208,
+        "minimum_seconds": 0.634416333,
+        "maximum_seconds": 0.662256,
+        "timing_samples_ns": [
+          638917042,
+          662256000,
+          652937792,
+          641698459,
+          642686375,
+          634416333,
+          653229541,
+          656078250,
+          635118833,
+          642527792,
+          643546041,
+          650786000
+        ],
+        "executable_bytes": 6842992,
+        "median_peak_rss_bytes": 506511360,
+        "peak_rss_samples_bytes": [
+          515653632,
+          506511360,
+          498515968
+        ]
       },
-      "candidate_executable_bytes_over_selected_control": 1.00000453056546
+      "fresh-default": {
+        "median_seconds": 0.6267824375,
+        "minimum_seconds": 0.624594667,
+        "maximum_seconds": 0.629925166,
+        "timing_samples_ns": [
+          627845708,
+          628304291,
+          624781417,
+          629925166,
+          627326500,
+          624594667,
+          626843958,
+          625481750,
+          626720917,
+          626449917,
+          625773542,
+          628210375
+        ],
+        "executable_bytes": 7063168,
+        "median_peak_rss_bytes": 287293440,
+        "peak_rss_samples_bytes": [
+          287293440,
+          287293440,
+          289603584
+        ]
+      }
     }
   },
-  "verified_exact_outputs": 96,
-  "verified_secured_reports": 96,
-  "runtime_compatibility": {
-    "status": "OBSERVED_EXACT_RETAINED_OBJECT_COMPATIBLE",
-    "candidate_processes": 32,
-    "generated_object_sha256": "970ea4d8e31645203432045e6579fe26a49e0a53fc628c4f4d25d5d00b14418f",
-    "bytecode_sha256": "f1e0ca1fd73905fc274b14a31609f0b389ba87551b959dfe097a16c9179e0f39",
-    "object_identity_sha256": "cdcd6383fda17159f7ef5a728bef043482eb51415f7b46277240178971f5f949",
-    "program_revision": "2749f8cd8f09131fc58bb8cfffdd0c79fe64a8f31152264787cd488a8e5a01a0",
-    "exact_output_and_full_secured_reports_match_v1142": true
+  "paired_current_over_controls": {
+    "10m": {
+      "legacy-direct": {
+        "median_ratio": 0.7461898356060273,
+        "median_delta_ms": -23.209542,
+        "faster_rounds": 12,
+        "total_rounds": 12
+      },
+      "secured-retained": {
+        "median_ratio": 0.9991658244091837,
+        "median_delta_ms": -0.057041999999999995,
+        "faster_rounds": 7,
+        "total_rounds": 12
+      }
+    },
+    "125m": {
+      "legacy-direct": {
+        "median_ratio": 0.6450023804099665,
+        "median_delta_ms": -345.32704149999995,
+        "faster_rounds": 12,
+        "total_rounds": 12
+      },
+      "secured-retained": {
+        "median_ratio": 0.9736803186319987,
+        "median_delta_ms": -16.925187,
+        "faster_rounds": 12,
+        "total_rounds": 12
+      }
+    }
   },
+  "verified_exact_outputs": 98,
+  "verified_secured_reports": 66,
   "variants": [
+    {
+      "name": "legacy-direct",
+      "binary": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-901/target/release/historical-fast",
+      "sha256": "e11bf3a7f10ed5ed6232d9bc88a4527d2ea6e0cf3fc96ee38978808e258a6be4",
+      "executable_bytes": 3159168,
+      "secure": false,
+      "environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_STD_MAP": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_ASYNC": "0",
+        "MECH_SEQUENCE_BUFFER_REUSE": "0",
+        "MECH_ARRAY_GRAIN": "16"
+      }
+    },
     {
       "name": "secured-retained",
       "binary": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-transfer-standard125m-release-v1096/variant-0/native-executable",
@@ -476,259 +351,93 @@
       "streaming": false
     },
     {
-      "name": "streaming-thinlto-v1143",
-      "binary": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/native-executable",
-      "sha256": "863502643e2eec77cf976d8e4c98e92a2139bc22db1760854083be904ddce60f",
-      "executable_bytes": 7063136,
-      "environment": {},
-      "secure": true,
-      "streaming": true,
-      "revision": "2749f8cd8f09131fc58bb8cfffdd0c79fe64a8f31152264787cd488a8e5a01a0"
-    },
-    {
-      "name": "streaming-frontier-v1144",
-      "binary": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/native-executable",
-      "sha256": "280f91edbc83a668cb2bba4ca81d353ec9e03594c70840922cf996ef00cdcd39",
+      "name": "fresh-default",
+      "binary": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/variant-0/native-executable",
+      "sha256": "a15b40d0bb4a37cfa7de5edff2f27df8e35cf822ff0c6f6dd88a3abf2cb42532",
       "executable_bytes": 7063168,
-      "environment": {},
       "secure": true,
       "streaming": true,
-      "revision": "2749f8cd8f09131fc58bb8cfffdd0c79fe64a8f31152264787cd488a8e5a01a0"
+      "revision": "2e0254100cd787c391ebcd973eb2792429a3b16f24eb963481b41cb3cbad0d23"
     }
   ],
   "current_provenance": {
-    "source_snapshot": {
-      "base_commit": "09f8bfaa85236086ccc3e32b4caae5a9ddf5b142",
-      "status": " M hosts/gpu/src/native_artifact/program_descriptor.rs\n M hosts/gpu/src/native_artifact/program_identity.rs\n M hosts/gpu/src/native_artifact/program_prefix_layout.rs\n M hosts/gpu/src/native_artifact/program_prefix_tests.rs\n",
-      "git_binary_patch_sha256": "1b45ce1e28ffae6b3f8d6e7ce1d24839f86c42c8d89cf84999d0fbdd13f7d946",
-      "untracked": [],
-      "source_snapshot_sha256": "6741977c470cc880fcd33d5fabe526b499a4877c4153818bbd01959757bfb38f"
-    },
-    "source_scope": "Host-only four-file patch on clean commit 09f8bfaa85236086ccc3e32b4caae5a9ddf5b142, frozen through local validation, linking and measurement. This measured snapshot is separate from subsequent source/default-profile/documentation edits.",
-    "profile_selection": {
-      "mode": "thin",
-      "explicitly_requested": true
-    },
-    "profile_override": {
-      "cargo_config": "profile.release.lto=\"thin\"",
-      "lto": "thin",
-      "opt_level": 3,
-      "panic": "unwind",
-      "strip": "symbols",
-      "codegen_units": "unchanged default"
-    },
-    "artifact_inheritance": {
-      "original_decoded_previously_byte_identical": true,
-      "current_build_kind": "one four-file host rebuild of the prior original object",
-      "generated_inputs_unchanged": true,
-      "nominal_identity_unchanged": true,
-      "program_revision": "2749f8cd8f09131fc58bb8cfffdd0c79fe64a8f31152264787cd488a8e5a01a0",
-      "source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
-      "bytecode_sha256": "f1e0ca1fd73905fc274b14a31609f0b389ba87551b959dfe097a16c9179e0f39",
-      "object_identity_sha256": "cdcd6383fda17159f7ef5a728bef043482eb51415f7b46277240178971f5f949"
-    },
-    "inherited_original_decoded_scope": "Reuse exact v1142 project-0/program.o/bytecode/identity. The local inventory regression is not proof of old-Object compatibility: the new binary must execute the secured boundary with exact full v1142 reports in the separate observer. This is one host rebuild, not new original/decoded generation.",
-    "retained_cranelift_object": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/program.o",
-      "bytes": 26920,
-      "sha256": "970ea4d8e31645203432045e6579fe26a49e0a53fc628c4f4d25d5d00b14418f"
-    },
-    "candidate": {
-      "kind": "original",
-      "binary": {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/native-executable",
-        "bytes": 7063168,
-        "sha256": "280f91edbc83a668cb2bba4ca81d353ec9e03594c70840922cf996ef00cdcd39"
-      },
-      "object": {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/program.o",
-        "bytes": 26920,
-        "sha256": "970ea4d8e31645203432045e6579fe26a49e0a53fc628c4f4d25d5d00b14418f"
-      },
-      "revision": "2749f8cd8f09131fc58bb8cfffdd0c79fe64a8f31152264787cd488a8e5a01a0"
-    },
-    "project_pins": [
+    "source_commit": "3470ea678111865140b9aa5008f90b645eeff300",
+    "source_clean_before_and_after_qualification": true,
+    "qualification": "The maintained fresh clean-source original/decoded build and its pins are recorded in fresh_default_profile_qualification below. The matched observer runs those immutable binaries without a build or regeneration.",
+    "source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+    "original_decoded": [
       {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/linked-manifest.json",
-        "bytes": 2720,
-        "sha256": "0146a92319c544b9ed2215a4f057ba445499b5b5a8ef8236ff3b2ead413f1c1a"
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/variant-0/native-executable",
+          "bytes": 7063168,
+          "sha256": "a15b40d0bb4a37cfa7de5edff2f27df8e35cf822ff0c6f6dd88a3abf2cb42532"
+        },
+        "revision": "2e0254100cd787c391ebcd973eb2792429a3b16f24eb963481b41cb3cbad0d23",
+        "object_sha256": "546d7b6f173828310192d970d8741c00480ad3bb2f878e32c602e8284c5615ca",
+        "bytecode_sha256": "bc511b57f473cb411db0eeb43c2e5997e0f68f358f1d0c2f89ba6e4cde4dfabb",
+        "identity_sha256": "dd158a03373e24e2dd9cf589872634cb0b00c55836a2307103d7a68850a715e1"
       },
       {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/Cargo.toml",
-        "bytes": 2870,
-        "sha256": "aa27165b698338f7341da9cd269b95a27b7fd1a7365d56e15e24083325f67a8e"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/application.mec",
-        "bytes": 2621,
-        "sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/build.rs",
-        "bytes": 2360,
-        "sha256": "278617e0dea2a4d9ba65f386bfcfe7ddd0f0cb66a39e126c60dd991184519af5"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/factory-profile.json",
-        "bytes": 2267,
-        "sha256": "379398d3029ac76c5e12f35e913b8b67acea06f4aaf80b7b7009a8be7320a24a"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/object-identity.bin",
-        "bytes": 192,
-        "sha256": "cdcd6383fda17159f7ef5a728bef043482eb51415f7b46277240178971f5f949"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/program.mecb",
-        "bytes": 33723,
-        "sha256": "f1e0ca1fd73905fc274b14a31609f0b389ba87551b959dfe097a16c9179e0f39"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/program.o",
-        "bytes": 26920,
-        "sha256": "970ea4d8e31645203432045e6579fe26a49e0a53fc628c4f4d25d5d00b14418f"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/rust-toolchain.toml",
-        "bytes": 63,
-        "sha256": "19219593d7dba33a75623287af94da940a93fac92eeef99e8fff9b7fd804fcf9"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/src/main.rs",
-        "bytes": 29361,
-        "sha256": "f7ff35aa2b57e2492b5f5939f61fdac9aad0ab56d28f27446c22062066ecb57f"
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/variant-1/native-executable",
+          "bytes": 7063168,
+          "sha256": "a15b40d0bb4a37cfa7de5edff2f27df8e35cf822ff0c6f6dd88a3abf2cb42532"
+        },
+        "revision": "2e0254100cd787c391ebcd973eb2792429a3b16f24eb963481b41cb3cbad0d23",
+        "object_sha256": "546d7b6f173828310192d970d8741c00480ad3bb2f878e32c602e8284c5615ca",
+        "bytecode_sha256": "bc511b57f473cb411db0eeb43c2e5997e0f68f358f1d0c2f89ba6e4cde4dfabb",
+        "identity_sha256": "dd158a03373e24e2dd9cf589872634cb0b00c55836a2307103d7a68850a715e1"
       }
     ],
-    "resolved_lock": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/Cargo.lock",
+    "generated_manifest": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/linked-manifest.json",
+      "bytes": 2720,
+      "sha256": "03c03e4dd0dfd21333154bbc23c5341c383a0e74080d5a7044a536529a88728c"
+    },
+    "resolved_lockfile": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/Cargo.lock",
       "bytes": 35469,
       "sha256": "dcb094e2225f372251f939286eba54f1edfabef2a98a5dae457fb5c87406de73"
     },
-    "retained_source_and_binary_files": [
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/source.diff",
-        "bytes": 7963,
-        "sha256": "1b45ce1e28ffae6b3f8d6e7ce1d24839f86c42c8d89cf84999d0fbdd13f7d946"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/source-snapshot.json",
-        "bytes": 519,
-        "sha256": "2c0b80998b1a80878415ca12914ecf6506b66d66f4a7c0ba2dde46b2102e54ea"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/source-files/hosts/gpu/src/native_artifact/program_descriptor.rs",
-        "bytes": 17258,
-        "sha256": "b2cce918fbc568f443e7514b269675db001e0f3e96ac48528b1a4062207469dc"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/source-files/hosts/gpu/src/native_artifact/program_identity.rs",
-        "bytes": 40386,
-        "sha256": "ee9ae267758ad01c827a19422673992155da1e6d3ac9b1c92d3e1a84aed77a21"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/source-files/hosts/gpu/src/native_artifact/program_prefix_layout.rs",
-        "bytes": 4857,
-        "sha256": "ab7e3a60bbe08f277218cd6b44bacfc74174b6547fda9e365b88eb273b78f20d"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/source-files/hosts/gpu/src/native_artifact/program_prefix_tests.rs",
-        "bytes": 27514,
-        "sha256": "f31890a80eede97075add62efd38b6a1adb9d11ec268840f7fe2487f649e415e"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/native-executable",
-        "bytes": 7063168,
-        "sha256": "280f91edbc83a668cb2bba4ca81d353ec9e03594c70840922cf996ef00cdcd39"
-      }
-    ],
-    "script_pins": [
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/build-streaming-frontier-v1144.cjs",
-        "bytes": 13624,
-        "sha256": "72e16f8382c2ac0104503f7044bf580acc751f20a05e142be1553540ee7455ea"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-common-v1144.cjs",
-        "bytes": 3318,
-        "sha256": "0607423b1066b6d3e027039654a8f9950cd5dfdec6417c204acd36c9454f4179"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-common-v1142.cjs",
-        "bytes": 4225,
-        "sha256": "6aa79521d734b6d17b514208fecdce408a5400fda0e1ccf937f9b787efc45e38"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-streaming-frontier-three-way-v1144.cjs",
-        "bytes": 25221,
-        "sha256": "61795b1ce946968b4f7e94c890e04cbae32cdb7b3735cb11a16977d6030778f9"
-      }
-    ],
-    "build_commands": [
-      {
-        "program": "cargo",
-        "arguments": [
-          "+nightly-2026-03-03",
-          "build",
-          "--manifest-path",
-          "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/Cargo.toml",
-          "--bin",
-          "canonical-hosted-knucleotide",
-          "--message-format=json-render-diagnostics",
-          "--locked",
-          "--offline",
-          "--target-dir",
-          "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/cargo-target",
-          "--release",
-          "--verbose",
-          "--config",
-          "profile.release.lto=\"thin\""
-        ],
-        "working_directory": "/",
-        "ambient_cargo_rust_mech_overrides_removed": true,
-        "explicit_profile_environment": {},
-        "exit": 0,
-        "signal": null,
-        "error": null,
-        "guard_failure": null,
-        "elapsed_seconds": 80.291235084,
-        "lowest_observed_free_bytes": 53808250880,
-        "stdout": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/build.stdout",
-          "bytes": 147770,
-          "sha256": "3a6e18a69f97dd6c4576333cd2a9725350d0e1116d170b889f953bc46c1a83f6"
-        },
-        "stderr": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/build.stderr",
-          "bytes": 22259,
-          "sha256": "f88d6b0c7c85167c8a16610d546ef777b538950213bc0b968c27e345357f7d4c"
-        },
-        "idle_before": {
-          "checked_utc": "2026-10-21T20:12:14.107Z",
-          "conflicts": []
-        },
-        "idle_after": {
-          "checked_utc": "2026-10-21T20:13:34.415Z",
-          "conflicts": []
-        },
-        "disk_before": {
-          "checked_utc": "2026-10-21T20:12:14.109Z",
-          "available_bytes": 53827915776
-        },
-        "disk_after": {
-          "checked_utc": "2026-10-21T20:13:34.417Z",
-          "available_bytes": 53828890624
-        }
-      }
-    ],
-    "build_elapsed_seconds": 80.291235084,
-    "host_rustc_profile_evidence": "     Running `/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc --crate-name canonical_hosted_knucleotide --edition=2024 src/main.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C opt-level=3 -C lto=thin --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=20a6cdb785836a5f -C extra-filename=-fdce3dc9ea0e3e38 --out-dir /Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/cargo-target/release/deps -C strip=symbols -L dependency=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/cargo-target/release/deps --extern mech_core=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/cargo-target/release/deps/libmech_core-540d39dad2a3ddb5.rlib --extern mech_engine=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/cargo-target/release/deps/libmech_engine-0f0185a8384af89d.rlib --extern mech_gpu=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/cargo-target/release/deps/libmech_gpu-5146e56871514a9e.rlib --extern mech_runtime=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/cargo-target/release/deps/libmech_runtime-c3f31f3ea20d5dfb.rlib --extern mech_stdlib=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/cargo-target/release/deps/libmech_stdlib-4f50b621e70cbb57.rlib --extern mech_terminal=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/cargo-target/release/deps/libmech_terminal-5832c7b81edfdbd2.rlib --extern serde=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/cargo-target/release/deps/libserde-e98661e847c11d96.rlib --extern serde_json=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/cargo-target/release/deps/libserde_json-3fd69977ad3c2bcd.rlib --extern sha2=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/cargo-target/release/deps/libsha2-87ad02aaa2eab408.rlib -L native=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/cargo-target/release/build/blake3-87c16dcfc64182cc/out -C link-arg=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/project-0/program.o`",
-    "identity_scope": "This is one host rebuild using the already byte-identical v1142 original/decoded project inputs, not a new source compile or original/decoded generation. The new host successfully executes the exact old Object across 32 candidate processes; unchanged full reports prove observed compatibility for these inputs."
+    "profile": "Normal generated release ThinLTO; no diagnostic CLI override.",
+    "legacy_tuning_receipt": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-io-measurement-v321/measurement.json",
+      "bytes": 43543,
+      "sha256": "fe1f4902b89d54e9912f221fd8bbc7a8b39c83284cfa40daf8ef83a3cf559560"
+    },
+    "prior_security_report_reference": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-three-way-v1144/measurement.json",
+      "bytes": 344876,
+      "sha256": "7e32fd9cedace8cffe83b6804abfa175d23417e38f8c81475d63024236cee94b"
+    }
   },
-  "current_security_reports": [
-    {
-      "size": "10m",
-      "variant": "streaming-frontier-v1144",
-      "observed_report": {
+  "current_security_reports": {
+    "10m": {
+      "secured-retained": {
+        "effects": 1,
+        "host_result_carrier_bytes": 192,
+        "hosted_phases": "admit-activate-capture-resume",
+        "input_acquisition_byte_cap": 254166745,
+        "jit": false,
+        "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+        "native_aot": true,
+        "native_comparison_work": 483361822,
+        "native_transport_bytes": 32472,
+        "native_visits": 474,
+        "native_work": 57293335199,
+        "observations": 1,
+        "payload_argument_snapshot_reserved_bytes": 16,
+        "policy": "secured",
+        "program_revision": "3b77b1f0df1a806eeaae7748d4223ac413390e2e896b100e038629da2c6a533b",
+        "requirements": 2,
+        "resident_body_evaluation": false,
+        "route": "canonical-artifact-program-object-secured-cli",
+        "schema": "mech.canonical-hosted-native-execution.v1",
+        "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+        "shutdown": "completed",
+        "source_parser": false
+      },
+      "fresh-default": {
         "effects": 1,
         "host_result_carrier_bytes": 192,
         "hosted_phases": "admit-activate-capture-resume",
@@ -744,7 +453,7 @@
         "observations": 1,
         "payload_argument_snapshot_reserved_bytes": 16,
         "policy": "secured",
-        "program_revision": "2749f8cd8f09131fc58bb8cfffdd0c79fe64a8f31152264787cd488a8e5a01a0",
+        "program_revision": "2e0254100cd787c391ebcd973eb2792429a3b16f24eb963481b41cb3cbad0d23",
         "requirements": 2,
         "resident_body_evaluation": false,
         "route": "canonical-artifact-program-object-secured-cli",
@@ -754,10 +463,32 @@
         "source_parser": false
       }
     },
-    {
-      "size": "125m",
-      "variant": "streaming-frontier-v1144",
-      "observed_report": {
+    "125m": {
+      "secured-retained": {
+        "effects": 1,
+        "host_result_carrier_bytes": 192,
+        "hosted_phases": "admit-activate-capture-resume",
+        "input_acquisition_byte_cap": 254166745,
+        "jit": false,
+        "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+        "native_aot": true,
+        "native_comparison_work": 6041695262,
+        "native_transport_bytes": 32472,
+        "native_visits": 474,
+        "native_work": 709766994147,
+        "observations": 1,
+        "payload_argument_snapshot_reserved_bytes": 16,
+        "policy": "secured",
+        "program_revision": "3b77b1f0df1a806eeaae7748d4223ac413390e2e896b100e038629da2c6a533b",
+        "requirements": 2,
+        "resident_body_evaluation": false,
+        "route": "canonical-artifact-program-object-secured-cli",
+        "schema": "mech.canonical-hosted-native-execution.v1",
+        "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+        "shutdown": "completed",
+        "source_parser": false
+      },
+      "fresh-default": {
         "effects": 1,
         "host_result_carrier_bytes": 192,
         "hosted_phases": "admit-activate-capture-resume",
@@ -773,7 +504,7 @@
         "observations": 1,
         "payload_argument_snapshot_reserved_bytes": 16,
         "policy": "secured",
-        "program_revision": "2749f8cd8f09131fc58bb8cfffdd0c79fe64a8f31152264787cd488a8e5a01a0",
+        "program_revision": "2e0254100cd787c391ebcd973eb2792429a3b16f24eb963481b41cb3cbad0d23",
         "requirements": 2,
         "resident_body_evaluation": false,
         "route": "canonical-artifact-program-object-secured-cli",
@@ -783,367 +514,282 @@
         "source_parser": false
       }
     }
-  ],
-  "local_validation": {
-    "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/result.json",
-      "bytes": 11621,
-      "sha256": "b7e94f8f3b3dd4e64c8be8a0390c4b3cd7841ec185a6d18f2925068e51d4b4fb"
-    },
-    "source_snapshot": {
-      "base_commit": "09f8bfaa85236086ccc3e32b4caae5a9ddf5b142",
-      "status": " M hosts/gpu/src/native_artifact/program_descriptor.rs\n M hosts/gpu/src/native_artifact/program_identity.rs\n M hosts/gpu/src/native_artifact/program_prefix_layout.rs\n M hosts/gpu/src/native_artifact/program_prefix_tests.rs\n",
-      "git_binary_patch_sha256": "1b45ce1e28ffae6b3f8d6e7ce1d24839f86c42c8d89cf84999d0fbdd13f7d946",
-      "untracked": [],
-      "source_snapshot_sha256": "6741977c470cc880fcd33d5fabe526b499a4877c4153818bbd01959757bfb38f"
-    },
-    "checks": [
-      {
-        "name": "compile",
-        "program": "cargo",
-        "arguments": [
-          "+nightly-2026-03-03",
-          "test",
-          "--locked",
-          "--offline",
-          "-p",
-          "mech-core",
-          "-p",
-          "mech-engine",
-          "-p",
-          "mech-runtime",
-          "-p",
-          "mech-stdlib",
-          "-p",
-          "mech-syntax",
-          "-p",
-          "mech-gpu",
-          "--no-default-features",
-          "--features",
-          "mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-program-host",
-          "--lib",
-          "--test",
-          "canonical_hosted_artifact",
-          "--no-run",
-          "--message-format=json-render-diagnostics"
-        ],
-        "exit": 0,
-        "signal": null,
-        "error": null,
-        "elapsed_seconds": 29.844900125,
-        "stdout": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/compile.stdout",
-          "bytes": 260560,
-          "sha256": "404dd1b9c4afce0989cfc17bb08bd3ca85a35d48f14beb28cc7cc5842bbbce0f"
-        },
-        "stderr": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/compile.stderr",
-          "bytes": 170,
-          "sha256": "fec5b6c94063857a2bbaed9de908333fc969e83744687712b97a40c38ade88d6"
-        }
-      },
-      {
-        "name": "identity_inventory_tests",
-        "program": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-901/target/debug/deps/mech_gpu-c0554e42f8c90e10",
-        "arguments": [
-          "shared_retention_inventory_preserves_identity_and_capture_eligibility",
-          "--test-threads=1"
-        ],
-        "exit": 0,
-        "signal": null,
-        "error": null,
-        "elapsed_seconds": 10.90427225,
-        "stdout": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/identity_inventory_tests.stdout",
-          "bytes": 253,
-          "sha256": "fd161bf2659a7a9deb10a8a6641ee765d465b59a728432dc1704de7889a790b7"
-        },
-        "stderr": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/identity_inventory_tests.stderr",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        }
-      },
-      {
-        "name": "native_host_tests",
-        "program": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-901/target/debug/deps/mech_gpu-c0554e42f8c90e10",
-        "arguments": [
-          "native_artifact::",
-          "--test-threads=1"
-        ],
-        "exit": 0,
-        "signal": null,
-        "error": null,
-        "elapsed_seconds": 58.051475458,
-        "stdout": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/native_host_tests.stdout",
-          "bytes": 20301,
-          "sha256": "e7432624260a4380b963e05d86e044c1c1b518347f59c2ed469dd362aaf90045"
-        },
-        "stderr": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/native_host_tests.stderr",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        }
-      },
-      {
-        "name": "hosted_capture_tests",
-        "program": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-901/target/debug/deps/canonical_hosted_artifact-3007e36d1f41010f",
-        "arguments": [
-          "capture",
-          "--test-threads=1"
-        ],
-        "exit": 0,
-        "signal": null,
-        "error": null,
-        "elapsed_seconds": 9.93960525,
-        "stdout": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/hosted_capture_tests.stdout",
-          "bytes": 1228,
-          "sha256": "2fe95745c5bf794b6678173e52472762fa224c54e560854fa9f16ad475d7fb31"
-        },
-        "stderr": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/hosted_capture_tests.stderr",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        }
-      },
-      {
-        "name": "runtime_only_feature_check",
-        "program": "cargo",
-        "arguments": [
-          "+nightly-2026-03-03",
-          "check",
-          "--locked",
-          "--offline",
-          "-p",
-          "mech-gpu",
-          "--no-default-features",
-          "--features",
-          "canonical-native-program-host-runtime"
-        ],
-        "exit": 0,
-        "signal": null,
-        "error": null,
-        "elapsed_seconds": 10.73131525,
-        "stdout": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/runtime_only_feature_check.stdout",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        },
-        "stderr": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/runtime_only_feature_check.stderr",
-          "bytes": 590,
-          "sha256": "aad4eba0e2f578a91f5345093691a42762e15adcd2a3285155f90d1584fed24d"
-        }
-      },
-      {
-        "name": "warning_policy",
-        "program": "python3",
-        "arguments": [
-          "scripts/check-warning-policy.py"
-        ],
-        "exit": 0,
-        "signal": null,
-        "error": null,
-        "elapsed_seconds": 11.910693542,
-        "stdout": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/warning_policy.stdout",
-          "bytes": 31,
-          "sha256": "43c902f13e02413a527c9f0483cd12052c5d4ebd3a92d08a609163e3a3defade"
-        },
-        "stderr": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/warning_policy.stderr",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        }
-      },
-      {
-        "name": "module_layout",
-        "program": "python3",
-        "arguments": [
-          "scripts/check-rust-module-layout.py"
-        ],
-        "exit": 0,
-        "signal": null,
-        "error": null,
-        "elapsed_seconds": 0.111728375,
-        "stdout": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/module_layout.stdout",
-          "bytes": 35,
-          "sha256": "243ddf51bdf2d99ebab694699c135100a4696d18b46232d5da12776160724464"
-        },
-        "stderr": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/module_layout.stderr",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        }
-      },
-      {
-        "name": "memory_runtime",
-        "program": "python3",
-        "arguments": [
-          "scripts/check-memory-runtime.py"
-        ],
-        "exit": 0,
-        "signal": null,
-        "error": null,
-        "elapsed_seconds": 20.081349417,
-        "stdout": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/memory_runtime.stdout",
-          "bytes": 53,
-          "sha256": "0b66ce89f3e8d72fa0cd91e51007a7a3c72a511c29feaa32ceba110951cd076a"
-        },
-        "stderr": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/memory_runtime.stderr",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        }
-      },
-      {
-        "name": "memory_planner",
-        "program": "python3",
-        "arguments": [
-          "scripts/check-memory-planner.py"
-        ],
-        "exit": 0,
-        "signal": null,
-        "error": null,
-        "elapsed_seconds": 14.088029916,
-        "stdout": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/memory_planner.stdout",
-          "bytes": 28,
-          "sha256": "2735714dbcdd449212ec8780a49a1a43192230a72984043cced9b311807f251a"
-        },
-        "stderr": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/memory_planner.stderr",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        }
-      },
-      {
-        "name": "format",
-        "program": "rustup",
-        "arguments": [
-          "run",
-          "nightly-2026-03-03",
-          "rustfmt",
-          "--check",
-          "--edition",
-          "2024",
-          "hosts/gpu/src/native_artifact/program_descriptor.rs",
-          "hosts/gpu/src/native_artifact/program_identity.rs",
-          "hosts/gpu/src/native_artifact/program_prefix_layout.rs",
-          "hosts/gpu/src/native_artifact/program_prefix_tests.rs"
-        ],
-        "exit": 0,
-        "signal": null,
-        "error": null,
-        "elapsed_seconds": 0.0532675,
-        "stdout": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/format.stdout",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        },
-        "stderr": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/format.stderr",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        }
-      },
-      {
-        "name": "diff_check",
-        "program": "git",
-        "arguments": [
-          "diff",
-          "--check"
-        ],
-        "exit": 0,
-        "signal": null,
-        "error": null,
-        "elapsed_seconds": 0.015895375,
-        "stdout": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/diff_check.stdout",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        },
-        "stderr": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/diff_check.stderr",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        }
-      }
-    ],
-    "test_binaries": [
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-901/target/debug/deps/mech_gpu-c0554e42f8c90e10",
-        "bytes": 642182128,
-        "sha256": "21341e583a1f3074bf3d500e03ba8766291be4a07587b41824a52e2d5c086938"
-      },
-      {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-901/target/debug/deps/canonical_hosted_artifact-3007e36d1f41010f",
-        "bytes": 638584640,
-        "sha256": "eaeb6a7dc3c378fbceb8884b7b1dd7bdaf069323403764d98cff032750b5f797"
-      }
-    ],
-    "native_host_tests_passed": 138,
-    "native_host_diagnostics_ignored": 3,
-    "hosted_capture_tests_passed": 12,
-    "identity_inventory_tests_passed": 1,
-    "scope": "The separately run identity-inventory regression also appears in the native-host suite; it is not an additional unique test. Local passing tests and the runtime-only feature check do not establish complete CI or fresh review. The inventory test alone is not proof of retained-Object runtime compatibility; that comes from the subsequent recorded candidate executions."
   },
   "independent_read_only_audit": {
     "status": "PASS",
-    "recording": "Reported in the task conversation after measurement; no separate persisted audit file was created.",
-    "physical_exact_outputs_and_reports_checked": 96,
-    "candidate_processes_checked": 32,
-    "unique_physical_pins_checked": 147,
-    "full_input_and_oracle_hashes_rechecked": true,
-    "checks": [
-      "Re-read every stdout and full secured report and compare byte-for-byte/field-for-field with the pinned oracles and v1142 reports.",
-      "Verify retained source.diff, source snapshot, four copied source files, local-test log pins, original Object, bytecode, identity, nominal revision and explicit ThinLTO profile.",
-      "Recompute timing medians, paired ratios and win counts; verify balanced round order, separate RSS metrics and all retained file hashes.",
-      "After the source freeze ended, audit the pinned measured snapshot rather than claiming the subsequently edited checkout is still identical."
-    ]
+    "scope": [
+      "Re-read all 98 physical outputs and require the exact size-specific oracle, with empty stderr and successful process exits.",
+      "Re-read all 66 complete secured reports and require exact retained/fresh expectations; the fresh nominal revision is pinned to the actual manifest at both sizes.",
+      "Verify all observer pins, both full input/oracle files, the authenticated v321 legacy environment and original/decoded artifact identities.",
+      "Recompute every timing median/range, paired ratio/delta/win count and RSS median from raw samples; verify all 18 physical RSS metric files and all balanced serial orders."
+    ],
+    "persisted_separate_audit_artifact": false
+  },
+  "fresh_default_profile_qualification": {
+    "label": "v1145",
+    "status": "PASS_FRESH_CLEAN_SOURCE_ORIGINAL_AND_DECODED_125M",
+    "scope": "Separate maintained qualification of freshly generated original/decoded applications. This does not relabel or replace the historical v1144 host-only matched timing/RSS evidence.",
+    "source_commit": "3470ea678111865140b9aa5008f90b645eeff300",
+    "source_clean_before_and_after": true,
+    "qualification_elapsed_seconds": 431.982739666,
+    "profile": {
+      "origin": "Both generated Cargo.toml files contain the normal release default lto=\"thin\" and opt-level=3; no command-line or environment profile override.",
+      "panic": "unchanged default unwind",
+      "codegen_units": "unchanged default",
+      "object_optimization": "speed",
+      "mech_object_route": "Cranelift Object linked unchanged; ThinLTO applies to the Rust host/libraries."
+    },
+    "program_revision": "2e0254100cd787c391ebcd973eb2792429a3b16f24eb963481b41cb3cbad0d23",
+    "original_decoded_byte_identical": [
+      "source",
+      "bytecode",
+      "program.o",
+      "object identity",
+      "generated launcher",
+      "Cargo manifest",
+      "Cargo.lock",
+      "build script",
+      "factory profile",
+      "linked manifest",
+      "native executable"
+    ],
+    "checks": {
+      "small_cases_per_variant": 13,
+      "generated_template_tests_per_variant": 8,
+      "tamper_rejections": 9,
+      "full125m_correctness_processes": 2,
+      "full125m_timed_processes": 6,
+      "physical_full125m_outputs_and_reports_verified": 8,
+      "audit": "Independently re-read all eight physical full-input stdout/stderr/report triples, checked exact oracle output and identical complete security reports, verified all generated pins and original/decoded byte equality, and checked 183 unique physical file hashes against the final receipts. No separate persisted audit artifact is claimed."
+    },
+    "full125m": {
+      "input_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "input_bytes": 254166745,
+      "oracle_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+      "finite_policy_unchanged": true,
+      "report_sha256": "6a49ec117d24546dc02842734ace3782097927472546c618c219cf6107cd4441",
+      "input_storage": "bounded-lines",
+      "original_samples_ns": [
+        630119250,
+        638467458,
+        633763083
+      ],
+      "decoded_samples_ns": [
+        629727250,
+        630187625,
+        628488875
+      ],
+      "original_median_seconds": 0.633763083,
+      "decoded_median_seconds": 0.62972725,
+      "interpretation": "Three fresh-process samples per variant confirm approximately 0.63-second execution with the adopted default profile. Original and decoded executables are byte-identical: the small sample difference is not a decoded-path speedup. Warm-cache spawn-through-observed-exit timing includes CLI acquisition, output and report publication; these six samples are not a new matched-control comparison.",
+      "new_10m_or_rss_measurement": false
+    },
+    "pins": {
+      "wrapper": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/qualify-streaming-default-v1145.cjs",
+        "bytes": 4375,
+        "sha256": "105bf81a0bea3b93a2c259eec44b80b3b479687924035fbcde1ec2c635970026"
+      },
+      "wrapper_result": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-qualification-v1145/result.json",
+        "bytes": 3759,
+        "sha256": "7d24cc3c045e7f42df334357a791257327b942333591d02d30c0eeac05ce96d9"
+      },
+      "configuration": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-full-config-v1145.json",
+        "bytes": 884,
+        "sha256": "9a640dcc84f6fe18cb6c2d53d1041853b310121c1410cc180cc3542c943aec0f"
+      },
+      "qualification_result": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/hosted-linked-result.json",
+        "bytes": 589294,
+        "sha256": "58af8dcb09b40b93709874b194fddeb415896a295fd5c52d0e465b7a205b1d9a"
+      },
+      "full_input_result": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/full-input/full-input-result.json",
+        "bytes": 25110,
+        "sha256": "f148ad1e4a61a190376c81712cba504c02d1daf868351d2f0ba7fcf4e9091f75"
+      },
+      "linked_manifest": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/linked-manifest.json",
+        "bytes": 2720,
+        "sha256": "03c03e4dd0dfd21333154bbc23c5341c383a0e74080d5a7044a536529a88728c"
+      },
+      "cargo_manifest": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/Cargo.toml",
+        "bytes": 3041,
+        "sha256": "2b2bc30300490c47a602da873a9c7e59b88f698a99d1bdcdd88cc0fbe03cc631"
+      },
+      "resolved_lockfile": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/Cargo.lock",
+        "bytes": 35469,
+        "sha256": "dcb094e2225f372251f939286eba54f1edfabef2a98a5dae457fb5c87406de73"
+      },
+      "object": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/program.o",
+        "bytes": 26920,
+        "sha256": "546d7b6f173828310192d970d8741c00480ad3bb2f878e32c602e8284c5615ca"
+      },
+      "bytecode": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/program.mecb",
+        "bytes": 33723,
+        "sha256": "bc511b57f473cb411db0eeb43c2e5997e0f68f358f1d0c2f89ba6e4cde4dfabb"
+      },
+      "identity": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/object-identity.bin",
+        "bytes": 192,
+        "sha256": "dd158a03373e24e2dd9cf589872634cb0b00c55836a2307103d7a68850a715e1"
+      },
+      "original_executable": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/variant-0/native-executable",
+        "bytes": 7063168,
+        "sha256": "a15b40d0bb4a37cfa7de5edff2f27df8e35cf822ff0c6f6dd88a3abf2cb42532"
+      },
+      "decoded_executable": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/variant-1/native-executable",
+        "bytes": 7063168,
+        "sha256": "a15b40d0bb4a37cfa7de5edff2f27df8e35cf822ff0c6f6dd88a3abf2cb42532"
+      }
+    }
   },
   "remaining": [
     "Reduce executable size and peak memory toward the approximately 200 MB/3.16 MB reference footprint without sacrificing runtime.",
-    "Freshly generate, build and qualify the final clean-source original/decoded application with the adopted default profile; do not relabel this host-only/CLI-override diagnostic as that qualification.",
     "Obtain clean review and green CI; remain draft/unmerged until user direction."
   ],
   "evidence": {
-    "build": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/result.json",
-      "bytes": 48975,
-      "sha256": "c8f9289625ba2120d39ef23d61f6028b7925e80d41c079870ef9c7ca19561d0d"
-    },
     "measurement": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-three-way-v1144/measurement.json",
-      "bytes": 344876,
-      "sha256": "7e32fd9cedace8cffe83b6804abfa175d23417e38f8c81475d63024236cee94b"
-    },
-    "local_validation": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/result.json",
-      "bytes": 11621,
-      "sha256": "b7e94f8f3b3dd4e64c8be8a0390c4b3cd7841ec185a6d18f2925068e51d4b4fb"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-clean-three-way-v1145/measurement.json",
+      "bytes": 278043,
+      "sha256": "c6f42707b2f96a39120ed3758ea066e8e998bf5afa04c956706c3428bda9fb6b"
     },
     "observer": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-streaming-frontier-three-way-v1144.cjs",
-      "bytes": 25221,
-      "sha256": "61795b1ce946968b4f7e94c890e04cbae32cdb7b3735cb11a16977d6030778f9"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-streaming-clean-three-way-v1145.cjs",
+      "bytes": 11686,
+      "sha256": "6b8d207dfd09dd3f3cc731497ff2c04d8939951a2249c3fbf4434145c61c67dc"
     },
-    "prior_thin_build": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/result.json",
-      "bytes": 41327,
-      "sha256": "2e212e430004fa4708b899958139d6597c7a40c4c43370a3c77b524904462b7c"
+    "observer_helper": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-common-v1142.cjs",
+      "bytes": 4225,
+      "sha256": "6aa79521d734b6d17b514208fecdce408a5400fda0e1ccf937f9b787efc45e38"
     },
-    "prior_thin_measurement": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-packaging-three-way-v1143/measurement.json",
-      "bytes": 328917,
-      "sha256": "209a253550c5bd13ab07e481e7914a5a64de85c766154a50b5ce97ca9e734369"
+    "legacy_tuning": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-io-measurement-v321/measurement.json",
+      "bytes": 43543,
+      "sha256": "fe1f4902b89d54e9912f221fd8bbc7a8b39c83284cfa40daf8ef83a3cf559560"
+    },
+    "qualification": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/hosted-linked-result.json",
+      "bytes": 589294,
+      "sha256": "58af8dcb09b40b93709874b194fddeb415896a295fd5c52d0e465b7a205b1d9a"
+    },
+    "qualification_wrapper_result": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-qualification-v1145/result.json",
+      "bytes": 3759,
+      "sha256": "7d24cc3c045e7f42df334357a791257327b942333591d02d30c0eeac05ce96d9"
     }
   },
   "historical_batches": {
+    "v1144": {
+      "label": "Prior host-only descriptor-frontier diagnostic with retained v1142 Object and explicit CLI ThinLTO; not the fresh default-profile v1145 batch.",
+      "complete_committed_receipt": {
+        "git_reference": "3470ea678111865140b9aa5008f90b645eeff300:docs/validation/canonical-knucleotide-streaming-footprint-v1.json",
+        "git_blob": "edfbdb650c4dcb307511f423c19ab04c9a4de895",
+        "bytes": 71818,
+        "sha256": "9dbb9cc79ffd58f48c5ce0c9acbae6d902d7153c2a8498827ce59ddc2ac61e1e"
+      },
+      "source_snapshot": {
+        "base_commit": "09f8bfaa85236086ccc3e32b4caae5a9ddf5b142",
+        "status": " M hosts/gpu/src/native_artifact/program_descriptor.rs\n M hosts/gpu/src/native_artifact/program_identity.rs\n M hosts/gpu/src/native_artifact/program_prefix_layout.rs\n M hosts/gpu/src/native_artifact/program_prefix_tests.rs\n",
+        "git_binary_patch_sha256": "1b45ce1e28ffae6b3f8d6e7ce1d24839f86c42c8d89cf84999d0fbdd13f7d946",
+        "untracked": [],
+        "source_snapshot_sha256": "6741977c470cc880fcd33d5fabe526b499a4877c4153818bbd01959757bfb38f"
+      },
+      "profile_override": {
+        "cargo_config": "profile.release.lto=\"thin\"",
+        "lto": "thin",
+        "opt_level": 3,
+        "panic": "unwind",
+        "strip": "symbols",
+        "codegen_units": "unchanged default"
+      },
+      "summary": {
+        "10m": {
+          "secured-retained": {
+            "executable_bytes": 6842992,
+            "median_seconds": 0.068913917,
+            "minimum_seconds": 0.06873875,
+            "maximum_seconds": 0.072614625,
+            "median_peak_rss_bytes": 55869440,
+            "median_peak_footprint_bytes": 40076224
+          },
+          "streaming-thinlto-v1143": {
+            "executable_bytes": 7063136,
+            "median_seconds": 0.071131021,
+            "minimum_seconds": 0.070933041,
+            "maximum_seconds": 0.0714225,
+            "median_peak_rss_bytes": 31031296,
+            "median_peak_footprint_bytes": 16892736
+          },
+          "streaming-frontier-v1144": {
+            "executable_bytes": 7063168,
+            "median_seconds": 0.068642396,
+            "minimum_seconds": 0.06827975,
+            "maximum_seconds": 0.070408542,
+            "median_peak_rss_bytes": 31424512,
+            "median_peak_footprint_bytes": 17482752
+          }
+        },
+        "125m": {
+          "secured-retained": {
+            "executable_bytes": 6842992,
+            "median_seconds": 0.6488789585,
+            "minimum_seconds": 0.641718416,
+            "maximum_seconds": 0.65671775,
+            "median_peak_rss_bytes": 482295808,
+            "median_peak_footprint_bytes": 466896704
+          },
+          "streaming-thinlto-v1143": {
+            "executable_bytes": 7063136,
+            "median_seconds": 0.636499854,
+            "minimum_seconds": 0.633931458,
+            "maximum_seconds": 0.649060583,
+            "median_peak_rss_bytes": 287440896,
+            "median_peak_footprint_bytes": 164447424
+          },
+          "streaming-frontier-v1144": {
+            "executable_bytes": 7063168,
+            "median_seconds": 0.632705958,
+            "minimum_seconds": 0.630611333,
+            "maximum_seconds": 0.646257625,
+            "median_peak_rss_bytes": 287670272,
+            "median_peak_footprint_bytes": 164431040
+          }
+        }
+      },
+      "raw_evidence": {
+        "build": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/result.json",
+          "bytes": 48975,
+          "sha256": "c8f9289625ba2120d39ef23d61f6028b7925e80d41c079870ef9c7ca19561d0d"
+        },
+        "measurement": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-three-way-v1144/measurement.json",
+          "bytes": 344876,
+          "sha256": "7e32fd9cedace8cffe83b6804abfa175d23417e38f8c81475d63024236cee94b"
+        },
+        "local_validation": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/result.json",
+          "bytes": 11621,
+          "sha256": "b7e94f8f3b3dd4e64c8be8a0390c4b3cd7841ec185a6d18f2925068e51d4b4fb"
+        },
+        "observer": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-streaming-frontier-three-way-v1144.cjs",
+          "bytes": 25221,
+          "sha256": "61795b1ce946968b4f7e94c890e04cbae32cdb7b3735cb11a16977d6030778f9"
+        }
+      }
+    },
     "complete_prior_committed_receipt": {
       "revision": "09f8bfaa85236086ccc3e32b4caae5a9ddf5b142",
       "path": "docs/validation/canonical-knucleotide-streaming-footprint-v1.json",

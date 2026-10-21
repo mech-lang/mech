@@ -158,25 +158,29 @@ contract is not a claim that whole-benchmark qualification is complete.
 ### Canonical k-nucleotide performance
 
 The [streaming timing and footprint receipt](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
-records the latest matched M1 diagnostic. Full-size streaming is now comparable
-to or faster than retained secured execution in this batch, with 40.4% lower
-peak RSS. The earlier 10M regression is no longer observed in this comparison.
+records the latest matched M1 comparison of fresh, clean-source default-profile
+builds. Full-size streaming retains approximately 0.63-second performance, with
+43.3% lower peak RSS than the retained secured snapshot in this batch. The 10M
+case is at parity; the earlier small-input regression is no longer observed.
 
 | Implementation | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Retained secured snapshot | 0.06891 s | 0.64888 s | 482.3 MB | 6.843 MB |
-| Streaming + host ThinLTO control | 0.07113 s | 0.63650 s | 287.4 MB | 7.063 MB |
-| Streaming + shared startup proof (v1144) | 0.06864 s | 0.63271 s | 287.7 MB | 7.063 MB |
+| Original tuned direct I/O | 0.09163 s | 0.97263 s | 178.8 MB | 3.159 MB |
+| Retained secured snapshot | 0.06839 s | 0.64312 s | 506.5 MB | 6.843 MB |
+| Fresh default streaming (v1145) | 0.06833 s | 0.62678 s | 287.3 MB | 7.063 MB |
 
-Twelve balanced timing rounds per binary and size include startup, one complete
-secured round and report publication; three separate runs measure peak RSS.
-All 96 outputs and complete security reports match their expected results,
-including unchanged nominal identity for the retained Object. Sizes use decimal
-MB. The 10M result is near parity, not a meaningful speedup claim. Earlier
-approximately 0.639-second secured results remain valid; this table uses controls
-remeasured in the same batch. These are pinned host-only diagnostics with an
-explicit ThinLTO override, not fresh clean-source qualification, a measurement
-of the subsequently adopted default profile, or isolated capability overhead.
+Twelve balanced timing rounds per binary and size include startup and complete
+execution, including one secured round and report publication for secured
+variants; three separate runs measure peak RSS.
+All 98 outputs and all 66 secured reports match their expected results; the
+direct-I/O control has no security report. Sizes use decimal MB. Original and
+decoded default builds have identical artifacts and executable bytes. Both pass
+the maintained permission-denial, pin-tampering and generated-launcher checks.
+The 10M result is near parity, not a meaningful speedup claim. Earlier 0.639- and
+0.633-second results remain valid; this table uses same-batch controls. There is
+no additional code optimization between the 0.633-second diagnostic and this
+fresh-default comparison. These are whole implementations, not isolated
+capability overhead or a general language ranking.
 
 The current ABI12/IR26/work-policy35 implementation streams bounded UTF-8 line
 windows through the same authorized CLI resource and one runtime transaction.
@@ -188,15 +192,16 @@ snapshot storage strategy.
 
 Startup now derives the retention proof once from the same immutable plan and
 shares the complete inventory between layout and identity hashing. No proof or
-permission is cached across executions. The measured host accepts the exact
-previous Object, with identical work, identity and output. The generated release
-profile now selects ThinLTO for the Rust host and libraries, retaining opt-level3,
+permission is cached across executions. The earlier host-only check accepted the
+exact previous Object with identical work, identity and output. The generated
+release profile now selects ThinLTO for the Rust host and libraries, retaining opt-level3,
 symbol stripping, default codegen units and unwind behavior. Mech remains
 Cranelift-generated machine code linked unchanged, not LLVM input. Release build
 time and memory can increase; debug defaults are unchanged.
 
-The roughly 200 MB/3.16 MB reference footprint target, fresh default-profile
-clean-source qualification, clean review and green CI remain outstanding.
+The roughly 200 MB/3.16 MB reference footprint target, clean review and green CI
+remain outstanding. Fresh default-profile qualification and matched two-size
+measurements pass; they do not establish broad native-language coverage.
 The PR stays draft and unmerged until the user directs otherwise.
 
 ### Canonical native architecture and limits
