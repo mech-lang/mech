@@ -65,8 +65,12 @@ pub mod linkage_factories {
 
     macro_rules! factory {
         ($token:ident, $module:expr, $name:literal, $memory:expr, $binder:expr, $primitive:expr) => {
+            factory!(@features $token, &["pure_text"], $module, $name, $memory, $binder, $primitive);
+        };
+        (@features $token:ident, $features:expr, $module:expr, $name:literal, $memory:expr, $binder:expr, $primitive:expr) => {
             pub const $token: NativeLinkedFactory = NativeLinkedFactory::new(
                 concat!("mech_engine::linked_factories::", stringify!($token)),
+                $features,
                 || super::make_entry($module, $name, $memory, $binder, $primitive, &$token),
             );
         };
@@ -139,7 +143,7 @@ pub mod linkage_factories {
     );
     #[cfg(feature = "convert")]
     factory!(
-        CONVERT_KIND,
+        @features CONVERT_KIND, &["pure_text", "convert"],
         &["convert"],
         "kind",
         CanonicalFinalize,
@@ -148,7 +152,7 @@ pub mod linkage_factories {
     );
     #[cfg(feature = "convert")]
     factory!(
-        CONVERT_SET,
+        @features CONVERT_SET, &["pure_text", "convert"],
         &["convert"],
         "set",
         ImplementationMemoryClass::CanonicalSortUnique,
@@ -213,7 +217,7 @@ pub mod linkage_factories {
     );
     #[cfg(feature = "sequence_sort")]
     factory!(
-        SEQUENCE_SORT_INDICES,
+        @features SEQUENCE_SORT_INDICES, &["pure_text", "sequence_sort"],
         &["sequence"],
         "sort-indices",
         CanonicalFinalize,
@@ -258,7 +262,7 @@ pub mod linkage_factories {
     );
     #[cfg(feature = "map_ops")]
     factory!(
-        MAP_HISTOGRAM,
+        @features MAP_HISTOGRAM, &["map_ops"],
         &["map"],
         "histogram",
         crate::intrinsics::map_ops::Operation::Histogram.memory(),
@@ -267,7 +271,7 @@ pub mod linkage_factories {
     );
     #[cfg(feature = "map_ops")]
     factory!(
-        MAP_KEYS,
+        @features MAP_KEYS, &["map_ops"],
         &["map"],
         "keys",
         crate::intrinsics::map_ops::Operation::Keys.memory(),
@@ -276,7 +280,7 @@ pub mod linkage_factories {
     );
     #[cfg(feature = "map_ops")]
     factory!(
-        MAP_VALUES,
+        @features MAP_VALUES, &["map_ops"],
         &["map"],
         "values",
         crate::intrinsics::map_ops::Operation::Values.memory(),

@@ -6,6 +6,7 @@ macro_rules! factory {
     ($token:ident, $module:expr, $name:literal, $memory:ident, $binder:path) => {
         pub const $token: NativeLinkedFactory = NativeLinkedFactory::new(
             concat!("mech_engine::linked_factories::", stringify!($token)),
+            &[],
             || {
                 raw_entry(
                     $module,

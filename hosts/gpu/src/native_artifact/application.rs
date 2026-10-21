@@ -6,7 +6,7 @@ use mech_engine::{ProgramArtifact, encode_program_artifact_bytecode_v1};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     fs,
     path::{Path, PathBuf},
 };
@@ -251,6 +251,11 @@ pub(super) fn write_linked_application(
         "workspace path is not Unicode",
     ))?;
     let selected = inputs.factory_linkage.factories();
+    let factory_feature_names = selected
+        .into_iter()
+        .flatten()
+        .flat_map(|factory| factory.required_engine_features().iter().copied())
+        .collect::<BTreeSet<_>>();
     let factory_profile = json!({
         "schema": "mech.canonical-linked-factory-profile.v1",
         "mode": if selected.is_some() { "artifact-selected" } else { "complete-catalog" },
@@ -258,6 +263,7 @@ pub(super) fn write_linked_application(
             .map(|operation| operation.canonical_name()).collect::<Vec<_>>(),
         "factory_declarations": selected.map(|factories| factories.iter()
             .map(|factory| factory.rust_path()).collect::<Vec<_>>()),
+        "required_engine_features": factory_feature_names,
         "missing_linkage_operations": inputs.factory_linkage.missing_operations().iter()
             .map(|operation| operation.canonical_name()).collect::<Vec<_>>(),
     });
@@ -278,6 +284,10 @@ pub(super) fn write_linked_application(
     let main = inputs
         .main
         .replace("@INSTALL_CANONICAL_FACTORIES@", &installation);
+    let factory_features = factory_feature_names
+        .iter()
+        .map(|feature| format!(", {}", json_string(feature)))
+        .collect::<String>();
     let (gpu_feature, core_features, library_features, dependencies) = match inputs.profile {
         LinkedApplicationProfile::Scalar => ("canonical-native-runtime", "", "", String::new()),
         #[cfg(feature = "canonical-native-program")]
@@ -313,7 +323,7 @@ build = "build.rs"
 [workspace]
 [dependencies]
 mech-core = {{ path = {core}, default-features = false{core_features} }}
-mech-engine = {{ path = {engine}, default-features = false, features = ["native-artifact"] }}
+mech-engine = {{ path = {engine}, default-features = false, features = ["native-artifact"{factory_features}] }}
 mech-gpu = {{ path = {gpu}, default-features = false, features = ["{gpu_feature}"] }}
 mech-stdlib = {{ path = {stdlib}, default-features = false, features = ["std", "native-plan", "bool", "u64", "i64", "f64", "convert", "math_sqrt", "math_neg", "math_add", "math_sub", "math_mul", "math_div", "math_mod", "compare_default", "logic_default"{library_features}] }}
 sha2 = {{ version = "0.11.0", default-features = false }}

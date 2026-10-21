@@ -23,7 +23,7 @@ pub mod linkage_factories {
     use crate::resident::native_factory_linkage::{NativeLinkedFactory, raw_entry};
 
     pub const MATRIX_LITERAL: NativeLinkedFactory =
-        NativeLinkedFactory::new("mech_engine::linked_factories::MATRIX_LITERAL", || {
+        NativeLinkedFactory::new("mech_engine::linked_factories::MATRIX_LITERAL", &[], || {
             raw_entry(
                 &["matrix"],
                 "literal",

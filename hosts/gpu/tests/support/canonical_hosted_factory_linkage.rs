@@ -245,3 +245,69 @@ fn unrecognized_registration_retains_complete_catalog_without_skipping_obligatio
         );
     }
 }
+
+#[test]
+fn scalar_and_managed_launchers_enable_their_selected_factory_owner_features() {
+    // The generator's source catalog has String equality evidence even when
+    // this particular artifact is scalar numeric. A scalar runtime does not
+    // otherwise enable the owning collection module; its declaration must
+    // supply that requirement instead of producing an unresolved Rust path.
+    let source = "value<u64> == 2u64\n";
+    let (variants, catalog) = artifacts(source);
+    let temporary = tempfile::tempdir().unwrap();
+    let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .unwrap();
+    for (index, artifact) in variants.iter().enumerate() {
+        for managed in [false, true] {
+            let directory = temporary.path().join(format!("project-{index}-{managed}"));
+            let generate = if managed {
+                mech_gpu::native_artifact::generate_linked_program_application
+            } else {
+                mech_gpu::native_artifact::generate_linked_application
+            };
+            let generated = generate(
+                &workspace,
+                &directory,
+                "selected-equality",
+                artifact,
+                &catalog,
+                source.as_bytes(),
+            )
+            .unwrap();
+            let manifest = std::fs::read_to_string(generated.manifest_path())
+                .unwrap()
+                .parse::<toml_edit::DocumentMut>()
+                .unwrap();
+            let features = manifest["dependencies"]["mech-engine"]["features"]
+                .as_array()
+                .unwrap();
+            let profile = NativeFactoryLinkageProfile::derive(artifact, &catalog);
+            assert!(
+                profile
+                    .factories()
+                    .unwrap()
+                    .iter()
+                    .any(|factory| factory.required_engine_features().contains(&"pure_text"))
+            );
+            for factory in profile.factories().unwrap() {
+                for requirement in factory.required_engine_features() {
+                    assert!(
+                        features
+                            .iter()
+                            .any(|value| value.as_str() == Some(requirement))
+                    );
+                }
+            }
+            let profile: serde_json::Value = serde_json::from_slice(
+                &std::fs::read(directory.join("factory-profile.json")).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                profile["required_engine_features"],
+                serde_json::json!(["pure_text"])
+            );
+        }
+    }
+}

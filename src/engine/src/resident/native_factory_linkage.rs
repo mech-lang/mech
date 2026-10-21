@@ -13,19 +13,24 @@ use mech_core::{
 pub struct NativeLinkedFactory {
     #[cfg(feature = "native-artifact")]
     rust_path: &'static str,
+    #[cfg(feature = "native-artifact")]
+    required_engine_features: &'static [&'static str],
     entry: fn() -> ResidentKernelFactoryEntry,
 }
 
 impl NativeLinkedFactory {
     pub(crate) const fn new(
         rust_path: &'static str,
+        required_engine_features: &'static [&'static str],
         entry: fn() -> ResidentKernelFactoryEntry,
     ) -> Self {
         #[cfg(not(feature = "native-artifact"))]
-        let _ = rust_path;
+        let _ = (rust_path, required_engine_features);
         Self {
             #[cfg(feature = "native-artifact")]
             rust_path,
+            #[cfg(feature = "native-artifact")]
+            required_engine_features,
             entry,
         }
     }
@@ -33,6 +38,13 @@ impl NativeLinkedFactory {
     #[cfg(feature = "native-artifact")]
     pub const fn rust_path(&self) -> &'static str {
         self.rust_path
+    }
+
+    /// Requirements owned by the registration, not inferred from its public
+    /// operation name or assumed from the generator's own Cargo features.
+    #[cfg(feature = "native-artifact")]
+    pub const fn required_engine_features(&self) -> &'static [&'static str] {
+        self.required_engine_features
     }
 
     pub fn install(&self, builder: &mut FunctionCatalogBuilder) -> MResult<()> {
