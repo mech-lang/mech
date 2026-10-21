@@ -291,6 +291,125 @@
       }
     }
   },
+  "macos_peak_physical_footprint": {
+    "metric": "macOS /usr/bin/time -l: peak memory footprint",
+    "scope": "Additional metric extracted from the same 18 separate RSS runs in the existing v1145 matched batch, not new benchmark executions. Peak physical footprint and peak RSS are distinct OS-reported measurements and must not be substituted for each other.",
+    "units": "Exact bytes; README converts to decimal MB.",
+    "samples_per_variant_per_size": 3,
+    "current_v1145": {
+      "10m": {
+        "legacy-direct": {
+          "samples_bytes": [
+            31114432,
+            31081664,
+            31409472
+          ],
+          "median_bytes": 31114432
+        },
+        "secured-retained": {
+          "samples_bytes": [
+            40059776,
+            40109120,
+            40076224
+          ],
+          "median_bytes": 40076224
+        },
+        "fresh-default": {
+          "samples_bytes": [
+            16892800,
+            16892800,
+            19022976
+          ],
+          "median_bytes": 16892800
+        }
+      },
+      "125m": {
+        "legacy-direct": {
+          "samples_bytes": [
+            146294208,
+            160286528,
+            154945280
+          ],
+          "median_bytes": 154945280
+        },
+        "secured-retained": {
+          "samples_bytes": [
+            500188992,
+            490981184,
+            483034944
+          ],
+          "median_bytes": 490981184
+        },
+        "fresh-default": {
+          "samples_bytes": [
+            164414592,
+            164431040,
+            165020928
+          ],
+          "median_bytes": 164431040
+        }
+      }
+    },
+    "raw_evidence": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-clean-three-way-v1145/measurement.json",
+      "bytes": 278043,
+      "sha256": "c6f42707b2f96a39120ed3758ea066e8e998bf5afa04c956706c3428bda9fb6b"
+    },
+    "rss_unchanged": "Fresh125M median peak RSS remains 287293440 bytes. Its median peak physical footprint is 164431040 bytes; neither this sample nor the inspection below proves memory always remains below 200 MB or resolves the peak-RSS target.",
+    "post_input_allocator_inspection": {
+      "label": "v1149",
+      "status": "INSPECTED_NON_TIMING_DIAGNOSTIC",
+      "binary_source_commit": "3470ea678111865140b9aa5008f90b645eeff300",
+      "binary": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/variant-0/native-executable",
+        "bytes": 7063168,
+        "sha256": "a15b40d0bb4a37cfa7de5edff2f27df8e35cf822ff0c6f6dd88a3abf2cb42532"
+      },
+      "stage": "One owned full125M child after all 254166745 input bytes were consumed, kept alive by a prefilled stdout pipe. The exact instruction/program counter was not captured; the script infers publication blocking from the full pipe, input position and continued liveness.",
+      "live_malloc_nodes": 5041,
+      "live_malloc_bytes": 1495664,
+      "vmmap_display": {
+        "physical_footprint_current": "12.8M",
+        "physical_footprint_peak": "156.9M",
+        "malloc_large_reusable_resident": "135.1M",
+        "malloc_medium_empty_resident": "86.7M",
+        "units": "Verbatim rounded tool displays, not exact-byte benchmark values."
+      },
+      "interpretation": "Large reusable and mostly empty allocator regions remain resident at this late-run snapshot while live malloc allocations are small. This is evidence of substantial allocator retention in the post-input resident total, not a decomposition of peak RSS or a fix for its measured high-water mark.",
+      "complete_security_report_matches_v1145": true,
+      "matched_security_report": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-clean-three-way-v1145/125m-warmup-0-fresh-default.report.json",
+        "bytes": 1122,
+        "sha256": "6a49ec117d24546dc02842734ace3782097927472546c618c219cf6107cd4441"
+      },
+      "output_validation": "The inspection driver asserted exact oracle output after draining its prefilled pipe and recorded output_exact=true. It did not retain the raw stdout for a second independent byte comparison.",
+      "limitations": [
+        "A single paused-process heap snapshot does not measure maximum live allocations during computation; heap malloc totals exclude other process memory.",
+        "Inspection and stdout blocking perturb execution. This run supplies no timing sample and does not replace the matched RSS/physical-footprint measurements.",
+        "The observer hard-pins the binary but does not pre/post-hash input, launch and oracle files. Their qualified pins remain those of v1145; the complete resulting security report independently matches v1145 without exceptions.",
+        "No claim that RSS is fixed, that all of its excess is allocator retention, or that memory always stays below 200 MB."
+      ],
+      "evidence": {
+        "observer": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/inspect-streaming-postrun-v1149.py",
+          "bytes": 3686,
+          "sha256": "08f0b122298af202982192f9d5fc538ed7cb396336d53a253c3dd093c16fb925"
+        },
+        "inspection": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-postrun-inspection-v1149.json",
+          "bytes": 16060,
+          "sha256": "67d7811ff3f8660956fe2ed52ba8ef149a82c0ee91e96d940fab11e3960367ae"
+        }
+      }
+    },
+    "independent_audit": {
+      "status": "PASS",
+      "physical_metric_files_verified": 18,
+      "complete_inspection_security_report_verified": true,
+      "inspection_summary_checked_against_embedded_vmmap_and_heap_output": true,
+      "persisted_separate_audit_artifact": false
+    }
+  },
   "paired_current_over_controls": {
     "10m": {
       "legacy-direct": {
@@ -849,7 +968,187 @@
       }
     }
   },
+  "canonical_envelope_host_diagnostic": {
+    "label": "v1150",
+    "status": "PASS_HOST_READER_DIAGNOSTIC",
+    "scope": "HOST_READER_DIAGNOSTIC_RETAINED_OBJECT_NOT_CLEAN_SOURCE_QUALIFICATION",
+    "conclusion": {
+      "executable": "6713008 bytes versus 7063168: 350160 bytes (4.9575%) smaller. Approximately 0.63-second full-size performance is preserved with no material regression observed in this batch; this is not a speedup or proof of zero overhead.",
+      "timing": "Paired median candidate/baseline ratios are 1.0014123506252575 at 125M (+0.14%) and 1.0009650435444448 at 10M (+0.0965%). Ratios of independently computed medians are not substituted for paired ratios.",
+      "memory": "No meaningful memory improvement: 125M median peak RSS is 287080448 versus 287293440 bytes, and physical footprint is 164414592 versus 164414656 bytes. The peak-RSS and executable-size targets remain unmet.",
+      "qualification": "Host-only diagnostic with the unchanged retained v1142 program and 64KiB capture project. The current v1145 clean-qualified table remains unchanged; this reader change still needs fresh clean-source/default-profile qualification."
+    },
+    "change": "The engine admits canonical artifacts through the existing shared envelope/header/directory/checksum/requirements/artifact checks, rejecting nonempty legacy execution authority without decoding that forbidden payload. Full semantic decoding/finalization and exact outer/embedded requirement matching remain in the same engine. No new wire format, executor, capability authority or Mech compiler path is introduced.",
+    "source": {
+      "base_commit": "6bd26b07e5e690f9d64a1cb2bb5fb3741ef7f874",
+      "tracked_patch_sha256": "3d44c53d6866902a6941164c69100baee53bbf7165b4bf25ca84966f066588d7",
+      "files_sha256": {
+        "src/core/src/program/bytecode/reader.rs": "b40c9911e625be51b1dc4914868870022065f11afe2dcaf8d544dd6849f67159",
+        "src/core/src/program/bytecode/reader_canonical.rs": "a10245f97a499148c2282e87e22368bac19366f32524a234709cce17922a0221",
+        "src/core/src/program/bytecode/reader_canonical_tests.rs": "bce3ac6f95fbc55915b63cfa15e8ec8a8cc35f24af85911667a4b7ce9568007b",
+        "src/engine/src/artifact/bytecode.rs": "240bcf8cb92045d81a4badade4e3ce101854e4d74e7191d294393734d060a20b",
+        "src/core/src/program/bytecode/aggregates.rs": "bd50973691529fc3dbe4c61dae0ceb1a39d3c342ffe1d6bc4dfef51fa4c3eee4",
+        "src/core/src/program/bytecode/validation.rs": "69d68bc662d09f5ce27ebd48b1b63b2dbbb777053b888db74bce4f3c8f0e27e3",
+        "src/core/src/program/bytecode/constants/canonical.rs": "46d15d27afd2c799d6f982405d20ca304c99788f9f296180d9da8bf97b789aae"
+      }
+    },
+    "unchanged_program": {
+      "program_revision": "2749f8cd8f09131fc58bb8cfffdd0c79fe64a8f31152264787cd488a8e5a01a0",
+      "pins_sha256": {
+        "application.mec": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+        "program.mecb": "f1e0ca1fd73905fc274b14a31609f0b389ba87551b959dfe097a16c9179e0f39",
+        "program.o": "970ea4d8e31645203432045e6579fe26a49e0a53fc628c4f4d25d5d00b14418f",
+        "object-identity.bin": "cdcd6383fda17159f7ef5a728bef043482eb51415f7b46277240178971f5f949"
+      },
+      "chunk_bytes": 65536,
+      "profile": "The same generated default opt-level3/ThinLTO/strip-symbols profile; default unwind/codegen units unchanged, no CLI profile override. Diagnostic linking adds a link map only.",
+      "inputs_and_policy": "The exact 10M/125M input/oracle hashes and finite policy are unchanged from the current receipt; pinned measurement.sizes and measurement.launch retain every value. All 64 full reports match the retained 64KiB baseline exactly, with no field exclusions or revision normalization."
+    },
+    "binaries": [
+      {
+        "name": "baseline-64k",
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-v1147/native-executable-65536",
+          "bytes": 7063168,
+          "sha256": "280f91edbc83a668cb2bba4ca81d353ec9e03594c70840922cf996ef00cdcd39"
+        }
+      },
+      {
+        "name": "strict-envelope-64k",
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-host-v1150/native-executable",
+          "bytes": 6713008,
+          "sha256": "58a7f9179fb6c50e8ddc2c61b5537caf535276500b7f2bb944251f1ff5919b5f"
+        }
+      }
+    ],
+    "method": {
+      "timing": "12 serial paired rounds per input size, alternating AB/BA six times each. Monotonic spawn-through-exit time includes startup, secured round and report publication; descriptors opened first. Warmups and validation are untimed.",
+      "memory": "Three separate macOS time -l executions per variant/size; RSS and physical footprint retained separately. Memory executions provide no timing samples.",
+      "verified_outputs": 64,
+      "verified_security_reports": 64,
+      "raw_samples": "All 48 timings, 12 separate RSS/physical-footprint samples and 4 warmups remain in the pinned measurement with individual output/report/metric hashes. Hardware/OS/power is unchanged before/after; no interfering process was recorded.",
+      "independent_audit": "Re-read and verified all 64 physical stdout/security reports, empty stderr, 12 metric files, sample counts/order, medians/paired ratios, binary/source/build/validation/link-map pins. Input file hashes were not independently recomputed in this documentation audit; the observer verifies them before and after phases."
+    },
+    "summary": {
+      "10m": {
+        "baseline-64k": {
+          "median_seconds": 0.068067167,
+          "range_seconds": [
+            0.067939458,
+            0.068418125
+          ],
+          "median_peak_rss_bytes": 31031296,
+          "median_peak_physical_footprint_bytes": 16876352
+        },
+        "strict-envelope-64k": {
+          "median_seconds": 0.0681730835,
+          "range_seconds": [
+            0.067900083,
+            0.069109584
+          ],
+          "median_peak_rss_bytes": 31096832,
+          "median_peak_physical_footprint_bytes": 17023872
+        }
+      },
+      "125m": {
+        "baseline-64k": {
+          "median_seconds": 0.6286386665,
+          "range_seconds": [
+            0.626171417,
+            0.636332667
+          ],
+          "median_peak_rss_bytes": 287293440,
+          "median_peak_physical_footprint_bytes": 164414656
+        },
+        "strict-envelope-64k": {
+          "median_seconds": 0.629134312,
+          "range_seconds": [
+            0.627782292,
+            0.635081417
+          ],
+          "median_peak_rss_bytes": 287080448,
+          "median_peak_physical_footprint_bytes": 164414592
+        }
+      }
+    },
+    "paired_candidate_over_baseline": {
+      "10m": {
+        "median_ratio": 1.0009650435444448,
+        "median_delta_ms": 0.065687,
+        "faster_rounds": 5,
+        "total_rounds": 12
+      },
+      "125m": {
+        "median_ratio": 1.0014123506252575,
+        "median_delta_ms": 0.8897075,
+        "faster_rounds": 4,
+        "total_rounds": 12
+      }
+    },
+    "link_map": {
+      "live_legacy_symbols_absent": [
+        "decode_value_payload",
+        "decode_constants",
+        "validate_composite_packs",
+        "rebuild_canonical_bytecode_composite",
+        "parse_program"
+      ],
+      "interpretation": "Legacy payload decoder/validation functions are absent from the live linked symbol map; canonical envelope and semantic validation remain required. This does not claim every legacy-named helper was removed."
+    },
+    "local_validation": {
+      "inherited_passed_tests": 325,
+      "inherited_ignored_tests": 5,
+      "inherited_scope": "Executed before the three cfg-only import fixes; not rerun on this seven-file snapshot.",
+      "passed_by_suite": {
+        "core_bytecode": 75,
+        "engine_artifact_bytecode": 19,
+        "gpu_native_artifact": 141,
+        "program_artifact_contract": 37,
+        "canonical_hosted_artifact": 53
+      },
+      "cfg_only_followup": "The first validation completed all 325 tests and runtime-only checking, then failed no_std,program. Three exact import-only changes keep std-active code identical; the follow-up passed no_std,program, maintained no_std, runtime-only and diff checks. Tests were not rerun on the seven-file snapshot.",
+      "original_validation": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-validation-v1150/result.json",
+        "bytes": 9525,
+        "sha256": "ffc53100a260f8ba4fb4e010b6799201d0271e89440a36aa1e69bfdea9ea59db"
+      },
+      "followup_validation": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-validation-v1150b/result.json",
+        "bytes": 11367,
+        "sha256": "3bd66ee0e0fdfc260e80195cc00c67552fc33c4f48e3d8a8c987cbc3cd3672fc"
+      }
+    },
+    "evidence": {
+      "measurement": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-host-measurement-v1150/measurement.json",
+        "bytes": 251973,
+        "sha256": "332d7c3573bfe59c92eed9be3fea82654f2f8d02f1cf425d30fe44e72d10fd7f"
+      },
+      "observer": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-canonical-envelope-host-v1150.cjs",
+        "bytes": 16598,
+        "sha256": "106e79ee9b9edb8679813c7cbf985f22d5217200e06ed3bac7f45c96ace005bf"
+      },
+      "build": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-host-v1150/build-result.json",
+        "bytes": 18239,
+        "sha256": "9fb21b0fa50cb3781f523986279d93db0cad9d55cf15f38f0ddaebc996100ced"
+      },
+      "build_driver": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/build-canonical-envelope-host-v1150.cjs",
+        "bytes": 6573,
+        "sha256": "447f6b7bd86fe3c41c04791b052138b567621549a5c6140c3709b0e38ad3f0a0"
+      },
+      "link_map": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-host-v1150/host.map",
+        "bytes": 6557044,
+        "sha256": "2f7cfb39bb786afa2d3fdc504e53bcfba48d628873d3a3c423a2d84428a5b764"
+      }
+    }
+  },
   "remaining": [
+    "Fresh clean-source/default-profile qualification of the strict canonical-envelope reader change; v1150 is a retained-Object host-only diagnostic, not replacement qualification.",
     "Reduce executable size and peak memory toward the approximately 200 MB/3.16 MB reference footprint without sacrificing runtime.",
     "Obtain clean review and green CI; remain draft/unmerged until user direction."
   ],

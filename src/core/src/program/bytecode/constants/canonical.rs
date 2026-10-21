@@ -33,7 +33,9 @@ use crate::{
 #[cfg(all(feature = "no_std", feature = "matrix"))]
 use alloc::rc::Rc;
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec, vec::Vec};
+use alloc::{
+    borrow::ToOwned, boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec, vec::Vec,
+};
 #[cfg(all(not(feature = "no_std"), feature = "matrix"))]
 use std::rc::Rc;
 #[cfg(not(feature = "no_std"))]

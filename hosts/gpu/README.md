@@ -163,15 +163,16 @@ builds. Full-size streaming retains approximately 0.63-second performance, with
 43.3% lower peak RSS than the retained secured snapshot in this batch. The 10M
 case is at parity; the earlier small-input regression is no longer observed.
 
-| Implementation | 10M bases | 125M bases | 125M peak RSS | Executable |
-| --- | ---: | ---: | ---: | ---: |
-| Original tuned direct I/O | 0.09163 s | 0.97263 s | 178.8 MB | 3.159 MB |
-| Retained secured snapshot | 0.06839 s | 0.64312 s | 506.5 MB | 6.843 MB |
-| Fresh default streaming (v1145) | 0.06833 s | 0.62678 s | 287.3 MB | 7.063 MB |
+| Implementation | 10M bases | 125M bases | 125M peak RSS | 125M physical peak | Executable |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Original tuned direct I/O | 0.09163 s | 0.97263 s | 178.8 MB | 154.9 MB | 3.159 MB |
+| Retained secured snapshot | 0.06839 s | 0.64312 s | 506.5 MB | 491.0 MB | 6.843 MB |
+| Fresh default streaming (v1145) | 0.06833 s | 0.62678 s | 287.3 MB | 164.4 MB | 7.063 MB |
 
 Twelve balanced timing rounds per binary and size include startup and complete
 execution, including one secured round and report publication for secured
-variants; three separate runs measure peak RSS.
+variants; three separate runs measure peak RSS and macOS `peak memory footprint`
+(the physical-peak column). These are distinct metrics, not interchangeable.
 All 98 outputs and all 66 secured reports match their expected results; the
 direct-I/O control has no security report. Sizes use decimal MB. Original and
 decoded default builds have identical artifacts and executable bytes. Both pass
@@ -181,6 +182,22 @@ The 10M result is near parity, not a meaningful speedup claim. Earlier 0.639- an
 no additional code optimization between the 0.633-second diagnostic and this
 fresh-default comparison. These are whole implementations, not isolated
 capability overhead or a general language ranking.
+
+A later host-only diagnostic (v1150) reduces the executable from 7.063 to
+6.713 MB (4.96%) by rejecting legacy execution payloads through the shared strict
+canonical-envelope reader, allowing unused legacy decoding code to be removed.
+The same Cranelift Object, capability policy and full execution reports are
+unchanged; canonical semantic validation remains in the same engine. Twelve
+paired rounds preserve approximately 0.63-second performance (0.62913 versus
+0.62864 seconds at 125M; paired median difference +0.14%), with no material
+regression observed in this batch and no meaningful memory improvement. This is
+not a speedup or proof of zero overhead; fresh qualification is still required
+for this change, so the qualified table above remains v1145.
+
+A separate non-timing inspection after input consumption found 1.50 MB of live
+malloc allocations alongside large reusable and mostly empty allocator regions.
+This supports allocator retention as a contributor to late-run RSS; it is not a
+peak-live-memory bound or a fix for the measured 287.3 MB peak RSS.
 
 The current ABI12/IR26/work-policy35 implementation streams bounded UTF-8 line
 windows through the same authorized CLI resource and one runtime transaction.
@@ -199,8 +216,9 @@ symbol stripping, default codegen units and unwind behavior. Mech remains
 Cranelift-generated machine code linked unchanged, not LLVM input. Release build
 time and memory can increase; debug defaults are unchanged.
 
-The roughly 200 MB/3.16 MB reference footprint target, clean review and green CI
-remain outstanding. Fresh default-profile qualification and matched two-size
+The roughly 200 MB peak-RSS/3.16 MB executable targets, clean review and green CI
+remain outstanding; the physical-footprint samples do not guarantee memory stays
+below 200 MB. Fresh default-profile qualification and matched two-size
 measurements pass; they do not establish broad native-language coverage.
 The PR stays draft and unmerged until the user directs otherwise.
 
