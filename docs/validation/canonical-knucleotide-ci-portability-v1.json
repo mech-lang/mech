@@ -12,6 +12,30 @@
     "change": "Gate code-generation-only descriptor fields out of runtime-only builds while preserving unconditional checked layout arithmetic and overlap validation. Replace four test-only platform-size constants with exact target-derived requirements; retain one-short denials and prior-output preservation.",
     "scope": "No benchmark source, production numeric arithmetic, native computation, capability grants, finite policy, work policy, ABI or IR change."
   },
+  "workloads": {
+    "10m": {
+      "input": {
+        "bytes": 20333411,
+        "three_bases": 10000000,
+        "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b"
+      },
+      "oracle": {
+        "bytes": 254,
+        "sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+      }
+    },
+    "125m": {
+      "input": {
+        "bytes": 254166745,
+        "three_bases": 125000000,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa"
+      },
+      "oracle": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      }
+    }
+  },
   "measurement": {
     "method": "Twelve serial rounds per input size: all six permutations twice, so every variant occupies every position four times. One separate correctness/warmup per variant per size. Identical Node synchronous observer and regular-file descriptors opened before timing. Spawn through exit including secured report generation is timed; compilation, integrity hashing and parent validation excluded.",
     "exact_outputs": 78,
@@ -322,6 +346,7 @@
   },
   "evidence": {
     "root": "tmp/pr-stack-evidence",
+    "availability": "The following raw run and audit files are retained local evidence, not committed repository files. Both workload input/oracle byte counts and SHA-256 pins are recorded directly in workloads above; the timing samples are recorded directly in measurement.summary.",
     "files": [
       {
         "path": "ci-portability-preparation-v1002.json",
