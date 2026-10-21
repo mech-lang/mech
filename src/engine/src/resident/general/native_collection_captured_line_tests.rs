@@ -373,6 +373,8 @@ fn consuming_join_releases_unique_chunks_and_preserves_shared_and_reordered_sour
             (vec![2, 3, 4], false),
             (vec![2, 3, 4], true),
             (vec![4, 2, 2], false),
+            (vec![2, 4, 1, 3], false),
+            (vec![4, 3, 2, 1, 1, 4], true),
             (vec![], false),
         ] {
             let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);

@@ -1,0 +1,293 @@
+{
+  "schema": "mech.canonical-knucleotide-streaming-footprint.v1",
+  "status": "MEASURED_PERFORMANCE_REGRESSION_REMAINS",
+  "qualified_streaming_source_commit": "7227f235630bb6c571b2e0652f274b80010546c2",
+  "helper_diagnostic_source": {
+    "base_commit": "7227f235630bb6c571b2e0652f274b80010546c2",
+    "status": " M src/engine/src/resident/general/native_collection_captured_line_tests.rs\n M src/engine/src/resident/general/native_collection_selected_join.rs\n M src/engine/src/resident/general/native_collection_selected_lines.rs\n M src/engine/src/resident/general/native_collection_text_lines.rs\n M src/engine/src/resident/general/native_text_line_chunk_tests.rs\n M src/engine/src/resident/general/native_text_line_chunks.rs\n M src/engine/src/resident/general/native_text_line_window.rs\n M src/engine/src/resident/general/native_text_line_window_tests.rs\n",
+    "git_binary_patch_sha256": "9e44f8669882e79a622db2e19b6930d455f91a4cc9c18376b658cf756ec98aff",
+    "untracked": [],
+    "source_snapshot_sha256": "6a56b267c5acd6b189c2e17e5bbca5f675f64e7677b9893c865e7066acf32f00"
+  },
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "retained_cranelift_object": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-standard125m-release-v1134/project-0/program.o",
+    "sha256": "a1530b7de292492907159ccba1c7fa94e3b0ba4d6327821e2d67632e4c865a65"
+  },
+  "hardware": {
+    "architecture": "arm64",
+    "cpu_and_memory": "Apple M1\n8\n8\n8589934592",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90",
+    "power_source": "Now drawing from 'AC Power'"
+  },
+  "implementation": {
+    "streaming": "One admitted CLI text observation feeds generated Mech scanner continuations through bounded UTF-8 line windows. Proven dead prefixes and consumed final-join chunks are released. EOF admits genuine full count/shape and original producer/length semantics before saved body failures. Same capability/provider/transaction authority and cumulative finite ledger; no Rust workload scanner.",
+    "helper_fixes": [
+      "Use a traversal-local chunk cursor for selected-line geometry and shared-source joins; arbitrary and backward selectors retain checked binary-search fallback.",
+      "Reuse immutable producer ASCII facts for line windows; mixed sources inspect their actual cells. Existing work debits and admission/allocation order stay unchanged.",
+      "Count CRLF using single-character CR candidate search and checked following-byte comparison, preserving split UTF-8/CRLF semantics."
+    ],
+    "unchanged": "The helper diagnostic reuses the identical qualified Cranelift object and generated-project pins. It changes private generic Rust text storage/helpers only; all 96 outputs and complete security reports, including work counters and bounded-lines storage markers, match qualified per-size reports."
+  },
+  "method": {
+    "timing": "12 serial rounds per size, all six orders twice. Descriptors open before monotonic timing; spawn through exit includes startup and secured report publication. One separate correctness/warmup per variant/size. Hashing/report checks outside timing.",
+    "memory": "3 separate fresh-process RSS samples per variant/size using macOS /usr/bin/time -l. First three cyclic orders put each variant in every position once; wrapper elapsed time receives no timing credit.",
+    "interference": "Reject active compilers, relevant tests, benchmarks and profilers before and after every process.",
+    "counters": "Every report equals its existing qualified per-size implementation report. Changed helpers must preserve the complete qualified7227 report, including native counters and bounded-lines input storage.",
+    "provenance": "Rust helpers rebuilt from recorded base commit plus exact binary patch/untracked-file hashes; qualified Cranelift object and generated-project pins unchanged. Not fresh clean-source/original-decoded qualification."
+  },
+  "qualified_streaming_batch": {
+    "10m": {
+      "legacy-direct": {
+        "median_seconds": 0.091837875,
+        "minimum_seconds": 0.091148625,
+        "maximum_seconds": 0.107720166,
+        "median_peak_rss_bytes": 55214080,
+        "rss_samples_bytes": [
+          55492608,
+          55214080,
+          55214080
+        ],
+        "executable_bytes": 3159168
+      },
+      "secured-retained": {
+        "median_seconds": 0.0685023125,
+        "minimum_seconds": 0.06826775,
+        "maximum_seconds": 0.070093042,
+        "median_peak_rss_bytes": 55869440,
+        "rss_samples_bytes": [
+          55869440,
+          62537728,
+          55869440
+        ],
+        "executable_bytes": 6842992
+      },
+      "secured-streaming": {
+        "median_seconds": 0.090655146,
+        "minimum_seconds": 0.0902635,
+        "maximum_seconds": 0.091299291,
+        "median_peak_rss_bytes": 30998528,
+        "rss_samples_bytes": [
+          30998528,
+          31326208,
+          30998528
+        ],
+        "executable_bytes": 7141408
+      }
+    },
+    "125m": {
+      "legacy-direct": {
+        "median_seconds": 0.975588875,
+        "minimum_seconds": 0.964342792,
+        "maximum_seconds": 0.99318475,
+        "median_peak_rss_bytes": 228917248,
+        "rss_samples_bytes": [
+          229146624,
+          228917248,
+          178634752
+        ],
+        "executable_bytes": 3159168
+      },
+      "secured-retained": {
+        "median_seconds": 0.6462101665,
+        "minimum_seconds": 0.637124792,
+        "maximum_seconds": 0.652234042,
+        "median_peak_rss_bytes": 481705984,
+        "rss_samples_bytes": [
+          506511360,
+          481705984,
+          481705984
+        ],
+        "executable_bytes": 6842992
+      },
+      "secured-streaming": {
+        "median_seconds": 0.8868122085,
+        "minimum_seconds": 0.885090917,
+        "maximum_seconds": 0.896476125,
+        "median_peak_rss_bytes": 287834112,
+        "rss_samples_bytes": [
+          289456128,
+          287260672,
+          287834112
+        ],
+        "executable_bytes": 7141408
+      }
+    }
+  },
+  "helper_diagnostic_batch": {
+    "10m": {
+      "secured-retained": {
+        "median_seconds": 0.068057479,
+        "minimum_seconds": 0.067884625,
+        "maximum_seconds": 0.070270625,
+        "median_peak_rss_bytes": 57131008,
+        "rss_samples_bytes": [
+          62898176,
+          55869440,
+          57131008
+        ],
+        "executable_bytes": 6842992
+      },
+      "streaming-qualified": {
+        "median_seconds": 0.0903354165,
+        "minimum_seconds": 0.0901235,
+        "maximum_seconds": 0.090687583,
+        "median_peak_rss_bytes": 30998528,
+        "rss_samples_bytes": [
+          30998528,
+          31670272,
+          30998528
+        ],
+        "executable_bytes": 7141408
+      },
+      "streaming-diagnostic": {
+        "median_seconds": 0.077734333,
+        "minimum_seconds": 0.077607,
+        "maximum_seconds": 0.0779125,
+        "median_peak_rss_bytes": 31014912,
+        "rss_samples_bytes": [
+          31014912,
+          31342592,
+          31014912
+        ],
+        "executable_bytes": 7095072
+      }
+    },
+    "125m": {
+      "secured-retained": {
+        "median_seconds": 0.630468125,
+        "minimum_seconds": 0.627907291,
+        "maximum_seconds": 0.647992375,
+        "median_peak_rss_bytes": 506511360,
+        "rss_samples_bytes": [
+          506511360,
+          506511360,
+          481705984
+        ],
+        "executable_bytes": 6842992
+      },
+      "streaming-qualified": {
+        "median_seconds": 0.8804567915,
+        "minimum_seconds": 0.879621042,
+        "maximum_seconds": 0.884902042,
+        "median_peak_rss_bytes": 287260672,
+        "rss_samples_bytes": [
+          287604736,
+          287260672,
+          287260672
+        ],
+        "executable_bytes": 7141408
+      },
+      "streaming-diagnostic": {
+        "median_seconds": 0.7111716045,
+        "minimum_seconds": 0.710190917,
+        "maximum_seconds": 0.716426166,
+        "median_peak_rss_bytes": 287424512,
+        "rss_samples_bytes": [
+          287571968,
+          287424512,
+          287277056
+        ],
+        "executable_bytes": 7095072
+      }
+    }
+  },
+  "assessment": {
+    "full125m_streaming_improvement_percent": 19.226972707155266,
+    "full125m_remaining_runtime_regression_percent": 12.800564580485329,
+    "executable_change_bytes": -46336,
+    "performance_first_requirement_met": false,
+    "interpretation": "Streaming reduces memory materially, but even after the profiled helper fixes it remains slower than retained secured execution. This is not accepted as a performance-preserving replacement. The helper batch is pinned dirty-source diagnostic evidence, not new clean-source original/decoded qualification. No readiness or merge is authorized."
+  },
+  "local_validation": {
+    "text_chunk_window_tests_passed": 18,
+    "captured_selection_join_tests_passed": 6,
+    "native_host_tests_passed": 131,
+    "native_host_diagnostics_ignored": 3,
+    "hosted_capture_tests_passed": 12,
+    "architecture_checks": [
+      "Rust module layout",
+      "managed memory runtime",
+      "memory planner",
+      "warning policy",
+      "git diff --check"
+    ],
+    "edge_cases": "Exhaustive short UTF-8/CR/LF strings across every valid fragment split; repeated/backward/random/discarded selectors; unchanged exact debits; original/decoded capture; Unicode fallback; source/body failure precedence and capability denials."
+  },
+  "profile": {
+    "sample_rows": 911,
+    "sampled_cpu_ms": 911,
+    "interpretation": "One launch-time CPU sampling diagnostic, not wall-time or independent causal savings. Profile identified general substring search during capture, repeated selected-row directory lookup and redundant per-line ASCII scans.",
+    "resolved_native_frames": 14942,
+    "unresolved_native_frames": 0
+  },
+  "finite_launch_policy": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/policy-standard-125m-launch-v660.json",
+    "sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+    "finite_policy": {
+      "grants": [
+        {
+          "operations": [
+            "read"
+          ],
+          "paths": [
+            "text"
+          ],
+          "target": "cli/stdin"
+        },
+        {
+          "operations": [
+            "write"
+          ],
+          "paths": [
+            "text"
+          ],
+          "target": "cli/stdout"
+        }
+      ],
+      "input_text_bytes": 254166745,
+      "library": {
+        "cloned_bytes": 536870912,
+        "comparison_work": 68719476736,
+        "compute_work": 8796093022208,
+        "output_bytes": 536870912,
+        "output_elements": 8388608,
+        "retained_nodes": 16777216,
+        "temporary_bytes": 1073741824
+      },
+      "max_ports": 16,
+      "memory_bytes": 3221225472,
+      "native_stack_bytes": 1048576,
+      "output_text_bytes": 1048576,
+      "transport_bytes": 16777216,
+      "work": 562949953421312
+    }
+  },
+  "remaining": [
+    "Recover the remaining streaming runtime regression before performance acceptance.",
+    "Reduce executable footprint toward the retained direct-I/O reference and qualify lower-memory behavior without sacrificing runtime.",
+    "Run fresh clean-source original/decoded qualification after further performance changes, obtain clean review and green CI; remain draft/unmerged until user direction."
+  ],
+  "evidence": {
+    "qualified_streaming": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-standard125m-release-v1134/hosted-linked-result.json",
+      "sha256": "14391e7a58654bf5c28cba90fc28a15830f178512a14ade8edfa1611598d893c"
+    },
+    "qualified_measurement": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-three-way-v1134/measurement.json",
+      "sha256": "32a39dba5e5f54292e7a619b70356d6a6f6bc20fc39d99c25dd87edef43b2848"
+    },
+    "helper_build": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1136/result.json",
+      "sha256": "8fa08f718fe0b6d369b44c31112ab9ae3748b01c6f7a3c77a782c5bb1ff6d983"
+    },
+    "helper_measurement": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-three-way-v1136/measurement.json",
+      "sha256": "aeaf4014538f773151e4bdda00c33666b1e910f5ebd530d4925b1e106a9a4b2a"
+    },
+    "profile": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-full125m-profile-v1135/profile-analysis-symbolized-v1135.json",
+      "sha256": "5e2e8b83271c770178a3386916c8e5cf76ced6b3eface98c2d3f049bdc6d5052"
+    }
+  }
+}

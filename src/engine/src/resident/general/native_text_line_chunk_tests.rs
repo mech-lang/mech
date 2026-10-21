@@ -44,10 +44,8 @@ fn finish_matches(store: &mut NativeTextLineChunks, source: &str) {
     assert_eq!(store.line(facts.lines() + 1), None);
 }
 
-#[test]
-fn every_short_utf8_split_matches_the_ordinary_lines_iterator() {
-    let alphabet = ['x', '\r', '\n', 'é', '猫'];
-    for length in 0..=4 {
+fn every_utf8_split_matches(alphabet: &[char], maximum_length: u32) {
+    for length in 0..=maximum_length {
         for mut ordinal in 0..alphabet.len().pow(length) {
             let mut source = String::new();
             for _ in 0..length {
@@ -72,6 +70,16 @@ fn every_short_utf8_split_matches_the_ordinary_lines_iterator() {
             }
         }
     }
+}
+
+#[test]
+fn every_short_utf8_split_matches_the_ordinary_lines_iterator() {
+    every_utf8_split_matches(&['x', '\r', '\n', 'é', '猫'], 4);
+}
+
+#[test]
+fn crlf_search_preserves_repeated_cr_and_every_utf8_fragment_split() {
+    every_utf8_split_matches(&['a', '\r', '\n', 'é'], 5);
 }
 
 #[test]
@@ -355,6 +363,44 @@ fn wrapped_chunk_directory_growth_preserves_ordinals_and_releases_every_claim() 
     store.retain_from(65).unwrap();
     assert!(store.retained_capacity_bytes() < peak);
     assert_eq!(store.finish().unwrap().lines(), 64);
+    drop((store, ledger));
+    assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
+fn cached_cells_preserve_random_repeated_backward_and_retired_access() {
+    let memory = ManagedMemoryBudget::new(1024 * 1024);
+    let ledger = work(&memory);
+    let mut store = prepare(128, 32, limits(), &ledger).unwrap();
+    for fragment in ["a\nb\r\n", "猫\n\n", "tail"] {
+        store.push(fragment).unwrap();
+    }
+    store.finish().unwrap();
+    let before = ledger.used();
+    let mut cursor = usize::MAX;
+    for (ordinal, chunk) in [(1, 0), (2, 0), (3, 1), (4, 1), (5, 2)] {
+        assert_eq!(store.line_cached(ordinal, &mut cursor), store.line(ordinal));
+        assert_eq!(cursor, chunk, "sequential reads track their actual chunk");
+    }
+    for initial in [0, 1, 2, usize::MAX] {
+        cursor = initial;
+        for ordinal in [5, 1, 1, 4, 3, 2, 5, 0, 6, u64::MAX, 3] {
+            assert_eq!(store.line_cached(ordinal, &mut cursor), store.line(ordinal));
+        }
+    }
+    assert_eq!(
+        ledger.used(),
+        before,
+        "lookup uses the enclosing traversal debit"
+    );
+    store.retain_from(3).unwrap();
+    for ordinal in [1, 5, 3, 4, 2, 3] {
+        assert_eq!(store.line_cached(ordinal, &mut cursor), store.line(ordinal));
+    }
+    store.retain_range(3, 5).unwrap();
+    for ordinal in [5, 3, 4, 1, 4, 3] {
+        assert_eq!(store.line_cached(ordinal, &mut cursor), store.line(ordinal));
+    }
     drop((store, ledger));
     assert_eq!(memory.used_bytes(), 0);
 }

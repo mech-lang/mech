@@ -72,6 +72,33 @@ fn row_loans_use_real_global_ordinals_and_utf8_owners_until_the_loan_drops() {
 }
 
 #[test]
+fn producer_ascii_proof_preserves_cell_qualification_and_exact_window_work() {
+    let memory = ManagedMemoryBudget::new(1024 * 1024);
+    let ledger = work(&memory);
+    let mut debits = Vec::new();
+    // Equal byte lengths and the same selected cell: the producer-wide proof
+    // and mixed-source inspection must debit precisely the same row/payload
+    // work, with neither path renewing its existing source allowance.
+    for source in ["AAAA\nB\r\r\n", "éé\nB\r\r\n"] {
+        let mut owner = store(&ledger, limits());
+        for fragment in source.split_inclusive('\n') {
+            owner.push(fragment).unwrap();
+        }
+        let before = ledger.used().0;
+        let window = owner.borrow_window(2, 3).unwrap();
+        assert!(window.is_ascii());
+        assert_eq!(window.line(2), Some("B\r"));
+        debits.push(ledger.used().0 - before);
+        drop(window);
+        assert_eq!(owner.line(2), Some("B\r"));
+        drop(owner);
+    }
+    assert_eq!(debits[0], debits[1]);
+    drop(ledger);
+    assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
 fn many_completed_lines_do_not_force_a_full_input_pointer_table() {
     let memory = ManagedMemoryBudget::new(1024 * 1024);
     let ledger = work(&memory);

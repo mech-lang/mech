@@ -286,6 +286,38 @@ impl NativeTextLineChunks {
         self.chunks.get(index)?.line(ordinal)
     }
 
+    /// A traversal-local directory hint, never an owner or an access permit.
+    /// Sequential cells stay in the current chunk or its immediate successor;
+    /// arbitrary gathers retain the same checked directory-search fallback.
+    pub(super) fn line_cached(&self, ordinal: u64, cursor: &mut usize) -> Option<&str> {
+        if self.failed
+            || ordinal < self.lower
+            || ordinal > self.facts.lines
+            || self.upper.is_some_and(|end| ordinal >= end)
+        {
+            return None;
+        }
+        if let Some(text) = self
+            .chunks
+            .get(*cursor)
+            .and_then(|chunk| chunk.line(ordinal))
+        {
+            return Some(text);
+        }
+        if let Some(next) = cursor.checked_add(1)
+            && let Some(text) = self.chunks.get(next).and_then(|chunk| chunk.line(ordinal))
+        {
+            *cursor = next;
+            return Some(text);
+        }
+        let index = self
+            .chunks
+            .partition_point(|chunk| chunk.first <= ordinal)
+            .checked_sub(1)?;
+        *cursor = index;
+        self.chunks.get(index)?.line(ordinal)
+    }
+
     /// Copy one valid UTF-8 fragment into private admitted backing, framing
     /// many lines in one allocation with four-byte delimiter offsets. A line
     /// crossing fragments uses one amortized growing buffer, not one buffer
@@ -330,7 +362,13 @@ impl NativeTextLineChunks {
         if let Some(last) = text.rfind('\n') {
             let complete = &text[..last + 1];
             let count = crate::intrinsics::text_ops::line_count(complete);
-            let crlf = complete.match_indices("\r\n").count();
+            // A single-byte delimiter search avoids a general two-character
+            // substring scan. CRLF cannot overlap itself; inspect the checked
+            // following byte only at actual CR positions, including CRCRLF.
+            let crlf = complete
+                .match_indices('\r')
+                .filter(|(index, _)| complete.as_bytes().get(*index + 1) == Some(&b'\n'))
+                .count();
             let first = self
                 .facts
                 .lines

@@ -236,12 +236,15 @@ impl NativePreparedLibraryCall {
         };
         match &view.source {
             Source::Canonical(source) => view.geometry.for_each(source, &view.selector, append)?,
-            Source::Lines(lines) => view.geometry.for_each_cells(
-                lines.count(),
-                &view.selector,
-                |i| lines.line(i),
-                append,
-            )?,
+            Source::Lines(lines) => {
+                let mut chunk_cursor = 0;
+                view.geometry.for_each_cells(
+                    lines.count(),
+                    &view.selector,
+                    |i| lines.line_cached(i, &mut chunk_cursor),
+                    append,
+                )?;
+            }
         }
         if target.len() as u64 != payload {
             return Err(InvokeError::InvalidInput);

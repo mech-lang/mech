@@ -157,20 +157,26 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [latest qualified timing and footprint receipt](../../docs/validation/canonical-knucleotide-capture-transfer-footprint-v1.json)
-compares three retained binaries in one matched M1 batch. Sizes use decimal MB;
-peak RSS comes from separate process-memory runs.
+The [streaming timing and footprint receipt](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
+records a matched M1 comparison. The latest helper changes are pinned diagnostic
+measurements, not a fresh clean-source qualification. Sizes use decimal MB; peak
+RSS comes from separate process-memory runs.
 
 | Implementation | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Legacy direct I/O | 0.0922 s | 0.9763 s | 195.4 MB | 3.16 MB |
-| Previous secured application (`7f5475450`) | 0.0721 s | 0.6587 s | 585.5 MB | 6.83 MB |
-| Latest qualified secured application (`c0271df4f`) | 0.0701 s | 0.6391 s | 482.3 MB | 6.84 MB |
+| Retained secured snapshot (`c0271df4f`) | 0.0681 s | 0.6305 s | 506.5 MB | 6.84 MB |
+| Initial secured streaming (`7227f2356`) | 0.0903 s | 0.8805 s | 287.3 MB | 7.14 MB |
+| Streaming with profiled helper fixes (diagnostic) | 0.0777 s | 0.7112 s | 287.4 MB | 7.10 MB |
 
-These retained results predate the streaming implementation below. They compare
-whole applications, not isolated capability overhead. The receipt records twelve
-balanced timing rounds and six separate peak-memory runs per binary and size.
-The roughly 200 MB/3.16 MB footprint target is not yet qualified.
+Twelve balanced timing rounds and three separate peak-memory runs per binary and
+size include startup, the complete secured round and report publication. All
+96 outputs and complete security reports match; these are not isolated capability
+overhead measurements. The helper fixes remove repeated chunk searches, per-line
+ASCII scans and general CRLF substring searches without changing any work debit.
+They improve full-size streaming by 19.2%, but it remains 12.8% slower than retained
+secured execution: the performance-first requirement is **not met**. In the
+preceding matched batch, legacy direct I/O measured 0.9756 s / 228.9 MB / 3.16 MB.
+The roughly 200 MB/3.16 MB footprint target remains unfinished.
 
 The current ABI12/IR25/work-policy35 implementation connects bounded UTF-8
 capture to the same authorized CLI resource and one runtime transaction. General
@@ -187,9 +193,9 @@ Unsupported capture proofs/providers/budgets use the existing snapshot storage
 strategy, not another evaluator. Both strategies retain the original finite
 limits, selected factories, cumulative ledger and atomic publication.
 
-Fresh whole-process timing and memory qualification of streaming, further host
-size reduction, clean review and green CI remain outstanding. The PR stays draft
-and unmerged until the user directs otherwise.
+Recovering the remaining runtime regression, further host size reduction, fresh
+clean-source qualification, clean review and green CI remain outstanding. The PR
+stays draft and unmerged until the user directs otherwise.
 
 ### Canonical native architecture and limits
 

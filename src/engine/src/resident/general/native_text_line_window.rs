@@ -72,11 +72,25 @@ impl NativeTextLineChunks {
             return Err(InvokeError::InvalidInput);
         }
         let mut ascii = true;
-        self.visit_window_cells(first, end, |text| {
-            ascii &= crate::intrinsics::text_graphemes::is_ascii_without_crlf(text);
-            rows.push([text.as_ptr() as u64, text.len() as u64]);
-            Ok(())
-        })?;
+        // The immutable producer already inspected every delivered byte. An
+        // all-ASCII source therefore proves all borrowed cells ASCII without
+        // rescanning each short line. Genuine str::lines cells contain no LF,
+        // so they cannot contain the sole multi-byte ASCII grapheme, CRLF.
+        // For a mixed source, inspect only these cells to preserve the exact
+        // window qualification (ASCII cells may follow discarded Unicode).
+        // Keep the same payload precharge above on BOTH representation paths.
+        if self.facts.ascii {
+            self.visit_window_cells(first, end, |text| {
+                rows.push([text.as_ptr() as u64, text.len() as u64]);
+                Ok(())
+            })?;
+        } else {
+            self.visit_window_cells(first, end, |text| {
+                ascii &= text.is_ascii();
+                rows.push([text.as_ptr() as u64, text.len() as u64]);
+                Ok(())
+            })?;
+        }
         Ok(NativeTextLineWindow {
             rows,
             owner: self,

@@ -113,12 +113,13 @@ impl NativePreparedLibraryCall {
                         .map_err(|_| InvokeError::InvalidInput)?,
                 )
                 .map_err(|_| InvokeError::InvalidInput)?;
+                let mut chunk_cursor = 0;
                 let geometry = selected_string_matrix::prepare_cells(
                     &call.kernel,
                     (rows, columns),
                     lines.count(),
                     selector,
-                    |i| lines.line(i),
+                    |i| lines.line_cached(i, &mut chunk_cursor),
                 )?;
                 Ok(NativeSelectedStringMatrix {
                     source: Source::Lines(lines.clone()),

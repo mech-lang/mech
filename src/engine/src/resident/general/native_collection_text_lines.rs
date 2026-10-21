@@ -135,6 +135,15 @@ impl NativeTextLineMatrix {
         let end = start.checked_add(usize::try_from(length).ok()?)?;
         text.get(start..end)
     }
+
+    /// Preserve canonical cell access while amortizing captured chunk lookup
+    /// across one already-admitted selection or immutable append traversal.
+    pub(super) fn line_cached(&self, ordinal: usize, cursor: &mut usize) -> Option<&str> {
+        match &self.backing {
+            Backing::Captured(owner) => owner.line_cached((ordinal as u64).checked_add(1)?, cursor),
+            Backing::Snapshot { .. } => self.line(ordinal),
+        }
+    }
 }
 fn add(a: u64, b: u64) -> Result<u64, ResidentKernelError> {
     a.checked_add(b).ok_or(ResidentKernelError::InvalidShape)
