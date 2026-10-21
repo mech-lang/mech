@@ -163,14 +163,16 @@ peak RSS comes from separate process-memory runs.
 
 | Implementation | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Legacy direct I/O | 0.0918 s | 0.9743 s | 203.8 MB | 3.16 MB |
-| Previous secured application (`0402f8222`) | 0.0723 s | 0.6674 s | 607.7 MB | 7.52 MB |
-| Latest qualified secured application (`1111e5eba`) | 0.0718 s | 0.6648 s | 607.3 MB | 6.81 MB |
+| Legacy direct I/O | 0.0918 s | 0.9762 s | 187.2 MB | 3.16 MB |
+| Previous secured application (`0402f8222`) | 0.0723 s | 0.6623 s | 607.4 MB | 7.52 MB |
+| Latest qualified secured application (`fc85cc37b`) | 0.0720 s | 0.6621 s | 607.2 MB | 6.81 MB |
 
 Generated launchers directly install the 27 maintained canonical factories in
 the complete artifact kernel closure, including nested and cold code. The full
 catalog uses those same declarations. Missing or replaced private registration
 evidence retains complete catalog installation; no operation is silently skipped.
+Declarations also supply their required build features, so smaller runtime
+profiles do not accidentally inherit assumptions from the source compiler.
 The separately pinned factory profile is packaging metadata, not an execution
 or capability authority. Mech source, native instructions (apart from proved
 constant-slot renaming), IR20/work policy30 and native counters are unchanged.

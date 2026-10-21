@@ -1,10 +1,10 @@
 {
   "schema": "mech.canonical-knucleotide-selected-factories-footprint.v1",
   "status": "QUALIFIED",
-  "measured_source_commit": "1111e5ebad50c22ac6d0fa10cb36c6e389733744",
+  "measured_source_commit": "fc85cc37b14b4ac9920979375bf3d633be38fdc1",
   "prior_secured_source_commit": "0402f8222b4511e8a1f864ac6e861884a0d6da64",
   "implementation": {
-    "factory_linkage": "The complete artifact kernel closure, including nested and cold code, selects private-owner-witnessed maintained declarations. Generated launchers directly install those same declarations; they do not install the whole catalog and filter it at runtime.",
+    "factory_linkage": "The complete artifact kernel closure, including nested and cold code, selects private-owner-witnessed maintained declarations. Generated launchers enable their owner-declared engine features and directly install those same declarations; they do not install the whole catalog and filter it at runtime.",
     "fallback": "Any missing, replaced or unrecognized registration evidence selects complete catalog installation. Public key/cost/function replacements, even with identical values, invalidate private evidence. Public descriptive metadata cannot recreate it.",
     "unchanged": "The Mech source, semantic graph modulo proved nominal/constant renaming, emitted native instructions modulo exact constant-slot offsets, canonical binders, grants, finite policy, one secured round, output bytes, IR20/work policy30 and every native counter are unchanged. No benchmark-specific Rust body, new resource or alternate evaluator.",
     "limits": "This removes unused linked factories but does not stream input, fuse record/normalization buffers, or achieve the footprint target."
@@ -137,8 +137,14 @@
     ],
     "missing_linkage_operations": [],
     "mode": "artifact-selected",
+    "required_engine_features": [
+      "convert",
+      "map_ops",
+      "pure_text",
+      "sequence_sort"
+    ],
     "schema": "mech.canonical-linked-factory-profile.v1",
-    "sha256": "517f4858035016a4452f0f77c9be576afbbbfb9a9e33e9f28f91ddb8763bac13"
+    "sha256": "379398d3029ac76c5e12f35e913b8b67acea06f4aaf80b7b7009a8be7320a24a"
   },
   "timing": {
     "method": "Twelve serial rounds per input size: all six permutations twice, so every variant occupies every position four times. One separate correctness/warmup per variant per size. Identical Node synchronous observer and regular-file descriptors opened before timing. Spawn through exit including secured report generation is timed; compilation, integrity hashing and parent validation excluded.",
@@ -150,131 +156,131 @@
         "variants": {
           "legacy-direct": {
             "samples_ns": [
-              91529625,
-              91663625,
-              92970250,
-              91799583,
-              91582333,
-              91733125,
-              91928333,
-              91791041,
-              91891375,
-              92618375,
-              91534041,
-              91602292
+              91357125,
+              91850458,
+              96390500,
+              91306125,
+              91971583,
+              91050667,
+              92087542,
+              91596625,
+              91778916,
+              91212083,
+              91756708,
+              91752042
             ],
-            "median_ns": 91762083,
-            "min_ns": 91529625,
-            "max_ns": 92970250
+            "median_ns": 91754375,
+            "min_ns": 91050667,
+            "max_ns": 96390500
           },
           "secured-before": {
             "samples_ns": [
-              72142708,
-              72305542,
-              72546333,
-              72012417,
-              72272708,
-              72299209,
-              72013667,
-              72421208,
-              72140666,
-              72238375,
-              72260500,
-              72856250
+              70955083,
+              71985458,
+              72460500,
+              72421667,
+              72300708,
+              72269541,
+              72491458,
+              72124875,
+              72190375,
+              72381625,
+              72640792,
+              72263500
             ],
-            "median_ns": 72266604,
-            "min_ns": 72012417,
-            "max_ns": 72856250
+            "median_ns": 72285124.5,
+            "min_ns": 70955083,
+            "max_ns": 72640792
           },
-          "secured-selected": {
+          "secured-owned": {
             "samples_ns": [
-              71489625,
-              72427541,
-              71863125,
-              71946042,
-              71725333,
-              70900708,
-              71951959,
-              72243709,
-              71696584,
-              72326875,
-              71447250,
-              71267375
+              71130750,
+              71952458,
+              71222791,
+              71660250,
+              72212667,
+              70991834,
+              72104625,
+              72106166,
+              72025041,
+              72055916,
+              71914083,
+              72607708
             ],
-            "median_ns": 71794229,
-            "min_ns": 70900708,
-            "max_ns": 72427541
+            "median_ns": 71988749.5,
+            "min_ns": 70991834,
+            "max_ns": 72607708
           }
         },
-        "selected_over_before": 0.993463439903721,
-        "selected_over_legacy": 0.7823953712994941,
-        "selected_faster_rounds_than_before": 10,
-        "selected_faster_rounds_than_legacy": 12
+        "owner_over_before": 0.9958999171399365,
+        "owner_over_legacy": 0.7845811112549129,
+        "owner_faster_rounds_than_before": 10,
+        "owner_faster_rounds_than_legacy": 12
       },
       "125m": {
         "variants": {
           "legacy-direct": {
             "samples_ns": [
-              971142541,
-              972587375,
-              980113541,
-              973208958,
-              974406583,
-              975330583,
-              974094709,
-              970730459,
-              973922042,
-              975666292,
-              975411084,
-              977448917
+              984061542,
+              978501708,
+              968917166,
+              1008890708,
+              975041084,
+              971102625,
+              968380542,
+              977277583,
+              979758959,
+              983562250,
+              973622125,
+              973776416
             ],
-            "median_ns": 974250646,
-            "min_ns": 970730459,
-            "max_ns": 980113541
+            "median_ns": 976159333.5,
+            "min_ns": 968380542,
+            "max_ns": 1008890708
           },
           "secured-before": {
             "samples_ns": [
-              666996666,
-              663114083,
-              663483000,
-              664555042,
-              665567208,
-              673858958,
-              664903833,
-              667855666,
-              667848500,
-              667752583,
-              674712750,
-              669553959
+              661239000,
+              664385875,
+              664770209,
+              660726708,
+              663901917,
+              660461000,
+              662147334,
+              664328750,
+              662393875,
+              661724209,
+              662828000,
+              661173750
             ],
-            "median_ns": 667374624.5,
-            "min_ns": 663114083,
-            "max_ns": 674712750
+            "median_ns": 662270604.5,
+            "min_ns": 660461000,
+            "max_ns": 664770209
           },
-          "secured-selected": {
+          "secured-owned": {
             "samples_ns": [
-              665947000,
-              670517458,
-              663671000,
-              663198458,
-              665510625,
-              662089709,
-              664152042,
-              667833916,
-              663892833,
-              663395042,
-              665683000,
-              668549042
+              664492167,
+              665774666,
+              674698667,
+              663290917,
+              661799500,
+              660365708,
+              661875166,
+              659280750,
+              661945666,
+              662285750,
+              661782834,
+              662464209
             ],
-            "median_ns": 664831333.5,
-            "min_ns": 662089709,
-            "max_ns": 670517458
+            "median_ns": 662115708,
+            "min_ns": 659280750,
+            "max_ns": 674698667
           }
         },
-        "selected_over_before": 0.9961891104236913,
-        "selected_over_legacy": 0.6824027638366073,
-        "selected_faster_rounds_than_before": 10,
-        "selected_faster_rounds_than_legacy": 12
+        "owner_over_before": 0.9997661129771614,
+        "owner_over_legacy": 0.678286510487993,
+        "owner_faster_rounds_than_before": 6,
+        "owner_faster_rounds_than_legacy": 12
       }
     }
   },
@@ -284,54 +290,54 @@
     "summary": {
       "10m": {
         "legacy-direct": {
-          "median_peak_rss_bytes": 55279616,
+          "median_peak_rss_bytes": 55312384,
           "rss_range_bytes": [
-            55115776,
-            60506112
+            54919168,
+            57311232
           ],
-          "median_peak_footprint_bytes": 31434080
+          "median_peak_footprint_bytes": 31335680
         },
         "secured-before": {
-          "median_peak_rss_bytes": 90898432,
+          "median_peak_rss_bytes": 93732864,
           "rss_range_bytes": [
             87031808,
             93732864
           ],
-          "median_peak_footprint_bytes": 62792736
+          "median_peak_footprint_bytes": 74007552
         },
-        "secured-selected": {
-          "median_peak_rss_bytes": 93257728,
+        "secured-owned": {
+          "median_peak_rss_bytes": 93151232,
           "rss_range_bytes": [
             86556672,
             93257728
           ],
-          "median_peak_footprint_bytes": 73974784
+          "median_peak_footprint_bytes": 73876480
         }
       },
       "125m": {
         "legacy-direct": {
-          "median_peak_rss_bytes": 203751424,
+          "median_peak_rss_bytes": 187187200,
           "rss_range_bytes": [
-            178552832,
-            230998016
+            172457984,
+            229031936
           ],
-          "median_peak_footprint_bytes": 179971776
+          "median_peak_footprint_bytes": 163276416
         },
         "secured-before": {
-          "median_peak_rss_bytes": 607657984,
+          "median_peak_rss_bytes": 607436800,
           "rss_range_bytes": [
             607272960,
-            624132096
+            607698944
           ],
-          "median_peak_footprint_bytes": 591751200
+          "median_peak_footprint_bytes": 591505440
         },
-        "secured-selected": {
-          "median_peak_rss_bytes": 607338496,
+        "secured-owned": {
+          "median_peak_rss_bytes": 607223808,
           "rss_range_bytes": [
-            606797824,
-            652705792
+            606765056,
+            623525888
           ],
-          "median_peak_footprint_bytes": 591841280
+          "median_peak_footprint_bytes": 591751264
         }
       }
     },
@@ -340,10 +346,10 @@
         "size": "10m",
         "variant": "legacy-direct",
         "round": 0,
-        "maximum_resident_bytes": 55296000,
-        "peak_footprint_bytes": 31458688,
+        "maximum_resident_bytes": 54984704,
+        "peak_footprint_bytes": 31163712,
         "metrics_file": "10m-0-legacy-direct.metrics",
-        "metrics_sha256": "7222b5bc6c118d9289065c859cd518dd98db8e1e9b0d63ea0088d8d297fbb310",
+        "metrics_sha256": "50bf61b4ac7aef7c24c37b7359ec8a5e595a98513f5fa92314793b0294d08a9f",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
         "report_sha256": null
       },
@@ -354,73 +360,73 @@
         "maximum_resident_bytes": 93732864,
         "peak_footprint_bytes": 74007552,
         "metrics_file": "10m-0-secured-before.metrics",
-        "metrics_sha256": "c08c58b66aa80a6aaa97a2889ba6708a87129a75b00bdf699b63648a562c32a5",
+        "metrics_sha256": "dc90e25851e0a72248f81c1b86329aa8cf504a1f9217e6f16b475420eda08e6f",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
         "report_sha256": "e551487178be26afa85ffe56854a499cfbce8fafdad6335e0356031a6c7eca46"
       },
       {
         "size": "10m",
-        "variant": "secured-selected",
+        "variant": "secured-owned",
         "round": 0,
         "maximum_resident_bytes": 93257728,
         "peak_footprint_bytes": 73974784,
-        "metrics_file": "10m-0-secured-selected.metrics",
-        "metrics_sha256": "1f4f0b065d9d7674afe85a286bbb1b30d7b28f2e870e96edc0ce71ad31f07405",
+        "metrics_file": "10m-0-secured-owned.metrics",
+        "metrics_sha256": "902747c77744f1f04c62a18e47d3d452dfcda7cc4dc8c0c1e1512a7780565d94",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
-        "report_sha256": "f23af92e2d91c1b0eb818350bbc543fff1139717f77e68773c7bb95a0c18d262"
+        "report_sha256": "2787947545cdf19022d9203dbaa8b7d94edb80483fb4aa8780c6131eebb095d8"
       },
       {
         "size": "10m",
         "variant": "secured-before",
         "round": 1,
-        "maximum_resident_bytes": 87031808,
-        "peak_footprint_bytes": 50496640,
+        "maximum_resident_bytes": 93732864,
+        "peak_footprint_bytes": 74007552,
         "metrics_file": "10m-1-secured-before.metrics",
-        "metrics_sha256": "3dc7be99f1b0b7b3a687410c12d1d3113318c1e3a0ca9426b720a07de4504305",
+        "metrics_sha256": "5e023b38e8adea686327a4899c41449949f3ef6bec8836606dc190918649c803",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
         "report_sha256": "e551487178be26afa85ffe56854a499cfbce8fafdad6335e0356031a6c7eca46"
       },
       {
         "size": "10m",
-        "variant": "secured-selected",
+        "variant": "secured-owned",
         "round": 1,
-        "maximum_resident_bytes": 93257728,
-        "peak_footprint_bytes": 73974784,
-        "metrics_file": "10m-1-secured-selected.metrics",
-        "metrics_sha256": "5c337c1ee8675e929fbb1d24068f341b2fce4db86b415ee3d95223cab7ea88d4",
+        "maximum_resident_bytes": 86556672,
+        "peak_footprint_bytes": 50430976,
+        "metrics_file": "10m-1-secured-owned.metrics",
+        "metrics_sha256": "6180049c4cdf65cb48afce058ca5616d5608a1a70e87d5622fe85da9f5b3afd0",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
-        "report_sha256": "f23af92e2d91c1b0eb818350bbc543fff1139717f77e68773c7bb95a0c18d262"
+        "report_sha256": "2787947545cdf19022d9203dbaa8b7d94edb80483fb4aa8780c6131eebb095d8"
       },
       {
         "size": "10m",
         "variant": "legacy-direct",
         "round": 1,
-        "maximum_resident_bytes": 55115776,
-        "peak_footprint_bytes": 31294720,
+        "maximum_resident_bytes": 54919168,
+        "peak_footprint_bytes": 31098112,
         "metrics_file": "10m-1-legacy-direct.metrics",
-        "metrics_sha256": "4212dd6b573e3edd61c1754d900ac13694f11ec4148e0698782c97926ddeefb9",
+        "metrics_sha256": "bd964d6a15c6fdae858bd266251af3306cf7a7ad532b67aa9749deaeb1ab5ccb",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
         "report_sha256": null
       },
       {
         "size": "10m",
-        "variant": "secured-selected",
+        "variant": "secured-owned",
         "round": 2,
         "maximum_resident_bytes": 86556672,
         "peak_footprint_bytes": 50463872,
-        "metrics_file": "10m-2-secured-selected.metrics",
-        "metrics_sha256": "6954209bbe0d2ce2a2298eaa1c9054107d1ef57962cc251255de10b4e9ec2662",
+        "metrics_file": "10m-2-secured-owned.metrics",
+        "metrics_sha256": "06ecca4dcb4b5685bbb75672e574e56cf19ae9428b2906e488765724c7787732",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
-        "report_sha256": "f23af92e2d91c1b0eb818350bbc543fff1139717f77e68773c7bb95a0c18d262"
+        "report_sha256": "2787947545cdf19022d9203dbaa8b7d94edb80483fb4aa8780c6131eebb095d8"
       },
       {
         "size": "10m",
         "variant": "legacy-direct",
         "round": 2,
-        "maximum_resident_bytes": 55197696,
-        "peak_footprint_bytes": 31409472,
+        "maximum_resident_bytes": 55328768,
+        "peak_footprint_bytes": 31376640,
         "metrics_file": "10m-2-legacy-direct.metrics",
-        "metrics_sha256": "3b9f840a7715d1ede871c12dff4f76f387eda3aa6fb27ede0431fbc1853f124d",
+        "metrics_sha256": "e2acdea8c2c162852237ad02d58eea94e733b50851f06b5454350de4312055c4",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
         "report_sha256": null
       },
@@ -431,29 +437,29 @@
         "maximum_resident_bytes": 93732864,
         "peak_footprint_bytes": 74007552,
         "metrics_file": "10m-2-secured-before.metrics",
-        "metrics_sha256": "d3ef9e7ecd2efb9b1a0d4386eb53fd8d5e0e3adb6756281a283abb5f00ae2546",
+        "metrics_sha256": "3a5c0759f4c2d75450f6e1abe7133d7fd887e473f620d91b1fc350dbd72b7899",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
         "report_sha256": "e551487178be26afa85ffe56854a499cfbce8fafdad6335e0356031a6c7eca46"
       },
       {
         "size": "10m",
-        "variant": "secured-selected",
+        "variant": "secured-owned",
         "round": 3,
-        "maximum_resident_bytes": 93257728,
-        "peak_footprint_bytes": 73974784,
-        "metrics_file": "10m-3-secured-selected.metrics",
-        "metrics_sha256": "4ea62c3a2dfa06bbcb0398da6eb0e5669bcb3b2fb6cf1bae07deb413e2226843",
+        "maximum_resident_bytes": 93044736,
+        "peak_footprint_bytes": 73778176,
+        "metrics_file": "10m-3-secured-owned.metrics",
+        "metrics_sha256": "fa1bfc64c943d29523f07e4f4dd2e7ed336457ab3da23929085840a59d2eb5a3",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
-        "report_sha256": "f23af92e2d91c1b0eb818350bbc543fff1139717f77e68773c7bb95a0c18d262"
+        "report_sha256": "2787947545cdf19022d9203dbaa8b7d94edb80483fb4aa8780c6131eebb095d8"
       },
       {
         "size": "10m",
         "variant": "secured-before",
         "round": 3,
-        "maximum_resident_bytes": 88064000,
-        "peak_footprint_bytes": 51577920,
+        "maximum_resident_bytes": 93732864,
+        "peak_footprint_bytes": 74007552,
         "metrics_file": "10m-3-secured-before.metrics",
-        "metrics_sha256": "7f82f4826f3b28c33dfeda8a211bc049c87636b0378e879a3cdfe9b064549f4f",
+        "metrics_sha256": "e0748437e33f627b78743b42449976154918f67d09ea9913780affe079011365",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
         "report_sha256": "e551487178be26afa85ffe56854a499cfbce8fafdad6335e0356031a6c7eca46"
       },
@@ -461,10 +467,10 @@
         "size": "10m",
         "variant": "legacy-direct",
         "round": 3,
-        "maximum_resident_bytes": 60506112,
-        "peak_footprint_bytes": 34964928,
+        "maximum_resident_bytes": 55377920,
+        "peak_footprint_bytes": 31376704,
         "metrics_file": "10m-3-legacy-direct.metrics",
-        "metrics_sha256": "0457f59b106a1b37a8dc97dafb3d0057896566fa33f64fa732a1820101f69c7f",
+        "metrics_sha256": "6749bf8d26c2fb9617f4a51a71ea20c284e4ccb05ff38ef3541ad1f3a6bd1397",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
         "report_sha256": null
       },
@@ -475,7 +481,7 @@
         "maximum_resident_bytes": 93732864,
         "peak_footprint_bytes": 74007552,
         "metrics_file": "10m-4-secured-before.metrics",
-        "metrics_sha256": "c052ec97cd4d00c4d1ff3ca8224b2de602be53b541b426625e1e9ae32f55d5e0",
+        "metrics_sha256": "e17074811447dbed27e3cd36660470ecf847bebbf56ad7ac99edd3f2034ccb4f",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
         "report_sha256": "e551487178be26afa85ffe56854a499cfbce8fafdad6335e0356031a6c7eca46"
       },
@@ -483,54 +489,54 @@
         "size": "10m",
         "variant": "legacy-direct",
         "round": 4,
-        "maximum_resident_bytes": 57425920,
-        "peak_footprint_bytes": 31376576,
+        "maximum_resident_bytes": 55296000,
+        "peak_footprint_bytes": 31409536,
         "metrics_file": "10m-4-legacy-direct.metrics",
-        "metrics_sha256": "dcc70d8bfe59dc8880defde2a7230e07e1ba2246b37b0855c34331d2399ca8ac",
+        "metrics_sha256": "326b9d01902bfd36119be011dff72f1f8b4e6c36858f897b4ae5a39e15b66ec6",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
         "report_sha256": null
       },
       {
         "size": "10m",
-        "variant": "secured-selected",
+        "variant": "secured-owned",
         "round": 4,
         "maximum_resident_bytes": 93257728,
         "peak_footprint_bytes": 73974784,
-        "metrics_file": "10m-4-secured-selected.metrics",
-        "metrics_sha256": "5877c4d3979c38c002d06cc710f60044d650937873618b5dc208e21868c1ddec",
+        "metrics_file": "10m-4-secured-owned.metrics",
+        "metrics_sha256": "7030c7133d0e7a2237b154921fce6d4188c513413be3729e7bf8f8be6f70eb23",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
-        "report_sha256": "f23af92e2d91c1b0eb818350bbc543fff1139717f77e68773c7bb95a0c18d262"
+        "report_sha256": "2787947545cdf19022d9203dbaa8b7d94edb80483fb4aa8780c6131eebb095d8"
       },
       {
         "size": "10m",
         "variant": "legacy-direct",
         "round": 5,
-        "maximum_resident_bytes": 55263232,
-        "peak_footprint_bytes": 31475072,
+        "maximum_resident_bytes": 57311232,
+        "peak_footprint_bytes": 31294720,
         "metrics_file": "10m-5-legacy-direct.metrics",
-        "metrics_sha256": "85e810fe4a53e1383fc8cab3071c29602eed9ed20d04ef1c0ba18bab142f1fdd",
+        "metrics_sha256": "2b36f2756b0d9c93914b00c8d553e42481e3c253f1cc1536737dba59bd1bf8c3",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
         "report_sha256": null
       },
       {
         "size": "10m",
-        "variant": "secured-selected",
+        "variant": "secured-owned",
         "round": 5,
         "maximum_resident_bytes": 93257728,
         "peak_footprint_bytes": 73974784,
-        "metrics_file": "10m-5-secured-selected.metrics",
-        "metrics_sha256": "973ba257c46f6b2929cc104495fcdee8f4f7d5b68335bb26e67eb0d7077af361",
+        "metrics_file": "10m-5-secured-owned.metrics",
+        "metrics_sha256": "677c7f386ca708563dbdfc4fbe115123034189254a561ea1ca4d825f6324870f",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
-        "report_sha256": "f23af92e2d91c1b0eb818350bbc543fff1139717f77e68773c7bb95a0c18d262"
+        "report_sha256": "2787947545cdf19022d9203dbaa8b7d94edb80483fb4aa8780c6131eebb095d8"
       },
       {
         "size": "10m",
         "variant": "secured-before",
         "round": 5,
         "maximum_resident_bytes": 87031808,
-        "peak_footprint_bytes": 50480192,
+        "peak_footprint_bytes": 50463744,
         "metrics_file": "10m-5-secured-before.metrics",
-        "metrics_sha256": "b2108771343604b04a4350f2c5637c1ef3d513563ccf8a18bda826e9c6c4db29",
+        "metrics_sha256": "12cefee795fa0319f8b259ef9089a49e0588166f89ec2d134714811200f2113d",
         "output_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
         "report_sha256": "e551487178be26afa85ffe56854a499cfbce8fafdad6335e0356031a6c7eca46"
       },
@@ -538,10 +544,10 @@
         "size": "125m",
         "variant": "legacy-direct",
         "round": 0,
-        "maximum_resident_bytes": 229195776,
-        "peak_footprint_bytes": 205375232,
+        "maximum_resident_bytes": 178520064,
+        "peak_footprint_bytes": 154699264,
         "metrics_file": "125m-0-legacy-direct.metrics",
-        "metrics_sha256": "936e0daa0819194692ff72e97f4ec59469677614454f9fee5489fe87a4492df9",
+        "metrics_sha256": "1741e77966e30bc8187f991d008eb3d1dab2ee3db490e281e948cd0cc0dee6c8",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
         "report_sha256": null
       },
@@ -549,76 +555,76 @@
         "size": "125m",
         "variant": "secured-before",
         "round": 0,
-        "maximum_resident_bytes": 607617024,
-        "peak_footprint_bytes": 591743040,
+        "maximum_resident_bytes": 607698944,
+        "peak_footprint_bytes": 591742912,
         "metrics_file": "125m-0-secured-before.metrics",
-        "metrics_sha256": "237b792ea47ec3de5693d6665daba7a201c201e1f6c0b64506f4ad28a1392ff3",
+        "metrics_sha256": "9e43b5ea6a26c793031e2100515216ae4e6d8a820ea03d6e549a7c9e44c532f7",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
         "report_sha256": "19d33f8c55cf5d358ef226ed4e2760f172c0797cb901a9955e5b09e6676c49e1"
       },
       {
         "size": "125m",
-        "variant": "secured-selected",
+        "variant": "secured-owned",
         "round": 0,
-        "maximum_resident_bytes": 607453184,
-        "peak_footprint_bytes": 591955968,
-        "metrics_file": "125m-0-secured-selected.metrics",
-        "metrics_sha256": "aaef6a917f76822573bc9fe699f465c39c8bf36306f5a72130bda957a78e965f",
+        "maximum_resident_bytes": 623312896,
+        "peak_footprint_bytes": 607914112,
+        "metrics_file": "125m-0-secured-owned.metrics",
+        "metrics_sha256": "15c280fcb1ccbcece1bd0bfefabf5a2b6b5cffaf283170ec6692573399ce8f09",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
-        "report_sha256": "42d9a9ad0af591e165a136c2689dd369d842d3fe95f3f524bc6dfd138da7fd60"
+        "report_sha256": "59e9e1f5f413fc7a062336a911bab9fe513e24e8c23b482bc8bd7c53a05fe678"
       },
       {
         "size": "125m",
         "variant": "secured-before",
         "round": 1,
-        "maximum_resident_bytes": 624132096,
-        "peak_footprint_bytes": 608291008,
+        "maximum_resident_bytes": 607272960,
+        "peak_footprint_bytes": 591333376,
         "metrics_file": "125m-1-secured-before.metrics",
-        "metrics_sha256": "2d53956ee4973f002fb185e2169431b43b9103e1003714900e8a136965bd4dd2",
+        "metrics_sha256": "08b279b29dd3f864e2dec200d669854f1800d864a24e86fcaf1d78b4a5d1cafb",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
         "report_sha256": "19d33f8c55cf5d358ef226ed4e2760f172c0797cb901a9955e5b09e6676c49e1"
       },
       {
         "size": "125m",
-        "variant": "secured-selected",
+        "variant": "secured-owned",
         "round": 1,
-        "maximum_resident_bytes": 624082944,
-        "peak_footprint_bytes": 608749760,
-        "metrics_file": "125m-1-secured-selected.metrics",
-        "metrics_sha256": "1686c62e89c2d2f3844bc1f7167e9d63b58f552d9f8e3dc4620d610940978932",
+        "maximum_resident_bytes": 606765056,
+        "peak_footprint_bytes": 591267840,
+        "metrics_file": "125m-1-secured-owned.metrics",
+        "metrics_sha256": "421d725fd2c95421f1dad9af2ed80ff20d22f9083126926f71d1119f2b5d658a",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
-        "report_sha256": "42d9a9ad0af591e165a136c2689dd369d842d3fe95f3f524bc6dfd138da7fd60"
+        "report_sha256": "59e9e1f5f413fc7a062336a911bab9fe513e24e8c23b482bc8bd7c53a05fe678"
       },
       {
         "size": "125m",
         "variant": "legacy-direct",
         "round": 1,
-        "maximum_resident_bytes": 178552832,
-        "peak_footprint_bytes": 154682816,
+        "maximum_resident_bytes": 199917568,
+        "peak_footprint_bytes": 176031424,
         "metrics_file": "125m-1-legacy-direct.metrics",
-        "metrics_sha256": "8f950ccd0b3a226358487d0fe22ff8dcfd2154ea916bb9b8387c02a15f3dd281",
+        "metrics_sha256": "af8f135f1744abc15e45796934b0b1b518b72e929e3cdb356cee951c12ef3fdb",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
         "report_sha256": null
       },
       {
         "size": "125m",
-        "variant": "secured-selected",
+        "variant": "secured-owned",
         "round": 2,
-        "maximum_resident_bytes": 607125504,
-        "peak_footprint_bytes": 591677632,
-        "metrics_file": "125m-2-secured-selected.metrics",
-        "metrics_sha256": "189b924de529ae668b036743d67ebfe3089e1649a43fbac637e29130437c2b5b",
+        "maximum_resident_bytes": 607649792,
+        "peak_footprint_bytes": 592152576,
+        "metrics_file": "125m-2-secured-owned.metrics",
+        "metrics_sha256": "935df1bb10e6ec711d4b365c4df1a8745815a8de71b6ddbd3372f547eb4f3f22",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
-        "report_sha256": "42d9a9ad0af591e165a136c2689dd369d842d3fe95f3f524bc6dfd138da7fd60"
+        "report_sha256": "59e9e1f5f413fc7a062336a911bab9fe513e24e8c23b482bc8bd7c53a05fe678"
       },
       {
         "size": "125m",
         "variant": "legacy-direct",
         "round": 2,
-        "maximum_resident_bytes": 178634752,
-        "peak_footprint_bytes": 154813952,
+        "maximum_resident_bytes": 195723264,
+        "peak_footprint_bytes": 171787968,
         "metrics_file": "125m-2-legacy-direct.metrics",
-        "metrics_sha256": "0a4c53ba39a53181f0137b5edfd8c04a71e4b269c76498275b272daedccdc454",
+        "metrics_sha256": "0e478cfe7b34f0a9cedb4f39b6b80de5f38b4360bdb12b7beb2e1defb797e692",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
         "report_sha256": null
       },
@@ -629,20 +635,20 @@
         "maximum_resident_bytes": 607698944,
         "peak_footprint_bytes": 591759360,
         "metrics_file": "125m-2-secured-before.metrics",
-        "metrics_sha256": "cdec0e32a5f44f8fbc7e88ec1c65455e64ce15bd78d6f61292c7fd5804522b72",
+        "metrics_sha256": "6a9939f1194e8671f02c13a8f8dd02c5e18ae4bc94045e3bf57a6555c4e04e56",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
         "report_sha256": "19d33f8c55cf5d358ef226ed4e2760f172c0797cb901a9955e5b09e6676c49e1"
       },
       {
         "size": "125m",
-        "variant": "secured-selected",
+        "variant": "secured-owned",
         "round": 3,
         "maximum_resident_bytes": 606797824,
-        "peak_footprint_bytes": 591300608,
-        "metrics_file": "125m-3-secured-selected.metrics",
-        "metrics_sha256": "c9f8a817a8adfe21db5545a734e9babfeb09806e4512329719e3698f3dee0995",
+        "peak_footprint_bytes": 591349952,
+        "metrics_file": "125m-3-secured-owned.metrics",
+        "metrics_sha256": "2c9ac4f2c6c26f0be5ee8fb6cb9f84d272234a7499800cec69319552dd97cacb",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
-        "report_sha256": "42d9a9ad0af591e165a136c2689dd369d842d3fe95f3f524bc6dfd138da7fd60"
+        "report_sha256": "59e9e1f5f413fc7a062336a911bab9fe513e24e8c23b482bc8bd7c53a05fe678"
       },
       {
         "size": "125m",
@@ -651,7 +657,7 @@
         "maximum_resident_bytes": 607272960,
         "peak_footprint_bytes": 591333376,
         "metrics_file": "125m-3-secured-before.metrics",
-        "metrics_sha256": "0cfe2389ddea64a6eeaa5b0ab7db700409e4ebf3ab92e13b1c7a42044899f4a7",
+        "metrics_sha256": "831fea7fea76c103645ee5f49e3ad55518f7324b5955ee3f64f676351a437f5f",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
         "report_sha256": "19d33f8c55cf5d358ef226ed4e2760f172c0797cb901a9955e5b09e6676c49e1"
       },
@@ -659,10 +665,10 @@
         "size": "125m",
         "variant": "legacy-direct",
         "round": 3,
-        "maximum_resident_bytes": 228868096,
-        "peak_footprint_bytes": 205113088,
+        "maximum_resident_bytes": 172457984,
+        "peak_footprint_bytes": 146408896,
         "metrics_file": "125m-3-legacy-direct.metrics",
-        "metrics_sha256": "ee5d657fab2c54470ebf08629da9855e70af878a51adb1232b64becf0f88c16f",
+        "metrics_sha256": "852babdc5eae9af7e79e1a6c056917aa2c4ab5727b7e8a9628027c4037373e5a",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
         "report_sha256": null
       },
@@ -670,10 +676,10 @@
         "size": "125m",
         "variant": "secured-before",
         "round": 4,
-        "maximum_resident_bytes": 607698944,
-        "peak_footprint_bytes": 591759360,
+        "maximum_resident_bytes": 607600640,
+        "peak_footprint_bytes": 591644608,
         "metrics_file": "125m-4-secured-before.metrics",
-        "metrics_sha256": "dc0c3183f6c9801ca6d2c234190fe6dce047d81e9a2398a234dc1b588f3b11e6",
+        "metrics_sha256": "2a5ae6d76ae1e13c5b1c7d555e423f87cafe16e796be96d76f1ff862d9d99208",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
         "report_sha256": "19d33f8c55cf5d358ef226ed4e2760f172c0797cb901a9955e5b09e6676c49e1"
       },
@@ -681,54 +687,54 @@
         "size": "125m",
         "variant": "legacy-direct",
         "round": 4,
-        "maximum_resident_bytes": 178634752,
-        "peak_footprint_bytes": 154846912,
+        "maximum_resident_bytes": 229031936,
+        "peak_footprint_bytes": 205276800,
         "metrics_file": "125m-4-legacy-direct.metrics",
-        "metrics_sha256": "19de62c2831a022be22e6aebd364bc17153a916265017f614998f33bc81df932",
+        "metrics_sha256": "4e0e629c39cfa39b8f7fde9c349f67375713ee28840e2f7f362d0e17f6c28dae",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
         "report_sha256": null
       },
       {
         "size": "125m",
-        "variant": "secured-selected",
+        "variant": "secured-owned",
         "round": 4,
-        "maximum_resident_bytes": 652705792,
-        "peak_footprint_bytes": 637569280,
-        "metrics_file": "125m-4-secured-selected.metrics",
-        "metrics_sha256": "4f484035d60c1455e7ce1d7c8d36da505f5e018a69528ca414c70c686808190f",
+        "maximum_resident_bytes": 623525888,
+        "peak_footprint_bytes": 608110720,
+        "metrics_file": "125m-4-secured-owned.metrics",
+        "metrics_sha256": "23f1b4ccf333bdc6bd19ada0f0403157fdcece21c5f75dc3de491492ec6e20f5",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
-        "report_sha256": "42d9a9ad0af591e165a136c2689dd369d842d3fe95f3f524bc6dfd138da7fd60"
+        "report_sha256": "59e9e1f5f413fc7a062336a911bab9fe513e24e8c23b482bc8bd7c53a05fe678"
       },
       {
         "size": "125m",
         "variant": "legacy-direct",
         "round": 5,
-        "maximum_resident_bytes": 230998016,
-        "peak_footprint_bytes": 205096640,
+        "maximum_resident_bytes": 178651136,
+        "peak_footprint_bytes": 154764864,
         "metrics_file": "125m-5-legacy-direct.metrics",
-        "metrics_sha256": "090593662b79f79ef8320e5e8f80a141796ed47d8751c395bbd793965523dce7",
+        "metrics_sha256": "70a3bb497e29855a167bc7cde13283a489bd275890084ae2b5ca2dd0ceb626c2",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
         "report_sha256": null
       },
       {
         "size": "125m",
-        "variant": "secured-selected",
+        "variant": "secured-owned",
         "round": 5,
-        "maximum_resident_bytes": 607223808,
-        "peak_footprint_bytes": 591726592,
-        "metrics_file": "125m-5-secured-selected.metrics",
-        "metrics_sha256": "5cdba10c5e6ccd9f1bb052fde7b3dfc6d9cc4002df46b13aaafcf7f440f59b3d",
+        "maximum_resident_bytes": 606797824,
+        "peak_footprint_bytes": 591349952,
+        "metrics_file": "125m-5-secured-owned.metrics",
+        "metrics_sha256": "e8783469e3b8b704e0dd15bba0c40e0e7377346c44e497b3fff29df2b66301aa",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
-        "report_sha256": "42d9a9ad0af591e165a136c2689dd369d842d3fe95f3f524bc6dfd138da7fd60"
+        "report_sha256": "59e9e1f5f413fc7a062336a911bab9fe513e24e8c23b482bc8bd7c53a05fe678"
       },
       {
         "size": "125m",
         "variant": "secured-before",
         "round": 5,
         "maximum_resident_bytes": 607272960,
-        "peak_footprint_bytes": 591333376,
+        "peak_footprint_bytes": 591366272,
         "metrics_file": "125m-5-secured-before.metrics",
-        "metrics_sha256": "f8053a417dc14ce5e0efc6ba09914e56538bc2a5af91560c0dee299ebce013da",
+        "metrics_sha256": "02278219eb8509887b1e6aa9ba3fc51b3eaa7e0d4e8e6a567d2cd444eaf5a0df",
         "output_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
         "report_sha256": "19d33f8c55cf5d358ef226ed4e2760f172c0797cb901a9955e5b09e6676c49e1"
       }
@@ -746,15 +752,15 @@
       "sha256": "4e4c103424e6e37b3c658b971708e7e0726d776e5c2ccc20567fd33149a0cbe2"
     },
     {
-      "implementation": "secured-selected",
-      "bytes": 6810112,
-      "sha256": "05e7b6a56e74551239d9904880b218d77c72e99c1649a5d7739a8ae9a9016b0e"
+      "implementation": "secured-owned",
+      "bytes": 6810160,
+      "sha256": "8b86d93bf3374f3191ea11886c9ba19b5c6b3f884fa949dc45625cc36090e7ff"
     }
   ],
   "assessment": {
-    "executable_size_change_bytes": -712976,
-    "executable_size_reduction_fraction": 0.09477172139951041,
-    "speed": "Matched medians differ by less than1%; no material speed regression is observed. Do not describe this packaging change as a substantial computational speedup.",
+    "executable_size_change_bytes": -712928,
+    "executable_size_reduction_fraction": 0.09476534104080665,
+    "speed": "See the exact matched medians, all paired samples and ratios above. The native body is unchanged; this is a packaging change, not a claim of a substantial computational speedup.",
     "memory": "Matched125M RSS medians and ranges overlap; no meaningful RAM reduction is established by this change."
   },
   "qualification": {
@@ -763,31 +769,40 @@
         "suite": "native_program",
         "passed": 134,
         "ignored": 2,
-        "name": "selected-factories-program-and-hosted-recheck-v1062.log",
-        "sha256": "e3c0f0d87c1e4fbe1ca493a53c73884afb50c28fdfd0b972227cf83505f74c6c"
+        "name": "selected-features-program-v1069.log",
+        "sha256": "886d8e52407f19253f97d80d23acb70578c68d7e87c8f06f2e891ab46f11db4e"
       },
       {
         "suite": "hosted",
-        "passed": 43,
+        "passed": 44,
         "ignored": 2,
-        "name": "selected-factories-hosted-tests-v1062.log",
-        "sha256": "1697760707497d1f29ea9c0abec468611bcd3319af8126c2ac7ba7ea3a6b5d7f"
+        "name": "owner-features-hosted-tests-v1069.log",
+        "sha256": "fb593bc51bcb05c1fc9300222510f92c7a13fa0a66619d867adb753d39b3085e"
       }
     ],
-    "factory_linkage_tests_included_in_hosted": 5,
+    "factory_linkage_tests_included_in_hosted": 6,
+    "linked_scalar_owner_features": {
+      "name": "owner-features-scalar-linked-v1069.json",
+      "sha256": "2dca61304f03bf3829563a9618681097c60c3806ebab082683b9bb5f504f38f6",
+      "source_commit": "fc85cc37b14b4ac9920979375bf3d633be38fdc1",
+      "actual_checked_cases": 57,
+      "linked": true,
+      "executed": true,
+      "benchmark_measurements": 0
+    },
     "minimal_build_checks": [
       {
-        "name": "selected-factories-scalar-minimal-recheck-v1062.log",
-        "sha256": "4ed4689d8ef67c734b9486c4f3adf22e88d5a3f09ac72c5201e805a377e6e4e9"
+        "name": "owner-features-scalar-minimal-recheck-v1069.log",
+        "sha256": "71c6938f9f77ec836782fd3ec1f0f16b34f5b635120de46aaadda7c76d583a1f"
       },
       {
-        "name": "selected-factories-resident-minimal-recheck-v1062.log",
-        "sha256": "4de3ec928f9d104c6d65de9c79dc07e4f902b6b9c7e2efe14a376f109d24611b"
+        "name": "owner-features-resident-minimal-recheck-v1069.log",
+        "sha256": "dfad96b980592aaf8d4066f4755c9bcaef2c37da03114cd71ca55a804bf27b2d"
       }
     ],
     "boundary_checks": {
       "passed": 3,
-      "name": "selected-factories-boundaries-v1062.log",
+      "name": "owner-features-boundaries-v1069.log",
       "sha256": "4bcf0df8dd29256b25b00c22d7f5577a2a741ebac0db1fdc3e577a0e13bf9762"
     },
     "full125m_original_and_decoded_processes": 8,
@@ -1059,44 +1074,44 @@
           48
         ],
         "after": [
-          116,
-          91,
-          0,
-          200,
-          195,
-          156,
-          107,
-          40,
-          102,
-          22,
-          160,
+          75,
+          218,
+          59,
+          203,
+          193,
+          206,
+          173,
+          190,
+          121,
           105,
-          99,
-          157,
+          73,
+          35,
           120,
-          132,
-          39,
-          223,
-          42,
-          180,
-          161,
-          90,
-          138,
-          109,
-          83,
-          137,
-          184,
-          15,
-          181,
-          255,
-          223,
-          55
+          125,
+          203,
+          224,
+          97,
+          252,
+          108,
+          22,
+          157,
+          226,
+          114,
+          185,
+          67,
+          69,
+          207,
+          250,
+          63,
+          114,
+          9,
+          153
         ]
       },
       "constant_id_remap_candidate_to_baseline": [
         0,
-        15,
         1,
+        15,
         2,
         3,
         4,
@@ -1310,11 +1325,6 @@
           "baseline": 5
         },
         {
-          "path": "section-13.nodes.10.body.Comprehension.steps.0.Generator.source.Constant",
-          "candidate": 2,
-          "baseline": 1
-        },
-        {
           "path": "section-13.nodes.10.body.Comprehension.steps.3.Operation.body.Comprehension.steps.0.Operation.inputs.0.Constant",
           "candidate": 3,
           "baseline": 2
@@ -1351,7 +1361,7 @@
         },
         {
           "path": "section-14.22.Input.source.Constant",
-          "candidate": 1,
+          "candidate": 2,
           "baseline": 15
         }
       ]
@@ -1380,7 +1390,7 @@
       "observations": 1,
       "payload_argument_snapshot_reserved_bytes": 16,
       "policy": "secured",
-      "program_revision": "6926b4e4b03dc6e0a1cb82c1fb203925f986a2430063ee35358304e8d9b36b52",
+      "program_revision": "bc8f4f54b5a808d8edc153e33bc26295f9ce2bf6fc448f93b53368d0e5fca68a",
       "requirements": 2,
       "resident_body_evaluation": false,
       "route": "canonical-artifact-program-object-secured-cli",
@@ -1392,10 +1402,10 @@
     "scope": "Same source and graph modulo proved nominal/constant renaming; same native instructions modulo exact constant-slot offsets; same grants, finite policy, one secured round, exact output. IR20/policy30 layout and accounting are unchanged; generated launchers reference only maintained artifact-selected factory declarations. All candidate original/decoded reports match exactly. This is not a streaming or final footprint claim."
   },
   "pins": {
-    "bytecode": "4bc945031084aa8c0f8ad362da3093569a4ba49e7a1c58f069b6ede9d68b93d2",
-    "object": "9b664cf9beb2e910d0018af5d6ffbd849f7edb28aa4abfa34da7f4947cbd973e",
-    "identity": "5d918a9d589671c8ab6d9eb6e0dd8d808003a746acaa3ea7c9de8478532b1516",
-    "program_revision": "6926b4e4b03dc6e0a1cb82c1fb203925f986a2430063ee35358304e8d9b36b52",
+    "bytecode": "f8afc7547de7a37663d105e0bad0b4cf1e3652aa48103f8dd8a3161e1f6d1410",
+    "object": "df9c96e35f9c073439ff3613c6cd461f1c54e1d7a85f21478bfd516e3900e9de",
+    "identity": "35ec093ae6735017841eb7e825b18a8c4d2abb998396298979806d1a54d1ffd4",
+    "program_revision": "bc8f4f54b5a808d8edc153e33bc26295f9ce2bf6fc448f93b53368d0e5fca68a",
     "launch": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257"
   },
   "footprint_target": {
@@ -1417,28 +1427,28 @@
     "availability": "Raw reports, executables, logs and drivers are retained locally under tmp/pr-stack-evidence, not committed. Timing arrays, memory samples, workload/policy pins and the factory profile are included here.",
     "references": [
       {
-        "name": "selected-factories-preparation-v1062.json",
-        "sha256": "af11bba23dfef1ab4747de957faeb16138f27364c62dcb0faa97b18498c50fce"
+        "name": "owner-features-preparation-v1069.json",
+        "sha256": "11090ee459d18a8af2c72287d3d0f118b66460ad80bce7ab4fd49efdf13d489c"
       },
       {
-        "name": "selected-factories-standard125m-release-v1063/hosted-linked-result.json",
-        "sha256": "f3e1c027acc3fb6a2ee577daee3f659de24b255ca65021749febc925c4070e97"
+        "name": "owner-features-standard125m-release-v1070/hosted-linked-result.json",
+        "sha256": "b6594849def0c401676da4d2817fea887c17698f27b90bc13b004cbcb7fca4cb"
       },
       {
-        "name": "audit-selected-factories-full125m-v1064-result.json",
-        "sha256": "689f7d06bdcc96b72c1467f54a36d7e813674ae66943bc877c0d8907bedea7f1"
+        "name": "audit-owner-features-full125m-v1071-result.json",
+        "sha256": "0833bf30798166fef5fa33d2b18e0636ed8f0ba9f0b7677b8bdd5402f6b4d568"
       },
       {
-        "name": "selected-factories-three-way-v1065/measurement.json",
-        "sha256": "04a49614e79ff2ca615585b53ad61ff5dd5ad73a73ed9181f98029d8844b4527"
+        "name": "owner-features-three-way-v1072/measurement.json",
+        "sha256": "db828f4832da3678f90cae455026a36af0ca27c7d6886af727673dce332b1cef"
       },
       {
-        "name": "selected-factories-memory-v1066/measurement.json",
-        "sha256": "e126ab417d6ed4921431a87aae784abe1e3f16a1ccbbac529a439de696cde7e6"
+        "name": "owner-features-memory-v1073/measurement.json",
+        "sha256": "f6ce0ca5b42b08d4a61310aaeb03b638398acaa2724709784aad6a2e47d8bf9e"
       },
       {
-        "name": "selected-factories-comparison-audit-v1067.json",
-        "sha256": "1be44306ac30edeb030be38e81e15fecc114f0041718800af6d3a927b1950455"
+        "name": "owner-features-comparison-audit-v1074.json",
+        "sha256": "ceab1ea69d1b8c0de39ef1138ee88ae28274baa34da82ae08a899bc015898829"
       }
     ]
   }
