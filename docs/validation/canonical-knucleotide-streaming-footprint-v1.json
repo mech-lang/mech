@@ -1,5 +1,6 @@
 {
   "schema": "mech.canonical-knucleotide-streaming-footprint.v1",
+  "later_compact_selector_measurement": "canonical-knucleotide-compact-selector-v1.json",
   "status": "CLEAN_QUALIFIED_TWO_SIZE_RUNTIME_PARITY_FOOTPRINT_UNFINISHED",
   "qualification_kind": "FRESH_CLEAN_SOURCE_ORIGINAL_AND_DECODED_DEFAULT_PROFILE",
   "measurement_label": "v1145",
@@ -1147,8 +1148,29 @@
       }
     }
   },
+  "canonical_envelope_fresh_qualification": {
+    "label": "v1151",
+    "status": "PASS",
+    "source_commit": "a8e334004f609e6de1c0e3fc17aaaaea35a12819",
+    "original_and_decoded_executables_identical": true,
+    "executable_bytes": 6713008,
+    "executable_sha256": "375468ecee1f64a58503663435de7b42fbdd81f29f42652f07d5033e7952fcf3",
+    "full125m_qualification_median_seconds": { "original": 0.6341435, "decoded": 0.628591 },
+    "samples_per_variant": 3,
+    "security": "Original and decoded complete reports match exactly. Against v1145, only the independent nominal program revision differs. Physical audit verified all project pins, 26 small security cases, 16 launcher tests, 9 tamper rejections and 8 full-input outputs/reports.",
+    "interpretation": "Maintained fresh clean-source default-profile qualification of the strict reader change, separate from the retained-Object v1150 diagnostic. These qualification samples are not a new paired-performance or RSS measurement and do not replace the v1145 three-way table.",
+    "wrapper": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-qualification-v1151/result.json",
+      "bytes": 4698,
+      "sha256": "090d59de4915785a8d32ff7d379a577145712eb7e507c2161999c4dc443bcf33"
+    },
+    "qualification": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-release-v1151/hosted-linked-result.json",
+      "bytes": 589833,
+      "sha256": "091080f52da2310f90f7e6e7ee64ae1f4f5ddb056d7ca52e26929420bd4d2161"
+    }
+  },
   "remaining": [
-    "Fresh clean-source/default-profile qualification of the strict canonical-envelope reader change; v1150 is a retained-Object host-only diagnostic, not replacement qualification.",
     "Reduce executable size and peak memory toward the approximately 200 MB/3.16 MB reference footprint without sacrificing runtime.",
     "Obtain clean review and green CI; remain draft/unmerged until user direction."
   ],

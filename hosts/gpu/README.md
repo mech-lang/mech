@@ -157,70 +157,48 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [streaming timing and footprint receipt](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
-records the latest matched M1 comparison of fresh, clean-source default-profile
-builds. Full-size streaming retains approximately 0.63-second performance, with
-43.3% lower peak RSS than the retained secured snapshot in this batch. The 10M
-case is at parity; the earlier small-input regression is no longer observed.
+The latest [matched measurement](../../docs/validation/canonical-knucleotide-compact-selector-v1.json)
+uses the unchanged full Mech source, input and finite capability policy on one
+M1. A proved sole-use unit range now retains checked start/count metadata instead
+of allocating its index array. Its original Range, Select and Join visits remain;
+escaping or unsupported ranges retain ordinary canonical execution.
 
-| Implementation | 10M bases | 125M bases | 125M peak RSS | 125M physical peak | Executable |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Original tuned direct I/O | 0.09163 s | 0.97263 s | 178.8 MB | 154.9 MB | 3.159 MB |
-| Retained secured snapshot | 0.06839 s | 0.64312 s | 506.5 MB | 491.0 MB | 6.843 MB |
-| Fresh default streaming (v1145) | 0.06833 s | 0.62678 s | 287.3 MB | 164.4 MB | 7.063 MB |
+| Secured build | 10M bases | 125M bases | 125M peak RSS | Executable |
+| --- | ---: | ---: | ---: | ---: |
+| Before compact selector | 0.06804 s | 0.63105 s | 287.1 MB | 6.713 MB |
+| Compact selector | 0.06719 s | 0.62066 s | 270.8 MB | 6.729 MB |
 
-Twelve balanced timing rounds per binary and size include startup and complete
-execution, including one secured round and report publication for secured
-variants; three separate runs measure peak RSS and macOS `peak memory footprint`
-(the physical-peak column). These are distinct metrics, not interchangeable.
-All 98 outputs and all 66 secured reports match their expected results; the
-direct-I/O control has no security report. Sizes use decimal MB. Original and
-decoded default builds have identical artifacts and executable bytes. Both pass
-the maintained permission-denial, pin-tampering and generated-launcher checks.
-The 10M result is near parity, not a meaningful speedup claim. Earlier 0.639- and
-0.633-second results remain valid; this table uses same-batch controls. There is
-no additional code optimization between the 0.633-second diagnostic and this
-fresh-default comparison. These are whole implementations, not isolated
-capability overhead or a general language ranking.
+At 125M this change is 1.65% faster by the median paired ratio (12/12 rounds
+faster) and uses 16.3 MB less peak RSS, with a 16.5 KB larger executable. Twelve
+balanced timing rounds per build/size include startup, the complete secured
+round and report publication. Three separate processes measure RSS. Units are
+decimal MB; physical-footprint measurements are recorded separately, not used
+as a substitute for RSS or as evidence that the 200 MB target is met.
 
-A later host-only diagnostic (v1150) reduces the executable from 7.063 to
-6.713 MB (4.96%) by rejecting legacy execution payloads through the shared strict
-canonical-envelope reader, allowing unused legacy decoding code to be removed.
-The same Cranelift Object, capability policy and full execution reports are
-unchanged; canonical semantic validation remains in the same engine. Twelve
-paired rounds preserve approximately 0.63-second performance (0.62913 versus
-0.62864 seconds at 125M; paired median difference +0.14%), with no material
-regression observed in this batch and no meaningful memory improvement. This is
-not a speedup or proof of zero overhead; fresh qualification is still required
-for this change, so the qualified table above remains v1145.
+Fresh original/decoded default-profile builds pass the maintained security and
+pin-tampering qualification and are byte-identical within each version. All 64
+measured outputs and complete reports pass: across versions, only the actual
+program revision and expected work count change. These are same-machine results,
+not universal guarantees or an isolated measurement of capability overhead.
 
-A separate non-timing inspection after input consumption found 1.50 MB of live
-malloc allocations alongside large reusable and mostly empty allocator regions.
-This supports allocator retention as a contributor to late-run RSS; it is not a
-peak-live-memory bound or a fix for the measured 287.3 MB peak RSS.
+For context, the earlier [three-way comparison and host-size evidence](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
+measured 0.62678 s secured versus 0.97263 s tuned direct I/O at 125M, and the
+strict canonical reader subsequently reduced the host from 7.063 to 6.713 MB.
+Earlier approximately 0.639-second results remain valid; differences between
+batches are not additional optimization wins.
 
-The current ABI12/IR26/work-policy35 implementation streams bounded UTF-8 line
-windows through the same authorized CLI resource and one runtime transaction.
-The generated Mech scanner discards proved-dead prefixes; the final join releases
-consumed chunks. Genuine count/shape admission waits for successful EOF, and
-source failures precede saved body failures. No partial count, Rust workload
-scanner or second evaluator is introduced; unsupported proofs use the existing
-snapshot storage strategy.
+The current ABI12/IR27/work-policy36 implementation streams bounded UTF-8 line
+windows through one authorized CLI observation and runtime transaction. The
+generated Mech scanner discards proved-dead prefixes and the final join releases
+consumed chunks. Successful EOF admits genuine full count/shape before saved
+body failures. All stages share the finite cumulative ledger; no Rust workload
+scanner, fabricated canonical matrix or second evaluator is introduced.
 
-Startup now derives the retention proof once from the same immutable plan and
-shares the complete inventory between layout and identity hashing. No proof or
-permission is cached across executions. The earlier host-only check accepted the
-exact previous Object with identical work, identity and output. The generated
-release profile now selects ThinLTO for the Rust host and libraries, retaining opt-level3,
-symbol stripping, default codegen units and unwind behavior. Mech remains
-Cranelift-generated machine code linked unchanged, not LLVM input. Release build
-time and memory can increase; debug defaults are unchanged.
-
-The roughly 200 MB peak-RSS/3.16 MB executable targets, clean review and green CI
-remain outstanding; the physical-footprint samples do not guarantee memory stays
-below 200 MB. Fresh default-profile qualification and matched two-size
-measurements pass; they do not establish broad native-language coverage.
-The PR stays draft and unmerged until the user directs otherwise.
+The default release profile uses opt-level3, ThinLTO and symbol stripping, with
+unchanged unwind/codegen-unit defaults. LLVM optimizes linked Rust host/library
+code; the Mech Object is generated by Cranelift. Broader native coverage, the
+roughly 200 MB peak-RSS/3.16 MB executable targets, clean review and green CI
+remain outstanding. The PR stays draft and unmerged until user direction.
 
 ### Canonical native architecture and limits
 
