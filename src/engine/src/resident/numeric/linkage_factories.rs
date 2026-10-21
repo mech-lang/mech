@@ -468,6 +468,11 @@ factory!(
     NoAdditionalScratch,
     super::bind_bool_not
 );
+// Ordinary collection profiles register their owner's declaration instead.
+#[cfg(any(
+    feature = "native-artifact",
+    not(any(feature = "pure_text", feature = "map_ops"))
+))]
 factory!(
     NUMERIC_COMPARE_EQ,
     &["compare"],
@@ -475,6 +480,11 @@ factory!(
     NoAdditionalScratch,
     super::bind_semantic_equal
 );
+// Ordinary collection profiles register their owner's declaration instead.
+#[cfg(any(
+    feature = "native-artifact",
+    not(any(feature = "pure_text", feature = "map_ops"))
+))]
 factory!(
     NUMERIC_COMPARE_NEQ,
     &["compare"],
@@ -524,6 +534,11 @@ factory!(
     NoAdditionalScratch,
     super::bind_strict_not_equal
 );
+// Ordinary collection profiles register their owner's declaration instead.
+#[cfg(any(
+    feature = "native-artifact",
+    not(any(feature = "pure_text", feature = "map_ops"))
+))]
 factory!(
     NUMERIC_ACCESS_SCALAR,
     &["access"],
@@ -559,6 +574,11 @@ factory!(
     NoAdditionalScratch,
     super::bind_scalar_index
 );
+// Ordinary collection profiles register their owner's declaration instead.
+#[cfg(any(
+    feature = "native-artifact",
+    not(any(feature = "pure_text", feature = "map_ops"))
+))]
 factory!(
     NUMERIC_ACCESS_RANGE,
     &["access"],
@@ -699,6 +719,11 @@ factory!(
     CanonicalFinalize,
     super::selection_address::bind_broadcast
 );
+// Ordinary collection profiles register their owner's declaration instead.
+#[cfg(any(
+    feature = "native-artifact",
+    not(any(feature = "pure_text", feature = "map_ops"))
+))]
 factory!(
     NUMERIC_RANGE_EXCLUSIVE,
     &["range"],
@@ -706,6 +731,11 @@ factory!(
     NoAdditionalScratch,
     super::bind_range_exclusive
 );
+// Ordinary collection profiles register their owner's declaration instead.
+#[cfg(any(
+    feature = "native-artifact",
+    not(any(feature = "pure_text", feature = "map_ops"))
+))]
 factory!(
     NUMERIC_RANGE_EXCLUSIVE_INCREMENT,
     &["range"],
@@ -713,6 +743,11 @@ factory!(
     NoAdditionalScratch,
     super::bind_range_increment_exclusive
 );
+// Ordinary collection profiles register their owner's declaration instead.
+#[cfg(any(
+    feature = "native-artifact",
+    not(any(feature = "pure_text", feature = "map_ops"))
+))]
 factory!(
     NUMERIC_RANGE_INCLUSIVE,
     &["range"],
@@ -720,6 +755,11 @@ factory!(
     NoAdditionalScratch,
     super::bind_range_inclusive
 );
+// Ordinary collection profiles register their owner's declaration instead.
+#[cfg(any(
+    feature = "native-artifact",
+    not(any(feature = "pure_text", feature = "map_ops"))
+))]
 factory!(
     NUMERIC_RANGE_INCLUSIVE_INCREMENT,
     &["range"],
@@ -734,6 +774,11 @@ factory!(
     NoAdditionalScratch,
     super::bind_n_choose_k
 );
+// Ordinary collection profiles register their owner's declaration instead.
+#[cfg(any(
+    feature = "native-artifact",
+    not(any(feature = "pure_text", feature = "map_ops"))
+))]
 factory!(
     NUMERIC_STATS_SUM_COLUMN,
     &["stats", "sum"],
@@ -741,6 +786,11 @@ factory!(
     NoAdditionalScratch,
     super::bind_sum_columns
 );
+// Ordinary collection profiles register their owner's declaration instead.
+#[cfg(any(
+    feature = "native-artifact",
+    not(any(feature = "pure_text", feature = "map_ops"))
+))]
 factory!(
     NUMERIC_STATS_SUM_ROW,
     &["stats", "sum"],
