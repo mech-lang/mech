@@ -59,6 +59,8 @@ pub struct NativePreparedLibraryCall {
     span_selector_work: u64,
     #[cfg(feature = "pure_text")]
     selection_shape_bounds: (u64, u64),
+    #[cfg(feature = "pure_text")]
+    selection_range_shape_bounds: (u64, u64),
 }
 
 /// One owning native invocation's lazy per-site binding slot. This retains
@@ -197,6 +199,21 @@ pub fn prepare_native_program_library_call(
     } else {
         (0, 0)
     };
+    #[cfg(feature = "pure_text")]
+    let selection_range_shape_bounds = if template.primitive()
+        == crate::native_artifact::NativeCollectionPrimitive::MatrixRangeAccess
+    {
+        template
+            .inputs()
+            .get(1)
+            .and_then(string_span::selector_schema_geometry_bounds)
+            // Optional strategy metadata must not reject other ordinary
+            // MatrixRangeAccess programs. Eligible Range output schemas have
+            // already passed this same bound during their preparation.
+            .unwrap_or((0, 0))
+    } else {
+        (0, 0)
+    };
     Ok(NativePreparedLibraryCall {
         template,
         schemas: Arc::new(artifact.schemas().clone()),
@@ -214,6 +231,8 @@ pub fn prepare_native_program_library_call(
         span_selector_work,
         #[cfg(feature = "pure_text")]
         selection_shape_bounds,
+        #[cfg(feature = "pure_text")]
+        selection_range_shape_bounds,
     })
 }
 

@@ -3,6 +3,7 @@ use mech_engine::native_artifact::{NativeProgramArtifactPlan, NativeSelectedText
 
 #[derive(Clone, Copy, Debug)]
 pub(super) enum Site {
+    Range(usize),
     Select(usize),
     Join(usize),
 }
@@ -39,10 +40,15 @@ impl Layout {
         let regions = plan.selected_text_joins().into_boxed_slice();
         let mut sites = vec![None; plan.blocks().len()].into_boxed_slice();
         for (index, region) in regions.iter().enumerate() {
-            for (site, role) in [
-                (region.selection(), Site::Select(index)),
-                (region.consumer(), Site::Join(index)),
-            ] {
+            for (site, role) in region
+                .range()
+                .map(|range| (range.producer(), Site::Range(index)))
+                .into_iter()
+                .chain([
+                    (region.selection(), Site::Select(index)),
+                    (region.consumer(), Site::Join(index)),
+                ])
+            {
                 let entry = sites
                     .get_mut(site as usize)
                     .ok_or("selected join site outside plan")?;
@@ -54,3 +60,7 @@ impl Layout {
         Ok(Self { regions, sites })
     }
 }
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_selected_join_layout_tests.rs"]
+mod tests;

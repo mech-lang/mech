@@ -1,5 +1,8 @@
 //! Genuine owner-bound selection, not a canonical Matrix or a visit permit.
-use super::{InvokeError, NativePreparedLibraryCall, NativeTextLineMatrix, finite_limits};
+use super::{
+    InvokeError, NativePreparedLibraryCall, NativeSelectedStringSpanSelector, NativeTextLineMatrix,
+    finite_limits,
+};
 use crate::resident::{
     budget::{NativeLibraryWorkBudget, native_turn_plan_cache::NativeProjectionIndexContext},
     numeric::selected_string_matrix::{self, Geometry},
@@ -18,12 +21,44 @@ enum Source {
     Lines(Rc<NativeTextLineMatrix>),
 }
 
+enum SelectorOwner {
+    Canonical(Value),
+    UnitRange(NativeSelectedStringSpanSelector),
+}
+impl SelectorOwner {
+    fn geometry(&self) -> selected_string_matrix::Selector<'_> {
+        match self {
+            Self::Canonical(value) => selected_string_matrix::Selector::Canonical(value),
+            Self::UnitRange(range) => selected_string_matrix::Selector::UnitRange {
+                start: range.start(),
+                count: range.count(),
+            },
+        }
+    }
+    fn retained_bytes(&self, memory: &ManagedMemoryBudget) -> Result<u64, InvokeError> {
+        match self {
+            Self::Canonical(value) => value
+                .memory_budget_retained_bytes(memory)
+                .ok_or(InvokeError::UnadmittedValue),
+            // Fixed inline metadata belongs to the caller's admitted state;
+            // there is no selector allocation or canonical owner to charge.
+            Self::UnitRange(_) => Ok(0),
+        }
+    }
+    fn payload_nodes(&self, count: usize) -> u64 {
+        match self {
+            Self::Canonical(_) => count as u64,
+            Self::UnitRange(_) => 0,
+        }
+    }
+}
+
 /// Constructed only by the actual prepared access factory. The geometry cannot
 /// be paired with different Values: these strong, immutable owners travel with
 /// it until the selected join finishes or the invocation fails.
 pub struct NativeSelectedStringMatrix {
     source: Source,
-    selector: Value,
+    selector: SelectorOwner,
     geometry: Geometry,
     schema: SchemaId,
     key: SchemaKey,
@@ -52,10 +87,7 @@ impl NativeSelectedStringMatrix {
                 .ok_or(InvokeError::UnadmittedValue)?,
             Source::Lines(view) => view.retained_bytes(memory)?,
         };
-        let b = self
-            .selector
-            .memory_budget_retained_bytes(memory)
-            .ok_or(InvokeError::UnadmittedValue)?;
+        let b = self.selector.retained_bytes(memory)?;
         Ok(add(a, b)?)
     }
     pub fn retained_nodes_bound(&self) -> Result<u64, InvokeError> {
@@ -70,7 +102,10 @@ impl NativeSelectedStringMatrix {
         };
         // Actual source cells or private line rows, numeric selector cells and
         // root/shape headers. Never a claim about nonexistent output cells.
-        Ok(add(add(count as u64, self.count() as u64)?, 16)?)
+        Ok(add(
+            add(count as u64, self.selector.payload_nodes(self.count()))?,
+            16,
+        )?)
     }
 }
 
@@ -164,7 +199,7 @@ impl NativePreparedLibraryCall {
                 };
                 Ok(NativeSelectedStringMatrix {
                     source: Source::Canonical(source.clone()),
-                    selector: selector.clone(),
+                    selector: SelectorOwner::Canonical(selector.clone()),
                     geometry,
                     schema: contract.outputs[0].schema,
                     key: self.output_key,
@@ -235,12 +270,15 @@ impl NativePreparedLibraryCall {
             Ok(())
         };
         match &view.source {
-            Source::Canonical(source) => view.geometry.for_each(source, &view.selector, append)?,
+            Source::Canonical(source) => {
+                view.geometry
+                    .for_each(source, view.selector.geometry(), append)?
+            }
             Source::Lines(lines) => {
                 let mut chunk_cursor = 0;
                 view.geometry.for_each_cells(
                     lines.count(),
-                    &view.selector,
+                    view.selector.geometry(),
                     |i| lines.line_cached(i, &mut chunk_cursor),
                     append,
                 )?;

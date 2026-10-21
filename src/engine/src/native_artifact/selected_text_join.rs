@@ -1,15 +1,41 @@
 //! Complete-use proof for a selected String matrix consumed only by TextJoin.
 //! This is metadata, not a new leaf or execution authority. A backend must
-//! preserve both original visits and bind real source/selector/separator owners.
+//! preserve every original visit and bind real owners or proved private range
+//! geometry. Neither selected output is a fabricated canonical Matrix.
 use super::{
     NativeCollectionPrimitive as Primitive, NativeIterationAction as Action,
     NativeIterationTerminator as Terminator, NativeMatchAction as Scalar,
     NativeMatchTerminator as Term, NativeMatchValue as Value, NativeProgramArtifactPlan as Plan,
-    NativeProgramLibraryTemplate as Template,
+    NativeProgramLibraryTemplate as Template, NativeScalarKind,
     fusion_semantics::{Read, reads, semantic_actions},
     iteration_validation::ControlPlan,
 };
-use mech_core::{ImplementationMemoryClass, IntegerWidth, SchemaBody};
+use mech_core::{DimensionExpr, ImplementationMemoryClass, IntegerWidth, SchemaBody};
+
+/// An optional sole-use unit-U64 Range at its original semantic visit.
+/// This describes immutable operand identities, not evaluated endpoints,
+/// admitted storage, a canonical selector or permission to execute a visit.
+#[derive(Clone, Debug)]
+pub struct NativeSelectedTextJoinRange {
+    producer: u32,
+    start: Value,
+    end: Value,
+    inclusive: bool,
+}
+impl NativeSelectedTextJoinRange {
+    pub const fn producer(&self) -> u32 {
+        self.producer
+    }
+    pub const fn start(&self) -> Value {
+        self.start
+    }
+    pub const fn end(&self) -> Value {
+        self.end
+    }
+    pub const fn inclusive(&self) -> bool {
+        self.inclusive
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct NativeSelectedTextJoin {
@@ -20,6 +46,7 @@ pub struct NativeSelectedTextJoin {
     selected: Value,
     separator: Value,
     output: Value,
+    range: Option<NativeSelectedTextJoinRange>,
 }
 impl NativeSelectedTextJoin {
     pub const fn selection(&self) -> u32 {
@@ -44,6 +71,11 @@ impl NativeSelectedTextJoin {
     }
     pub const fn output(&self) -> Value {
         self.output
+    }
+    /// Ineligible range producers leave the ordinary selection/join proof
+    /// intact. A backend must choose its representation at the Range visit.
+    pub const fn range(&self) -> Option<&NativeSelectedTextJoinRange> {
+        self.range.as_ref()
     }
 }
 
@@ -103,6 +135,91 @@ fn adjacent(plan: &Plan, producer: usize, consumer: usize) -> bool {
         next = target as usize;
     }
     false
+}
+
+fn selected_range(
+    plan: &Plan,
+    selection: usize,
+    selector: Value,
+    access: &Template,
+    uses: &[Vec<Read>],
+) -> Option<NativeSelectedTextJoinRange> {
+    if uses.get(selector.get() as usize)?.as_slice() != [Read::Action(selection as u32)] {
+        return None;
+    }
+    let mut producers = plan
+        .blocks()
+        .iter()
+        .enumerate()
+        .filter_map(|(site, block)| match block.action() {
+            Action::LibraryCall {
+                template,
+                operands,
+                output,
+            } if *output == selector => Some((site, template, operands)),
+            _ => None,
+        });
+    let (producer, range, operands) = producers.next()?;
+    let [start, end] = operands.as_ref() else {
+        return None;
+    };
+    let inclusive = match range.primitive() {
+        Primitive::RangeInclusive => true,
+        Primitive::RangeExclusive => false,
+        _ => return None,
+    };
+    let scalar = SchemaBody::UnsignedInteger(IntegerWidth::W64);
+    if producers.next().is_some()
+        || range.implementation_memory() != ImplementationMemoryClass::NoAdditionalScratch
+        || range.inputs().len() != 2
+        || range.output() != access.inputs().get(1)?
+        || range
+            .inputs()
+            .iter()
+            .zip(operands.iter())
+            .any(|(schema, value)| {
+                schema.body() != &scalar
+                    || !schema.dimension_parameters().is_empty()
+                    || plan.values().get(value.get() as usize).is_none_or(|ty| {
+                        ty.scalar_kind() != Some(NativeScalarKind::U64) || ty.definition() != schema
+                    })
+            })
+        || plan.values().get(selector.get() as usize)?.definition() != range.output()
+        || plan.value_scopes().get(selector.get() as usize)
+            != Some(&super::NativeIterationValueScope::Immutable {
+                iteration: plan.blocks()[producer].iteration(),
+            })
+        || plan.lifecycle_barrier(producer)
+        || !adjacent(plan, producer, selection)
+    {
+        return None;
+    }
+    // The same conservative shape grammar as the existing selected U64
+    // range/source strategy. Exact witnesses still run at the original visit.
+    let SchemaBody::Matrix {
+        element,
+        dimensions,
+    } = range.output().body()
+    else {
+        return None;
+    };
+    if element.as_ref() != &scalar
+        || dimensions.len() != 2
+        || dimensions[0] != DimensionExpr::Constant(1)
+        || !matches!(
+            &dimensions[1],
+            DimensionExpr::Constant(_) | DimensionExpr::Parameter(_)
+        )
+        || range.output().dimension_parameters().len() > 1
+    {
+        return None;
+    }
+    Some(NativeSelectedTextJoinRange {
+        producer: u32::try_from(producer).ok()?,
+        start: *start,
+        end: *end,
+        inclusive,
+    })
 }
 
 impl Plan {
@@ -168,6 +285,7 @@ impl Plan {
                     selected: *selected,
                     separator: *separator,
                     output: *output,
+                    range: selected_range(self, selection, *selector, template, &uses),
                 })
             })
             .collect()

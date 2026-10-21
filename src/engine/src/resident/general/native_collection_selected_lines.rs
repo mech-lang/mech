@@ -3,11 +3,100 @@
 use super::*;
 use crate::resident::numeric::selected_string_matrix;
 
+#[derive(Clone, Copy)]
+enum SelectorInput<'a> {
+    Canonical(&'a Value),
+    UnitRange(&'a NativeSelectedStringSpanSelector),
+}
+impl<'a> SelectorInput<'a> {
+    fn matches(self, schema: SchemaId, key: SchemaKey) -> bool {
+        match self {
+            Self::Canonical(value) => value.schema() == schema && value.schema_key() == key,
+            Self::UnitRange(range) => range.schema_key() == key,
+        }
+    }
+    fn count(self) -> Result<u64, InvokeError> {
+        match self {
+            Self::Canonical(value) => {
+                let ValueData::Matrix(matrix) = value.data() else {
+                    return Err(InvokeError::InvalidInput);
+                };
+                if !matches!(matrix.elements(), SequenceView::U64(_)) {
+                    return Err(InvokeError::InvalidInput);
+                }
+                Ok(matrix.elements().len() as u64)
+            }
+            Self::UnitRange(range) => Ok(range.count()),
+        }
+    }
+    fn retained_bytes(self, memory: &ManagedMemoryBudget) -> Result<u64, InvokeError> {
+        match self {
+            Self::Canonical(value) => value
+                .memory_budget_retained_bytes(memory)
+                .ok_or(InvokeError::UnadmittedValue),
+            Self::UnitRange(_) => Ok(0),
+        }
+    }
+    fn geometry(self) -> selected_string_matrix::Selector<'a> {
+        match self {
+            Self::Canonical(value) => selected_string_matrix::Selector::Canonical(value),
+            Self::UnitRange(range) => selected_string_matrix::Selector::UnitRange {
+                start: range.start(),
+                count: range.count(),
+            },
+        }
+    }
+    fn into_owner(self) -> SelectorOwner {
+        match self {
+            Self::Canonical(value) => SelectorOwner::Canonical(value.clone()),
+            Self::UnitRange(range) => SelectorOwner::UnitRange(*range),
+        }
+    }
+}
+
 impl NativePreparedLibraryCall {
     pub fn selected_text_line_matrix(
         &self,
         lines: &Rc<NativeTextLineMatrix>,
         selector: &Value,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<NativeSelectedStringMatrix, InvokeError> {
+        self.selected_text_line_matrix_with_selector(
+            lines,
+            SelectorInput::Canonical(selector),
+            limits,
+            work,
+            coexistence,
+        )
+    }
+
+    /// Bind the original selection using already validated Range geometry.
+    /// The caller retains/pays fixed state metadata; no selector Value or
+    /// count-sized allocation is manufactured here. Source ownership, output
+    /// shape, positional checks and the full real row traversal are unchanged.
+    pub fn selected_text_line_matrix_range(
+        &self,
+        lines: &Rc<NativeTextLineMatrix>,
+        selector: &NativeSelectedStringSpanSelector,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<NativeSelectedStringMatrix, InvokeError> {
+        self.selected_text_line_matrix_with_selector(
+            lines,
+            SelectorInput::UnitRange(selector),
+            limits,
+            work,
+            coexistence,
+        )
+    }
+
+    fn selected_text_line_matrix_with_selector(
+        &self,
+        lines: &Rc<NativeTextLineMatrix>,
+        selector: SelectorInput<'_>,
         limits: MemoryBudgetLimits,
         work: &NativeLibraryWorkBudget,
         mut coexistence: ResourceDemand,
@@ -25,11 +114,19 @@ impl NativePreparedLibraryCall {
             || lines.schema() != contract.inputs[0].schema
             || lines.schema_key() != self.input_keys[0]
             || lines.program_revision() != self.template.program_revision()
-            || selector.schema() != contract.inputs[1].schema
-            || selector.schema_key() != self.input_keys[1]
+            || !selector.matches(contract.inputs[1].schema, self.input_keys[1])
         {
             return Err(InvokeError::InvalidInput);
         }
+        let compact = matches!(selector, SelectorInput::UnitRange(_));
+        let extra_shape = if compact {
+            if self.selection_range_shape_bounds.0 == 0 {
+                return Err(InvokeError::InvalidInput);
+            }
+            self.selection_range_shape_bounds
+        } else {
+            (0, 0)
+        };
         let [source_schema, selector_schema] = self.template.inputs() else {
             return Err(InvokeError::InvalidInput);
         };
@@ -54,35 +151,48 @@ impl NativePreparedLibraryCall {
                 work.charge(self.lookup_work, 0)?;
                 let memory = work.memory_budget();
                 let source_bytes = lines.retained_bytes(&memory)?;
-                let selector_bytes = selector
-                    .memory_budget_retained_bytes(&memory)
-                    .ok_or(InvokeError::UnadmittedValue)?;
-                let ValueData::Matrix(indices) = selector.data() else {
-                    return Err(InvokeError::InvalidInput);
-                };
-                if !matches!(indices.elements(), SequenceView::U64(_)) {
-                    return Err(InvokeError::InvalidInput);
-                }
-                let count = indices.elements().len() as u64;
+                let selector_bytes = selector.retained_bytes(&memory)?;
+                let count = selector.count()?;
                 coexistence.turn_peak_bytes = add(
                     coexistence.turn_peak_bytes,
                     add(source_bytes, selector_bytes)?,
                 )?;
                 coexistence.retained_nodes = add(
                     coexistence.retained_nodes,
-                    add(add(lines.count() as u64, count)?, 16)?,
+                    add(
+                        add(lines.count() as u64, if compact { 0 } else { count })?,
+                        16,
+                    )?,
                 )?;
                 let context = NativeProjectionIndexContext::new(work, limits, coexistence);
-                let binding_bytes = add(self.binding_bytes, self.selection_shape_bounds.0)?;
+                let binding_bytes = add(
+                    add(self.binding_bytes, self.selection_shape_bounds.0)?,
+                    extra_shape.0,
+                )?;
                 context.check_capacity(binding_bytes, self.binding_nodes)?;
                 context.charge(
                     add(
                         self.binding_work,
-                        add(self.selection_shape_bounds.1, add(mul(count, 128)?, 256)?)?,
+                        add(
+                            add(self.selection_shape_bounds.1, extra_shape.1)?,
+                            add(mul(count, 128)?, 256)?,
+                        )?,
                     )?,
                     0,
                 )?;
                 let _binding = memory.reserve_capacity(binding_bytes)?;
+                let range_shape = if compact {
+                    Some(
+                        mech_core::shape_for_resolved_extents(selector_schema, &[1, count])
+                            .map_err(|_| InvokeError::Kernel(ResidentKernelError::InvalidShape))?,
+                    )
+                } else {
+                    None
+                };
+                let selector_parameters = match selector {
+                    SelectorInput::Canonical(value) => value.shape().parameter_values(),
+                    SelectorInput::UnitRange(_) => range_shape.as_ref().unwrap().parameter_values(),
+                };
                 // This is binding metadata only: no canonical source Matrix is
                 // created or passed to a kernel. The opaque line owner supplied
                 // its actual logical shape through the original text/lines leaf.
@@ -91,10 +201,7 @@ impl NativePreparedLibraryCall {
                     &self.schemas,
                     self.template.clone(),
                     self.factory,
-                    &[
-                        lines.shape().parameter_values(),
-                        selector.shape().parameter_values(),
-                    ],
+                    &[lines.shape().parameter_values(), selector_parameters],
                     &output_parameters,
                     limits,
                 )
@@ -118,12 +225,12 @@ impl NativePreparedLibraryCall {
                     &call.kernel,
                     (rows, columns),
                     lines.count(),
-                    selector,
+                    selector.geometry(),
                     |i| lines.line_cached(i, &mut chunk_cursor),
                 )?;
                 Ok(NativeSelectedStringMatrix {
                     source: Source::Lines(lines.clone()),
-                    selector: selector.clone(),
+                    selector: selector.into_owner(),
                     geometry,
                     schema: contract.outputs[0].schema,
                     key: self.output_key,

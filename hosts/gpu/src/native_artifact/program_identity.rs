@@ -60,7 +60,9 @@ fn selected_template(
 // IR26 keeps a returned range open until its requested endpoint is physically
 // available. The frontier itself is unchanged, so its old hash cannot safely
 // authenticate Objects emitted before the corrected retention instructions.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 26;
+// IR27 pins the optional sole-use Range producer/endpoints/inclusivity in the
+// selected matrix-join proof. The three original LibraryCall visits remain.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 27;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -123,7 +125,10 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 26;
 // Policy34 binds line-store/window debits to the existing shared program ledger.
 // Policy35 funds EOF source admission, symbolic-count branches, scoped Unicode
 // cell construction and scan-exit loan retirement on that same finite account.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 35;
+// Policy36 admits actual fixed range geometry instead of allocating a dead
+// numeric selector. Original-site shape/index errors and one ledger remain;
+// less actual work/storage may let formerly budget-denied programs succeed.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 36;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -906,6 +911,16 @@ pub(super) fn typed_ir_sha256(
             join.output(),
         ] {
             word(&mut hash, u64::from(value.get()));
+        }
+        match join.range() {
+            Some(range) => {
+                hash.update([1]);
+                word(&mut hash, u64::from(range.producer()));
+                word(&mut hash, u64::from(range.start().get()));
+                word(&mut hash, u64::from(range.end().get()));
+                hash.update([u8::from(range.inclusive())]);
+            }
+            None => hash.update([0]),
         }
     }
     let lines = plan.text_line_matrix_regions();

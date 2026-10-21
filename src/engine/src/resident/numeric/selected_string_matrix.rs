@@ -1,6 +1,65 @@
 //! Non-owning geometry of the maintained linear String-matrix selector.
-//! The caller pins both real Values and prepays the complete metadata scan.
+//! The caller pins the real cell/selector owners or immutable range metadata
+//! and prepays the complete metadata scan.
 use super::*;
+
+/// Two representations of the same positional selector. A unit range arrives
+/// only after its original Range visit has validated cardinality and shape.
+#[derive(Clone, Copy)]
+pub(in crate::resident) enum Selector<'a> {
+    Canonical(&'a mech_core::Value),
+    UnitRange { start: u64, count: u64 },
+}
+
+#[cfg(test)]
+#[path = "selected_string_matrix_tests.rs"]
+mod tests;
+
+impl Selector<'_> {
+    pub(in crate::resident) fn count(self) -> Result<usize, ResidentKernelError> {
+        match self {
+            Self::Canonical(value) => match value.data() {
+                ValueData::Matrix(matrix) => Ok(matrix.elements().len()),
+                _ => Err(ResidentKernelError::InvalidInput),
+            },
+            Self::UnitRange { count, .. } => {
+                usize::try_from(count).map_err(|_| ResidentKernelError::InvalidShape)
+            }
+        }
+    }
+
+    fn for_each_index(
+        self,
+        upper: usize,
+        mut visit: impl FnMut(usize) -> Result<(), ResidentKernelError>,
+    ) -> Result<(), ResidentKernelError> {
+        match self {
+            Self::Canonical(value) => {
+                let ValueData::Matrix(matrix) = value.data() else {
+                    return Err(ResidentKernelError::InvalidInput);
+                };
+                sequence_for_each_access_index(matrix.elements(), upper, visit)
+            }
+            Self::UnitRange { start, .. } => {
+                for offset in 0..self.count()? {
+                    // The terminal successor is never evaluated, even when the
+                    // final inclusive endpoint is u64::MAX.
+                    let index = start
+                        .checked_add(offset as u64)
+                        .ok_or(ResidentKernelError::InvalidInput)?;
+                    // Matrix selectors use the shared sequence conversion,
+                    // including its portable limit and InvalidInput mapping;
+                    // scalar access has a different out-of-bounds diagnostic.
+                    let position =
+                        mech_core::canonical_positional_index(&ValueData::U64(index), upper)
+                            .map_err(|_| ResidentKernelError::InvalidInput)?;
+                    visit(position)?;
+                }
+                Ok(())
+            }
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub(in crate::resident) struct Geometry {
@@ -77,9 +136,13 @@ pub(in crate::resident) fn prepare(
     }
     let (rows, columns) = snapshot_access_source_dimensions(source, schema.body(), plan)?;
     let strings = cells(source)?;
-    prepare_cells(kernel, (rows, columns), strings.len(), selector, |index| {
-        strings.get(index).map(|text| text.as_ref())
-    })
+    prepare_cells(
+        kernel,
+        (rows, columns),
+        strings.len(),
+        Selector::Canonical(selector),
+        |index| strings.get(index).map(|text| text.as_ref()),
+    )
 }
 
 /// SAME selector validation and output-shape solver, with a compiler-private
@@ -89,7 +152,7 @@ pub(in crate::resident) fn prepare_cells<'a>(
     kernel: &BoundResidentKernel,
     (rows, columns): (usize, usize),
     count: usize,
-    selector: &mech_core::Value,
+    selector: Selector<'_>,
     mut cell: impl FnMut(usize) -> Option<&'a str>,
 ) -> Result<Geometry, ResidentKernelError> {
     let plan = kernel
@@ -105,9 +168,7 @@ pub(in crate::resident) fn prepare_cells<'a>(
     if rows.checked_mul(columns) != Some(count) {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let ValueData::Matrix(indices) = selector.data() else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
+    selector.count()?;
     let mut geometry = Geometry {
         rows,
         columns,
@@ -115,7 +176,7 @@ pub(in crate::resident) fn prepare_cells<'a>(
         payload: 0,
         contiguous: Some((0, 0)),
     };
-    sequence_for_each_access_index(indices.elements(), count, |linear| {
+    selector.for_each_index(count, |linear| {
         // Canonical selectors are column-major; canonical payload cells are
         // row-major. Bounds above exclude zero-row division for every read.
         let position = (linear % rows) * columns + linear / rows;
@@ -160,7 +221,7 @@ impl Geometry {
     pub(in crate::resident) fn for_each(
         self,
         source: &mech_core::Value,
-        selector: &mech_core::Value,
+        selector: Selector<'_>,
         visit: impl FnMut(usize, &str) -> Result<(), ResidentKernelError>,
     ) -> Result<(), ResidentKernelError> {
         let strings = cells(source)?;
@@ -175,20 +236,15 @@ impl Geometry {
     pub(in crate::resident) fn for_each_cells<'a>(
         self,
         count: usize,
-        selector: &mech_core::Value,
+        selector: Selector<'_>,
         mut cell: impl FnMut(usize) -> Option<&'a str>,
         mut visit: impl FnMut(usize, &str) -> Result<(), ResidentKernelError>,
     ) -> Result<(), ResidentKernelError> {
-        let ValueData::Matrix(indices) = selector.data() else {
-            return Err(ResidentKernelError::InvalidInput);
-        };
-        if self.rows.checked_mul(self.columns) != Some(count)
-            || indices.elements().len() != self.count
-        {
+        if self.rows.checked_mul(self.columns) != Some(count) || selector.count()? != self.count {
             return Err(ResidentKernelError::InvalidInput);
         }
         let mut ordinal = 0;
-        sequence_for_each_access_index(indices.elements(), count, |linear| {
+        selector.for_each_index(count, |linear| {
             visit(
                 ordinal,
                 cell((linear % self.rows) * self.columns + linear / self.rows)

@@ -12,6 +12,13 @@ use mech_syntax::document::{
 
 fn variants() -> [crate::ProgramArtifact; 2] {
     let source = "lines := text/lines(input<string>)\ncount := sequence/length(lines)\nline := lines[position<u64>]\nselected := lines[positions<[u64]>]\ntext/join(selected, separator<string>)\n";
+    variants_for(source)
+}
+
+#[path = "native_collection_range_line_tests.rs"]
+mod range_tests;
+
+fn variants_for(source: &str) -> [crate::ProgramArtifact; 2] {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x454f464c), Revision(0), source).unwrap(),
         ParseConfig::default(),

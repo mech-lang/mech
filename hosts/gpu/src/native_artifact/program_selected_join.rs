@@ -1,4 +1,4 @@
-//! Preserve the two original selected visits while omitting their private Matrix.
+//! Preserve original range/selection/join visits without private Matrix payloads.
 use super::{Context, NativeProgramExecutionError as Error, invalid};
 use crate::native_artifact::{NativeExecutionPhase, program_selected_join_layout::Site};
 use mech_core::{
@@ -12,11 +12,23 @@ use mech_core::{
 use mech_engine::native_artifact::{
     NativeCollectionInvocationError as InvokeError, NativeIterationAction,
     NativeIterationTerminator, NativeMatchAction, NativeMatchTerminator,
-    NativeSelectedStringMatrix,
+    NativeSelectedStringMatrix, NativeSelectedStringSpanSelector, NativeTextLineMatrix,
 };
+use std::rc::Rc;
+
+#[path = "program_selected_join_range.rs"]
+mod range;
+
+enum Phase {
+    Range {
+        lines: Rc<NativeTextLineMatrix>,
+        selector: NativeSelectedStringSpanSelector,
+    },
+    Selected(NativeSelectedStringMatrix),
+}
 
 pub(super) struct State {
-    view: NativeSelectedStringMatrix,
+    phase: Phase,
     region: usize,
     parent: Option<u32>,
     // Retire genuine owners before releasing the admitted private metadata.
@@ -83,11 +95,19 @@ impl Context<'_, '_> {
             return Ok(());
         };
         let descriptor = self.control.descriptor;
-        let region = &descriptor.selected_joins.regions[state.region];
+        let region = descriptor
+            .selected_joins
+            .regions
+            .get(state.region)
+            .ok_or_else(|| invalid("selected join pending region is absent"))?;
+        let expected = match state.phase {
+            Phase::Range { .. } => region.selection(),
+            Phase::Selected(_) => region.consumer(),
+        } as usize;
         let block = &descriptor.plan.blocks()[site];
         if block.iteration() != descriptor.plan.blocks()[region.selection() as usize].iteration()
             || self.control.current != state.parent
-            || (site != region.consumer() as usize
+            || (site != expected
                 && !matches!(
                     (block.action(), block.terminator()),
                     (
@@ -111,28 +131,86 @@ impl Context<'_, '_> {
             return Ok(false);
         };
         #[cfg(all(test, feature = "canonical-native-program"))]
+        range_tests::before_call(self, site, role, words)?;
+        #[cfg(all(test, feature = "canonical-native-program"))]
         if tests::before_call(self, site, role)? {
             return Ok(true);
         }
-        if words != [0, 0] {
+        if !matches!(role, Site::Range(_)) && words != [0, 0] {
             return Err(invalid(
                 "selected join requires its two managed operand words",
             ));
         }
         self.control.work.charge(NativeExecutionPhase::Setup, 512)?;
         let index = match role {
-            Site::Select(index) | Site::Join(index) => index,
+            Site::Range(index) | Site::Select(index) | Site::Join(index) => index,
         };
         let region = &descriptor.selected_joins.regions[index];
         let call = descriptor.calls[site]
             .as_ref()
             .ok_or_else(|| invalid("selected join lost its prepared call"))?;
         match role {
-            Site::Select(_) => {
+            Site::Range(_) => {
+                let [start, end] = words else {
+                    return Err(invalid("selected join range requires two scalar words"));
+                };
                 if self.selected_join.is_some() {
-                    return Err(invalid("selected join projection was not consumed"));
+                    return Err(invalid("selected join range replayed before consumption"));
                 }
+                let proof = region
+                    .range()
+                    .ok_or_else(|| invalid("selected join range lacks its original proof"))?;
+                if proof.producer() as usize != site {
+                    return Err(invalid("selected join range belongs to another visit"));
+                }
+                let Some(lines) = self.line_matrix(region.source()).cloned() else {
+                    // No private source exists: the original Range must create
+                    // its genuine canonical selector for the ordinary path.
+                    return Ok(false);
+                };
+                self.prepare_selected_join_range(site, index, lines, [*start, *end])?;
+            }
+            Site::Select(_) => {
                 let lines = self.line_matrix(region.source()).cloned();
+                let pending = self.selected_join.take();
+                let (compact, reserved) = match pending {
+                    Some(State {
+                        phase:
+                            Phase::Range {
+                                lines: owner,
+                                selector,
+                            },
+                        region: pending_region,
+                        parent,
+                        reservation,
+                    }) if pending_region == index
+                        && parent == self.control.current
+                        && region.range().is_some()
+                        && lines
+                            .as_ref()
+                            .is_some_and(|lines| Rc::ptr_eq(lines, &owner)) =>
+                    {
+                        (Some(selector), Some(reservation))
+                    }
+                    Some(_) => {
+                        return Err(invalid("selected join selection has another pending phase"));
+                    }
+                    None if region.range().is_some() && lines.is_some() => {
+                        return Err(invalid("selected join compact range is missing"));
+                    }
+                    None => (None, None),
+                };
+                if region.range().is_some()
+                    && compact.is_none()
+                    && self
+                        .arena
+                        .current_retained_bytes(region.selector().get(), &mut self.control.work)?
+                        .is_none()
+                {
+                    return Err(invalid(
+                        "selected join has neither compact nor canonical range",
+                    ));
+                }
                 if lines.is_none() {
                     for (lane, value) in
                         [region.source(), region.selector()].into_iter().enumerate()
@@ -147,7 +225,10 @@ impl Context<'_, '_> {
                         return Ok(false);
                     }
                 }
-                let metadata = size_of::<State>() as u64;
+                let metadata = reserved.as_ref().map_or(
+                    size_of::<State>() as u64,
+                    ManagedMemoryReservation::capacity_bytes,
+                );
                 let mut prior = self.selected_join_coexistence(Some(region.source()))?;
                 prior.turn_peak_bytes = add(prior.turn_peak_bytes, metadata)?;
                 prior.retained_nodes = add(prior.retained_nodes, 1)?;
@@ -158,25 +239,38 @@ impl Context<'_, '_> {
                     prior.turn_peak_bytes,
                     self.limits.max_temporary_bytes,
                 )?;
-                self.control
-                    .work
-                    .charge(NativeExecutionPhase::Setup, add(mul(metadata, 8)?, 256)?)?;
-                let reservation = self
-                    .library
-                    .memory_budget()
-                    .reserve_capacity(metadata)
-                    .map_err(|error| library(self, site, error.into()))?;
+                let reservation = if let Some(reservation) = reserved {
+                    reservation
+                } else {
+                    self.control
+                        .work
+                        .charge(NativeExecutionPhase::Setup, add(mul(metadata, 8)?, 256)?)?;
+                    self.library
+                        .memory_budget()
+                        .reserve_capacity(metadata)
+                        .map_err(|error| library(self, site, error.into()))?
+                };
                 let result = if let Some(lines) = lines {
-                    let selector = self
-                        .arena
-                        .copy_current(region.selector().get(), &mut self.control.work)?;
-                    call.selected_text_line_matrix(
-                        &lines,
-                        &selector,
-                        self.limits,
-                        &self.library,
-                        prior,
-                    )
+                    if let Some(selector) = compact {
+                        call.selected_text_line_matrix_range(
+                            &lines,
+                            &selector,
+                            self.limits,
+                            &self.library,
+                            prior,
+                        )
+                    } else {
+                        let selector = self
+                            .arena
+                            .copy_current(region.selector().get(), &mut self.control.work)?;
+                        call.selected_text_line_matrix(
+                            &lines,
+                            &selector,
+                            self.limits,
+                            &self.library,
+                            prior,
+                        )
+                    }
                 } else {
                     call.selected_string_matrix(
                         &self.call_inputs.values()[..2],
@@ -206,18 +300,33 @@ impl Context<'_, '_> {
                     }
                 }
                 self.selected_join = Some(State {
-                    view,
+                    phase: Phase::Selected(view),
                     region: index,
                     parent: self.control.current,
                     reservation,
                 });
+                #[cfg(all(test, feature = "canonical-native-program"))]
+                range_tests::after_selection(self, index, compact.is_some());
                 // No Matrix is installed in the semantic selection-output slot.
             }
             Site::Join(_) => {
                 let Some(state) = self.selected_join.take() else {
-                    return Ok(false); // Producer used the ordinary representation.
+                    // Fallback is possible only with a real canonical result.
+                    // Missing/replayed private state must never fall through
+                    // to a call needing an intentionally absent Matrix.
+                    if self
+                        .arena
+                        .current_retained_bytes(region.selected().get(), &mut self.control.work)?
+                        .is_none()
+                    {
+                        return Err(invalid("selected join consumer has no selected owner"));
+                    }
+                    return Ok(false);
                 };
-                if state.region != index || state.parent != self.control.current {
+                if state.region != index
+                    || state.parent != self.control.current
+                    || !matches!(state.phase, Phase::Selected(_))
+                {
                     return Err(invalid("selected join consumer has another projection"));
                 }
                 let separator = self
@@ -237,6 +346,9 @@ impl Context<'_, '_> {
         state: State,
         separator: &Value,
     ) -> Result<Value, Error> {
+        let Phase::Selected(view) = state.phase else {
+            return Err(invalid("selected join consumer precedes selection"));
+        };
         let source = self.control.descriptor.selected_joins.regions[state.region].source();
         let prior = self.selected_join_coexistence(Some(source))?;
         let compute_limit = self
@@ -261,17 +373,16 @@ impl Context<'_, '_> {
                 let ValueData::String(text_separator) = separator.data() else {
                     return Err(invalid("selected join separator is not a String"));
                 };
-                let retained = state
-                    .view
+                let retained = view
                     .retained_bytes(&memory)
                     .map_err(|e| library(self, site, e))?;
                 let separator_bytes = separator
                     .memory_budget_retained_bytes(&memory)
                     .ok_or_else(|| library(self, site, InvokeError::UnadmittedValue))?;
                 let payload = add(
-                    state.view.payload_bytes(),
+                    view.payload_bytes(),
                     mul(
-                        state.view.count().saturating_sub(1) as u64,
+                        view.count().saturating_sub(1) as u64,
                         text_separator.len() as u64,
                     )?,
                 )?;
@@ -283,7 +394,7 @@ impl Context<'_, '_> {
                 let finalization = add(mul(payload, 8)?, 32)?;
                 let compute = add(
                     add(mul(envelope, 16)?, finalization)?,
-                    add(mul(state.view.count() as u64, 128)?, 1024)?,
+                    add(mul(view.count() as u64, 128)?, 1024)?,
                 )?;
                 let peak = add(
                     add(
@@ -298,9 +409,7 @@ impl Context<'_, '_> {
                 let nodes = add(
                     add(
                         prior.retained_nodes,
-                        state
-                            .view
-                            .retained_nodes_bound()
+                        view.retained_nodes_bound()
                             .map_err(|e| library(self, site, e))?,
                     )?,
                     8,
@@ -376,10 +485,8 @@ impl Context<'_, '_> {
                 if text.capacity() != capacity {
                     return Err(invalid("selected join output exceeds admitted capacity"));
                 }
-                call.selected_matrix_join_append_consuming(
-                    state.view, separator, &mut text, &memory,
-                )
-                .map_err(|e| library(self, site, e))?;
+                call.selected_matrix_join_append_consuming(view, separator, &mut text, &memory)
+                    .map_err(|e| library(self, site, e))?;
                 let canonical = SnapshotCanonicalizationBudget::new(finalization);
                 let output = &descriptor.plan.values()[region.output().get() as usize];
                 ValueDraft {
@@ -402,3 +509,7 @@ impl Context<'_, '_> {
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_selected_join_tests.rs"]
 mod tests;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_selected_join_range_tests.rs"]
+mod range_tests;

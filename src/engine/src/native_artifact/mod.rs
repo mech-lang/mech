@@ -67,7 +67,7 @@ pub use crate::resident::general::native_collection_calls::{
     NativeTextLineMatrix, NativeTextLineMatrixChoice, NativeTextLineWindow,
 };
 #[cfg(feature = "pure_text")]
-pub use selected_text_join::NativeSelectedTextJoin;
+pub use selected_text_join::{NativeSelectedTextJoin, NativeSelectedTextJoinRange};
 
 #[cfg(feature = "pure_text")]
 mod text_line_matrix;
