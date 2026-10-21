@@ -227,6 +227,9 @@ impl CliBackend for StdCliBackend {
 #[derive(Debug)]
 enum CliStdinAcquisition {
     Raw(Vec<u8>),
+    // The successful immutable text cache preserves the exact UTF-8 bytes.
+    // Future byte reads borrow that backing; no duplicate raw buffer is kept.
+    Decoded,
     LegacyText,
 }
 
@@ -236,6 +239,10 @@ struct CliStdinSnapshot {
     text: Option<MResult<Value>>,
     bytes: Option<MResult<Value>>,
 }
+
+#[cfg(test)]
+#[path = "provider_snapshot_tests.rs"]
+mod snapshot_tests;
 
 #[derive(Debug)]
 pub struct CliResourceProvider<B: CliBackend> {
@@ -425,7 +432,7 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                     None => Ok(CliStdinAcquisition::LegacyText),
                 }
             });
-            match acquired {
+            let result = match acquired {
                 Err(error) => Err(error.clone()),
                 Ok(CliStdinAcquisition::Raw(raw)) if request.path == "bytes" => bytes
                     .get_or_insert_with(|| byte_row_value(raw, &request.base_uri))
@@ -441,6 +448,29 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                         RuntimeHostInputValue::String(decoded.to_owned()).into_value()
                     })
                     .clone(),
+                Ok(CliStdinAcquisition::Decoded) => {
+                    let Some(Ok(value)) = text.as_ref() else {
+                        return Err(cli_error(
+                            request.base_uri,
+                            "decoded stdin snapshot has no retained text",
+                        ));
+                    };
+                    if request.path == "bytes" {
+                        bytes
+                            .get_or_insert_with(|| match value.data() {
+                                ValueData::String(decoded) => {
+                                    byte_row_value(decoded.as_bytes(), &request.base_uri)
+                                }
+                                _ => Err(cli_error(
+                                    request.base_uri.clone(),
+                                    "decoded stdin snapshot is not String",
+                                )),
+                            })
+                            .clone()
+                    } else {
+                        Ok(value.clone())
+                    }
+                }
                 Ok(CliStdinAcquisition::LegacyText) if request.path == "bytes" => bytes
                     .get_or_insert_with(|| {
                         Err(cli_error(
@@ -461,7 +491,17 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                         RuntimeHostInputValue::String(decoded).into_value()
                     })
                     .clone(),
+            };
+            if request.path == "text"
+                && result.is_ok()
+                && matches!(acquired, Ok(CliStdinAcquisition::Raw(_)))
+            {
+                // Commit the storage transition only after canonical text
+                // construction succeeds. Decode/construction failures retain
+                // the original bytes and their existing cached diagnostics.
+                *acquired = Ok(CliStdinAcquisition::Decoded);
             }
+            result
         } else if self.matches_base(&request.base_uri, "stdout")
             || self.matches_base(&request.base_uri, "stderr")
         {
