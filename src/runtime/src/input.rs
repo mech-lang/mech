@@ -9,6 +9,14 @@ use mech_core::{SchemaBody, snapshot::SequenceView, structures::Matrix as ValueM
 
 pub const DEFAULT_HOST_INPUT_CAPACITY: usize = 1024;
 
+/// Raw text capture distinguishes UTF8 failure from canonical construction
+/// failure so providers can preserve their existing resource diagnostics.
+#[derive(Clone, Debug)]
+pub enum RuntimeHostStringError {
+    InvalidUtf8(std::str::Utf8Error),
+    Snapshot(MechError),
+}
+
 #[cfg(feature = "string")]
 #[path = "input_string.rs"]
 mod string;
@@ -59,6 +67,23 @@ pub enum RuntimeHostInputValue {
 }
 
 impl RuntimeHostInputValue {
+    /// Transfer acquired UTF8 bytes into canonical text. Success consumes the
+    /// Vec; failure restores its exact bytes without another acquisition.
+    pub fn string_from_utf8_bytes(bytes: &mut Vec<u8>) -> Result<Value, RuntimeHostStringError> {
+        #[cfg(feature = "string")]
+        {
+            string::snapshot_bytes(bytes)
+        }
+        #[cfg(not(feature = "string"))]
+        {
+            std::str::from_utf8(bytes).map_err(RuntimeHostStringError::InvalidUtf8)?;
+            Err(RuntimeHostStringError::Snapshot(input_error(
+                "RuntimeHostInputValueUnsupported",
+                "string host input values require the `string` feature",
+            )))
+        }
+    }
+
     /// Converts a detached host input into the canonical immutable value used
     /// by execution, resource, and public host boundaries.
     pub fn into_value(self) -> MResult<Value> {

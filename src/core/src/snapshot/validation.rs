@@ -30,6 +30,10 @@ mod resident_token_tests;
 mod owned_string;
 pub use owned_string::{OwnedSnapshotBytes, OwnedSnapshotString, StringOwnershipTransfer};
 
+#[path = "string_constructor.rs"]
+mod string_constructor;
+pub use string_constructor::StringSnapshotConstructor;
+
 #[cfg(feature = "no_std")]
 use alloc::{
     boxed::Box,
@@ -282,11 +286,16 @@ impl<'a> SnapshotValidationContext<'a> {
         })
     }
 
-    fn try_boxed_str(&self, value: String) -> Result<Box<str>, SnapshotValueError> {
-        let bytes = u64::try_from(value.len()).unwrap_or(u64::MAX);
+    fn admit_string_backing(&self, length: usize) -> Result<(), SnapshotValueError> {
+        let bytes = u64::try_from(length).unwrap_or(u64::MAX);
         if let Some(authority) = self.construction_authority {
             authority.admit_snapshot_allocation(bytes, 1)?;
         }
+        Ok(())
+    }
+
+    fn try_boxed_str(&self, value: String) -> Result<Box<str>, SnapshotValueError> {
+        self.admit_string_backing(value.len())?;
         Ok(value.into_boxed_str())
     }
 
@@ -2506,6 +2515,21 @@ fn finalized_value_with_construction(
     schemas: Option<Arc<SchemaTable>>,
     context: &SnapshotValidationContext<'_>,
 ) -> Result<Value, SnapshotValueError> {
+    let (shape, root) = prepared_snapshot_storage(shape, data, context)?;
+    Ok(Value {
+        schema,
+        schema_key,
+        shape,
+        root,
+        schemas,
+    })
+}
+
+fn prepared_snapshot_storage(
+    shape: ShapeInstance,
+    data: ValueData,
+    context: &SnapshotValidationContext<'_>,
+) -> Result<(Arc<ShapeInstance>, Arc<FrozenSnapshotStorage>), SnapshotValueError> {
     // Final Arc allocations are directly owned by the immutable tree. They
     // consume the admitted finalization byte allowance, not mutable-envelope
     // block registrations, and cannot grow that registry during construction.
@@ -2521,13 +2545,7 @@ fn finalized_value_with_construction(
         data,
         memory_budget: None,
     })?;
-    Ok(Value {
-        schema,
-        schema_key,
-        shape,
-        root,
-        schemas,
-    })
+    Ok((shape, root))
 }
 
 fn dynamic_canonical(
@@ -3562,7 +3580,20 @@ pub(super) fn finalize_value(
             })?;
     let shape = entry.schema().instantiate_shape(draft.shape_values)?;
     let path = SnapshotPath::root();
-    let data = finalize_data(entry.schema().body(), draft.data, &shape, context, &path)?;
+    let data = match (entry.schema().body(), draft.data) {
+        (SchemaBody::String, ValueDataDraft::String(text)) => {
+            return StringSnapshotConstructor::from_validated_shape(
+                draft.schema,
+                entry.key(),
+                shape,
+                text.len(),
+                context,
+            )?
+            .finish(text)
+            .map_err(|(_, error)| error);
+        }
+        (body, data) => finalize_data(body, data, &shape, context, &path)?,
+    };
     let schemas = context.try_clone_schemas()?;
     finalized_value_with_construction(
         draft.schema,

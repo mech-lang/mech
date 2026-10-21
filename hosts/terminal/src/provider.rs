@@ -439,13 +439,15 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                     .clone(),
                 Ok(CliStdinAcquisition::Raw(raw)) => text
                     .get_or_insert_with(|| {
-                        let decoded = std::str::from_utf8(raw).map_err(|_| {
-                            cli_error(
-                                request.base_uri.clone(),
-                                "standard input is not valid UTF-8",
-                            )
-                        })?;
-                        RuntimeHostInputValue::String(decoded.to_owned()).into_value()
+                        RuntimeHostInputValue::string_from_utf8_bytes(raw).map_err(|error| {
+                            match error {
+                                mech_runtime::RuntimeHostStringError::InvalidUtf8(_) => cli_error(
+                                    request.base_uri.clone(),
+                                    "standard input is not valid UTF-8",
+                                ),
+                                mech_runtime::RuntimeHostStringError::Snapshot(error) => error,
+                            }
+                        })
                     })
                     .clone(),
                 Ok(CliStdinAcquisition::Decoded) => {

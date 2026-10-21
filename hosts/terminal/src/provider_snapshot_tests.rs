@@ -104,3 +104,37 @@ fn invalid_utf8_retains_raw_backing_for_later_byte_reads() {
     );
     assert_eq!(provider.backend().acquisitions.get(), 1);
 }
+
+#[test]
+fn raw_capture_transfers_backing_without_copy_in_both_read_orders() {
+    for input in [String::new(), "a\0é\r\n".repeat(8192)] {
+        for text_first in [false, true] {
+            let raw = input.as_bytes().to_vec();
+            assert_eq!(raw.capacity(), raw.len());
+            let pointer = raw.as_ptr();
+            let provider = provider(raw);
+            let earlier_bytes = if text_first {
+                None
+            } else {
+                Some(provider.read(read("bytes")).unwrap())
+            };
+            let text = provider.read(read("text")).unwrap();
+            assert!(
+                matches!(text.data(),ValueData::String(value) if value.as_ref() == input && value.as_ptr() == pointer)
+            );
+            let repeated = provider.read(read("text")).unwrap();
+            assert!(text.shares_frozen_storage(&repeated));
+            let bytes = provider.read(read("bytes")).unwrap();
+            assert_bytes(&bytes, input.as_bytes());
+            if let Some(earlier_bytes) = earlier_bytes {
+                assert!(earlier_bytes.shares_frozen_storage(&bytes));
+                assert_bytes(&earlier_bytes, input.as_bytes());
+            }
+            assert!(matches!(
+                provider.stdin_snapshot.lock().unwrap().acquisition,
+                Some(Ok(CliStdinAcquisition::Decoded))
+            ));
+            assert_eq!(provider.backend().acquisitions.get(), 1);
+        }
+    }
+}
