@@ -1,5 +1,6 @@
 mod compact_range;
 mod compact_string_access;
+pub mod linkage_factories;
 mod nested_assignment;
 mod promoted_assignment;
 mod selected_string_footprint;
@@ -740,182 +741,116 @@ impl SemanticComparison {
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     // ProgramArtifact nodes carry semantic identities. These factories select
     // the resident implementation from the resolved contract and layouts.
-    register_no_additional_scratch(builder, &["math"], "add", bind_add)?;
-    register_no_additional_scratch(builder, &["math"], "add-assign", bind_semantic_add_assign)?;
-    register_no_additional_scratch(builder, &["math"], "div-assign", bind_div_assign)?;
-    register_no_additional_scratch(builder, &["math"], "mul-assign", bind_mul_assign)?;
-    register_no_additional_scratch(builder, &["math"], "sub-assign", bind_semantic_sub_assign)?;
-    register_no_additional_scratch(
-        builder,
-        &["math", "add-assign"],
-        "range-all",
-        bind_add_indexed_rows,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["math", "sub-assign"],
-        "range-all",
-        bind_sub_indexed_rows,
-    )?;
-    register_no_additional_scratch(builder, &["math"], "sub", bind_sub)?;
-    register_no_additional_scratch(builder, &["math"], "mul", bind_semantic_mul)?;
-    register_no_additional_scratch(builder, &["math"], "div", bind_div)?;
-    register_no_additional_scratch(builder, &["math"], "mod", bind_remainder)?;
-    register_no_additional_scratch(builder, &["math"], "neg", bind_negate)?;
-    register_no_additional_scratch(builder, &["math"], "pow", bind_pow)?;
-    register_no_additional_scratch(builder, &["math"], "abs", bind_abs)?;
-    register_no_additional_scratch(builder, &["math"], "acos", bind_math_acos)?;
-    register_no_additional_scratch(builder, &["math"], "acosh", bind_math_acosh)?;
-    register_no_additional_scratch(builder, &["math"], "acot", bind_math_acot)?;
-    register_no_additional_scratch(builder, &["math"], "acsc", bind_math_acsc)?;
-    register_no_additional_scratch(builder, &["math"], "asec", bind_math_asec)?;
-    register_no_additional_scratch(builder, &["math"], "asin", bind_math_asin)?;
-    register_no_additional_scratch(builder, &["math"], "asinh", bind_math_asinh)?;
-    register_no_additional_scratch(builder, &["math"], "atan", bind_math_atan)?;
-    register_no_additional_scratch(builder, &["math"], "copysign", bind_math_copysign)?;
-    register_no_additional_scratch(builder, &["math"], "atanh", bind_math_atanh)?;
-    register_no_additional_scratch(builder, &["math"], "cbrt", bind_math_cbrt)?;
-    register_no_additional_scratch(builder, &["math"], "ceil", bind_math_ceil)?;
-    register_no_additional_scratch(builder, &["math"], "cosh", bind_math_cosh)?;
-    register_no_additional_scratch(builder, &["math"], "cot", bind_math_cot)?;
-    register_no_additional_scratch(builder, &["math"], "csc", bind_math_csc)?;
-    register_no_additional_scratch(builder, &["math"], "erf", bind_math_erf)?;
-    register_no_additional_scratch(builder, &["math"], "erfc", bind_math_erfc)?;
-    register_no_additional_scratch(builder, &["math"], "fdim", bind_math_fdim)?;
-    register_no_additional_scratch(builder, &["math"], "floor", bind_floor)?;
-    register_no_additional_scratch(builder, &["math"], "fmod", bind_math_fmod)?;
-    register_no_additional_scratch(builder, &["math"], "lgamma", bind_math_lgamma)?;
-    register_no_additional_scratch(builder, &["math"], "log", bind_math_log)?;
-    register_no_additional_scratch(builder, &["math"], "log10", bind_math_log10)?;
-    register_no_additional_scratch(builder, &["math"], "log1p", bind_math_log1p)?;
-    register_no_additional_scratch(builder, &["math"], "log2", bind_math_log2)?;
-    register_no_additional_scratch(builder, &["math"], "nextafter", bind_math_nextafter)?;
-    register_no_additional_scratch(builder, &["math"], "remainder", bind_math_remainder)?;
-    register_no_additional_scratch(builder, &["math"], "rint", bind_math_rint)?;
-    register_no_additional_scratch(builder, &["math"], "round", bind_math_round)?;
-    register_no_additional_scratch(builder, &["math"], "roundeven", bind_math_roundeven)?;
-    register_no_additional_scratch(builder, &["math"], "sec", bind_math_sec)?;
-    register_no_additional_scratch(builder, &["math"], "sqrt", bind_sqrt)?;
-    register_no_additional_scratch(builder, &["math"], "sinh", bind_math_sinh)?;
-    register_no_additional_scratch(builder, &["math"], "tan", bind_math_tan)?;
-    register_no_additional_scratch(builder, &["math"], "tanh", bind_math_tanh)?;
-    register_no_additional_scratch(builder, &["math"], "tgamma", bind_math_tgamma)?;
-    register_no_additional_scratch(builder, &["math"], "trunc", bind_math_trunc)?;
-    register_no_additional_scratch(builder, &["math"], "atan2", bind_atan2)?;
-    register_no_additional_scratch(builder, &["math"], "cos", bind_cos)?;
-    register_no_additional_scratch(builder, &["math"], "sin", bind_sin)?;
-    register_no_additional_scratch(builder, &["math", "bessel"], "j0", bind_math_bessel_j0)?;
-    register_no_additional_scratch(builder, &["math", "bessel"], "j1", bind_math_bessel_j1)?;
-    register_no_additional_scratch(builder, &["math", "bessel"], "jn", bind_math_bessel_jn)?;
-    register_no_additional_scratch(builder, &["math", "bessel"], "y0", bind_math_bessel_y0)?;
-    register_no_additional_scratch(builder, &["math", "bessel"], "y1", bind_math_bessel_y1)?;
-    register_no_additional_scratch(builder, &["math", "bessel"], "yn", bind_math_bessel_yn)?;
-    register_no_additional_scratch(builder, &["logic"], "and", bind_semantic_bool_and)?;
-    register_no_additional_scratch(builder, &["logic"], "or", bind_semantic_bool_or)?;
-    register_no_additional_scratch(builder, &["logic"], "xor", bind_semantic_bool_xor)?;
-    register_no_additional_scratch(builder, &["logic"], "not", bind_bool_not)?;
+    linkage_factories::NUMERIC_MATH_ADD.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ADD_ASSIGN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_DIV_ASSIGN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_MUL_ASSIGN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SUB_ASSIGN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ADD_ASSIGN_RANGE_ALL.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SUB_ASSIGN_RANGE_ALL.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SUB.install(builder)?;
+    linkage_factories::NUMERIC_MATH_MUL.install(builder)?;
+    linkage_factories::NUMERIC_MATH_DIV.install(builder)?;
+    linkage_factories::NUMERIC_MATH_MOD.install(builder)?;
+    linkage_factories::NUMERIC_MATH_NEG.install(builder)?;
+    linkage_factories::NUMERIC_MATH_POW.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ABS.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ACOS.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ACOSH.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ACOT.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ACSC.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ASEC.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ASIN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ASINH.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ATAN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_COPYSIGN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ATANH.install(builder)?;
+    linkage_factories::NUMERIC_MATH_CBRT.install(builder)?;
+    linkage_factories::NUMERIC_MATH_CEIL.install(builder)?;
+    linkage_factories::NUMERIC_MATH_COSH.install(builder)?;
+    linkage_factories::NUMERIC_MATH_COT.install(builder)?;
+    linkage_factories::NUMERIC_MATH_CSC.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ERF.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ERFC.install(builder)?;
+    linkage_factories::NUMERIC_MATH_FDIM.install(builder)?;
+    linkage_factories::NUMERIC_MATH_FLOOR.install(builder)?;
+    linkage_factories::NUMERIC_MATH_FMOD.install(builder)?;
+    linkage_factories::NUMERIC_MATH_LGAMMA.install(builder)?;
+    linkage_factories::NUMERIC_MATH_LOG.install(builder)?;
+    linkage_factories::NUMERIC_MATH_LOG10.install(builder)?;
+    linkage_factories::NUMERIC_MATH_LOG1P.install(builder)?;
+    linkage_factories::NUMERIC_MATH_LOG2.install(builder)?;
+    linkage_factories::NUMERIC_MATH_NEXTAFTER.install(builder)?;
+    linkage_factories::NUMERIC_MATH_REMAINDER.install(builder)?;
+    linkage_factories::NUMERIC_MATH_RINT.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ROUND.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ROUNDEVEN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SEC.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SQRT.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SINH.install(builder)?;
+    linkage_factories::NUMERIC_MATH_TAN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_TANH.install(builder)?;
+    linkage_factories::NUMERIC_MATH_TGAMMA.install(builder)?;
+    linkage_factories::NUMERIC_MATH_TRUNC.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ATAN2.install(builder)?;
+    linkage_factories::NUMERIC_MATH_COS.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SIN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_BESSEL_J0.install(builder)?;
+    linkage_factories::NUMERIC_MATH_BESSEL_J1.install(builder)?;
+    linkage_factories::NUMERIC_MATH_BESSEL_JN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_BESSEL_Y0.install(builder)?;
+    linkage_factories::NUMERIC_MATH_BESSEL_Y1.install(builder)?;
+    linkage_factories::NUMERIC_MATH_BESSEL_YN.install(builder)?;
+    linkage_factories::NUMERIC_LOGIC_AND.install(builder)?;
+    linkage_factories::NUMERIC_LOGIC_OR.install(builder)?;
+    linkage_factories::NUMERIC_LOGIC_XOR.install(builder)?;
+    linkage_factories::NUMERIC_LOGIC_NOT.install(builder)?;
     // The entry witness describes only the exact String branch. Numeric
     // scalar binders keep their separate finished-kernel semantic seals.
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     super::native_collection_semantics::register_string_comparisons(builder)?;
     #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     {
-        register_no_additional_scratch(builder, &["compare"], "eq", bind_semantic_equal)?;
-        register_no_additional_scratch(builder, &["compare"], "neq", bind_semantic_not_equal)?;
+        linkage_factories::NUMERIC_COMPARE_EQ.install(builder)?;
+        linkage_factories::NUMERIC_COMPARE_NEQ.install(builder)?;
     }
-    register_no_additional_scratch(builder, &["compare"], "lt", bind_semantic_less)?;
-    register_no_additional_scratch(builder, &["compare"], "lte", bind_semantic_less_equal)?;
-    register_no_additional_scratch(builder, &["compare"], "gt", bind_semantic_greater)?;
-    register_no_additional_scratch(builder, &["compare"], "gte", bind_semantic_greater_equal)?;
-    register_no_additional_scratch(builder, &["compare"], "seq", bind_strict_equal)?;
-    register_no_additional_scratch(builder, &["compare"], "sneq", bind_strict_not_equal)?;
+    linkage_factories::NUMERIC_COMPARE_LT.install(builder)?;
+    linkage_factories::NUMERIC_COMPARE_LTE.install(builder)?;
+    linkage_factories::NUMERIC_COMPARE_GT.install(builder)?;
+    linkage_factories::NUMERIC_COMPARE_GTE.install(builder)?;
+    linkage_factories::NUMERIC_COMPARE_SEQ.install(builder)?;
+    linkage_factories::NUMERIC_COMPARE_SNEQ.install(builder)?;
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     super::native_collection_semantics::register_access(builder, true)?;
     #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
-    register_canonical_finalize(builder, &["access"], "scalar", bind_semantic_scalar_access)?;
-    register_canonical_finalize(builder, &["access"], "column", bind_snapshot_access)?;
-    register_canonical_finalize(builder, &["access"], "rows", bind_semantic_rows_access)?;
-    register_canonical_finalize(
-        builder,
-        &["access"],
-        "columns",
-        bind_semantic_columns_access,
-    )?;
-    register_no_additional_scratch(builder, &["access"], "index", bind_scalar_index)?;
+    linkage_factories::NUMERIC_ACCESS_SCALAR.install(builder)?;
+    linkage_factories::NUMERIC_ACCESS_COLUMN.install(builder)?;
+    linkage_factories::NUMERIC_ACCESS_ROWS.install(builder)?;
+    linkage_factories::NUMERIC_ACCESS_COLUMNS.install(builder)?;
+    linkage_factories::NUMERIC_ACCESS_INDEX.install(builder)?;
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     super::native_collection_semantics::register_access(builder, false)?;
     #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
-    register_canonical_finalize(builder, &["access"], "range", bind_semantic_range_access)?;
-    register_canonical_finalize(
-        builder,
-        &["access"],
-        "rectangle",
-        bind_semantic_range_access,
-    )?;
-    register_canonical_finalize(builder, &["matrix"], "horzcat", bind_horizontal)?;
-    register_canonical_finalize(builder, &["matrix"], "vertcat", bind_vertical)?;
-    register_canonical_finalize(
-        builder,
-        &["matrix"],
-        "comprehension",
-        bind_matrix_comprehension,
-    )?;
+    linkage_factories::NUMERIC_ACCESS_RANGE.install(builder)?;
+    linkage_factories::NUMERIC_ACCESS_RECTANGLE.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_HORZCAT.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_VERTCAT.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_COMPREHENSION.install(builder)?;
     // Bytecode-v1 artifacts emitted before matrix/matmul became the canonical
     // identity persist matrix/multiply. Keep that stable operation loadable.
-    register_no_additional_scratch(builder, &["matrix"], "multiply", bind_matmul)?;
-    register_no_additional_scratch(builder, &["matrix"], "matmul", bind_matmul)?;
-    register_no_additional_scratch(builder, &["matrix"], "dot", bind_matrix_dot)?;
-    register_with_memory_class(
-        builder,
-        &["matrix"],
-        "solve",
-        ImplementationMemoryClass::MatrixSolve,
-        bind_matrix_solve,
-    )?;
-    register_canonical_finalize(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
-    register_canonical_finalize(builder, &["core"], "assign", bind_hold_state)?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "whole-value",
-        bind_whole_matrix_assign,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "indexed-axis",
-        bind_indexed_assign,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "indexed-rows",
-        bind_indexed_assign_rows,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "indexed-columns",
-        bind_indexed_assign_columns,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "indexed-rectangle",
-        bind_indexed_assign_rectangle,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "collection-entry",
-        bind_collection_entry_assign,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "single-element",
-        bind_single_element_assign,
-    )?;
+    linkage_factories::NUMERIC_MATRIX_MULTIPLY.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_MATMUL.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_DOT.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_SOLVE.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_TRANSPOSE.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_WHOLE_VALUE.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_AXIS.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_ROWS.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_COLUMNS.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_RECTANGLE.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_COLLECTION_ENTRY.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_SINGLE_ELEMENT.install(builder)?;
     macro_rules! compound_selection {
         ($name:literal, $operation:literal) => {
             for (selection, factory) in [
@@ -939,24 +874,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
             }
         };
     }
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "identity-indices",
-        selection_address::bind_identity_indices,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "selection-order",
-        selection_address::bind_selection_order,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "broadcast",
-        selection_address::bind_broadcast,
-    )?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_IDENTITY_INDICES.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_SELECTION_ORDER.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_BROADCAST.install(builder)?;
     compound_selection!("add", 0);
     compound_selection!("sub", 1);
     compound_selection!("mul", 2);
@@ -981,119 +901,39 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     super::native_collection_semantics::register_ranges(builder)?;
     #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     {
-        register_no_additional_scratch(builder, &["range"], "exclusive", bind_range_exclusive)?;
-        register_no_additional_scratch(
-            builder,
-            &["range"],
-            "exclusive-increment",
-            bind_range_increment_exclusive,
-        )?;
-        register_no_additional_scratch(builder, &["range"], "inclusive", bind_range_inclusive)?;
-        register_no_additional_scratch(
-            builder,
-            &["range"],
-            "inclusive-increment",
-            bind_range_increment_inclusive,
-        )?;
+        linkage_factories::NUMERIC_RANGE_EXCLUSIVE.install(builder)?;
+        linkage_factories::NUMERIC_RANGE_EXCLUSIVE_INCREMENT.install(builder)?;
+        linkage_factories::NUMERIC_RANGE_INCLUSIVE.install(builder)?;
+        linkage_factories::NUMERIC_RANGE_INCLUSIVE_INCREMENT.install(builder)?;
     }
-    register_no_additional_scratch(builder, &["combinatorics"], "n-choose-k", bind_n_choose_k)?;
+    linkage_factories::NUMERIC_COMBINATORICS_N_CHOOSE_K.install(builder)?;
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     super::native_collection_semantics::register_sums(builder)?;
     #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     {
-        register_no_additional_scratch(builder, &["stats", "sum"], "column", bind_sum_columns)?;
-        register_no_additional_scratch(builder, &["stats", "sum"], "row", bind_sum_rows)?;
+        linkage_factories::NUMERIC_STATS_SUM_COLUMN.install(builder)?;
+        linkage_factories::NUMERIC_STATS_SUM_ROW.install(builder)?;
     }
 
-    register_no_additional_scratch(builder, &["ekf"], "trigonometric-state", bind_ekf_trig)?;
-    register_no_additional_scratch(builder, &["ekf"], "motion-jacobian", bind_ekf_motion)?;
-    register_no_additional_scratch(builder, &["ekf"], "control-jacobian", bind_ekf_control)?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "predicted-state",
-        bind_ekf_predicted_state,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "predicted-covariance",
-        bind_ekf_predicted_covariance,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "landmark-delta-and-range",
-        bind_ekf_landmark,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "predicted-measurement",
-        bind_ekf_measurement,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "measurement-jacobian",
-        bind_ekf_measurement_jacobian,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "innovation-covariance",
-        bind_ekf_innovation_covariance,
-    )?;
-    register_no_additional_scratch(builder, &["ekf"], "solve-2x2", bind_ekf_solve)?;
-    register_no_additional_scratch(builder, &["ekf"], "kalman-gain", bind_ekf_gain)?;
-    register_no_additional_scratch(builder, &["ekf"], "innovation", bind_ekf_innovation)?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "corrected-state",
-        bind_ekf_corrected_state,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "joseph-covariance-update",
-        bind_ekf_joseph,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "covariance-symmetrization",
-        bind_ekf_symmetrize,
-    )?;
-    register_no_additional_scratch(builder, &["ekf"], "candidate-finite", bind_ekf_finite)?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "covariance-positive-diagonal",
-        bind_ekf_positive_diagonal,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "covariance-symmetric",
-        bind_ekf_symmetric,
-    )?;
+    linkage_factories::NUMERIC_EKF_TRIGONOMETRIC_STATE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_MOTION_JACOBIAN.install(builder)?;
+    linkage_factories::NUMERIC_EKF_CONTROL_JACOBIAN.install(builder)?;
+    linkage_factories::NUMERIC_EKF_PREDICTED_STATE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_PREDICTED_COVARIANCE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_LANDMARK_DELTA_AND_RANGE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_PREDICTED_MEASUREMENT.install(builder)?;
+    linkage_factories::NUMERIC_EKF_MEASUREMENT_JACOBIAN.install(builder)?;
+    linkage_factories::NUMERIC_EKF_INNOVATION_COVARIANCE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_SOLVE_2X2.install(builder)?;
+    linkage_factories::NUMERIC_EKF_KALMAN_GAIN.install(builder)?;
+    linkage_factories::NUMERIC_EKF_INNOVATION.install(builder)?;
+    linkage_factories::NUMERIC_EKF_CORRECTED_STATE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_JOSEPH_COVARIANCE_UPDATE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_COVARIANCE_SYMMETRIZATION.install(builder)?;
+    linkage_factories::NUMERIC_EKF_CANDIDATE_FINITE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_COVARIANCE_POSITIVE_DIAGONAL.install(builder)?;
+    linkage_factories::NUMERIC_EKF_COVARIANCE_SYMMETRIC.install(builder)?;
     Ok(())
-}
-
-fn register_no_additional_scratch(
-    builder: &mut FunctionCatalogBuilder,
-    module: &[&str],
-    operation: &str,
-    factory: mech_core::ResidentKernelFactory,
-) -> MResult<()> {
-    register_with_memory_class(
-        builder,
-        module,
-        operation,
-        ImplementationMemoryClass::NoAdditionalScratch,
-        factory,
-    )
 }
 
 fn register_canonical_finalize(

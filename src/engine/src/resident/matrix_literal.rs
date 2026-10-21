@@ -1,11 +1,10 @@
 use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
-    ExternalInteraction, FloatWidth, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
-    OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
-    ResidentKernelInputs, ResidentShape, ResidentSnapshotOutput, ResidentValueKind,
-    ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody, ShapeRule,
-    ValueDataDraft, ValueDraft,
+    ExternalInteraction, FloatWidth, FunctionCatalogBuilder, MResult, OutputConstruction,
+    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
+    ResidentShape, ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
+    ResolvedOperationContract, SchemaBody, ShapeRule, ValueDataDraft, ValueDraft,
 };
 use std::sync::Arc;
 
@@ -17,13 +16,22 @@ struct MatrixLiteralPlan {
 }
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    builder.insert_resident_factory(
-        ["matrix"],
-        "literal",
-        ImplementationMemoryClass::CanonicalFinalize,
-        bind_matrix_literal,
-    )?;
-    Ok(())
+    linkage_factories::MATRIX_LITERAL.install(builder)
+}
+
+pub mod linkage_factories {
+    use crate::resident::native_factory_linkage::{NativeLinkedFactory, raw_entry};
+
+    pub const MATRIX_LITERAL: NativeLinkedFactory =
+        NativeLinkedFactory::new("mech_engine::linked_factories::MATRIX_LITERAL", || {
+            raw_entry(
+                &["matrix"],
+                "literal",
+                mech_core::ImplementationMemoryClass::CanonicalFinalize,
+                super::bind_matrix_literal,
+                &MATRIX_LITERAL,
+            )
+        });
 }
 
 fn resident_element_kind(element: &SchemaBody) -> Option<ResidentValueKind> {

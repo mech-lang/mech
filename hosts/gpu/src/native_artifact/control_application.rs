@@ -36,6 +36,9 @@ pub fn generate_linked_match_application(
         binary_name,
         LinkedApplicationInputs {
             profile: LinkedApplicationProfile::Scalar,
+            factory_linkage: mech_engine::linked_factories::NativeFactoryLinkageProfile::derive(
+                artifact, catalog,
+            ),
             source_provenance,
             bytecode,
             object: object.bytes(),

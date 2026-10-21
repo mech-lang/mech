@@ -169,6 +169,7 @@ pub(super) enum LinkedApplicationProfile {
 
 pub(super) struct LinkedApplicationInputs<'a> {
     pub profile: LinkedApplicationProfile,
+    pub factory_linkage: mech_engine::linked_factories::NativeFactoryLinkageProfile,
     pub source_provenance: &'a [u8],
     pub bytecode: Vec<u8>,
     pub object: &'a [u8],
@@ -223,6 +224,9 @@ pub fn generate_linked_application(
         binary_name,
         LinkedApplicationInputs {
             profile: LinkedApplicationProfile::Scalar,
+            factory_linkage: mech_engine::linked_factories::NativeFactoryLinkageProfile::derive(
+                artifact, catalog,
+            ),
             source_provenance,
             bytecode,
             object: object.bytes(),
@@ -246,6 +250,34 @@ pub(super) fn write_linked_application(
     let workspace_text = workspace.to_str().ok_or(NativeApplicationError::Invalid(
         "workspace path is not Unicode",
     ))?;
+    let selected = inputs.factory_linkage.factories();
+    let factory_profile = json!({
+        "schema": "mech.canonical-linked-factory-profile.v1",
+        "mode": if selected.is_some() { "artifact-selected" } else { "complete-catalog" },
+        "kernel_operations": inputs.factory_linkage.operations().iter()
+            .map(|operation| operation.canonical_name()).collect::<Vec<_>>(),
+        "factory_declarations": selected.map(|factories| factories.iter()
+            .map(|factory| factory.rust_path()).collect::<Vec<_>>()),
+        "missing_linkage_operations": inputs.factory_linkage.missing_operations().iter()
+            .map(|operation| operation.canonical_name()).collect::<Vec<_>>(),
+    });
+    // Individual static references, not a runtime dispatcher over the entire
+    // catalog. Paths come ONLY from maintained private factory witnesses.
+    let installation = match selected {
+        Some(factories) => factories.iter().map(|factory| format!(
+            r#"{}.install(&mut builder).map_err(|error| format!("{{error:?}}"))?;"#,
+            factory.rust_path(),
+        )).collect::<Vec<_>>().join("\n"),
+        None => r#"mech_engine::install_intrinsic_resident(&mut builder).map_err(|error| format!("{error:?}"))?;"#.into(),
+    };
+    if !inputs.main.contains("@INSTALL_CANONICAL_FACTORIES@") {
+        return Err(NativeApplicationError::Invalid(
+            "linked launcher has no catalog installation site",
+        ));
+    }
+    let main = inputs
+        .main
+        .replace("@INSTALL_CANONICAL_FACTORIES@", &installation);
     let (gpu_feature, core_features, library_features, dependencies) = match inputs.profile {
         LinkedApplicationProfile::Scalar => ("canonical-native-runtime", "", "", String::new()),
         #[cfg(feature = "canonical-native-program")]
@@ -313,7 +345,12 @@ opt-level = 3
             "rust-toolchain.toml".into(),
             b"[toolchain]\nchannel = \"nightly-2026-03-03\"\nprofile = \"minimal\"\n".to_vec(),
         ),
-        ("src/main.rs".into(), inputs.main.into_bytes()),
+        ("src/main.rs".into(), main.into_bytes()),
+        (
+            "factory-profile.json".into(),
+            serde_json::to_vec_pretty(&factory_profile)
+                .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?,
+        ),
     ]);
     let mut pins = files
         .iter()

@@ -94,7 +94,15 @@ fn original_and_decoded_closed_program_generate_same_hosted_object_and_pins() {
         assert!(main.contains("with_canonical_native_resources_phased"));
         assert!(main.contains("linked.prepare_hosted"));
         assert!(main.contains("resume_hosted_into"));
-        assert!(main.contains("mech_engine::install_intrinsic_resident"));
+        let linkage =
+            mech_engine::linked_factories::NativeFactoryLinkageProfile::derive(artifact, &catalog);
+        for factory in linkage
+            .factories()
+            .expect("closed scalar operations have maintained linkage")
+        {
+            assert!(main.contains(&format!("{}.install(&mut builder)", factory.rust_path())));
+        }
+        assert!(!main.contains("mech_engine::install_intrinsic_resident"));
         assert!(!main.contains("mech_stdlib::install_native_plan"));
         assert_eq!(project.metadata()["source_is_provenance_only"], true);
         assert_eq!(project.metadata()["linked"], false);

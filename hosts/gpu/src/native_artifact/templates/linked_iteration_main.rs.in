@@ -37,8 +37,7 @@ fn run() -> Result<(), String> {
             let mut builder = mech_core::FunctionCatalogBuilder::new();
             // Canonical artifacts bind through resident entries, not legacy
             // bytecode runtime factories. Do not retain their unused callees.
-            mech_engine::install_intrinsic_resident(&mut builder)
-                .map_err(|error| format!("{error:?}"))?;
+@INSTALL_CANONICAL_FACTORIES@
             builder.build().map_err(|error| format!("{error:?}"))
         })
         .map_err(|error| error.to_string())?

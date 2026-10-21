@@ -951,3 +951,6 @@ mod scaling;
 
 #[path = "support/canonical_hosted_zero_resources.rs"]
 mod zero_resources;
+
+#[path = "support/canonical_hosted_factory_linkage.rs"]
+mod factory_linkage;

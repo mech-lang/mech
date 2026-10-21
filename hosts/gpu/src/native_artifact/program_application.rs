@@ -36,6 +36,9 @@ pub fn generate_linked_program_application(
         binary_name,
         LinkedApplicationInputs {
             profile: LinkedApplicationProfile::ManagedProgram,
+            factory_linkage: mech_engine::linked_factories::NativeFactoryLinkageProfile::derive(
+                artifact, catalog,
+            ),
             source_provenance,
             bytecode,
             object: object.bytes(),
@@ -141,6 +144,9 @@ fn generate_hosted(
         binary_name,
         LinkedApplicationInputs {
             profile: LinkedApplicationProfile::HostedManagedProgram { benchmark_policy },
+            factory_linkage: mech_engine::linked_factories::NativeFactoryLinkageProfile::derive(
+                artifact, catalog,
+            ),
             source_provenance,
             bytecode,
             object: object.bytes(),

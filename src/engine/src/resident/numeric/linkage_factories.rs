@@ -1,0 +1,882 @@
+//! Individual registrations shared with the complete numeric installer.
+use crate::resident::native_factory_linkage::{NativeLinkedFactory, raw_entry};
+use mech_core::ImplementationMemoryClass;
+
+macro_rules! factory {
+    ($token:ident, $module:expr, $name:literal, $memory:ident, $binder:path) => {
+        pub const $token: NativeLinkedFactory = NativeLinkedFactory::new(
+            concat!("mech_engine::linked_factories::", stringify!($token)),
+            || {
+                raw_entry(
+                    $module,
+                    $name,
+                    ImplementationMemoryClass::$memory,
+                    $binder,
+                    &$token,
+                )
+            },
+        );
+    };
+}
+
+factory!(
+    NUMERIC_MATH_ADD,
+    &["math"],
+    "add",
+    NoAdditionalScratch,
+    super::bind_add
+);
+factory!(
+    NUMERIC_MATH_ADD_ASSIGN,
+    &["math"],
+    "add-assign",
+    NoAdditionalScratch,
+    super::bind_semantic_add_assign
+);
+factory!(
+    NUMERIC_MATH_DIV_ASSIGN,
+    &["math"],
+    "div-assign",
+    NoAdditionalScratch,
+    super::bind_div_assign
+);
+factory!(
+    NUMERIC_MATH_MUL_ASSIGN,
+    &["math"],
+    "mul-assign",
+    NoAdditionalScratch,
+    super::bind_mul_assign
+);
+factory!(
+    NUMERIC_MATH_SUB_ASSIGN,
+    &["math"],
+    "sub-assign",
+    NoAdditionalScratch,
+    super::bind_semantic_sub_assign
+);
+factory!(
+    NUMERIC_MATH_ADD_ASSIGN_RANGE_ALL,
+    &["math", "add-assign"],
+    "range-all",
+    NoAdditionalScratch,
+    super::bind_add_indexed_rows
+);
+factory!(
+    NUMERIC_MATH_SUB_ASSIGN_RANGE_ALL,
+    &["math", "sub-assign"],
+    "range-all",
+    NoAdditionalScratch,
+    super::bind_sub_indexed_rows
+);
+factory!(
+    NUMERIC_MATH_SUB,
+    &["math"],
+    "sub",
+    NoAdditionalScratch,
+    super::bind_sub
+);
+factory!(
+    NUMERIC_MATH_MUL,
+    &["math"],
+    "mul",
+    NoAdditionalScratch,
+    super::bind_semantic_mul
+);
+factory!(
+    NUMERIC_MATH_DIV,
+    &["math"],
+    "div",
+    NoAdditionalScratch,
+    super::bind_div
+);
+factory!(
+    NUMERIC_MATH_MOD,
+    &["math"],
+    "mod",
+    NoAdditionalScratch,
+    super::bind_remainder
+);
+factory!(
+    NUMERIC_MATH_NEG,
+    &["math"],
+    "neg",
+    NoAdditionalScratch,
+    super::bind_negate
+);
+factory!(
+    NUMERIC_MATH_POW,
+    &["math"],
+    "pow",
+    NoAdditionalScratch,
+    super::bind_pow
+);
+factory!(
+    NUMERIC_MATH_ABS,
+    &["math"],
+    "abs",
+    NoAdditionalScratch,
+    super::bind_abs
+);
+factory!(
+    NUMERIC_MATH_ACOS,
+    &["math"],
+    "acos",
+    NoAdditionalScratch,
+    super::bind_math_acos
+);
+factory!(
+    NUMERIC_MATH_ACOSH,
+    &["math"],
+    "acosh",
+    NoAdditionalScratch,
+    super::bind_math_acosh
+);
+factory!(
+    NUMERIC_MATH_ACOT,
+    &["math"],
+    "acot",
+    NoAdditionalScratch,
+    super::bind_math_acot
+);
+factory!(
+    NUMERIC_MATH_ACSC,
+    &["math"],
+    "acsc",
+    NoAdditionalScratch,
+    super::bind_math_acsc
+);
+factory!(
+    NUMERIC_MATH_ASEC,
+    &["math"],
+    "asec",
+    NoAdditionalScratch,
+    super::bind_math_asec
+);
+factory!(
+    NUMERIC_MATH_ASIN,
+    &["math"],
+    "asin",
+    NoAdditionalScratch,
+    super::bind_math_asin
+);
+factory!(
+    NUMERIC_MATH_ASINH,
+    &["math"],
+    "asinh",
+    NoAdditionalScratch,
+    super::bind_math_asinh
+);
+factory!(
+    NUMERIC_MATH_ATAN,
+    &["math"],
+    "atan",
+    NoAdditionalScratch,
+    super::bind_math_atan
+);
+factory!(
+    NUMERIC_MATH_COPYSIGN,
+    &["math"],
+    "copysign",
+    NoAdditionalScratch,
+    super::bind_math_copysign
+);
+factory!(
+    NUMERIC_MATH_ATANH,
+    &["math"],
+    "atanh",
+    NoAdditionalScratch,
+    super::bind_math_atanh
+);
+factory!(
+    NUMERIC_MATH_CBRT,
+    &["math"],
+    "cbrt",
+    NoAdditionalScratch,
+    super::bind_math_cbrt
+);
+factory!(
+    NUMERIC_MATH_CEIL,
+    &["math"],
+    "ceil",
+    NoAdditionalScratch,
+    super::bind_math_ceil
+);
+factory!(
+    NUMERIC_MATH_COSH,
+    &["math"],
+    "cosh",
+    NoAdditionalScratch,
+    super::bind_math_cosh
+);
+factory!(
+    NUMERIC_MATH_COT,
+    &["math"],
+    "cot",
+    NoAdditionalScratch,
+    super::bind_math_cot
+);
+factory!(
+    NUMERIC_MATH_CSC,
+    &["math"],
+    "csc",
+    NoAdditionalScratch,
+    super::bind_math_csc
+);
+factory!(
+    NUMERIC_MATH_ERF,
+    &["math"],
+    "erf",
+    NoAdditionalScratch,
+    super::bind_math_erf
+);
+factory!(
+    NUMERIC_MATH_ERFC,
+    &["math"],
+    "erfc",
+    NoAdditionalScratch,
+    super::bind_math_erfc
+);
+factory!(
+    NUMERIC_MATH_FDIM,
+    &["math"],
+    "fdim",
+    NoAdditionalScratch,
+    super::bind_math_fdim
+);
+factory!(
+    NUMERIC_MATH_FLOOR,
+    &["math"],
+    "floor",
+    NoAdditionalScratch,
+    super::bind_floor
+);
+factory!(
+    NUMERIC_MATH_FMOD,
+    &["math"],
+    "fmod",
+    NoAdditionalScratch,
+    super::bind_math_fmod
+);
+factory!(
+    NUMERIC_MATH_LGAMMA,
+    &["math"],
+    "lgamma",
+    NoAdditionalScratch,
+    super::bind_math_lgamma
+);
+factory!(
+    NUMERIC_MATH_LOG,
+    &["math"],
+    "log",
+    NoAdditionalScratch,
+    super::bind_math_log
+);
+factory!(
+    NUMERIC_MATH_LOG10,
+    &["math"],
+    "log10",
+    NoAdditionalScratch,
+    super::bind_math_log10
+);
+factory!(
+    NUMERIC_MATH_LOG1P,
+    &["math"],
+    "log1p",
+    NoAdditionalScratch,
+    super::bind_math_log1p
+);
+factory!(
+    NUMERIC_MATH_LOG2,
+    &["math"],
+    "log2",
+    NoAdditionalScratch,
+    super::bind_math_log2
+);
+factory!(
+    NUMERIC_MATH_NEXTAFTER,
+    &["math"],
+    "nextafter",
+    NoAdditionalScratch,
+    super::bind_math_nextafter
+);
+factory!(
+    NUMERIC_MATH_REMAINDER,
+    &["math"],
+    "remainder",
+    NoAdditionalScratch,
+    super::bind_math_remainder
+);
+factory!(
+    NUMERIC_MATH_RINT,
+    &["math"],
+    "rint",
+    NoAdditionalScratch,
+    super::bind_math_rint
+);
+factory!(
+    NUMERIC_MATH_ROUND,
+    &["math"],
+    "round",
+    NoAdditionalScratch,
+    super::bind_math_round
+);
+factory!(
+    NUMERIC_MATH_ROUNDEVEN,
+    &["math"],
+    "roundeven",
+    NoAdditionalScratch,
+    super::bind_math_roundeven
+);
+factory!(
+    NUMERIC_MATH_SEC,
+    &["math"],
+    "sec",
+    NoAdditionalScratch,
+    super::bind_math_sec
+);
+factory!(
+    NUMERIC_MATH_SQRT,
+    &["math"],
+    "sqrt",
+    NoAdditionalScratch,
+    super::bind_sqrt
+);
+factory!(
+    NUMERIC_MATH_SINH,
+    &["math"],
+    "sinh",
+    NoAdditionalScratch,
+    super::bind_math_sinh
+);
+factory!(
+    NUMERIC_MATH_TAN,
+    &["math"],
+    "tan",
+    NoAdditionalScratch,
+    super::bind_math_tan
+);
+factory!(
+    NUMERIC_MATH_TANH,
+    &["math"],
+    "tanh",
+    NoAdditionalScratch,
+    super::bind_math_tanh
+);
+factory!(
+    NUMERIC_MATH_TGAMMA,
+    &["math"],
+    "tgamma",
+    NoAdditionalScratch,
+    super::bind_math_tgamma
+);
+factory!(
+    NUMERIC_MATH_TRUNC,
+    &["math"],
+    "trunc",
+    NoAdditionalScratch,
+    super::bind_math_trunc
+);
+factory!(
+    NUMERIC_MATH_ATAN2,
+    &["math"],
+    "atan2",
+    NoAdditionalScratch,
+    super::bind_atan2
+);
+factory!(
+    NUMERIC_MATH_COS,
+    &["math"],
+    "cos",
+    NoAdditionalScratch,
+    super::bind_cos
+);
+factory!(
+    NUMERIC_MATH_SIN,
+    &["math"],
+    "sin",
+    NoAdditionalScratch,
+    super::bind_sin
+);
+factory!(
+    NUMERIC_MATH_BESSEL_J0,
+    &["math", "bessel"],
+    "j0",
+    NoAdditionalScratch,
+    super::bind_math_bessel_j0
+);
+factory!(
+    NUMERIC_MATH_BESSEL_J1,
+    &["math", "bessel"],
+    "j1",
+    NoAdditionalScratch,
+    super::bind_math_bessel_j1
+);
+factory!(
+    NUMERIC_MATH_BESSEL_JN,
+    &["math", "bessel"],
+    "jn",
+    NoAdditionalScratch,
+    super::bind_math_bessel_jn
+);
+factory!(
+    NUMERIC_MATH_BESSEL_Y0,
+    &["math", "bessel"],
+    "y0",
+    NoAdditionalScratch,
+    super::bind_math_bessel_y0
+);
+factory!(
+    NUMERIC_MATH_BESSEL_Y1,
+    &["math", "bessel"],
+    "y1",
+    NoAdditionalScratch,
+    super::bind_math_bessel_y1
+);
+factory!(
+    NUMERIC_MATH_BESSEL_YN,
+    &["math", "bessel"],
+    "yn",
+    NoAdditionalScratch,
+    super::bind_math_bessel_yn
+);
+factory!(
+    NUMERIC_LOGIC_AND,
+    &["logic"],
+    "and",
+    NoAdditionalScratch,
+    super::bind_semantic_bool_and
+);
+factory!(
+    NUMERIC_LOGIC_OR,
+    &["logic"],
+    "or",
+    NoAdditionalScratch,
+    super::bind_semantic_bool_or
+);
+factory!(
+    NUMERIC_LOGIC_XOR,
+    &["logic"],
+    "xor",
+    NoAdditionalScratch,
+    super::bind_semantic_bool_xor
+);
+factory!(
+    NUMERIC_LOGIC_NOT,
+    &["logic"],
+    "not",
+    NoAdditionalScratch,
+    super::bind_bool_not
+);
+factory!(
+    NUMERIC_COMPARE_EQ,
+    &["compare"],
+    "eq",
+    NoAdditionalScratch,
+    super::bind_semantic_equal
+);
+factory!(
+    NUMERIC_COMPARE_NEQ,
+    &["compare"],
+    "neq",
+    NoAdditionalScratch,
+    super::bind_semantic_not_equal
+);
+factory!(
+    NUMERIC_COMPARE_LT,
+    &["compare"],
+    "lt",
+    NoAdditionalScratch,
+    super::bind_semantic_less
+);
+factory!(
+    NUMERIC_COMPARE_LTE,
+    &["compare"],
+    "lte",
+    NoAdditionalScratch,
+    super::bind_semantic_less_equal
+);
+factory!(
+    NUMERIC_COMPARE_GT,
+    &["compare"],
+    "gt",
+    NoAdditionalScratch,
+    super::bind_semantic_greater
+);
+factory!(
+    NUMERIC_COMPARE_GTE,
+    &["compare"],
+    "gte",
+    NoAdditionalScratch,
+    super::bind_semantic_greater_equal
+);
+factory!(
+    NUMERIC_COMPARE_SEQ,
+    &["compare"],
+    "seq",
+    NoAdditionalScratch,
+    super::bind_strict_equal
+);
+factory!(
+    NUMERIC_COMPARE_SNEQ,
+    &["compare"],
+    "sneq",
+    NoAdditionalScratch,
+    super::bind_strict_not_equal
+);
+factory!(
+    NUMERIC_ACCESS_SCALAR,
+    &["access"],
+    "scalar",
+    CanonicalFinalize,
+    super::bind_semantic_scalar_access
+);
+factory!(
+    NUMERIC_ACCESS_COLUMN,
+    &["access"],
+    "column",
+    CanonicalFinalize,
+    super::bind_snapshot_access
+);
+factory!(
+    NUMERIC_ACCESS_ROWS,
+    &["access"],
+    "rows",
+    CanonicalFinalize,
+    super::bind_semantic_rows_access
+);
+factory!(
+    NUMERIC_ACCESS_COLUMNS,
+    &["access"],
+    "columns",
+    CanonicalFinalize,
+    super::bind_semantic_columns_access
+);
+factory!(
+    NUMERIC_ACCESS_INDEX,
+    &["access"],
+    "index",
+    NoAdditionalScratch,
+    super::bind_scalar_index
+);
+factory!(
+    NUMERIC_ACCESS_RANGE,
+    &["access"],
+    "range",
+    CanonicalFinalize,
+    super::bind_semantic_range_access
+);
+factory!(
+    NUMERIC_ACCESS_RECTANGLE,
+    &["access"],
+    "rectangle",
+    CanonicalFinalize,
+    super::bind_semantic_range_access
+);
+factory!(
+    NUMERIC_MATRIX_HORZCAT,
+    &["matrix"],
+    "horzcat",
+    CanonicalFinalize,
+    super::bind_horizontal
+);
+factory!(
+    NUMERIC_MATRIX_VERTCAT,
+    &["matrix"],
+    "vertcat",
+    CanonicalFinalize,
+    super::bind_vertical
+);
+factory!(
+    NUMERIC_MATRIX_COMPREHENSION,
+    &["matrix"],
+    "comprehension",
+    CanonicalFinalize,
+    super::bind_matrix_comprehension
+);
+factory!(
+    NUMERIC_MATRIX_MULTIPLY,
+    &["matrix"],
+    "multiply",
+    NoAdditionalScratch,
+    super::bind_matmul
+);
+factory!(
+    NUMERIC_MATRIX_MATMUL,
+    &["matrix"],
+    "matmul",
+    NoAdditionalScratch,
+    super::bind_matmul
+);
+factory!(
+    NUMERIC_MATRIX_DOT,
+    &["matrix"],
+    "dot",
+    NoAdditionalScratch,
+    super::bind_matrix_dot
+);
+factory!(
+    NUMERIC_MATRIX_TRANSPOSE,
+    &["matrix"],
+    "transpose",
+    CanonicalFinalize,
+    super::bind_semantic_transpose
+);
+factory!(
+    NUMERIC_CORE_ASSIGN,
+    &["core"],
+    "assign",
+    CanonicalFinalize,
+    super::bind_hold_state
+);
+factory!(
+    NUMERIC_CORE_ASSIGN_WHOLE_VALUE,
+    &["core", "assign"],
+    "whole-value",
+    CanonicalFinalize,
+    super::bind_whole_matrix_assign
+);
+factory!(
+    NUMERIC_CORE_ASSIGN_INDEXED_AXIS,
+    &["core", "assign"],
+    "indexed-axis",
+    CanonicalFinalize,
+    super::bind_indexed_assign
+);
+factory!(
+    NUMERIC_CORE_ASSIGN_INDEXED_ROWS,
+    &["core", "assign"],
+    "indexed-rows",
+    CanonicalFinalize,
+    super::bind_indexed_assign_rows
+);
+factory!(
+    NUMERIC_CORE_ASSIGN_INDEXED_COLUMNS,
+    &["core", "assign"],
+    "indexed-columns",
+    CanonicalFinalize,
+    super::bind_indexed_assign_columns
+);
+factory!(
+    NUMERIC_CORE_ASSIGN_INDEXED_RECTANGLE,
+    &["core", "assign"],
+    "indexed-rectangle",
+    CanonicalFinalize,
+    super::bind_indexed_assign_rectangle
+);
+factory!(
+    NUMERIC_CORE_ASSIGN_COLLECTION_ENTRY,
+    &["core", "assign"],
+    "collection-entry",
+    CanonicalFinalize,
+    super::bind_collection_entry_assign
+);
+factory!(
+    NUMERIC_CORE_ASSIGN_SINGLE_ELEMENT,
+    &["core", "assign"],
+    "single-element",
+    CanonicalFinalize,
+    super::bind_single_element_assign
+);
+factory!(
+    NUMERIC_CORE_ASSIGN_IDENTITY_INDICES,
+    &["core", "assign"],
+    "identity-indices",
+    CanonicalFinalize,
+    super::selection_address::bind_identity_indices
+);
+factory!(
+    NUMERIC_CORE_ASSIGN_SELECTION_ORDER,
+    &["core", "assign"],
+    "selection-order",
+    CanonicalFinalize,
+    super::selection_address::bind_selection_order
+);
+factory!(
+    NUMERIC_CORE_ASSIGN_BROADCAST,
+    &["core", "assign"],
+    "broadcast",
+    CanonicalFinalize,
+    super::selection_address::bind_broadcast
+);
+factory!(
+    NUMERIC_RANGE_EXCLUSIVE,
+    &["range"],
+    "exclusive",
+    NoAdditionalScratch,
+    super::bind_range_exclusive
+);
+factory!(
+    NUMERIC_RANGE_EXCLUSIVE_INCREMENT,
+    &["range"],
+    "exclusive-increment",
+    NoAdditionalScratch,
+    super::bind_range_increment_exclusive
+);
+factory!(
+    NUMERIC_RANGE_INCLUSIVE,
+    &["range"],
+    "inclusive",
+    NoAdditionalScratch,
+    super::bind_range_inclusive
+);
+factory!(
+    NUMERIC_RANGE_INCLUSIVE_INCREMENT,
+    &["range"],
+    "inclusive-increment",
+    NoAdditionalScratch,
+    super::bind_range_increment_inclusive
+);
+factory!(
+    NUMERIC_COMBINATORICS_N_CHOOSE_K,
+    &["combinatorics"],
+    "n-choose-k",
+    NoAdditionalScratch,
+    super::bind_n_choose_k
+);
+factory!(
+    NUMERIC_STATS_SUM_COLUMN,
+    &["stats", "sum"],
+    "column",
+    NoAdditionalScratch,
+    super::bind_sum_columns
+);
+factory!(
+    NUMERIC_STATS_SUM_ROW,
+    &["stats", "sum"],
+    "row",
+    NoAdditionalScratch,
+    super::bind_sum_rows
+);
+factory!(
+    NUMERIC_EKF_TRIGONOMETRIC_STATE,
+    &["ekf"],
+    "trigonometric-state",
+    NoAdditionalScratch,
+    super::bind_ekf_trig
+);
+factory!(
+    NUMERIC_EKF_MOTION_JACOBIAN,
+    &["ekf"],
+    "motion-jacobian",
+    NoAdditionalScratch,
+    super::bind_ekf_motion
+);
+factory!(
+    NUMERIC_EKF_CONTROL_JACOBIAN,
+    &["ekf"],
+    "control-jacobian",
+    NoAdditionalScratch,
+    super::bind_ekf_control
+);
+factory!(
+    NUMERIC_EKF_PREDICTED_STATE,
+    &["ekf"],
+    "predicted-state",
+    NoAdditionalScratch,
+    super::bind_ekf_predicted_state
+);
+factory!(
+    NUMERIC_EKF_PREDICTED_COVARIANCE,
+    &["ekf"],
+    "predicted-covariance",
+    NoAdditionalScratch,
+    super::bind_ekf_predicted_covariance
+);
+factory!(
+    NUMERIC_EKF_LANDMARK_DELTA_AND_RANGE,
+    &["ekf"],
+    "landmark-delta-and-range",
+    NoAdditionalScratch,
+    super::bind_ekf_landmark
+);
+factory!(
+    NUMERIC_EKF_PREDICTED_MEASUREMENT,
+    &["ekf"],
+    "predicted-measurement",
+    NoAdditionalScratch,
+    super::bind_ekf_measurement
+);
+factory!(
+    NUMERIC_EKF_MEASUREMENT_JACOBIAN,
+    &["ekf"],
+    "measurement-jacobian",
+    NoAdditionalScratch,
+    super::bind_ekf_measurement_jacobian
+);
+factory!(
+    NUMERIC_EKF_INNOVATION_COVARIANCE,
+    &["ekf"],
+    "innovation-covariance",
+    NoAdditionalScratch,
+    super::bind_ekf_innovation_covariance
+);
+factory!(
+    NUMERIC_EKF_SOLVE_2X2,
+    &["ekf"],
+    "solve-2x2",
+    NoAdditionalScratch,
+    super::bind_ekf_solve
+);
+factory!(
+    NUMERIC_EKF_KALMAN_GAIN,
+    &["ekf"],
+    "kalman-gain",
+    NoAdditionalScratch,
+    super::bind_ekf_gain
+);
+factory!(
+    NUMERIC_EKF_INNOVATION,
+    &["ekf"],
+    "innovation",
+    NoAdditionalScratch,
+    super::bind_ekf_innovation
+);
+factory!(
+    NUMERIC_EKF_CORRECTED_STATE,
+    &["ekf"],
+    "corrected-state",
+    NoAdditionalScratch,
+    super::bind_ekf_corrected_state
+);
+factory!(
+    NUMERIC_EKF_JOSEPH_COVARIANCE_UPDATE,
+    &["ekf"],
+    "joseph-covariance-update",
+    NoAdditionalScratch,
+    super::bind_ekf_joseph
+);
+factory!(
+    NUMERIC_EKF_COVARIANCE_SYMMETRIZATION,
+    &["ekf"],
+    "covariance-symmetrization",
+    NoAdditionalScratch,
+    super::bind_ekf_symmetrize
+);
+factory!(
+    NUMERIC_EKF_CANDIDATE_FINITE,
+    &["ekf"],
+    "candidate-finite",
+    NoAdditionalScratch,
+    super::bind_ekf_finite
+);
+factory!(
+    NUMERIC_EKF_COVARIANCE_POSITIVE_DIAGONAL,
+    &["ekf"],
+    "covariance-positive-diagonal",
+    NoAdditionalScratch,
+    super::bind_ekf_positive_diagonal
+);
+factory!(
+    NUMERIC_EKF_COVARIANCE_SYMMETRIC,
+    &["ekf"],
+    "covariance-symmetric",
+    NoAdditionalScratch,
+    super::bind_ekf_symmetric
+);
+factory!(
+    NUMERIC_MATRIX_SOLVE,
+    &["matrix"],
+    "solve",
+    MatrixSolve,
+    super::bind_matrix_solve
+);

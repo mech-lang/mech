@@ -25,6 +25,19 @@ pub mod memory_planner;
 pub mod memory_runtime;
 #[cfg(feature = "native-artifact")]
 pub mod native_artifact;
+/// Separately linkable declarations of the SAME maintained canonical factories.
+/// Generated applications select these from private registration evidence;
+/// this is packaging, not an alternate evaluator or capability authority.
+#[cfg(feature = "native-artifact")]
+pub mod linked_factories {
+    pub use crate::resident::matrix_literal::linkage_factories::*;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    pub use crate::resident::native_collection_semantics::linkage_factories::*;
+    pub use crate::resident::native_factory_linkage::{
+        NativeFactoryLinkageProfile, NativeLinkedFactory,
+    };
+    pub use crate::resident::numeric::linkage_factories::*;
+}
 #[cfg(feature = "native-sequence")]
 pub mod native_sequence;
 pub mod numeric_optimizations;

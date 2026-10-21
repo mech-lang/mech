@@ -57,328 +57,367 @@ pub enum NativeCollectionPrimitive {
     StringMapValues,
 }
 
-pub(super) fn register_composite_pack(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    register(
-        builder,
-        "core",
+// The complete catalog and the selected linked catalog install the same
+// declarations. Each declaration references only its own actual binder.
+pub mod linkage_factories {
+    use super::*;
+    use crate::resident::native_factory_linkage::NativeLinkedFactory;
+
+    macro_rules! factory {
+        ($token:ident, $module:expr, $name:literal, $memory:expr, $binder:expr, $primitive:expr) => {
+            pub const $token: NativeLinkedFactory = NativeLinkedFactory::new(
+                concat!("mech_engine::linked_factories::", stringify!($token)),
+                || super::make_entry($module, $name, $memory, $binder, $primitive, &$token),
+            );
+        };
+    }
+    use ImplementationMemoryClass::{CanonicalFinalize, NoAdditionalScratch};
+
+    factory!(
+        CORE_COMPOSITE_PACK,
+        &["core"],
         "composite-pack",
-        ImplementationMemoryClass::CanonicalFinalize,
-        super::composite::bind_composite_pack,
-        NativeCollectionPrimitive::CompositePack(0),
-    )
+        CanonicalFinalize,
+        super::super::composite::bind_composite_pack,
+        NativeCollectionPrimitive::CompositePack(0)
+    );
+    factory!(
+        CORE_ENUM_PACK,
+        &["core"],
+        "enum-pack",
+        CanonicalFinalize,
+        super::super::composite::bind_enum_pack,
+        NativeCollectionPrimitive::EnumPack
+    );
+    factory!(
+        RANGE_EXCLUSIVE,
+        &["range"],
+        "exclusive",
+        NoAdditionalScratch,
+        super::super::numeric::bind_range_exclusive,
+        NativeCollectionPrimitive::RangeExclusive
+    );
+    factory!(
+        RANGE_INCLUSIVE,
+        &["range"],
+        "inclusive",
+        NoAdditionalScratch,
+        super::super::numeric::bind_range_inclusive,
+        NativeCollectionPrimitive::RangeInclusive
+    );
+    factory!(
+        RANGE_EXCLUSIVE_INCREMENT,
+        &["range"],
+        "exclusive-increment",
+        NoAdditionalScratch,
+        super::super::numeric::bind_range_increment_exclusive,
+        NativeCollectionPrimitive::RangeIncrementExclusive
+    );
+    factory!(
+        RANGE_INCLUSIVE_INCREMENT,
+        &["range"],
+        "inclusive-increment",
+        NoAdditionalScratch,
+        super::super::numeric::bind_range_increment_inclusive,
+        NativeCollectionPrimitive::RangeIncrementInclusive
+    );
+    factory!(
+        ACCESS_SCALAR,
+        &["access"],
+        "scalar",
+        CanonicalFinalize,
+        super::super::numeric::bind_semantic_scalar_access,
+        NativeCollectionPrimitive::StringScalarAccess
+    );
+    factory!(
+        ACCESS_RANGE,
+        &["access"],
+        "range",
+        ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize,
+        super::super::numeric::bind_semantic_range_access,
+        NativeCollectionPrimitive::StringRangeAccess
+    );
+    #[cfg(feature = "convert")]
+    factory!(
+        CONVERT_KIND,
+        &["convert"],
+        "kind",
+        CanonicalFinalize,
+        super::super::conversion::bind_kind_conversion,
+        NativeCollectionPrimitive::MatrixConversion
+    );
+    #[cfg(feature = "convert")]
+    factory!(
+        CONVERT_SET,
+        &["convert"],
+        "set",
+        ImplementationMemoryClass::CanonicalSortUnique,
+        super::super::set_conversion::bind,
+        NativeCollectionPrimitive::MatrixToSetConversion
+    );
+    factory!(
+        SET_ELEMENT_OF,
+        &["set"],
+        "element-of",
+        NoAdditionalScratch,
+        super::super::set::bind_element_of,
+        NativeCollectionPrimitive::SetContains
+    );
+    factory!(
+        SET_NOT_ELEMENT_OF,
+        &["set"],
+        "not-element-of",
+        NoAdditionalScratch,
+        super::super::set::bind_not_element_of,
+        NativeCollectionPrimitive::SetNotContains
+    );
+    factory!(
+        COMPARE_EQ,
+        &["compare"],
+        "eq",
+        NoAdditionalScratch,
+        super::super::numeric::bind_semantic_equal,
+        NativeCollectionPrimitive::StringEqual
+    );
+    factory!(
+        COMPARE_NEQ,
+        &["compare"],
+        "neq",
+        NoAdditionalScratch,
+        super::super::numeric::bind_semantic_not_equal,
+        NativeCollectionPrimitive::StringNotEqual
+    );
+    factory!(
+        STRING_CONCAT,
+        &["string"],
+        "concat",
+        NoAdditionalScratch,
+        super::super::text::bind_concat,
+        NativeCollectionPrimitive::StringConcat
+    );
+    factory!(
+        STATS_SUM_COLUMN,
+        &["stats", "sum"],
+        "column",
+        NoAdditionalScratch,
+        super::super::numeric::bind_sum_columns,
+        NativeCollectionPrimitive::SumColumns
+    );
+    factory!(
+        STATS_SUM_ROW,
+        &["stats", "sum"],
+        "row",
+        NoAdditionalScratch,
+        super::super::numeric::bind_sum_rows,
+        NativeCollectionPrimitive::SumRows
+    );
+    #[cfg(feature = "sequence_sort")]
+    factory!(
+        SEQUENCE_SORT_INDICES,
+        &["sequence"],
+        "sort-indices",
+        CanonicalFinalize,
+        super::super::sequence_sort::bind,
+        NativeCollectionPrimitive::SortIndices
+    );
+    #[cfg(feature = "pure_text")]
+    factory!(
+        TEXT_LINES,
+        &["text"],
+        "lines",
+        NoAdditionalScratch,
+        super::super::text_ops::bind_lines,
+        NativeCollectionPrimitive::TextLines
+    );
+    #[cfg(feature = "pure_text")]
+    factory!(
+        TEXT_JOIN,
+        &["text"],
+        "join",
+        CanonicalFinalize,
+        super::super::text_ops::bind_join,
+        NativeCollectionPrimitive::TextJoin
+    );
+    #[cfg(feature = "pure_text")]
+    factory!(
+        NUMBER_FORMAT,
+        &["number"],
+        "format",
+        CanonicalFinalize,
+        super::super::pure_text::bind_format,
+        NativeCollectionPrimitive::NumberFormat
+    );
+    #[cfg(feature = "pure_text")]
+    factory!(
+        SEQUENCE_LENGTH,
+        &["sequence"],
+        "length",
+        CanonicalFinalize,
+        super::super::pure_text::bind_length,
+        NativeCollectionPrimitive::SequenceLength
+    );
+    #[cfg(feature = "map_ops")]
+    factory!(
+        MAP_HISTOGRAM,
+        &["map"],
+        "histogram",
+        crate::intrinsics::map_ops::Operation::Histogram.memory(),
+        super::bind_histogram,
+        NativeCollectionPrimitive::StringHistogram
+    );
+    #[cfg(feature = "map_ops")]
+    factory!(
+        MAP_KEYS,
+        &["map"],
+        "keys",
+        crate::intrinsics::map_ops::Operation::Keys.memory(),
+        super::bind_keys,
+        NativeCollectionPrimitive::StringMapKeys
+    );
+    #[cfg(feature = "map_ops")]
+    factory!(
+        MAP_VALUES,
+        &["map"],
+        "values",
+        crate::intrinsics::map_ops::Operation::Values.memory(),
+        super::bind_values,
+        NativeCollectionPrimitive::StringMapValues
+    );
+}
+
+use linkage_factories::*;
+
+pub(super) fn register_composite_pack(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    CORE_COMPOSITE_PACK.install(builder)
 }
 
 pub(super) fn register_enum_pack(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    register(
-        builder,
-        "core",
-        "enum-pack",
-        ImplementationMemoryClass::CanonicalFinalize,
-        super::composite::bind_enum_pack,
-        NativeCollectionPrimitive::EnumPack,
-    )
+    CORE_ENUM_PACK.install(builder)
 }
 
 pub(super) fn register_ranges(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    let factories: [(&str, ResidentKernelFactory, NativeCollectionPrimitive); 4] = [
-        (
-            "exclusive",
-            super::numeric::bind_range_exclusive,
-            NativeCollectionPrimitive::RangeExclusive,
-        ),
-        (
-            "inclusive",
-            super::numeric::bind_range_inclusive,
-            NativeCollectionPrimitive::RangeInclusive,
-        ),
-        (
-            "exclusive-increment",
-            super::numeric::bind_range_increment_exclusive,
-            NativeCollectionPrimitive::RangeIncrementExclusive,
-        ),
-        (
-            "inclusive-increment",
-            super::numeric::bind_range_increment_inclusive,
-            NativeCollectionPrimitive::RangeIncrementInclusive,
-        ),
-    ];
-    for (name, factory, primitive) in factories {
-        register(
-            builder,
-            "range",
-            name,
-            ImplementationMemoryClass::NoAdditionalScratch,
-            factory,
-            primitive,
-        )?;
+    for factory in [
+        &RANGE_EXCLUSIVE,
+        &RANGE_INCLUSIVE,
+        &RANGE_EXCLUSIVE_INCREMENT,
+        &RANGE_INCLUSIVE_INCREMENT,
+    ] {
+        factory.install(builder)?;
     }
     Ok(())
 }
 
 pub(super) fn register_access(builder: &mut FunctionCatalogBuilder, scalar: bool) -> MResult<()> {
-    let (name, factory, primitive): (_, ResidentKernelFactory, _) = if scalar {
-        (
-            "scalar",
-            super::numeric::bind_semantic_scalar_access,
-            NativeCollectionPrimitive::StringScalarAccess,
-        )
+    if scalar {
+        ACCESS_SCALAR.install(builder)
     } else {
-        (
-            "range",
-            super::numeric::bind_semantic_range_access,
-            NativeCollectionPrimitive::StringRangeAccess,
-        )
-    };
-    register(
-        builder,
-        "access",
-        name,
-        if scalar {
-            ImplementationMemoryClass::CanonicalFinalize
-        } else {
-            ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize
-        },
-        factory,
-        primitive,
-    )
+        ACCESS_RANGE.install(builder)
+    }
 }
 
 #[cfg(feature = "convert")]
 pub(super) fn register_conversion(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    register(
-        builder,
-        "convert",
-        "kind",
-        ImplementationMemoryClass::CanonicalFinalize,
-        super::conversion::bind_kind_conversion,
-        NativeCollectionPrimitive::MatrixConversion,
-    )
+    CONVERT_KIND.install(builder)
 }
 
 #[cfg(feature = "convert")]
 pub(super) fn register_set_conversion(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    register(
-        builder,
-        "convert",
-        "set",
-        ImplementationMemoryClass::CanonicalSortUnique,
-        super::set_conversion::bind,
-        NativeCollectionPrimitive::MatrixToSetConversion,
-    )
+    CONVERT_SET.install(builder)
 }
 
 pub(super) fn register_set_membership(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    register(
-        builder,
-        "set",
-        "element-of",
-        ImplementationMemoryClass::NoAdditionalScratch,
-        super::set::bind_element_of,
-        NativeCollectionPrimitive::SetContains,
-    )?;
-    register(
-        builder,
-        "set",
-        "not-element-of",
-        ImplementationMemoryClass::NoAdditionalScratch,
-        super::set::bind_not_element_of,
-        NativeCollectionPrimitive::SetNotContains,
-    )
+    SET_ELEMENT_OF.install(builder)?;
+    SET_NOT_ELEMENT_OF.install(builder)
 }
 
 pub(super) fn register_string_comparisons(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    register(
-        builder,
-        "compare",
-        "eq",
-        ImplementationMemoryClass::NoAdditionalScratch,
-        super::numeric::bind_semantic_equal,
-        NativeCollectionPrimitive::StringEqual,
-    )?;
-    register(
-        builder,
-        "compare",
-        "neq",
-        ImplementationMemoryClass::NoAdditionalScratch,
-        super::numeric::bind_semantic_not_equal,
-        NativeCollectionPrimitive::StringNotEqual,
-    )
+    COMPARE_EQ.install(builder)?;
+    COMPARE_NEQ.install(builder)
 }
 
 pub(super) fn register_string_concat(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    register(
-        builder,
-        "string",
-        "concat",
-        ImplementationMemoryClass::NoAdditionalScratch,
-        super::text::bind_concat,
-        NativeCollectionPrimitive::StringConcat,
-    )
+    STRING_CONCAT.install(builder)
 }
 
 pub(super) fn register_sums(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    for (name, factory, primitive) in [
-        (
-            "column",
-            super::numeric::bind_sum_columns as ResidentKernelFactory,
-            NativeCollectionPrimitive::SumColumns,
-        ),
-        (
-            "row",
-            super::numeric::bind_sum_rows as ResidentKernelFactory,
-            NativeCollectionPrimitive::SumRows,
-        ),
-    ] {
-        register_path(
-            builder,
-            &["stats", "sum"],
-            name,
-            ImplementationMemoryClass::NoAdditionalScratch,
-            factory,
-            primitive,
-        )?;
-    }
-    Ok(())
+    STATS_SUM_COLUMN.install(builder)?;
+    STATS_SUM_ROW.install(builder)
 }
 
 #[cfg(feature = "sequence_sort")]
 pub(super) fn register_sort(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    register(
-        builder,
-        "sequence",
-        "sort-indices",
-        ImplementationMemoryClass::CanonicalFinalize,
-        super::sequence_sort::bind,
-        NativeCollectionPrimitive::SortIndices,
-    )
+    SEQUENCE_SORT_INDICES.install(builder)
 }
 
 #[cfg(feature = "native-artifact")]
 struct FactoryWitness {
     primitive: NativeCollectionPrimitive,
+    linkage: &'static super::native_factory_linkage::NativeLinkedFactory,
 }
 
-fn register(
-    builder: &mut FunctionCatalogBuilder,
-    module: &str,
-    name: &str,
-    memory: ImplementationMemoryClass,
-    factory: ResidentKernelFactory,
-    primitive: NativeCollectionPrimitive,
-) -> MResult<()> {
-    register_path(builder, &[module], name, memory, factory, primitive)
-}
-
-fn register_path(
-    builder: &mut FunctionCatalogBuilder,
+fn make_entry(
     module: &[&str],
     name: &str,
     memory: ImplementationMemoryClass,
     factory: ResidentKernelFactory,
     primitive: NativeCollectionPrimitive,
-) -> MResult<()> {
+    linkage: &'static super::native_factory_linkage::NativeLinkedFactory,
+) -> ResidentKernelFactoryEntry {
     let key = ResidentOperationKey::new(
         module.iter().map(|part| (*part).into()).collect(),
         name.into(),
     )
     .expect("maintained collection registration has a valid key");
     let entry = ResidentKernelFactoryEntry::new(key, memory, factory);
-    // No native consumer exists in a resident-only build. Keep the actual
-    // factory unchanged without allocating unused native evidence there.
+    // Retain the owner's ONE private certificate, including its original
+    // lowering evidence. Public semantic/cost replacements invalidate both.
     #[cfg(not(feature = "native-artifact"))]
-    let _ = primitive;
+    let _ = (primitive, linkage);
     #[cfg(feature = "native-artifact")]
-    let entry = entry.with_lowering_witness(Arc::new(FactoryWitness { primitive }));
-    builder.insert_resident_factory_entry(entry)
+    let entry = entry.with_lowering_witness(Arc::new(FactoryWitness { primitive, linkage }));
+    entry
 }
 
 #[cfg(feature = "pure_text")]
 pub(super) fn register_text(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    register(
-        builder,
-        "text",
-        "lines",
-        // The checked compact String constructor consumes its owned cells;
-        // there is no generic draft/repacking finalizer workspace. The leaf
-        // admits its complete actual container, payload and shape scratch
-        // before allocation; the common planner still stages publication.
-        ImplementationMemoryClass::NoAdditionalScratch,
-        super::text_ops::bind_lines,
-        NativeCollectionPrimitive::TextLines,
-    )?;
-    register(
-        builder,
-        "text",
-        "join",
-        ImplementationMemoryClass::CanonicalFinalize,
-        super::text_ops::bind_join,
-        NativeCollectionPrimitive::TextJoin,
-    )
+    // The compact lines constructor has no generic repacking workspace; its
+    // leaf still admits the complete real container, payload and shape scratch.
+    TEXT_LINES.install(builder)?;
+    TEXT_JOIN.install(builder)
 }
 
 #[cfg(feature = "pure_text")]
 pub(super) fn register_format_and_length(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    register(
-        builder,
-        "number",
-        "format",
-        ImplementationMemoryClass::CanonicalFinalize,
-        super::pure_text::bind_format,
-        NativeCollectionPrimitive::NumberFormat,
-    )?;
-    register(
-        builder,
-        "sequence",
-        "length",
-        ImplementationMemoryClass::CanonicalFinalize,
-        super::pure_text::bind_length,
-        NativeCollectionPrimitive::SequenceLength,
-    )
+    NUMBER_FORMAT.install(builder)?;
+    SEQUENCE_LENGTH.install(builder)
+}
+
+#[cfg(feature = "map_ops")]
+fn bind_histogram(
+    request: &mech_core::ResidentKernelBindRequest<'_>,
+) -> Result<mech_core::BoundResidentKernel, mech_core::ResidentKernelBindError> {
+    super::map_ops::bind(request, crate::intrinsics::map_ops::Operation::Histogram)
+}
+
+#[cfg(feature = "map_ops")]
+fn bind_keys(
+    request: &mech_core::ResidentKernelBindRequest<'_>,
+) -> Result<mech_core::BoundResidentKernel, mech_core::ResidentKernelBindError> {
+    super::map_ops::bind(request, crate::intrinsics::map_ops::Operation::Keys)
+}
+
+#[cfg(feature = "map_ops")]
+fn bind_values(
+    request: &mech_core::ResidentKernelBindRequest<'_>,
+) -> Result<mech_core::BoundResidentKernel, mech_core::ResidentKernelBindError> {
+    super::map_ops::bind(request, crate::intrinsics::map_ops::Operation::Values)
 }
 
 #[cfg(feature = "map_ops")]
 pub(super) fn register_maps(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    use crate::intrinsics::map_ops::Operation;
-    use mech_core::{BoundResidentKernel, ResidentKernelBindError, ResidentKernelBindRequest};
-    fn histogram(
-        request: &ResidentKernelBindRequest<'_>,
-    ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-        super::map_ops::bind(request, Operation::Histogram)
-    }
-    fn keys(
-        request: &ResidentKernelBindRequest<'_>,
-    ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-        super::map_ops::bind(request, Operation::Keys)
-    }
-    fn values(
-        request: &ResidentKernelBindRequest<'_>,
-    ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-        super::map_ops::bind(request, Operation::Values)
-    }
-    register(
-        builder,
-        "map",
-        "histogram",
-        Operation::Histogram.memory(),
-        histogram,
-        NativeCollectionPrimitive::StringHistogram,
-    )?;
-    register(
-        builder,
-        "map",
-        "keys",
-        Operation::Keys.memory(),
-        keys,
-        NativeCollectionPrimitive::StringMapKeys,
-    )?;
-    register(
-        builder,
-        "map",
-        "values",
-        Operation::Values.memory(),
-        values,
-        NativeCollectionPrimitive::StringMapValues,
-    )
+    MAP_HISTOGRAM.install(builder)?;
+    MAP_KEYS.install(builder)?;
+    MAP_VALUES.install(builder)
 }
 
 #[cfg(feature = "native-artifact")]
@@ -386,4 +425,13 @@ pub(crate) fn primitive(entry: &ResidentKernelFactoryEntry) -> Option<NativeColl
     entry
         .lowering_witness::<FactoryWitness>()
         .map(|witness| witness.primitive)
+}
+
+#[cfg(feature = "native-artifact")]
+pub(super) fn linkage(
+    entry: &ResidentKernelFactoryEntry,
+) -> Option<&'static super::native_factory_linkage::NativeLinkedFactory> {
+    entry
+        .lowering_witness::<FactoryWitness>()
+        .map(|witness| witness.linkage)
 }
