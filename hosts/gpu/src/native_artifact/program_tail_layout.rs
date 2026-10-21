@@ -12,6 +12,9 @@ pub(super) struct Region {
     pub iteration: u32,
     pub tail: NativeTailLoop,
     pub borrowed: Option<usize>,
+    // Runtime-only preparation still checks the same word-layout arithmetic;
+    // the concrete offset is consumed by code generation, not execution.
+    #[cfg(feature = "canonical-native-program")]
     pub words: usize,
     pub compute: u64,
     pub comparison: u64,
@@ -143,13 +146,17 @@ impl Layout {
             }
             layout.initializers[tail.initialize() as usize] = Some(index);
             layout.exits[tail.exit() as usize] = Some(index);
+            // Overflow validation remains unconditional, including builds
+            // without the code generator that consumes the concrete offset.
+            let _word_offset = base
+                .checked_add(layout.words)
+                .ok_or("Tail words overflow")?;
             layout.regions.push(Region {
                 iteration: iteration as u32,
                 tail: tail.clone(),
                 borrowed: borrowed.initializers[tail.initialize() as usize],
-                words: base
-                    .checked_add(layout.words)
-                    .ok_or("Tail words overflow")?,
+                #[cfg(feature = "canonical-native-program")]
+                words: _word_offset,
                 compute,
                 comparison,
             });

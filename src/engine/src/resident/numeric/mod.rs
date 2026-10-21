@@ -21831,8 +21831,8 @@ mod tests {
             Err(ResidentKernelError::ResourceLimit {
                 phase: mech_core::ResidentResourcePhase::Admission,
                 dimension: mech_core::MemoryBudgetDimension::OutputBytes,
-                required: 128,
-                limit: 127
+                required: expected.retained_bytes,
+                limit: expected.retained_bytes - 1,
             }),
             "scalar retention alone must not authorize a new packed matrix buffer",
         );
@@ -27308,6 +27308,22 @@ mod tests {
         const F92: u64 = 7_540_113_804_746_346_429;
         let left = [Some(matrix(F91, F92))];
         let right = [Some(matrix(F90, F91 as u64))];
+        // Each operand inspects a wrapper, two schema nodes and three data
+        // chunks (six 64-unit metadata steps), then funds its retained copy.
+        // Value wrapper size differs across supported targets.
+        let input_copy_work = 2 * 6 * 64
+            + left[0]
+                .as_ref()
+                .unwrap()
+                .retained_footprint(&schemas)
+                .unwrap()
+                .retained_bytes
+            + right[0]
+                .as_ref()
+                .unwrap()
+                .retained_footprint(&schemas)
+                .unwrap()
+                .retained_bytes;
         let inputs = [
             ResidentValueRef::Snapshot(&left),
             ResidentValueRef::Snapshot(&right),
@@ -27358,12 +27374,12 @@ mod tests {
             for (remaining_work, expected_result) in [
                 (10_000, Ok(true)),
                 (
-                    1_000,
+                    input_copy_work - 1,
                     Err(ResidentKernelError::ResourceLimit {
                         phase: mech_core::ResidentResourcePhase::Admission,
                         dimension: mech_core::MemoryBudgetDimension::ComputeWork,
-                        required: 1_040,
-                        limit: 1_000,
+                        required: input_copy_work,
+                        limit: input_copy_work - 1,
                     }),
                 ),
             ] {
@@ -27383,6 +27399,27 @@ mod tests {
                     expected.canonical_data_draft().unwrap(),
                 );
             }
+            // This allowance funds metadata and staging preparation but not
+            // the Euclidean reduction itself. Preserve the prior publication.
+            let mut bounded = plan.clone();
+            bounded.budget_limits.max_compute_work = Some(2_000);
+            let mut output = [Some(prior.clone())];
+            let result = super::super::budget::with_resident_turn_plan(bounded, || {
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output))
+            });
+            assert!(matches!(
+                result,
+                Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                    required,
+                    limit: 2_000,
+                }) if required >= RATIONAL_REDUCTION_TERM_COMPUTE_WORK as u64
+            ));
+            assert_eq!(
+                output[0].as_ref().unwrap().canonical_data_draft().unwrap(),
+                prior.canonical_data_draft().unwrap(),
+            );
         }
     }
 
@@ -28537,12 +28574,30 @@ mod tests {
         );
         let mut output = [Some(current.clone())];
 
+        // Retain the current value, both source copies, the selector and the
+        // complete replacement draft using this target's real value layout.
+        let current_footprint = current.retained_footprint(&schemas).unwrap();
+        let source_footprint = source[0]
+            .as_ref()
+            .unwrap()
+            .retained_footprint(&schemas)
+            .unwrap();
+        let selector_footprint = selector[0]
+            .as_ref()
+            .unwrap()
+            .retained_footprint(&schemas)
+            .unwrap();
+        let required_temporary_bytes = current_footprint.retained_bytes
+            + 2 * source_footprint.retained_bytes
+            + selector_footprint.retained_bytes
+            + (current_footprint.node_count + source_footprint.node_count)
+                * core::mem::size_of::<ValueDataDraft>() as u64;
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
             Err(ResidentKernelError::ResourceLimit {
                 phase: mech_core::ResidentResourcePhase::Admission,
                 dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
-                required: 18875225,
+                required: required_temporary_bytes,
                 limit: 16777216
             }),
         );
@@ -32177,6 +32232,15 @@ mod tests {
         );
         let left = [Some(u64_value.clone())];
         let right = [Some(u64_value)];
+        // Two complete input copies coexist with their 400,000 draft cells
+        // and the scalar output draft. Do not assume a platform's wrapper size.
+        let required_temporary_bytes = 2 * left[0]
+            .as_ref()
+            .unwrap()
+            .retained_footprint(&schemas)
+            .unwrap()
+            .retained_bytes
+            + 400_001 * core::mem::size_of::<ValueDataDraft>() as u64;
         let inputs = [
             ResidentValueRef::Snapshot(&left),
             ResidentValueRef::Snapshot(&right),
@@ -32188,7 +32252,7 @@ mod tests {
             Err(ResidentKernelError::ResourceLimit {
                 phase: mech_core::ResidentResourcePhase::Admission,
                 dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
-                required: 28800304,
+                required: required_temporary_bytes,
                 limit: 16777216
             }),
         );

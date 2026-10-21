@@ -1,17 +1,25 @@
 //! Immutable storage/dispatch metadata derived from the same canonical plan.
+#[cfg(feature = "canonical-native-program")]
+use mech_engine::native_artifact::NativeMatchValue;
 use mech_engine::native_artifact::{
     NativeBorrowedStringAction as Action, NativeBorrowedStringRegion as Region,
-    NativeIterationAction, NativeMatchValue, NativeProgramArtifactPlan,
+    NativeIterationAction, NativeProgramArtifactPlan,
 };
 
 #[derive(Debug)]
 pub(super) struct RegionLayout {
     pub proof: Region,
+    // Runtime-only descriptors derive the identical checked storage layout,
+    // while only the code generator reads its concrete word offsets.
+    #[cfg(feature = "canonical-native-program")]
     pub ready: usize,
+    #[cfg(feature = "canonical-native-program")]
     pub captures: usize,
+    #[cfg(feature = "canonical-native-program")]
     slots: Box<[Option<usize>]>,
 }
 impl RegionLayout {
+    #[cfg(feature = "canonical-native-program")]
     pub fn slot(&self, value: NativeMatchValue) -> usize {
         self.slots[value.get() as usize].expect("proved borrowed String slot")
     }
@@ -42,10 +50,12 @@ impl Layout {
         let mut next = base;
         for proof in plan.borrowed_string_regions() {
             let ordinal = layout.regions.len();
+            #[cfg(feature = "canonical-native-program")]
             let ready = next;
             next = next
                 .checked_add(1)
                 .ok_or("borrowed String ready slot overflow")?;
+            #[cfg(feature = "canonical-native-program")]
             let captures = next;
             let mut slots = vec![None; plan.values().len()];
             for &value in proof
@@ -72,8 +82,11 @@ impl Layout {
             }
             layout.regions.push(RegionLayout {
                 proof,
+                #[cfg(feature = "canonical-native-program")]
                 ready,
+                #[cfg(feature = "canonical-native-program")]
                 captures,
+                #[cfg(feature = "canonical-native-program")]
                 slots: slots.into(),
             });
         }
