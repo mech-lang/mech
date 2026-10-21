@@ -18,13 +18,25 @@ pub(super) struct Region {
 /// An early completion bypass must not publish while acquisition is pending.
 /// Conservatively require this root Tail to dominate EVERY completion; an
 /// unsupported graph retains the ordinary, complete snapshot execution path.
+#[cfg(feature = "canonical-native-program")]
 pub(super) fn derive(
     plan: &NativeProgramArtifactPlan,
     borrowed: &program_borrowed_layout::Layout,
     visits: &[NativeIterationVisit],
 ) -> Result<Option<Region>, &'static str> {
     let frontiers = plan.text_line_retention_frontiers();
-    let [frontier] = frontiers.as_slice() else {
+    derive_with_frontiers(plan, borrowed, visits, &frontiers)
+}
+
+/// Descriptor preparation supplies its freshly derived, same-plan inventory;
+/// sharing it with identity hashing must not discard unsupported frontiers.
+pub(super) fn derive_with_frontiers(
+    plan: &NativeProgramArtifactPlan,
+    borrowed: &program_borrowed_layout::Layout,
+    visits: &[NativeIterationVisit],
+    frontiers: &[NativeTextLineRetentionFrontier],
+) -> Result<Option<Region>, &'static str> {
+    let [frontier] = frontiers else {
         return Ok(None);
     };
     let NativeControlLoop::Tail(tail) = &plan.iterations()[frontier.iteration() as usize] else {

@@ -280,6 +280,12 @@ fn scalar_and_managed_launchers_enable_their_selected_factory_owner_features() {
                 .unwrap()
                 .parse::<toml_edit::DocumentMut>()
                 .unwrap();
+            let release = &manifest["profile"]["release"];
+            assert_eq!(release["strip"].as_str(), Some("symbols"));
+            assert_eq!(release["opt-level"].as_integer(), Some(3));
+            assert_eq!(release["lto"].as_str(), Some("thin"));
+            assert!(release.get("panic").is_none());
+            assert!(release.get("codegen-units").is_none());
             let features = manifest["dependencies"]["mech-engine"]["features"]
                 .as_array()
                 .unwrap();

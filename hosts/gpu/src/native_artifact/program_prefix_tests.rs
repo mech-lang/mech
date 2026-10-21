@@ -96,6 +96,75 @@ fn output_text(outputs: &[Option<Value>]) -> &str {
 }
 
 #[test]
+fn shared_retention_inventory_preserves_identity_and_capture_eligibility() {
+    use super::super::super::{program_identity, program_prefix_layout};
+
+    let lookahead = source().replace(
+        "    | rows[i] == \"close\"",
+        "    | i + 1u64 > count -> :Ready(first, i)\n    | rows[i] == \"close\"",
+    );
+    let zero_seed = source().replace(
+        "#Locate(rows, count) -> :Skip(1u64)",
+        "#Locate(rows, count) -> :Take(0u64, 1u64)",
+    );
+    for (source, eligible) in [
+        (source(), true),
+        (lookahead.as_str(), false),
+        (zero_seed.as_str(), false),
+    ] {
+        for artifact in artifacts(source) {
+            let jit = super::super::super::JitProgramArtifact::compile(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+            )
+            .unwrap();
+            let descriptor = jit.descriptor();
+            let frontiers = descriptor.plan.text_line_retention_frontiers();
+            let independently_derived = program_prefix_layout::derive(
+                &descriptor.plan,
+                &descriptor.borrowed_strings,
+                &descriptor.visits,
+            )
+            .unwrap();
+            assert_eq!(descriptor.prefix.is_some(), eligible);
+            assert_eq!(
+                format!("{:?}", descriptor.prefix),
+                format!("{independently_derived:?}"),
+            );
+            assert_eq!(
+                *descriptor.typed_ir_sha256(),
+                program_identity::typed_ir_sha256(&descriptor.plan, &frontiers),
+            );
+            if eligible {
+                // Identity records the FULL inventory, not merely the single
+                // frontier accepted by the runtime layout. Layout rejection
+                // must never silently erase a nonempty proof list from hashing.
+                let mut multiple = frontiers.clone();
+                multiple.extend(frontiers.iter().cloned());
+                assert!(
+                    program_prefix_layout::derive_with_frontiers(
+                        &descriptor.plan,
+                        &descriptor.borrowed_strings,
+                        &descriptor.visits,
+                        &multiple,
+                    )
+                    .unwrap()
+                    .is_none()
+                );
+                assert_ne!(
+                    *descriptor.typed_ir_sha256(),
+                    program_identity::typed_ir_sha256(&descriptor.plan, &multiple),
+                );
+                assert_ne!(
+                    *descriptor.typed_ir_sha256(),
+                    program_identity::typed_ir_sha256(&descriptor.plan, &[]),
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn original_and_decoded_selected_producer_own_the_incremental_line_storage() {
     use mech_engine::native_artifact::{NativeCollectionPrimitive, NativeLibraryWorkBudget};
 

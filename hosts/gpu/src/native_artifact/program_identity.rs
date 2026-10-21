@@ -2,6 +2,7 @@
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
     NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind,
+    NativeTextLineRetentionFrontier,
 };
 use sha2::{Digest, Sha256};
 fn word(hash: &mut Sha256, value: u64) {
@@ -177,14 +178,16 @@ impl NativeProgramObjectIdentity {
         &self.symbol
     }
 }
-pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
+pub(super) fn typed_ir_sha256(
+    plan: &NativeProgramArtifactPlan,
+    frontiers: &[NativeTextLineRetentionFrontier],
+) -> [u8; 32] {
     let mut hash = Sha256::new();
     hash.update(b"mech.canonical-managed-program-cfg\0");
     word(&mut hash, NATIVE_PROGRAM_TYPED_IR_VERSION); // Separate control IR version.
     word(&mut hash, super::program_abi::VERSION);
     word(&mut hash, NATIVE_PROGRAM_WORK_POLICY_VERSION);
     hash.update(plan.program_revision().as_bytes());
-    let frontiers = plan.text_line_retention_frontiers();
     word(&mut hash, frontiers.len() as u64);
     for frontier in frontiers {
         word(&mut hash, u64::from(frontier.iteration()));

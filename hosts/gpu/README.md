@@ -159,23 +159,24 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 The [streaming timing and footprint receipt](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
 records the latest matched M1 diagnostic. Full-size streaming is now comparable
-in speed to retained secured execution, with 43.3% lower peak RSS. The 10M case
-still regresses by 4.35%; performance preservation across both sizes is unfinished.
+to or faster than retained secured execution in this batch, with 40.4% lower
+peak RSS. The earlier 10M regression is no longer observed in this comparison.
 
 | Implementation | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Retained secured snapshot | 0.06885 s | 0.65041 s | 506.5 MB | 6.843 MB |
-| Previous streaming (v1139) | 0.07329 s | 0.65815 s | 287.3 MB | 7.095 MB |
-| Current streaming (v1142) | 0.07184 s | 0.64141 s | 287.3 MB | 7.095 MB |
+| Retained secured snapshot | 0.06891 s | 0.64888 s | 482.3 MB | 6.843 MB |
+| Streaming + host ThinLTO control | 0.07113 s | 0.63650 s | 287.4 MB | 7.063 MB |
+| Streaming + shared startup proof (v1144) | 0.06864 s | 0.63271 s | 287.7 MB | 7.063 MB |
 
 Twelve balanced timing rounds per binary and size include startup, one complete
 secured round and report publication; three separate runs measure peak RSS.
-All 98 outputs and complete security reports match their expected results.
-Sizes use decimal MB. The 125M timing ranges overlap, so this is **not proof of a
-1.4% speedup**. Earlier approximately 0.639-second secured results remain valid;
-the table uses controls remeasured in this same batch. These are pinned
-dirty-source diagnostics, not final clean-source qualification or isolated
-capability-overhead measurements.
+All 96 outputs and complete security reports match their expected results,
+including unchanged nominal identity for the retained Object. Sizes use decimal
+MB. The 10M result is near parity, not a meaningful speedup claim. Earlier
+approximately 0.639-second secured results remain valid; this table uses controls
+remeasured in the same batch. These are pinned host-only diagnostics with an
+explicit ThinLTO override, not fresh clean-source qualification, a measurement
+of the subsequently adopted default profile, or isolated capability overhead.
 
 The current ABI12/IR26/work-policy35 implementation streams bounded UTF-8 line
 windows through the same authorized CLI resource and one runtime transaction.
@@ -185,14 +186,16 @@ source failures precede saved body failures. No partial count, Rust workload
 scanner or second evaluator is introduced; unsupported proofs use the existing
 snapshot storage strategy.
 
-The latest general optimizations hoist entry-stable facts, maintain exact retained
-payload totals, use bounded line-count sums and reduce ASCII/CR masks separately.
-They do not loosen work accounting or cache permissions. Review fixes defer
-forward-range sealing until its endpoint arrives and reject unproved count
-lookahead or zero live retention seeds before capture. Stale IR25 objects are
-rejected; original and decoded IR26 builds produce identical executable bytes.
+Startup now derives the retention proof once from the same immutable plan and
+shares the complete inventory between layout and identity hashing. No proof or
+permission is cached across executions. The measured host accepts the exact
+previous Object, with identical work, identity and output. The generated release
+profile now selects ThinLTO for the Rust host and libraries, retaining opt-level3,
+symbol stripping, default codegen units and unwind behavior. Mech remains
+Cranelift-generated machine code linked unchanged, not LLVM input. Release build
+time and memory can increase; debug defaults are unchanged.
 
-The 10M regression, roughly 200 MB/3.16 MB reference footprint target, fresh
+The roughly 200 MB/3.16 MB reference footprint target, fresh default-profile
 clean-source qualification, clean review and green CI remain outstanding.
 The PR stays draft and unmerged until the user directs otherwise.
 

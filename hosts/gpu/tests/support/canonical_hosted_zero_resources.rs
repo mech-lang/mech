@@ -90,6 +90,13 @@ fn original_and_decoded_closed_program_generate_same_hosted_object_and_pins() {
             manifest["profile"]["release"]["opt-level"].as_integer(),
             Some(3)
         );
+        assert_eq!(manifest["profile"]["release"]["lto"].as_str(), Some("thin"));
+        assert!(manifest["profile"]["release"].get("panic").is_none());
+        assert!(
+            manifest["profile"]["release"]
+                .get("codegen-units")
+                .is_none()
+        );
         assert_eq!(manifest["profile"]["dev"]["debug"].as_integer(), Some(0));
         assert!(main.contains("with_canonical_native_resources_phased"));
         assert!(main.contains("linked.prepare_hosted"));

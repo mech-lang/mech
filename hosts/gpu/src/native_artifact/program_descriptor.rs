@@ -73,7 +73,16 @@ impl NativeProgramDescriptor {
         selected_joins
             .fund_visit_checks(&mut visits)
             .map_err(str::to_owned)?;
-        let prefix = super::program_prefix_layout::derive(&plan, &borrowed_strings, &visits)?;
+        // Derive this proof once from the SAME immutable plan. Both layout and
+        // identity inspect the complete result, including unsupported/multiple
+        // frontiers; no caller-provided or persistent proof cache is consulted.
+        let line_retention_frontiers = plan.text_line_retention_frontiers();
+        let prefix = super::program_prefix_layout::derive_with_frontiers(
+            &plan,
+            &borrowed_strings,
+            &visits,
+            &line_retention_frontiers,
+        )?;
         for (site, visit) in visits.iter_mut().enumerate() {
             visit.work = visit
                 .work
@@ -257,7 +266,7 @@ impl NativeProgramDescriptor {
             .and_then(|n| n.checked_mul(4))
             .and_then(|n| n.checked_add(4096))
             .ok_or("scalar ownership bound overflows")?;
-        let identity = super::program_identity::typed_ir_sha256(&plan);
+        let identity = super::program_identity::typed_ir_sha256(&plan, &line_retention_frontiers);
         Ok(Self {
             plan,
             schemas: Arc::new(artifact.schemas().clone()),
