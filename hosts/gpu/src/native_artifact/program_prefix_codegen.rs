@@ -11,6 +11,110 @@ use super::super::{
 };
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
+use mech_engine::native_artifact::NativeMatchAction;
+
+/// Branch around an unfinished count definition. The owner installs all of
+/// the proved identical count slots from final source facts before EOF entry;
+/// no prefix length or placeholder becomes a language value in the meantime.
+pub(in crate::native_artifact) fn count_store(
+    b: &mut FunctionBuilder,
+    frame: Value,
+    phase: Value,
+    region: Option<&Region>,
+    site: usize,
+) -> Option<Block> {
+    let region = region?;
+    if !region
+        .frontier
+        .read()
+        .count()
+        .lines()
+        .lengths()
+        .contains(&(site as u32))
+    {
+        return None;
+    }
+    let pending = count_pending(b, frame, phase);
+    let ordinary = b.create_block();
+    let joined = b.create_block();
+    b.ins().brif(pending, joined, &[], ordinary, &[]);
+    b.switch_to_block(ordinary);
+    Some(joined)
+}
+
+fn count_pending(b: &mut FunctionBuilder, frame: Value, phase: Value) -> Value {
+    let prefix = b
+        .ins()
+        .icmp_imm(IntCC::Equal, phase, program_abi::PHASE_PREFIX as i64);
+    let eof = b.ins().load(
+        types::I64,
+        MemFlags::new(),
+        frame,
+        core::mem::offset_of!(program_abi::Frame, input_eof) as i32,
+    );
+    let unfinished = b.ins().icmp_imm(IntCC::Equal, eof, 0);
+    b.ins().band(prefix, unfinished)
+}
+
+/// The count proof covers every numeric read. Before EOF, identity aliases
+/// remain uninitialized and an available index proves only the original
+/// `index > final_count` predicate false. All other reads await the EOF edge.
+pub(in crate::native_artifact) fn count_action(
+    b: &mut FunctionBuilder,
+    frame: Value,
+    locals: Value,
+    phase: Value,
+    region: Option<&Region>,
+    site: usize,
+    action: &NativeMatchAction,
+    error: Block,
+) -> Result<bool, NativeCompileError> {
+    let Some(region) = region else {
+        return Ok(false);
+    };
+    let count = region.frontier.read().count();
+    let comparison = count
+        .guards()
+        .iter()
+        .find(|guard| guard.comparison() as usize == site);
+    if comparison.is_none() && !count.aliases().contains(&(site as u32)) {
+        return Ok(false);
+    }
+    let pending = count_pending(b, frame, phase);
+    let unfinished = b.create_block();
+    let ordinary = b.create_block();
+    let joined = b.create_block();
+    b.ins().brif(pending, unfinished, &[], ordinary, &[]);
+    b.switch_to_block(unfinished);
+    if let Some(comparison) = comparison {
+        let index = super::super::control_compiler::load(b, locals, comparison.index())?;
+        let available = b.ins().load(
+            types::I64,
+            MemFlags::new(),
+            frame,
+            core::mem::offset_of!(program_abi::Frame, available_lines) as i32,
+        );
+        // The proved original header must have paused before an unavailable
+        // index reaches this site. Check that invariant without loading count.
+        let covered = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThanOrEqual, index, available);
+        guard(b, covered, error, STATUS_ABI);
+        let false_ = b.ins().iconst(types::I64, 0);
+        b.ins().store(
+            MemFlags::new(),
+            false_,
+            locals,
+            offset(comparison.predicate().get() as usize)?,
+        );
+    }
+    b.ins().jump(joined, &[]);
+    b.switch_to_block(ordinary);
+    super::super::control_compiler::emit_scalar_action(b, locals, action, error)?;
+    b.ins().jump(joined, &[]);
+    b.switch_to_block(joined);
+    Ok(true)
+}
 
 pub(in crate::native_artifact) fn resume(
     b: &mut FunctionBuilder,
@@ -31,6 +135,62 @@ pub(in crate::native_artifact) fn resume(
         error,
     )?;
     super::tail_codegen::resume(b, locals, closed, site, hooks, error)
+}
+
+/// End the scanner at its original exit, before that exit is visited. Closed
+/// Tail fuel was reconciled by the ordinary exit prologue. Clear every raw
+/// source lane before the helper retires the immutable owner loan, so the
+/// owning session can release external row loans before final range consumers.
+pub(in crate::native_artifact) fn scanned(
+    b: &mut FunctionBuilder,
+    frame: Value,
+    locals: Value,
+    phase: Value,
+    region: &Region,
+    borrowed: &program_borrowed_layout::Layout,
+    closed: &program_tail_layout::Layout,
+    hooks: &Hooks,
+    error: Block,
+) -> Result<(), NativeCompileError> {
+    let finish = b.create_block();
+    let proceed = b.create_block();
+    let prefix = b
+        .ins()
+        .icmp_imm(IntCC::Equal, phase, program_abi::PHASE_PREFIX as i64);
+    b.ins().brif(prefix, finish, &[], proceed, &[]);
+    b.switch_to_block(finish);
+    let eof = b.ins().load(
+        types::I64,
+        MemFlags::new(),
+        frame,
+        core::mem::offset_of!(program_abi::Frame, input_eof) as i32,
+    );
+    let final_input = b.ins().icmp_imm(IntCC::Equal, eof, 1);
+    guard(b, final_input, error, STATUS_ABI);
+    let zero = b.ins().iconst(types::I64, 0);
+    let layout = &borrowed.regions[region.borrowed];
+    for word in layout.ready..layout.end {
+        b.ins().store(MemFlags::new(), zero, locals, offset(word)?);
+    }
+    if let Some(ordinal) = closed.sites[region.tail.header() as usize] {
+        let words = closed.regions[ordinal].words;
+        for word in words..words + 3 {
+            b.ins().store(MemFlags::new(), zero, locals, offset(word)?);
+        }
+    }
+    hooks.call(
+        b,
+        region.tail.exit() as usize,
+        program_abi::PREFIX_SCANNED,
+        [zero; 3],
+        error,
+    );
+    let status = b
+        .ins()
+        .iconst(types::I64, program_abi::STATUS_INPUT_SCANNED as i64);
+    b.ins().return_(&[status]);
+    b.switch_to_block(proceed);
+    Ok(())
 }
 
 pub(in crate::native_artifact) fn gate(

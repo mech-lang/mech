@@ -192,6 +192,19 @@ impl Context<'_, '_> {
                 // projection succeeds; never substitute it for this view.
                 self.arena
                     .retire_current(region.selected().get(), &mut self.control.work)?;
+                if let Some(captured) = &self.line_matrices.captured {
+                    let lines = &descriptor.line_matrices.regions[captured.ordinal];
+                    if lines.matrix() == region.source()
+                        && lines.selections() == [site as u32]
+                        && self.line_window.is_none()
+                        && self.prefix.as_ref().is_some_and(|prefix| prefix.input.eof)
+                    {
+                        // The complete-use proof has one final selection, and
+                        // the scanner's EOF checkpoint already ended its loan.
+                        // Transfer the remaining owner to this selected join.
+                        self.line_matrices.views[captured.ordinal] = None;
+                    }
+                }
                 self.selected_join = Some(State {
                     view,
                     region: index,
@@ -210,10 +223,9 @@ impl Context<'_, '_> {
                 let separator = self
                     .arena
                     .copy_current(region.separator().get(), &mut self.control.work)?;
-                let value = self.finish_selected_join(site, &state, &separator)?;
+                let value = self.finish_selected_join(site, state, &separator)?;
                 self.arena
                     .put(region.output().get(), &value, &mut self.control.work)?;
-                drop(state);
             }
         }
         Ok(true)
@@ -222,7 +234,7 @@ impl Context<'_, '_> {
     fn finish_selected_join(
         &mut self,
         site: usize,
-        state: &State,
+        state: State,
         separator: &Value,
     ) -> Result<Value, Error> {
         let source = self.control.descriptor.selected_joins.regions[state.region].source();
@@ -364,8 +376,10 @@ impl Context<'_, '_> {
                 if text.capacity() != capacity {
                     return Err(invalid("selected join output exceeds admitted capacity"));
                 }
-                call.selected_matrix_join_append(&state.view, separator, &mut text, &memory)
-                    .map_err(|e| library(self, site, e))?;
+                call.selected_matrix_join_append_consuming(
+                    state.view, separator, &mut text, &memory,
+                )
+                .map_err(|e| library(self, site, e))?;
                 let canonical = SnapshotCanonicalizationBudget::new(finalization);
                 let output = &descriptor.plan.values()[region.output().get() as usize];
                 ValueDraft {

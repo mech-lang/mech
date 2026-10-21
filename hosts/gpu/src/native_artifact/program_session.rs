@@ -2,12 +2,22 @@
 //! are reconstructed from admitted owned backing for each synchronous entry;
 //! neither caller pointers nor self-referential borrowed state are retained.
 use super::super::program_abi::{
-    PHASE_ACTIVATION, PHASE_PREFIX, PHASE_TURN, STATUS_ACTIVATED, STATUS_INPUT_PENDING,
+    PHASE_ACTIVATION, PHASE_CAPTURE_TAIL, PHASE_PREFIX, PHASE_TURN, STATUS_ACTIVATED,
+    STATUS_INPUT_PENDING, STATUS_INPUT_SCANNED,
 };
 use super::*;
 
 #[path = "program_call_cache_allocation.rs"]
 mod call_cache_allocation;
+
+#[path = "program_capture.rs"]
+mod capture;
+#[cfg(feature = "canonical-native-program-host-runtime")]
+#[path = "program_capture_admission.rs"]
+mod capture_admission;
+#[cfg(feature = "canonical-native-program-host-runtime")]
+#[path = "program_capture_host.rs"]
+mod capture_host;
 
 #[cfg(test)]
 #[path = "program_observation_tests.rs"]
@@ -16,12 +26,75 @@ mod observation_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_call_cache_tests.rs"]
 mod call_cache_tests;
+#[cfg(all(test, feature = "canonical-native-program-host"))]
+#[path = "program_capture_host_tests.rs"]
+mod capture_host_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_capture_tests.rs"]
+mod capture_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_prefix_tests.rs"]
 mod prefix_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_prefix_window_tests.rs"]
 mod prefix_window_tests;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_output_retirement_tests.rs"]
+mod output_retirement_tests;
+
+/// Validate and fund retirement of the caller's existing output roots before
+/// native publication. The shared account remains available even if a failed
+/// speculative scanner has already retired its non-runnable execution state.
+fn admit_output_retirement(
+    descriptor: &NativeProgramDescriptor,
+    outputs: &[Option<Value>],
+    memory: &ManagedMemoryBudget,
+    library: &NativeLibraryWorkBudget,
+) -> Result<(), NativeProgramExecutionError> {
+    let plan = &descriptor.plan;
+    if outputs.len() != plan.transport_output_count() {
+        return Err(NativeExecutionError::InvalidOutputs {
+            expected: plan.transport_output_count(),
+            actual: outputs.len(),
+        }
+        .into());
+    }
+    for (index, value) in outputs
+        .iter()
+        .enumerate()
+        .filter_map(|(index, value)| value.as_ref().map(|value| (index, value)))
+    {
+        let ty = plan.transport_output_type(index);
+        if value.schema() != ty.schema() || value.schema_key() != ty.schema_key() {
+            return Err(NativeValueError::TypeMismatch.into());
+        }
+        let retained = value
+            .memory_budget_retained_bytes(memory)
+            .ok_or(NativeValueError::UnadmittedPayload)?;
+        let debit = retained
+            .checked_mul(4)
+            .and_then(|bytes| bytes.checked_add(32))
+            .ok_or_else(|| invalid("output retirement overflow"))?;
+        library.charge(debit, 0).map_err(|error| match error {
+            mech_core::ResidentKernelError::ResourceLimit {
+                dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                required,
+                limit,
+                ..
+            } => NativeExecutionError::WorkLimit {
+                phase: NativeExecutionPhase::Setup,
+                required,
+                limit,
+            },
+            error => NativeExecutionError::LibraryWork {
+                phase: NativeExecutionPhase::Setup,
+                error,
+            },
+        })?;
+    }
+    Ok(())
+}
 
 /// Native ownership admission for the selected zero-parameter String lane.
 /// Immutable payload sharing never substitutes for full capacity admission.
@@ -459,39 +532,13 @@ impl<'a> Prepared<'a> {
                 "captured observation count differs from exact native plan",
             ));
         }
-        if outputs.len() != plan.transport_output_count() {
-            return Err(NativeExecutionError::InvalidOutputs {
-                expected: plan.transport_output_count(),
-                actual: outputs.len(),
-            }
-            .into());
-        }
         let state = self
             .state
             .as_mut()
             .ok_or_else(|| invalid("consumed native state"))?;
         // Old caller-visible roots are not examined until closed activation
         // has succeeded. Publication still cannot fail partway through.
-        for (index, value) in outputs
-            .iter()
-            .enumerate()
-            .filter_map(|(index, value)| value.as_ref().map(|v| (index, v)))
-        {
-            let ty = plan.transport_output_type(index);
-            if value.schema() != ty.schema() || value.schema_key() != ty.schema_key() {
-                return Err(NativeValueError::TypeMismatch.into());
-            }
-            let retained = value
-                .memory_budget_retained_bytes(&self.memory)
-                .ok_or(NativeValueError::UnadmittedPayload)?;
-            state.work.charge(
-                NativeExecutionPhase::Setup,
-                retained
-                    .checked_mul(4)
-                    .and_then(|n| n.checked_add(32))
-                    .ok_or_else(|| invalid("output retirement overflow"))?,
-            )?;
-        }
+        admit_output_retirement(descriptor, outputs, &self.memory, &state.library)?;
         for (index, value) in inputs.iter().enumerate() {
             state
                 .arena
@@ -604,7 +651,10 @@ impl<'a> Prepared<'a> {
         self.run_prefix_window(entry, available, eof, None)
     }
 
-    #[cfg(all(test, feature = "canonical-native-program"))]
+    #[cfg(any(
+        feature = "canonical-native-program-host-runtime",
+        all(test, feature = "canonical-native-program")
+    ))]
     fn run_prefix_window<F: FnMut(*mut Frame) -> u64>(
         &mut self,
         entry: &mut F,
@@ -625,12 +675,50 @@ impl<'a> Prepared<'a> {
             .paused
             .or(self.descriptor.plan.activation_boundary())
             .ok_or_else(|| invalid("prefix lacks exact resume boundary"))?;
+        if eof {
+            self.install_final_line_count(available)?;
+        }
         self.prefix = Some(prefix::Input {
             resume_site,
             available,
             eof,
         });
-        self.run_with_window(entry, PHASE_PREFIX, window)
+        self.run_with_window(entry, PHASE_PREFIX, window)?;
+        if eof
+            && self
+                .state
+                .as_ref()
+                .is_some_and(|state| state.line_matrices.captured.is_none())
+        {
+            self.resume_capture_tail(entry)?;
+        }
+        Ok(())
+    }
+
+    #[cfg(any(
+        feature = "canonical-native-program-host-runtime",
+        all(test, feature = "canonical-native-program")
+    ))]
+    fn resume_capture_tail<F: FnMut(*mut Frame) -> u64>(
+        &mut self,
+        entry: &mut F,
+    ) -> Result<(), NativeProgramExecutionError> {
+        let exit = self
+            .descriptor
+            .prefix
+            .as_ref()
+            .ok_or_else(|| invalid("capture tail has no scan proof"))?
+            .tail
+            .exit();
+        let input = self
+            .prefix
+            .as_mut()
+            .ok_or_else(|| invalid("capture tail lost EOF"))?;
+        if !input.eof || self.paused != Some(exit) {
+            return Err(invalid("capture tail before exact scanner exit"));
+        }
+        input.resume_site = exit;
+        self.run_with_window(entry, PHASE_CAPTURE_TAIL, None)
     }
 
     fn run<F: FnMut(*mut Frame) -> u64>(
@@ -647,12 +735,15 @@ impl<'a> Prepared<'a> {
         phase: u64,
         line_window: Option<&mech_engine::native_artifact::NativeTextLineWindow<'_>>,
     ) -> Result<(), NativeProgramExecutionError> {
+        if phase == PHASE_CAPTURE_TAIL && line_window.is_some() {
+            return Err(invalid("capture tail cannot retain a scanner row loan"));
+        }
         let descriptor = self.descriptor;
         let plan = &descriptor.plan;
         let boundary = plan
             .activation_boundary()
             .ok_or_else(|| invalid("missing certified activation boundary"))?;
-        let prefix_input = if phase == PHASE_PREFIX {
+        let prefix_input = if phase == PHASE_PREFIX || phase == PHASE_CAPTURE_TAIL {
             let input = self
                 .prefix
                 .ok_or_else(|| invalid("prefix entry without owned continuation facts"))?;
@@ -682,7 +773,7 @@ impl<'a> Prepared<'a> {
             // NativeWorkMeter already owns this SAME shared library account.
             // Framing/row-loan debits are included immediately, not billed twice.
             self.window_work_seen = spent;
-        } else if self.window_work_seen != 0 {
+        } else if self.window_work_seen != 0 && phase != PHASE_CAPTURE_TAIL {
             return Err(invalid("line window continuation lost its owning source"));
         }
         let checkpoint_work = if prefix_input.is_some() {
@@ -851,11 +942,7 @@ impl<'a> Prepared<'a> {
             }
         } else {
             match status {
-                STATUS_OK
-                    if phase == PHASE_TURN
-                        || (phase == PHASE_PREFIX
-                            && prefix_input.is_some_and(|input| input.eof)) =>
-                {
+                STATUS_OK if phase == PHASE_TURN || phase == PHASE_CAPTURE_TAIL => {
                     if !context.control.completed
                         || f.error_node != NO_NODE
                         || context.output_cursor != plan.transport_output_count()
@@ -886,6 +973,22 @@ impl<'a> Prepared<'a> {
                         Some(context.prefix.as_ref().unwrap().retained.ok_or_else(|| {
                             invalid("native checkpoint omitted retention coordinates")
                         })?);
+                    self.paused = Some(site);
+                }
+                STATUS_INPUT_SCANNED if phase == PHASE_PREFIX => {
+                    let site = context
+                        .prefix
+                        .as_ref()
+                        .and_then(|prefix| prefix.scanned)
+                        .ok_or_else(|| invalid("native entry forged scanner completion"))?;
+                    if f.error_node != u64::from(site)
+                        || prefix_input.is_none_or(|input| !input.eof)
+                    {
+                        return Err(invalid("native scanner returned wrong EOF checkpoint"));
+                    }
+                    context.prefix.as_mut().unwrap().scanned = None;
+                    context.check_prefix_exit(site)?;
+                    prefix::check_cleared(descriptor, values, arguments)?;
                     self.paused = Some(site);
                 }
                 STATUS_ARITHMETIC | STATUS_REJECT => {
@@ -961,6 +1064,8 @@ pub struct NativeProgramExecutionSession<'a> {
     prepared: Prepared<'a>,
     entry: CheckedEntry,
     invocation: mech_runtime::CanonicalNativeResourceInvocation,
+    capture_offered: bool,
+    capture: Option<capture_host::Capture>,
 }
 #[cfg(feature = "canonical-native-program-host-runtime")]
 impl<'a> NativeProgramExecutionSession<'a> {
@@ -973,12 +1078,15 @@ impl<'a> NativeProgramExecutionSession<'a> {
     ) -> Result<Self, NativeProgramExecutionError> {
         verify_hosted_plan(descriptor, admission.program_revision(), admission.plan())?;
         let invocation = admission.invocation();
+        let capture_offered = admission.text_capture_site().is_some();
         let mut prepared = Prepared::new(descriptor, limits, memory)?;
         prepared.activate(&mut |frame| entry.invoke(frame))?;
         Ok(Self {
             prepared,
             entry,
             invocation,
+            capture_offered,
+            capture: None,
         })
     }
     pub fn resume_hosted_into(
@@ -993,10 +1101,10 @@ impl<'a> NativeProgramExecutionSession<'a> {
             ));
         }
         verify_hosted_turn(self.prepared.descriptor, &turn)?;
-        if turn.text_capture().is_some() {
-            return Err(invalid(
-                "snapshot native session cannot consume scoped text capture",
-            ));
+        if self.capture.is_some() {
+            return self.finish_text_capture(turn, inputs, outputs);
+        } else if turn.text_capture().is_some() {
+            return Err(invalid("native snapshot session received scoped capture"));
         }
         let Self {
             prepared,

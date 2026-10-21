@@ -96,7 +96,22 @@ pub(super) fn derive(
 }
 
 pub(super) fn extra_work(region: Option<&Region>, site: usize) -> u64 {
-    region
-        .filter(|region| region.tail.header() as usize == site)
-        .map_or(0, |region| region.header_work)
+    let Some(region) = region else {
+        return 0;
+    };
+    if region.tail.header() as usize == site || region.tail.exit() as usize == site {
+        return region.header_work;
+    }
+    let count = region.frontier.read().count();
+    if count.lines().lengths().contains(&(site as u32))
+        || count.aliases().contains(&(site as u32))
+        || count
+            .guards()
+            .iter()
+            .any(|guard| guard.comparison() as usize == site)
+    {
+        128
+    } else {
+        0
+    }
 }

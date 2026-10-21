@@ -8,6 +8,7 @@ pub(in crate::resident) struct Geometry {
     columns: usize,
     pub count: usize,
     pub payload: u64,
+    contiguous: Option<(usize, usize)>,
 }
 
 fn cells(value: &mech_core::Value) -> Result<&[Box<str>], ResidentKernelError> {
@@ -37,7 +38,16 @@ pub(in crate::resident) fn scalar_index(
     {
         return Err(ResidentKernelError::InvalidInput);
     }
-    access_index(&ValueData::U64(index), count)
+    available_scalar_index(index, count)
+}
+
+/// The maintained one-based conversion for an already available physical
+/// cell. This does not establish a language Matrix shape or execute a visit.
+pub(in crate::resident) fn available_scalar_index(
+    index: u64,
+    available: usize,
+) -> Result<usize, ResidentKernelError> {
+    access_index(&ValueData::U64(index), available)
 }
 
 /// Uses the SAME bound access plan, positional conversion and shape resolver
@@ -103,12 +113,20 @@ pub(in crate::resident) fn prepare_cells<'a>(
         columns,
         count: 0,
         payload: 0,
+        contiguous: Some((0, 0)),
     };
     sequence_for_each_access_index(indices.elements(), count, |linear| {
         // Canonical selectors are column-major; canonical payload cells are
         // row-major. Bounds above exclude zero-row division for every read.
-        let text = cell((linear % rows) * columns + linear / rows)
-            .ok_or(ResidentKernelError::InvalidInput)?;
+        let position = (linear % rows) * columns + linear / rows;
+        let text = cell(position).ok_or(ResidentKernelError::InvalidInput)?;
+        geometry.contiguous = if geometry.count == 0 {
+            Some((position, position + 1))
+        } else {
+            geometry
+                .contiguous
+                .and_then(|(first, end)| (end == position).then_some((first, position + 1)))
+        };
         geometry.count = geometry
             .count
             .checked_add(1)
@@ -134,6 +152,9 @@ pub(in crate::resident) fn prepare_cells<'a>(
 }
 
 impl Geometry {
+    pub(in crate::resident) const fn contiguous_range(self) -> Option<(usize, usize)> {
+        self.contiguous
+    }
     /// Both owners are immutable and retained by the opaque selected view.
     /// Complete traversal/copy work must be prepaid before calling this leaf.
     pub(in crate::resident) fn for_each(

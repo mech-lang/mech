@@ -1,4 +1,4 @@
-//! Managed ABI11 invocation. This boundary never evaluates a graph: generated
+//! Managed ABI12 invocation. This boundary never evaluates a graph: generated
 //! blocks choose every successor and run every scalar/counter instruction.
 use super::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
@@ -373,6 +373,7 @@ impl Context<'_, '_> {
             super::program_abi::PREFIX_PAUSE
                 | super::program_abi::PREFIX_BORROWED_RESUME
                 | super::program_abi::PREFIX_TAIL_RESUME
+                | super::program_abi::PREFIX_SCANNED
         ) {
             return self.prefix_helper(site, operation, args);
         }
@@ -514,6 +515,10 @@ impl Context<'_, '_> {
             if let Some(result) = self.line_matrix_call(site, words)? {
                 self.consumed = true;
                 return Ok(result);
+            }
+            if self.captured_line_element_call(site, words)? {
+                self.consumed = true;
+                return Ok(None);
             }
             if self.selected_join_call(site, words)? {
                 self.consumed = true;
@@ -975,7 +980,12 @@ fn verify_hosted_turn(
     turn: &mech_runtime::CanonicalNativeResourceTurn<'_>,
 ) -> Result<(), NativeProgramExecutionError> {
     verify_hosted_plan(descriptor, turn.program_revision(), turn.plan())?;
-    if turn.observations().len() != descriptor.plan.observations().len() {
+    let expected = if turn.text_capture().is_some() {
+        0
+    } else {
+        descriptor.plan.observations().len()
+    };
+    if turn.observations().len() != expected {
         return Err(invalid(
             "captured observation count differs from exact native plan",
         ));
@@ -3414,7 +3424,7 @@ mod tests {
                             *frame.arguments = 1;
                         }
                     }
-                    // SAFETY: arguments remain within the retained ABI11 boundary;
+                    // SAFETY: arguments remain within the retained ABI12 boundary;
                     // wrong metadata/pointer is rejected before dereference.
                     let status = unsafe {
                         (frame.helper)(
@@ -4218,6 +4228,9 @@ mod tests {
                 (32, 2u64),
                 (32, 3u64),
                 (32, 4u64),
+                (16, 24u64),
+                (24, 11u64),
+                (32, 34u64),
                 (112, 0u64),
                 (120, 0u64),
             ] {
@@ -4233,8 +4246,10 @@ mod tests {
         }
     }
     #[test]
-    fn abi11_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 11);
+    fn abi12_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
+        assert_eq!(VERSION, 12);
+        assert_eq!(super::super::program_abi::PHASE_CAPTURE_TAIL, 3);
+        assert_eq!(super::super::program_abi::STATUS_INPUT_SCANNED, 7);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);
         assert_eq!(
             core::mem::offset_of!(Frame, helper),

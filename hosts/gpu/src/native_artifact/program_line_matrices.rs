@@ -17,7 +17,13 @@ mod tests;
 
 pub(super) struct State {
     pub views: Box<[Option<Rc<NativeTextLineMatrix>>]>,
+    pub captured: Option<Captured>,
     reservation: Option<ManagedMemoryReservation>,
+}
+pub(super) struct Captured {
+    pub ordinal: usize,
+    pub produced: bool,
+    pub length: Option<usize>,
 }
 impl State {
     pub fn metadata_bytes(count: usize) -> Result<u64, Error> {
@@ -40,6 +46,7 @@ impl State {
         if count == 0 {
             return Ok(Self {
                 views: Box::new([]),
+                captured: None,
                 reservation: None,
             });
         }
@@ -59,6 +66,7 @@ impl State {
         views.resize_with(count, || None);
         Ok(Self {
             views: views.into_boxed_slice(),
+            captured: None,
             reservation: Some(reservation),
         })
     }
@@ -139,6 +147,22 @@ impl Context<'_, '_> {
         let ordinal = match role {
             Site::Produce(index) | Site::Length(index) => index,
         };
+        if let Some(captured) = &mut self.line_matrices.captured
+            && captured.ordinal == ordinal
+            && self.prefix.as_ref().is_some_and(|prefix| !prefix.input.eof)
+        {
+            // The original visits still happen. Their source-dependent
+            // admissions and numeric result remain pending until real EOF.
+            // Generated code never reads/stores a count in this phase.
+            match role {
+                Site::Produce(_) if !captured.produced => captured.produced = true,
+                Site::Length(_) if captured.produced && captured.length.is_none() => {
+                    captured.length = Some(site);
+                }
+                _ => return Err(invalid("repeated or unordered captured line producer")),
+            }
+            return Ok(Some(None));
+        }
         let region = &descriptor.line_matrices.regions[ordinal];
         let call = descriptor.calls[site]
             .as_ref()

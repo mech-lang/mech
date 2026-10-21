@@ -167,52 +167,29 @@ peak RSS comes from separate process-memory runs.
 | Previous secured application (`7f5475450`) | 0.0721 s | 0.6587 s | 585.5 MB | 6.83 MB |
 | Latest qualified secured application (`c0271df4f`) | 0.0701 s | 0.6391 s | 482.3 MB | 6.84 MB |
 
-Complete-use and ownership proofs now let the existing emitted ASCII map loop
-reuse a last-use String's charged backing. Shared/external owners, cold consumers,
-parent-loop reuse, Unicode and unsupported representations retain their ordinary
-canonical paths. A mutable buffer is never presented as an immutable Value;
-UTF8 is revalidated before publishing a new frozen identity. The provider now
-also transfers acquired UTF8 backing through the same canonical String constructor
-as ordinary values. Construction failures restore the original bytes; repeated
-mixed reads and cached diagnostics are preserved. The Mech source and native
-computation (modulo proved constant-slot renaming) are unchanged in that measured
-ABI8/IR21/work-policy31 revision, as are native counters, grants and one-round
-publication. Later compiler changes below have not been re-timed.
+These retained results predate the streaming implementation below. They compare
+whole applications, not isolated capability overhead. The receipt records twelve
+balanced timing rounds and six separate peak-memory runs per binary and size.
+The roughly 200 MB/3.16 MB footprint target is not yet qualified.
 
-Twelve balanced timing rounds per size retain 78 outputs and 52 secured reports;
-six separate memory runs per binary and size retain RSS and the distinct OS
-footprint metric. At 125M this change is 3.0% faster in the matched batch
-(12/12 paired rounds), reduces median peak RSS by 103.1 MB, and adds 15,888 executable
-bytes. These are whole-implementation measurements, not isolated capability costs
-or an optimization ceiling. Fresh review and green CI remain required; keep the
-PR draft and unmerged until the user directs otherwise.
+The current ABI12/IR25/work-policy35 implementation connects bounded UTF-8
+capture to the same authorized CLI resource and one runtime transaction. General
+count, progress and retention proofs let the generated Mech scanner consume
+packed line windows and discard dead prefixes without a complete input String
+or line-matrix snapshot. Final count and shape admission wait for successful
+EOF; input/source failures precede saved speculative body failures. No partial
+count is published as a language value and no Rust workload scanner is added.
 
-The roughly 200 MB/3.16 MB footprint target is **not achieved**. Whole-input
-capture still retains 254.2 MB; line geometry and the selected sequence also
-remain. Proved streaming through the existing authorized resource and further
-host trimming remain unfinished. The compiler now derives EOF-dependent count,
-current-visit bounds and future-range retention proofs from the full original
-graph, including the original and decoded k-nucleotide program. A bounded UTF-8
-chunk adapter now uses the same provider, read-authorization and transaction
-gates, with explicit one-shot host opt-in; ordinary cached/mixed reads are
-unchanged. ABI11/IR24/work-policy34 adds a private emitted header continuation:
-the original Mech scanner pauses before the next traversal, reconciles its fuel,
-clears borrowed pointer lanes and resumes its actual carrier on the same ledger.
-It waits for EOF even after finding the selected range. Qualification first uses
-genuine complete snapshots; no prefix length masquerades as a canonical count.
-The selected producer now owns packed UTF-8 chunks and four-byte line offsets;
-generated carrier instructions report monotonic retention coordinates without
-a Rust scanner. Synchronous row loans use an explicit global first ordinal;
-their source stays borrowed until native entry returns and framing/window work
-directly uses the same program account. Original/decoded scanner tests read
-those actual packed rows, including Unicode fallback and forward jumps.
-Storage tests bound live discarded-prefix capacity independently of total input.
-Production wiring and EOF producer-admission/error-order
-preservation remain unfinished. The shipped session still uses snapshots and rejects
-scoped text, so these prerequisites do not improve the measured footprint above.
-The [buffer-reuse receipt](../../docs/validation/canonical-knucleotide-owned-string-footprint-v1.json)
-retains the previous ownership measurement. Capacity shrinking may still
-reallocate backing; this is not a universal zero-copy guarantee.
+After the generated scanner ends, its row loans are cleared before the final
+join. A unique, contiguous selection releases consumed chunks while constructing
+the result. Shared or reordered selections retain ordinary join semantics.
+Unsupported capture proofs/providers/budgets use the existing snapshot storage
+strategy, not another evaluator. Both strategies retain the original finite
+limits, selected factories, cumulative ledger and atomic publication.
+
+Fresh whole-process timing and memory qualification of streaming, further host
+size reduction, clean review and green CI remain outstanding. The PR stays draft
+and unmerged until the user directs otherwise.
 
 ### Canonical native architecture and limits
 

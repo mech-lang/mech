@@ -252,9 +252,17 @@ pub(in crate::resident) fn line_shape(
         .get(metadata.schema)
         .ok_or(ResidentKernelError::InvalidOutput)?;
     let count = primitives::line_count(text);
-    let shape = mech_core::shape_for_resolved_extents(schema, &[1, budget::checked_u64(count)?])
-        .map_err(|_| ResidentKernelError::InvalidShape)?;
-    Ok((count, shape))
+    Ok((count, line_shape_from_count(schema, count)?))
+}
+
+/// Resolve the actual declared line-matrix schema from an established final
+/// count. Incremental physical availability is never a language shape.
+pub(in crate::resident) fn line_shape_from_count(
+    schema: &mech_core::Schema,
+    count: usize,
+) -> Result<ShapeInstance, ResidentKernelError> {
+    mech_core::shape_for_resolved_extents(schema, &[1, budget::checked_u64(count)?])
+        .map_err(|_| ResidentKernelError::InvalidShape)
 }
 fn execute_lines(
     kernel: &BoundResidentKernel,

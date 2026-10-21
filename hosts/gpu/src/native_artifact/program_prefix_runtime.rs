@@ -1,6 +1,6 @@
 //! Own/check generated continuation boundaries; never evaluate a Mech state.
-//! The initial qualification uses genuine FULL snapshots. Incremental source
-//! storage and deferred source admissions are separate, not enabled here.
+//! Snapshot and captured-input owners share these checked continuation
+//! boundaries. Source acquisition and final admission belong to the session.
 use super::super::{NativeExecutionPhase, program_abi};
 use super::{
     Context, NativeProgramDescriptor, NativeProgramExecutionError as Error, amount, invalid,
@@ -106,6 +106,7 @@ impl Retention {
 pub(super) struct State {
     pub input: Input,
     pub paused: Option<u32>,
+    pub scanned: Option<u32>,
     pub retained: Option<Retention>,
     previous_retention: Option<Retention>,
     borrowed_resumed: bool,
@@ -116,6 +117,7 @@ impl State {
         Self {
             input,
             paused: None,
+            scanned: None,
             retained: None,
             previous_retention,
             borrowed_resumed: false,
@@ -198,6 +200,7 @@ impl Context<'_, '_> {
         if site != region.tail.header()
             || self.activation_phase
             || prefix.paused.is_some()
+            || prefix.scanned.is_some()
             || self.control.completed
             || self.output_cursor != 0
             || self.consumed
@@ -221,6 +224,45 @@ impl Context<'_, '_> {
         }
         Ok(())
     }
+    /// The original Tail finish has run, but its exit and every consumer after
+    /// it have not. No caller-provided state ordinal is interpreted here.
+    pub(super) fn check_prefix_exit(&self, site: u32) -> Result<(), Error> {
+        let region = self
+            .control
+            .descriptor
+            .prefix
+            .as_ref()
+            .ok_or_else(|| invalid("scan exit lacks same-plan proof"))?;
+        let prefix = self
+            .prefix
+            .as_ref()
+            .ok_or_else(|| invalid("scan exit outside continuation phase"))?;
+        if site != region.tail.exit()
+            || !prefix.input.eof
+            || self.activation_phase
+            || prefix.paused.is_some()
+            || self.control.completed
+            || self.output_cursor != 0
+            || self.consumed
+            || self.control.current != Some(region.frontier.iteration())
+            || self.control.previous != Some(region.tail.finish())
+            || self
+                .control
+                .progress
+                .chunks_exact(2)
+                .enumerate()
+                .any(|(iteration, state)| {
+                    if iteration == region.frontier.iteration() as usize {
+                        state != [0, 1]
+                    } else {
+                        state[1] != 0
+                    }
+                })
+        {
+            return Err(invalid("scan outside its exact unvisited exit boundary"));
+        }
+        Ok(())
+    }
     pub(super) fn prefix_helper(
         &mut self,
         site: u64,
@@ -234,7 +276,11 @@ impl Context<'_, '_> {
             NativeExecutionPhase::Setup,
             amount(self.control.progress.len() / 2, 64, 1024)?,
         )?;
-        self.check_prefix_header(site)?;
+        if operation == program_abi::PREFIX_SCANNED {
+            self.check_prefix_exit(site)?;
+        } else {
+            self.check_prefix_header(site)?;
+        }
         if (operation != program_abi::PREFIX_PAUSE && args != [0; 3])
             || self.window_region.is_some()
             || self.selected_join.is_some()
@@ -245,6 +291,27 @@ impl Context<'_, '_> {
         let borrowed = region.borrowed;
         let input = self.prefix.as_ref().unwrap().input;
         match operation {
+            program_abi::PREFIX_SCANNED => {
+                if self.prefix.as_ref().unwrap().scanned.is_some()
+                    || self.closed_tail.is_some()
+                    || !self
+                        .borrowed_strings
+                        .as_ref()
+                        .is_some_and(|state| state.region == borrowed)
+                {
+                    return Err(invalid("scan exit omitted its exact loan reconciliation"));
+                }
+                self.control.work.charge(
+                    NativeExecutionPhase::Setup,
+                    amount(self.argument_capacity, 16, 1024)?,
+                )?;
+                for word in 0..self.argument_capacity {
+                    self.write_borrowed_word(word, 0)?;
+                }
+                self.borrowed_strings = None;
+                self.prefix.as_mut().unwrap().scanned = Some(site);
+                Ok(None)
+            }
             program_abi::PREFIX_PAUSE => {
                 let retained = Retention::checked(
                     args,

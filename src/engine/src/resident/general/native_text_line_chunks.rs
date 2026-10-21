@@ -3,7 +3,7 @@
 //! be borrowed; only EOF produces descriptive final geometry. The caller must
 //! preserve source admissions/error order before executing any final consumer.
 use super::{InvokeError, NativeLibraryWorkBudget};
-use mech_core::{ManagedMemoryReservation, MemoryBudgetLimits};
+use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, MemoryBudgetLimits};
 use std::{collections::VecDeque, rc::Rc, sync::Arc};
 
 #[path = "native_text_line_chunk_allocation.rs"]
@@ -87,6 +87,7 @@ pub struct NativeTextLineChunks {
     slots: Option<Claim>,
     account: Rc<Account>,
     producer: Option<Arc<()>>,
+    limits: MemoryBudgetLimits,
     input_limit: u64,
     max_fragment: usize,
     facts: NativeTextLineCaptureFacts,
@@ -120,6 +121,7 @@ pub(super) fn prepare(
         slots: None,
         account,
         producer,
+        limits,
         input_limit,
         max_fragment,
         facts: NativeTextLineCaptureFacts {
@@ -136,7 +138,125 @@ pub(super) fn prepare(
     })
 }
 
+/// Worst-case cumulative source work when nonempty fragments trigger at most
+/// one row loan/bind/retention update each, and each completed cell appears in
+/// one loan. Include an EOF loan and one sealed-range update. The host must
+/// prove those scheduling conditions before using this setup eligibility bound.
+pub(super) fn capture_work_bound(
+    input_limit: u64,
+    lookup_work: u64,
+    binding_work: u64,
+    matrix_metadata: u64,
+) -> Option<u64> {
+    if input_limit >= usize::MAX as u64 {
+        return None;
+    }
+    let fixed = (core::mem::size_of::<NativeTextLineChunks>() as u64)
+        .checked_add(core::mem::size_of::<Account>() as u64)?
+        .checked_add(512)?
+        .checked_mul(8)?
+        .checked_add(128)?
+        .checked_add(lookup_work)?;
+    // Byte-buffer geometric capacities sum to <=4 input bytes. Delimiter
+    // offsets use <=4 bytes/input byte. Directory capacities sum to <=4 slots
+    // per completed chunk; every chunk contains at least one input byte.
+    // Each of these three allocation families makes <=input_limit claims.
+    let allocations = 4u64
+        .checked_mul(8)?
+        .checked_add(4 * 8)?
+        .checked_add((core::mem::size_of::<Chunk>() as u64).checked_mul(4 * 8)?)?
+        .checked_add(128 * 8)?
+        .checked_add(3 * 128)?;
+    let per_byte = allocations
+        .checked_add(16)? // framing
+        .checked_add(4)? // row-loan ASCII scan
+        .checked_add(256)? // row geometry and retirement
+        .checked_add(16 * 8)? // row-table allocation
+        .checked_add(2 * 64)? // both retention boundaries
+        .checked_add(128)?; // final producer admission
+    let per_callback = (core::mem::size_of::<NativeTextLineWindow<'_>>() as u64)
+        .checked_add(128)?
+        .checked_mul(8)?
+        .checked_add(128)? // row-loan claim
+        .checked_add(512)? // framing callback
+        .checked_add(4096)? // row directory searches
+        .checked_add(256)? // selected producer binding
+        .checked_add(4096)?; // retention search
+    fixed
+        .checked_add(input_limit.checked_mul(per_byte)?)?
+        .checked_add(input_limit.checked_add(2)?.checked_mul(per_callback)?)?
+        .checked_add(8192 + 512)? // sealed-range searches and EOF
+        .checked_add(binding_work)?
+        .checked_add(matrix_metadata.checked_mul(8)?)
+}
+
 impl NativeTextLineChunks {
+    /// Consume the only owner's proven contiguous selection. The selected join
+    /// has already prepaid its entire selector/copy/retirement traversal and
+    /// allocated the exact output; no source-call allowance is renewed here.
+    /// Drop each physical chunk after its final selected cell is appended.
+    pub(super) fn append_joined_consuming(
+        &mut self,
+        first: u64,
+        end: u64,
+        separator: &str,
+        target: &mut String,
+    ) -> Result<(), InvokeError> {
+        if self.final_facts().is_none()
+            || first == 0
+            || first > end
+            || end > self.facts.lines + 1
+            || (first < end && (first < self.lower || self.upper.is_some_and(|upper| end > upper)))
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        let mut next = first;
+        let mut has_previous = false;
+        while next < end {
+            while self.chunks.front().is_some_and(|chunk| chunk.end() <= next) {
+                self.chunks.pop_front();
+            }
+            let chunk = self.chunks.front().ok_or(InvokeError::InvalidInput)?;
+            let stop = end.min(chunk.end());
+            for ordinal in next..stop {
+                let text = chunk.line(ordinal).ok_or(InvokeError::InvalidInput)?;
+                crate::resident::text_ops::append_joined(target, separator, has_previous, text);
+                has_previous = true;
+            }
+            next = stop;
+            self.chunks.pop_front();
+        }
+        self.chunks.clear();
+        self.pending.backing = None;
+        Ok(())
+    }
+
+    pub(super) fn bind_final(
+        &self,
+        producer: &Arc<()>,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<NativeTextLineCaptureFacts, InvokeError> {
+        if self.limits != limits
+            || !self.account.shares_work(work)
+            || !self
+                .producer
+                .as_ref()
+                .is_some_and(|actual| Arc::ptr_eq(actual, producer))
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        self.final_facts().ok_or(InvokeError::InvalidInput)
+    }
+    pub(super) fn retained_bytes(&self, memory: &ManagedMemoryBudget) -> Result<u64, InvokeError> {
+        if !self.account.shares_memory(memory) {
+            return Err(InvokeError::UnadmittedValue);
+        }
+        Ok(self.account.used())
+    }
+    pub(super) fn debit(&self, work: u64) -> Result<(), InvokeError> {
+        self.account.debit(work)
+    }
     /// A physical completed-prefix extent, not a language length result.
     /// No final count or canonical shape is available before successful EOF.
     pub fn available_lines(&self) -> Option<u64> {
@@ -341,18 +461,18 @@ impl NativeTextLineChunks {
         {
             return Err(InvokeError::InvalidInput);
         }
+        // Fund a bounded directory search before finding actual retirements.
+        // Charging every live chunk on every fragment would grow quadratically
+        // while a large retained range is still receiving input.
+        self.account.debit(4096)?;
+        let retired = self.chunks.partition_point(|chunk| chunk.end() <= first);
         self.account.debit(
-            (self.chunks.len() as u64)
+            (retired as u64)
                 .checked_mul(64)
-                .and_then(|work| work.checked_add(128))
                 .ok_or(InvokeError::InvalidInput)?,
         )?;
         self.lower = first;
-        while self
-            .chunks
-            .front()
-            .is_some_and(|chunk| chunk.end() <= first)
-        {
+        for _ in 0..retired {
             self.chunks.pop_front();
         }
         Ok(())
@@ -366,31 +486,27 @@ impl NativeTextLineChunks {
         {
             return Err(InvokeError::InvalidInput);
         }
-        self.account.debit(
-            (self.chunks.len() as u64)
-                .checked_mul(64)
-                .and_then(|work| work.checked_add(128))
-                .ok_or(InvokeError::InvalidInput)?,
-        )?;
+        self.account.debit(8192)?;
         // An empty returned range cannot resurrect a previously dead prefix.
-        self.lower = if first == end {
+        let lower = if first == end {
             self.facts.lines + 1
         } else {
             first
         };
-        self.upper = Some(if first == end { self.lower } else { end });
-        while self
-            .chunks
-            .front()
-            .is_some_and(|chunk| chunk.end() <= self.lower)
-        {
+        let upper = if first == end { lower } else { end };
+        let front = self.chunks.partition_point(|chunk| chunk.end() <= lower);
+        let back = self.chunks.len() - self.chunks.partition_point(|chunk| chunk.first < upper);
+        self.account.debit(
+            ((front + back) as u64)
+                .checked_mul(64)
+                .ok_or(InvokeError::InvalidInput)?,
+        )?;
+        self.lower = lower;
+        self.upper = Some(upper);
+        for _ in 0..front {
             self.chunks.pop_front();
         }
-        while self
-            .chunks
-            .back()
-            .is_some_and(|chunk| chunk.first >= self.upper.unwrap())
-        {
+        for _ in 0..back {
             self.chunks.pop_back();
         }
         self.pending.backing = None;

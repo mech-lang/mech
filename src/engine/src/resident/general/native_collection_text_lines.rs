@@ -10,24 +10,34 @@ use mech_core::{
     ResourceDemand, SchemaBody, SchemaId, SchemaKey, ShapeInstance, Value, ValueData,
 };
 
+#[cfg(test)]
+#[path = "native_collection_captured_line_tests.rs"]
+mod captured_line_tests;
 #[path = "native_text_line_chunks.rs"]
 mod chunks;
 #[path = "native_collection_line_reads.rs"]
 mod reads;
 pub use chunks::{NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineWindow};
 
-/// Immutable owner and exact native pointer/length rows. Only the maintained
-/// prepared factory can construct it; the original scalar String stays alive
-/// until every row and shape tape drops, before its metadata charge releases.
+/// Immutable logical line matrix admitted by the maintained prepared factory.
+/// Snapshot rows retain their scalar String; captured backing retains only
+/// compiler-proven live chunks. Both carry the complete final logical shape.
 pub struct NativeTextLineMatrix {
-    source: Value,
-    rows: Box<[[u64; 2]]>,
+    backing: Backing,
+    count: usize,
     shape: ShapeInstance,
     schema: SchemaId,
     key: SchemaKey,
     revision: ProgramRevision,
     ascii: bool,
     reservation: ManagedMemoryReservation,
+}
+enum Backing {
+    Snapshot {
+        source: Value,
+        rows: Box<[[u64; 2]]>,
+    },
+    Captured(NativeTextLineChunks),
 }
 
 /// Both representations of ONE original call share its enclosing allowance.
@@ -36,11 +46,45 @@ pub enum NativeTextLineMatrixChoice {
     Canonical(Value),
 }
 impl NativeTextLineMatrix {
-    pub fn source(&self) -> &Value {
-        &self.source
+    pub fn source(&self) -> Option<&Value> {
+        match &self.backing {
+            Backing::Snapshot { source, .. } => Some(source),
+            Backing::Captured(_) => None,
+        }
     }
-    pub fn rows(&self) -> &[[u64; 2]] {
-        &self.rows
+    pub fn rows(&self) -> Option<&[[u64; 2]]> {
+        match &self.backing {
+            Backing::Snapshot { rows, .. } => Some(rows),
+            Backing::Captured(_) => None,
+        }
+    }
+    pub fn captured_chunks(&self) -> Option<&NativeTextLineChunks> {
+        match &self.backing {
+            Backing::Captured(owner) => Some(owner),
+            Backing::Snapshot { .. } => None,
+        }
+    }
+    pub(super) fn append_capture_join_consuming(
+        &mut self,
+        first: usize,
+        end: usize,
+        separator: &str,
+        target: &mut String,
+    ) -> Result<bool, InvokeError> {
+        let Backing::Captured(owner) = &mut self.backing else {
+            return Ok(false);
+        };
+        owner.append_joined_consuming(
+            (first as u64)
+                .checked_add(1)
+                .ok_or(InvokeError::InvalidInput)?,
+            (end as u64)
+                .checked_add(1)
+                .ok_or(InvokeError::InvalidInput)?,
+            separator,
+            target,
+        )?;
+        Ok(true)
     }
     pub fn shape(&self) -> &ShapeInstance {
         &self.shape
@@ -58,7 +102,7 @@ impl NativeTextLineMatrix {
         self.ascii
     }
     pub fn count(&self) -> usize {
-        self.rows.len()
+        self.count
     }
     pub fn metadata_bytes(&self) -> u64 {
         self.reservation.capacity_bytes()
@@ -67,17 +111,24 @@ impl NativeTextLineMatrix {
         if self.reservation.budget() != *memory {
             return Err(InvokeError::UnadmittedValue);
         }
-        let source = self
-            .source
-            .memory_budget_retained_bytes(memory)
-            .ok_or(InvokeError::UnadmittedValue)?;
+        let source = match &self.backing {
+            Backing::Snapshot { source, .. } => source
+                .memory_budget_retained_bytes(memory)
+                .ok_or(InvokeError::UnadmittedValue)?,
+            Backing::Captured(owner) => owner.retained_bytes(memory)?,
+        };
         Ok(add(source, self.metadata_bytes())?)
     }
     /// Borrow through the real immutable String, not a raw-pointer read. Rows
     /// are private-constructor facts and every requested extent stays checked.
     pub fn line(&self, ordinal: usize) -> Option<&str> {
-        let [pointer, length] = *self.rows.get(ordinal)?;
-        let ValueData::String(text) = self.source.data() else {
+        let Backing::Snapshot { source, rows } = &self.backing else {
+            return self
+                .captured_chunks()?
+                .line((ordinal as u64).checked_add(1)?);
+        };
+        let [pointer, length] = *rows.get(ordinal)?;
+        let ValueData::String(text) = source.data() else {
             return None;
         };
         let start = usize::try_from(pointer.checked_sub(text.as_ptr() as u64)?).ok()?;
@@ -106,6 +157,26 @@ fn require(dimension: Dimension, required: u64, limit: Option<u64>) -> Result<()
 }
 
 impl NativePreparedLibraryCall {
+    /// Conservative eligibility cost for bounded capture under the scheduling
+    /// conditions documented by the storage owner. This grants no work credit:
+    /// every real operation still debits the same original producer account.
+    pub fn text_line_capture_work_bound(&self, input_limit: u64) -> Option<u64> {
+        use crate::native_artifact::NativeCollectionPrimitive as Primitive;
+        if self.template.primitive() != Primitive::TextLines {
+            return None;
+        }
+        let matrix_metadata = (core::mem::size_of::<NativeTextLineMatrix>() as u64)
+            .checked_add((self.output_parameters as u64).checked_mul(8)?)?
+            .checked_add(512)?;
+        chunks::capture_work_bound(
+            input_limit,
+            self.lookup_work,
+            self.binding_work
+                .checked_add(self.selection_shape_bounds.1)?,
+            matrix_metadata,
+        )
+    }
+
     /// Prepare private UTF-8 storage for this SAME selected text/lines site.
     /// This neither executes that source visit nor publishes a partial Matrix,
     /// String observation, numeric count, or permission to complete a program.
@@ -289,8 +360,11 @@ impl NativePreparedLibraryCall {
                     return Err(InvokeError::InvalidInput);
                 };
                 Ok(NativeTextLineMatrix {
-                    source: source.clone(),
-                    rows: rows.into_boxed_slice(),
+                    backing: Backing::Snapshot {
+                        source: source.clone(),
+                        rows: rows.into_boxed_slice(),
+                    },
+                    count,
                     shape,
                     schema: contract.outputs[0].schema,
                     key: self.output_key,
@@ -300,5 +374,89 @@ impl NativePreparedLibraryCall {
                 })
             },
         )?
+    }
+
+    /// Admit the original selected producer using its genuine successful EOF
+    /// facts. Framing and this final admission share one cumulative allowance;
+    /// no full String, pointer table, or canonical partial value is constructed.
+    pub fn text_line_matrix_from_capture(
+        &self,
+        owner: NativeTextLineChunks,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        mut coexistence: ResourceDemand,
+    ) -> Result<NativeTextLineMatrix, InvokeError> {
+        use crate::native_artifact::NativeCollectionPrimitive as Primitive;
+        finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
+        if self.template.primitive() != Primitive::TextLines
+            || self.template.inputs().len() != 1
+            || self.template.inputs()[0].body() != &SchemaBody::String
+            || !self.template.inputs()[0].dimension_parameters().is_empty()
+            || self.input_keys.len() != 1
+            || self.selection_shape_bounds.0 == 0
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        let facts = owner.bind_final(&self.cache_identity, limits, work)?;
+        let count = usize::try_from(facts.lines()).map_err(|_| InvokeError::InvalidInput)?;
+        let memory = work.memory_budget();
+        let source_bytes = owner.retained_bytes(&memory)?;
+        coexistence.turn_peak_bytes = add(coexistence.turn_peak_bytes, source_bytes)?;
+        coexistence.retained_nodes = add(coexistence.retained_nodes, 1)?;
+        let context = NativeProjectionIndexContext::new(work, limits, coexistence);
+        let binding_bytes = add(self.binding_bytes, self.selection_shape_bounds.0)?;
+        context.check_capacity(binding_bytes, self.binding_nodes)?;
+        owner.debit(add(self.binding_work, self.selection_shape_bounds.1)?)?;
+        let _binding = memory.reserve_capacity(binding_bytes)?;
+        let shape =
+            crate::resident::text_ops::line_shape_from_count(self.template.output(), count)?;
+        require(
+            Dimension::OutputElements,
+            facts.lines(),
+            limits.max_output_elements,
+        )?;
+        let call = super::super::bind_current(
+            &self.schemas,
+            self.template.clone(),
+            self.factory,
+            &[&[]],
+            shape.parameter_values(),
+            limits,
+        )
+        .map_err(InvokeError::Binding)?;
+        // The actual selected text/lines factory must retain precisely the
+        // resolved final shape we supplied; this is not a generic retagging.
+        if call.kernel.snapshot_output().map(|output| &output.shape) != Some(&shape) {
+            return Err(InvokeError::InvalidInput);
+        }
+        let metadata = add(
+            core::mem::size_of::<NativeTextLineMatrix>() as u64,
+            add(mul(shape.parameter_values().len() as u64, 8)?, 512)?,
+        )?;
+        require(
+            Dimension::OutputBytes,
+            add(source_bytes, metadata)?,
+            limits.max_output_bytes,
+        )?;
+        require(Dimension::ClonedBytes, 0, limits.max_cloned_bytes)?;
+        context
+            .with_added_capacity(binding_bytes, self.binding_nodes)?
+            .check_capacity(metadata, add(facts.lines(), 1)?)?;
+        owner.debit(add(mul(facts.lines(), 128)?, mul(metadata, 8)?)?)?;
+        let reservation = memory.reserve_capacity(metadata)?;
+        let mech_core::ResolvedOperationContract::Declared(contract) = self.template.contract()
+        else {
+            return Err(InvokeError::InvalidInput);
+        };
+        Ok(NativeTextLineMatrix {
+            backing: Backing::Captured(owner),
+            count,
+            shape,
+            schema: contract.outputs[0].schema,
+            key: self.output_key,
+            revision: self.template.program_revision(),
+            ascii: facts.is_ascii(),
+            reservation,
+        })
     }
 }

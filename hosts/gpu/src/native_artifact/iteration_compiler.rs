@@ -457,7 +457,7 @@ pub(super) fn define_cfg<M: Module>(
                 IntCC::UnsignedLessThanOrEqual,
                 phase,
                 if prefix.is_some() {
-                    super::program_abi::PHASE_PREFIX
+                    super::program_abi::PHASE_CAPTURE_TAIL
                 } else {
                     super::program_abi::PHASE_TURN
                 } as i64,
@@ -541,6 +541,37 @@ pub(super) fn define_cfg<M: Module>(
                 let snapshot = b.create_block();
                 let dispatch = b.create_block();
                 let phase = program_phase.expect("managed resume phase");
+                let capture_tail = b.create_block();
+                let scan_or_snapshot = b.create_block();
+                let is_capture_tail = b.ins().icmp_imm(
+                    IntCC::Equal,
+                    phase,
+                    super::program_abi::PHASE_CAPTURE_TAIL as i64,
+                );
+                b.ins()
+                    .brif(is_capture_tail, capture_tail, &[], scan_or_snapshot, &[]);
+                b.switch_to_block(capture_tail);
+                let target = frame_load(
+                    &mut b,
+                    frame,
+                    core::mem::offset_of!(super::program_abi::Frame, resume_site),
+                );
+                let at_exit = b
+                    .ins()
+                    .icmp_imm(IntCC::Equal, target, i64::from(region.tail.exit()));
+                guard(&mut b, at_exit, error, STATUS_ABI);
+                let eof = frame_load(
+                    &mut b,
+                    frame,
+                    core::mem::offset_of!(super::program_abi::Frame, input_eof),
+                );
+                let final_input = b.ins().icmp_imm(IntCC::Equal, eof, 1);
+                guard(&mut b, final_input, error, STATUS_ABI);
+                b.ins().jump(
+                    blocks[region.tail.exit() as usize].expect("reachable scan exit"),
+                    &[],
+                );
+                b.switch_to_block(scan_or_snapshot);
                 let is_prefix =
                     b.ins()
                         .icmp_imm(IntCC::Equal, phase, super::program_abi::PHASE_PREFIX as i64);
@@ -627,6 +658,22 @@ pub(super) fn define_cfg<M: Module>(
             } else {
                 None
             };
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(region) = &prefix
+                && region.tail.exit() as usize == index
+            {
+                super::program_compiler::prefix_codegen::scanned(
+                    &mut b,
+                    frame,
+                    locals,
+                    program_phase.expect("managed prefix phase"),
+                    region,
+                    &borrowed,
+                    &closed,
+                    hooks.as_ref().expect("managed hooks"),
+                    error,
+                )?;
+            }
             admit(
                 &mut b,
                 callback_signature,
@@ -789,6 +836,16 @@ pub(super) fn define_cfg<M: Module>(
                         error,
                     )?;
                     if plan.kind(*output).is_some() {
+                        #[cfg(feature = "canonical-native-program")]
+                        let count_join = program_phase.and_then(|phase| {
+                            super::program_compiler::prefix_codegen::count_store(
+                                &mut b,
+                                frame,
+                                phase,
+                                prefix.as_ref(),
+                                index,
+                            )
+                        });
                         let value = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
                         b.ins().store(
                             MemFlags::new(),
@@ -796,10 +853,34 @@ pub(super) fn define_cfg<M: Module>(
                             locals,
                             offset(output.get() as usize)?,
                         );
+                        #[cfg(feature = "canonical-native-program")]
+                        if let Some(joined) = count_join {
+                            b.ins().jump(joined, &[]);
+                            b.switch_to_block(joined);
+                        }
                     }
                 }
                 NativeIterationAction::Scalar(action) => {
-                    if let NativeMatchAction::Copy { output, .. } = action
+                    #[cfg(feature = "canonical-native-program")]
+                    let count_action = if let Some(phase) = program_phase {
+                        super::program_compiler::prefix_codegen::count_action(
+                            &mut b,
+                            frame,
+                            locals,
+                            phase,
+                            prefix.as_ref(),
+                            index,
+                            action,
+                            error,
+                        )?
+                    } else {
+                        false
+                    };
+                    #[cfg(not(feature = "canonical-native-program"))]
+                    let count_action = false;
+                    if count_action {
+                        // The selected EOF-dependent action was emitted above.
+                    } else if let NativeMatchAction::Copy { output, .. } = action
                         && plan.kind(*output).is_none()
                     {
                         let hooks = hooks

@@ -174,16 +174,13 @@ impl NativePreparedLibraryCall {
         )?
     }
 
-    /// SAME TextJoin append mechanics, after the original consumer's complete
-    /// copy/selector work and exact output capacity have been admitted. This
-    /// method cannot grow the target, run a program, or authorize a visit.
-    pub fn selected_matrix_join_append(
+    fn selected_matrix_join_target<'a>(
         &self,
         view: &NativeSelectedStringMatrix,
-        separator: &Value,
-        target: &mut String,
+        separator: &'a Value,
+        target: &String,
         memory: &ManagedMemoryBudget,
-    ) -> Result<(), InvokeError> {
+    ) -> Result<(&'a str, u64), InvokeError> {
         use crate::native_artifact::NativeCollectionPrimitive as Primitive;
         let mech_core::ResolvedOperationContract::Declared(contract) = self.template.contract()
         else {
@@ -218,6 +215,21 @@ impl NativePreparedLibraryCall {
         if target.capacity() as u64 != payload {
             return Err(InvokeError::InvalidInput);
         }
+        Ok((separator, payload))
+    }
+
+    /// SAME TextJoin append mechanics, after the original consumer's complete
+    /// copy/selector work and exact output capacity have been admitted. This
+    /// method cannot grow the target, run a program, or authorize a visit.
+    pub fn selected_matrix_join_append(
+        &self,
+        view: &NativeSelectedStringMatrix,
+        separator: &Value,
+        target: &mut String,
+        memory: &ManagedMemoryBudget,
+    ) -> Result<(), InvokeError> {
+        let (separator, payload) =
+            self.selected_matrix_join_target(view, separator, target, memory)?;
         let append = |index, text: &str| {
             crate::resident::text_ops::append_joined(target, separator, index != 0, text);
             Ok(())
@@ -235,5 +247,31 @@ impl NativePreparedLibraryCall {
             return Err(InvokeError::InvalidInput);
         }
         Ok(())
+    }
+
+    /// Transfer the final consumer's owner after all row loans have ended.
+    /// A unique captured source and the already validated ascending contiguous
+    /// selector permit retirement during copying. Shared or reordered sources
+    /// retain the ordinary immutable append behavior and result.
+    pub fn selected_matrix_join_append_consuming(
+        &self,
+        mut view: NativeSelectedStringMatrix,
+        separator: &Value,
+        target: &mut String,
+        memory: &ManagedMemoryBudget,
+    ) -> Result<(), InvokeError> {
+        let (text_separator, payload) =
+            self.selected_matrix_join_target(&view, separator, target, memory)?;
+        if let Some((first, end)) = view.geometry.contiguous_range()
+            && let Source::Lines(lines) = &mut view.source
+            && let Some(lines) = Rc::get_mut(lines)
+            && lines.append_capture_join_consuming(first, end, text_separator, target)?
+        {
+            if target.len() as u64 != payload {
+                return Err(InvokeError::InvalidInput);
+            }
+            return Ok(());
+        }
+        self.selected_matrix_join_append(&view, separator, target, memory)
     }
 }

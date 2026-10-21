@@ -50,6 +50,7 @@ pub struct NativeTextLineRetentionFrontier {
     join: NativeSelectedTextJoin,
     result_fields: (usize, usize),
     states: Box<[NativeTextLineRetentionState]>,
+    scans_per_ordinal: Option<u64>,
 }
 impl NativeTextLineRetentionFrontier {
     pub fn read(&self) -> &NativeTextLineReadFrontier {
@@ -66,6 +67,13 @@ impl NativeTextLineRetentionFrontier {
     }
     pub fn states(&self) -> &[NativeTextLineRetentionState] {
         &self.states
+    }
+    /// A bound on scan traversals at one physical input ordinal. The same
+    /// symbol analysis proves nondecreasing indices and an acyclic graph of
+    /// zero-advance transitions. A zero-advance cycle retains the ordinary
+    /// snapshot strategy; retention alone does not prove bounded execution.
+    pub const fn scans_per_ordinal(&self) -> Option<u64> {
+        self.scans_per_ordinal
     }
 }
 
@@ -125,6 +133,46 @@ enum Def {
 struct Symbols {
     defs: Vec<Vec<Def>>,
     words: Vec<Option<Box<[Word]>>>,
+}
+
+fn scans_per_ordinal(next: &[Box<[Word]>], indices: &[Option<usize>]) -> Option<u64> {
+    let mut outgoing = vec![Vec::new(); indices.len()];
+    let mut incoming = vec![0usize; indices.len()];
+    for words in next {
+        let target = ordinal(words)?;
+        let Some(index) = *indices.get(target)? else {
+            continue;
+        };
+        let word = *words.get(index)?;
+        let (source, field) = word.state()?;
+        let source = source as usize;
+        if indices.get(source).copied().flatten() != Some(field) {
+            return None;
+        }
+        if word.add == 0 {
+            outgoing[source].push(target);
+            incoming[target] = incoming[target].checked_add(1)?;
+        }
+    }
+    let mut ready = indices
+        .iter()
+        .enumerate()
+        .filter_map(|(state, index)| (index.is_some() && incoming[state] == 0).then_some(state))
+        .collect::<Vec<_>>();
+    let count = indices.iter().filter(|index| index.is_some()).count();
+    let mut seen = 0usize;
+    while let Some(state) = ready.pop() {
+        seen += 1;
+        for &target in &outgoing[state] {
+            incoming[target] -= 1;
+            if incoming[target] == 0 {
+                ready.push(target);
+            }
+        }
+    }
+    // Every positive transition increases the checked u64 index by >=1;
+    // between increases, a DAG path visits at most every scanning state once.
+    (seen == count && count != 0).then_some(count as u64)
 }
 impl Symbols {
     fn scalar(&self, value: Value) -> Option<Word> {
@@ -561,6 +609,7 @@ fn frontier(
             }
         }
     }
+    let scans_per_ordinal = scans_per_ordinal(&next, &indices);
     let states = indices
         .into_iter()
         .zip(ranges)
@@ -582,7 +631,43 @@ fn frontier(
         join,
         result_fields,
         states,
+        scans_per_ordinal,
     })
+}
+
+#[cfg(test)]
+mod progress_bound_tests {
+    use super::*;
+
+    fn edge(source: u32, target: u64, advance: u64) -> Box<[Word]> {
+        vec![
+            Word::constant(target),
+            Word {
+                atom: Some(Atom::State(source, 1)),
+                add: advance,
+            },
+        ]
+        .into()
+    }
+
+    #[test]
+    fn positive_cycles_and_acyclic_zero_transitions_have_finite_scan_bounds() {
+        let indices = [Some(1), Some(1), None];
+        assert_eq!(
+            scans_per_ordinal(&[edge(0, 1, 0), edge(1, 0, 1), edge(1, 2, 0)], &indices),
+            Some(2)
+        );
+        assert_eq!(scans_per_ordinal(&[edge(0, 0, 1)], &[Some(1)]), Some(1));
+    }
+
+    #[test]
+    fn zero_advance_cycle_does_not_claim_bounded_scan_work() {
+        assert_eq!(scans_per_ordinal(&[edge(0, 0, 0)], &[Some(1)]), None);
+        assert_eq!(
+            scans_per_ordinal(&[edge(0, 1, 0), edge(1, 0, 0)], &[Some(1), Some(1)]),
+            None
+        );
+    }
 }
 
 impl Plan {

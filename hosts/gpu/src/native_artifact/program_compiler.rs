@@ -1,4 +1,4 @@
-//! ABI11 facade over the SAME canonical iteration CFG definition pass.
+//! ABI12 facade over the SAME canonical iteration CFG definition pass.
 use super::compiler::{backend, host_supported};
 use super::iteration_code_plan::CodePlan;
 use super::program_abi::{ENTRY, Entry, VERSION};
@@ -83,7 +83,7 @@ impl JitProgramArtifact {
         let descriptor = NativeProgramDescriptor::prepare(artifact, catalog, plan, stack, code)
             .map_err(backend)?;
         module.finalize_definitions().map_err(backend)?;
-        // SAFETY: define_cfg emits exactly the private ABI11 signature, and
+        // SAFETY: define_cfg emits exactly the private ABI12 signature, and
         // this owner retains the module for every synchronous invocation.
         let entry = unsafe {
             std::mem::transmute::<*const u8, Entry>(module.get_finalized_function(function))
@@ -124,7 +124,7 @@ impl JitProgramArtifact {
         super::program_runtime::execute(
             &self.descriptor,
             |frame| {
-                // SAFETY: this owner retains the exact checked ABI11 entry.
+                // SAFETY: this owner retains the exact checked ABI12 entry.
                 unsafe { (self.entry)(frame) }
             },
             inputs,

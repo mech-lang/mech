@@ -126,6 +126,60 @@ fn discarded_prefix_has_bounded_live_storage_independent_of_total_input() {
 }
 
 #[test]
+fn retention_search_work_does_not_rescan_every_live_chunk() {
+    let memory = ManagedMemoryBudget::new(1024 * 1024);
+    let work = work(&memory);
+    let mut store = prepare(4096, 4, limits(), &work).unwrap();
+    for _ in 0..512 {
+        store.push("a\n").unwrap();
+        let before = work.used().0;
+        store.retain_from(1).unwrap();
+        assert_eq!(work.used().0 - before, 4096);
+    }
+    let before = work.used().0;
+    store.retain_from(513).unwrap();
+    assert_eq!(work.used().0 - before, 4096 + 512 * 64);
+    drop((store, work));
+    assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
+fn final_contiguous_join_retires_payload_while_the_logical_owner_is_still_alive() {
+    let memory = ManagedMemoryBudget::new(1024 * 1024);
+    let work = work(&memory);
+    let mut store = prepare(4096, 64, limits(), &work).unwrap();
+    for _ in 0..32 {
+        store.push("猫\nA\r\n").unwrap();
+    }
+    let facts = store.finish().unwrap();
+    let before = store.retained_capacity_bytes();
+    let expected = std::iter::repeat_n(["猫", "A"], 32)
+        .flatten()
+        .collect::<Vec<_>>()
+        .join("|");
+    let mut target = String::new();
+    target.try_reserve_exact(expected.len()).unwrap();
+    let output = memory.reserve_capacity(expected.len() as u64).unwrap();
+    work.charge((expected.len() as u64 + facts.lines() + 1) * 128, 0)
+        .unwrap();
+    let prepaid = work.used();
+    store
+        .append_joined_consuming(1, facts.lines() + 1, "|", &mut target)
+        .unwrap();
+    assert_eq!(target, expected);
+    assert!(store.retained_capacity_bytes() < before);
+    assert!(store.chunks.is_empty());
+    assert_eq!(store.final_facts(), Some(facts));
+    assert_eq!(
+        work.used(),
+        prepaid,
+        "join traversal does not renew or debit the producer allowance"
+    );
+    drop((store, work, output));
+    assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
 fn sealed_range_keeps_real_unicode_lines_and_counts_unretained_suffix_without_backing() {
     let memory = ManagedMemoryBudget::new(1024 * 1024);
     let work = work(&memory);

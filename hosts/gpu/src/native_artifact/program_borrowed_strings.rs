@@ -89,6 +89,17 @@ impl Context<'_, '_> {
             } else {
                 None
             };
+            if let Some(window) = window {
+                // This immutable Context loan owns the actual source cells.
+                // No canonical source String or Matrix exists before EOF,
+                // and the window's admitted capacity includes its row table.
+                self.control.work.charge(NativeExecutionPhase::Setup, 128)?;
+                active &= window.is_ascii();
+                source_bytes = source_bytes
+                    .checked_add(window.retained_capacity_bytes())
+                    .ok_or_else(|| invalid("borrowed line window footprint overflow"))?;
+                continue;
+            }
             let lines = if i < region.proof.matrices().len() {
                 self.line_matrix(*value).cloned()
             } else {
@@ -100,7 +111,10 @@ impl Context<'_, '_> {
                     .checked_add(lines.metadata_bytes())
                     .ok_or_else(|| invalid("borrowed line metadata overflow"))?;
                 active &= lines.is_ascii();
-                lines.source().clone()
+                lines
+                    .source()
+                    .ok_or_else(|| invalid("captured line matrix requires an actual row window"))?
+                    .clone()
             } else {
                 self.arena
                     .copy_current(value.get(), &mut self.control.work)?
@@ -120,13 +134,7 @@ impl Context<'_, '_> {
                         .ok_or_else(|| invalid("borrowed String capture is not admitted"))?,
                 )
                 .ok_or_else(|| invalid("borrowed String owner footprint overflow"))?;
-            if let Some(window) = window {
-                active &= window.is_ascii();
-                source_bytes = source_bytes
-                    .checked_add(window.retained_capacity_bytes())
-                    .ok_or_else(|| invalid("borrowed line window footprint overflow"))?;
-            }
-            if i < region.proof.matrices().len() && lines.is_none() && window.is_none() {
+            if i < region.proof.matrices().len() && lines.is_none() {
                 if let Some(strings) = texts(&owner) {
                     rows = rows
                         .checked_add(strings.len())
@@ -172,7 +180,10 @@ impl Context<'_, '_> {
             {
                 continue;
             }
-            if let Some(strings) = texts(owner.as_ref().unwrap()) {
+            let owner = owner
+                .as_ref()
+                .ok_or_else(|| invalid("borrowed matrix lacks its source owner"))?;
+            if let Some(strings) = texts(owner) {
                 for text in strings {
                     // ASCII except CRLF has exactly one byte per canonical grapheme.
                     // Admit ASCII + CR-absence + possible pair scans before
@@ -190,7 +201,6 @@ impl Context<'_, '_> {
         let mut offset = 0;
         let mut capture = 0;
         for (i, owner) in owners.values().iter().enumerate() {
-            let owner = owner.as_ref().unwrap();
             let (pointer, length) = if i < region.proof.matrices().len() {
                 if let Some(window) = self.prefix_line_window(region.proof.matrices()[i]) {
                     (window.rows().as_ptr() as u64, window.rows().len() as u64)
@@ -198,8 +208,14 @@ impl Context<'_, '_> {
                     // The Context/session pins this exact immutable table across
                     // the native scanner; its real String owner is also pinned
                     // in owners. No second pointer table or Matrix is allocated.
-                    (lines.rows().as_ptr() as u64, lines.count() as u64)
+                    let rows = lines.rows().ok_or_else(|| {
+                        invalid("captured line matrix requires an actual row window")
+                    })?;
+                    (rows.as_ptr() as u64, lines.count() as u64)
                 } else {
+                    let owner = owner
+                        .as_ref()
+                        .ok_or_else(|| invalid("borrowed matrix lacks its source owner"))?;
                     let length = texts(owner).map_or(0, |s| s.len());
                     // add is only used to form an in-bounds or one-past empty view.
                     let pointer = table.values().as_ptr().wrapping_add(offset) as u64;
@@ -207,6 +223,9 @@ impl Context<'_, '_> {
                     (pointer, length as u64)
                 }
             } else {
+                let owner = owner
+                    .as_ref()
+                    .ok_or_else(|| invalid("borrowed literal lacks its source owner"))?;
                 let ValueData::String(text) = owner.data() else {
                     return Err(invalid("String literal owner kind differs"));
                 };
@@ -262,6 +281,25 @@ impl Context<'_, '_> {
             return Err(invalid("String failure outside selected library leaf"));
         };
         let state = self.borrowed_strings.take().unwrap();
+        if let Action::MatrixElement { source, .. } = &action
+            && let Some(window) = self.prefix_line_window(*source)
+        {
+            let prior = self.selected_join_coexistence(Some(*source))?;
+            let call = descriptor.calls[site]
+                .as_ref()
+                .ok_or_else(|| invalid("line window bounds failure lost its selected call"))?;
+            let result =
+                call.text_line_window_element(window, args[2], self.limits, &self.library, prior);
+            let error = match result {
+                Err(error) => Error::Library {
+                    origin: descriptor.plan.blocks()[site].origin(),
+                    error,
+                },
+                Ok(_) => invalid("borrowed line window bounds failure unexpectedly succeeded"),
+            };
+            drop(state);
+            return Err(error);
+        }
         if let Action::MatrixElement { source, .. } = &action
             && let Some(lines) = self.line_matrix(*source).cloned()
         {
@@ -324,9 +362,21 @@ impl Context<'_, '_> {
                     .checked_add(texts(owner).map_or(1, |s| s.len()))
                     .ok_or_else(|| invalid("String failure owner scan overflow"))?;
             }
-            self.control
-                .work
-                .charge(NativeExecutionPhase::Setup, amount(inspected, 64, 128)?)?;
+            let region = &descriptor.borrowed_strings.regions[state.region];
+            let mut window_inspected = 0usize;
+            for &matrix in region.proof.matrices() {
+                if let Some(window) = self.prefix_line_window(matrix) {
+                    window_inspected = window_inspected
+                        .checked_add(window.rows().len())
+                        .ok_or_else(|| invalid("String failure window scan overflow"))?;
+                }
+            }
+            self.control.work.charge(
+                NativeExecutionPhase::Setup,
+                amount(inspected, 64, 128)?
+                    .checked_add(amount(window_inspected, 256, 0)?)
+                    .ok_or_else(|| invalid("String failure scan work overflow"))?,
+            )?;
             let end = args[0]
                 .checked_add(args[1])
                 .ok_or_else(|| invalid("String failure view overflow"))?;
@@ -340,7 +390,26 @@ impl Context<'_, '_> {
                 }
             };
             let mut found = None;
+            for &matrix in region.proof.matrices() {
+                if let Some(window) = self.prefix_line_window(matrix) {
+                    for ordinal in window.first()..window.end() {
+                        let text = window
+                            .line(ordinal)
+                            .ok_or_else(|| invalid("String failure window lost its real cell"))?;
+                        if let Some((a, b)) = slice(text) {
+                            found = text.get(a..b);
+                            break;
+                        }
+                    }
+                }
+                if found.is_some() {
+                    break;
+                }
+            }
             for owner in state.owners.values().iter().flatten() {
+                if found.is_some() {
+                    break;
+                }
                 if let Some(strings) = texts(owner) {
                     for text in strings {
                         if let Some((a, b)) = slice(text) {

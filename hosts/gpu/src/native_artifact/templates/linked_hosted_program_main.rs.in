@@ -153,6 +153,12 @@ impl CliBackend for BoundedStdin {
     fn stdin_text(&self) -> mech_core::MResult<String> {
         Err(io_error("bounded backend requires the provider's raw snapshot path"))
     }
+    fn supports_single_use_stdin_text_capture(&self) -> bool { true }
+    fn with_single_use_stdin_text_reader(
+        &self, capture: &mut dyn FnMut(&mut dyn Read) -> mech_core::MResult<()>,
+    ) -> mech_core::MResult<()> {
+        capture(&mut std::io::stdin().lock())
+    }
     fn write_stdout(&mut self, text: &str) -> mech_core::MResult<()> {
         StdCliBackend.write_stdout(text)
     }
@@ -272,7 +278,7 @@ fn run() -> Result<(), String> {
         });
     }
     let mut runtime = builder.build().map_err(diagnostic)?;
-    let execution = runtime.with_canonical_native_resources_phased(
+    let execution = runtime.with_canonical_native_resources_phased_text(
         &artifact,
         CanonicalNativeResourceLimits {
             max_ports: launch.max_ports,
@@ -283,6 +289,9 @@ fn run() -> Result<(), String> {
         // canonical admission -> generated closed activation -> provider
         // capture -> native resume. No parser, evaluator or callee graph.
         |admission| linked.prepare_hosted(admission, limits, &memory)
+            .and_then(|session| session.with_text_capture(launch.input_text_bytes, 64 * 1024))
+            .map_err(|error| mech_core::MechError::new(error, None)),
+        |session, chunk| session.capture_chunk(chunk)
             .map_err(|error| mech_core::MechError::new(error, None)),
         |session, turn| {
             let report = session.resume_hosted_into(turn, &[], &mut candidates)

@@ -109,6 +109,9 @@ impl NativeTextLineChunks {
     }
 }
 impl NativeTextLineWindow<'_> {
+    pub(crate) fn shares_work(&self, work: &NativeLibraryWorkBudget) -> bool {
+        self.owner.account.shares_work(work)
+    }
     pub const fn first(&self) -> u64 {
         self.first
     }

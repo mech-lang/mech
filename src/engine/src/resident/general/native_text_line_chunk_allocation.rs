@@ -71,6 +71,9 @@ impl Account {
     pub fn shares_work(&self, work: &NativeLibraryWorkBudget) -> bool {
         self.work.shares_account(work)
     }
+    pub fn shares_memory(&self, memory: &ManagedMemoryBudget) -> bool {
+        self.memory == *memory
+    }
     pub fn peak(&self) -> u64 {
         self.peak.get()
     }
