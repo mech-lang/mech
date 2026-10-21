@@ -1,6 +1,4 @@
 //! Shared owned-process, source-pin and runtime-closure checks for linked tests.
-#[path = "canonical_runtime_closure.rs"]
-mod runtime_closure;
 use mech_build::process::ContainedChild;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -123,7 +121,11 @@ pub(super) fn closure(metadata: &Value, stdout: &[u8]) -> Vec<Value> {
         let package = packages[id];
         let name = package["name"].as_str().unwrap();
         names.insert(name.to_owned());
-        runtime_closure::package(name);
+        assert_ne!(name, "mech-syntax", "runtime contains parser");
+        assert!(
+            !name.starts_with("cranelift-"),
+            "runtime contains code generator"
+        );
         if name.starts_with("mech-") {
             assert!(package["source"].is_null(), "registry Mech crate {name}");
             assert!(
@@ -133,7 +135,31 @@ pub(super) fn closure(metadata: &Value, stdout: &[u8]) -> Vec<Value> {
                     .starts_with(workspace().canonicalize().unwrap())
             );
         }
-        runtime_closure::features(name, message["features"].as_array().unwrap());
+        let forbidden: &[&str] = match name {
+            "mech-gpu" => &[
+                "canonical-native",
+                "jit",
+                "aot",
+                "sequence-cli",
+                "native-build",
+                "fused-cli",
+            ],
+            "mech-engine" | "mech-stdlib" => &[
+                "source",
+                "semantic-compiler",
+                "compiler",
+                "full_compiler",
+                "standard_compiler",
+                "native-sequence",
+            ],
+            _ => &[],
+        };
+        for feature in message["features"].as_array().unwrap() {
+            assert!(
+                !forbidden.contains(&feature.as_str().unwrap()),
+                "runtime enabled {name}/{feature}"
+            );
+        }
         if seen.insert((
             id.to_owned(),
             message["target"].to_string(),
@@ -142,7 +168,9 @@ pub(super) fn closure(metadata: &Value, stdout: &[u8]) -> Vec<Value> {
             result.push(json!({"name":name, "id":id, "root":id==root, "target":message["target"], "features":message["features"], "filenames":message["filenames"]}));
         }
     }
-    runtime_closure::required(&names);
+    for name in ["mech-core", "mech-engine", "mech-gpu", "mech-stdlib"] {
+        assert!(names.contains(name));
+    }
     assert!(result.iter().any(|unit| unit["root"] == true));
     result
 }

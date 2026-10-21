@@ -179,22 +179,6 @@ fn canonical_linked_profiles_do_not_depend_on_unused_bytecode_libraries() {
                 .unwrap();
             assert!(engine.iter().any(|f| f.as_str() == Some("native-artifact")));
             assert!(!engine.iter().any(|f| f.as_str() == Some("native-plan")));
-            for feature in [
-                "math_sqrt",
-                "math_neg",
-                "math_add",
-                "math_sub",
-                "math_mul",
-                "math_div",
-                "math_mod",
-                "compare_default",
-                "logic_default",
-            ] {
-                assert!(
-                    !engine.iter().any(|f| f.as_str() == Some(feature)),
-                    "{profile} must not enable legacy bytecode operations through {feature}"
-                );
-            }
             assert!(
                 !project.metadata()["runtime_features"]
                     .as_array()

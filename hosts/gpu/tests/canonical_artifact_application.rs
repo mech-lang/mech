@@ -5,9 +5,6 @@
 #![cfg(feature = "canonical-native")]
 #![cfg_attr(windows, feature(windows_process_extensions_main_thread_handle))]
 
-#[path = "support/canonical_runtime_closure.rs"]
-mod runtime_closure;
-
 use std::{
     collections::{BTreeMap, BTreeSet},
     ffi::OsString,
@@ -1142,8 +1139,36 @@ fn compiled_feature_closure(metadata: &Value, build_stdout: &[u8]) -> Vec<Value>
                 "Mech crate {name} is outside the pinned workspace"
             );
         }
-        runtime_closure::package(name);
-        runtime_closure::features(name, message["features"].as_array().unwrap());
+        assert_ne!(name, "mech-syntax");
+        assert!(
+            !name.starts_with("cranelift-"),
+            "runtime graph contains compiler crate {name}"
+        );
+        let forbidden: &[&str] = match name {
+            "mech-gpu" => &[
+                "canonical-native",
+                "jit",
+                "aot",
+                "sequence-cli",
+                "native-build",
+                "fused-cli",
+            ],
+            "mech-engine" | "mech-stdlib" => &[
+                "source",
+                "semantic-compiler",
+                "compiler",
+                "full_compiler",
+                "standard_compiler",
+                "native-sequence",
+            ],
+            _ => &[],
+        };
+        for feature in message["features"].as_array().unwrap() {
+            assert!(
+                !forbidden.contains(&feature.as_str().unwrap()),
+                "runtime-only graph enabled {name}/{feature}"
+            );
+        }
         if seen.insert((
             id.to_owned(),
             message["target"].to_string(),
@@ -1153,7 +1178,12 @@ fn compiled_feature_closure(metadata: &Value, build_stdout: &[u8]) -> Vec<Value>
         }
     }
     assert!(result.iter().any(|unit| unit["id"] == root));
-    runtime_closure::required(&seen_packages);
+    for required in ["mech-core", "mech-engine", "mech-gpu", "mech-stdlib"] {
+        assert!(
+            seen_packages.contains(required),
+            "missing compiled {required}"
+        );
+    }
     result.sort_by(|a, b| a["id"].as_str().cmp(&b["id"].as_str()));
     result
 }
