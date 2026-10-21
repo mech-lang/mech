@@ -1,0 +1,436 @@
+{
+  "schema": "mech.canonical-knucleotide-line-geometry.v1",
+  "status": "FRESH_QUALIFIED_MATCHED_SPEEDUP_FOOTPRINT_UNFINISHED",
+  "measurement_label": "v1157",
+  "source_commit": "5ddaf199ab1f19e6c934aa3c0d1ff6d5a7d83bd3",
+  "source_provenance": "Fresh original/decoded qualification and measurement used this exact clean commit. Later publication documentation is not a fresh executable qualification.",
+  "measured_utc": {
+    "started": "2026-10-21T22:35:53.517Z",
+    "finished": "2026-10-21T22:36:18.818Z"
+  },
+  "assessment": {
+    "full125m": "0.6159263545 to 0.5970952915 seconds. Median paired ratio 0.9688224771649137: 3.11775% improvement, 19.189188 ms, 12/12 faster pairs.",
+    "ten_m": "0.067187146 to 0.065725729 seconds. Median paired ratio 0.9780618853490799: 2.19381% improvement, but only 9/12 pairs faster. The final three pairs are slower by 0.826708, 2.912333 and 0.552750 ms; no samples are discarded.",
+    "memory": "125M median peak RSS 270696448 to 270712832 bytes (+16384); essentially unchanged, not a memory improvement. Physical footprint remains a separate metric.",
+    "size": "6729488 to 6729376 executable bytes (-112); essentially unchanged, not a meaningful size improvement.",
+    "interpretation": "The unchanged predecessor binary measured approximately 0.621 seconds in the preceding batch and 0.616 in this batch. Use this batch's paired comparison to attribute the optimization, not the difference between historical medians. Not a universal guarantee, language ranking or isolated capability-overhead measurement.",
+    "reference_footprint_target_met": false
+  },
+  "implementation": {
+    "abi_version": 12,
+    "typed_ir_version": 27,
+    "work_policy_version": 36,
+    "change": "For proved unit ranges over final captured row-vector text lines, replace the selected-row geometry walk with existing immutable exact full-chunk payload totals plus ordinary partial-edge inspection.",
+    "fast_path_requires": "Successful EOF, unchanged validated owner/account and source shape, row-vector UnitRange, nonempty cardinality, both endpoints accepted by canonical_positional_index including its portable u32 limit, matching selected cardinality and complete retained extent.",
+    "fallback": "Overflow, invalid endpoints, unsupported representations/non-row matrices or missing retained backing return to the original ordered per-cell walk and errors. No fabricated canonical Matrix or alternate evaluator.",
+    "semantics_and_accounting": "Original Range/Select/Join visits and shared output-shape validation remain. Keep the full conservative work precharge and fixed witness reservation in their original positions, on the same cumulative finite ledger. No new allocation/cache, per-row work debit, permission, work-policy version or native ABI.",
+    "compilation": "Unchanged idiomatic Mech source through Cranelift Object generation. Generated default opt-level3/ThinLTO/strip Rust host/library profile, unchanged unwind and codegen-unit defaults."
+  },
+  "hardware": {
+    "architecture": "arm64",
+    "cpu_and_memory": "Apple M1\n8\n8\n8589934592",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90",
+    "power_source": "Now drawing from 'AC Power'"
+  },
+  "source": {
+    "path": "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+    "bytes": 2621,
+    "sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f"
+  },
+  "variants": [
+    {
+      "name": "baseline-v1153",
+      "binary": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/compact-range-release-v1153/variant-0/native-executable",
+        "bytes": 6729488,
+        "sha256": "7617e0392559f89e2d6db9a07293c378f30ea0027823304a30a887cda59417a4"
+      },
+      "source_commit": "3779fd61c648e9258c109ca49b9f039407d2ba94",
+      "program_revision": "de650b928994ff2b6f02dfa769a18037a9c297fec2d956cddf69e114223cdea9",
+      "typed_ir_version": 27,
+      "work_policy_version": 36,
+      "wrapper": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/compact-range-qualification-v1153/result.json",
+        "bytes": 4715,
+        "sha256": "9c69f7dc282772913ec0d320ef44036866eb2dfd381badcec1cb416434c01f94"
+      },
+      "qualification": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/compact-range-release-v1153/hosted-linked-result.json",
+        "bytes": 587050,
+        "sha256": "d4babda9179eb29b6b64a9183fe1de3cd497bcac5b66b3c1b5a7740f31a7d74c"
+      }
+    },
+    {
+      "name": "compact-line-geometry-v1156",
+      "binary": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/compact-line-geometry-release-v1156/variant-0/native-executable",
+        "bytes": 6729376,
+        "sha256": "57a61260fbc9a4f03df327d9d85509f106154b5814244f7a047ff1372cddd741"
+      },
+      "source_commit": "5ddaf199ab1f19e6c934aa3c0d1ff6d5a7d83bd3",
+      "program_revision": "ae9da5f5d774e391c6ab0320d1511f902bd45d3dc072ee15fafd5e39896a4ff5",
+      "typed_ir_version": 27,
+      "work_policy_version": 36,
+      "wrapper": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/compact-line-geometry-qualification-v1156/result.json",
+        "bytes": 4827,
+        "sha256": "585f7815d7710c8958b1cb3cca8587222f7d5dd920655a7ca3ede9ad7bb4b532"
+      },
+      "qualification": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/compact-line-geometry-release-v1156/hosted-linked-result.json",
+        "bytes": 591274,
+        "sha256": "c5ac4b0b922f1aaa0e99e35cdb120fdc2e67434275f72312575420dbf851994a"
+      }
+    }
+  ],
+  "inputs_and_oracles": [
+    {
+      "label": "10m",
+      "input": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/knucleotide-large-controls-v564/fasta-n-2000000.txt",
+        "bytes": 20333411,
+        "three_bases": 10000000,
+        "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b"
+      },
+      "oracle": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/legacy-native-10m-measurement-v677/full-qualification-historical-fast.stdout",
+        "bytes": 254,
+        "sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+      }
+    },
+    {
+      "label": "125m",
+      "input": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/input",
+        "bytes": 254166745,
+        "three_bases": 125000000,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa"
+      },
+      "oracle": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/oracle",
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      }
+    }
+  ],
+  "finite_launch_policy": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/policy-standard-125m-launch-v660.json",
+    "sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+    "finite_policy": {
+      "grants": [
+        {
+          "operations": [
+            "read"
+          ],
+          "paths": [
+            "text"
+          ],
+          "target": "cli/stdin"
+        },
+        {
+          "operations": [
+            "write"
+          ],
+          "paths": [
+            "text"
+          ],
+          "target": "cli/stdout"
+        }
+      ],
+      "input_text_bytes": 254166745,
+      "library": {
+        "cloned_bytes": 536870912,
+        "comparison_work": 68719476736,
+        "compute_work": 8796093022208,
+        "output_bytes": 536870912,
+        "output_elements": 8388608,
+        "retained_nodes": 16777216,
+        "temporary_bytes": 1073741824
+      },
+      "max_ports": 16,
+      "memory_bytes": 3221225472,
+      "native_stack_bytes": 1048576,
+      "output_text_bytes": 1048576,
+      "transport_bytes": 16777216,
+      "work": 562949953421312
+    }
+  },
+  "method": {
+    "timing": "12 serial paired rounds per input size, alternating AB/BA six times each. Monotonic spawn-through-exit time includes startup, secured round and report publication; descriptors opened first. Warmups and validation are untimed.",
+    "memory": "Three separate macOS time -l executions per variant/size. RSS and physical footprint are separate metrics, never timing samples.",
+    "process_lifetime": "RSS wrappers run in owned detached groups with tracked-tree termination on deadline. Direct leaf timing samples retain their synchronous launch/clock path; no process scans or guard timers run inside timed intervals.",
+    "reports": "Every repeated report equals that exact variant/size warmup in full. Both125M warmups must equal their respective maintained qualification reports. Cross-variant differences are enumerated, not normalized away; only actual program_revision may differ. Native work, visits and every other reported field must match under unchanged IR27/ABI12/work-policy36 conservative bounds.",
+    "identity": "Both fresh original/decoded pairs must have internally identical binary/Object/bytecode/identity pins. The two versions use the exact same Mech source/input/oracle/policy, not the same compiled Object or revision.",
+    "interference": "Reject compiler/test/benchmark/profiler interference and less than40GiB free before and after each process. Reverify clean candidate commit and immutable pins between phases; require unchanged hardware/OS/power."
+  },
+  "results": {
+    "10m": {
+      "baseline-v1153": {
+        "executable_bytes": 6729488,
+        "timing_samples_ns": [
+          67348625,
+          66939334,
+          67175167,
+          67165583,
+          67154375,
+          67443542,
+          67167708,
+          67499375,
+          66915459,
+          67540917,
+          67199125,
+          67316208
+        ],
+        "median_seconds": 0.067187146,
+        "minimum_seconds": 0.066915459,
+        "maximum_seconds": 0.067540917,
+        "peak_rss_samples_bytes": [
+          29769728,
+          29425664,
+          29425664
+        ],
+        "median_peak_rss_bytes": 29425664,
+        "peak_footprint_samples_bytes": [
+          15893376,
+          15532864,
+          15532864
+        ],
+        "median_peak_footprint_bytes": 15532864
+      },
+      "compact-line-geometry-v1156": {
+        "executable_bytes": 6729376,
+        "timing_samples_ns": [
+          65751583,
+          65586250,
+          65585625,
+          65855834,
+          65492250,
+          65699875,
+          65426375,
+          65489958,
+          66598666,
+          68367625,
+          70111458,
+          67868958
+        ],
+        "median_seconds": 0.065725729,
+        "minimum_seconds": 0.065426375,
+        "maximum_seconds": 0.070111458,
+        "peak_rss_samples_bytes": [
+          29425664,
+          29425664,
+          29425664
+        ],
+        "median_peak_rss_bytes": 29425664,
+        "peak_footprint_samples_bytes": [
+          15532864,
+          15532864,
+          15549312
+        ],
+        "median_peak_footprint_bytes": 15532864
+      }
+    },
+    "125m": {
+      "baseline-v1153": {
+        "executable_bytes": 6729488,
+        "timing_samples_ns": [
+          615612750,
+          615316834,
+          615281208,
+          616212833,
+          615635792,
+          617243917,
+          615319208,
+          624757167,
+          615767792,
+          616084917,
+          617040417,
+          622605208
+        ],
+        "median_seconds": 0.6159263545,
+        "minimum_seconds": 0.615281208,
+        "maximum_seconds": 0.624757167,
+        "peak_rss_samples_bytes": [
+          272482304,
+          270696448,
+          270696448
+        ],
+        "median_peak_rss_bytes": 270696448,
+        "peak_footprint_samples_bytes": [
+          148161984,
+          148063360,
+          148079872
+        ],
+        "median_peak_footprint_bytes": 148079872
+      },
+      "compact-line-geometry-v1156": {
+        "executable_bytes": 6729376,
+        "timing_samples_ns": [
+          597297292,
+          597062500,
+          598844625,
+          596058958,
+          595958791,
+          596957958,
+          596617833,
+          598998834,
+          597605625,
+          598001209,
+          597128083,
+          594938875
+        ],
+        "median_seconds": 0.5970952915,
+        "minimum_seconds": 0.594938875,
+        "maximum_seconds": 0.598998834,
+        "peak_rss_samples_bytes": [
+          270319616,
+          272809984,
+          270712832
+        ],
+        "median_peak_rss_bytes": 270712832,
+        "peak_footprint_samples_bytes": [
+          147735808,
+          148506048,
+          148096256
+        ],
+        "median_peak_footprint_bytes": 148096256
+      }
+    }
+  },
+  "paired_candidate_over_baseline": {
+    "10m": {
+      "median_ratio": 0.9780618853490799,
+      "median_delta_ms": -1.4713129999999999,
+      "faster_rounds": 9,
+      "total_rounds": 12,
+      "ratios": [
+        0.9762869397853334,
+        0.9797864137698173,
+        0.9763373569283423,
+        0.9804997002705984,
+        0.9752491926252013,
+        0.9741462718550576,
+        0.9740748485864665,
+        0.9702305836165149,
+        0.9952657725922496,
+        1.0122401062455222,
+        1.043338852998458,
+        1.0082112468367201
+      ],
+      "deltas_ms": [
+        -1.597042,
+        -1.353084,
+        -1.589542,
+        -1.309749,
+        -1.662125,
+        -1.743667,
+        -1.741333,
+        -2.009417,
+        -0.316793,
+        0.826708,
+        2.912333,
+        0.55275
+      ]
+    },
+    "125m": {
+      "median_ratio": 0.9688224771649137,
+      "median_delta_ms": -19.189188,
+      "faster_rounds": 12,
+      "total_rounds": 12,
+      "ratios": [
+        0.9702484102221729,
+        0.9703334396341251,
+        0.9732860636952851,
+        0.9672939706531558,
+        0.9680379190818718,
+        0.9671346149532001,
+        0.9696070352479554,
+        0.9587706482445203,
+        0.9705048441377395,
+        0.9706473774945541,
+        0.9677292873345118,
+        0.9555636017101868
+      ],
+      "deltas_ms": [
+        -18.315458,
+        -18.254334,
+        -16.436583,
+        -20.153875,
+        -19.677001,
+        -20.285959,
+        -18.701375,
+        -25.758333,
+        -18.162167,
+        -18.083708,
+        -19.912334,
+        -27.666333
+      ]
+    }
+  },
+  "security": {
+    "verified_outputs": 64,
+    "verified_complete_security_reports": 64,
+    "cross_version_differences": [
+      {
+        "size": "10m",
+        "differences": [
+          {
+            "key": "program_revision",
+            "baseline": "de650b928994ff2b6f02dfa769a18037a9c297fec2d956cddf69e114223cdea9",
+            "candidate": "ae9da5f5d774e391c6ab0320d1511f902bd45d3dc072ee15fafd5e39896a4ff5",
+            "numeric_delta": null
+          }
+        ],
+        "native_work_delta": 0
+      },
+      {
+        "size": "125m",
+        "differences": [
+          {
+            "key": "program_revision",
+            "baseline": "de650b928994ff2b6f02dfa769a18037a9c297fec2d956cddf69e114223cdea9",
+            "candidate": "ae9da5f5d774e391c6ab0320d1511f902bd45d3dc072ee15fafd5e39896a4ff5",
+            "numeric_delta": null
+          }
+        ],
+        "native_work_delta": 0
+      }
+    ],
+    "invariant": "Every work counter and other complete-report field matches across versions except actual program_revision. Each repeated report matches its exact version/size warmup; both 125M warmups match their maintained qualification reports.",
+    "qualification": "Fresh original/decoded default-profile builds passed 26 small security cases, 16 generated-launcher tests, 9 pin-rejection cases and 8 full-size outputs/reports. Binary and artifact pins match within each pair.",
+    "independent_audit": "201 qualification pins and 604 measurement files independently checked; paired statistics recomputed."
+  },
+  "validation": {
+    "targeted_tests_passed": 267,
+    "intentionally_ignored": 5,
+    "runtime_only_check": "PASS",
+    "suites": {
+      "proof": 6,
+      "numeric": 7,
+      "captured_lines": 10,
+      "line_windows": 8,
+      "gpu_native": 146,
+      "artifact_contract": 37,
+      "hosted_contract": 53
+    },
+    "source_proof": "v1155 tests used the exact seven-file precommit patch on 3779fd61. Its SHA256 equals git diff --binary 654500e5 5ddaf199 after rebasing over the documentation-only 654500e5 parent. No tested implementation content changed.",
+    "source_patch_sha256": "30caa74bf867105801a5bb867da406f70ab1f3a015db48818adbd72bad5fe294",
+    "evidence": [
+      {
+        "path": "tmp/pr-stack-evidence/compact-line-geometry-validation-v1155/result.json",
+        "bytes": 12951,
+        "sha256": "56f5839668507cb6bf4d19cef87887e40ce4c6c9e1b7cced1d5bdeca15b130f9"
+      },
+      {
+        "path": "tmp/pr-stack-evidence/compact-line-geometry-measurement-v1157/measurement.json",
+        "bytes": 411047,
+        "sha256": "1bdc559b1edf898694b2b3f555496a69beb8d8cce1208945c617933084645797"
+      }
+    ],
+    "evidence_location": "Raw files, generated projects and preserved executables are retained locally under ignored tmp/pr-stack-evidence. This checked-in summary is not a public raw-data archive."
+  },
+  "remaining": [
+    "Reduce peak RSS/executable size toward approximately 200 MB/3.16 MB without sacrificing runtime.",
+    "Obtain clean review and green CI for the updated published head; remain draft and unmerged until user direction."
+  ]
+}

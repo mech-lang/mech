@@ -1,5 +1,6 @@
 {
   "schema": "mech.canonical-knucleotide-compact-selector.v1",
+  "later_geometry_measurement": "canonical-knucleotide-line-geometry-v1.json",
   "status": "FRESH_QUALIFIED_MATCHED_IMPROVEMENT_FOOTPRINT_UNFINISHED",
   "measurement_label": "v1154",
   "source_commit": "3779fd61c648e9258c109ca49b9f039407d2ba94",

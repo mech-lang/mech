@@ -157,48 +157,52 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The latest [matched measurement](../../docs/validation/canonical-knucleotide-compact-selector-v1.json)
+The latest [matched measurement](../../docs/validation/canonical-knucleotide-line-geometry-v1.json)
 uses the unchanged full Mech source, input and finite capability policy on one
-M1. A proved sole-use unit range now retains checked start/count metadata instead
-of allocating its index array. Its original Range, Select and Join visits remain;
-escaping or unsupported ranges retain ordinary canonical execution.
+M1. Proved sole-use ranges keep checked start/count metadata instead of index
+arrays. Selection now also sums exact retained chunk totals instead of walking
+every selected row to compute its payload length. Partial edges retain ordinary
+cell inspection; unsupported or uncertain geometry uses the original path.
 
 | Secured build | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Before compact selector | 0.06804 s | 0.63105 s | 287.1 MB | 6.713 MB |
-| Compact selector | 0.06719 s | 0.62066 s | 270.8 MB | 6.729 MB |
+| Before chunk-summary geometry | 0.06719 s | 0.61593 s | 270.7 MB | 6.729 MB |
+| Chunk-summary geometry | 0.06573 s | 0.59710 s | 270.7 MB | 6.729 MB |
 
-At 125M this change is 1.65% faster by the median paired ratio (12/12 rounds
-faster) and uses 16.3 MB less peak RSS, with a 16.5 KB larger executable. Twelve
-balanced timing rounds per build/size include startup, the complete secured
-round and report publication. Three separate processes measure RSS. Units are
-decimal MB; physical-footprint measurements are recorded separately, not used
-as a substitute for RSS or as evidence that the 200 MB target is met.
+At 125M this change is 3.12% faster by the median paired ratio, winning all 12
+pairs. At 10M the paired median improves 2.19%, but only 9/12 pairs are faster;
+the three slower pairs remain in the results. Memory and binary size are
+essentially unchanged. Twelve balanced timing rounds per build/size include
+startup, the complete secured round and report publication. Three separate
+processes measure RSS. Units are decimal MB; physical-footprint measurements
+are recorded separately and do not substitute for RSS.
 
 Fresh original/decoded default-profile builds pass the maintained security and
 pin-tampering qualification and are byte-identical within each version. All 64
-measured outputs and complete reports pass: across versions, only the actual
-program revision and expected work count change. These are same-machine results,
-not universal guarantees or an isolated measurement of capability overhead.
+outputs and complete reports pass: only the actual program revision differs
+across versions; every work counter is unchanged. These are same-machine
+results, not universal guarantees or isolated capability-overhead measurements.
 
-For context, the earlier [three-way comparison and host-size evidence](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
-measured 0.62678 s secured versus 0.97263 s tuned direct I/O at 125M, and the
-strict canonical reader subsequently reduced the host from 7.063 to 6.713 MB.
-Earlier approximately 0.639-second results remain valid; differences between
-batches are not additional optimization wins.
+The preceding [compact-selector comparison](../../docs/validation/canonical-knucleotide-compact-selector-v1.json)
+reduced peak RSS by 16.3 MB. The earlier [three-way comparison](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
+measured 0.62678 s secured versus 0.97263 s tuned direct I/O at 125M. Earlier
+approximately 0.639- and 0.621-second measurements remain valid; only same-batch
+comparisons establish the measured benefit of each change.
 
-The current ABI12/IR27/work-policy36 implementation streams bounded UTF-8 line
-windows through one authorized CLI observation and runtime transaction. The
-generated Mech scanner discards proved-dead prefixes and the final join releases
-consumed chunks. Successful EOF admits genuine full count/shape before saved
-body failures. All stages share the finite cumulative ledger; no Rust workload
-scanner, fabricated canonical matrix or second evaluator is introduced.
+The ABI12/IR27/work-policy36 implementation streams bounded UTF-8 line windows
+through one authorized CLI observation and runtime transaction. The generated
+Mech scanner discards proved-dead prefixes and the final join releases consumed
+chunks. Successful EOF admits genuine full count/shape before saved body
+failures. Original Range/Select/Join visits, output-shape validation and the
+finite cumulative ledger remain. No Rust workload scanner, fabricated canonical
+matrix or second evaluator is introduced.
 
 The default release profile uses opt-level3, ThinLTO and symbol stripping, with
 unchanged unwind/codegen-unit defaults. LLVM optimizes linked Rust host/library
 code; the Mech Object is generated by Cranelift. Broader native coverage, the
 roughly 200 MB peak-RSS/3.16 MB executable targets, clean review and green CI
-remain outstanding. The PR stays draft and unmerged until user direction.
+remain outstanding for the updated head. The PR stays draft and unmerged until
+user direction.
 
 ### Canonical native architecture and limits
 
