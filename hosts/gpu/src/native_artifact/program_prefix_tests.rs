@@ -19,8 +19,22 @@ fn limits() -> NativeProgramExecutionLimits {
 
 fn input(descriptor: &NativeProgramDescriptor, text: &str, memory: &ManagedMemoryBudget) -> Value {
     assert_eq!(descriptor.plan.inputs().len(), 1);
+    string_value(
+        descriptor,
+        descriptor.plan.inputs()[0].ty().schema(),
+        text,
+        memory,
+    )
+}
+
+fn string_value(
+    descriptor: &NativeProgramDescriptor,
+    schema: mech_core::SchemaId,
+    text: &str,
+    memory: &ManagedMemoryBudget,
+) -> Value {
     let value = ValueDraft {
-        schema: descriptor.plan.inputs()[0].ty().schema(),
+        schema,
         shape_values: Box::new([]),
         data: ValueDataDraft::String(text.into()),
     }
@@ -82,6 +96,59 @@ fn output_text(outputs: &[Option<Value>]) -> &str {
 }
 
 #[test]
+fn original_and_decoded_selected_producer_own_the_incremental_line_storage() {
+    use mech_engine::native_artifact::{NativeCollectionPrimitive, NativeLibraryWorkBudget};
+
+    for artifact in artifacts(source()) {
+        let jit = super::super::super::JitProgramArtifact::compile(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+        )
+        .unwrap();
+        let descriptor = jit.descriptor();
+        let calls = descriptor.calls.iter().flatten();
+        let producer = calls
+            .clone()
+            .find(|call| call.template().primitive() == NativeCollectionPrimitive::TextLines)
+            .unwrap();
+        let other = calls
+            .clone()
+            .find(|call| call.template().primitive() != NativeCollectionPrimitive::TextLines)
+            .unwrap();
+        let memory = ManagedMemoryBudget::new(1024 * 1024);
+        let work = NativeLibraryWorkBudget::new(1 << 40, 1 << 32, &memory).unwrap();
+        assert!(
+            other
+                .prepare_text_line_chunks(1024, 128, limits().library, &work)
+                .is_err()
+        );
+        let mut store = producer
+            .prepare_text_line_chunks(1024, 128, limits().library, &work)
+            .unwrap();
+        store.push("skip\nopen\nA\r").unwrap();
+        assert!(store.final_facts().is_none());
+        assert_eq!(store.available_lines(), Some(2));
+        store.retain_from(3).unwrap();
+        store.push("\n猫\nclose\nafter\n").unwrap();
+        store.retain_range(3, 5).unwrap();
+        assert_eq!(store.line(2), None);
+        assert_eq!(store.line(3), Some("A"));
+        assert_eq!(store.line(4), Some("猫"));
+        assert_eq!(store.line(5), None);
+        let facts = store.finish().unwrap();
+        assert_eq!(facts.lines(), 6);
+        assert_eq!(
+            facts.input_bytes(),
+            "skip\nopen\nA\r\n猫\nclose\nafter\n".len() as u64
+        );
+        assert!(!facts.is_ascii());
+        assert!(work.used().0 > 0);
+        drop((store, work));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
 fn emitted_scanner_preserves_carrier_and_one_ledger_across_header_pauses() {
     for artifact in artifacts(source()) {
         let jit = super::super::super::JitProgramArtifact::compile(
@@ -108,6 +175,27 @@ fn emitted_scanner_preserves_carrier_and_one_ledger_across_header_pauses() {
         for available in 0..=6 {
             prepared.run_prefix(&mut entry, available, false).unwrap();
             assert!(prepared.paused.is_some());
+            assert_eq!(
+                prepared.retention,
+                Some(match available {
+                    0 => prefix::Retention {
+                        first: 1,
+                        end: None
+                    },
+                    1 => prefix::Retention {
+                        first: 2,
+                        end: None
+                    },
+                    2..=4 => prefix::Retention {
+                        first: 3,
+                        end: None
+                    },
+                    _ => prefix::Retention {
+                        first: 3,
+                        end: Some(5)
+                    },
+                })
+            );
             assert_unloaned(&prepared);
             assert!(outputs.iter().all(Option::is_none));
             let state = prepared.state.as_ref().unwrap();
@@ -137,6 +225,80 @@ fn emitted_scanner_preserves_carrier_and_one_ledger_across_header_pauses() {
             .unwrap();
         assert_eq!(output_text(&outputs), output_text(&ordinary));
         drop((outputs, ordinary, inputs));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn emitted_frontier_drives_storage_discard_without_a_rust_scanner() {
+    use mech_engine::native_artifact::NativeCollectionPrimitive;
+
+    // The execution still uses ONE genuine full snapshot in this qualification.
+    // Only the ownership handoff below is incremental; it is not a production
+    // streaming claim or a replacement implementation of the Mech scanner.
+    for artifact in artifacts(source()) {
+        let jit = super::super::super::JitProgramArtifact::compile(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+        )
+        .unwrap();
+        let descriptor = jit.descriptor();
+        let producer = descriptor
+            .calls
+            .iter()
+            .flatten()
+            .find(|call| call.template().primitive() == NativeCollectionPrimitive::TextLines)
+            .unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let text = "skip\nopen\nA\nB\nclose\nafter\n";
+        let inputs = [input(descriptor, text, &memory)];
+        let mut outputs = vec![None; descriptor.plan.transport_output_count()];
+        let mut entry = jit.test_generated_entry();
+        let mut prepared = Prepared::new(descriptor, limits(), &memory).unwrap();
+        prepared.activate(&mut entry).unwrap();
+        prepared.import_turn(&inputs, &[], &outputs).unwrap();
+        let mut storage = producer
+            .prepare_text_line_chunks(
+                text.len() as u64,
+                128,
+                limits().library,
+                &prepared.state.as_ref().unwrap().library,
+            )
+            .unwrap();
+        let mut closed = None;
+        for fragment in text.split_inclusive('\n') {
+            storage.push(fragment).unwrap();
+            prepared
+                .run_prefix(&mut entry, storage.available_lines().unwrap(), false)
+                .unwrap();
+            assert_unloaned(&prepared);
+            let retained = prepared.retention.unwrap();
+            if let Some(end) = retained.end {
+                if let Some(prior) = closed {
+                    assert_eq!(prior, retained);
+                } else {
+                    storage.retain_range(retained.first, end).unwrap();
+                    closed = Some(retained);
+                }
+            } else {
+                storage.retain_from(retained.first).unwrap();
+                assert_eq!(storage.line(retained.first - 1), None);
+            }
+            assert!(outputs.iter().all(Option::is_none));
+        }
+        assert_eq!(storage.line(1), None);
+        assert_eq!(storage.line(2), None);
+        assert_eq!(storage.line(3), Some("A"));
+        assert_eq!(storage.line(4), Some("B"));
+        assert_eq!(storage.line(5), None);
+        assert_eq!(storage.line(6), None);
+        let facts = storage.finish().unwrap();
+        prepared
+            .run_prefix(&mut entry, facts.lines(), true)
+            .unwrap();
+        prepared.publish(&mut outputs).unwrap();
+        assert_eq!(output_text(&outputs), "A|B");
+        drop((storage, inputs, outputs));
         assert_eq!(memory.used_bytes(), 0);
     }
 }
@@ -285,6 +447,65 @@ fn real_full_source_selects_generic_header_continuation_without_enabling_capture
             .expect("ordinary scanner proof");
         assert_eq!(region.frontier.states().len(), 3);
         assert_eq!(region.frontier.read().count().guards().len(), 2);
+
+        // Run the actual complete program, not just its proof inventory. Its
+        // ONE genuine resource observation is already captured in this test;
+        // production incremental I/O/admission is deliberately not claimed.
+        let text = ">ONE\nAAA\n>TWO\nCCCC\n>THREE\nGGTATTTTAATTTATAGT\nGGTAC\n>FOUR\nT\n";
+        assert_eq!(jit.descriptor().plan.inputs().len(), 0);
+        assert_eq!(jit.descriptor().plan.observations().len(), 1);
+        let descriptor = jit.descriptor();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let observations = [string_value(
+            descriptor,
+            descriptor.plan.transport_input_type(0).schema(),
+            text,
+            &memory,
+        )];
+        let mut expected = vec![None; descriptor.plan.transport_output_count()];
+        let mut entry = jit.test_generated_entry();
+        let mut ordinary = Prepared::new(descriptor, limits(), &memory).unwrap();
+        ordinary.activate(&mut entry).unwrap();
+        ordinary
+            .finish(&mut entry, &[], &observations, &mut expected)
+            .unwrap();
+        let mut actual = vec![None; expected.len()];
+        let mut prepared = Prepared::new(descriptor, limits(), &memory).unwrap();
+        prepared.activate(&mut entry).unwrap();
+        prepared.import_turn(&[], &observations, &actual).unwrap();
+        for available in 0..=text.lines().count() as u64 {
+            prepared.run_prefix(&mut entry, available, false).unwrap();
+            assert_unloaned(&prepared);
+            assert!(actual.iter().all(Option::is_none));
+        }
+        assert_eq!(
+            prepared.retention,
+            Some(prefix::Retention {
+                first: 6,
+                end: Some(8)
+            })
+        );
+        prepared
+            .run_prefix(&mut entry, text.lines().count() as u64, true)
+            .unwrap();
+        prepared.publish(&mut actual).unwrap();
+        assert_eq!(actual.len(), expected.len());
+        for (actual, expected) in actual.iter().zip(&expected) {
+            assert_eq!(
+                actual
+                    .as_ref()
+                    .unwrap()
+                    .canonical_snapshot_bytes(&descriptor.schemas)
+                    .unwrap(),
+                expected
+                    .as_ref()
+                    .unwrap()
+                    .canonical_snapshot_bytes(&descriptor.schemas)
+                    .unwrap(),
+            );
+        }
+        drop((actual, expected, observations));
+        assert_eq!(memory.used_bytes(), 0);
     }
 }
 

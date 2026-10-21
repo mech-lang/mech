@@ -10,8 +10,11 @@ use mech_core::{
     ResourceDemand, SchemaBody, SchemaId, SchemaKey, ShapeInstance, Value, ValueData,
 };
 
+#[path = "native_text_line_chunks.rs"]
+mod chunks;
 #[path = "native_collection_line_reads.rs"]
 mod reads;
+pub use chunks::{NativeTextLineCaptureFacts, NativeTextLineChunks};
 
 /// Immutable owner and exact native pointer/length rows. Only the maintained
 /// prepared factory can construct it; the original scalar String stays alive
@@ -103,6 +106,30 @@ fn require(dimension: Dimension, required: u64, limit: Option<u64>) -> Result<()
 }
 
 impl NativePreparedLibraryCall {
+    /// Prepare private UTF-8 storage for this SAME selected text/lines site.
+    /// This neither executes that source visit nor publishes a partial Matrix,
+    /// String observation, numeric count, or permission to complete a program.
+    /// The owning backend must still reconcile the original producer/length
+    /// admissions and capture errors at EOF before consuming the final facts.
+    pub fn prepare_text_line_chunks(
+        &self,
+        input_limit: u64,
+        max_fragment: usize,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<NativeTextLineChunks, InvokeError> {
+        use crate::native_artifact::NativeCollectionPrimitive as Primitive;
+        finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
+        if self.template.primitive() != Primitive::TextLines
+            || self.template.inputs().len() != 1
+            || self.template.inputs()[0].body() != &SchemaBody::String
+            || !self.template.inputs()[0].dimension_parameters().is_empty()
+            || self.selection_shape_bounds.0 == 0
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        chunks::prepare(input_limit, max_fragment, limits, work, self.lookup_work)
+    }
     pub fn text_line_matrix_or_canonical(
         &self,
         source: &Value,

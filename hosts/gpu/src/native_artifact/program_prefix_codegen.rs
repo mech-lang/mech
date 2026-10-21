@@ -72,6 +72,11 @@ pub(in crate::native_artifact) fn gate(
         .load(types::I64, MemFlags::new(), locals, offset(region.carrier)?);
     let mut known = b.ins().iconst(types::I8, 0);
     let mut pending = b.ins().iconst(types::I8, 0);
+    let zero = b.ins().iconst(types::I64, 0);
+    let one = b.ins().iconst(types::I64, 1);
+    let mut keep_first = zero;
+    let mut keep_end = zero;
+    let mut keep_closed = zero;
     for state in region.frontier.states() {
         let matches = b
             .ins()
@@ -92,6 +97,49 @@ pub(in crate::native_artifact) fn gate(
             matches
         };
         pending = b.ins().bor(pending, waiting);
+        // The SAME emitted carrier determines storage liveness. The runtime
+        // receives coordinates only; it never interprets a Mech state/tag.
+        let (first, end, closed) = if let Some((first, end)) = state.returned_range() {
+            let first = b.ins().load(
+                types::I64,
+                MemFlags::new(),
+                locals,
+                offset(region.carrier + first)?,
+            );
+            let end = b.ins().load(
+                types::I64,
+                MemFlags::new(),
+                locals,
+                offset(region.carrier + end)?,
+            );
+            let nonempty = b.ins().icmp(IntCC::UnsignedLessThan, first, end);
+            // Both unordered and equal returned endpoints mean an empty
+            // result under the original nonempty guard. Never revive bytes.
+            (
+                b.ins().select(nonempty, first, one),
+                b.ins().select(nonempty, end, one),
+                one,
+            )
+        } else {
+            let mut first = None;
+            for field in state.keep_fields() {
+                let word = b.ins().load(
+                    types::I64,
+                    MemFlags::new(),
+                    locals,
+                    offset(region.carrier + field)?,
+                );
+                first = Some(first.map_or(word, |prior| b.ins().umin(prior, word)));
+            }
+            (
+                first.ok_or_else(|| super::super::compiler::backend("empty retention frontier"))?,
+                zero,
+                zero,
+            )
+        };
+        keep_first = b.ins().select(matches, first, keep_first);
+        keep_end = b.ins().select(matches, end, keep_end);
+        keep_closed = b.ins().select(matches, closed, keep_closed);
     }
     guard(b, known, error, STATUS_ABI);
     let pause = b.create_block();
@@ -100,13 +148,18 @@ pub(in crate::native_artifact) fn gate(
     let site = region.tail.header() as usize;
     super::tail_codegen::pause(b, locals, closed, site, hooks, error)?;
     let layout = &borrowed.regions[region.borrowed];
-    let zero = b.ins().iconst(types::I64, 0);
     // Clear all raw pair lanes, including derived Strings from the last
     // traversal, BEFORE the helper drops their actual immutable owner loans.
     for word in layout.ready..layout.end {
         b.ins().store(MemFlags::new(), zero, locals, offset(word)?);
     }
-    hooks.call(b, site, program_abi::PREFIX_PAUSE, [zero; 3], error);
+    hooks.call(
+        b,
+        site,
+        program_abi::PREFIX_PAUSE,
+        [keep_first, keep_end, keep_closed],
+        error,
+    );
     let status = b
         .ins()
         .iconst(types::I64, program_abi::STATUS_INPUT_PENDING as i64);

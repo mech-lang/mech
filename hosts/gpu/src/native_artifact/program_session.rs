@@ -229,6 +229,7 @@ pub(super) struct Prepared<'a> {
     activated: bool,
     prefix: Option<prefix::Input>,
     paused: Option<u32>,
+    retention: Option<prefix::Retention>,
 }
 
 impl<'a> Prepared<'a> {
@@ -399,6 +400,7 @@ impl<'a> Prepared<'a> {
             activated: false,
             prefix: None,
             paused: None,
+            retention: None,
             state: Some(OwnedState {
                 collections,
                 line_matrices,
@@ -723,7 +725,7 @@ impl<'a> Prepared<'a> {
             borrowed_strings: None,
             closed_tail: None,
             selected_join: None,
-            prefix: prefix_input.map(prefix::State::new),
+            prefix: prefix_input.map(|input| prefix::State::new(input, self.retention)),
         };
         let context_pointer = (&mut context as *mut Context<'_, '_>).cast::<c_void>();
         let mut frame = Frame {
@@ -842,6 +844,10 @@ impl<'a> Prepared<'a> {
                     context.prefix.as_mut().unwrap().paused = None;
                     context.check_prefix_header(site)?;
                     prefix::check_cleared(descriptor, values, arguments)?;
+                    self.retention =
+                        Some(context.prefix.as_ref().unwrap().retained.ok_or_else(|| {
+                            invalid("native checkpoint omitted retention coordinates")
+                        })?);
                     self.paused = Some(site);
                 }
                 STATUS_ARITHMETIC | STATUS_REJECT => {

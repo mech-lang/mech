@@ -13,17 +13,62 @@ pub(super) struct Input {
     pub available: u64,
     pub eof: bool,
 }
+
+/// Coordinates reported by generated instructions, not a decoded Mech state.
+/// A sealed range is immutable; an open lower bound only moves forward.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct Retention {
+    pub first: u64,
+    pub end: Option<u64>,
+}
+impl Retention {
+    fn checked(args: [u64; 3], available: u64, prior: Option<Self>) -> Result<Self, Error> {
+        let [first, end, closed] = args;
+        let extent = available
+            .checked_add(1)
+            .ok_or_else(|| invalid("prefix extent overflows"))?;
+        if first == 0
+            || closed > 1
+            || first > extent
+            || (closed == 0 && end != 0)
+            || (closed == 1 && (end < first || end > extent))
+        {
+            return Err(invalid(
+                "native retention coordinates exceed completed input",
+            ));
+        }
+        let retained = Self {
+            first,
+            end: (closed == 1).then_some(end),
+        };
+        if let Some(prior) = prior {
+            if prior.end.is_some() && retained != prior {
+                return Err(invalid(
+                    "native retention reopened or changed a sealed range",
+                ));
+            }
+            if retained.end != Some(first) && first < prior.first {
+                return Err(invalid("native retention revived a discarded prefix"));
+            }
+        }
+        Ok(retained)
+    }
+}
 pub(super) struct State {
     pub input: Input,
     pub paused: Option<u32>,
+    pub retained: Option<Retention>,
+    previous_retention: Option<Retention>,
     borrowed_resumed: bool,
     tail_resumed: bool,
 }
 impl State {
-    pub fn new(input: Input) -> Self {
+    pub fn new(input: Input, previous_retention: Option<Retention>) -> Self {
         Self {
             input,
             paused: None,
+            retained: None,
+            previous_retention,
             borrowed_resumed: false,
             tail_resumed: false,
         }
@@ -141,7 +186,10 @@ impl Context<'_, '_> {
             amount(self.control.progress.len() / 2, 64, 1024)?,
         )?;
         self.check_prefix_header(site)?;
-        if args != [0; 3] || self.window_region.is_some() || self.selected_join.is_some() {
+        if (operation != program_abi::PREFIX_PAUSE && args != [0; 3])
+            || self.window_region.is_some()
+            || self.selected_join.is_some()
+        {
             return Err(invalid("malformed or overlapping prefix loan"));
         }
         let region = self.control.descriptor.prefix.as_ref().unwrap();
@@ -149,6 +197,11 @@ impl Context<'_, '_> {
         let input = self.prefix.as_ref().unwrap().input;
         match operation {
             program_abi::PREFIX_PAUSE => {
+                let retained = Retention::checked(
+                    args,
+                    input.available,
+                    self.prefix.as_ref().unwrap().previous_retention,
+                )?;
                 if input.eof
                     || self.closed_tail.is_some()
                     || !self
@@ -168,6 +221,7 @@ impl Context<'_, '_> {
                     self.write_borrowed_word(word, 0)?;
                 }
                 self.borrowed_strings = None;
+                self.prefix.as_mut().unwrap().retained = Some(retained);
                 self.prefix.as_mut().unwrap().paused = Some(site);
                 Ok(None)
             }
@@ -193,5 +247,55 @@ impl Context<'_, '_> {
             }
             _ => Err(invalid("unknown native prefix helper")),
         }
+    }
+}
+
+#[cfg(test)]
+mod retention_tests {
+    use super::Retention;
+
+    #[test]
+    fn coordinates_reject_unknown_extents_regressions_and_sealed_range_mutation() {
+        let open = Retention::checked([3, 0, 0], 3, None).unwrap();
+        assert_eq!(
+            open,
+            Retention {
+                first: 3,
+                end: None
+            }
+        );
+        for args in [
+            [0, 0, 0],
+            [5, 0, 0],
+            [3, 1, 0],
+            [3, 0, 2],
+            [3, 2, 1],
+            [3, 5, 1],
+            [2, 0, 0],
+            [2, 4, 1],
+        ] {
+            assert!(Retention::checked(args, 3, Some(open)).is_err(), "{args:?}");
+        }
+        let sealed = Retention::checked([3, 4, 1], 3, Some(open)).unwrap();
+        assert_eq!(
+            Retention::checked([3, 4, 1], 100, Some(sealed)).unwrap(),
+            sealed
+        );
+        for args in [[3, 0, 0], [2, 4, 1], [3, 5, 1], [1, 1, 1]] {
+            assert!(
+                Retention::checked(args, 100, Some(sealed)).is_err(),
+                "{args:?}"
+            );
+        }
+        let empty = Retention::checked([1, 1, 1], 3, Some(open)).unwrap();
+        assert_eq!(
+            empty,
+            Retention {
+                first: 1,
+                end: Some(1)
+            }
+        );
+        assert!(Retention::checked([1, 2, 1], 100, Some(empty)).is_err());
+        assert!(Retention::checked([1, 0, 0], u64::MAX, None).is_err());
     }
 }

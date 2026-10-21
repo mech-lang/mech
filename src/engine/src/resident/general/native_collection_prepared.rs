@@ -33,7 +33,10 @@ pub use selected_join::NativeSelectedStringMatrix;
 #[path = "native_collection_text_lines.rs"]
 mod text_lines;
 #[cfg(feature = "pure_text")]
-pub use text_lines::{NativeTextLineMatrix, NativeTextLineMatrixChoice};
+pub use text_lines::{
+    NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineMatrix,
+    NativeTextLineMatrixChoice,
+};
 
 /// Compiler-owned selection/immutable schemas, not a bound runtime call or
 /// authority to enter its source site. No artifact/catalog traversal occurs

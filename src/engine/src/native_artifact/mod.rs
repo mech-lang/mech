@@ -63,7 +63,8 @@ pub use borrowed_strings::{NativeBorrowedStringAction, NativeBorrowedStringRegio
 mod selected_text_join;
 #[cfg(feature = "pure_text")]
 pub use crate::resident::general::native_collection_calls::{
-    NativeSelectedStringMatrix, NativeTextLineMatrix, NativeTextLineMatrixChoice,
+    NativeSelectedStringMatrix, NativeTextLineCaptureFacts, NativeTextLineChunks,
+    NativeTextLineMatrix, NativeTextLineMatrixChoice,
 };
 #[cfg(feature = "pure_text")]
 pub use selected_text_join::NativeSelectedTextJoin;

@@ -56,6 +56,8 @@ pub(super) fn derive(
     };
     if frontier.states().iter().any(|state| {
         state.index_field().is_some_and(|field| field >= width)
+            || (state.returned_range().is_none()
+                && (state.index_field().is_none() || state.keep_fields().is_empty()))
             || state.keep_fields().iter().any(|field| *field >= width)
             || state
                 .returned_range()
@@ -63,8 +65,16 @@ pub(super) fn derive(
     }) {
         return Err("prefix carrier fields exceed their proved storage");
     }
+    let retention_work = frontier
+        .states()
+        .iter()
+        .try_fold(0u64, |work, state| {
+            work.checked_add((state.keep_fields().len() as u64).checked_mul(32)?)
+        })
+        .ok_or("prefix retention work overflows")?;
     let header_work = (frontier.states().len() as u64)
-        .checked_mul(32)
+        .checked_mul(128)
+        .and_then(|n| n.checked_add(retention_work))
         .and_then(|n| {
             n.checked_add(
                 ((borrowed.regions[ordinal].proof.matrices().len()
