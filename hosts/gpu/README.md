@@ -157,7 +157,7 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [current timing and footprint receipt](../../docs/validation/canonical-knucleotide-host-footprint-v1.json)
+The [latest qualified timing and footprint receipt](../../docs/validation/canonical-knucleotide-host-footprint-v1.json)
 compares three retained binaries on the same M1. Memory and executable sizes
 below use decimal MB; peak RSS comes from separate process-memory runs.
 
@@ -165,7 +165,7 @@ below use decimal MB; peak RSS comes from separate process-memory runs.
 | --- | ---: | ---: | ---: | ---: |
 | Legacy direct I/O | 0.0916 s | 0.9756 s | 187.0 MB | 3.16 MB |
 | Previous secured application (`cb52cb9dc`) | 0.0920 s | 0.9608 s | 1,206.7 MB | 17.82 MB |
-| Current secured application (`fb47118f0`) | 0.0907 s | 0.9280 s | 964.8 MB | 12.89 MB |
+| Latest qualified secured application (`fb47118f0`) | 0.0907 s | 0.9280 s | 964.8 MB | 12.89 MB |
 
 Twelve balanced timing rounds per size retain all 78 outputs and 52 secured
 reports; every output and report matches. Six separate memory runs per binary
@@ -176,11 +176,17 @@ machine; they do not isolate capability-check costs or establish an optimization
 ceiling. The [previous receipt](../../docs/validation/canonical-knucleotide-ci-portability-v1.json)
 retains its own measurements and source pins.
 
+Memory and executable size remain unfinished: the reference is about 187 MB
+peak RSS and 3.16 MB, not the current secured footprint. Further reductions
+must preserve speed and the same capability, validation and accounting rules.
+
 The provider releases redundant raw stdin backing after successful text capture,
 preserving exact mixed byte/text reads and invalid-UTF-8 behavior. Detached host
 Strings move through the existing canonical finalizer without a temporary
 mutable cell and snapshot copy. Generated release workspaces strip symbols at
 speed optimization level 3. Grants, finite limits and accounting are unchanged.
+Canonical linked launchers register only the canonical factory surface; the
+unused legacy bytecode factory catalog is not needed to validate their Objects.
 Original and decoded builds are byte-identical. The emitted Mech instructions
 differ only in constant-slot immediates induced by standalone nominal identity;
 the receipt records the exact constant bijection, instruction remaps and unchanged

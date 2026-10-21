@@ -94,6 +94,8 @@ fn original_and_decoded_closed_program_generate_same_hosted_object_and_pins() {
         assert!(main.contains("with_canonical_native_resources_phased"));
         assert!(main.contains("linked.prepare_hosted"));
         assert!(main.contains("resume_hosted_into"));
+        assert!(main.contains("mech_engine::install_intrinsic_resident"));
+        assert!(!main.contains("mech_stdlib::install_native_plan"));
         assert_eq!(project.metadata()["source_is_provenance_only"], true);
         assert_eq!(project.metadata()["linked"], false);
         assert_eq!(project.metadata()["executed"], false);
@@ -119,6 +121,44 @@ fn original_and_decoded_closed_program_generate_same_hosted_object_and_pins() {
             ))
         ));
         assert!(!directory.exists());
+    }
+}
+
+#[test]
+fn canonical_only_catalog_preserves_original_and_decoded_native_objects() {
+    let mut builder = mech_core::FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut builder).unwrap();
+    let canonical = builder.build().unwrap();
+    assert_eq!(canonical.runtime_factory_count(), 0);
+    assert_eq!(canonical.specializer_count(), 0);
+    assert!(canonical.resident_factory_count() > 0);
+
+    // Source compilation still uses the ordinary complete catalog. The
+    // linked shell only rebinds its resulting canonical artifact; it must not
+    // keep the old bytecode factories (and all their callees) alive as well.
+    for source in [SOURCE, FULL, ECHO, TWO, CLOSED_FAIL, CLOSED_LIVE, FAIL] {
+        let (variants, complete) = artifacts(source);
+        for artifact in variants {
+            let expected = mech_gpu::native_artifact::emit_program_object(&artifact, &complete)
+                .unwrap();
+            let selected = mech_gpu::native_artifact::emit_program_object(&artifact, &canonical)
+                .unwrap();
+            assert_eq!(selected.bytes(), expected.bytes());
+            assert_eq!(selected.identity().bytes(), expected.identity().bytes());
+            assert_eq!(selected.metadata(), expected.metadata());
+        }
+    }
+
+    let (variants, _) = artifacts(FULL);
+    for artifact in variants {
+        let jit = JitProgramArtifact::compile(&artifact, &canonical).unwrap();
+        let (mut instance, trace) = runtime(GGTA_INPUT, true);
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        super::execute(&mut instance, &artifact, &jit, limits(), &memory).unwrap();
+        assert_eq!(trace.lock().unwrap().output, GGTA_OUTPUT);
+        assert_eq!(memory.used_bytes(), 0);
+        no_resident(&instance);
+        instance.shutdown().unwrap();
     }
 }
 
