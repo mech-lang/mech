@@ -139,8 +139,7 @@ pub(super) fn prepare_destination(
     validate_linked_application_binary_name(binary_name)?;
     let workspace = workspace.canonicalize()?;
     if !workspace.join("hosts/gpu/Cargo.toml").is_file()
-        || !workspace.join("src/core/Cargo.toml").is_file()
-        || !workspace.join("src/engine/Cargo.toml").is_file()
+        || !workspace.join("src/stdlib/Cargo.toml").is_file()
     {
         return Err(NativeApplicationError::Invalid(
             "workspace dependencies are absent",
@@ -247,10 +246,7 @@ pub(super) fn write_linked_application(
     let workspace_text = workspace.to_str().ok_or(NativeApplicationError::Invalid(
         "workspace path is not Unicode",
     ))?;
-    // Launchers rebind canonical resident factories only. Retain their engine
-    // type/kernel features directly, not via an unused legacy bytecode library
-    // dependency and its native-plan/math/compare/logic package closure.
-    let (gpu_feature, core_features, engine_features, dependencies) = match inputs.profile {
+    let (gpu_feature, core_features, library_features, dependencies) = match inputs.profile {
         LinkedApplicationProfile::Scalar => ("canonical-native-runtime", "", "", String::new()),
         #[cfg(feature = "canonical-native-program")]
         LinkedApplicationProfile::ManagedProgram => (
@@ -285,8 +281,9 @@ build = "build.rs"
 [workspace]
 [dependencies]
 mech-core = {{ path = {core}, default-features = false{core_features} }}
-mech-engine = {{ path = {engine}, default-features = false, features = ["native-artifact", "std", "bool", "u64", "i64", "f64", "convert", "math_sqrt", "math_neg", "math_add", "math_sub", "math_mul", "math_div", "math_mod", "compare_default", "logic_default"{engine_features}] }}
+mech-engine = {{ path = {engine}, default-features = false, features = ["native-artifact"] }}
 mech-gpu = {{ path = {gpu}, default-features = false, features = ["{gpu_feature}"] }}
+mech-stdlib = {{ path = {stdlib}, default-features = false, features = ["std", "native-plan", "bool", "u64", "i64", "f64", "convert", "math_sqrt", "math_neg", "math_add", "math_sub", "math_mul", "math_div", "math_mod", "compare_default", "logic_default"{library_features}] }}
 sha2 = {{ version = "0.11.0", default-features = false }}
 {dependencies}[build-dependencies]
 sha2 = {{ version = "0.11.0", default-features = false }}
@@ -303,6 +300,7 @@ opt-level = 3
         core = json_string(&format!("{workspace_text}/src/core")),
         engine = json_string(&format!("{workspace_text}/src/engine")),
         gpu = json_string(&format!("{workspace_text}/hosts/gpu")),
+        stdlib = json_string(&format!("{workspace_text}/src/stdlib")),
     );
     cargo.push_str(&workspace_resolution_patches(workspace)?);
     let mut files = BTreeMap::<String, Vec<u8>>::from([
@@ -334,6 +332,7 @@ opt-level = 3
     let runtime_features = vec![
         format!("mech-gpu/{gpu_feature}"),
         "mech-engine/native-artifact".to_owned(),
+        "mech-stdlib/native-plan".to_owned(),
     ];
     #[cfg(feature = "canonical-native-program-host")]
     let runtime_features = {
