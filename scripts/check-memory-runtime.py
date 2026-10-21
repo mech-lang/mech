@@ -29,6 +29,7 @@ REQUIRED = (
     "src/core/src/execution.rs",
     "src/core/src/snapshot/encoding.rs",
     "src/core/src/snapshot/validation.rs",
+    "src/core/src/snapshot/string_constructor.rs",
     "include/project.js",
     "machines/string/src/lib.rs",
     "machines/matrix/src/transpose.rs",
@@ -449,6 +450,7 @@ def failures(root: Path) -> list[str]:
     snapshot = rust_code(sources.get("src/core/src/snapshot/validation.rs", ""))
     finalizers = list(function_bodies(snapshot, "finalize_data"))
     finalized_values = list(function_bodies(snapshot, "finalized_value_with_construction"))
+    prepared_storage = list(function_bodies(snapshot, "prepared_snapshot_storage"))
     admitted_finalizers = list(function_bodies(cell, "finalize_draft_with_construction"))
     if (
         "SnapshotConstructionAuthority" not in snapshot
@@ -458,11 +460,43 @@ def failures(root: Path) -> list[str]:
         or "context.try_vec_with_capacity" not in finalizers[0]
         or "context.try_boxed_str" not in finalizers[0]
         or "finalized_value_with_construction" not in snapshot
-        or not finalized_values
-        or finalized_values[0].count("context.try_arc(") < 2
+        or len(finalized_values) != 1
+        or "prepared_snapshot_storage(shape, data, context)?" not in finalized_values[0]
         or "Arc::new(" in finalized_values[0]
+        or len(prepared_storage) != 1
+        or prepared_storage[0].count("context.try_arc(") != 3
+        or "Arc::new(" in prepared_storage[0]
     ):
         found.append("common canonical finalization bypasses construction authority")
+    string_constructor = rust_code(
+        sources.get("src/core/src/snapshot/string_constructor.rs", "")
+    )
+    string_preparers = list(function_bodies(string_constructor, "from_validated_shape"))
+    string_finishers = list(function_bodies(string_constructor, "finish"))
+    value_finalizers = list(function_bodies(snapshot, "finalize_value"))
+    boxed_strings = list(function_bodies(snapshot, "try_boxed_str"))
+    if (
+        len(string_preparers) != 1
+        or "context.admit_string_backing(length)?" not in string_preparers[0]
+        or "context.try_clone_schemas()?" not in string_preparers[0]
+        or not re.search(r"\bprepared_snapshot_storage\s*\(", string_preparers[0])
+        or "Arc::new(" in string_preparers[0]
+        or len(string_finishers) != 1
+        or "text.len() != self.length" not in string_finishers[0]
+        or "Arc::get_mut(&mut self.root)" not in string_finishers[0]
+        or "Arc::get_mut(&mut storage.data)" not in string_finishers[0]
+        or not (
+            string_finishers[0].find("text.len() != self.length")
+            < string_finishers[0].find("Arc::get_mut(&mut self.root)")
+            < string_finishers[0].find("text.into_boxed_str()")
+            < string_finishers[0].find("Ok(Value {")
+        )
+        or len(value_finalizers) != 1
+        or "StringSnapshotConstructor::from_validated_shape(" not in value_finalizers[0]
+        or len(boxed_strings) != 1
+        or "self.admit_string_backing(value.len())?" not in boxed_strings[0]
+    ):
+        found.append("prepared canonical String construction bypasses authority or ownership")
     if (
         "shared_schemas: OnceCell<Arc<SchemaTable>>" not in snapshot
         or "self.shared_schemas.get()" not in snapshot
@@ -501,9 +535,10 @@ def failures(root: Path) -> list[str]:
         )
         and len(plain_finalizers) == 1
         and len(finalized_values) == 1
+        and len(prepared_storage) == 1
         and all(
             "resident_token:SharedOwnershipCell::new()" in re.sub(r"\s+", "", body)
-            for body in [plain_finalizers[0], finalized_values[0]]
+            for body in [plain_finalizers[0], prepared_storage[0]]
         )
     )
     if (

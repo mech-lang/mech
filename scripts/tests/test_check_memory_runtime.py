@@ -888,6 +888,55 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         )
         self.assert_failure(root, "common canonical finalization bypasses")
 
+    def test_74a_common_finalizer_must_call_the_checked_storage_helper(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "prepared_snapshot_storage(shape, data, context)?",
+                     "unadmitted_snapshot_storage(shape, data, context)?")
+        self.assert_failure(root, "common canonical finalization bypasses")
+
+    def test_74b_finalizer_shape_owner_must_use_construction_authority(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "let shape = context.try_arc(shape)?;",
+                     "let shape = Arc::new(shape);")
+        self.assert_failure(root, "common canonical finalization bypasses")
+
+    def test_74c_prepared_string_must_admit_its_backing_and_schema_owner(self):
+        for old in ("context.admit_string_backing(length)?;",
+                    "context.try_clone_schemas()?"):
+            with self.subTest(admission=old):
+                root = self.fixture()
+                self.replace(root, "src/core/src/snapshot/string_constructor.rs", old, "unadmitted()")
+                self.assert_failure(root, "prepared canonical String construction bypasses")
+
+    def test_74d_prepared_string_must_share_the_checked_metadata_constructor(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/string_constructor.rs",
+                     "prepared_snapshot_storage(", "unadmitted_snapshot_storage(")
+        self.assert_failure(root, "prepared canonical String construction bypasses")
+
+    def test_74e_prepared_string_must_keep_length_and_both_owner_guards(self):
+        for old in ("text.len() != self.length",
+                    "Arc::get_mut(&mut self.root)",
+                    "Arc::get_mut(&mut storage.data)"):
+            with self.subTest(guard=old):
+                root = self.fixture()
+                self.replace(root, "src/core/src/snapshot/string_constructor.rs", old, "unchecked()")
+                self.assert_failure(root, "prepared canonical String construction bypasses")
+
+    def test_74f_ordinary_string_finalization_must_share_the_prepared_leaf(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "StringSnapshotConstructor::from_validated_shape(", "unchecked_string_constructor(")
+        self.assert_failure(root, "prepared canonical String construction bypasses")
+
+    def test_74g_packed_string_finalization_must_still_admit_backing(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "self.admit_string_backing(value.len())?;", "unadmitted();")
+        self.assert_failure(root, "prepared canonical String construction bypasses")
+
     def test_75_recursive_values_must_share_one_schema_owner(self):
         root = self.fixture()
         self.replace(
