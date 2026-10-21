@@ -104,6 +104,20 @@ fn complete_knucleotide_original_and_decoded_run_through_actual_secured_cli() {
         );
         assert_eq!(frontiers[0].guards().len(), 2);
         assert!(!frontiers[0].exact().is_empty());
+        let reads = jit.descriptor().plan().text_line_read_frontiers();
+        assert_eq!(
+            reads.len(),
+            1,
+            "the actual secured source must guard every borrowed line in its current Tail visit"
+        );
+        assert_eq!(reads[0].reads().len(), 2);
+        let retention = jit.descriptor().plan().text_line_retention_frontiers();
+        assert_eq!(
+            retention.len(),
+            1,
+            "the actual secured source must retain every future selected-range start"
+        );
+        assert_eq!(retention[0].states().len(), 3);
         assert_eq!(
             jit.descriptor().plan().borrowed_string_regions()[0]
                 .actions()

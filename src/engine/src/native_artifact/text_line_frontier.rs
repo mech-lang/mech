@@ -15,6 +15,14 @@ use super::{
 };
 use mech_core::ValueData;
 
+#[path = "text_line_availability.rs"]
+mod availability;
+pub use availability::{NativeTextLineReadFrontier, NativeTextLineReadGuard};
+
+#[path = "text_line_retention.rs"]
+mod retention;
+pub use retention::{NativeTextLineRetentionFrontier, NativeTextLineRetentionState};
+
 /// A predicate at its original scalar comparison and branch sites. The count
 /// may not be replaced by a prefix length in any canonical/native value slot.
 #[derive(Clone, Debug)]
@@ -184,7 +192,35 @@ fn guards_for_comparison(
         Op::U64Lt if counts[left.get() as usize] && !counts[right.get() as usize] => *right,
         _ => return None,
     };
-    let mut aliases = vec![*output];
+    Some(
+        predicate_branches(plan, site, *output, uses, definitions)?
+            .into_iter()
+            .map(|(branch, available, exhausted)| NativeTextLineCountGuard {
+                comparison: site,
+                branch,
+                index,
+                predicate: *output,
+                available,
+                exhausted,
+            })
+            .collect(),
+    )
+}
+
+/// Complete uses of one Bool predicate and identity-only copies. Tuples are
+/// (branch site, false successor, true successor), independent of arm order.
+fn predicate_branches(
+    plan: &Plan,
+    site: u32,
+    predicate: Value,
+    uses: &[Vec<Read>],
+    definitions: &[Vec<Option<Value>>],
+) -> Option<Vec<(u32, u32, u32)>> {
+    let block = &plan.blocks()[site as usize];
+    if definitions[predicate.get() as usize].as_slice() != [None] {
+        return None;
+    }
+    let mut aliases = vec![predicate];
     let mut branches = Vec::new();
     let mut next = 0;
     while next < aliases.len() {
@@ -254,19 +290,7 @@ fn guards_for_comparison(
     if branches.is_empty() {
         return None;
     }
-    Some(
-        branches
-            .into_iter()
-            .map(|(branch, available, exhausted)| NativeTextLineCountGuard {
-                comparison: site,
-                branch,
-                index,
-                predicate: *output,
-                available,
-                exhausted,
-            })
-            .collect(),
-    )
+    Some(branches)
 }
 
 fn frontier(

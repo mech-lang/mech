@@ -189,7 +189,11 @@ PR draft and unmerged until the user directs otherwise.
 The roughly 200 MB/3.16 MB footprint target is **not achieved**. Whole-input
 capture still retains 254.2 MB; line geometry and the selected sequence also
 remain. Proved streaming through the existing authorized resource and further
-host trimming remain unfinished. Streaming is not implemented by this change.
+host trimming remain unfinished. The compiler now derives EOF-dependent count,
+current-visit bounds and future-range retention proofs from the full original
+graph, including the original and decoded k-nucleotide program. These are
+prerequisites only: chunk delivery and native resume are not implemented yet,
+so the footprint above has not improved from these proofs.
 The [buffer-reuse receipt](../../docs/validation/canonical-knucleotide-owned-string-footprint-v1.json)
 retains the previous ownership measurement. Capacity shrinking may still
 reallocate backing; this is not a universal zero-copy guarantee.

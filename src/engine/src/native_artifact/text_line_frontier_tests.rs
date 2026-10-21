@@ -5,7 +5,7 @@ use mech_syntax::document::{
 };
 use std::sync::Arc;
 
-fn plans(source: &str) -> [Plan; 2] {
+pub(super) fn plans(source: &str) -> [Plan; 2] {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x46524f4e54), Revision(1), source).unwrap(),
         ParseConfig::default(),
@@ -37,7 +37,7 @@ fn plans(source: &str) -> [Plan; 2] {
         .map(|artifact| super::super::lower_native_program_artifact(&artifact, &catalog).unwrap())
 }
 
-fn scan(predicate: &str, eof: &str, extra: &str) -> String {
+pub(super) fn scan(predicate: &str, eof: &str, extra: &str) -> String {
     let output = if extra.is_empty() { "result" } else { extra };
     format!(
         "+> text\n+> sequence\n#Scan(lines<[string]>, n<u64>) => <u64>\n  | :Step(i<u64>)\n  | :Done(out<u64>).\n#Scan(lines, n) -> :Step(1u64)\n  :Step(i)\n    | {predicate} -> :Done({eof})\n    | lines[i] == \"stop\" -> :Done(i)\n    | * -> :Step(i + 1u64)\n  :Done(out) => out.\nlines := text/lines(input<string>)\nn := sequence/length(lines)\nresult := #Scan(lines, n)\n{output}\n"
