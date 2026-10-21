@@ -54,9 +54,9 @@ fn selected_template(
         word(hash, number);
     }
 }
-// IR19 adds owner-bound selected Matrix<String> -> TextJoin regions.
+// IR20 adds complete-use, owner-bound private text/lines matrix regions.
 // Exclusive window selectors retain their distinct ordinary CFG semantics.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 19;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 20;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -109,7 +109,10 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 19;
 // reconciles its finite cumulative fuel before every callback/region exit.
 // Policy29 preserves both original selection/join visits while charging their
 // private metadata and complete canonical String construction on the same ledger.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 29;
+// Policy30 admits private line geometry and its immutable String owner instead
+// of copied line payloads. Original producer/length/selection visits remain;
+// Unicode fallback inherits the same original call's already-spent allowance.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 30;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -838,6 +841,19 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
             join.output(),
         ] {
             word(&mut hash, u64::from(value.get()));
+        }
+    }
+    let lines = plan.text_line_matrix_regions();
+    word(&mut hash, lines.len() as u64);
+    for line in lines {
+        word(&mut hash, u64::from(line.producer()));
+        word(&mut hash, u64::from(line.source().get()));
+        word(&mut hash, u64::from(line.matrix().get()));
+        for sites in [line.lengths(), line.borrowed_regions(), line.selections()] {
+            word(&mut hash, sites.len() as u64);
+            for &site in sites {
+                word(&mut hash, u64::from(site));
+            }
         }
     }
     hash.finalize().into()

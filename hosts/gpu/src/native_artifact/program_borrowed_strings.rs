@@ -58,6 +58,7 @@ impl Context<'_, '_> {
         let mut owners = NativeTypedStorage::new_values(count, limit, &memory)?;
         let mut rows = 0usize;
         let mut source_bytes = 0u64;
+        let mut line_metadata_bytes = 0u64;
         let mut active = true;
         for (i, value) in region
             .proof
@@ -66,9 +67,22 @@ impl Context<'_, '_> {
             .chain(region.proof.literals())
             .enumerate()
         {
-            let owner = self
-                .arena
-                .copy_current(value.get(), &mut self.control.work)?;
+            let lines = if i < region.proof.matrices().len() {
+                self.line_matrix(*value).cloned()
+            } else {
+                None
+            };
+            let owner = if let Some(lines) = &lines {
+                self.control.work.charge(NativeExecutionPhase::Setup, 128)?;
+                line_metadata_bytes = line_metadata_bytes
+                    .checked_add(lines.metadata_bytes())
+                    .ok_or_else(|| invalid("borrowed line metadata overflow"))?;
+                active &= lines.is_ascii();
+                lines.source().clone()
+            } else {
+                self.arena
+                    .copy_current(value.get(), &mut self.control.work)?
+            };
             source_bytes = source_bytes
                 .checked_add(
                     owner
@@ -76,7 +90,7 @@ impl Context<'_, '_> {
                         .ok_or_else(|| invalid("borrowed String capture is not admitted"))?,
                 )
                 .ok_or_else(|| invalid("borrowed String owner footprint overflow"))?;
-            if i < region.proof.matrices().len() {
+            if i < region.proof.matrices().len() && lines.is_none() {
                 if let Some(strings) = texts(&owner) {
                     rows = rows
                         .checked_add(strings.len())
@@ -93,6 +107,7 @@ impl Context<'_, '_> {
         let metadata = amount(count, core::mem::size_of::<Option<Value>>() as u64, 8192)?;
         let temporary = amount(rows, 16, metadata)?
             .checked_add(source_bytes)
+            .and_then(|bytes| bytes.checked_add(line_metadata_bytes))
             .ok_or_else(|| invalid("borrowed String temporary footprint overflow"))?;
         if temporary > limit {
             return Err(Error::Collection {
@@ -110,7 +125,13 @@ impl Context<'_, '_> {
             .charge(NativeExecutionPhase::Setup, amount(rows, 128, 4096)?)?;
         let mut table = NativeWordStorage::new(words, limit, Some(&memory))?;
         let mut cursor = 0;
-        for owner in &owners.values()[..region.proof.matrices().len()] {
+        for (i, owner) in owners.values()[..region.proof.matrices().len()]
+            .iter()
+            .enumerate()
+        {
+            if self.line_matrix(region.proof.matrices()[i]).is_some() {
+                continue;
+            }
             if let Some(strings) = texts(owner.as_ref().unwrap()) {
                 for text in strings {
                     // ASCII except CRLF has exactly one byte per canonical grapheme.
@@ -130,11 +151,18 @@ impl Context<'_, '_> {
         for (i, owner) in owners.values().iter().enumerate() {
             let owner = owner.as_ref().unwrap();
             let (pointer, length) = if i < region.proof.matrices().len() {
-                let length = texts(owner).map_or(0, |s| s.len());
-                // add is only used to form an in-bounds or one-past empty view.
-                let pointer = table.values().as_ptr().wrapping_add(offset) as u64;
-                offset += length * 2;
-                (pointer, length as u64)
+                if let Some(lines) = self.line_matrix(region.proof.matrices()[i]) {
+                    // The Context/session pins this exact immutable table across
+                    // the native scanner; its real String owner is also pinned
+                    // in owners. No second pointer table or Matrix is allocated.
+                    (lines.rows().as_ptr() as u64, lines.count() as u64)
+                } else {
+                    let length = texts(owner).map_or(0, |s| s.len());
+                    // add is only used to form an in-bounds or one-past empty view.
+                    let pointer = table.values().as_ptr().wrapping_add(offset) as u64;
+                    offset += length * 2;
+                    (pointer, length as u64)
+                }
             } else {
                 let ValueData::String(text) = owner.data() else {
                     return Err(invalid("String literal owner kind differs"));
@@ -176,6 +204,25 @@ impl Context<'_, '_> {
             return Err(invalid("String failure outside selected library leaf"));
         };
         let state = self.borrowed_strings.take().unwrap();
+        if let Action::MatrixElement { source, .. } = &action
+            && let Some(lines) = self.line_matrix(*source).cloned()
+        {
+            let prior = self.selected_join_coexistence(Some(*source))?;
+            let call = descriptor.calls[site]
+                .as_ref()
+                .ok_or_else(|| invalid("line matrix bounds failure lost its selected call"))?;
+            let result =
+                call.text_line_matrix_element(&lines, args[2], self.limits, &self.library, prior);
+            let error = match result {
+                Err(error) => Error::Library {
+                    origin: descriptor.plan.blocks()[site].origin(),
+                    error,
+                },
+                Ok(_) => invalid("borrowed line bounds failure unexpectedly succeeded"),
+            };
+            drop(state);
+            return Err(error);
+        }
         if matches!(action, Action::FixedRange { .. }) {
             // On a failure only, reconstruct an elided selector through its
             // actual maintained leaf so the original String leaf can report

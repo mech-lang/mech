@@ -167,6 +167,7 @@ impl NativeProgramObject {
             "borrowed_string_regions": self.descriptor.borrowed_strings.regions.len(),
             "closed_tail_regions": self.descriptor.closed_tails.regions.len(),
             "selected_matrix_join_regions": self.descriptor.selected_joins.regions.len(),
+            "private_line_matrix_regions": self.descriptor.line_matrices.regions.len(),
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }

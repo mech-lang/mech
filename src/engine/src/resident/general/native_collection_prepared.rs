@@ -29,6 +29,11 @@ pub use string_span::NativeSelectedStringSpanSelector;
 mod selected_join;
 #[cfg(feature = "pure_text")]
 pub use selected_join::NativeSelectedStringMatrix;
+#[cfg(feature = "pure_text")]
+#[path = "native_collection_text_lines.rs"]
+mod text_lines;
+#[cfg(feature = "pure_text")]
+pub use text_lines::{NativeTextLineMatrix, NativeTextLineMatrixChoice};
 
 /// Compiler-owned selection/immutable schemas, not a bound runtime call or
 /// authority to enter its source site. No artifact/catalog traversal occurs
@@ -179,9 +184,11 @@ pub fn prepare_native_program_library_call(
     let (span_selector_metadata_bytes, span_selector_work) =
         string_span::selector_geometry_bounds(&template).ok_or_else(|| super::invalid(node))?;
     #[cfg(feature = "pure_text")]
-    let selection_shape_bounds = if template.primitive()
-        == crate::native_artifact::NativeCollectionPrimitive::MatrixRangeAccess
-    {
+    let selection_shape_bounds = if matches!(
+        template.primitive(),
+        crate::native_artifact::NativeCollectionPrimitive::MatrixRangeAccess
+            | crate::native_artifact::NativeCollectionPrimitive::TextLines
+    ) {
         string_span::selector_schema_geometry_bounds(template.output())
             .ok_or_else(|| super::invalid(node))?
     } else {

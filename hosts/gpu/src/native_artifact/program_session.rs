@@ -198,6 +198,7 @@ impl CallCacheLane {
 struct OwnedState<'a> {
     // Preserve collection-before-arena retirement ordering.
     collections: Option<collection::State>,
+    line_matrices: line_matrices::State,
     arena: NativeValueArena<'a>,
     call_inputs: NativeTypedStorage<Option<Value>>,
     call_caches: CallCacheLane,
@@ -299,6 +300,12 @@ impl<'a> Prepared<'a> {
             })
             .and_then(|n| n.checked_add(collection::State::metadata_bytes(plan).ok()?))
             .and_then(|n| n.checked_add(CallCacheLane::metadata_bytes(plan.blocks().len()).ok()?))
+            .and_then(|n| {
+                n.checked_add(
+                    line_matrices::State::metadata_bytes(descriptor.line_matrices.regions.len())
+                        .ok()?,
+                )
+            })
             .ok_or_else(|| invalid("combined transport overflow"))?;
         if bytes > limits.execution.max_transport_bytes {
             return Err(NativeExecutionError::TransportLimit {
@@ -368,6 +375,12 @@ impl<'a> Prepared<'a> {
             memory,
             &mut work,
         )?;
+        let line_matrices = line_matrices::State::new(
+            descriptor,
+            limits.execution.max_transport_bytes,
+            memory,
+            &mut work,
+        )?;
         Ok(Self {
             descriptor,
             storage,
@@ -379,6 +392,7 @@ impl<'a> Prepared<'a> {
             activated: false,
             state: Some(OwnedState {
                 collections,
+                line_matrices,
                 arena,
                 call_inputs,
                 call_caches,
@@ -609,6 +623,7 @@ impl<'a> Prepared<'a> {
                 error: None,
             },
             collections: state.collections,
+            line_matrices: state.line_matrices,
             arena: state.arena,
             library: state.library,
             limits: self.limits.library,
@@ -745,6 +760,7 @@ impl<'a> Prepared<'a> {
         }
         self.state = Some(OwnedState {
             collections: context.collections,
+            line_matrices: context.line_matrices,
             arena: context.arena,
             call_inputs: context.call_inputs,
             call_caches: context.call_caches,

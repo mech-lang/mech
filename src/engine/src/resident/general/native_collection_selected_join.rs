@@ -1,5 +1,5 @@
 //! Genuine owner-bound selection, not a canonical Matrix or a visit permit.
-use super::{InvokeError, NativePreparedLibraryCall, finite_limits};
+use super::{InvokeError, NativePreparedLibraryCall, NativeTextLineMatrix, finite_limits};
 use crate::resident::{
     budget::{NativeLibraryWorkBudget, native_turn_plan_cache::NativeProjectionIndexContext},
     numeric::selected_string_matrix::{self, Geometry},
@@ -8,12 +8,21 @@ use mech_core::{
     IntegerWidth, ManagedMemoryBudget, MemoryBudgetLimits, ProgramRevision, ResidentKernelError,
     ResourceDemand, SchemaBody, SchemaId, SchemaKey, Value, ValueData, snapshot::SequenceView,
 };
+use std::rc::Rc;
+
+#[path = "native_collection_selected_lines.rs"]
+mod lines;
+
+enum Source {
+    Canonical(Value),
+    Lines(Rc<NativeTextLineMatrix>),
+}
 
 /// Constructed only by the actual prepared access factory. The geometry cannot
 /// be paired with different Values: these strong, immutable owners travel with
 /// it until the selected join finishes or the invocation fails.
 pub struct NativeSelectedStringMatrix {
-    source: Value,
+    source: Source,
     selector: Value,
     geometry: Geometry,
     schema: SchemaId,
@@ -37,10 +46,12 @@ impl NativeSelectedStringMatrix {
         self.geometry.payload
     }
     pub fn retained_bytes(&self, memory: &ManagedMemoryBudget) -> Result<u64, InvokeError> {
-        let a = self
-            .source
-            .memory_budget_retained_bytes(memory)
-            .ok_or(InvokeError::UnadmittedValue)?;
+        let a = match &self.source {
+            Source::Canonical(value) => value
+                .memory_budget_retained_bytes(memory)
+                .ok_or(InvokeError::UnadmittedValue)?,
+            Source::Lines(view) => view.retained_bytes(memory)?,
+        };
         let b = self
             .selector
             .memory_budget_retained_bytes(memory)
@@ -48,15 +59,18 @@ impl NativeSelectedStringMatrix {
         Ok(add(a, b)?)
     }
     pub fn retained_nodes_bound(&self) -> Result<u64, InvokeError> {
-        let ValueData::Matrix(source) = self.source.data() else {
-            return Err(InvokeError::InvalidInput);
+        let count = match &self.source {
+            Source::Canonical(value) => {
+                let ValueData::Matrix(source) = value.data() else {
+                    return Err(InvokeError::InvalidInput);
+                };
+                source.elements().len()
+            }
+            Source::Lines(view) => view.count(),
         };
-        // Actual packed String cells, numeric selector cells and root/shape
-        // headers. Conservative, never a claim about nonexistent output cells.
-        Ok(add(
-            add(source.elements().len() as u64, self.count() as u64)?,
-            16,
-        )?)
+        // Actual source cells or private line rows, numeric selector cells and
+        // root/shape headers. Never a claim about nonexistent output cells.
+        Ok(add(add(count as u64, self.count() as u64)?, 16)?)
     }
 }
 
@@ -149,7 +163,7 @@ impl NativePreparedLibraryCall {
                     return Err(InvokeError::InvalidInput);
                 };
                 Ok(NativeSelectedStringMatrix {
-                    source: source.clone(),
+                    source: Source::Canonical(source.clone()),
                     selector: selector.clone(),
                     geometry,
                     schema: contract.outputs[0].schema,
@@ -204,11 +218,19 @@ impl NativePreparedLibraryCall {
         if target.capacity() as u64 != payload {
             return Err(InvokeError::InvalidInput);
         }
-        view.geometry
-            .for_each(&view.source, &view.selector, |index, text| {
-                crate::resident::text_ops::append_joined(target, separator, index != 0, text);
-                Ok(())
-            })?;
+        let append = |index, text: &str| {
+            crate::resident::text_ops::append_joined(target, separator, index != 0, text);
+            Ok(())
+        };
+        match &view.source {
+            Source::Canonical(source) => view.geometry.for_each(source, &view.selector, append)?,
+            Source::Lines(lines) => view.geometry.for_each_cells(
+                lines.count(),
+                &view.selector,
+                |i| lines.line(i),
+                append,
+            )?,
+        }
         if target.len() as u64 != payload {
             return Err(InvokeError::InvalidInput);
         }

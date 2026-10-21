@@ -29,6 +29,8 @@ mod borrowed;
 mod closed_tail;
 #[path = "program_collection.rs"]
 mod collection;
+#[path = "program_line_matrices.rs"]
+mod line_matrices;
 #[path = "program_selected_join.rs"]
 mod selected_join;
 #[path = "program_session.rs"]
@@ -138,6 +140,7 @@ struct Context<'plan, 'visit> {
     borrowed_strings: Option<borrowed::State>,
     closed_tail: Option<closed_tail::State>,
     selected_join: Option<selected_join::State>,
+    line_matrices: line_matrices::State,
     arena: NativeValueArena<'plan>,
     library: NativeLibraryWorkBudget,
     limits: MemoryBudgetLimits,
@@ -450,6 +453,10 @@ impl Context<'_, '_> {
             // the synchronous entry. Native code is suspended in this callback;
             // no Rust reference to the lane survives across native writes.
             let words = unsafe { core::slice::from_raw_parts(self.arguments, operands.len()) };
+            if let Some(result) = self.line_matrix_call(site, words)? {
+                self.consumed = true;
+                return Ok(result);
+            }
             if self.selected_join_call(site, words)? {
                 self.consumed = true;
                 return Ok(None);

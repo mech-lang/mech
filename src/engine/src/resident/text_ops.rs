@@ -235,6 +235,27 @@ fn copy_text(source: &str) -> Result<String, ResidentKernelError> {
     result.push_str(source);
     Ok(result)
 }
+
+/// Shared geometry for the ordinary constructor and a compiler-private view.
+/// The caller must admit the delimiter scan and declared-shape solver first.
+pub(in crate::resident) fn line_shape(
+    kernel: &BoundResidentKernel,
+    text: &str,
+) -> Result<(usize, ShapeInstance), ResidentKernelError> {
+    let metadata = kernel
+        .snapshot_output()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schema = schemas
+        .get(metadata.schema)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let count = primitives::line_count(text);
+    let shape = mech_core::shape_for_resolved_extents(schema, &[1, budget::checked_u64(count)?])
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    Ok((count, shape))
+}
 fn execute_lines(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -275,9 +296,7 @@ fn execute_lines(
     )
     .admit()?
     .into_plan();
-    let count = primitives::line_count(text);
-    let shape = mech_core::shape_for_resolved_extents(schema, &[1, budget::checked_u64(count)?])
-        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let (count, shape) = line_shape(kernel, text)?;
     let prospective = prospective_string_value_footprint(
         shape.parameter_values().len(),
         true,

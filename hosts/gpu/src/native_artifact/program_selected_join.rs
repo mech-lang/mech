@@ -62,12 +62,20 @@ fn require(
 }
 
 impl Context<'_, '_> {
-    fn selected_join_coexistence(&self) -> Result<ResourceDemand, Error> {
-        self.collections
+    pub(super) fn selected_join_coexistence(
+        &mut self,
+        skip: Option<mech_engine::native_artifact::NativeMatchValue>,
+    ) -> Result<ResourceDemand, Error> {
+        let mut prior = self
+            .collections
             .as_ref()
             .map_or(Ok(ResourceDemand::default()), |state| {
                 state.retained_demand()
-            })
+            })?;
+        let lines = self.line_matrix_coexistence(skip)?;
+        prior.turn_peak_bytes = add(prior.turn_peak_bytes, lines.turn_peak_bytes)?;
+        prior.retained_nodes = add(prior.retained_nodes, lines.retained_nodes)?;
+        Ok(prior)
     }
 
     pub(super) fn validate_selected_join_boundary(&self, site: usize) -> Result<(), Error> {
@@ -124,18 +132,23 @@ impl Context<'_, '_> {
                 if self.selected_join.is_some() {
                     return Err(invalid("selected join projection was not consumed"));
                 }
-                for (lane, value) in [region.source(), region.selector()].into_iter().enumerate() {
-                    self.call_inputs.values_mut()[lane] = Some(
-                        self.arena
-                            .copy_current(value.get(), &mut self.control.work)?,
-                    );
-                }
-                if !call.supports_selected_string_matrix(&self.call_inputs.values()[..2]) {
-                    self.call_inputs.values_mut()[..2].fill(None);
-                    return Ok(false);
+                let lines = self.line_matrix(region.source()).cloned();
+                if lines.is_none() {
+                    for (lane, value) in
+                        [region.source(), region.selector()].into_iter().enumerate()
+                    {
+                        self.call_inputs.values_mut()[lane] = Some(
+                            self.arena
+                                .copy_current(value.get(), &mut self.control.work)?,
+                        );
+                    }
+                    if !call.supports_selected_string_matrix(&self.call_inputs.values()[..2]) {
+                        self.call_inputs.values_mut()[..2].fill(None);
+                        return Ok(false);
+                    }
                 }
                 let metadata = size_of::<State>() as u64;
-                let mut prior = self.selected_join_coexistence()?;
+                let mut prior = self.selected_join_coexistence(Some(region.source()))?;
                 prior.turn_peak_bytes = add(prior.turn_peak_bytes, metadata)?;
                 prior.retained_nodes = add(prior.retained_nodes, 1)?;
                 require(
@@ -153,12 +166,25 @@ impl Context<'_, '_> {
                     .memory_budget()
                     .reserve_capacity(metadata)
                     .map_err(|error| library(self, site, error.into()))?;
-                let result = call.selected_string_matrix(
-                    &self.call_inputs.values()[..2],
-                    self.limits,
-                    &self.library,
-                    prior,
-                );
+                let result = if let Some(lines) = lines {
+                    let selector = self
+                        .arena
+                        .copy_current(region.selector().get(), &mut self.control.work)?;
+                    call.selected_text_line_matrix(
+                        &lines,
+                        &selector,
+                        self.limits,
+                        &self.library,
+                        prior,
+                    )
+                } else {
+                    call.selected_string_matrix(
+                        &self.call_inputs.values()[..2],
+                        self.limits,
+                        &self.library,
+                        prior,
+                    )
+                };
                 self.call_inputs.values_mut()[..2].fill(None);
                 let view = result.map_err(|error| library(self, site, error))?;
                 // A previous ordinary-representation iteration may have left
@@ -194,11 +220,13 @@ impl Context<'_, '_> {
     }
 
     fn finish_selected_join(
-        &self,
+        &mut self,
         site: usize,
         state: &State,
         separator: &Value,
     ) -> Result<Value, Error> {
+        let source = self.control.descriptor.selected_joins.regions[state.region].source();
+        let prior = self.selected_join_coexistence(Some(source))?;
         let compute_limit = self
             .limits
             .max_compute_work
@@ -245,7 +273,6 @@ impl Context<'_, '_> {
                     add(mul(envelope, 16)?, finalization)?,
                     add(mul(state.view.count() as u64, 128)?, 1024)?,
                 )?;
-                let prior = self.selected_join_coexistence()?;
                 let peak = add(
                     add(
                         add(

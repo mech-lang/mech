@@ -87,6 +87,15 @@ fn complete_knucleotide_original_and_decoded_run_through_actual_secured_cli() {
             1,
             "the complete record scanner must select owner-bound native String reads"
         );
+        let lines = jit.descriptor().plan().text_line_matrix_regions();
+        assert_eq!(
+            lines.len(),
+            1,
+            "the secured source must prove its private line matrix"
+        );
+        assert_eq!(lines[0].borrowed_regions(), [0]);
+        assert_eq!(lines[0].lengths().len(), 1);
+        assert_eq!(lines[0].selections().len(), 1);
         assert_eq!(
             jit.descriptor().plan().borrowed_string_regions()[0]
                 .actions()

@@ -70,6 +70,15 @@ fn complete_idiomatic_record_scan_has_a_closed_borrowed_string_component() {
             1,
             "the actual selected record must have one nonescaping join consumer"
         );
+        let lines = plan.text_line_matrix_regions();
+        assert_eq!(
+            lines.len(),
+            1,
+            "the complete source must prove its private line matrix"
+        );
+        assert_eq!(lines[0].borrowed_regions(), [0]);
+        assert_eq!(lines[0].lengths().len(), 1);
+        assert_eq!(lines[0].selections().len(), 1);
         let object = emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
         assert_eq!(
             object.metadata()["closed_tail_regions"],

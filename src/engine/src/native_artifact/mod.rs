@@ -62,9 +62,16 @@ pub use borrowed_strings::{NativeBorrowedStringAction, NativeBorrowedStringRegio
 #[cfg(feature = "pure_text")]
 mod selected_text_join;
 #[cfg(feature = "pure_text")]
-pub use crate::resident::general::native_collection_calls::NativeSelectedStringMatrix;
+pub use crate::resident::general::native_collection_calls::{
+    NativeSelectedStringMatrix, NativeTextLineMatrix, NativeTextLineMatrixChoice,
+};
 #[cfg(feature = "pure_text")]
 pub use selected_text_join::NativeSelectedTextJoin;
+
+#[cfg(feature = "pure_text")]
+mod text_line_matrix;
+#[cfg(feature = "pure_text")]
+pub use text_line_matrix::NativeTextLineMatrixRegion;
 
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 pub use crate::resident::general::native_collection_templates::{

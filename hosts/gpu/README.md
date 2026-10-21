@@ -203,7 +203,7 @@ prebuilt host package could remove the per-application Rust build while retainin
 the native linker and target-system dependencies. That distribution path is not
 implemented here.
 
-IR19/work policy29 retain one canonical compiler and **one host round** for
+IR20/work policy30 retain one canonical compiler and **one host round** for
 capture, effect staging and atomic commit. Generic proofs lower closed control,
 String mapping, overlapping-window queries and eligible histograms to native
 loops. Real owners remain pinned, complete region work and scratch are admitted
@@ -220,6 +220,12 @@ without changing canonical bytes or billing.
 ASCII String maps batch bounded lookups while retaining scalar first-error
 behavior. Both maintained text-line paths share a vectorizable byte count;
 ordinary iteration still constructs every genuine String owner.
+Complete-use proofs additionally allow private ASCII `text/lines` results to
+retain one admitted input owner and line index, shared by native scanners and
+selected joins. No canonical Matrix is fabricated. Unicode or escaping matrices
+keep ordinary construction; fallback does not renew the call allowance.
+This removes line copies, not whole-input capture: streaming remains unfinished,
+and the older timing receipt above does not qualify this new layout.
 Startup use-count analysis streams semantic reads. Other read-only analyses
 borrow ordinary instruction descriptions too; all checks, virtual expansions
 and explicitly owned snapshots for rewriting remain.

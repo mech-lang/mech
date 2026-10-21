@@ -37,6 +37,12 @@ mod text_join_sink_qualification;
 #[path = "support/canonical_program_selected_join.rs"]
 mod selected_join_qualification;
 
+#[path = "support/canonical_program_text_line_matrix.rs"]
+mod text_line_matrix_qualification;
+
+#[path = "support/canonical_program_line_reads.rs"]
+mod line_read_qualification;
+
 #[path = "support/canonical_program_histogram_query.rs"]
 mod histogram_query_qualification;
 

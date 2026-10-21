@@ -37,6 +37,7 @@ pub struct NativeProgramDescriptor {
     pub(super) borrowed_strings: super::program_borrowed_layout::Layout,
     pub(super) closed_tails: super::program_tail_layout::Layout,
     pub(super) selected_joins: super::program_selected_join_layout::Layout,
+    pub(super) line_matrices: super::program_line_matrix_layout::Layout,
     pub(super) stack: u64,
     pub(super) code: u64,
     pub(super) identity: [u8; 32],
@@ -61,6 +62,7 @@ impl NativeProgramDescriptor {
             .ok_or("program completion overflow")?;
         let borrowed_strings = super::program_borrowed_layout::Layout::derive(&plan)?;
         let selected_joins = super::program_selected_join_layout::Layout::derive(&plan)?;
+        let line_matrices = super::program_line_matrix_layout::Layout::derive(&plan)?;
         let mut visits = super::iteration_abi::control_visits(
             plan.blocks(),
             plan.iterations().iter().map(Into::into),
@@ -265,6 +267,7 @@ impl NativeProgramDescriptor {
             borrowed_strings,
             closed_tails,
             selected_joins,
+            line_matrices,
             stack,
             code,
             identity,
