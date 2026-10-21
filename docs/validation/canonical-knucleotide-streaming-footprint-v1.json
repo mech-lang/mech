@@ -653,6 +653,202 @@
       }
     }
   },
+  "capture_chunk_diagnostic": {
+    "label": "v1147",
+    "status": "PASS_DIAGNOSTIC_NO_ADOPTION",
+    "scope": "Private generated capture-buffer-size experiment using the exact retained v1142 Object/bytecode/identity. This is not fresh clean-source production qualification and does not replace the current v1145 matched results.",
+    "measured_utc": {
+      "started": "2026-10-21T20:51:13.980Z",
+      "finished": "2026-10-21T20:51:38.472Z"
+    },
+    "conclusion": {
+      "memory_hypothesis": "Disproved for these tested sizes: increasing capture chunks from 64KiB to 256KiB or 1MiB did not reduce peak RSS. At 125M the medians were 287293440, 287440896 and 289472512 bytes respectively; both larger sizes also increased 10M RSS.",
+      "performance": "1MiB measured 0.6228949375 versus 0.6327250625 seconds at 125M, a modest approximately 1.5% paired gain (6/6 faster rounds). The 10M timings were noisy, with the 1MiB median slightly slower than 64KiB; this is not a general performance win.",
+      "adoption": "None. Production capture remains 65536 bytes. The temporary three-file generator diagnostic was removed after measurement; its exact measured source copies and all raw logs remain pinned.",
+      "size": "All three executables are 7063168 bytes; this experiment produced no executable-size reduction."
+    },
+    "method": {
+      "timing_samples_per_variant_per_size": 6,
+      "balanced_orders": "All six permutations once at each size.",
+      "rss_samples_per_variant_per_size": 3,
+      "physical_outputs_and_full_reports": 60,
+      "timing_samples_total": 36,
+      "rss_samples_total": 18,
+      "raw_samples": "All 36 timings, all 18 RSS/footprint metric files and six warmup reports are retained in the pinned measurement; compact summaries follow.",
+      "inputs_and_policy": "Exactly the existing inputs_and_oracles and finite_launch_policy above; no authority, policy, input-cap or artifact change.",
+      "hardware": "Recorded Apple M1/8GiB on AC power before/after, matching the established machine context."
+    },
+    "summary": {
+      "10m": {
+        "65536": {
+          "median_seconds": 0.068692062,
+          "range_seconds": [
+            0.068358541,
+            0.072903791
+          ],
+          "median_peak_rss_bytes": 31031296,
+          "range_peak_rss_bytes": [
+            31031296,
+            31031296
+          ]
+        },
+        "262144": {
+          "median_seconds": 0.0678993125,
+          "range_seconds": [
+            0.06759325,
+            0.068278959
+          ],
+          "median_peak_rss_bytes": 31621120,
+          "range_peak_rss_bytes": [
+            31621120,
+            31621120
+          ]
+        },
+        "1048576": {
+          "median_seconds": 0.0691372295,
+          "range_seconds": [
+            0.067999791,
+            0.078003958
+          ],
+          "median_peak_rss_bytes": 33636352,
+          "range_peak_rss_bytes": [
+            33636352,
+            33636352
+          ]
+        }
+      },
+      "125m": {
+        "65536": {
+          "median_seconds": 0.6327250625,
+          "range_seconds": [
+            0.630791292,
+            0.640812
+          ],
+          "median_peak_rss_bytes": 287293440,
+          "range_peak_rss_bytes": [
+            287293440,
+            287293440
+          ]
+        },
+        "262144": {
+          "median_seconds": 0.6292305,
+          "range_seconds": [
+            0.624043625,
+            0.634458833
+          ],
+          "median_peak_rss_bytes": 287440896,
+          "range_peak_rss_bytes": [
+            287309824,
+            287703040
+          ]
+        },
+        "1048576": {
+          "median_seconds": 0.6228949375,
+          "range_seconds": [
+            0.620780917,
+            0.63069
+          ],
+          "median_peak_rss_bytes": 289472512,
+          "range_peak_rss_bytes": [
+            289472512,
+            289832960
+          ]
+        }
+      }
+    },
+    "paired_full125m_over_64k": {
+      "capture-262144": {
+        "median_ratio": 0.9930873703934737,
+        "faster_rounds": 5,
+        "total_rounds": 6
+      },
+      "capture-1048576": {
+        "median_ratio": 0.9848323856153656,
+        "faster_rounds": 6,
+        "total_rounds": 6
+      }
+    },
+    "accounting": {
+      "actual_differing_keys": [
+        "native_work"
+      ],
+      "native_work_by_input_and_chunk": {
+        "10m": {
+          "65536": 58002815343,
+          "262144": 57994758207,
+          "1048576": 57992748671
+        },
+        "125m": {
+          "65536": 718630134843,
+          "262144": 718532834635,
+          "1048576": 718508514131
+        }
+      },
+      "invariants": "The 64KiB report exactly matches v1144. Only cumulative chunk-related native_work changes for larger buffers; native_visits, native_comparison_work, transport/carrier bytes, argument reservation, input cap, nominal revision, bounded-lines storage and every authority field remain identical. Every repeated complete report equals its variant/size warmup exactly."
+    },
+    "source_at_measurement": {
+      "base_commit": "e21000b3751c685869f6753f8d07e1b5cfd14413",
+      "git_diff_sha256": "e942209f9eb44848f65d9775829072ce774222c4cb9772ad69007a2b12394e1e",
+      "untracked_test": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-v1147/source-files/hosts/gpu/src/native_artifact/program_application_capture_tests.rs",
+        "bytes": 6688,
+        "sha256": "4baba9cdeb59a2ed5dea8a7b4908065f5b6b43e951709d9a9b863fa1201fa83b"
+      },
+      "source_copies": "The build receipt pins all three preserved source-files copies and source.diff. These describe the measured temporary generator patch, not the checkout after it was removed."
+    },
+    "retained_artifact": {
+      "program_revision": "2749f8cd8f09131fc58bb8cfffdd0c79fe64a8f31152264787cd488a8e5a01a0",
+      "object_sha256": "970ea4d8e31645203432045e6579fe26a49e0a53fc628c4f4d25d5d00b14418f",
+      "bytecode_sha256": "f1e0ca1fd73905fc274b14a31609f0b389ba87551b959dfe097a16c9179e0f39",
+      "identity_sha256": "cdcd6383fda17159f7ef5a728bef043482eb51415f7b46277240178971f5f949"
+    },
+    "executables": {
+      "directory": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-v1147",
+      "filename_pattern": "native-executable-<chunk_bytes>",
+      "bytes_each": 7063168,
+      "sha256_by_chunk": {
+        "65536": "280f91edbc83a668cb2bba4ca81d353ec9e03594c70840922cf996ef00cdcd39",
+        "262144": "f173048fcf56a14777dd2f0742d5f3ff0418864cc55d35a99423fcbece956ca3",
+        "1048576": "0313fb2007db3c1f4c1a7ff041f98dd95d9e5865ec34ea47a2f2ca9212dfbad4"
+      }
+    },
+    "build_recovery": "The v1146 guard rejected a stale Cargo Fresh result before copying or timing the wrong 256KiB binary. v1147 preserved the valid 64KiB binary and performed package-scoped host cleans before relinking 256KiB/1MiB; generated projects and dependency cache were retained. Both build receipts and logs remain pinned.",
+    "independent_audit": {
+      "status": "PASS",
+      "physical_pins_verified": 286,
+      "outputs_and_full_reports_verified": 60,
+      "rss_metric_files_verified": 18,
+      "scope": "Re-read exact output/security reports, recompute all medians/ranges/paired ratios and order checks, verify project/Object/input/policy/build/script pins, and validate measured source against immutable preserved copies rather than the subsequently restored checkout.",
+      "persisted_separate_audit_artifact": false
+    },
+    "evidence": {
+      "measurement": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-three-way-v1147/measurement.json",
+        "bytes": 242946,
+        "sha256": "e22fc02252cdb371e3b2e88e8cdda574771cea0855d8e77ad6cb21c67d702129"
+      },
+      "observer": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-streaming-capture-chunks-v1147.cjs",
+        "bytes": 20340,
+        "sha256": "ee2d4cc954c601c62417f8c636ef44990afd8976d11a1e8cd4e6119cfa675b79"
+      },
+      "build": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-v1147/build-result.json",
+        "bytes": 39661,
+        "sha256": "c8d70e22200f54a240f47b711d2d176786811a3753eb3ee631adb79f21346f4e"
+      },
+      "generation": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-v1147/generation.json",
+        "bytes": 3886,
+        "sha256": "6d162f4390fd715b635353860edb4ffbd16dafe890c3ad06865d11af137192cd"
+      },
+      "rejected_predecessor_build": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-v1146/build-result.json",
+        "bytes": 18654,
+        "sha256": "209040003e5fb3b7ea51dd3a3e8e7cf7b547cb9594c6d00e202d2f52edcccf81"
+      }
+    }
+  },
   "remaining": [
     "Reduce executable size and peak memory toward the approximately 200 MB/3.16 MB reference footprint without sacrificing runtime.",
     "Obtain clean review and green CI; remain draft/unmerged until user direction."

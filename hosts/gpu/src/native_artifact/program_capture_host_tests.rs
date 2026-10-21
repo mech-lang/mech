@@ -21,6 +21,8 @@ const TEST_MEMORY_LIMIT: u64 = 32 * 1024 * 1024;
 struct Trace {
     input: Vec<u8>,
     position: usize,
+    read_step: usize,
+    largest_read: usize,
     captures: usize,
     snapshots: usize,
     writes: usize,
@@ -39,9 +41,14 @@ impl Read for Reader {
         if trace.fail_at == Some(trace.position) {
             return Err(io::Error::other("controlled late capture I/O failure"));
         }
-        let count = output.len().min(1).min(trace.input.len() - trace.position);
+        let count = output
+            .len()
+            .min(trace.read_step)
+            .min(trace.input.len() - trace.position)
+            .min(trace.fail_at.map_or(usize::MAX, |at| at - trace.position));
         output[..count].copy_from_slice(&trace.input[trace.position..trace.position + count]);
         trace.position += count;
+        trace.largest_read = trace.largest_read.max(count);
         Ok(count)
     }
 }
@@ -93,9 +100,21 @@ fn runtime(
     offered: bool,
     fail_at: Option<usize>,
 ) -> (MechRuntime, Arc<Mutex<Trace>>) {
+    runtime_delivery(input, offered, fail_at, 1)
+}
+
+fn runtime_delivery(
+    input: &[u8],
+    offered: bool,
+    fail_at: Option<usize>,
+    read_step: usize,
+) -> (MechRuntime, Arc<Mutex<Trace>>) {
+    assert!(read_step > 0);
     let trace = Arc::new(Mutex::new(Trace {
         input: input.into(),
         position: 0,
+        read_step,
+        largest_read: 0,
         captures: 0,
         snapshots: 0,
         writes: 0,
@@ -135,6 +154,18 @@ fn execute(
     trace: &Arc<Mutex<Trace>>,
     memory: &ManagedMemoryBudget,
 ) -> Result<NativeProgramExecutionReport, CanonicalNativeResourceRunError> {
+    execute_with_chunk(runtime, artifact, jit, limits, (cap, 7), trace, memory)
+}
+
+fn execute_with_chunk(
+    runtime: &mut MechRuntime,
+    artifact: &mech_engine::ProgramArtifact,
+    jit: &JitProgramArtifact,
+    limits: NativeProgramExecutionLimits,
+    (cap, chunk_bytes): (u64, usize),
+    trace: &Arc<Mutex<Trace>>,
+    memory: &ManagedMemoryBudget,
+) -> Result<NativeProgramExecutionReport, CanonicalNativeResourceRunError> {
     let mut bridge = fixture::bridge_limits();
     bridge.max_input_text_bytes = cap;
     let plan = jit.descriptor().plan();
@@ -151,7 +182,7 @@ fn execute(
             );
             drop(trace);
             jit.prepare_hosted(admission, limits, memory)
-                .and_then(|session| session.with_text_capture(cap, 7))
+                .and_then(|session| session.with_text_capture(cap, chunk_bytes))
                 .map_err(|error| MechError::new(error, None))
         },
         |session, chunk| {
@@ -272,6 +303,9 @@ fn original_and_decoded_full_program_stream_through_authorized_cli_and_match_sna
         }
     }
 }
+
+#[path = "program_capture_chunk_boundary_tests.rs"]
+mod chunk_boundaries;
 
 #[test]
 fn capture_failures_precede_a_real_generated_body_failure_and_publish_nothing() {
