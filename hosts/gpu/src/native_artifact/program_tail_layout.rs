@@ -12,9 +12,7 @@ pub(super) struct Region {
     pub iteration: u32,
     pub tail: NativeTailLoop,
     pub borrowed: Option<usize>,
-    // Runtime-only preparation still checks the same word-layout arithmetic;
-    // the concrete offset is consumed by code generation, not execution.
-    #[cfg(feature = "canonical-native-program")]
+    // Emission and checkpoint validation use the identical admitted word lane.
     pub words: usize,
     pub compute: u64,
     pub comparison: u64,
@@ -155,7 +153,6 @@ impl Layout {
                 iteration: iteration as u32,
                 tail: tail.clone(),
                 borrowed: borrowed.initializers[tail.initialize() as usize],
-                #[cfg(feature = "canonical-native-program")]
                 words: _word_offset,
                 compute,
                 comparison,

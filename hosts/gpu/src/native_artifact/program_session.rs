@@ -1,7 +1,9 @@
 //! Owning two-phase state for ONE generated CFG invocation. Raw frame pointers
 //! are reconstructed from admitted owned backing for each synchronous entry;
 //! neither caller pointers nor self-referential borrowed state are retained.
-use super::super::program_abi::{PHASE_ACTIVATION, PHASE_TURN, STATUS_ACTIVATED};
+use super::super::program_abi::{
+    PHASE_ACTIVATION, PHASE_PREFIX, PHASE_TURN, STATUS_ACTIVATED, STATUS_INPUT_PENDING,
+};
 use super::*;
 
 #[path = "program_call_cache_allocation.rs"]
@@ -14,6 +16,9 @@ mod observation_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_call_cache_tests.rs"]
 mod call_cache_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_prefix_tests.rs"]
+mod prefix_tests;
 
 /// Native ownership admission for the selected zero-parameter String lane.
 /// Immutable payload sharing never substitutes for full capacity admission.
@@ -222,6 +227,8 @@ pub(super) struct Prepared<'a> {
     progress: usize,
     bytes: u64,
     activated: bool,
+    prefix: Option<prefix::Input>,
+    paused: Option<u32>,
 }
 
 impl<'a> Prepared<'a> {
@@ -390,6 +397,8 @@ impl<'a> Prepared<'a> {
             progress,
             bytes,
             activated: false,
+            prefix: None,
+            paused: None,
             state: Some(OwnedState {
                 collections,
                 line_matrices,
@@ -541,6 +550,16 @@ impl<'a> Prepared<'a> {
         }
         imported?;
         self.run(entry, PHASE_TURN)?;
+        self.publish(outputs)
+    }
+
+    fn publish(
+        mut self,
+        outputs: &mut [Option<Value>],
+    ) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError> {
+        if self.paused.is_some() || !self.state.as_ref().is_some_and(|state| state.completed) {
+            return Err(invalid("publication before exact native completion"));
+        }
         let state = self
             .state
             .as_mut()
@@ -565,6 +584,37 @@ impl<'a> Prepared<'a> {
         })
     }
 
+    // Exercise the real generated protocol before exposing any incremental
+    // capture API. This test-only driver imports ONE genuine full snapshot;
+    // neither a partial canonical Value nor a prefix-valued count is created.
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    fn run_prefix<F: FnMut(*mut Frame) -> u64>(
+        &mut self,
+        entry: &mut F,
+        available: u64,
+        eof: bool,
+    ) -> Result<(), NativeProgramExecutionError> {
+        if !self.activated
+            || self.descriptor.prefix.is_none()
+            || self.state.as_ref().is_none_or(|state| state.completed)
+            || self
+                .prefix
+                .is_some_and(|prior| prior.eof || available < prior.available)
+        {
+            return Err(invalid("invalid, regressing or completed native prefix"));
+        }
+        let resume_site = self
+            .paused
+            .or(self.descriptor.plan.activation_boundary())
+            .ok_or_else(|| invalid("prefix lacks exact resume boundary"))?;
+        self.prefix = Some(prefix::Input {
+            resume_site,
+            available,
+            eof,
+        });
+        self.run(entry, PHASE_PREFIX)
+    }
+
     fn run<F: FnMut(*mut Frame) -> u64>(
         &mut self,
         entry: &mut F,
@@ -575,14 +625,47 @@ impl<'a> Prepared<'a> {
         let boundary = plan
             .activation_boundary()
             .ok_or_else(|| invalid("missing certified activation boundary"))?;
+        let prefix_input = if phase == PHASE_PREFIX {
+            let input = self
+                .prefix
+                .ok_or_else(|| invalid("prefix entry without owned continuation facts"))?;
+            if input.resume_site != self.paused.unwrap_or(boundary)
+                || !self.activated
+                || descriptor.prefix.is_none()
+            {
+                return Err(invalid("prefix entry outside owned resume boundary"));
+            }
+            Some(input)
+        } else {
+            if self.prefix.is_some() || self.paused.is_some() {
+                return Err(invalid("ordinary entry cannot replay a prefix invocation"));
+            }
+            None
+        };
         let mut state = self
             .state
             .take()
             .ok_or_else(|| invalid("consumed native state"))?;
+        let checkpoint_work = if prefix_input.is_some() {
+            amount(prefix::checkpoint_words(descriptor)?, 16, 256)?
+        } else {
+            0
+        };
         // Both entry prologues and checkpoint verification are paid on this
         // SAME ledger before entering native code or scanning progress arrays.
         let transition_work = amount(plan.iterations().len(), 32, 512)?
             .checked_add(amount(plan.collections().len(), 32, 0)?)
+            .and_then(|work| work.checked_add(checkpoint_work))
+            .and_then(|work| {
+                work.checked_add(if prefix_input.is_some() {
+                    descriptor
+                        .prefix
+                        .as_ref()
+                        .map_or(0, |region| region.header_work)
+                } else {
+                    0
+                })
+            })
             .ok_or_else(|| invalid("native phase work overflow"))?;
         let transitioned = state
             .work
@@ -640,6 +723,7 @@ impl<'a> Prepared<'a> {
             borrowed_strings: None,
             closed_tail: None,
             selected_join: None,
+            prefix: prefix_input.map(prefix::State::new),
         };
         let context_pointer = (&mut context as *mut Context<'_, '_>).cast::<c_void>();
         let mut frame = Frame {
@@ -660,6 +744,9 @@ impl<'a> Prepared<'a> {
             arguments: argument_pointer,
             argument_capacity: descriptor.max_library_inputs as u64,
             phase,
+            resume_site: prefix_input.map_or(0, |input| u64::from(input.resume_site)),
+            available_lines: prefix_input.map_or(0, |input| input.available),
+            input_eof: prefix_input.map_or(0, |input| u64::from(input.eof)),
         };
         let status = entry(&mut frame);
         #[cfg(all(
@@ -693,6 +780,9 @@ impl<'a> Prepared<'a> {
             || frame.arguments != argument_pointer
             || frame.argument_capacity != descriptor.max_library_inputs as u64
             || frame.phase != phase
+            || frame.resume_site != prefix_input.map_or(0, |input| u64::from(input.resume_site))
+            || frame.available_lines != prefix_input.map_or(0, |input| input.available)
+            || frame.input_eof != prefix_input.map_or(0, |input| u64::from(input.eof))
         {
             return Err(invalid("program entry changed immutable frame"));
         }
@@ -721,7 +811,11 @@ impl<'a> Prepared<'a> {
             }
         } else {
             match status {
-                STATUS_OK if phase == PHASE_TURN => {
+                STATUS_OK
+                    if phase == PHASE_TURN
+                        || (phase == PHASE_PREFIX
+                            && prefix_input.is_some_and(|input| input.eof)) =>
+                {
                     if !context.control.completed
                         || f.error_node != NO_NODE
                         || context.output_cursor != plan.transport_output_count()
@@ -731,6 +825,24 @@ impl<'a> Prepared<'a> {
                     {
                         return Err(invalid("program omitted atomic completion"));
                     }
+                    self.paused = None;
+                }
+                STATUS_INPUT_PENDING if phase == PHASE_PREFIX => {
+                    let site = context
+                        .prefix
+                        .as_ref()
+                        .and_then(|prefix| prefix.paused)
+                        .ok_or_else(|| invalid("native entry forged an input checkpoint"))?;
+                    if f.error_node != u64::from(site) || prefix_input.is_none_or(|input| input.eof)
+                    {
+                        return Err(invalid("native entry returned the wrong input checkpoint"));
+                    }
+                    // check_prefix_header deliberately rejects an already
+                    // marked pause. Recheck its invariant without granting a visit.
+                    context.prefix.as_mut().unwrap().paused = None;
+                    context.check_prefix_header(site)?;
+                    prefix::check_cleared(descriptor, values, arguments)?;
+                    self.paused = Some(site);
                 }
                 STATUS_ARITHMETIC | STATUS_REJECT => {
                     let id = context

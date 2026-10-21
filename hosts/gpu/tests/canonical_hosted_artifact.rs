@@ -80,6 +80,13 @@ fn complete_knucleotide_original_and_decoded_run_through_actual_secured_cli() {
         assert_eq!(
             mech_gpu::native_artifact::emit_program_object(&artifact, &catalog)
                 .unwrap()
+                .metadata()["compiled_header_continuation_regions"],
+            1,
+            "the actual program selects the generic header protocol; acquisition remains snapshot-only"
+        );
+        assert_eq!(
+            mech_gpu::native_artifact::emit_program_object(&artifact, &catalog)
+                .unwrap()
                 .metadata()["closed_tail_regions"],
             1,
             "the actual secured artifact must select callback-free Tail control"

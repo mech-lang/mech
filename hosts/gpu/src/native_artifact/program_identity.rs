@@ -1,4 +1,4 @@
-//! Explicit program IR/ABI8 identity. No Debug or pointer serialization.
+//! Explicit program IR/ABI9 identity. No Debug or pointer serialization.
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
     NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind,
@@ -54,9 +54,8 @@ fn selected_template(
         word(hash, number);
     }
 }
-// IR21 pins complete-use String ownership transfer and consumed-copy slots.
-// Exclusive window selectors retain their distinct ordinary CFG semantics.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 21;
+// IR22 pins the plan-derived header continuation and exact carrier fields.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 22;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -114,7 +113,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 21;
 // Unicode fallback inherits the same original call's already-spent allowance.
 // Policy31 funds exact current-alias retirement and ownership handoff before
 // a closed String map loop; copied/shared fallback stays on the same ledger.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 31;
+// Policy32 funds header pauses/re-entry on the SAME cumulative account.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 32;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -176,6 +176,34 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
     word(&mut hash, super::program_abi::VERSION);
     word(&mut hash, NATIVE_PROGRAM_WORK_POLICY_VERSION);
     hash.update(plan.program_revision().as_bytes());
+    let frontiers = plan.text_line_retention_frontiers();
+    word(&mut hash, frontiers.len() as u64);
+    for frontier in frontiers {
+        word(&mut hash, u64::from(frontier.iteration()));
+        word(
+            &mut hash,
+            u64::from(frontier.read().count().lines().matrix().get()),
+        );
+        word(&mut hash, frontier.states().len() as u64);
+        for state in frontier.states() {
+            word(&mut hash, u64::from(state.ordinal()));
+            word(
+                &mut hash,
+                state.index_field().map_or(u64::MAX, |field| field as u64),
+            );
+            word(&mut hash, state.keep_fields().len() as u64);
+            for field in state.keep_fields() {
+                word(&mut hash, *field as u64);
+            }
+            let (first, end) = state
+                .returned_range()
+                .map_or((u64::MAX, u64::MAX), |(first, end)| {
+                    (first as u64, end as u64)
+                });
+            word(&mut hash, first);
+            word(&mut hash, end);
+        }
+    }
     word(&mut hash, plan.entry() as u64);
     word(&mut hash, plan.values().len() as u64);
     for ty in plan.values() {

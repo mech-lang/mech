@@ -1,4 +1,4 @@
-//! ABI8 facade over the SAME canonical iteration CFG definition pass.
+//! ABI9 facade over the SAME canonical iteration CFG definition pass.
 use super::compiler::{backend, host_supported};
 use super::iteration_code_plan::CodePlan;
 use super::program_abi::{ENTRY, Entry, VERSION};
@@ -14,6 +14,8 @@ use mech_engine::{ProgramArtifact, native_artifact::lower_native_program_artifac
 
 #[path = "program_borrowed_codegen.rs"]
 pub(super) mod borrowed_codegen;
+#[path = "program_prefix_codegen.rs"]
+pub(super) mod prefix_codegen;
 #[path = "program_scalar_aggregates.rs"]
 pub(super) mod scalar_aggregates;
 #[path = "program_string_map_codegen.rs"]
@@ -81,7 +83,7 @@ impl JitProgramArtifact {
         let descriptor = NativeProgramDescriptor::prepare(artifact, catalog, plan, stack, code)
             .map_err(backend)?;
         module.finalize_definitions().map_err(backend)?;
-        // SAFETY: define_cfg emits exactly the private ABI8 signature, and
+        // SAFETY: define_cfg emits exactly the private ABI9 signature, and
         // this owner retains the module for every synchronous invocation.
         let entry = unsafe {
             std::mem::transmute::<*const u8, Entry>(module.get_finalized_function(function))
@@ -101,6 +103,14 @@ impl JitProgramArtifact {
     pub(super) fn test_checked_entry(&self) -> Entry {
         self.entry
     }
+    #[cfg(test)]
+    pub(super) fn test_generated_entry(
+        &self,
+    ) -> impl FnMut(*mut super::program_abi::Frame) -> u64 + '_ {
+        // SAFETY: the test's Prepared session owns the exact admitted frame,
+        // and this borrow retains the checked JIT owner across every entry.
+        |frame| unsafe { (self.entry)(frame) }
+    }
     /// Evaluate one fresh, stateless invocation: closed pure activation DAG
     /// followed by one turn. No activation cache, state or suspended instance
     /// survives a call. Both phases share the same limits and atomic outputs.
@@ -114,7 +124,7 @@ impl JitProgramArtifact {
         super::program_runtime::execute(
             &self.descriptor,
             |frame| {
-                // SAFETY: this owner retains the exact checked ABI8 entry.
+                // SAFETY: this owner retains the exact checked ABI9 entry.
                 unsafe { (self.entry)(frame) }
             },
             inputs,
@@ -168,6 +178,7 @@ impl NativeProgramObject {
             "closed_tail_regions": self.descriptor.closed_tails.regions.len(),
             "selected_matrix_join_regions": self.descriptor.selected_joins.regions.len(),
             "private_line_matrix_regions": self.descriptor.line_matrices.regions.len(),
+            "compiled_header_continuation_regions": usize::from(self.descriptor.prefix.is_some()),
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }

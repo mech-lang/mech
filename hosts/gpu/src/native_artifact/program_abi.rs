@@ -1,11 +1,13 @@
-//! Mixed-value ABI8 carries an admitted variable-arity operand lane without
+//! Mixed-value ABI9 carries an admitted variable-arity operand lane without
 //! changing the frozen scalar-frame prefix. Older Objects fail admission.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 8;
+pub(super) const VERSION: u64 = 9;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
+pub(super) const PHASE_PREFIX: u64 = 2;
 pub(super) const STATUS_ACTIVATED: u64 = 5;
+pub(super) const STATUS_INPUT_PENDING: u64 = 6;
 #[cfg(feature = "canonical-native-program")]
 pub(super) const ENTRY: &str = "mech_canonical_program_entry_v1";
 pub(super) const LIBRARY: u64 = 0;
@@ -21,6 +23,9 @@ pub(super) const BORROWED_STRINGS_PREPARE: u64 = u64::MAX - 5;
 pub(super) const BORROWED_STRING_FAILURE: u64 = u64::MAX - 6;
 pub(super) const CLOSED_TAIL_BEGIN: u64 = u64::MAX - 7;
 pub(super) const CLOSED_TAIL_END: u64 = u64::MAX - 8;
+pub(super) const PREFIX_PAUSE: u64 = u64::MAX - 9;
+pub(super) const PREFIX_BORROWED_RESUME: u64 = u64::MAX - 10;
+pub(super) const PREFIX_TAIL_RESUME: u64 = u64::MAX - 11;
 pub(super) type Helper =
     unsafe extern "C" fn(*mut c_void, u64, u64, u64, u64, u64, *mut u64) -> u64;
 #[repr(C)]
@@ -32,6 +37,11 @@ pub(super) struct Frame {
     pub argument_capacity: u64,
     // Immutable for each call; only the owning session selects the second phase.
     pub phase: u64,
+    // Constructor-private continuation facts, immutable throughout an entry.
+    // These are NOT canonical line/count Values or arbitrary jump targets.
+    pub resume_site: u64,
+    pub available_lines: u64,
+    pub input_eof: u64,
 }
 #[cfg(feature = "canonical-native-program")]
 pub(super) type Entry = unsafe extern "C" fn(*mut Frame) -> u64;

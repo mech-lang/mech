@@ -92,8 +92,67 @@ pub(in crate::native_artifact) fn prepare(
         return Ok(());
     };
     let region = &layout.regions[region];
+    prepare_region(
+        b,
+        locals,
+        region,
+        site,
+        program_abi::CLOSED_TAIL_BEGIN,
+        hooks,
+        error,
+    )
+}
+pub(in crate::native_artifact) fn resume(
+    b: &mut FunctionBuilder,
+    locals: Value,
+    layout: &Layout,
+    site: usize,
+    hooks: &Hooks,
+    error: Block,
+) -> Result<(), NativeCompileError> {
+    let Some(region) = layout.sites.get(site).copied().flatten() else {
+        return Ok(());
+    };
+    prepare_region(
+        b,
+        locals,
+        &layout.regions[region],
+        site,
+        program_abi::PREFIX_TAIL_RESUME,
+        hooks,
+        error,
+    )
+}
+pub(in crate::native_artifact) fn pause(
+    b: &mut FunctionBuilder,
+    locals: Value,
+    layout: &Layout,
+    site: usize,
+    hooks: &Hooks,
+    error: Block,
+) -> Result<(), NativeCompileError> {
+    if let Some(region) = layout.sites.get(site).copied().flatten() {
+        let site = b.ins().iconst(types::I64, site as i64);
+        leave(b, locals, &layout.regions[region], site, 4, hooks, error)?;
+        let zero = b.ins().iconst(types::I64, 0);
+        // A declined loan may leave capture words in the unused fuel lane.
+        for word in layout.regions[region].words..layout.regions[region].words + 3 {
+            store(b, locals, word, zero)?;
+        }
+    }
+    Ok(())
+}
+fn prepare_region(
+    b: &mut FunctionBuilder,
+    locals: Value,
+    region: &Region,
+    site: usize,
+    operation: u64,
+    hooks: &Hooks,
+    error: Block,
+) -> Result<(), NativeCompileError> {
     let zero = b.ins().iconst(types::I64, 0);
-    hooks.call(b, site, program_abi::CLOSED_TAIL_BEGIN, [zero; 3], error);
+    hooks.call(b, site, operation, [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     store(b, locals, region.words, ready)?;
     for i in 0..2 {

@@ -1,4 +1,4 @@
-//! Same-artifact metadata for generated ABI8, not an evaluator.
+//! Same-artifact metadata for generated ABI9, not an evaluator.
 use super::{NativeValueSlot, iteration_abi::NativeIterationVisit};
 use mech_core::{FunctionCatalog, SchemaTable, Value};
 use mech_engine::{
@@ -38,6 +38,7 @@ pub struct NativeProgramDescriptor {
     pub(super) closed_tails: super::program_tail_layout::Layout,
     pub(super) selected_joins: super::program_selected_join_layout::Layout,
     pub(super) line_matrices: super::program_line_matrix_layout::Layout,
+    pub(super) prefix: Option<super::program_prefix_layout::Region>,
     pub(super) stack: u64,
     pub(super) code: u64,
     pub(super) identity: [u8; 32],
@@ -72,10 +73,17 @@ impl NativeProgramDescriptor {
         selected_joins
             .fund_visit_checks(&mut visits)
             .map_err(str::to_owned)?;
+        let prefix = super::program_prefix_layout::derive(&plan, &borrowed_strings, &visits)?;
         for (site, visit) in visits.iter_mut().enumerate() {
             visit.work = visit
                 .work
                 .checked_add(borrowed_strings.extra_work(site)?)
+                .and_then(|work| {
+                    work.checked_add(super::program_prefix_layout::extra_work(
+                        prefix.as_ref(),
+                        site,
+                    ))
+                })
                 .ok_or("borrowed String visit work overflow")?;
         }
         let closed_tails =
@@ -268,6 +276,7 @@ impl NativeProgramDescriptor {
             closed_tails,
             selected_joins,
             line_matrices,
+            prefix,
             stack,
             code,
             identity,

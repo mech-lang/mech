@@ -1,0 +1,92 @@
+//! Plan-local header continuations, not acquisition or a second FSM evaluator.
+//! Only the emitted Mech body reads/transitions its scalar aggregate carrier.
+use super::{iteration_abi::NativeIterationVisit, program_borrowed_layout};
+use mech_engine::native_artifact::{
+    NativeControlLoop, NativeProgramArtifactPlan, NativeTailLoop, NativeTextLineRetentionFrontier,
+};
+
+#[derive(Debug)]
+pub(super) struct Region {
+    pub frontier: NativeTextLineRetentionFrontier,
+    pub tail: NativeTailLoop,
+    pub borrowed: usize,
+    #[cfg(feature = "canonical-native-program")]
+    pub carrier: usize,
+    pub header_work: u64,
+}
+
+/// An early completion bypass must not publish while acquisition is pending.
+/// Conservatively require this root Tail to dominate EVERY completion; an
+/// unsupported graph retains the ordinary, complete snapshot execution path.
+pub(super) fn derive(
+    plan: &NativeProgramArtifactPlan,
+    borrowed: &program_borrowed_layout::Layout,
+    visits: &[NativeIterationVisit],
+) -> Result<Option<Region>, &'static str> {
+    let frontiers = plan.text_line_retention_frontiers();
+    let [frontier] = frontiers.as_slice() else {
+        return Ok(None);
+    };
+    let NativeControlLoop::Tail(tail) = &plan.iterations()[frontier.iteration() as usize] else {
+        return Ok(None);
+    };
+    let [ordinal] = frontier.read().count().lines().borrowed_regions() else {
+        return Ok(None);
+    };
+    let ordinal = *ordinal as usize;
+    if tail.parent().is_some()
+        || borrowed.regions[ordinal].proof.iteration() != frontier.iteration()
+    {
+        return Ok(None);
+    }
+    let mut seen = vec![false; visits.len()];
+    let mut pending = vec![plan.entry()];
+    while let Some(site) = pending.pop() {
+        if site == tail.initialize() || core::mem::replace(&mut seen[site as usize], true) {
+            continue;
+        }
+        if visits[site as usize].is_completion() {
+            return Ok(None);
+        }
+        pending.extend(visits[site as usize].successors().into_iter().flatten());
+    }
+    let aggregates = plan.scalar_aggregates();
+    let Some((_carrier, width)) = aggregates.slot(tail.carrier()) else {
+        return Ok(None);
+    };
+    if frontier.states().iter().any(|state| {
+        state.index_field().is_some_and(|field| field >= width)
+            || state.keep_fields().iter().any(|field| *field >= width)
+            || state
+                .returned_range()
+                .is_some_and(|(first, end)| first >= width || end >= width)
+    }) {
+        return Err("prefix carrier fields exceed their proved storage");
+    }
+    let header_work = (frontier.states().len() as u64)
+        .checked_mul(32)
+        .and_then(|n| {
+            n.checked_add(
+                ((borrowed.regions[ordinal].proof.matrices().len()
+                    + borrowed.regions[ordinal].proof.literals().len()
+                    + borrowed.regions[ordinal].proof.values().len()) as u64)
+                    .checked_mul(32)?,
+            )
+        })
+        .and_then(|n| n.checked_add(512))
+        .ok_or("prefix header work overflows")?;
+    Ok(Some(Region {
+        frontier: frontier.clone(),
+        tail: tail.clone(),
+        borrowed: ordinal,
+        #[cfg(feature = "canonical-native-program")]
+        carrier: _carrier,
+        header_work,
+    }))
+}
+
+pub(super) fn extra_work(region: Option<&Region>, site: usize) -> u64 {
+    region
+        .filter(|region| region.tail.header() as usize == site)
+        .map_or(0, |region| region.header_work)
+}

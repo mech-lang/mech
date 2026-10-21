@@ -299,7 +299,7 @@ pub(super) fn define_cfg<M: Module>(
     #[cfg(not(feature = "canonical-native-program"))]
     let borrowed_words = 0;
     #[cfg(feature = "canonical-native-program")]
-    let closed = match plan {
+    let (closed, prefix) = match plan {
         super::iteration_code_plan::CodePlan::Program(program) => {
             // No completion block belongs to a closed Tail. Its completion
             // envelope is irrelevant to the body bound, not a second work policy.
@@ -313,16 +313,27 @@ pub(super) fn define_cfg<M: Module>(
                 .map_err(backend)?
                 .fund_visit_checks(&mut visits)
                 .map_err(backend)?;
+            let prefix = super::program_prefix_layout::derive(program, &borrowed, &visits)
+                .map_err(backend)?;
             for (site, visit) in visits.iter_mut().enumerate() {
                 visit.work = visit
                     .work
                     .checked_add(borrowed.extra_work(site).map_err(backend)?)
+                    .and_then(|work| {
+                        work.checked_add(super::program_prefix_layout::extra_work(
+                            prefix.as_ref(),
+                            site,
+                        ))
+                    })
                     .ok_or_else(|| backend("Tail visit cost overflow"))?;
             }
-            super::program_tail_layout::Layout::derive(program, &borrowed, &visits)
-                .map_err(backend)?
+            (
+                super::program_tail_layout::Layout::derive(program, &borrowed, &visits)
+                    .map_err(backend)?,
+                prefix,
+            )
         }
-        _ => Default::default(),
+        _ => (Default::default(), None),
     };
     #[cfg(feature = "canonical-native-program")]
     let closed_words = closed.words;
@@ -445,7 +456,11 @@ pub(super) fn define_cfg<M: Module>(
             let valid = b.ins().icmp_imm(
                 IntCC::UnsignedLessThanOrEqual,
                 phase,
-                super::program_abi::PHASE_TURN as i64,
+                if prefix.is_some() {
+                    super::program_abi::PHASE_PREFIX
+                } else {
+                    super::program_abi::PHASE_TURN
+                } as i64,
             );
             guard(&mut b, valid, error, STATUS_ABI);
             Some(phase)
@@ -457,7 +472,7 @@ pub(super) fn define_cfg<M: Module>(
         let resume_block = if let Some(phase) = program_phase {
             let initialize = b.create_block();
             let resume = b.create_block();
-            let is_resume = b.ins().icmp_imm(IntCC::Equal, phase, 1);
+            let is_resume = b.ins().icmp_imm(IntCC::NotEqual, phase, 0);
             b.ins().brif(is_resume, resume, &[], initialize, &[]);
             b.switch_to_block(initialize);
             Some(resume)
@@ -521,6 +536,45 @@ pub(super) fn define_cfg<M: Module>(
             let boundary = plan
                 .activation_boundary()
                 .ok_or_else(|| backend("managed plan has no activation checkpoint"))?;
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(region) = &prefix {
+                let snapshot = b.create_block();
+                let dispatch = b.create_block();
+                let phase = program_phase.expect("managed resume phase");
+                let is_prefix =
+                    b.ins()
+                        .icmp_imm(IntCC::Equal, phase, super::program_abi::PHASE_PREFIX as i64);
+                b.ins().brif(is_prefix, dispatch, &[], snapshot, &[]);
+                b.switch_to_block(dispatch);
+                let target = frame_load(
+                    &mut b,
+                    frame,
+                    core::mem::offset_of!(super::program_abi::Frame, resume_site),
+                );
+                let at_boundary = b.ins().icmp_imm(IntCC::Equal, target, i64::from(boundary));
+                let at_header =
+                    b.ins()
+                        .icmp_imm(IntCC::Equal, target, i64::from(region.tail.header()));
+                let valid = b.ins().bor(at_boundary, at_header);
+                guard(&mut b, valid, error, STATUS_ABI);
+                let reopen = b.create_block();
+                b.ins().brif(at_header, reopen, &[], snapshot, &[]);
+                b.switch_to_block(reopen);
+                super::program_compiler::prefix_codegen::resume(
+                    &mut b,
+                    locals,
+                    region,
+                    &borrowed,
+                    &closed,
+                    hooks.as_ref().expect("managed hooks"),
+                    error,
+                )?;
+                b.ins().jump(
+                    blocks[region.tail.header() as usize].expect("reachable prefix header"),
+                    &[],
+                );
+                b.switch_to_block(snapshot);
+            }
             b.ins().jump(
                 blocks[boundary as usize].expect("reachable checkpoint"),
                 &[],
@@ -548,6 +602,22 @@ pub(super) fn define_cfg<M: Module>(
                 let status = b.ins().iconst(types::I64, 5);
                 b.ins().return_(&[status]);
                 b.switch_to_block(turn);
+            }
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(region) = &prefix
+                && region.tail.header() as usize == index
+            {
+                super::program_compiler::prefix_codegen::gate(
+                    &mut b,
+                    frame,
+                    locals,
+                    program_phase.expect("managed prefix phase"),
+                    region,
+                    &borrowed,
+                    &closed,
+                    hooks.as_ref().expect("managed hooks"),
+                    error,
+                )?;
             }
             #[cfg(feature = "canonical-native-program")]
             let admission_join = if let Some(hooks) = &hooks {
@@ -1021,6 +1091,12 @@ pub(super) fn define_cfg<M: Module>(
             let bound = bound
                 .checked_add(borrowed.extra_work(index).map_err(backend)?)
                 .and_then(|n| n.checked_add(closed.extra_work(index)))
+                .and_then(|n| {
+                    n.checked_add(super::program_prefix_layout::extra_work(
+                        prefix.as_ref(),
+                        index,
+                    ))
+                })
                 .ok_or_else(|| backend("borrowed String instruction work overflow"))?;
             if emitted.checked_add(128).is_none_or(|total| total > bound) {
                 return Err(NativeCompileError::InvalidPlan {

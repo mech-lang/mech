@@ -89,6 +89,8 @@ mod program_line_matrix_layout;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_linked;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod program_prefix_layout;
+#[cfg(feature = "canonical-native-program-runtime")]
 mod program_runtime;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_selected_join_layout;

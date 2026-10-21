@@ -1,4 +1,4 @@
-//! Managed ABI8 invocation. This boundary never evaluates a graph: generated
+//! Managed ABI9 invocation. This boundary never evaluates a graph: generated
 //! blocks choose every successor and run every scalar/counter instruction.
 use super::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
@@ -31,6 +31,8 @@ mod closed_tail;
 mod collection;
 #[path = "program_line_matrices.rs"]
 mod line_matrices;
+#[path = "program_prefix_runtime.rs"]
+mod prefix;
 #[path = "program_selected_join.rs"]
 mod selected_join;
 #[path = "program_session.rs"]
@@ -122,6 +124,44 @@ fn amount(count: usize, scale: u64, base: u64) -> Result<u64, NativeProgramExecu
         .and_then(|n| n.checked_add(base))
         .ok_or_else(|| invalid("program size/work overflow"))
 }
+#[cfg(all(test, feature = "canonical-native-program"))]
+fn test_corrupt_prefix_checkpoint(frame: *mut Frame, field: u8) {
+    // SAFETY: only the synchronous owning Prepared test driver calls this,
+    // after the retained checked JIT returned. Descriptor offsets name its
+    // exact admitted lanes; no poisoned word is subsequently executed.
+    unsafe {
+        let frame = &mut *frame;
+        assert_eq!(frame.phase, super::program_abi::PHASE_PREFIX);
+        let context = &*frame.base.context.cast::<Context<'_, '_>>();
+        let descriptor = context.control.descriptor;
+        let region = descriptor.prefix.as_ref().unwrap();
+        let borrowed = &descriptor.borrowed_strings.regions[region.borrowed];
+        match field {
+            0..=2 => {
+                let word = match field {
+                    0 => borrowed.ready,
+                    1 => borrowed.end - 1,
+                    _ => {
+                        descriptor.closed_tails.regions
+                            [descriptor.closed_tails.sites[region.tail.header() as usize].unwrap()]
+                        .words
+                            + 1
+                    }
+                };
+                assert!(word < frame.base.local_count as usize);
+                *frame.base.locals.add(word) = 1;
+            }
+            3 => {
+                assert!(frame.argument_capacity > 0);
+                *frame.arguments = 1;
+            }
+            4 => frame.resume_site ^= 1,
+            5 => frame.available_lines ^= 1,
+            6 => frame.input_eof ^= 1,
+            _ => panic!("unknown checkpoint corruption"),
+        }
+    }
+}
 fn bits(value: &Value, kind: NativeScalarKind) -> Result<u64, NativeProgramExecutionError> {
     match (kind, value.data()) {
         (NativeScalarKind::Bool, ValueData::Bool(v)) => Ok(u64::from(*v)),
@@ -154,6 +194,7 @@ struct Context<'plan, 'visit> {
     error: Option<NativeProgramExecutionError>,
     activation_phase: bool,
     window_region: Option<(u32, u64)>,
+    prefix: Option<prefix::State>,
 }
 impl Context<'_, '_> {
     fn write_borrowed_word(
@@ -309,6 +350,13 @@ impl Context<'_, '_> {
         operation: u64,
         args: [u64; 3],
     ) -> Result<Option<u64>, NativeProgramExecutionError> {
+        if self
+            .prefix
+            .as_ref()
+            .is_some_and(|prefix| prefix.paused.is_some())
+        {
+            return Err(invalid("helper after native prefix checkpoint"));
+        }
         if operation == super::program_abi::CLOSED_TAIL_END {
             let site = usize::try_from(site).map_err(|_| invalid("closed Tail site overflow"))?;
             return self.end_closed_tail(site, args);
@@ -317,6 +365,14 @@ impl Context<'_, '_> {
             return Err(invalid(
                 "ordinary helper while closed Tail fuel is outstanding",
             ));
+        }
+        if matches!(
+            operation,
+            super::program_abi::PREFIX_PAUSE
+                | super::program_abi::PREFIX_BORROWED_RESUME
+                | super::program_abi::PREFIX_TAIL_RESUME
+        ) {
+            return self.prefix_helper(site, operation, args);
         }
         if self.control.previous.map(u64::from) != Some(site) {
             return Err(invalid("helper outside exact admitted visit"));
@@ -570,6 +626,13 @@ impl Context<'_, '_> {
         }
     }
     fn visit(&mut self, site: u64) -> Result<(), NativeProgramExecutionError> {
+        if self
+            .prefix
+            .as_ref()
+            .is_some_and(|prefix| prefix.paused.is_some())
+        {
+            return Err(invalid("visit after native prefix checkpoint"));
+        }
         if self.closed_tail.is_some() {
             return Err(invalid(
                 "ordinary visit while closed Tail fuel is outstanding",
@@ -3349,7 +3412,7 @@ mod tests {
                             *frame.arguments = 1;
                         }
                     }
-                    // SAFETY: arguments remain within the retained ABI8 boundary;
+                    // SAFETY: arguments remain within the retained ABI9 boundary;
                     // wrong metadata/pointer is rejected before dereference.
                     let status = unsafe {
                         (frame.helper)(
@@ -4168,8 +4231,8 @@ mod tests {
         }
     }
     #[test]
-    fn abi8_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 8);
+    fn abi9_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
+        assert_eq!(VERSION, 9);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);
         assert_eq!(
             core::mem::offset_of!(Frame, helper),
@@ -4192,8 +4255,20 @@ mod tests {
             core::mem::size_of::<NativeEntryFrame>() + 32
         );
         assert_eq!(
-            core::mem::size_of::<Frame>(),
+            core::mem::offset_of!(Frame, resume_site),
             core::mem::size_of::<NativeEntryFrame>() + 40
+        );
+        assert_eq!(
+            core::mem::offset_of!(Frame, available_lines),
+            core::mem::size_of::<NativeEntryFrame>() + 48
+        );
+        assert_eq!(
+            core::mem::offset_of!(Frame, input_eof),
+            core::mem::size_of::<NativeEntryFrame>() + 56
+        );
+        assert_eq!(
+            core::mem::size_of::<Frame>(),
+            core::mem::size_of::<NativeEntryFrame>() + 64
         );
     }
 }

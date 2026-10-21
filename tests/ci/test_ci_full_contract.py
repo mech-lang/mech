@@ -194,6 +194,33 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("- canonical-linked-applications", job_block(FULL, "cargo"))
         self.assertNotIn("continue-on-error", linked)
 
+    def test_canonical_application_suites_keep_all_commands_in_required_parallel_shards(self):
+        block = job_block(FULL, "canonical-applications")
+        self.assertIn("fail-fast: false", block)
+        self.assertIn("suite: [source, native, cli]", block)
+        expected = {
+            "Execute canonical resident applications and retained tail controls": "source",
+            "Execute canonical collection and text source contracts": "source",
+            "Execute source assignment and fixed-shape specialization contracts": "source",
+            "Execute canonical native lowering and selected implementation witnesses": "native",
+            "Execute secured canonical reference bytecode admission": "cli",
+            "Execute canonical CLI byte and resource contracts": "cli",
+        }
+        steps = [step for step in job_steps(FULL, "canonical-applications")
+                 if re.search(r"(?m)^      - name: Execute ", step)]
+        self.assertEqual(len(steps), len(expected))
+        for name, suite in expected.items():
+            with self.subTest(name=name):
+                matching = [step for step in steps if f"- name: {name}\n" in step]
+                self.assertEqual(len(matching), 1)
+                self.assertIn("if: ${{ matrix.suite == '" + suite + "' }}", matching[0])
+                self.assertNotIn("continue-on-error", matching[0])
+                self.assertIn("--locked --offline", matching[0])
+        gate = job_block(FULL, "cargo")
+        self.assertIn("      - canonical-applications\n", gate)
+        for family in ("language", "native"):
+            self.assertRegex(gate, rf"'{family}': \[[^\n]*'canonical-applications'")
+
     def test_native_cli_collision_has_an_independent_required_cold_build_budget(self):
         memory = job_block(FULL, "managed-memory-runtime")
         collision = job_block(FULL, "native-cli-collision")
@@ -367,7 +394,11 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertLess(block.index(listing), block.index(execution))
         for step in (contracts, listing, execution):
             self.assertNotIn("continue-on-error", step)
-            self.assertNotIn("if:", step)
+            if step == contracts:
+                self.assertEqual(re.findall(r"(?m)^        if: (.*)$", step),
+                                 ["${{ matrix.suite == 'native' }}"])
+            else:
+                self.assertNotIn("if:", step)
 
     def test_canonical_casts_execute_both_contract_targets_and_real_linked_qualification(self):
         steps = job_steps(FULL, "canonical-applications")
@@ -395,7 +426,11 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertLess(block.index(listing), block.index(execution))
         for step in (contracts, listing, execution):
             self.assertNotIn("continue-on-error", step)
-            self.assertNotIn("if:", step)
+            if step == contracts:
+                self.assertEqual(re.findall(r"(?m)^        if: (.*)$", step),
+                                 ["${{ matrix.suite == 'native' }}"])
+            else:
+                self.assertNotIn("if:", step)
 
     def test_native_linkage_workspace_lock_is_fetched_before_offline_installer_tests(self):
         block = job_block(FULL, "native-linkage-owners")

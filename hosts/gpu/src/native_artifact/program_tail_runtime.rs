@@ -7,12 +7,28 @@ pub(super) struct State {
     region: usize,
     used: (u64, u64),
     remaining: (u64, u64),
+    entry: u32,
 }
 impl Context<'_, '_> {
     pub(super) fn begin_closed_tail(
         &mut self,
         site: usize,
         args: [u64; 3],
+    ) -> Result<Option<u64>, Error> {
+        let layout = &self.control.descriptor.closed_tails;
+        let region = layout
+            .initializers
+            .get(site)
+            .copied()
+            .flatten()
+            .ok_or_else(|| invalid("closed Tail outside initializer"))?;
+        self.begin_closed_region(site, args, region)
+    }
+    pub(super) fn begin_closed_region(
+        &mut self,
+        _site: usize,
+        args: [u64; 3],
+        region: usize,
     ) -> Result<Option<u64>, Error> {
         if args != [0; 3]
             || self.closed_tail.is_some()
@@ -22,12 +38,6 @@ impl Context<'_, '_> {
             return Err(invalid("duplicate or malformed closed Tail entry"));
         }
         let layout = &self.control.descriptor.closed_tails;
-        let region = layout
-            .initializers
-            .get(site)
-            .copied()
-            .flatten()
-            .ok_or_else(|| invalid("closed Tail outside initializer"))?;
         let proof = &layout.regions[region];
         if self.control.current != Some(proof.iteration)
             || self.control.progress[proof.iteration as usize * 2..][..2] != [0, 1]
@@ -56,6 +66,10 @@ impl Context<'_, '_> {
             region,
             used: self.library.used(),
             remaining,
+            entry: self
+                .control
+                .previous
+                .ok_or_else(|| invalid("closed Tail has no current predecessor"))?,
         });
         Ok(Some(1))
     }
@@ -72,7 +86,7 @@ impl Context<'_, '_> {
         let descriptor = self.control.descriptor;
         let layout = &descriptor.closed_tails;
         let proof = &layout.regions[state.region];
-        if self.control.previous != Some(proof.tail.initialize())
+        if self.control.previous != Some(state.entry)
             || self.control.current != Some(proof.iteration)
             || self.control.progress[proof.iteration as usize * 2..][..2] != [0, 1]
             || self.library.used() != state.used
@@ -106,7 +120,14 @@ impl Context<'_, '_> {
             // admits any further instruction. No allowance is refilled.
             1 if site == proof.tail.header() as usize => {
                 if traversals == 0 {
-                    proof.tail.initialize()
+                    state.entry
+                } else {
+                    proof.tail.latch()
+                }
+            }
+            4 if site == proof.tail.header() as usize && self.prefix.is_some() => {
+                if traversals == 0 {
+                    state.entry
                 } else {
                     proof.tail.latch()
                 }

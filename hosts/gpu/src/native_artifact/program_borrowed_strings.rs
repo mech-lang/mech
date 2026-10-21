@@ -34,14 +34,22 @@ impl Context<'_, '_> {
         site: usize,
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
+        let ordinal = self.control.descriptor.borrowed_strings.initializers[site]
+            .ok_or_else(|| invalid("borrowed String preparation outside initializer"))?;
+        self.prepare_borrowed_region(site, args, ordinal)
+    }
+    pub(super) fn prepare_borrowed_region(
+        &mut self,
+        site: usize,
+        args: [u64; 3],
+        ordinal: usize,
+    ) -> Result<Option<u64>, Error> {
         if self.borrowed_strings.is_some() || self.consumed || args != [0; 3] {
             return Err(invalid(
                 "duplicate or malformed borrowed String preparation",
             ));
         }
         let descriptor = self.control.descriptor;
-        let ordinal = descriptor.borrowed_strings.initializers[site]
-            .ok_or_else(|| invalid("borrowed String preparation outside initializer"))?;
         let region = &descriptor.borrowed_strings.regions[ordinal];
         if self.control.current != Some(region.proof.iteration()) {
             return Err(invalid("borrowed String preparation outside current loop"));
@@ -83,6 +91,14 @@ impl Context<'_, '_> {
                 self.arena
                     .copy_current(value.get(), &mut self.control.work)?
             };
+            if self.prefix.is_some() && i < region.proof.matrices().len() {
+                let actual = lines
+                    .as_ref()
+                    .map(|lines| lines.count())
+                    .or_else(|| texts(&owner).map(<[_]>::len))
+                    .ok_or_else(|| invalid("prefix source has no genuine line extent"))?;
+                self.validate_prefix_extent(*value, actual)?;
+            }
             source_bytes = source_bytes
                 .checked_add(
                     owner

@@ -7,7 +7,7 @@ use mech_syntax::document::{
     parse_canonical_document,
 };
 
-fn artifacts(source: &str) -> [mech_engine::ProgramArtifact; 2] {
+pub(super) fn artifacts(source: &str) -> [mech_engine::ProgramArtifact; 2] {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x4f4e4345), Revision(1), source).unwrap(),
         ParseConfig::default(),
@@ -28,7 +28,7 @@ fn artifacts(source: &str) -> [mech_engine::ProgramArtifact; 2] {
     [original, decoded]
 }
 
-fn policy() -> MemoryBudgetLimits {
+pub(super) fn policy() -> MemoryBudgetLimits {
     let mut limits = mech_core::TargetMemoryProfile::current_resident_cpu()
         .unwrap()
         .limits;

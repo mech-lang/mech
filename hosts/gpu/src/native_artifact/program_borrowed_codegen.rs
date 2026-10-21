@@ -44,15 +44,45 @@ pub(in crate::native_artifact) fn prepare(
     let Some(Some(region)) = layout.initializers.get(site) else {
         return Ok(());
     };
-    let layout = &layout.regions[*region];
-    let zero = b.ins().iconst(types::I64, 0);
-    hooks.call(
+    prepare_region(
         b,
+        locals,
+        &layout.regions[*region],
         site,
         super::super::program_abi::BORROWED_STRINGS_PREPARE,
-        [zero; 3],
+        hooks,
         error,
-    );
+    )
+}
+pub(in crate::native_artifact) fn resume(
+    b: &mut FunctionBuilder,
+    locals: Value,
+    layout: &RegionLayout,
+    site: usize,
+    hooks: &Hooks,
+    error: Block,
+) -> Result<(), NativeCompileError> {
+    prepare_region(
+        b,
+        locals,
+        layout,
+        site,
+        super::super::program_abi::PREFIX_BORROWED_RESUME,
+        hooks,
+        error,
+    )
+}
+fn prepare_region(
+    b: &mut FunctionBuilder,
+    locals: Value,
+    layout: &RegionLayout,
+    site: usize,
+    operation: u64,
+    hooks: &Hooks,
+    error: Block,
+) -> Result<(), NativeCompileError> {
+    let zero = b.ins().iconst(types::I64, 0);
+    hooks.call(b, site, operation, [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     put(b, locals, layout.ready, ready)?;
     // The checked callback verifies capacity and writes every capture, even

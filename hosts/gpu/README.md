@@ -175,8 +175,9 @@ UTF8 is revalidated before publishing a new frozen identity. The provider now
 also transfers acquired UTF8 backing through the same canonical String constructor
 as ordinary values. Construction failures restore the original bytes; repeated
 mixed reads and cached diagnostics are preserved. The Mech source and native
-computation (modulo proved constant-slot renaming) are unchanged. IR21/work
-policy31, native counters, grants and one-round publication remain unchanged.
+computation (modulo proved constant-slot renaming) are unchanged in that measured
+ABI8/IR21/work-policy31 revision, as are native counters, grants and one-round
+publication. Later compiler changes below have not been re-timed.
 
 Twelve balanced timing rounds per size retain 78 outputs and 52 secured reports;
 six separate memory runs per binary and size retain RSS and the distinct OS
@@ -194,9 +195,14 @@ current-visit bounds and future-range retention proofs from the full original
 graph, including the original and decoded k-nucleotide program. A bounded UTF-8
 chunk adapter now uses the same provider, read-authorization and transaction
 gates, with explicit one-shot host opt-in; ordinary cached/mixed reads are
-unchanged. Incremental native continuation and retention-driven discard remain
-unfinished. The shipped session still uses snapshots and rejects scoped text,
-so these prerequisites do not improve the measured footprint above.
+unchanged. ABI9/IR22/work-policy32 adds a private emitted header continuation:
+the original Mech scanner pauses before the next traversal, reconciles its fuel,
+clears borrowed pointer lanes and resumes its actual carrier on the same ledger.
+It waits for EOF even after finding the selected range. Qualification first uses
+genuine complete snapshots; no prefix length masquerades as a canonical count.
+Incremental storage, admission/error-order preservation and retention-driven
+discard remain unfinished. The shipped session still uses snapshots and rejects
+scoped text, so these prerequisites do not improve the measured footprint above.
 The [buffer-reuse receipt](../../docs/validation/canonical-knucleotide-owned-string-footprint-v1.json)
 retains the previous ownership measurement. Capacity shrinking may still
 reallocate backing; this is not a universal zero-copy guarantee.
