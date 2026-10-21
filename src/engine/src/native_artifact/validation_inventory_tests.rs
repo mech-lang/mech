@@ -134,11 +134,16 @@ fn validation_inventory_reuse_keeps_cold_and_escaping_reads_visible() {
 
 #[test]
 fn validation_inventory_reuse_preserves_first_selected_diagnostic() {
+    // The native tuple constructor accepts shallow atomic fields, not a Map.
+    // Keep the full Histogram observable through an ordinary, unguarded key
+    // read; the separate lookup still selects the guarded-query strategy.
     let source = SOURCES[5].replace(
         "lookup(source<[string]>, query<string>)",
-        "items := source<[string]>\njoined := text/join([piece | piece <- items], \"\")\nhistogram := map/histogram([piece | piece <- items])\nmatched := lookup(items, query<string>)\n(joined, histogram, matched)",
+        "items := source<[string]>\njoined := text/join([piece | piece <- items], \"\")\nhistogram := map/histogram([piece | piece <- items])\nmatched := lookup(items, query<string>)\n(joined, histogram{query}, matched)",
     );
     for plan in plans(&source) {
+        same(&plan).unwrap();
+        plan.validate_current_visits().unwrap();
         let join = plan
             .collections()
             .iter()
