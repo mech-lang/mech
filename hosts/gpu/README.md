@@ -157,28 +157,32 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [latest qualified timing and footprint receipt](../../docs/validation/canonical-knucleotide-host-footprint-v1.json)
+The [latest qualified timing and footprint receipt](../../docs/validation/canonical-knucleotide-catalog-footprint-v1.json)
 compares three retained binaries on the same M1. Memory and executable sizes
 below use decimal MB; peak RSS comes from separate process-memory runs.
 
 | Implementation | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Legacy direct I/O | 0.0916 s | 0.9756 s | 187.0 MB | 3.16 MB |
-| Previous secured application (`cb52cb9dc`) | 0.0920 s | 0.9608 s | 1,206.7 MB | 17.82 MB |
-| Latest qualified secured application (`fb47118f0`) | 0.0907 s | 0.9280 s | 964.8 MB | 12.89 MB |
+| Legacy direct I/O | 0.0918 s | 0.9784 s | 180.9 MB | 3.16 MB |
+| Previous secured application (`fb47118f0`) | 0.0910 s | 0.9311 s | 952.6 MB | 12.89 MB |
+| Latest qualified secured application (`b9b4a105f`) | 0.0897 s | 0.9238 s | 950.1 MB | 7.47 MB |
 
 Twelve balanced timing rounds per size retain all 78 outputs and 52 secured
 reports; every output and report matches. Six separate memory runs per binary
 and size retain both peak RSS and the distinct OS memory-footprint metric.
-The current build beats the previous secured build in all twelve paired rounds
-at both sizes. These measurements compare complete implementations on this
+The current build beats the previous secured build in twelve paired rounds at
+10M and ten at 125M. It beats the legacy binary in all twelve at both sizes.
+These measurements compare complete implementations on this
 machine; they do not isolate capability-check costs or establish an optimization
-ceiling. The [previous receipt](../../docs/validation/canonical-knucleotide-ci-portability-v1.json)
+ceiling. The [previous receipt](../../docs/validation/canonical-knucleotide-host-footprint-v1.json)
 retains its own measurements and source pins.
 
-Memory and executable size remain unfinished: the reference is about 187 MB
-peak RSS and 3.16 MB, not the current secured footprint. Further reductions
-must preserve speed and the same capability, validation and accounting rules.
+Memory and executable size remain unfinished: the reference is roughly
+180–200 MB peak RSS and 3.16 MB, not the current secured footprint. Removing
+unused bytecode factories primarily trims linked code, not input materialization;
+the 10M peak RSS actually rises from 115.1 to 119.0 MB in this diagnostic.
+Further reductions must preserve speed and the same capability, validation and
+accounting rules.
 
 The provider releases redundant raw stdin backing after successful text capture,
 preserving exact mixed byte/text reads and invalid-UTF-8 behavior. Detached host
