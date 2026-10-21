@@ -157,24 +157,26 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [latest matched comparison](../../docs/validation/canonical-knucleotide-borrowed-startup-v1.json)
+The [latest matched comparison](../../docs/validation/canonical-knucleotide-ci-portability-v1.json)
 remeasures three binaries on the same M1 at both input sizes:
 
 | Implementation | 10M bases | 125M bases |
 | --- | ---: | ---: |
-| Legacy direct-I/O compiled body | 0.0921 s | 0.9744 s |
-| Secured application before borrowed inventories | 0.0979 s | 0.9743 s |
-| Secured application with borrowed inventories | 0.0923 s | 0.9692 s |
+| Legacy direct-I/O compiled body | 0.0915 s | 0.9748 s |
+| Previous secured application (`2a5cd26fbc`) | 0.0923 s | 0.9709 s |
+| Current measured secured application (`cb52cb9dc`) | 0.0924 s | 0.9715 s |
 
 Twelve balanced rounds per size use the same observer and regular-file capture;
-all 78 correctness/timed outputs match. Borrowing read-only instruction
-inventories removes another 5.6 ms at 10M versus the remeasured prior secured
-build. The remaining median difference from legacy is 0.17 ms (0.19%): practical
-parity at both sizes, not a demonstrated speed advantage or irreducible penalty.
-The measured source is pinned to `2a5cd26fbc`. Grants, finite limits and
-accounting are unchanged. Original and decoded builds are byte-identical.
-Historical measurements, profiles and preserved failures remain in the
-[validation evidence](../../docs/validation).
+all 78 correctness/timed outputs and 52 secured reports match. The runtime-only
+metadata portability correction shows no clear regression against the previous
+secured build. Against legacy, the secured median is 0.91 ms (1.00%) higher at
+10M and 3.37 ms (0.35%) lower at 125M. This is near-legacy performance, not a
+demonstrated full-size speed advantage or an isolated security-cost measurement.
+The measured source is pinned to `cb52cb9dc`; subsequent documentation-only
+changes are not relabeled as measurements. Grants, finite limits, accounting
+and emitted machine instructions are unchanged. Original and decoded builds
+are byte-identical. The earlier [borrowed-startup result](../../docs/validation/canonical-knucleotide-borrowed-startup-v1.json)
+and other historical evidence retain their original revision and session pins.
 
 IR19/work policy29 retain one canonical compiler and **one host round** for
 capture, effect staging and atomic commit. Generic proofs lower closed control,
@@ -290,8 +292,9 @@ Set `MECH_CANONICAL_HOSTED_PROFILE=release` to qualify the release Rust shell an
 library code. The default is `debug`; other values are rejected. Both original
 and decoded builds, including pin-mutation rejection and restored builds, use
 the chosen profile. The receipt records the actual Cargo compiler profiles.
-The checked Cranelift Object still uses `opt_level=none`; a release shell is not
-a claim of optimized whole-program Mech code, full-size correctness or timing.
+The checked Cranelift Object uses `opt_level=speed`; the Rust profile is a
+separate setting. A release shell alone does not establish whole-program
+optimization, full-size correctness or timing.
 
 The explicitly opt-in `canonical-native-benchmark-policy` generator feature
 adds `generate_linked_benchmark_program_application`, not another evaluator or
