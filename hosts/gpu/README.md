@@ -157,35 +157,39 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [latest qualified timing and footprint receipt](../../docs/validation/canonical-knucleotide-private-lines-footprint-v1.json)
-compares three retained binaries on the same M1. Memory and executable sizes
-below use decimal MB; peak RSS comes from separate process-memory runs.
+The [latest qualified timing and footprint receipt](../../docs/validation/canonical-knucleotide-selected-factories-footprint-v1.json)
+compares three retained binaries in one matched M1 batch. Sizes use decimal MB;
+peak RSS comes from separate process-memory runs.
 
 | Implementation | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Legacy direct I/O | 0.0920 s | 0.9750 s | 213.1 MB | 3.16 MB |
-| Previous secured application (`b9b4a105f`) | 0.0897 s | 0.9229 s | 958.1 MB | 7.47 MB |
-| Latest qualified secured application (`0402f8222`) | 0.0724 s | 0.6642 s | 616.1 MB | 7.52 MB |
+| Legacy direct I/O | 0.0918 s | 0.9743 s | 203.8 MB | 3.16 MB |
+| Previous secured application (`0402f8222`) | 0.0723 s | 0.6674 s | 607.7 MB | 7.52 MB |
+| Latest qualified secured application (`1111e5eba`) | 0.0718 s | 0.6648 s | 607.3 MB | 6.81 MB |
+
+Generated launchers directly install the 27 maintained canonical factories in
+the complete artifact kernel closure, including nested and cold code. The full
+catalog uses those same declarations. Missing or replaced private registration
+evidence retains complete catalog installation; no operation is silently skipped.
+The separately pinned factory profile is packaging metadata, not an execution
+or capability authority. Mech source, native instructions (apart from proved
+constant-slot renaming), IR20/work policy30 and native counters are unchanged.
 
 Twelve balanced timing rounds per size retain all 78 outputs and 52 secured
-reports; outputs match the oracle and reports match their own qualified build.
-The new private storage has explicitly versioned accounting, not old counters.
-Six separate memory runs per binary
-and size retain both peak RSS and the distinct OS memory-footprint metric.
-The current build beats both the previous secured build and the legacy binary
-in all twelve paired rounds at both sizes.
-These measurements compare complete implementations on this
-machine; they do not isolate capability-check costs or establish an optimization
-ceiling. The [previous receipt](../../docs/validation/canonical-knucleotide-catalog-footprint-v1.json)
-retains its own measurements and source pins.
+reports. Six separate memory runs per binary and size retain RSS and the distinct
+OS memory-footprint metric. The executable is 9.5% smaller; speed is effectively
+unchanged from the previous secured build. RSS ranges overlap, so this change
+does not establish a RAM improvement. The current build beats legacy in all
+twelve paired rounds at both sizes. These are complete-implementation comparisons,
+not isolated capability costs or an optimization ceiling. The
+[private-line receipt](../../docs/validation/canonical-knucleotide-private-lines-footprint-v1.json)
+retains the earlier storage improvement and its independent measurements.
 
-Memory and executable size remain unfinished: the target is roughly 200 MB peak
-RSS and 3.16 MB, not the current secured footprint. Legacy RSS varies across
-diagnostics (previously 180.9 MB, 213.1 MB here). Private lines cut matched secured
-125M RSS by 35.7% and 10M RSS from 115.7 to 93.7 MB, but add about 0.05 MB of code.
-Further reductions must preserve speed, capabilities, validation and finite
-same-account accounting. Whole-input capture alone still retains 254.2 MB;
-general streaming fusion and additional host trimming remain unfinished.
+The footprint target remains unfinished: roughly 200 MB peak RSS and 3.16 MB.
+Whole-input capture alone still retains 254.2 MB. General streaming of the existing
+authorized resource pathway, sole-use buffer fusion and further host trimming
+remain necessary, while preserving speed, validation and finite same-account
+accounting. Streaming is not implemented by this packaging change.
 
 The provider releases redundant raw stdin backing after successful text capture,
 preserving exact mixed byte/text reads and invalid-UTF-8 behavior. Detached host
