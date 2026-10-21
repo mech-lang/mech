@@ -56,8 +56,11 @@ fn selected(_: &super::NativeProgramLibraryTemplate) -> bool {
 
 /// Reprove strategy, exact consumer, no escaping Matrix, types and legal
 /// schedule on every opaque plan validation (including linked rederivation).
-pub(super) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
-    let counts = uses(plan)?;
+pub(super) fn validate(
+    inputs: &super::fusion_semantics::ValidationInputs<'_, impl ControlPlan>,
+) -> Result<(), &'static str> {
+    let plan = inputs.plan();
+    let counts = inputs.counts();
     for (id, data) in plan.collections().iter().enumerate() {
         let ResultKind::TextJoin(sink) = data.result() else {
             continue;

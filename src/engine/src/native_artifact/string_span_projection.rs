@@ -363,15 +363,18 @@ pub(crate) fn lower(plan: &mut Plan) -> Result<(), &'static str> {
 /// Rederive the exact same selected-factory/semantic use proof at every opaque
 /// plan validation. The shared inventory expands private actions but never
 /// treats the absent semantic selector/String identities as known Values.
-pub(super) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
-    let actions = super::fusion_semantics::semantic_actions(plan)?;
-    let counts = super::fusion_semantics::semantic_use_counts(plan)?;
+pub(super) fn validate(
+    inputs: &super::fusion_semantics::ValidationInputs<'_, impl ControlPlan>,
+) -> Result<(), &'static str> {
+    let plan = inputs.plan();
+    let actions = inputs.actions()?;
+    let counts = inputs.counts();
     let mut expected = vec![None; plan.blocks().len()];
     for (collection, data) in plan.collections().iter().enumerate() {
         let Some(projection) = data.string_span_projection() else {
             continue;
         };
-        if candidate(plan, collection, &counts, &actions).as_ref() != Some(projection) {
+        if candidate(plan, collection, counts, actions).as_ref() != Some(projection) {
             return Err(BAD);
         }
         for (site, phase) in [

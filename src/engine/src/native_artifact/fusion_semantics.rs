@@ -7,7 +7,7 @@ use super::{
     NativeIterationTerminator as Terminator, NativeMatchAction as Scalar,
     NativeMatchTerminator as Term, NativeMatchValue as Value,
 };
-use std::borrow::Cow;
+use std::{borrow::Cow, cell::OnceCell};
 const BAD: &str = "invalid native fusion semantic read inventory";
 /// An immutable semantic view. Ordinary instructions stay borrowed while
 /// virtual consumers own their checked expansion. Mutating passes explicitly
@@ -39,6 +39,42 @@ impl std::ops::Index<usize> for SemanticActions<'_> {
             .expect("native semantic action index out of bounds")
     }
 }
+
+/// Scratch for ONE validation of one immutably borrowed plan. This is not a
+/// validated-plan token or a persistent cache. Every selected validator still
+/// runs, and rewriting/lowering passes construct their own fresh inventories.
+pub(super) struct ValidationInputs<'a, P: ControlPlan> {
+    plan: &'a P,
+    counts: Vec<usize>,
+    actions: OnceCell<Result<SemanticActions<'a>, &'static str>>,
+}
+impl<'a, P: ControlPlan> ValidationInputs<'a, P> {
+    /// Called at the first selected validator's existing use-count check,
+    /// after ordinary collection validation. Keep the streaming count walk's
+    /// error order; do not eagerly expand all actions before that check.
+    pub(super) fn new(plan: &'a P) -> Result<Self, &'static str> {
+        Ok(Self {
+            plan,
+            counts: semantic_use_counts(plan)?,
+            actions: OnceCell::new(),
+        })
+    }
+    pub(super) fn plan(&self) -> &'a P {
+        self.plan
+    }
+    pub(super) fn counts(&self) -> &[usize] {
+        &self.counts
+    }
+    /// The guarded-query validator is the first reader. Earlier TextJoin
+    /// failures must still return before this fallible expansion is attempted.
+    pub(super) fn actions(&self) -> Result<&SemanticActions<'a>, &'static str> {
+        self.actions
+            .get_or_init(|| semantic_actions(self.plan))
+            .as_ref()
+            .map_err(|error| *error)
+    }
+}
+
 /// Reconstruct semantic actions only; never construct missing language Values.
 /// All result strategies share this use inventory so one pass cannot hide an
 /// escaping read from a later pass.

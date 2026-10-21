@@ -8,6 +8,9 @@ use mech_syntax::document::{
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
+#[path = "validation_inventory_tests.rs"]
+mod validation_inventory_tests;
+
 const SOURCES: &[&str] = &[
     "0u64\n",
     "[i | i <- 0u64..count<u64>]\n",

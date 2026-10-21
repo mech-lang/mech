@@ -225,15 +225,18 @@ pub(crate) fn lower(plan: &mut Plan) -> Result<(), &'static str> {
     Ok(())
 }
 
-pub(super) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
-    let actions = super::fusion_semantics::semantic_actions(plan)?;
-    let counts = super::fusion_semantics::semantic_use_counts(plan)?;
+pub(super) fn validate(
+    inputs: &super::fusion_semantics::ValidationInputs<'_, impl ControlPlan>,
+) -> Result<(), &'static str> {
+    let plan = inputs.plan();
+    let actions = inputs.actions()?;
+    let counts = inputs.counts();
     let mut expected = vec![None; plan.blocks().len()];
     for (id, data) in plan.collections().iter().enumerate() {
         let Some(p) = data.string_element_map_projection() else {
             continue;
         };
-        if candidate(plan, id, &counts, &actions).as_ref() != Some(p)
+        if candidate(plan, id, counts, actions).as_ref() != Some(p)
             || expected
                 .get_mut(p.selection_site as usize)
                 .ok_or(BAD)?

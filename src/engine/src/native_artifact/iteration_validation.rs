@@ -880,11 +880,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
         }
     }
     super::collection_validation::validate(plan)?;
-    super::text_join_sink::validate(plan)?;
-    super::guarded_histogram_query::validate(plan)?;
-    super::histogram_sink::validate(plan)?;
-    super::string_span_projection::validate(plan)?;
-    super::string_element_map_projection::validate(plan)?;
+    validate_fusions(plan)?;
     let mut visited = vec![false; blocks.len()];
     check_scope(plan, None, plan.entry(), initial, &roles, &mut visited)?;
     // Unreachable fail-closed Reject blocks still have checked structure/types;
@@ -898,6 +894,18 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
         }
     }
     Ok(())
+}
+
+pub(super) fn validate_fusions(plan: &impl ControlPlan) -> Result<(), &'static str> {
+    // Reuse only descriptive scratch within this immutable validation call.
+    // Counts and actions retain their original first-demand/failure order;
+    // all selected proofs run before the ordinary current-scope traversal.
+    let inputs = super::fusion_semantics::ValidationInputs::new(plan)?;
+    super::text_join_sink::validate(&inputs)?;
+    super::guarded_histogram_query::validate(&inputs)?;
+    super::histogram_sink::validate(&inputs)?;
+    super::string_span_projection::validate(&inputs)?;
+    super::string_element_map_projection::validate(&inputs)
 }
 fn check_scope(
     plan: &impl ControlPlan,
