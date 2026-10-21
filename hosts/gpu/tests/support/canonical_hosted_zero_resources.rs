@@ -139,10 +139,10 @@ fn canonical_only_catalog_preserves_original_and_decoded_native_objects() {
     for source in [SOURCE, FULL, ECHO, TWO, CLOSED_FAIL, CLOSED_LIVE, FAIL] {
         let (variants, complete) = artifacts(source);
         for artifact in variants {
-            let expected = mech_gpu::native_artifact::emit_program_object(&artifact, &complete)
-                .unwrap();
-            let selected = mech_gpu::native_artifact::emit_program_object(&artifact, &canonical)
-                .unwrap();
+            let expected =
+                mech_gpu::native_artifact::emit_program_object(&artifact, &complete).unwrap();
+            let selected =
+                mech_gpu::native_artifact::emit_program_object(&artifact, &canonical).unwrap();
             assert_eq!(selected.bytes(), expected.bytes());
             assert_eq!(selected.identity().bytes(), expected.identity().bytes());
             assert_eq!(selected.metadata(), expected.metadata());
