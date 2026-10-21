@@ -73,6 +73,11 @@ mod text_line_matrix;
 #[cfg(feature = "pure_text")]
 pub use text_line_matrix::NativeTextLineMatrixRegion;
 
+#[cfg(feature = "pure_text")]
+mod text_line_frontier;
+#[cfg(feature = "pure_text")]
+pub use text_line_frontier::{NativeTextLineCountFrontier, NativeTextLineCountGuard};
+
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 pub use crate::resident::general::native_collection_templates::{
     NativeCollectionLexicalSource, NativeCollectionLexicalTemplate,

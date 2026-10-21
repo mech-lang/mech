@@ -96,6 +96,14 @@ fn complete_knucleotide_original_and_decoded_run_through_actual_secured_cli() {
         assert_eq!(lines[0].borrowed_regions(), [0]);
         assert_eq!(lines[0].lengths().len(), 1);
         assert_eq!(lines[0].selections().len(), 1);
+        let frontiers = jit.descriptor().plan().text_line_count_frontiers();
+        assert_eq!(
+            frontiers.len(),
+            1,
+            "the actual secured source must prove its EOF-dependent count uses"
+        );
+        assert_eq!(frontiers[0].guards().len(), 2);
+        assert!(!frontiers[0].exact().is_empty());
         assert_eq!(
             jit.descriptor().plan().borrowed_string_regions()[0]
                 .actions()
