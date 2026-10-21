@@ -157,148 +157,72 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [latest qualified timing and footprint receipt](../../docs/validation/canonical-knucleotide-selected-factories-footprint-v1.json)
+The [latest qualified timing and footprint receipt](../../docs/validation/canonical-knucleotide-owned-string-footprint-v1.json)
 compares three retained binaries in one matched M1 batch. Sizes use decimal MB;
 peak RSS comes from separate process-memory runs.
 
 | Implementation | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Legacy direct I/O | 0.0918 s | 0.9762 s | 187.2 MB | 3.16 MB |
-| Previous secured application (`0402f8222`) | 0.0723 s | 0.6623 s | 607.4 MB | 7.52 MB |
-| Latest qualified secured application (`fc85cc37b`) | 0.0720 s | 0.6621 s | 607.2 MB | 6.81 MB |
+| Legacy direct I/O | 0.0921 s | 0.9776 s | 204.8 MB | 3.16 MB |
+| Previous secured application (`fc85cc37b`) | 0.0717 s | 0.6619 s | 607.5 MB | 6.81 MB |
+| Latest qualified secured application (`7f5475450`) | 0.0712 s | 0.6527 s | 568.5 MB | 6.83 MB |
 
-Generated launchers directly install the 27 maintained canonical factories in
-the complete artifact kernel closure, including nested and cold code. The full
-catalog uses those same declarations. Missing or replaced private registration
-evidence retains complete catalog installation; no operation is silently skipped.
-Declarations also supply their required build features, so smaller runtime
-profiles do not accidentally inherit assumptions from the source compiler.
-The separately pinned factory profile is packaging metadata, not an execution
-or capability authority. Mech source, native instructions (apart from proved
-constant-slot renaming), IR20/work policy30 and native counters are unchanged.
+Complete-use and ownership proofs now let the existing emitted ASCII map loop
+reuse a last-use String's charged backing. Shared/external owners, cold consumers,
+parent-loop reuse, Unicode and unsupported representations retain their ordinary
+canonical paths. A mutable buffer is never presented as an immutable Value;
+UTF8 is revalidated before publishing a new frozen identity. The Mech source and
+generated instructions are unchanged. IR21/work policy31 pins the ownership
+handoff and its same-ledger charges; grants and one-round publication are unchanged.
 
-Twelve balanced timing rounds per size retain all 78 outputs and 52 secured
-reports. Six separate memory runs per binary and size retain RSS and the distinct
-OS memory-footprint metric. The executable is 9.5% smaller; speed is effectively
-unchanged from the previous secured build. RSS ranges overlap, so this change
-does not establish a RAM improvement. The current build beats legacy in all
-twelve paired rounds at both sizes. These are complete-implementation comparisons,
-not isolated capability costs or an optimization ceiling. The
-[private-line receipt](../../docs/validation/canonical-knucleotide-private-lines-footprint-v1.json)
-retains the earlier storage improvement and its independent measurements.
+Twelve balanced timing rounds per size retain 78 outputs and 52 secured reports;
+six separate memory runs per binary and size retain RSS and the distinct OS
+footprint metric. At 125M this change is 1.4% faster in the matched batch
+(12/12 paired rounds), reduces median peak RSS by 39.0 MB, and adds 16,944 executable
+bytes. These are whole-implementation measurements, not isolated capability costs
+or an optimization ceiling. Fresh review and green CI remain required; keep the
+PR draft and unmerged until the user directs otherwise.
 
-The footprint target remains unfinished: roughly 200 MB peak RSS and 3.16 MB.
-Whole-input capture alone still retains 254.2 MB. General streaming of the existing
-authorized resource pathway, sole-use buffer fusion and further host trimming
-remain necessary, while preserving speed, validation and finite same-account
-accounting. Streaming is not implemented by this packaging change.
+The roughly 200 MB/3.16 MB footprint target is **not achieved**. The provider still
+copies raw input while constructing text; whole-input capture retains 254.2 MB,
+and line geometry also remains. Removing capture copies, proved streaming through
+the existing authorized resource and further host trimming remain unfinished.
+Streaming is not implemented by this change. The
+[factory-linkage receipt](../../docs/validation/canonical-knucleotide-selected-factories-footprint-v1.json)
+retains the previous packaging measurement.
 
-The provider releases redundant raw stdin backing after successful text capture,
-preserving exact mixed byte/text reads and invalid-UTF-8 behavior. Detached host
-Strings move through the existing canonical finalizer without a temporary
-mutable cell and snapshot copy. Generated release workspaces strip symbols at
-speed optimization level 3. Grants and finite limits remain unchanged; new
-private-line accounting is distinguished by IR20/work policy30.
-Canonical linked launchers register only the canonical factory surface; the
-unused legacy bytecode factory catalog is not needed to validate their Objects.
-Original and decoded builds are byte-identical. The emitted Mech instructions
-differ only in constant-slot immediates induced by standalone nominal identity;
-the receipt records the exact constant bijection, instruction remaps and unchanged
-relocations.
-
-The executable contains its host and libraries and runs without Rust installed.
-The current application builder still invokes Cargo to compile its generated
-Rust launcher. Cranelift emits the Mech object without invoking rustc; a future
-prebuilt host package could remove the per-application Rust build while retaining
-the native linker and target-system dependencies. That distribution path is not
-implemented here.
-
-IR20/work policy30 retain one canonical compiler and **one host round** for
-capture, effect staging and atomic commit. Generic proofs lower closed control,
-String mapping, overlapping-window queries and eligible histograms to native
-loops. Real owners remain pinned, complete region work and scratch are admitted
-before entry, and unsupported representations keep their ordinary canonical
-operations. Histogram banks reserve their complete scratch/result peak
-atomically and fall back to serial layout if that admission loses headroom.
-
-Eligible String selection/join retains genuine owners without an intermediate
-Matrix; validation and consumer admission remain. Numeric ranges fill the
-existing canonical packed buffers directly, avoiding draft cloning and
-repacking. All thirteen numeric kinds keep the original arithmetic, shape,
-admission and publication rules. Concrete encoding sinks remove indirect writes
-without changing canonical bytes or billing.
-ASCII String maps batch bounded lookups while retaining scalar first-error
-behavior. Both maintained text-line paths share a vectorizable byte count;
-ordinary iteration still constructs every genuine String owner.
-Complete-use proofs additionally allow private ASCII `text/lines` results to
-retain one admitted input owner and line index, shared by native scanners and
-selected joins. No canonical Matrix is fabricated. Unicode or escaping matrices
-keep ordinary construction; fallback does not renew the call allowance.
-This removes line copies, not whole-input capture: streaming remains unfinished.
-Startup use-count analysis streams semantic reads. Other read-only analyses
-borrow ordinary instruction descriptions too; all checks, virtual expansions
-and explicitly owned snapshots for rewriting remain.
-
-These are whole-implementation comparisons,
-not isolated permission-check costs, a language ranking or an optimization
-ceiling. Fresh review and green CI remain required; keep the PR draft and
-unmerged until the user directs otherwise.
+### Canonical native architecture and limits
 
 The [canonical k-nucleotide source](tests/fixtures/native/knucleotide-idiomatic.mec)
-expresses record selection, overlapping String windows, frequency widths and
-queries in Mech, using comprehensions and general-purpose library primitives
-such as `map/histogram`. Keep that algorithm in the language: packing, streaming,
-fusion and parallel execution should be compiler optimizations over its canonical
-semantics, not a benchmark-sized external helper. The checked native backend
-now lowers scalar/String matrix comprehensions and shape-preserving unary
-pattern-function lifting to generated loops, including filters and nested
-generators. It uses the same artifact, current-visit proof, scalar emitter and
-invocation budgets; collection helpers project elements and stage results,
-never interpret body operations. Maintained numeric ranges, String grapheme
-indexing/slicing, shallow matrix conversion and closed pure initialization
-have historical standalone receipts for their recorded source identities;
-those receipts do not qualify the current complete hosted application. The
-current managed lowerer additionally supports selected shallow matrix/map
-access, canonical matrix-to-Set conversion and membership, shallow
-composite/enum values, String equality/concatenation, maintained sorting and sums,
-and tail-recursive
-FSM control. The complete k-nucleotide source uses these language-level
-operations, not a workload-sized Rust helper.
+expresses record selection, normalization, overlapping windows, histograms and
+queries in Mech. General proofs optimize its canonical artifact into native
+control, mapping, query and histogram loops; collection helpers project and
+stage values, never interpret the Mech body. Private line views and selected
+joins retain genuine owners without fabricating canonical matrices. Unicode or
+escaping values keep ordinary canonical operations; an unsupported whole program
+is rejected, not silently sent to another evaluator.
 
-Each native invocation still measures its current payloads and funds the same
-maintained kernels, fresh memory plans and atomic publication. Its bounded
-per-site binding cache exists only for structurally repeatable loop-body sites.
-Canonical validation contracts nested loops and proves the remaining root CFG
-acyclic; the consuming activation/turn session continues that same path without
-replaying its prefix. Root-scope calls, including nested Match arms, therefore
-use the same maintained uncached leaf directly and retain no bound/planner cache.
-The full concrete once/repeated slot lane is still admitted before creation.
-Repeatable sites' binding cache holds only one exact geometry at a time, never arguments,
-results or provider permissions. A shape miss admits replacement work and finite
-policy before retiring the old prepaid binding, then acquires its replacement
-reservation before allocation; old/new binding allocations do not coexist.
-Every hit and miss uses the same cumulative ledger and finite policy. The
-same guarded binding may reuse immutable planning metadata only after matching
-the complete fresh payload facts. Snapshot String selection may additionally
-retain weak-storage-identity grapheme-index metadata, never the source payload.
-Compact byte ordinals are used only after canonical grapheme segmentation
-proves every grapheme has one byte, so CRLF and Unicode keep their usual meaning.
-Index construction and eventual retirement are prepaid; its independently
-reserved bytes and nodes remain part of every finite call admission. The
-maintained selector still reads the actual current String and selector and
-publishes through the same atomic output boundary. The
-managed Object pins include the ABI, typed-IR and work-policy identities;
-old work-policy receipts
-must not be presented as qualification of changed accounting. Scalar/control
-legacy identities remain separate and unchanged.
+Generated launchers install the 27 maintained factories selected from the full
+artifact closure, including cold/nested code. Missing private registration
+evidence retains the complete catalog. Those same maintained declarations and
+owner-specified build features supply both profiles; the factory profile is
+packaging metadata, not execution or capability authority.
 
-Implemented lowering and secured JIT correctness are not standalone execution
-or full-input performance qualification by themselves. Clean source
-`f176277d87feeae4a66167d7e11eb2b731acc2a0` passed actual secured Object-linked
-execution of the complete original/decoded k-nucleotide source on small fixtures;
-see [the exact-source receipt](../../docs/validation/canonical-hosted-native-linked-v1.json).
-This does not qualify standard-size input, timings or the production native-build
-CLI. The secured gate is
+Native regions admit complete work and scratch before entry on one cumulative
+account. Repeated-site binding caches retain bounded planning metadata, never
+arguments or permissions; a miss must fund replacement before allocation. All
+real owners and fresh payload facts remain checked. The ABI, typed IR, work policy
+and actual selected semantics are pinned to each Object. Old policy receipts do
+not qualify changed accounting.
+
+The executable includes its host and libraries and runs without Rust installed.
+Cranelift emits Mech code; Cargo currently compiles the generated Rust launcher.
+Prebuilt host distribution is not implemented. Stateless native invocations do
+not establish persistent-reactive or all-program coverage.
+
+### Reproduce linked qualification
+
+The secured gate is
 `canonical_hosted_artifact`'s ignored test
 `linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned`.
 It builds and runs both complete original/decoded canonical artifacts with
@@ -435,12 +359,9 @@ and report publication, excluding builds, hashing and parent validation—not
 cold-cache or kernel time. This facility alone is not a full-size correctness
 or timing result.
 
-Persistent state, broader matrix/map/recursive operations, element-wise counts,
-all-ten-program coverage, standard-size input and whole-program optimization
-remain separate work. Release comparisons must follow exact-source
-correctness/admission qualification and identify the source, input, execution
-route and finite policy. The production generated shell is secured-only; the legacy
-trusted-mode environment setting does not change its grants. No timings of
-this language-level target are qualified yet. Older `sequence/packed-windows`
-timings are separately scoped migration diagnostics, not completion of this
-target.
+Persistent state, broader matrix/map/recursive operations, element-wise counts
+and all-ten-program coverage remain separate work. The complete k-nucleotide
+source is qualified at the two sizes recorded above; this does not qualify other
+programs or future revisions. Release comparisons must identify the exact
+source, input, execution route and finite policy. The production shell is
+secured-only; legacy trusted-mode environment settings do not change its grants.
