@@ -95,6 +95,22 @@ impl NativeTextLineChunks {
         })
     }
 
+    /// Reuse immutable full-chunk totals without a row loan or a second work
+    /// allowance. Partial edge chunks retain the exact CRLF-aware cell walk.
+    /// Only the owning final line Matrix may use this private success proof.
+    pub(in super::super) fn final_range_payload(&self, first: u64, end: u64) -> Option<u64> {
+        let facts = self.final_facts()?;
+        if first == 0
+            || first >= end
+            || end > facts.lines.checked_add(1)?
+            || first < self.lower
+            || self.upper.is_some_and(|limit| end > limit)
+        {
+            return None;
+        }
+        self.window_payload_bytes(first, end).ok()
+    }
+
     fn window_payload_bytes(&self, first: u64, end: u64) -> Result<u64, InvokeError> {
         let start = self.chunks.partition_point(|chunk| chunk.end() <= first);
         let finish = self.chunks.partition_point(|chunk| chunk.first < end);

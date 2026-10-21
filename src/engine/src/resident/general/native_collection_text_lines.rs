@@ -144,6 +144,15 @@ impl NativeTextLineMatrix {
             Backing::Snapshot { .. } => self.line(ordinal),
         }
     }
+
+    /// Exact immutable geometry only; the selected visit has already funded
+    /// its complete conservative scan and validated this owner's account.
+    pub(super) fn captured_range_payload(&self, first: usize, end: usize) -> Option<u64> {
+        let owner = self.captured_chunks()?;
+        let first = u64::try_from(first).ok()?.checked_add(1)?;
+        let end = u64::try_from(end).ok()?.checked_add(1)?;
+        owner.final_range_payload(first, end)
+    }
 }
 fn add(a: u64, b: u64) -> Result<u64, ResidentKernelError> {
     a.checked_add(b).ok_or(ResidentKernelError::InvalidShape)

@@ -122,6 +122,101 @@ fn append(
 }
 
 #[test]
+fn compact_range_final_summary_matches_snapshot_fallback_and_its_work_charge() {
+    for artifact in programs(false) {
+        let producer = prepared(&artifact, NativeCollectionPrimitive::TextLines);
+        let range = prepared(&artifact, NativeCollectionPrimitive::RangeExclusive);
+        let select = prepared(&artifact, NativeCollectionPrimitive::MatrixRangeAccess);
+        let join = prepared(&artifact, NativeCollectionPrimitive::TextJoin);
+        let mech_core::ResolvedOperationContract::Declared(input_contract) =
+            producer.template.contract()
+        else {
+            panic!("declared text/lines")
+        };
+        let mech_core::ResolvedOperationContract::Declared(join_contract) =
+            join.template.contract()
+        else {
+            panic!("declared join")
+        };
+        for clipped in [false, true] {
+            let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+            let work = work(&memory);
+            let text = "discard\r\n猫\na\r\r\n\nlast\r\r\nsuffix\n";
+            let input = admitted(
+                &artifact,
+                &memory,
+                input_contract.inputs[0].schema,
+                ValueDataDraft::String(text.into()),
+            );
+            let snapshot = Rc::new(
+                producer
+                    .text_line_matrix(&input, limits(), &work, ResourceDemand::default())
+                    .unwrap(),
+            );
+            let mut chunks = producer
+                .prepare_text_line_chunks(text.len() as u64, 128, limits(), &work)
+                .unwrap();
+            chunks.push(text).unwrap();
+            chunks.finish().unwrap();
+            if clipped {
+                chunks.retain_range(2, 6).unwrap();
+            }
+            let captured = Rc::new(
+                producer
+                    .text_line_matrix_from_capture(
+                        chunks,
+                        limits(),
+                        &work,
+                        ResourceDemand::default(),
+                    )
+                    .unwrap(),
+            );
+            assert_eq!(snapshot.captured_range_payload(1, 5), None);
+            assert_eq!(captured.captured_range_payload(1, 5), Some(10));
+            let selector = compact(&range, 2, 6, &work).unwrap();
+            let before = work.used();
+            let actual = select
+                .selected_text_line_matrix_range(
+                    &captured,
+                    &selector,
+                    limits(),
+                    &work,
+                    ResourceDemand::default(),
+                )
+                .unwrap();
+            let after = work.used();
+            let summarized_work = (after.0 - before.0, after.1 - before.1);
+            let expected = select
+                .selected_text_line_matrix_range(
+                    &snapshot,
+                    &selector,
+                    limits(),
+                    &work,
+                    ResourceDemand::default(),
+                )
+                .unwrap();
+            let final_work = work.used();
+            assert_eq!(
+                summarized_work,
+                (final_work.0 - after.0, final_work.1 - after.1)
+            );
+            assert_eq!(actual.count(), expected.count());
+            assert_eq!(actual.payload_bytes(), expected.payload_bytes());
+            let separator = admitted(
+                &artifact,
+                &memory,
+                join_contract.inputs[1].schema,
+                ValueDataDraft::String("|".into()),
+            );
+            assert_eq!(append(&join, actual, &separator, &work), "猫|a\r||last\r");
+            assert_eq!(append(&join, expected, &separator, &work), "猫|a\r||last\r");
+            drop((captured, snapshot, input, separator, work));
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}
+
+#[test]
 fn compact_range_matches_materialized_range_for_unicode_and_both_owner_lifetimes() {
     for inclusive in [false, true] {
         for artifact in programs(inclusive) {

@@ -115,6 +115,17 @@ fn cached_payload_preserves_exact_window_debits_across_fragmentation_and_retenti
                 let expected = &lines[(start - 1) as usize..(stop - 1) as usize];
                 let payload = expected.iter().map(|line| line.len() as u64).sum::<u64>();
                 assert_eq!(owner.window_payload_bytes(start, stop).unwrap(), payload);
+                let before = ledger.used();
+                assert_eq!(
+                    owner.final_range_payload(start, stop),
+                    (start < stop).then_some(payload)
+                );
+                assert_eq!(ledger.used(), before, "the selected visit prepays geometry");
+                assert_eq!(
+                    memory.used_bytes(),
+                    retained,
+                    "no row loan or cache allocation"
+                );
                 let before = ledger.used().0;
                 let window = owner.borrow_window(start, stop).unwrap();
                 let claim_bytes = count * core::mem::size_of::<[u64; 2]>() as u64
@@ -161,6 +172,29 @@ fn cached_payload_preserves_exact_window_debits_across_fragmentation_and_retenti
             assert_eq!(memory.used_bytes(), 0);
         }
     }
+}
+
+#[test]
+fn final_range_payload_requires_eof_and_the_exact_retained_extent() {
+    let memory = ManagedMemoryBudget::new(1024 * 1024);
+    let ledger = work(&memory);
+    let mut owner = store(&ledger, limits());
+    owner.push("discard\nA\r\n猫\nlast\r").unwrap();
+    assert_eq!(owner.final_range_payload(2, 4), None);
+    owner.finish().unwrap();
+    assert_eq!(owner.final_range_payload(2, 4), Some(4));
+    assert_eq!(owner.final_range_payload(4, 5), Some(5));
+    owner.retain_from(2).unwrap();
+    assert_eq!(owner.final_range_payload(1, 3), None);
+    owner.retain_range(2, 4).unwrap();
+    let before = (ledger.used(), memory.used_bytes());
+    for (first, end) in [(0, 2), (2, 2), (3, 2), (2, 5), (5, 6), (1, u64::MAX)] {
+        assert_eq!(owner.final_range_payload(first, end), None);
+    }
+    assert_eq!(owner.final_range_payload(2, 4), Some(4));
+    assert_eq!((ledger.used(), memory.used_bytes()), before);
+    drop((owner, ledger));
+    assert_eq!(memory.used_bytes(), 0);
 }
 
 #[test]

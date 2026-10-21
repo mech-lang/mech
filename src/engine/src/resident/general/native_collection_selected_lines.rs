@@ -227,6 +227,7 @@ impl NativePreparedLibraryCall {
                     lines.count(),
                     selector.geometry(),
                     |i| lines.line_cached(i, &mut chunk_cursor),
+                    |first, end| lines.captured_range_payload(first, end),
                 )?;
                 Ok(NativeSelectedStringMatrix {
                     source: Source::Lines(lines.clone()),

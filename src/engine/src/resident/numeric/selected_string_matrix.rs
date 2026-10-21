@@ -142,6 +142,7 @@ pub(in crate::resident) fn prepare(
         strings.len(),
         Selector::Canonical(selector),
         |index| strings.get(index).map(|text| text.as_ref()),
+        |_, _| None,
     )
 }
 
@@ -153,7 +154,8 @@ pub(in crate::resident) fn prepare_cells<'a>(
     (rows, columns): (usize, usize),
     count: usize,
     selector: Selector<'_>,
-    mut cell: impl FnMut(usize) -> Option<&'a str>,
+    cell: impl FnMut(usize) -> Option<&'a str>,
+    range_payload: impl FnOnce(usize, usize) -> Option<u64>,
 ) -> Result<Geometry, ResidentKernelError> {
     let plan = kernel
         .retained_state::<SnapshotAccessPlan>()
@@ -165,10 +167,41 @@ pub(in crate::resident) fn prepare_cells<'a>(
     {
         return Err(ResidentKernelError::InvalidInput);
     }
+    let geometry = cell_geometry((rows, columns), count, selector, cell, range_payload)?;
+    let dimensions = if plan.linear_gather_row {
+        (1, geometry.count)
+    } else {
+        (geometry.count, 1)
+    };
+    if !plan.output_dimensions_dynamic && plan.output_dimensions != Some(dimensions) {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    // Enforce every declared axis/parameter bound even though no intermediate
+    // canonical Matrix exists. This is not cardinality-only retagging.
+    resolved_snapshot_output_shape(kernel, dimensions.0, dimensions.1)?;
+    Ok(geometry)
+}
+
+fn cell_geometry<'a>(
+    (rows, columns): (usize, usize),
+    count: usize,
+    selector: Selector<'_>,
+    mut cell: impl FnMut(usize) -> Option<&'a str>,
+    range_payload: impl FnOnce(usize, usize) -> Option<u64>,
+) -> Result<Geometry, ResidentKernelError> {
     if rows.checked_mul(columns) != Some(count) {
         return Err(ResidentKernelError::InvalidShape);
     }
-    selector.count()?;
+    let selected_count = selector.count()?;
+    if let Some(geometry) = unit_range_geometry(
+        (rows, columns),
+        count,
+        selector,
+        selected_count,
+        range_payload,
+    ) {
+        return Ok(geometry);
+    }
     let mut geometry = Geometry {
         rows,
         columns,
@@ -198,18 +231,47 @@ pub(in crate::resident) fn prepare_cells<'a>(
             .ok_or(ResidentKernelError::InvalidShape)?;
         Ok(())
     })?;
-    let dimensions = if plan.linear_gather_row {
-        (1, geometry.count)
-    } else {
-        (geometry.count, 1)
-    };
-    if !plan.output_dimensions_dynamic && plan.output_dimensions != Some(dimensions) {
-        return Err(ResidentKernelError::InvalidShape);
-    }
-    // Enforce every declared axis/parameter bound even though no intermediate
-    // canonical Matrix exists. This is not cardinality-only retagging.
-    resolved_snapshot_output_shape(kernel, dimensions.0, dimensions.1)?;
     Ok(geometry)
+}
+
+fn unit_range_geometry(
+    (rows, columns): (usize, usize),
+    count: usize,
+    selector: Selector<'_>,
+    selected_count: usize,
+    range_payload: impl FnOnce(usize, usize) -> Option<u64>,
+) -> Option<Geometry> {
+    let Selector::UnitRange {
+        start,
+        count: length,
+    } = selector
+    else {
+        return None;
+    };
+    // This fast path is restricted to row vectors, whose canonical selector
+    // and physical cell order agree. Both endpoints must pass the portable conversion;
+    // uncertainty falls back to the original ordered per-cell diagnostics.
+    if rows != 1 || selected_count == 0 {
+        return None;
+    }
+    let last = start.checked_add(length.checked_sub(1)?)?;
+    let first = mech_core::canonical_positional_index(&ValueData::U64(start), count).ok()?;
+    let end = mech_core::canonical_positional_index(&ValueData::U64(last), count)
+        .ok()?
+        .checked_add(1)?;
+    if end.checked_sub(first)? != selected_count {
+        return None;
+    }
+    // The private owner callback proves every selected cell is still retained
+    // after EOF and supplies an exact immutable payload sum. Existing callers
+    // prepay the same conservative complete-scan work on either path.
+    Some(Geometry {
+        rows,
+        columns,
+        count: selected_count,
+        payload: range_payload(first, end)?,
+        contiguous: Some((first, end)),
+    })
 }
 
 impl Geometry {
