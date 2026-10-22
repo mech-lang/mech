@@ -2,7 +2,12 @@
 use mech_core::{FloatWidth, IntegerInterval, IntegerWidth, SchemaBody, SchemaTable};
 use std::collections::BTreeSet;
 
-pub(super) fn required(schemas: &SchemaTable) -> BTreeSet<&'static str> {
+pub(super) struct Requirements {
+    pub features: BTreeSet<&'static str>,
+    pub open_types: bool,
+}
+
+pub(super) fn required(schemas: &SchemaTable) -> Requirements {
     from_bodies(schemas.entries().map(|entry| entry.schema().body()))
 }
 
@@ -22,9 +27,10 @@ fn integer(width: IntegerWidth, signed: bool) -> &'static str {
     }
 }
 
-fn from_bodies<'a>(bodies: impl Iterator<Item = &'a SchemaBody>) -> BTreeSet<&'static str> {
+fn from_bodies<'a>(bodies: impl Iterator<Item = &'a SchemaBody>) -> Requirements {
     let mut pending: Vec<_> = bodies.collect();
     let mut features = BTreeSet::new();
+    let mut open_types = false;
     while let Some(body) = pending.pop() {
         let feature = match body {
             SchemaBody::Bool => "bool",
@@ -84,15 +90,21 @@ fn from_bodies<'a>(bodies: impl Iterator<Item = &'a SchemaBody>) -> BTreeSet<&'s
                 pending.extend([key.as_ref(), value.as_ref()]);
                 "map"
             }
-            // These canonical representations have no existing Cargo value
-            // gate. This inventory does not claim to restrict dynamic payloads.
-            SchemaBody::Dynamic | SchemaBody::Id | SchemaBody::Index | SchemaBody::ReifiedType => {
+            SchemaBody::Dynamic | SchemaBody::ReifiedType => {
+                open_types = true;
+                continue;
+            }
+            // These canonical representations have no existing Cargo gate.
+            SchemaBody::Id | SchemaBody::Index => {
                 continue;
             }
         };
         features.insert(feature);
     }
-    features
+    Requirements {
+        features,
+        open_types,
+    }
 }
 
 #[cfg(test)]
@@ -110,8 +122,15 @@ mod tests {
             .into_boxed_slice(),
         );
         assert_eq!(
-            from_bodies(std::iter::once(&body)),
+            from_bodies(std::iter::once(&body)).features,
             BTreeSet::from(["complex", "f32", "r64", "tuple", "u128"])
         );
+    }
+
+    #[test]
+    fn dynamic_nested_payloads_keep_complete_conversion_support() {
+        let body = SchemaBody::Option(Box::new(SchemaBody::Dynamic));
+        assert!(from_bodies(std::iter::once(&body)).open_types);
+        assert!(from_bodies(std::iter::once(&SchemaBody::ReifiedType)).open_types);
     }
 }

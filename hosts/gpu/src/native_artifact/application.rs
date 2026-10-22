@@ -256,7 +256,8 @@ pub(super) fn write_linked_application(
         "workspace path is not Unicode",
     ))?;
     let selected = inputs.factory_linkage.factories();
-    let value_feature_names = value_features::required(inputs.schemas);
+    let value_requirements = value_features::required(inputs.schemas);
+    let value_feature_names = &value_requirements.features;
     let factory_feature_names = selected
         .into_iter()
         .flatten()
@@ -271,6 +272,7 @@ pub(super) fn write_linked_application(
             .map(|factory| factory.rust_path()).collect::<Vec<_>>()),
         "required_engine_features": factory_feature_names,
         "required_core_value_features": value_feature_names,
+        "selective_conversions": selected.is_some() && !value_requirements.open_types,
         "missing_linkage_operations": inputs.factory_linkage.missing_operations().iter()
             .map(|operation| operation.canonical_name()).collect::<Vec<_>>(),
     });
@@ -320,7 +322,10 @@ pub(super) fn write_linked_application(
             ),
         ),
     };
-    let mut core_feature_names = value_feature_names;
+    let mut core_feature_names = value_requirements.features;
+    if selected.is_some() && !value_requirements.open_types {
+        core_feature_names.insert("selective-convert");
+    }
     if !core_features.is_empty() {
         core_feature_names.insert("serde");
     }
