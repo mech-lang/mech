@@ -174,6 +174,33 @@ fn generated_launcher_references_individual_factories_and_pins_profile() {
             .parse::<toml_edit::DocumentMut>()
             .unwrap();
         assert!(manifest["dependencies"].get("mech-stdlib").is_none());
+        let core_features = manifest["dependencies"]["mech-core"]["features"]
+            .as_array()
+            .unwrap();
+        let value_features = metadata["required_core_value_features"].as_array().unwrap();
+        for required in [
+            "bool", "u64", "f64", "string", "map", "matrixd", "set", "tuple", "enum",
+        ] {
+            assert!(
+                value_features
+                    .iter()
+                    .any(|value| value.as_str() == Some(required))
+            );
+        }
+        for value in value_features {
+            assert!(
+                core_features
+                    .iter()
+                    .any(|feature| feature.as_str() == value.as_str())
+            );
+        }
+        for unused in ["complex", "r64", "u128", "i128", "table"] {
+            assert!(
+                !value_features
+                    .iter()
+                    .any(|value| value.as_str() == Some(unused))
+            );
+        }
         assert!(
             !generated.metadata()["runtime_features"]
                 .as_array()

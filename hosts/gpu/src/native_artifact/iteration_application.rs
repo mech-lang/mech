@@ -36,6 +36,7 @@ pub fn generate_linked_iteration_application(
         binary_name,
         LinkedApplicationInputs {
             profile: LinkedApplicationProfile::Scalar,
+            schemas: artifact.schemas(),
             factory_linkage: mech_engine::linked_factories::NativeFactoryLinkageProfile::derive(
                 artifact, catalog,
             ),

@@ -11,6 +11,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[path = "application_value_features.rs"]
+mod value_features;
+
 #[derive(Debug)]
 pub enum NativeApplicationError {
     Invalid(&'static str),
@@ -169,6 +172,7 @@ pub(super) enum LinkedApplicationProfile {
 
 pub(super) struct LinkedApplicationInputs<'a> {
     pub profile: LinkedApplicationProfile,
+    pub schemas: &'a mech_core::SchemaTable,
     pub factory_linkage: mech_engine::linked_factories::NativeFactoryLinkageProfile,
     pub source_provenance: &'a [u8],
     pub bytecode: Vec<u8>,
@@ -224,6 +228,7 @@ pub fn generate_linked_application(
         binary_name,
         LinkedApplicationInputs {
             profile: LinkedApplicationProfile::Scalar,
+            schemas: artifact.schemas(),
             factory_linkage: mech_engine::linked_factories::NativeFactoryLinkageProfile::derive(
                 artifact, catalog,
             ),
@@ -251,6 +256,7 @@ pub(super) fn write_linked_application(
         "workspace path is not Unicode",
     ))?;
     let selected = inputs.factory_linkage.factories();
+    let value_feature_names = value_features::required(inputs.schemas);
     let factory_feature_names = selected
         .into_iter()
         .flatten()
@@ -264,6 +270,7 @@ pub(super) fn write_linked_application(
         "factory_declarations": selected.map(|factories| factories.iter()
             .map(|factory| factory.rust_path()).collect::<Vec<_>>()),
         "required_engine_features": factory_feature_names,
+        "required_core_value_features": value_feature_names,
         "missing_linkage_operations": inputs.factory_linkage.missing_operations().iter()
             .map(|operation| operation.canonical_name()).collect::<Vec<_>>(),
     });
@@ -312,6 +319,22 @@ pub(super) fn write_linked_application(
                 json_string(&format!("{workspace_text}/hosts/terminal")),
             ),
         ),
+    };
+    let mut core_feature_names = value_feature_names;
+    if !core_features.is_empty() {
+        core_feature_names.insert("serde");
+    }
+    let core_features = if core_feature_names.is_empty() {
+        String::new()
+    } else {
+        format!(
+            ", features = [{}]",
+            core_feature_names
+                .iter()
+                .map(|feature| json_string(feature))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
     };
     // The selected declarations are owned by mech-engine. Adding mech-stdlib
     // here would unify its broad operation/type features into those owners,
@@ -396,6 +419,11 @@ lto = "thin"
     if selected.is_none() {
         runtime_features.push("mech-stdlib/native-plan".to_owned());
     }
+    runtime_features.extend(
+        core_feature_names
+            .iter()
+            .map(|feature| format!("mech-core/{feature}")),
+    );
     #[cfg(feature = "canonical-native-program-host")]
     let runtime_features = {
         let mut runtime_features = runtime_features;
