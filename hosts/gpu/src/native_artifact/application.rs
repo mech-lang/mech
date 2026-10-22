@@ -313,6 +313,18 @@ pub(super) fn write_linked_application(
             ),
         ),
     };
+    // The selected declarations are owned by mech-engine. Adding mech-stdlib
+    // here would unify its broad operation/type features into those owners,
+    // even though this launcher never references the library's installer.
+    // Preserve the historical feature bundle only for complete-catalog mode.
+    let stdlib_dependency = if selected.is_none() {
+        format!(
+            "mech-stdlib = {{ path = {}, default-features = false, features = [\"std\", \"native-plan\", \"bool\", \"u64\", \"i64\", \"f64\", \"convert\", \"math_sqrt\", \"math_neg\", \"math_add\", \"math_sub\", \"math_mul\", \"math_div\", \"math_mod\", \"compare_default\", \"logic_default\"{library_features}] }}\n",
+            json_string(&format!("{workspace_text}/src/stdlib")),
+        )
+    } else {
+        String::new()
+    };
     let mut cargo = format!(
         r#"[package]
 name = {name}
@@ -325,8 +337,7 @@ build = "build.rs"
 mech-core = {{ path = {core}, default-features = false{core_features} }}
 mech-engine = {{ path = {engine}, default-features = false, features = ["native-artifact"{factory_features}] }}
 mech-gpu = {{ path = {gpu}, default-features = false, features = ["{gpu_feature}"] }}
-mech-stdlib = {{ path = {stdlib}, default-features = false, features = ["std", "native-plan", "bool", "u64", "i64", "f64", "convert", "math_sqrt", "math_neg", "math_add", "math_sub", "math_mul", "math_div", "math_mod", "compare_default", "logic_default"{library_features}] }}
-sha2 = {{ version = "0.11.0", default-features = false }}
+{stdlib_dependency}sha2 = {{ version = "0.11.0", default-features = false }}
 {dependencies}[build-dependencies]
 sha2 = {{ version = "0.11.0", default-features = false }}
 serde_json = "1.0"
@@ -345,7 +356,6 @@ lto = "thin"
         core = json_string(&format!("{workspace_text}/src/core")),
         engine = json_string(&format!("{workspace_text}/src/engine")),
         gpu = json_string(&format!("{workspace_text}/hosts/gpu")),
-        stdlib = json_string(&format!("{workspace_text}/src/stdlib")),
     );
     cargo.push_str(&workspace_resolution_patches(workspace)?);
     let mut files = BTreeMap::<String, Vec<u8>>::from([
@@ -379,11 +389,13 @@ lto = "thin"
         );
     pins.insert("build.rs".into(), digest(build.as_bytes()));
     files.insert("build.rs".into(), build.into_bytes());
-    let runtime_features = vec![
+    let mut runtime_features = vec![
         format!("mech-gpu/{gpu_feature}"),
         "mech-engine/native-artifact".to_owned(),
-        "mech-stdlib/native-plan".to_owned(),
     ];
+    if selected.is_none() {
+        runtime_features.push("mech-stdlib/native-plan".to_owned());
+    }
     #[cfg(feature = "canonical-native-program-host")]
     let runtime_features = {
         let mut runtime_features = runtime_features;

@@ -169,6 +169,18 @@ fn generated_launcher_references_individual_factories_and_pins_profile() {
         );
         let metadata: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(metadata["mode"], "artifact-selected");
+        let manifest = std::fs::read_to_string(generated.manifest_path())
+            .unwrap()
+            .parse::<toml_edit::DocumentMut>()
+            .unwrap();
+        assert!(manifest["dependencies"].get("mech-stdlib").is_none());
+        assert!(
+            !generated.metadata()["runtime_features"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|feature| feature.as_str() == Some("mech-stdlib/native-plan"))
+        );
         assert_eq!(
             metadata["kernel_operations"],
             serde_json::json!(
@@ -229,6 +241,18 @@ fn unrecognized_registration_retains_complete_catalog_without_skipping_obligatio
         )
         .unwrap();
         assert_eq!(profile["mode"], "complete-catalog");
+        let manifest = std::fs::read_to_string(generated.manifest_path())
+            .unwrap()
+            .parse::<toml_edit::DocumentMut>()
+            .unwrap();
+        assert!(manifest["dependencies"].get("mech-stdlib").is_some());
+        assert!(
+            generated.metadata()["runtime_features"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|feature| feature.as_str() == Some("mech-stdlib/native-plan"))
+        );
         assert_eq!(
             profile["missing_linkage_operations"],
             serde_json::json!(["math/add"])
@@ -281,6 +305,7 @@ fn scalar_and_managed_launchers_enable_their_selected_factory_owner_features() {
                 .parse::<toml_edit::DocumentMut>()
                 .unwrap();
             let release = &manifest["profile"]["release"];
+            assert!(manifest["dependencies"].get("mech-stdlib").is_none());
             assert_eq!(release["strip"].as_str(), Some("symbols"));
             assert_eq!(release["opt-level"].as_integer(), Some(3));
             assert_eq!(release["lto"].as_str(), Some("thin"));
