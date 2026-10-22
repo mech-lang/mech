@@ -1,6 +1,6 @@
 //! Pure native String map/join loop over entry-bound owners and lookup table.
 use super::{NativeCompileError, backend};
-use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, condcodes::IntCC, types};
+use cranelift_codegen::ir::{AbiParam, Endianness, InstBuilder, MemFlags, condcodes::IntCC, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::NativeStringMapRegion;
@@ -8,9 +8,22 @@ use mech_engine::native_artifact::NativeStringMapRegion;
 #[path = "program_string_map_batches.rs"]
 mod batches;
 
+#[path = "program_string_map_simd.rs"]
+mod simd;
+
 pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
     region: &NativeStringMapRegion,
+) -> Result<(FuncId, u64, u64), NativeCompileError> {
+    let vectorized =
+        module.isa().name() == "aarch64" && module.isa().endianness() == Endianness::Little;
+    define_impl(module, region, vectorized)
+}
+
+fn define_impl<M: Module>(
+    module: &mut M,
+    region: &NativeStringMapRegion,
+    vectorized: bool,
 ) -> Result<(FuncId, u64, u64), NativeCompileError> {
     let mut signature = module.make_signature();
     signature.params = vec![AbiParam::new(types::I64); 5];
@@ -37,7 +50,12 @@ pub(in crate::native_artifact) fn define<M: Module>(
         b.switch_to_block(entry);
         let args = b.block_params(entry).to_vec();
         let (source, length, table, output) = (args[0], args[1], args[2], args[3]);
-        let offset = batches::emit(&mut b, source, length, table, output);
+        let start = if vectorized {
+            simd::emit(&mut b, source, length, table, output)
+        } else {
+            b.ins().iconst(types::I64, 0)
+        };
+        let offset = batches::emit(&mut b, source, length, table, output, start);
         b.ins().jump(header, &[offset.into()]);
         b.switch_to_block(header);
         let index = b.block_params(header)[0];
@@ -74,3 +92,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
     let stack = super::super::compiler::compiled_stack_bytes(&compiled.buffer)?;
     Ok((function, stack, compiled.code_info().total_size as u64))
 }
+
+#[cfg(all(test, feature = "canonical-native-program-host"))]
+#[path = "program_string_map_codegen_tests.rs"]
+mod tests;

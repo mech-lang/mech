@@ -10,6 +10,7 @@ pub(super) fn emit(
     length: Value,
     table: Value,
     output: Value,
+    start: Value,
 ) -> Value {
     let init = b.create_block();
     let batch = b.create_block();
@@ -19,13 +20,14 @@ pub(super) fn emit(
         b.append_block_param(block, types::I64);
     }
     let zero = b.ins().iconst(types::I64, 0);
+    let remaining = b.ins().isub(length, start);
     let fits = b
         .ins()
-        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, length, 8);
-    b.ins().brif(fits, init, &[], tail, &[zero.into()]);
+        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 8);
+    b.ins().brif(fits, init, &[], tail, &[start.into()]);
     b.switch_to_block(init);
     let last = b.ins().iadd_imm(length, -8);
-    b.ins().jump(batch, &[zero.into()]);
+    b.ins().jump(batch, &[start.into()]);
     b.switch_to_block(batch);
     let offset = b.block_params(batch)[0];
     let address = b.ins().iadd(source, offset);
