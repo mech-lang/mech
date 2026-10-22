@@ -163,14 +163,16 @@ paired rounds include startup, one secured round and report publication.
 
 | Build | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Published secured Mech, remeasured | 0.05711 s | 0.55648 s | 147.44 MB | 6.714 MB |
-| Current secured Mech | 0.05644 s | 0.54774 s | 147.49 MB | 6.714 MB |
+| Published secured Mech, remeasured | 0.05642 s | 0.54719 s | 147.49 MB | 6.714 MB |
+| Current secured Mech | 0.05524 s | 0.53422 s | 147.85 MB | 6.714 MB |
 
-The 0.0582-second target at 10M and 200 MB RSS reference are met. Independent
-counter banks now cover both one- and two-character ASCII histograms. Matched
-pairs improve 1.22% at 10M and 1.58% at 125M; executable size is unchanged and
-median 125M RSS increases 49,152 bytes. This is a modest speed win, not a size win.
-Schema-derived gates also omit unused complex/rational converters.
+The 0.0582-second target at 10M and 200 MB RSS reference are met. One bounded
+weak identity caches the ASCII/no-CRLF representation fact within a native entry,
+avoiding repeated scans of the same immutable String. Matched pairs improve
+2.12% at 10M and 2.46% at 125M, with all twelve pairs faster at both sizes.
+Median 125M RSS increases 360,448 bytes across three samples; this is not a
+memory win. The executable shrinks only 16 bytes, not a meaningful size win.
+Existing schema-derived gates omit unused complex/rational converters.
 The earlier Rust #7 batch measured 0.06085/0.66286 s, 175.4 MB RSS and a 0.758 MB
 executable; Rust was not rerun in this paired experiment.
 
@@ -179,12 +181,16 @@ finishes before new offsets and unfinished-tail backing are acquired; mandatory
 backing is funded before optional pages. Heap fallback, finite accounts and the
 single capability/provider/transaction authority remain.
 
-Fresh original/decoded builds at `8f54e5ce1b` produce identical executables and
+Fresh original/decoded builds at `f8b959ffc9` produce identical executables and
 pass security denials, launcher tests, tamper rejection and full-input checks.
 All 64 measured outputs and 64 complete Mech reports pass an independent audit.
-Execution counters are unchanged. The Mech body grows from 26,048 to 26,496 bytes
-for the additional histogram specialization; both actual Object files remain
-pinned. Cranelift compiles Mech source; LLVM compiles linked Rust host/library code.
+Work policy 37 adds exactly 144 admitted metadata bytes and 1,152 work units;
+every other report field except the program revision is unchanged. The weak
+fact retains no payload or permissions and does not bypass fresh owner, shape,
+quota or work checks. Local validation passes 215 GPU unit tests and 53 hosted
+contract tests. The 26,496-byte Mech body keeps the same opcodes, registers,
+control flow and relocations; only local-buffer address immediates differ.
+Cranelift compiles Mech source; LLVM compiles linked Rust host/library code.
 
 RSS uses three separate processes; the earlier Rust batch spans 175.4–209.0 MB.
 Physical footprint is separate. Units are decimal MB. Rust is unstripped; Mech
