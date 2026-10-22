@@ -59,6 +59,68 @@ fn build_owned_template_image_roundtrips_with_the_actual_factory() {
     }
     .unwrap();
     assert_eq!(loaded, outer);
+    for (pointer, replacement) in [
+        (
+            "/revision/0",
+            serde_json::json!(outer_image["revision"][0].as_u64().unwrap() ^ 1),
+        ),
+        (
+            "/selected_key/operation_name",
+            serde_json::json!("invalid-image-operation"),
+        ),
+        ("/inputs/0/body", serde_json::json!("Bool")),
+        ("/output/body", serde_json::json!("Bool")),
+        (
+            "/contract/Declared/inputs/0/schema",
+            serde_json::json!(u32::MAX),
+        ),
+    ] {
+        let mut changed = outer_image.clone();
+        *changed.pointer_mut(pointer).unwrap() = replacement;
+        // SAFETY: a rejection probe; no restored metadata reaches execution.
+        assert!(
+            unsafe {
+                crate::native_artifact::program_image_read::library::template(
+                    &changed,
+                    &catalog,
+                    artifact.schemas(),
+                )
+            }
+            .is_err(),
+            "{pointer}"
+        );
+    }
+    let mut changed = outer_image.clone();
+    changed["origin"].as_object_mut().unwrap().remove("block");
+    // SAFETY: missing-field rejection probe only.
+    assert!(
+        unsafe {
+            crate::native_artifact::program_image_read::library::template(
+                &changed,
+                &catalog,
+                artifact.schemas(),
+            )
+        }
+        .is_err()
+    );
+    let mut changed = outer_image.clone();
+    changed
+        .pointer_mut("/selected/Root/leaf/contract/Declared/inputs/0")
+        .unwrap()
+        .as_object_mut()
+        .unwrap()
+        .insert("unexpected".into(), true.into());
+    // SAFETY: nested unknown-field rejection probe only.
+    assert!(
+        unsafe {
+            crate::native_artifact::program_image_read::library::template(
+                &changed,
+                &catalog,
+                artifact.schemas(),
+            )
+        }
+        .is_err()
+    );
     let mut changed = outer_image;
     changed["origin"]["node"] = 999.into();
     // SAFETY: rejection probe; no returned proof escapes to execution.
