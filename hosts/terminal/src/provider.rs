@@ -9,7 +9,7 @@ use mech_core::{
     AccessMode, DeliveryMode, DimensionExpr, EffectContract, EffectDeliveryPolicy,
     ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, IntegerWidth,
     MResult, MechError, MechErrorKind, OperationContractDeclaration, Schema, SchemaBody,
-    SchemaDraft, SchemaTableBuilder, Value, ValueCell, ValueData,
+    SchemaDraft, SchemaTableBuilder, Value, ValueData,
     snapshot::{SequenceView, SnapshotValidationContext, ValueDataDraft, ValueDraft},
 };
 use mech_runtime::{
@@ -792,13 +792,51 @@ fn argument_count_value(count: u64) -> MResult<Value> {
 fn byte_row_value(bytes: &[u8], resource: &str) -> MResult<Value> {
     let columns = u64::try_from(bytes.len())
         .map_err(|_| cli_error(resource.into(), "byte input length exceeds u64"))?;
-    ValueCell::dynamic_matrix(
-        SchemaBody::UnsignedInteger(IntegerWidth::W8),
-        Box::new([1, columns]),
-        bytes.iter().copied().map(ValueDataDraft::U8).collect(),
-    )?
-    .snapshot()
+    // Keep the existing turn-scoped matrix schema, but publish its immutable
+    // packed bytes directly. No mutable cell or per-byte drafts are needed.
+    let schema = SchemaDraft {
+        dimension_parameters: (0..2)
+            .map(|index| mech_core::DimensionParameterDeclaration {
+                id: mech_core::DimensionParameterId::new(index),
+                origin: mech_core::DimensionParameterOrigin::Inferred,
+                lifetime: mech_core::DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            })
+            .collect(),
+        body: SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+            dimensions: (0..2)
+                .map(|index| DimensionExpr::Parameter(mech_core::DimensionParameterId::new(index)))
+                .collect(),
+        },
+    }
+    .finalize()
+    .map_err(|error| byte_snapshot_error(error.into()))?;
+    let shape = schema
+        .instantiate_shape(Box::new([1, columns]))
+        .map_err(|error| byte_snapshot_error(error.into()))?;
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder
+        .insert(schema)
+        .map_err(|error| byte_snapshot_error(error.into()))?;
+    let built = builder
+        .finish()
+        .map_err(|error| byte_snapshot_error(error.into()))?;
+    let id = built
+        .resolve(handle)
+        .map_err(|error| byte_snapshot_error(error.into()))?;
+    Value::from_u8_matrix(id, shape, bytes.into(), Arc::new(built.table))
+        .map_err(byte_snapshot_error)
 }
+
+fn byte_snapshot_error(error: mech_core::SnapshotValueError) -> MechError {
+    MechError::new(mech_core::ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+}
+
+#[cfg(test)]
+#[path = "provider_byte_snapshot_tests.rs"]
+mod byte_snapshot_tests;
 
 fn byte_row_schema(schema: &Schema, resource: &str) -> MResult<ResourceSchemaPreflight> {
     let SchemaBody::Matrix {
