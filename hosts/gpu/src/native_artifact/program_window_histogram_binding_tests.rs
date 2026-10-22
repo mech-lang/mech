@@ -44,6 +44,14 @@ fn inputs(
     memory: &ManagedMemoryBudget,
     length: usize,
 ) -> Vec<Value> {
+    inputs_width(artifact, memory, length, 1)
+}
+fn inputs_width(
+    artifact: &mech_engine::ProgramArtifact,
+    memory: &ManagedMemoryBudget,
+    length: usize,
+    width: u64,
+) -> Vec<Value> {
     artifact
         .inputs()
         .iter()
@@ -51,7 +59,7 @@ fn inputs(
             let name = mech_engine::decode_source_input_name(&input.name).unwrap();
             let data = match name.as_str() {
                 "input" => Data::String("\0".repeat(length)),
-                "width" => Data::U64(1),
+                "width" => Data::U64(width),
                 _ => panic!("unexpected input {name}"),
             };
             let value = ValueDraft {
@@ -69,6 +77,9 @@ fn inputs(
         .collect()
 }
 fn exact(outputs: &[Option<Value>], length: usize) {
+    exact_width(outputs, length, 1);
+}
+fn exact_width(outputs: &[Option<Value>], length: usize, width: usize) {
     let Data::Map(entries) = outputs
         .last()
         .unwrap()
@@ -79,12 +90,70 @@ fn exact(outputs: &[Option<Value>], length: usize) {
     else {
         panic!("canonical Map");
     };
-    assert_eq!(entries.len(), usize::from(length != 0));
-    if length != 0 {
+    let count = length.checked_sub(width).map_or(0, |last| last + 1);
+    assert_eq!(entries.len(), usize::from(count != 0));
+    if count != 0 {
         assert_eq!(
             entries[0].items.as_ref(),
-            &[Data::String("\0".into()), Data::U64(length as u64)]
+            &[Data::String("\0".repeat(width)), Data::U64(count as u64)]
         );
+    }
+}
+
+#[test]
+fn original_and_decoded_pair_banks_keep_thresholds_denial_cleanup_and_recovery() {
+    let logical = super::layout::PAIR_CELLS;
+    for artifact in variants() {
+        let memory = ManagedMemoryBudget::new(16 * 1024 * 1024);
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        for length in [logical * 8, logical * 8 + 1] {
+            let args = inputs_width(&artifact, &memory, length, 2);
+            let mut outputs = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut outputs, limits(), &memory)
+                .unwrap();
+            exact_width(&outputs, length, 2);
+            let actual = take();
+            assert_eq!(
+                actual.cells,
+                if length == logical * 8 {
+                    logical
+                } else {
+                    logical * 4
+                }
+            );
+            assert_eq!(
+                actual.reserved_bytes,
+                if actual.cells == logical {
+                    (logical * 8) as u64
+                } else {
+                    super::layout::banked_peak(2, size_of::<super::Entry>() as u64).unwrap()
+                }
+            );
+            let previous = outputs.clone();
+            let before = memory.used_bytes();
+            let mut denied = limits();
+            denied.execution.max_work = actual.work - 1;
+            let error = jit
+                .evaluate_into(&args, &mut outputs, denied, &memory)
+                .unwrap_err();
+            assert!(format!("{error:?}").contains("ComputeWork"), "{error:?}");
+            assert!(LAST.with(|slot| slot.get()).is_none());
+            assert_eq!(memory.used_bytes(), before);
+            for (actual, old) in outputs.iter().zip(&previous) {
+                assert!(
+                    actual
+                        .as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(old.as_ref().unwrap())
+                );
+            }
+            jit.evaluate_into(&args, &mut outputs, limits(), &memory)
+                .unwrap();
+            exact_width(&outputs, length, 2);
+            assert_eq!(take().cells, actual.cells);
+            drop((outputs, previous, args));
+            assert_eq!(memory.used_bytes(), 0);
+        }
     }
 }
 
