@@ -17,6 +17,8 @@ use crate::snapshot::OptionDraft;
 #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
 use crate::snapshot::{Complex32Bits, Complex64Bits};
 use crate::{KindExpr, MechErrorKind, ValueDataDraft};
+#[cfg(any(not(feature = "selective-convert"), feature = "string"))]
+use alloc_string::String;
 use core::fmt::{self, Display, Formatter};
 
 #[cfg(all(
@@ -29,17 +31,9 @@ use core::fmt::{self, Display, Formatter};
 ))]
 use alloc::format;
 #[cfg(feature = "no_std")]
-use alloc::{
-    boxed::Box,
-    string::{String, ToString},
-    vec::Vec,
-};
+use alloc::{boxed::Box, string::ToString, vec::Vec};
 #[cfg(not(feature = "no_std"))]
-use std::{
-    boxed::Box,
-    string::{String, ToString},
-    vec::Vec,
-};
+use std::{boxed::Box, string::ToString, vec::Vec};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TypeRelation {
@@ -727,7 +721,10 @@ fn execute_conversion_draft_impl(
 }
 
 #[derive(Clone, Copy)]
-#[cfg_attr(feature = "selective-convert", allow(dead_code))]
+#[allow(
+    dead_code,
+    reason = "numeric scratch variants are shared across feature-selected source and target conversions"
+)]
 enum RuntimeNumber {
     Unsigned(u128),
     Signed(i128),
@@ -909,11 +906,27 @@ pub fn execute_scalar_conversion(
         K::String => Ok(ValueDataDraft::String(number_display(number))),
         #[cfg(any(not(feature = "selective-convert"), feature = "bool"))]
         K::Bool => Err(ConversionExecutionError::ConversionExecutionUnsupported),
-        #[cfg(feature = "selective-convert")]
-        #[allow(
-            unreachable_patterns,
-            reason = "a selective build may enable every scalar kind"
-        )]
+        #[cfg(all(
+            feature = "selective-convert",
+            not(all(
+                feature = "u8",
+                feature = "u16",
+                feature = "u32",
+                feature = "u64",
+                feature = "u128",
+                feature = "i8",
+                feature = "i16",
+                feature = "i32",
+                feature = "i64",
+                feature = "i128",
+                feature = "f32",
+                feature = "f64",
+                feature = "complex",
+                feature = "r64",
+                feature = "bool",
+                feature = "string"
+            ))
+        ))]
         _ => Err(ConversionExecutionError::ConversionExecutionUnsupported),
     }
 }
@@ -932,7 +945,19 @@ fn real_number(number: RuntimeNumber) -> Result<RuntimeNumber, ConversionExecuti
     }
 }
 
-#[cfg_attr(feature = "selective-convert", allow(dead_code))]
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "u8",
+    feature = "u16",
+    feature = "u32",
+    feature = "u64",
+    feature = "u128",
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128"
+))]
 fn integer_target(
     number: RuntimeNumber,
     signed: bool,
@@ -1001,7 +1026,19 @@ fn integer_target(
     }
 }
 
-#[cfg_attr(feature = "selective-convert", allow(dead_code))]
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "u8",
+    feature = "u16",
+    feature = "u32",
+    feature = "u64",
+    feature = "u128",
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128"
+))]
 fn float_to_integer(value: f64, signed: bool, bits: u16) -> Result<i128, ConversionExecutionError> {
     if !value.is_finite() {
         return Err(ConversionExecutionError::ConversionNonFinite);
@@ -1025,7 +1062,11 @@ fn float_to_integer(value: f64, signed: bool, bits: u16) -> Result<i128, Convers
     })
 }
 
-#[cfg_attr(feature = "selective-convert", allow(dead_code))]
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "f32",
+    feature = "complex"
+))]
 fn number_to_f32(number: RuntimeNumber) -> Result<f32, ConversionExecutionError> {
     match real_number(number)? {
         RuntimeNumber::Unsigned(value) => finite_f32_from_finite(value as f32),
@@ -1048,7 +1089,11 @@ fn number_to_f32(number: RuntimeNumber) -> Result<f32, ConversionExecutionError>
     }
 }
 
-#[cfg_attr(feature = "selective-convert", allow(dead_code))]
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "f64",
+    feature = "complex"
+))]
 fn number_to_f64(number: RuntimeNumber) -> Result<f64, ConversionExecutionError> {
     match real_number(number)? {
         RuntimeNumber::Unsigned(value) => finite_f64_from_finite(value as f64),
@@ -1064,7 +1109,11 @@ fn number_to_f64(number: RuntimeNumber) -> Result<f64, ConversionExecutionError>
     }
 }
 
-#[cfg_attr(feature = "selective-convert", allow(dead_code))]
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "f32",
+    feature = "complex"
+))]
 fn finite_f32_from_finite(value: f32) -> Result<f32, ConversionExecutionError> {
     if value.is_infinite() {
         Err(ConversionExecutionError::ConversionOutOfRange)
@@ -1073,7 +1122,11 @@ fn finite_f32_from_finite(value: f32) -> Result<f32, ConversionExecutionError> {
     }
 }
 
-#[cfg_attr(feature = "selective-convert", allow(dead_code))]
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "f64",
+    feature = "complex"
+))]
 fn finite_f64_from_finite(value: f64) -> Result<f64, ConversionExecutionError> {
     if value.is_infinite() {
         Err(ConversionExecutionError::ConversionOutOfRange)
