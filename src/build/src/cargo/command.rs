@@ -61,6 +61,45 @@ impl CargoInvocation {
         )
     }
 
+    /// Optimize the final linked host without changing dependency prelinking.
+    /// `cargo rustc` scopes these flags to the selected binary, not its build
+    /// script or dependencies. The generated host's ThinLTO dependency profile
+    /// supplies bitcode; its already-native Mech Object is linked unchanged.
+    pub fn build_linked_native_host(
+        manifest_path: impl AsRef<Path>,
+        binary_name: &str,
+        target: Option<&str>,
+        target_dir: impl AsRef<Path>,
+        release: bool,
+        offline: bool,
+    ) -> MResult<Self> {
+        if !release {
+            return Self::build(
+                manifest_path,
+                binary_name,
+                target,
+                target_dir,
+                false,
+                offline,
+            );
+        }
+        let mut invocation = Self::binary(
+            "rustc",
+            manifest_path,
+            binary_name,
+            target,
+            target_dir,
+            true,
+            offline,
+        )?;
+        invocation.arguments.extend(
+            ["--", "-C", "lto=fat", "-C", "codegen-units=1"]
+                .into_iter()
+                .map(OsString::from),
+        );
+        Ok(invocation)
+    }
+
     /// Compile and execute the Rust tests of a generated binary using the same
     /// pinned, locked command policy as its production build.
     pub fn test_binary(
@@ -410,21 +449,44 @@ pub fn build_cargo_project(
     release: bool,
     offline: bool,
 ) -> MResult<NativeBuildArtifact> {
-    require_regular_generated_file(&project.manifest_path(), "Cargo manifest")?;
-    require_regular_generated_file(&project.lockfile_path(), "Cargo lockfile")?;
+    build_cargo_project_with(project, binary_name, |manifest| {
+        CargoInvocation::build(manifest, binary_name, target, target_dir, release, offline)
+    })
+}
 
-    let manifest_path = project.manifest_path();
-    let invocation = isolate_cargo_invocation(
-        CargoInvocation::build(
-            &manifest_path,
+/// Build a generated linked native host with final-binary-only release LTO.
+/// File validation, frozen inputs, isolation and executable selection are the
+/// same as `build_cargo_project`; this only changes the final compiler command.
+pub fn build_linked_native_host(
+    project: &CargoProjectPaths<'_>,
+    binary_name: &str,
+    target: Option<&str>,
+    target_dir: &Path,
+    release: bool,
+    offline: bool,
+) -> MResult<NativeBuildArtifact> {
+    build_cargo_project_with(project, binary_name, |manifest| {
+        CargoInvocation::build_linked_native_host(
+            manifest,
             binary_name,
             target,
             target_dir,
             release,
             offline,
-        )?,
-        &manifest_path,
-    )?;
+        )
+    })
+}
+
+fn build_cargo_project_with(
+    project: &CargoProjectPaths<'_>,
+    binary_name: &str,
+    invocation: impl FnOnce(&Path) -> MResult<CargoInvocation>,
+) -> MResult<NativeBuildArtifact> {
+    require_regular_generated_file(&project.manifest_path(), "Cargo manifest")?;
+    require_regular_generated_file(&project.lockfile_path(), "Cargo lockfile")?;
+
+    let manifest_path = project.manifest_path();
+    let invocation = isolate_cargo_invocation(invocation(&manifest_path)?, &manifest_path)?;
     let output = invocation.output()?;
     let messages = parse_cargo_build_messages(Cursor::new(&output.stdout))?;
     if !output.status.success() || messages.build_finished == Some(false) {
@@ -644,6 +706,45 @@ checksum = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
     }
 
     #[test]
+    fn linked_host_release_optimizes_only_the_selected_binary() {
+        for (release, offline, target) in [
+            (false, false, None),
+            (false, true, Some("aarch64-apple-darwin")),
+            (true, false, None),
+            (true, true, Some("x86_64-unknown-linux-gnu")),
+        ] {
+            let ordinary = CargoInvocation::build(
+                "project/Cargo.toml",
+                "native-app",
+                target,
+                "cache",
+                release,
+                offline,
+            )
+            .unwrap();
+            let linked = CargoInvocation::build_linked_native_host(
+                "project/Cargo.toml",
+                "native-app",
+                target,
+                "cache",
+                release,
+                offline,
+            )
+            .unwrap();
+            let mut expected = arguments(&ordinary);
+            if release {
+                expected[1] = "rustc".into();
+                expected.extend(
+                    ["--", "-C", "lto=fat", "-C", "codegen-units=1"]
+                        .into_iter()
+                        .map(String::from),
+                );
+            }
+            assert_eq!(arguments(&linked), expected);
+        }
+    }
+
+    #[test]
     fn hostile_request_strings_never_become_arguments() {
         for binary in ["app; touch owned", "$(whoami)", "--release"] {
             assert!(
@@ -653,8 +754,30 @@ checksum = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
                 CargoInvocation::test_binary("Cargo.toml", binary, None, "target", false, false)
                     .is_err()
             );
+            assert!(
+                CargoInvocation::build_linked_native_host(
+                    "Cargo.toml",
+                    binary,
+                    None,
+                    "target",
+                    true,
+                    false,
+                )
+                .is_err()
+            );
         }
         for target in ["x86_64;touch-owned", "$(whoami)", "--target=x"] {
+            assert!(
+                CargoInvocation::build_linked_native_host(
+                    "Cargo.toml",
+                    "safe-app",
+                    Some(target),
+                    "target",
+                    true,
+                    false,
+                )
+                .is_err()
+            );
             assert!(
                 CargoInvocation::build(
                     "Cargo.toml",

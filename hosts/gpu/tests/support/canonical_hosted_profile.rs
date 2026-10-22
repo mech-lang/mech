@@ -29,7 +29,15 @@ impl Profile {
         binary: &str,
         target: &Path,
     ) -> CargoInvocation {
-        CargoInvocation::build(manifest, binary, None, target, self.release(), true).unwrap()
+        CargoInvocation::build_linked_native_host(
+            manifest,
+            binary,
+            None,
+            target,
+            self.release(),
+            true,
+        )
+        .unwrap()
     }
     /// Keep actual compiler-reported profiles, not inferred target-directory names.
     pub(super) fn audit(self, stdout: &[u8], executable: &Path) -> Vec<Value> {
@@ -81,6 +89,16 @@ fn explicit_profile_is_strict_and_changes_the_actual_cargo_invocation() {
         );
         assert!(invocation.arguments().any(|arg| arg == "--locked"));
         assert!(invocation.arguments().any(|arg| arg == "--offline"));
+        let args = invocation.arguments().collect::<Vec<_>>();
+        assert_eq!(args[1], if profile.release() { "rustc" } else { "build" });
+        if profile.release() {
+            assert_eq!(
+                &args[args.len() - 5..],
+                ["--", "-C", "lto=fat", "-C", "codegen-units=1"].map(OsStr::new)
+            );
+        } else {
+            assert!(!args.contains(&OsStr::new("--")));
+        }
     }
     for value in ["", "Release", "true", "release --config x", "debug "] {
         assert!(Profile::parse(Some(OsStr::new(value))).is_err());

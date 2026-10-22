@@ -3,7 +3,7 @@ use super::tests::{MINIMAL_LOCK_SEED, minimal_project};
 use super::*;
 
 #[test]
-fn both_entrypoints_reject_unmaterialized_and_nonregular_inputs_identically() {
+fn all_build_entrypoints_reject_nonregular_inputs_identically() {
     let temporary = tempfile::tempdir().unwrap();
     let root = temporary.path().join("project");
     let project = minimal_project(&root);
@@ -36,6 +36,17 @@ fn both_entrypoints_reject_unmaterialized_and_nonregular_inputs_identically() {
     assert_eq!(legacy.kind_name(), "NativeProjectInvalid");
     assert_eq!(legacy.kind_message(), shared.kind_message());
     assert!(paths.lockfile_path().is_dir());
+    let linked = build_linked_native_host(
+        &paths,
+        "native-cargo-test",
+        None,
+        temporary.path(),
+        true,
+        true,
+    )
+    .unwrap_err();
+    assert_eq!(shared.kind_name(), linked.kind_name());
+    assert_eq!(shared.kind_message(), linked.kind_message());
 }
 
 #[test]
@@ -91,6 +102,19 @@ fn shared_helpers_reject_manifest_and_lock_symlinks_before_any_cargo_process() {
         "NativeProjectInvalid"
     );
     assert_eq!(fs::read(outside).unwrap(), b"outside");
+    assert_eq!(
+        build_linked_native_host(
+            &paths,
+            "native-cargo-test",
+            None,
+            temporary.path(),
+            true,
+            true,
+        )
+        .unwrap_err()
+        .kind_name(),
+        "NativeProjectInvalid"
+    );
 }
 
 #[test]
@@ -185,6 +209,40 @@ fn shared_path_build_and_legacy_wrapper_select_the_same_reported_executable() {
     assert!(shared.executable.is_file());
     assert!(shared.executable.starts_with(&target));
     assert_ne!(shared.executable, target.join("guessed-path"));
+    assert_eq!(fs::read(paths.lockfile_path()).unwrap(), lock);
+}
+
+#[test]
+fn linked_release_host_uses_regular_frozen_inputs_and_reported_executable() {
+    let temporary = tempfile::tempdir().unwrap();
+    let root = temporary.path().join("linked-project");
+    fs::create_dir_all(root.join("src")).unwrap();
+    fs::write(
+        root.join("Cargo.toml"),
+        concat!(
+            "[package]\nname = \"linked-host-test\"\nversion = \"0.0.0\"\nedition = \"2024\"\n",
+            "[workspace]\n[profile.release]\nlto = \"thin\"\nopt-level = 3\n",
+        ),
+    )
+    .unwrap();
+    fs::write(
+        root.join("src/main.rs"),
+        "fn main() { println!(\"linked-host-ok\"); }\n",
+    )
+    .unwrap();
+    let paths = CargoProjectPaths::new(&root);
+    generate_cargo_project_lockfile(&paths, MINIMAL_LOCK_SEED, true).unwrap();
+    let lock = fs::read(paths.lockfile_path()).unwrap();
+    let target = temporary.path().join("linked-cargo-target");
+    let artifact =
+        build_linked_native_host(&paths, "linked-host-test", None, &target, true, true).unwrap();
+    assert!(artifact.executable.starts_with(&target));
+    let run = std::process::Command::new(&artifact.executable)
+        .output()
+        .unwrap();
+    assert!(run.status.success());
+    assert_eq!(run.stdout, b"linked-host-ok\n");
+    assert!(run.stderr.is_empty());
     assert_eq!(fs::read(paths.lockfile_path()).unwrap(), lock);
 }
 

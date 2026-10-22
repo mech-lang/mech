@@ -1,6 +1,6 @@
 //! Public canonical AOT adapter; no source-native frontend or execution fallback.
 use super::*;
-use mech_build::{CargoProjectPaths, build_cargo_project, generate_cargo_project_lockfile};
+use mech_build::{CargoProjectPaths, build_linked_native_host, generate_cargo_project_lockfile};
 use mech_engine::{ProgramArtifact, decode_program_artifact_bytecode_v1};
 use mech_gpu::native_artifact::{
     GeneratedLinkedApplication, generate_linked_hosted_program_application,
@@ -176,7 +176,7 @@ pub(super) fn run(options: BuildOptions) -> MResult<CliOutcome> {
     let paths = CargoProjectPaths::new(project.root());
     let seed = fs::read(workspace.join("Cargo.lock"))?;
     generate_cargo_project_lockfile(&paths, &seed, options.offline)?;
-    let artifact = build_cargo_project(
+    let artifact = build_linked_native_host(
         &paths,
         &name,
         None,
