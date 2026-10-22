@@ -22,6 +22,55 @@ fn limits() -> MemoryBudgetLimits {
 fn work(memory: &ManagedMemoryBudget) -> NativeLibraryWorkBudget {
     NativeLibraryWorkBudget::new(1 << 48, 1 << 32, memory).unwrap()
 }
+
+fn directory_growth_before_new_tail(local: bool) {
+    let tail = "x".repeat(32 << 10);
+    let fragment = "\n".to_owned() + &tail;
+    // This input bound makes page backing ineligible on every target.
+    let memory = ManagedMemoryBudget::new(1 << 20);
+    let control_work = work(&memory);
+    let mut store = prepare(1 << 20, fragment.len(), limits(), &control_work).unwrap();
+    for _ in 0..4 {
+        store.push("\n").unwrap();
+    }
+    assert_eq!(store.chunks.len(), store.chunks.capacity());
+    store.push(&fragment).unwrap();
+    let global_limit = memory.used_bytes();
+    let local_limit = store.retained_capacity_bytes();
+    drop((store, control_work));
+    assert_eq!(memory.used_bytes(), 0);
+
+    // The final heap layout fits exactly. Directory replacement must release
+    // its old allocation before acquiring this fragment's unfinished tail.
+    let memory = ManagedMemoryBudget::new(if local { 1 << 20 } else { global_limit });
+    let work = work(&memory);
+    let mut limits = limits();
+    if local {
+        limits.max_temporary_bytes = Some(local_limit);
+    }
+    let mut store = prepare(1 << 20, fragment.len(), limits, &work).unwrap();
+    for _ in 0..4 {
+        store.push("\n").unwrap();
+    }
+    store.push(&fragment).unwrap();
+    assert_eq!(store.available_lines(), Some(5));
+    assert_eq!(store.line(6), None);
+    finish_matches(&mut store, &("\n".repeat(5) + &tail));
+    assert!(store.peak_capacity_bytes() <= local_limit);
+    drop((store, work));
+    assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
+fn directory_growth_precedes_tail_under_global_memory_limit() {
+    directory_growth_before_new_tail(false);
+}
+
+#[test]
+fn directory_growth_precedes_tail_under_local_temporary_limit() {
+    directory_growth_before_new_tail(true);
+}
+
 fn finish_matches(store: &mut NativeTextLineChunks, source: &str) {
     let expected = source.lines().collect::<Vec<_>>();
     let facts = store.finish().unwrap();
