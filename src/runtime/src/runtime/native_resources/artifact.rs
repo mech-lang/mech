@@ -48,6 +48,7 @@ use crate::runtime::transaction::RuntimeCommitResolution;
 /// Descriptive action owned by a site selected from the original artifact.
 /// Constructing a copy of an action grants neither I/O nor native-entry authority.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "canonical-native-images", derive(serde::Serialize))]
 pub enum CanonicalNativeResourceAction {
     Observation {
         output: CellSlotId,
@@ -60,6 +61,7 @@ pub enum CanonicalNativeResourceAction {
 
 /// Constructor-private port identity. There is no request replacement API.
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "canonical-native-images", derive(serde::Serialize))]
 pub struct CanonicalNativeResourceSite {
     node: NodeId,
     requirement: ApplicationRequirementId,
@@ -89,9 +91,10 @@ impl CanonicalNativeResourceSite {
     }
 }
 
-/// Host-side descriptor only, never another serialized or executable program.
+/// Host-side descriptor only, never another executable program.
 /// The canonical revision commits to requirements, contracts and bindings.
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "canonical-native-images", derive(serde::Serialize))]
 pub struct CanonicalNativeResourcePlan {
     revision: ProgramRevision,
     requirements: Box<[ExecutionResourceRequest]>,

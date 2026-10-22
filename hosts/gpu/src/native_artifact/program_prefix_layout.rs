@@ -5,12 +5,15 @@ use mech_engine::native_artifact::{
     NativeControlLoop, NativeProgramArtifactPlan, NativeTailLoop, NativeTextLineRetentionFrontier,
 };
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(super) struct Region {
+    #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub frontier: NativeTextLineRetentionFrontier,
+    #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub tail: NativeTailLoop,
     pub borrowed: usize,
-    #[cfg(feature = "canonical-native-program")]
+    #[cfg_attr(not(feature = "canonical-native-program"), allow(dead_code))]
     pub carrier: usize,
     pub header_work: u64,
 }
@@ -101,7 +104,6 @@ pub(super) fn derive_with_frontiers(
         frontier: frontier.clone(),
         tail: tail.clone(),
         borrowed: ordinal,
-        #[cfg(feature = "canonical-native-program")]
         carrier: _carrier,
         header_work,
     }))

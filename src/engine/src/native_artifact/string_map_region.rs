@@ -15,6 +15,9 @@ pub struct NativeStringMapRegion {
     selection_site: u32,
     owned_source_slots: Box<[NativeMatchValue]>,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeStringMapRegion {
+    collection: u32, iteration: u32, source: NativeMatchValue, map: NativeMatchValue, selection_site: u32, owned_source_slots: Box<[NativeMatchValue]>,
+});
 impl NativeStringMapRegion {
     pub const fn collection(&self) -> u32 {
         self.collection

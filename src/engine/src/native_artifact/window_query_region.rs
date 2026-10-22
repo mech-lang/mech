@@ -21,6 +21,9 @@ pub struct NativeWindowRegion {
     query: Option<Value>,
     sites: Box<[u32]>,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeWindowRegion {
+    collection: u32, iteration: u32, source: Value, length: Value, width: Value, query: Option<Value>, sites: Box<[u32]>,
+});
 impl NativeWindowRegion {
     pub const fn collection(&self) -> u32 {
         self.collection

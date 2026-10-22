@@ -16,7 +16,8 @@ const KINDS: [RetirementKind; 3] = [
     RetirementKind::TailExit,
 ];
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct RetirementTables {
     // A three-range prefix per loop, followed by ascending slot ordinals.
     // The invocation copies ALL words into its own admitted typed storage.

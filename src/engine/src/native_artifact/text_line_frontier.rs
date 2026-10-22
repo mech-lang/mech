@@ -34,6 +34,14 @@ pub struct NativeTextLineCountGuard {
     available: u32,
     exhausted: u32,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeTextLineCountGuard {
+    comparison: u32,
+    branch: u32,
+    index: Value,
+    predicate: Value,
+    available: u32,
+    exhausted: u32,
+});
 impl NativeTextLineCountGuard {
     pub const fn comparison(&self) -> u32 {
         self.comparison
@@ -68,6 +76,9 @@ pub struct NativeTextLineCountFrontier {
     guards: Box<[NativeTextLineCountGuard]>,
     exact: Box<[u32]>,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeTextLineCountFrontier {
+    lines: NativeTextLineMatrixRegion, counts: Box<[Value]>, aliases: Box<[u32]>, guards: Box<[NativeTextLineCountGuard]>, exact: Box<[u32]>,
+});
 impl NativeTextLineCountFrontier {
     pub fn lines(&self) -> &NativeTextLineMatrixRegion {
         &self.lines

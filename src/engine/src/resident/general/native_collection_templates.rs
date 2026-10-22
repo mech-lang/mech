@@ -1,6 +1,8 @@
 //! Selected collection-leaf metadata, never an executor or a complete program.
 //! No live shape, binder, kernel, source parser or preflight is invoked here.
 use super::{node_inputs, node_output_slot};
+#[path = "native_collection_template_image.rs"]
+mod image;
 use crate::native_artifact::NativeArtifactLoweringError as Error;
 pub use crate::resident::native_collection_semantics::NativeCollectionPrimitive;
 use crate::{ArtifactSource, ExecutableNodeBody, OperationReference, ProgramArtifact};
@@ -547,29 +549,7 @@ fn select_leaf(
     // These are branches of the SAME maintained access factories, not new
     // kernels. Specialize only after private factory provenance is established;
     // the exact selected schemas/arity/contract still have to validate below.
-    let primitive = match primitive {
-        NativeCollectionPrimitive::CompositePack(_) => {
-            NativeCollectionPrimitive::CompositePack(input_ids.len())
-        }
-        NativeCollectionPrimitive::StringScalarAccess => match inputs.first().map(Schema::body) {
-            Some(SchemaBody::Matrix { .. }) => NativeCollectionPrimitive::MatrixScalarAccess,
-            Some(SchemaBody::Map { .. }) => NativeCollectionPrimitive::MapKeyAccess,
-            _ => primitive,
-        },
-        NativeCollectionPrimitive::StringRangeAccess
-            if input_ids.len() == 2
-                && matches!(
-                    inputs.first().map(Schema::body),
-                    Some(SchemaBody::Matrix { .. })
-                ) =>
-        {
-            NativeCollectionPrimitive::MatrixRangeAccess
-        }
-        NativeCollectionPrimitive::StringRangeAccess if input_ids.len() == 1 => {
-            NativeCollectionPrimitive::StringAllAccess
-        }
-        _ => primitive,
-    };
+    let primitive = image::specialize_primitive(primitive, &inputs);
     if !validate_schemas(primitive, &inputs, &output) {
         return Err(Error::WitnessTypeMismatch { node });
     }

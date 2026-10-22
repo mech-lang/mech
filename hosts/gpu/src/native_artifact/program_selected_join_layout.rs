@@ -1,15 +1,17 @@
 //! Immutable site associations derived only from the canonical complete-use proof.
 use mech_engine::native_artifact::{NativeProgramArtifactPlan, NativeSelectedTextJoin};
 
-#[derive(Clone, Copy, Debug, serde::Serialize)]
+#[derive(Clone, Copy, Debug, serde::Serialize, serde::Deserialize)]
 pub(super) enum Site {
     Range(usize),
     Select(usize),
     Join(usize),
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(super) struct Layout {
+    #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub regions: Box<[NativeSelectedTextJoin]>,
     pub sites: Box<[Option<Site>]>,
 }

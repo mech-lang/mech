@@ -52,6 +52,15 @@ pub enum NativeBorrowedStringAction {
         negate: bool,
     },
 }
+super::program_image_proofs::image_enum!(NativeBorrowedStringAction {
+    ConstantRange { first: u64, last: u64, output: Value },
+    MatrixElement { source: Value, index: Value, output: Value },
+    Copy { source: Value, output: Value },
+    Length { source: Value, output: Value },
+    ScalarSelect { source: Value, index: Value, output: Value },
+    FixedRange { source: Value, first: u64, last: u64, output: Value },
+    Equal { source: Value, literal: Value, output: Value, negate: bool },
+});
 impl NativeBorrowedStringAction {
     pub fn output(&self) -> Value {
         match *self {
@@ -91,6 +100,9 @@ pub struct NativeBorrowedStringRegion {
     values: Box<[Value]>,
     actions: Box<[(u32, NativeBorrowedStringAction)]>,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeBorrowedStringRegion {
+    iteration: u32, matrices: Box<[Value]>, literals: Box<[Value]>, values: Box<[Value]>, actions: Box<[(u32, NativeBorrowedStringAction)]>,
+});
 impl NativeBorrowedStringRegion {
     pub const fn iteration(&self) -> u32 {
         self.iteration

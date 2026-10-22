@@ -5,6 +5,73 @@ use mech_engine::native_artifact::{
 };
 
 #[test]
+fn build_owned_images_reject_wrong_registry_revision_and_broken_inventories() {
+    let (artifacts, catalog) = artifacts(FULL);
+    let artifact = &artifacts[0];
+    let jit = JitProgramArtifact::compile(artifact, &catalog).unwrap();
+    let bytes = jit.descriptor().encode_build_owned_image().unwrap();
+    let original: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    for (pointer, replacement) in [
+        ("/version", serde_json::json!(2)),
+        ("/descriptor/code", serde_json::json!(0)),
+        ("/descriptor/calls", serde_json::json!([])),
+        ("/descriptor/types/0/schema", serde_json::json!(u32::MAX)),
+    ] {
+        let mut changed = original.clone();
+        *changed.pointer_mut(pointer).unwrap() = replacement;
+        // SAFETY: rejection probe only; no reconstructed metadata can execute.
+        assert!(
+            unsafe {
+                mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                    &serde_json::to_vec(&changed).unwrap(),
+                    &catalog,
+                )
+            }
+            .is_err(),
+            "{pointer}"
+        );
+    }
+    let empty = mech_core::FunctionCatalogBuilder::new().build().unwrap();
+    // SAFETY: rejection probe confined to this test, never an executable.
+    assert!(
+        unsafe {
+            mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                &bytes, &empty,
+            )
+        }
+        .is_err()
+    );
+
+    let resources = CanonicalNativeResourceMetadata::prepare(artifact, 16).unwrap();
+    let bytes = resources.encode_build_owned_image().unwrap();
+    let other_revision = self::artifacts(ECHO).0[0].revision();
+    // SAFETY: mismatched metadata is inspected only, never used with a session.
+    assert!(
+        unsafe {
+            CanonicalNativeResourceMetadata::decode_build_owned_image(
+                &bytes,
+                other_revision,
+                artifact.schemas().clone(),
+            )
+        }
+        .is_err()
+    );
+    let mut changed: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    changed["plan"]["requirements"] = serde_json::json!([]);
+    // SAFETY: rejection probe cannot enter resource admission or native code.
+    assert!(
+        unsafe {
+            CanonicalNativeResourceMetadata::decode_build_owned_image(
+                &serde_json::to_vec(&changed).unwrap(),
+                artifact.revision(),
+                artifact.schemas().clone(),
+            )
+        }
+        .is_err()
+    );
+}
+
+#[test]
 fn generated_hosted_application_pins_the_same_object_descriptor() {
     use sha2::{Digest, Sha256};
     let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -30,6 +97,36 @@ fn generated_hosted_application_pins_the_same_object_descriptor() {
             .map(|byte| format!("{byte:02x}"))
             .collect::<String>();
         assert_eq!(project.pins()["native-descriptor.json"], digest);
+        let resources = std::fs::read(project.root().join("native-resources.json")).unwrap();
+        let resource_digest = Sha256::digest(&resources)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        assert_eq!(project.pins()["native-resources.json"], resource_digest);
+        let prepared = CanonicalNativeResourceMetadata::prepare(artifact, usize::MAX).unwrap();
+        assert_eq!(resources, prepared.encode_build_owned_image().unwrap());
+        // SAFETY: this same checked build produced both the image and Object.
+        let restored_resources = unsafe {
+            CanonicalNativeResourceMetadata::decode_build_owned_image(
+                &resources,
+                artifact.revision(),
+                artifact.schemas().clone(),
+            )
+        }
+        .unwrap();
+        assert_eq!(
+            resources,
+            restored_resources.encode_build_owned_image().unwrap()
+        );
+        assert_eq!(
+            restored_resources.plan().requirements().len(),
+            artifact.requirements().len()
+        );
+        let main = std::fs::read_to_string(project.root().join("src/main.rs")).unwrap();
+        assert!(!main.contains("decode_program_artifact"));
+        assert!(!main.contains("CanonicalNativeResourceMetadata::prepare"));
+        assert!(!main.contains("lower_native_program_artifact"));
+        assert!(main.contains("LinkedProgramArtifact::from_build_owned_image"));
         let object = mech_gpu::native_artifact::emit_program_object(artifact, &catalog).unwrap();
         assert_eq!(
             image,
@@ -59,6 +156,14 @@ fn native_descriptor_images_preserve_layouts_without_process_pointers() {
                 let descriptor = jit.descriptor();
                 let bytes = descriptor.encode_build_owned_image().unwrap();
                 assert_eq!(bytes, descriptor.encode_build_owned_image().unwrap());
+                // SAFETY: unchanged output from this checked JIT descriptor;
+                // restored metadata is compared only and never executed here.
+                let restored = unsafe {
+                    mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                        &bytes, &catalog,
+                    )
+                }.unwrap();
+                assert_eq!(bytes, restored.encode_build_owned_image().unwrap());
                 let image: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
                 assert_eq!(image["format"], "mech.build-owned-native-descriptor");
                 assert_eq!(image["version"], 1);
@@ -88,6 +193,29 @@ fn native_descriptor_images_preserve_layouts_without_process_pointers() {
                     for process_local in ["factory", "cache_identity", "schemas"] {
                         assert!(call.get(process_local).is_none(), "{process_local}");
                     }
+                    // SAFETY: metadata-only round trip of the unchanged JIT
+                    // descriptor. No restored proof escapes to execution.
+                    let restored = unsafe {
+                        mech_engine::native_artifact::NativePreparedLibraryCall::from_build_owned_image(
+                            call,
+                            std::sync::Arc::new(artifact.schemas().clone()),
+                            &catalog,
+                        )
+                    }
+                    .unwrap();
+                    assert_eq!(*call, serde_json::to_value(restored).unwrap());
+                    for field in ["output_parameters", "input_keys", "factory"] {
+                        let mut changed = call.clone();
+                        changed[field] = serde_json::json!(999999);
+                        // SAFETY: rejection probe only, never an executable.
+                        assert!(unsafe {
+                            mech_engine::native_artifact::NativePreparedLibraryCall::from_build_owned_image(
+                                &changed,
+                                std::sync::Arc::new(artifact.schemas().clone()),
+                                &catalog,
+                            )
+                        }.is_err());
+                    }
                 }
                 let plan: serde_json::Value = serde_json::from_slice(
                     &encode_native_program_plan_image(descriptor.plan()).unwrap(),
@@ -111,6 +239,17 @@ fn native_plan_images_preserve_original_and_decoded_artifacts() {
             .map(|artifact| {
                 let plan = lower_native_program_artifact(artifact, &catalog).unwrap();
                 let bytes = encode_native_program_plan_image(&plan).unwrap();
+                // SAFETY: unchanged image of this artifact's just-lowered plan,
+                // paired with its exact schemas and catalog; metadata-only test.
+                let restored = unsafe {
+                    mech_engine::native_artifact::decode_build_owned_native_plan_image(
+                        &bytes,
+                        artifact.schemas(),
+                        &catalog,
+                    )
+                }
+                .unwrap();
+                assert_eq!(bytes, encode_native_program_plan_image(&restored).unwrap());
                 assert_eq!(bytes, encode_native_program_plan_image(&plan).unwrap());
                 let image: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
                 assert_eq!(image["format"], "mech.build-owned-native-plan");

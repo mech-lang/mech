@@ -1,10 +1,15 @@
 //! Immutable execution metadata, never a capability or native-entry proof.
 use super::*;
 
+#[path = "prepared_metadata_image.rs"]
+#[cfg(feature = "canonical-native-images")]
+mod image;
+
 /// Resource metadata selected from a validated canonical artifact. This owns
 /// only the resource plan, original requirements and schemas, not the program
-/// graph. Construction performs no I/O and admits no capability. There is no
-/// unchecked constructor or deserialization path.
+/// graph. Construction performs no I/O and admits no capability. An unsafe
+/// build-owned image loader may restore the same checked metadata; no public
+/// Deserialize implementation or safe unchecked constructor is provided.
 #[derive(Clone, Debug)]
 pub struct CanonicalNativeResourceMetadata {
     plan: CanonicalNativeResourcePlan,

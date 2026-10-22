@@ -22,6 +22,12 @@ pub struct NativeSelectedTextJoinRange {
     end: Value,
     inclusive: bool,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeSelectedTextJoinRange {
+    producer: u32,
+    start: Value,
+    end: Value,
+    inclusive: bool,
+});
 impl NativeSelectedTextJoinRange {
     pub const fn producer(&self) -> u32 {
         self.producer
@@ -48,6 +54,9 @@ pub struct NativeSelectedTextJoin {
     output: Value,
     range: Option<NativeSelectedTextJoinRange>,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeSelectedTextJoin {
+    selection: u32, consumer: u32, source: Value, selector: Value, selected: Value, separator: Value, output: Value, range: Option<NativeSelectedTextJoinRange>,
+});
 impl NativeSelectedTextJoin {
     pub const fn selection(&self) -> u32 {
         self.selection

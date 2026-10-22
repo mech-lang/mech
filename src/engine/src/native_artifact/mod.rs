@@ -38,9 +38,17 @@ pub(crate) mod text_join_sink;
 mod phase_validation;
 mod program;
 mod program_image;
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+pub(crate) mod program_image_proofs;
+pub(crate) mod program_image_read;
 pub use crate::resident::general::native_match_lowering::lower_native_program_artifact;
 pub use program::*;
 pub use program_image::encode_native_program_plan_image;
+pub use program_image_read::values::schemas as decode_native_schema_image;
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+pub use program_image_read::{
+    decode_build_owned_native_plan_image, decode_build_owned_native_plan_value,
+};
 
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 mod window_query_region;

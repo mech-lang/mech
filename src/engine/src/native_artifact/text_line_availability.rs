@@ -19,6 +19,9 @@ pub struct NativeTextLineReadGuard {
     index: Value,
     guards: Box<[u32]>,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeTextLineReadGuard {
+    site: u32, iteration: u32, index: Value, guards: Box<[u32]>,
+});
 impl NativeTextLineReadGuard {
     pub const fn site(&self) -> u32 {
         self.site
@@ -44,6 +47,9 @@ pub struct NativeTextLineReadFrontier {
     count: NativeTextLineCountFrontier,
     reads: Box<[NativeTextLineReadGuard]>,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeTextLineReadFrontier {
+    count: NativeTextLineCountFrontier, reads: Box<[NativeTextLineReadGuard]>,
+});
 impl NativeTextLineReadFrontier {
     pub fn count(&self) -> &NativeTextLineCountFrontier {
         &self.count

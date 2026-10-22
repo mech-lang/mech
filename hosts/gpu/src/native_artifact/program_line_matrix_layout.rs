@@ -1,14 +1,16 @@
 //! Immutable dispatch of the same plan's complete-use line-matrix proofs.
 use mech_engine::native_artifact::{NativeProgramArtifactPlan, NativeTextLineMatrixRegion};
 
-#[derive(Clone, Copy, Debug, serde::Serialize)]
+#[derive(Clone, Copy, Debug, serde::Serialize, serde::Deserialize)]
 pub(super) enum Site {
     Produce(usize),
     Length(usize),
 }
 
-#[derive(Default, Debug, serde::Serialize)]
+#[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(super) struct Layout {
+    #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub regions: Vec<NativeTextLineMatrixRegion>,
     pub sites: Vec<Option<Site>>,
     pub matrices: Vec<Option<usize>>,

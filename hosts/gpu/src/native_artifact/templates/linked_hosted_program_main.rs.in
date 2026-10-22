@@ -194,12 +194,6 @@ fn run() -> Result<(), String> {
     launch.input_text_bytes.checked_add(1).ok_or("input acquisition cap overflows")?;
     let memory = ManagedMemoryBudget::new(launch.memory_bytes);
     let mut payload_arguments = bounded_arguments(arguments, launch.input_text_bytes, &memory)?;
-    let bytecode = include_bytes!("../program.mecb");
-    if hex(&Sha256::digest(bytecode)) != "@BYTECODE_SHA256@" {
-        return Err("embedded canonical bytecode identity mismatch".into());
-    }
-    let artifact = mech_engine::decode_program_artifact_bytecode_v1(bytecode)
-        .map_err(diagnostic)?;
     let catalog = std::thread::Builder::new().name("canonical-native-catalog".into())
         .stack_size(64 * 1024 * 1024)
         .spawn(|| -> Result<_, String> {
@@ -213,11 +207,12 @@ fn run() -> Result<(), String> {
     // SAFETY: build.rs pins the original source/bytecode/Object and all
     // generated inputs. Identity+entry are process-lifetime symbols from that
     // SAME checked Object. No caller-provided entry or metadata authenticates
-    // arbitrary code. The constructor rederives exact current canonical
-    // selection, CFG, resource descriptors, target and ABI/work identity.
+    // arbitrary code. The pinned descriptor was prepared by that SAME build;
+    // loading checks actual selected factories and the complete Object identity
+    // without rerunning the compiler's lowering/analysis inside the executable.
     let linked = unsafe {
-        LinkedProgramArtifact::from_build_owned_entry(
-            &artifact, &catalog, &LINKED_IDENTITY, linked_entry,
+        LinkedProgramArtifact::from_build_owned_image(
+            include_bytes!("../native-descriptor.json"), &catalog, &LINKED_IDENTITY, linked_entry,
         )
     }.map_err(diagnostic)?;
     if !linked.descriptor().plan().inputs().is_empty() {
@@ -279,12 +274,17 @@ fn run() -> Result<(), String> {
         });
     }
     let mut runtime = builder.build().map_err(diagnostic)?;
-    // The selected native descriptor owns its checked factory bindings. Retain
-    // only the resource metadata needed by the shared execution boundary, not
-    // the decoded compiler artifact or catalog for the duration of input work.
-    let program_revision = artifact.revision();
-    let resource_metadata = CanonicalNativeResourceMetadata::prepare(&artifact, launch.max_ports);
-    drop(artifact);
+    // SAFETY: build.rs pins this complete resource image alongside the SAME
+    // source/bytecode/Object and native descriptor. Its canonical revision and
+    // schemas are checked below. No program graph is decoded at startup; fresh
+    // runtime authority and port caps remain mandatory on every invocation.
+    let program_revision = linked.descriptor().plan().program_revision();
+    let resource_metadata = unsafe {
+        CanonicalNativeResourceMetadata::decode_build_owned_image(
+            include_bytes!("../native-resources.json"), program_revision,
+            linked.descriptor().schemas().clone(),
+        )
+    };
     drop(catalog);
     let execution = resource_metadata.map_err(|error| CanonicalNativeResourceRunError::BeforeCommit {
         phase: "admission", error, cleanup: None,

@@ -23,6 +23,9 @@ pub struct NativeTextLineRetentionState {
     keep: Box<[usize]>,
     returned: Option<(usize, usize)>,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeTextLineRetentionState {
+    ordinal: u32, index: Option<usize>, keep: Box<[usize]>, returned: Option<(usize, usize)>,
+});
 impl NativeTextLineRetentionState {
     pub const fn ordinal(&self) -> u32 {
         self.ordinal
@@ -52,6 +55,9 @@ pub struct NativeTextLineRetentionFrontier {
     states: Box<[NativeTextLineRetentionState]>,
     scans_per_ordinal: Option<u64>,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeTextLineRetentionFrontier {
+    read: NativeTextLineReadFrontier, iteration: u32, join: NativeSelectedTextJoin, result_fields: (usize, usize), states: Box<[NativeTextLineRetentionState]>, scans_per_ordinal: Option<u64>,
+});
 impl NativeTextLineRetentionFrontier {
     pub fn read(&self) -> &NativeTextLineReadFrontier {
         &self.read

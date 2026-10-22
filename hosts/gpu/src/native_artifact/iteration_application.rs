@@ -49,6 +49,7 @@ pub fn generate_linked_iteration_application(
             typed_ir_sha256: object.descriptor().typed_ir_sha256(),
             object_metadata: object.metadata(),
             descriptor_image: None,
+            resource_image: None,
             manifest_schema: "mech.canonical-linked-iteration-application.v1",
             route: "canonical-artifact-iteration-cranelift-object",
         },

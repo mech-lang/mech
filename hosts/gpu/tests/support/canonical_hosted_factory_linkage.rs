@@ -156,7 +156,18 @@ fn generated_launcher_references_individual_factories_and_pins_profile() {
         let capture = main
             .find("with_prepared_canonical_native_resources_phased_text(")
             .unwrap();
-        assert!(main.find("drop(artifact);").unwrap() < capture);
+        assert!(!main.contains("decode_program_artifact"));
+        assert!(!main.contains("let artifact ="));
+        assert!(
+            main.find("LinkedProgramArtifact::from_build_owned_image(")
+                .unwrap()
+                < capture
+        );
+        assert!(
+            main.find("CanonicalNativeResourceMetadata::decode_build_owned_image(")
+                .unwrap()
+                < capture
+        );
         assert!(main.find("drop(catalog);").unwrap() < capture);
         assert!(main.contains("hex(program_revision.as_bytes())"));
         assert!(!main.contains("@INSTALL_CANONICAL_FACTORIES@"));

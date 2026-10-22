@@ -1,11 +1,32 @@
 //! Prepared metadata retains neither a program graph nor runtime authority.
 use super::*;
 
+fn restored_metadata(artifact: &mech_engine::ProgramArtifact) -> CanonicalNativeResourceMetadata {
+    let prepared = CanonicalNativeResourceMetadata::prepare(artifact, 16).unwrap();
+    let bytes = prepared.encode_build_owned_image().unwrap();
+    // SAFETY: unchanged metadata from this checked artifact, with its SAME
+    // revision and schemas. The tests pair it only with that artifact's JIT.
+    let restored = unsafe {
+        CanonicalNativeResourceMetadata::decode_build_owned_image(
+            &bytes,
+            artifact.revision(),
+            artifact.schemas().clone(),
+        )
+    }
+    .unwrap();
+    assert_eq!(bytes, restored.encode_build_owned_image().unwrap());
+    assert_eq!(
+        restored.plan().requirements().len(),
+        artifact.requirements().len()
+    );
+    restored
+}
+
 #[test]
 fn prepared_resource_metadata_executes_after_original_artifact_is_dropped() {
     let (variants, catalog) = artifacts(ECHO);
     for artifact in variants {
-        let metadata = CanonicalNativeResourceMetadata::prepare(&artifact, 16).unwrap();
+        let metadata = restored_metadata(&artifact);
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         assert_eq!(metadata.plan().program_revision(), artifact.revision());
         drop(artifact);
@@ -69,7 +90,7 @@ fn prepared_resource_metadata_executes_after_original_artifact_is_dropped() {
 #[test]
 fn prepared_resource_metadata_rechecks_current_port_limit_before_activation() {
     for artifact in artifacts(ECHO).0 {
-        let metadata = CanonicalNativeResourceMetadata::prepare(&artifact, 16).unwrap();
+        let metadata = restored_metadata(&artifact);
         drop(artifact);
         let (mut runtime, trace) = runtime(b"must not read", true);
         let mut caps = bridge_limits();

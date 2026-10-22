@@ -17,6 +17,10 @@ use mech_core::{
 };
 use std::sync::Arc;
 
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[path = "native_collection_prepared_image.rs"]
+mod image;
+
 #[path = "native_collection_histogram.rs"]
 mod histogram;
 #[path = "native_collection_string_map_entry.rs"]

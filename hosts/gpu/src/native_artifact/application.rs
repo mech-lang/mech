@@ -183,6 +183,7 @@ pub(super) struct LinkedApplicationInputs<'a> {
     pub typed_ir_sha256: &'a [u8],
     pub object_metadata: Value,
     pub descriptor_image: Option<Vec<u8>>,
+    pub resource_image: Option<Vec<u8>>,
     pub manifest_schema: &'static str,
     pub route: &'static str,
 }
@@ -242,6 +243,7 @@ pub fn generate_linked_application(
             typed_ir_sha256: object.descriptor().typed_ir_sha256(),
             object_metadata: object.metadata(),
             descriptor_image: None,
+            resource_image: None,
             manifest_schema: "mech.canonical-linked-application.v1",
             route: "canonical-artifact-cranelift-object",
         },
@@ -412,6 +414,9 @@ lto = "thin"
     if let Some(image) = inputs.descriptor_image {
         files.insert("native-descriptor.json".into(), image);
     }
+    if let Some(image) = inputs.resource_image {
+        files.insert("native-resources.json".into(), image);
+    }
     let mut pins = files
         .iter()
         .map(|(name, value)| (name.clone(), digest(value)))
@@ -447,6 +452,7 @@ lto = "thin"
         ) {
             runtime_features.extend([
                 format!("mech-runtime/{hosted_runtime_feature}"),
+                "mech-runtime/canonical-native-images".to_owned(),
                 "mech-terminal/provider".to_owned(),
             ]);
         }

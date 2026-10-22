@@ -23,6 +23,9 @@ pub struct NativeTextLineMatrixRegion {
     borrowed: Box<[u32]>,
     selections: Box<[u32]>,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeTextLineMatrixRegion {
+    producer: u32, source: Value, matrix: Value, lengths: Box<[u32]>, borrowed: Box<[u32]>, selections: Box<[u32]>,
+});
 impl NativeTextLineMatrixRegion {
     pub const fn producer(&self) -> u32 {
         self.producer

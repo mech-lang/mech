@@ -46,6 +46,30 @@ impl LinkedProgramArtifact {
         let descriptor = prepare_descriptor(artifact, catalog, identity)?;
         Ok(Self { entry, descriptor })
     }
+    /// Bind metadata already prepared by the compiler, without repeating its
+    /// lowering or proof-selection passes inside the application executable.
+    ///
+    /// # Safety
+    /// All requirements of `from_build_owned_entry` apply. In addition, `image`
+    /// must be the unchanged descriptor emitted for that SAME checked Object;
+    /// the build must pin the descriptor alongside source, bytecode and Object.
+    /// Neither a caller-supplied image nor a matching identity authenticates
+    /// arbitrary code or compiler proofs. Only the real maintained factories
+    /// from that build may populate `catalog`. Runtime admission is unchanged.
+    pub unsafe fn from_build_owned_image(
+        image: &[u8],
+        catalog: &FunctionCatalog,
+        identity: &'static [u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES],
+        entry: unsafe extern "C" fn(*mut c_void) -> u64,
+    ) -> Result<Self, NativeLinkError> {
+        // SAFETY: delegated unchanged compiler/Object/image provenance.
+        let descriptor =
+            unsafe { NativeProgramDescriptor::decode_build_owned_image(image, catalog) }.map_err(
+                |_| NativeLinkError::new("build-owned program descriptor could not be restored"),
+            )?;
+        check_identity(&descriptor, identity)?;
+        Ok(Self { entry, descriptor })
+    }
     pub fn descriptor(&self) -> &NativeProgramDescriptor {
         &self.descriptor
     }
@@ -98,12 +122,20 @@ pub(super) fn prepare_descriptor(
         .map_err(|_| NativeLinkError::new("program Object has no current canonical selection"))?;
     let descriptor = NativeProgramDescriptor::prepare(artifact, catalog, plan, stack, code)
         .map_err(|_| NativeLinkError::new("program Object selection could not be prepared"))?;
+    check_identity(&descriptor, identity)?;
+    Ok(descriptor)
+}
+
+fn check_identity(
+    descriptor: &NativeProgramDescriptor,
+    identity: &[u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES],
+) -> Result<(), NativeLinkError> {
     let expected =
-        NativeProgramObjectIdentity::from_descriptor(&descriptor).map_err(NativeLinkError::new)?;
+        NativeProgramObjectIdentity::from_descriptor(descriptor).map_err(NativeLinkError::new)?;
     if identity != expected.bytes() {
         return Err(NativeLinkError::new(
             "program Object identity/ABI/work/target/typed CFG differs from selected artifact",
         ));
     }
-    Ok(descriptor)
+    Ok(())
 }

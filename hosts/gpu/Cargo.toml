@@ -17,7 +17,7 @@ canonical-native = ["canonical-native-runtime", "aot", "dep:toml_edit"]
 canonical-native-program-runtime = ["canonical-native-runtime", "mech-engine/pure_text", "mech-engine/map_ops", "mech-engine/convert", "dep:grapheme"]
 canonical-native-program = ["canonical-native-program-runtime", "canonical-native"]
 # Runtime-only capability bridge; no source-native sequence frontend or JIT.
-canonical-native-program-host-runtime = ["canonical-native-program-runtime", "runtime-host", "mech-runtime/canonical-native-resources"]
+canonical-native-program-host-runtime = ["canonical-native-program-runtime", "runtime-host", "mech-runtime/canonical-native-images"]
 canonical-native-program-host = ["canonical-native-program", "canonical-native-program-host-runtime", "mech-runtime/resident-routing", "dep:mech-terminal"]
 # Explicit experiment only: never enabled by the production hosted CLI features.
 canonical-native-benchmark-policy-runtime = ["canonical-native-program-host-runtime"]

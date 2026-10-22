@@ -11,7 +11,7 @@ use mech_engine::{
 use std::sync::Arc;
 
 #[path = "program_descriptor_image.rs"]
-mod image;
+pub(super) mod image;
 
 #[path = "program_retirement.rs"]
 mod retirement;
@@ -305,6 +305,10 @@ impl NativeProgramDescriptor {
     }
     pub fn plan(&self) -> &NativeProgramArtifactPlan {
         &self.plan
+    }
+    /// Immutable canonical types shared by this build's native/resource metadata.
+    pub fn schemas(&self) -> &SchemaTable {
+        &self.schemas
     }
     /// Fixed-header association only, not a new semantic or visit authority.
     /// prepare checked full selected-template equality against the actual

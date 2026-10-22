@@ -6,16 +6,18 @@ use mech_engine::native_artifact::{
     NativeIterationAction, NativeProgramArtifactPlan,
 };
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(super) struct RegionLayout {
+    #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub proof: Region,
     // The code generator writes these lanes; the owning runtime independently
     // verifies their clearance before accepting a continuation checkpoint.
     pub ready: usize,
-    #[cfg(feature = "canonical-native-program")]
+    #[cfg_attr(not(feature = "canonical-native-program"), allow(dead_code))]
     pub captures: usize,
     pub end: usize,
-    #[cfg(feature = "canonical-native-program")]
+    #[cfg_attr(not(feature = "canonical-native-program"), allow(dead_code))]
     slots: Box<[Option<usize>]>,
 }
 impl RegionLayout {
@@ -27,7 +29,8 @@ impl RegionLayout {
         self.proof.matrices().len() * 3 + self.proof.literals().len() * 2
     }
 }
-#[derive(Debug, Default, serde::Serialize)]
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(super) struct Layout {
     pub regions: Vec<RegionLayout>,
     pub initializers: Vec<Option<usize>>,
@@ -54,7 +57,6 @@ impl Layout {
             next = next
                 .checked_add(1)
                 .ok_or("borrowed String ready slot overflow")?;
-            #[cfg(feature = "canonical-native-program")]
             let captures = next;
             let mut slots = vec![None; plan.values().len()];
             for (&value, words) in proof.matrices().iter().map(|value| (value, 3)).chain(
@@ -85,10 +87,8 @@ impl Layout {
             layout.regions.push(RegionLayout {
                 proof,
                 ready,
-                #[cfg(feature = "canonical-native-program")]
                 captures,
                 end: next,
-                #[cfg(feature = "canonical-native-program")]
                 slots: slots.into(),
             });
         }

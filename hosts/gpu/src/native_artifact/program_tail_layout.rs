@@ -7,9 +7,11 @@ use mech_engine::native_artifact::{
 };
 
 pub(super) const OVERHEAD: u64 = 512;
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(super) struct Region {
     pub iteration: u32,
+    #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub tail: NativeTailLoop,
     pub borrowed: Option<usize>,
     // Emission and checkpoint validation use the identical admitted word lane.
@@ -17,7 +19,8 @@ pub(super) struct Region {
     pub compute: u64,
     pub comparison: u64,
 }
-#[derive(Debug, Default, serde::Serialize)]
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(super) struct Layout {
     pub regions: Vec<Region>,
     pub sites: Vec<Option<usize>>,

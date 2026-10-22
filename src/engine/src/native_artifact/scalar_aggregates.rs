@@ -32,6 +32,28 @@ pub enum NativeAggregateWord {
     Field(Value, usize),
     Constant(u64),
 }
+super::program_image_proofs::image_enum!(NativeScalarAggregateAction {
+    Pack { output: Value, words: Box<[NativeAggregateWord]> },
+    Copy { source: Value, output: Value },
+    Observe { source: Value, offset: usize, ordinal: Option<u32>, guards: Box<[(usize, u32)]>, output: Value },
+});
+impl super::program_image_proofs::ImageRead for NativeAggregateWord {
+    fn read(image: serde_json::Value) -> Result<Self, String> {
+        #[derive(serde::Deserialize)]
+        enum Wire {
+            Scalar(u32),
+            Field(u32, usize),
+            Constant(u64),
+        }
+        Ok(
+            match serde_json::from_value(image).map_err(|e| e.to_string())? {
+                Wire::Scalar(v) => Self::Scalar(Value(v)),
+                Wire::Field(v, i) => Self::Field(Value(v), i),
+                Wire::Constant(v) => Self::Constant(v),
+            },
+        )
+    }
+}
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct NativeScalarAggregates {
     slots: Box<[Option<(usize, usize)>]>,
@@ -39,6 +61,9 @@ pub struct NativeScalarAggregates {
     constants: Box<[(Value, Box<[u64]>)]>,
     words: usize,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeScalarAggregates {
+    slots: Box<[Option<(usize, usize)>]>, actions: Box<[Option<NativeScalarAggregateAction>]>, constants: Box<[(Value, Box<[u64]>)]>, words: usize,
+});
 impl NativeScalarAggregates {
     pub fn slot(&self, value: Value) -> Option<(usize, usize)> {
         self.slot_at(value.get() as usize)

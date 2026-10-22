@@ -55,6 +55,7 @@ pub fn generate_linked_program_application(
                     .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?,
             ),
             manifest_schema: "mech.canonical-linked-program-application.v1",
+            resource_image: None,
             route: "canonical-artifact-program-cranelift-object",
         },
     )
@@ -128,7 +129,7 @@ fn generate_hosted(
     }
     // Metadata only: exact contracts, original Live observations, Snapshot sends
     // and shared canonical effect order. No provider/input is observed here.
-    let _ports = mech_runtime::CanonicalNativeResourcePlan::select(artifact, usize::MAX)
+    let resources = mech_runtime::CanonicalNativeResourceMetadata::prepare(artifact, usize::MAX)
         .map_err(|error| NativeApplicationError::Encoding(format!("{error:?}")))?;
     let object =
         super::emit_program_object(artifact, catalog).map_err(NativeApplicationError::Compile)?;
@@ -166,6 +167,11 @@ fn generate_hosted(
             descriptor_image: Some(
                 object
                     .descriptor()
+                    .encode_build_owned_image()
+                    .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?,
+            ),
+            resource_image: Some(
+                resources
                     .encode_build_owned_image()
                     .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?,
             ),
