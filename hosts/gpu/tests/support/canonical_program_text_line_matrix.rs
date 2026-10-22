@@ -65,10 +65,7 @@ fn text_line_matrix_view_matches_canonical_utf8_crlf_empty_shape_and_bytes() {
             };
             for (i, expected) in owner.lines().enumerate() {
                 assert_eq!(view.line(i), Some(expected));
-                assert_eq!(
-                    rows[i],
-                    [expected.as_ptr() as u64, expected.len() as u64]
-                );
+                assert_eq!(rows[i], [expected.as_ptr() as u64, expected.len() as u64]);
                 assert_eq!(view.line(i).unwrap().as_ptr(), expected.as_ptr());
             }
             assert_eq!(view.line(view.count()), None);
