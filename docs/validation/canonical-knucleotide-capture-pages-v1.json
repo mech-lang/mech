@@ -1,13 +1,13 @@
 {
   "schema": "mech.canonical-knucleotide-capture-pages.v1",
   "status": "FRESH_QUALIFIED_SPEED_AND_RSS_TARGETS_MET",
-  "source_commit": "46c42d21c88f45c4dfea3ad8178b470ffc7a240c",
-  "source_tree": "efa76ac31d8cff4fd1ce1ae86c416d471b87da6c",
-  "publication_equivalent_source_commit": "46c42d21c88f45c4dfea3ad8178b470ffc7a240c",
-  "source_provenance": "Fresh qualification and measurements use this exact clean source. The publication branch fast-forwards to the SAME commit; only hosts/gpu/README.md and this validation summary differ in the documentation follow-up.",
+  "source_commit": "4c3a2db731dee2d86fdfc23780966248d3c17fa4",
+  "source_tree": "9a19bb4c884121147465329c10d0c7720a456364",
+  "publication_equivalent_source_commit": "4c3a2db731dee2d86fdfc23780966248d3c17fa4",
+  "source_provenance": "Qualification and measurements use this exact clean source. The publication branch fast-forwards to the SAME commit; only hosts/gpu/README.md and this validation summary differ in the documentation follow-up.",
   "measured_utc": {
-    "started": "2026-10-22T13:11:17.248Z",
-    "finished": "2026-10-22T13:11:43.744Z"
+    "started": "2026-10-22T13:44:41.875Z",
+    "finished": "2026-10-22T13:45:07.689Z"
   },
   "hardware": {
     "architecture": "arm64",
@@ -23,12 +23,12 @@
   "target": {
     "size": "10m",
     "requested_seconds": 0.0582,
-    "candidate_median_seconds": 0.05529275,
+    "candidate_median_seconds": 0.054806563,
     "meets_requested_target": true,
     "peak_rss_reference_bytes": 200000000,
-    "candidate_125m_peak_rss_bytes": 147701760,
+    "candidate_125m_peak_rss_bytes": 147324928,
     "meets_rss_reference": true,
-    "executable_size": "Candidate6,630,400B; control6,714,000B. Saves83,600B (1.25%); necessary secured-host cost remains and the binary is still substantially larger than Rust#7."
+    "executable_size": "Both current paired executables6,630,400B. No file-size growth for this speed optimization; necessary secured-host cost remains substantially larger than Rust#7."
   },
   "implementation": {
     "typed_ir": 27,
@@ -40,14 +40,14 @@
     "compiler": "Full idiomatic Mech source through canonical Cranelift Object compilation. LLVM compiles linked Rust host/library routines, not the Mech body. Default opt-level3, ThinLTO, stripped symbols, unchanged unwind and codegen-unit defaults.",
     "code_generation_proof": {
       "old_object": {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/window-source-facts-release-v1276/project-0/program.o",
-        "bytes": 27368,
-        "sha256": "aee115832951ba0e3959ff7573cc2c55959f07f27e4c444d8b92d18cee2c57e1"
-      },
-      "fresh_object": {
         "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-release-v1283/project-0/program.o",
         "bytes": 27368,
         "sha256": "181591212ebcf90a308301358f30ac314f694271759812de82e4c8f15fdaba22"
+      },
+      "fresh_object": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-release-v1294/project-0/program.o",
+        "bytes": 27368,
+        "sha256": "6712479fbc6002517e68170587de244437d8a5876480405dc24a9bb14e5a949c"
       },
       "old": {
         "bytes": 26496,
@@ -57,13 +57,112 @@
       },
       "fresh": {
         "bytes": 26496,
-        "sha256": "88c0528234fd3242b742e5a0db9a037f309df6c6912b543129060e9e26dde646",
+        "sha256": "41d14901c3c9cbd17a30a10e6308bc05e1d3b0e7372bf207356637bd23aa8eed",
         "relocation_bytes": 24,
         "relocation_sha256": "d3bbcd0e2d5c6350f703b16013bc0a9c97b823e087d1890ad259590b860ea988"
       },
-      "byte_identical": true,
-      "instruction_differences": [],
-      "comparison": "Same section size, relocation bytes, opcodes, registers and control flow. Actual changed words, if any, are only local-buffer load/store address immediates; all hashes remain pinned. The change narrows host packaging, not Mech semantics."
+      "byte_identical": false,
+      "instruction_differences": [
+        {
+          "offset": 3756,
+          "old_word": 4177539682,
+          "new_word": 4177538658,
+          "old_local_offset": 96,
+          "fresh_local_offset": 88
+        },
+        {
+          "offset": 3760,
+          "old_word": 4177540719,
+          "new_word": 4177539695,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 3764,
+          "old_word": 4177541729,
+          "new_word": 4177540705,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 7836,
+          "old_word": 4181735009,
+          "new_word": 4181733985,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 7900,
+          "old_word": 4181736033,
+          "new_word": 4181735009,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 9024,
+          "old_word": 4181735019,
+          "new_word": 4181733995,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 9132,
+          "old_word": 4181736032,
+          "new_word": 4181735008,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 9248,
+          "old_word": 4181736032,
+          "new_word": 4181735008,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 9468,
+          "old_word": 4181735008,
+          "new_word": 4181733984,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 10024,
+          "old_word": 4181735008,
+          "new_word": 4181733984,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 12460,
+          "old_word": 4181735008,
+          "new_word": 4181733984,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 20856,
+          "old_word": 4181736033,
+          "new_word": 4181735009,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 20904,
+          "old_word": 4181735009,
+          "new_word": 4181733985,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 25480,
+          "old_word": 4181733999,
+          "new_word": 4181732975,
+          "old_local_offset": 96,
+          "fresh_local_offset": 88
+        }
+      ],
+      "comparison": "Same section size, relocation bytes, opcodes, registers and control flow. Actual changed words, if any, are only local-buffer load/store address immediates; all hashes remain pinned. The change reuses admitted immutable-text facts for sequence sizing and byte-map guards; generated Mech semantics and complete work charges stay unchanged."
     },
     "selected_library_features": {
       "mode": "artifact-selected",
@@ -96,33 +195,34 @@
     ],
     "histogram_banks": "The general ASCII one/two-grapheme histogram lowering uses four disjoint counter banks after128/16,384 logical cells have at least eight starts each. Admission reserves every physical counter plus worst-case Entry/key backing before entry, checks local/global headroom, and retains serial storage on short input, tight headroom or a lost shared reservation race. Existing finite work bounds cover zeroing, counting, reduction and materialization; no per-start callbacks, extra permission protocol or new resource authority.",
     "immutable_text_fact": "One same-entry fixed weak frozen-storage identity caches ASCII-without-CRLF, never source payloads or permissions. Admission includes the inline slot plus complete weak Arc shell (144B on this target,1152 work units); replacement drops the old weak token first. Every invocation still pays the existing complete scan-work bound and validates source kind, genuine owner, geometry and finite limits. New entry/round state reacquires facts. Work policy37 rejects old36 receipts; ABI12 and typed IR27 are unchanged.",
-    "native_host_features": "canonical-native-resources reuses the original artifact admission, capability preview/revalidation, provider/schema checks and transaction pipeline without enabling resident-routing in deployed native hosts. Resident routing depends on that SAME shared feature; the build/test frontend retains resident APIs. No copied authority, new executor, changed artifact wire format, relaxed safety check or release-profile change. Route introspection reports None when no resident execution support exists."
+    "native_host_features": "canonical-native-resources reuses the original artifact admission, capability preview/revalidation, provider/schema checks and transaction pipeline without enabling resident-routing in deployed native hosts. Resident routing depends on that SAME shared feature; the build/test frontend retains resident APIs. No copied authority, new executor, changed artifact wire format, relaxed safety check or release-profile change. Route introspection reports None when no resident execution support exists.",
+    "immutable_text_fact_usage": "Window-bearing descriptors already admit the fixed144B fact slot. Collection sizing and compiled byte-map guards now use that SAME one-slot weak identity cache after the original full fresh scan-work charges. A positive ASCII-without-CRLF fact permits byte-length counting; Unicode/CRLF retain maintained grapheme counting and ordinary mapping. Programs without an admitted window fact keep their existing path. No payload/permission retention, extra metadata, reduced charge or new work policy."
   },
   "qualification": {
     "wrapper": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-qualification-v1283/result.json",
-      "bytes": 18745,
-      "sha256": "9e562577a71c175e59487593511bd90ade79ec4c7833fc2b840c0a0638b6c440"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-qualification-v1294/result.json",
+      "bytes": 17987,
+      "sha256": "e8089ee79957bb39dc17e8b7d8c080e43416c18b946e8adfaec62ac8c7a985a3"
     },
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-release-v1283/hosted-linked-result.json",
-      "bytes": 564629,
-      "sha256": "f573ea9dac5c76084b2f1d2cc65adcc9b3f5141134619f7466a7e2f80ebb8c44"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-release-v1294/hosted-linked-result.json",
+      "bytes": 564319,
+      "sha256": "4a44f1ab8324bac2b8df557b469b8a39d2d2d0bc3a3f0b425af1415a190b6992"
     },
     "original_decoded_binaries": [
       {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-release-v1283/variant-0/native-executable",
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-release-v1294/variant-0/native-executable",
         "bytes": 6630400,
-        "sha256": "e14bde55ded84da30e925171e4731d1475bb0ac86b81ce64651334c25eb0f760"
+        "sha256": "9d0c7def0b45eb48a13c7a07638575cab318fbe0f2a91eb6500ff2ee3047a028"
       },
       {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-release-v1283/variant-1/native-executable",
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-release-v1294/variant-1/native-executable",
         "bytes": 6630400,
-        "sha256": "e14bde55ded84da30e925171e4731d1475bb0ac86b81ce64651334c25eb0f760"
+        "sha256": "9d0c7def0b45eb48a13c7a07638575cab318fbe0f2a91eb6500ff2ee3047a028"
       }
     ],
     "original_decoded_byte_identical": true,
-    "program_revision": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
+    "program_revision": "85a2f100a5bee66778916c9cb63675d04e9fb5ad8adf59d52a18604eff6181f2",
     "security_cases_per_variant": 13,
     "generated_launcher_tests_per_variant": 8,
     "mutated_pins_rejected": 9,
@@ -130,23 +230,39 @@
     "full_input_correctness_processes": 2,
     "full_input_timing_processes": 6,
     "local_validation": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-validation-v1284/result.json",
-      "bytes": 13066,
-      "sha256": "4fda5eeabc14a17f291364085d6fae7621f0bed13f24c98bc012fd2fa045fdd0"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-validation-v1293/result.json",
+      "bytes": 11141,
+      "sha256": "5f0dafca4cbb0fe2a980c9ada9b76675bdcb563d274d6fe968992b1e89952729"
     },
-    "local_validation_scope": "351 runtime unit tests with resident-routing disabled,215 GPU unit tests (including five immutable-text fact regressions),53 hosted contracts, formatting, warning-policy and diff checks pass. Generated manifest regression selects the shared resource profile, not resident routing. Actual Cargo metadata and compiler-reported features of BOTH release binaries prove resident-routing and resident-routing-source are absent.",
+    "local_validation_scope": "216 GPU unit tests (including six immutable-text fact regressions),53 hosted contracts, focused generated-manifest regression, formatting, warning-policy and diff checks pass. Original/decoded repeated mappings and histograms preserve ASCII, Unicode and CRLF results, cache hit/scan counts and complete account cleanup. Fresh release advertised runtime_features and both actual Cargo feature graphs agree on the shared resource profile, excluding resident routing.",
     "resident_profile_validation": {
       "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resident-profile-v1289/result.json",
       "bytes": 3621,
       "sha256": "7ecfc6ae2008d12fa225851c715a9c7606d562480bbe5b7d51e81fe08a6d98b4"
     },
-    "resident_profile_scope": "test result: ok. 357 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s"
+    "resident_profile_scope": "357 passed at46c42d21c8; runtime source is unchanged, not a claim that this suite was rerun at the current whole-tree commit.",
+    "unchanged_runtime_implementation": {
+      "source_commit": "46c42d21c88f45c4dfea3ad8178b470ffc7a240c",
+      "native_profile_validation": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-validation-v1284/result.json",
+        "bytes": 13066,
+        "sha256": "4fda5eeabc14a17f291364085d6fae7621f0bed13f24c98bc012fd2fa045fdd0"
+      },
+      "native_profile_tests": 351,
+      "resident_profile_validation": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resident-profile-v1289/result.json",
+        "bytes": 3621,
+        "sha256": "7ecfc6ae2008d12fa225851c715a9c7606d562480bbe5b7d51e81fe08a6d98b4"
+      },
+      "resident_profile_tests": 357,
+      "scope": "These runtime suites were run at the recorded earlier commit. Git diff verifies no tracked src/runtime file differs from that tested source; this candidate changes GPU helper/generation code and its tests only."
+    }
   },
   "matched_measurement": {
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-paired-v1285/measurement.json",
-      "bytes": 349429,
-      "sha256": "78ba861e01bddfbbf11b660e57495131e68a24726b9d119cbbb2b0bb11063231"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-paired-v1295/measurement.json",
+      "bytes": 348501,
+      "sha256": "acddcf451613e0cf857d70ff382f0d01659ba79151cfa5fa8ad089fd170b5551"
     },
     "method": {
       "timing": "Twelve alternating-order paired rounds per size. Serial fresh-process spawn-through-exit wall time; input/output descriptors opened before the clock. Warmups, hashing, validation and process checks are untimed.",
@@ -286,18 +402,7 @@
     },
     "builds": [
       {
-        "name": "qualified-mech-v1276",
-        "binary": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/window-source-facts-release-v1276/variant-0/native-executable",
-          "bytes": 6714000,
-          "sha256": "4d244a2b37794566f15c3c298ed94d5858ee87a30f678920243d9fab4aaaede7"
-        },
-        "program_revision": "edb2b51e3752e761187c73dc456d3210083130c696478f9f03b0d47bde79c438",
-        "source_commit": "f8b959ffc9adaa8b87b53f675cef1e32b5fc8841",
-        "work_policy_version": 37
-      },
-      {
-        "name": "candidate-mech-v1283",
+        "name": "qualified-mech-v1283",
         "binary": {
           "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-release-v1283/variant-0/native-executable",
           "bytes": 6630400,
@@ -306,216 +411,227 @@
         "program_revision": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
         "source_commit": "46c42d21c88f45c4dfea3ad8178b470ffc7a240c",
         "work_policy_version": 37
+      },
+      {
+        "name": "candidate-mech-v1294",
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-release-v1294/variant-0/native-executable",
+          "bytes": 6630400,
+          "sha256": "9d0c7def0b45eb48a13c7a07638575cab318fbe0f2a91eb6500ff2ee3047a028"
+        },
+        "program_revision": "85a2f100a5bee66778916c9cb63675d04e9fb5ad8adf59d52a18604eff6181f2",
+        "source_commit": "4c3a2db731dee2d86fdfc23780966248d3c17fa4",
+        "work_policy_version": 37
       }
     ],
     "summary": {
       "10m": {
-        "qualified-mech-v1276": {
-          "executable_bytes": 6714000,
-          "timing_samples_ns": [
-            55806833,
-            55211291,
-            55252541,
-            55400666,
-            55174833,
-            55074334,
-            55541500,
-            55456833,
-            55374292,
-            55612583,
-            55333875,
-            55189917
-          ],
-          "median_seconds": 0.0553540835,
-          "minimum_seconds": 0.055074334,
-          "maximum_seconds": 0.055806833,
-          "peak_rss_samples_bytes": [
-            22609920,
-            22233088,
-            22233088
-          ],
-          "median_peak_rss_bytes": 22233088,
-          "peak_footprint_samples_bytes": [
-            15991680,
-            15680576,
-            15631232
-          ],
-          "median_peak_footprint_bytes": 15680576
-        },
-        "candidate-mech-v1283": {
+        "qualified-mech-v1283": {
           "executable_bytes": 6630400,
           "timing_samples_ns": [
-            55511959,
-            55376833,
-            55339750,
-            55512000,
-            55084333,
-            55446250,
-            55335500,
-            55187708,
-            54993500,
-            55203500,
-            55250000,
-            55195000
+            55497125,
+            54672125,
+            55049958,
+            54929834,
+            55110125,
+            57841500,
+            56512500,
+            55235000,
+            55109667,
+            55327625,
+            54826500,
+            55003375
           ],
-          "median_seconds": 0.05529275,
-          "minimum_seconds": 0.0549935,
-          "maximum_seconds": 0.055512,
+          "median_seconds": 0.055109896,
+          "minimum_seconds": 0.054672125,
+          "maximum_seconds": 0.0578415,
           "peak_rss_samples_bytes": [
             22462464,
             22085632,
-            22462464
+            22396928
           ],
-          "median_peak_rss_bytes": 22462464,
+          "median_peak_rss_bytes": 22396928,
           "peak_footprint_samples_bytes": [
-            15975296,
+            16008192,
             15614848,
-            15975296
+            15959040
           ],
-          "median_peak_footprint_bytes": 15975296
+          "median_peak_footprint_bytes": 15959040
+        },
+        "candidate-mech-v1294": {
+          "executable_bytes": 6630400,
+          "timing_samples_ns": [
+            54884459,
+            55220500,
+            54700209,
+            54601042,
+            54683833,
+            54728667,
+            54970458,
+            55282084,
+            55072291,
+            55144416,
+            54613125,
+            54673542
+          ],
+          "median_seconds": 0.054806563,
+          "minimum_seconds": 0.054601042,
+          "maximum_seconds": 0.055282084,
+          "peak_rss_samples_bytes": [
+            22085632,
+            22085632,
+            22085632
+          ],
+          "median_peak_rss_bytes": 22085632,
+          "peak_footprint_samples_bytes": [
+            15614848,
+            15598400,
+            15614848
+          ],
+          "median_peak_footprint_bytes": 15614848
         }
       },
       "125m": {
-        "qualified-mech-v1276": {
-          "executable_bytes": 6714000,
-          "timing_samples_ns": [
-            533702208,
-            532571084,
-            534224250,
-            534060417,
-            533698375,
-            533796875,
-            534786708,
-            534181333,
-            537436375,
-            533284625,
-            533279792,
-            538206958
-          ],
-          "median_seconds": 0.533928646,
-          "minimum_seconds": 0.532571084,
-          "maximum_seconds": 0.538206958,
-          "peak_rss_samples_bytes": [
-            147652608,
-            147472384,
-            147472384
-          ],
-          "median_peak_rss_bytes": 147472384,
-          "peak_footprint_samples_bytes": [
-            141149440,
-            140969216,
-            140952768
-          ],
-          "median_peak_footprint_bytes": 140969216
-        },
-        "candidate-mech-v1283": {
+        "qualified-mech-v1283": {
           "executable_bytes": 6630400,
           "timing_samples_ns": [
-            533438125,
-            536630167,
-            533611292,
-            532480208,
-            533543542,
-            535515917,
-            533590000,
-            533522125,
-            534857792,
-            533173667,
-            534809666,
-            548945292
+            533479875,
+            533763542,
+            533511917,
+            534551709,
+            534165000,
+            534891916,
+            533750833,
+            532944334,
+            533421750,
+            537648833,
+            534006584,
+            535504875
           ],
-          "median_seconds": 0.533600646,
-          "minimum_seconds": 0.532480208,
-          "maximum_seconds": 0.548945292,
+          "median_seconds": 0.533885063,
+          "minimum_seconds": 0.532944334,
+          "maximum_seconds": 0.537648833,
           "peak_rss_samples_bytes": [
             147324928,
-            147701760,
+            147324928,
             147701760
           ],
-          "median_peak_rss_bytes": 147701760,
+          "median_peak_rss_bytes": 147324928,
+          "peak_footprint_samples_bytes": [
+            140952832,
+            140952832,
+            141296832
+          ],
+          "median_peak_footprint_bytes": 140952832
+        },
+        "candidate-mech-v1294": {
+          "executable_bytes": 6630400,
+          "timing_samples_ns": [
+            531282750,
+            533906167,
+            531123458,
+            532014708,
+            531802000,
+            531893500,
+            532356750,
+            532215833,
+            530998667,
+            531167292,
+            530410958,
+            532901875
+          ],
+          "median_seconds": 0.53184775,
+          "minimum_seconds": 0.530410958,
+          "maximum_seconds": 0.533906167,
+          "peak_rss_samples_bytes": [
+            147324928,
+            147324928,
+            147701760
+          ],
+          "median_peak_rss_bytes": 147324928,
           "peak_footprint_samples_bytes": [
             140936384,
-            141296832,
+            140936384,
             141313280
           ],
-          "median_peak_footprint_bytes": 141296832
+          "median_peak_footprint_bytes": 140936384
         }
       }
     },
     "paired": {
       "10m": {
-        "candidate-mech-v1283_over_qualified-mech-v1276": {
-          "candidate": "candidate-mech-v1283",
-          "control": "qualified-mech-v1276",
-          "median_ratio": 0.998421980503425,
-          "median_delta_ms": -0.0871875,
-          "faster_rounds": 7,
+        "candidate-mech-v1294_over_qualified-mech-v1283": {
+          "candidate": "candidate-mech-v1294",
+          "control": "qualified-mech-v1283",
+          "median_ratio": 0.9940088658891786,
+          "median_delta_ms": -0.3293125,
+          "faster_rounds": 10,
           "total_rounds": 12,
           "ratios": [
-            0.9947161667461044,
-            1.0029983359744297,
-            1.001578370848139,
-            1.0020096148302622,
-            0.9983597594214739,
-            1.0067529822512242,
-            0.9962910616385946,
-            0.9951471264145214,
-            0.9931233071115383,
-            0.9926440568315268,
-            0.9984842015853761,
-            1.0000921001566283
+            0.9889604011018589,
+            1.0100302485041508,
+            0.9936466981500695,
+            0.9940143274418051,
+            0.9922647244948183,
+            0.9461833977334613,
+            0.9727132581287325,
+            1.0008524305241242,
+            0.9993217886800151,
+            0.9966886523685049,
+            0.9961081776148395,
+            0.9940034043365521
           ],
           "deltas_ms": [
-            -0.294874,
-            0.165542,
-            0.087209,
-            0.111334,
-            -0.0905,
-            0.371916,
-            -0.206,
-            -0.269125,
-            -0.380792,
-            -0.409083,
-            -0.083875,
-            0.005083
+            -0.612666,
+            0.548375,
+            -0.349749,
+            -0.328792,
+            -0.426292,
+            -3.112833,
+            -1.542042,
+            0.047084,
+            -0.037376,
+            -0.183209,
+            -0.213375,
+            -0.329833
           ]
         }
       },
       "125m": {
-        "candidate-mech-v1283_over_qualified-mech-v1276": {
-          "candidate": "candidate-mech-v1283",
-          "control": "qualified-mech-v1276",
-          "median_ratio": 0.9996075366508468,
-          "median_delta_ms": -0.209458,
-          "faster_rounds": 8,
+        "candidate-mech-v1294_over_qualified-mech-v1283": {
+          "candidate": "candidate-mech-v1294",
+          "control": "qualified-mech-v1283",
+          "median_ratio": 0.9954903054339062,
+          "median_delta_ms": -2.405771,
+          "faster_rounds": 11,
           "total_rounds": 12,
           "ratios": [
-            0.9995051866077346,
-            1.0076216736543662,
-            0.9988526204117466,
-            0.9970411418826421,
-            0.9997098866939589,
-            1.0032204047653894,
-            0.9977622704863487,
-            0.9987659471432709,
-            0.9952020683378567,
-            0.9997919347477906,
-            1.0028688017490075,
-            1.0199520534626756
+            0.9958815222411155,
+            1.0002672063353477,
+            0.9955231384269154,
+            0.9952539652249058,
+            0.9955762732489025,
+            0.9943943516244879,
+            0.9973881389708295,
+            0.9986330636174847,
+            0.9954574724408969,
+            0.9879446571773736,
+            0.9932667009963307,
+            0.9951391665668776
           ],
           "deltas_ms": [
-            -0.264083,
-            4.059083,
-            -0.612958,
-            -1.580209,
-            -0.154833,
-            1.719042,
-            -1.196708,
-            -0.659208,
-            -2.578583,
-            -0.110958,
-            1.529874,
-            10.738334
+            -2.197125,
+            0.142625,
+            -2.388459,
+            -2.537001,
+            -2.363,
+            -2.998416,
+            -1.394083,
+            -0.728501,
+            -2.423083,
+            -6.481541,
+            -3.595626,
+            -2.603
           ]
         }
       }
@@ -539,7 +655,7 @@
           "observations": 1,
           "payload_argument_snapshot_reserved_bytes": 16,
           "policy": "secured",
-          "program_revision": "edb2b51e3752e761187c73dc456d3210083130c696478f9f03b0d47bde79c438",
+          "program_revision": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
           "requirements": 2,
           "resident_body_evaluation": false,
           "route": "canonical-artifact-program-object-secured-cli",
@@ -564,7 +680,7 @@
           "observations": 1,
           "payload_argument_snapshot_reserved_bytes": 16,
           "policy": "secured",
-          "program_revision": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
+          "program_revision": "85a2f100a5bee66778916c9cb63675d04e9fb5ad8adf59d52a18604eff6181f2",
           "requirements": 2,
           "resident_body_evaluation": false,
           "route": "canonical-artifact-program-object-secured-cli",
@@ -576,8 +692,8 @@
         "differences": [
           {
             "key": "program_revision",
-            "baseline": "edb2b51e3752e761187c73dc456d3210083130c696478f9f03b0d47bde79c438",
-            "candidate": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
+            "baseline": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
+            "candidate": "85a2f100a5bee66778916c9cb63675d04e9fb5ad8adf59d52a18604eff6181f2",
             "numeric_delta": null
           }
         ]
@@ -600,7 +716,7 @@
           "observations": 1,
           "payload_argument_snapshot_reserved_bytes": 16,
           "policy": "secured",
-          "program_revision": "edb2b51e3752e761187c73dc456d3210083130c696478f9f03b0d47bde79c438",
+          "program_revision": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
           "requirements": 2,
           "resident_body_evaluation": false,
           "route": "canonical-artifact-program-object-secured-cli",
@@ -625,7 +741,7 @@
           "observations": 1,
           "payload_argument_snapshot_reserved_bytes": 16,
           "policy": "secured",
-          "program_revision": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
+          "program_revision": "85a2f100a5bee66778916c9cb63675d04e9fb5ad8adf59d52a18604eff6181f2",
           "requirements": 2,
           "resident_body_evaluation": false,
           "route": "canonical-artifact-program-object-secured-cli",
@@ -637,8 +753,8 @@
         "differences": [
           {
             "key": "program_revision",
-            "baseline": "edb2b51e3752e761187c73dc456d3210083130c696478f9f03b0d47bde79c438",
-            "candidate": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
+            "baseline": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
+            "candidate": "85a2f100a5bee66778916c9cb63675d04e9fb5ad8adf59d52a18604eff6181f2",
             "numeric_delta": null
           }
         ]
@@ -647,27 +763,27 @@
   },
   "independent_audit": {
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-measurement-audit-v1286.json",
-      "bytes": 1010,
-      "sha256": "d3668c41c09515a73d4c9dc9d3bad9b81daa6daf55ec0b960940f20060810da5"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-measurement-audit-v1296.json",
+      "bytes": 995,
+      "sha256": "307d942e1cfcac79e8f5a7293e12d7326f7b00c8d5e71ae71878430408022974"
     },
     "status": "PASS",
-    "physical_files_verified": 471
+    "physical_files_verified": 468
   },
   "assessment": {
-    "speed": "Effectively unchanged performance: paired median ratios0.9984219805/0.9996075367 (10M/125M),7/12 and8/12 faster pairs. Candidate medians0.05529275s/0.533600646s; control0.0553540835s/0.533928646s. Tiny median differences are within ordinary variation, not a demonstrated speed improvement or material regression. Raw125M candidate outlier0.548945292s is retained.",
-    "footprint": "Candidate6,630,400B vs6,714,000B:83,600B smaller (1.25%). Median125M RSS147,701,760B vs147,472,384B (+229,376B); three raw samples per variant retained, no memory win. Live code section4,937,304B (down61,760B), exception/unwind1,059,804B (down26,568B). Emitted Mech code and relocations are byte-identical at26,496B. Object-origin attribution does not identify all independently removable bytes.",
+    "speed": "Modest matched gain: paired median ratios0.9940088659/0.9954903054 (10M/125M),10/12 and11/12 faster pairs. Candidate medians0.054806563s/0.53184775s; control0.055109896s/0.533885063s. Raw control outliers remain; no language-wide ranking or fresh Rust comparison.",
+    "footprint": "Both files6,630,400B and both median125M RSS147,324,928B. Identical raw125M RSS samples147,324,928/147,324,928/147,701,760B. Physical footprint remains separate. Live code4,937,640B (+336B) and exception/unwind1,059,808B (+4B); padding absorbs file growth. Emitted Mech26,496B retains opcodes/registers/control flow/relocations;14 local-buffer address immediates differ. No byte-identical body or memory-win claim.",
     "limits": "One M1, two inputs,12 alternating-order pairs,3 RSS processes per variant/size. Raw outliers remain; no language-wide ranking. Rust was not rerun in this batch.",
     "outstanding": "Further compiler/host optimization remains possible; no claim that all unused host support has been eliminated.",
     "completion_gate": "Clean review and green CI on publication head; keep draft and unmerged until user direction."
   },
   "historical": {
     "previous_qualified_measurement": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/window-source-facts-paired-v1277/measurement.json",
-      "bytes": 352485,
-      "sha256": "235435a7343279069796ec1fb0f21299efacf66f9a64a0374b764cd4cb5899c7"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-paired-v1285/measurement.json",
+      "bytes": 349429,
+      "sha256": "78ba861e01bddfbbf11b660e57495131e68a24726b9d119cbbb2b0bb11063231"
     },
-    "previous_published_results": "https://github.com/mech-lang/mech/blob/0a5b0a276bbd9cf616e5a33f3d87b0146ff80ba9/docs/validation/canonical-knucleotide-capture-pages-v1.json",
+    "previous_published_results": "https://github.com/mech-lang/mech/blob/3a1f71b91ad0b6d20af376ebfb65b6d012b0da8a/docs/validation/canonical-knucleotide-capture-pages-v1.json",
     "rust7": {
       "median_10m_seconds": 0.060849687,
       "median_125m_seconds": 0.662864583,
@@ -679,13 +795,13 @@
   },
   "linked_code_attribution": {
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-linkmap-analysis-v1288.json",
-      "bytes": 18300,
-      "sha256": "3dad399491f756e62803cef1d3c7dd5dbe963b84ac0a0f944efb2d7614e06998"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-linkmap-analysis-v1298.json",
+      "bytes": 18285,
+      "sha256": "a84bf1d27bb492aff43179eba0ddd8fb6b2072a3c31db7030bb4049dddff83d4"
     },
     "sections_identical": true,
-    "code_bytes": 4937304,
-    "unwind_bytes": 1059804,
+    "code_bytes": 4937640,
+    "unwind_bytes": 1059808,
     "by_object_origin": [
       {
         "origin": "mech_engine",
@@ -707,9 +823,9 @@
       },
       {
         "origin": "mech_gpu",
-        "code_bytes": 417100,
-        "other_symbol_bytes": 127949,
-        "symbols": 3446
+        "code_bytes": 417444,
+        "other_symbol_bytes": 128025,
+        "symbols": 3449
       },
       {
         "origin": "generated_launcher_monomorphizations",
@@ -966,6 +1082,23 @@
       },
       "regressions": "Both global and local exact-final-capacity cases fail before the correction and pass after it.",
       "selected_local_tests_passed": 343
+    },
+    {
+      "thread": "https://github.com/mech-lang/mech/pull/909#discussion_r4348850684",
+      "commit": "15631a1cd8ab9c68dcc3553cce3967ad00093fa8",
+      "problem": "The real generated Cargo graph used canonical-native-resources, but descriptive runtime_features still advertised resident-routing.",
+      "change": "Use one local hosted_runtime_feature value for both Cargo and linked-manifest metadata. Extend the original/decoded manifest regression to require the shared feature and reject the stale routing label.",
+      "validation": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-validation-v1293/result.json",
+        "bytes": 11141,
+        "sha256": "5f0dafca4cbb0fe2a980c9ada9b76675bdcb563d274d6fe968992b1e89952729"
+      },
+      "fresh_release_qualification": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-qualification-v1294/result.json",
+        "bytes": 17987,
+        "sha256": "e8089ee79957bb39dc17e8b7d8c080e43416c18b946e8adfaec62ac8c7a985a3"
+      },
+      "scope": "Focused metadata regression and53 hosted tests pass. Both fresh release manifests and actual compiler profiles agree; no security checks are skipped."
     }
   ],
   "ci_fix": {

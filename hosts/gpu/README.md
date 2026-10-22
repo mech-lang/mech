@@ -163,17 +163,17 @@ paired rounds include startup, one secured round and report publication.
 
 | Build | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Published secured Mech, remeasured | 0.05535 s | 0.53393 s | 147.47 MB | 6.714 MB |
-| Current secured Mech | 0.05529 s | 0.53360 s | 147.70 MB | 6.630 MB |
+| Published secured Mech, remeasured | 0.05511 s | 0.53389 s | 147.32 MB | 6.630 MB |
+| Current secured Mech | 0.05481 s | 0.53185 s | 147.32 MB | 6.630 MB |
 
-The 0.0582-second target at 10M and 200 MB RSS reference are met. The deployed
-native host now excludes resident session routing while retaining the SAME
+The 0.0582-second target at 10M and 200 MB RSS reference are met. Collection
+sizing and byte-map guards now reuse the same admitted weak immutable-String
+fact as window regions. All existing full scan-work charges remain. Paired
+medians improve 0.60%/0.45%, with 10/12 and 11/12 faster pairs respectively.
+Executable size and median 125M RSS are unchanged in this batch.
+The deployed host excludes resident session routing while retaining the SAME
 artifact admission, capability, provider and transaction implementation.
-This saves 83,600 bytes (1.25%). Paired timing differences of 0.16%/0.04% are
-within ordinary variation: no demonstrated speed win or material regression.
-Median 125M RSS increases 229,376 bytes across three samples; no memory win.
-Existing schema-derived gates omit unused complex/rational converters, and a
-bounded weak identity avoids repeated scans of the same immutable String.
+Existing schema-derived gates omit unused complex/rational converters.
 The earlier Rust #7 batch measured 0.06085/0.66286 s, 175.4 MB RSS and a 0.758 MB
 executable; Rust was not rerun in this paired experiment.
 
@@ -182,15 +182,18 @@ finishes before new offsets and unfinished-tail backing are acquired; mandatory
 backing is funded before optional pages. Heap fallback, finite accounts and the
 single capability/provider/transaction authority remain.
 
-Fresh original/decoded builds at `46c42d21c8` produce identical executables and
+Fresh original/decoded builds at `4c3a2db731` produce identical executables and
 pass security denials, launcher tests, tamper rejection and full-input checks.
 All 64 measured outputs and 64 complete Mech reports pass an independent audit.
 Every report field except the independently compiled program revision is
 unchanged, including every execution counter. Work policy 37 still admits the
 144-byte weak fact and its 1,152 setup work units; no payload or permissions are
 retained and fresh owner, shape, quota and work checks remain. Local validation
-passes 215 GPU and 53 hosted tests, plus 351 native-only and 357 resident-profile
-runtime tests. The 26,496-byte Mech body and its relocations are byte-identical.
+passes 216 GPU and 53 hosted tests, including original/decoded ASCII, Unicode
+and CRLF fact reuse and advertised-versus-requested runtime features. The
+unchanged runtime implementation passed 351 native-only and 357 resident-profile
+tests. The 26,496-byte Mech body keeps identical opcodes, registers, control flow
+and relocations; only 14 local-buffer address immediates differ.
 Cranelift compiles Mech source; LLVM compiles linked Rust host/library code.
 
 RSS uses three separate processes; the earlier Rust batch spans 175.4–209.0 MB.
