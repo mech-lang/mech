@@ -1,5 +1,4 @@
 //! Private wire reconstruction of native iteration blocks; never a scheduler.
-#![allow(dead_code)]
 use super::{WireAction, WireOrigin, WireTerminator, action, library, terminator};
 use crate::native_artifact::*;
 use mech_core::{FunctionCatalog, SchemaTable};

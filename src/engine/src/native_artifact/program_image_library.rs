@@ -1,5 +1,4 @@
 //! Private assembly of the redundant outer template from its actual selection.
-#![allow(dead_code)]
 use crate::native_artifact::{
     NativeCollectionLexicalTemplate, NativeCollectionOperationTemplate,
     NativeProgramLibraryTemplate,

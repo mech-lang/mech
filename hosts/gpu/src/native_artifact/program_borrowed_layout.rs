@@ -14,10 +14,16 @@ pub(super) struct RegionLayout {
     // The code generator writes these lanes; the owning runtime independently
     // verifies their clearance before accepting a continuation checkpoint.
     pub ready: usize,
-    #[cfg_attr(not(feature = "canonical-native-program"), allow(dead_code))]
+    #[allow(
+        dead_code,
+        reason = "build-only descriptors retain runtime capture offsets in the shared image layout"
+    )]
     pub captures: usize,
     pub end: usize,
-    #[cfg_attr(not(feature = "canonical-native-program"), allow(dead_code))]
+    #[allow(
+        dead_code,
+        reason = "build-only descriptors retain runtime capture offsets in the shared image layout"
+    )]
     slots: Box<[Option<usize>]>,
 }
 impl RegionLayout {

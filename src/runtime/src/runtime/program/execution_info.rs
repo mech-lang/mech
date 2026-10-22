@@ -69,7 +69,8 @@ impl MechRuntime {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{RuntimeProgramExecutionInfo, RuntimeProgramRoute};
+    use crate::runtime::MechRuntime;
 
     #[test]
     fn unactivated_runtime_reports_no_program_with_or_without_resident_routing() {

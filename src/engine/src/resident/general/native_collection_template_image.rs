@@ -1,9 +1,91 @@
 //! Build-owned template reconstruction without source-artifact traversal.
-#![allow(dead_code)] // Joined to the full private descriptor reader incrementally.
 use super::*;
 use crate::native_artifact::program_image_read::values::schema;
 use serde::Deserialize;
 use serde_json::Value as Json;
+
+// Only this descriptive build-image witness is wire data. The core memory
+// planner and its process-local implementation contracts do not implement serde.
+#[derive(serde::Serialize)]
+enum MemoryClassImage {
+    NoAdditionalScratch,
+    CloneInput { input: u16 },
+    CanonicalCloneInput { input: u16 },
+    AbiContiguousBridge { input: u16, output: u16 },
+    ExternalMarshalling,
+    MatrixSolve,
+    CanonicalFinalize,
+    PackedStringMatrixOrCanonicalFinalize,
+    CanonicalSortUnique,
+}
+impl From<ImplementationMemoryClass> for MemoryClassImage {
+    fn from(memory: ImplementationMemoryClass) -> Self {
+        use ImplementationMemoryClass as M;
+        match memory {
+            M::NoAdditionalScratch => Self::NoAdditionalScratch,
+            M::CloneInput { input } => Self::CloneInput { input },
+            M::CanonicalCloneInput { input } => Self::CanonicalCloneInput { input },
+            M::AbiContiguousBridge { input, output } => Self::AbiContiguousBridge { input, output },
+            M::ExternalMarshalling => Self::ExternalMarshalling,
+            M::MatrixSolve => Self::MatrixSolve,
+            M::CanonicalFinalize => Self::CanonicalFinalize,
+            M::PackedStringMatrixOrCanonicalFinalize => Self::PackedStringMatrixOrCanonicalFinalize,
+            M::CanonicalSortUnique => Self::CanonicalSortUnique,
+        }
+    }
+}
+pub(super) fn serialize_memory<S: serde::Serializer>(
+    memory: &ImplementationMemoryClass,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    serde::Serialize::serialize(&MemoryClassImage::from(*memory), serializer)
+}
+
+#[cfg(test)]
+#[test]
+fn memory_class_image_preserves_all_descriptive_tags_and_full_width_fields() {
+    use ImplementationMemoryClass as M;
+    for (memory, expected) in [
+        (
+            M::NoAdditionalScratch,
+            serde_json::json!("NoAdditionalScratch"),
+        ),
+        (
+            M::CloneInput { input: u16::MAX },
+            serde_json::json!({"CloneInput":{"input":65535}}),
+        ),
+        (
+            M::CanonicalCloneInput { input: u16::MAX },
+            serde_json::json!({"CanonicalCloneInput":{"input":65535}}),
+        ),
+        (
+            M::AbiContiguousBridge {
+                input: u16::MAX,
+                output: u16::MAX,
+            },
+            serde_json::json!({"AbiContiguousBridge":{"input":65535,"output":65535}}),
+        ),
+        (
+            M::ExternalMarshalling,
+            serde_json::json!("ExternalMarshalling"),
+        ),
+        (M::MatrixSolve, serde_json::json!("MatrixSolve")),
+        (M::CanonicalFinalize, serde_json::json!("CanonicalFinalize")),
+        (
+            M::PackedStringMatrixOrCanonicalFinalize,
+            serde_json::json!("PackedStringMatrixOrCanonicalFinalize"),
+        ),
+        (
+            M::CanonicalSortUnique,
+            serde_json::json!("CanonicalSortUnique"),
+        ),
+    ] {
+        assert_eq!(
+            serde_json::to_value(MemoryClassImage::from(memory)).unwrap(),
+            expected
+        );
+    }
+}
 
 #[cfg(all(test, feature = "pure_text", feature = "semantic-compiler"))]
 #[path = "native_collection_template_image_tests.rs"]
@@ -75,7 +157,8 @@ fn leaf(
     let primitive = specialize_primitive(primitive, &inputs);
     let memory = entry.implementation_memory();
     if serde_json::to_value(primitive).map_err(|e| e.to_string())? != wire.primitive
-        || serde_json::to_value(memory).map_err(|e| e.to_string())? != wire.implementation_memory
+        || serde_json::to_value(MemoryClassImage::from(memory)).map_err(|e| e.to_string())?
+            != wire.implementation_memory
     {
         return Err("image factory witness or memory class differs".into());
     }

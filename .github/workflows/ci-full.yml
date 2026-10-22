@@ -1751,6 +1751,11 @@ jobs:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') }}
     name: Native generated applications (macOS)
     runs-on: macos-latest
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
@@ -1770,12 +1775,36 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
-      - name: Build selected native fixture families
+      # Cold compiler-owner construction has a separate bounded budget; fixture
+      # execution must consume those runners rather than starting hidden builds.
+      - name: Prepare macOS native owner runners
+        timeout-minutes: 75
+        env:
+          MECH_NATIVE_OWNER_BUILD_TIMEOUT_SECS: "1800"
         run: |
-          for case in scalar fixed-matrix dynamic-matrix cli console time-once; do
-            MECH_NATIVE_GENERATED_CASE="$case" \
-              cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts --test native_generated_end_to_end -- --nocapture
-          done
+          python3 scripts/run-native-plan-stage.py --stage macos-owner-prepare --timeout-secs 4200 -- \
+            cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts \
+            --test native_generated_end_to_end -- --ignored --exact prepare_generated_owner_runners --test-threads=1 --nocapture
+      - name: Build selected native fixture families
+        timeout-minutes: 95
+        env:
+          MECH_NATIVE_OWNER_REQUIRE_PREBUILT: "1"
+          MECH_NATIVE_GENERATED_CASE: scalar,fixed-matrix,dynamic-matrix,cli,console,time-once
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage macos-generated --timeout-secs 5400 -- \
+            cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts \
+            --test native_generated_end_to_end -- --exact every_generated_application_fixture_builds_and_executes --test-threads=1 --nocapture
+
+      - name: Retain macOS native application diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-macos-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/native-plan-logs
+            target/bytecode-v1-fixtures/owner-runner/logs
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Check native cache and input ownership on macOS
         timeout-minutes: 20

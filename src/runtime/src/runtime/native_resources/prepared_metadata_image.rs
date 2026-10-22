@@ -1,5 +1,15 @@
 //! Build-owned resource selection, not a capability grant or native executor.
-use super::*;
+use super::super::{
+    CanonicalNativeResourceAction, CanonicalNativeResourcePlan, CanonicalNativeResourceSite, error,
+    invalid,
+};
+use super::CanonicalNativeResourceMetadata;
+use mech_core::{
+    ApplicationRequirement, ApplicationRequirementId, CellSlotId, ExecutionResourceRequest,
+    MResult, NodeId, ProgramRevision, ResourceDelivery, ResourceIntent, SchemaBody, SchemaId,
+    SchemaKey, SchemaTable,
+};
+use mech_engine::{ApplicationRequirementTable, ArtifactSource};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]

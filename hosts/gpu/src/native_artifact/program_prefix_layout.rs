@@ -13,7 +13,10 @@ pub(super) struct Region {
     #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub tail: NativeTailLoop,
     pub borrowed: usize,
-    #[cfg_attr(not(feature = "canonical-native-program"), allow(dead_code))]
+    #[allow(
+        dead_code,
+        reason = "build-only descriptors retain the runtime carrier offset in the shared image layout"
+    )]
     pub carrier: usize,
     pub header_work: u64,
 }

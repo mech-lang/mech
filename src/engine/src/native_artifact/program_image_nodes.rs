@@ -1,6 +1,5 @@
 //! Private reconstruction of typed ports and original resource descriptions.
 //! No resource acquisition, capability grant, lowering or scheduling occurs.
-#![allow(dead_code)] // Used by the complete image reader as it is assembled.
 use super::values;
 use crate::native_artifact::*;
 use mech_core::*;

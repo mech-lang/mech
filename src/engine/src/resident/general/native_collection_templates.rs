@@ -31,6 +31,7 @@ struct SelectedCollectionLeaf {
     inputs: Box<[Schema]>,
     output: Schema,
     contract: ResolvedOperationContract,
+    #[serde(serialize_with = "image::serialize_memory")]
     implementation_memory: ImplementationMemoryClass,
 }
 impl NativeCollectionOperationTemplate {

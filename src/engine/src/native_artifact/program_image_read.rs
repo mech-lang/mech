@@ -1,10 +1,11 @@
 //! Private wire representations for the build-owned descriptor loader.
 //! These are not semantic validators and must never become public Deserialize
 //! implementations for constructor-private native proofs.
-use super::{
-    NativeMatchAction, NativeMatchBlock, NativeMatchOrigin, NativeMatchTerminator,
-    NativeMatchValue, NativeScalarOp,
-};
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+use super::{NativeMatchAction, NativeMatchTerminator, NativeMatchValue, NativeScalarOp};
+#[cfg(test)]
+use super::{NativeMatchBlock, NativeMatchOrigin};
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
 use serde::Deserialize;
 
 #[path = "program_image_canonical_json.rs"]
@@ -33,10 +34,12 @@ pub(crate) mod library;
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 mod loops;
 #[path = "program_image_nodes.rs"]
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
 mod nodes;
 #[path = "program_image_values.rs"]
 pub(crate) mod values;
 
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
 macro_rules! scalar_operations {
     ($($op:ident),+ $(,)?) => {
         #[derive(Deserialize)]
@@ -46,6 +49,7 @@ macro_rules! scalar_operations {
         }
     };
 }
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
 scalar_operations! {
     U64Add, U64Sub, U64Mul, U64Div, U64Rem, U64Eq, U64Ne, U64Lt, U64Le, U64Gt, U64Ge,
     BoolAnd, BoolOr, BoolXor, BoolNot, BoolEq, BoolNe,
@@ -56,6 +60,7 @@ scalar_operations! {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
 struct WireOrigin {
     node: u32,
     block: Option<u32>,
@@ -64,6 +69,7 @@ struct WireOrigin {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
 enum WireAction {
     Primitive {
         op: WireOp,
@@ -79,6 +85,7 @@ enum WireAction {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
 enum WireTerminator {
     Jump(u32),
     Branch {
@@ -98,6 +105,7 @@ enum WireTerminator {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct WireBlock {
     origin: WireOrigin,
     action: WireAction,
@@ -112,7 +120,7 @@ struct WireBlock {
 /// build. Execution may use it only with that build's checked indices, operand
 /// types and selected operation witness. Parsing establishes wire shape only.
 /// Keep this private until the enclosing loader verifies its build association.
-#[allow(dead_code)] // The complete descriptor loader is not connected yet.
+#[cfg(test)]
 pub(super) unsafe fn decode_control_block(
     image: &serde_json::Value,
 ) -> Result<NativeMatchBlock, serde_json::Error> {
@@ -128,6 +136,7 @@ pub(super) unsafe fn decode_control_block(
     })
 }
 
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
 fn action(wire: WireAction) -> NativeMatchAction {
     match wire {
         WireAction::Primitive {
@@ -150,6 +159,7 @@ fn action(wire: WireAction) -> NativeMatchAction {
         WireAction::None => NativeMatchAction::None,
     }
 }
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
 fn terminator(wire: WireTerminator) -> NativeMatchTerminator {
     match wire {
         WireTerminator::Jump(next) => NativeMatchTerminator::Jump(next),

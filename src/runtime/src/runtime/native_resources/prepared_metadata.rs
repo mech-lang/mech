@@ -1,5 +1,13 @@
 //! Immutable execution metadata, never a capability or native-entry proof.
-use super::*;
+use super::{
+    CanonicalNativeResourceAdmission, CanonicalNativeResourceCompletion,
+    CanonicalNativeResourceLimits, CanonicalNativeResourcePlan, CanonicalNativeResourcePrepared,
+    CanonicalNativeResourceRunError, CanonicalNativeResourceTextChunk, CanonicalNativeResourceTurn,
+    ResourceMetadataView,
+};
+use crate::runtime::MechRuntime;
+use mech_core::{MResult, SchemaTable};
+use mech_engine::{ApplicationRequirementTable, ProgramArtifact};
 
 #[path = "prepared_metadata_image.rs"]
 #[cfg(feature = "canonical-native-images")]

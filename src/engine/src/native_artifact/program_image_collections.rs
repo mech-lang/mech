@@ -1,5 +1,4 @@
 //! Private collection reconstruction. No producer, consumer, or kernel runs here.
-#![allow(dead_code)]
 use super::{WireOrigin, library};
 use crate::native_artifact::*;
 use mech_core::{FunctionCatalog, SchemaTable};
@@ -18,7 +17,7 @@ enum Rows {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-enum Kind {
+enum CollectionImageKind {
     Matrix,
     MatrixPreserveShape,
     Set,
@@ -54,7 +53,7 @@ struct Collection {
     origin: WireOrigin,
     parent: Option<u32>,
     parent_collection: Option<u32>,
-    kind: Kind,
+    kind: CollectionImageKind,
     output: u32,
     result: Json,
     string_span_projection: Option<Span>,
@@ -75,18 +74,20 @@ pub(super) unsafe fn collection(
 ) -> Result<NativeProgramCollection, String> {
     let wire = Collection::deserialize(image).map_err(|e| e.to_string())?;
     let kind = match wire.kind {
-        Kind::Matrix => crate::ComprehensionKind::Matrix,
-        Kind::MatrixPreserveShape => crate::ComprehensionKind::MatrixPreserveShape,
-        Kind::Set => crate::ComprehensionKind::Set,
-        Kind::MatrixHorizontalBlocks { rows } => crate::ComprehensionKind::MatrixHorizontalBlocks {
-            rows: match rows {
-                Rows::InferOrZero => crate::MatrixBlockRows::InferOrZero,
-                Rows::Fixed(n) => crate::MatrixBlockRows::Fixed(n),
-                Rows::InputMatrixElements { input } => {
-                    crate::MatrixBlockRows::InputMatrixElements { input }
-                }
-            },
-        },
+        CollectionImageKind::Matrix => crate::ComprehensionKind::Matrix,
+        CollectionImageKind::MatrixPreserveShape => crate::ComprehensionKind::MatrixPreserveShape,
+        CollectionImageKind::Set => crate::ComprehensionKind::Set,
+        CollectionImageKind::MatrixHorizontalBlocks { rows } => {
+            crate::ComprehensionKind::MatrixHorizontalBlocks {
+                rows: match rows {
+                    Rows::InferOrZero => crate::MatrixBlockRows::InferOrZero,
+                    Rows::Fixed(n) => crate::MatrixBlockRows::Fixed(n),
+                    Rows::InputMatrixElements { input } => {
+                        crate::MatrixBlockRows::InputMatrixElements { input }
+                    }
+                },
+            }
+        }
     };
     let span = wire
         .string_span_projection

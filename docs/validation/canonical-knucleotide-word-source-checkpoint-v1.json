@@ -1,0 +1,86 @@
+{
+  "status": "PASS_LOCAL_WORD_SOURCE_HISTOGRAM_IMPROVEMENT",
+  "source": {
+    "commit": "f2268e48259c6e2e3320ba7a7feca0310c7df3aa",
+    "tree": "e62b718799aaf6422bbef82d7b580b119c47bc3c"
+  },
+  "binary": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/word-source-histogram-release-v1482/variant-0/native-executable",
+    "bytes": 4806512,
+    "sha256": "ff781abb8d10b40374ddba318f9386e124a08b645ac2c84d4be7d60c84b2bb1e"
+  },
+  "previous_local_baseline": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/simd-byte-map-release-v1474/variant-0/native-executable",
+    "bytes": 4806512,
+    "sha256": "704b03c1a87d748a9a8a5a26e8820e0c1b381a8dc46114e485d7f6849e86f04f"
+  },
+  "qualification": "word-source-histogram-qualification-v1482/result.json",
+  "validation": "word-source-histogram-validation-v1480/result.json",
+  "profile": "simd-byte-map-hotspots-v1479.json",
+  "measurements": [
+    "word-source-histogram-paired-v1483/measurement.json",
+    "word-source-histogram-confirmation-v1484/measurement.json"
+  ],
+  "summaries": [
+    [
+      {
+        "size": "10m",
+        "previous_local_seconds": 0.0502826455,
+        "candidate_seconds": 0.049983187,
+        "candidate_over_previous_median_ratio": 0.9936220125309104,
+        "candidate_faster_than_previous_rounds": 12,
+        "rounds": 12,
+        "previous_local_median_peak_rss_bytes": 20250624,
+        "candidate_median_peak_rss_bytes": 20250624
+      },
+      {
+        "size": "125m",
+        "previous_local_seconds": 0.4856708955,
+        "candidate_seconds": 0.482094396,
+        "candidate_over_previous_median_ratio": 0.9912604328576693,
+        "candidate_faster_than_previous_rounds": 11,
+        "rounds": 12,
+        "previous_local_median_peak_rss_bytes": 146145280,
+        "candidate_median_peak_rss_bytes": 146145280
+      }
+    ],
+    [
+      {
+        "size": "10m",
+        "previous_local_seconds": 0.0506165,
+        "candidate_seconds": 0.050273563,
+        "candidate_over_previous_median_ratio": 0.9931690988651453,
+        "candidate_faster_than_previous_rounds": 12,
+        "rounds": 12,
+        "previous_local_median_peak_rss_bytes": 20545536,
+        "candidate_median_peak_rss_bytes": 20250624
+      },
+      {
+        "size": "125m",
+        "previous_local_seconds": 0.4853414585,
+        "candidate_seconds": 0.4828091665,
+        "candidate_over_previous_median_ratio": 0.9950714011741308,
+        "candidate_faster_than_previous_rounds": 10,
+        "rounds": 12,
+        "previous_local_median_peak_rss_bytes": 146145280,
+        "candidate_median_peak_rss_bytes": 146145280
+      }
+    ]
+  ],
+  "mech_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "mech_source_unchanged": true,
+  "checks": {
+    "kernel_differential_tests": 7,
+    "secured_host_tests": 61,
+    "original_decoded_identical_binaries": true,
+    "launcher_tests_per_variant": 8,
+    "input_pin_rejections": 12,
+    "full_size_correctness_and_complete_security_reports": "PASS",
+    "query_map_caller_instructions_and_call_targets_unchanged_except_equivalent_constant_slots": "PASS"
+  },
+  "implementation": "Only histogram bulk source loading changes. Each eight-start batch reads one bounded little-endian u64 and, for width two, its bounded ninth byte; the identical bytes form the existing base-128 keys. Scratch sizes, four-bank store ordering, reduction, tails, all ASCII support, and one-round security protocol remain unchanged. No stronger memory flags or DNA assumptions.",
+  "scope": "Measured checkpoint only. Later CI audit, feature-gating, and macOS preparation corrections are not retimed by this receipt. Local raw evidence paths are retained evidence, not portable download links.",
+  "external_writes": "None. No push, merge, PR edit or readiness change.",
+  "next": "Profile the new checkpoint. Investigate whether repeated queries over the same immutable source can share scanning/gather work through a generic proven loop-fusion plan; preserve precise error ordering, admitted lifetimes and the single-round protocol. This is an investigation target, not a promised speedup.",
+  "cache": "Retain active debug math cache for future compiler tests. About 38 GB free; all prior binaries, inputs, qualification records, and measurements are preserved."
+}

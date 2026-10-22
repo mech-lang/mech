@@ -1470,7 +1470,15 @@ class FullWorkflowContractTests(unittest.TestCase):
             r"--test native_generated_end_to_end",
             FULL + NATIVE_APPLICATIONS,
         )
-        self.assertEqual(len(generated_commands), 5)
+        # Five execution commands plus the separately bounded macOS cold setup.
+        self.assertEqual(len(generated_commands), 6)
+        macos = job_block(FULL, "native-macos")
+        self.assertEqual(macos.count("--ignored --exact prepare_generated_owner_runners"), 1)
+        self.assertIn('MECH_NATIVE_OWNER_REQUIRE_PREBUILT: "1"', macos)
+        self.assertLess(
+            macos.index("prepare_generated_owner_runners"),
+            macos.index("- name: Build selected native fixture families"),
+        )
 
         windows = job_block(FULL, "native-windows")
         self.assertNotIn("actor-alpha", windows)

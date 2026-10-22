@@ -1,6 +1,6 @@
 //! Canonical data reconstruction for the private build-image loader.
 //! Unlike selected compiler proofs, these values use ordinary safe finalizers.
-#![allow(dead_code)] // Connected as the complete descriptor reader is assembled.
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
 use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::*;
 use serde::Deserialize;
@@ -94,6 +94,7 @@ pub fn schemas(image: &Json) -> Result<SchemaTable, String> {
     Ok(build.table)
 }
 
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
 pub(super) fn descriptor(image: &Json) -> Result<ResolvedValueDescriptor, String> {
     let (definition, parameters) =
         <(Json, Box<[u64]>)>::deserialize(image).map_err(|e| e.to_string())?;
@@ -105,6 +106,7 @@ pub(super) fn descriptor(image: &Json) -> Result<ResolvedValueDescriptor, String
         .map_err(|e| format!("image type: {e:?}"))
 }
 
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
 pub(super) fn constant(image: &Json, schemas: &SchemaTable) -> Result<Value, String> {
     let draft: ValueDraft = super::canonical_json::decode(image)?;
     draft

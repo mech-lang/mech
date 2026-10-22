@@ -1,5 +1,4 @@
 //! Private reconstruction of immutable loop metadata, not loop execution.
-#![allow(dead_code)]
 use super::{WireOrigin, library};
 use crate::native_artifact::*;
 use mech_core::{FunctionCatalog, SchemaTable};
