@@ -246,8 +246,10 @@ fn vector_queries_match_scalar_and_reference_at_every_batch_and_word_boundary() 
     let compiled = Compiled::new();
     let scalar = Compiled::scalar();
     assert!(!scalar.ir.contains("shuffle"));
+    assert!(!scalar.ir.contains("swizzle"));
     if cfg!(all(target_arch = "aarch64", target_endian = "little")) {
-        assert!(compiled.ir.contains("shuffle") && compiled.ir.contains("i64x2"));
+        assert!(compiled.ir.contains("swizzle") && compiled.ir.contains("i64x2"));
+        assert!(!compiled.ir.contains("shuffle"));
         assert!(compiled.ir.contains("load.i8x16"));
     }
     for ir in [&compiled.ir, &scalar.ir] {

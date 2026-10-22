@@ -9,8 +9,12 @@ fn pair(b: &mut FunctionBuilder<'_>, bytes: Value, start: u8) -> Value {
     let mask = (start..start + 8)
         .chain(start + 1..start + 9)
         .collect::<Vec<_>>();
-    let mask = b.func.dfg.immediates.push(ConstantData::from(mask));
-    let bytes = b.ins().shuffle(bytes, bytes, mask);
+    // Every index is inside this one 16-byte source vector. A one-input
+    // lookup is exactly the same gather, without requesting a two-register
+    // table containing two copies of the source on AArch64.
+    let mask = b.func.dfg.constants.insert(ConstantData::from(mask));
+    let mask = b.ins().vconst(types::I8X16, mask);
+    let bytes = b.ins().swizzle(bytes, mask);
     b.ins().bitcast(types::I64X2, little(), bytes)
 }
 
