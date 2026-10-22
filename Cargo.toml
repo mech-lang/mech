@@ -132,6 +132,8 @@ system_gmp = ["mech-gpu/system-gmp"]
 build = [
       "cli_core", "compiler",
       "dep:mech-build",
+      # Build planning calls the standard host catalog even without distribution defaults.
+      "mech-build/standard-hosts",
       "mech-stdlib/native-plan",
       "mech-runtime", "mech-runtime/compiler", "mech-runtime/native-link", "mech-runtime/serde",
       ]
