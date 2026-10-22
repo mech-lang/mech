@@ -1,12 +1,13 @@
 {
   "schema": "mech.canonical-knucleotide-capture-pages.v1",
   "status": "FRESH_QUALIFIED_SPEED_AND_RSS_TARGETS_MET",
-  "source_commit": "a24eb610a9081f87378e88c3f15e0b4d9b0346c8",
-  "source_tree": "e38bfd45a40964adb914a975e43cdda004a99f30",
-  "source_provenance": "Fresh original/decoded source qualification and matched timings used this exact clean commit. Publication documentation changes no executable source.",
+  "source_commit": "30ea9d1c04528095465edd166613ac13676e0780",
+  "source_tree": "39be38a3490ee7a7d6f76266aaa17a7c8ba7c898",
+  "publication_equivalent_source_commit": "0e36b7e40",
+  "source_provenance": "The measured clean source and the publication implementation have identical Git trees. Publication documentation changes no executable source.",
   "measured_utc": {
-    "started": "2026-10-22T03:51:37.106Z",
-    "finished": "2026-10-22T03:52:21.299Z"
+    "started": "2026-10-22T04:53:42.860Z",
+    "finished": "2026-10-22T04:54:10.282Z"
   },
   "hardware": {
     "architecture": "arm64",
@@ -22,14 +23,12 @@
   "target": {
     "size": "10m",
     "requested_seconds": 0.0582,
-    "candidate_median_seconds": 0.0566903755,
+    "candidate_median_seconds": 0.0570262705,
     "meets_requested_target": true,
-    "fresh_rust7_median_seconds": 0.060849687,
-    "note": "The requested absolute target is reported separately from the freshly remeasured Rust comparator; neither defines correctness PASS.",
     "peak_rss_reference_bytes": 200000000,
     "candidate_125m_peak_rss_bytes": 147439616,
     "meets_rss_reference": true,
-    "executable_size": "No equality requirement with standalone Rust or the older Rust-backed Mech binary. The secured host has legitimate costs; remove unused/duplicated code without sacrificing speed or security."
+    "executable_size": "Necessary secured-host cost is accepted. File size is effectively unchanged; this revision removes only 5,536 machine-code bytes."
   },
   "implementation": {
     "typed_ir": 27,
@@ -41,346 +40,342 @@
     "compiler": "Full idiomatic Mech source through canonical Cranelift Object compilation. LLVM compiles linked Rust host/library routines, not the Mech body. Default opt-level3, ThinLTO, stripped symbols, unchanged unwind and codegen-unit defaults.",
     "code_generation_proof": {
       "old_object": {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1210/project-0/program.o",
-        "bytes": 26920,
-        "sha256": "7840e21a2ef1612c32c2dca0589d497110c16fce07ff4f4edeb9cdb5f8b2951b"
-      },
-      "fresh_object": {
         "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-release-v1236/project-0/program.o",
         "bytes": 26920,
         "sha256": "1d6ef3fb32fac654d9a910b1508eee6eb86ddf83acff68c2280dd05ff7b3ad08"
       },
+      "fresh_object": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selective-conversions-release-v1249/project-0/program.o",
+        "bytes": 26920,
+        "sha256": "5d790c6d186ce87e907e456f08c2e92ea869c5f62f929e8ebb348d5ad85b170f"
+      },
       "old": {
         "bytes": 26048,
-        "sha256": "3480aa77b80bfa1bcb3a5928a2c01637800937c34c9fa64e947c578ca7c547a1",
-        "relocation_bytes": 24,
-        "relocation_sha256": "0848e868b5021b96a5129a9a313017f2e540705d6e1599eef69a63cb6934c8c3"
+        "sha256": "f98a901c4277ab6370edd5db757020707c92a02ea9199a53438bc3ed8fc8d5b6"
       },
       "fresh": {
         "bytes": 26048,
-        "sha256": "f98a901c4277ab6370edd5db757020707c92a02ea9199a53438bc3ed8fc8d5b6",
-        "relocation_bytes": 24,
-        "relocation_sha256": "0848e868b5021b96a5129a9a313017f2e540705d6e1599eef69a63cb6934c8c3"
+        "sha256": "3480aa77b80bfa1bcb3a5928a2c01637800937c34c9fa64e947c578ca7c547a1"
       },
       "byte_identical": false,
       "instruction_differences": [
         {
           "offset": 3260,
-          "old_word": 4177530479,
-          "new_word": 4177529455,
-          "old_local_offset": 24,
-          "fresh_local_offset": 16
+          "old_word": 4177529455,
+          "new_word": 4177530479,
+          "old_local_offset": 16,
+          "fresh_local_offset": 24
         },
         {
           "offset": 3268,
-          "old_word": 4177531489,
-          "new_word": 4177530465,
-          "old_local_offset": 32,
-          "fresh_local_offset": 24
-        },
-        {
-          "offset": 3276,
-          "old_word": 4177532514,
-          "new_word": 4177531490,
-          "old_local_offset": 40,
+          "old_word": 4177530465,
+          "new_word": 4177531489,
+          "old_local_offset": 24,
           "fresh_local_offset": 32
         },
         {
-          "offset": 3284,
-          "old_word": 4177533538,
+          "offset": 3276,
+          "old_word": 4177531490,
           "new_word": 4177532514,
-          "old_local_offset": 48,
+          "old_local_offset": 32,
           "fresh_local_offset": 40
+        },
+        {
+          "offset": 3284,
+          "old_word": 4177532514,
+          "new_word": 4177533538,
+          "old_local_offset": 40,
+          "fresh_local_offset": 48
         },
         {
           "offset": 3292,
-          "old_word": 4177534562,
-          "new_word": 4177533538,
-          "old_local_offset": 56,
-          "fresh_local_offset": 48
+          "old_word": 4177533538,
+          "new_word": 4177534562,
+          "old_local_offset": 48,
+          "fresh_local_offset": 56
         },
         {
           "offset": 3300,
-          "old_word": 4177535586,
-          "new_word": 4177534562,
-          "old_local_offset": 64,
-          "fresh_local_offset": 56
+          "old_word": 4177534562,
+          "new_word": 4177535586,
+          "old_local_offset": 56,
+          "fresh_local_offset": 64
         },
         {
           "offset": 3308,
-          "old_word": 4177539682,
-          "new_word": 4177538658,
-          "old_local_offset": 96,
-          "fresh_local_offset": 88
+          "old_word": 4177538658,
+          "new_word": 4177539682,
+          "old_local_offset": 88,
+          "fresh_local_offset": 96
         },
         {
           "offset": 3312,
-          "old_word": 4177540719,
-          "new_word": 4177539695,
-          "old_local_offset": 104,
-          "fresh_local_offset": 96
+          "old_word": 4177539695,
+          "new_word": 4177540719,
+          "old_local_offset": 96,
+          "fresh_local_offset": 104
         },
         {
           "offset": 3316,
-          "old_word": 4177541729,
-          "new_word": 4177540705,
-          "old_local_offset": 112,
-          "fresh_local_offset": 104
+          "old_word": 4177540705,
+          "new_word": 4177541729,
+          "old_local_offset": 104,
+          "fresh_local_offset": 112
         },
         {
           "offset": 6484,
-          "old_word": 4181728865,
-          "new_word": 4181727841,
-          "old_local_offset": 56,
-          "fresh_local_offset": 48
+          "old_word": 4181727841,
+          "new_word": 4181728865,
+          "old_local_offset": 48,
+          "fresh_local_offset": 56
         },
         {
           "offset": 6564,
-          "old_word": 4181728865,
-          "new_word": 4181727841,
-          "old_local_offset": 56,
-          "fresh_local_offset": 48
+          "old_word": 4181727841,
+          "new_word": 4181728865,
+          "old_local_offset": 48,
+          "fresh_local_offset": 56
         },
         {
           "offset": 6748,
-          "old_word": 4181725797,
-          "new_word": 4181724773,
-          "old_local_offset": 32,
-          "fresh_local_offset": 24
+          "old_word": 4181724773,
+          "new_word": 4181725797,
+          "old_local_offset": 24,
+          "fresh_local_offset": 32
         },
         {
           "offset": 6760,
-          "old_word": 4181728870,
-          "new_word": 4181727846,
-          "old_local_offset": 56,
-          "fresh_local_offset": 48
+          "old_word": 4181727846,
+          "new_word": 4181728870,
+          "old_local_offset": 48,
+          "fresh_local_offset": 56
         },
         {
           "offset": 7388,
-          "old_word": 4181735009,
-          "new_word": 4181733985,
-          "old_local_offset": 104,
-          "fresh_local_offset": 96
+          "old_word": 4181733985,
+          "new_word": 4181735009,
+          "old_local_offset": 96,
+          "fresh_local_offset": 104
         },
         {
           "offset": 7452,
-          "old_word": 4181736033,
-          "new_word": 4181735009,
-          "old_local_offset": 112,
-          "fresh_local_offset": 104
+          "old_word": 4181735009,
+          "new_word": 4181736033,
+          "old_local_offset": 104,
+          "fresh_local_offset": 112
         },
         {
           "offset": 7684,
-          "old_word": 4181729898,
-          "new_word": 4181728874,
-          "old_local_offset": 64,
-          "fresh_local_offset": 56
+          "old_word": 4181728874,
+          "new_word": 4181729898,
+          "old_local_offset": 56,
+          "fresh_local_offset": 64
         },
         {
           "offset": 7748,
-          "old_word": 4181729893,
-          "new_word": 4181728869,
-          "old_local_offset": 64,
-          "fresh_local_offset": 56
+          "old_word": 4181728869,
+          "new_word": 4181729893,
+          "old_local_offset": 56,
+          "fresh_local_offset": 64
         },
         {
           "offset": 8576,
-          "old_word": 4181735019,
-          "new_word": 4181733995,
-          "old_local_offset": 104,
-          "fresh_local_offset": 96
+          "old_word": 4181733995,
+          "new_word": 4181735019,
+          "old_local_offset": 96,
+          "fresh_local_offset": 104
         },
         {
           "offset": 8684,
-          "old_word": 4181736032,
-          "new_word": 4181735008,
-          "old_local_offset": 112,
-          "fresh_local_offset": 104
+          "old_word": 4181735008,
+          "new_word": 4181736032,
+          "old_local_offset": 104,
+          "fresh_local_offset": 112
         },
         {
           "offset": 8800,
-          "old_word": 4181736032,
-          "new_word": 4181735008,
-          "old_local_offset": 112,
-          "fresh_local_offset": 104
+          "old_word": 4181735008,
+          "new_word": 4181736032,
+          "old_local_offset": 104,
+          "fresh_local_offset": 112
         },
         {
           "offset": 9020,
-          "old_word": 4181735008,
-          "new_word": 4181733984,
-          "old_local_offset": 104,
-          "fresh_local_offset": 96
-        },
-        {
-          "offset": 9576,
-          "old_word": 4181735008,
-          "new_word": 4181733984,
-          "old_local_offset": 104,
-          "fresh_local_offset": 96
-        },
-        {
-          "offset": 11196,
-          "old_word": 4181724769,
-          "new_word": 4181723745,
-          "old_local_offset": 24,
-          "fresh_local_offset": 16
-        },
-        {
-          "offset": 11392,
-          "old_word": 4181725792,
-          "new_word": 4181724768,
-          "old_local_offset": 32,
-          "fresh_local_offset": 24
-        },
-        {
-          "offset": 11456,
-          "old_word": 4181725797,
-          "new_word": 4181724773,
-          "old_local_offset": 32,
-          "fresh_local_offset": 24
-        },
-        {
-          "offset": 12012,
-          "old_word": 4181735008,
-          "new_word": 4181733984,
-          "old_local_offset": 104,
-          "fresh_local_offset": 96
-        },
-        {
-          "offset": 13140,
-          "old_word": 4181725793,
-          "new_word": 4181724769,
-          "old_local_offset": 32,
-          "fresh_local_offset": 24
-        },
-        {
-          "offset": 13748,
-          "old_word": 4181725793,
-          "new_word": 4181724769,
-          "old_local_offset": 32,
-          "fresh_local_offset": 24
-        },
-        {
-          "offset": 14220,
-          "old_word": 4181725793,
-          "new_word": 4181724769,
-          "old_local_offset": 32,
-          "fresh_local_offset": 24
-        },
-        {
-          "offset": 14500,
-          "old_word": 4181725793,
-          "new_word": 4181724769,
-          "old_local_offset": 32,
-          "fresh_local_offset": 24
-        },
-        {
-          "offset": 14588,
-          "old_word": 4181725793,
-          "new_word": 4181724769,
-          "old_local_offset": 32,
-          "fresh_local_offset": 24
-        },
-        {
-          "offset": 14932,
-          "old_word": 4181725792,
-          "new_word": 4181724768,
-          "old_local_offset": 32,
-          "fresh_local_offset": 24
-        },
-        {
-          "offset": 18732,
-          "old_word": 4181724771,
-          "new_word": 4181723747,
-          "old_local_offset": 24,
-          "fresh_local_offset": 16
-        },
-        {
-          "offset": 19172,
-          "old_word": 4181724769,
-          "new_word": 4181723745,
-          "old_local_offset": 24,
-          "fresh_local_offset": 16
-        },
-        {
-          "offset": 19436,
-          "old_word": 4181725794,
-          "new_word": 4181724770,
-          "old_local_offset": 32,
-          "fresh_local_offset": 24
-        },
-        {
-          "offset": 20408,
-          "old_word": 4181736033,
-          "new_word": 4181735009,
-          "old_local_offset": 112,
+          "old_word": 4181733984,
+          "new_word": 4181735008,
+          "old_local_offset": 96,
           "fresh_local_offset": 104
         },
         {
-          "offset": 20456,
+          "offset": 9576,
+          "old_word": 4181733984,
+          "new_word": 4181735008,
+          "old_local_offset": 96,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 11196,
+          "old_word": 4181723745,
+          "new_word": 4181724769,
+          "old_local_offset": 16,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 11392,
+          "old_word": 4181724768,
+          "new_word": 4181725792,
+          "old_local_offset": 24,
+          "fresh_local_offset": 32
+        },
+        {
+          "offset": 11456,
+          "old_word": 4181724773,
+          "new_word": 4181725797,
+          "old_local_offset": 24,
+          "fresh_local_offset": 32
+        },
+        {
+          "offset": 12012,
+          "old_word": 4181733984,
+          "new_word": 4181735008,
+          "old_local_offset": 96,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 13140,
+          "old_word": 4181724769,
+          "new_word": 4181725793,
+          "old_local_offset": 24,
+          "fresh_local_offset": 32
+        },
+        {
+          "offset": 13748,
+          "old_word": 4181724769,
+          "new_word": 4181725793,
+          "old_local_offset": 24,
+          "fresh_local_offset": 32
+        },
+        {
+          "offset": 14220,
+          "old_word": 4181724769,
+          "new_word": 4181725793,
+          "old_local_offset": 24,
+          "fresh_local_offset": 32
+        },
+        {
+          "offset": 14500,
+          "old_word": 4181724769,
+          "new_word": 4181725793,
+          "old_local_offset": 24,
+          "fresh_local_offset": 32
+        },
+        {
+          "offset": 14588,
+          "old_word": 4181724769,
+          "new_word": 4181725793,
+          "old_local_offset": 24,
+          "fresh_local_offset": 32
+        },
+        {
+          "offset": 14932,
+          "old_word": 4181724768,
+          "new_word": 4181725792,
+          "old_local_offset": 24,
+          "fresh_local_offset": 32
+        },
+        {
+          "offset": 18732,
+          "old_word": 4181723747,
+          "new_word": 4181724771,
+          "old_local_offset": 16,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 19172,
+          "old_word": 4181723745,
+          "new_word": 4181724769,
+          "old_local_offset": 16,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 19436,
+          "old_word": 4181724770,
+          "new_word": 4181725794,
+          "old_local_offset": 24,
+          "fresh_local_offset": 32
+        },
+        {
+          "offset": 20408,
           "old_word": 4181735009,
-          "new_word": 4181733985,
+          "new_word": 4181736033,
           "old_local_offset": 104,
-          "fresh_local_offset": 96
+          "fresh_local_offset": 112
+        },
+        {
+          "offset": 20456,
+          "old_word": 4181733985,
+          "new_word": 4181735009,
+          "old_local_offset": 96,
+          "fresh_local_offset": 104
         },
         {
           "offset": 20600,
-          "old_word": 4181724768,
-          "new_word": 4181723744,
-          "old_local_offset": 24,
-          "fresh_local_offset": 16
+          "old_word": 4181723744,
+          "new_word": 4181724768,
+          "old_local_offset": 16,
+          "fresh_local_offset": 24
         },
         {
           "offset": 20916,
-          "old_word": 4181724768,
-          "new_word": 4181723744,
-          "old_local_offset": 24,
-          "fresh_local_offset": 16
+          "old_word": 4181723744,
+          "new_word": 4181724768,
+          "old_local_offset": 16,
+          "fresh_local_offset": 24
         },
         {
           "offset": 21804,
-          "old_word": 4181724771,
-          "new_word": 4181723747,
-          "old_local_offset": 24,
-          "fresh_local_offset": 16
+          "old_word": 4181723747,
+          "new_word": 4181724771,
+          "old_local_offset": 16,
+          "fresh_local_offset": 24
         },
         {
           "offset": 22248,
-          "old_word": 4181724771,
-          "new_word": 4181723747,
-          "old_local_offset": 24,
-          "fresh_local_offset": 16
+          "old_word": 4181723747,
+          "new_word": 4181724771,
+          "old_local_offset": 16,
+          "fresh_local_offset": 24
         },
         {
           "offset": 22512,
-          "old_word": 4181725793,
-          "new_word": 4181724769,
-          "old_local_offset": 32,
-          "fresh_local_offset": 24
+          "old_word": 4181724769,
+          "new_word": 4181725793,
+          "old_local_offset": 24,
+          "fresh_local_offset": 32
         },
         {
           "offset": 23768,
-          "old_word": 4181725792,
-          "new_word": 4181724768,
-          "old_local_offset": 32,
-          "fresh_local_offset": 24
+          "old_word": 4181724768,
+          "new_word": 4181725792,
+          "old_local_offset": 24,
+          "fresh_local_offset": 32
         },
         {
           "offset": 25032,
-          "old_word": 4181733999,
-          "new_word": 4181732975,
-          "old_local_offset": 96,
-          "fresh_local_offset": 88
+          "old_word": 4181732975,
+          "new_word": 4181733999,
+          "old_local_offset": 88,
+          "fresh_local_offset": 96
         },
         {
           "offset": 25180,
-          "old_word": 4181727840,
-          "new_word": 4181726816,
-          "old_local_offset": 48,
-          "fresh_local_offset": 40
+          "old_word": 4181726816,
+          "new_word": 4181727840,
+          "old_local_offset": 40,
+          "fresh_local_offset": 48
         }
       ],
-      "comparison": "Same section size, relocation bytes, opcodes, registers and control-flow instructions. All45 changed instruction words differ only in unsigned load/store local-buffer address immediates. Actual Object hashes and every changed word remain recorded."
+      "comparison": "Same section size, relocation bytes, opcodes, registers and control-flow instructions. Recorded changed instruction words differ only in unsigned load/store local-buffer address immediates. Actual Object hashes and every changed word remain recorded."
     },
     "selected_library_features": {
       "mode": "artifact-selected",
@@ -398,33 +393,45 @@
         "mech-string"
       ],
       "limitation": "Canonical snapshot types and their generic converters are still broader than this program. This dependency cleanup did not reduce measured executable size or time."
-    }
+    },
+    "value_feature_selection": "Derive existing core type features from every artifact schema, recursively including cold/nested payloads. Known registration closures with no Dynamic/ReifiedType value schemas enable selective-convert. Unknown registrations and open value schemas retain complete numeric conversion semantics. Canonical wire variants/tags and the ordinary library default are unchanged.",
+    "required_core_value_features": [
+      "bool",
+      "enum",
+      "f64",
+      "map",
+      "matrixd",
+      "set",
+      "string",
+      "tuple",
+      "u64"
+    ]
   },
   "qualification": {
     "wrapper": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-qualification-v1236/result.json",
-      "bytes": 13025,
-      "sha256": "a8cca503dbe97d0324e5b5c87c8e5b110adc84a2fa60e7036cbef226fddec3e5"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selective-conversions-qualification-v1249/result.json",
+      "bytes": 25003,
+      "sha256": "ebad2aac29683044146d18d6d3859fdbd0f64c9fbe73239f88ff057c8ed31155"
     },
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-release-v1236/hosted-linked-result.json",
-      "bytes": 563969,
-      "sha256": "b9476b1d626d5de3941cd35032cae5447878bd35adfd71415d90f31470c4f603"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selective-conversions-release-v1249/hosted-linked-result.json",
+      "bytes": 564279,
+      "sha256": "793fb67c01f5d043ee3bea7a6ac0c6406fc3a790a91ef09811d237f3a9b82c50"
     },
     "original_decoded_binaries": [
       {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-release-v1236/variant-0/native-executable",
-        "bytes": 6714000,
-        "sha256": "0be8b51963c0717ff6b9287296b6a343686183f74d97be0a5d4e4d3b0766369d"
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selective-conversions-release-v1249/variant-0/native-executable",
+        "bytes": 6714016,
+        "sha256": "d35f63d4a3c67d7a92cfc627a23f009f0b3d0d76440d2d193508da355a0a6d74"
       },
       {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-release-v1236/variant-1/native-executable",
-        "bytes": 6714000,
-        "sha256": "0be8b51963c0717ff6b9287296b6a343686183f74d97be0a5d4e4d3b0766369d"
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selective-conversions-release-v1249/variant-1/native-executable",
+        "bytes": 6714016,
+        "sha256": "d35f63d4a3c67d7a92cfc627a23f009f0b3d0d76440d2d193508da355a0a6d74"
       }
     ],
     "original_decoded_byte_identical": true,
-    "program_revision": "89855b44cf410cef1383c67bcc7f60877276592c7502af8226085704482da372",
+    "program_revision": "3da0fccdc9be5b3eee07eea003b6a9122dee580cbd59b5bc9525c21b9ee40a47",
     "security_cases_per_variant": 13,
     "generated_launcher_tests_per_variant": 8,
     "mutated_pins_rejected": 9,
@@ -432,98 +439,85 @@
     "full_input_correctness_processes": 2,
     "full_input_timing_processes": 6,
     "local_validation": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-validation-v1237/result.json",
-      "bytes": 10025,
-      "sha256": "efd4f2b8165aeaeb7985f8f3eb6263579ba00370146543bf0e8d075be7715fc2"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selective-conversions-validation-v1247/result.json",
+      "bytes": 15506,
+      "sha256": "72979ba4c0eb2f9e172f5efdc41aade5bf1a88f4ce78f8d39c64d9b369fefeb8"
     },
-    "local_validation_scope": "53 hosted contract tests pass at the measured revision; scalar and match process qualification targets compile but their ignored workers are not counted as passing tests.",
-    "preceding_allocation_fix_validation": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-validation-v1216/result.json",
-      "bytes": 25080,
-      "sha256": "9f266081abe8e3da77c1447fc6e5920c0e6eb0c3636000f07a2915e5bbe370ff"
+    "integration_validation": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/conversion-integration-validation-v1248/result.json",
+      "bytes": 20789,
+      "sha256": "7f172ac841325a42e28084a6a6a92f6a83183318bcb5c44e91effcf19ec21f66"
     },
-    "preceding_allocation_fix_tests_passed": 343
+    "local_validation_scope": "53 hosted contract tests, two schema feature-selection tests, four selected-type conversion regressions, five core unit tests, all-type selective compile, and 28 numeric/matrix/set integration tests in each of the ordinary and selective all-type profiles. Formatting/diff checks pass."
   },
   "matched_measurement": {
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-rust7-three-way-v1231/measurement.json",
-      "bytes": 425774,
-      "sha256": "f117dff4d62aa871413618367b14173d75a8ac725edf98060b6c17b9077cb85a"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selective-conversions-paired-v1250/measurement.json",
+      "bytes": 367699,
+      "sha256": "0dbbab773a7ffa4a575371e9cf62db0e23ee190980b5d5a065e2ae7982995931"
     },
     "method": {
-      "timing": "Twelve balanced three-way rounds per size, all six permutations twice. Serial fresh-process spawn-through-exit wall time; input/output descriptors opened before the clock. Warmups, hashing, validation and process checks are untimed.",
+      "timing": "Twelve alternating-order paired rounds per size. Serial fresh-process spawn-through-exit wall time; input/output descriptors opened before the clock. Warmups, hashing, validation and process checks are untimed.",
       "correctness": "Every stdout must byte-exactly match the same pinned oracle and every stderr must be empty. No whitespace, float, line-order or security-report normalization.",
-      "security": "Both Mech versions use the SAME pinned finite capability policy. Baseline reports equal pinned v1211 reports. Candidate125M reports equal fresh v1236 qualification; candidate10M counters equal the pinned v1198 report with program_revision bound to the actual fresh manifest, without changing observed reports. Every repeat matches its complete variant/size report. Cross-Mech reports retain all fields and every delta; only actual revision and storage-dependent native_work may differ. Standalone Rust#7 is an unsecured control.",
+      "security": "Both Mech versions use the SAME pinned finite capability policy. Baseline reports equal pinned v1231 reports. Candidate125M reports equal fresh v1249 qualification; candidate10M counters equal the pinned v1198 report with program_revision bound to the actual fresh manifest, without changing observed reports. Every repeat matches its complete variant/size report. Cross-Mech reports retain all fields and every delta; only actual revision and storage-dependent native_work may differ.",
       "memory": "Three separate macOS time -l processes per binary/size; maximum RSS and physical footprint separately retained, never mixed into timing samples.",
       "lifecycle": "Fixed native leaves (threads allowed, no child-process work) have a10s deadline. RSS wrapper uses the reviewed owned-tree/group guard with15s deadline and bounded2s termination. No process polling inside timed samples.",
       "interference": "At least40GiB free and no compiler/test/benchmark/profiler before/after each process. Immutable source/build/binary/input/policy pins verified between phases; hardware/OS/power unchanged.",
-      "packaging": "Executable bytes are recorded only for provenance, NOT a size-fair comparison: upstream Rust recipe leaves symbols unstripped while the maintained Mech profile strips symbols. Build settings and thread defaults are preserved, not normalized.",
-      "scope": "Same-machine same-input comparison of these exact implementations and recorded build recipes, not a general language ranking or isolated capability overhead measurement. Both Mech versions and Rust are freshly remeasured; historical measurements are provenance only."
+      "packaging": "Both Mech executables use the maintained opt-level3/ThinLTO/strip profile. No release-profile or thread-default changes.",
+      "scope": "Same-machine same-input paired comparison of the two Mech builds. Rust is retained only as pinned historical context and is not rerun in this experiment."
     },
     "rounds_per_size": 12,
     "orders": [
       [
         0,
-        1,
-        2
-      ],
-      [
-        1,
-        2,
-        0
-      ],
-      [
-        2,
-        0,
         1
       ],
       [
-        2,
         1,
         0
       ],
       [
-        1,
-        0,
-        2
-      ],
-      [
-        0,
-        2,
-        1
-      ],
-      [
-        0,
-        1,
-        2
-      ],
-      [
-        1,
-        2,
-        0
-      ],
-      [
-        2,
         0,
         1
       ],
       [
-        2,
         1,
         0
       ],
       [
-        1,
         0,
-        2
+        1
+      ],
+      [
+        1,
+        0
       ],
       [
         0,
-        2,
         1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0
       ]
     ],
-    "outputs_verified": 96,
+    "outputs_verified": 64,
     "complete_mech_reports_verified": 64,
     "rss_processes_per_variant_per_size": 3,
     "sizes": [
@@ -600,226 +594,154 @@
     },
     "builds": [
       {
-        "name": "standalone-rust7",
-        "binary": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/rust7-m1-build-v1168/knucleotide-rust-7",
-          "bytes": 758208,
-          "sha256": "6a0c71d8a7bf27683e71e0d23e0ade4e468b51c1dee8792f6f3a6d9b3f2a7ab1"
-        },
-        "program_revision": null
-      },
-      {
-        "name": "qualified-mech-v1210",
-        "binary": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1210/variant-0/native-executable",
-          "bytes": 6696528,
-          "sha256": "98ad424b0e8e46001205ad862c9b4fda53880ef2ef3acfed54669d85029efaf9"
-        },
-        "program_revision": "400a09f0ca1ec57e463e53615391af9eb63afdbb09a001cc1119a2c2d4077151"
-      },
-      {
-        "name": "candidate-mech-v1236",
+        "name": "qualified-mech-v1236",
         "binary": {
           "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-release-v1236/variant-0/native-executable",
           "bytes": 6714000,
           "sha256": "0be8b51963c0717ff6b9287296b6a343686183f74d97be0a5d4e4d3b0766369d"
         },
         "program_revision": "89855b44cf410cef1383c67bcc7f60877276592c7502af8226085704482da372"
+      },
+      {
+        "name": "candidate-mech-v1249",
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selective-conversions-release-v1249/variant-0/native-executable",
+          "bytes": 6714016,
+          "sha256": "d35f63d4a3c67d7a92cfc627a23f009f0b3d0d76440d2d193508da355a0a6d74"
+        },
+        "program_revision": "3da0fccdc9be5b3eee07eea003b6a9122dee580cbd59b5bc9525c21b9ee40a47",
+        "source_commit": "30ea9d1c04528095465edd166613ac13676e0780"
       }
     ],
     "summary": {
       "10m": {
-        "standalone-rust7": {
-          "executable_bytes": 758208,
-          "timing_samples_ns": [
-            70226083,
-            71255917,
-            59503791,
-            55840375,
-            58509833,
-            57626083,
-            57022000,
-            60685416,
-            61825042,
-            61013958,
-            61058417,
-            61860833
-          ],
-          "median_seconds": 0.060849687,
-          "minimum_seconds": 0.055840375,
-          "maximum_seconds": 0.071255917,
-          "peak_rss_samples_bytes": [
-            35471360,
-            34127872,
-            35356672
-          ],
-          "median_peak_rss_bytes": 35356672,
-          "peak_footprint_samples_bytes": [
-            22136128,
-            20694144,
-            21988544
-          ],
-          "median_peak_footprint_bytes": 21988544
-        },
-        "qualified-mech-v1210": {
-          "executable_bytes": 6696528,
-          "timing_samples_ns": [
-            56311542,
-            56425416,
-            56536209,
-            56539459,
-            57684875,
-            56632708,
-            56592625,
-            57071583,
-            56328125,
-            56254791,
-            56447875,
-            56410083
-          ],
-          "median_seconds": 0.056492042,
-          "minimum_seconds": 0.056254791,
-          "maximum_seconds": 0.057684875,
-          "peak_rss_samples_bytes": [
-            22249472,
-            22249472,
-            22249472
-          ],
-          "median_peak_rss_bytes": 22249472,
-          "peak_footprint_samples_bytes": [
-            15614784,
-            15631232,
-            15664128
-          ],
-          "median_peak_footprint_bytes": 15631232
-        },
-        "candidate-mech-v1236": {
+        "qualified-mech-v1236": {
           "executable_bytes": 6714000,
           "timing_samples_ns": [
-            56719958,
-            56777375,
-            56719584,
-            56819000,
-            56661167,
-            56636417,
-            56640333,
-            56642500,
-            56653000,
-            56617708,
-            57183625,
-            56787708
+            60584500,
+            56909916,
+            57035416,
+            56802417,
+            56616417,
+            56722833,
+            56841459,
+            57078083,
+            56892792,
+            56948875,
+            57483709,
+            56875709
           ],
-          "median_seconds": 0.0566903755,
-          "minimum_seconds": 0.056617708,
-          "maximum_seconds": 0.057183625,
+          "median_seconds": 0.056901354,
+          "minimum_seconds": 0.056616417,
+          "maximum_seconds": 0.0605845,
           "peak_rss_samples_bytes": [
+            22347776,
             22200320,
-            22200320,
-            22577152
+            22200320
           ],
           "median_peak_rss_bytes": 22200320,
           "peak_footprint_samples_bytes": [
+            15778688,
             15614784,
+            15664128
+          ],
+          "median_peak_footprint_bytes": 15664128
+        },
+        "candidate-mech-v1249": {
+          "executable_bytes": 6714016,
+          "timing_samples_ns": [
+            57311584,
+            56915334,
+            56764917,
+            56401125,
+            57033041,
+            57029583,
+            56893250,
+            59431583,
+            57022958,
+            57059916,
+            57128500,
+            57018500
+          ],
+          "median_seconds": 0.0570262705,
+          "minimum_seconds": 0.056401125,
+          "maximum_seconds": 0.059431583,
+          "peak_rss_samples_bytes": [
+            22200320,
+            22200320,
+            22200320
+          ],
+          "median_peak_rss_bytes": 22200320,
+          "peak_footprint_samples_bytes": [
             15664128,
-            15991680
+            15664128,
+            15631232
           ],
           "median_peak_footprint_bytes": 15664128
         }
       },
       "125m": {
-        "standalone-rust7": {
-          "executable_bytes": 758208,
-          "timing_samples_ns": [
-            663620458,
-            679507584,
-            715474292,
-            651628292,
-            658152083,
-            652516292,
-            678697417,
-            658087916,
-            669047000,
-            661548583,
-            675782791,
-            662108708
-          ],
-          "median_seconds": 0.662864583,
-          "minimum_seconds": 0.651628292,
-          "maximum_seconds": 0.715474292,
-          "peak_rss_samples_bytes": [
-            209027072,
-            175390720,
-            175439872
-          ],
-          "median_peak_rss_bytes": 175439872,
-          "peak_footprint_samples_bytes": [
-            195839744,
-            162301568,
-            162186752
-          ],
-          "median_peak_footprint_bytes": 162301568
-        },
-        "qualified-mech-v1210": {
-          "executable_bytes": 6696528,
-          "timing_samples_ns": [
-            550279125,
-            553621292,
-            549481167,
-            549694792,
-            553733667,
-            549140833,
-            548836208,
-            550840417,
-            548879375,
-            549590417,
-            548928166,
-            553897917
-          ],
-          "median_seconds": 0.5496426045,
-          "minimum_seconds": 0.548836208,
-          "maximum_seconds": 0.553897917,
-          "peak_rss_samples_bytes": [
-            147488768,
-            147488768,
-            147865600
-          ],
-          "median_peak_rss_bytes": 147488768,
-          "peak_footprint_samples_bytes": [
-            140969216,
-            140969216,
-            141313216
-          ],
-          "median_peak_footprint_bytes": 140969216
-        },
-        "candidate-mech-v1236": {
+        "qualified-mech-v1236": {
           "executable_bytes": 6714000,
           "timing_samples_ns": [
-            550724375,
-            557461375,
-            551977041,
-            559207667,
-            557932167,
-            552417125,
-            548926167,
-            552451542,
-            550061584,
-            550179667,
-            551553750,
-            553188208
+            576675834,
+            556751208,
+            556581083,
+            556889000,
+            561430583,
+            556989542,
+            557555750,
+            557436125,
+            563560792,
+            556606125,
+            557905458,
+            558024750
           ],
-          "median_seconds": 0.552197083,
-          "minimum_seconds": 0.548926167,
-          "maximum_seconds": 0.559207667,
+          "median_seconds": 0.5574959375,
+          "minimum_seconds": 0.556581083,
+          "maximum_seconds": 0.576675834,
           "peak_rss_samples_bytes": [
             147439616,
-            147439616,
-            147816448
+            147816448,
+            147439616
           ],
           "median_peak_rss_bytes": 147439616,
           "peak_footprint_samples_bytes": [
+            140952768,
+            141329664,
+            140952768
+          ],
+          "median_peak_footprint_bytes": 140952768
+        },
+        "candidate-mech-v1249": {
+          "executable_bytes": 6714016,
+          "timing_samples_ns": [
+            576209209,
+            558924250,
+            556387166,
+            556069042,
+            556470958,
+            556349292,
+            557405458,
+            557647708,
+            557363333,
+            558358625,
+            557656125,
+            556661000
+          ],
+          "median_seconds": 0.5573843955,
+          "minimum_seconds": 0.556069042,
+          "maximum_seconds": 0.576209209,
+          "peak_rss_samples_bytes": [
+            147816448,
+            147439616,
+            147439616
+          ],
+          "median_peak_rss_bytes": 147439616,
+          "peak_footprint_samples_bytes": [
+            141329664,
             140969216,
-            140969216,
-            141329664
+            140952768
           ],
           "median_peak_footprint_bytes": 140969216
         }
@@ -827,222 +749,78 @@
     },
     "paired": {
       "10m": {
-        "qualified-mech-v1210_over_standalone-rust7": {
-          "candidate": "qualified-mech-v1210",
-          "control": "standalone-rust7",
-          "median_ratio": 0.9324696928285368,
-          "median_delta_ms": -4.1121875,
-          "faster_rounds": 11,
+        "candidate-mech-v1249_over_qualified-mech-v1236": {
+          "candidate": "candidate-mech-v1249",
+          "control": "qualified-mech-v1236",
+          "median_ratio": 1.0014304924540491,
+          "median_delta_ms": 0.081416,
+          "faster_rounds": 4,
           "total_rounds": 12,
           "ratios": [
-            0.8018607844039942,
-            0.7918699018356609,
-            0.9501278498373322,
-            1.0125193285324463,
-            0.9859005237632451,
-            0.9827617122614425,
-            0.99247001157448,
-            0.9404497284817163,
-            0.9110891505742932,
-            0.9219987170804425,
-            0.9244896571753571,
-            0.911886896188417
+            0.9459776675552328,
+            1.0000952030925507,
+            0.9952573502751343,
+            0.9929353006228591,
+            1.0073587136395439,
+            1.005407875167307,
+            1.0009111483222133,
+            1.0412329895522245,
+            1.0022879172461776,
+            1.0019498365858852,
+            0.9938207014442997,
+            1.0025105796922902
           ],
           "deltas_ms": [
-            -13.914541,
-            -14.830501,
-            -2.967582,
-            0.699084,
-            -0.824958,
-            -0.993375,
-            -0.429375,
-            -3.613833,
-            -5.496917,
-            -4.759167,
-            -4.610542,
-            -5.45075
-          ]
-        },
-        "candidate-mech-v1236_over_standalone-rust7": {
-          "candidate": "candidate-mech-v1236",
-          "control": "standalone-rust7",
-          "median_ratio": 0.9349593549404895,
-          "median_delta_ms": -3.9588539999999997,
-          "faster_rounds": 11,
-          "total_rounds": 12,
-          "ratios": [
-            0.8076765152913341,
-            0.7968092670816376,
-            0.9532095862598066,
-            1.0175254016471058,
-            0.9684041825926935,
-            0.9828260754769677,
-            0.9933066711093964,
-            0.933379116985867,
-            0.9163438983187427,
-            0.9279468150550075,
-            0.9365395928951122,
-            0.9179913241711439
-          ],
-          "deltas_ms": [
-            -13.506125,
-            -14.478542,
-            -2.784207,
-            0.978625,
-            -1.848666,
-            -0.989666,
-            -0.381667,
-            -4.042916,
-            -5.172042,
-            -4.39625,
-            -3.874792,
-            -5.073125
-          ]
-        },
-        "candidate-mech-v1236_over_qualified-mech-v1210": {
-          "candidate": "candidate-mech-v1236",
-          "control": "qualified-mech-v1210",
-          "median_ratio": 1.0053558602176502,
-          "median_delta_ms": 0.30220800000000003,
-          "faster_rounds": 2,
-          "total_rounds": 12,
-          "ratios": [
-            1.0072527937523004,
-            1.006237596901368,
-            1.00324349657049,
-            1.0049441753590178,
-            0.9822534416517328,
-            1.0000654921887189,
-            1.00084300737066,
-            0.9924816699056692,
-            1.0057675450762829,
-            1.0064513082983457,
-            1.0130341487611358,
-            1.0066942819424676
-          ],
-          "deltas_ms": [
-            0.408416,
-            0.351959,
-            0.183375,
-            0.279541,
-            -1.023708,
-            0.003709,
-            0.047708,
-            -0.429083,
-            0.324875,
-            0.362917,
-            0.73575,
-            0.377625
+            -3.272916,
+            0.005418,
+            -0.270499,
+            -0.401292,
+            0.416624,
+            0.30675,
+            0.051791,
+            2.3535,
+            0.130166,
+            0.111041,
+            -0.355209,
+            0.142791
           ]
         }
       },
       "125m": {
-        "qualified-mech-v1210_over_standalone-rust7": {
-          "candidate": "qualified-mech-v1210",
-          "control": "standalone-rust7",
-          "median_ratio": 0.8299855488549182,
-          "median_delta_ms": -112.64974950000001,
-          "faster_rounds": 12,
+        "candidate-mech-v1249_over_qualified-mech-v1236": {
+          "candidate": "candidate-mech-v1249",
+          "control": "qualified-mech-v1236",
+          "median_ratio": 0.9993719637547999,
+          "median_delta_ms": -0.357979,
+          "faster_rounds": 9,
           "total_rounds": 12,
           "ratios": [
-            0.8292075965506175,
-            0.8147389448415634,
-            0.7679956822264132,
-            0.84357109528326,
-            0.8413460677294552,
-            0.8415741334470772,
-            0.8086611120843561,
-            0.8370316542934364,
-            0.8203898605030737,
-            0.8307635011592187,
-            0.8122849136002932,
-            0.8365664283031904
+            0.999190836562782,
+            1.0039030755008258,
+            0.9996515925425371,
+            0.9985276096313628,
+            0.9911660939924251,
+            0.9988505170174272,
+            0.9997304448927304,
+            1.0003795645644602,
+            0.9890030337667636,
+            1.0031485460207612,
+            0.9995530909468178,
+            0.9975561119824883
           ],
           "deltas_ms": [
-            -113.341333,
-            -125.886292,
-            -165.993125,
-            -101.9335,
-            -104.418416,
-            -103.375459,
-            -129.861209,
-            -107.247499,
-            -120.167625,
-            -111.958166,
-            -126.854625,
-            -108.210791
-          ]
-        },
-        "candidate-mech-v1236_over_standalone-rust7": {
-          "candidate": "candidate-mech-v1236",
-          "control": "standalone-rust7",
-          "median_ratio": 0.8307663757822263,
-          "median_delta_ms": -112.1324995,
-          "faster_rounds": 12,
-          "total_rounds": 12,
-          "ratios": [
-            0.829878537288855,
-            0.8203902180435414,
-            0.7714841010667648,
-            0.8581697171000059,
-            0.8477252923926399,
-            0.8465951452442815,
-            0.8087936586327099,
-            0.8394798454253946,
-            0.8221568649138252,
-            0.8316542142755976,
-            0.8161701619892241,
-            0.8354945363443249
-          ],
-          "deltas_ms": [
-            -112.896083,
-            -122.046209,
-            -163.497251,
-            -92.420625,
-            -100.219916,
-            -100.099167,
-            -129.77125,
-            -105.636374,
-            -118.985416,
-            -111.368916,
-            -124.229041,
-            -108.9205
-          ]
-        },
-        "candidate-mech-v1236_over_qualified-mech-v1210": {
-          "candidate": "candidate-mech-v1236",
-          "control": "qualified-mech-v1210",
-          "median_ratio": 1.0037335432454433,
-          "median_delta_ms": 2.0534995,
-          "faster_rounds": 1,
-          "total_rounds": 12,
-          "ratios": [
-            1.000809134818625,
-            1.0069362993358284,
-            1.0045422375686262,
-            1.017305739727656,
-            1.0075821649471786,
-            1.0059662144992958,
-            1.0001639086464937,
-            1.0029248489222606,
-            1.0021538593976136,
-            1.0010721620715595,
-            1.0047831103642075,
-            0.9987187007240542
-          ],
-          "deltas_ms": [
-            0.44525,
-            3.840083,
-            2.495874,
-            9.512875,
-            4.1985,
-            3.276292,
-            0.089959,
-            1.611125,
-            1.182209,
-            0.58925,
-            2.625584,
-            -0.709709
+            -0.466625,
+            2.173042,
+            -0.193917,
+            -0.819958,
+            -4.959625,
+            -0.64025,
+            -0.150292,
+            0.211583,
+            -6.197459,
+            1.7525,
+            -0.249333,
+            -1.36375
           ]
         }
       }
@@ -1053,8 +831,8 @@
         "differences": [
           {
             "key": "program_revision",
-            "baseline": "400a09f0ca1ec57e463e53615391af9eb63afdbb09a001cc1119a2c2d4077151",
-            "candidate": "89855b44cf410cef1383c67bcc7f60877276592c7502af8226085704482da372",
+            "baseline": "89855b44cf410cef1383c67bcc7f60877276592c7502af8226085704482da372",
+            "candidate": "3da0fccdc9be5b3eee07eea003b6a9122dee580cbd59b5bc9525c21b9ee40a47",
             "numeric_delta": null
           }
         ]
@@ -1064,8 +842,8 @@
         "differences": [
           {
             "key": "program_revision",
-            "baseline": "400a09f0ca1ec57e463e53615391af9eb63afdbb09a001cc1119a2c2d4077151",
-            "candidate": "89855b44cf410cef1383c67bcc7f60877276592c7502af8226085704482da372",
+            "baseline": "89855b44cf410cef1383c67bcc7f60877276592c7502af8226085704482da372",
+            "candidate": "3da0fccdc9be5b3eee07eea003b6a9122dee580cbd59b5bc9525c21b9ee40a47",
             "numeric_delta": null
           }
         ]
@@ -1074,57 +852,57 @@
   },
   "independent_audit": {
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-measurement-audit-v1232.json",
-      "bytes": 1061,
-      "sha256": "cd85d29df8b5ccb224d7427a05b12958123d9379bfe93c8a1b346d1edbf97c7c"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selective-conversions-measurement-audit-v1251.json",
+      "bytes": 1049,
+      "sha256": "c2001b4a3c9390a632f0faa40b0d965d3170f87a46f1b09ed8c78a820979adbd"
     },
     "status": "PASS",
-    "physical_files_verified": 565
+    "physical_files_verified": 517
   },
   "assessment": {
-    "speed": "The feature-gated candidate meets the 0.0582-second target, but paired elapsed time is 0.54% higher at10M and0.37% higher at125M versus the freshly remeasured published Mech build. Preserve this result as a small regression, not an optimization win. Candidate/Rust paired ratios are0.9349594 at10M and0.8307664 at125M; Rust variability remains in the samples.",
-    "footprint": "125M median peak RSS is147439616 bytes versus147488768 for the remeasured prior Mech. Physical footprint medians are identical at140969216 bytes. Executable size grows from6696528 to6714000 bytes (+17472). Removing the broad library bundle alone does not trim the surviving generic runtime code.",
-    "rust_rss_variability": {
-      "latest_125m_samples_bytes": [
-        209027072,
-        175390720,
-        175439872
-      ],
-      "latest_125m_median_bytes": 175439872,
-      "note": "All samples remain; scheduler/library timing and RSS variation are not normalized away."
-    },
-    "limits": "Finite policy, provider/transaction authority and every execution counter are retained. Complete reports differ only in artifact revision. Both generated Mech code sections contain26048 bytes with identical relocation bytes. The45 changed instruction words differ only in local-buffer load/store address immediates; every changed word and both hashes are recorded.",
-    "outstanding": "Further canonical type/conversion gating for size; clean review and green CI on the publication head. PR909 remains draft and unmerged pending user direction.",
-    "completion_gate": "Performance work for this PR is complete when these measured targets hold after the review correction: 10M median at or below 0.0582 seconds, 125M RSS below 200 MB, and no material time or executable-size regression. All review notes must be addressed with a clean review and green CI on the publication head. Further optimization is separate work; readiness and merging still require user direction."
+    "speed": "No meaningful change: paired median ratios are +0.143% at10M and -0.063% at125M against the published build in this same batch. Absolute medians are0.0570262705s and0.5573843955s.",
+    "footprint": "Both builds have147,439,616B median125M RSS. Candidate file6,714,016B vs6,714,000B baseline (+16B). Actual code shrinks4,999,656 to4,994,120B; executable layout padding absorbs the small saving. This is not a substantial file-size win.",
+    "limits": "One M1, two inputs, twelve alternating-order pairs and three RSS processes per variant/size. Rust was not rerun in this batch. No general language ranking or independently removable-byte claim.",
+    "outstanding": "Larger host-size reduction remains. Most remaining code is engine/core generic value, schema, transaction and validation support; attribution alone does not prove which bytes can safely be removed.",
+    "completion_gate": "Clean review and green CI on the publication head. Keep draft and unmerged until user direction."
   },
   "historical": {
-    "startup_measurement": "canonical-knucleotide-startup-validation-v1.json",
-    "direct_io": "canonical-knucleotide-streaming-footprint-v1.json",
-    "note": "The historical approximately 0.975-second control is Rust-backed Mech, not standalone Rust #7.",
-    "initial_capture_pages_measurement": "https://github.com/mech-lang/mech/blob/fa25989a21cdcb2d832f2d8de2ccafbb71c34bb7/docs/validation/canonical-knucleotide-capture-pages-v1.json",
-    "preceding_qualified_measurement": "https://github.com/mech-lang/mech/blob/199ed4fa9d835e556d145454349e89860f69f153/docs/validation/canonical-knucleotide-capture-pages-v1.json"
+    "previous_qualified_measurement": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-rust7-three-way-v1231/measurement.json",
+      "bytes": 425774,
+      "sha256": "f117dff4d62aa871413618367b14173d75a8ac725edf98060b6c17b9077cb85a"
+    },
+    "previous_published_results": "https://github.com/mech-lang/mech/blob/4a85ff4f3346a8b5cfa0c56abd5c55d63dbdf1ce/docs/validation/canonical-knucleotide-capture-pages-v1.json",
+    "rust7": {
+      "median_10m_seconds": 0.060849687,
+      "median_125m_seconds": 0.662864583,
+      "median_125m_rss_bytes": 175439872,
+      "executable_bytes": 758208,
+      "scope": "Earlier same-machine matched three-way batch, not newly rerun; raw samples and variability remain in previous receipt."
+    },
+    "direct_io": "canonical-knucleotide-streaming-footprint-v1.json"
   },
   "linked_code_attribution": {
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-linkmap-analysis-v1238.json",
-      "bytes": 18262,
-      "sha256": "dee04c69f692a8eca76ac29fa85240100780af7b2b9994c02460c695cb08ace6"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selective-conversions-linkmap-analysis-v1253.json",
+      "bytes": 18257,
+      "sha256": "1975070aac5598879666042aa9beafc9266677ae32c98f82640bf7d8d0684917"
     },
     "sections_identical": true,
-    "code_bytes": 4999656,
-    "unwind_bytes": 1087352,
+    "code_bytes": 4994120,
+    "unwind_bytes": 1086732,
     "by_object_origin": [
       {
         "origin": "mech_engine",
-        "code_bytes": 1951232,
-        "other_symbol_bytes": 466940,
-        "symbols": 11718
+        "code_bytes": 1951200,
+        "other_symbol_bytes": 466776,
+        "symbols": 11712
       },
       {
         "origin": "mech_core",
-        "code_bytes": 1189108,
-        "other_symbol_bytes": 272289,
-        "symbols": 7178
+        "code_bytes": 1183664,
+        "other_symbol_bytes": 270713,
+        "symbols": 7108
       },
       {
         "origin": "mech_runtime",
@@ -1135,7 +913,7 @@
       {
         "origin": "mech_gpu",
         "code_bytes": 412704,
-        "other_symbol_bytes": 128239,
+        "other_symbol_bytes": 128241,
         "symbols": 3456
       },
       {
@@ -1218,9 +996,9 @@
       },
       {
         "origin": "compiler_builtins",
-        "code_bytes": 1992,
+        "code_bytes": 1924,
         "other_symbol_bytes": 504,
-        "symbols": 26
+        "symbols": 25
       },
       {
         "origin": "object",
@@ -1345,7 +1123,7 @@
       {
         "origin": "linker_synthesized",
         "code_bytes": 0,
-        "other_symbol_bytes": 118892,
+        "other_symbol_bytes": 118796,
         "symbols": 107
       },
       {

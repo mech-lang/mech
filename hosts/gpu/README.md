@@ -158,28 +158,29 @@ contract is not a claim that whole-benchmark qualification is complete.
 ### Canonical k-nucleotide performance
 
 The [current measurements and pins](../../docs/validation/canonical-knucleotide-capture-pages-v1.json)
-use the full Mech source, the same M1, inputs and output oracles. Twelve balanced
-three-way rounds include startup, one secured round and report publication.
+use the full Mech source, the same M1, inputs and output oracles. Twelve alternating
+paired rounds include startup, one secured round and report publication.
 
 | Build | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Standalone Rust #7 | 0.06085 s | 0.66286 s | 175.4 MB | 0.758 MB |
-| Current secured Mech | 0.05669 s | 0.55220 s | 147.4 MB | 6.714 MB |
+| Published secured Mech, remeasured | 0.05690 s | 0.55750 s | 147.4 MB | 6.714 MB |
+| Current secured Mech | 0.05703 s | 0.55738 s | 147.4 MB | 6.714 MB |
 
-The 0.0582-second target at 10M and 200 MB RSS reference are met. Removing the
-broad standard-library feature bundle excludes ten resolved Mech library crates,
-but is **not a size or speed win**: compared with the freshly remeasured previous
-Mech build, paired times increase 0.54% at 10M and 0.37% at 125M, and the binary
-grows 17,472 bytes. Canonical type/conversion support still needs finer gates.
+The 0.0582-second target at 10M and 200 MB RSS reference are met. Schema-derived
+type gates remove 5,536 machine-code bytes, including unused complex/rational
+converters. This is **not a substantial file-size or speed win**: layout padding
+leaves the file 16 bytes larger, and paired timings change +0.14%/-0.06%.
+The earlier Rust #7 batch measured 0.06085/0.66286 s, 175.4 MB RSS and a 0.758 MB
+executable; Rust was not rerun in this paired experiment.
 
 Private capture pages retire during the consuming join. Directory replacement
 finishes before new offsets and unfinished-tail backing are acquired; mandatory
 backing is funded before optional pages. Heap fallback, finite accounts and the
 single capability/provider/transaction authority remain.
 
-Fresh original/decoded builds at `a24eb610a` produce identical executables and
+Fresh original/decoded builds at `30ea9d1c0` produce identical executables and
 pass security denials, launcher tests, tamper rejection and full-input checks.
-All 96 measured outputs and 64 complete Mech reports pass an independent audit.
+All 64 measured outputs and 64 complete Mech reports pass an independent audit.
 Execution counters are unchanged. The Mech body remains 26,048 bytes; recorded
 instruction differences are local-buffer addresses. Cranelift compiles Mech
 source; LLVM compiles the linked Rust host/library code.
@@ -210,6 +211,11 @@ artifact closure, including cold/nested code. Missing private registration
 evidence retains the complete catalog. Those same maintained declarations and
 owner-specified build features supply both profiles; the factory profile is
 packaging metadata, not execution or capability authority.
+
+The complete schema closure also selects existing core type features. Closed,
+known-registration applications omit unused numeric converters; dynamic/reified
+value schemas and unknown registrations retain complete conversion support.
+Ordinary library defaults and canonical wire tags remain unchanged.
 
 Native regions admit complete work and scratch before entry on one cumulative
 account. Repeated-site binding caches retain bounded planning metadata, never
