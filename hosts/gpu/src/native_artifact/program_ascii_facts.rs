@@ -29,6 +29,8 @@ impl Cache {
         if let Some(fact) = &self.fact
             && fact.owner.matches(value)
         {
+            #[cfg(all(test, feature = "canonical-native-program"))]
+            tests::hit();
             return Ok(fact.ascii_without_crlf);
         }
         let ascii_without_crlf =

@@ -442,7 +442,19 @@ impl State {
                             _ => 64,
                         };
                         self.account(ctx, definition.collection(), 0, cost)?;
-                        let count = data::count(&value)?;
+                        // A window-bearing descriptor has already admitted
+                        // the one weak fact slot. Keep the full fresh scan
+                        // charge above even when this exact root is a hit.
+                        let count = match value.data() {
+                            ValueData::String(text)
+                                if !descriptor.window_regions.is_empty()
+                                    && self.ascii_facts.inspect(&value)? =>
+                            {
+                                u64::try_from(text.len())
+                                    .map_err(|_| invalid("generator count exceeds u64"))?
+                            }
+                            _ => data::count(&value)?,
+                        };
                         (SourceBacking::Value(value), handle, count, 0)
                     }
                     NativeCollectionSource::U64Range(_) => {

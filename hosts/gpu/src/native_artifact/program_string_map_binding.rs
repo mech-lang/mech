@@ -69,7 +69,14 @@ impl State {
             return Err(invalid("compiled String map source kind"));
         };
         self.account(ctx, id, 0, add(mul(text.len() as u64, 64)?, 256)?)?;
-        if !mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(text) {
+        // Only descriptors that already fund the weak fact may use it. The
+        // fresh source/generation checks and complete scan charge above stay.
+        let ascii = if ctx.control.descriptor.window_regions.is_empty() {
+            mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(text)
+        } else {
+            self.ascii_facts.inspect(&source)?
+        };
+        if !ascii {
             return Ok(None);
         }
         if text.len() as u64 != remaining {

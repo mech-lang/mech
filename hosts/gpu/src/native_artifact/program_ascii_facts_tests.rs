@@ -6,11 +6,18 @@ use mech_core::{
 use std::cell::Cell;
 
 thread_local! { static SCANS: Cell<usize> = const { Cell::new(0) }; }
+thread_local! { static HITS: Cell<usize> = const { Cell::new(0) }; }
 pub(super) fn scanned() {
     SCANS.with(|count| count.set(count.get() + 1));
 }
 fn scans() -> usize {
     SCANS.with(Cell::get)
+}
+pub(super) fn hit() {
+    HITS.with(|count| count.set(count.get() + 1));
+}
+fn hits() -> usize {
+    HITS.with(Cell::get)
 }
 
 fn string(text: &str) -> Value {
@@ -194,5 +201,75 @@ fn original_and_decoded_calls_share_only_the_same_source_fact_and_keep_unicode_r
         );
         drop((outputs, args));
         assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn collection_counts_and_map_guards_share_facts_without_byte_counting_unicode_or_crlf() {
+    use crate::native_artifact::{
+        JitProgramArtifact,
+        program_runtime::tests::{artifact_source, limits},
+    };
+    let source = "+> text\n+> map\n+> sequence\nhistogram(s<string>, width<u64>) => (out<{string:u64}>) :=\n  n := sequence/length(s)\n  words := [s[(i + 1u64)..=(i + width)] | i <- 0u64..=n, width > 0u64, width <= n - i]\n  out := map/histogram(words).\nentries := {\"a\": \"A\", \"b\": \"B\", \"é\": \"É\", \"\\r\\n\": \"\\r\\n\"}\nfirst := text/join([entries{ch} | ch <- seed<string>], \"\")\nsecond := text/join([entries{ch} | ch <- seed], \"\")\nh := histogram(first, width<u64>)\nh{key<string>} + sequence/length(second)\n";
+    let original = artifact_source(source);
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
+    )
+    .unwrap();
+    for artifact in [original, decoded] {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        assert!(!jit.descriptor().window_regions.is_empty());
+        for (seed, width, key, expected) in [
+            ("abab", 2, "AB", 6),
+            ("éé", 1, "É", 4),
+            ("\r\n\r\n", 1, "\r\n", 4),
+        ] {
+            let memory = ManagedMemoryBudget::new(16 * 1024 * 1024);
+            let args = artifact
+                .inputs()
+                .iter()
+                .map(|input| {
+                    let name = mech_engine::decode_source_input_name(&input.name).unwrap();
+                    let data = match name.as_str() {
+                        "seed" => ValueDataDraft::String(seed.into()),
+                        "width" => ValueDataDraft::U64(width),
+                        "key" => ValueDataDraft::String(key.into()),
+                        _ => panic!("unexpected input"),
+                    };
+                    let value = ValueDraft {
+                        schema: input.schema,
+                        shape_values: Box::new([]),
+                        data,
+                    }
+                    .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                    .unwrap();
+                    let mut claim = memory
+                        .reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap())
+                        .unwrap();
+                    value.into_memory_budget(&mut claim).unwrap()
+                })
+                .collect::<Vec<_>>();
+            let before = (scans(), hits());
+            let mut outputs = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut outputs, limits(), &memory)
+                .unwrap();
+            assert_eq!(scans() - before.0, 2, "one seed and one mapped root");
+            assert!(
+                hits() - before.1 >= 3,
+                "both sizing and map guards reuse the seed fact"
+            );
+            assert_eq!(
+                outputs
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                ValueDataDraft::U64(expected)
+            );
+            drop((outputs, args));
+            assert_eq!(memory.used_bytes(), 0);
+        }
     }
 }
