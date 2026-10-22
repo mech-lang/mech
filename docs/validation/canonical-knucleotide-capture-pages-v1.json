@@ -1,12 +1,12 @@
 {
   "schema": "mech.canonical-knucleotide-capture-pages.v1",
   "status": "FRESH_QUALIFIED_SPEED_AND_RSS_TARGETS_MET",
-  "source_commit": "a7bd7082e5538fd678cb05763277a9b9f8d11524",
-  "source_tree": "ac1a2db4add27412b425bdcf370893420003e79d",
+  "source_commit": "d94d0b7cca2145a006b37a46cdbb32a70575bb3e",
+  "source_tree": "6f4c4a2c605e0b55a3cf0cba92bd01b06841e140",
   "source_provenance": "Fresh original/decoded source qualification and matched timings used this exact clean commit. Publication documentation changes no executable source.",
   "measured_utc": {
-    "started": "2026-10-22T01:45:50.343Z",
-    "finished": "2026-10-22T01:46:34.952Z"
+    "started": "2026-10-22T02:37:27.472Z",
+    "finished": "2026-10-22T02:38:07.591Z"
   },
   "hardware": {
     "architecture": "arm64",
@@ -22,12 +22,12 @@
   "target": {
     "size": "10m",
     "requested_seconds": 0.0582,
-    "candidate_median_seconds": 0.0567277915,
+    "candidate_median_seconds": 0.056513729,
     "meets_requested_target": true,
-    "fresh_rust7_median_seconds": 0.057946437,
+    "fresh_rust7_median_seconds": 0.0570528755,
     "note": "The requested absolute target is reported separately from the freshly remeasured Rust comparator; neither defines correctness PASS.",
     "peak_rss_reference_bytes": 200000000,
-    "candidate_125m_peak_rss_bytes": 147718144,
+    "candidate_125m_peak_rss_bytes": 147488768,
     "meets_rss_reference": true,
     "executable_size": "No equality requirement with standalone Rust or the older Rust-backed Mech binary. The secured host has legitimate costs; remove unused/duplicated code without sacrificing speed or security."
   },
@@ -35,20 +35,20 @@
     "typed_ir": 27,
     "abi": 12,
     "work_policy": 36,
-    "capture": "Private append-only anonymous Unix slabs retain immutable UTF-8 slices under Rc. The existing consuming join unmaps source slabs after their last slice retires instead of leaving malloc medium-region pages resident. Small fragments, insufficient headroom and mapping failure retain the ordinary heap path; non-Unix targets use heap storage.",
+    "capture": "Private append-only anonymous Unix slabs retain immutable UTF-8 slices under Rc. The existing consuming join unmaps source slabs after their last slice retires instead of leaving malloc medium-region pages resident. Small fragments, insufficient headroom and mapping failure retain the ordinary heap path; non-Unix targets use heap storage. Required offsets, directory capacity and unfinished tail backing are funded before choosing an optional slab, so the slab cannot crowd out the rest of that fragment.",
     "accounting": "Every real slab and owner header is reserved on the existing managed memory account before physical allocation. Optional admission previews the same cumulative work ledger without spending on a declined preference; failed physical allocation remains charged once. No ledger renewal, per-operation protocol, new resource route or secondary executor.",
     "size_and_startup": "Hash complete, already-derived same-plan join and line proof inventories instead of rebuilding them. Share repeated streaming identity hash updates out of line; the identity transcript is unchanged.",
     "compiler": "Full idiomatic Mech source through canonical Cranelift Object compilation. LLVM compiles linked Rust host/library routines, not the Mech body. Default opt-level3, ThinLTO, stripped symbols, unchanged unwind and codegen-unit defaults.",
     "code_generation_proof": {
       "old_object": {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/validation-inventory-release-v1175/project-0/program.o",
-        "bytes": 26920,
-        "sha256": "53bf1ad7e3f75c8f924585fe6edc679871825f4472e693662e803270a60e79fc"
-      },
-      "fresh_object": {
         "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1201/project-0/program.o",
         "bytes": 26920,
         "sha256": "bc7e86f6aaae8d96f4aad9fd7ad8f0636d1b85221774aa104988f1a3d8329f92"
+      },
+      "fresh_object": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1210/project-0/program.o",
+        "bytes": 26920,
+        "sha256": "7840e21a2ef1612c32c2dca0589d497110c16fce07ff4f4edeb9cdb5f8b2951b"
       },
       "old": {
         "bytes": 26048,
@@ -66,29 +66,29 @@
   },
   "qualification": {
     "wrapper": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-qualification-v1201/result.json",
-      "bytes": 82437,
-      "sha256": "4e7a0d80893e2668989ccfb1add6349f93ccfd5bc6626bf453d489f853d8edbd"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-qualification-v1210/result.json",
+      "bytes": 18480,
+      "sha256": "8021550ad1fb25016d60ea9aa60be555727b2c58fdf5b2ea3d0bcd4aaaa0d669"
     },
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1201/hosted-linked-result.json",
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1210/hosted-linked-result.json",
       "bytes": 597074,
-      "sha256": "5007421f359396bf8d32c93af85dd7a44a3b7072c299c11826fde497a5956c3c"
+      "sha256": "0179474305982111fb84546f8d6a42179882578cfc6fbab374834d24c5df53f8"
     },
     "original_decoded_binaries": [
       {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1201/variant-0/native-executable",
-        "bytes": 6696512,
-        "sha256": "328149ebdabfee12f588af085223cfe46147b3f2a074906fa730880797f206b3"
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1210/variant-0/native-executable",
+        "bytes": 6696528,
+        "sha256": "98ad424b0e8e46001205ad862c9b4fda53880ef2ef3acfed54669d85029efaf9"
       },
       {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1201/variant-1/native-executable",
-        "bytes": 6696512,
-        "sha256": "328149ebdabfee12f588af085223cfe46147b3f2a074906fa730880797f206b3"
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1210/variant-1/native-executable",
+        "bytes": 6696528,
+        "sha256": "98ad424b0e8e46001205ad862c9b4fda53880ef2ef3acfed54669d85029efaf9"
       }
     ],
     "original_decoded_byte_identical": true,
-    "program_revision": "5f1bb0870c227926a14aec3e54f9fd18e06aa6ccf4b12f2c0db8bfe45812d6bc",
+    "program_revision": "400a09f0ca1ec57e463e53615391af9eb63afdbb09a001cc1119a2c2d4077151",
     "security_cases_per_variant": 13,
     "generated_launcher_tests_per_variant": 8,
     "mutated_pins_rejected": 9,
@@ -96,21 +96,21 @@
     "full_input_correctness_processes": 2,
     "full_input_timing_processes": 6,
     "local_validation": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-validation-v1200/result.json",
-      "bytes": 23674,
-      "sha256": "41c47876522e1d06f01ad8baa5cf6c2aa8613a18b624aa6e0a1d87dd5d96773f"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-validation-v1212/result.json",
+      "bytes": 25079,
+      "sha256": "079930c68d5cfd33c56c3a5078b1b9a9f2473d1dc507bd301aedc0370eb470d7"
     }
   },
   "matched_measurement": {
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-rust7-three-way-v1203/measurement.json",
-      "bytes": 474162,
-      "sha256": "a72d4c22ee6b70ec93d5419fad9508711e8e164fe9b1c668a7647d9aefdb1f4b"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-rust7-three-way-v1211/measurement.json",
+      "bytes": 416389,
+      "sha256": "a5933f51340b1a398b14b78be5b45b5ea1be7c8ce36fa2740ebd9bbc9879b650"
     },
     "method": {
       "timing": "Twelve balanced three-way rounds per size, all six permutations twice. Serial fresh-process spawn-through-exit wall time; input/output descriptors opened before the clock. Warmups, hashing, validation and process checks are untimed.",
       "correctness": "Every stdout must byte-exactly match the same pinned oracle and every stderr must be empty. No whitespace, float, line-order or security-report normalization.",
-      "security": "Both Mech versions use the SAME pinned finite capability policy. Baseline reports equal pinned v1178 reports. Candidate125M reports equal fresh v1201 qualification and candidate10M reports equal the exact pinned v1198 full report. Every repeat matches its complete variant/size report. Cross-Mech reports retain all fields and every delta; only actual revision and storage-dependent native_work may differ. Standalone Rust#7 is an unsecured control.",
+      "security": "Both Mech versions use the SAME pinned finite capability policy. Baseline reports equal pinned v1203 reports. Candidate125M reports equal fresh v1210 qualification; candidate10M counters equal the pinned v1198 report with program_revision bound to the actual fresh manifest, without changing observed reports. Every repeat matches its complete variant/size report. Cross-Mech reports retain all fields and every delta; only actual revision and storage-dependent native_work may differ. Standalone Rust#7 is an unsecured control.",
       "memory": "Three separate macOS time -l processes per binary/size; maximum RSS and physical footprint separately retained, never mixed into timing samples.",
       "lifecycle": "Fixed native leaves (threads allowed, no child-process work) have a10s deadline. RSS wrapper uses the reviewed owned-tree/group guard with15s deadline and bounded2s termination. No process polling inside timed samples.",
       "interference": "At least40GiB free and no compiler/test/benchmark/profiler before/after each process. Immutable source/build/binary/input/policy pins verified between phases; hardware/OS/power unchanged.",
@@ -277,23 +277,23 @@
         "description": "Exact archived standalone Rust#7 source and dependencies, compiled locally for this M1; no source edits or thread-pool overrides. Not the historical Rust-backed Mech control."
       },
       {
-        "name": "qualified-mech-v1175",
-        "binary": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/validation-inventory-release-v1175/variant-0/native-executable",
-          "bytes": 6712992,
-          "sha256": "bb5bae13bdbe57db60033c3a9756434f60ef5904227bdf6e31aa467afd4ecbf1"
-        },
-        "program_revision": "c8d2662bc9875c2ef93602b773b48cd0752d0881b6c2b32c077cb30809ec522f"
-      },
-      {
-        "name": "candidate-mech-v1201",
+        "name": "qualified-mech-v1201",
         "binary": {
           "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1201/variant-0/native-executable",
           "bytes": 6696512,
           "sha256": "328149ebdabfee12f588af085223cfe46147b3f2a074906fa730880797f206b3"
         },
-        "source_commit": "a7bd7082e5538fd678cb05763277a9b9f8d11524",
         "program_revision": "5f1bb0870c227926a14aec3e54f9fd18e06aa6ccf4b12f2c0db8bfe45812d6bc"
+      },
+      {
+        "name": "candidate-mech-v1210",
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1210/variant-0/native-executable",
+          "bytes": 6696528,
+          "sha256": "98ad424b0e8e46001205ad862c9b4fda53880ef2ef3acfed54669d85029efaf9"
+        },
+        "source_commit": "d94d0b7cca2145a006b37a46cdbb32a70575bb3e",
+        "program_revision": "400a09f0ca1ec57e463e53615391af9eb63afdbb09a001cc1119a2c2d4077151"
       }
     ],
     "summary": {
@@ -301,417 +301,417 @@
         "standalone-rust7": {
           "executable_bytes": 758208,
           "timing_samples_ns": [
-            72096709,
-            57755958,
-            53773625,
-            57873291,
-            56155208,
-            56864125,
-            61480292,
-            65906500,
-            58019583,
-            66015917,
-            58026333,
-            57645667
+            54267083,
+            58665209,
+            63153583,
+            55985166,
+            56626917,
+            61254875,
+            56777209,
+            57328542,
+            101957542,
+            115432458,
+            54989458,
+            54964542
           ],
-          "median_seconds": 0.057946437,
-          "minimum_seconds": 0.053773625,
-          "maximum_seconds": 0.072096709,
+          "median_seconds": 0.0570528755,
+          "minimum_seconds": 0.054267083,
+          "maximum_seconds": 0.115432458,
           "peak_rss_samples_bytes": [
-            35356672,
-            30720000,
-            30720000
+            35373056,
+            35258368,
+            35471360
           ],
-          "median_peak_rss_bytes": 30720000,
+          "median_peak_rss_bytes": 35373056,
           "peak_footprint_samples_bytes": [
-            22087168,
-            17958208,
-            21873856
+            24233216,
+            21923072,
+            22136192
           ],
-          "median_peak_footprint_bytes": 21873856
+          "median_peak_footprint_bytes": 22136192
         },
-        "qualified-mech-v1175": {
-          "executable_bytes": 6712992,
-          "timing_samples_ns": [
-            57945583,
-            57448791,
-            57533750,
-            57651083,
-            57795417,
-            57317250,
-            57400542,
-            57498125,
-            57530959,
-            57521709,
-            57621250,
-            57609625
-          ],
-          "median_seconds": 0.0575323545,
-          "minimum_seconds": 0.05731725,
-          "maximum_seconds": 0.057945583,
-          "peak_rss_samples_bytes": [
-            29442048,
-            29802496,
-            29442048
-          ],
-          "median_peak_rss_bytes": 29442048,
-          "peak_footprint_samples_bytes": [
-            15188800,
-            15565696,
-            15238144
-          ],
-          "median_peak_footprint_bytes": 15238144
-        },
-        "candidate-mech-v1201": {
+        "qualified-mech-v1201": {
           "executable_bytes": 6696512,
           "timing_samples_ns": [
-            56603042,
-            56729333,
-            56504917,
-            56726250,
-            56794916,
-            56775000,
-            56521250,
-            57554791,
-            57095291,
-            57021292,
-            56677250,
-            56697500
+            56668000,
+            58090292,
+            56788167,
+            56604166,
+            56931458,
+            56643500,
+            56520000,
+            56528458,
+            56819375,
+            56812250,
+            56661500,
+            57010416
           ],
-          "median_seconds": 0.0567277915,
-          "minimum_seconds": 0.056504917,
-          "maximum_seconds": 0.057554791,
+          "median_seconds": 0.0567280835,
+          "minimum_seconds": 0.05652,
+          "maximum_seconds": 0.058090292,
           "peak_rss_samples_bytes": [
             22233088,
-            22609920,
+            22233088,
             22233088
           ],
           "median_peak_rss_bytes": 22233088,
           "peak_footprint_samples_bytes": [
+            15614848,
             15598400,
-            15991744,
-            15614848
+            15598400
           ],
-          "median_peak_footprint_bytes": 15614848
+          "median_peak_footprint_bytes": 15598400
+        },
+        "candidate-mech-v1210": {
+          "executable_bytes": 6696528,
+          "timing_samples_ns": [
+            58106625,
+            57044417,
+            56571333,
+            56408458,
+            56506333,
+            56538209,
+            56462834,
+            56338542,
+            56521125,
+            56411833,
+            56317625,
+            56663750
+          ],
+          "median_seconds": 0.056513729,
+          "minimum_seconds": 0.056317625,
+          "maximum_seconds": 0.058106625,
+          "peak_rss_samples_bytes": [
+            22626304,
+            22249472,
+            22249472
+          ],
+          "median_peak_rss_bytes": 22249472,
+          "peak_footprint_samples_bytes": [
+            15991680,
+            15631232,
+            15614784
+          ],
+          "median_peak_footprint_bytes": 15631232
         }
       },
       "125m": {
         "standalone-rust7": {
           "executable_bytes": 758208,
           "timing_samples_ns": [
-            675153042,
-            653714417,
-            647649042,
-            657763250,
-            666562375,
-            759221125,
-            711480417,
-            659422959,
-            666477167,
-            702944083,
-            672280125,
-            672677834
+            660104333,
+            656170292,
+            643027416,
+            651178208,
+            656872917,
+            644547000,
+            658481292,
+            675710417,
+            654608292,
+            667775083,
+            651465750,
+            656989000
           ],
-          "median_seconds": 0.66942125,
-          "minimum_seconds": 0.647649042,
-          "maximum_seconds": 0.759221125,
+          "median_seconds": 0.6565216045,
+          "minimum_seconds": 0.643027416,
+          "maximum_seconds": 0.675710417,
           "peak_rss_samples_bytes": [
-            175439872,
-            204341248,
-            209092608
+            158711808,
+            208977920,
+            204931072
           ],
-          "median_peak_rss_bytes": 204341248,
+          "median_peak_rss_bytes": 204931072,
           "peak_footprint_samples_bytes": [
-            162203200,
-            191710912,
-            196134656
+            145475136,
+            196052672,
+            191809216
           ],
-          "median_peak_footprint_bytes": 191710912
+          "median_peak_footprint_bytes": 191809216
         },
-        "qualified-mech-v1175": {
-          "executable_bytes": 6712992,
-          "timing_samples_ns": [
-            552174167,
-            560228917,
-            552617042,
-            568685083,
-            571130959,
-            562266166,
-            555597250,
-            552515208,
-            555376750,
-            594026625,
-            555727833,
-            554713750
-          ],
-          "median_seconds": 0.5556625415,
-          "minimum_seconds": 0.552174167,
-          "maximum_seconds": 0.594026625,
-          "peak_rss_samples_bytes": [
-            270352384,
-            270532608,
-            273350656
-          ],
-          "median_peak_rss_bytes": 270532608,
-          "peak_footprint_samples_bytes": [
-            155059456,
-            155059456,
-            145868224
-          ],
-          "median_peak_footprint_bytes": 155059456
-        },
-        "candidate-mech-v1201": {
+        "qualified-mech-v1201": {
           "executable_bytes": 6696512,
           "timing_samples_ns": [
-            550189333,
-            551748209,
-            551667667,
-            557304625,
-            586508208,
-            563199666,
-            551859958,
-            571962459,
-            552139834,
-            577612333,
-            552056792,
-            550748125
+            550530958,
+            554266084,
+            550741042,
+            550758500,
+            551808833,
+            551608084,
+            550739500,
+            551086917,
+            552447625,
+            552040417,
+            552832958,
+            550449666
           ],
-          "median_seconds": 0.552098313,
-          "minimum_seconds": 0.550189333,
-          "maximum_seconds": 0.586508208,
+          "median_seconds": 0.5513475005,
+          "minimum_seconds": 0.550449666,
+          "maximum_seconds": 0.554266084,
           "peak_rss_samples_bytes": [
             147488768,
-            147718144,
-            147849216
+            147488768,
+            148340736
           ],
-          "median_peak_rss_bytes": 147718144,
+          "median_peak_rss_bytes": 147488768,
           "peak_footprint_samples_bytes": [
             140952768,
-            141198592,
-            141313280
+            140969216,
+            141804800
           ],
-          "median_peak_footprint_bytes": 141198592
+          "median_peak_footprint_bytes": 140969216
+        },
+        "candidate-mech-v1210": {
+          "executable_bytes": 6696528,
+          "timing_samples_ns": [
+            556856333,
+            548387125,
+            549363541,
+            548852875,
+            548331542,
+            549499208,
+            555974000,
+            548696084,
+            548648000,
+            548865083,
+            550342208,
+            548991250
+          ],
+          "median_seconds": 0.5489281665,
+          "minimum_seconds": 0.548331542,
+          "maximum_seconds": 0.556856333,
+          "peak_rss_samples_bytes": [
+            147488768,
+            147488768,
+            147488768
+          ],
+          "median_peak_rss_bytes": 147488768,
+          "peak_footprint_samples_bytes": [
+            140969216,
+            140952768,
+            140952768
+          ],
+          "median_peak_footprint_bytes": 140952768
         }
       }
     },
     "paired": {
       "10m": {
-        "qualified-mech-v1175_over_standalone-rust7": {
-          "candidate": "qualified-mech-v1175",
+        "qualified-mech-v1201_over_standalone-rust7": {
+          "candidate": "qualified-mech-v1201",
           "control": "standalone-rust7",
-          "median_ratio": 0.9938503097232281,
-          "median_delta_ms": -0.356125,
-          "faster_rounds": 9,
+          "median_ratio": 0.9928349448639116,
+          "median_delta_ms": -0.416063,
+          "faster_rounds": 7,
           "total_rounds": 12,
           "ratios": [
-            0.8037202225139014,
-            0.9946816395981173,
-            1.0699250794418267,
-            0.9961604395367805,
-            1.0292084930038903,
-            1.0079685566251129,
-            0.9336413366416673,
-            0.8724196399444668,
-            0.9915782917640067,
-            0.8713309094835416,
-            0.9930189798483389,
-            0.9993747665370929
+            1.044242602831628,
+            0.9902000349133675,
+            0.8992073656375126,
+            1.0110565002165037,
+            1.0053780254362072,
+            0.9247182367117719,
+            0.9954698548144556,
+            0.986043880201942,
+            0.5572846685535043,
+            0.4921687624463476,
+            1.0304065917507315,
+            1.0372217055861213
           ],
           "deltas_ms": [
-            -14.151126,
-            -0.307167,
-            3.760125,
-            -0.222208,
-            1.640209,
-            0.453125,
-            -4.07975,
-            -8.408375,
-            -0.488624,
-            -8.494208,
-            -0.405083,
-            -0.036042
+            2.400917,
+            -0.574917,
+            -6.365416,
+            0.619,
+            0.304541,
+            -4.611375,
+            -0.257209,
+            -0.800084,
+            -45.138167,
+            -58.620208,
+            1.672042,
+            2.045874
           ]
         },
-        "candidate-mech-v1201_over_standalone-rust7": {
-          "candidate": "candidate-mech-v1201",
+        "candidate-mech-v1210_over_standalone-rust7": {
+          "candidate": "candidate-mech-v1210",
           "control": "standalone-rust7",
-          "median_ratio": 0.9812024546852437,
-          "median_delta_ms": -1.086833,
-          "faster_rounds": 10,
+          "median_ratio": 0.9885970610688453,
+          "median_delta_ms": -0.6521875,
+          "faster_rounds": 8,
           "total_rounds": 12,
           "ratios": [
-            0.7850988316262814,
-            0.9822247775718654,
-            1.0507924098477646,
-            0.980180131798622,
-            1.0113917839998028,
-            0.9984326673451847,
-            0.9193393225913761,
-            0.8732794337432574,
-            0.9840693098397484,
-            0.8637506618290253,
-            0.9767505039479231,
-            0.9835518079789067
+            1.0707526881443028,
+            0.9723721771791523,
+            0.8957739262394661,
+            1.0075607885131572,
+            0.9978705533271395,
+            0.9229993367874801,
+            0.9944630071548604,
+            0.9827311149828301,
+            0.5543594313013156,
+            0.4886999200866016,
+            1.0241531204035508,
+            1.030914621284391
           ],
           "deltas_ms": [
-            -15.493667,
-            -1.026625,
-            2.731292,
-            -1.147041,
-            0.639708,
-            -0.089125,
-            -4.959042,
-            -8.351709,
-            -0.924292,
-            -8.994625,
-            -1.349083,
-            -0.948167
+            3.839542,
+            -1.620792,
+            -6.58225,
+            0.423292,
+            -0.120584,
+            -4.716666,
+            -0.314375,
+            -0.99,
+            -45.436417,
+            -59.020625,
+            1.328167,
+            1.699208
           ]
         },
-        "candidate-mech-v1201_over_qualified-mech-v1175": {
-          "candidate": "candidate-mech-v1201",
-          "control": "qualified-mech-v1175",
-          "median_ratio": 0.9844243054482434,
-          "median_delta_ms": -0.8957085,
+        "candidate-mech-v1210_over_qualified-mech-v1201": {
+          "candidate": "candidate-mech-v1210",
+          "control": "qualified-mech-v1201",
+          "median_ratio": 0.9954663073875365,
+          "median_delta_ms": -0.257542,
           "faster_rounds": 11,
           "total_rounds": 12,
           "ratios": [
-            0.9768310036676997,
-            0.9874765336663046,
-            0.9821177482781845,
-            0.9839580984107446,
-            0.9826889215108526,
-            0.9905394972717637,
-            0.9846814686871772,
-            1.0009855277889497,
-            0.9924272425217178,
-            0.9913003801747268,
-            0.9836171551294011,
-            0.9841671422093097
+            1.0253869026611138,
+            0.9819957007618416,
+            0.9961817045441879,
+            0.9965425159695843,
+            0.992532687288634,
+            0.9981411635933514,
+            0.9989885704175513,
+            0.9966403470620054,
+            0.9947509102308851,
+            0.992951924980968,
+            0.9939310643029218,
+            0.9939192515276507
           ],
           "deltas_ms": [
-            -1.342541,
-            -0.719458,
-            -1.028833,
-            -0.924833,
-            -1.000501,
-            -0.54225,
-            -0.879292,
-            0.056666,
-            -0.435668,
-            -0.500417,
-            -0.944,
-            -0.912125
+            1.438625,
+            -1.045875,
+            -0.216834,
+            -0.195708,
+            -0.425125,
+            -0.105291,
+            -0.057166,
+            -0.189916,
+            -0.29825,
+            -0.400417,
+            -0.343875,
+            -0.346666
           ]
         }
       },
       "125m": {
-        "qualified-mech-v1175_over_standalone-rust7": {
-          "candidate": "qualified-mech-v1175",
+        "qualified-mech-v1201_over_standalone-rust7": {
+          "candidate": "qualified-mech-v1201",
           "control": "standalone-rust7",
-          "median_ratio": 0.8355894023633549,
-          "median_delta_ms": -110.0089375,
+          "median_ratio": 0.8419951777249715,
+          "median_delta_ms": -103.6123755,
           "faster_rounds": 12,
           "total_rounds": 12,
           "ratios": [
-            0.8178503726566931,
-            0.8569933635102926,
-            0.8532662077187169,
-            0.8645741199436119,
-            0.8568304789180458,
-            0.7405828782754168,
-            0.7809030814125697,
-            0.8378768140525116,
-            0.8333019906741982,
-            0.845055302926563,
-            0.826631358468317,
-            0.8246350956764245
+            0.834005975234221,
+            0.8446985344469085,
+            0.8564814318896785,
+            0.8457876710763638,
+            0.8400541698692078,
+            0.8558073872037261,
+            0.8363783553018542,
+            0.8155667030363393,
+            0.843936185580735,
+            0.8266861568418239,
+            0.8485986531141506,
+            0.8378369592184953
           ],
           "deltas_ms": [
-            -122.978875,
-            -93.4855,
-            -95.032,
-            -89.078167,
-            -95.431416,
-            -196.954959,
-            -155.883167,
-            -106.907751,
-            -111.100417,
-            -108.917458,
-            -116.552292,
-            -117.964084
+            -109.573375,
+            -101.904208,
+            -92.286374,
+            -100.419708,
+            -105.064084,
+            -92.938916,
+            -107.741792,
+            -124.6235,
+            -102.160667,
+            -115.734666,
+            -98.632792,
+            -106.539334
           ]
         },
-        "candidate-mech-v1201_over_standalone-rust7": {
-          "candidate": "candidate-mech-v1201",
+        "candidate-mech-v1210_over_standalone-rust7": {
+          "candidate": "candidate-mech-v1210",
           "control": "standalone-rust7",
-          "median_ratio": 0.8250748799866268,
-          "median_delta_ms": -117.280333,
+          "median_ratio": 0.8404965025023743,
+          "median_delta_ms": -104.604146,
           "faster_rounds": 12,
           "total_rounds": 12,
           "ratios": [
-            0.8149105443858757,
-            0.8440202551017014,
-            0.8518003289195014,
-            0.8472723658550397,
-            0.8798999613502038,
-            0.7418124278351712,
-            0.7756502425280386,
-            0.8673681302625073,
-            0.8284452361441513,
-            0.8217045238291023,
-            0.8211707760957533,
-            0.8187398144592348
+            0.8435883619627748,
+            0.8357390325132245,
+            0.8543392199625902,
+            0.8428612448283896,
+            0.8347604655467932,
+            0.8525355140897406,
+            0.8443277079464848,
+            0.8120284521231527,
+            0.838131760176359,
+            0.8219310617793746,
+            0.8447753515821822,
+            0.8356171107887651
           ],
           "deltas_ms": [
-            -124.963709,
-            -101.966208,
-            -95.981375,
-            -100.458625,
-            -80.054167,
-            -196.021459,
-            -159.620459,
-            -87.4605,
-            -114.337333,
-            -125.33175,
-            -120.223333,
-            -121.929709
+            -103.248,
+            -107.783167,
+            -93.663875,
+            -102.325333,
+            -108.541375,
+            -95.047792,
+            -102.507292,
+            -127.014333,
+            -105.960292,
+            -118.91,
+            -101.123542,
+            -107.99775
           ]
         },
-        "candidate-mech-v1201_over_qualified-mech-v1175": {
-          "candidate": "candidate-mech-v1201",
-          "control": "qualified-mech-v1175",
-          "median_ratio": 0.9937829250080932,
-          "median_delta_ms": -3.4539785,
-          "faster_rounds": 9,
+        "candidate-mech-v1210_over_qualified-mech-v1201": {
+          "candidate": "candidate-mech-v1210",
+          "control": "qualified-mech-v1201",
+          "median_ratio": 0.995919231281093,
+          "median_delta_ms": -2.2498545,
+          "faster_rounds": 10,
           "total_rounds": 12,
           "ratios": [
-            0.9964054203933811,
-            0.9848620666612252,
-            0.9982820381424284,
-            0.979988119364826,
-            1.0269242084633692,
-            1.0016602457278214,
-            0.9932733792328886,
-            1.0351976755000019,
-            0.9941716753537126,
-            0.9723677503512574,
-            0.9933941746624737,
-            0.9928510425422121
+            1.0114895900186598,
+            0.9893932550273092,
+            0.9974988226862526,
+            0.9965399989287501,
+            0.9936983774234002,
+            0.9961768580606951,
+            1.0095044935037345,
+            0.995661604501491,
+            0.9931221986880657,
+            0.9942480044898596,
+            0.9954945703508509,
+            0.9973505007086334
           ],
           "deltas_ms": [
-            -1.984834,
-            -8.480708,
-            -0.949375,
-            -11.380458,
-            15.377249,
-            0.9335,
-            -3.737292,
-            19.447251,
-            -3.236916,
-            -16.414292,
-            -3.671041,
-            -3.965625
+            6.325375,
+            -5.878959,
+            -1.377501,
+            -1.905625,
+            -3.477291,
+            -2.108876,
+            5.2345,
+            -2.390833,
+            -3.799625,
+            -3.175334,
+            -2.49075,
+            -1.458416
           ]
         }
       }
@@ -721,15 +721,9 @@
         "size": "10m",
         "differences": [
           {
-            "key": "native_work",
-            "baseline": 57976721126,
-            "candidate": 57898057358,
-            "numeric_delta": -78663768
-          },
-          {
             "key": "program_revision",
-            "baseline": "c8d2662bc9875c2ef93602b773b48cd0752d0881b6c2b32c077cb30809ec522f",
-            "candidate": "5f1bb0870c227926a14aec3e54f9fd18e06aa6ccf4b12f2c0db8bfe45812d6bc",
+            "baseline": "5f1bb0870c227926a14aec3e54f9fd18e06aa6ccf4b12f2c0db8bfe45812d6bc",
+            "candidate": "400a09f0ca1ec57e463e53615391af9eb63afdbb09a001cc1119a2c2d4077151",
             "numeric_delta": null
           }
         ]
@@ -738,15 +732,9 @@
         "size": "125m",
         "differences": [
           {
-            "key": "native_work",
-            "baseline": 718418123927,
-            "candidate": 717409670527,
-            "numeric_delta": -1008453400
-          },
-          {
             "key": "program_revision",
-            "baseline": "c8d2662bc9875c2ef93602b773b48cd0752d0881b6c2b32c077cb30809ec522f",
-            "candidate": "5f1bb0870c227926a14aec3e54f9fd18e06aa6ccf4b12f2c0db8bfe45812d6bc",
+            "baseline": "5f1bb0870c227926a14aec3e54f9fd18e06aa6ccf4b12f2c0db8bfe45812d6bc",
+            "candidate": "400a09f0ca1ec57e463e53615391af9eb63afdbb09a001cc1119a2c2d4077151",
             "numeric_delta": null
           }
         ]
@@ -755,35 +743,60 @@
   },
   "independent_audit": {
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-measurement-audit-v1204.json",
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-measurement-audit-v1213.json",
       "bytes": 1034,
-      "sha256": "9e8cb3cc077c7dbd974a24a95297a18f54d4acff8561ff66032657b452477a10"
+      "sha256": "9613523fb1c7bb035c63dc89e0bdc39a089cb1db2645a69a91d6303836b4d4c0"
     },
     "status": "PASS",
-    "physical_files_verified": 816
+    "physical_files_verified": 586
   },
   "assessment": {
-    "speed": "Versus the remeasured prior secured Mech build: 10M paired median ratio 0.9844243 (1.56% less elapsed time, 11/12 faster); 125M ratio 0.9937829 (0.62% less, 9/12 faster). Slower samples remain included. Versus this Rust #7 recipe: 10M ratio 0.9812025 (10/12 faster), 125M ratio 0.8250749 (12/12 faster). This is not a general language ranking.",
-    "footprint": "125M Mech median peak RSS falls from 270532608 to 147718144 bytes. Executable falls from 6712992 to 6696512 bytes. RSS and physical footprint are separate measurements; RSS is not a proof of the minimum managed-memory budget needed to run.",
+    "speed": "The correction preserves performance: 10M paired median ratio 0.9954663 (0.45% less elapsed time, 11/12 faster), 125M ratio 0.9959192 (0.41% less, 10/12 faster). Versus Rust #7, paired ratios are 0.9885971 at 10M and 0.8404965 at 125M. All samples, including slower runs and Rust's 10M outliers, remain. This is a comparison of the recorded implementations, not a language ranking.",
+    "footprint": "125M median peak RSS is 147488768 bytes for both the remeasured prior and corrected Mech builds. The executable changes from 6696512 to 6696528 bytes (+16 bytes). RSS and physical footprint remain separate; RSS does not prove the minimum managed-memory budget.",
     "rust_rss_variability": {
       "latest_125m_samples_bytes": [
+        158711808,
+        208977920,
+        204931072
+      ],
+      "preceding_125m_samples_bytes": [
         175439872,
         204341248,
         209092608
       ],
-      "preceding_125m_samples_bytes": [
+      "earlier_125m_samples_bytes": [
         204652544,
         171130880,
         171327488
       ],
-      "note": "The previous batch had a 171327488-byte median; this batch has a 204341248-byte median. Retain both distributions, not a single supposedly fixed baseline. The standalone Rust executable remains 758208 bytes with its original unstripped recipe."
+      "note": "Latest median is 204931072 bytes, with a 158711808–208977920-byte range. Previous medians were 204341248 and 171327488 bytes. Retain each distribution. The unchanged standalone Rust executable is 758208 bytes, unstripped."
     },
-    "limits": "Finite policy, all original requirements, provider contracts, transaction/commit authority, error precedence, shapes, visits, comparisons and transport remain. Only actual artifact revision and allocation-dependent native_work differ between complete reports; raw values and deltas are retained.",
-    "outstanding": "New review and green CI on the publication head. PR909 remains draft and unmerged; user approval is required before ready/merge actions."
+    "limits": "Finite policy, requirements, provider contracts, transaction/commit authority and all execution counters remain. Complete reports differ only in the actual separately pinned artifact revision; work, visits, comparisons and transport are identical. Generated Mech machine code and relocation bytes are identical.",
+    "outstanding": "New review and green CI on the publication head. PR909 remains draft and unmerged; user approval is required before ready/merge actions.",
+    "completion_gate": "Performance work for this PR is complete when these measured targets hold after the review correction: 10M median at or below 0.0582 seconds, 125M RSS below 200 MB, and no material time or executable-size regression. All review notes must be addressed with a clean review and green CI on the publication head. Further optimization is separate work; readiness and merging still require user direction."
   },
   "historical": {
     "startup_measurement": "canonical-knucleotide-startup-validation-v1.json",
     "direct_io": "canonical-knucleotide-streaming-footprint-v1.json",
-    "note": "The historical approximately 0.975-second control is Rust-backed Mech, not standalone Rust #7."
+    "note": "The historical approximately 0.975-second control is Rust-backed Mech, not standalone Rust #7.",
+    "initial_capture_pages_measurement": "https://github.com/mech-lang/mech/blob/fa25989a21cdcb2d832f2d8de2ccafbb71c34bb7/docs/validation/canonical-knucleotide-capture-pages-v1.json"
+  },
+  "review_correction": {
+    "thread": "https://github.com/mech-lang/mech/pull/909#discussion_r4343832793",
+    "commit": "d94d0b7cca2145a006b37a46cdbb32a70575bb3e",
+    "problem": "An optional 2 MiB slab could fit alone but leave too little room for mandatory offsets, directory growth or an unfinished tail in the same input fragment.",
+    "change": "Reserve each fragment's mandatory backing before selecting page or heap storage. Keep the same finite memory account and cumulative work ledger; declined slab preference spends no speculative work.",
+    "red": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-envelope-red-v1208/result.json",
+      "bytes": 3847,
+      "sha256": "8b948d2949778f640f7605af932b8fdb629fec03787d87dc5ce0cac18f5fc66e"
+    },
+    "green": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-envelope-green-v1208/result.json",
+      "bytes": 3856,
+      "sha256": "53b6b0597a65666bab97d20a2cb4e68c3b0ad581239eb1ecc12849ccfd8aa67d"
+    },
+    "regressions": "Three tests failed on the published implementation and pass after the fix. Dense offsets and unfinished-tail cases cover both global memory and local temporary limits; directory growth has an exact remaining-capacity regression.",
+    "selected_local_tests_passed": 341
   }
 }

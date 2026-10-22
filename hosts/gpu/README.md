@@ -157,51 +157,46 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The latest [matched measurements, samples and pins](../../docs/validation/canonical-knucleotide-capture-pages-v1.json)
-use the unchanged full Mech source, the same M1, inputs and output oracles.
-Twelve balanced three-way rounds measure startup, the complete secured round
-and report publication. Mech retains the same finite capability policy.
+The latest [measurements, samples and pins](../../docs/validation/canonical-knucleotide-capture-pages-v1.json)
+use the full Mech source, the same M1, inputs and output oracles. Twelve balanced
+three-way rounds compare Rust #7, the previous secured Mech build and the
+corrected build, including startup, one secured round and report publication.
 
 | Build | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Standalone Rust #7 | 0.05795 s | 0.66942 s | 204.3 MB | 0.758 MB |
-| Prior secured Mech | 0.05753 s | 0.55566 s | 270.5 MB | 6.713 MB |
-| Secured Mech with capture pages | 0.05673 s | 0.55210 s | 147.7 MB | 6.697 MB |
+| Standalone Rust #7 | 0.05705 s | 0.65652 s | 204.9 MB | 0.758 MB |
+| Current secured Mech | 0.05651 s | 0.54893 s | 147.5 MB | 6.697 MB |
 
-Both the **0.0582-second median target at 10M** and approximately **200 MB RSS
-reference** are met. Against prior Mech, paired elapsed time improves 1.56%
-at 10M (11/12 faster pairs) and 0.62% at 125M (9/12); all slower samples remain.
-These are results for the recorded implementations, not a language ranking.
+The **0.0582-second median target at 10M** and **200 MB RSS reference** are met.
+The capture-budget correction preserves performance: paired elapsed time is
+0.45% lower at 10M and 0.41% lower at 125M; executable size increases by 16 bytes.
+All samples remain, including slower runs and Rust's 10M outliers.
 
-Private page-backed capture lets the existing consuming join release source
-pages as it fills the final String. Small fragments and tight budgets retain
-the ordinary heap path; non-Unix targets use heap storage. Every real capacity
-claim stays on the original finite account. Same-plan proof reuse reduces
-startup duplication; shared identity-hash updates trim code size. No separate
-executor, I/O authority, workload-sized Rust replacement or per-operation
-protocol is introduced. The generated Mech code and relocation bytes are
-unchanged; fresh artifacts retain their actual separately validated identities.
+Private capture pages retire during the existing consuming join. Each fragment's
+required offsets, directory and unfinished tail are funded before optional page
+storage, preserving heap fallback under tight budgets. Small fragments and
+non-Unix targets retain heap storage. Real allocations use the same finite
+account; the runtime retains one capability/provider/transaction authority.
 
-Fresh original/decoded builds at `a7bd7082e` are byte-identical and pass the
-maintained security, launcher, pin-tampering and full-input qualification.
-All 96 measured outputs and 64 complete Mech reports pass, independently audited
-against 816 physical files. Only actual artifact revision and storage-dependent
-`native_work` differ across builds; every value/delta is retained. IR27/ABI12/
-work-policy36 and one capability/provider/transaction authority remain. Mech
-source compiles through Cranelift; LLVM compiles linked Rust host/library code.
+Fresh original/decoded builds at `d94d0b7cc` produce identical executables and
+pass security denials, launcher tests, tamper rejection and full-input checks.
+All 96 measured outputs and 64 complete Mech reports pass an independent audit.
+Execution counters and generated Mech code/relocations are unchanged; actual
+artifact identities remain separately pinned. The local contract checks pass
+341 tests. Mech source compiles through Cranelift; LLVM compiles linked Rust
+host/library code.
 
-RSS medians use three separate processes; physical footprint is recorded
-separately. Rust #7 varies: this batch spans 175.4–209.1 MB, while the preceding
-batch spans 171.1–204.7 MB (171.3 MB median). All samples remain available.
-Units are decimal MB. Executable sizes include each program's linked support;
-Rust is unstripped and Mech uses the default opt-level3/ThinLTO/strip profile.
-The secured host has legitimate size costs; equality with Rust or the older
-Rust-backed Mech binary is not a requirement. New review and green CI remain
-required. PR909 stays draft and unmerged pending user direction.
+RSS medians use three separate processes; Rust spans 158.7–209.0 MB this batch.
+Physical footprint is recorded separately. Units are decimal MB. Rust remains
+unstripped; Mech uses the default opt-level3/ThinLTO/strip profile and includes
+its secured host. Equal executable size is not a requirement.
 
-The [preceding startup measurement](../../docs/validation/canonical-knucleotide-startup-validation-v1.json)
-and [earlier direct-I/O comparison](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
-retain their provenance. The historical approximately 0.975-second control is
+Implementation and performance targets are met. Completion still requires all
+review notes resolved, a clean review and green CI on the publication head.
+PR909 stays draft and unmerged pending user direction.
+
+The [earlier direct-I/O comparison](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
+retains its provenance: the approximately 0.975-second historical control is
 Rust-backed Mech, not standalone Rust #7.
 
 ### Canonical native architecture and limits
