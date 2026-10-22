@@ -168,9 +168,19 @@ pub(super) fn closure(metadata: &Value, stdout: &[u8]) -> Vec<Value> {
             result.push(json!({"name":name, "id":id, "root":id==root, "target":message["target"], "features":message["features"], "filenames":message["filenames"]}));
         }
     }
-    for name in ["mech-core", "mech-engine", "mech-gpu", "mech-stdlib"] {
+    for name in ["mech-core", "mech-engine", "mech-gpu"] {
         assert!(names.contains(name));
     }
+    let requires_stdlib = packages[root]["dependencies"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|dependency| dependency["name"] == "mech-stdlib");
+    assert_eq!(
+        names.contains("mech-stdlib"),
+        requires_stdlib,
+        "compiled standard-library presence must match the generated manifest"
+    );
     assert!(result.iter().any(|unit| unit["root"] == true));
     result
 }

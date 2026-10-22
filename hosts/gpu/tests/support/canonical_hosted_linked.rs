@@ -189,7 +189,10 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
             String::from_utf8_lossy(&metadata_output.stderr)
         );
         let metadata: Value = serde_json::from_slice(&metadata_output.stdout).unwrap();
-        let target = evidence.join("cargo-target");
+        let target = std::env::var_os("MECH_CANONICAL_HOSTED_TARGET_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| evidence.join("cargo-target"));
+        assert!(target.is_absolute(), "qualification cache must be absolute");
         let mut command = profile
             .invocation(&project.manifest_path(), binary_name, &target)
             .with_current_dir(isolated)
