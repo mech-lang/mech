@@ -447,7 +447,14 @@ impl NativeTextLineChunks {
                 .payload
                 .checked_add(payload_bytes as u64)
                 .ok_or(InvokeError::InvalidInput)?;
+            // Fund every mandatory backing in this fragment before preferring
+            // a slab. Otherwise its unused capacity can crowd out offsets,
+            // directory growth or the unfinished tail even though heap storage
+            // would fit. Pending bytes stay private until their line completes.
+            self.append_pending(&text[last + 1..])?;
             if self.upper.is_none() {
+                self.reserve_chunk_slot()?;
+                let offsets = Offsets::new(complete, count, payload_bytes, &self.account)?;
                 #[cfg(all(unix, feature = "native-capture-pages"))]
                 let bytes = match self.pages.copy(complete, self.input_limit, &self.account)? {
                     Some(text) => ChunkData::Pages(text),
@@ -455,14 +462,14 @@ impl NativeTextLineChunks {
                 };
                 #[cfg(not(all(unix, feature = "native-capture-pages")))]
                 let bytes = Bytes::copy(complete, &self.account)?;
-                let offsets = Offsets::new(complete, count, payload_bytes, &self.account)?;
-                self.push_chunk(Chunk {
+                // The slot and all other fragment backing are already funded.
+                self.chunks.push_back(Chunk {
                     first,
                     bytes,
                     offsets: Some(offsets),
-                })?;
+                });
             }
-            text = &text[last + 1..];
+            return Ok(());
         }
         self.append_pending(text)
     }
@@ -516,6 +523,11 @@ impl NativeTextLineChunks {
         Ok(())
     }
     fn push_chunk(&mut self, chunk: Chunk) -> Result<(), InvokeError> {
+        self.reserve_chunk_slot()?;
+        self.chunks.push_back(chunk);
+        Ok(())
+    }
+    fn reserve_chunk_slot(&mut self) -> Result<(), InvokeError> {
         if self.chunks.len() == self.chunks.capacity() {
             let capacity = self
                 .chunks
@@ -543,7 +555,6 @@ impl NativeTextLineChunks {
             // releases only after the complete replacement was held at once.
             self.slots = Some(claim);
         }
-        self.chunks.push_back(chunk);
         Ok(())
     }
 
