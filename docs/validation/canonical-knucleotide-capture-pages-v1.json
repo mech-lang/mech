@@ -1,12 +1,12 @@
 {
   "schema": "mech.canonical-knucleotide-capture-pages.v1",
   "status": "FRESH_QUALIFIED_SPEED_AND_RSS_TARGETS_MET",
-  "source_commit": "d94d0b7cca2145a006b37a46cdbb32a70575bb3e",
-  "source_tree": "6f4c4a2c605e0b55a3cf0cba92bd01b06841e140",
+  "source_commit": "a24eb610a9081f87378e88c3f15e0b4d9b0346c8",
+  "source_tree": "e38bfd45a40964adb914a975e43cdda004a99f30",
   "source_provenance": "Fresh original/decoded source qualification and matched timings used this exact clean commit. Publication documentation changes no executable source.",
   "measured_utc": {
-    "started": "2026-10-22T02:37:27.472Z",
-    "finished": "2026-10-22T02:38:07.591Z"
+    "started": "2026-10-22T03:51:37.106Z",
+    "finished": "2026-10-22T03:52:21.299Z"
   },
   "hardware": {
     "architecture": "arm64",
@@ -22,12 +22,12 @@
   "target": {
     "size": "10m",
     "requested_seconds": 0.0582,
-    "candidate_median_seconds": 0.056513729,
+    "candidate_median_seconds": 0.0566903755,
     "meets_requested_target": true,
-    "fresh_rust7_median_seconds": 0.0570528755,
+    "fresh_rust7_median_seconds": 0.060849687,
     "note": "The requested absolute target is reported separately from the freshly remeasured Rust comparator; neither defines correctness PASS.",
     "peak_rss_reference_bytes": 200000000,
-    "candidate_125m_peak_rss_bytes": 147488768,
+    "candidate_125m_peak_rss_bytes": 147439616,
     "meets_rss_reference": true,
     "executable_size": "No equality requirement with standalone Rust or the older Rust-backed Mech binary. The secured host has legitimate costs; remove unused/duplicated code without sacrificing speed or security."
   },
@@ -35,20 +35,20 @@
     "typed_ir": 27,
     "abi": 12,
     "work_policy": 36,
-    "capture": "Private append-only anonymous Unix slabs retain immutable UTF-8 slices under Rc. The existing consuming join unmaps source slabs after their last slice retires instead of leaving malloc medium-region pages resident. Small fragments, insufficient headroom and mapping failure retain the ordinary heap path; non-Unix targets use heap storage. Required offsets, directory capacity and unfinished tail backing are funded before choosing an optional slab, so the slab cannot crowd out the rest of that fragment.",
+    "capture": "Private append-only anonymous Unix slabs retain immutable UTF-8 slices under Rc. The existing consuming join unmaps source slabs after their last slice retires instead of leaving malloc medium-region pages resident. Small fragments, insufficient headroom and mapping failure retain the ordinary heap path; non-Unix targets use heap storage. Directory replacement, offsets and unfinished tail backing are funded before choosing an optional slab, so the slab cannot crowd out the rest of that fragment.",
     "accounting": "Every real slab and owner header is reserved on the existing managed memory account before physical allocation. Optional admission previews the same cumulative work ledger without spending on a declined preference; failed physical allocation remains charged once. No ledger renewal, per-operation protocol, new resource route or secondary executor.",
     "size_and_startup": "Hash complete, already-derived same-plan join and line proof inventories instead of rebuilding them. Share repeated streaming identity hash updates out of line; the identity transcript is unchanged.",
     "compiler": "Full idiomatic Mech source through canonical Cranelift Object compilation. LLVM compiles linked Rust host/library routines, not the Mech body. Default opt-level3, ThinLTO, stripped symbols, unchanged unwind and codegen-unit defaults.",
     "code_generation_proof": {
       "old_object": {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1201/project-0/program.o",
-        "bytes": 26920,
-        "sha256": "bc7e86f6aaae8d96f4aad9fd7ad8f0636d1b85221774aa104988f1a3d8329f92"
-      },
-      "fresh_object": {
         "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1210/project-0/program.o",
         "bytes": 26920,
         "sha256": "7840e21a2ef1612c32c2dca0589d497110c16fce07ff4f4edeb9cdb5f8b2951b"
+      },
+      "fresh_object": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-release-v1236/project-0/program.o",
+        "bytes": 26920,
+        "sha256": "1d6ef3fb32fac654d9a910b1508eee6eb86ddf83acff68c2280dd05ff7b3ad08"
       },
       "old": {
         "bytes": 26048,
@@ -58,37 +58,373 @@
       },
       "fresh": {
         "bytes": 26048,
-        "sha256": "3480aa77b80bfa1bcb3a5928a2c01637800937c34c9fa64e947c578ca7c547a1",
+        "sha256": "f98a901c4277ab6370edd5db757020707c92a02ea9199a53438bc3ed8fc8d5b6",
         "relocation_bytes": 24,
         "relocation_sha256": "0848e868b5021b96a5129a9a313017f2e540705d6e1599eef69a63cb6934c8c3"
-      }
+      },
+      "byte_identical": false,
+      "instruction_differences": [
+        {
+          "offset": 3260,
+          "old_word": 4177530479,
+          "new_word": 4177529455,
+          "old_local_offset": 24,
+          "fresh_local_offset": 16
+        },
+        {
+          "offset": 3268,
+          "old_word": 4177531489,
+          "new_word": 4177530465,
+          "old_local_offset": 32,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 3276,
+          "old_word": 4177532514,
+          "new_word": 4177531490,
+          "old_local_offset": 40,
+          "fresh_local_offset": 32
+        },
+        {
+          "offset": 3284,
+          "old_word": 4177533538,
+          "new_word": 4177532514,
+          "old_local_offset": 48,
+          "fresh_local_offset": 40
+        },
+        {
+          "offset": 3292,
+          "old_word": 4177534562,
+          "new_word": 4177533538,
+          "old_local_offset": 56,
+          "fresh_local_offset": 48
+        },
+        {
+          "offset": 3300,
+          "old_word": 4177535586,
+          "new_word": 4177534562,
+          "old_local_offset": 64,
+          "fresh_local_offset": 56
+        },
+        {
+          "offset": 3308,
+          "old_word": 4177539682,
+          "new_word": 4177538658,
+          "old_local_offset": 96,
+          "fresh_local_offset": 88
+        },
+        {
+          "offset": 3312,
+          "old_word": 4177540719,
+          "new_word": 4177539695,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 3316,
+          "old_word": 4177541729,
+          "new_word": 4177540705,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 6484,
+          "old_word": 4181728865,
+          "new_word": 4181727841,
+          "old_local_offset": 56,
+          "fresh_local_offset": 48
+        },
+        {
+          "offset": 6564,
+          "old_word": 4181728865,
+          "new_word": 4181727841,
+          "old_local_offset": 56,
+          "fresh_local_offset": 48
+        },
+        {
+          "offset": 6748,
+          "old_word": 4181725797,
+          "new_word": 4181724773,
+          "old_local_offset": 32,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 6760,
+          "old_word": 4181728870,
+          "new_word": 4181727846,
+          "old_local_offset": 56,
+          "fresh_local_offset": 48
+        },
+        {
+          "offset": 7388,
+          "old_word": 4181735009,
+          "new_word": 4181733985,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 7452,
+          "old_word": 4181736033,
+          "new_word": 4181735009,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 7684,
+          "old_word": 4181729898,
+          "new_word": 4181728874,
+          "old_local_offset": 64,
+          "fresh_local_offset": 56
+        },
+        {
+          "offset": 7748,
+          "old_word": 4181729893,
+          "new_word": 4181728869,
+          "old_local_offset": 64,
+          "fresh_local_offset": 56
+        },
+        {
+          "offset": 8576,
+          "old_word": 4181735019,
+          "new_word": 4181733995,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 8684,
+          "old_word": 4181736032,
+          "new_word": 4181735008,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 8800,
+          "old_word": 4181736032,
+          "new_word": 4181735008,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 9020,
+          "old_word": 4181735008,
+          "new_word": 4181733984,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 9576,
+          "old_word": 4181735008,
+          "new_word": 4181733984,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 11196,
+          "old_word": 4181724769,
+          "new_word": 4181723745,
+          "old_local_offset": 24,
+          "fresh_local_offset": 16
+        },
+        {
+          "offset": 11392,
+          "old_word": 4181725792,
+          "new_word": 4181724768,
+          "old_local_offset": 32,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 11456,
+          "old_word": 4181725797,
+          "new_word": 4181724773,
+          "old_local_offset": 32,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 12012,
+          "old_word": 4181735008,
+          "new_word": 4181733984,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 13140,
+          "old_word": 4181725793,
+          "new_word": 4181724769,
+          "old_local_offset": 32,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 13748,
+          "old_word": 4181725793,
+          "new_word": 4181724769,
+          "old_local_offset": 32,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 14220,
+          "old_word": 4181725793,
+          "new_word": 4181724769,
+          "old_local_offset": 32,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 14500,
+          "old_word": 4181725793,
+          "new_word": 4181724769,
+          "old_local_offset": 32,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 14588,
+          "old_word": 4181725793,
+          "new_word": 4181724769,
+          "old_local_offset": 32,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 14932,
+          "old_word": 4181725792,
+          "new_word": 4181724768,
+          "old_local_offset": 32,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 18732,
+          "old_word": 4181724771,
+          "new_word": 4181723747,
+          "old_local_offset": 24,
+          "fresh_local_offset": 16
+        },
+        {
+          "offset": 19172,
+          "old_word": 4181724769,
+          "new_word": 4181723745,
+          "old_local_offset": 24,
+          "fresh_local_offset": 16
+        },
+        {
+          "offset": 19436,
+          "old_word": 4181725794,
+          "new_word": 4181724770,
+          "old_local_offset": 32,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 20408,
+          "old_word": 4181736033,
+          "new_word": 4181735009,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 20456,
+          "old_word": 4181735009,
+          "new_word": 4181733985,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 20600,
+          "old_word": 4181724768,
+          "new_word": 4181723744,
+          "old_local_offset": 24,
+          "fresh_local_offset": 16
+        },
+        {
+          "offset": 20916,
+          "old_word": 4181724768,
+          "new_word": 4181723744,
+          "old_local_offset": 24,
+          "fresh_local_offset": 16
+        },
+        {
+          "offset": 21804,
+          "old_word": 4181724771,
+          "new_word": 4181723747,
+          "old_local_offset": 24,
+          "fresh_local_offset": 16
+        },
+        {
+          "offset": 22248,
+          "old_word": 4181724771,
+          "new_word": 4181723747,
+          "old_local_offset": 24,
+          "fresh_local_offset": 16
+        },
+        {
+          "offset": 22512,
+          "old_word": 4181725793,
+          "new_word": 4181724769,
+          "old_local_offset": 32,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 23768,
+          "old_word": 4181725792,
+          "new_word": 4181724768,
+          "old_local_offset": 32,
+          "fresh_local_offset": 24
+        },
+        {
+          "offset": 25032,
+          "old_word": 4181733999,
+          "new_word": 4181732975,
+          "old_local_offset": 96,
+          "fresh_local_offset": 88
+        },
+        {
+          "offset": 25180,
+          "old_word": 4181727840,
+          "new_word": 4181726816,
+          "old_local_offset": 48,
+          "fresh_local_offset": 40
+        }
+      ],
+      "comparison": "Same section size, relocation bytes, opcodes, registers and control-flow instructions. All45 changed instruction words differ only in unsigned load/store local-buffer address immediates. Actual Object hashes and every changed word remain recorded."
+    },
+    "selected_library_features": {
+      "mode": "artifact-selected",
+      "change": "Omit the broad mech-stdlib dependency when all maintained factory registrations are selected. Preserve complete-catalog dependency/features for unrecognized registrations. Existing owner features remain derived from the complete artifact kernel closure.",
+      "removed_resolved_packages": [
+        "mech-combinatorics",
+        "mech-compare",
+        "mech-logic",
+        "mech-math",
+        "mech-matrix",
+        "mech-range",
+        "mech-set",
+        "mech-stats",
+        "mech-stdlib",
+        "mech-string"
+      ],
+      "limitation": "Canonical snapshot types and their generic converters are still broader than this program. This dependency cleanup did not reduce measured executable size or time."
     }
   },
   "qualification": {
     "wrapper": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-qualification-v1210/result.json",
-      "bytes": 18480,
-      "sha256": "8021550ad1fb25016d60ea9aa60be555727b2c58fdf5b2ea3d0bcd4aaaa0d669"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-qualification-v1236/result.json",
+      "bytes": 13025,
+      "sha256": "a8cca503dbe97d0324e5b5c87c8e5b110adc84a2fa60e7036cbef226fddec3e5"
     },
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1210/hosted-linked-result.json",
-      "bytes": 597074,
-      "sha256": "0179474305982111fb84546f8d6a42179882578cfc6fbab374834d24c5df53f8"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-release-v1236/hosted-linked-result.json",
+      "bytes": 563969,
+      "sha256": "b9476b1d626d5de3941cd35032cae5447878bd35adfd71415d90f31470c4f603"
     },
     "original_decoded_binaries": [
       {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1210/variant-0/native-executable",
-        "bytes": 6696528,
-        "sha256": "98ad424b0e8e46001205ad862c9b4fda53880ef2ef3acfed54669d85029efaf9"
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-release-v1236/variant-0/native-executable",
+        "bytes": 6714000,
+        "sha256": "0be8b51963c0717ff6b9287296b6a343686183f74d97be0a5d4e4d3b0766369d"
       },
       {
-        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1210/variant-1/native-executable",
-        "bytes": 6696528,
-        "sha256": "98ad424b0e8e46001205ad862c9b4fda53880ef2ef3acfed54669d85029efaf9"
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-release-v1236/variant-1/native-executable",
+        "bytes": 6714000,
+        "sha256": "0be8b51963c0717ff6b9287296b6a343686183f74d97be0a5d4e4d3b0766369d"
       }
     ],
     "original_decoded_byte_identical": true,
-    "program_revision": "400a09f0ca1ec57e463e53615391af9eb63afdbb09a001cc1119a2c2d4077151",
+    "program_revision": "89855b44cf410cef1383c67bcc7f60877276592c7502af8226085704482da372",
     "security_cases_per_variant": 13,
     "generated_launcher_tests_per_variant": 8,
     "mutated_pins_rejected": 9,
@@ -96,28 +432,34 @@
     "full_input_correctness_processes": 2,
     "full_input_timing_processes": 6,
     "local_validation": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-validation-v1212/result.json",
-      "bytes": 25079,
-      "sha256": "079930c68d5cfd33c56c3a5078b1b9a9f2473d1dc507bd301aedc0370eb470d7"
-    }
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-validation-v1237/result.json",
+      "bytes": 10025,
+      "sha256": "efd4f2b8165aeaeb7985f8f3eb6263579ba00370146543bf0e8d075be7715fc2"
+    },
+    "local_validation_scope": "53 hosted contract tests pass at the measured revision; scalar and match process qualification targets compile but their ignored workers are not counted as passing tests.",
+    "preceding_allocation_fix_validation": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-validation-v1216/result.json",
+      "bytes": 25080,
+      "sha256": "9f266081abe8e3da77c1447fc6e5920c0e6eb0c3636000f07a2915e5bbe370ff"
+    },
+    "preceding_allocation_fix_tests_passed": 343
   },
   "matched_measurement": {
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-rust7-three-way-v1211/measurement.json",
-      "bytes": 416389,
-      "sha256": "a5933f51340b1a398b14b78be5b45b5ea1be7c8ce36fa2740ebd9bbc9879b650"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-rust7-three-way-v1231/measurement.json",
+      "bytes": 425774,
+      "sha256": "f117dff4d62aa871413618367b14173d75a8ac725edf98060b6c17b9077cb85a"
     },
     "method": {
       "timing": "Twelve balanced three-way rounds per size, all six permutations twice. Serial fresh-process spawn-through-exit wall time; input/output descriptors opened before the clock. Warmups, hashing, validation and process checks are untimed.",
       "correctness": "Every stdout must byte-exactly match the same pinned oracle and every stderr must be empty. No whitespace, float, line-order or security-report normalization.",
-      "security": "Both Mech versions use the SAME pinned finite capability policy. Baseline reports equal pinned v1203 reports. Candidate125M reports equal fresh v1210 qualification; candidate10M counters equal the pinned v1198 report with program_revision bound to the actual fresh manifest, without changing observed reports. Every repeat matches its complete variant/size report. Cross-Mech reports retain all fields and every delta; only actual revision and storage-dependent native_work may differ. Standalone Rust#7 is an unsecured control.",
+      "security": "Both Mech versions use the SAME pinned finite capability policy. Baseline reports equal pinned v1211 reports. Candidate125M reports equal fresh v1236 qualification; candidate10M counters equal the pinned v1198 report with program_revision bound to the actual fresh manifest, without changing observed reports. Every repeat matches its complete variant/size report. Cross-Mech reports retain all fields and every delta; only actual revision and storage-dependent native_work may differ. Standalone Rust#7 is an unsecured control.",
       "memory": "Three separate macOS time -l processes per binary/size; maximum RSS and physical footprint separately retained, never mixed into timing samples.",
       "lifecycle": "Fixed native leaves (threads allowed, no child-process work) have a10s deadline. RSS wrapper uses the reviewed owned-tree/group guard with15s deadline and bounded2s termination. No process polling inside timed samples.",
       "interference": "At least40GiB free and no compiler/test/benchmark/profiler before/after each process. Immutable source/build/binary/input/policy pins verified between phases; hardware/OS/power unchanged.",
       "packaging": "Executable bytes are recorded only for provenance, NOT a size-fair comparison: upstream Rust recipe leaves symbols unstripped while the maintained Mech profile strips symbols. Build settings and thread defaults are preserved, not normalized.",
       "scope": "Same-machine same-input comparison of these exact implementations and recorded build recipes, not a general language ranking or isolated capability overhead measurement. Both Mech versions and Rust are freshly remeasured; historical measurements are provenance only."
     },
-    "method_clarification": "The 10M expected reference retains all pinned diagnostic counters, with its program_revision explicitly bound to the fresh manifest. Observed reports are never rewritten. The 125M candidate report matches fresh source qualification exactly. All cross-build identity/work differences remain in the raw receipt.",
     "rounds_per_size": 12,
     "orders": [
       [
@@ -256,7 +598,7 @@
         "work": 562949953421312
       }
     },
-    "variants": [
+    "builds": [
       {
         "name": "standalone-rust7",
         "binary": {
@@ -264,36 +606,25 @@
           "bytes": 758208,
           "sha256": "6a0c71d8a7bf27683e71e0d23e0ade4e468b51c1dee8792f6f3a6d9b3f2a7ab1"
         },
-        "recipe": {
-          "edition": "2021",
-          "opt_level": 3,
-          "target_cpu": "native",
-          "codegen_units": 1,
-          "lto": "default",
-          "panic": "default unwind",
-          "strip": "unchanged default"
-        },
-        "rustc_version": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-apple-darwin\nrelease: 1.98.1\nLLVM version: 22.1.8",
-        "description": "Exact archived standalone Rust#7 source and dependencies, compiled locally for this M1; no source edits or thread-pool overrides. Not the historical Rust-backed Mech control."
+        "program_revision": null
       },
       {
-        "name": "qualified-mech-v1201",
-        "binary": {
-          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1201/variant-0/native-executable",
-          "bytes": 6696512,
-          "sha256": "328149ebdabfee12f588af085223cfe46147b3f2a074906fa730880797f206b3"
-        },
-        "program_revision": "5f1bb0870c227926a14aec3e54f9fd18e06aa6ccf4b12f2c0db8bfe45812d6bc"
-      },
-      {
-        "name": "candidate-mech-v1210",
+        "name": "qualified-mech-v1210",
         "binary": {
           "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-default-release-v1210/variant-0/native-executable",
           "bytes": 6696528,
           "sha256": "98ad424b0e8e46001205ad862c9b4fda53880ef2ef3acfed54669d85029efaf9"
         },
-        "source_commit": "d94d0b7cca2145a006b37a46cdbb32a70575bb3e",
         "program_revision": "400a09f0ca1ec57e463e53615391af9eb63afdbb09a001cc1119a2c2d4077151"
+      },
+      {
+        "name": "candidate-mech-v1236",
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-release-v1236/variant-0/native-executable",
+          "bytes": 6714000,
+          "sha256": "0be8b51963c0717ff6b9287296b6a343686183f74d97be0a5d4e4d3b0766369d"
+        },
+        "program_revision": "89855b44cf410cef1383c67bcc7f60877276592c7502af8226085704482da372"
       }
     ],
     "summary": {
@@ -301,417 +632,417 @@
         "standalone-rust7": {
           "executable_bytes": 758208,
           "timing_samples_ns": [
-            54267083,
-            58665209,
-            63153583,
-            55985166,
-            56626917,
-            61254875,
-            56777209,
-            57328542,
-            101957542,
-            115432458,
-            54989458,
-            54964542
+            70226083,
+            71255917,
+            59503791,
+            55840375,
+            58509833,
+            57626083,
+            57022000,
+            60685416,
+            61825042,
+            61013958,
+            61058417,
+            61860833
           ],
-          "median_seconds": 0.0570528755,
-          "minimum_seconds": 0.054267083,
-          "maximum_seconds": 0.115432458,
+          "median_seconds": 0.060849687,
+          "minimum_seconds": 0.055840375,
+          "maximum_seconds": 0.071255917,
           "peak_rss_samples_bytes": [
-            35373056,
-            35258368,
-            35471360
+            35471360,
+            34127872,
+            35356672
           ],
-          "median_peak_rss_bytes": 35373056,
+          "median_peak_rss_bytes": 35356672,
           "peak_footprint_samples_bytes": [
-            24233216,
-            21923072,
-            22136192
+            22136128,
+            20694144,
+            21988544
           ],
-          "median_peak_footprint_bytes": 22136192
+          "median_peak_footprint_bytes": 21988544
         },
-        "qualified-mech-v1201": {
-          "executable_bytes": 6696512,
-          "timing_samples_ns": [
-            56668000,
-            58090292,
-            56788167,
-            56604166,
-            56931458,
-            56643500,
-            56520000,
-            56528458,
-            56819375,
-            56812250,
-            56661500,
-            57010416
-          ],
-          "median_seconds": 0.0567280835,
-          "minimum_seconds": 0.05652,
-          "maximum_seconds": 0.058090292,
-          "peak_rss_samples_bytes": [
-            22233088,
-            22233088,
-            22233088
-          ],
-          "median_peak_rss_bytes": 22233088,
-          "peak_footprint_samples_bytes": [
-            15614848,
-            15598400,
-            15598400
-          ],
-          "median_peak_footprint_bytes": 15598400
-        },
-        "candidate-mech-v1210": {
+        "qualified-mech-v1210": {
           "executable_bytes": 6696528,
           "timing_samples_ns": [
-            58106625,
-            57044417,
-            56571333,
-            56408458,
-            56506333,
-            56538209,
-            56462834,
-            56338542,
-            56521125,
-            56411833,
-            56317625,
-            56663750
+            56311542,
+            56425416,
+            56536209,
+            56539459,
+            57684875,
+            56632708,
+            56592625,
+            57071583,
+            56328125,
+            56254791,
+            56447875,
+            56410083
           ],
-          "median_seconds": 0.056513729,
-          "minimum_seconds": 0.056317625,
-          "maximum_seconds": 0.058106625,
+          "median_seconds": 0.056492042,
+          "minimum_seconds": 0.056254791,
+          "maximum_seconds": 0.057684875,
           "peak_rss_samples_bytes": [
-            22626304,
+            22249472,
             22249472,
             22249472
           ],
           "median_peak_rss_bytes": 22249472,
           "peak_footprint_samples_bytes": [
-            15991680,
+            15614784,
             15631232,
-            15614784
+            15664128
           ],
           "median_peak_footprint_bytes": 15631232
+        },
+        "candidate-mech-v1236": {
+          "executable_bytes": 6714000,
+          "timing_samples_ns": [
+            56719958,
+            56777375,
+            56719584,
+            56819000,
+            56661167,
+            56636417,
+            56640333,
+            56642500,
+            56653000,
+            56617708,
+            57183625,
+            56787708
+          ],
+          "median_seconds": 0.0566903755,
+          "minimum_seconds": 0.056617708,
+          "maximum_seconds": 0.057183625,
+          "peak_rss_samples_bytes": [
+            22200320,
+            22200320,
+            22577152
+          ],
+          "median_peak_rss_bytes": 22200320,
+          "peak_footprint_samples_bytes": [
+            15614784,
+            15664128,
+            15991680
+          ],
+          "median_peak_footprint_bytes": 15664128
         }
       },
       "125m": {
         "standalone-rust7": {
           "executable_bytes": 758208,
           "timing_samples_ns": [
-            660104333,
-            656170292,
-            643027416,
-            651178208,
-            656872917,
-            644547000,
-            658481292,
-            675710417,
-            654608292,
-            667775083,
-            651465750,
-            656989000
+            663620458,
+            679507584,
+            715474292,
+            651628292,
+            658152083,
+            652516292,
+            678697417,
+            658087916,
+            669047000,
+            661548583,
+            675782791,
+            662108708
           ],
-          "median_seconds": 0.6565216045,
-          "minimum_seconds": 0.643027416,
-          "maximum_seconds": 0.675710417,
+          "median_seconds": 0.662864583,
+          "minimum_seconds": 0.651628292,
+          "maximum_seconds": 0.715474292,
           "peak_rss_samples_bytes": [
-            158711808,
-            208977920,
-            204931072
+            209027072,
+            175390720,
+            175439872
           ],
-          "median_peak_rss_bytes": 204931072,
+          "median_peak_rss_bytes": 175439872,
           "peak_footprint_samples_bytes": [
-            145475136,
-            196052672,
-            191809216
+            195839744,
+            162301568,
+            162186752
           ],
-          "median_peak_footprint_bytes": 191809216
+          "median_peak_footprint_bytes": 162301568
         },
-        "qualified-mech-v1201": {
-          "executable_bytes": 6696512,
+        "qualified-mech-v1210": {
+          "executable_bytes": 6696528,
           "timing_samples_ns": [
-            550530958,
-            554266084,
-            550741042,
-            550758500,
-            551808833,
-            551608084,
-            550739500,
-            551086917,
-            552447625,
-            552040417,
-            552832958,
-            550449666
+            550279125,
+            553621292,
+            549481167,
+            549694792,
+            553733667,
+            549140833,
+            548836208,
+            550840417,
+            548879375,
+            549590417,
+            548928166,
+            553897917
           ],
-          "median_seconds": 0.5513475005,
-          "minimum_seconds": 0.550449666,
-          "maximum_seconds": 0.554266084,
+          "median_seconds": 0.5496426045,
+          "minimum_seconds": 0.548836208,
+          "maximum_seconds": 0.553897917,
           "peak_rss_samples_bytes": [
             147488768,
             147488768,
-            148340736
+            147865600
           ],
           "median_peak_rss_bytes": 147488768,
           "peak_footprint_samples_bytes": [
-            140952768,
             140969216,
-            141804800
+            140969216,
+            141313216
           ],
           "median_peak_footprint_bytes": 140969216
         },
-        "candidate-mech-v1210": {
-          "executable_bytes": 6696528,
+        "candidate-mech-v1236": {
+          "executable_bytes": 6714000,
           "timing_samples_ns": [
-            556856333,
-            548387125,
-            549363541,
-            548852875,
-            548331542,
-            549499208,
-            555974000,
-            548696084,
-            548648000,
-            548865083,
-            550342208,
-            548991250
+            550724375,
+            557461375,
+            551977041,
+            559207667,
+            557932167,
+            552417125,
+            548926167,
+            552451542,
+            550061584,
+            550179667,
+            551553750,
+            553188208
           ],
-          "median_seconds": 0.5489281665,
-          "minimum_seconds": 0.548331542,
-          "maximum_seconds": 0.556856333,
+          "median_seconds": 0.552197083,
+          "minimum_seconds": 0.548926167,
+          "maximum_seconds": 0.559207667,
           "peak_rss_samples_bytes": [
-            147488768,
-            147488768,
-            147488768
+            147439616,
+            147439616,
+            147816448
           ],
-          "median_peak_rss_bytes": 147488768,
+          "median_peak_rss_bytes": 147439616,
           "peak_footprint_samples_bytes": [
             140969216,
-            140952768,
-            140952768
+            140969216,
+            141329664
           ],
-          "median_peak_footprint_bytes": 140952768
+          "median_peak_footprint_bytes": 140969216
         }
       }
     },
     "paired": {
       "10m": {
-        "qualified-mech-v1201_over_standalone-rust7": {
-          "candidate": "qualified-mech-v1201",
+        "qualified-mech-v1210_over_standalone-rust7": {
+          "candidate": "qualified-mech-v1210",
           "control": "standalone-rust7",
-          "median_ratio": 0.9928349448639116,
-          "median_delta_ms": -0.416063,
-          "faster_rounds": 7,
-          "total_rounds": 12,
-          "ratios": [
-            1.044242602831628,
-            0.9902000349133675,
-            0.8992073656375126,
-            1.0110565002165037,
-            1.0053780254362072,
-            0.9247182367117719,
-            0.9954698548144556,
-            0.986043880201942,
-            0.5572846685535043,
-            0.4921687624463476,
-            1.0304065917507315,
-            1.0372217055861213
-          ],
-          "deltas_ms": [
-            2.400917,
-            -0.574917,
-            -6.365416,
-            0.619,
-            0.304541,
-            -4.611375,
-            -0.257209,
-            -0.800084,
-            -45.138167,
-            -58.620208,
-            1.672042,
-            2.045874
-          ]
-        },
-        "candidate-mech-v1210_over_standalone-rust7": {
-          "candidate": "candidate-mech-v1210",
-          "control": "standalone-rust7",
-          "median_ratio": 0.9885970610688453,
-          "median_delta_ms": -0.6521875,
-          "faster_rounds": 8,
-          "total_rounds": 12,
-          "ratios": [
-            1.0707526881443028,
-            0.9723721771791523,
-            0.8957739262394661,
-            1.0075607885131572,
-            0.9978705533271395,
-            0.9229993367874801,
-            0.9944630071548604,
-            0.9827311149828301,
-            0.5543594313013156,
-            0.4886999200866016,
-            1.0241531204035508,
-            1.030914621284391
-          ],
-          "deltas_ms": [
-            3.839542,
-            -1.620792,
-            -6.58225,
-            0.423292,
-            -0.120584,
-            -4.716666,
-            -0.314375,
-            -0.99,
-            -45.436417,
-            -59.020625,
-            1.328167,
-            1.699208
-          ]
-        },
-        "candidate-mech-v1210_over_qualified-mech-v1201": {
-          "candidate": "candidate-mech-v1210",
-          "control": "qualified-mech-v1201",
-          "median_ratio": 0.9954663073875365,
-          "median_delta_ms": -0.257542,
+          "median_ratio": 0.9324696928285368,
+          "median_delta_ms": -4.1121875,
           "faster_rounds": 11,
           "total_rounds": 12,
           "ratios": [
-            1.0253869026611138,
-            0.9819957007618416,
-            0.9961817045441879,
-            0.9965425159695843,
-            0.992532687288634,
-            0.9981411635933514,
-            0.9989885704175513,
-            0.9966403470620054,
-            0.9947509102308851,
-            0.992951924980968,
-            0.9939310643029218,
-            0.9939192515276507
+            0.8018607844039942,
+            0.7918699018356609,
+            0.9501278498373322,
+            1.0125193285324463,
+            0.9859005237632451,
+            0.9827617122614425,
+            0.99247001157448,
+            0.9404497284817163,
+            0.9110891505742932,
+            0.9219987170804425,
+            0.9244896571753571,
+            0.911886896188417
           ],
           "deltas_ms": [
-            1.438625,
-            -1.045875,
-            -0.216834,
-            -0.195708,
-            -0.425125,
-            -0.105291,
-            -0.057166,
-            -0.189916,
-            -0.29825,
-            -0.400417,
-            -0.343875,
-            -0.346666
+            -13.914541,
+            -14.830501,
+            -2.967582,
+            0.699084,
+            -0.824958,
+            -0.993375,
+            -0.429375,
+            -3.613833,
+            -5.496917,
+            -4.759167,
+            -4.610542,
+            -5.45075
+          ]
+        },
+        "candidate-mech-v1236_over_standalone-rust7": {
+          "candidate": "candidate-mech-v1236",
+          "control": "standalone-rust7",
+          "median_ratio": 0.9349593549404895,
+          "median_delta_ms": -3.9588539999999997,
+          "faster_rounds": 11,
+          "total_rounds": 12,
+          "ratios": [
+            0.8076765152913341,
+            0.7968092670816376,
+            0.9532095862598066,
+            1.0175254016471058,
+            0.9684041825926935,
+            0.9828260754769677,
+            0.9933066711093964,
+            0.933379116985867,
+            0.9163438983187427,
+            0.9279468150550075,
+            0.9365395928951122,
+            0.9179913241711439
+          ],
+          "deltas_ms": [
+            -13.506125,
+            -14.478542,
+            -2.784207,
+            0.978625,
+            -1.848666,
+            -0.989666,
+            -0.381667,
+            -4.042916,
+            -5.172042,
+            -4.39625,
+            -3.874792,
+            -5.073125
+          ]
+        },
+        "candidate-mech-v1236_over_qualified-mech-v1210": {
+          "candidate": "candidate-mech-v1236",
+          "control": "qualified-mech-v1210",
+          "median_ratio": 1.0053558602176502,
+          "median_delta_ms": 0.30220800000000003,
+          "faster_rounds": 2,
+          "total_rounds": 12,
+          "ratios": [
+            1.0072527937523004,
+            1.006237596901368,
+            1.00324349657049,
+            1.0049441753590178,
+            0.9822534416517328,
+            1.0000654921887189,
+            1.00084300737066,
+            0.9924816699056692,
+            1.0057675450762829,
+            1.0064513082983457,
+            1.0130341487611358,
+            1.0066942819424676
+          ],
+          "deltas_ms": [
+            0.408416,
+            0.351959,
+            0.183375,
+            0.279541,
+            -1.023708,
+            0.003709,
+            0.047708,
+            -0.429083,
+            0.324875,
+            0.362917,
+            0.73575,
+            0.377625
           ]
         }
       },
       "125m": {
-        "qualified-mech-v1201_over_standalone-rust7": {
-          "candidate": "qualified-mech-v1201",
+        "qualified-mech-v1210_over_standalone-rust7": {
+          "candidate": "qualified-mech-v1210",
           "control": "standalone-rust7",
-          "median_ratio": 0.8419951777249715,
-          "median_delta_ms": -103.6123755,
+          "median_ratio": 0.8299855488549182,
+          "median_delta_ms": -112.64974950000001,
           "faster_rounds": 12,
           "total_rounds": 12,
           "ratios": [
-            0.834005975234221,
-            0.8446985344469085,
-            0.8564814318896785,
-            0.8457876710763638,
-            0.8400541698692078,
-            0.8558073872037261,
-            0.8363783553018542,
-            0.8155667030363393,
-            0.843936185580735,
-            0.8266861568418239,
-            0.8485986531141506,
-            0.8378369592184953
+            0.8292075965506175,
+            0.8147389448415634,
+            0.7679956822264132,
+            0.84357109528326,
+            0.8413460677294552,
+            0.8415741334470772,
+            0.8086611120843561,
+            0.8370316542934364,
+            0.8203898605030737,
+            0.8307635011592187,
+            0.8122849136002932,
+            0.8365664283031904
           ],
           "deltas_ms": [
-            -109.573375,
-            -101.904208,
-            -92.286374,
-            -100.419708,
-            -105.064084,
-            -92.938916,
-            -107.741792,
-            -124.6235,
-            -102.160667,
-            -115.734666,
-            -98.632792,
-            -106.539334
+            -113.341333,
+            -125.886292,
+            -165.993125,
+            -101.9335,
+            -104.418416,
+            -103.375459,
+            -129.861209,
+            -107.247499,
+            -120.167625,
+            -111.958166,
+            -126.854625,
+            -108.210791
           ]
         },
-        "candidate-mech-v1210_over_standalone-rust7": {
-          "candidate": "candidate-mech-v1210",
+        "candidate-mech-v1236_over_standalone-rust7": {
+          "candidate": "candidate-mech-v1236",
           "control": "standalone-rust7",
-          "median_ratio": 0.8404965025023743,
-          "median_delta_ms": -104.604146,
+          "median_ratio": 0.8307663757822263,
+          "median_delta_ms": -112.1324995,
           "faster_rounds": 12,
           "total_rounds": 12,
           "ratios": [
-            0.8435883619627748,
-            0.8357390325132245,
-            0.8543392199625902,
-            0.8428612448283896,
-            0.8347604655467932,
-            0.8525355140897406,
-            0.8443277079464848,
-            0.8120284521231527,
-            0.838131760176359,
-            0.8219310617793746,
-            0.8447753515821822,
-            0.8356171107887651
+            0.829878537288855,
+            0.8203902180435414,
+            0.7714841010667648,
+            0.8581697171000059,
+            0.8477252923926399,
+            0.8465951452442815,
+            0.8087936586327099,
+            0.8394798454253946,
+            0.8221568649138252,
+            0.8316542142755976,
+            0.8161701619892241,
+            0.8354945363443249
           ],
           "deltas_ms": [
-            -103.248,
-            -107.783167,
-            -93.663875,
-            -102.325333,
-            -108.541375,
-            -95.047792,
-            -102.507292,
-            -127.014333,
-            -105.960292,
-            -118.91,
-            -101.123542,
-            -107.99775
+            -112.896083,
+            -122.046209,
+            -163.497251,
+            -92.420625,
+            -100.219916,
+            -100.099167,
+            -129.77125,
+            -105.636374,
+            -118.985416,
+            -111.368916,
+            -124.229041,
+            -108.9205
           ]
         },
-        "candidate-mech-v1210_over_qualified-mech-v1201": {
-          "candidate": "candidate-mech-v1210",
-          "control": "qualified-mech-v1201",
-          "median_ratio": 0.995919231281093,
-          "median_delta_ms": -2.2498545,
-          "faster_rounds": 10,
+        "candidate-mech-v1236_over_qualified-mech-v1210": {
+          "candidate": "candidate-mech-v1236",
+          "control": "qualified-mech-v1210",
+          "median_ratio": 1.0037335432454433,
+          "median_delta_ms": 2.0534995,
+          "faster_rounds": 1,
           "total_rounds": 12,
           "ratios": [
-            1.0114895900186598,
-            0.9893932550273092,
-            0.9974988226862526,
-            0.9965399989287501,
-            0.9936983774234002,
-            0.9961768580606951,
-            1.0095044935037345,
-            0.995661604501491,
-            0.9931221986880657,
-            0.9942480044898596,
-            0.9954945703508509,
-            0.9973505007086334
+            1.000809134818625,
+            1.0069362993358284,
+            1.0045422375686262,
+            1.017305739727656,
+            1.0075821649471786,
+            1.0059662144992958,
+            1.0001639086464937,
+            1.0029248489222606,
+            1.0021538593976136,
+            1.0010721620715595,
+            1.0047831103642075,
+            0.9987187007240542
           ],
           "deltas_ms": [
-            6.325375,
-            -5.878959,
-            -1.377501,
-            -1.905625,
-            -3.477291,
-            -2.108876,
-            5.2345,
-            -2.390833,
-            -3.799625,
-            -3.175334,
-            -2.49075,
-            -1.458416
+            0.44525,
+            3.840083,
+            2.495874,
+            9.512875,
+            4.1985,
+            3.276292,
+            0.089959,
+            1.611125,
+            1.182209,
+            0.58925,
+            2.625584,
+            -0.709709
           ]
         }
       }
@@ -722,8 +1053,8 @@
         "differences": [
           {
             "key": "program_revision",
-            "baseline": "5f1bb0870c227926a14aec3e54f9fd18e06aa6ccf4b12f2c0db8bfe45812d6bc",
-            "candidate": "400a09f0ca1ec57e463e53615391af9eb63afdbb09a001cc1119a2c2d4077151",
+            "baseline": "400a09f0ca1ec57e463e53615391af9eb63afdbb09a001cc1119a2c2d4077151",
+            "candidate": "89855b44cf410cef1383c67bcc7f60877276592c7502af8226085704482da372",
             "numeric_delta": null
           }
         ]
@@ -733,8 +1064,8 @@
         "differences": [
           {
             "key": "program_revision",
-            "baseline": "5f1bb0870c227926a14aec3e54f9fd18e06aa6ccf4b12f2c0db8bfe45812d6bc",
-            "candidate": "400a09f0ca1ec57e463e53615391af9eb63afdbb09a001cc1119a2c2d4077151",
+            "baseline": "400a09f0ca1ec57e463e53615391af9eb63afdbb09a001cc1119a2c2d4077151",
+            "candidate": "89855b44cf410cef1383c67bcc7f60877276592c7502af8226085704482da372",
             "numeric_delta": null
           }
         ]
@@ -743,60 +1074,325 @@
   },
   "independent_audit": {
     "receipt": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-pages-measurement-audit-v1213.json",
-      "bytes": 1034,
-      "sha256": "9613523fb1c7bb035c63dc89e0bdc39a089cb1db2645a69a91d6303836b4d4c0"
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-measurement-audit-v1232.json",
+      "bytes": 1061,
+      "sha256": "cd85d29df8b5ccb224d7427a05b12958123d9379bfe93c8a1b346d1edbf97c7c"
     },
     "status": "PASS",
-    "physical_files_verified": 586
+    "physical_files_verified": 565
   },
   "assessment": {
-    "speed": "The correction preserves performance: 10M paired median ratio 0.9954663 (0.45% less elapsed time, 11/12 faster), 125M ratio 0.9959192 (0.41% less, 10/12 faster). Versus Rust #7, paired ratios are 0.9885971 at 10M and 0.8404965 at 125M. All samples, including slower runs and Rust's 10M outliers, remain. This is a comparison of the recorded implementations, not a language ranking.",
-    "footprint": "125M median peak RSS is 147488768 bytes for both the remeasured prior and corrected Mech builds. The executable changes from 6696512 to 6696528 bytes (+16 bytes). RSS and physical footprint remain separate; RSS does not prove the minimum managed-memory budget.",
+    "speed": "The feature-gated candidate meets the 0.0582-second target, but paired elapsed time is 0.54% higher at10M and0.37% higher at125M versus the freshly remeasured published Mech build. Preserve this result as a small regression, not an optimization win. Candidate/Rust paired ratios are0.9349594 at10M and0.8307664 at125M; Rust variability remains in the samples.",
+    "footprint": "125M median peak RSS is147439616 bytes versus147488768 for the remeasured prior Mech. Physical footprint medians are identical at140969216 bytes. Executable size grows from6696528 to6714000 bytes (+17472). Removing the broad library bundle alone does not trim the surviving generic runtime code.",
     "rust_rss_variability": {
       "latest_125m_samples_bytes": [
-        158711808,
-        208977920,
-        204931072
+        209027072,
+        175390720,
+        175439872
       ],
-      "preceding_125m_samples_bytes": [
-        175439872,
-        204341248,
-        209092608
-      ],
-      "earlier_125m_samples_bytes": [
-        204652544,
-        171130880,
-        171327488
-      ],
-      "note": "Latest median is 204931072 bytes, with a 158711808–208977920-byte range. Previous medians were 204341248 and 171327488 bytes. Retain each distribution. The unchanged standalone Rust executable is 758208 bytes, unstripped."
+      "latest_125m_median_bytes": 175439872,
+      "note": "All samples remain; scheduler/library timing and RSS variation are not normalized away."
     },
-    "limits": "Finite policy, requirements, provider contracts, transaction/commit authority and all execution counters remain. Complete reports differ only in the actual separately pinned artifact revision; work, visits, comparisons and transport are identical. Generated Mech machine code and relocation bytes are identical.",
-    "outstanding": "New review and green CI on the publication head. PR909 remains draft and unmerged; user approval is required before ready/merge actions.",
+    "limits": "Finite policy, provider/transaction authority and every execution counter are retained. Complete reports differ only in artifact revision. Both generated Mech code sections contain26048 bytes with identical relocation bytes. The45 changed instruction words differ only in local-buffer load/store address immediates; every changed word and both hashes are recorded.",
+    "outstanding": "Further canonical type/conversion gating for size; clean review and green CI on the publication head. PR909 remains draft and unmerged pending user direction.",
     "completion_gate": "Performance work for this PR is complete when these measured targets hold after the review correction: 10M median at or below 0.0582 seconds, 125M RSS below 200 MB, and no material time or executable-size regression. All review notes must be addressed with a clean review and green CI on the publication head. Further optimization is separate work; readiness and merging still require user direction."
   },
   "historical": {
     "startup_measurement": "canonical-knucleotide-startup-validation-v1.json",
     "direct_io": "canonical-knucleotide-streaming-footprint-v1.json",
     "note": "The historical approximately 0.975-second control is Rust-backed Mech, not standalone Rust #7.",
-    "initial_capture_pages_measurement": "https://github.com/mech-lang/mech/blob/fa25989a21cdcb2d832f2d8de2ccafbb71c34bb7/docs/validation/canonical-knucleotide-capture-pages-v1.json"
+    "initial_capture_pages_measurement": "https://github.com/mech-lang/mech/blob/fa25989a21cdcb2d832f2d8de2ccafbb71c34bb7/docs/validation/canonical-knucleotide-capture-pages-v1.json",
+    "preceding_qualified_measurement": "https://github.com/mech-lang/mech/blob/199ed4fa9d835e556d145454349e89860f69f153/docs/validation/canonical-knucleotide-capture-pages-v1.json"
   },
-  "review_correction": {
-    "thread": "https://github.com/mech-lang/mech/pull/909#discussion_r4343832793",
-    "commit": "d94d0b7cca2145a006b37a46cdbb32a70575bb3e",
-    "problem": "An optional 2 MiB slab could fit alone but leave too little room for mandatory offsets, directory growth or an unfinished tail in the same input fragment.",
-    "change": "Reserve each fragment's mandatory backing before selecting page or heap storage. Keep the same finite memory account and cumulative work ledger; declined slab preference spends no speculative work.",
-    "red": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-envelope-red-v1208/result.json",
-      "bytes": 3847,
-      "sha256": "8b948d2949778f640f7605af932b8fdb629fec03787d87dc5ce0cac18f5fc66e"
+  "linked_code_attribution": {
+    "receipt": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/selected-library-gates-linkmap-analysis-v1238.json",
+      "bytes": 18262,
+      "sha256": "dee04c69f692a8eca76ac29fa85240100780af7b2b9994c02460c695cb08ace6"
     },
-    "green": {
-      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-envelope-green-v1208/result.json",
-      "bytes": 3856,
-      "sha256": "53b6b0597a65666bab97d20a2cb4e68c3b0ad581239eb1ecc12849ccfd8aa67d"
+    "sections_identical": true,
+    "code_bytes": 4999656,
+    "unwind_bytes": 1087352,
+    "by_object_origin": [
+      {
+        "origin": "mech_engine",
+        "code_bytes": 1951232,
+        "other_symbol_bytes": 466940,
+        "symbols": 11718
+      },
+      {
+        "origin": "mech_core",
+        "code_bytes": 1189108,
+        "other_symbol_bytes": 272289,
+        "symbols": 7178
+      },
+      {
+        "origin": "mech_runtime",
+        "code_bytes": 794328,
+        "other_symbol_bytes": 221534,
+        "symbols": 6254
+      },
+      {
+        "origin": "mech_gpu",
+        "code_bytes": 412704,
+        "other_symbol_bytes": 128239,
+        "symbols": 3456
+      },
+      {
+        "origin": "generated_launcher_monomorphizations",
+        "code_bytes": 274696,
+        "other_symbol_bytes": 136085,
+        "symbols": 3185
+      },
+      {
+        "origin": "std",
+        "code_bytes": 175464,
+        "other_symbol_bytes": 44358,
+        "symbols": 1281
+      },
+      {
+        "origin": "core",
+        "code_bytes": 41668,
+        "other_symbol_bytes": 16298,
+        "symbols": 375
+      },
+      {
+        "origin": "mech_terminal",
+        "code_bytes": 41436,
+        "other_symbol_bytes": 16044,
+        "symbols": 572
+      },
+      {
+        "origin": "emitted_mech_object",
+        "code_bytes": 26048,
+        "other_symbol_bytes": 192,
+        "symbols": 5
+      },
+      {
+        "origin": "rustc_demangle",
+        "code_bytes": 23236,
+        "other_symbol_bytes": 5719,
+        "symbols": 246
+      },
+      {
+        "origin": "blake3",
+        "code_bytes": 13632,
+        "other_symbol_bytes": 2106,
+        "symbols": 69
+      },
+      {
+        "origin": "libm",
+        "code_bytes": 13328,
+        "other_symbol_bytes": 8184,
+        "symbols": 59
+      },
+      {
+        "origin": "serde_json",
+        "code_bytes": 11632,
+        "other_symbol_bytes": 7848,
+        "symbols": 149
+      },
+      {
+        "origin": "sha2",
+        "code_bytes": 8332,
+        "other_symbol_bytes": 416,
+        "symbols": 22
+      },
+      {
+        "origin": "gimli",
+        "code_bytes": 5240,
+        "other_symbol_bytes": 2423,
+        "symbols": 81
+      },
+      {
+        "origin": "alloc",
+        "code_bytes": 2940,
+        "other_symbol_bytes": 1683,
+        "symbols": 58
+      },
+      {
+        "origin": "uuid",
+        "code_bytes": 2716,
+        "other_symbol_bytes": 1409,
+        "symbols": 36
+      },
+      {
+        "origin": "compiler_builtins",
+        "code_bytes": 1992,
+        "other_symbol_bytes": 504,
+        "symbols": 26
+      },
+      {
+        "origin": "object",
+        "code_bytes": 1700,
+        "other_symbol_bytes": 373,
+        "symbols": 11
+      },
+      {
+        "origin": "crc32fast",
+        "code_bytes": 1552,
+        "other_symbol_bytes": 16484,
+        "symbols": 5
+      },
+      {
+        "origin": "serde_core",
+        "code_bytes": 1524,
+        "other_symbol_bytes": 752,
+        "symbols": 51
+      },
+      {
+        "origin": "seahash",
+        "code_bytes": 1288,
+        "other_symbol_bytes": 0,
+        "symbols": 1
+      },
+      {
+        "origin": "zmij",
+        "code_bytes": 1048,
+        "other_symbol_bytes": 17744,
+        "symbols": 4
+      },
+      {
+        "origin": "addr2line",
+        "code_bytes": 916,
+        "other_symbol_bytes": 288,
+        "symbols": 11
+      },
+      {
+        "origin": "itoa",
+        "code_bytes": 644,
+        "other_symbol_bytes": 321,
+        "symbols": 4
+      },
+      {
+        "origin": "panic_unwind",
+        "code_bytes": 500,
+        "other_symbol_bytes": 449,
+        "symbols": 17
+      },
+      {
+        "origin": "unicode_segmentation",
+        "code_bytes": 480,
+        "other_symbol_bytes": 21772,
+        "symbols": 11
+      },
+      {
+        "origin": "getrandom",
+        "code_bytes": 180,
+        "other_symbol_bytes": 267,
+        "symbols": 10
+      },
+      {
+        "origin": "serde",
+        "code_bytes": 92,
+        "other_symbol_bytes": 113,
+        "symbols": 5
+      },
+      {
+        "origin": "libcommonCrypto.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 20,
+        "symbols": 2
+      },
+      {
+        "origin": "libsystem_c.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 488,
+        "symbols": 49
+      },
+      {
+        "origin": "libunwind.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 240,
+        "symbols": 24
+      },
+      {
+        "origin": "libsystem_kernel.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 280,
+        "symbols": 28
+      },
+      {
+        "origin": "libdyld.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 108,
+        "symbols": 11
+      },
+      {
+        "origin": "libsystem_malloc.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 100,
+        "symbols": 10
+      },
+      {
+        "origin": "libdispatch.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 80,
+        "symbols": 8
+      },
+      {
+        "origin": "libsystem_m.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 120,
+        "symbols": 12
+      },
+      {
+        "origin": "libsystem_pthread.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 360,
+        "symbols": 36
+      },
+      {
+        "origin": "linker_synthesized",
+        "code_bytes": 0,
+        "other_symbol_bytes": 118892,
+        "symbols": 107
+      },
+      {
+        "origin": "hashbrown",
+        "code_bytes": 0,
+        "other_symbol_bytes": 95,
+        "symbols": 3
+      }
+    ],
+    "caveat": "Object-origin attribution includes generic monomorphizations in the crate that emitted them. Diagnostic relink has a different whole-file hash; section comparisons are explicit. No speed, memory, removable-byte or panic-policy claim."
+  },
+  "review_corrections": [
+    {
+      "thread": "https://github.com/mech-lang/mech/pull/909#discussion_r4343832793",
+      "commit": "d94d0b7cca2145a006b37a46cdbb32a70575bb3e",
+      "problem": "An optional 2 MiB slab could fit alone but leave too little room for mandatory offsets, directory growth or an unfinished tail in the same input fragment.",
+      "change": "Reserve each fragment's mandatory backing before selecting page or heap storage. Keep the same finite memory account and cumulative work ledger; declined slab preference spends no speculative work.",
+      "red": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-envelope-red-v1208/result.json",
+        "bytes": 3847,
+        "sha256": "8b948d2949778f640f7605af932b8fdb629fec03787d87dc5ce0cac18f5fc66e"
+      },
+      "green": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-envelope-green-v1208/result.json",
+        "bytes": 3856,
+        "sha256": "53b6b0597a65666bab97d20a2cb4e68c3b0ad581239eb1ecc12849ccfd8aa67d"
+      },
+      "regressions": "Three tests failed on the published implementation and pass after the fix. Dense offsets and unfinished-tail cases cover both global memory and local temporary limits; directory growth has an exact remaining-capacity regression.",
+      "selected_local_tests_passed": 341
     },
-    "regressions": "Three tests failed on the published implementation and pass after the fix. Dense offsets and unfinished-tail cases cover both global memory and local temporary limits; directory growth has an exact remaining-capacity regression.",
-    "selected_local_tests_passed": 341
-  }
+    {
+      "thread": "https://github.com/mech-lang/mech/pull/909#discussion_r4344052670",
+      "commit": "fb7e00da8f3b0f624348a213934525f936eb0a82",
+      "problem": "Holding a new unfinished tail during old/new directory replacement increased the transient peak beyond an otherwise sufficient final memory budget.",
+      "change": "Reserve and release replaced directory backing before acquiring offsets and unfinished-tail backing; fund all mandatory backing before optional pages.",
+      "red": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-directory-order-red-v1215/result.json",
+        "bytes": 3920,
+        "sha256": "4ae372e26d114f20dd922d3a16a481659c8ed17848adfd4d86e269bbade605bd"
+      },
+      "green": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-directory-order-green-v1215/result.json",
+        "bytes": 3929,
+        "sha256": "3bbb87016bd1240bdf9b1bdf20246010e1ef14af2e765d728a8b28aa10455082"
+      },
+      "regressions": "Both global and local exact-final-capacity cases fail before the correction and pass after it.",
+      "selected_local_tests_passed": 343
+    }
+  ]
 }
