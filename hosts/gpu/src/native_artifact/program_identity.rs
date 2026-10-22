@@ -133,7 +133,11 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 27;
 // Policy36 admits actual fixed range geometry instead of allocating a dead
 // numeric selector. Original-site shape/index errors and one ledger remain;
 // less actual work/storage may let formerly budget-denied programs succeed.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 36;
+// Policy37 admits one same-entry immutable representation-fact slot and its
+// complete weak identity shell before use. It never retains source payloads
+// or permissions; every call still pays the original full scan bound and
+// validates its fresh owners, shapes and finite limits on the same ledger.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 37;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

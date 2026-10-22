@@ -114,7 +114,7 @@ impl State {
         // Before inspecting representation, pay its full scan, including a
         // declined Unicode/CRLF variant. CRLF is one grapheme, not two bytes.
         self.histogram_account(ctx, id, 0, add(mul(text.len() as u64, 64)?, 256)?, 0)?;
-        if !mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(text) {
+        if !self.ascii_facts.inspect(&source)? {
             return Ok(None);
         }
         if text.len() as u64 != length {

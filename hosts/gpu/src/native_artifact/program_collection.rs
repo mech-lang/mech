@@ -14,12 +14,14 @@ use mech_engine::{
     ComprehensionKind,
     native_artifact::{
         NativeCollectionSource, NativeControlLoop, NativeIterationAction as Action,
-        NativeMatchOrigin as Origin, NativeProgramArtifactPlan, NativeScalarKind,
+        NativeMatchOrigin as Origin, NativeScalarKind,
     },
 };
 
 #[path = "program_admitted_allocation.rs"]
 mod allocation;
+#[path = "program_ascii_facts.rs"]
+mod ascii_facts;
 pub(super) fn admitted_capacity<T>(
     values: Vec<T>,
     count: usize,
@@ -103,6 +105,9 @@ pub(super) struct State {
     active_string_spans: u64,
     string_map_nodes: u64,
     active_string_maps: u64,
+    // Only immutable representation facts; the weak shell retires before its
+    // complete fixed metadata reservation below. No canonical root is kept.
+    ascii_facts: ascii_facts::Cache,
     _metadata: ManagedMemoryReservation,
 }
 fn add(left: u64, right: u64) -> Result<u64, Error> {
@@ -145,14 +150,20 @@ impl State {
         })
     }
 
-    pub(super) fn metadata_bytes(plan: &NativeProgramArtifactPlan) -> Result<u64, Error> {
+    pub(super) fn metadata_bytes(descriptor: &NativeProgramDescriptor) -> Result<u64, Error> {
+        let plan = &descriptor.plan;
         if plan.collections().is_empty() {
             return Ok(0);
         }
         add(
             (size_of::<[u64; 6]>()
                 + size_of::<Vec<Option<string_span::Lane>>>()
-                + size_of::<Vec<Option<string_map_entry::Lane>>>()) as u64,
+                + size_of::<Vec<Option<string_map_entry::Lane>>>()) as u64
+                + if descriptor.window_regions.is_empty() {
+                    0
+                } else {
+                    ascii_facts::Cache::metadata_bytes()
+                },
             add(
                 mul(
                     plan.iterations().len() as u64,
@@ -177,7 +188,7 @@ impl State {
         if plan.collections().is_empty() {
             return Ok(None);
         }
-        let bytes = Self::metadata_bytes(plan)?;
+        let bytes = Self::metadata_bytes(descriptor)?;
         check(
             plan.collections()[0].origin(),
             Dimension::TemporaryBytes,
@@ -216,6 +227,7 @@ impl State {
             active_string_spans: 0,
             string_map_nodes: 0,
             active_string_maps: 0,
+            ascii_facts: ascii_facts::Cache::default(),
             _metadata: metadata,
         }))
     }

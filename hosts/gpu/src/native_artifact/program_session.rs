@@ -386,7 +386,7 @@ impl<'a> Prepared<'a> {
                     .ok()?,
                 )
             })
-            .and_then(|n| n.checked_add(collection::State::metadata_bytes(plan).ok()?))
+            .and_then(|n| n.checked_add(collection::State::metadata_bytes(descriptor).ok()?))
             .and_then(|n| n.checked_add(CallCacheLane::metadata_bytes(plan.blocks().len()).ok()?))
             .and_then(|n| {
                 n.checked_add(

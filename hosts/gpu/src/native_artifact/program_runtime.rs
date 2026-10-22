@@ -2296,7 +2296,7 @@ mod histogram_observation_tests {
             .map(|call| call.binding_metadata_bytes())
             .max()
             .unwrap();
-        binding + collection::State::metadata_bytes(jit.descriptor().plan()).unwrap()
+        binding + collection::State::metadata_bytes(jit.descriptor()).unwrap()
     }
     fn captured_roots(bytes: usize, count: u8) -> Vec<String> {
         (0..count)
@@ -4036,7 +4036,7 @@ mod tests {
             4,
             "one outer source plus a fresh inner source for each of three visits"
         );
-        let fixed_metadata = collection::State::metadata_bytes(&jit.descriptor().plan).unwrap();
+        let fixed_metadata = collection::State::metadata_bytes(jit.descriptor()).unwrap();
         assert!(
             rows.iter().any(|row| row.live_bytes > fixed_metadata),
             "inner preparation must coexist with already-retained builder drafts"
