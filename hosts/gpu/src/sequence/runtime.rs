@@ -241,6 +241,15 @@ impl<R: BufRead> RecordReader<R> {
             }
             line.to_vec()
         };
+        // A single-byte prefix can be recognized at each physical line start.
+        // Join directly from buffered input instead of copying line endings
+        // into the record and moving the body again to remove them.
+        if self.marker.len() == 1
+            && !matches!(self.marker[0], b'\r' | b'\n')
+            && self.separator.is_empty()
+        {
+            return self.next_compacted_body(header).map(Some);
+        }
         let mut body = Vec::new();
         loop {
             let count = self
@@ -300,6 +309,76 @@ impl<R: BufRead> RecordReader<R> {
             header: Arc::new(header),
             body: Arc::new(body),
         }))
+    }
+
+    fn next_compacted_body(&mut self, header: Vec<u8>) -> Result<Record, String> {
+        let marker = self.marker[0];
+        let mut body = Vec::new();
+        let mut line_start = true;
+        loop {
+            let (consumed, next_header, eof) = {
+                let input = match self.reader.fill_buf() {
+                    Ok(input) => input,
+                    Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+                    Err(error) => return Err(error.to_string()),
+                };
+                let mut position = 0;
+                let mut next_header = false;
+                while position < input.len() {
+                    if line_start && input[position] == marker {
+                        next_header = true;
+                        break;
+                    }
+                    match memchr::memchr(b'\n', &input[position..]) {
+                        Some(relative) => {
+                            let end = position + relative;
+                            // CR and LF can lie in different input buffers.
+                            // Remove exactly one CR from this physical line,
+                            // never a CR retained from a preceding blank line.
+                            if end == position && !line_start && body.last() == Some(&b'\r') {
+                                body.pop();
+                            }
+                            let trim = if end > position && input[end - 1] == b'\r' {
+                                end - 1
+                            } else {
+                                end
+                            };
+                            body.extend_from_slice(&input[position..trim]);
+                            position = end + 1;
+                            line_start = true;
+                        }
+                        None => {
+                            body.extend_from_slice(&input[position..]);
+                            position = input.len();
+                            line_start = false;
+                        }
+                    }
+                }
+                (position, next_header, input.is_empty())
+            };
+            self.reader.consume(consumed);
+            if next_header {
+                self.line.clear();
+                self.reader
+                    .read_until(b'\n', &mut self.line)
+                    .map_err(|error| error.to_string())?;
+                let line = self.line.strip_suffix(b"\n").unwrap_or(&self.line);
+                let line = line.strip_suffix(b"\r").unwrap_or(line);
+                self.pending = Some(line.to_vec());
+                break;
+            }
+            if eof {
+                if !line_start && body.last() == Some(&b'\r') {
+                    body.pop();
+                }
+                self.ended = true;
+                break;
+            }
+        }
+        Ok(Record {
+            header: Arc::new(header),
+            body: Arc::new(body),
+        })
     }
 }
 impl Value {
@@ -1997,6 +2076,142 @@ pub(super) fn register_symbols(builder: &mut cranelift_jit::JITBuilder) {
         ),
     ] {
         builder.symbol(name, address);
+    }
+}
+
+#[cfg(test)]
+mod record_stream_tests {
+    use super::{Record, RecordReader};
+    use std::io::{self, BufRead, BufReader, Cursor, Read};
+
+    fn reference(
+        input: &[u8],
+        marker: &[u8],
+        separator: &[u8],
+    ) -> Result<Vec<(Vec<u8>, Vec<u8>)>, String> {
+        let mut records: Vec<(Vec<u8>, Vec<u8>)> = Vec::new();
+        let mut lines = 0;
+        for physical in input.split_inclusive(|&byte| byte == b'\n') {
+            let line = physical.strip_suffix(b"\n").unwrap_or(physical);
+            let line = line.strip_suffix(b"\r").unwrap_or(line);
+            if line.starts_with(marker) {
+                records.push((line.to_vec(), Vec::new()));
+                lines = 0;
+            } else {
+                let Some((_, body)) = records.last_mut() else {
+                    return Err("body before first record header".into());
+                };
+                if lines != 0 {
+                    body.extend_from_slice(separator);
+                }
+                body.extend_from_slice(line);
+                lines += 1;
+            }
+        }
+        Ok(records)
+    }
+
+    fn collect(mut reader: RecordReader<impl BufRead>) -> Result<Vec<(Vec<u8>, Vec<u8>)>, String> {
+        let mut records = Vec::new();
+        while let Some(Record { header, body }) = reader.next()? {
+            records.push((header.as_ref().clone(), body.as_ref().clone()));
+        }
+        assert!(reader.next()?.is_none(), "exhausted readers stay exhausted");
+        Ok(records)
+    }
+
+    #[test]
+    fn compact_record_reader_matches_line_contract_at_every_small_buffer_boundary() {
+        let cases: &[&[u8]] = &[
+            b"",
+            b"@",
+            b"@header\n",
+            b"@header\r\n",
+            b"@one\nAC\nGT\n@two\nN",
+            b"@one\n\n\n@two\n",
+            b"@one\nA@B\nC\r\n\r\nD\r",
+            b"@one\n\r\r\n\nX\n",
+            b"@one\r\n\r\n\r\r\n\n@two\r\n\r",
+            b"@one\nA\rB\nC\r\r",
+            b"@one\n\0\xff\x80 \t\n@two",
+            b"body\n@later\n",
+        ];
+        for marker in [b"@".as_slice(), b"xy", b"\0", b" "] {
+            for separator in [b"".as_slice(), b",", b"\r\n"] {
+                for original in cases {
+                    let mut input = Vec::new();
+                    // Retain inline @ bytes; vary only actual header prefixes.
+                    for line in original.split_inclusive(|&b| b == b'\n') {
+                        if line.first() == Some(&b'@') {
+                            input.extend_from_slice(marker);
+                            input.extend_from_slice(&line[1..]);
+                        } else {
+                            input.extend_from_slice(line);
+                        }
+                    }
+                    let want = reference(&input, marker, separator);
+                    for capacity in 1..=19 {
+                        let actual = collect(
+                            RecordReader::new(
+                                BufReader::with_capacity(capacity, Cursor::new(&input)),
+                                marker,
+                                separator,
+                            )
+                            .unwrap(),
+                        );
+                        assert_eq!(
+                            actual, want,
+                            "capacity={capacity}, marker={marker:?}, separator={separator:?}, input={input:?}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    struct Interrupt<R> {
+        inner: R,
+        calls: usize,
+        error: io::ErrorKind,
+    }
+    impl<R: Read> Read for Interrupt<R> {
+        fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
+            self.inner.read(output)
+        }
+    }
+    impl<R: BufRead> BufRead for Interrupt<R> {
+        fn fill_buf(&mut self) -> io::Result<&[u8]> {
+            self.calls += 1;
+            if self.calls == 2 {
+                return Err(io::Error::new(self.error, "injected input failure"));
+            }
+            self.inner.fill_buf()
+        }
+        fn consume(&mut self, amount: usize) {
+            self.inner.consume(amount);
+        }
+    }
+
+    #[test]
+    fn compact_reader_retries_interruption_but_propagates_real_io_errors() {
+        let input = b"@\nAC\r\nGT\n@two\nN\r";
+        let reader = Interrupt {
+            inner: Cursor::new(input),
+            calls: 0,
+            error: io::ErrorKind::Interrupted,
+        };
+        assert_eq!(
+            collect(RecordReader::new(reader, b"@", b"").unwrap()),
+            reference(input, b"@", b"")
+        );
+        let reader = Interrupt {
+            inner: Cursor::new(input),
+            calls: 0,
+            error: io::ErrorKind::Other,
+        };
+        let error = collect(RecordReader::new(reader, b"@", b"").unwrap()).unwrap_err();
+        assert_eq!(error, "injected input failure");
+        assert!(RecordReader::new(Cursor::new(input), b"", b"").is_err());
     }
 }
 
