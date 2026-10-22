@@ -47,10 +47,14 @@ fn text_line_matrix_view_matches_canonical_utf8_crlf_empty_shape_and_bytes() {
             let view = call
                 .text_line_matrix(&source, limits().library, &work, ResourceDemand::default())
                 .unwrap();
-            assert!(view.source().shares_frozen_storage(&source));
+            let snapshot_source = view
+                .source()
+                .expect("snapshot view retains its String source");
+            let rows = view.rows().expect("snapshot view retains its row offsets");
+            assert!(snapshot_source.shares_frozen_storage(&source));
             assert_eq!(view.is_ascii(), text.is_ascii());
             assert_eq!(view.count(), text.lines().count());
-            assert_eq!(view.rows().len(), view.count());
+            assert_eq!(rows.len(), view.count());
             assert_eq!(view.program_revision(), artifact.revision());
             assert_eq!(
                 view.retained_bytes(&memory).unwrap(),
@@ -62,7 +66,7 @@ fn text_line_matrix_view_matches_canonical_utf8_crlf_empty_shape_and_bytes() {
             for (i, expected) in owner.lines().enumerate() {
                 assert_eq!(view.line(i), Some(expected));
                 assert_eq!(
-                    view.rows()[i],
+                    rows[i],
                     [expected.as_ptr() as u64, expected.len() as u64]
                 );
                 assert_eq!(view.line(i).unwrap().as_ptr(), expected.as_ptr());
