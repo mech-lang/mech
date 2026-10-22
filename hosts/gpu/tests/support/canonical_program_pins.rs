@@ -45,7 +45,9 @@ fn build(
     target: &Path,
     release: bool,
 ) -> Command {
-    let mut command = CargoInvocation::build(
+    // Rejection and restored builds must use the same final-link policy as
+    // production. Debug remains identical to the ordinary Cargo build.
+    let mut command = CargoInvocation::build_linked_native_host(
         project.manifest_path(),
         binary_name,
         None,
