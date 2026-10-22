@@ -6,6 +6,35 @@ use mech_core::{
 };
 use std::{cell::Cell, rc::Rc};
 
+#[cfg(all(unix, feature = "native-capture-pages"))]
+#[path = "native_text_line_pages.rs"]
+mod pages;
+#[cfg(all(unix, feature = "native-capture-pages"))]
+pub(super) use pages::{Pool as PagePool, allocation_work_bound as page_allocation_work_bound};
+
+#[cfg(not(all(unix, feature = "native-capture-pages")))]
+pub(super) type ChunkData = Bytes;
+#[cfg(all(unix, feature = "native-capture-pages"))]
+pub(super) enum ChunkData {
+    Heap(Bytes),
+    Pages(pages::Text),
+}
+#[cfg(all(unix, feature = "native-capture-pages"))]
+impl From<Bytes> for ChunkData {
+    fn from(bytes: Bytes) -> Self {
+        Self::Heap(bytes)
+    }
+}
+#[cfg(all(unix, feature = "native-capture-pages"))]
+impl ChunkData {
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Heap(bytes) => bytes.as_str(),
+            Self::Pages(text) => text.as_str(),
+        }
+    }
+}
+
 pub(super) struct Account {
     memory: ManagedMemoryBudget,
     work: NativeLibraryWorkBudget,
@@ -174,6 +203,9 @@ pub(super) struct Bytes {
     _claim: Option<Claim>,
 }
 impl Bytes {
+    pub fn as_str(&self) -> &str {
+        &self.text
+    }
     pub fn copy(text: &str, account: &Rc<Account>) -> Result<Self, InvokeError> {
         let claim = if text.is_empty() {
             None

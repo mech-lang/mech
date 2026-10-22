@@ -32,7 +32,7 @@ resident-artifact = [
 ]
 native-artifact = ["std", "resident-artifact", "bool", "u64", "i64"]
 # Experimental private capture-storage selection; never a separate executor.
-native-capture-pages = ["native-artifact"]
+native-capture-pages = ["native-artifact", "dep:libc"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
 source = ["runtime", "artifact-codec", "dep:mech-syntax", "mech-core/range"]
@@ -503,6 +503,9 @@ version = "0.2.19"
 default-features = false
 features = ["libm"]
 optional = true
+
+[target.'cfg(unix)'.dependencies]
+libc = { version = "=0.2.189", optional = true }
 
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
 web-time = "1.1.0"

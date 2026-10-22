@@ -8,13 +8,16 @@ use std::{collections::VecDeque, rc::Rc, sync::Arc};
 
 #[path = "native_text_line_chunk_allocation.rs"]
 mod allocation;
-use allocation::{Account, Bytes, Claim, Offsets};
+use allocation::{Account, Bytes, ChunkData, Claim, Offsets};
 #[path = "native_text_line_window.rs"]
 mod window;
 pub use window::NativeTextLineWindow;
 #[cfg(test)]
 #[path = "native_text_line_chunk_tests.rs"]
 mod native_text_line_chunk_tests;
+#[cfg(all(test, unix, feature = "native-capture-pages"))]
+#[path = "native_text_line_page_capture_tests.rs"]
+mod page_capture_tests;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct NativeTextLineCaptureFacts {
@@ -40,7 +43,7 @@ impl NativeTextLineCaptureFacts {
 
 struct Chunk {
     first: u64,
-    bytes: Bytes,
+    bytes: ChunkData,
     offsets: Option<Offsets>,
 }
 // Rust does not guarantee Box/Vec/Option aggregate layouts. Preserve the
@@ -61,7 +64,7 @@ const _: () = {
     )]
     struct UncachedChunk {
         first: u64,
-        bytes: Bytes,
+        bytes: ChunkData,
         offsets: Option<UncachedOffsets>,
     }
     assert!(core::mem::size_of::<Offsets>() == core::mem::size_of::<UncachedOffsets>());
@@ -95,10 +98,10 @@ impl Chunk {
                 offsets.values[index - 1] as usize + 1
             };
             let end =
-                end - usize::from(end > start && self.bytes.text.as_bytes()[end - 1] == b'\r');
-            self.bytes.text.get(start..end)
+                end - usize::from(end > start && self.bytes.as_str().as_bytes()[end - 1] == b'\r');
+            self.bytes.as_str().get(start..end)
         } else {
-            (index == 0).then_some(self.bytes.text.as_str())
+            (index == 0).then_some(self.bytes.as_str())
         }
     }
     fn payload_bytes(&self, first: u64, end: u64) -> Option<u64> {
@@ -106,7 +109,7 @@ impl Chunk {
             return Some(
                 self.offsets
                     .as_ref()
-                    .map_or(self.bytes.text.len(), |offsets| offsets.payload_bytes)
+                    .map_or(self.bytes.as_str().len(), |offsets| offsets.payload_bytes)
                     as u64,
             );
         }
@@ -131,6 +134,8 @@ struct Pending {
 /// discarded prefix. Backing is released before its memory reservation.
 pub struct NativeTextLineChunks {
     chunks: VecDeque<Chunk>,
+    #[cfg(all(unix, feature = "native-capture-pages"))]
+    pages: allocation::PagePool,
     pending: Pending,
     slots: Option<Claim>,
     account: Rc<Account>,
@@ -165,6 +170,8 @@ pub(super) fn prepare(
     )?;
     Ok(NativeTextLineChunks {
         chunks: VecDeque::new(),
+        #[cfg(all(unix, feature = "native-capture-pages"))]
+        pages: allocation::PagePool::default(),
         pending: Pending::default(),
         slots: None,
         account,
@@ -230,7 +237,12 @@ pub(super) fn capture_work_bound(
         .checked_add(4096)? // row directory searches
         .checked_add(256)? // selected producer binding
         .checked_add(4096)?; // retention search
+    #[cfg(all(unix, feature = "native-capture-pages"))]
+    let preferred_allocations = allocation::page_allocation_work_bound(input_limit)?;
+    #[cfg(not(all(unix, feature = "native-capture-pages")))]
+    let preferred_allocations = 0;
     fixed
+        .checked_add(preferred_allocations)?
         .checked_add(input_limit.checked_mul(per_byte)?)?
         .checked_add(input_limit.checked_add(2)?.checked_mul(per_callback)?)?
         .checked_add(8192 + 512)? // sealed-range searches and EOF
@@ -275,6 +287,8 @@ impl NativeTextLineChunks {
             self.chunks.pop_front();
         }
         self.chunks.clear();
+        #[cfg(all(unix, feature = "native-capture-pages"))]
+        self.pages.clear();
         self.pending.backing = None;
         Ok(())
     }
@@ -434,6 +448,12 @@ impl NativeTextLineChunks {
                 .checked_add(payload_bytes as u64)
                 .ok_or(InvokeError::InvalidInput)?;
             if self.upper.is_none() {
+                #[cfg(all(unix, feature = "native-capture-pages"))]
+                let bytes = match self.pages.copy(complete, self.input_limit, &self.account)? {
+                    Some(text) => ChunkData::Pages(text),
+                    None => Bytes::copy(complete, &self.account)?.into(),
+                };
+                #[cfg(not(all(unix, feature = "native-capture-pages")))]
                 let bytes = Bytes::copy(complete, &self.account)?;
                 let offsets = Offsets::new(complete, count, payload_bytes, &self.account)?;
                 self.push_chunk(Chunk {
@@ -488,7 +508,7 @@ impl NativeTextLineChunks {
             }
             self.push_chunk(Chunk {
                 first,
-                bytes,
+                bytes: bytes.into(),
                 offsets: None,
             })?;
         }
@@ -595,6 +615,10 @@ impl NativeTextLineChunks {
         }
         for _ in 0..back {
             self.chunks.pop_back();
+        }
+        #[cfg(all(unix, feature = "native-capture-pages"))]
+        if self.chunks.is_empty() {
+            self.pages.clear();
         }
         self.pending.backing = None;
         Ok(())

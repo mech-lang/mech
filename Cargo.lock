@@ -2745,6 +2745,7 @@ dependencies = [
  "byteorder",
  "grapheme",
  "indexmap",
+ "libc",
  "libloading 0.8.9",
  "libm",
  "mech-abi",
