@@ -163,13 +163,14 @@ paired rounds include startup, one secured round and report publication.
 
 | Build | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Published secured Mech, remeasured | 0.05690 s | 0.55750 s | 147.4 MB | 6.714 MB |
-| Current secured Mech | 0.05703 s | 0.55738 s | 147.4 MB | 6.714 MB |
+| Published secured Mech, remeasured | 0.05711 s | 0.55648 s | 147.44 MB | 6.714 MB |
+| Current secured Mech | 0.05644 s | 0.54774 s | 147.49 MB | 6.714 MB |
 
-The 0.0582-second target at 10M and 200 MB RSS reference are met. Schema-derived
-type gates remove 5,536 machine-code bytes, including unused complex/rational
-converters. This is **not a substantial file-size or speed win**: layout padding
-leaves the file 16 bytes larger, and paired timings change +0.14%/-0.06%.
+The 0.0582-second target at 10M and 200 MB RSS reference are met. Independent
+counter banks now cover both one- and two-character ASCII histograms. Matched
+pairs improve 1.22% at 10M and 1.58% at 125M; executable size is unchanged and
+median 125M RSS increases 49,152 bytes. This is a modest speed win, not a size win.
+Schema-derived gates also omit unused complex/rational converters.
 The earlier Rust #7 batch measured 0.06085/0.66286 s, 175.4 MB RSS and a 0.758 MB
 executable; Rust was not rerun in this paired experiment.
 
@@ -178,18 +179,23 @@ finishes before new offsets and unfinished-tail backing are acquired; mandatory
 backing is funded before optional pages. Heap fallback, finite accounts and the
 single capability/provider/transaction authority remain.
 
-Fresh original/decoded builds at `30ea9d1c0` produce identical executables and
+Fresh original/decoded builds at `8f54e5ce1b` produce identical executables and
 pass security denials, launcher tests, tamper rejection and full-input checks.
 All 64 measured outputs and 64 complete Mech reports pass an independent audit.
-Execution counters are unchanged. The Mech body remains 26,048 bytes; recorded
-instruction differences are local-buffer addresses. Cranelift compiles Mech
-source; LLVM compiles the linked Rust host/library code.
+Execution counters are unchanged. The Mech body grows from 26,048 to 26,496 bytes
+for the additional histogram specialization; both actual Object files remain
+pinned. Cranelift compiles Mech source; LLVM compiles linked Rust host/library code.
 
-RSS uses three separate processes; Rust spans 175.4–209.0 MB in this batch.
+RSS uses three separate processes; the earlier Rust batch spans 175.4–209.0 MB.
 Physical footprint is separate. Units are decimal MB. Rust is unstripped; Mech
 uses opt-level3/ThinLTO/strip and includes its secured host. Equal executable
 size is not required. Review and green CI are still required before completion.
 PR909 stays draft and unmerged pending user direction.
+
+Banked histograms reserve all counters and worst-case result backing before
+entry. Small inputs, tight local/global limits and lost shared headroom retain
+the serial layout. Existing finite work bounds cover initialization, native
+counting, reduction and materialization; no per-window admission is introduced.
 
 The [earlier direct-I/O comparison](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
 retains the approximately 0.975-second Rust-backed Mech control, which is distinct
