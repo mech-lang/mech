@@ -163,16 +163,17 @@ paired rounds include startup, one secured round and report publication.
 
 | Build | 10M bases | 125M bases | 125M peak RSS | Executable |
 | --- | ---: | ---: | ---: | ---: |
-| Published secured Mech, remeasured | 0.05642 s | 0.54719 s | 147.49 MB | 6.714 MB |
-| Current secured Mech | 0.05524 s | 0.53422 s | 147.85 MB | 6.714 MB |
+| Published secured Mech, remeasured | 0.05535 s | 0.53393 s | 147.47 MB | 6.714 MB |
+| Current secured Mech | 0.05529 s | 0.53360 s | 147.70 MB | 6.630 MB |
 
-The 0.0582-second target at 10M and 200 MB RSS reference are met. One bounded
-weak identity caches the ASCII/no-CRLF representation fact within a native entry,
-avoiding repeated scans of the same immutable String. Matched pairs improve
-2.12% at 10M and 2.46% at 125M, with all twelve pairs faster at both sizes.
-Median 125M RSS increases 360,448 bytes across three samples; this is not a
-memory win. The executable shrinks only 16 bytes, not a meaningful size win.
-Existing schema-derived gates omit unused complex/rational converters.
+The 0.0582-second target at 10M and 200 MB RSS reference are met. The deployed
+native host now excludes resident session routing while retaining the SAME
+artifact admission, capability, provider and transaction implementation.
+This saves 83,600 bytes (1.25%). Paired timing differences of 0.16%/0.04% are
+within ordinary variation: no demonstrated speed win or material regression.
+Median 125M RSS increases 229,376 bytes across three samples; no memory win.
+Existing schema-derived gates omit unused complex/rational converters, and a
+bounded weak identity avoids repeated scans of the same immutable String.
 The earlier Rust #7 batch measured 0.06085/0.66286 s, 175.4 MB RSS and a 0.758 MB
 executable; Rust was not rerun in this paired experiment.
 
@@ -181,15 +182,15 @@ finishes before new offsets and unfinished-tail backing are acquired; mandatory
 backing is funded before optional pages. Heap fallback, finite accounts and the
 single capability/provider/transaction authority remain.
 
-Fresh original/decoded builds at `f8b959ffc9` produce identical executables and
+Fresh original/decoded builds at `46c42d21c8` produce identical executables and
 pass security denials, launcher tests, tamper rejection and full-input checks.
 All 64 measured outputs and 64 complete Mech reports pass an independent audit.
-Work policy 37 adds exactly 144 admitted metadata bytes and 1,152 work units;
-every other report field except the program revision is unchanged. The weak
-fact retains no payload or permissions and does not bypass fresh owner, shape,
-quota or work checks. Local validation passes 215 GPU unit tests and 53 hosted
-contract tests. The 26,496-byte Mech body keeps the same opcodes, registers,
-control flow and relocations; only local-buffer address immediates differ.
+Every report field except the independently compiled program revision is
+unchanged, including every execution counter. Work policy 37 still admits the
+144-byte weak fact and its 1,152 setup work units; no payload or permissions are
+retained and fresh owner, shape, quota and work checks remain. Local validation
+passes 215 GPU and 53 hosted tests, plus 351 native-only and 357 resident-profile
+runtime tests. The 26,496-byte Mech body and its relocations are byte-identical.
 Cranelift compiles Mech source; LLVM compiles linked Rust host/library code.
 
 RSS uses three separate processes; the earlier Rust batch spans 175.4–209.0 MB.
@@ -223,6 +224,11 @@ artifact closure, including cold/nested code. Missing private registration
 evidence retains the complete catalog. Those same maintained declarations and
 owner-specified build features supply both profiles; the factory profile is
 packaging metadata, not execution or capability authority.
+
+Generated standalone hosts enable `canonical-native-resources`, not
+`resident-routing`. Both profiles share the original admission implementation;
+the build/test frontend retains resident APIs. This packaging boundary removes
+resident session state from the native host, not security checks or semantics.
 
 The complete schema closure also selects existing core type features. Closed,
 known-registration applications omit unused numeric converters; dynamic/reified
