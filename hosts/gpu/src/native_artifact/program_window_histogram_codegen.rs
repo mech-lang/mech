@@ -4,7 +4,7 @@ use super::*;
 use crate::native_artifact::program_window_histogram_layout::{
     BANKED_CELLS, BANKED_PAIR_CELLS, BANKS, SINGLE_CELLS,
 };
-use cranelift_codegen::ir::Value;
+use cranelift_codegen::ir::{Endianness, Value};
 
 pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     let entry = b.create_block();
@@ -84,11 +84,23 @@ fn emit_width(
     let offset = b.block_params(bulk)[0];
     let address = b.ins().iadd(source, offset);
     // Eight legal starts need 8 or 9 source bytes. offset <= accepted-8 proves
-    // the LAST load is within the actual source. Reuse overlapping bytes and
-    // compute keys before touching disjoint scratch; no endian/alignment claim.
-    let bytes = (0..8 + width - 1)
-        .map(|i| load_byte(b, address, i as i32))
+    // the complete word (and the final ninth byte for pairs) is in the owner.
+    // Explicit little endian preserves byte order without an alignment claim.
+    let word = b.ins().load(
+        types::I64,
+        MemFlags::new().with_endianness(Endianness::Little),
+        address,
+        0,
+    );
+    let mut bytes = (0..8)
+        .map(|i| {
+            let shifted = b.ins().ushr_imm(word, i * 8);
+            b.ins().band_imm(shifted, 255)
+        })
         .collect::<Vec<_>>();
+    if width == 2 {
+        bytes.push(load_byte(b, address, 8));
+    }
     let keys = (0..8)
         .map(|i| key(b, &bytes[i..i + width]))
         .collect::<Vec<_>>();
