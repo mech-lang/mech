@@ -48,6 +48,12 @@ pub fn generate_linked_program_application(
             revision: artifact.revision().as_bytes(),
             typed_ir_sha256: object.descriptor().typed_ir_sha256(),
             object_metadata: object.metadata(),
+            descriptor_image: Some(
+                object
+                    .descriptor()
+                    .encode_build_owned_image()
+                    .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?,
+            ),
             manifest_schema: "mech.canonical-linked-program-application.v1",
             route: "canonical-artifact-program-cranelift-object",
         },
@@ -157,6 +163,12 @@ fn generate_hosted(
             revision: artifact.revision().as_bytes(),
             typed_ir_sha256: object.descriptor().typed_ir_sha256(),
             object_metadata: object.metadata(),
+            descriptor_image: Some(
+                object
+                    .descriptor()
+                    .encode_build_owned_image()
+                    .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?,
+            ),
             manifest_schema: if benchmark_policy {
                 "mech.canonical-linked-benchmark-program-application.v1"
             } else {

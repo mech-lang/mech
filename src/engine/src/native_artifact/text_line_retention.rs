@@ -16,7 +16,7 @@ use mech_core::{SchemaBody, ValueData};
 /// Word offsets in the SAME checked scalar-aggregate carrier layout. Scanning
 /// states retain from min(keep_fields). A returning state retains from first
 /// only when first < end; an empty range must not revive a discarded prefix.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeTextLineRetentionState {
     ordinal: u32,
     index: Option<usize>,
@@ -43,7 +43,7 @@ impl NativeTextLineRetentionState {
 /// names, state names, string literals, benchmark sizes or host URIs are used.
 /// Full capture/error ordering, budgets, Unicode and owning-session delivery
 /// still require separate implementation and qualification before streaming.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeTextLineRetentionFrontier {
     read: NativeTextLineReadFrontier,
     iteration: u32,

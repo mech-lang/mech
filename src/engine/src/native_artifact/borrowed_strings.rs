@@ -12,7 +12,7 @@ use mech_core::{SchemaBody, ValueData};
 #[path = "borrowed_string_selectors.rs"]
 mod selectors;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub enum NativeBorrowedStringAction {
     /// No selector Value is needed when every read is a proved native fixed
     /// String slice. The ordinary branch still executes the original call.
@@ -83,7 +83,7 @@ impl NativeBorrowedStringAction {
         )
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeBorrowedStringRegion {
     iteration: u32,
     matrices: Box<[Value]>,

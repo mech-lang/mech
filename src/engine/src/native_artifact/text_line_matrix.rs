@@ -14,7 +14,7 @@ use mech_core::{DimensionExpr, SchemaBody};
 
 /// Constructor-private metadata for one root immutable line matrix. This is
 /// not a canonical value, a transport representation or execution authority.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeTextLineMatrixRegion {
     producer: u32,
     source: Value,

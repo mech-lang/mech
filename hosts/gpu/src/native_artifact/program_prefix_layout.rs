@@ -5,7 +5,7 @@ use mech_engine::native_artifact::{
     NativeControlLoop, NativeProgramArtifactPlan, NativeTailLoop, NativeTextLineRetentionFrontier,
 };
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize)]
 pub(super) struct Region {
     pub frontier: NativeTextLineRetentionFrontier,
     pub tail: NativeTailLoop,

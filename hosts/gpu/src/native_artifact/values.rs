@@ -8,7 +8,7 @@ use mech_core::{ManagedMemoryBudget, MemoryDomainId, SchemaId, SchemaKey, Value}
 /// Descriptive slot type from the checked native plan. It grants no execution
 /// authority; every inserted Value must already have canonical validation and
 /// complete immutable ownership in the invocation's same memory account.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, serde::Serialize)]
 pub struct NativeValueSlot {
     pub schema: SchemaId,
     pub key: SchemaKey,

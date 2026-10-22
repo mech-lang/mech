@@ -4,7 +4,7 @@ use mech_core::{
 };
 
 /// Exact semantic kinds supported by the canonical scalar native adapter.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeScalarKind {
     Bool,
     U64,
@@ -14,7 +14,7 @@ pub enum NativeScalarKind {
 
 /// Checked operations certified by the actual selected maintained binder.
 /// These are semantic identities, not source names or catalog hashes.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeScalarOp {
     U64Add,
     U64Sub,
@@ -65,7 +65,7 @@ pub enum NativeScalarOp {
     F64ToI64,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeScalarValue {
     Bool(bool),
     U64(u64),
@@ -75,18 +75,19 @@ pub enum NativeScalarValue {
 
 /// An artifact value identity. A local is evaluated by its one ordered Let;
 /// later users refer to that identity without duplicating its expression.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeValueRef {
     Constant(ConstantId),
     Input(InputId),
     Local(NodeId),
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeScalarType {
     pub(crate) kind: NativeScalarKind,
     pub(crate) schema: SchemaId,
     pub(crate) schema_key: SchemaKey,
+    #[serde(serialize_with = "super::program_image::serialize_descriptor")]
     pub(crate) descriptor: ResolvedValueDescriptor,
 }
 impl NativeScalarType {
@@ -104,7 +105,7 @@ impl NativeScalarType {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeInput {
     pub(crate) input: InputId,
     pub(crate) slot: CellSlotId,
@@ -126,7 +127,7 @@ impl NativeInput {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeConstant {
     pub(crate) constant: ConstantId,
     pub(crate) ty: NativeScalarType,
@@ -177,7 +178,7 @@ impl NativeLet {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeOutput {
     pub(crate) output: OutputId,
     pub(crate) slot: CellSlotId,

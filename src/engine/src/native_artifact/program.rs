@@ -13,7 +13,7 @@ use mech_core::{
 
 /// Exact symbolic type. Managed dimensions are deliberately not replaced by
 /// the physical one-handle transport shape; a call must bind its current shape.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeProgramType {
     pub(crate) schema: SchemaId,
     pub(crate) definition: Schema,
@@ -43,7 +43,7 @@ impl NativeProgramType {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeProgramInput {
     pub(crate) input: InputId,
     pub(crate) slot: CellSlotId,
@@ -71,7 +71,7 @@ impl NativeProgramInput {
 
 /// An original root observation captured by the authorized host BEFORE native
 /// execution. This is transport metadata, never a native I/O callback or grant.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeProgramObservation {
     pub(crate) node: NodeId,
     pub(crate) requirement: ApplicationRequirementId,
@@ -107,7 +107,7 @@ impl NativeProgramObservation {
 
 /// An immutable payload selected at the original root Send site. Completion
 /// transports it to the authorized host; emitted computation performs no I/O.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeProgramEffect {
     pub(crate) node: NodeId,
     pub(crate) requirement: ApplicationRequirementId,
@@ -141,9 +141,10 @@ impl NativeProgramEffect {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeProgramConstant {
     pub(crate) value: NativeMatchValue,
+    #[serde(serialize_with = "super::program_image::serialize_constant")]
     pub(crate) constant: Value,
 }
 impl NativeProgramConstant {
@@ -155,7 +156,7 @@ impl NativeProgramConstant {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeProgramOutput {
     pub(crate) output: OutputId,
     pub(crate) slot: CellSlotId,
@@ -185,7 +186,7 @@ impl NativeProgramOutput {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeProgramLibraryTemplate {
     origin: super::NativeMatchOrigin,
     revision: ProgramRevision,
@@ -197,7 +198,7 @@ pub struct NativeProgramLibraryTemplate {
     selected: SelectedLibrary,
 }
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 enum SelectedLibrary {
     Root(super::NativeCollectionOperationTemplate),
     Lexical(super::NativeCollectionLexicalTemplate),
@@ -283,7 +284,7 @@ impl NativeProgramLibraryTemplate {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeProgramArtifactPlan {
     pub(crate) revision: ProgramRevision,
     pub(crate) resource_requirements: Box<[ExecutionResourceRequest]>,

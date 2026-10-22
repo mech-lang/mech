@@ -15,7 +15,7 @@ use mech_core::{DimensionExpr, ImplementationMemoryClass, IntegerWidth, SchemaBo
 /// An optional sole-use unit-U64 Range at its original semantic visit.
 /// This describes immutable operand identities, not evaluated endpoints,
 /// admitted storage, a canonical selector or permission to execute a visit.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeSelectedTextJoinRange {
     producer: u32,
     start: Value,
@@ -37,7 +37,7 @@ impl NativeSelectedTextJoinRange {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeSelectedTextJoin {
     selection: u32,
     consumer: u32,

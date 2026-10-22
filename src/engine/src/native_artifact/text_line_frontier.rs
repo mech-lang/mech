@@ -25,7 +25,7 @@ pub use retention::{NativeTextLineRetentionFrontier, NativeTextLineRetentionStat
 
 /// A predicate at its original scalar comparison and branch sites. The count
 /// may not be replaced by a prefix length in any canonical/native value slot.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeTextLineCountGuard {
     comparison: u32,
     branch: u32,
@@ -60,7 +60,7 @@ impl NativeTextLineCountGuard {
 /// Constructor-private, plan-local metadata. Before using this in a streaming
 /// backend, separately prove line availability/retention, bind the exact host
 /// capture/session lifetime, and preserve full acquisition errors and effects.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeTextLineCountFrontier {
     lines: NativeTextLineMatrixRegion,
     counts: Box<[Value]>,

@@ -12,7 +12,7 @@ use super::{
 /// dominate its successful read on its current Tail traversal. Repeated tests
 /// of the unchanged current carrier have the same truth value. Zero-index
 /// checks, selected-call admission and canonical errors remain at their sites.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeTextLineReadGuard {
     site: u32,
     iteration: u32,
@@ -39,7 +39,7 @@ impl NativeTextLineReadGuard {
 /// A plan-local upper-bound proof for every borrowed read of one private line
 /// matrix. It does NOT prove monotonic indices or future range retention, and
 /// therefore MUST NOT be used alone to discard a source prefix or enable I/O.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeTextLineReadFrontier {
     count: NativeTextLineCountFrontier,
     reads: Box<[NativeTextLineReadGuard]>,

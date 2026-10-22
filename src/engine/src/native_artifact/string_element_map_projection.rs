@@ -4,7 +4,7 @@ use super::iteration_validation::ControlPlan;
 use super::{NativeIterationAction as Action, NativeProgramArtifactPlan as Plan};
 
 /// Constructor-private proof; neither semantic String is a materialized Value.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeStringElementMapProjection {
     pub(crate) iteration: u32,
     pub(crate) element_site: u32,

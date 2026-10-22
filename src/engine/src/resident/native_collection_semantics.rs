@@ -10,7 +10,7 @@ use mech_core::{
 #[cfg(feature = "native-artifact")]
 use std::sync::Arc;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeCollectionPrimitive {
     CompositePack(usize),
     EnumPack,

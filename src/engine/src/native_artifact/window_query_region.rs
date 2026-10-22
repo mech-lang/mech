@@ -11,7 +11,7 @@ use super::{
 /// or a benchmark identity. A backend can use this to emit one compiled region
 /// after binding its exact String owners and selector geometry at entry.
 /// It must still implement the selected semantics and finite round policy.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeWindowRegion {
     collection: u32,
     iteration: u32,

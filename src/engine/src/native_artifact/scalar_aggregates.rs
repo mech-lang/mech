@@ -8,7 +8,7 @@ use super::{
 };
 use mech_core::{IntegerWidth, SchemaBody as Schema, ValueData};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub enum NativeScalarAggregateAction {
     Pack {
         output: Value,
@@ -26,13 +26,13 @@ pub enum NativeScalarAggregateAction {
         output: Value,
     },
 }
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, serde::Serialize)]
 pub enum NativeAggregateWord {
     Scalar(Value),
     Field(Value, usize),
     Constant(u64),
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct NativeScalarAggregates {
     slots: Box<[Option<(usize, usize)>]>,
     actions: Box<[Option<NativeScalarAggregateAction>]>,

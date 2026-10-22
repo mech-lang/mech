@@ -41,10 +41,15 @@ pub use text_lines::{
 /// Compiler-owned selection/immutable schemas, not a bound runtime call or
 /// authority to enter its source site. No artifact/catalog traversal occurs
 /// during invoke_current. Its complete temporary binding is admitted first.
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize)]
 pub struct NativePreparedLibraryCall {
     template: NativeProgramLibraryTemplate,
+    // The enclosing descriptor exports the SAME canonical schema table once.
+    #[serde(skip)]
     schemas: Arc<SchemaTable>,
+    // A build image names the selected implementation through template, never
+    // a process address. Loading must resolve its exact build-owned binding.
+    #[serde(skip)]
     factory: ResidentKernelFactory,
     binding_bytes: u64,
     binding_work: u64,
@@ -54,6 +59,7 @@ pub struct NativePreparedLibraryCall {
     output_key: mech_core::SchemaKey,
     lookup_work: u64,
     output_follows_input: bool,
+    #[serde(skip)]
     cache_identity: Arc<()>,
     span_selector_metadata_bytes: u64,
     span_selector_work: u64,

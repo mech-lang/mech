@@ -6,7 +6,7 @@ use mech_engine::native_artifact::{
     NativeIterationAction, NativeProgramArtifactPlan,
 };
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize)]
 pub(super) struct RegionLayout {
     pub proof: Region,
     // The code generator writes these lanes; the owning runtime independently
@@ -27,7 +27,7 @@ impl RegionLayout {
         self.proof.matrices().len() * 3 + self.proof.literals().len() * 2
     }
 }
-#[derive(Debug, Default)]
+#[derive(Debug, Default, serde::Serialize)]
 pub(super) struct Layout {
     pub regions: Vec<RegionLayout>,
     pub initializers: Vec<Option<usize>>,

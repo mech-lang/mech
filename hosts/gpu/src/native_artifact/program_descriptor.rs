@@ -10,13 +10,17 @@ use mech_engine::{
 };
 use std::sync::Arc;
 
+#[path = "program_descriptor_image.rs"]
+mod image;
+
 #[path = "program_retirement.rs"]
 mod retirement;
 pub(super) use retirement::{RetirementKind, RetirementTables};
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize)]
 pub struct NativeProgramDescriptor {
     pub(super) plan: NativeProgramArtifactPlan,
+    #[serde(serialize_with = "image::serialize_schemas")]
     pub(super) schemas: Arc<SchemaTable>,
     // Query entries are prepared from their SAME sink step and fully checked
     // by validate_query_stages before this immutable descriptor can escape.

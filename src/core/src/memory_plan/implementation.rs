@@ -1,4 +1,5 @@
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum ImplementationMemoryClass {
     NoAdditionalScratch,
     CloneInput {

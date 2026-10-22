@@ -7,7 +7,7 @@ use mech_engine::native_artifact::{
 };
 
 pub(super) const OVERHEAD: u64 = 512;
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize)]
 pub(super) struct Region {
     pub iteration: u32,
     pub tail: NativeTailLoop,
@@ -17,7 +17,7 @@ pub(super) struct Region {
     pub compute: u64,
     pub comparison: u64,
 }
-#[derive(Debug, Default)]
+#[derive(Debug, Default, serde::Serialize)]
 pub(super) struct Layout {
     pub regions: Vec<Region>,
     pub sites: Vec<Option<usize>>,

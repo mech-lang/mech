@@ -37,8 +37,10 @@ pub(crate) mod text_join_sink;
 
 mod phase_validation;
 mod program;
+mod program_image;
 pub use crate::resident::general::native_match_lowering::lower_native_program_artifact;
 pub use program::*;
+pub use program_image::encode_native_program_plan_image;
 
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 mod window_query_region;

@@ -6,7 +6,7 @@ use super::{
     NativeProgramArtifactPlan as Plan,
 };
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeStringMapRegion {
     collection: u32,
     iteration: u32,

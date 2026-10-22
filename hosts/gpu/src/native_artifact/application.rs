@@ -182,6 +182,7 @@ pub(super) struct LinkedApplicationInputs<'a> {
     pub revision: &'a [u8],
     pub typed_ir_sha256: &'a [u8],
     pub object_metadata: Value,
+    pub descriptor_image: Option<Vec<u8>>,
     pub manifest_schema: &'static str,
     pub route: &'static str,
 }
@@ -240,6 +241,7 @@ pub fn generate_linked_application(
             revision: artifact.revision().as_bytes(),
             typed_ir_sha256: object.descriptor().typed_ir_sha256(),
             object_metadata: object.metadata(),
+            descriptor_image: None,
             manifest_schema: "mech.canonical-linked-application.v1",
             route: "canonical-artifact-cranelift-object",
         },
@@ -405,6 +407,11 @@ lto = "thin"
                 .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?,
         ),
     ]);
+    // Bind compiler-produced execution metadata to the SAME pinned Object,
+    // bytecode and source. The current launcher does not load this image yet.
+    if let Some(image) = inputs.descriptor_image {
+        files.insert("native-descriptor.json".into(), image);
+    }
     let mut pins = files
         .iter()
         .map(|(name, value)| (name.clone(), digest(value)))
