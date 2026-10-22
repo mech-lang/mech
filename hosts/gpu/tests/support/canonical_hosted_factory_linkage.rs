@@ -153,6 +153,12 @@ fn generated_launcher_references_individual_factories_and_pins_profile() {
         .unwrap();
         let main = std::fs::read_to_string(generated.root().join("src/main.rs")).unwrap();
         assert!(!main.contains("install_intrinsic_resident("));
+        let capture = main
+            .find("with_prepared_canonical_native_resources_phased_text(")
+            .unwrap();
+        assert!(main.find("drop(artifact);").unwrap() < capture);
+        assert!(main.find("drop(catalog);").unwrap() < capture);
+        assert!(main.contains("hex(program_revision.as_bytes())"));
         assert!(!main.contains("@INSTALL_CANONICAL_FACTORIES@"));
         assert!(!main.contains("\\\""));
         let profile = NativeFactoryLinkageProfile::derive(artifact, &full);

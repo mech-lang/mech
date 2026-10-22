@@ -59,9 +59,9 @@ pub use self::errors::*;
 pub use self::native_resources::{
     CanonicalNativeResourceAction, CanonicalNativeResourceAdmission,
     CanonicalNativeResourceCompletion, CanonicalNativeResourceInvocation,
-    CanonicalNativeResourceLimits, CanonicalNativeResourcePlan, CanonicalNativeResourcePrepared,
-    CanonicalNativeResourceRunError, CanonicalNativeResourceSite, CanonicalNativeResourceTextChunk,
-    CanonicalNativeResourceTurn,
+    CanonicalNativeResourceLimits, CanonicalNativeResourceMetadata, CanonicalNativeResourcePlan,
+    CanonicalNativeResourcePrepared, CanonicalNativeResourceRunError, CanonicalNativeResourceSite,
+    CanonicalNativeResourceTextChunk, CanonicalNativeResourceTurn,
 };
 #[cfg(feature = "string")]
 pub use self::native_resources::{NativeResourceBindingError, NativeResourceBindings};

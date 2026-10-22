@@ -8,6 +8,7 @@ use mech_gpu::native_artifact::{
 @BENCHMARK_POLICY_IMPORT@
 use mech_runtime::{
     CanonicalNativeResourceCompletion, CanonicalNativeResourceLimits,
+    CanonicalNativeResourceMetadata, CanonicalNativeResourceRunError,
     ConfigValue, HostInstanceConfig, NativeResourceBindingError,
     RunResourceGrantConfig, RuntimeBuilder, RuntimeProgramRoute,
 };
@@ -278,8 +279,17 @@ fn run() -> Result<(), String> {
         });
     }
     let mut runtime = builder.build().map_err(diagnostic)?;
-    let execution = runtime.with_canonical_native_resources_phased_text(
-        &artifact,
+    // The selected native descriptor owns its checked factory bindings. Retain
+    // only the resource metadata needed by the shared execution boundary, not
+    // the decoded compiler artifact or catalog for the duration of input work.
+    let program_revision = artifact.revision();
+    let resource_metadata = CanonicalNativeResourceMetadata::prepare(&artifact, launch.max_ports);
+    drop(artifact);
+    drop(catalog);
+    let execution = resource_metadata.map_err(|error| CanonicalNativeResourceRunError::BeforeCommit {
+        phase: "admission", error, cleanup: None,
+    }).and_then(|resource_metadata| runtime.with_prepared_canonical_native_resources_phased_text(
+        &resource_metadata,
         CanonicalNativeResourceLimits {
             max_ports: launch.max_ports,
             max_input_text_bytes: launch.input_text_bytes,
@@ -308,7 +318,7 @@ fn run() -> Result<(), String> {
                 effects: effect_values.into_boxed_slice(),
             })
         },
-    );
+    ));
     // This CLI runtime supplies authority/provider/transaction services only.
     // No resident artifact is activated or evaluated by a native application.
     let route = runtime.program_execution_info();
@@ -329,7 +339,7 @@ fn run() -> Result<(), String> {
             "schema": "mech.canonical-hosted-native-execution.v1",
             "route": @HOSTED_ROUTE_LITERAL@,
             "policy": @HOSTED_POLICY_EXPRESSION@,
-            "program_revision": hex(artifact.revision().as_bytes()),
+            "program_revision": hex(program_revision.as_bytes()),
             "launch_sha256": hex(&Sha256::digest(&launch_bytes)),
             "native_aot": true,
             "hosted_phases": "admit-activate-capture-resume",

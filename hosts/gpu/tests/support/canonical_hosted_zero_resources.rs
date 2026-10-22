@@ -98,7 +98,7 @@ fn original_and_decoded_closed_program_generate_same_hosted_object_and_pins() {
                 .is_none()
         );
         assert_eq!(manifest["profile"]["dev"]["debug"].as_integer(), Some(0));
-        assert!(main.contains("with_canonical_native_resources_phased"));
+        assert!(main.contains("with_prepared_canonical_native_resources_phased_text"));
         assert!(main.contains("linked.prepare_hosted"));
         assert!(main.contains("resume_hosted_into"));
         let linkage =

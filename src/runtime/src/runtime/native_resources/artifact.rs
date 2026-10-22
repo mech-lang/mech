@@ -18,9 +18,21 @@ use std::collections::BTreeMap;
 use mech_core::{
     ApplicationRequirement, ApplicationRequirementId, CellSlotId, ExecutionResourceRequest,
     MResult, MechError, NodeId, ProgramRevision, ResourceDelivery, ResourceIntent, SchemaBody,
-    SchemaId, SchemaKey, Value, ValueData,
+    SchemaId, SchemaKey, SchemaTable, Value, ValueData,
 };
-use mech_engine::{ArtifactSource, ExecutableNodeBody, ProgramArtifact, SlotRole};
+use mech_engine::{
+    ApplicationRequirementTable, ArtifactSource, ExecutableNodeBody, ProgramArtifact, SlotRole,
+};
+
+#[path = "prepared_metadata.rs"]
+mod prepared_metadata;
+pub use prepared_metadata::CanonicalNativeResourceMetadata;
+
+struct ResourceMetadataView<'a> {
+    plan: &'a CanonicalNativeResourcePlan,
+    requirements: &'a ApplicationRequirementTable,
+    schemas: &'a SchemaTable,
+}
 
 use crate::{
     ResourceSchemaPreflight, RuntimeCommitOutcome, RuntimeContext, RuntimeId,
@@ -591,7 +603,7 @@ impl MechRuntime {
         prepare: impl FnOnce(
             CanonicalNativeResourceAdmission<'_>,
         ) -> MResult<CanonicalNativeResourcePrepared<S>>,
-        mut chunk: impl FnMut(&mut S, CanonicalNativeResourceTextChunk<'_>) -> MResult<()>,
+        chunk: impl FnMut(&mut S, CanonicalNativeResourceTextChunk<'_>) -> MResult<()>,
         invoke: impl FnOnce(
             S,
             CanonicalNativeResourceTurn<'_>,
@@ -599,10 +611,62 @@ impl MechRuntime {
     ) -> Result<R, CanonicalNativeResourceRunError> {
         let plan =
             CanonicalNativeResourcePlan::select(artifact, limits.max_ports).map_err(preflight)?;
+        self.with_selected_native_resources_delivery(
+            ResourceMetadataView {
+                plan: &plan,
+                requirements: artifact.requirements(),
+                schemas: artifact.schemas(),
+            },
+            limits,
+            offer_text,
+            prepare,
+            chunk,
+            invoke,
+        )
+    }
+
+    fn with_selected_native_resources_delivery<S, R>(
+        &mut self,
+        metadata: ResourceMetadataView<'_>,
+        limits: CanonicalNativeResourceLimits,
+        offer_text: bool,
+        prepare: impl FnOnce(
+            CanonicalNativeResourceAdmission<'_>,
+        ) -> MResult<CanonicalNativeResourcePrepared<S>>,
+        mut chunk: impl FnMut(&mut S, CanonicalNativeResourceTextChunk<'_>) -> MResult<()>,
+        invoke: impl FnOnce(
+            S,
+            CanonicalNativeResourceTurn<'_>,
+        ) -> MResult<CanonicalNativeResourceCompletion<R>>,
+    ) -> Result<R, CanonicalNativeResourceRunError> {
+        let ResourceMetadataView {
+            plan,
+            requirements,
+            schemas,
+        } = metadata;
+        // Prepared metadata is not a policy decision. Reapply this invocation's
+        // finite port limits before authority selection or provider callbacks.
+        if requirements.len() > limits.max_ports {
+            return Err(preflight(error(
+                "native resource requirement count exceeds its finite port cap",
+            )));
+        }
+        if plan
+            .observations
+            .len()
+            .checked_add(plan.effects.len())
+            .is_none_or(|count| count > limits.max_ports)
+        {
+            return Err(preflight(error(
+                "native resource site count exceeds its finite port cap",
+            )));
+        }
         // Reuse the SAME canonical session admission proof, including the
         // finite-use-capability rejection. This does not activate/evaluate a
         // resident instance or introduce another capability-policy authority.
-        let authority = self.build_resident_authority(artifact).map_err(preflight)?;
+        let authority = self
+            .build_requirement_authority(requirements)
+            .map_err(preflight)?;
         // Binding checks EVERY original requirement before observations or
         // provider preparation. Actual reads/sends recheck ordinary authority.
         let bindings = self
@@ -635,7 +699,7 @@ impl MechRuntime {
         };
 
         let mut prepared = prepare(CanonicalNativeResourceAdmission {
-            plan: &plan,
+            plan,
             invocation,
             text_capture_site,
             _private: (),
@@ -755,7 +819,7 @@ impl MechRuntime {
         let completion = invoke(
             prepared.state,
             CanonicalNativeResourceTurn {
-                plan: &plan,
+                plan,
                 observations: &inputs,
                 invocation,
                 text_capture,
@@ -782,14 +846,12 @@ impl MechRuntime {
                     error("native effect type differs from canonical plan"),
                 ));
             }
-            value
-                .validate_against(artifact.schemas())
-                .map_err(|error| {
-                    transaction.reject(
-                        "effect materialization",
-                        self::error(format!("invalid native effect snapshot: {error:?}")),
-                    )
-                })?;
+            value.validate_against(schemas).map_err(|error| {
+                transaction.reject(
+                    "effect materialization",
+                    self::error(format!("invalid native effect snapshot: {error:?}")),
+                )
+            })?;
         }
         authority.revalidate(transaction.runtime).map_err(|error| {
             transaction.reject("authorization before effect preparation", error)

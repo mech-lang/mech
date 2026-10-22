@@ -22,6 +22,8 @@ const EMPTY_OUTPUT: &str =
 #[path = "support/canonical_hosted_fixture.rs"]
 mod fixture;
 use fixture::{artifacts, bridge_limits, execute, limits, no_resident, quiet, runtime};
+#[path = "support/canonical_prepared_metadata.rs"]
+mod prepared_metadata;
 #[path = "support/canonical_hosted_text_capture.rs"]
 mod text_capture;
 #[test]
