@@ -145,7 +145,7 @@ impl Account {
 
     /// Atomically hold an optional storage envelope before physical allocation.
     /// Insufficient headroom keeps the ordinary small-buffer path eligible.
-    #[cfg(feature = "native-capture-pages")]
+    #[cfg(all(unix, feature = "native-capture-pages"))]
     pub fn reserve_preferred(account: &Rc<Self>, bytes: u64) -> Result<Option<Claim>, InvokeError> {
         let Some(used) = account.used.get().checked_add(bytes) else {
             return Ok(None);
@@ -319,6 +319,6 @@ impl Offsets {
 #[path = "native_text_line_offset_tests.rs"]
 mod line_offset_tests;
 
-#[cfg(all(test, feature = "native-capture-pages"))]
+#[cfg(all(test, unix, feature = "native-capture-pages"))]
 #[path = "native_text_line_optional_storage_tests.rs"]
 mod optional_storage_tests;

@@ -30,9 +30,10 @@ resident-artifact = [
   "dep:libm",
   "f64", "matrixd", "row_vectord",
 ]
-native-artifact = ["std", "resident-artifact", "bool", "u64", "i64"]
-# Experimental private capture-storage selection; never a separate executor.
-native-capture-pages = ["native-artifact", "dep:libc"]
+native-artifact = ["std", "resident-artifact", "bool", "u64", "i64", "native-capture-pages"]
+# Private Unix capture backing; the same executor retains its small-buffer and
+# budget-limited heap fallback. Non-Unix targets keep ordinary heap storage.
+native-capture-pages = ["dep:libc"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
 source = ["runtime", "artifact-codec", "dep:mech-syntax", "mech-core/range"]

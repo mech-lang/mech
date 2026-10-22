@@ -351,7 +351,12 @@ impl NativeLibraryWorkBudget {
 
     /// Preview the same account's debit before optional backing is selected.
     /// A declined storage preference must neither spend work nor renew fuel.
-    #[cfg(feature = "native-capture-pages")]
+    #[cfg(all(
+        unix,
+        feature = "native-artifact",
+        feature = "native-capture-pages",
+        feature = "pure_text"
+    ))]
     pub(in crate::resident) fn preview_allocation_charge(
         &self,
         compute: u64,
