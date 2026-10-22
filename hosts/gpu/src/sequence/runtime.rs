@@ -126,6 +126,11 @@ impl Records {
             Self::Streaming(r) => r.next(),
         }
     }
+    fn recycle_buffer(&mut self, buffer: Vec<u8>) {
+        if let Self::Streaming(reader) = self {
+            reader.recycle_buffer(buffer);
+        }
+    }
 }
 struct MappedRecords {
     records: Arc<Mutex<Records>>,
@@ -140,6 +145,31 @@ enum TextView {
     Concat(Value, Value),
 }
 impl Value {
+    /// Reclaim only uniquely owned storage after a streamed result is written.
+    /// Shared captures and live aliases retain their original allocation.
+    fn reclaim_byte_buffer(self, spare: &mut Vec<u8>) {
+        let bytes = match self {
+            Self::Text(bytes) | Self::Bytes(bytes, _) => Some(bytes),
+            Self::TextView(view) => match Arc::try_unwrap(view) {
+                Ok(TextView::Wrap(bytes, _, _, _)) => Some(bytes),
+                Ok(TextView::Concat(left, right)) => {
+                    left.reclaim_byte_buffer(spare);
+                    right.reclaim_byte_buffer(spare);
+                    None
+                }
+                Err(_) => None,
+            },
+            _ => None,
+        };
+        if let Some(bytes) = bytes {
+            if let Ok(mut buffer) = Arc::try_unwrap(bytes) {
+                if buffer.capacity() > spare.capacity() {
+                    buffer.clear();
+                    *spare = buffer;
+                }
+            }
+        }
+    }
     fn write_text(&self, writer: &mut dyn Write) -> Result<(), String> {
         match self {
             Self::Text(v) => writer.write_all(v).map_err(|e| e.to_string()),
@@ -201,6 +231,7 @@ struct RecordReader<R> {
     separator: Vec<u8>,
     pending: Option<Vec<u8>>,
     line: Vec<u8>,
+    spare: Vec<u8>,
     ended: bool,
 }
 impl<R: BufRead> RecordReader<R> {
@@ -214,8 +245,17 @@ impl<R: BufRead> RecordReader<R> {
             separator: separator.to_vec(),
             pending: None,
             line: Vec::new(),
+            spare: Vec::new(),
             ended: false,
         })
+    }
+    fn recycle_buffer(&mut self, mut buffer: Vec<u8>) {
+        // Retain at most one completed record allocation. No file-size query or
+        // fixed workload size is used; future records still grow as necessary.
+        if buffer.capacity() > self.spare.capacity() {
+            buffer.clear();
+            self.spare = buffer;
+        }
     }
     fn next(&mut self) -> Result<Option<Record>, String> {
         if self.ended {
@@ -250,7 +290,7 @@ impl<R: BufRead> RecordReader<R> {
         {
             return self.next_compacted_body(header).map(Some);
         }
-        let mut body = Vec::new();
+        let mut body = std::mem::take(&mut self.spare);
         loop {
             let count = self
                 .reader
@@ -313,7 +353,7 @@ impl<R: BufRead> RecordReader<R> {
 
     fn next_compacted_body(&mut self, header: Vec<u8>) -> Result<Record, String> {
         let marker = self.marker[0];
-        let mut body = Vec::new();
+        let mut body = std::mem::take(&mut self.spare);
         let mut line_start = true;
         loop {
             let (consumed, next_header, eof) = {
@@ -2047,6 +2087,11 @@ unsafe extern "C" fn mech_sequence_record_step(state: *mut RecordState<'_>) -> u
                 start.elapsed().as_secs_f64()
             );
         }
+        let mut spare = Vec::new();
+        for value in std::mem::take(&mut scope.values) {
+            value.reclaim_byte_buffer(&mut spare);
+        }
+        state.records.recycle_buffer(spare);
         Ok(true)
     })();
     match result {
@@ -2115,6 +2160,7 @@ mod record_stream_tests {
         let mut records = Vec::new();
         while let Some(Record { header, body }) = reader.next()? {
             records.push((header.as_ref().clone(), body.as_ref().clone()));
+            reader.recycle_buffer(std::sync::Arc::try_unwrap(body).unwrap());
         }
         assert!(reader.next()?.is_none(), "exhausted readers stay exhausted");
         Ok(records)
@@ -2167,6 +2213,60 @@ mod record_stream_tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn completed_record_storage_is_reused_without_retaining_old_bytes() {
+        let mut reader =
+            RecordReader::new(Cursor::new(b"@one\nABCD\n@two\nX\n"), b"@", b"").unwrap();
+        let first = reader.next().unwrap().unwrap();
+        let buffer = std::sync::Arc::try_unwrap(first.body).unwrap();
+        let pointer = buffer.as_ptr();
+        reader.recycle_buffer(buffer);
+        let second = reader.next().unwrap().unwrap();
+        assert_eq!(second.body.as_slice(), b"X");
+        assert_eq!(second.body.as_ptr(), pointer);
+        assert!(reader.next().unwrap().is_none());
+    }
+
+    #[test]
+    fn streamed_result_reclamation_preserves_live_aliases_and_recovers_dead_views() {
+        use super::{TextView, Value};
+        use std::sync::Arc;
+        let original = Arc::new(vec![b'X'; 128]);
+        let retained = original.clone();
+        let mut spare = Vec::new();
+        Value::Bytes(original, 256).reclaim_byte_buffer(&mut spare);
+        assert_eq!(spare.capacity(), 0);
+        assert_eq!(retained.as_slice(), &[b'X'; 128]);
+        let view = Arc::new(TextView::Wrap(retained, 60, Arc::new(b"\n".to_vec()), 0));
+        let live_view = view.clone();
+        Value::TextView(view).reclaim_byte_buffer(&mut spare);
+        assert_eq!(spare.capacity(), 0);
+        let mut output = Vec::new();
+        Value::TextView(live_view.clone())
+            .write_text(&mut output)
+            .unwrap();
+        assert_eq!(output.len(), 131);
+        Value::TextView(live_view).reclaim_byte_buffer(&mut spare);
+        assert!(spare.capacity() >= 128);
+        assert!(spare.is_empty());
+        let reused_pointer = spare.as_ptr();
+        let smaller = Value::Text(Arc::new(vec![b'Y'; 16]));
+        smaller.reclaim_byte_buffer(&mut spare);
+        assert_eq!(spare.as_ptr(), reused_pointer);
+        let nested = Value::TextView(Arc::new(TextView::Concat(
+            Value::Text(Arc::new(b"header\n".to_vec())),
+            Value::TextView(Arc::new(TextView::Wrap(
+                Arc::new(vec![b'Z'; 256]),
+                7,
+                Arc::new(b"\n".to_vec()),
+                0,
+            ))),
+        )));
+        nested.reclaim_byte_buffer(&mut spare);
+        assert!(spare.capacity() >= 256);
+        assert!(spare.is_empty());
     }
 
     struct Interrupt<R> {
