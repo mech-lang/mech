@@ -157,52 +157,51 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The latest [matched measurement](../../docs/validation/canonical-knucleotide-line-geometry-v1.json)
-uses the unchanged full Mech source, input and finite capability policy on one
-M1. Proved sole-use ranges keep checked start/count metadata instead of index
-arrays. Selection now also sums exact retained chunk totals instead of walking
-every selected row to compute its payload length. Partial edges retain ordinary
-cell inspection; unsupported or uncertain geometry uses the original path.
+The latest [matched measurement and pins](../../docs/validation/canonical-knucleotide-startup-validation-v1.json)
+compare the unchanged full Mech source with standalone benchmark-game Rust #7
+on the same M1, inputs and output oracles. Mech uses the same finite capability
+policy in both versions. Twelve balanced three-way rounds measure startup,
+the complete secured round and report publication; every sample is retained.
 
-| Secured build | 10M bases | 125M bases | 125M peak RSS | Executable |
-| --- | ---: | ---: | ---: | ---: |
-| Before chunk-summary geometry | 0.06719 s | 0.61593 s | 270.7 MB | 6.729 MB |
-| Chunk-summary geometry | 0.06573 s | 0.59710 s | 270.7 MB | 6.729 MB |
+| Build | 10M bases | 125M bases |
+| --- | ---: | ---: |
+| Standalone Rust #7 | 0.05856 s | 0.67127 s |
+| Secured Mech before shared validation | 0.06237 s | 0.56016 s |
+| Secured Mech with shared validation | 0.05746 s | 0.55904 s |
 
-At 125M this change is 3.12% faster by the median paired ratio, winning all 12
-pairs. At 10M the paired median improves 2.19%, but only 9/12 pairs are faster;
-the three slower pairs remain in the results. Memory and binary size are
-essentially unchanged. Twelve balanced timing rounds per build/size include
-startup, the complete secured round and report publication. Three separate
-processes measure RSS. Units are decimal MB; physical-footprint measurements
-are recorded separately and do not substitute for RSS.
+The **0.0582-second median target at 10M is met**. Sharing startup analysis
+reduces paired elapsed time by 7.78%, with all 12 Mech pairs faster. Mech and
+Rust are approximately tied at 10M: Mech wins only 6/12 pairs. At 125M Mech
+uses 16.77% less elapsed time than Rust, winning 12/12 pairs; the startup
+change itself improves only 0.39%, with 8/12 faster pairs. These results concern
+the recorded implementations and recipes, rather than a general language ranking.
 
-Fresh original/decoded default-profile builds pass the maintained security and
-pin-tampering qualification and are byte-identical within each version. All 64
-outputs and complete reports pass: only the actual program revision differs
-across versions; every work counter is unchanged. These are same-machine
-results, not universal guarantees or isolated capability-overhead measurements.
+The generic changes enumerate LF offsets with safe 64-byte SIMD and reuse
+semantic use counts and lazily expanded actions within one immutable native
+validation. Every validator still runs in its original order; malformed plans,
+cold/escaping reads and first-error selection retain their checks. The preceding
+Mech baseline already includes the LF change, so this table isolates sharing.
 
-The preceding [compact-selector comparison](../../docs/validation/canonical-knucleotide-compact-selector-v1.json)
-reduced peak RSS by 16.3 MB. The earlier [three-way comparison](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
-measured 0.62678 s secured versus 0.97263 s tuned direct I/O at 125M. Earlier
-approximately 0.639- and 0.621-second measurements remain valid; only same-batch
-comparisons establish the measured benefit of each change.
+Fresh original/decoded default-profile builds at `8c06ac993` are byte-identical
+and pass the maintained security, launcher and pin-tampering qualification.
+All 96 measured outputs and 64 complete Mech reports pass. Only the actual
+program revision differs between Mech builds; every work counter is unchanged.
+IR27/ABI12/work-policy36 and the single capability/provider/transaction authority
+remain. The full Mech body compiles through Cranelift; LLVM compiles linked
+Rust host/library code with the default opt-level3/ThinLTO/strip profile.
 
-The ABI12/IR27/work-policy36 implementation streams bounded UTF-8 line windows
-through one authorized CLI observation and runtime transaction. The generated
-Mech scanner discards proved-dead prefixes and the final join releases consumed
-chunks. Successful EOF admits genuine full count/shape before saved body
-failures. Original Range/Select/Join visits, output-shape validation and the
-finite cumulative ledger remain. No Rust workload scanner, fabricated canonical
-matrix or second evaluator is introduced.
+Footprint remains unfinished: the current executable is **6.713 MB**, and
+125M median peak RSS is **270.7 MB**. Three separate processes measure RSS;
+physical footprint is recorded separately. Units are decimal MB. Rust's
+unstripped executable size is not a packaging-normalized comparison.
+The approximately 200 MB RSS/3.16 MB executable goals, broader native coverage,
+new review and green CI remain outstanding. PR909 stays draft and unmerged
+until user direction.
 
-The default release profile uses opt-level3, ThinLTO and symbol stripping, with
-unchanged unwind/codegen-unit defaults. LLVM optimizes linked Rust host/library
-code; the Mech Object is generated by Cranelift. Broader native coverage, the
-roughly 200 MB peak-RSS/3.16 MB executable targets, clean review and green CI
-remain outstanding for the updated head. The PR stays draft and unmerged until
-user direction.
+The [preceding geometry measurement](../../docs/validation/canonical-knucleotide-line-geometry-v1.json)
+and [earlier direct-I/O comparison](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
+retain their original provenance. The historical approximately 0.975-second
+control is Rust-backed Mech; standalone Rust #7 is the comparator above.
 
 ### Canonical native architecture and limits
 
