@@ -989,3 +989,7 @@ mod zero_resources;
 
 #[path = "support/canonical_hosted_factory_linkage.rs"]
 mod factory_linkage;
+
+#[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+#[path = "support/canonical_program_alignment.rs"]
+mod program_alignment;

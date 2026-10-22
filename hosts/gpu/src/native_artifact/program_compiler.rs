@@ -12,6 +12,24 @@ use cranelift_object::{ObjectBuilder, ObjectModule};
 use mech_core::{FunctionCatalog, ManagedMemoryBudget, Value};
 use mech_engine::{ProgramArtifact, native_artifact::lower_native_program_artifact};
 
+// Keep generated function placement independent of unrelated host link-size
+// changes on AArch64. 128-byte alignment covers both 64- and 128-byte cache
+// lines; other architectures retain Cranelift's normal alignment policy.
+const PROGRAM_CODEGEN_FLAGS: &[(&str, &str)] = &[
+    ("opt_level", "speed"),
+    ("is_pic", "true"),
+    ("preserve_frame_pointers", "true"),
+    ("unwind_info", "true"),
+    (
+        "log2_min_function_alignment",
+        if cfg!(target_arch = "aarch64") {
+            "7"
+        } else {
+            "0"
+        },
+    ),
+];
+
 #[path = "program_borrowed_codegen.rs"]
 pub(super) mod borrowed_codegen;
 #[path = "program_prefix_codegen.rs"]
@@ -62,16 +80,9 @@ impl JitProgramArtifact {
     ) -> Result<Self, NativeCompileError> {
         host_supported()?;
         let plan = lower_native_program_artifact(artifact, catalog).map_err(backend)?;
-        let builder = cranelift_jit::JITBuilder::with_flags(
-            &[
-                ("opt_level", "speed"),
-                ("is_pic", "true"),
-                ("preserve_frame_pointers", "true"),
-                ("unwind_info", "true"),
-            ],
-            default_libcall_names(),
-        )
-        .map_err(backend)?;
+        let builder =
+            cranelift_jit::JITBuilder::with_flags(PROGRAM_CODEGEN_FLAGS, default_libcall_names())
+                .map_err(backend)?;
         let mut module = cranelift_jit::JITModule::new(builder);
         let (function, stack, code) = super::iteration_compiler::define_cfg(
             CodePlan::Program(&plan),
@@ -197,12 +208,7 @@ pub fn emit_program_object_with_limits(
     host_supported()?;
     let plan = lower_native_program_artifact(artifact, catalog).map_err(backend)?;
     let mut flags = settings::builder();
-    for (key, value) in [
-        ("opt_level", "speed"),
-        ("is_pic", "true"),
-        ("preserve_frame_pointers", "true"),
-        ("unwind_info", "true"),
-    ] {
+    for &(key, value) in PROGRAM_CODEGEN_FLAGS {
         flags.set(key, value).map_err(backend)?;
     }
     let isa = cranelift_native::builder()
