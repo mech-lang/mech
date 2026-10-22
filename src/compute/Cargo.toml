@@ -12,8 +12,15 @@ rust-version = "1.92"
 
 [features]
 default = ["runtime-values"]
-runtime-values = ["mech-core/f32"]
+# Activation consumes canonical snapshots, not legacy F32 ValueCell storage.
+# Applications select legacy value gates from their declared schema closure.
+runtime-values = []
 
 [dependencies]
 mech-core = { version = "0.3.5", path = "../core", default-features = false, features = ["matrixd", "range"] }
 mech-engine = { version = "0.3.5", path = "../engine", default-features = false, features = ["resident-artifact"] }
+
+[dev-dependencies]
+# Memory-layout fixtures deliberately construct legacy F32 cells. Production
+# activation above uses canonical snapshots and does not require this gate.
+mech-core = { path = "../core", default-features = false, features = ["f32"] }

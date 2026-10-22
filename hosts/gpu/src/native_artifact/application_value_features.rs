@@ -128,6 +128,20 @@ mod tests {
     }
 
     #[test]
+    fn signed_cells_are_selected_only_by_signed_schema_requirements() {
+        let unsigned = SchemaBody::UnsignedInteger(IntegerWidth::W64);
+        assert_eq!(
+            from_bodies(std::iter::once(&unsigned)).features,
+            BTreeSet::from(["u64"]),
+        );
+        let signed = SchemaBody::Option(Box::new(SchemaBody::SignedInteger(IntegerWidth::W64)));
+        assert_eq!(
+            from_bodies(std::iter::once(&signed)).features,
+            BTreeSet::from(["i64"]),
+        );
+    }
+
+    #[test]
     fn dynamic_nested_payloads_keep_complete_conversion_support() {
         let body = SchemaBody::Option(Box::new(SchemaBody::Dynamic));
         assert!(from_bodies(std::iter::once(&body)).open_types);

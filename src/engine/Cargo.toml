@@ -30,7 +30,10 @@ resident-artifact = [
   "dep:libm",
   "f64", "matrixd", "row_vectord",
 ]
-native-artifact = ["std", "resident-artifact", "bool", "u64", "i64", "native-capture-pages"]
+# Canonical scalar words support signed integers without enabling legacy I64
+# cells in every native host. Generated applications select value gates from
+# their complete declared schema closure (including nested signed payloads).
+native-artifact = ["std", "resident-artifact", "bool", "u64", "native-capture-pages"]
 # Private Unix capture backing; the same executor retains its small-buffer and
 # budget-limited heap fallback. Non-Unix targets keep ordinary heap storage.
 native-capture-pages = ["dep:libc"]
