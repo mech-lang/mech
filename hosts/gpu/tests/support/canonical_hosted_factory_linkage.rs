@@ -187,6 +187,15 @@ fn generated_launcher_references_individual_factories_and_pins_profile() {
                 .iter()
                 .any(|feature| feature.as_str() == Some("resident-routing"))
         );
+        let advertised = generated.metadata()["runtime_features"].as_array().unwrap();
+        assert!(advertised.iter().any(|feature| {
+            feature.as_str() == Some("mech-runtime/canonical-native-resources")
+        }));
+        assert!(
+            !advertised
+                .iter()
+                .any(|feature| { feature.as_str() == Some("mech-runtime/resident-routing") })
+        );
         assert_eq!(metadata["selective_conversions"], true);
         let core_features = manifest["dependencies"]["mech-core"]["features"]
             .as_array()

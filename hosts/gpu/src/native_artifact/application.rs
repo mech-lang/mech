@@ -297,6 +297,8 @@ pub(super) fn write_linked_application(
         .iter()
         .map(|feature| format!(", {}", json_string(feature)))
         .collect::<String>();
+    #[cfg(feature = "canonical-native-program-host")]
+    let hosted_runtime_feature = "canonical-native-resources";
     let (gpu_feature, core_features, library_features, dependencies) = match inputs.profile {
         LinkedApplicationProfile::Scalar => ("canonical-native-runtime", "", "", String::new()),
         #[cfg(feature = "canonical-native-program")]
@@ -316,7 +318,7 @@ pub(super) fn write_linked_application(
             ", features = [\"serde\"]",
             ", \"string\", \"pure_text\", \"map_ops\", \"access\", \"set\", \"tuple\", \"enum\", \"sequence_sort\"",
             format!(
-                "serde_json = \"1.0\"\nserde = {{ version = \"1.0\", features = [\"derive\"] }}\nmech-runtime = {{ path = {}, default-features = false, features = [\"runtime\", \"string\", \"canonical-native-resources\"] }}\nmech-terminal = {{ path = {}, default-features = false, features = [\"provider\"] }}\n",
+                "serde_json = \"1.0\"\nserde = {{ version = \"1.0\", features = [\"derive\"] }}\nmech-runtime = {{ path = {}, default-features = false, features = [\"runtime\", \"string\", \"{hosted_runtime_feature}\"] }}\nmech-terminal = {{ path = {}, default-features = false, features = [\"provider\"] }}\n",
                 json_string(&format!("{workspace_text}/src/runtime")),
                 json_string(&format!("{workspace_text}/hosts/terminal")),
             ),
@@ -437,7 +439,7 @@ lto = "thin"
             LinkedApplicationProfile::HostedManagedProgram { .. }
         ) {
             runtime_features.extend([
-                "mech-runtime/resident-routing".to_owned(),
+                format!("mech-runtime/{hosted_runtime_feature}"),
                 "mech-terminal/provider".to_owned(),
             ]);
         }
