@@ -5,9 +5,14 @@ use mech_engine::native_artifact::{
     NativeTextLineMatrixRegion, NativeTextLineRetentionFrontier,
 };
 use sha2::{Digest, Sha256};
+// Identity construction runs once per descriptor, outside generated execution.
+// Keep the streaming hash update out of its hundreds of serialization sites;
+// this shares code without changing a single byte of the identity transcript.
+#[inline(never)]
 fn word(hash: &mut Sha256, value: u64) {
     hash.update(value.to_le_bytes());
 }
+#[inline(never)]
 fn bytes(hash: &mut Sha256, value: &[u8]) {
     word(hash, value.len() as u64);
     hash.update(value);
