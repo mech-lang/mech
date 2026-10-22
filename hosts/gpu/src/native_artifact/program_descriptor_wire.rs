@@ -3,7 +3,7 @@ use crate::native_artifact::{self as native, NativeProgramDescriptor, NativeValu
 use mech_core::{FunctionCatalog, SchemaId, SchemaKey};
 use mech_engine::native_artifact::*;
 use serde::{Deserialize, Deserializer};
-use serde_json::Value as Json;
+use serde_json::{Value as Json, value::RawValue};
 use std::sync::Arc;
 
 // This trait is inaccessible outside the native implementation. In particular,
@@ -86,10 +86,12 @@ impl From<Visit> for native::iteration_abi::NativeIterationVisit {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Descriptor {
-    plan: Json,
+struct Descriptor<'a> {
+    #[serde(borrow)]
+    plan: &'a RawValue,
     schemas: Json,
-    calls: Box<[Option<Json>]>,
+    #[serde(borrow)]
+    calls: Box<[Option<&'a RawValue>]>,
     types: Box<[Slot]>,
     visits: Box<[Visit]>,
     retirements: native::program_descriptor::RetirementTables,
@@ -114,28 +116,27 @@ struct Descriptor {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Image {
+struct Image<'a> {
     format: String,
     version: u32,
-    descriptor: Descriptor,
+    #[serde(borrow)]
+    descriptor: Descriptor<'a>,
 }
 
 pub(super) fn decode(
     bytes: &[u8],
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
-    let image: Image = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+    let image: Image<'_> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor" || image.version != 1 {
         return Err("unsupported native descriptor image format".into());
     }
     let w = image.descriptor;
     let schemas = Arc::new(decode_native_schema_image(&w.schemas)?);
-    let plan_image = serde_json::json!({
-        "format": "mech.build-owned-native-plan", "version": 1, "plan": w.plan,
-    });
     // SAFETY: only the enclosing unsafe descriptor loader reaches this private
     // reader; it retains all metadata until exact checked-build provenance holds.
-    let plan = unsafe { decode_build_owned_native_plan_value(plan_image, &schemas, catalog)? };
+    let plan =
+        unsafe { decode_build_owned_native_plan_body(w.plan.get().as_bytes(), &schemas, catalog)? };
     let calls = w
         .calls
         .iter()
@@ -143,10 +144,14 @@ pub(super) fn decode(
             image
                 .as_ref()
                 .map(|image| {
+                    // Do not retain every call's expanded JSON while binding
+                    // the others: these bytes borrow the immutable build image.
+                    let image: Json =
+                        serde_json::from_str(image.get()).map_err(|e| e.to_string())?;
                     // SAFETY: same confined build image; factory witnesses are checked too.
                     unsafe {
                         NativePreparedLibraryCall::from_build_owned_image(
-                            image,
+                            &image,
                             schemas.clone(),
                             catalog,
                         )

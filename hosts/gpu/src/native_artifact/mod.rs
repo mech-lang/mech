@@ -85,6 +85,8 @@ mod program_hooks;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_identity;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod program_image_packing;
+#[cfg(feature = "canonical-native-program-runtime")]
 mod program_line_matrix_layout;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_linked;

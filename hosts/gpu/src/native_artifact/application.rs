@@ -270,6 +270,7 @@ pub(super) fn write_linked_application(
     let factory_profile = json!({
         "schema": "mech.canonical-linked-factory-profile.v1",
         "mode": if selected.is_some() { "artifact-selected" } else { "complete-catalog" },
+        "selection_basis": inputs.factory_linkage.selection_basis(),
         "kernel_operations": inputs.factory_linkage.operations().iter()
             .map(|operation| operation.canonical_name()).collect::<Vec<_>>(),
         "factory_declarations": selected.map(|factories| factories.iter()
@@ -409,9 +410,14 @@ lto = "thin"
                 .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?,
         ),
     ]);
-    // Bind compiler-produced execution metadata to the SAME pinned Object,
-    // bytecode and source. The current launcher does not load this image yet.
+    // Bind both inspectable and embedded copies to the SAME checked Object,
+    // bytecode and source. The launcher loads only the smaller packed copy.
     if let Some(image) = inputs.descriptor_image {
+        #[cfg(feature = "canonical-native-program")]
+        files.insert(
+            "native-descriptor.bin".into(),
+            super::program_image_packing::pack(&image).map_err(NativeApplicationError::Encoding)?,
+        );
         files.insert("native-descriptor.json".into(), image);
     }
     if let Some(image) = inputs.resource_image {

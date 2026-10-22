@@ -51,6 +51,11 @@ impl NativeProgramDescriptor {
     ) -> Result<Self, String> {
         // Private wire assembly never publishes a safe deserializer for a
         // descriptor or engine proof. Its result inherits this confinement.
-        wire::decode(bytes, catalog)
+        if bytes.starts_with(super::super::program_image_packing::MAGIC) {
+            let unpacked = super::super::program_image_packing::unpack(bytes)?;
+            wire::decode(&unpacked, catalog)
+        } else {
+            wire::decode(bytes, catalog)
+        }
     }
 }

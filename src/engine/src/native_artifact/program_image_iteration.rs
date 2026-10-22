@@ -107,7 +107,7 @@ pub(super) unsafe fn block(
     catalog: &FunctionCatalog,
     schemas: &SchemaTable,
 ) -> Result<NativeIterationBlock, String> {
-    let wire: Block = serde_json::from_value(image.clone()).map_err(|e| e.to_string())?;
+    let wire = Block::deserialize(image).map_err(|e| e.to_string())?;
     use NativeIterationAction as N;
     let action = match wire.action {
         Action::Scalar(a) => N::Scalar(action(a)),

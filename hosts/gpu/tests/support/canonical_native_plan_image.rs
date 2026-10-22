@@ -97,6 +97,49 @@ fn generated_hosted_application_pins_the_same_object_descriptor() {
             .map(|byte| format!("{byte:02x}"))
             .collect::<String>();
         assert_eq!(project.pins()["native-descriptor.json"], digest);
+        let packed = std::fs::read(project.root().join("native-descriptor.bin")).unwrap();
+        let packed_digest = Sha256::digest(&packed)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        assert_eq!(project.pins()["native-descriptor.bin"], packed_digest);
+        assert!(packed.len() < image.len());
+        // SAFETY: this same checked compiler produced the image and Object;
+        // the decoded metadata remains confined to round-trip inspection.
+        let restored = unsafe {
+            mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                &packed, &catalog,
+            )
+        }
+        .unwrap();
+        assert_eq!(image, restored.encode_build_owned_image().unwrap());
+        // Header length/size checks precede allocation; checksum, truncation,
+        // exact consumption and exact expanded length are enforced as well.
+        let mut corruptions = vec![packed[..12].to_vec(), packed[..packed.len() - 1].to_vec()];
+        for offset in [0, 8, 16, 24, packed.len() - 1] {
+            let mut changed = packed.clone();
+            changed[offset] ^= 1;
+            corruptions.push(changed);
+        }
+        let mut oversized = packed.clone();
+        oversized[8..16].copy_from_slice(&u64::MAX.to_le_bytes());
+        corruptions.push(oversized);
+        let mut trailing = packed.clone();
+        trailing.push(0);
+        let payload_len = u64::try_from(trailing.len() - 24).unwrap();
+        trailing[16..24].copy_from_slice(&payload_len.to_le_bytes());
+        corruptions.push(trailing);
+        for changed in corruptions {
+            // SAFETY: rejection probe only; no returned proof can execute.
+            assert!(
+                unsafe {
+                    mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                        &changed, &catalog,
+                    )
+                }
+                .is_err()
+            );
+        }
         let resources = std::fs::read(project.root().join("native-resources.json")).unwrap();
         let resource_digest = Sha256::digest(&resources)
             .iter()
@@ -127,6 +170,8 @@ fn generated_hosted_application_pins_the_same_object_descriptor() {
         assert!(!main.contains("CanonicalNativeResourceMetadata::prepare"));
         assert!(!main.contains("lower_native_program_artifact"));
         assert!(main.contains("LinkedProgramArtifact::from_build_owned_image"));
+        assert!(main.contains("include_bytes!(\"../native-descriptor.bin\")"));
+        assert!(!main.contains("include_bytes!(\"../native-descriptor.json\")"));
         let object = mech_gpu::native_artifact::emit_program_object(artifact, &catalog).unwrap();
         assert_eq!(
             image,

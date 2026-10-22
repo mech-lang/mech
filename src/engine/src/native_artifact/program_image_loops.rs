@@ -89,7 +89,7 @@ fn origin(wire: WireOrigin) -> NativeMatchOrigin {
 }
 pub(super) fn scope(image: &Json) -> Result<NativeIterationValueScope, String> {
     Ok(
-        match serde_json::from_value(image.clone()).map_err(|e| e.to_string())? {
+        match Scope::deserialize(image).map_err(|e| e.to_string())? {
             Scope::Immutable { iteration } => NativeIterationValueScope::Immutable { iteration },
             Scope::Carrier { iteration } => NativeIterationValueScope::Carrier { iteration },
         },
@@ -104,7 +104,7 @@ pub(super) unsafe fn control_loop(
     catalog: &FunctionCatalog,
     schemas: &SchemaTable,
 ) -> Result<NativeControlLoop, String> {
-    let wire: Loop = serde_json::from_value(image.clone()).map_err(|e| e.to_string())?;
+    let wire = Loop::deserialize(image).map_err(|e| e.to_string())?;
     Ok(match wire {
         Loop::Iteration(w) => NativeControlLoop::Iteration(NativeIterationLoop {
             origin: origin(w.origin),

@@ -37,9 +37,11 @@ pub fn generate_linked_program_application(
         LinkedApplicationInputs {
             profile: LinkedApplicationProfile::ManagedProgram,
             schemas: artifact.schemas(),
-            factory_linkage: mech_engine::linked_factories::NativeFactoryLinkageProfile::derive(
-                artifact, catalog,
-            ),
+            factory_linkage:
+                mech_engine::linked_factories::NativeFactoryLinkageProfile::derive_native_image(
+                    object.descriptor().plan(),
+                    catalog,
+                ),
             source_provenance,
             bytecode,
             object: object.bytes(),
@@ -153,9 +155,11 @@ fn generate_hosted(
         LinkedApplicationInputs {
             profile: LinkedApplicationProfile::HostedManagedProgram { benchmark_policy },
             schemas: artifact.schemas(),
-            factory_linkage: mech_engine::linked_factories::NativeFactoryLinkageProfile::derive(
-                artifact, catalog,
-            ),
+            factory_linkage:
+                mech_engine::linked_factories::NativeFactoryLinkageProfile::derive_native_image(
+                    object.descriptor().plan(),
+                    catalog,
+                ),
             source_provenance,
             bytecode,
             object: object.bytes(),

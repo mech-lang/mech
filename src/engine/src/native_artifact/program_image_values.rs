@@ -21,7 +21,7 @@ struct SchemaImage {
 }
 
 pub(crate) fn schema(image: &Json) -> Result<Schema, String> {
-    let wire: SchemaImage = serde_json::from_value(image.clone()).map_err(|e| e.to_string())?;
+    let wire = SchemaImage::deserialize(image).map_err(|e| e.to_string())?;
     let dimension_parameters = wire
         .dimension_parameters
         .into_iter()
@@ -83,8 +83,8 @@ pub fn schemas(image: &Json) -> Result<SchemaTable, String> {
 }
 
 pub(super) fn descriptor(image: &Json) -> Result<ResolvedValueDescriptor, String> {
-    let (definition, parameters): (Json, Box<[u64]>) =
-        serde_json::from_value(image.clone()).map_err(|e| e.to_string())?;
+    let (definition, parameters) =
+        <(Json, Box<[u64]>)>::deserialize(image).map_err(|e| e.to_string())?;
     let definition = schema(&definition)?;
     let shape = definition
         .instantiate_shape(parameters)
@@ -94,7 +94,7 @@ pub(super) fn descriptor(image: &Json) -> Result<ResolvedValueDescriptor, String
 }
 
 pub(super) fn constant(image: &Json, schemas: &SchemaTable) -> Result<Value, String> {
-    let draft: ValueDraft = serde_json::from_value(image.clone()).map_err(|e| e.to_string())?;
+    let draft = ValueDraft::deserialize(image).map_err(|e| e.to_string())?;
     if serde_json::to_value(&draft).map_err(|e| e.to_string())? != *image {
         return Err("unknown constant image fields".into());
     }

@@ -22,13 +22,8 @@ pub(crate) unsafe fn template(
     catalog: &FunctionCatalog,
     schemas: &SchemaTable,
 ) -> Result<NativeProgramLibraryTemplate, String> {
-    let selected: Selected = serde_json::from_value(
-        image
-            .get("selected")
-            .ok_or("missing image selection")?
-            .clone(),
-    )
-    .map_err(|e| e.to_string())?;
+    let selected = Selected::deserialize(image.get("selected").ok_or("missing image selection")?)
+        .map_err(|e| e.to_string())?;
     let template = match selected {
         Selected::Root(image) => {
             // SAFETY: delegated unchanged build-image confinement obligation.

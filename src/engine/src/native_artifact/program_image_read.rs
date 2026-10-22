@@ -11,7 +11,10 @@ use serde::Deserialize;
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 mod plan;
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
-pub use plan::{decode_build_owned_native_plan_image, decode_build_owned_native_plan_value};
+pub use plan::{
+    decode_build_owned_native_plan_body, decode_build_owned_native_plan_image,
+    decode_build_owned_native_plan_value,
+};
 
 #[path = "program_image_collections.rs"]
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]

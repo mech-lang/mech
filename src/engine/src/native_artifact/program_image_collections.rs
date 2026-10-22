@@ -73,7 +73,7 @@ pub(super) unsafe fn collection(
     catalog: &FunctionCatalog,
     schemas: &SchemaTable,
 ) -> Result<NativeProgramCollection, String> {
-    let wire: Collection = serde_json::from_value(image.clone()).map_err(|e| e.to_string())?;
+    let wire = Collection::deserialize(image).map_err(|e| e.to_string())?;
     let kind = match wire.kind {
         Kind::Matrix => crate::ComprehensionKind::Matrix,
         Kind::MatrixPreserveShape => crate::ComprehensionKind::MatrixPreserveShape,

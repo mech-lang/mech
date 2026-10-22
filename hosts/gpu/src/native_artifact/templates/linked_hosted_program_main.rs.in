@@ -212,7 +212,7 @@ fn run() -> Result<(), String> {
     // without rerunning the compiler's lowering/analysis inside the executable.
     let linked = unsafe {
         LinkedProgramArtifact::from_build_owned_image(
-            include_bytes!("../native-descriptor.json"), &catalog, &LINKED_IDENTITY, linked_entry,
+            include_bytes!("../native-descriptor.bin"), &catalog, &LINKED_IDENTITY, linked_entry,
         )
     }.map_err(diagnostic)?;
     if !linked.descriptor().plan().inputs().is_empty() {

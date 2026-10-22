@@ -41,7 +41,7 @@ impl NativePreparedLibraryCall {
         schemas: Arc<SchemaTable>,
         catalog: &FunctionCatalog,
     ) -> Result<Self, String> {
-        let wire: Call = serde_json::from_value(image.clone()).map_err(|e| e.to_string())?;
+        let wire = Call::deserialize(image).map_err(|e| e.to_string())?;
         // SAFETY: the caller inherits the enclosing unchanged-build confinement
         // obligation; this helper also checks the actual maintained factory.
         let template = unsafe {

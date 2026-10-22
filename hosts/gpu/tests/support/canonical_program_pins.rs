@@ -139,6 +139,12 @@ pub(super) fn qualify(
     .chain(
         [
             (
+                "packed-descriptor",
+                "native-descriptor.bin",
+                Mutation::Flip(24),
+                "changed generated input native-descriptor.bin",
+            ),
+            (
                 "descriptor-work",
                 "native-descriptor.json",
                 Mutation::DescriptorWork,

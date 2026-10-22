@@ -137,7 +137,7 @@ impl NativeCollectionOperationTemplate {
         catalog: &FunctionCatalog,
         schemas: &mech_core::SchemaTable,
     ) -> Result<Self, String> {
-        let wire: Root = serde_json::from_value(image.clone()).map_err(|e| e.to_string())?;
+        let wire = Root::deserialize(image).map_err(|e| e.to_string())?;
         let leaf = leaf(wire.leaf, catalog, schemas)?;
         if wire.sources.len() != leaf.inputs.len() {
             return Err("image source count differs".into());
@@ -217,7 +217,7 @@ impl NativeCollectionLexicalTemplate {
         catalog: &FunctionCatalog,
         schemas: &mech_core::SchemaTable,
     ) -> Result<Self, String> {
-        let wire: Lexical = serde_json::from_value(image.clone()).map_err(|e| e.to_string())?;
+        let wire = Lexical::deserialize(image).map_err(|e| e.to_string())?;
         let leaf = leaf(wire.leaf, catalog, schemas)?;
         if wire.sources.len() != leaf.inputs.len() {
             return Err("image source count differs".into());

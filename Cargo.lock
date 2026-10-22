@@ -2787,6 +2787,7 @@ dependencies = [
  "mech-syntax",
  "mech-terminal",
  "memchr",
+ "miniz_oxide",
  "pollster",
  "rayon",
  "regex",

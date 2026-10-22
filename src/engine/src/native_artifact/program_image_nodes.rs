@@ -8,7 +8,7 @@ use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::Value as Json;
 
 fn wire<T: DeserializeOwned>(image: &Json) -> Result<T, String> {
-    serde_json::from_value(image.clone()).map_err(|e| e.to_string())
+    T::deserialize(image).map_err(|e| e.to_string())
 }
 
 #[derive(Deserialize)]

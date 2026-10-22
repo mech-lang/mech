@@ -76,7 +76,7 @@ pub(super) unsafe fn result(
     catalog: &FunctionCatalog,
     schemas: &SchemaTable,
 ) -> Result<NativeCollectionResult, String> {
-    let sink: Sink = serde_json::from_value(image.clone()).map_err(|e| e.to_string())?;
+    let sink = Sink::deserialize(image).map_err(|e| e.to_string())?;
     Ok(match sink {
         Sink::Materialized => NativeCollectionResult::Materialized,
         Sink::TextJoin(w) => NativeCollectionResult::TextJoin(NativeTextJoinSink {

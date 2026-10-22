@@ -101,14 +101,17 @@ fn original_and_decoded_closed_program_generate_same_hosted_object_and_pins() {
         assert!(main.contains("with_prepared_canonical_native_resources_phased_text"));
         assert!(main.contains("linked.prepare_hosted"));
         assert!(main.contains("resume_hosted_into"));
+        let object = mech_gpu::native_artifact::emit_program_object(artifact, &catalog).unwrap();
         let linkage =
-            mech_engine::linked_factories::NativeFactoryLinkageProfile::derive(artifact, &catalog);
-        for factory in linkage
-            .factories()
-            .expect("closed scalar operations have maintained linkage")
-        {
-            assert!(main.contains(&format!("{}.install(&mut builder)", factory.rust_path())));
-        }
+            mech_engine::linked_factories::NativeFactoryLinkageProfile::derive_native_image(
+                object.descriptor().plan(),
+                &catalog,
+            );
+        // Closed scalar arithmetic is already in the Object. No factory is
+        // required to restore this image, and no operation gains I/O authority.
+        assert!(linkage.operations().is_empty());
+        assert!(linkage.factories().unwrap().is_empty());
+        assert!(!main.contains("mech_engine::linked_factories::"));
         assert!(!main.contains("mech_engine::install_intrinsic_resident"));
         assert!(!main.contains("mech_stdlib::install_native_plan"));
         assert_eq!(project.metadata()["source_is_provenance_only"], true);

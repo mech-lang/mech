@@ -57,7 +57,7 @@ fn run() -> Result<(), String> {
     // and checks the complete ABI/work/target/IR Object identity.
     let linked = unsafe {
         LinkedProgramArtifact::from_build_owned_image(
-            include_bytes!("../native-descriptor.json"), &catalog, &LINKED_IDENTITY, linked_entry,
+            include_bytes!("../native-descriptor.bin"), &catalog, &LINKED_IDENTITY, linked_entry,
         )
     }.map_err(|error| error.to_string())?;
     // This explicit bounded transport is for linked qualification, not an

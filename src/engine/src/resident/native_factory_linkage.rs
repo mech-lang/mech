@@ -88,11 +88,12 @@ fn linkage(entry: &ResidentKernelFactoryEntry) -> Option<&'static NativeLinkedFa
     None
 }
 
-/// Packaging metadata derived from the COMPLETE artifact kernel closure.
+/// Packaging metadata derived from a complete artifact or native-image closure.
 /// This does not authorize operations, remove resource requirements, activate
 /// a program, execute a kernel, or replace ordinary lowering/identity checks.
 #[cfg(feature = "native-artifact")]
 pub struct NativeFactoryLinkageProfile {
+    basis: &'static str,
     operations: Box<[crate::OperationReference]>,
     factories: Option<Box<[&'static NativeLinkedFactory]>>,
     missing: Box<[crate::OperationReference]>,
@@ -101,7 +102,32 @@ pub struct NativeFactoryLinkageProfile {
 #[cfg(feature = "native-artifact")]
 impl NativeFactoryLinkageProfile {
     pub fn derive(artifact: &crate::ProgramArtifact, catalog: &mech_core::FunctionCatalog) -> Self {
-        let operations = artifact.kernel_operation_references();
+        Self::from_operations(
+            artifact.kernel_operation_references(),
+            catalog,
+            "artifact-kernels",
+        )
+    }
+
+    /// Select factories for restoring an already-compiled image, not for
+    /// lowering source. The compiler still uses the full source catalog before
+    /// producing the checked Object. No original resource requirement is removed.
+    pub fn derive_native_image(
+        plan: &crate::native_artifact::NativeProgramArtifactPlan,
+        catalog: &mech_core::FunctionCatalog,
+    ) -> Self {
+        Self::from_operations(
+            plan.library_operation_references(),
+            catalog,
+            "native-image-libraries",
+        )
+    }
+
+    fn from_operations(
+        operations: Vec<crate::OperationReference>,
+        catalog: &mech_core::FunctionCatalog,
+        basis: &'static str,
+    ) -> Self {
         let mut factories = Vec::with_capacity(operations.len());
         let mut missing = Vec::new();
         for operation in &operations {
@@ -114,6 +140,7 @@ impl NativeFactoryLinkageProfile {
             }
         }
         Self {
+            basis,
             operations: operations.into_boxed_slice(),
             factories: missing.is_empty().then(|| factories.into_boxed_slice()),
             missing: missing.into_boxed_slice(),
@@ -122,6 +149,10 @@ impl NativeFactoryLinkageProfile {
 
     pub fn operations(&self) -> &[crate::OperationReference] {
         &self.operations
+    }
+
+    pub const fn selection_basis(&self) -> &'static str {
+        self.basis
     }
 
     /// None conservatively retains complete catalog installation. In
