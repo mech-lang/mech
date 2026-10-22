@@ -451,10 +451,12 @@ impl NativeTextLineChunks {
             // a slab. Otherwise its unused capacity can crowd out offsets,
             // directory growth or the unfinished tail even though heap storage
             // would fit. Pending bytes stay private until their line completes.
-            self.append_pending(&text[last + 1..])?;
             if self.upper.is_none() {
+                // Release the old directory before acquiring any new fragment
+                // backing, keeping its replacement peak independent of the tail.
                 self.reserve_chunk_slot()?;
                 let offsets = Offsets::new(complete, count, payload_bytes, &self.account)?;
+                self.append_pending(&text[last + 1..])?;
                 #[cfg(all(unix, feature = "native-capture-pages"))]
                 let bytes = match self.pages.copy(complete, self.input_limit, &self.account)? {
                     Some(text) => ChunkData::Pages(text),
@@ -468,6 +470,8 @@ impl NativeTextLineChunks {
                     bytes,
                     offsets: Some(offsets),
                 });
+            } else {
+                self.append_pending(&text[last + 1..])?;
             }
             return Ok(());
         }
