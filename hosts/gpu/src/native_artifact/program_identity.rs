@@ -1,8 +1,8 @@
 //! Explicit program IR/ABI12 identity. No Debug or pointer serialization.
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
-    NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind,
-    NativeTextLineRetentionFrontier,
+    NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind, NativeSelectedTextJoin,
+    NativeTextLineMatrixRegion, NativeTextLineRetentionFrontier,
 };
 use sha2::{Digest, Sha256};
 fn word(hash: &mut Sha256, value: u64) {
@@ -186,6 +186,8 @@ impl NativeProgramObjectIdentity {
 pub(super) fn typed_ir_sha256(
     plan: &NativeProgramArtifactPlan,
     frontiers: &[NativeTextLineRetentionFrontier],
+    joins: &[NativeSelectedTextJoin],
+    lines: &[NativeTextLineMatrixRegion],
 ) -> [u8; 32] {
     let mut hash = Sha256::new();
     hash.update(b"mech.canonical-managed-program-cfg\0");
@@ -898,7 +900,6 @@ pub(super) fn typed_ir_sha256(
         bytes(&mut hash, output.name().as_bytes());
         word(&mut hash, output.value().get() as u64);
     }
-    let joins = plan.selected_text_joins();
     word(&mut hash, joins.len() as u64);
     for join in joins {
         word(&mut hash, u64::from(join.selection()));
@@ -923,7 +924,6 @@ pub(super) fn typed_ir_sha256(
             None => hash.update([0]),
         }
     }
-    let lines = plan.text_line_matrix_regions();
     word(&mut hash, lines.len() as u64);
     for line in lines {
         word(&mut hash, u64::from(line.producer()));

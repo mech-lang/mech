@@ -33,6 +33,9 @@ mod capture_host_tests;
 #[path = "program_capture_tests.rs"]
 mod capture_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_identity_inventory_tests.rs"]
+mod identity_inventory_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_prefix_tests.rs"]
 mod prefix_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]

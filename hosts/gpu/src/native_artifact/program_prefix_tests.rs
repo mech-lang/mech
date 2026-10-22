@@ -120,6 +120,11 @@ fn shared_retention_inventory_preserves_identity_and_capture_eligibility() {
             .unwrap();
             let descriptor = jit.descriptor();
             let frontiers = descriptor.plan.text_line_retention_frontiers();
+            let joins = descriptor.plan.selected_text_joins();
+            let lines = descriptor.plan.text_line_matrix_regions();
+            let identity = |frontiers: &[_]| {
+                program_identity::typed_ir_sha256(&descriptor.plan, frontiers, &joins, &lines)
+            };
             let independently_derived = program_prefix_layout::derive(
                 &descriptor.plan,
                 &descriptor.borrowed_strings,
@@ -131,10 +136,7 @@ fn shared_retention_inventory_preserves_identity_and_capture_eligibility() {
                 format!("{:?}", descriptor.prefix),
                 format!("{independently_derived:?}"),
             );
-            assert_eq!(
-                *descriptor.typed_ir_sha256(),
-                program_identity::typed_ir_sha256(&descriptor.plan, &frontiers),
-            );
+            assert_eq!(*descriptor.typed_ir_sha256(), identity(&frontiers));
             if eligible {
                 // Identity records the FULL inventory, not merely the single
                 // frontier accepted by the runtime layout. Layout rejection
@@ -151,14 +153,8 @@ fn shared_retention_inventory_preserves_identity_and_capture_eligibility() {
                     .unwrap()
                     .is_none()
                 );
-                assert_ne!(
-                    *descriptor.typed_ir_sha256(),
-                    program_identity::typed_ir_sha256(&descriptor.plan, &multiple),
-                );
-                assert_ne!(
-                    *descriptor.typed_ir_sha256(),
-                    program_identity::typed_ir_sha256(&descriptor.plan, &[]),
-                );
+                assert_ne!(*descriptor.typed_ir_sha256(), identity(&multiple));
+                assert_ne!(*descriptor.typed_ir_sha256(), identity(&[]));
             }
         }
     }

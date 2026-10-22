@@ -266,7 +266,15 @@ impl NativeProgramDescriptor {
             .and_then(|n| n.checked_mul(4))
             .and_then(|n| n.checked_add(4096))
             .ok_or("scalar ownership bound overflows")?;
-        let identity = super::program_identity::typed_ir_sha256(&plan, &line_retention_frontiers);
+        // These complete inventories were derived above from this SAME
+        // immutable plan. Hash every proof in its original order, including
+        // proofs not selected by the capture prefix, without deriving again.
+        let identity = super::program_identity::typed_ir_sha256(
+            &plan,
+            &line_retention_frontiers,
+            &selected_joins.regions,
+            &line_matrices.regions,
+        );
         Ok(Self {
             plan,
             schemas: Arc::new(artifact.schemas().clone()),
