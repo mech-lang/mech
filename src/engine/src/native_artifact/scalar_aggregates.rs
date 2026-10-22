@@ -38,20 +38,18 @@ super::program_image_proofs::image_enum!(NativeScalarAggregateAction {
     Observe { source: Value, offset: usize, ordinal: Option<u32>, guards: Box<[(usize, u32)]>, output: Value },
 });
 impl super::program_image_proofs::ImageRead for NativeAggregateWord {
-    fn read(image: serde_json::Value) -> Result<Self, String> {
+    fn read<'de, D: serde::Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
         #[derive(serde::Deserialize)]
         enum Wire {
             Scalar(u32),
             Field(u32, usize),
             Constant(u64),
         }
-        Ok(
-            match serde_json::from_value(image).map_err(|e| e.to_string())? {
-                Wire::Scalar(v) => Self::Scalar(Value(v)),
-                Wire::Field(v, i) => Self::Field(Value(v), i),
-                Wire::Constant(v) => Self::Constant(v),
-            },
-        )
+        Ok(match <Wire as serde::Deserialize>::deserialize(image)? {
+            Wire::Scalar(v) => Self::Scalar(Value(v)),
+            Wire::Field(v, i) => Self::Field(Value(v), i),
+            Wire::Constant(v) => Self::Constant(v),
+        })
     }
 }
 #[derive(Clone, Debug, Default, serde::Serialize)]
