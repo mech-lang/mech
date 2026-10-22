@@ -23,7 +23,10 @@ runtime_bench_probes = ["mech-engine/runtime_bench_probes"]
 resident_ekf_benchmarks = ["compiler", "mech-engine/resident-artifact"]
 resident-external = ["runtime", "string", "mech-engine/resident-artifact"]
 resident_external_test_support = ["resident-routing-source", "compiler_default"]
-resident-routing = ["resident-external"]
+# Shared artifact resource admission/delivery, without resident session routing.
+# Native and resident hosts use the SAME capability/provider/transaction checks.
+canonical-native-resources = ["resident-external"]
+resident-routing = ["canonical-native-resources"]
 resident-routing-source = ["resident-routing", "semantic-compiler"]
 compute = ["resident-routing-source", "f32", "f64", "string", "matrixd", "dep:mech-compute"]
 native-link = ["runtime", "string"]

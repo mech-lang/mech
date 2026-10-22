@@ -18,7 +18,11 @@ use crate::{
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
 };
 
-#[cfg(all(feature = "runtime", feature = "string", feature = "resident-routing"))]
+#[cfg(all(
+    feature = "runtime",
+    feature = "string",
+    feature = "canonical-native-resources"
+))]
 #[path = "resource_text_delivery.rs"]
 mod text_delivery;
 

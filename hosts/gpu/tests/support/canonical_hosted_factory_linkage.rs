@@ -174,6 +174,19 @@ fn generated_launcher_references_individual_factories_and_pins_profile() {
             .parse::<toml_edit::DocumentMut>()
             .unwrap();
         assert!(manifest["dependencies"].get("mech-stdlib").is_none());
+        let runtime_features = manifest["dependencies"]["mech-runtime"]["features"]
+            .as_array()
+            .unwrap();
+        assert!(
+            runtime_features
+                .iter()
+                .any(|feature| { feature.as_str() == Some("canonical-native-resources") })
+        );
+        assert!(
+            !runtime_features
+                .iter()
+                .any(|feature| feature.as_str() == Some("resident-routing"))
+        );
         assert_eq!(metadata["selective_conversions"], true);
         let core_features = manifest["dependencies"]["mech-core"]["features"]
             .as_array()

@@ -55,7 +55,7 @@ pub use self::builder::RuntimeBuilder;
 #[doc(hidden)]
 pub use self::cost_probe::{RuntimeCostSnapshot, reset_runtime_costs, runtime_cost_snapshot};
 pub use self::errors::*;
-#[cfg(all(feature = "string", feature = "resident-routing"))]
+#[cfg(all(feature = "string", feature = "canonical-native-resources"))]
 pub use self::native_resources::{
     CanonicalNativeResourceAction, CanonicalNativeResourceAdmission,
     CanonicalNativeResourceCompletion, CanonicalNativeResourceInvocation,

@@ -221,9 +221,9 @@ impl MechRuntime {
     }
 }
 
-#[cfg(feature = "resident-routing")]
+#[cfg(feature = "canonical-native-resources")]
 mod artifact;
-#[cfg(feature = "resident-routing")]
+#[cfg(feature = "canonical-native-resources")]
 pub use artifact::*;
 #[cfg(test)]
 mod tests;

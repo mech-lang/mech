@@ -12,6 +12,10 @@ mod compiler;
 #[cfg(feature = "resident-routing")]
 mod diagnostics;
 mod drivers;
+#[cfg(feature = "canonical-native-resources")]
+mod execution_info;
+#[cfg(feature = "canonical-native-resources")]
+pub use execution_info::{RuntimeProgramExecutionInfo, RuntimeProgramRoute};
 #[cfg(feature = "resident-external")]
 pub mod external;
 #[cfg(feature = "resident-routing")]
@@ -19,6 +23,12 @@ mod input;
 #[cfg(feature = "resident-routing")]
 mod loading;
 mod query;
+#[cfg(feature = "canonical-native-resources")]
+mod route_failure;
+#[cfg(feature = "canonical-native-resources")]
+pub(crate) use route_failure::route_failure;
+#[cfg(feature = "canonical-native-resources")]
+pub use route_failure::{ResidentRouteFailure, ResidentRouteFailureClass};
 #[cfg(feature = "resident-routing")]
 mod session;
 #[cfg(feature = "resident-routing")]

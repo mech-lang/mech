@@ -1,4 +1,4 @@
-#[cfg(feature = "resident-routing")]
+#[cfg(feature = "canonical-native-resources")]
 mod admission;
 mod authority;
 mod coordinator;

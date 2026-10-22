@@ -144,6 +144,7 @@ impl MechRuntime {
         Ok(grant_set)
     }
 
+    #[cfg(feature = "resident-routing")]
     pub(crate) fn revalidate_active_resident_grants(&self) -> MResult<()> {
         let super::super::ActiveProgramExecution::ResidentExternal(execution) =
             &self.active_program
