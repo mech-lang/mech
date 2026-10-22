@@ -104,7 +104,7 @@ fn actual_banks_keep_results_and_finite_denial_is_atomic_with_owner_cleanup() {
             (expanded.cells, expanded.reserved_bytes),
             (
                 512,
-                super::layout::banked_peak(size_of::<super::Entry>() as u64).unwrap()
+                super::layout::banked_peak(1, size_of::<super::Entry>() as u64).unwrap()
             )
         );
         let previous = outputs.clone();
@@ -162,7 +162,7 @@ fn actual_scratch_extents_follow_threshold_and_keep_the_same_logical_map() {
             assert_eq!(
                 record.reserved_bytes,
                 if expected == 512 {
-                    super::layout::banked_peak(size_of::<super::Entry>() as u64).unwrap()
+                    super::layout::banked_peak(1, size_of::<super::Entry>() as u64).unwrap()
                 } else {
                     (expected * 8) as u64
                 }
@@ -176,7 +176,7 @@ fn actual_scratch_extents_follow_threshold_and_keep_the_same_logical_map() {
 #[test]
 fn bank_admission_losing_shared_headroom_retries_serial_without_leaking() {
     let entry = size_of::<super::Entry>() as u64;
-    let peak = super::layout::banked_peak(entry).unwrap();
+    let peak = super::layout::banked_peak(1, entry).unwrap();
     for remaining in [1023, 1024, peak - 1] {
         let memory = ManagedMemoryBudget::new(peak);
         let preferred = super::layout::prefer_banks(1, 1024, 0, None, peak, entry);
@@ -184,7 +184,7 @@ fn bank_admission_losing_shared_headroom_retries_serial_without_leaking() {
         // Deterministic competing execution between the preference snapshot and
         // actual reservation. It shares the genuine account, not a mock quota.
         let competitor = memory.clone().reserve_capacity(peak - remaining).unwrap();
-        let result = super::reserve_layout(&memory, 128, preferred);
+        let result = super::reserve_layout(&memory, 128, 1, preferred);
         if remaining < 1024 {
             assert!(matches!(
                 result,
@@ -210,10 +210,10 @@ fn bank_admission_losing_shared_headroom_retries_serial_without_leaking() {
 #[test]
 fn banked_result_transfers_reserved_peak_even_when_shared_account_is_full() {
     let entry = size_of::<super::Entry>() as u64;
-    let peak = super::layout::banked_peak(entry).unwrap();
+    let peak = super::layout::banked_peak(1, entry).unwrap();
     for distinct in [1, 13, 128] {
         let memory = ManagedMemoryBudget::new(peak + 17);
-        let (cells, reservation) = super::reserve_layout(&memory, 128, true).unwrap();
+        let (cells, reservation) = super::reserve_layout(&memory, 128, 1, true).unwrap();
         assert_eq!((cells, reservation.capacity_bytes()), (512, peak));
         let mut bins = super::Bins {
             values: vec![0; cells],
@@ -233,4 +233,36 @@ fn banked_result_transfers_reserved_peak_even_when_shared_account_is_full() {
         drop(competitor);
         assert_eq!(memory.used_bytes(), 0);
     }
+}
+
+#[test]
+fn pair_bank_peak_transfers_keys_and_lost_headroom_keeps_serial_fallback() {
+    let entry = size_of::<super::Entry>() as u64;
+    let logical = super::layout::PAIR_CELLS;
+    let serial = (logical * size_of::<u64>()) as u64;
+    let peak = super::layout::banked_peak(2, entry).unwrap();
+    let memory = ManagedMemoryBudget::new(peak);
+    let competitor = memory.reserve_capacity(peak - serial).unwrap();
+    let (cells, reservation) = super::reserve_layout(&memory, logical, 2, true).unwrap();
+    assert_eq!((cells, reservation.capacity_bytes()), (logical, serial));
+    drop(reservation);
+    drop(competitor);
+    assert_eq!(memory.used_bytes(), 0);
+
+    let (cells, reservation) = super::reserve_layout(&memory, logical, 2, true).unwrap();
+    assert_eq!(cells, logical * 4);
+    assert_eq!(reservation.capacity_bytes(), peak);
+    let mut bins = super::Bins {
+        values: vec![0; cells],
+        width: 2,
+        _reservation: reservation,
+    };
+    assert!(memory.reserve_capacity(1).is_err());
+    let keys = logical as u64 * (entry + 2);
+    let result = bins.reserve_result(&memory, keys).unwrap();
+    assert_eq!(result.capacity_bytes(), keys);
+    drop(bins);
+    assert_eq!(memory.used_bytes(), keys);
+    drop(result);
+    assert_eq!(memory.used_bytes(), 0);
 }

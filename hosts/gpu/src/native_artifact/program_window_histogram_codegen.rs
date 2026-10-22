@@ -1,7 +1,9 @@
 //! Native dense counting for one/two-grapheme windows of a proved ASCII source.
 //! Scratch and source loans are admitted before entry; no callbacks in the loop.
 use super::*;
-use crate::native_artifact::program_window_histogram_layout::{BANKED_CELLS, BANKS, SINGLE_CELLS};
+use crate::native_artifact::program_window_histogram_layout::{
+    BANKED_CELLS, BANKED_PAIR_CELLS, BANKS, SINGLE_CELLS,
+};
 use cranelift_codegen::ir::Value;
 
 pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
@@ -12,6 +14,8 @@ pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     let serial = b.create_block();
     let banked = b.create_block();
     let pair = b.create_block();
+    let pair_serial = b.create_block();
+    let pair_banked = b.create_block();
     b.append_block_params_for_function_params(entry);
     b.switch_to_block(entry);
     let args = b.block_params(entry).to_vec();
@@ -32,8 +36,8 @@ pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     b.ins().brif(single, one, &[], pair, &[]);
     b.switch_to_block(one);
     // The fourth word is the actual admitted extent, not a guessed capacity.
-    // Old 128-cell callers retain the serial body; only exact 512-cell loans
-    // can select four disjoint banks. The five-word ABI is unchanged.
+    // Exact physical extents select four disjoint banks. Ordinary one-bank
+    // callers retain the serial body. The five-word ABI is unchanged.
     let expanded = b.ins().icmp_imm(IntCC::Equal, args[3], BANKED_CELLS as i64);
     b.ins().brif(expanded, banked, &[], serial, &[]);
     b.switch_to_block(serial);
@@ -41,7 +45,14 @@ pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     b.switch_to_block(banked);
     emit_width(b, source, bins, accepted, 1, true);
     b.switch_to_block(pair);
+    let expanded = b
+        .ins()
+        .icmp_imm(IntCC::Equal, args[3], BANKED_PAIR_CELLS as i64);
+    b.ins().brif(expanded, pair_banked, &[], pair_serial, &[]);
+    b.switch_to_block(pair_serial);
     emit_width(b, source, bins, accepted, 2, false);
+    b.switch_to_block(pair_banked);
+    emit_width(b, source, bins, accepted, 2, true);
 }
 
 fn emit_width(
@@ -52,6 +63,7 @@ fn emit_width(
     width: usize,
     banked: bool,
 ) {
+    let logical_cells = SINGLE_CELLS.pow(width as u32);
     let bulk = b.create_block();
     let tail_check = b.create_block();
     let tail = b.create_block();
@@ -90,7 +102,7 @@ fn emit_width(
                 .enumerate()
                 .map(|(bank, &key)| {
                     let offset = b.ins().ishl_imm(key, 3);
-                    let base = b.ins().iadd_imm(bins, (bank * SINGLE_CELLS * 8) as i64);
+                    let base = b.ins().iadd_imm(bins, (bank * logical_cells * 8) as i64);
                     b.ins().iadd(base, offset)
                 })
                 .collect::<Vec<_>>();
@@ -134,12 +146,12 @@ fn emit_width(
     b.ins().brif(more, tail, &[next.into()], done, &[]);
     b.switch_to_block(done);
     if banked {
-        reduce_banks(b, bins);
+        reduce_banks(b, bins, logical_cells);
     }
     b.ins().return_(&[accepted]);
 }
 
-fn reduce_banks(b: &mut FunctionBuilder<'_>, bins: Value) {
+fn reduce_banks(b: &mut FunctionBuilder<'_>, bins: Value, logical_cells: usize) {
     let reduce = b.create_block();
     let done = b.create_block();
     b.append_block_param(reduce, types::I64);
@@ -154,7 +166,7 @@ fn reduce_banks(b: &mut FunctionBuilder<'_>, bins: Value) {
             types::I64,
             MemFlags::new(),
             cell,
-            (bank * SINGLE_CELLS * 8) as i32,
+            (bank * logical_cells * 8) as i32,
         );
         count = b.ins().iadd(count, part);
     }
@@ -164,7 +176,7 @@ fn reduce_banks(b: &mut FunctionBuilder<'_>, bins: Value) {
     let next = b.ins().iadd_imm(offset, 8);
     let more = b
         .ins()
-        .icmp_imm(IntCC::UnsignedLessThan, next, (SINGLE_CELLS * 8) as i64);
+        .icmp_imm(IntCC::UnsignedLessThan, next, (logical_cells * 8) as i64);
     b.ins().brif(more, reduce, &[next.into()], done, &[]);
     b.switch_to_block(done);
 }

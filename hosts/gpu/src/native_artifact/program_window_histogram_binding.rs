@@ -51,13 +51,18 @@ impl Bins {
 fn reserve_layout(
     memory: &ManagedMemoryBudget,
     cells: usize,
+    width: u64,
     banked: bool,
 ) -> Result<(usize, ManagedMemoryReservation), Error> {
     if banked {
-        let peak = layout::banked_peak(size_of::<Entry>() as u64)
+        let peak = layout::banked_peak(width, size_of::<Entry>() as u64)
             .ok_or_else(|| invalid("compiled Histogram banked envelope overflow"))?;
         match memory.reserve_capacity(peak) {
-            Ok(reservation) => return Ok((layout::BANKED_CELLS, reservation)),
+            Ok(reservation) => {
+                let physical = layout::banked_cells(width)
+                    .ok_or_else(|| invalid("compiled Histogram banked width"))?;
+                return Ok((physical, reservation));
+            }
             // The earlier headroom observation is not an allocation permit.
             // Losing this race must not rule out the ordinary serial layout.
             Err(MemoryRuntimeError::BudgetExceeded { .. }) => {}
@@ -139,7 +144,7 @@ impl State {
             size_of::<Entry>() as u64,
         );
         let peak = if banked {
-            layout::banked_peak(size_of::<Entry>() as u64)
+            layout::banked_peak(width, size_of::<Entry>() as u64)
                 .ok_or_else(|| invalid("compiled Histogram banked envelope overflow"))?
         } else {
             mul(cells as u64, size_of::<u64>() as u64)?
@@ -169,7 +174,7 @@ impl State {
         // Final canonical Map validation retains its existing finite accounting.
         let work = add(add(mul(accepted, 32)?, mul(cells as u64, 1024)?)?, 1024)?;
         self.histogram_account(ctx, id, 0, work, 0)?;
-        let (physical_cells, reservation) = reserve_layout(&memory, cells, banked)?;
+        let (physical_cells, reservation) = reserve_layout(&memory, cells, width, banked)?;
         let reserved_bytes = reservation.capacity_bytes();
         #[cfg(all(test, feature = "canonical-native-program"))]
         tests::record(physical_cells, reserved_bytes, ctx.library.used().0);

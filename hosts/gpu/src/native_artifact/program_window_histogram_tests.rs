@@ -17,7 +17,7 @@ fn reference(source: &str, width: usize) -> Vec<u64> {
 
 fn check(code: &Compiled, source: &str, width: usize, expected: &[u64]) {
     check_layout(code, source, width, expected, expected.len());
-    if width == 1 && !expected.is_empty() {
+    if matches!(width, 1 | 2) && !expected.is_empty() {
         check_layout(code, source, width, expected, 4 * expected.len());
     }
 }
@@ -117,7 +117,7 @@ fn measure_compiled_histogram_kernel_only() {
         for round in 0..7 {
             let variants = if round % 2 == 0 {
                 [
-                    ("banked", &selected, if width == 1 { 4 } else { 1 }),
+                    ("banked", &selected, 4),
                     ("serial", &selected, 1),
                     ("scalar", &scalar, 1),
                 ]
@@ -125,7 +125,7 @@ fn measure_compiled_histogram_kernel_only() {
                 [
                     ("scalar", &scalar, 1),
                     ("serial", &selected, 1),
-                    ("banked", &selected, if width == 1 { 4 } else { 1 }),
+                    ("banked", &selected, 4),
                 ]
             };
             for (lowering, code, banks) in variants {
