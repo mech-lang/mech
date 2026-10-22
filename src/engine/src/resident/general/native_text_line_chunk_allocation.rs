@@ -113,6 +113,48 @@ impl Account {
             bytes,
         })
     }
+
+    /// Atomically hold an optional storage envelope before physical allocation.
+    /// Insufficient headroom keeps the ordinary small-buffer path eligible.
+    #[cfg(feature = "native-capture-pages")]
+    pub fn reserve_preferred(account: &Rc<Self>, bytes: u64) -> Result<Option<Claim>, InvokeError> {
+        let Some(used) = account.used.get().checked_add(bytes) else {
+            return Ok(None);
+        };
+        let Some(debit) = bytes.checked_mul(8).and_then(|n| n.checked_add(128)) else {
+            return Ok(None);
+        };
+        if bytes == 0
+            || used > account.temporary
+            || account
+                .spent
+                .get()
+                .checked_add(debit)
+                .is_none_or(|n| n > account.compute)
+        {
+            return Ok(None);
+        }
+        match account.work.preview_allocation_charge(debit) {
+            Ok(()) => {}
+            Err(ResidentKernelError::ResourceLimit { .. }) => return Ok(None),
+            Err(error) => return Err(error.into()),
+        }
+        let reservation = match account.memory.reserve_capacity(bytes) {
+            Ok(reservation) => reservation,
+            Err(mech_core::MemoryRuntimeError::BudgetExceeded { .. }) => return Ok(None),
+            Err(error) => return Err(error.into()),
+        };
+        // The work account is Rc-owned and synchronous. Capacity reservation
+        // invokes no library callback, so the successful preview remains valid.
+        account.debit(debit)?;
+        account.used.set(used);
+        account.peak.set(account.peak.get().max(used));
+        Ok(Some(Claim {
+            reservation: Some(reservation),
+            account: account.clone(),
+            bytes,
+        }))
+    }
 }
 pub(super) struct Claim {
     reservation: Option<ManagedMemoryReservation>,
@@ -244,3 +286,7 @@ impl Offsets {
 #[cfg(test)]
 #[path = "native_text_line_offset_tests.rs"]
 mod line_offset_tests;
+
+#[cfg(all(test, feature = "native-capture-pages"))]
+#[path = "native_text_line_optional_storage_tests.rs"]
+mod optional_storage_tests;

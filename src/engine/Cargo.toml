@@ -31,6 +31,8 @@ resident-artifact = [
   "f64", "matrixd", "row_vectord",
 ]
 native-artifact = ["std", "resident-artifact", "bool", "u64", "i64"]
+# Experimental private capture-storage selection; never a separate executor.
+native-capture-pages = ["native-artifact"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
 source = ["runtime", "artifact-codec", "dep:mech-syntax", "mech-core/range"]

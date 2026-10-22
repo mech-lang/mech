@@ -349,6 +349,26 @@ impl NativeLibraryWorkBudget {
         charge_control_account(&mut self.account.borrow_mut(), compute, comparison)
     }
 
+    /// Preview the same account's debit before optional backing is selected.
+    /// A declined storage preference must neither spend work nor renew fuel.
+    #[cfg(feature = "native-capture-pages")]
+    pub(in crate::resident) fn preview_allocation_charge(
+        &self,
+        compute: u64,
+    ) -> Result<(), ResidentKernelError> {
+        CONTROL_WORK.with(|active| {
+            if active
+                .borrow()
+                .as_ref()
+                .is_some_and(|current| !std::rc::Rc::ptr_eq(current, &self.account))
+            {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            Ok(())
+        })?;
+        checked_control_account_work(&self.account.borrow(), compute, 0).map(drop)
+    }
+
     /// Other native work may only reduce the allowance left to library calls.
     /// A failed restriction leaves both limits and spent work unchanged.
     pub fn restrict(
