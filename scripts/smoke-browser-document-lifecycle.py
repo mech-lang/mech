@@ -58,6 +58,12 @@ OUTPUT_ASSERTIONS = """
 """
 
 
+def fresh_chrome_profile(artifacts: Path) -> tempfile.TemporaryDirectory:
+    # Rust build caches can restore old browser singleton locks from another
+    # runner. Never reuse or unlock a possibly live profile; own a fresh one.
+    return tempfile.TemporaryDirectory(prefix="chrome-profile-", dir=artifacts)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mech-bin", default="target/debug/mech")
@@ -67,7 +73,10 @@ def main() -> None:
     artifacts = Path(args.artifacts).resolve()
     artifacts.mkdir(parents=True, exist_ok=True)
     results = []
-    with tempfile.TemporaryDirectory(prefix="document-source-", dir=artifacts) as directory:
+    with (
+        tempfile.TemporaryDirectory(prefix="document-source-", dir=artifacts) as directory,
+        fresh_chrome_profile(artifacts) as profile,
+    ):
         source_dir = Path(directory)
         (source_dir / "fence.mec").write_text("~~~mech\n11\n~~~\n")
         (source_dir / "inline.mec").write_text("anchor := 0\n\nVisible {11}.\n")
@@ -128,7 +137,7 @@ def main() -> None:
             try:
                 url = f"http://127.0.0.1:{port}"
                 wait_for_http(url + "/fence.mec", server)
-                browser = ChromeSession(None, artifacts / "chrome-profile", artifacts / "chrome.log", flags=["--disable-gpu"]).start()
+                browser = ChromeSession(None, Path(profile), artifacts / "chrome.log", flags=["--disable-gpu"]).start()
                 for page in static_cases:
                     browser.navigate(url + "/" + page)
                     browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "static custom shim readiness")

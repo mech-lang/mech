@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import contextlib
+import ast
 from collections.abc import Callable
 import io
+import importlib.util
 import itertools
 import json
 from pathlib import Path
@@ -16,6 +18,62 @@ import unittest
 from unittest import mock
 
 from tests.browser.harness import chrome
+
+
+class DocumentLifecycleProfileTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        script = Path(__file__).resolve().parents[3] / "scripts/smoke-browser-document-lifecycle.py"
+        spec = importlib.util.spec_from_file_location("document_lifecycle_smoke", script)
+        assert spec is not None and spec.loader is not None
+        cls.smoke = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.smoke)
+        cls.script = script
+
+    def test_cached_singleton_lock_is_neither_reused_nor_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            artifacts = Path(directory)
+            cached = artifacts / "chrome-profile"
+            cached.mkdir()
+            lock = cached / "SingletonLock"
+            lock.write_text("another-runner-22810")
+            with self.smoke.fresh_chrome_profile(artifacts) as profile:
+                owned = Path(profile)
+                self.assertNotEqual(owned, cached)
+                self.assertEqual(owned.parent, artifacts)
+                self.assertEqual(list(owned.iterdir()), [])
+            self.assertFalse(owned.exists())
+            self.assertEqual(lock.read_text(), "another-runner-22810")
+
+    def test_profiles_are_unique_and_cleanup_also_runs_on_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            artifacts = Path(directory)
+            with self.smoke.fresh_chrome_profile(artifacts) as first:
+                with self.assertRaisesRegex(RuntimeError, "fixture failure"):
+                    with self.smoke.fresh_chrome_profile(artifacts) as second:
+                        self.assertNotEqual(first, second)
+                        self.assertTrue(Path(first).is_dir())
+                        raise RuntimeError("fixture failure")
+                self.assertFalse(Path(second).exists())
+                self.assertTrue(Path(first).is_dir())
+            self.assertFalse(Path(first).exists())
+
+    def test_main_passes_the_owned_profile_to_chrome(self) -> None:
+        tree = ast.parse(self.script.read_text())
+        main = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "main")
+        owned = [item for node in ast.walk(main) if isinstance(node, ast.With)
+                 for item in node.items if isinstance(item.context_expr, ast.Call)
+                 and isinstance(item.context_expr.func, ast.Name)
+                 and item.context_expr.func.id == "fresh_chrome_profile"]
+        self.assertEqual(len(owned), 1)
+        self.assertIsInstance(owned[0].optional_vars, ast.Name)
+        name = owned[0].optional_vars.id
+        launches = [node for node in ast.walk(main) if isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name) and node.func.id == "ChromeSession"]
+        self.assertEqual(len(launches), 1)
+        argument = launches[0].args[1]
+        self.assertIsInstance(argument, ast.Call)
+        self.assertEqual(ast.unparse(argument), f"Path({name})")
 
 
 class ChromeSessionStartupTests(unittest.TestCase):
