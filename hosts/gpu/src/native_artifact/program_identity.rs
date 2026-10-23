@@ -68,7 +68,9 @@ fn selected_template(
 // IR27 pins the optional sole-use Range producer/endpoints/inclusivity in the
 // selected matrix-join proof. The three original LibraryCall visits remain.
 // IR28 pins funded canonical child bindings in structural patterns.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 28;
+// IR29 pins the complete same-plan retained-map candidate and word inventory
+// carried by build-owned descriptors. It does not activate owner execution.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 29;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -212,6 +214,7 @@ pub(super) fn typed_ir_sha256(
     frontiers: &[NativeTextLineRetentionFrontier],
     joins: &[NativeSelectedTextJoin],
     lines: &[NativeTextLineMatrixRegion],
+    map_owners: Option<&mech_engine::native_artifact::NativeMapOwnerWords>,
 ) -> [u8; 32] {
     let mut hash = Sha256::new();
     hash.update(b"mech.canonical-managed-program-cfg\0");
@@ -219,6 +222,25 @@ pub(super) fn typed_ir_sha256(
     word(&mut hash, super::program_abi::VERSION);
     word(&mut hash, NATIVE_PROGRAM_WORK_POLICY_VERSION);
     hash.update(plan.program_revision().as_bytes());
+    // These proof records contain only ordered struct/enum fields, arrays and
+    // integer words (no maps, floats, pointers or Debug output). Stream their
+    // complete encoding, including lengths and otherwise unused candidates,
+    // rather than reconstructing selection or allocating a second image.
+    bytes(&mut hash, b"mech.retained-map-candidate-layout.v1");
+    struct ProofDigest<'a>(&'a mut Sha256);
+    impl std::io::Write for ProofDigest<'_> {
+        fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+            self.0.update(bytes);
+            Ok(bytes.len())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+    // The fixed proof grammar above has no fallible JSON values; the digest
+    // sink is infallible. A failure still receives a distinct invalid marker.
+    let encoded = serde_json::to_writer(ProofDigest(&mut hash), &map_owners);
+    word(&mut hash, u64::from(encoded.is_ok()));
     word(&mut hash, frontiers.len() as u64);
     for frontier in frontiers {
         word(&mut hash, u64::from(frontier.iteration()));

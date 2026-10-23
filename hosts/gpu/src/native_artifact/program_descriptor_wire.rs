@@ -32,6 +32,7 @@ engine_proofs!(
     NativeWindowRegion,
     NativeStringMapRegion,
     NativeScalarAggregates,
+    NativeMapOwnerWords,
     NativeBorrowedStringRegion,
     NativeSelectedTextJoin,
     NativeTextLineMatrixRegion,
@@ -48,6 +49,15 @@ impl<T: ProofImage> ProofImage for Vec<T> {
 impl<T: ProofImage> ProofImage for Box<[T]> {
     fn read(image: Json) -> Result<Self, String> {
         Vec::<T>::read(image).map(Vec::into_boxed_slice)
+    }
+}
+impl<T: ProofImage> ProofImage for Option<T> {
+    fn read(image: Json) -> Result<Self, String> {
+        if image.is_null() {
+            Ok(None)
+        } else {
+            T::read(image).map(Some)
+        }
     }
 }
 
@@ -105,6 +115,8 @@ struct Descriptor<'a> {
     string_map_regions: Box<[NativeStringMapRegion]>,
     #[serde(deserialize_with = "proof")]
     scalar_aggregates: NativeScalarAggregates,
+    #[serde(deserialize_with = "proof")]
+    map_owner_words: Option<NativeMapOwnerWords>,
     borrowed_strings: native::program_borrowed_layout::Layout,
     closed_tails: native::program_tail_layout::Layout,
     selected_joins: native::program_selected_join_layout::Layout,
@@ -195,6 +207,7 @@ pub(super) fn decode(
         window_regions: w.window_regions,
         string_map_regions: w.string_map_regions,
         scalar_aggregates: w.scalar_aggregates,
+        map_owner_words: w.map_owner_words,
         borrowed_strings: w.borrowed_strings,
         closed_tails: w.closed_tails,
         selected_joins: w.selected_joins,
