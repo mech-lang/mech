@@ -746,6 +746,9 @@ pub fn maintained_source_type_declaration(
             declaration.parameter_names =
                 Some(vec!["values".into(), "separator".into()].into_boxed_slice())
         }
+        "map/contains-key" => {
+            declaration.parameter_names = Some(vec!["map".into(), "key".into()].into_boxed_slice())
+        }
         "map/insert" => {
             declaration.parameter_names =
                 Some(vec!["map".into(), "key".into(), "value".into()].into_boxed_slice())

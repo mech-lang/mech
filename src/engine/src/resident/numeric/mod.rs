@@ -4197,6 +4197,115 @@ fn bind_indexed_assign(
     bind_indexed_assign_with_region(request, RegionPolicy::IndexedAxis { axis: 0 })
 }
 
+#[cfg(feature = "map_ops")]
+#[derive(Clone, Debug)]
+struct MapContainsPlan {
+    map_schema: SchemaId,
+    map_key: mech_core::SchemaKey,
+    selector: SnapshotAccessSelectorLayout,
+}
+
+#[cfg(feature = "map_ops")]
+pub(super) fn bind_map_contains_key(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        2,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::ExactScalar,
+    )?;
+    let [map, key] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let schema = request
+        .schemas
+        .get(map.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let SchemaBody::Map { key: key_body, .. } = schema.body() else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if map.kind != ResidentValueKind::Snapshot
+        || map.shape != ResidentShape::SCALAR
+        || request.output.kind != ResidentValueKind::Bool
+        || request.output.shape != ResidentShape::SCALAR
+        || request
+            .schemas
+            .get(request.output.schema_id)
+            .map(|s| s.body())
+            != Some(&SchemaBody::Bool)
+        || request.schemas.get(key.schema_id).map(|s| s.body()) != Some(key_body.as_ref())
+        || !scalar_layout_matches_schema_body(key, key_body)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(
+        bound(map_contains_key, Vec::<u64>::new().into_boxed_slice())?
+            .with_retained_state(Arc::new(MapContainsPlan {
+                map_schema: map.schema_id,
+                map_key: map.schema_key,
+                selector: SnapshotAccessSelectorLayout {
+                    schema: key.schema_id,
+                    shape: key.shape_instance.clone(),
+                    resident_shape: key.shape,
+                },
+            }))
+            .with_snapshot_schemas(request.schemas.clone()),
+    )
+}
+
+#[cfg(feature = "map_ops")]
+fn map_contains_key(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let ResidentValueMut::Bool([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let plan = kernel
+        .retained_state::<MapContainsPlan>()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let ResidentValueRef::Snapshot([Some(value)]) = input(inputs, 0)? else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    if value.schema() != plan.map_schema || value.schema_key() != plan.map_key {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let schema = value
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let SchemaBody::Map { key, .. } = schema.body() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ValueData::Map(map) = value.data() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let mut meter = super::budget::ResidentBudgetMeter::default();
+    // Validate the actual selector identity/layout before comparing key data.
+    snapshot_selector_materialization_cost(schemas, &plan.selector, input(inputs, 1)?, &mut meter)?;
+    let mut publication = super::budget::KernelCostEstimate::default();
+    publication.set_compute_work(1)?;
+    publication.set_output_elements(1);
+    publication.set_output_bytes(1);
+    super::budget::PreparedKernel::new((), publication)
+        .admit()?
+        .into_plan();
+    let found =
+        map_optional_entry_for_selector_with_meter(map, key, input(inputs, 1)?, &mut meter)?
+            .is_some();
+    let next = u8::from(found);
+    let changed = *target != next;
+    *target = next;
+    Ok(changed)
+}
+
 /// Pure entry insertion uses the same admitted single-entry builder as
 /// assignment. Its base is borrowed and its result is a distinct map value.
 #[cfg(feature = "map_ops")]
@@ -28701,6 +28810,107 @@ mod tests {
                 .language_eq(&schemas, &current, &schemas)
                 .unwrap()
         );
+    }
+
+    #[cfg(feature = "map_ops")]
+    #[test]
+    fn map_membership_reports_changes_and_preserves_output_on_denial() {
+        let body = SchemaBody::Map {
+            key: Box::new(SchemaBody::String),
+            value: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+            cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+        };
+        let (schemas, ids) = test_schema_table([body, SchemaBody::String, SchemaBody::Bool]);
+        let [map_schema, key_schema, bool_schema] = ids.as_slice() else {
+            unreachable!()
+        };
+        let contract = test_contract(
+            &[*map_schema, *key_schema],
+            *bool_schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::ExactScalar,
+        );
+        let kernel = bind_map_contains_key(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[
+                test_layout(
+                    &schemas,
+                    *map_schema,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+                test_layout(
+                    &schemas,
+                    *key_schema,
+                    ResidentValueKind::String,
+                    ResidentShape::SCALAR,
+                ),
+            ],
+            output: test_layout(
+                &schemas,
+                *bool_schema,
+                ResidentValueKind::Bool,
+                ResidentShape::SCALAR,
+            ),
+        })
+        .unwrap();
+        let map = [Some(test_value(
+            &schemas,
+            *map_schema,
+            ValueDataDraft::Map(
+                vec![mech_core::snapshot::MapEntryDraft {
+                    items: vec![
+                        ValueDataDraft::String("é".to_owned()),
+                        ValueDataDraft::U64(1),
+                    ]
+                    .into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ))];
+        let previous = map[0].clone().unwrap();
+        let present = ["é".to_owned()];
+        let missing = ["absent".to_owned()];
+        let mut output = [0];
+        let inputs = [
+            ResidentValueRef::Snapshot(&map),
+            ResidentValueRef::String(&present),
+        ];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Ok(true)
+        );
+        assert_eq!(output, [1]);
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Ok(false)
+        );
+        let absent = [
+            ResidentValueRef::Snapshot(&map),
+            ResidentValueRef::String(&missing),
+        ];
+        let mut denied =
+            super::super::budget::detached_turn_plan(mech_core::ResourceDemand::default()).unwrap();
+        denied.budget_limits.max_comparison_work = Some(0);
+        let result = super::super::budget::with_resident_turn_plan(denied, || {
+            kernel.execute(&Inputs(&absent), ResidentValueMut::Bool(&mut output))
+        });
+        assert!(
+            matches!(result, Err(ResidentKernelError::ResourceLimit { .. })),
+            "{result:?}"
+        );
+        assert_eq!(output, [1]);
+        assert_eq!(
+            kernel.execute(&Inputs(&absent), ResidentValueMut::Bool(&mut output)),
+            Ok(true)
+        );
+        assert_eq!(output, [0]);
+        assert!(map[0].as_ref().unwrap().shares_frozen_storage(&previous));
     }
 
     #[test]

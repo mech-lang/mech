@@ -222,6 +222,7 @@ fn capture_qualified_catalog_inventory(source: &mech_core::FunctionCatalog) {
     let additions = [
         "map/new",
         "map/insert",
+        "map/contains-key",
         "map/histogram",
         "map/keys",
         "map/values",

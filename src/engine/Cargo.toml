@@ -221,7 +221,7 @@ access = ["functions"]
 assign = ["functions"]
 convert = ["functions"]
 pure_text = ["functions", "string"]
-map_ops = ["functions", "map", "string"]
+map_ops = ["functions", "map", "string", "bool"]
 sequence_sort = ["functions", "string"]
 
 # Values and shapes. Syntax forwarding is weak so runtime-only builds do not

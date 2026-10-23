@@ -4184,6 +4184,14 @@ impl SemanticBuilder {
         syntax: &SyntaxNode,
     ) -> Result<PendingValue, SourceSemanticError> {
         let (mut name, _) = operator_name(operator);
+        let map_membership = matches!(
+            operator,
+            CanonicalOperator::ElementOf | CanonicalOperator::NotElementOf
+        ) && matches!(self.schema_draft_of(rhs)?.body, SchemaBody::Map { .. });
+        if map_membership {
+            name = "map/contains-key";
+            core::mem::swap(&mut lhs, &mut rhs);
+        }
         if operator == CanonicalOperator::Add
             && (self.schema_of(lhs)? == Some(BuiltinSchema::String)
                 || self.schema_of(rhs)? == Some(BuiltinSchema::String))
@@ -4235,7 +4243,26 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(syntax),
             });
         };
-        Ok(self.emit_with_schema_draft(name, inputs, output, syntax, "operator", None))
+        let result = self.emit_with_schema_draft(name, inputs, output, syntax, "operator", None);
+        if map_membership && operator == CanonicalOperator::NotElementOf {
+            let Some((inputs, output)) =
+                self.resolve_maintained_call("logic/not", vec![result], syntax)?
+            else {
+                return Err(internal(
+                    SourceSemanticAnchor::for_node(syntax),
+                    "map non-membership requires logic/not".to_owned(),
+                ));
+            };
+            return Ok(self.emit_with_schema_draft(
+                "logic/not",
+                inputs,
+                output,
+                syntax,
+                "operator",
+                None,
+            ));
+        }
+        Ok(result)
     }
 
     fn conform_dynamic_to_schema(
