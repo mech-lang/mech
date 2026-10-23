@@ -126,6 +126,11 @@ impl Records {
             Self::Streaming(r) => r.next(),
         }
     }
+    fn recycle_buffer(&mut self, buffer: Vec<u8>) {
+        if let Self::Streaming(reader) = self {
+            reader.recycle_buffer(buffer);
+        }
+    }
 }
 struct MappedRecords {
     records: Arc<Mutex<Records>>,
@@ -140,6 +145,31 @@ enum TextView {
     Concat(Value, Value),
 }
 impl Value {
+    /// Reclaim only uniquely owned storage after a streamed result is written.
+    /// Shared captures and live aliases retain their original allocation.
+    fn reclaim_byte_buffer(self, spare: &mut Vec<u8>) {
+        let bytes = match self {
+            Self::Text(bytes) | Self::Bytes(bytes, _) => Some(bytes),
+            Self::TextView(view) => match Arc::try_unwrap(view) {
+                Ok(TextView::Wrap(bytes, _, _, _)) => Some(bytes),
+                Ok(TextView::Concat(left, right)) => {
+                    left.reclaim_byte_buffer(spare);
+                    right.reclaim_byte_buffer(spare);
+                    None
+                }
+                Err(_) => None,
+            },
+            _ => None,
+        };
+        if let Some(bytes) = bytes {
+            if let Ok(mut buffer) = Arc::try_unwrap(bytes) {
+                if buffer.capacity() > spare.capacity() {
+                    buffer.clear();
+                    *spare = buffer;
+                }
+            }
+        }
+    }
     fn write_text(&self, writer: &mut dyn Write) -> Result<(), String> {
         match self {
             Self::Text(v) => writer.write_all(v).map_err(|e| e.to_string()),
@@ -201,6 +231,7 @@ struct RecordReader<R> {
     separator: Vec<u8>,
     pending: Option<Vec<u8>>,
     line: Vec<u8>,
+    spare: Vec<u8>,
     ended: bool,
 }
 impl<R: BufRead> RecordReader<R> {
@@ -214,8 +245,17 @@ impl<R: BufRead> RecordReader<R> {
             separator: separator.to_vec(),
             pending: None,
             line: Vec::new(),
+            spare: Vec::new(),
             ended: false,
         })
+    }
+    fn recycle_buffer(&mut self, mut buffer: Vec<u8>) {
+        // Retain at most one completed record allocation. No file-size query or
+        // fixed workload size is used; future records still grow as necessary.
+        if buffer.capacity() > self.spare.capacity() {
+            buffer.clear();
+            self.spare = buffer;
+        }
     }
     fn next(&mut self) -> Result<Option<Record>, String> {
         if self.ended {
@@ -241,7 +281,16 @@ impl<R: BufRead> RecordReader<R> {
             }
             line.to_vec()
         };
-        let mut body = Vec::new();
+        // A single-byte prefix can be recognized at each physical line start.
+        // Join directly from buffered input instead of copying line endings
+        // into the record and moving the body again to remove them.
+        if self.marker.len() == 1
+            && !matches!(self.marker[0], b'\r' | b'\n')
+            && self.separator.is_empty()
+        {
+            return self.next_compacted_body(header).map(Some);
+        }
+        let mut body = std::mem::take(&mut self.spare);
         loop {
             let count = self
                 .reader
@@ -300,6 +349,76 @@ impl<R: BufRead> RecordReader<R> {
             header: Arc::new(header),
             body: Arc::new(body),
         }))
+    }
+
+    fn next_compacted_body(&mut self, header: Vec<u8>) -> Result<Record, String> {
+        let marker = self.marker[0];
+        let mut body = std::mem::take(&mut self.spare);
+        let mut line_start = true;
+        loop {
+            let (consumed, next_header, eof) = {
+                let input = match self.reader.fill_buf() {
+                    Ok(input) => input,
+                    Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+                    Err(error) => return Err(error.to_string()),
+                };
+                let mut position = 0;
+                let mut next_header = false;
+                while position < input.len() {
+                    if line_start && input[position] == marker {
+                        next_header = true;
+                        break;
+                    }
+                    match memchr::memchr(b'\n', &input[position..]) {
+                        Some(relative) => {
+                            let end = position + relative;
+                            // CR and LF can lie in different input buffers.
+                            // Remove exactly one CR from this physical line,
+                            // never a CR retained from a preceding blank line.
+                            if end == position && !line_start && body.last() == Some(&b'\r') {
+                                body.pop();
+                            }
+                            let trim = if end > position && input[end - 1] == b'\r' {
+                                end - 1
+                            } else {
+                                end
+                            };
+                            body.extend_from_slice(&input[position..trim]);
+                            position = end + 1;
+                            line_start = true;
+                        }
+                        None => {
+                            body.extend_from_slice(&input[position..]);
+                            position = input.len();
+                            line_start = false;
+                        }
+                    }
+                }
+                (position, next_header, input.is_empty())
+            };
+            self.reader.consume(consumed);
+            if next_header {
+                self.line.clear();
+                self.reader
+                    .read_until(b'\n', &mut self.line)
+                    .map_err(|error| error.to_string())?;
+                let line = self.line.strip_suffix(b"\n").unwrap_or(&self.line);
+                let line = line.strip_suffix(b"\r").unwrap_or(line);
+                self.pending = Some(line.to_vec());
+                break;
+            }
+            if eof {
+                if !line_start && body.last() == Some(&b'\r') {
+                    body.pop();
+                }
+                self.ended = true;
+                break;
+            }
+        }
+        Ok(Record {
+            header: Arc::new(header),
+            body: Arc::new(body),
+        })
     }
 }
 impl Value {
@@ -1968,6 +2087,11 @@ unsafe extern "C" fn mech_sequence_record_step(state: *mut RecordState<'_>) -> u
                 start.elapsed().as_secs_f64()
             );
         }
+        let mut spare = Vec::new();
+        for value in std::mem::take(&mut scope.values) {
+            value.reclaim_byte_buffer(&mut spare);
+        }
+        state.records.recycle_buffer(spare);
         Ok(true)
     })();
     match result {
@@ -1997,6 +2121,197 @@ pub(super) fn register_symbols(builder: &mut cranelift_jit::JITBuilder) {
         ),
     ] {
         builder.symbol(name, address);
+    }
+}
+
+#[cfg(test)]
+mod record_stream_tests {
+    use super::{Record, RecordReader};
+    use std::io::{self, BufRead, BufReader, Cursor, Read};
+
+    fn reference(
+        input: &[u8],
+        marker: &[u8],
+        separator: &[u8],
+    ) -> Result<Vec<(Vec<u8>, Vec<u8>)>, String> {
+        let mut records: Vec<(Vec<u8>, Vec<u8>)> = Vec::new();
+        let mut lines = 0;
+        for physical in input.split_inclusive(|&byte| byte == b'\n') {
+            let line = physical.strip_suffix(b"\n").unwrap_or(physical);
+            let line = line.strip_suffix(b"\r").unwrap_or(line);
+            if line.starts_with(marker) {
+                records.push((line.to_vec(), Vec::new()));
+                lines = 0;
+            } else {
+                let Some((_, body)) = records.last_mut() else {
+                    return Err("body before first record header".into());
+                };
+                if lines != 0 {
+                    body.extend_from_slice(separator);
+                }
+                body.extend_from_slice(line);
+                lines += 1;
+            }
+        }
+        Ok(records)
+    }
+
+    fn collect(mut reader: RecordReader<impl BufRead>) -> Result<Vec<(Vec<u8>, Vec<u8>)>, String> {
+        let mut records = Vec::new();
+        while let Some(Record { header, body }) = reader.next()? {
+            records.push((header.as_ref().clone(), body.as_ref().clone()));
+            reader.recycle_buffer(std::sync::Arc::try_unwrap(body).unwrap());
+        }
+        assert!(reader.next()?.is_none(), "exhausted readers stay exhausted");
+        Ok(records)
+    }
+
+    #[test]
+    fn compact_record_reader_matches_line_contract_at_every_small_buffer_boundary() {
+        let cases: &[&[u8]] = &[
+            b"",
+            b"@",
+            b"@header\n",
+            b"@header\r\n",
+            b"@one\nAC\nGT\n@two\nN",
+            b"@one\n\n\n@two\n",
+            b"@one\nA@B\nC\r\n\r\nD\r",
+            b"@one\n\r\r\n\nX\n",
+            b"@one\r\n\r\n\r\r\n\n@two\r\n\r",
+            b"@one\nA\rB\nC\r\r",
+            b"@one\n\0\xff\x80 \t\n@two",
+            b"body\n@later\n",
+        ];
+        for marker in [b"@".as_slice(), b"xy", b"\0", b" "] {
+            for separator in [b"".as_slice(), b",", b"\r\n"] {
+                for original in cases {
+                    let mut input = Vec::new();
+                    // Retain inline @ bytes; vary only actual header prefixes.
+                    for line in original.split_inclusive(|&b| b == b'\n') {
+                        if line.first() == Some(&b'@') {
+                            input.extend_from_slice(marker);
+                            input.extend_from_slice(&line[1..]);
+                        } else {
+                            input.extend_from_slice(line);
+                        }
+                    }
+                    let want = reference(&input, marker, separator);
+                    for capacity in 1..=19 {
+                        let actual = collect(
+                            RecordReader::new(
+                                BufReader::with_capacity(capacity, Cursor::new(&input)),
+                                marker,
+                                separator,
+                            )
+                            .unwrap(),
+                        );
+                        assert_eq!(
+                            actual, want,
+                            "capacity={capacity}, marker={marker:?}, separator={separator:?}, input={input:?}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn completed_record_storage_is_reused_without_retaining_old_bytes() {
+        let mut reader =
+            RecordReader::new(Cursor::new(b"@one\nABCD\n@two\nX\n"), b"@", b"").unwrap();
+        let first = reader.next().unwrap().unwrap();
+        let buffer = std::sync::Arc::try_unwrap(first.body).unwrap();
+        let pointer = buffer.as_ptr();
+        reader.recycle_buffer(buffer);
+        let second = reader.next().unwrap().unwrap();
+        assert_eq!(second.body.as_slice(), b"X");
+        assert_eq!(second.body.as_ptr(), pointer);
+        assert!(reader.next().unwrap().is_none());
+    }
+
+    #[test]
+    fn streamed_result_reclamation_preserves_live_aliases_and_recovers_dead_views() {
+        use super::{TextView, Value};
+        use std::sync::Arc;
+        let original = Arc::new(vec![b'X'; 128]);
+        let retained = original.clone();
+        let mut spare = Vec::new();
+        Value::Bytes(original, 256).reclaim_byte_buffer(&mut spare);
+        assert_eq!(spare.capacity(), 0);
+        assert_eq!(retained.as_slice(), &[b'X'; 128]);
+        let view = Arc::new(TextView::Wrap(retained, 60, Arc::new(b"\n".to_vec()), 0));
+        let live_view = view.clone();
+        Value::TextView(view).reclaim_byte_buffer(&mut spare);
+        assert_eq!(spare.capacity(), 0);
+        let mut output = Vec::new();
+        Value::TextView(live_view.clone())
+            .write_text(&mut output)
+            .unwrap();
+        assert_eq!(output.len(), 131);
+        Value::TextView(live_view).reclaim_byte_buffer(&mut spare);
+        assert!(spare.capacity() >= 128);
+        assert!(spare.is_empty());
+        let reused_pointer = spare.as_ptr();
+        let smaller = Value::Text(Arc::new(vec![b'Y'; 16]));
+        smaller.reclaim_byte_buffer(&mut spare);
+        assert_eq!(spare.as_ptr(), reused_pointer);
+        let nested = Value::TextView(Arc::new(TextView::Concat(
+            Value::Text(Arc::new(b"header\n".to_vec())),
+            Value::TextView(Arc::new(TextView::Wrap(
+                Arc::new(vec![b'Z'; 256]),
+                7,
+                Arc::new(b"\n".to_vec()),
+                0,
+            ))),
+        )));
+        nested.reclaim_byte_buffer(&mut spare);
+        assert!(spare.capacity() >= 256);
+        assert!(spare.is_empty());
+    }
+
+    struct Interrupt<R> {
+        inner: R,
+        calls: usize,
+        error: io::ErrorKind,
+    }
+    impl<R: Read> Read for Interrupt<R> {
+        fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
+            self.inner.read(output)
+        }
+    }
+    impl<R: BufRead> BufRead for Interrupt<R> {
+        fn fill_buf(&mut self) -> io::Result<&[u8]> {
+            self.calls += 1;
+            if self.calls == 2 {
+                return Err(io::Error::new(self.error, "injected input failure"));
+            }
+            self.inner.fill_buf()
+        }
+        fn consume(&mut self, amount: usize) {
+            self.inner.consume(amount);
+        }
+    }
+
+    #[test]
+    fn compact_reader_retries_interruption_but_propagates_real_io_errors() {
+        let input = b"@\nAC\r\nGT\n@two\nN\r";
+        let reader = Interrupt {
+            inner: Cursor::new(input),
+            calls: 0,
+            error: io::ErrorKind::Interrupted,
+        };
+        assert_eq!(
+            collect(RecordReader::new(reader, b"@", b"").unwrap()),
+            reference(input, b"@", b"")
+        );
+        let reader = Interrupt {
+            inner: Cursor::new(input),
+            calls: 0,
+            error: io::ErrorKind::Other,
+        };
+        let error = collect(RecordReader::new(reader, b"@", b"").unwrap()).unwrap_err();
+        assert_eq!(error, "injected input failure");
+        assert!(RecordReader::new(Cursor::new(input), b"", b"").is_err());
     }
 }
 

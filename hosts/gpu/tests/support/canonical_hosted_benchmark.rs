@@ -59,6 +59,7 @@ fn benchmark_generator_preserves_the_original_object_and_isolates_policy_control
             assert!(!main.contains("@BENCHMARK_") && !main.contains("@HOSTED_"));
             for same_boundary in [
                 "with_prepared_canonical_native_resources_phased_text",
+                "CanonicalNativeResourceMetadata::decode_build_owned_image",
                 "linked.prepare_hosted",
                 "session.resume_hosted_into",
                 "runtime.shutdown()",
