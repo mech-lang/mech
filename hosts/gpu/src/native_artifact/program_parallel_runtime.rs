@@ -66,6 +66,18 @@ fn transport<T>(count: usize, reason: &'static str) -> Result<Vec<T>, Error> {
     super::collection::admitted_capacity(values, count, reason)
 }
 
+fn scheduler_nodes(workers: usize, regions: usize, captures: usize) -> Result<u64, Error> {
+    // Count structural carriers/backings, not their byte size: fixed scheduler
+    // containers; Ready/Pending region, source/ID and capture-vector roots;
+    // each task's escrow/local-account owner, scope/thread closure, handle,
+    // job, result, receipt and capture-vector roots; then Capture entries.
+    // Captured/result canonical payloads keep their independent shared claims.
+    amount(regions, 8, 16)?
+        .checked_add(amount(workers, 16, 0)?)
+        .and_then(|nodes| nodes.checked_add(amount(captures, workers as u64 + 1, 0).ok()?))
+        .ok_or_else(|| invalid("parallel scheduler node count overflow"))
+}
+
 fn budget_error(error: NativeWorkerBudgetError, origin: mech_engine::native_artifact::NativeMatchOrigin) -> Error {
     match error {
         NativeWorkerBudgetError::Work(error) => Error::Collection { origin, error },
@@ -161,10 +173,11 @@ impl Context<'_, '_> {
         self.control.work.charge(Phase::Setup, metadata.checked_mul(8)
             .and_then(|n| n.checked_add(4096)).ok_or_else(|| invalid("parallel setup overflow"))?)?;
         let reservation = match memory.reserve_capacity(metadata) { Ok(value) => value, Err(_) => return Ok(Some(0)) };
-        // Private scheduler container nodes coexist across every worker. The
-        // byte envelope conservatively bounds this metadata only; canonical
-        // captured/result payloads already retain their own shared claims.
-        let nodes = match memory.reserve_nodes(metadata) { Ok(value) => value, Err(_) => return Ok(Some(0)) };
+        // All private scheduler containers coexist under this shared structural
+        // claim. Their separately admitted byte envelope is not a node count.
+        let nodes = match memory.reserve_nodes(scheduler_nodes(workers, region.group.len(), capture_slots)?) {
+            Ok(value) => value, Err(_) => return Ok(Some(0)),
+        };
         let mut ready = transport(region.group.len(), "parallel region allocation")?;
         let mut task_count = 0u64;
         for &member in &region.group {
@@ -199,6 +212,15 @@ impl Context<'_, '_> {
         let mut region_ids = transport(ready.len(), "parallel admission inventory allocation")?;
         region_ids.extend(ready.iter().map(|selected| selected.region));
         let Some(_parked_parent) = self.parallel_admission(&region_ids)? else { return Ok(Some(0)); };
+        // Decline before spawning when even the exact fixed constructor claims
+        // cannot coexist. Release this feasibility reservation immediately;
+        // each child still admits its own setup and later dynamic allocations.
+        let setup_nodes = super::session::Prepared::worker_setup_nodes(descriptor)?
+            .checked_mul(task_count).ok_or_else(|| invalid("parallel worker setup node count overflow"))?;
+        match memory.reserve_nodes(setup_nodes) {
+            Ok(setup) => drop(setup),
+            Err(_) => return Ok(Some(0)),
+        }
         let origin = descriptor.plan.collections()[region.collection as usize].origin();
         let (compute, comparisons) = self.library.unscoped_remaining().ok_or_else(|| invalid("parallel scope changed during admission"))?;
         let group = self.library.reserve_worker_group_with_memory(compute, comparisons, &memory)

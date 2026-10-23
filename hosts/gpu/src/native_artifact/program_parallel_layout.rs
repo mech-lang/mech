@@ -72,10 +72,10 @@ impl Layout {
             if !matches!(plan.values()[generator.source().semantic_value().get() as usize].definition().body(),
                 mech_core::SchemaBody::Matrix { .. } | mech_core::SchemaBody::Set { .. }) { continue; }
             // The private entry replays exactly this original builder/source
-            // prelude. Any extra prerequisite remains on the ordinary path.
-            if plan.blocks()[collection.begin() as usize].terminator()
-                    != Terminator::Scalar(Term::Jump(generator.initialize()))
-                || plan.blocks()[generator.initialize() as usize].terminator()
+            // prelude, including lexical no-op blocks emitted by collection
+            // lowering. Additional computations remain on the ordinary path.
+            let Some(prelude) = empty_prelude(plan, collection.begin(), generator.initialize()) else { continue; };
+            if plan.blocks()[generator.initialize() as usize].terminator()
                     != Terminator::Scalar(Term::Jump(generator.header()))
                 || plan.blocks()[generator.header() as usize].terminator()
                     != (Terminator::Header { iteration, body: generator.body(), exit: generator.exit() }) {
@@ -108,6 +108,7 @@ impl Layout {
             }
             sites.insert(collection.push());
             sites.insert(collection.begin());
+            sites.extend(prelude);
             sites.insert(generator.initialize());
             sites.insert(generator.header());
             // Only immutable root captures may cross the worker boundary.
@@ -172,6 +173,24 @@ impl Layout {
         }
         Ok(Self { regions: regions.into() })
     }
+}
+
+// Canonical collection lowering emits lexical entry blocks between its builder
+// and generator initializer. Replay only an acyclic root-scope chain of empty
+// unconditional visits: no capture producer, selected operation or branch can
+// be moved into a child constructor by this proof.
+fn empty_prelude(plan: &Plan, begin: u32, initialize: u32) -> Option<Vec<u32>> {
+    let Terminator::Scalar(Term::Jump(mut site)) = plan.blocks()[begin as usize].terminator() else { return None; };
+    let mut sites = Vec::new();
+    while site != initialize {
+        if site == begin || sites.contains(&site) || plan.activation_boundary() == Some(site) { return None; }
+        let block = &plan.blocks()[site as usize];
+        if block.iteration().is_some() || !matches!(block.action(), Action::Scalar(Scalar::None)) { return None; }
+        let Terminator::Scalar(Term::Jump(next)) = block.terminator() else { return None; };
+        sites.push(site);
+        site = next;
+    }
+    Some(sites)
 }
 
 // Only a guaranteed pure root path can join sibling work. The parent still
