@@ -13,6 +13,7 @@ use super::{MemoryRuntimeError, MemoryRuntimeResult};
 struct ManagedMemoryBudgetAccount {
     limit: u64,
     used: AtomicU64,
+    snapshot_nodes: AtomicU64,
     snapshot_import_failure_countdown: AtomicU64,
 }
 
@@ -39,6 +40,7 @@ impl ManagedMemoryBudget {
             account: Arc::new(ManagedMemoryBudgetAccount {
                 limit: limit_bytes,
                 used: AtomicU64::new(0),
+                snapshot_nodes: AtomicU64::new(0),
                 snapshot_import_failure_countdown: AtomicU64::new(0),
             }),
         }
@@ -50,6 +52,26 @@ impl ManagedMemoryBudget {
 
     pub fn used_bytes(&self) -> u64 {
         self.account.used.load(Ordering::Acquire)
+    }
+
+    /// Sum of canonical node witnesses held by live admitted snapshot owners.
+    /// Ordinary aliases reuse their owner's claim; independent imports may
+    /// conservatively count shared data more than once. This reads no Values.
+    /// Unadmitted snapshots, private builders and native frame metadata are
+    /// excluded. This is resource metadata, not a quota or execution authority.
+    pub fn retained_snapshot_nodes(&self) -> u64 {
+        self.account.snapshot_nodes.load(Ordering::Acquire)
+    }
+
+    pub(crate) fn retain_snapshot_nodes(&self, nodes: u64) -> MemoryRuntimeResult<SnapshotNodeCharge> {
+        self.account.snapshot_nodes.fetch_update(Ordering::AcqRel, Ordering::Acquire, |current| {
+            current.checked_add(nodes)
+        }).map_err(|current| MemoryRuntimeError::AccountingInvariantViolation {
+            dimension: "admitted snapshot node census",
+            current,
+            change: nodes,
+        })?;
+        Ok(SnapshotNodeCharge { budget: self.clone(), nodes })
     }
 
     /// One-shot account-scoped fixture for immutable import allocation tests.
@@ -107,6 +129,26 @@ impl ManagedMemoryBudget {
             budget: self.clone(),
             bytes,
         })
+    }
+}
+
+/// One immutable snapshot owner's node witness. Kept inside its ownership
+/// wrapper rather than the weak import registry, so registry links cannot
+/// prolong the census after the last actual admitted owner retires.
+#[derive(Debug)]
+pub(crate) struct SnapshotNodeCharge {
+    budget: ManagedMemoryBudget,
+    nodes: u64,
+}
+impl SnapshotNodeCharge {
+    pub(crate) fn nodes(&self) -> u64 {
+        self.nodes
+    }
+}
+impl Drop for SnapshotNodeCharge {
+    fn drop(&mut self) {
+        let previous = self.budget.account.snapshot_nodes.fetch_sub(self.nodes, Ordering::AcqRel);
+        debug_assert!(previous >= self.nodes, "snapshot node census underflow");
     }
 }
 
@@ -211,6 +253,47 @@ impl Drop for ManagedMemoryReservation {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn snapshot_node_census_overflow_preserves_account_and_retires_claim() {
+        let budget = ManagedMemoryBudget::new(0);
+        let other = ManagedMemoryBudget::new(0);
+        let claim = budget.retain_snapshot_nodes(u64::MAX).unwrap();
+        assert_eq!(claim.nodes(), u64::MAX);
+        assert_eq!(budget.clone().retained_snapshot_nodes(), u64::MAX);
+        assert_eq!(other.retained_snapshot_nodes(), 0);
+        assert!(matches!(budget.retain_snapshot_nodes(1),
+            Err(MemoryRuntimeError::AccountingInvariantViolation { .. })));
+        assert_eq!(budget.retained_snapshot_nodes(), u64::MAX);
+        assert_eq!(budget.used_bytes(), 0, "node metadata does not reserve payload bytes");
+        drop(claim);
+        assert_eq!(budget.retained_snapshot_nodes(), 0);
+    }
+
+    #[cfg(any(not(feature = "no_std"), feature = "std"))]
+    #[test]
+    fn snapshot_node_census_shares_atomic_claims_across_threads() {
+        let budget = ManagedMemoryBudget::new(0);
+        let ready = std::sync::Arc::new(std::sync::Barrier::new(9));
+        let retire = std::sync::Arc::new(std::sync::Barrier::new(9));
+        let threads = (0..8).map(|_| {
+            let budget = budget.clone();
+            let ready = ready.clone();
+            let retire = retire.clone();
+            std::thread::spawn(move || {
+                let claim = budget.retain_snapshot_nodes(7).unwrap();
+                ready.wait();
+                retire.wait();
+                drop(claim);
+            })
+        }).collect::<std::vec::Vec<_>>();
+        ready.wait();
+        let live = budget.retained_snapshot_nodes();
+        retire.wait();
+        for thread in threads { thread.join().unwrap(); }
+        assert_eq!(live, 56);
+        assert_eq!(budget.retained_snapshot_nodes(), 0);
+    }
 
     #[test]
     fn shared_memory_account_checks_overflow_and_retains_split_ownership() {

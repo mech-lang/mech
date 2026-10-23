@@ -17,6 +17,7 @@ pub(crate) use self::access::RetainedPublicationLease;
 pub use self::access::*;
 pub use self::allocation::{PlannedArenaElement, PlannedArenaProjection};
 pub(crate) use self::budget::ManagedMemoryCharge;
+pub(crate) use self::budget::SnapshotNodeCharge;
 pub use self::budget::{ManagedMemoryBudget, ManagedMemoryReservation};
 pub use self::domain::*;
 pub use self::error::*;

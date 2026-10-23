@@ -399,8 +399,8 @@ struct SnapshotBudgetOwnership {
     registration: Arc<SnapshotBudgetRegistration>,
     schemas: Arc<SchemaTable>,
     required_bytes: u64,
-    retained_nodes: u64,
     reservation: crate::ManagedMemoryReservation,
+    node_charge: crate::memory_runtime::SnapshotNodeCharge,
 }
 
 #[derive(Debug)]
@@ -694,14 +694,15 @@ impl Value {
             }
             // All physical construction has succeeded under the reservation.
             // No user code runs under this short metadata gate.
+            let node_charge = budget.retain_snapshot_nodes(retained_nodes)?;
             let charge = reservation.split_capacity(admitted_bytes)?;
             Arc::get_mut(&mut prepared)
                 .expect("unpublished import has no shared or weak wrapper owner")
                 .memory_budget = Some(SnapshotBudgetOwnership {
                 schemas,
                 required_bytes: retained_bytes,
-                retained_nodes,
                 reservation: charge,
+                node_charge,
                 registration: registration.clone(),
             });
             let _ = registration.owner.set(Arc::downgrade(&prepared));
@@ -946,7 +947,7 @@ impl Value {
     /// not execution, ownership-transfer or capability authority.
     pub fn memory_budget_retained_nodes(&self, budget: &crate::ManagedMemoryBudget) -> Option<u64> {
         self.memory_budget_retained_bytes(budget)?;
-        Some(self.root.memory_budget.as_ref()?.retained_nodes)
+        Some(self.root.memory_budget.as_ref()?.node_charge.nodes())
     }
 
     pub const fn schema(&self) -> SchemaId {
@@ -4426,6 +4427,7 @@ mod tests {
         assert_eq!(expected, 8);
         let a = crate::ManagedMemoryBudget::new(4 * 1024 * 1024);
         let b = crate::ManagedMemoryBudget::new(4 * 1024 * 1024);
+        assert_eq!(a.retained_snapshot_nodes(), 0);
         assert_eq!(raw.memory_budget_retained_nodes(&a), None);
         let mut claim_a = a
             .reserve_capacity(raw.memory_budget_admission_bytes(&a).unwrap())
@@ -4433,9 +4435,15 @@ mod tests {
         let owned = raw.clone().into_memory_budget(&mut claim_a).unwrap();
         assert_eq!(owned.memory_budget_retained_nodes(&a), Some(expected));
         assert_eq!(owned.memory_budget_retained_nodes(&b), None);
+        assert_eq!(a.retained_snapshot_nodes(), expected);
         let mut zero = a.reserve_capacity(0).unwrap();
         let reused = owned.clone().into_memory_budget(&mut zero).unwrap();
         assert_eq!(reused.memory_budget_retained_nodes(&a), Some(expected));
+        assert_eq!(a.retained_snapshot_nodes(), expected, "same owner aliases do not add claims");
+        let weak = owned.frozen_storage_identity();
+        let mut independent_claim = a.reserve_capacity(raw.unshared_memory_budget_admission_bytes(&a).unwrap()).unwrap();
+        let independent = raw.clone().into_independent_memory_budget(&mut independent_claim).unwrap();
+        assert_eq!(a.retained_snapshot_nodes(), expected * 2);
         let mut claim_b = b
             .reserve_capacity(raw.memory_budget_admission_bytes(&b).unwrap())
             .unwrap();
@@ -4445,7 +4453,40 @@ mod tests {
             .unwrap();
         assert_eq!(foreign.memory_budget_retained_nodes(&b), Some(expected));
         assert_eq!(foreign.memory_budget_retained_nodes(&a), None);
-        drop((raw, owned, reused, foreign, claim_a, claim_b, zero));
+        assert_eq!(b.retained_snapshot_nodes(), expected);
+        for step in [0, 1] {
+            let failed = crate::ManagedMemoryBudget::new(4 * 1024 * 1024);
+            let mut claim = failed.reserve_capacity(raw.memory_budget_admission_bytes(&failed).unwrap()).unwrap();
+            let before = claim.capacity_bytes();
+            failed.inject_snapshot_import_failure_after(step);
+            assert!(matches!(raw.clone().into_independent_memory_budget(&mut claim),
+                Err(crate::MemoryRuntimeError::AllocationFailed { .. })));
+            assert_eq!(claim.capacity_bytes(), before);
+            assert_eq!(failed.retained_snapshot_nodes(), 0);
+            drop(claim);
+            assert_eq!(failed.used_bytes(), 0);
+        }
+        let overflow = crate::ManagedMemoryBudget::new(4 * 1024 * 1024);
+        let full = overflow.retain_snapshot_nodes(u64::MAX).unwrap();
+        let mut claim = overflow.reserve_capacity(raw.memory_budget_admission_bytes(&overflow).unwrap()).unwrap();
+        let before = claim.capacity_bytes();
+        assert!(matches!(raw.clone().into_independent_memory_budget(&mut claim),
+            Err(crate::MemoryRuntimeError::AccountingInvariantViolation { .. })));
+        assert_eq!(claim.capacity_bytes(), before, "census failure cannot consume byte admission");
+        assert_eq!(overflow.retained_snapshot_nodes(), u64::MAX);
+        drop((full, claim));
+        assert_eq!(overflow.retained_snapshot_nodes(), 0);
+        assert_eq!(overflow.used_bytes(), 0);
+        drop(independent);
+        assert_eq!(a.retained_snapshot_nodes(), expected);
+        drop(owned);
+        assert_eq!(a.retained_snapshot_nodes(), expected, "the reused owner still lives");
+        drop(reused);
+        assert_eq!(a.retained_snapshot_nodes(), 0, "raw and weak roots cannot retain admitted claims");
+        assert_eq!(b.retained_snapshot_nodes(), expected);
+        drop(foreign);
+        assert_eq!(b.retained_snapshot_nodes(), 0);
+        drop((raw, weak, independent_claim, claim_a, claim_b, zero));
         assert_eq!(a.used_bytes(), 0);
         assert_eq!(b.used_bytes(), 0);
     }
