@@ -106,8 +106,8 @@ fn once_library_slot_retains_no_binding_or_planner_metadata() {
         let args = [Some(text(descriptor, site, "e\u{301}A", &memory))];
         let before = memory.used_bytes();
         let mut output = None;
-        lane.entries[site]
-            .invoke(
+        lane
+            .invoke(site,
                 descriptor.calls[site].as_ref().unwrap(),
                 &args,
                 &mut output,
@@ -137,7 +137,7 @@ fn repeated_cache_demand_is_read_only_account_bound_and_keeps_nested_fuel() {
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let (mut lane, library) = lane(descriptor, &memory);
         let demand = |lane: &CallCacheLane, work: &NativeLibraryWorkBudget| {
-            let CallCacheEntry::Repeated(cache) = &lane.entries[site] else { panic!("repeated"); };
+            let CallCacheEntry::Repeated(cache, _) = &lane.entries[site] else { panic!("repeated"); };
             cache.retained_metadata_demand(work)
         };
         let cold = demand(&lane, &library).unwrap();
@@ -147,7 +147,7 @@ fn repeated_cache_demand_is_read_only_account_bound_and_keeps_nested_fuel() {
         let before = memory.used_bytes();
         let call = descriptor.calls[site].as_ref().unwrap();
         let mut output = None;
-        lane.entries[site].invoke(call, &input, &mut output, policy(), &library).unwrap();
+        lane.invoke(site, call, &input, &mut output, policy(), &library).unwrap();
         assert!(matches!(output.as_ref().unwrap().data(), ValueData::U64(4096)));
         drop(output.take());
         let held = memory.used_bytes();
@@ -156,6 +156,11 @@ fn repeated_cache_demand_is_read_only_account_bound_and_keeps_nested_fuel() {
         assert_eq!(preview.turn_peak_bytes, held - before,
             "include independently admitted binding, plan and index metadata");
         assert!(preview.turn_peak_bytes > 0 && preview.retained_nodes > 0);
+        let before_read = library.used().0;
+        assert_eq!(lane.caller_retained_nodes(&library).unwrap(),
+            lane._reservation.capacity_bytes() + preview.retained_nodes);
+        assert_eq!(library.used().0 - before_read, 256,
+            "aggregate lookup has fixed work independent of cache count");
         let second = demand(&lane, &library).unwrap();
         assert_eq!(preview, second);
         assert_eq!(memory.used_bytes(), held, "preview allocates no backing");
@@ -170,6 +175,7 @@ fn repeated_cache_demand_is_read_only_account_bound_and_keeps_nested_fuel() {
         let foreign = foreign_meter.shared_library_budget(NativeExecutionPhase::Setup,
             1_000_000, &memory).unwrap();
         assert!(matches!(demand(&lane, &foreign), Err(NativeCollectionInvocationError::InvalidInput)));
+        assert!(lane.caller_retained_nodes(&foreign).is_err());
         drop((foreign, foreign_meter));
         drop(input);
         assert_eq!(memory.retained_snapshot_nodes(), 0,
@@ -195,15 +201,15 @@ fn repeated_library_slot_reuses_binding_but_reads_fresh_values_and_recovers() {
         assert!(descriptor.plan.blocks()[site].iteration().is_some());
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let (mut lane, library) = lane(descriptor, &memory);
-        assert!(matches!(&lane.entries[site], CallCacheEntry::Repeated(_)));
+        assert!(matches!(&lane.entries[site], CallCacheEntry::Repeated(..)));
         // Equal byte lengths and empty shape tapes are not value identity.
         let args = ["ABC", "e\u{301}"].map(|value| [Some(text(descriptor, site, value, &memory))]);
         let before = memory.used_bytes();
         let call = descriptor.calls[site].as_ref().unwrap();
         let mut output = None;
         let start = library.used().0;
-        lane.entries[site]
-            .invoke(call, &args[0], &mut output, policy(), &library)
+        lane
+            .invoke(site,call, &args[0], &mut output, policy(), &library)
             .unwrap();
         assert!(matches!(output.as_ref().unwrap().data(), ValueData::U64(3)));
         let first_work = library.used().0 - start;
@@ -213,8 +219,8 @@ fn repeated_library_slot_reuses_binding_but_reads_fresh_values_and_recovers() {
             "the repeatable slot must retain its fully admitted planner cache"
         );
         let start = library.used().0;
-        lane.entries[site]
-            .invoke(call, &args[1], &mut output, policy(), &library)
+        lane
+            .invoke(site,call, &args[1], &mut output, policy(), &library)
             .unwrap();
         assert!(matches!(output.as_ref().unwrap().data(), ValueData::U64(1)));
         assert!(library.used().0 - start < first_work);
@@ -224,7 +230,7 @@ fn repeated_library_slot_reuses_binding_but_reads_fresh_values_and_recovers() {
             .reserve_capacity(memory.limit_bytes() - held)
             .unwrap();
         assert!(matches!(
-            lane.entries[site].invoke(call, &args[1], &mut output, policy(), &library),
+            lane.invoke(site, call, &args[1], &mut output, policy(), &library),
             Err(NativeCollectionInvocationError::Memory(
                 mech_core::MemoryRuntimeError::BudgetExceeded { .. }
             ))
@@ -233,8 +239,8 @@ fn repeated_library_slot_reuses_binding_but_reads_fresh_values_and_recovers() {
         drop(blocker);
         assert_eq!(memory.used_bytes(), held);
         drop(prior);
-        lane.entries[site]
-            .invoke(call, &args[1], &mut output, policy(), &library)
+        lane
+            .invoke(site,call, &args[1], &mut output, policy(), &library)
             .unwrap();
         assert!(matches!(output.as_ref().unwrap().data(), ValueData::U64(1)));
         drop((output, lane));
@@ -303,7 +309,7 @@ fn once_repeatable_witness_covers_activation_matches_counted_collections_and_tai
                 }
                 match (&lane.entries[site], block.iteration()) {
                     (CallCacheEntry::Once, None) => once_calls += 1,
-                    (CallCacheEntry::Repeated(_), Some(_)) => repeated_calls += 1,
+                    (CallCacheEntry::Repeated(..), Some(_)) => repeated_calls += 1,
                     _ => panic!("cache storage differs from the validated lexical scope"),
                 }
             }

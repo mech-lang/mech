@@ -235,8 +235,8 @@ impl State {
             );
             (builder.cloned_bytes, builder.compute, comparison)
         };
-        let super::super::session::CallCacheEntry::Repeated(cache) =
-            &mut ctx.call_caches.entries[site]
+        let super::super::session::CallCacheEntry::Repeated(cache, _) =
+            &ctx.call_caches.entries[site]
         else {
             return Err(invalid(
                 "String span projection lacks its repeated-site cache",
@@ -265,14 +265,16 @@ impl State {
         // metadata/index residency, using the same finite account and Slot.
         // It does not create a selector Value or synthetic TurnMemoryPlan.
         let before_work = ctx.library.used();
-        let outcome = selected.selected_u64_string_span(
-            cache,
+        let outcome = ctx.call_caches.with_repeated(site, &ctx.library, |cache|
+            selected.selected_u64_string_span(cache,
             &owner,
             &selector,
             ctx.limits,
             &ctx.library,
             coexistence,
-        );
+        ));
+        let super::super::session::CallCacheEntry::Repeated(cache, _) =
+            &ctx.call_caches.entries[site] else { unreachable!("retained cache kind"); };
         let new_bytes = cache.retained_projection_bytes();
         let new_nodes = cache.retained_projection_nodes();
         #[cfg(all(test, feature = "canonical-native-program"))]

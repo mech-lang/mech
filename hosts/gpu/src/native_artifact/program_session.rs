@@ -198,24 +198,7 @@ fn import_string_observation(
 /// SAME activation/turn invocation. Only a structurally owned loop can repeat.
 pub(super) enum CallCacheEntry {
     Once,
-    Repeated(NativePreparedLibraryCallCache),
-}
-impl CallCacheEntry {
-    pub(super) fn invoke(
-        &mut self,
-        call: &mech_engine::native_artifact::NativePreparedLibraryCall,
-        inputs: &[Option<Value>],
-        output: &mut Option<Value>,
-        limits: MemoryBudgetLimits,
-        work: &NativeLibraryWorkBudget,
-    ) -> Result<bool, NativeCollectionInvocationError> {
-        match self {
-            Self::Once => call.invoke_current(inputs, output, limits, work),
-            Self::Repeated(cache) => {
-                call.invoke_current_cached(cache, inputs, output, limits, work)
-            }
-        }
-    }
+    Repeated(NativePreparedLibraryCallCache, u64),
 }
 
 /// Empty per-site slots are native invocation metadata, not prebound calls.
@@ -223,31 +206,82 @@ impl CallCacheEntry {
 /// no cache owner; repeated slots separately admit lazy bound metadata.
 pub(super) struct CallCacheLane {
     pub(super) entries: Box<[CallCacheEntry]>,
+    metadata_nodes: u64,
+    metadata_valid: bool,
+    library: Option<NativeLibraryWorkBudget>,
     _reservation: mech_core::ManagedMemoryReservation,
 }
 impl CallCacheLane {
+    /// Reconcile only the cache that can change at this boundary. A failed
+    /// reconciliation leaves the lane unusable, never a stale lower bound.
+    pub(super) fn with_repeated<T>(
+        &mut self,
+        site: usize,
+        work: &NativeLibraryWorkBudget,
+        invoke: impl FnOnce(&mut NativePreparedLibraryCallCache)
+            -> Result<T, NativeCollectionInvocationError>,
+    ) -> Result<T, NativeCollectionInvocationError> {
+        self.check_account(work)?;
+        work.charge(256, 0)?;
+        let CallCacheEntry::Repeated(cache, nodes) = self.entries.get_mut(site)
+            .ok_or(NativeCollectionInvocationError::InvalidInput)? else {
+            return Err(NativeCollectionInvocationError::InvalidInput);
+        };
+        if self.library.is_none() {
+            self.library = Some(work.clone());
+        }
+        self.metadata_valid = false;
+        let outcome = invoke(cache);
+        // A failed call may still have populated admitted plans or indexes.
+        // Reconcile those holdings before returning either result.
+        let next = cache.retained_metadata_demand(work)?.retained_nodes;
+        self.metadata_nodes = self.metadata_nodes.checked_sub(*nodes)
+            .and_then(|total| total.checked_add(next))
+            .ok_or(NativeCollectionInvocationError::InvalidInput)?;
+        *nodes = next;
+        self.metadata_valid = true;
+        outcome
+    }
+
+    pub(super) fn invoke(
+        &mut self,
+        site: usize,
+        call: &mech_engine::native_artifact::NativePreparedLibraryCall,
+        inputs: &[Option<Value>],
+        output: &mut Option<Value>,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<bool, NativeCollectionInvocationError> {
+        match self.entries.get(site) {
+            Some(CallCacheEntry::Once) => call.invoke_current(inputs, output, limits, work),
+            Some(CallCacheEntry::Repeated(..)) => self.with_repeated(site, work,
+                |cache| call.invoke_current_cached(cache, inputs, output, limits, work)),
+            None => Err(NativeCollectionInvocationError::InvalidInput),
+        }
+    }
+
+    fn check_account(&self, work: &NativeLibraryWorkBudget)
+        -> Result<(), NativeCollectionInvocationError>
+    {
+        if !self.metadata_valid || self._reservation.budget() != work.memory_budget()
+            || self.library.as_ref().is_some_and(|owner| !owner.shares_account(work))
+        {
+            return Err(NativeCollectionInvocationError::UnadmittedValue);
+        }
+        Ok(())
+    }
+
     pub(super) fn caller_retained_nodes(
         &self,
         work: &NativeLibraryWorkBudget,
     ) -> Result<u64, NativeCollectionInvocationError> {
-        if self._reservation.budget() != work.memory_budget() {
-            return Err(NativeCollectionInvocationError::UnadmittedValue);
-        }
-        let debit = (self.entries.len() as u64).checked_mul(128)
-            .and_then(|n| n.checked_add(256))
-            .ok_or(NativeCollectionInvocationError::InvalidInput)?;
-        work.charge(debit, 0)?;
-        let mut nodes = self._reservation.capacity_bytes();
-        for entry in &self.entries {
-            if let CallCacheEntry::Repeated(cache) = entry {
-                nodes = nodes.checked_add(cache.retained_metadata_demand(work)?.retained_nodes)
-                    .ok_or(NativeCollectionInvocationError::InvalidInput)?;
-            }
-        }
-        Ok(nodes)
+        self.check_account(work)?;
+        work.charge(256, 0)?;
+        self._reservation.capacity_bytes().checked_add(self.metadata_nodes)
+            .ok_or(NativeCollectionInvocationError::InvalidInput)
     }
 
-    fn metadata_bytes(count: usize) -> Result<u64, NativeProgramExecutionError> {
+    pub(super) fn metadata_bytes(count: usize) -> Result<u64, NativeProgramExecutionError> {
         amount(
             count,
             (core::mem::size_of::<CallCacheEntry>() as u64) * 2,
@@ -290,11 +324,14 @@ impl CallCacheLane {
             if block.iteration().is_none() {
                 CallCacheEntry::Once
             } else {
-                CallCacheEntry::Repeated(NativePreparedLibraryCallCache::default())
+                CallCacheEntry::Repeated(NativePreparedLibraryCallCache::default(), 0)
             }
         })?;
         Ok(Self {
             entries: entries.into_boxed_slice(),
+            metadata_nodes: 0,
+            metadata_valid: true,
+            library: None,
             _reservation: reservation,
         })
     }
