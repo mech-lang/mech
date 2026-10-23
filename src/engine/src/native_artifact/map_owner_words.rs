@@ -16,6 +16,7 @@ pub struct NativeMapOwnerWords {
     aggregates: NativeScalarAggregates,
     initializers: Box<[Option<usize>]>,
     exits: Box<[Option<usize>]>,
+    owner_base: usize,
     frame_words: usize,
 }
 crate::native_artifact::program_image_proofs::image_struct!(NativeMapOwnerWords {
@@ -23,6 +24,7 @@ crate::native_artifact::program_image_proofs::image_struct!(NativeMapOwnerWords 
     aggregates: NativeScalarAggregates,
     initializers: Box<[Option<usize>]>,
     exits: Box<[Option<usize>]>,
+    owner_base: usize,
     frame_words: usize,
 });
 impl NativeMapOwnerWords {
@@ -40,6 +42,37 @@ impl NativeMapOwnerWords {
     }
     pub const fn frame_words(&self) -> usize {
         self.frame_words
+    }
+    /// First private appended word. Root map references keep their value slots;
+    /// ordinary scalar aggregates precede this boundary and never relocate.
+    pub const fn owner_base(&self) -> usize {
+        self.owner_base
+    }
+
+    /// Append private state after an already occupied native frame prefix.
+    /// Borrowed String/closed-loop metadata keep all their existing offsets.
+    /// This is layout composition, not runtime owner selection or authority.
+    pub fn after_frame_words(mut self, prefix_words: usize) -> Result<Self, &'static str> {
+        let shift = prefix_words
+            .checked_sub(self.owner_base)
+            .ok_or("map owner prefix overlaps ordinary native storage")?;
+        let end = self.frame_words.checked_add(shift).ok_or("map owner frame overflow")?;
+        let words = self.aggregates.words.checked_add(shift).ok_or("map owner word overflow")?;
+        for region in &self.regions {
+            for &value in region.values() {
+                let slot = self.aggregates.slots.get_mut(value.get() as usize)
+                    .and_then(Option::as_mut).ok_or("map owner slot is missing")?;
+                if slot.0 >= self.owner_base {
+                    slot.0 = slot.0.checked_add(shift).ok_or("map owner slot overflow")?;
+                } else if *slot != (value.get() as usize, 1) {
+                    return Err("map owner root reference overlaps native metadata");
+                }
+            }
+        }
+        self.owner_base = prefix_words;
+        self.frame_words = end;
+        self.aggregates.words = words;
+        Ok(self)
     }
 }
 
@@ -198,6 +231,7 @@ impl Plan {
             .len()
             .checked_add(self.iterations().len())
             .ok_or("map state frame overflow")?;
+        let owner_base = end;
         // Preserve every existing scalar component and its offsets. New owner
         // words append after that complete layout; no strategy replaces it.
         let mut slots = ordinary.slots.to_vec();
@@ -262,6 +296,7 @@ impl Plan {
             regions,
             initializers: initializers.into(),
             exits: exits.into(),
+            owner_base,
             frame_words: end,
             aggregates: NativeScalarAggregates {
                 slots: slots.into(),

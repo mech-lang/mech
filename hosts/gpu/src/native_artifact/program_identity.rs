@@ -70,7 +70,9 @@ fn selected_template(
 // IR28 pins funded canonical child bindings in structural patterns.
 // IR29 pins the complete same-plan retained-map candidate and word inventory
 // carried by build-owned descriptors. It does not activate owner execution.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 29;
+// IR30 pins the explicit owner boundary after borrowed/closed-loop storage;
+// candidate words may not overlap those separately retained metadata lanes.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 30;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
