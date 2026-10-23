@@ -119,3 +119,44 @@ fn native_structural_map_states_execute_all_seven_counting_widths() {
         }
     }
 }
+
+#[test]
+fn native_structural_metadata_names_only_a_selected_window_accumulator() {
+    let window = include_str!("../../tests/fixtures/native/window-histogram.mec").replace(
+        "histogram(input<string>, width<u64>)",
+        "histogram(input<string>, 3u64)",
+    );
+    for (source, selected) in [
+        ("+> sequence\nsequence/length(input<string>)\n", false),
+        (window.as_str(), true),
+    ] {
+        let original = tests::artifact_source(source);
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
+        )
+        .unwrap();
+        for artifact in [original, decoded] {
+            let object = crate::native_artifact::emit_program_object(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+            )
+            .unwrap();
+            let metadata = object.metadata();
+            assert_eq!(
+                metadata["compiled_window_histogram_regions"]
+                    .as_u64()
+                    .unwrap()
+                    > 0,
+                selected
+            );
+            if selected {
+                assert_eq!(
+                    metadata["compiled_window_accumulator"],
+                    "hashbrown-0.15.5-entry-updates"
+                );
+            } else {
+                assert!(metadata["compiled_window_accumulator"].is_null());
+            }
+        }
+    }
+}
