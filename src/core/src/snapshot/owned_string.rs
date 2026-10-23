@@ -182,6 +182,7 @@ impl Value {
             registration,
             schemas: admitted_schemas,
             required_bytes: _,
+            retained_nodes: _,
             reservation,
         } = ownership;
         drop(registration);
