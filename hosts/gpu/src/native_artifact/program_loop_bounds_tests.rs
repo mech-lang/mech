@@ -42,7 +42,7 @@ fn guarded_loop_versions_preserve_actual_bounds_arbitrary_seeds_headers_and_work
         let baseline = without_loop_bounds(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
         assert_eq!(take_loop_bounds_emissions(), (0, 0));
         let long = "a".repeat(1024);
-        for (text, width, n, start, mode) in [
+        let cases = [
             ("abcabc", 1u64, 6u64, 0u64, Mode::Native),
             ("abcabc", 2, 5, 0, Mode::Native), // n may be smaller than actual length.
             ("abcabc", 2, 6, 2, Mode::Native),
@@ -60,10 +60,17 @@ fn guarded_loop_versions_preserve_actual_bounds_arbitrary_seeds_headers_and_work
             ("aa", 1, 2, 0, Mode::TightCall),
             ("aa", 1, 2, 0, Mode::TightWrite),
             ("aa", 1, 2, 0, Mode::OneShort),
+        ];
+        let refill_cases = [
             (long.as_str(), 1, 1022, 0, Mode::Native),
-            (long.as_str(), 1, 1023, 0, Mode::Native), // Refill on final Done header.
+            (long.as_str(), 1, 1023, 0, Mode::Native), // With full loans, refill on final Done header.
             (long.as_str(), 1, 1024, 0, Mode::Native),
-        ] {
+        ];
+        for ((text, width, n, start, mode), full_refill_budget, expected_default_denial) in cases.into_iter()
+            .map(|case| (case, false, false))
+            .chain(refill_cases.iter().copied().map(|case| (case, false, true)))
+            .chain(refill_cases.iter().copied().map(|case| (case, true, false)))
+        {
             let mut executions = Vec::new();
             for (version, jit) in [&optimized, &baseline].into_iter().enumerate() {
                 MODE.with(|m| m.set(mode)); OBS.with(|r| *r.borrow_mut() = Observation::default());
@@ -82,6 +89,16 @@ fn guarded_loop_versions_preserve_actual_bounds_arbitrary_seeds_headers_and_work
                     value.into_memory_budget(&mut reservation).unwrap()
                 }).collect::<Vec<_>>();
                 let mut outputs = vec![None]; let terminal = Cell::new(None); let entry = jit.test_checked_entry();
+                let mut limits = tests::limits();
+                if full_refill_budget {
+                    // The default comparison cap is 65,536: these loops need
+                    // over 337,000 units and cannot reach a 1,024-header loan.
+                    // Keep those original-cap failures above, then separately
+                    // fund complete loans with explicit finite TEST limits.
+                    limits.execution.max_work = 1 << 40;
+                    limits.library.max_compute_work = Some(1 << 36);
+                    limits.library.max_comparison_work = Some(1 << 34);
+                }
                 let mut outcome = execute(jit.descriptor(), |frame| {
                     // SAFETY: inspect only the synchronous owned entry/context.
                     let old = unsafe { (*frame).helper }; unsafe { (*frame).helper = observed; }
@@ -90,7 +107,7 @@ fn guarded_loop_versions_preserve_actual_bounds_arbitrary_seeds_headers_and_work
                     terminal.set(Some((status, (status != STATUS_OK).then(|| unsafe { (*frame).base.error_node }),
                         ctx.control.work.used(), ctx.library.used())));
                     status
-                }, &inputs, &mut outputs, tests::limits(), &memory).map_err(|e| format!("{e:?}"));
+                }, &inputs, &mut outputs, limits, &memory).map_err(|e| format!("{e:?}"));
                 let pairs = outputs[0].as_ref().map(|value| {
                     let ValueData::Map(map) = value.data() else { panic!("map"); };
                     map.entries().iter().map(|e| match (e.key().data(), e.value()) {
@@ -141,7 +158,12 @@ fn guarded_loop_versions_preserve_actual_bounds_arbitrary_seeds_headers_and_work
             }
             // Check both variants before requiring success so an unexpectedly
             // tight fixture budget reports their actual matching error/work.
-            if mode == Mode::Native && n <= text.len() as u64 {
+            if expected_default_denial {
+                let error = a.0.as_ref().expect_err("original finite comparison cap must refuse this long loop");
+                assert!(error.contains("dimension: ComparisonWork"), "{error}");
+                let limit = tests::limits().library.max_comparison_work.unwrap();
+                assert!(error.contains(&format!("limit: {limit}")), "{error}");
+            } else if mode == Mode::Native && n <= text.len() as u64 {
                 assert!(a.0.is_ok(), "valid oracle case failed: width={width}, n={n}, start={start}; optimized={:?}; checked={:?}; frontier={:?}", a.0, b.0, a.2);
             }
         }
