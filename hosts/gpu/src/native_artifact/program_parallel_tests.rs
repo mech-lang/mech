@@ -54,6 +54,14 @@ fn observed(descriptor: &NativeProgramDescriptor, entry: super::super::program_a
     args: &[Value], outputs: &mut [Option<Value>], memory: &ManagedMemoryBudget,
     workers: usize, fail_push: bool) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError>
 {
+    observed_with_nodes(descriptor, entry, args, outputs, memory, workers, fail_push,
+        tests::limits().library.max_retained_nodes.unwrap())
+}
+
+fn observed_with_nodes(descriptor: &NativeProgramDescriptor, entry: super::super::program_abi::Entry,
+    args: &[Value], outputs: &mut [Option<Value>], memory: &ManagedMemoryBudget,
+    workers: usize, fail_push: bool, nodes: u64) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError>
+{
     struct Restore(Option<usize>, bool);
     impl Drop for Restore {
         fn drop(&mut self) {
@@ -64,13 +72,15 @@ fn observed(descriptor: &NativeProgramDescriptor, entry: super::super::program_a
     let _restore = Restore(parallel::TEST_WORKERS.with(|value| value.replace(Some(workers))),
         FAIL_PUSH.with(|value| value.replace(fail_push)));
     BATCHES.with(|value| value.set(0));
+    let mut limits = tests::limits();
+    limits.library.max_retained_nodes = Some(nodes);
     execute(descriptor, |frame| {
         let previous = unsafe { (*frame).helper };
         unsafe { (*frame).helper = observe; }
         let status = unsafe { entry(frame) };
         unsafe { (*frame).helper = previous; }
         status
-    }, args, outputs, tests::limits(), memory)
+    }, args, outputs, limits, memory)
 }
 
 #[test]
@@ -100,12 +110,15 @@ first + ";" + second
             let baseline = (memory.used_bytes(), memory.retained_nodes());
             let mut serial = vec![None; artifact.outputs().len()];
             let mut parallel = vec![None; artifact.outputs().len()];
-            let serial_report = observed(descriptor, jit.test_checked_entry(), &args, &mut serial, &memory, 1, false).unwrap();
+            // Seven complete private contexts need a larger finite inventory
+            // than the default single-invocation fixture. Byte/work caps stay
+            // unchanged; the small-ceiling test below verifies serial fallback.
+            let serial_report = observed_with_nodes(descriptor, jit.test_checked_entry(), &args, &mut serial, &memory, 1, false, 1_048_576).unwrap();
             assert_eq!(BATCHES.with(Cell::get), 0);
             assert_eq!((serial_report.parallel_regions, serial_report.parallel_tasks,
                 serial_report.parallel_peak_workers), (0, 0, 0));
             assert_eq!(serial_report.parallel_batches, 0);
-            let report = observed(descriptor, jit.test_checked_entry(), &args, &mut parallel, &memory, 8, false).unwrap();
+            let report = observed_with_nodes(descriptor, jit.test_checked_entry(), &args, &mut parallel, &memory, 8, false, 1_048_576).unwrap();
             assert_eq!(BATCHES.with(Cell::get), 1);
             assert_eq!((report.parallel_regions, report.parallel_tasks), (2, 7));
             assert_eq!(report.parallel_batches, 1);
@@ -147,8 +160,8 @@ first + ";" + second
         let mut errors = Vec::new();
         for workers in [1, 8] {
             let mut output = vec![None; artifact.outputs().len()];
-            let error = observed(jit.descriptor(), jit.test_checked_entry(), &args, &mut output,
-                &memory, workers, fail_push).unwrap_err();
+            let error = observed_with_nodes(jit.descriptor(), jit.test_checked_entry(), &args, &mut output,
+                &memory, workers, fail_push, 1_048_576).unwrap_err();
             if workers == 8 { assert_eq!(BATCHES.with(Cell::get), 1); }
             assert!(output.iter().all(Option::is_none));
             errors.push(format!("{error:?}"));
@@ -158,6 +171,44 @@ first + ";" + second
         assert_eq!(errors[0], errors[1], "source error order differs");
         assert!(errors[0].contains(if fail_push { "OutputBytes" } else { "Arithmetic" }));
     }
+}
+
+#[test]
+fn insufficient_combined_worker_setup_uses_serial_source_body() {
+    let source = source("number/format(h{\"a\"}, 0u64)", r#"
+first-items := [4u64 8u64]
+second-items := [1u64 2u64 3u64 4u64 5u64]
+first := text/join([count-text(text, width, n) | n <- first-items], "|")
+second := text/join([count-text(text, width, n) | n <- second-items], ",")
+first + ";" + second
+"#);
+    let artifact = tests::artifact_source(&source);
+    let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+    let floor = session::Prepared::worker_setup_nodes(jit.descriptor()).unwrap();
+    // One caller plus serial dynamic state fits; neither seven nor the later
+    // five simultaneous child constructor inventories can fit this ceiling.
+    let nodes = floor.checked_mul(2).unwrap().checked_add(4096).unwrap();
+    assert!(floor * 5 > nodes);
+    let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+    let args = vec![input(&artifact, &memory)];
+    let baseline = (memory.used_bytes(), memory.retained_nodes());
+    let mut serial = vec![None; artifact.outputs().len()];
+    let mut fallback = vec![None; artifact.outputs().len()];
+    let serial_report = observed_with_nodes(jit.descriptor(), jit.test_checked_entry(), &args,
+        &mut serial, &memory, 1, false, nodes).unwrap();
+    let report = observed_with_nodes(jit.descriptor(), jit.test_checked_entry(), &args,
+        &mut fallback, &memory, 8, false, nodes).unwrap();
+    assert_eq!(BATCHES.with(Cell::get), 0);
+    assert_eq!((report.parallel_batches, report.parallel_regions, report.parallel_tasks), (0, 0, 0));
+    assert_eq!((report.hash_table_regions, report.hash_table_updates), (7, 27));
+    assert_eq!((report.hash_table_regions, report.hash_table_updates),
+        (serial_report.hash_table_regions, serial_report.hash_table_updates));
+    for (left, right) in serial.iter().zip(&fallback) {
+        assert_eq!(left.as_ref().unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap(),
+            right.as_ref().unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap());
+    }
+    drop((serial, fallback));
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
 }
 
 #[test]
