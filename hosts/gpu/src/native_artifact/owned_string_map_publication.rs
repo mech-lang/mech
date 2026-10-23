@@ -227,18 +227,30 @@ impl<S: BuildHasher> OwnedStringMap<S> {
 // prepaid before inspecting key bytes. A denial only disturbs this workspace,
 // never the retained table; no panic or fresh comparison allowance is used.
 fn sort(values: &mut [(&str, u64)], work: &NativeLibraryWorkBudget) -> Result<(), Error> {
-    fn less(a: &str, b: &str, work: &NativeLibraryWorkBudget) -> Result<bool, Error> {
+    // This leaf only compares borrowed bytes and swaps borrowed entries. No
+    // allocation, host callback or budget observer runs while a batch is held.
+    work.with_debit_batch(|batch| sort_with_debits(values, &mut |compute, comparison|
+        batch.charge(compute, comparison)))?
+}
+
+fn sort_with_debits(
+    values: &mut [(&str, u64)],
+    charge: &mut impl FnMut(u64, u64) -> Result<(), ResidentKernelError>,
+) -> Result<(), Error> {
+    fn less(a: &str, b: &str,
+        charge: &mut impl FnMut(u64, u64) -> Result<(), ResidentKernelError>,
+    ) -> Result<bool, Error> {
         let bytes = add(add(a.len() as u64, b.len() as u64)?, 1)?;
-        work.charge(add(mul(bytes, 8)?, 32)?, bytes)?;
+        charge(add(mul(bytes, 8)?, 32)?, bytes)?;
         Ok(a.as_bytes() < b.as_bytes())
     }
     fn sift(
         values: &mut [(&str, u64)],
         mut root: usize,
-        work: &NativeLibraryWorkBudget,
+        charge: &mut impl FnMut(u64, u64) -> Result<(), ResidentKernelError>,
     ) -> Result<(), Error> {
         loop {
-            work.charge(32, 0)?;
+            charge(32, 0)?;
             let left = root
                 .checked_mul(2)
                 .and_then(|n| n.checked_add(1))
@@ -247,10 +259,10 @@ fn sort(values: &mut [(&str, u64)], work: &NativeLibraryWorkBudget) -> Result<()
                 return Ok(());
             }
             let mut child = left;
-            if left + 1 < values.len() && less(values[left].0, values[left + 1].0, work)? {
+            if left + 1 < values.len() && less(values[left].0, values[left + 1].0, charge)? {
                 child += 1;
             }
-            if !less(values[root].0, values[child].0, work)? {
+            if !less(values[root].0, values[child].0, charge)? {
                 return Ok(());
             }
             values.swap(root, child);
@@ -258,12 +270,12 @@ fn sort(values: &mut [(&str, u64)], work: &NativeLibraryWorkBudget) -> Result<()
         }
     }
     for root in (0..values.len() / 2).rev() {
-        sift(values, root, work)?;
+        sift(values, root, charge)?;
     }
     for end in (1..values.len()).rev() {
-        work.charge(32, 0)?;
+        charge(32, 0)?;
         values.swap(0, end);
-        sift(&mut values[..end], 0, work)?;
+        sift(&mut values[..end], 0, charge)?;
     }
     Ok(())
 }

@@ -210,6 +210,10 @@ impl Drop for NativeWorkGroup {
     fn drop(&mut self) { self.close(); }
 }
 
+#[path = "native_work_debit_batch.rs"]
+mod debit_batch;
+pub use debit_batch::NativeWorkDebitBatch;
+
 #[cfg(test)]
 #[path = "native_worker_budget_tests.rs"]
 mod tests;
