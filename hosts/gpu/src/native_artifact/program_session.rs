@@ -226,6 +226,27 @@ pub(super) struct CallCacheLane {
     _reservation: mech_core::ManagedMemoryReservation,
 }
 impl CallCacheLane {
+    pub(super) fn caller_retained_nodes(
+        &self,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<u64, NativeCollectionInvocationError> {
+        if self._reservation.budget() != work.memory_budget() {
+            return Err(NativeCollectionInvocationError::UnadmittedValue);
+        }
+        let debit = (self.entries.len() as u64).checked_mul(128)
+            .and_then(|n| n.checked_add(256))
+            .ok_or(NativeCollectionInvocationError::InvalidInput)?;
+        work.charge(debit, 0)?;
+        let mut nodes = self._reservation.capacity_bytes();
+        for entry in &self.entries {
+            if let CallCacheEntry::Repeated(cache) = entry {
+                nodes = nodes.checked_add(cache.retained_metadata_demand(work)?.retained_nodes)
+                    .ok_or(NativeCollectionInvocationError::InvalidInput)?;
+            }
+        }
+        Ok(nodes)
+    }
+
     fn metadata_bytes(count: usize) -> Result<u64, NativeProgramExecutionError> {
         amount(
             count,
