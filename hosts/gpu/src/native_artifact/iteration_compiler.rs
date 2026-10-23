@@ -299,7 +299,7 @@ pub(super) fn define_cfg<M: Module>(
     #[cfg(not(feature = "canonical-native-program"))]
     let borrowed_words = 0;
     #[cfg(feature = "canonical-native-program")]
-    let (closed, prefix) = match plan {
+    let (closed, prefix, map_admission) = match plan {
         super::iteration_code_plan::CodePlan::Program(program) => {
             // No completion block belongs to a closed Tail. Its completion
             // envelope is irrelevant to the body bound, not a second work policy.
@@ -332,13 +332,17 @@ pub(super) fn define_cfg<M: Module>(
                 visit.work = visit.work.checked_add(super::program_map_owner_layout::extra_work(&owner_prices, site).map_err(backend)?)
                     .ok_or_else(|| backend("map owner visit work overflow"))?;
             }
-            (
-                super::program_tail_layout::Layout::derive(program, &borrowed, &visits)
-                    .map_err(backend)?,
-                prefix,
-            )
+            let closed = super::program_tail_layout::Layout::derive(program, &borrowed, &visits)
+                .map_err(backend)?;
+            for (site, visit) in visits.iter_mut().enumerate() {
+                visit.work = visit.work.checked_add(closed.extra_work(site))
+                    .ok_or_else(|| backend("closed Tail work overflow"))?;
+            }
+            let map_admission = super::program_map_admission::Layout::derive(program, &owner_prices, &visits)
+                .map_err(backend)?;
+            (closed, prefix, map_admission)
         }
-        _ => (Default::default(), None),
+        _ => (Default::default(), None, Default::default()),
     };
     #[cfg(feature = "canonical-native-program")]
     let closed_words = closed.words;
@@ -674,6 +678,14 @@ pub(super) fn define_cfg<M: Module>(
                 None
             };
             #[cfg(feature = "canonical-native-program")]
+            let map_admission_join = super::program_compiler::map_owner_codegen::admission(
+                &mut b, locals, owner.as_ref(), &map_admission, index,
+            )?;
+            #[cfg(feature = "canonical-native-program")]
+            if admission_join.is_some() && map_admission_join.is_some() {
+                return Err(backend("overlapping closed Tail and map admission groups"));
+            }
+            #[cfg(feature = "canonical-native-program")]
             if let Some(region) = &prefix
                 && region.tail.exit() as usize == index
             {
@@ -697,7 +709,7 @@ pub(super) fn define_cfg<M: Module>(
                 error,
             );
             #[cfg(feature = "canonical-native-program")]
-            if let Some(joined) = admission_join {
+            if let Some(joined) = admission_join.or(map_admission_join) {
                 b.ins().jump(joined, &[]);
                 b.switch_to_block(joined);
             }

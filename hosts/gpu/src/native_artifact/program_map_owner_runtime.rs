@@ -23,7 +23,7 @@ impl<'plan> Session<'plan> {
     pub(super) fn new(descriptor: &'plan NativeProgramDescriptor) -> Self {
         Self { descriptor, state: None, refused_visit: None }
     }
-    fn active(&self, index: usize) -> bool {
+    pub(super) fn active(&self, index: usize) -> bool {
         self.state.as_ref().and_then(|state| state.slots.get(index))
             .is_some_and(|slot| slot.binding.is_some())
     }
