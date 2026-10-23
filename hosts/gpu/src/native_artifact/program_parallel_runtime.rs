@@ -3,9 +3,10 @@
 use super::{Context, NativeProgramExecutionError as Error, invalid, amount};
 use crate::native_artifact::{NativeExecutionPhase as Phase, NativeProgramExecutionLimits,
     program_abi::{self as abi, Frame}};
-use mech_core::{ManagedMemoryReservation, Value};
+use mech_core::{ManagedMemoryReservation, ManagedNodeReservation, Value};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeWorkerBudgetError};
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::collections::VecDeque;
 
 #[derive(Default)]
 struct Activity { current: AtomicUsize, peak: AtomicUsize }
@@ -45,12 +46,24 @@ pub(super) struct Worker {
     pub count: u64,
     pub result: Option<Receipt>,
 }
-pub(super) struct Batch {
+struct PendingRegion {
     region: usize,
     next: u64,
     count: u64,
+    source: Value,
+}
+pub(super) struct Batch {
+    regions: VecDeque<PendingRegion>,
     results: std::vec::IntoIter<Result<Receipt, Error>>,
     _reservation: ManagedMemoryReservation,
+    _nodes: ManagedNodeReservation,
+}
+struct ReadyRegion { region: usize, count: u64, source: Value, captures: Vec<Capture> }
+
+fn transport<T>(count: usize, reason: &'static str) -> Result<Vec<T>, Error> {
+    let mut values = Vec::new();
+    values.try_reserve_exact(count).map_err(|_| invalid(reason))?;
+    super::collection::admitted_capacity(values, count, reason)
 }
 
 fn budget_error(error: NativeWorkerBudgetError, origin: mech_engine::native_artifact::NativeMatchOrigin) -> Error {
@@ -91,13 +104,22 @@ impl Context<'_, '_> {
             return Err(invalid("parallel dispatch outside exact initialized collection"));
         }
         if self.worker.is_some() || self.activation_phase { return Ok(Some(0)); }
-        if self.parallel_batch.is_some() { return Err(invalid("overlapping native parallel batches")); }
         let count = self.control.progress[region.iteration as usize * 2];
+        if let Some(batch) = &self.parallel_batch {
+            let pending = batch.regions.front().ok_or_else(|| invalid("empty parallel group"))?;
+            if pending.region != id || pending.next != 0 || pending.count != count {
+                return Err(invalid("future parallel initializer differs from queued source"));
+            }
+            let source = self.arena.copy_current(region.source, &mut self.control.work)?;
+            if !source.shares_frozen_storage(&pending.source) {
+                return Err(invalid("future parallel source changed identity"));
+            }
+            return Ok(Some(2));
+        }
         let workers = std::thread::available_parallelism().map_or(1, usize::from).min(32);
         #[cfg(test)]
         let workers = TEST_WORKERS.with(|override_| override_.get().unwrap_or(workers)).min(32);
-        if count < 2 || count > workers as u64 { return Ok(Some(0)); }
-        let Some(_parent_nodes) = self.parallel_admission(&[id])? else { return Ok(Some(0)); };
+        if count == 0 || count > workers as u64 || region.group.len() > workers { return Ok(Some(0)); }
         let Some((compute, _)) = self.library.unscoped_remaining() else { return Ok(Some(0)); };
         if compute == 0 { return Ok(Some(0)); }
         if args[0] == 0 || args[1] == 0 { return Err(invalid("parallel dispatch lost checked entry")); }
@@ -124,28 +146,59 @@ impl Context<'_, '_> {
         // enlarge the bounded stack reserved for these workers.
         const CALLBACK_HEADROOM: usize = 1024 * 1024;
         if descriptor.stack > (STACK - CALLBACK_HEADROOM) as u64 { return Ok(Some(0)); }
-        let count_usize = count as usize;
-        let metadata = amount(count_usize, (std::mem::size_of::<Receipt>() + 1024) as u64, 1024)?
-            .checked_add(amount(region.captures.len(),
-                (std::mem::size_of::<Capture>() as u64) * (count + 1), 0)?)
+        let capture_slots = region.group.iter().try_fold(0usize, |total, &member| {
+            let member = descriptor.parallel.regions.get(member as usize)
+                .ok_or_else(|| invalid("parallel sibling proof outside descriptor"))?;
+            total.checked_add(member.captures.len()).ok_or_else(|| invalid("parallel capture count overflow"))
+        })?;
+        // Admit the bounded maximum before inspecting future immutable
+        // sources or allocating per-region capture/receipt containers.
+        let metadata = amount(workers, (std::mem::size_of::<Receipt>()
+                + std::mem::size_of::<ReadyRegion>() + std::mem::size_of::<PendingRegion>() + 1024) as u64, 1024)?
+            .checked_add(amount(capture_slots,
+                (std::mem::size_of::<Capture>() as u64) * (workers as u64 + 1), 0)?)
             .ok_or_else(|| invalid("parallel metadata overflow"))?;
         self.control.work.charge(Phase::Setup, metadata.checked_mul(8)
             .and_then(|n| n.checked_add(4096)).ok_or_else(|| invalid("parallel setup overflow"))?)?;
         let reservation = match memory.reserve_capacity(metadata) { Ok(value) => value, Err(_) => return Ok(Some(0)) };
-        let stacks = match memory.reserve_capacity(count.checked_mul((STACK + 65536) as u64)
+        // Private scheduler container nodes coexist across every worker. The
+        // byte envelope conservatively bounds this metadata only; canonical
+        // captured/result payloads already retain their own shared claims.
+        let nodes = match memory.reserve_nodes(metadata) { Ok(value) => value, Err(_) => return Ok(Some(0)) };
+        let mut ready = transport(region.group.len(), "parallel region allocation")?;
+        let mut task_count = 0u64;
+        for &member in &region.group {
+            let member = member as usize;
+            let selected = &descriptor.parallel.regions[member];
+            let source = self.arena.copy_current(selected.source, &mut self.control.work)?;
+            if !matches!(source.data(), mech_core::ValueData::Matrix(_) | mech_core::ValueData::Set(_)) {
+                return Err(invalid("parallel sibling source is not a proved sequence"));
+            }
+            let source_count = super::collection::source_count(&source)?;
+            if member == id && source_count != count { return Err(invalid("parallel leader source count changed")); }
+            task_count = task_count.checked_add(source_count).ok_or_else(|| invalid("parallel task count overflow"))?;
+            if source_count == 0 || task_count > workers as u64 { return Ok(Some(0)); }
+            let mut captures = transport(selected.captures.len(), "parallel capture allocation")?;
+            for &slot in &selected.captures {
+                if descriptor.plan.values()[slot as usize].scalar_kind().is_some() {
+                    // SAFETY: every slot is a proved immutable capture in this
+                    // exact live local lane, dominated by the leader frontier.
+                    captures.push(Capture::Word(slot, unsafe { *frame.base.locals.add(slot as usize) }));
+                } else {
+                    captures.push(Capture::Value(slot, self.arena.copy_current(slot, &mut self.control.work)?));
+                }
+            }
+            ready.push(ReadyRegion { region: member, count: source_count, source, captures });
+        }
+        if task_count < 2 { return Ok(Some(0)); }
+        let count_usize = task_count as usize;
+        let stacks = match memory.reserve_capacity(task_count.checked_mul((STACK + 65536) as u64)
             .ok_or_else(|| invalid("parallel stack admission overflow"))?) {
             Ok(value) => value, Err(_) => return Ok(Some(0)),
         };
-        let mut captures = Vec::new();
-        captures.try_reserve_exact(region.captures.len()).map_err(|_| invalid("parallel capture allocation"))?;
-        for &slot in &region.captures {
-            if descriptor.plan.values()[slot as usize].scalar_kind().is_some() {
-                // SAFETY: checked slot is within this exact live local lane.
-                captures.push(Capture::Word(slot, unsafe { *frame.base.locals.add(slot as usize) }));
-            } else {
-                captures.push(Capture::Value(slot, self.arena.copy_current(slot, &mut self.control.work)?));
-            }
-        }
+        let mut region_ids = transport(ready.len(), "parallel admission inventory allocation")?;
+        region_ids.extend(ready.iter().map(|selected| selected.region));
+        let Some(_parked_parent) = self.parallel_admission(&region_ids)? else { return Ok(Some(0)); };
         let origin = descriptor.plan.collections()[region.collection as usize].origin();
         let (compute, comparisons) = self.library.unscoped_remaining().ok_or_else(|| invalid("parallel scope changed during admission"))?;
         let group = self.library.reserve_worker_group_with_memory(compute, comparisons, &memory)
@@ -157,21 +210,19 @@ impl Context<'_, '_> {
         let entry: abi::Entry = unsafe { std::mem::transmute(args[0] as usize) };
         let activity = Activity::default();
         let outcomes = std::thread::scope(|scope| -> Result<Vec<Result<Receipt, Error>>, Error> {
-            let mut handles = Vec::new();
-            handles.try_reserve_exact(count_usize).map_err(|_| invalid("parallel handle allocation"))?;
-            let mut results = Vec::new();
-            results.try_reserve_exact(count_usize).map_err(|_| invalid("parallel result allocation"))?;
-            let mut jobs = Vec::new();
-            jobs.try_reserve_exact(count_usize).map_err(|_| invalid("parallel job allocation"))?;
-            for index in 0..count {
-                let loan = group.worker_loan_with_memory(&memory).map_err(|error| budget_error(error, origin))?;
-                let mut worker_captures = Vec::new();
-                worker_captures.try_reserve_exact(captures.len()).map_err(|_| invalid("worker capture allocation"))?;
-                worker_captures.extend(captures.iter().cloned());
-                jobs.push((index, loan, worker_captures));
+            let mut handles = transport(count_usize, "parallel handle allocation")?;
+            let mut results = transport(count_usize, "parallel result allocation")?;
+            let mut jobs = transport(count_usize, "parallel job allocation")?;
+            for selected in &ready {
+                for index in 0..selected.count {
+                    let loan = group.worker_loan_with_memory(&memory).map_err(|error| budget_error(error, origin))?;
+                    let mut worker_captures = transport(selected.captures.len(), "worker capture allocation")?;
+                    worker_captures.extend(selected.captures.iter().cloned());
+                    jobs.push((selected.region, selected.count, index, loan, worker_captures));
+                }
             }
             let mut spawn_failed = false;
-            for (index, loan, worker_captures) in jobs {
+            for (region, count, index, loan, worker_captures) in jobs {
                 let memory = memory.clone();
                 let activity = &activity;
                 let handle = std::thread::Builder::new().stack_size(STACK).spawn_scoped(scope, move || {
@@ -179,7 +230,7 @@ impl Context<'_, '_> {
                     let library = NativeLibraryWorkBudget::from_worker_loan(loan)
                         .map_err(|error| Error::Collection { origin, error })?;
                     super::session::Prepared::run_worker(descriptor, entry, limits, &memory,
-                        library, Worker { region: id, index, count, result: None }, worker_captures)
+                        library, Worker { region, index, count, result: None }, worker_captures)
                 });
                 match handle {
                     Ok(handle) => handles.push(handle),
@@ -199,8 +250,9 @@ impl Context<'_, '_> {
         drop(stacks);
         let results = outcomes?;
         if results.iter().all(Result::is_ok) {
-            self.parallel_regions = self.parallel_regions.checked_add(1).ok_or_else(|| invalid("parallel batch count overflow"))?;
-            self.parallel_tasks = self.parallel_tasks.checked_add(count).ok_or_else(|| invalid("parallel task count overflow"))?;
+            self.parallel_batches = self.parallel_batches.checked_add(1).ok_or_else(|| invalid("parallel batch count overflow"))?;
+            self.parallel_regions = self.parallel_regions.checked_add(ready.len() as u64).ok_or_else(|| invalid("parallel batch count overflow"))?;
+            self.parallel_tasks = self.parallel_tasks.checked_add(task_count).ok_or_else(|| invalid("parallel task count overflow"))?;
             self.parallel_peak_workers = self.parallel_peak_workers.max(activity.peak.load(Ordering::Relaxed) as u64);
         }
         for result in results.iter().filter_map(|result| result.as_ref().ok()) {
@@ -211,7 +263,13 @@ impl Context<'_, '_> {
             self.packed_map_updates = self.packed_map_updates.checked_add(result.packed_updates).ok_or_else(|| invalid("parallel packed update overflow"))?;
             self.packed_ssa_regions = self.packed_ssa_regions.checked_add(result.packed_ssa_regions).ok_or_else(|| invalid("parallel SSA region overflow"))?;
         }
-        self.parallel_batch = Some(Batch { region: id, next: 0, count, results: results.into_iter(), _reservation: reservation });
+        let mut pending = VecDeque::new();
+        pending.try_reserve_exact(ready.len()).map_err(|_| invalid("parallel pending group allocation"))?;
+        if pending.capacity() != ready.len() { return Err(invalid("parallel pending group exceeds admitted capacity")); }
+        for selected in ready {
+            pending.push_back(PendingRegion { region: selected.region, next: 0, count: selected.count, source: selected.source });
+        }
+        self.parallel_batch = Some(Batch { regions: pending, results: results.into_iter(), _reservation: reservation, _nodes: nodes });
         Ok(Some(1))
     }
 
@@ -224,14 +282,16 @@ impl Context<'_, '_> {
             return Err(invalid("parallel take outside original element"));
         }
         let Some(batch) = &mut self.parallel_batch else { return Ok(Some(0)); };
-        if batch.region != id || self.control.current != Some(region.iteration)
-            || batch.count.checked_sub(self.control.progress[region.iteration as usize * 2]) != Some(batch.next) {
+        let pending = batch.regions.front_mut().ok_or_else(|| invalid("parallel group omitted region"))?;
+        if pending.region != id || self.control.current != Some(region.iteration)
+            || pending.count.checked_sub(self.control.progress[region.iteration as usize * 2]) != Some(pending.next) {
             return Err(invalid("parallel result belongs to another collection visit"));
         }
         // Surface a failed body only at its original source element. Earlier
         // pushes retain their own output/cap error ordering.
         let receipt = batch.results.next().ok_or_else(|| invalid("parallel result replay"))??;
-        batch.next = batch.next.checked_add(1).ok_or_else(|| invalid("parallel result index overflow"))?;
+        pending.next = pending.next.checked_add(1).ok_or_else(|| invalid("parallel result index overflow"))?;
+        if pending.next == pending.count { batch.regions.pop_front(); }
         if !region.contains(receipt.previous) || !super::super::program_parallel_layout::successors(
             descriptor.plan.blocks()[receipt.previous as usize].terminator()).contains(&Some(region.push)) {
             return Err(invalid("parallel receipt lacks original push frontier"));
@@ -244,7 +304,10 @@ impl Context<'_, '_> {
         // child loan. Only its original push successor becomes admissible.
         self.control.previous = Some(receipt.previous);
         self.consumed = true;
-        if self.parallel_batch.as_ref().is_some_and(|batch| batch.results.len() == 0) { self.parallel_batch = None; }
+        if self.parallel_batch.as_ref().is_some_and(|batch| batch.regions.is_empty()) {
+            if self.parallel_batch.as_ref().unwrap().results.len() != 0 { return Err(invalid("parallel group retained extra results")); }
+            self.parallel_batch = None;
+        }
         Ok(Some(1))
     }
 

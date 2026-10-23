@@ -76,8 +76,10 @@ fn observed(descriptor: &NativeProgramDescriptor, entry: super::super::program_a
 #[test]
 fn parallel_source_bodies_keep_all_seven_maps_updates_captures_and_order() {
     let source = source("number/format(h{\"a\"}, 0u64)", r#"
-first := text/join([count-text(text, width, n) | n <- [4u64 8u64]], "|")
-second := text/join([count-text(text, width, n) | n <- [1u64 2u64 3u64 4u64 5u64]], ",")
+first-items := [4u64 8u64]
+second-items := [1u64 2u64 3u64 4u64 5u64]
+first := text/join([count-text(text, width, n) | n <- first-items], "|")
+second := text/join([count-text(text, width, n) | n <- second-items], ",")
 first + ";" + second
 "#);
     let original = tests::artifact_source(&source);
@@ -87,6 +89,7 @@ first + ";" + second
         let catalog = mech_stdlib::source_catalog();
         let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         assert_eq!(jit.descriptor().parallel.regions.len(), 2);
+        assert_eq!(jit.descriptor().parallel.regions[0].group.as_ref(), &[0, 1]);
         let image = jit.descriptor().encode_build_owned_image().unwrap();
         // SAFETY: unchanged image and checked entry share this retained build.
         let restored = unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
@@ -101,10 +104,12 @@ first + ";" + second
             assert_eq!(BATCHES.with(Cell::get), 0);
             assert_eq!((serial_report.parallel_regions, serial_report.parallel_tasks,
                 serial_report.parallel_peak_workers), (0, 0, 0));
+            assert_eq!(serial_report.parallel_batches, 0);
             let report = observed(descriptor, jit.test_checked_entry(), &args, &mut parallel, &memory, 8, false).unwrap();
-            assert_eq!(BATCHES.with(Cell::get), 2);
+            assert_eq!(BATCHES.with(Cell::get), 1);
             assert_eq!((report.parallel_regions, report.parallel_tasks), (2, 7));
-            assert!((1..=5).contains(&report.parallel_peak_workers));
+            assert_eq!(report.parallel_batches, 1);
+            assert!((1..=7).contains(&report.parallel_peak_workers));
             assert_eq!((report.hash_table_regions, report.hash_table_updates), (7, 27));
             assert_eq!((report.hash_table_regions, report.hash_table_updates),
                 (serial_report.hash_table_regions, serial_report.hash_table_updates));
@@ -126,7 +131,13 @@ first + ";" + second
 #[test]
 fn prior_push_failure_precedes_later_worker_arithmetic_and_retires_pending_results() {
     let source = source("number/format(h{\"a\"} + 8u64 / (8u64 - n), 0u64)",
-        "text/join([count-text(text, width, n) | n <- [4u64 8u64]], \"|\")");
+        r#"
+first-items := [1u64 4u64]
+second-items := [8u64 8u64]
+first := text/join([count-text(text, width, n) | n <- first-items], "|")
+second := text/join([count-text(text, width, n) | n <- second-items], ",")
+first + ";" + second
+"#);
     let artifact = tests::artifact_source(&source);
     let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
@@ -147,6 +158,22 @@ fn prior_push_failure_precedes_later_worker_arithmetic_and_retires_pending_resul
         assert_eq!(errors[0], errors[1], "source error order differs");
         assert!(errors[0].contains(if fail_push { "OutputBytes" } else { "Arithmetic" }));
     }
+}
+
+#[test]
+fn result_dependent_sibling_capture_keeps_separate_source_groups() {
+    let source = source("number/format(h{\"a\"}, 0u64)", r#"
+first-items := [4u64 8u64]
+second-items := [1u64 2u64]
+first := text/join([count-text(text, width, n) | n <- first-items], "|")
+dependent := first + text
+text/join([count-text(dependent, width, n) | n <- second-items], ",")
+"#);
+    let artifact = tests::artifact_source(&source);
+    let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+    assert_eq!(jit.descriptor().parallel.regions.len(), 2);
+    assert_eq!(jit.descriptor().parallel.regions[0].group.as_ref(), &[0]);
+    assert_eq!(jit.descriptor().parallel.regions[1].group.as_ref(), &[1]);
 }
 
 #[test]

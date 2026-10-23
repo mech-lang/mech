@@ -21,8 +21,10 @@ pub(super) struct Region {
     pub body: u32,
     pub push: u32,
     pub output: u32,
+    pub source: u32,
     pub captures: Box<[u32]>,
     pub sites: Box<[u32]>,
+    pub group: Box<[u32]>,
 }
 impl Region {
     pub fn contains(&self, site: u32) -> bool { self.sites.binary_search(&site).is_ok() }
@@ -46,12 +48,19 @@ impl Layout {
     pub fn derive(plan: &Plan) -> Result<Self, &'static str> {
         plan.validate_current_visits()?;
         let aggregates = plan.scalar_aggregates();
+        let mut reachable = BTreeSet::new();
+        let mut pending = vec![plan.entry()];
+        while let Some(site) = pending.pop() {
+            if reachable.insert(site) {
+                pending.extend(successors(plan.blocks()[site as usize].terminator()).into_iter().flatten());
+            }
+        }
         let mut regions = Vec::new();
         for (id, collection) in plan.collections().iter().enumerate() {
             // The first version parks one root builder and serializes nested
             // collections. Selected histogram/span storage has a different
             // yield protocol and remains on its ordinary path.
-            if collection.parent().is_some() || collection.parent_collection().is_some()
+            if !reachable.contains(&collection.begin()) || collection.parent().is_some() || collection.parent_collection().is_some()
                 || collection.generators().len() != 1
                 || collection.string_span_projection().is_some()
                 || collection.string_element_map_projection().is_some()
@@ -125,6 +134,14 @@ impl Layout {
             }
             for &site in &sites {
                 let block = &plan.blocks()[site as usize];
+                if let Action::CollectionBegin { collection } = block.action() {
+                    let child = &plan.collections()[*collection as usize];
+                    if !matches!(child.result(), ResultKind::Materialized | ResultKind::TextJoin(_))
+                        || child.string_span_projection().is_some()
+                        || child.string_element_map_projection().is_some() {
+                        valid = false; break;
+                    }
+                }
                 if reads(plan, block.action(), &mut capture).is_err() { valid = false; break; }
                 let result = match block.terminator() {
                     Terminator::Scalar(Term::Branch { condition, .. }) => capture(condition),
@@ -139,11 +156,83 @@ impl Layout {
             if !valid || captures.iter().any(|&slot| aggregates.slot_at(slot as usize).is_some()) { continue; }
             regions.push(Region { collection: id as u32, iteration, begin: collection.begin(),
                 initialize: generator.initialize(), header: generator.header(), body: generator.body(),
-                push: collection.push(), output: output.get(), captures: captures.into_iter().collect(),
-                sites: sites.into_iter().collect() });
+                push: collection.push(), output: output.get(), source: generator.source().semantic_value().get(),
+                captures: captures.into_iter().collect(), sites: sites.into_iter().collect(), group: Box::new([]) });
+        }
+        for leader in 0..regions.len() {
+            let mut group = vec![leader as u32];
+            let mut current = leader;
+            while let Some(next) = next_sibling(plan, &regions, current) {
+                if group.contains(&(next as u32)) || !regions[next].captures.iter().all(|&slot|
+                    available_before(plan, slot, regions[leader].initialize)) { break; }
+                group.push(next as u32);
+                current = next;
+            }
+            regions[leader].group = group.into();
         }
         Ok(Self { regions: regions.into() })
     }
+}
+
+// Only a guaranteed pure root path can join sibling work. The parent still
+// executes every intervening source action and exposes its errors in order.
+fn next_sibling(plan: &Plan, regions: &[Region], current: usize) -> Option<usize> {
+    let finish = plan.collections()[regions[current].collection as usize].finish();
+    let mut site = finish;
+    let mut seen = BTreeSet::new();
+    loop {
+        if !seen.insert(site) || plan.activation_boundary() == Some(site) { return None; }
+        if site != finish && let Some(next) = regions.iter().position(|region| region.begin == site) {
+            return Some(next);
+        }
+        let block = &plan.blocks()[site as usize];
+        if block.iteration().is_some() { return None; }
+        match block.action() {
+            Action::Scalar(_) | Action::Structural { .. } => {}
+            Action::LibraryCall { template, .. } => pure(template).ok()?,
+            Action::CollectionFinish { collection } if *collection == regions[current].collection => {}
+            Action::TextJoinFinish { collection } => {
+                let ResultKind::TextJoin(sink) = plan.collections()[*collection as usize].result() else { return None; };
+                pure(sink.template()).ok()?;
+            }
+            _ => return None,
+        }
+        let Terminator::Scalar(Term::Jump(next)) = block.terminator() else { return None; };
+        site = next;
+    }
+}
+
+// A unique root producer must dominate the leader's initialized frontier.
+// Multi-producer joins conservatively decline; existing lexical validation
+// already proves every accepted immutable capture has one current definition.
+fn available_before(plan: &Plan, slot: u32, frontier: u32) -> bool {
+    if plan.constants().iter().any(|constant| constant.value().get() == slot)
+        || (0..plan.transport_input_count()).any(|index| plan.transport_input_value(index).get() == slot) {
+        return true;
+    }
+    let mut producers = plan.blocks().iter().enumerate().filter_map(|(site, block)| {
+        let output = match block.action() {
+            Action::Scalar(Scalar::Primitive { output, .. } | Scalar::Copy { output, .. })
+            | Action::LibraryCall { output, .. } | Action::Structural { output, .. } => Some(*output),
+            Action::CollectionFinish { collection } if matches!(plan.collections()[*collection as usize].result(), ResultKind::Materialized) =>
+                Some(plan.collections()[*collection as usize].output()),
+            Action::TextJoinFinish { collection } => match plan.collections()[*collection as usize].result() {
+                ResultKind::TextJoin(sink) => Some(sink.output()), _ => None,
+            },
+            _ => None,
+        };
+        (output.is_some_and(|output| output.get() == slot)).then_some((site as u32, block.iteration()))
+    });
+    let Some((producer, None)) = producers.next() else { return false; };
+    if producers.next().is_some() || producer == frontier { return false; }
+    let mut pending = vec![plan.entry()];
+    let mut seen = BTreeSet::new();
+    while let Some(site) = pending.pop() {
+        if site == producer || !seen.insert(site) { continue; }
+        if site == frontier { return false; }
+        pending.extend(successors(plan.blocks()[site as usize].terminator()).into_iter().flatten());
+    }
+    true
 }
 
 fn reads(plan: &Plan, action: &Action, read: &mut impl FnMut(Value) -> Result<(), &'static str>) -> Result<(), &'static str> {

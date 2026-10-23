@@ -133,6 +133,8 @@ pub struct NativeProgramExecutionReport {
     pub packed_ssa_regions: u64,
     /// Source comprehensions whose original child bodies completed in workers.
     pub parallel_regions: u64,
+    /// Completed dispatches; one dispatch may cover several source regions.
+    pub parallel_batches: u64,
     /// Original source elements completed by those worker batches.
     pub parallel_tasks: u64,
     /// Observed peak simultaneously executing workers, not admitted capacity.
@@ -226,6 +228,7 @@ struct Context<'plan, 'visit> {
     packed_map_updates: u64,
     packed_ssa_regions: u64,
     parallel_regions: u64,
+    parallel_batches: u64,
     parallel_tasks: u64,
     parallel_peak_workers: u64,
     window_region: Option<(u32, u64)>,
