@@ -101,7 +101,7 @@ pub(in crate::native_artifact) fn emit(
         b.switch_to_block(thin);
         let function = load(b, locals, proof.words + 3)?;
         let context = load(b, locals, proof.words + 4)?;
-        if proof.packed.is_some() {
+        if let Some(packed_proof) = &proof.packed {
             // Constructor-owned prefix: zero declines packed storage while
             // retaining the existing closed String-map implementation.
             let frame = b.ins().load(types::I64, MemFlags::new(), context, 0);
@@ -114,7 +114,7 @@ pub(in crate::native_artifact) fn emit(
                 if span.range_site() as usize == site {
                     let first = load(b, locals, span.operands()[0].get() as usize)?;
                     let last = load(b, locals, span.operands()[1].get() as usize)?;
-                    super::packed_maps::select(b, frame, first, last, hooks,
+                    super::packed_maps::select(b, frame, packed_proof.packing_domain(), first, last, hooks,
                         function, context, site, error);
                 }
             } else {
@@ -127,7 +127,7 @@ pub(in crate::native_artifact) fn emit(
                 };
                 let value = if op == 5 { load(b, locals, operands[2].get() as usize)? } else { zero };
                 let token = load(b, locals, operands[0].get() as usize)?;
-                super::packed_maps::operation(b, frame, op, value, locals,
+                super::packed_maps::operation(b, frame, packed_proof.packing_domain(), op, value, locals,
                     output.get() as usize, token, hooks, function, context, site, error)?;
             }
             b.ins().jump(joined, &[]);

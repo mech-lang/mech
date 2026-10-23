@@ -56,6 +56,47 @@ unsafe extern "C" fn observe(raw: *mut c_void, site: u64, op: u64,
 }
 
 #[test]
+fn packed_compact_domain_executes_source_map_join_and_publishes_all_keys() {
+    let source = format!(r#"{}
++> text
+letters := {{"a":"A", "c":"C", "g":"G", "t":"T"}}
+sequence := text/join([letters{{char}} | char <- "acgtacgtacgtacgt"], "")
+#Count(sequence, 3u64, 16u64, empty)
+"#, structural_projection_tests::COUNT);
+    let original = tests::artifact_source(&source);
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+    for artifact in [original, decoded] {
+        let catalog = mech_stdlib::source_catalog();
+        let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let domains = jit.descriptor().closed_tails.regions.iter()
+            .filter_map(|region| region.packed.as_ref())
+            .map(|proof| (proof.packing_domain().bits(), proof.packing_domain().shift()))
+            .collect::<Vec<_>>();
+        assert_eq!(domains, [(2, Some(1))]);
+        let image = jit.descriptor().encode_build_owned_image().unwrap();
+        // SAFETY: these descriptor bytes and native code have the same owner.
+        let restored = unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
+        for descriptor in [jit.descriptor(), &restored] {
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let mut output = vec![None];
+            let entry = jit.test_checked_entry();
+            let report = execute(descriptor, |frame| unsafe { entry(frame) },
+                &[], &mut output, tests::limits(), &memory).unwrap();
+            assert_eq!((report.packed_map_regions, report.packed_ssa_regions, report.packed_map_updates), (1, 1, 14));
+            let ValueData::Map(map) = output[0].as_ref().unwrap().data() else { panic!("map"); };
+            let pairs = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
+                (ValueData::String(key), ValueData::U64(value)) => (key.to_string(), *value),
+                _ => panic!("String/U64 map"),
+            }).collect::<Vec<_>>();
+            assert_eq!(pairs, [("ACG".into(), 4), ("CGT".into(), 4), ("GTA".into(), 3), ("TAC".into(), 3)]);
+            drop(output);
+            assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+        }
+    }
+}
+
+#[test]
 fn closed_map_binds_source_once_rejects_reentry_and_keeps_finite_fuel() {
     let source = format!("{}\n#Count(\"ab:ab:ab\", 2u64, 8u64, empty)\n",
         structural_projection_tests::COUNT.replace("previous + 1u64", "previous + 7u64"));

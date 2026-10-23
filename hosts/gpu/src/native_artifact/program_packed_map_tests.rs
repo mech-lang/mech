@@ -21,6 +21,14 @@ fn packed(key: &[u8]) -> (u64, u64) {
     });
     (word as u64, (word >> 64) as u64)
 }
+fn encoded(key: &[u8], domain: Domain) -> (u64, u64) {
+    let (encode, _) = domain.tables();
+    let word = key.iter().fold(0u128, |word, &byte| {
+        assert!(domain.contains(byte));
+        (word << domain.bits()) | u128::from(encode[usize::from(byte)])
+    });
+    (word as u64, (word >> 64) as u64)
+}
 // Test model of the emitted operations. Caller-supplied values deliberately
 // include replacement, zero and MAX; no accumulation is part of the owner API.
 fn begin_key(map: &mut PackedMap, key: &[u8]) -> Option<u64> {
@@ -29,7 +37,7 @@ fn begin_key(map: &mut PackedMap, key: &[u8]) -> Option<u64> {
     map.frame.fuel -= 1;
     map.check_call(6).unwrap();
     map.check_call(3).unwrap();
-    let (low, high) = packed(key);
+    let (low, high) = encoded(key, map.domain);
     map.frame.key_low = low;
     map.frame.key_high = high;
     map.frame.entry_pointer = 0;
@@ -52,7 +60,7 @@ fn put(map: &mut PackedMap, key: &[u8], value: u64) {
         slot.value = value;
         map.frame.updates = updates;
     } else {
-        let (low, high) = packed(key);
+        let (low, high) = encoded(key, map.domain);
         map.insert_missing(low, high, value).unwrap();
     }
 }
@@ -134,6 +142,37 @@ fn successful_packed_conversion_keeps_only_the_returned_owner_claim() {
     assert_eq!(memory.retained_snapshot_nodes(), 0);
     drop((output, work));
     assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+}
+
+#[test]
+fn packed_finite_domains_publish_every_original_key_and_preserve_replacements() {
+    for alphabet in [b"ACGT".as_slice(), b"xyz", b"\0a", b"\x01\x02\x04\x08"] {
+        let mut bitmap = [0u64; 2];
+        for &byte in alphabet { bitmap[usize::from(byte / 64)] |= 1 << (byte % 64); }
+        let domain = Domain::from_alphabet(bitmap).unwrap();
+        let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+        let work = new_work(&memory);
+        let mut map = PackedMap::new_encoded(work.clone(), limits(), 4, body(), 0, domain).unwrap();
+        let mut expected = BTreeMap::new();
+        for i in 0..alphabet.len().pow(4) {
+            let mut rank = i;
+            let key: [u8; 4] = core::array::from_fn(|_| {
+                let byte = alphabet[rank % alphabet.len()]; rank /= alphabet.len(); byte
+            });
+            put(&mut map, &key, i as u64);
+            let replacement = if i % 2 == 0 { 0 } else { u64::MAX };
+            put(&mut map, &key, replacement);
+            expected.insert(std::str::from_utf8(&key).unwrap().to_string(), replacement);
+        }
+        let count = expected.len() as u64;
+        let (published, updates, traversals) = map.finish().unwrap();
+        assert_eq!((updates, traversals), (count * 2, count * 2));
+        let actual = published.entries().unwrap().map(|(key, value)| (key.to_string(), value))
+            .collect::<BTreeMap<_, _>>();
+        assert_eq!(actual, expected);
+        drop(published); drop(work);
+        assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+    }
 }
 
 #[test]

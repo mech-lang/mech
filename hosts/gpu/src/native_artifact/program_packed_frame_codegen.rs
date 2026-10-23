@@ -1,16 +1,17 @@
 //! Register carriers for one invocation-owned packed table. Only slow calls
 //! expose the frame to Rust; every such boundary synchronizes mutable words.
-use super::super::super::{program_hooks::Hooks, program_packed_map::Frame};
+use super::super::super::{program_hooks::Hooks, program_packed_map::Frame, program_key_domain::Domain};
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::{FunctionBuilder, Variable};
 
 pub(in crate::native_artifact) struct FrameState {
     pointer: Value,
     words: Option<Vec<Variable>>,
+    pub(super) domain: Domain,
 }
 impl FrameState {
-    pub(super) fn memory(pointer: Value) -> Self { Self { pointer, words: None } }
-    pub(in crate::native_artifact) fn registers(b: &mut FunctionBuilder<'_>, pointer: Value) -> Self {
+    pub(super) fn memory(pointer: Value, domain: Domain) -> Self { Self { pointer, words: None, domain } }
+    pub(in crate::native_artifact) fn registers(b: &mut FunctionBuilder<'_>, pointer: Value, domain: Domain) -> Self {
         assert_eq!(core::mem::size_of::<Frame>() % 8, 0);
         let words = (0..core::mem::size_of::<Frame>() / 8).map(|word| {
             let variable = b.declare_var(types::I64);
@@ -18,7 +19,7 @@ impl FrameState {
             b.def_var(variable, value);
             variable
         }).collect();
-        Self { pointer, words: Some(words) }
+        Self { pointer, words: Some(words), domain }
     }
     pub(in crate::native_artifact) fn read(&self, b: &mut FunctionBuilder<'_>, offset: usize) -> Value {
         if let Some(words) = &self.words { b.use_var(words[offset / 8]) }

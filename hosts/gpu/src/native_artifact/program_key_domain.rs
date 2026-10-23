@@ -19,6 +19,9 @@ impl Domain {
     pub fn ascii() -> Self { Self { alphabet: [u64::MAX; 2], bits: 7, shift: Some(0) } }
     pub fn bits(&self) -> u8 { self.bits }
     pub fn shift(&self) -> Option<u8> { self.shift }
+    // A bit-window encoder is emitted directly. Other finite alphabets retain
+    // the existing lossless representation until a table encoder is available.
+    pub fn packing(self) -> Self { if self.shift.is_some() { self } else { Self::ascii() } }
     pub fn contains(&self, byte: u8) -> bool {
         byte < 128 && self.alphabet[usize::from(byte / 64)] & (1 << (byte % 64)) != 0
     }
@@ -39,7 +42,7 @@ impl Domain {
         }
         (encode, decode)
     }
-    fn from_alphabet(alphabet: [u64; 2]) -> Option<Self> {
+    pub(super) fn from_alphabet(alphabet: [u64; 2]) -> Option<Self> {
         let count = alphabet.iter().map(|x| x.count_ones()).sum::<u32>();
         if count == 0 { return None; }
         let bits = (u32::BITS - (count - 1).leading_zeros()).max(1) as u8;
