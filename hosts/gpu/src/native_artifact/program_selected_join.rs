@@ -34,6 +34,16 @@ pub(super) struct State {
     // Retire genuine owners before releasing the admitted private metadata.
     reservation: ManagedMemoryReservation,
 }
+impl State {
+    pub(super) fn caller_retained_nodes(&self) -> Result<u64, Error> {
+        let nodes = match &self.phase {
+            Phase::Range { lines, .. } => add(lines.count() as u64, 2)?,
+            Phase::Selected(view) => view.retained_nodes_bound()
+                .map_err(|_| invalid("selected join retained nodes changed"))?,
+        };
+        add(nodes, self.reservation.capacity_bytes())
+    }
+}
 
 fn add(a: u64, b: u64) -> Result<u64, Error> {
     a.checked_add(b)

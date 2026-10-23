@@ -142,6 +142,29 @@ fn charge(work: &mut NativeWorkMeter, amount: u64) -> Result<(), Error> {
     work.charge(Phase::Setup, amount).map_err(Into::into)
 }
 impl State {
+    pub(super) fn caller_retained_nodes(&self, work: &mut NativeWorkMeter) -> Result<u64, Error> {
+        charge(work, super::amount(self.builders.len(), 256, 512)?)?;
+        // This reservation contains fixed per-site carriers and weak ASCII
+        // metadata, not collection payloads. Its capacity bounds those nodes.
+        let mut nodes = add(self._metadata.capacity_bytes(), self.retained_nodes()?)?;
+        for builder in self.builders.iter().flatten() {
+            // CollectionPush accepts only scalar/Index/String drafts. Each
+            // draft contributes at most one node, plus the flat carrier/root.
+            // Bodies and input payloads are never traversed here.
+            nodes = add(nodes, add(builder.values.len() as u64, 2)?)?;
+            if let Some(join) = &builder.join {
+                nodes = add(nodes, join.caller_retained_nodes())?;
+            }
+            if let Some(histogram) = &builder.histogram {
+                nodes = add(nodes, histogram.caller_retained_nodes()?)?;
+            }
+            if let Some(query) = &builder.query {
+                nodes = add(nodes, query.caller_retained_nodes()?)?;
+            }
+        }
+        Ok(nodes)
+    }
+
     pub(super) fn retained_demand(&self) -> Result<mech_core::ResourceDemand, Error> {
         Ok(mech_core::ResourceDemand {
             turn_peak_bytes: self.live_bytes,
@@ -242,6 +265,14 @@ impl State {
     #[cfg(test)]
     pub(super) fn test_live_bytes(&self) -> u64 {
         self.live_bytes
+    }
+    #[cfg(test)]
+    pub(super) fn test_builder_kinds(&self) -> u8 {
+        self.builders.iter().flatten().fold(0, |kinds, builder| {
+            kinds | if builder.join.is_some() { 2 }
+                else if builder.histogram.is_some() { 4 }
+                else if builder.query.is_some() { 8 } else { 1 }
+        })
     }
     fn builder(&mut self, id: u32) -> Result<&mut Builder, Error> {
         if self.current != Some(id) {

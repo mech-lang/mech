@@ -39,6 +39,8 @@ mod selected_join;
 mod session;
 #[path = "program_window_round.rs"]
 mod window_round;
+#[path = "program_caller_geometry.rs"]
+mod caller_geometry;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub(super) use session::CheckedEntry;
 #[cfg(feature = "canonical-native-program-host-runtime")]

@@ -27,6 +27,13 @@ pub(super) struct Builder {
     accepted: u64,
     parked: bool,
 }
+impl Builder {
+    pub(super) fn caller_retained_nodes(&self) -> u64 {
+        // String backing and fixed owner metadata, plus an optional byte-map
+        // table, output backing and transferred source owner. No per-byte nodes.
+        4 + 4 * u64::from(self.compiled_map.is_some())
+    }
+}
 fn sink(descriptor: &NativeProgramDescriptor, id: u32) -> Result<&NativeTextJoinSink, Error> {
     match descriptor
         .plan

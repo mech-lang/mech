@@ -25,6 +25,13 @@ pub(super) struct Builder {
     pub(super) comparison: u64,
     phase: Option<Phase>,
 }
+impl Builder {
+    pub(super) fn caller_retained_nodes(&self) -> Result<u64, Error> {
+        // The captured query is also covered by the snapshot census. Keep a
+        // conservative bound for private phase/scalar state without a scan.
+        add(self.scalar_nodes, 2)
+    }
+}
 
 fn sink(
     descriptor: &NativeProgramDescriptor,
