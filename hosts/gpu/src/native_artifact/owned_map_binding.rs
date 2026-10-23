@@ -550,6 +550,15 @@ impl<'plan> Binding<'plan> {
     /// compiler's linear-use proof excludes any observer of an intermediate
     /// version, so its private token stays stable until canonical publication.
     /// This is still generic storage: the generated caller supplies the value.
+    pub(super) fn native_seed_is_empty(&self) -> Result<bool, Error> {
+        Ok(self.current(self.token)?.len() == 0)
+    }
+    pub(super) fn install_native_map(&mut self, map: OwnedStringMap) -> Result<(), Error> {
+        if !self.native_seed_is_empty()? { return Err(Error::Binding("packed map replaced nonempty seed")); }
+        self.map = Some(map);
+        self.native_version = self.native_version.checked_add(1).ok_or(Error::Overflow)?;
+        Ok(())
+    }
     fn native_lookup(&self, key: &str, probe: &mut Option<NativeProbe>) -> Result<Option<u64>, Error> {
         let map = self.current(self.token)?;
         if let Some(cached) = probe.as_ref().filter(|cached|

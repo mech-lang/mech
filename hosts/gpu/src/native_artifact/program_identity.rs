@@ -78,7 +78,8 @@ fn selected_template(
 // IR34 pins acyclic native path frontiers and fused map-helper admission.
 // IR35 binds a private storage pair and pinned String to closed map Tail bodies.
 // IR36 admits a closed map Tail within an ordinary suspended parent loop.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 36;
+// IR37 carries an invariant-width proof for generated private map storage.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 37;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -191,7 +192,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 36;
 // closed loop. Full lookup debits remain; every write invalidates the proof.
 // Policy57 fuses a selected adjacent range/String projection in a closed map
 // body. Both original visits, range charges and diagnostic origins remain.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 57;
+// Policy58 prepays bounded packed-map bodies and growth deltas on the same
+// finite account. Generated probes/stores retain every source operation.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 58;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

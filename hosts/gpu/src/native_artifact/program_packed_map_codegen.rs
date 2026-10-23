@@ -1,0 +1,261 @@
+//! Generated storage operations over an invocation-owned explicit table layout.
+//! Source control flow and replacement arithmetic remain in the original CFG.
+use super::super::{NativeCompileError, compiler::offset, program_hooks::Hooks,
+    program_packed_map::{Frame, Slot}};
+use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
+use cranelift_frontend::FunctionBuilder;
+
+fn get(b: &mut FunctionBuilder<'_>, frame: Value, at: usize) -> Value {
+    b.ins().load(types::I64, MemFlags::new(), frame, at as i32)
+}
+fn put(b: &mut FunctionBuilder<'_>, frame: Value, at: usize, value: Value) {
+    b.ins().store(MemFlags::new(), value, frame, at as i32);
+}
+macro_rules! read {
+    ($b:expr, $f:expr, $field:ident) => { get($b, $f, core::mem::offset_of!(Frame, $field)) };
+}
+macro_rules! write {
+    ($b:expr, $f:expr, $field:ident, $v:expr) => { put($b, $f, core::mem::offset_of!(Frame, $field), $v) };
+}
+
+fn fail(b: &mut FunctionBuilder<'_>, hooks: &Hooks, function: Value, context: Value,
+    site: usize, op: u64, error: Block)
+{
+    let zero = b.ins().iconst(types::I64, 0);
+    hooks.bound_call(b, function, context, site, op, [zero; 3], error);
+    // The private failure operation always returns an error. Keep malformed
+    // host behavior from resuming an unchecked native memory operation.
+    super::super::compiler::guard(b, zero, error, super::super::abi::STATUS_ABI);
+}
+
+// A batch prepays root work, but an individual call limit applies only when
+// the source reaches that call. The owner refreshes these flags on growth;
+// ordinary calls need only this branch, with diagnostics on the failure path.
+fn check_call(b: &mut FunctionBuilder<'_>, allowed: Value, hooks: &Hooks,
+    function: Value, context: Value, site: usize, op: u64, error: Block)
+{
+    let accepted = b.create_block();
+    let denied = b.create_block();
+    b.ins().brif(allowed, accepted, &[], denied, &[]);
+    b.switch_to_block(denied);
+    fail(b, hooks, function, context, site, op, error);
+    b.ins().jump(accepted, &[]);
+    b.switch_to_block(accepted);
+}
+
+pub(super) fn select(b: &mut FunctionBuilder<'_>, frame: Value, start: Value, end: Value,
+    hooks: &Hooks, function: Value, context: Value, site: usize, error: Block)
+{
+    let allowed = read!(b, frame, range_call_allowed);
+    check_call(b, allowed, hooks, function, context, site, 10, error);
+    let zero = b.ins().iconst(types::I64, 0);
+    let width = read!(b, frame, width);
+    let source = read!(b, frame, source_ptr);
+    let length = read!(b, frame, source_len);
+    let begin = b.ins().iadd_imm(start, -1);
+    let (finish, overflow) = b.ins().uadd_overflow(begin, width);
+    let positive = b.ins().icmp_imm(IntCC::UnsignedGreaterThan, start, 0);
+    let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, finish, length);
+    let no_overflow = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+    let valid = b.ins().band(positive, fits);
+    let valid = b.ins().band(valid, no_overflow);
+    let checked = b.create_block();
+    let bad = b.create_block();
+    b.ins().brif(valid, checked, &[], bad, &[]);
+    b.switch_to_block(bad);
+    // Delegate only failure formatting to the maintained range/selection,
+    // retaining its original origin and precise semantic error.
+    hooks.bound_call(b, function, context, site, 6, [start, end, zero], error);
+    fail(b, hooks, function, context, site, 9, error);
+    b.ins().jump(checked, &[]);
+    b.switch_to_block(checked);
+    let previous = read!(b, frame, previous_start);
+    let next = b.ins().iadd_imm(previous, 1);
+    let adjacent = b.ins().icmp(IntCC::Equal, begin, next);
+    let initialized = b.ins().icmp_imm(IntCC::NotEqual, previous, -1);
+    let rolling = b.ins().band(adjacent, initialized);
+    let reuse = b.create_block();
+    let fresh = b.create_block();
+    let loop_head = b.create_block();
+    let loop_body = b.create_block();
+    let done = b.create_block();
+    for _ in 0..3 { b.append_block_param(loop_head, types::I64); }
+    for _ in 0..2 { b.append_block_param(done, types::I64); }
+    b.ins().brif(rolling, reuse, &[], fresh, &[]);
+    b.switch_to_block(reuse);
+    let old_low = read!(b, frame, key_low);
+    let old_high = read!(b, frame, key_high);
+    let last = b.ins().iadd_imm(finish, -1);
+    let address = b.ins().iadd(source, last);
+    let byte = b.ins().load(types::I8, MemFlags::new(), address, 0);
+    let byte = b.ins().uextend(types::I64, byte);
+    let low = b.ins().ishl_imm(old_low, 7);
+    let low = b.ins().bor(low, byte);
+    let carry = b.ins().ushr_imm(old_low, 57);
+    let high = b.ins().ishl_imm(old_high, 7);
+    let high = b.ins().bor(high, carry);
+    let low_mask = read!(b, frame, low_mask);
+    let high_mask = read!(b, frame, high_mask);
+    let low = b.ins().band(low, low_mask);
+    let high = b.ins().band(high, high_mask);
+    b.ins().jump(done, &[low.into(), high.into()]);
+    b.switch_to_block(fresh);
+    b.ins().jump(loop_head, &[zero.into(), zero.into(), zero.into()]);
+    b.switch_to_block(loop_head);
+    let args = b.block_params(loop_head).to_vec();
+    let (index, low, high) = (args[0], args[1], args[2]);
+    let more = b.ins().icmp(IntCC::UnsignedLessThan, index, width);
+    b.ins().brif(more, loop_body, &[], done, &[low.into(), high.into()]);
+    b.switch_to_block(loop_body);
+    let position = b.ins().iadd(begin, index);
+    let address = b.ins().iadd(source, position);
+    let byte = b.ins().load(types::I8, MemFlags::new(), address, 0);
+    let byte = b.ins().uextend(types::I64, byte);
+    let carry = b.ins().ushr_imm(low, 57);
+    let next_low = b.ins().ishl_imm(low, 7);
+    let next_low = b.ins().bor(next_low, byte);
+    let next_high = b.ins().ishl_imm(high, 7);
+    let next_high = b.ins().bor(next_high, carry);
+    let index = b.ins().iadd_imm(index, 1);
+    b.ins().jump(loop_head, &[index.into(), next_low.into(), next_high.into()]);
+    b.switch_to_block(done);
+    let keys = b.block_params(done).to_vec();
+    write!(b, frame, key_low, keys[0]);
+    write!(b, frame, key_high, keys[1]);
+    write!(b, frame, previous_start, begin);
+    write!(b, frame, entry_known, zero);
+    write!(b, frame, entry_pointer, zero);
+}
+
+fn probe(b: &mut FunctionBuilder<'_>, frame: Value, hooks: &Hooks,
+    function: Value, context: Value, site: usize, error: Block) -> Value
+{
+    let zero = b.ins().iconst(types::I64, 0);
+    let one = b.ins().iconst(types::I64, 1);
+    let known = read!(b, frame, entry_known);
+    let known = b.ins().icmp_imm(IntCC::NotEqual, known, 0);
+    let cached = b.create_block();
+    let initial = b.create_block();
+    let setup = b.create_block();
+    let head = b.create_block();
+    let occupied = b.create_block();
+    let advance = b.create_block();
+    let found = b.create_block();
+    let absent = b.create_block();
+    let bad = b.create_block();
+    let done = b.create_block();
+    b.append_block_param(head, types::I64);
+    b.append_block_param(head, types::I64);
+    b.append_block_param(found, types::I64);
+    b.append_block_param(done, types::I64);
+    b.ins().brif(known, cached, &[], initial, &[]);
+    b.switch_to_block(cached);
+    let entry = read!(b, frame, entry_pointer);
+    b.ins().jump(done, &[entry.into()]);
+    b.switch_to_block(initial);
+    let capacity = read!(b, frame, capacity);
+    let nonempty = b.ins().icmp_imm(IntCC::NotEqual, capacity, 0);
+    b.ins().brif(nonempty, setup, &[], absent, &[]);
+    b.switch_to_block(setup);
+    let low = read!(b, frame, key_low);
+    let high = read!(b, frame, key_high);
+    let rotated = b.ins().rotl_imm(high, 29);
+    let hash = b.ins().bxor(low, rotated);
+    let shifted = b.ins().ushr_imm(hash, 30);
+    let hash = b.ins().bxor(hash, shifted);
+    let hash = b.ins().imul_imm(hash, 0xbf58476d1ce4e5b9u64 as i64);
+    let shifted = b.ins().ushr_imm(hash, 27);
+    let hash = b.ins().bxor(hash, shifted);
+    let hash = b.ins().imul_imm(hash, 0x94d049bb133111ebu64 as i64);
+    let shifted = b.ins().ushr_imm(hash, 31);
+    let hash = b.ins().bxor(hash, shifted);
+    let mask = b.ins().iadd_imm(capacity, -1);
+    let index = b.ins().band(hash, mask);
+    let slots = read!(b, frame, slots);
+    b.ins().jump(head, &[index.into(), zero.into()]);
+    b.switch_to_block(head);
+    let args = b.block_params(head).to_vec();
+    let (index, inspected) = (args[0], args[1]);
+    let address = b.ins().imul_imm(index, core::mem::size_of::<Slot>() as i64);
+    let address = b.ins().iadd(slots, address);
+    let live = get(b, address, core::mem::offset_of!(Slot, occupied));
+    b.ins().brif(live, occupied, &[], absent, &[]);
+    b.switch_to_block(occupied);
+    let stored_low = get(b, address, core::mem::offset_of!(Slot, low));
+    let stored_high = get(b, address, core::mem::offset_of!(Slot, high));
+    let same_low = b.ins().icmp(IntCC::Equal, low, stored_low);
+    let same_high = b.ins().icmp(IntCC::Equal, high, stored_high);
+    let same = b.ins().band(same_low, same_high);
+    b.ins().brif(same, found, &[address.into()], advance, &[]);
+    b.switch_to_block(advance);
+    let inspected = b.ins().iadd_imm(inspected, 1);
+    let bounded = b.ins().icmp(IntCC::UnsignedLessThan, inspected, capacity);
+    let index = b.ins().iadd_imm(index, 1);
+    let index = b.ins().band(index, mask);
+    b.ins().brif(bounded, head, &[index.into(), inspected.into()], bad, &[]);
+    b.switch_to_block(bad);
+    fail(b, hooks, function, context, site, 9, error);
+    b.ins().jump(absent, &[]);
+    b.switch_to_block(absent);
+    write!(b, frame, entry_pointer, zero);
+    write!(b, frame, entry_known, one);
+    b.ins().jump(done, &[zero.into()]);
+    b.switch_to_block(found);
+    let entry = b.block_params(found)[0];
+    write!(b, frame, entry_pointer, entry);
+    write!(b, frame, entry_known, one);
+    b.ins().jump(done, &[entry.into()]);
+    b.switch_to_block(done);
+    b.block_params(done)[0]
+}
+
+pub(super) fn operation(b: &mut FunctionBuilder<'_>, frame: Value, op: u64, replacement: Value,
+    locals: Value, output: usize, token: Value, hooks: &Hooks, function: Value,
+    context: Value, site: usize, error: Block) -> Result<(), NativeCompileError>
+{
+    let allowed = if op == 5 { read!(b, frame, write_call_allowed) }
+        else { read!(b, frame, read_call_allowed) };
+    check_call(b, allowed, hooks, function, context, site, if op == 5 { 12 } else { 11 }, error);
+    let entry = probe(b, frame, hooks, function, context, site, error);
+    let present = b.ins().icmp_imm(IntCC::NotEqual, entry, 0);
+    let value = if op == 3 {
+        b.ins().uextend(types::I64, present)
+    } else {
+        let hit = b.create_block();
+        let miss = b.create_block();
+        let done = b.create_block();
+        b.append_block_param(done, types::I64);
+        b.ins().brif(present, hit, &[], miss, &[]);
+        b.switch_to_block(miss);
+        if op == 4 {
+            fail(b, hooks, function, context, site, 8, error);
+        } else {
+            let zero = b.ins().iconst(types::I64, 0);
+            hooks.bound_call(b, function, context, site, 7, [zero, zero, replacement], error);
+        }
+        b.ins().jump(done, &[token.into()]);
+        b.switch_to_block(hit);
+        let value = if op == 4 {
+            get(b, entry, core::mem::offset_of!(Slot, value))
+        } else {
+            let updates = read!(b, frame, updates);
+            let fits = b.ins().icmp_imm(IntCC::NotEqual, updates, -1);
+            let accepted = b.create_block();
+            let bad = b.create_block();
+            b.ins().brif(fits, accepted, &[], bad, &[]);
+            b.switch_to_block(bad);
+            fail(b, hooks, function, context, site, 9, error);
+            b.ins().jump(accepted, &[]);
+            b.switch_to_block(accepted);
+            put(b, entry, core::mem::offset_of!(Slot, value), replacement);
+            let updates = b.ins().iadd_imm(updates, 1);
+            write!(b, frame, updates, updates);
+            token
+        };
+        b.ins().jump(done, &[value.into()]);
+        b.switch_to_block(done);
+        b.block_params(done)[0]
+    };
+    b.ins().store(MemFlags::new(), value, locals, offset(output)?);
+    Ok(())
+}

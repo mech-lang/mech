@@ -356,6 +356,8 @@ fn run() -> Result<(), String> {
             "native_transport_bytes": native.transport_bytes,
             "native_hash_table_regions": native.hash_table_regions,
             "native_hash_table_updates": native.hash_table_updates,
+            "native_packed_map_regions": native.packed_map_regions,
+            "native_packed_map_updates": native.packed_map_updates,
             "host_result_carrier_bytes": carrier_bytes,
             "input_acquisition_byte_cap": launch.input_text_bytes,
             "payload_argument_snapshot_reserved_bytes": payload_arguments._reservation.capacity_bytes(),

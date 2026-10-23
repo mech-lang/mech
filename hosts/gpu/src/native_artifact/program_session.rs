@@ -353,6 +353,8 @@ struct OwnedState<'a> {
     visits: u64,
     hash_table_regions: u64,
     hash_table_updates: u64,
+    packed_map_regions: u64,
+    packed_map_updates: u64,
     consumed: bool,
     output_cursor: usize,
 }
@@ -560,6 +562,8 @@ impl<'a> Prepared<'a> {
                 visits: 0,
                 hash_table_regions: 0,
                 hash_table_updates: 0,
+                packed_map_regions: 0,
+                packed_map_updates: 0,
                 consumed: false,
                 output_cursor: 0,
             }),
@@ -706,6 +710,8 @@ impl<'a> Prepared<'a> {
             transport_bytes: self.bytes,
             hash_table_regions: state.hash_table_regions,
             hash_table_updates: state.hash_table_updates,
+            packed_map_regions: state.packed_map_regions,
+            packed_map_updates: state.packed_map_updates,
         })
     }
 
@@ -951,6 +957,8 @@ impl<'a> Prepared<'a> {
             activation_phase: phase == PHASE_ACTIVATION,
             hash_table_regions: state.hash_table_regions,
             hash_table_updates: state.hash_table_updates,
+            packed_map_regions: state.packed_map_regions,
+            packed_map_updates: state.packed_map_updates,
             window_region: None,
             window_hashes: None,
             borrowed_strings: None,
@@ -1130,6 +1138,8 @@ impl<'a> Prepared<'a> {
             visits: context.control.visits,
             hash_table_regions: context.hash_table_regions,
             hash_table_updates: context.hash_table_updates,
+            packed_map_regions: context.packed_map_regions,
+            packed_map_updates: context.packed_map_updates,
             consumed: context.consumed,
             output_cursor: context.output_cursor,
         });

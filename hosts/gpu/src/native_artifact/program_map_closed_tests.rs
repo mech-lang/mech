@@ -5,10 +5,10 @@ use crate::native_artifact::program_abi::{CLOSED_TAIL_BEGIN, CLOSED_TAIL_END,
 use std::cell::{Cell, RefCell};
 
 #[derive(Clone, Copy, PartialEq)]
-enum Mode { Native, Decline, OneShort, Renew }
+enum Mode { Native, Decline, OneShort, Renew, TightCall }
 #[derive(Default, Debug)]
 struct Observation {
-    entries: u64, guarded: u64, rejected: u64, errors: Vec<&'static str>, bound: [u64; 7],
+    entries: u64, packed: u64, guarded: u64, rejected: u64, errors: Vec<&'static str>, bound: [u64; 10],
 }
 thread_local! {
     static MODE: Cell<Mode> = const { Cell::new(Mode::Native) };
@@ -18,6 +18,7 @@ fn note(f: impl FnOnce(&mut Observation)) { OBS.with(|v| f(&mut v.borrow_mut()))
 pub(super) fn record_bound_call(op: u64) {
     note(|r| if let Some(count) = r.bound.get_mut(op as usize) { *count += 1; });
 }
+pub(super) fn record_packed_entry() { note(|r| r.packed += 1); }
 unsafe extern "C" fn observe(raw: *mut c_void, site: u64, op: u64,
     first: u64, second: u64, third: u64, result: *mut u64) -> u64
 {
@@ -26,6 +27,7 @@ unsafe extern "C" fn observe(raw: *mut c_void, site: u64, op: u64,
     let old = ctx.limits;
     let mode = MODE.with(Cell::get);
     if op == CLOSED_TAIL_BEGIN && mode == Mode::Decline { ctx.limits.max_temporary_bytes = Some(0); }
+    if op == CLOSED_TAIL_BEGIN && mode == Mode::TightCall { ctx.limits.max_comparison_work = Some(0); }
     if matches!(op, MAP_OWNER_CALL | MAP_OWNER_SPAN) { note(|r| r.guarded += 1); }
     let first = if op == CLOSED_TAIL_END && mode == Mode::Renew { u64::MAX } else { first };
     // SAFETY: unchanged maintained helper and its exact result lane.
@@ -99,12 +101,18 @@ fn closed_map_binds_source_once_rejects_reentry_and_keeps_finite_fuel() {
                     }).collect::<Vec<_>>();
                     assert_eq!(pairs, vec![(":a".into(), 14), ("ab".into(), 21), ("b:".into(), 14)]);
                     if mode == Mode::Native {
+                        assert_eq!((report.packed_map_regions, report.packed_map_updates), (1, 7));
                         assert_eq!((observed.entries, observed.guarded, observed.rejected), (1, 0, 2));
-                        // Every source window runs the fused range/projection,
-                        // with no separate range or projection callback.
-                        assert_eq!((observed.bound[1], observed.bound[2], observed.bound[6]), (0, 0, 7));
+                        // Existing keys run entirely in generated code; only
+                        // the three distinct keys require storage insertion.
+                        assert_eq!(observed.packed, 1);
+                        assert_eq!(&observed.bound[1..7], &[0; 6]);
+                        assert_eq!(observed.bound[7], 3);
                     }
-                    else { assert_eq!(observed.entries, 0); assert!(observed.guarded > 7); }
+                    else {
+                        assert_eq!((report.packed_map_regions, report.packed_map_updates), (0, 0));
+                        assert_eq!(observed.entries, 0); assert!(observed.guarded > 7);
+                    }
                     visits.push(report.visits);
                 }
                 drop(output);
@@ -196,7 +204,8 @@ fn closed_map_rechecks_changed_widths_and_current_string_bounds() {
                 let observed = OBS.with(|v| core::mem::take(&mut *v.borrow_mut()));
                 assert!(observed.errors.is_empty(), "{observed:?}");
                 assert_eq!((observed.entries, observed.guarded), (1, 0));
-                assert_eq!((observed.bound[1], observed.bound[2], observed.bound[6]), (0, 0, 3));
+                assert_eq!((observed.bound[1], observed.bound[2]), (0, 0));
+                assert_eq!((observed.packed, observed.bound[6]), if invalid { (1, 1) } else { (0, 3) });
                 if invalid {
                     let selection = descriptor.map_owner_words.as_ref().unwrap().spans()[0].selection_site();
                     let expected_origin = descriptor.plan.blocks()[selection as usize].origin();
@@ -263,13 +272,131 @@ fn closed_map_reuses_only_current_lookup_and_keeps_zero_values_and_growth() {
                 assert_eq!((observed.entries, observed.guarded), (1, 0));
                 assert_eq!((report.hash_table_regions, report.hash_table_updates), (1, text.len() as u64));
                 let probes = crate::native_artifact::owned_map_binding::take_native_probe_counts();
-                assert_eq!(probes, ((2 * text.len() - expected.len()) as u64, text.len() as u64));
+                if observed.packed == 1 {
+                    assert_eq!(probes, (0, 0));
+                    assert_eq!(&observed.bound[1..7], &[0; 6]);
+                    assert_eq!(observed.bound[7], expected.len() as u64);
+                } else {
+                    assert_eq!(probes, ((2 * text.len() - expected.len()) as u64, text.len() as u64));
+                }
                 let ValueData::Map(map) = output[0].as_ref().unwrap().data() else { panic!("map"); };
                 let actual = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
                     (ValueData::String(key), ValueData::U64(value)) => (key.to_string(), *value),
                     _ => panic!("String/U64 map"),
                 }).collect::<std::collections::BTreeMap<_, _>>();
                 assert_eq!(actual, expected);
+                drop(output);
+                assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+            }
+        }
+    }
+}
+
+#[test]
+fn packed_map_transports_computed_and_copied_invariant_offsets() {
+    for width in ["computed", "copied"] {
+        let source = format!("{}\ncomputed := seed<u64> + 1u64\ncopied := computed\n#Count(\"ababab\", {width}, 6u64, empty)\n",
+            structural_projection_tests::COUNT);
+        let original = tests::artifact_source(&source);
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+        for artifact in [original, decoded] {
+            let catalog = mech_stdlib::source_catalog();
+            let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let image = jit.descriptor().encode_build_owned_image().unwrap();
+            // SAFETY: the restored descriptor shares this retained generated entry.
+            let restored = unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
+            for descriptor in [jit.descriptor(), &restored] {
+                let proof = descriptor.closed_tails.regions.iter().find_map(|region| region.packed.as_ref()).unwrap();
+                let end = proof.end_offset().expect("computed invariant offset");
+                assert!(descriptor.plan.blocks().iter().any(|block| matches!(block.action(),
+                    NativeIterationAction::Scalar(NativeMatchAction::Primitive { output, .. }
+                        | NativeMatchAction::Copy { output, .. }) if output.get() == end)));
+                for seed in [0u64, 1] {
+                    MODE.with(|v| v.set(Mode::Native));
+                    OBS.with(|v| *v.borrow_mut() = Observation::default());
+                    let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                    assert_eq!(artifact.inputs().len(), 1);
+                    let value = ValueDraft { schema: artifact.inputs()[0].schema,
+                        shape_values: Box::new([]), data: ValueDataDraft::U64(seed) }
+                        .finalize(&SnapshotValidationContext::new(artifact.schemas())).unwrap();
+                    let mut reservation = memory.reserve_capacity(
+                        value.memory_budget_admission_bytes(&memory).unwrap()).unwrap();
+                    let inputs = [value.into_memory_budget(&mut reservation).unwrap()];
+                    drop(reservation);
+                    let mut output = vec![None];
+                    let entry = jit.test_checked_entry();
+                    let report = execute(descriptor, |frame| {
+                        // SAFETY: observe only this synchronous owned entry.
+                        let old = unsafe { (*frame).helper };
+                        unsafe { (*frame).helper = observe; }
+                        let status = unsafe { entry(frame) };
+                        unsafe { (*frame).helper = old; }
+                        status
+                    }, &inputs, &mut output, tests::limits(), &memory).unwrap();
+                    let observed = OBS.with(|v| core::mem::take(&mut *v.borrow_mut()));
+                    assert!(observed.errors.is_empty(), "{observed:?}");
+                    assert_eq!((observed.entries, observed.packed, observed.guarded), (1, 1, 0));
+                    assert_eq!((report.hash_table_regions, report.hash_table_updates), (1, 6 - seed));
+                    let mut expected = std::collections::BTreeMap::new();
+                    for key in b"ababab".windows(seed as usize + 1) {
+                        *expected.entry(std::str::from_utf8(key).unwrap().to_owned()).or_insert(0u64) += 1;
+                    }
+                    let ValueData::Map(map) = output[0].as_ref().unwrap().data() else { panic!("map"); };
+                    let actual = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
+                        (ValueData::String(key), ValueData::U64(value)) => (key.to_string(), *value),
+                        _ => panic!("String/U64 map"),
+                    }).collect::<std::collections::BTreeMap<_, _>>();
+                    assert_eq!(actual, expected);
+                    drop((inputs, output));
+                    assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn packed_map_checks_call_caps_only_for_executed_operations() {
+    for n in [0u64, 1] {
+        let source = format!("{}\n#Count(\"a\", 1u64, {n}u64, empty)\n",
+            structural_projection_tests::COUNT);
+        let original = tests::artifact_source(&source);
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+        for artifact in [original, decoded] {
+            let catalog = mech_stdlib::source_catalog();
+            let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let image = jit.descriptor().encode_build_owned_image().unwrap();
+            // SAFETY: retain the exact compilation and generated entry.
+            let restored = unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
+            for descriptor in [jit.descriptor(), &restored] {
+                MODE.with(|v| v.set(Mode::TightCall));
+                OBS.with(|v| *v.borrow_mut() = Observation::default());
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let mut output = vec![None];
+                let entry = jit.test_checked_entry();
+                let outcome = execute(descriptor, |frame| {
+                    // SAFETY: restrict only the captured per-call cap while
+                    // this synchronous owner is created; root limits stay fixed.
+                    let old = unsafe { (*frame).helper };
+                    unsafe { (*frame).helper = observe; }
+                    let status = unsafe { entry(frame) };
+                    unsafe { (*frame).helper = old; }
+                    status
+                }, &[], &mut output, tests::limits(), &memory);
+                let observed = OBS.with(|v| core::mem::take(&mut *v.borrow_mut()));
+                assert!(observed.errors.is_empty(), "{observed:?}");
+                assert_eq!((observed.entries, observed.packed, observed.guarded), (1, 1, 0));
+                assert_eq!(observed.bound[7], 0, "a denied read cannot reach insertion");
+                if n == 0 {
+                    let report = outcome.unwrap();
+                    assert_eq!(report.hash_table_updates, 0);
+                    assert!(matches!(output[0].as_ref().unwrap().data(), ValueData::Map(map) if map.entries().is_empty()));
+                } else {
+                    assert!(outcome.is_err());
+                    assert!(output.iter().all(Option::is_none));
+                }
                 drop(output);
                 assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
             }
