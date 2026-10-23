@@ -11,6 +11,7 @@ use mech_core::{IntegerWidth, SchemaBody as Schema};
 
 #[derive(Clone, Debug)]
 pub struct NativeMapOwnerRegion {
+    revision: mech_core::ProgramRevision,
     iteration: u32,
     tail: NativeTailLoop,
     values: Box<[Value]>,
@@ -18,6 +19,9 @@ pub struct NativeMapOwnerRegion {
     reads: Box<[u32]>,
 }
 impl NativeMapOwnerRegion {
+    pub const fn program_revision(&self) -> mech_core::ProgramRevision {
+        self.revision
+    }
     pub const fn iteration(&self) -> u32 {
         self.iteration
     }
@@ -306,6 +310,7 @@ fn select(
         return None;
     }
     Some(NativeMapOwnerRegion {
+        revision: plan.program_revision(),
         iteration,
         tail: tail.clone(),
         values: known

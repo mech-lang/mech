@@ -25,6 +25,7 @@ pub(super) enum Error {
     Overflow,
     Allocation,
     Publication(&'static str),
+    Binding(&'static str),
 }
 impl std::fmt::Display for Error {
     fn fmt(&self, out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -39,6 +40,7 @@ impl std::fmt::Display for Error {
             Self::Overflow => out.write_str("owned map size arithmetic overflow"),
             Self::Allocation => out.write_str("owned map allocation failed"),
             Self::Publication(reason) => write!(out, "owned map publication: {reason}"),
+            Self::Binding(reason) => write!(out, "owned map binding: {reason}"),
         }
     }
 }
@@ -142,6 +144,12 @@ impl<S: BuildHasher> OwnedStringMap<S> {
     }
     pub(super) fn capacity(&self) -> usize {
         self.values.capacity()
+    }
+    pub(super) fn key_bytes(&self) -> u64 {
+        self.keys.capacity_bytes()
+    }
+    pub(super) fn set_limits(&mut self, limits: Limits) {
+        self.limits = limits;
     }
     pub(super) fn retained_bytes(&self) -> Result<u64, Error> {
         add(
