@@ -28,7 +28,7 @@ pub(crate) mod payload;
 #[path = "native_worker_budget.rs"]
 mod workers;
 #[cfg(feature = "native-artifact")]
-pub use workers::{NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerWorkLoan};
+pub use workers::{NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerWorkLoan};
 
 #[derive(Default)]
 struct DisplayByteCounter(usize);
@@ -675,7 +675,7 @@ impl Drop for ControlWorkScopeGuard {
     }
 }
 
-fn checked_control_account_work(
+fn checked_local_control_account_work(
     account: &ControlWorkAccount,
     compute: u64,
     comparison: u64,
@@ -713,14 +713,23 @@ fn checked_control_account_work(
             });
         }
     }
-    #[cfg(feature = "native-artifact")]
-    if let Some(worker) = &account.worker {
-        worker.preview(compute - account.used.compute, comparison - account.used.comparison)?;
-    }
     Ok(ControlWork {
         compute,
         comparison,
     })
+}
+
+fn checked_control_account_work(
+    account: &ControlWorkAccount,
+    compute: u64,
+    comparison: u64,
+) -> Result<ControlWork, ResidentKernelError> {
+    let next = checked_local_control_account_work(account, compute, comparison)?;
+    #[cfg(feature = "native-artifact")]
+    if let Some(worker) = &account.worker {
+        worker.preview(compute, comparison)?;
+    }
+    Ok(next)
 }
 
 fn charge_control_account(
@@ -728,7 +737,9 @@ fn charge_control_account(
     compute: u64,
     comparison: u64,
 ) -> Result<(), ResidentKernelError> {
-    let next = checked_control_account_work(account, compute, comparison)?;
+    // A real debit checks and commits both shared dimensions under one lock.
+    // Eligibility-only callers retain the separate, non-spending preview.
+    let next = checked_local_control_account_work(account, compute, comparison)?;
     #[cfg(feature = "native-artifact")]
     if let Some(worker) = &account.worker {
         // Local call caps were checked first. Both shared dimensions commit
