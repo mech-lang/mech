@@ -101,7 +101,7 @@ fn words_for(code: CodePlan<'_>, closed: &Layout, id: usize,
             }
         }
         match block.terminator() {
-            Term::TailHeader { .. } | Term::Scalar(Branch::Jump(_)) => {}
+            Term::TailHeader { .. } | Term::Scalar(Branch::Jump(_) | Branch::Reject) => {}
             Term::Scalar(Branch::Branch { condition, .. }) => { words.insert(condition.get() as usize); }
             Term::Scalar(Branch::LiteralBranch { left, right, .. }) => {
                 code.kind(left)?;
@@ -310,6 +310,12 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
                     b.ins().fcmp(FloatCC::Equal, left, right)
                 } else { b.ins().icmp(IntCC::Equal, left, right) };
                 b.ins().brif(equal, target(yes), &[], target(no), &[]);
+            }
+            Term::Scalar(Branch::Reject) => {
+                // Exhaustive source matches retain their fail-closed default
+                // arm. Preserve its origin and unwind the owned frame/fuel.
+                let status = b.ins().iconst(types::I64, super::super::control_abi::STATUS_REJECT as i64);
+                b.ins().jump(failed, &[status.into()]);
             }
             _ => unreachable!("checked packed SSA terminator"),
         }
