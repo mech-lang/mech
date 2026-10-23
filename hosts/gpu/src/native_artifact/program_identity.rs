@@ -77,7 +77,8 @@ fn selected_template(
 // IR33 pins single-entry native owner groups and precise interior error origins.
 // IR34 pins acyclic native path frontiers and fused map-helper admission.
 // IR35 binds a private storage pair and pinned String to closed map Tail bodies.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 35;
+// IR36 admits a closed map Tail within an ordinary suspended parent loop.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 36;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

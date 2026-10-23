@@ -104,3 +104,49 @@ fn closed_map_binds_source_once_rejects_reentry_and_keeps_finite_fuel() {
         }
     }
 }
+
+#[test]
+fn closed_map_inside_comprehension_rebinds_each_invocation() {
+    let source = format!(r#"{}
++> number
++> text
+count-text(n<u64>) => (output<string>) :=
+  h := #Count("ab:ab:ab", 1u64, n, empty)
+  output := number/format(h{{"a"}}, 0u64).
+text/join([count-text(n) | n <- [4u64 8u64]], "")
+"#, structural_projection_tests::COUNT);
+    let original = tests::artifact_source(&source);
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+    for artifact in [original, decoded] {
+        let catalog = mech_stdlib::source_catalog();
+        let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        assert!(jit.descriptor().closed_tails.regions.iter()
+            .any(|region| region.map.is_some() && region.tail.parent().is_some()));
+        let image = jit.descriptor().encode_build_owned_image().unwrap();
+        // SAFETY: retain exact compilation provenance for this restored image.
+        let restored = unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
+        for descriptor in [jit.descriptor(), &restored] {
+            MODE.with(|v| v.set(Mode::Native));
+            OBS.with(|v| *v.borrow_mut() = Observation::default());
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let mut output = vec![None];
+            let entry = jit.test_checked_entry();
+            let report = execute(descriptor, |frame| {
+                // SAFETY: observe the actual synchronous entry and restore its frame.
+                let old = unsafe { (*frame).helper };
+                unsafe { (*frame).helper = observe; }
+                let status = unsafe { entry(frame) };
+                unsafe { (*frame).helper = old; }
+                status
+            }, &[], &mut output, tests::limits(), &memory).unwrap();
+            assert_eq!((report.hash_table_regions, report.hash_table_updates), (2, 12));
+            assert!(matches!(output[0].as_ref().unwrap().data(), ValueData::String(s) if s.as_ref() == "23"));
+            let observed = OBS.with(|v| core::mem::take(&mut *v.borrow_mut()));
+            assert!(observed.errors.is_empty(), "{observed:?}");
+            assert_eq!((observed.entries, observed.guarded, observed.rejected), (2, 0, 4));
+            drop(output);
+            assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+        }
+    }
+}
