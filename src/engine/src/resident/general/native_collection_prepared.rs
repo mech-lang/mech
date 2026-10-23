@@ -306,6 +306,15 @@ impl NativePreparedLibraryCall {
     /// invocation account before this schema/shape traversal or allocation.
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     pub fn selected_u64_range_cardinality(&self, start: u64, end: u64) -> Result<u64, InvokeError> {
+        let count = self.selected_u64_range_count(start, end)?;
+        self.validate_selected_u64_range_shape(count)?;
+        Ok(count)
+    }
+
+    // Endpoint arithmetic remains fresh even when a constructor-private
+    // selector carries an already checked shape for the same cardinality.
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    fn selected_u64_range_count(&self, start: u64, end: u64) -> Result<u64, InvokeError> {
         use crate::native_artifact::NativeCollectionPrimitive as Primitive;
         use mech_core::{IntegerWidth, SchemaBody, snapshot::ValueDataDraft};
         let inclusive = match self.template.primitive() {
@@ -332,8 +341,12 @@ impl NativePreparedLibraryCall {
         .ok_or(InvokeError::Kernel(
             mech_core::ResidentKernelError::InvalidInput,
         ))?;
-        let count = u64::try_from(count)
-            .map_err(|_| InvokeError::Kernel(mech_core::ResidentKernelError::InvalidShape))?;
+        u64::try_from(count)
+            .map_err(|_| InvokeError::Kernel(mech_core::ResidentKernelError::InvalidShape))
+    }
+
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    fn validate_selected_u64_range_shape(&self, count: u64) -> Result<(), InvokeError> {
         // Exactly the ordinary range's shape resolver, including parameter
         // bounds and fixed cardinality constraints. Never silently retag it.
         mech_core::shape_for_resolved_extents(self.template.output(), &[1, count])
@@ -341,7 +354,7 @@ impl NativePreparedLibraryCall {
         // Preserve the ordinary materializing range's physical Layout bound
         // even when the certified source strategy never constructs its Matrix.
         crate::resident::numeric::canonical_u64_range_selector_representation(count)?;
-        Ok(count)
+        Ok(())
     }
 
     /// Maintained TextJoin mechanics after a constructor-private composed

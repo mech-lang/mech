@@ -38,6 +38,16 @@ fn compact(
     end: u64,
     work: &NativeLibraryWorkBudget,
 ) -> Result<NativeSelectedStringSpanSelector, InvokeError> {
+    compact_reusing(range, start, end, work, None)
+}
+
+fn compact_reusing(
+    range: &NativePreparedLibraryCall,
+    start: u64,
+    end: u64,
+    work: &NativeLibraryWorkBudget,
+    previous: Option<&NativeSelectedStringSpanSelector>,
+) -> Result<NativeSelectedStringSpanSelector, InvokeError> {
     let limits = limits();
     work.with_call_limits(
         limits.max_compute_work.unwrap(),
@@ -47,9 +57,59 @@ fn compact(
             let _scratch = work
                 .memory_budget()
                 .reserve_capacity(range.selected_u64_string_span_selector_metadata_bytes())?;
-            range.selected_u64_string_span_selector(start, end)
+            range.selected_u64_string_span_selector_reusing_shape(start, end, previous)
         },
     )?
+}
+
+#[test]
+fn reused_range_shapes_match_materialized_ranges_and_keep_endpoint_errors() {
+    for inclusive in [false, true] {
+        for artifact in programs(inclusive) {
+            let range = prepared(&artifact, if inclusive {
+                NativeCollectionPrimitive::RangeInclusive
+            } else {
+                NativeCollectionPrimitive::RangeExclusive
+            });
+            let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+            let work = work(&memory);
+            let mut previous = None;
+            for (start, end) in (0..9).flat_map(|start| (0..9).map(move |end| (start, end))) {
+                let ordinary = materialized(&artifact, &range, start, end, &work);
+                let before = work.used();
+                let retained = memory.used_bytes();
+                let reused = compact_reusing(&range, start, end, &work, previous.as_ref());
+                assert_eq!(work.used().0 - before.0, range.selected_u64_string_span_selector_work());
+                assert_eq!(memory.used_bytes(), retained);
+                match (ordinary, reused) {
+                    (Ok(value), Ok(selector)) => {
+                        let ValueData::Matrix(matrix) = value.data() else { panic!("Range output"); };
+                        assert_eq!(selector.count(), matrix.elements().len() as u64);
+                        assert_eq!(selector.start(), start);
+                        // Repeat exactly this width at different endpoints on
+                        // the next call, then return to changing widths.
+                        let shifted = compact_reusing(&range, start + 20, end + 20,
+                            &work, Some(&selector)).unwrap();
+                        assert_eq!((shifted.start(), shifted.count()), (start + 20, selector.count()));
+                        previous = Some(shifted);
+                    }
+                    (Err(expected), Err(actual)) => assert_eq!(actual, expected),
+                    pair => panic!("different Range results: {pair:?}"),
+                }
+            }
+            // These counts must be rejected without allocating a payload.
+            // A preceding valid selector cannot waive overflow/Layout checks.
+            for (start, end) in [(0, u64::MAX), (1, u64::MAX), (u64::MAX, 0),
+                (u64::MAX, u64::MAX), (u64::MAX - 1, u64::MAX)]
+            {
+                let fresh = compact(&range, start, end, &work);
+                let reused = compact_reusing(&range, start, end, &work, previous.as_ref());
+                assert_eq!(reused, fresh);
+            }
+            drop(work);
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
 }
 
 fn materialized(

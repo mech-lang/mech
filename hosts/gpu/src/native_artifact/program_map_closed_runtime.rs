@@ -13,6 +13,7 @@ pub(super) struct Owner<'plan> {
     range: &'plan NativePreparedLibraryCall,
     descriptor: &'plan crate::native_artifact::NativeProgramDescriptor,
     selector: Option<NativeSelectedStringSpanSelector>,
+    selector_current: bool,
     key: Option<core::ops::Range<usize>>,
     work: NativeLibraryWorkBudget,
     limits: MemoryBudgetLimits,
@@ -37,7 +38,7 @@ impl Owner<'_> {
                 .ok_or_else(|| invalid("closed map body prepayment overflow"))?;
             self.work.charge(price, 0).map_err(super::StorageError::Work).map_err(storage_error)?;
             self.funded = add(self.funded, count)?;
-            self.selector = None;
+            self.selector_current = false;
             self.key = None;
             return Ok(count);
         }
@@ -46,10 +47,12 @@ impl Owner<'_> {
                 self.limits.max_comparison_work.unwrap(), || {
                     self.work.charge(self.range.selected_u64_string_span_selector_work(), 0)
                         .map_err(super::StorageError::Work).map_err(storage_error)?;
-                    self.range.selected_u64_string_span_selector(args[0], args[1])
+                    self.range.selected_u64_string_span_selector_reusing_shape(
+                        args[0], args[1], self.selector.as_ref())
                         .map_err(|error| Error::Library { origin: self.descriptor.plan.blocks()[site].origin(), error })
                 }).map_err(super::StorageError::Work).map_err(storage_error)??;
             self.selector = Some(selector);
+            self.selector_current = true;
             self.key = None;
             return Ok(0);
         }
@@ -57,7 +60,10 @@ impl Owner<'_> {
             return Err(invalid("closed map lost pinned String"));
         };
         if op == 2 {
-            let selector = self.selector.take()
+            if !core::mem::take(&mut self.selector_current) {
+                return Err(invalid("closed map selection without current range"));
+            }
+            let selector = self.selector.as_ref()
                 .ok_or_else(|| invalid("closed map selection without range"))?;
             let bad = || Error::Library {
                 origin: self.descriptor.plan.blocks()[site].origin(),
@@ -163,7 +169,7 @@ impl<'plan> State<'plan> {
             .and_then(|n| n.checked_add(bytes)).ok_or_else(|| invalid("closed map census overflow"))?;
         let binding = self.slots[index].binding.take().unwrap();
         let mut owner = Box::new(Owner { binding, source, range, descriptor: self.descriptor,
-            selector: None, key: None,
+            selector: None, selector_current: false, key: None,
             work: ctx.library.clone(), limits: ctx.limits, outside_nodes,
             body_work: proof.compute, funded: 0, updates: 0, result: ctx.result,
             error: None, _reservation: reservation });

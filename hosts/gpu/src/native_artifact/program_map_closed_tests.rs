@@ -150,3 +150,61 @@ text/join([count-text(n) | n <- [4u64 8u64]], "")
         }
     }
 }
+
+#[test]
+fn closed_map_rechecks_changed_widths_and_current_string_bounds() {
+    for invalid in [false, true] {
+        let source = if invalid {
+            format!("{}\n#Count(\"abc\", 2u64, 4u64, empty)\n", structural_projection_tests::COUNT)
+        } else {
+            format!("{}\n#Count(\"abcdef\", 1u64, 3u64, empty)\n",
+                structural_projection_tests::COUNT.replace("(index + width)", "(index + index + 1u64)"))
+        };
+        let original = tests::artifact_source(&source);
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+        for artifact in [original, decoded] {
+            let catalog = mech_stdlib::source_catalog();
+            let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let image = jit.descriptor().encode_build_owned_image().unwrap();
+            // SAFETY: the descriptor and generated entry share this exact build.
+            let restored = unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
+            for descriptor in [jit.descriptor(), &restored] {
+                MODE.with(|v| v.set(Mode::Native));
+                OBS.with(|v| *v.borrow_mut() = Observation::default());
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let mut output = vec![None];
+                let entry = jit.test_checked_entry();
+                let outcome = execute(descriptor, |frame| {
+                    // SAFETY: the observer is confined to the owned synchronous entry.
+                    let old = unsafe { (*frame).helper };
+                    unsafe { (*frame).helper = observe; }
+                    let status = unsafe { entry(frame) };
+                    unsafe { (*frame).helper = old; }
+                    status
+                }, &[], &mut output, tests::limits(), &memory);
+                let observed = OBS.with(|v| core::mem::take(&mut *v.borrow_mut()));
+                assert!(observed.errors.is_empty(), "{observed:?}");
+                assert_eq!((observed.entries, observed.guarded), (1, 0));
+                if invalid {
+                    assert!(matches!(outcome, Err(NativeProgramExecutionError::Library {
+                        error: mech_engine::native_artifact::NativeCollectionInvocationError::Kernel(
+                            mech_core::ResidentKernelError::InvalidInput), ..
+                    })), "{outcome:?}");
+                    assert!(output.iter().all(Option::is_none));
+                } else {
+                    let report = outcome.unwrap();
+                    assert_eq!((report.hash_table_regions, report.hash_table_updates), (1, 3));
+                    let ValueData::Map(map) = output[0].as_ref().unwrap().data() else { panic!("map"); };
+                    let pairs = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
+                        (ValueData::String(key), ValueData::U64(value)) => (key.to_string(), *value),
+                        _ => panic!("String/U64 map"),
+                    }).collect::<Vec<_>>();
+                    assert_eq!(pairs, vec![("a".into(), 1), ("bc".into(), 1), ("cde".into(), 1)]);
+                }
+                drop(output);
+                assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+            }
+        }
+    }
+}
