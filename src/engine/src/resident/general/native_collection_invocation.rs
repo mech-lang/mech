@@ -63,8 +63,8 @@ impl std::error::Error for NativeCollectionInvocationError {}
 #[path = "native_data_footprint_tests.rs"]
 mod data_footprint_tests;
 
-/// Only the constructor-private shallow maintained families reach this
-/// envelope. It conservatively covers planner coexistence, deep copies of
+/// Only constructor-private maintained families reach this envelope, including
+/// nested scalar/map state carriers. It conservatively covers planner coexistence, deep copies of
 /// the actual port descriptors, shared schema-arena wrappers, borrowed
 /// argument tapes and BTree facts; it is not a canonical payload bound.
 /// Runtime admission reserves it before any of those objects are constructed.
