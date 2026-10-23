@@ -42,9 +42,9 @@ fn begin_key(map: &mut PackedMap, key: &[u8]) -> Option<u64> {
     map.frame.key_high = high;
     map.frame.entry_pointer = 0;
     map.frame.entry_known = 0;
-    let index = PackedMap::probe(&map.slots, low, high).unwrap();
+    let index = PackedMap::probe(&map.slots, &map.controls, low, high).unwrap();
     map.frame.entry_known = 1;
-    if map.slots[index].occupied == 1 {
+    if map.controls[index] != EMPTY {
         map.frame.entry_pointer = (&mut map.slots[index] as *mut Slot) as u64;
         Some(map.slots[index].value)
     } else { None }
@@ -64,8 +64,8 @@ fn put(map: &mut PackedMap, key: &[u8], value: u64) {
         map.insert_missing(low, high, value).unwrap();
     }
 }
-fn table(map: &PackedMap) -> Vec<(u64, u64, u64, u64)> {
-    map.slots.iter().map(|s| (s.low, s.high, s.value, s.occupied)).collect()
+fn table(map: &PackedMap) -> (Vec<(u64, u64, u64)>, Vec<u8>) {
+    (map.slots.iter().map(|s| (s.low, s.high, s.value)).collect(), map.controls.clone())
 }
 
 fn boundary_domain(alphabet: &[u8]) -> Domain {
@@ -176,7 +176,7 @@ fn maximum_width_ascii_and_sparse_fallback_keep_all_high_and_low_symbols() {
 #[test]
 fn packed_maps_share_private_claims_without_claiming_the_same_caller_twice() {
     let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
-    let base = (size_of::<PackedMap>() + size_of::<Frame>()) as u64 + 3;
+    let base = (size_of::<PackedMap>() + size_of::<Frame>()) as u64 + 4;
     let work = new_work(&memory.with_limits(u64::MAX, 2 * base + 2));
     let mut left = PackedMap::new(work.clone(), limits(), 1, body(), 64).unwrap();
     let mut right = PackedMap::new(work.clone(), limits(), 1, body(), 64).unwrap();
@@ -203,7 +203,7 @@ fn packed_maps_share_private_claims_without_claiming_the_same_caller_twice() {
 #[test]
 fn packed_rehash_admits_simultaneous_old_and_new_nodes_before_table_mutation() {
     let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
-    let base = (size_of::<PackedMap>() + size_of::<Frame>()) as u64 + 3;
+    let base = (size_of::<PackedMap>() + size_of::<Frame>()) as u64 + 4;
     let work = new_work(&memory.with_limits(u64::MAX, base + 8));
     let mut map = PackedMap::new(work.clone(), limits(), 1, body(), 0).unwrap();
     for key in 0..7 { put(&mut map, &[key], key as u64); }
@@ -221,9 +221,72 @@ fn packed_rehash_admits_simultaneous_old_and_new_nodes_before_table_mutation() {
 }
 
 #[test]
+fn packed_control_rehash_requires_both_container_nodes_at_the_shared_boundary() {
+    for allowance in [16, 17] {
+        let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+        let base = (size_of::<PackedMap>() + size_of::<Frame>()) as u64 + 4;
+        // Seven current entries, one pending entry, seven copied entries and
+        // two replacement containers coexist before either old vector retires.
+        let work = new_work(&memory.with_limits(u64::MAX, base + allowance));
+        let mut map = PackedMap::new(work.clone(), limits(), 1, body(), 0).unwrap();
+        for key in 0..7 { put(&mut map, &[key], key as u64); }
+        assert_eq!(begin_key(&mut map, &[7]), None);
+        let old = table(&map);
+        let bytes = memory.used_bytes();
+        let key = packed(&[7]);
+        let result = map.insert_missing(key.0, key.1, 7);
+        if allowance == 16 {
+            assert!(matches!(result, Err(Error::Memory(_))));
+            assert_eq!(table(&map), old);
+            assert_eq!((map.frame.capacity, map.frame.len, map.updates()), (8, 7, 7));
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), (bytes, base + 7));
+        } else {
+            result.unwrap();
+            assert_eq!((map.frame.capacity, map.frame.len, map.updates()), (16, 8, 8));
+            assert_eq!(memory.retained_nodes(), base + 8);
+            assert_eq!(&map.controls[..GROUP - 1], &map.controls[16..]);
+        }
+        drop((map, work));
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+    }
+}
+
+#[test]
+fn packed_control_rehash_admits_old_and_new_backing_bytes_before_mutation() {
+    for short in [1, 0] {
+        let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+        let work = new_work(&memory);
+        let work_bytes = memory.used_bytes();
+        let metadata = (size_of::<PackedMap>() + size_of::<Frame>()) as u64;
+        let mut caps = limits();
+        caps.max_temporary_bytes = Some(work_bytes + metadata
+            + table_bytes(8).unwrap() + table_bytes(16).unwrap() - short);
+        let mut map = PackedMap::new(work.clone(), caps, 1, body(), 0).unwrap();
+        for key in 0..7 { put(&mut map, &[key], key as u64); }
+        assert_eq!(begin_key(&mut map, &[7]), None);
+        let old = table(&map);
+        let usage = (memory.used_bytes(), memory.retained_nodes());
+        let key = packed(&[7]);
+        let result = map.insert_missing(key.0, key.1, 7);
+        if short == 1 {
+            assert!(matches!(result, Err(Error::Limit { field: "temporary bytes", .. })));
+            assert_eq!(table(&map), old);
+            assert_eq!((map.frame.capacity, map.frame.len, map.updates()), (8, 7, 7));
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), usage);
+        } else {
+            result.unwrap();
+            assert_eq!((map.frame.capacity, map.frame.len, map.updates()), (16, 8, 8));
+            assert_eq!(memory.used_bytes(), work_bytes + metadata + table_bytes(16).unwrap());
+        }
+        drop((map, work));
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+    }
+}
+
+#[test]
 fn packed_conversion_holds_both_owners_and_releases_all_claims_on_denial() {
     let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
-    let base = (size_of::<PackedMap>() + size_of::<Frame>()) as u64 + 3;
+    let base = (size_of::<PackedMap>() + size_of::<Frame>()) as u64 + 4;
     let work = new_work(&memory.with_limits(u64::MAX, base + 3));
     let work_bytes = memory.used_bytes();
     let mut map = PackedMap::new(work.clone(), limits(), 1, body(), 0).unwrap();
@@ -302,10 +365,10 @@ fn packed_layout_matches_generated_word_offsets() {
     assert_eq!(std::mem::offset_of!(Frame, range_call_allowed), RANGE_CALL_ALLOWED * 8);
     assert_eq!(std::mem::offset_of!(Frame, read_call_allowed), READ_CALL_ALLOWED * 8);
     assert_eq!(std::mem::offset_of!(Frame, write_call_allowed), WRITE_CALL_ALLOWED * 8);
+    assert_eq!(std::mem::offset_of!(Frame, controls), CONTROLS * 8);
     assert_eq!(std::mem::offset_of!(Slot, low), SLOT_LOW * 8);
     assert_eq!(std::mem::offset_of!(Slot, high), SLOT_HIGH * 8);
     assert_eq!(std::mem::offset_of!(Slot, value), SLOT_VALUE * 8);
-    assert_eq!(std::mem::offset_of!(Slot, occupied), SLOT_OCCUPIED * 8);
 }
 
 #[test]
@@ -420,22 +483,62 @@ fn packed_map_handles_deliberate_probe_collisions_and_bounds_full_tables() {
     let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
     let work = new_work(&memory);
     let mut map = PackedMap::new(work.clone(), limits(), 2, body(), 0).unwrap();
-    let keys = (0..16384u64).map(|index| [(index / 128) as u8, (index % 128) as u8])
-        .filter(|key| { let (low, high) = packed(key); hash(low, high) & 7 == 0 })
-        .take(7).collect::<Vec<_>>();
-    assert_eq!(keys.len(), 7);
-    for (index, key) in keys.iter().enumerate() { put(&mut map, key, index as u64); }
-    assert_eq!((map.frame.capacity, map.frame.len), (8, 7));
-    for (index, key) in keys.iter().enumerate() {
-        let (low, high) = packed(key);
-        let at = PackedMap::probe(&map.slots, low, high).unwrap();
-        assert_eq!((map.slots[at].occupied, map.slots[at].value), (1, index as u64));
+    let mut candidates: [Vec<[u8; 2]>; 128] = std::array::from_fn(|_| Vec::new());
+    for index in 0..16384u64 {
+        let key = [(index / 128) as u8, (index % 128) as u8];
+        let (low, high) = packed(&key);
+        let hash = hash(low, high);
+        if hash & 15 == 15 { candidates[usize::from(fingerprint(hash))].push(key); }
     }
-    let full = vec![Slot { low: 0, high: 0, value: 0, occupied: 1 }; 8];
-    assert!(PackedMap::probe(&full, 1, 0).is_err());
+    let keys = candidates.into_iter().find(|keys| keys.len() >= 10).expect("collision fixture");
+    // Every first lookup wraps and every occupied fingerprint is a candidate.
+    // Only full-key equality distinguishes these keys, including a missing one.
+    for (index, key) in keys[..7].iter().enumerate() { put(&mut map, key, index as u64); }
+    assert_eq!((map.frame.capacity, map.frame.len), (8, 7));
+    assert_eq!(&map.controls[..7], &map.controls[8..]);
+    for (index, key) in keys[..7].iter().enumerate() {
+        let (low, high) = packed(key);
+        let at = PackedMap::probe(&map.slots, &map.controls, low, high).unwrap();
+        assert_eq!((map.controls[at] != EMPTY, map.slots[at].value), (true, index as u64));
+    }
+    assert_eq!(begin_key(&mut map, &keys[7]), None);
+    put(&mut map, &keys[7], 700);
+    assert_eq!((map.frame.capacity, map.frame.len), (16, 8));
+    assert_eq!(&map.controls[..7], &map.controls[16..]);
+    put(&mut map, &keys[8], 800);
+    // Nine colliding controls fill a complete wrapped group and continue into
+    // a second one. Both successful and absent probes must inspect that group.
+    assert_eq!(begin_key(&mut map, &keys[8]), Some(800));
+    assert_eq!(begin_key(&mut map, &keys[9]), None);
+    for capacity in [8, 16, 32] {
+        let full = vec![Slot { low: 0, high: 0, value: 0 }; capacity];
+        let controls = vec![fingerprint(hash(1, 0)); capacity + GROUP - 1];
+        assert!(PackedMap::probe(&full, &controls, 1, 0).is_err());
+    }
     drop(map);
     drop(work);
     assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
+fn packed_control_mirror_is_validated_before_refill_or_publication() {
+    let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+    let work = new_work(&memory);
+    let mut map = PackedMap::new(work.clone(), limits(), 1, body(), 0).unwrap();
+    let capacity = map.slots.len();
+    map.controls[capacity] = 0;
+    let before = work.used();
+    assert!(matches!(map.refill(), Err(Error::Binding("invalid private packed-map frame"))));
+    assert_eq!(work.used(), before);
+    map.controls[capacity] = EMPTY;
+    put(&mut map, b"a", 9);
+    let (low, high) = packed(b"a");
+    let at = PackedMap::probe(&map.slots, &map.controls, low, high).unwrap();
+    let wrong = (map.controls[at] + 1) & 127;
+    set_control(&mut map.controls, capacity, at, wrong);
+    assert!(matches!(map.finish(), Err(Error::Binding("invalid packed-map publication entry"))));
+    drop(work);
+    assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
 }
 
 #[test]
@@ -479,7 +582,7 @@ fn packed_map_missing_insert_rejects_forgery_and_denial_without_mutation() {
             2 => { work.restrict(used.0, used.1).unwrap(); }
             3 => { map.limits.max_cloned_bytes = Some(0); }
             4 => {
-                map.limits.max_temporary_bytes = Some(memory.used_bytes() + 16 * size_of::<Slot>() as u64 - 1);
+                map.limits.max_temporary_bytes = Some(memory.used_bytes() + table_bytes(16).unwrap() - 1);
             }
             _ => { map.limits.max_output_bytes = Some(0); }
         }
@@ -517,8 +620,8 @@ fn packed_map_growth_refreshes_entry_and_prepays_remaining_body_delta() {
     assert_eq!((map.frame.entry_pointer - map.frame.slots) % size_of::<Slot>() as u64, 0);
     assert!(after.0 - before.0 >= (next_price.compute - old_price.compute) * pending);
     assert!(after.1 - before.1 >= (next_price.comparison - old_price.comparison) * pending);
-    let at = PackedMap::probe(&map.slots, low, high).unwrap();
-    assert_eq!((map.slots[at].occupied, map.slots[at].value), (1, 27));
+    let at = PackedMap::probe(&map.slots, &map.controls, low, high).unwrap();
+    assert_eq!((map.controls[at] != EMPTY, map.slots[at].value), (true, 27));
     drop(map);
     drop(work);
     assert_eq!(memory.used_bytes(), 0);
@@ -584,9 +687,9 @@ fn packed_map_new_entry_admits_the_prospective_replacement_geometry() {
     let work = new_work(&memory);
     let mut map = PackedMap::new(work.clone(), limits(), 1, body(), 64).unwrap();
     assert_eq!(begin_key(&mut map, b"a"), None);
-    // The former calculation admitted old len+3 plus the new output nodes,
+    // The former calculation admitted old len+4 plus the new output nodes,
     // missing the new retained node that the next replacement would observe.
-    let former = map.outside_nodes + map.metadata.capacity_bytes() + 3 + 2 + 2;
+    let former = map.outside_nodes + map.metadata.capacity_bytes() + 4 + 2 + 2;
     map.limits.max_retained_nodes = Some(former);
     let (low, high) = packed(b"a");
     assert!(matches!(map.insert_missing(low, high, 3),

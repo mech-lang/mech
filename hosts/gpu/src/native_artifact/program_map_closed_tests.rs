@@ -575,3 +575,60 @@ fn packed_ssa_preserves_carriers_across_refill_growth_and_branch_merges() {
 
 #[path = "program_packed_origin_tests.rs"]
 mod cold_origins;
+
+#[test]
+fn packed_generated_controls_compare_colliding_keys_across_wrap_and_growth() {
+    use crate::native_artifact::program_packed_map::hash;
+    let mut candidates: [Vec<[u8; 2]>; 128] = std::array::from_fn(|_| Vec::new());
+    for low in 0..16384u64 {
+        let key = [(low >> 7) as u8, (low & 127) as u8];
+        if key.iter().any(|&byte| matches!(byte, 10 | 13)) { continue; }
+        let mixed = hash(low, 0);
+        if mixed & 15 == 15 { candidates[(mixed >> 57) as usize].push(key); }
+    }
+    let keys = candidates.into_iter().find(|keys| keys.len() >= 9).expect("collision fixture");
+    let keys = &keys[..9];
+    let text = keys.iter().chain(keys.iter().rev()).flat_map(|key| key.iter().copied()).collect::<Vec<_>>();
+    let text = String::from_utf8(text).unwrap();
+    // Independent fixed-width projections also exercise the fresh-key path;
+    // every source pair is retained, including zero-valued key bytes.
+    let count = structural_projection_tests::COUNT.replace(
+        ":Next(index + 1u64, increment", ":Next(index + 2u64, increment");
+    let source = format!("{count}\n#Count(text<string>, 2u64, {}u64, empty)\n", text.len());
+    let original = tests::artifact_source(&source);
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+    for artifact in [original, decoded] {
+        let catalog = mech_stdlib::source_catalog();
+        let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let proof = jit.descriptor().closed_tails.regions.iter().find_map(|r| r.packed.as_ref()).unwrap();
+        assert_eq!(proof.packing_domain().bits(), 7, "external text keeps the full ASCII domain");
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        assert_eq!(artifact.inputs().len(), 1);
+        let value = ValueDraft { schema: artifact.inputs()[0].schema, shape_values: Box::new([]),
+            data: ValueDataDraft::String(text.clone().into()) }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas())).unwrap();
+        let mut reservation = memory.reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap()).unwrap();
+        let inputs = [value.into_memory_budget(&mut reservation).unwrap()];
+        drop(reservation);
+        let mut output = vec![None];
+        let entry = jit.test_checked_entry();
+        let mut limits = tests::limits();
+        limits.execution.max_work = 1 << 36;
+        limits.library.max_compute_work = Some(1 << 32);
+        limits.library.max_comparison_work = Some(1 << 30);
+        let report = execute(jit.descriptor(), |frame| unsafe { entry(frame) },
+            &inputs, &mut output, limits, &memory).unwrap();
+        assert_eq!((report.packed_map_regions, report.packed_ssa_regions, report.packed_map_updates), (1, 1, 18));
+        let ValueData::Map(map) = output[0].as_ref().unwrap().data() else { panic!("map"); };
+        let actual = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
+            (ValueData::String(key), ValueData::U64(value)) => (key.to_string(), *value),
+            _ => panic!("String/U64 map"),
+        }).collect::<std::collections::BTreeMap<_, _>>();
+        let expected = keys.iter().map(|key| (std::str::from_utf8(key).unwrap().to_owned(), 2))
+            .collect::<std::collections::BTreeMap<_, _>>();
+        assert_eq!(actual, expected);
+        drop(output); drop(inputs);
+        assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+    }
+}

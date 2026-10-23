@@ -1,8 +1,8 @@
 //! Generated storage operations over an invocation-owned explicit table layout.
 //! Source control flow and replacement arithmetic remain in the original CFG.
 use super::super::{NativeCompileError, compiler::offset, program_hooks::Hooks,
-    program_packed_map::{Frame, Slot}, program_key_domain::Domain};
-use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
+    program_packed_map::{Frame, Slot, GROUP}, program_key_domain::Domain};
+use cranelift_codegen::ir::{Block, Endianness, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 
 #[path = "program_packed_frame_codegen.rs"]
@@ -149,6 +149,34 @@ pub(super) fn select_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, star
     write!(b, frame, entry_pointer, zero);
 }
 
+/// Match all eight controls before touching payload slots. Return one low bit
+/// per matching byte and the high bits of empty bytes; trailing-zero count / 8
+/// selects the same lane order as the runtime's linear group probe.
+fn control_group(b: &mut FunctionBuilder<'_>, address: Value, tag: Value) -> (Value, Value) {
+    let flags = MemFlags::new().with_endianness(Endianness::Little);
+    let raw = b.ins().load(types::I64, flags, address, 0);
+    let byte = b.ins().ireduce(types::I8, tag);
+    let matches = if cfg!(target_arch = "aarch64") {
+        let group = b.ins().bitcast(types::I8X8, flags, raw);
+        let tags = b.ins().splat(types::I8X8, byte);
+        let equal = b.ins().icmp(IntCC::Equal, group, tags);
+        b.ins().bitcast(types::I64, flags, equal)
+    } else {
+        // x86 has 128-bit SIMD registers. Duplicate the already bounded
+        // eight-byte load; no extra memory beyond the admitted group is read.
+        let group = b.ins().splat(types::I64X2, raw);
+        let group = b.ins().bitcast(types::I8X16, flags, group);
+        let tags = b.ins().splat(types::I8X16, byte);
+        let equal = b.ins().icmp(IntCC::Equal, group, tags);
+        let words = b.ins().bitcast(types::I64X2, flags, equal);
+        b.ins().extractlane(words, 0)
+    };
+    let matches = b.ins().band_imm(matches, 0x0101010101010101);
+    // Occupied controls are seven-bit hashes; EMPTY is exactly 0x80.
+    let empty = b.ins().band_imm(raw, 0x8080808080808080u64 as i64);
+    (matches, empty)
+}
+
 fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     function: Value, context: Value, site: usize, error: Block) -> Value
 {
@@ -161,7 +189,9 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     let initial = b.create_block();
     let setup = b.create_block();
     let head = b.create_block();
-    let occupied = b.create_block();
+    let candidates = b.create_block();
+    let mismatch = b.create_block();
+    let empties = b.create_block();
     let advance = b.create_block();
     let found = b.create_block();
     let absent = b.create_block();
@@ -169,6 +199,7 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     let done = b.create_block();
     b.append_block_param(head, types::I64);
     b.append_block_param(head, types::I64);
+    b.append_block_param(candidates, types::I64);
     b.append_block_param(found, types::I64);
     b.append_block_param(done, types::I64);
     b.ins().brif(known, cached, &[], initial, &[]);
@@ -196,16 +227,24 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     let hash = b.ins().bxor(hash, shifted);
     let mask = b.ins().iadd_imm(capacity, -1);
     let index = b.ins().band(hash, mask);
+    let tag = b.ins().ushr_imm(hash, 57);
     let slots = read!(b, frame, slots);
+    let controls = read!(b, frame, controls);
     b.ins().jump(head, &[index.into(), zero.into()]);
     b.switch_to_block(head);
     let args = b.block_params(head).to_vec();
     let (index, inspected) = (args[0], args[1]);
-    let address = b.ins().imul_imm(index, core::mem::size_of::<Slot>() as i64);
+    let group_address = b.ins().iadd(controls, index);
+    let (matching, empty) = control_group(b, group_address, tag);
+    b.ins().brif(matching, candidates, &[matching.into()], empties, &[]);
+    b.switch_to_block(candidates);
+    let remaining = b.block_params(candidates)[0];
+    let bit = b.ins().ctz(remaining);
+    let lane = b.ins().ushr_imm(bit, 3);
+    let bucket = b.ins().iadd(index, lane);
+    let bucket = b.ins().band(bucket, mask);
+    let address = b.ins().imul_imm(bucket, core::mem::size_of::<Slot>() as i64);
     let address = b.ins().iadd(slots, address);
-    let live = get(b, address, core::mem::offset_of!(Slot, occupied));
-    b.ins().brif(live, occupied, &[], absent, &[]);
-    b.switch_to_block(occupied);
     let stored_low = get(b, address, core::mem::offset_of!(Slot, low));
     let same_low = b.ins().icmp(IntCC::Equal, low, stored_low);
     let same = if narrow { same_low } else {
@@ -213,11 +252,17 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
         let same_high = b.ins().icmp(IntCC::Equal, high, stored_high);
         b.ins().band(same_low, same_high)
     };
-    b.ins().brif(same, found, &[address.into()], advance, &[]);
+    b.ins().brif(same, found, &[address.into()], mismatch, &[]);
+    b.switch_to_block(mismatch);
+    let cleared = b.ins().iadd_imm(remaining, -1);
+    let remaining = b.ins().band(remaining, cleared);
+    b.ins().brif(remaining, candidates, &[remaining.into()], empties, &[]);
+    b.switch_to_block(empties);
+    b.ins().brif(empty, absent, &[], advance, &[]);
     b.switch_to_block(advance);
-    let inspected = b.ins().iadd_imm(inspected, 1);
+    let inspected = b.ins().iadd_imm(inspected, GROUP as i64);
     let bounded = b.ins().icmp(IntCC::UnsignedLessThan, inspected, capacity);
-    let index = b.ins().iadd_imm(index, 1);
+    let index = b.ins().iadd_imm(index, GROUP as i64);
     let index = b.ins().band(index, mask);
     b.ins().brif(bounded, head, &[index.into(), inspected.into()], bad, &[]);
     b.switch_to_block(bad);
