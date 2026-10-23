@@ -66,18 +66,21 @@ fn run(descriptor: &NativeProgramDescriptor, entry: crate::native_artifact::prog
         status
     }, args, output, caps(), memory)
 }
-fn query_input(artifact: &mech_engine::ProgramArtifact, text: &str, memory: &ManagedMemoryBudget) -> Value {
-    assert_eq!(artifact.inputs().len(), 1);
-    let value = ValueDraft { schema: artifact.inputs()[0].schema, shape_values: Box::new([]),
+fn string_input(artifact: &mech_engine::ProgramArtifact, index: usize, text: &str, memory: &ManagedMemoryBudget) -> Value {
+    let value = ValueDraft { schema: artifact.inputs()[index].schema, shape_values: Box::new([]),
         data: ValueDataDraft::String(text.into()) }.finalize(&SnapshotValidationContext::new(artifact.schemas())).unwrap();
     let mut reservation = memory.reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap()).unwrap();
     value.into_memory_budget(&mut reservation).unwrap()
 }
+fn query_inputs(artifact: &mech_engine::ProgramArtifact, text: &str, query: &str, memory: &ManagedMemoryBudget) -> [Value; 2] {
+    assert_eq!(artifact.inputs().len(), 2);
+    [string_input(artifact, 0, text, memory), string_input(artifact, 1, query, memory)]
+}
 fn source(text: &str, width: usize, increment: u64, expression: &str) -> String {
     let expression = if expression.contains('?') { format!("{expression}.") } else { expression.to_owned() };
-    format!("{}\nlookup(query<string>) => (result<u64>) :=\n  h := #Count({}, {width}u64, {}u64, empty)\n  alias := h\n  selected := {expression}\n  result := selected.\nlookup(query<string>)\n",
+    format!("{}\nlookup(text<string>, query<string>) => (result<u64>) :=\n  h := #Count(text, {width}u64, {}u64, empty)\n  alias := h\n  selected := {expression}\n  result := selected.\nlookup(text<string>, query<string>)\n",
         structural_projection_tests::COUNT.replace("previous + 1u64", &format!("previous + {increment}u64")),
-        serde_json::to_string(text).unwrap(), text.len())
+        text.len())
 }
 
 fn require_selected(descriptor: &NativeProgramDescriptor) {
@@ -88,6 +91,29 @@ fn require_selected(descriptor: &NativeProgramDescriptor) {
         })).unwrap());
     }
     assert_eq!(descriptor.frozen_maps.regions.len(), 1);
+}
+
+#[test]
+fn frozen_prepared_constant_map_keeps_canonical_transport_across_activation() {
+    let source = format!("{}\nlookup(query<string>) => (result<u64>) :=\n  counts := #Count(\"abcabc\", 1u64, 6u64, empty)\n  result := counts{{query}}.\nlookup(query<string>)\n", structural_projection_tests::COUNT);
+    let artifact = tests::artifact_source(&source);
+    let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+    let descriptor = jit.descriptor();
+    assert!(descriptor.closed_tails.regions.iter().any(|r| r.packed.is_some()));
+    assert!(descriptor.plan.activation_boundary().is_some());
+    assert!(descriptor.frozen_maps.regions.is_empty(), "private maps cannot cross activation");
+    let memory = ManagedMemoryBudget::new(256 << 20);
+    let args = [string_input(&artifact, 0, "a", &memory)];
+    let baseline = (memory.used_bytes(), memory.retained_nodes());
+    let mut output = vec![None; artifact.outputs().len()];
+    MODE.with(|v| v.set(Mode::Normal));
+    let report = run(descriptor, jit.test_checked_entry(), &args, &mut output, &memory, false).unwrap();
+    assert_eq!((report.frozen_map_regions, report.frozen_map_reads), (0, 0));
+    assert!(matches!(output.last().unwrap().as_ref().unwrap().data(), ValueData::U64(2)));
+    drop(output);
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
+    drop(args);
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
 }
 
 #[test]
@@ -110,7 +136,7 @@ fn frozen_queries_keep_complete_maps_arbitrary_strings_zero_values_and_restored_
             for descriptor in [jit.descriptor(), &restored] {
                 for &(query, expected) in &queries {
                     let memory = ManagedMemoryBudget::new(256 << 20);
-                    let args = [query_input(&artifact, query, &memory)];
+                    let args = query_inputs(&artifact, text, query, &memory);
                     let baseline = (memory.used_bytes(), memory.retained_nodes());
                     let mut values = Vec::new();
                     for disabled in [false, true] {
@@ -146,7 +172,7 @@ fn frozen_missing_get_keeps_original_library_origin_and_releases_every_owner() {
     let site = descriptor.frozen_maps.reads.iter().position(Option::is_some).unwrap();
     for disabled in [false, true] {
         let memory = ManagedMemoryBudget::new(256 << 20);
-        let args = [query_input(&artifact, "z", &memory)];
+        let args = query_inputs(&artifact, "abcabc", "z", &memory);
         let baseline = (memory.used_bytes(), memory.retained_nodes());
         let mut output = vec![None; artifact.outputs().len()];
         let error = run(descriptor, jit.test_checked_entry(), &args, &mut output, &memory, disabled).unwrap_err();
@@ -165,7 +191,7 @@ fn frozen_tokens_cannot_cross_invocations_and_logical_caps_fail_at_original_exit
     let descriptor = jit.descriptor();
     let exit = descriptor.frozen_maps.regions[0].exit;
     let memory = ManagedMemoryBudget::new(256 << 20);
-    let args = [query_input(&artifact, "a", &memory)];
+    let args = query_inputs(&artifact, "abcabc", "a", &memory);
     let baseline = (memory.used_bytes(), memory.retained_nodes());
     for mode in [Mode::Normal, Mode::Stale, Mode::ExitLimit] {
         MODE.with(|v| v.set(mode)); FAILURE_SITE.with(|v| v.set(None));
@@ -210,7 +236,7 @@ fn frozen_unsupported_enumeration_executes_canonical_fallback_and_wire_proof_can
     let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
     assert!(jit.descriptor().frozen_maps.regions.is_empty());
     let memory = ManagedMemoryBudget::new(256 << 20);
-    let args = [query_input(&artifact, "a", &memory)];
+    let args = query_inputs(&artifact, "abcabc", "a", &memory);
     let baseline = (memory.used_bytes(), memory.retained_nodes());
     let mut output = vec![None; artifact.outputs().len()];
     MODE.with(|v| v.set(Mode::Normal));
