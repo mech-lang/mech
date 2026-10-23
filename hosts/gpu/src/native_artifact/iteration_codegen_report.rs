@@ -11,9 +11,11 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub tag_threading: TagThreading,
     pub frame_effects: FrameEffects,
     pub guarded_loops: GuardedLoops,
+    pub lookup_facts: LookupFacts,
     substitutions: usize,
     tag_records: usize,
     guarded_records: usize,
+    lookup_records: usize,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct EdgeFacts {
@@ -68,6 +70,17 @@ struct GuardedRegion {
 }
 
 #[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct LookupFacts { complete: bool, regions: Vec<LookupRegion> }
+impl Default for LookupFacts { fn default() -> Self { Self { complete: true, regions: Vec::new() } } }
+#[derive(serde::Serialize)]
+struct LookupRegion {
+    header: usize, source_nodes: usize, emitted_nodes: usize,
+    substitutions: Vec<LookupSubstitution>,
+}
+#[derive(serde::Serialize)]
+struct LookupSubstitution { node: usize, site: usize, operation: u64, fact: &'static str }
+
+#[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct FrameEffects { complete: bool, regions: Vec<FrameRegion> }
 impl Default for FrameEffects {
     fn default() -> Self { Self { complete: true, regions: Vec::new() } }
@@ -85,6 +98,18 @@ struct FrameOperation {
 }
 
 impl CodegenReport {
+    pub fn lookup_facts(&mut self, header: usize, source_nodes: usize, emitted_nodes: usize,
+        substitutions: Vec<(usize, usize, u64, &'static str)>)
+    {
+        if self.lookup_facts.regions.len() == MAX_REGIONS
+            || self.lookup_records.saturating_add(substitutions.len()) > MAX_SUBSTITUTIONS
+        { self.lookup_facts.complete = false; return; }
+        self.lookup_records += substitutions.len();
+        self.lookup_facts.regions.push(LookupRegion { header, source_nodes, emitted_nodes,
+            substitutions: substitutions.into_iter().map(|(node, site, operation, fact)| LookupSubstitution {
+                node, site, operation, fact,
+            }).collect() });
+    }
     /// Constant-size per-region counts accumulated only at actual narrow
     /// synchronization emissions. Each private op contributes at most once.
     pub fn frame_effects(&mut self, header: usize, operations: Vec<(u64, u64, u64, u64)>) {
@@ -203,5 +228,15 @@ mod tests {
         report.guarded_loop(0, 1, 2, 3, 0, [4,5,6], 7, vec![8], 64, vec![39], 1024);
         assert!(!report.guarded_loops.complete);
         assert_eq!(report.guarded_loops.regions.len(), MAX_REGIONS);
+        let mut report = CodegenReport::default();
+        for header in 0..MAX_REGIONS { report.lookup_facts(header, 32, 64, vec![(1, 2, 3, "Fresh")]); }
+        assert!(report.lookup_facts.complete);
+        report.lookup_facts(0, 32, 64, vec![]);
+        assert!(!report.lookup_facts.complete);
+        assert_eq!(report.lookup_facts.regions.len(), MAX_REGIONS);
+        let mut report = CodegenReport::default();
+        report.lookup_facts(0, 32, 64, vec![(1, 2, 3, "Cached"); MAX_SUBSTITUTIONS + 1]);
+        assert!(!report.lookup_facts.complete);
+        assert!(report.lookup_facts.regions.is_empty());
     }
 }

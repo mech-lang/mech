@@ -100,7 +100,9 @@ fn selected_template(
 // invariant widths/limits fit the actual pinned source. Original work remains.
 // ABI25 binds private op14's validated, once-per-invocation selection receipt.
 // IR49 binds complete-use frozen owners and private same-scope read helpers.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 49;
+// IR50 carries source-proved current-key cache/presence facts within one
+// closed traversal. New selections, headers and mutations invalidate aliases.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 50;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

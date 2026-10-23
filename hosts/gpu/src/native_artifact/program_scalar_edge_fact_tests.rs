@@ -5,21 +5,26 @@ use crate::native_artifact::program_compiler::packed_loop_codegen::{
     take_edge_fact_emissions, without_edge_facts,
     take_tag_thread_emissions, without_tag_threading,
     take_frame_effect_emissions, without_frame_effects,
+    take_lookup_fact_emissions, without_lookup_facts,
 };
 use crate::native_artifact::JitProgramArtifact;
 
 #[derive(Clone, Copy)]
-enum Pass { EdgeFacts, TagThreading, FrameEffects }
+enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts }
 impl Pass {
     fn disabled<T>(self, f: impl FnOnce() -> T) -> T {
         match self {
             Self::EdgeFacts => without_edge_facts(f),
             Self::TagThreading => without_tag_threading(f),
             Self::FrameEffects => without_frame_effects(f),
+            Self::LookupFacts => without_lookup_facts(f),
         }
     }
     fn check(self, edges: (usize, usize), tags: (usize, usize, usize), effects: (usize, usize, usize), selected: bool) {
+        let lookups = take_lookup_fact_emissions();
         match self {
+            Self::LookupFacts if selected => assert!(lookups.0 > 0 && lookups.1 >= 4, "{lookups:?}"),
+            Self::LookupFacts => assert_eq!(lookups, (0, 0)),
             Self::EdgeFacts if !selected => assert_eq!(edges, (0, 0)),
             Self::TagThreading if selected => assert!(tags.0 > 0 && tags.1 >= 4 && tags.2 >= 2, "{tags:?}"),
             Self::TagThreading => assert_eq!(tags, (0, 0, 0)),
@@ -57,6 +62,47 @@ fn structural_report(report: &NativeProgramExecutionReport) -> [u64; 11] {
     [report.visits, report.transport_bytes, report.hash_table_regions, report.hash_table_updates,
         report.packed_map_regions, report.packed_map_updates, report.packed_ssa_regions,
         report.parallel_regions, report.parallel_batches, report.parallel_tasks, report.parallel_peak_workers]
+}
+
+#[test]
+fn lookup_facts_metadata_records_only_actual_current_key_substitutions() {
+    let artifact = tests::artifact_source(&format!("{}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n",
+        structural_projection_tests::COUNT));
+    let catalog = mech_stdlib::source_catalog();
+    take_lookup_fact_emissions();
+    let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+    let actual = take_lookup_fact_emissions();
+    let metadata = object.metadata();
+    let receipt = &metadata["compiled_lookup_facts"];
+    assert_eq!(receipt["complete"], true);
+    let regions = receipt["regions"].as_array().unwrap();
+    assert_eq!(regions.len(), 1);
+    assert_eq!(actual.0, 1);
+    let region = &regions[0];
+    let nodes = region["emitted_nodes"].as_u64().unwrap();
+    assert!(nodes <= 2048);
+    let substitutions = region["substitutions"].as_array().unwrap();
+    assert_eq!(substitutions.len(), actual.1);
+    let mut facts = std::collections::BTreeSet::new();
+    for record in substitutions {
+        assert!(record["node"].as_u64().unwrap() < nodes);
+        let site = record["site"].as_u64().unwrap() as usize;
+        let NativeIterationAction::LibraryCall { template, .. } = object.descriptor().plan.blocks()[site].action() else { panic!("source call"); };
+        let operation = match template.primitive() {
+            mech_engine::native_artifact::NativeCollectionPrimitive::MapContainsKey => 3,
+            mech_engine::native_artifact::NativeCollectionPrimitive::MapKeyAccess => 4,
+            mech_engine::native_artifact::NativeCollectionPrimitive::MapInsert => 5,
+            _ => panic!("unrelated operation"),
+        };
+        assert_eq!(record["operation"], operation);
+        facts.insert(record["fact"].as_str().unwrap());
+    }
+    assert!(facts.contains("Fresh") && facts.contains("Present") && facts.contains("Cached"), "{facts:?}");
+    let baseline = without_lookup_facts(|| crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
+    assert_eq!(take_lookup_fact_emissions(), (0, 0));
+    let receipt = baseline.metadata();
+    assert_eq!(receipt["compiled_lookup_facts"]["complete"], true);
+    assert!(receipt["compiled_lookup_facts"]["regions"][0]["substitutions"].as_array().unwrap().is_empty());
 }
 
 #[test]
@@ -268,6 +314,10 @@ fn tag_threading_preserves_changed_inputs_source_names_and_exact_terminal_work()
 fn frame_effects_preserve_changed_inputs_growth_refills_and_exact_work() {
     changed_input_equivalence(Pass::FrameEffects);
 }
+#[test]
+fn lookup_facts_preserve_changed_inputs_growth_refills_and_exact_work() {
+    changed_input_equivalence(Pass::LookupFacts);
+}
 fn changed_input_equivalence(pass: Pass) {
     // These are ordinary typed parameters, not constants captured from the
     // fixture or assertions that n equals this particular String's length.
@@ -301,7 +351,7 @@ fn changed_input_equivalence(pass: Pass) {
             // Bounds must still use the actual selected source, not n.
             ("abc", 2, 4),
         ];
-        if matches!(pass, Pass::FrameEffects) {
+        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts) {
             cases.push((long_text.as_str(), 3, long_text.len() as u64));
             // Unknown ASCII domain at width18 requires both key words. They
             // must survive refills although refill never reads either word.
@@ -425,6 +475,10 @@ fn tag_threading_keeps_later_iteration_arithmetic_failures_at_original_sites() {
 #[test]
 fn frame_effects_keep_arithmetic_failures_and_full_error_spills() {
     arithmetic_failure_equivalence(Pass::FrameEffects);
+}
+#[test]
+fn lookup_facts_keep_arithmetic_failures_at_original_source_sites() {
+    arithmetic_failure_equivalence(Pass::LookupFacts);
 }
 fn arithmetic_failure_equivalence(pass: Pass) {
     // The valid first iteration must not establish facts for a later visit.

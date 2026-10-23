@@ -15,6 +15,17 @@ pub(in crate::native_artifact) use frame_state::{take_frame_effect_emissions, wi
 #[path = "program_packed_hash_tests.rs"]
 mod hash_tests;
 
+/// Compile-time facts rederived from the source CFG for this selected key.
+/// Memory-mode callers and unsupported graphs always use Unknown.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
+pub(in crate::native_artifact) enum LookupFact { Unknown, Fresh, Cached, Present, Absent }
+impl LookupFact {
+    pub(super) fn name(self) -> &'static str { match self {
+        Self::Unknown => "Unknown", Self::Fresh => "Fresh", Self::Cached => "Cached",
+        Self::Present => "Present", Self::Absent => "Absent",
+    }}
+}
+
 fn hash_words(b: &mut FunctionBuilder<'_>, low: Value, high: Value) -> Value {
     let left = b.ins().bxor_imm(low, HASH_FIRST as i64);
     let right = b.ins().bxor_imm(high, HASH_SECOND as i64);
@@ -203,15 +214,35 @@ fn control_group(b: &mut FunctionBuilder<'_>, address: Value, tag: Value) -> (Va
 }
 
 fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
+    function: Value, context: Value, site: usize, error: Block, fact: LookupFact) -> Value
+{
+    match fact {
+        LookupFact::Cached | LookupFact::Present => read!(b, frame, entry_pointer),
+        LookupFact::Absent => b.ins().iconst(types::I64, 0),
+        LookupFact::Fresh => probe_fresh(b, frame, hooks, function, context, site, error),
+        LookupFact::Unknown => {
+            let cached = b.create_block(); let initial = b.create_block(); let done = b.create_block();
+            b.append_block_param(done, types::I64);
+            let known = read!(b, frame, entry_known);
+            b.ins().brif(known, cached, &[], initial, &[]);
+            b.switch_to_block(cached);
+            let entry = read!(b, frame, entry_pointer);
+            b.ins().jump(done, &[entry.into()]);
+            b.switch_to_block(initial);
+            let entry = probe_fresh(b, frame, hooks, function, context, site, error);
+            b.ins().jump(done, &[entry.into()]);
+            b.switch_to_block(done);
+            b.block_params(done)[0]
+        }
+    }
+}
+
+fn probe_fresh(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     function: Value, context: Value, site: usize, error: Block) -> Value
 {
     let narrow = narrow(frame.domain);
     let zero = b.ins().iconst(types::I64, 0);
     let one = b.ins().iconst(types::I64, 1);
-    let known = read!(b, frame, entry_known);
-    let known = b.ins().icmp_imm(IntCC::NotEqual, known, 0);
-    let cached = b.create_block();
-    let initial = b.create_block();
     let setup = b.create_block();
     let head = b.create_block();
     let candidates = b.create_block();
@@ -227,11 +258,6 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     b.append_block_param(candidates, types::I64);
     b.append_block_param(found, types::I64);
     b.append_block_param(done, types::I64);
-    b.ins().brif(known, cached, &[], initial, &[]);
-    b.switch_to_block(cached);
-    let entry = read!(b, frame, entry_pointer);
-    b.ins().jump(done, &[entry.into()]);
-    b.switch_to_block(initial);
     let capacity = read!(b, frame, capacity);
     let nonempty = b.ins().icmp_imm(IntCC::NotEqual, capacity, 0);
     b.ins().brif(nonempty, setup, &[], absent, &[]);
@@ -308,11 +334,21 @@ pub(super) fn operation(b: &mut FunctionBuilder<'_>, frame: Value, domain: Domai
 pub(super) fn operation_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, op: u64, replacement: Value,
     token: Value, hooks: &Hooks, function: Value, context: Value, site: usize, error: Block) -> Value
 {
+    operation_state_with_lookup(b, frame, op, replacement, token, hooks, function, context, site, error, LookupFact::Unknown)
+}
+
+pub(super) fn operation_state_with_lookup(b: &mut FunctionBuilder<'_>, frame: &FrameState, op: u64, replacement: Value,
+    token: Value, hooks: &Hooks, function: Value, context: Value, site: usize, error: Block, fact: LookupFact) -> Value
+{
     let allowed = if op == 5 { read!(b, frame, write_call_allowed) }
         else { read!(b, frame, read_call_allowed) };
     check_call(b, frame, allowed, hooks, function, context, site, if op == 5 { 12 } else { 11 }, error);
-    let entry = probe(b, frame, hooks, function, context, site, error);
-    let present = b.ins().icmp_imm(IntCC::NotEqual, entry, 0);
+    let entry = probe(b, frame, hooks, function, context, site, error, fact);
+    let present = match fact {
+        LookupFact::Present => b.ins().iconst(types::I8, 1),
+        LookupFact::Absent => b.ins().iconst(types::I8, 0),
+        _ => b.ins().icmp_imm(IntCC::NotEqual, entry, 0),
+    };
     let value = if op == 3 {
         b.ins().uextend(types::I64, present)
     } else {
