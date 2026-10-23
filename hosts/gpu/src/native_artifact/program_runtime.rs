@@ -382,6 +382,16 @@ impl Context<'_, '_> {
         ) {
             return self.prefix_helper(site, operation, args);
         }
+        // Native path interiors have no callback. A selected map operation
+        // admits its own observable boundary before reading any operands or
+        // mutating storage. Canonical/refused execution keeps ordinary visits.
+        if (operation == super::program_abi::MAP_OWNER_CALL
+                && self.retained_native_call(site as usize))
+            || (operation == super::program_abi::MAP_OWNER_SPAN
+                && self.retained_native_span(site as usize))
+        {
+            self.visit(site)?;
+        }
         if self.control.previous.map(u64::from) != Some(site) {
             return Err(invalid("helper outside exact admitted visit"));
         }
@@ -721,11 +731,20 @@ impl Context<'_, '_> {
         {
             return Err(invalid("entry omitted current required helper"));
         }
+        let previous = if let Some(previous) = self.control.previous
+            && let Some(group) = self.control.descriptor.map_admission.group(previous as usize)
+            && self.map_owners.active(group.owner)
+        {
+            if previous != group.start() { return Err(invalid("native path lost its entry")); }
+            Some(group.predecessor(u32::try_from(site)
+                .map_err(|_| invalid("map path frontier overflow"))?)
+                .ok_or_else(|| invalid("visit outside prepaid native path frontier"))?)
+        } else { self.control.previous };
         // A native aggregate latch has no managed move callback. Retire the
         // OTHER managed loop locals after that generated copy, before the next
         // visit, exactly as the managed latch used to do. Aggregate words own
         // no heap payload and are absent from the retirement inventory.
-        if let Some(previous) = self.control.previous
+        if let Some(previous) = previous
             && (self
                 .control
                 .descriptor
@@ -759,7 +778,7 @@ impl Context<'_, '_> {
         if group.is_some_and(|group| u64::from(group.start()) != site) {
             return Err(invalid("ordinary visit inside admitted scalar group"));
         }
-        self.control.visit_with_work(site, group.map(|group| group.work))?;
+        self.control.visit_from(site, group.map(|group| group.work), previous)?;
         let descriptor = self.control.descriptor;
         if let Some(mech_engine::native_artifact::NativeBorrowedStringAction::Equal { .. }) =
             self.borrowed_action(index)
@@ -818,13 +837,9 @@ impl Context<'_, '_> {
             return Err(invalid("completion with an active retained map owner"));
         }
         self.consumed = false;
-        if let Some(group) = group {
-            // A single-entry, straight-line sequence of native instructions
-            // has no intervening helper or ownership/progress boundary. Its
-            // end supplies the next callback's actual CFG predecessor. This
-            // is one admission, not fabricated per-instruction visits.
-            self.control.previous = Some(group.end());
-        }
+        // Keep the actual admitted anchor. The next callback must belong to
+        // this prepaid path's exact frontier; interior failures retain their
+        // original source sites. No synthetic per-instruction visits occur.
         Ok(())
     }
 
@@ -834,7 +849,7 @@ impl Context<'_, '_> {
         if site == previous { return Ok(site); }
         let layout = &self.control.descriptor.map_admission;
         if let Some(group) = layout.group(previous as usize)
-            && self.map_owners.active(group.owner) && group.end() == previous
+            && self.map_owners.active(group.owner) && group.start() == previous
             && group.sites.contains(&site) {
             return Ok(site);
         }
@@ -4265,7 +4280,7 @@ mod tests {
     }
     #[test]
     fn abi18_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 18);
+        assert_eq!(VERSION, 19);
         assert_eq!(super::super::program_abi::PHASE_CAPTURE_TAIL, 3);
         assert_eq!(super::super::program_abi::STATUS_INPUT_SCANNED, 7);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);

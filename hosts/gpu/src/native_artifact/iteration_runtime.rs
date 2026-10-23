@@ -124,9 +124,17 @@ impl<D: VisitPlan> Context<'_, D> {
     pub(super) fn visit_with_work(&mut self, raw: u64, group_work: Option<u64>)
         -> Result<(), NativeIterationExecutionError>
     {
+        self.visit_from(raw, group_work, self.previous)
+    }
+
+    // A paid native path supplies its proved frontier predecessor. Keep the
+    // stored anchor unchanged until the next boundary has been fully admitted.
+    pub(super) fn visit_from(&mut self, raw: u64, group_work: Option<u64>, previous: Option<u32>)
+        -> Result<(), NativeIterationExecutionError>
+    {
         let id = u32::try_from(raw).ok();
         let allowed = !self.completed
-            && match self.previous {
+            && match previous {
                 None => id == Some(self.descriptor.entry()),
                 Some(previous) => {
                     let prior = &self.descriptor.visits()[previous as usize];

@@ -1,8 +1,8 @@
-//! Mixed-value ABI18 admits proved straight-line native owner groups once.
+//! Mixed-value ABI19 admits native map paths at their observable frontiers.
 //! The scalar-frame prefix and disjoint transport lanes remain unchanged.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 18;
+pub(super) const VERSION: u64 = 19;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
 pub(super) const PHASE_PREFIX: u64 = 2;

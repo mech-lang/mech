@@ -17,16 +17,19 @@ fn store(b: &mut FunctionBuilder<'_>, base: Value, word: usize, value: Value) ->
     Ok(())
 }
 
-/// Only a live owner selects grouped native admission. Refused entry keeps
-/// the original per-block canonical callbacks and their original work prices.
+/// Only a live owner selects native paths. Retained map helpers admit their
+/// boundary in the helper callback itself, avoiding a separate round trip.
+/// Refused entry keeps the original canonical callbacks and work prices.
 pub(in crate::native_artifact) fn admission(
     b: &mut FunctionBuilder<'_>, locals: Value, owner: Option<&NativeMapOwnerWords>,
     layout: &super::super::program_map_admission::Layout, site: usize,
 ) -> Result<Option<Block>, NativeCompileError> {
-    let Some(group) = layout.group(site).filter(|group| group.start() as usize != site)
-        else { return Ok(None); };
-    let owner = owner.ok_or_else(|| backend("map admission lacks owner layout"))?;
-    let flag = owner.frame_words().checked_add(group.owner)
+    let Some(owner) = owner else { return Ok(None); };
+    let index = layout.group(site).filter(|group| group.start() as usize != site)
+        .map(|group| group.owner).or_else(|| owner.call_region(site))
+        .or_else(|| owner.span_site(site).map(|id| owner.spans()[id].region()));
+    let Some(index) = index else { return Ok(None); };
+    let flag = owner.frame_words().checked_add(index)
         .ok_or_else(|| backend("map admission flag overflow"))?;
     let active = load(b, locals, flag)?;
     let active = b.ins().icmp_imm(IntCC::NotEqual, active, 0);

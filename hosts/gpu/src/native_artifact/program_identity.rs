@@ -75,7 +75,8 @@ fn selected_template(
 // IR31 selects conditional owner words and per-region live flags.
 // IR32 pins non-escaping range/String projections used by retained map keys.
 // IR33 pins single-entry native owner groups and precise interior error origins.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 33;
+// IR34 pins acyclic native path frontiers and fused map-helper admission.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 34;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -175,7 +176,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 33;
 // fallback prices and all library/ownership/loop admission boundaries.
 // Policy51 admits an immutable outer caller census for closed map loops.
 // Snapshot and cache holdings stay dynamic; each loop invocation owns its census.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 51;
+// Policy52 prepays every native branch in an acyclic path and validates the
+// next observable frontier. Map helpers admit themselves on the same ledger.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 52;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
