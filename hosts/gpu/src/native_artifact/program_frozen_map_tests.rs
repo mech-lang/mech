@@ -78,18 +78,12 @@ fn query_inputs(artifact: &mech_engine::ProgramArtifact, text: &str, query: &str
 }
 fn source(text: &str, width: usize, increment: u64, expression: &str) -> String {
     let expression = if expression.contains('?') { format!("{expression}.") } else { expression.to_owned() };
-    format!("{}\nlookup(text<string>, query<string>) => (result<u64>) :=\n  h := #Count(text, {width}u64, {}u64, empty)\n  alias := h\n  selected := {expression}\n  result := selected.\nlookup(text<string>, query<string>)\n",
+    format!("{}\n+> sequence\nlookup(text<string>, query<string>) => (result<u64>) :=\n  h := #Count(text, {width}u64, {}u64, empty)\n  alias := h\n  selected := {expression}\n  result := selected.\nlookup(text<string>, query<string>)\n",
         structural_projection_tests::COUNT.replace("previous + 1u64", &format!("previous + {increment}u64")),
         text.len())
 }
 
 fn require_selected(descriptor: &NativeProgramDescriptor) {
-    if descriptor.frozen_maps.regions.is_empty() {
-        eprintln!("FROZEN_REJECTION_PLAN {}", serde_json::to_string(&serde_json::json!({
-            "plan": descriptor.plan, "closed": descriptor.closed_tails,
-            "owners": descriptor.map_owner_words,
-        })).unwrap());
-    }
     assert_eq!(descriptor.frozen_maps.regions.len(), 1);
 }
 
