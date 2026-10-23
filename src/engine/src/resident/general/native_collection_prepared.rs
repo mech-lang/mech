@@ -13,6 +13,7 @@ use crate::{
 };
 use mech_core::{
     CurrentMemoryFootprint, FunctionCatalog, ManagedMemoryBudget, ManagedMemoryReservation,
+    ManagedNodeReservation,
     MemoryBudgetLimits, MemoryPlanError, ResidentKernelFactory, ResourceDemand, SchemaTable, Value,
 };
 use std::sync::Arc;
@@ -93,6 +94,7 @@ struct CachedBinding {
     binding_nodes: u64,
     projection_index: crate::resident::text_index::snapshot::Slot,
     _reservation: ManagedMemoryReservation,
+    _nodes: ManagedNodeReservation,
 }
 
 impl NativePreparedLibraryCallCache {
@@ -617,16 +619,23 @@ impl NativePreparedLibraryCall {
                         // Keep a funded guard if replacement admission fails.
                         binding.plans = NativePlanCacheState::default();
                         drop(binding.call.take());
+                        binding._nodes.resize(1)?;
                         binding._reservation.resize_capacity(owner_bytes)?;
+                        let nodes = memory.reserve_nodes(self.binding_nodes)?;
                         binding._reservation.resize_capacity(bytes)?;
                         match self.bind_values(inputs, output, nested) {
-                            Ok(call) => binding.call = Some(call),
+                            Ok(call) => {
+                                binding._nodes.merge(nodes)?;
+                                binding.call = Some(call);
+                            }
                             Err(error) => {
                                 binding._reservation.resize_capacity(owner_bytes)?;
                                 return Err(error);
                             }
                         }
                     } else {
+                        let nodes = memory.reserve_nodes(1u64.checked_add(self.binding_nodes)
+                            .ok_or(InvokeError::InvalidInput)?)?;
                         let reservation = memory.reserve_capacity(bytes)?;
                         let call = self.bind_values(inputs, output, nested)?;
                         cache.binding = Some(Box::new(CachedBinding {
@@ -639,6 +648,7 @@ impl NativePreparedLibraryCall {
                             binding_nodes: self.binding_nodes,
                             projection_index: Default::default(),
                             _reservation: reservation,
+                            _nodes: nodes,
                         }));
                     }
                 }
