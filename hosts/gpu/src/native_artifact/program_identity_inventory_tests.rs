@@ -97,7 +97,7 @@ fn map_owner_identity_covers_unused_candidates_words_and_site_inventories() {
             let changed = unsafe { NativeMapOwnerWords::from_build_owned_image(&changed) }.unwrap();
             assert_ne!(
                 *descriptor.typed_ir_sha256(),
-                program_identity::typed_ir_sha256(plan, &frontiers, &joins, &lines, Some(&changed)),
+                program_identity::typed_ir_sha256(plan, &frontiers, &joins, &lines, Some(&changed), &descriptor.frozen_maps),
                 "a changed candidate/layout must change Object association",
             );
         }
@@ -197,7 +197,7 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                 expected_ranges,
                 "{name}"
             );
-            let fresh = program_identity::typed_ir_sha256(plan, &frontiers, &joins, &lines, owners);
+            let fresh = program_identity::typed_ir_sha256(plan, &frontiers, &joins, &lines, owners, &descriptor.frozen_maps);
             assert_eq!(*descriptor.typed_ir_sha256(), fresh, "{name}");
             assert_eq!(descriptor.selected_joins.regions.len(), joins.len());
             assert_eq!(descriptor.line_matrices.regions.len(), lines.len());
@@ -211,25 +211,25 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
             if !joins.is_empty() {
                 assert_ne!(
                     fresh,
-                    program_identity::typed_ir_sha256(plan, &frontiers, &[], &lines, owners)
+                    program_identity::typed_ir_sha256(plan, &frontiers, &[], &lines, owners, &descriptor.frozen_maps)
                 );
                 let mut duplicated = joins.clone();
                 duplicated.extend(joins.iter().cloned());
                 assert_ne!(
                     fresh,
-                    program_identity::typed_ir_sha256(plan, &frontiers, &duplicated, &lines, owners)
+                    program_identity::typed_ir_sha256(plan, &frontiers, &duplicated, &lines, owners, &descriptor.frozen_maps)
                 );
             }
             if !lines.is_empty() {
                 assert_ne!(
                     fresh,
-                    program_identity::typed_ir_sha256(plan, &frontiers, &joins, &[], owners)
+                    program_identity::typed_ir_sha256(plan, &frontiers, &joins, &[], owners, &descriptor.frozen_maps)
                 );
                 let mut duplicated = lines.clone();
                 duplicated.extend(lines.iter().cloned());
                 assert_ne!(
                     fresh,
-                    program_identity::typed_ir_sha256(plan, &frontiers, &joins, &duplicated, owners)
+                    program_identity::typed_ir_sha256(plan, &frontiers, &joins, &duplicated, owners, &descriptor.frozen_maps)
                 );
             }
             if joins.len() > 1 {
@@ -237,7 +237,7 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                 reversed.reverse();
                 assert_ne!(
                     fresh,
-                    program_identity::typed_ir_sha256(plan, &frontiers, &reversed, &lines, owners)
+                    program_identity::typed_ir_sha256(plan, &frontiers, &reversed, &lines, owners, &descriptor.frozen_maps)
                 );
             }
             if lines.len() > 1 {
@@ -245,7 +245,7 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                 reversed.reverse();
                 assert_ne!(
                     fresh,
-                    program_identity::typed_ir_sha256(plan, &frontiers, &joins, &reversed, owners)
+                    program_identity::typed_ir_sha256(plan, &frontiers, &joins, &reversed, owners, &descriptor.frozen_maps)
                 );
             }
         }

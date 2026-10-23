@@ -1,9 +1,9 @@
-//! Mixed-value ABI25 retains folded-product hashes and adds the private
-//! guarded-loop actual-selection receipt.
+//! Mixed-value ABI26 retains folded-product hashes and guarded-loop receipts,
+//! and adds invocation-local frozen-map copy/read helpers.
 //! Entry phases, control pointer and scalar transport stay unchanged.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 25;
+pub(super) const VERSION: u64 = 26;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
 pub(super) const PHASE_PREFIX: u64 = 2;
@@ -40,6 +40,9 @@ pub(super) const PARALLEL_RUN: u64 = u64::MAX - 20;
 pub(super) const PARALLEL_TAKE: u64 = u64::MAX - 21;
 pub(super) const PARALLEL_YIELD: u64 = u64::MAX - 22;
 pub(super) const PARALLEL_ENTER: u64 = u64::MAX - 23;
+// Global Context helpers; distinct from private bound Owner operations.
+pub(super) const FROZEN_MAP_COPY: u64 = u64::MAX - 24;
+pub(super) const FROZEN_MAP_READ: u64 = u64::MAX - 25;
 pub(super) type Helper =
     unsafe extern "C" fn(*mut c_void, u64, u64, u64, u64, u64, *mut u64) -> u64;
 #[repr(C)]

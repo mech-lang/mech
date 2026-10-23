@@ -79,6 +79,8 @@ mod program_abi;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_map_owner_layout;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod program_frozen_map_layout;
+#[cfg(feature = "canonical-native-program-runtime")]
 mod program_map_packed_layout;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_key_domain;

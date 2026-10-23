@@ -323,9 +323,24 @@ impl<'plan, 'a> Context<'plan, 'a> {
             }
             updates = packed.updates();
             if mode == 0 {
-                let (map, written, consumed) = packed.finish().map_err(storage_error)?;
-                if written != updates || consumed != traversals { return Err(invalid("packed map completion differs")); }
-                binding.install_native_map(map).map_err(storage_error)?;
+                let frozen_proof = state.descriptor.frozen_maps.regions.iter()
+                    .find(|proof| proof.owner == index && proof.closed == region);
+                #[cfg(test)]
+                let frozen_proof = if super::frozen::TEST_DISABLE.with(std::cell::Cell::get) { None } else { frozen_proof };
+                if let Some(proof) = frozen_proof {
+                    if state.slots[index].frozen.is_some() { return Err(invalid("overlapping frozen map")); }
+                    let map = packed.freeze().map_err(storage_error)?;
+                    if map.updates() != updates || map.traversals() != traversals {
+                        return Err(invalid("frozen map completion differs"));
+                    }
+                    state.slots[index].frozen = Some(super::frozen::FrozenSlot {
+                        map, token: 0, parent: proof.parent, born_visit: self.control.visits,
+                    });
+                } else {
+                    let (map, written, consumed) = packed.finish().map_err(storage_error)?;
+                    if written != updates || consumed != traversals { return Err(invalid("packed map completion differs")); }
+                    binding.install_native_map(map).map_err(storage_error)?;
+                }
             }
         }
         state.slots[index].binding = Some(binding);

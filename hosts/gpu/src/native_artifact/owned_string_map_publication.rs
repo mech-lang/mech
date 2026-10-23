@@ -38,6 +38,42 @@ fn exact_vec<T>(count: usize) -> Result<Vec<T>, Error> {
 fn required(limit: Option<u64>) -> Result<u64, Error> {
     limit.ok_or(Error::Publication("unbounded call dimension"))
 }
+
+pub(in crate::native_artifact) fn string_u64_schema(
+    schemas: &SchemaTable, schema: SchemaId, count: u64,
+) -> Result<(), Error> {
+    let target = schemas.get(schema).ok_or(Error::Publication("missing schema"))?;
+    if !target.dimension_parameters().is_empty() {
+        return Err(Error::Publication("parameterized output schema"));
+    }
+    let SchemaBody::Map { key, value, cardinality } = target.body() else {
+        return Err(Error::Publication("output is not a map"));
+    };
+    if key.as_ref() != &SchemaBody::String
+        || value.as_ref() != &SchemaBody::UnsignedInteger(IntegerWidth::W64)
+    { return Err(Error::Publication("output key/value kind")); }
+    match cardinality {
+        CardinalitySpec::Exact(DimensionExpr::Constant(n)) if *n == count => Ok(()),
+        CardinalitySpec::Dynamic { upper_bound: None } => Ok(()),
+        CardinalitySpec::Dynamic { upper_bound: Some(DimensionExpr::Constant(n)) } if count <= *n => Ok(()),
+        _ => Err(Error::Publication("output cardinality")),
+    }
+}
+
+/// Logical canonical output size, independent of a private retained storage
+/// choice. Private read-only maps must keep these same declared output caps.
+pub(in crate::native_artifact) fn logical_map_bytes(count: u64, payload: u64) -> Result<u64, Error> {
+    add(add(size_of::<Value>() as u64, size_of::<ValueData>() as u64)?,
+        add(mul(count, (size_of::<mech_core::snapshot::MapEntryValue>()
+            + 2 * size_of::<ValueData>()) as u64)?, payload)?)
+}
+pub(in crate::native_artifact) fn logical_map_limits(published: u64, limits: MemoryBudgetLimits)
+    -> Result<(), Error>
+{
+    check(1, required(limits.max_output_elements)?, "output elements")?;
+    check(published, required(limits.max_output_bytes)?, "output bytes")?;
+    check(published, required(limits.max_cloned_bytes)?, "cloned bytes")
+}
 impl<S: BuildHasher> OwnedStringMap<S> {
     fn publication_plan(
         &self,
@@ -63,33 +99,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
             return Err(Error::Publication("caller geometry omits retained owner"));
         }
         self.work.charge(128, 0)?;
-        let target = schemas
-            .get(schema)
-            .ok_or(Error::Publication("missing schema"))?;
-        if !target.dimension_parameters().is_empty() {
-            return Err(Error::Publication("parameterized output schema"));
-        }
-        let SchemaBody::Map {
-            key,
-            value,
-            cardinality,
-        } = target.body()
-        else {
-            return Err(Error::Publication("output is not a map"));
-        };
-        if key.as_ref() != &SchemaBody::String
-            || value.as_ref() != &SchemaBody::UnsignedInteger(IntegerWidth::W64)
-        {
-            return Err(Error::Publication("output key/value kind"));
-        }
-        match cardinality {
-            CardinalitySpec::Exact(DimensionExpr::Constant(n)) if *n == count => {}
-            CardinalitySpec::Dynamic { upper_bound: None } => {}
-            CardinalitySpec::Dynamic {
-                upper_bound: Some(DimensionExpr::Constant(n)),
-            } if count <= *n => {}
-            _ => return Err(Error::Publication("output cardinality")),
-        }
+        string_u64_schema(schemas, schema, count)?;
         // Sharing the schema arena still imports its complete ownership.
         let schema_bytes = schemas
             .clone_allocation_bound_bytes_with_precharge(|bytes| self.work.charge(bytes, 0))
@@ -100,17 +110,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         let payload = self.keys.capacity_bytes();
         // Exact narrow canonical layout, matching Value::retained_footprint:
         // Value + root ValueData + MapEntryValue + two child ValueDatas/key.
-        let published = add(
-            add(size_of::<Value>() as u64, size_of::<ValueData>() as u64)?,
-            add(
-                mul(
-                    count,
-                    (size_of::<mech_core::snapshot::MapEntryValue>() + 2 * size_of::<ValueData>())
-                        as u64,
-                )?,
-                payload,
-            )?,
-        )?;
+        let published = logical_map_bytes(count, payload)?;
         let nodes = add(mul(count, 2)?, 2)?;
         let drafts = mul(
             count,
@@ -132,17 +132,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
                 add(mul(drafts, 4)?, add(mul(published, 4)?, mul(payload, 4)?)?)?,
             )?,
         )?;
-        check(1, required(limits.max_output_elements)?, "output elements")?;
-        check(
-            published,
-            required(limits.max_output_bytes)?,
-            "output bytes",
-        )?;
-        check(
-            published,
-            required(limits.max_cloned_bytes)?,
-            "cloned bytes",
-        )?;
+        logical_map_limits(published, limits)?;
         check(
             add(geometry.live_nodes, mul(nodes, 3)?)?,
             required(limits.max_retained_nodes)?,

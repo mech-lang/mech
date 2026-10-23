@@ -127,6 +127,8 @@ first + ";" + second
             assert_eq!((report.hash_table_regions, report.hash_table_updates),
                 (serial_report.hash_table_regions, serial_report.hash_table_updates));
             assert_eq!(report.packed_ssa_regions, serial_report.packed_ssa_regions);
+            assert_eq!((report.frozen_map_regions, report.frozen_map_reads), (7, 7));
+            assert_eq!((serial_report.frozen_map_regions, serial_report.frozen_map_reads), (7, 7));
             for (left, right) in serial.iter().zip(&parallel) {
                 assert_eq!(left.as_ref().unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap(),
                     right.as_ref().unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap());
