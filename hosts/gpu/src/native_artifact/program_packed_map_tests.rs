@@ -68,6 +68,111 @@ fn table(map: &PackedMap) -> Vec<(u64, u64, u64, u64)> {
     map.slots.iter().map(|s| (s.low, s.high, s.value, s.occupied)).collect()
 }
 
+fn boundary_domain(alphabet: &[u8]) -> Domain {
+    let mut bitmap = [0u64; 2];
+    for &byte in alphabet { bitmap[usize::from(byte / 64)] |= 1 << (byte % 64); }
+    Domain::from_alphabet(bitmap).unwrap()
+}
+
+fn assert_boundary_publication(domain: Domain, width: usize, keys: &[Vec<u8>]) {
+    let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+    let work = new_work(&memory);
+    let mut map = PackedMap::new_encoded(work.clone(), limits(), width as u64, body(), 0, domain).unwrap();
+    assert_eq!(map.domain, domain.packing());
+    let mut expected = BTreeMap::new();
+    for (index, key) in keys.iter().enumerate() {
+        assert_eq!(key.len(), width);
+        put(&mut map, key, index as u64 + 1);
+        let replacement = if index % 2 == 0 { 0 } else { u64::MAX };
+        put(&mut map, key, replacement);
+        expected.insert(std::str::from_utf8(key).unwrap().to_owned(), replacement);
+    }
+    let (published, updates, traversals) = map.finish().unwrap();
+    assert_eq!((updates, traversals), (keys.len() as u64 * 2, keys.len() as u64 * 2));
+    let actual = published.entries().unwrap().map(|(key, value)| (key.to_owned(), value))
+        .collect::<BTreeMap<_, _>>();
+    assert_eq!(actual, expected);
+    drop((published, work));
+    assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+}
+
+#[test]
+fn singleton_code_one_preserves_each_supported_fixed_width() {
+    let domain = boundary_domain(b"a");
+    assert_eq!(domain.tables().0[usize::from(b'a')], 1);
+    for width in [1, 16, 17, 18] {
+        assert_boundary_publication(domain, width, &[vec![b'a'; width]]);
+    }
+}
+
+#[test]
+fn unused_compact_codes_are_rejected_before_insertion_and_publication() {
+    let domain = boundary_domain(b"abc");
+    assert_eq!((domain.bits(), domain.tables().1[0]), (2, u8::MAX));
+    let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+    let work = new_work(&memory);
+    let mut map = PackedMap::new_encoded(work.clone(), limits(), 2, body(), 0, domain).unwrap();
+    assert_eq!(begin_key(&mut map, b"aa"), None);
+    // A current missing-key proof does not make an unused symbol code valid.
+    map.frame.key_low = 0;
+    let before = (map.updates(), map.frame.len, memory.used_bytes(), work.used());
+    assert!(map.insert_missing(0, 0, 9).is_err());
+    assert_eq!((map.updates(), map.frame.len, memory.used_bytes(), work.used()), before);
+    put(&mut map, b"ab", 0);
+    put(&mut map, b"ca", u64::MAX);
+    let (published, updates, traversals) = map.finish().unwrap();
+    assert_eq!((updates, traversals), (2, 3));
+    assert_eq!(published.entries().unwrap().map(|(key, value)| (key.to_owned(), value))
+        .collect::<BTreeMap<_, _>>(), BTreeMap::from([("ab".into(), 0), ("ca".into(), u64::MAX)]));
+    drop((published, work));
+    assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+}
+
+#[test]
+fn four_bit_keys_keep_leading_symbols_on_both_sides_of_the_word_boundary() {
+    let alphabet = b"ABCDEFGHI";
+    let domain = boundary_domain(alphabet);
+    assert_eq!((domain.bits(), domain.shift()), (4, Some(0)));
+    for width in [16, 17] {
+        let keys = alphabet.iter().map(|&first| {
+            let mut key = vec![b'B'; width];
+            key[0] = first;
+            key
+        }).collect::<Vec<_>>();
+        let first = encoded(&keys[0], domain);
+        let last = encoded(keys.last().unwrap(), domain);
+        if width == 16 {
+            assert_eq!((first.1, last.1), (0, 0));
+            assert_ne!(first.0, last.0);
+        } else {
+            assert_eq!(first.0, last.0);
+            assert_ne!(first.1, last.1);
+        }
+        assert_boundary_publication(domain, width, &keys);
+    }
+}
+
+#[test]
+fn maximum_width_ascii_and_sparse_fallback_keep_all_high_and_low_symbols() {
+    let keys = (0..128u8).map(|first| {
+        let mut key = vec![127; 18];
+        key[0] = first;
+        key[17] = 127 - first;
+        key
+    }).collect::<Vec<_>>();
+    assert_boundary_publication(Domain::ascii(), 18, &keys);
+
+    let alphabet = [1, 2, 4, 8];
+    let sparse = boundary_domain(&alphabet);
+    assert_eq!(sparse.shift(), None);
+    let keys = alphabet.iter().map(|&first| {
+        let mut key = vec![8; 18];
+        key[0] = first;
+        key
+    }).collect::<Vec<_>>();
+    assert_boundary_publication(sparse, 18, &keys);
+}
+
 #[test]
 fn packed_maps_share_private_claims_without_claiming_the_same_caller_twice() {
     let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);

@@ -97,6 +97,73 @@ sequence := text/join([letters{{char}} | char <- "acgtacgtacgtacgt"], "")
 }
 
 #[test]
+fn packed_domain_boundaries_execute_rolling_keys_and_restore_descriptors_losslessly() {
+    let cross_word = format!("A{}I{}ACDEFGHI", "B".repeat(16), "B".repeat(16));
+    // Runtime input keeps the full ASCII representation. Include NUL, DEL and
+    // both word halves without embedding control bytes in a source literal.
+    let ascii = String::from_utf8((0..128u8).filter(|&byte| !matches!(byte, 10 | 13)).collect()).unwrap();
+    for (text, width, bits, shift, runtime_input) in [
+        ("a".repeat(40), 18usize, 1u8, Some(0u8), false),
+        ("abc".repeat(12), 3, 2, Some(0), false),
+        (cross_word.clone(), 16, 4, Some(0), false),
+        (cross_word, 17, 4, Some(0), false),
+        (ascii, 18, 7, Some(0), true),
+        ("ABDH".repeat(12), 18, 7, Some(0), false),
+    ] {
+        let argument = if runtime_input { "text<string>".to_owned() } else { format!("\"{text}\"") };
+        let source = format!("{}\n#Count({argument}, {width}u64, {}u64, empty)\n",
+            structural_projection_tests::COUNT, text.len());
+        let original = tests::artifact_source(&source);
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+        let mut expected = std::collections::BTreeMap::new();
+        for key in text.as_bytes().windows(width) {
+            *expected.entry(std::str::from_utf8(key).unwrap().to_owned()).or_insert(0u64) += 1;
+        }
+        for artifact in [original, decoded] {
+            let catalog = mech_stdlib::source_catalog();
+            let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let image = jit.descriptor().encode_build_owned_image().unwrap();
+            // SAFETY: descriptor and retained generated entry share this checked build.
+            let restored = unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
+            for descriptor in [jit.descriptor(), &restored] {
+                let proof = descriptor.closed_tails.regions.iter().find_map(|region| region.packed.as_ref()).unwrap();
+                assert_eq!((proof.packing_domain().bits(), proof.packing_domain().shift()), (bits, shift));
+                if runtime_input { assert!(proof.domain().is_none()); }
+                if text.starts_with("ABDH") { assert_eq!(proof.domain().unwrap().shift(), None); }
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let inputs = if runtime_input {
+                    assert_eq!(artifact.inputs().len(), 1);
+                    let value = ValueDraft { schema: artifact.inputs()[0].schema,
+                        shape_values: Box::new([]), data: ValueDataDraft::String(text.clone()) }
+                        .finalize(&SnapshotValidationContext::new(artifact.schemas())).unwrap();
+                    let mut reservation = memory.reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap()).unwrap();
+                    vec![value.into_memory_budget(&mut reservation).unwrap()]
+                } else { Vec::new() };
+                let mut output = vec![None];
+                let mut limits = tests::limits();
+                limits.execution.max_work = 1 << 40;
+                limits.library.max_compute_work = Some(1 << 36);
+                limits.library.max_comparison_work = Some(1 << 34);
+                let entry = jit.test_checked_entry();
+                let report = execute(descriptor, |frame| unsafe { entry(frame) },
+                    &inputs, &mut output, limits, &memory).unwrap();
+                assert_eq!((report.packed_map_regions, report.packed_ssa_regions, report.packed_map_updates),
+                    (1, 1, (text.len() - width + 1) as u64));
+                let ValueData::Map(map) = output[0].as_ref().unwrap().data() else { panic!("map"); };
+                let actual = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
+                    (ValueData::String(key), ValueData::U64(value)) => (key.to_string(), *value),
+                    _ => panic!("String/U64 map"),
+                }).collect::<std::collections::BTreeMap<_, _>>();
+                assert_eq!(actual, expected, "width {width}, bits {bits}, runtime input {runtime_input}");
+                drop((inputs, output));
+                assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+            }
+        }
+    }
+}
+
+#[test]
 fn closed_map_binds_source_once_rejects_reentry_and_keeps_finite_fuel() {
     let source = format!("{}\n#Count(\"ab:ab:ab\", 2u64, 8u64, empty)\n",
         structural_projection_tests::COUNT.replace("previous + 1u64", "previous + 7u64"));
