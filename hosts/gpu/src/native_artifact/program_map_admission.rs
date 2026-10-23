@@ -1,6 +1,6 @@
-//! Admit a straight-line run of native owner words once, before its first
-//! instruction. Every original instruction and failure origin is still emitted.
-//! No library helper, loop boundary, alternate entry or backedge is hidden.
+//! Prepay an acyclic native path between observable runtime boundaries.
+//! Branches and scalar joins remain generated instructions. A selected map
+//! helper may anchor a path, but no other helper or loop header is hidden.
 use super::iteration_abi::{NativeIterationVisit, Progress};
 use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeMapOwnerWords, NativeMatchAction as Scalar,
@@ -9,14 +9,24 @@ use mech_engine::native_artifact::{
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
+pub(super) struct Frontier {
+    pub site: u32,
+    pub previous: u32,
+}
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(super) struct Group {
     pub owner: usize,
     pub sites: Box<[u32]>,
+    pub frontier: Box<[Frontier]>,
     pub work: u64,
 }
 impl Group {
     pub fn start(&self) -> u32 { self.sites[0] }
-    pub fn end(&self) -> u32 { *self.sites.last().unwrap() }
+    pub fn predecessor(&self, site: u32) -> Option<u32> {
+        self.frontier.binary_search_by_key(&site, |edge| edge.site).ok()
+            .map(|index| self.frontier[index].previous)
+    }
 }
 
 #[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
@@ -37,58 +47,90 @@ impl Layout {
         if owners.regions().is_empty() { return Ok(Self::default()); }
         let count = plan.blocks().len();
         if visits.len() != count { return Err("map admission visit inventory differs"); }
-        let mut predecessors = vec![0usize; count];
-        for visit in visits {
+        let mut predecessors = vec![Vec::new(); count];
+        for (site, visit) in visits.iter().enumerate() {
             for next in visit.successors.into_iter().flatten() {
-                let incoming = predecessors.get_mut(next as usize)
-                    .ok_or("map admission successor outside plan")?;
-                *incoming = incoming.checked_add(1).ok_or("map admission predecessors overflow")?;
+                predecessors.get_mut(next as usize)
+                    .ok_or("map admission successor outside plan")?.push(site);
             }
         }
         let mut selected = vec![None; count];
+        let mut roots = vec![None; count];
+        let mut known = vec![false; count];
         for (site, block) in plan.blocks().iter().enumerate() {
             let visit = visits[site];
-            if visit.progress != Progress::Normal || visit.complete || visit.reject
-                || plan.activation_boundary() == Some(site as u32) {
-                continue;
-            }
-            let Some(owner) = owners.regions().iter().position(|region|
-                block.iteration() == Some(region.iteration())) else { continue; };
-            // The owning lane makes these structural packs/projections/copies
-            // native words. Refused owner entry retains all canonical callbacks.
+            let owner = owners.regions().iter().position(|region|
+                block.iteration() == Some(region.iteration()));
+            let Some(owner) = owner else { known[site] = true; continue; };
+            let helper = owners.call_region(site) == Some(owner)
+                || owners.span_site(site).is_some_and(|id| owners.spans()[id].region() == owner);
             let native = owners.action_region(site) == Some(owner)
                 || matches!(block.action(), Action::Scalar(Scalar::None | Scalar::Primitive { .. }))
                 || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
                     if plan.values()[output.get() as usize].scalar_kind().is_some());
-            if native { selected[site] = Some(owner); }
+            if (!native && !helper) || visit.complete || visit.reject
+                || plan.activation_boundary() == Some(site as u32)
+                || matches!(visit.progress, Progress::Initialize(_) | Progress::Exit(_)) {
+                known[site] = true;
+                continue;
+            }
+            selected[site] = Some(owner);
+            // Headers cut every declared backedge. Helpers cut every effect.
+            // A Tail latch can be native: it changes no runtime counter, and
+            // its precise retirement remains at the next header boundary.
+            if helper || matches!(visit.progress, Progress::Header(_))
+                || site == plan.entry() as usize {
+                roots[site] = Some(site);
+                known[site] = true;
+            }
         }
+        loop {
+            let mut changed = false;
+            for site in 0..count {
+                if known[site] || !predecessors[site].iter().all(|&prior| known[prior]) {
+                    continue;
+                }
+                let common = predecessors[site].first().and_then(|&prior| roots[prior]);
+                roots[site] = Some(if common.is_some_and(|root|
+                    selected[root] == selected[site]
+                        && predecessors[site].iter().all(|&prior| roots[prior] == Some(root))) {
+                    common.unwrap()
+                } else { site });
+                known[site] = true;
+                changed = true;
+            }
+            if !changed { break; }
+        }
+        // Unresolved cycles decline grouping. Every included interior was
+        // assigned only AFTER all its predecessors, proving an acyclic body
+        // with one entry. A merge from another region starts a new boundary.
         let mut assigned = vec![None; count];
         let mut groups = Vec::new();
         for first in 0..count {
-            let Some(owner) = selected[first] else { continue; };
-            if assigned[first].is_some() { continue; }
+            if roots[first] != Some(first) { continue; }
             let mut sites = vec![first as u32];
-            let mut work = visits[first].work;
-            let mut site = first;
-            while let [Some(next), None] = visits[site].successors {
-                let next = next as usize;
-                if next == first || predecessors[next] != 1 || selected[next] != Some(owner)
-                    || assigned[next].is_some() || next == plan.entry() as usize {
-                    break;
-                }
-                sites.push(next as u32);
-                work = work.checked_add(visits[next].work).ok_or("map admission work overflow")?;
-                site = next;
-            }
+            sites.extend((0..count).filter(|&site| site != first && roots[site] == Some(first))
+                .map(|site| site as u32));
             if sites.len() < 2 { continue; }
-            // Constant-time entry/end checks and optional exceptional-origin
-            // membership are paid before any instruction in this group runs.
-            work = work.checked_add((sites.len() as u64).checked_mul(16)
-                .and_then(|n| n.checked_add(128)).ok_or("map admission proof cost overflow")?)
-                .ok_or("map admission work overflow")?;
+            let mut frontier = Vec::new();
+            let mut work = 128u64;
+            for &site in &sites {
+                work = work.checked_add(visits[site as usize].work)
+                    .and_then(|n| n.checked_add(16)).ok_or("map admission work overflow")?;
+                for next in visits[site as usize].successors.into_iter().flatten() {
+                    if roots[next as usize] != Some(first) || next as usize == first {
+                        frontier.push(Frontier { site: next, previous: site });
+                    }
+                }
+            }
+            frontier.sort_unstable_by_key(|edge| edge.site);
+            frontier.dedup_by_key(|edge| edge.site);
+            work = work.checked_add((frontier.len() as u64).checked_mul(16)
+                .ok_or("map frontier work overflow")?).ok_or("map admission work overflow")?;
             let id = groups.len();
             for &site in &sites { assigned[site as usize] = Some(id); }
-            groups.push(Group { owner, sites: sites.into_boxed_slice(), work });
+            groups.push(Group { owner: selected[first].unwrap(), sites: sites.into_boxed_slice(),
+                frontier: frontier.into_boxed_slice(), work });
         }
         Ok(Self { groups: groups.into_boxed_slice(), sites: assigned.into_boxed_slice() })
     }

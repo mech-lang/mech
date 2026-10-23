@@ -5,12 +5,13 @@ use crate::native_artifact::JitProgramArtifact;
 use std::cell::{Cell, RefCell};
 
 #[derive(Clone, Copy, PartialEq)]
-enum Mode { Native, Fallback, Limited }
+enum Mode { Native, Fallback, Limited, LimitedHelper }
 #[derive(Default, Debug)]
 struct Observation {
     calls: usize, groups: usize, native_interiors: usize, fallback_interiors: usize,
     probes: usize, errors: Vec<&'static str>, limited: bool,
     failure: Option<(u64, Option<u32>)>,
+    fused: usize, helper_probes: usize, limited_helper: bool,
 }
 thread_local! {
     static MODE: Cell<Mode> = const { Cell::new(Mode::Native) };
@@ -50,8 +51,8 @@ unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
     if status == STATUS_OK && native && !OBS.with(|r| r.borrow().probes != 0) {
         let group = group.unwrap();
         let before = (ctx.control.previous, ctx.control.work.used());
-        if before.0 != Some(group.end()) {
-            note(|r| r.errors.push("group did not establish its proved end"));
+        if before.0 != Some(group.start()) {
+            note(|r| r.errors.push("group did not retain its admitted anchor"));
         }
         if ctx.visit(site).is_ok() || ctx.visit(u64::from(group.sites[1])).is_ok()
             || ctx.failure_site(u64::MAX).is_ok() {
@@ -70,12 +71,46 @@ unsafe extern "C" fn observe_helper(
 ) -> u64 {
     let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
     let previous = ctx.limits;
+    let fused = (operation == super::super::program_abi::MAP_OWNER_CALL && ctx.retained_native_call(site as usize))
+        || (operation == super::super::program_abi::MAP_OWNER_SPAN && ctx.retained_native_span(site as usize));
+    let before = (ctx.control.previous, ctx.control.work.used(), ctx.control.visits, ctx.hash_table_updates);
+    let limited = fused && MODE.with(Cell::get) == Mode::LimitedHelper
+        && !OBS.with(|r| r.borrow().limited_helper);
+    if limited {
+        let work = ctx.control.descriptor.map_admission.group(site as usize)
+            .map_or(ctx.control.descriptor.visits[site as usize].work, |group| group.work);
+        let used = ctx.library.used();
+        if ctx.library.restrict(used.0 + work - 1, used.1).is_err() {
+            note(|r| r.errors.push("could not restrict fused helper admission"));
+        }
+        note(|r| r.limited_helper = true);
+    }
     if operation == super::super::program_abi::MAP_OWNER_BEGIN && MODE.with(Cell::get) == Mode::Fallback {
         ctx.limits.max_temporary_bytes = Some(0);
     }
     // SAFETY: the real helper receives the checked frame's unchanged arguments.
     let status = unsafe { super::helper(raw, site, operation, first, second, third, result) };
-    unsafe { &mut *raw.cast::<Context<'_, '_>>() }.limits = previous;
+    let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
+    ctx.limits = previous;
+    if limited && (status == STATUS_OK || before !=
+        (ctx.control.previous, ctx.control.work.used(), ctx.control.visits, ctx.hash_table_updates)) {
+        note(|r| r.errors.push("denied fused helper advanced work, storage or control"));
+    }
+    if fused && status == STATUS_OK {
+        note(|r| r.fused += 1);
+        if ctx.control.previous != Some(site as u32) || ctx.control.visits != before.2 + 1 {
+            note(|r| r.errors.push("helper was not admitted exactly once at its own boundary"));
+        }
+        let before = (ctx.control.previous, ctx.control.work.used(), ctx.control.visits, ctx.hash_table_updates);
+        if ctx.helper(site, operation, [first, second, third]).is_ok()
+            || ctx.visit(ctx.control.descriptor.plan.entry() as u64).is_ok() {
+            note(|r| r.errors.push("fused helper replay or foreign frontier was accepted"));
+        }
+        if before != (ctx.control.previous, ctx.control.work.used(), ctx.control.visits, ctx.hash_table_updates) {
+            note(|r| r.errors.push("rejected fused helper probe changed its state"));
+        }
+        note(|r| r.helper_probes += 2);
+    }
     status
 }
 fn run(
@@ -118,15 +153,17 @@ fn native_map_groups_reduce_actual_callbacks_preserve_fallback_and_deny_one_shor
         assert_eq!(restored.encode_build_owned_image().unwrap(), image);
         for descriptor in [jit.descriptor(), &restored] {
             assert!(!descriptor.map_admission.groups.is_empty());
+            assert!(descriptor.map_admission.groups.iter().any(|group| group.frontier.len() > 1),
+                "fixture must exercise native branches with multiple observable successors");
             let mut callbacks = Vec::new();
-            for mode in [Mode::Native, Mode::Fallback, Mode::Limited] {
+            for mode in [Mode::Native, Mode::Fallback, Mode::Limited, Mode::LimitedHelper] {
                 let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
                 let mut outputs = vec![None; 1];
                 let (result, observed) = run(&jit, descriptor, mode, &[], &mut outputs, &memory);
                 assert!(observed.errors.is_empty(), "{observed:?}");
                 assert_eq!(observed.native_interiors, 0, "{observed:?}");
-                if mode == Mode::Limited {
-                    assert!(result.is_err() && observed.limited, "{result:?} {observed:?}");
+                if matches!(mode, Mode::Limited | Mode::LimitedHelper) {
+                    assert!(result.is_err() && (observed.limited || observed.limited_helper), "{result:?} {observed:?}");
                     assert!(outputs.iter().all(Option::is_none));
                 } else {
                     result.unwrap();
@@ -134,7 +171,10 @@ fn native_map_groups_reduce_actual_callbacks_preserve_fallback_and_deny_one_shor
                     assert_eq!(map.entries().len(), 1);
                     assert!(matches!(map.entries()[0].key().data(), ValueData::String(s) if s.as_ref() == "opaque"));
                     assert!(matches!(map.entries()[0].value(), ValueData::U64(3)));
-                    if mode == Mode::Native { assert!(observed.groups > 0 && observed.probes == 3); }
+                    if mode == Mode::Native {
+                        assert!(observed.groups > 0 && observed.probes == 3);
+                        assert!(observed.fused > 0 && observed.helper_probes == observed.fused * 2);
+                    }
                     else { assert!(observed.groups == 0 && observed.fallback_interiors > 0); }
                     callbacks.push(observed.calls);
                 }
@@ -165,7 +205,7 @@ fn native_map_group_arithmetic_failure_keeps_the_original_interior_origin() {
         let (failed, previous) = observed.failure.expect("generated arithmetic failure");
         let previous = previous.unwrap();
         let group = jit.descriptor().map_admission.group(previous as usize).unwrap();
-        assert_eq!(previous, group.end());
+        assert_eq!(previous, group.start());
         assert_ne!(failed, u64::from(previous), "failure must exercise an interior original instruction");
         assert!(group.sites.contains(&(failed as u32)));
         let Err(NativeProgramExecutionError::Control(NativeIterationExecutionError::Arithmetic { origin })) = result
