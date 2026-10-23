@@ -57,6 +57,19 @@ impl CanonicalEvaluationError {
 }
 
 pub fn evaluate(source: &str) -> Result<EvaluatedValue, CanonicalEvaluationError> {
+    evaluate_in_catalog(source, false)
+}
+
+pub fn evaluate_with_source_catalog(
+    source: &str,
+) -> Result<EvaluatedValue, CanonicalEvaluationError> {
+    evaluate_in_catalog(source, true)
+}
+
+fn evaluate_in_catalog(
+    source: &str,
+    with_catalog: bool,
+) -> Result<EvaluatedValue, CanonicalEvaluationError> {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x523), Revision(1), source)
             .map_err(|error| CanonicalEvaluationError::Parse(format!("{error:?}")))?,
@@ -71,9 +84,13 @@ pub fn evaluate(source: &str) -> Result<EvaluatedValue, CanonicalEvaluationError
     let document = DocumentSyntax::cast(parsed.syntax()).ok_or_else(|| {
         CanonicalEvaluationError::Parse("canonical parser did not publish a document root".into())
     })?;
-    let compiled = CanonicalSourceFrontend
-        .compile_document(&document)
-        .map_err(CanonicalEvaluationError::Source)?;
+    let compiled = if with_catalog {
+        CanonicalSourceFrontend
+            .compile_document_with_catalog(&document, mech_stdlib::source_catalog())
+    } else {
+        CanonicalSourceFrontend.compile_document(&document)
+    }
+    .map_err(CanonicalEvaluationError::Source)?;
     let output = compiled
         .document_outputs()
         .iter()

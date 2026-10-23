@@ -1183,6 +1183,24 @@ fn text_join() -> Result<KindScheme, SemanticModelError> {
     )
 }
 
+fn insert_map() -> Result<KindScheme, SemanticModelError> {
+    let map = |cardinality| KindExpr::Map {
+        key: Box::new(kind(0)),
+        value: Box::new(kind(1)),
+        cardinality,
+    };
+    make(
+        2,
+        2,
+        vec![map(dim(0)), kind(0), kind(1)],
+        vec![map(dim(1))],
+        vec![KindConstraint::Satisfies {
+            kind: kind(0),
+            predicate: BuiltinKindPredicate::Keyable,
+        }],
+    )
+}
+
 fn new_map() -> Result<KindScheme, SemanticModelError> {
     make(
         2,
@@ -1733,6 +1751,7 @@ pub fn maintained_source_schemes(
         "text/lines" => vec![text_lines()?],
         "text/join" => vec![text_join()?],
         "map/new" => vec![new_map()?],
+        "map/insert" => vec![insert_map()?],
         "map/histogram" => vec![string_histogram()?],
         "map/keys" => vec![string_count_projection(true)?],
         "map/values" => vec![string_count_projection(false)?],

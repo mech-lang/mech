@@ -77,6 +77,8 @@ fn managed_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'s
             name,
             "set/define"
                 | "set/comprehension"
+                | "map/new"
+                | "map/insert"
                 | "map/histogram"
                 | "map/keys"
                 | "map/values"
@@ -164,6 +166,8 @@ fn managed_source_family(name: &str, intrinsic: bool) -> Option<&'static str> {
             "matrix/comprehension"
                 | "matrix/horzcat"
                 | "matrix/vertcat"
+                | "map/new"
+                | "map/insert"
                 | "map/histogram"
                 | "map/keys"
                 | "map/values"
@@ -325,7 +329,7 @@ fn ordinary_map_additions_have_exact_aggregate_families_and_memory_classes() {
         assert_eq!(export.exposure, mech_core::FunctionExposure::ModuleOnly);
         assert_eq!(catalog.exports_for_operation(operation).len(), 1);
     }
-    assert_eq!(catalog.module_exports("map").len(), 3);
+    assert_eq!(catalog.module_exports("map").len(), 5);
 }
 
 #[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
