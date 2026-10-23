@@ -202,6 +202,7 @@ impl NativeProgramObject {
             "private_line_matrix_regions": self.descriptor.line_matrices.regions.len(),
             "compiled_header_continuation_regions": usize::from(self.descriptor.prefix.is_some()),
             "compiled_source_edge_facts": &self.codegen.source_edge_facts,
+            "compiled_tag_threading": &self.codegen.tag_threading,
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }

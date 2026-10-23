@@ -1,5 +1,6 @@
 //! Version a proved closed packed Tail into its original CFG with SSA words.
-//! No source branch, primitive, update or error is replaced by an algorithm.
+//! Only proved tag branches are threaded; primitives, updates and errors keep
+//! their source order, including the last terminal header traversal.
 use super::super::{NativeCompileError, compiler::{backend, guard, offset, primitive, set_origin},
     iteration_code_plan::CodePlan, program_hooks::Hooks, program_packed_map::Frame,
     program_tail_layout::{Layout, Region}};
@@ -14,11 +15,15 @@ use std::collections::{BTreeMap, BTreeSet};
 use super::super::iteration_compiler::{CodegenReport, RegionToken};
 #[path = "program_scalar_edge_facts.rs"]
 mod edge_facts;
+#[path = "program_tag_threading.rs"]
+mod tag_threading;
 
 #[cfg(test)]
 thread_local! {
     static EDGE_FACT_EMISSIONS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };
     static EDGE_FACTS_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static TAG_THREADING_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static TAG_THREAD_EMISSIONS: std::cell::Cell<(usize, usize, usize)> = const { std::cell::Cell::new((0, 0, 0)) };
 }
 #[cfg(test)]
 pub(in crate::native_artifact) fn take_edge_fact_emissions() -> (usize, usize) {
@@ -32,6 +37,19 @@ pub(in crate::native_artifact) fn without_edge_facts<T>(f: impl FnOnce() -> T) -
     }
     let _restore = Restore(EDGE_FACTS_DISABLED.with(|disabled| disabled.replace(true)));
     f()
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn without_tag_threading<T>(f: impl FnOnce() -> T) -> T {
+    struct Restore(bool);
+    impl Drop for Restore {
+        fn drop(&mut self) { TAG_THREADING_DISABLED.with(|disabled| disabled.set(self.0)); }
+    }
+    let _restore = Restore(TAG_THREADING_DISABLED.with(|disabled| disabled.replace(true)));
+    f()
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn take_tag_thread_emissions() -> (usize, usize, usize) {
+    TAG_THREAD_EMISSIONS.with(|counts| counts.replace((0, 0, 0)))
 }
 fn note_edge_fact(arithmetic: bool) {
     #[cfg(test)]
@@ -257,10 +275,14 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
         return Ok(());
     }
     let facts = edge_facts::derive(code, closed, id, owner, aggregates, &slots).unwrap_or_default();
+    let threaded = tag_threading::derive(code, closed, id, owner, aggregates);
+    #[cfg(test)]
+    let threaded = if TAG_THREADING_DISABLED.with(std::cell::Cell::get) { None } else { threaded };
     #[cfg(test)]
     let facts = if EDGE_FACTS_DISABLED.with(std::cell::Cell::get) { edge_facts::Proof::default() } else { facts };
     let report_region = report.packed_ssa_region(site);
     let owner_index = region.map.unwrap();
+    let entry_template_start = b.func.dfg.num_insts();
     let ordinary = b.create_block();
     let inspect = b.create_block();
     let selected = b.create_block();
@@ -280,17 +302,34 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
     let words = Words::new(b, locals, code, slots)?;
     let packed = FrameState::registers(b, pointer, region.packed.as_ref().unwrap().packing_domain());
     let entry_work = (b.func.dfg.num_insts() - setup) as u64;
-    // The existing closed-body envelope includes 1024 fixed setup units.
+    // The existing closed-body envelope includes 1024 fixed units per
+    // traversal. Keep the original setup bound; check all fixed templates below.
     if entry_work > 512 { return Err(backend("packed SSA entry exceeds closed setup envelope")); }
     let exit = b.create_block();
     let failed = b.create_block();
     b.append_block_param(failed, types::I64);
     b.set_cold_block(failed);
-    let blocks = closed.sites.iter().map(|candidate| (*candidate == Some(id)).then(|| b.create_block()))
-        .collect::<Vec<_>>();
-    b.ins().jump(blocks[site].unwrap(), &[]);
-    for (index, block) in code.blocks().iter().enumerate() {
-        let Some(current) = blocks[index] else { continue; };
+    let source_sites = closed.sites.iter().enumerate().filter_map(|(index, candidate)|
+        (*candidate == Some(id)).then_some(index)).collect::<Vec<_>>();
+    let emitted_sites = threaded.as_ref().map_or_else(|| source_sites.clone(),
+        |graph| graph.nodes.iter().map(|node| node.site).collect());
+    let blocks = emitted_sites.iter().map(|_| b.create_block()).collect::<Vec<_>>();
+    let original_target = |next: u32| if next == region.tail.exit() { exit } else {
+        blocks[source_sites.binary_search(&(next as usize)).unwrap()]
+    };
+    let graph_target = |target: tag_threading::Target| match target {
+        tag_threading::Target::Node(index) => blocks[index], tag_threading::Target::Exit => exit,
+    };
+    b.ins().jump(if threaded.is_some() { blocks[0] } else { original_target(site as u32) }, &[]);
+    let entry_template_work = b.func.dfg.num_insts() - entry_template_start;
+    let mut dispatch_template_work = 0;
+    let mut folded_branches = Vec::new();
+    let mut known_latches = Vec::new();
+    let mut header_versions = 0;
+    for (version, &index) in emitted_sites.iter().enumerate() {
+        let block = &code.blocks()[index];
+        let current = blocks[version];
+        let threaded_node = threaded.as_ref().map(|graph| &graph.nodes[version]);
         // The entry frame observes a source origin only when control leaves
         // this private CFG. Each helper already receives its precise site.
         // Preserve that origin on every failing edge, without writing it for
@@ -300,6 +339,7 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
         b.set_cold_block(fail_at);
         b.switch_to_block(current);
         if index == site {
+            header_versions += 1;
             let fuel = packed.read(b, core::mem::offset_of!(Frame, fuel));
             let replenish = b.create_block();
             let funded = b.create_block();
@@ -313,6 +353,12 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
             let fuel = packed.read(b, core::mem::offset_of!(Frame, fuel));
             let fuel = b.ins().iadd_imm(fuel, -1);
             packed.write(b, core::mem::offset_of!(Frame, fuel), fuel);
+            if let Some(tag) = threaded_node.and_then(|node| node.header_tag) {
+                // Proven by the actual incoming dispatcher or completed
+                // source latch copy, never by an assumed initializer.
+                let value = b.ins().iconst(types::I64, i64::from(tag));
+                words.write(b, threaded.as_ref().unwrap().carrier_word, value);
+            }
         }
         if let Some((layout, action)) = aggregate_at(owner, aggregates, owner_index, index) {
             emit_aggregate(b, &words, layout, action, index, &facts, fail_at, report, report_region)?;
@@ -355,37 +401,60 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
                 _ => unreachable!("checked packed SSA action"),
             }
         }
-        let target = |next: u32| if next == region.tail.exit() { exit } else { blocks[next as usize].unwrap() };
-        match block.terminator() {
-            Term::TailHeader { body, .. } | Term::Scalar(Branch::Jump(body)) => { b.ins().jump(target(body), &[]); }
-            Term::Scalar(Branch::Branch { condition, yes, no }) => {
-                let value = words.read(b, condition.get() as usize);
-                b.ins().brif(value, target(yes), &[], target(no), &[]);
+        if let Some(node) = threaded_node {
+            if node.folded_branch { folded_branches.push(index); }
+            if node.known_latch { known_latches.push(index); }
+            match &node.edge {
+                tag_threading::Edge::Jump(target) => { b.ins().jump(graph_target(*target), &[]); }
+                tag_threading::Edge::Dispatch { cases, other } => {
+                    // Dispatch follows the original header debit. Each arm
+                    // enters a body version, so no traversal is charged twice.
+                    let value = words.read(b, threaded.as_ref().unwrap().carrier_word);
+                    let before = b.func.dfg.num_insts();
+                    for &(ordinal, target) in cases {
+                        let next = b.create_block();
+                        let equal = b.ins().icmp_imm(IntCC::Equal, value, i64::from(ordinal));
+                        b.ins().brif(equal, graph_target(target), &[], next, &[]);
+                        b.switch_to_block(next);
+                    }
+                    b.ins().jump(graph_target(*other), &[]);
+                    // At most eight comparisons/branches plus a jump. Count
+                    // this on EVERY traversal, including unknown backedges.
+                    let work = b.func.dfg.num_insts() - before;
+                    if work > 32 {
+                        return Err(backend("tag dispatcher exceeds existing per-visit envelope"));
+                    }
+                    dispatch_template_work = dispatch_template_work.max(work);
+                }
+                tag_threading::Edge::Branch { .. } | tag_threading::Edge::Reject => {
+                    emit_source_terminator(b, &words, code, block.terminator(), fail_at, |next| {
+                        let tag_threading::Edge::Branch { yes, no } = &node.edge else { unreachable!() };
+                        let source_yes = match block.terminator() {
+                            Term::Scalar(Branch::Branch { yes, .. } | Branch::LiteralBranch { yes, .. }) => yes,
+                            _ => unreachable!(),
+                        };
+                        graph_target(if next == source_yes { *yes } else { *no })
+                    });
+                }
             }
-            Term::Scalar(Branch::LiteralBranch { left, right, yes, no }) => {
-                let kind = code.kind(left).unwrap();
-                let left = words.read(b, left.get() as usize);
-                let right = words.read(b, right.get() as usize);
-                let equal = if kind == NativeScalarKind::F64 {
-                    let left = b.ins().bitcast(types::F64, MemFlags::new(), left);
-                    let right = b.ins().bitcast(types::F64, MemFlags::new(), right);
-                    b.ins().fcmp(FloatCC::Equal, left, right)
-                } else { b.ins().icmp(IntCC::Equal, left, right) };
-                b.ins().brif(equal, target(yes), &[], target(no), &[]);
-            }
-            Term::Scalar(Branch::Reject) => {
-                // Exhaustive source matches retain their fail-closed default
-                // arm. Preserve its origin and unwind the owned frame/fuel.
-                let status = b.ins().iconst(types::I64, super::super::control_abi::STATUS_REJECT as i64);
-                b.ins().jump(fail_at, &[status.into()]);
-            }
-            _ => unreachable!("checked packed SSA terminator"),
+        } else {
+            emit_source_terminator(b, &words, code, block.terminator(), fail_at, original_target);
         }
         b.switch_to_block(fail_at);
         let status = b.block_params(fail_at)[0];
         set_origin(b, frame, index as u64);
         b.ins().jump(failed, &[status.into()]);
     }
+    if let Some(graph) = &threaded {
+        #[cfg(test)]
+        TAG_THREAD_EMISSIONS.with(|counts| {
+            let previous = counts.get();
+            counts.set((previous.0 + graph.nodes.len(), previous.1 + folded_branches.len(), previous.2 + known_latches.len()));
+        });
+        report.tag_threading(site, graph.carrier_word, graph.variants.clone(), source_sites.len(),
+            graph.nodes.len(), header_versions, folded_branches, known_latches);
+    }
+    let boundary_start = b.func.dfg.num_insts();
     b.switch_to_block(exit);
     // Tail validation confines source locals/carriers to this invocation and
     // permits only `returned` at its parent-scope exit. Do not make dead source
@@ -401,6 +470,48 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
     // source scalar slots. Synchronize ownership without extending their lives.
     spill(b, &packed, locals, region)?;
     b.ins().jump(error, &[status.into()]);
+    let boundary_work = b.func.dfg.num_insts() - boundary_start;
+    // Layout.compute includes this fixed lane on every original traversal,
+    // in addition to visit.work + OVERHEAD for every original source site.
+    // Even the first traversal pays enough for the entire one-time setup,
+    // a repeated unknown-tag dispatcher, AND both mutually exclusive exits.
+    // Known-tag header rematerialization is one instruction in that original
+    // header's unchanged OVERHEAD. No charge is removed or renewed here.
+    if entry_template_work + dispatch_template_work + boundary_work
+        > super::super::program_tail_layout::FIXED_OVERHEAD as usize
+    {
+        return Err(backend("packed SSA templates exceed fixed per-traversal envelope"));
+    }
     b.switch_to_block(ordinary);
     Ok(())
+}
+
+fn emit_source_terminator(b: &mut FunctionBuilder<'_>, words: &Words, code: CodePlan<'_>,
+    terminator: Term, fail_at: Block, target: impl Fn(u32) -> Block)
+{
+    match terminator {
+        Term::TailHeader { body, .. } | Term::Scalar(Branch::Jump(body)) => { b.ins().jump(target(body), &[]); }
+        Term::Scalar(Branch::Branch { condition, yes, no }) => {
+            let value = words.read(b, condition.get() as usize);
+            b.ins().brif(value, target(yes), &[], target(no), &[]);
+        }
+        Term::Scalar(Branch::LiteralBranch { left, right, yes, no }) => {
+            let kind = code.kind(left).unwrap();
+            let left = words.read(b, left.get() as usize);
+            let right = words.read(b, right.get() as usize);
+            let equal = if kind == NativeScalarKind::F64 {
+                let left = b.ins().bitcast(types::F64, MemFlags::new(), left);
+                let right = b.ins().bitcast(types::F64, MemFlags::new(), right);
+                b.ins().fcmp(FloatCC::Equal, left, right)
+            } else { b.ins().icmp(IntCC::Equal, left, right) };
+            b.ins().brif(equal, target(yes), &[], target(no), &[]);
+        }
+        Term::Scalar(Branch::Reject) => {
+            // Exhaustive source matches retain their fail-closed default
+            // arm. Preserve its origin and unwind the owned frame/fuel.
+            let status = b.ins().iconst(types::I64, super::super::control_abi::STATUS_REJECT as i64);
+            b.ins().jump(fail_at, &[status.into()]);
+        }
+        _ => unreachable!("checked packed SSA terminator"),
+    }
 }
