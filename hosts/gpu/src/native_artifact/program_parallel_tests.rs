@@ -174,6 +174,60 @@ first + ";" + second
 }
 
 #[test]
+fn parallel_string_query_elements_preserve_variable_widths_and_guarded_map_lookup() {
+    let source = format!(r#"{}
++> number
++> text
++> sequence
+key-count(s<string>, width<u64>, n<u64>) => (output<string>) :=
+  h := #Count(s, width, n, empty)
+  output := number/format(sequence/length(h_keys), 0u64).
+query-count(s<string>, query<string>, n<u64>) => (output<string>) :=
+  h := #Count(s, sequence/length(query), n, empty)
+  count := (query ∈ h)?
+    | true => h{{query}}
+    | false => 0u64.
+  output := number/format(count, 0u64) + ":" + query.
+text := seed<string>
+n := sequence/length(text)
+first-items := [1u64 2u64]
+queries := ["a" "ab" "ab:" ":ab:" "zzzzz"]
+first := text/join([key-count(text, width, n) | width <- first-items], "|")
+second := text/join([query-count(text, query, n) | query <- queries], ",")
+first + ";" + second
+"#, structural_projection_tests::COUNT);
+    let artifact = tests::artifact_source(&source);
+    let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+    assert_eq!(jit.descriptor().parallel.regions.len(), 2);
+    assert_eq!(jit.descriptor().parallel.regions[0].group.as_ref(), &[0, 1]);
+    let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+    let args = vec![input(&artifact, &memory)];
+    let baseline = (memory.used_bytes(), memory.retained_nodes());
+    let mut serial = vec![None; artifact.outputs().len()];
+    let serial_report = observed_with_nodes(jit.descriptor(), jit.test_checked_entry(), &args,
+        &mut serial, &memory, 1, false, 1_048_576).unwrap();
+    assert_eq!((serial_report.hash_table_regions, serial_report.hash_table_updates), (7, 45));
+    assert!(matches!(serial.last().unwrap().as_ref().unwrap().data(),
+        ValueData::String(text) if text.as_ref() == "3|3;3:a,3:ab,2:ab:,1::ab:,0:zzzzz"));
+    // Repeat the shared-account path while preserving the same ordered source
+    // result. Both hit and missing-key branches execute after private map exit.
+    for _ in 0..3 {
+        let mut parallel = vec![None; artifact.outputs().len()];
+        let report = observed_with_nodes(jit.descriptor(), jit.test_checked_entry(), &args,
+            &mut parallel, &memory, 8, false, 1_048_576).unwrap();
+        assert_eq!((report.parallel_batches, report.parallel_regions, report.parallel_tasks), (1, 2, 7));
+        assert_eq!((report.hash_table_regions, report.hash_table_updates), (7, 45));
+        for (left, right) in serial.iter().zip(&parallel) {
+            assert_eq!(left.as_ref().unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap(),
+                right.as_ref().unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap());
+        }
+        drop(parallel);
+    }
+    drop(serial);
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
+}
+
+#[test]
 fn insufficient_combined_worker_setup_uses_serial_source_body() {
     let source = source("number/format(h{\"a\"}, 0u64)", r#"
 first-items := [4u64 8u64]
