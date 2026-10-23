@@ -1,4 +1,4 @@
-//! ABI15 facade over the SAME canonical iteration CFG definition pass.
+//! ABI16 facade over the SAME canonical iteration CFG definition pass.
 use super::compiler::{backend, host_supported};
 use super::iteration_code_plan::CodePlan;
 use super::program_abi::{ENTRY, Entry, VERSION};
@@ -36,6 +36,8 @@ pub(super) mod borrowed_codegen;
 pub(super) mod prefix_codegen;
 #[path = "program_scalar_aggregates.rs"]
 pub(super) mod scalar_aggregates;
+#[path = "program_map_owner_codegen.rs"]
+pub(super) mod map_owner_codegen;
 #[path = "program_string_map_codegen.rs"]
 pub(super) mod string_map_codegen;
 #[path = "program_tail_codegen.rs"]
@@ -94,7 +96,7 @@ impl JitProgramArtifact {
         let descriptor = NativeProgramDescriptor::prepare(artifact, catalog, plan, stack, code)
             .map_err(backend)?;
         module.finalize_definitions().map_err(backend)?;
-        // SAFETY: define_cfg emits exactly the private ABI15 signature, and
+        // SAFETY: define_cfg emits exactly the private ABI16 signature, and
         // this owner retains the module for every synchronous invocation.
         let entry = unsafe {
             std::mem::transmute::<*const u8, Entry>(module.get_finalized_function(function))
@@ -135,7 +137,7 @@ impl JitProgramArtifact {
         super::program_runtime::execute(
             &self.descriptor,
             |frame| {
-                // SAFETY: this owner retains the exact checked ABI15 entry.
+                // SAFETY: this owner retains the exact checked ABI16 entry.
                 unsafe { (self.entry)(frame) }
             },
             inputs,

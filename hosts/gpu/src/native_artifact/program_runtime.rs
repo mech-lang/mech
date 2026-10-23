@@ -1,4 +1,4 @@
-//! Managed ABI15 invocation. This boundary never evaluates a graph: generated
+//! Managed ABI16 invocation. This boundary never evaluates a graph: generated
 //! blocks choose every successor and run every scalar/counter instruction.
 use super::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
@@ -231,7 +231,7 @@ impl Context<'_, '_> {
         Ok(())
     }
     fn needs_move(&self, site: usize) -> Option<(NativeMatchValue, NativeMatchValue)> {
-        if self.borrowed_action(site).is_some() {
+        if self.borrowed_action(site).is_some() || self.retained_native_action(site) {
             return None;
         }
         if self
@@ -278,7 +278,7 @@ impl Context<'_, '_> {
             .then_some(pair)
     }
     fn action_required(&self, site: usize) -> bool {
-        if self.borrowed_action(site).is_some() {
+        if self.borrowed_action(site).is_some() || self.retained_native_action(site) {
             return false;
         }
         if self
@@ -386,6 +386,13 @@ impl Context<'_, '_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         collection::before_span_helper(self, site)?;
         let descriptor = self.control.descriptor;
+        if matches!(operation, super::program_abi::MAP_OWNER_BEGIN
+            | super::program_abi::MAP_OWNER_CALL | super::program_abi::MAP_OWNER_END) {
+            return self.retained_map_helper(site, operation, args);
+        }
+        if self.retained_native_action(site) || self.retained_native_call(site) || self.retained_native_exit(site) {
+            return Err(invalid("ordinary helper at retained native map site"));
+        }
         if operation == super::program_abi::CLOSED_TAIL_BEGIN {
             return self.begin_closed_tail(site, args);
         }
@@ -713,12 +720,12 @@ impl Context<'_, '_> {
         // visit, exactly as the managed latch used to do. Aggregate words own
         // no heap payload and are absent from the retirement inventory.
         if let Some(previous) = self.control.previous
-            && self
+            && (self
                 .control
                 .descriptor
                 .scalar_aggregates
                 .action(previous as usize)
-                .is_some()
+                .is_some() || self.retained_native_action(previous as usize))
             && let NativeIterationAction::Latch { iteration } =
                 self.control.descriptor.plan.blocks()[previous as usize].action()
             && matches!(
@@ -795,6 +802,9 @@ impl Context<'_, '_> {
                 .is_some_and(|state| !state.is_complete())
         {
             return Err(invalid("completion with an active collection builder"));
+        }
+        if self.control.completed && self.has_retained_maps() {
+            return Err(invalid("completion with an active retained map owner"));
         }
         self.consumed = false;
         Ok(())
@@ -3399,7 +3409,7 @@ mod tests {
                             *frame.arguments = 1;
                         }
                     }
-                    // SAFETY: arguments remain within the retained ABI15 boundary;
+                    // SAFETY: arguments remain within the retained ABI16 boundary;
                     // wrong metadata/pointer is rejected before dereference.
                     let status = unsafe {
                         (frame.helper)(
@@ -4222,8 +4232,8 @@ mod tests {
         }
     }
     #[test]
-    fn abi15_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 15);
+    fn abi16_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
+        assert_eq!(VERSION, 16);
         assert_eq!(super::super::program_abi::PHASE_CAPTURE_TAIL, 3);
         assert_eq!(super::super::program_abi::STATUS_INPUT_SCANNED, 7);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);

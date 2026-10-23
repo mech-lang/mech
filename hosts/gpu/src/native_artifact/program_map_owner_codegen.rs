@@ -1,0 +1,82 @@
+//! Conditional native words around the ordinary generated CFG. Rust helpers
+//! provide storage only; source blocks still choose successors and compute values.
+use super::super::{
+    NativeCompileError, compiler::{backend, offset}, iteration_code_plan::CodePlan,
+    program_hooks::Hooks, program_map_owner_layout as layout,
+    program_abi::{MAP_OWNER_BEGIN, MAP_OWNER_CALL, MAP_OWNER_END},
+};
+use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
+use cranelift_frontend::FunctionBuilder;
+use mech_engine::native_artifact::{NativeMapOwnerWords, NativeIterationAction};
+
+fn load(b: &mut FunctionBuilder<'_>, base: Value, word: usize) -> Result<Value, NativeCompileError> {
+    Ok(b.ins().load(types::I64, MemFlags::new(), base, offset(word)?))
+}
+fn store(b: &mut FunctionBuilder<'_>, base: Value, word: usize, value: Value) -> Result<(), NativeCompileError> {
+    b.ins().store(MemFlags::new(), value, base, offset(word)?);
+    Ok(())
+}
+
+/// Return the common continuation when a native branch skips the ordinary
+/// action, and whether entry was completely emitted (including fallback MOVE).
+pub(in crate::native_artifact) fn emit(
+    b: &mut FunctionBuilder<'_>, locals: Value, owner: Option<&NativeMapOwnerWords>,
+    site: usize, hooks: Option<&Hooks>, code: CodePlan<'_>, error: Block,
+) -> Result<(Option<Block>, bool), NativeCompileError> {
+    let Some(owner) = owner else { return Ok((None, false)); };
+    let entry = owner.initializer(site);
+    let exit = owner.exit(site);
+    let call = layout::call_region(owner, site);
+    let action = layout::action_region(owner, site);
+    let Some(index) = entry.or(exit).or(call).or(action) else { return Ok((None, false)); };
+    let hooks = hooks.ok_or_else(|| backend("map owner transport lacks checked hooks"))?;
+    let region = &owner.regions()[index];
+    let flag = owner.frame_words().checked_add(index).ok_or_else(|| backend("map owner flag overflow"))?;
+    let zero = b.ins().iconst(types::I64, 0);
+    let native = b.create_block();
+    let ordinary = b.create_block();
+    let joined = b.create_block();
+    if entry.is_some() {
+        hooks.call(b, site, MAP_OWNER_BEGIN, [zero; 3], error);
+        let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+        store(b, locals, flag, ready)?;
+        let selected = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
+        b.ins().brif(selected, native, &[], ordinary, &[]);
+        b.switch_to_block(native);
+        let (base, count) = owner.aggregates().slot(region.tail().carrier())
+            .ok_or_else(|| backend("map owner carrier has no fixed slice"))?;
+        for word in 0..count {
+            let value = load(b, hooks.arguments, word)?;
+            store(b, locals, base + word, value)?;
+        }
+        b.ins().jump(joined, &[]);
+        b.switch_to_block(ordinary);
+        // The checked begin helper already performed the canonical MOVE on
+        // refusal, using the same visit and cumulative work ledger.
+        b.ins().jump(joined, &[]);
+        b.switch_to_block(joined);
+        store(b, locals, code.value_count() + region.iteration() as usize, zero)?;
+        return Ok((None, true));
+    }
+    let active = load(b, locals, flag)?;
+    let active = b.ins().icmp_imm(IntCC::NotEqual, active, 0);
+    b.ins().brif(active, native, &[], ordinary, &[]);
+    b.switch_to_block(native);
+    if exit.is_some() {
+        let token = load(b, locals, region.tail().returned().get() as usize)?;
+        hooks.call(b, site, MAP_OWNER_END, [token, zero, zero], error);
+        store(b, locals, flag, zero)?;
+    } else if call.is_some() {
+        let NativeIterationAction::LibraryCall { operands, output, .. } = code.blocks()[site].action()
+            else { return Err(backend("map owner call is not a library action")); };
+        hooks.library_operation(b, site, MAP_OWNER_CALL, operands, locals,
+            |value| value == operands[0] || code.kind(value).is_some(), error)?;
+        let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+        store(b, locals, output.get() as usize, word)?;
+    } else if !super::scalar_aggregates::emit(b, locals, owner.aggregates(), site, error)? {
+        return Err(backend("map owner action lacks word transport"));
+    }
+    b.ins().jump(joined, &[]);
+    b.switch_to_block(ordinary);
+    Ok((Some(joined), false))
+}

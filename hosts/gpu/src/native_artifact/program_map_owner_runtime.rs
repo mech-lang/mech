@@ -20,6 +20,10 @@ impl<'plan> Session<'plan> {
     pub(super) fn new(descriptor: &'plan NativeProgramDescriptor) -> Self {
         Self { descriptor, state: None, refused_visit: None }
     }
+    fn active(&self, index: usize) -> bool {
+        self.state.as_ref().and_then(|state| state.slots.get(index))
+            .is_some_and(|slot| slot.binding.is_some())
+    }
 }
 
 struct Slot<'plan> {
@@ -30,6 +34,7 @@ pub(super) struct State<'plan> {
     slots: Box<[Slot<'plan>]>,
     descriptor: &'plan NativeProgramDescriptor,
     work_identity: u64,
+    active_tables: u64,
     last_owned_visit: Option<u64>,
     reservation: ManagedMemoryReservation,
 }
@@ -83,7 +88,7 @@ impl<'plan> State<'plan> {
         slots.resize_with(count, || Slot { binding: None });
         Ok(Some(Self {
             slots: slots.into_boxed_slice(), descriptor,
-            work_identity: work.identity(), last_owned_visit: None, reservation,
+            work_identity: work.identity(), active_tables: 0, last_owned_visit: None, reservation,
         }))
     }
 
@@ -144,6 +149,8 @@ impl<'plan> State<'plan> {
             &source, ctx.library.clone(), geometry, ctx.limits);
         match imported {
             Ok((binding, words)) => {
+                self.active_tables = self.active_tables.checked_add(1)
+                    .ok_or_else(|| invalid("retained map owner count overflow"))?;
                 self.slots[index].binding = Some(binding);
                 self.last_owned_visit = Some(ctx.control.visits);
                 Ok(Some(words))
@@ -166,9 +173,8 @@ impl<'plan> State<'plan> {
         let layout = self.descriptor.map_owner_words.as_ref()
             .ok_or_else(|| invalid("retained map call has no descriptor layout"))?;
         ctx.control.work.charge(Phase::Setup, amount(layout.regions().len(), 128, 128)?)?;
-        let (index, region) = layout.regions().iter().enumerate().find(|(_, region)| {
-            region.reads().contains(&(site as u32)) || region.writes().contains(&(site as u32))
-        }).ok_or_else(|| invalid("retained map call is not selected"))?;
+        let index = layout.call_region(site).ok_or_else(|| invalid("retained map call is not selected"))?;
+        let region = &layout.regions()[index];
         if ctx.control.current != Some(region.iteration()) {
             return Err(invalid("retained map call is outside owning loop"));
         }
@@ -178,6 +184,9 @@ impl<'plan> State<'plan> {
         if words.len() != operands.len() || words.len() < 2 || words[1] != 0 {
             return Err(invalid("retained map operand lane differs"));
         }
+        ctx.control.work.charge(Phase::Setup,
+            amount(region.writes().len().checked_add(region.reads().len())
+                .ok_or_else(|| invalid("retained map site inventory overflow"))?, 128, 128)?)?;
         let write = region.writes().contains(&(site as u32));
         let key = ctx.arena.copy_current(operands[1].get(), &mut ctx.control.work)?;
         let geometry = self.geometry(ctx, site)?.ok_or_else(|| invalid("retained map call lost caller geometry"))?;
@@ -206,6 +215,8 @@ impl<'plan> State<'plan> {
         let value = self.slots[index].binding.as_mut()
             .ok_or_else(|| invalid("retained map publication lacks owner"))?
             .finish(site, token, &self.descriptor.schemas, geometry, ctx.limits).map_err(storage_error)?;
+        self.active_tables = self.active_tables.checked_sub(1)
+            .ok_or_else(|| invalid("retained map owner count underflow"))?;
         drop(self.slots[index].binding.take());
         self.last_owned_visit = Some(ctx.control.visits);
         Ok(value)
@@ -214,7 +225,7 @@ impl<'plan> State<'plan> {
 
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_map_owner_runtime_tests.rs"]
-mod tests;
+pub(in crate::native_artifact::program_runtime) mod tests;
 
 impl Context<'_, '_> {
     pub(super) fn begin_retained_map(&mut self, site: usize) -> Result<Option<InitialWords>, Error> {
@@ -260,5 +271,78 @@ impl Context<'_, '_> {
         let result = state.finish(self, site, token);
         self.map_owners.state = Some(state);
         result
+    }
+}
+
+impl Context<'_, '_> {
+    pub(super) fn retained_native_action(&self, site: usize) -> bool {
+        self.control.descriptor.map_owner_words.as_ref()
+            .and_then(|layout| crate::native_artifact::program_map_owner_layout::action_region(layout, site))
+            .is_some_and(|index| self.map_owners.active(index))
+    }
+    pub(super) fn retained_native_exit(&self, site: usize) -> bool {
+        self.control.descriptor.map_owner_words.as_ref().and_then(|layout| layout.exit(site))
+            .is_some_and(|index| self.map_owners.active(index))
+    }
+    pub(super) fn has_retained_maps(&self) -> bool {
+        self.map_owners.state.as_ref().is_some_and(|state| state.active_tables != 0)
+    }
+    pub(super) fn retained_native_call(&self, site: usize) -> bool {
+        self.control.descriptor.map_owner_words.as_ref()
+            .and_then(|layout| crate::native_artifact::program_map_owner_layout::call_region(layout, site))
+            .is_some_and(|index| self.map_owners.active(index))
+    }
+    pub(super) fn retained_map_helper(&mut self, site: usize, operation: u64, args: [u64; 3])
+        -> Result<Option<u64>, Error>
+    {
+        use crate::native_artifact::program_abi::{MAP_OWNER_BEGIN, MAP_OWNER_CALL, MAP_OWNER_END, MOVE};
+        if self.consumed { return Err(invalid("duplicate retained map helper")); }
+        if operation == MAP_OWNER_BEGIN {
+            if args != [0; 3] { return Err(invalid("malformed retained map entry")); }
+            if let Some(words) = self.begin_retained_map(site)? {
+                let layout = self.control.descriptor.map_owner_words.as_ref().unwrap();
+                let index = layout.initializer(site).unwrap();
+                let count = layout.aggregates().slot(layout.regions()[index].tail().carrier()).unwrap().1;
+                if words.words().len() != count || count > self.argument_capacity {
+                    return Err(invalid("retained map initializer word lane differs"));
+                }
+                self.control.work.charge(Phase::Setup, amount(count, 16, 128)?)?;
+                for (index, &word) in words.words().iter().enumerate() {
+                    self.write_borrowed_word(index, word)?;
+                }
+                self.consumed = true;
+                Ok(Some(1))
+            } else {
+                self.helper(site as u64, MOVE, [0; 3])?;
+                Ok(Some(0))
+            }
+        } else if operation == MAP_OWNER_CALL {
+            let Action::LibraryCall { operands, .. } = self.control.descriptor.plan.blocks()[site].action()
+                else { return Err(invalid("retained map helper outside library call")); };
+            let count = operands.len();
+            if args != [self.arguments as u64, count as u64, 0] || count > 3
+                || count > self.argument_capacity || !self.retained_native_call(site)
+            {
+                return Err(invalid("retained map helper operand lane differs"));
+            }
+            let mut words = [0; 3];
+            // SAFETY: exact admitted pointer and capacity checked above; native
+            // execution is suspended and no borrowed lane escapes this copy.
+            words[..count].copy_from_slice(unsafe { core::slice::from_raw_parts(self.arguments, count) });
+            let result = self.call_retained_map(site, &words[..count])?;
+            self.consumed = true;
+            Ok(Some(result))
+        } else if operation == MAP_OWNER_END {
+            if args[1..] != [0; 2] { return Err(invalid("malformed retained map publication")); }
+            let Action::Scalar(mech_engine::native_artifact::NativeMatchAction::Copy { output, .. })
+                = self.control.descriptor.plan.blocks()[site].action() else {
+                    return Err(invalid("retained map exit lacks canonical destination"));
+                };
+            let output = *output;
+            let value = self.finish_retained_map(site, args[0])?;
+            self.arena.put(output.get(), &value, &mut self.control.work)?;
+            self.consumed = true;
+            Ok(None)
+        } else { Err(invalid("unknown retained map helper")) }
     }
 }

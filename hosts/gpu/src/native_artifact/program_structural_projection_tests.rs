@@ -88,9 +88,9 @@ fn native_structural_map_states_execute_all_seven_counting_widths() {
             crate::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
                 .unwrap();
         let identity = object.identity().bytes();
-        assert_eq!(u64::from_le_bytes(identity[16..24].try_into().unwrap()), 30);
-        assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 15);
-        assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 46);
+        assert_eq!(u64::from_le_bytes(identity[16..24].try_into().unwrap()), 31);
+        assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 16);
+        assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 47);
         assert!(jit.descriptor().plan().blocks().iter().any(|block| matches!(block.action(), NativeIterationAction::Structural { observation: mech_engine::native_artifact::NativeStructuralObservation::CanonicalValue, .. })));
         for text in ["ACGTACGTNACGTTACGTACGTACGT", "", "GGTAGGT"] {
             for width in widths {
@@ -122,7 +122,8 @@ fn native_structural_map_states_execute_all_seven_counting_widths() {
                 let mut output = vec![None; artifact.outputs().len()];
                 let mut limits = tests::limits();
                 limits.library.max_comparison_work = Some(10_000_000);
-                jit.evaluate_into(&inputs, &mut output, limits, &memory)
+                let updates = if width <= text.len() { text.len() - width + 1 } else { 0 };
+                map_owners::tests::evaluate_count_case(&jit, &inputs, &mut output, limits, &memory, updates as u64)
                     .unwrap();
                 assert_eq!(output.len(), 1);
                 for actual in &output {

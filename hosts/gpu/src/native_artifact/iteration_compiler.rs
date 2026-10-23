@@ -327,6 +327,11 @@ pub(super) fn define_cfg<M: Module>(
                     })
                     .ok_or_else(|| backend("Tail visit cost overflow"))?;
             }
+            let owner_prices = program.map_owner_words().map_err(backend)?;
+            for (site, visit) in visits.iter_mut().enumerate() {
+                visit.work = visit.work.checked_add(super::program_map_owner_layout::extra_work(&owner_prices, site).map_err(backend)?)
+                    .ok_or_else(|| backend("map owner visit work overflow"))?;
+            }
             (
                 super::program_tail_layout::Layout::derive(program, &borrowed, &visits)
                     .map_err(backend)?,
@@ -339,13 +344,24 @@ pub(super) fn define_cfg<M: Module>(
     let closed_words = closed.words;
     #[cfg(not(feature = "canonical-native-program"))]
     let closed_words = 0;
-    let local_count = plan
+    let canonical_local_count = plan
         .value_count()
         .checked_add(plan.iteration_count())
         .and_then(|n| n.checked_add(aggregate_words))
         .and_then(|n| n.checked_add(borrowed_words))
         .and_then(|n| n.checked_add(closed_words))
         .ok_or_else(|| backend("iteration local count overflow"))?;
+    #[cfg(feature = "canonical-native-program")]
+    let owner = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+        let layout = program.map_owner_words().map_err(backend)?
+            .after_frame_words(canonical_local_count).map_err(backend)?;
+        (!layout.regions().is_empty()).then_some(layout)
+    } else { None };
+    #[cfg(feature = "canonical-native-program")]
+    let local_count = owner.as_ref().map_or(Ok(canonical_local_count),
+        super::program_map_owner_layout::local_words).map_err(backend)?;
+    #[cfg(not(feature = "canonical-native-program"))]
+    let local_count = canonical_local_count;
     offset(local_count)?;
     offset(plan.input_count())?;
     offset(plan.output_count())?;
@@ -748,6 +764,12 @@ pub(super) fn define_cfg<M: Module>(
                 error,
             )?;
             #[cfg(feature = "canonical-native-program")]
+            let (owner_join, owner_handled) = super::program_compiler::map_owner_codegen::emit(
+                &mut b, locals, owner.as_ref(), index, hooks.as_ref(), plan, error,
+            )?;
+            #[cfg(not(feature = "canonical-native-program"))]
+            let owner_handled = false;
+            #[cfg(feature = "canonical-native-program")]
             let aggregate = super::program_compiler::scalar_aggregates::emit(
                 &mut b,
                 locals,
@@ -758,6 +780,7 @@ pub(super) fn define_cfg<M: Module>(
             #[cfg(not(feature = "canonical-native-program"))]
             let aggregate = false;
             match block.action() {
+                _ if owner_handled => {}
                 _ if aggregate
                     && !matches!(
                         block.action(),
@@ -1060,6 +1083,11 @@ pub(super) fn define_cfg<M: Module>(
                         }
                     }
                 }
+            }
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(joined) = owner_join {
+                b.ins().jump(joined, &[]);
+                b.switch_to_block(joined);
             }
             #[cfg(feature = "canonical-native-program")]
             if let Some(joined) = borrowed_join {

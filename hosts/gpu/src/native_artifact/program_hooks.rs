@@ -187,9 +187,17 @@ impl Hooks {
         }
     }
     pub fn library(
+        &self, b: &mut FunctionBuilder<'_>, site: usize,
+        operands: &[mech_engine::native_artifact::NativeMatchValue], locals: Value,
+        is_scalar: impl Fn(mech_engine::native_artifact::NativeMatchValue) -> bool, error: Block,
+    ) -> Result<(), NativeCompileError> {
+        self.library_operation(b, site, 0, operands, locals, is_scalar, error)
+    }
+    pub fn library_operation(
         &self,
         b: &mut FunctionBuilder<'_>,
         site: usize,
+        operation: u64,
         operands: &[mech_engine::native_artifact::NativeMatchValue],
         locals: Value,
         is_scalar: impl Fn(mech_engine::native_artifact::NativeMatchValue) -> bool,
@@ -223,7 +231,7 @@ impl Hooks {
             self.call(
                 b,
                 site,
-                super::program_abi::LIBRARY,
+                operation,
                 [self.arguments, count, zero],
                 error,
             );
@@ -231,7 +239,7 @@ impl Hooks {
         }
         #[cfg(not(feature = "canonical-native-program"))]
         {
-            let _ = (b, site, operands, locals, is_scalar, error);
+            let _ = (b, site, operation, operands, locals, is_scalar, error);
             Err(super::compiler::backend(
                 "library operand ABI is not enabled",
             ))

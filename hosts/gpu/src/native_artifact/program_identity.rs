@@ -1,4 +1,4 @@
-//! Explicit program IR/ABI15 identity. No Debug or pointer serialization.
+//! Explicit program IR/ABI16 identity. No Debug or pointer serialization.
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
     NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind, NativeSelectedTextJoin,
@@ -72,7 +72,8 @@ fn selected_template(
 // carried by build-owned descriptors. It does not activate owner execution.
 // IR30 pins the explicit owner boundary after borrowed/closed-loop storage;
 // candidate words may not overlap those separately retained metadata lanes.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 30;
+// IR31 selects conditional owner words and per-region live flags.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 31;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -164,7 +165,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 30;
 // reservations. Older Objects must not reuse the preceding binding layout price.
 // Policy46 retains lazy map-owner session metadata through entry boundaries.
 // Fixed caller geometry includes that state; table allocations remain lazy.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 46;
+// Policy47 funds owner transport and retained session entry/call/exit operations.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 47;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
