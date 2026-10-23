@@ -10,6 +10,8 @@ use mech_core::{
     },
 };
 use mech_engine::native_artifact::{NativeCollectionResult, NativeMatchValue, NativeTextJoinSink};
+#[path = "program_string_map_binding.rs"]
+mod compiled_map;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_text_join_observation.rs"]
 mod observation;
@@ -19,6 +21,7 @@ pub(in crate::native_artifact) use observation::{TextJoinDemand, TextJoinStage};
 pub(super) struct Builder {
     // Payloads are destroyed before the parent reservation is released.
     text: String,
+    compiled_map: Option<compiled_map::Buffer>,
     separator: Value,
     separator_bytes: u64,
     accepted: u64,
@@ -139,6 +142,7 @@ impl State {
         )?;
         self.builder(id)?.join = Some(Builder {
             text: String::new(),
+            compiled_map: None,
             separator,
             separator_bytes,
             accepted: 0,

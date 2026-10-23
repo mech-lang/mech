@@ -2,9 +2,9 @@
 //! Every selected semantic read is inventoried once in fusion_semantics.
 #[cfg(not(all(feature = "map_ops", feature = "convert")))]
 use super::NativeGuardedHistogramQuery as Sink;
-#[cfg(not(all(feature = "map_ops", feature = "convert")))]
-use super::fusion_semantics::Read;
 use super::fusion_semantics::reads;
+#[cfg(not(all(feature = "map_ops", feature = "convert")))]
+use super::fusion_semantics::{Read, SemanticActions};
 pub(crate) use super::fusion_semantics::{semantic_actions, semantic_use_counts};
 use super::iteration_validation::ControlPlan;
 use super::{
@@ -18,19 +18,27 @@ mod selected;
 #[cfg(all(feature = "map_ops", feature = "convert"))]
 use selected::candidate;
 #[cfg(not(all(feature = "map_ops", feature = "convert")))]
-fn candidate(_: &impl ControlPlan, _: &[Action], _: &[Vec<Read>], _: usize) -> Option<Sink> {
+fn candidate(
+    _: &impl ControlPlan,
+    _: &SemanticActions<'_>,
+    _: &[Vec<Read>],
+    _: usize,
+) -> Option<Sink> {
     None
 }
 
-pub(super) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
-    let actions = semantic_actions(plan)?;
-    let uses = reads(plan, &actions)?;
+pub(super) fn validate(
+    inputs: &super::fusion_semantics::ValidationInputs<'_, impl ControlPlan>,
+) -> Result<(), &'static str> {
+    let plan = inputs.plan();
+    let actions = inputs.actions()?;
+    let uses = reads(plan, actions)?;
     let mut sites = vec![false; actions.len()];
     for (id, data) in plan.collections().iter().enumerate() {
         let ResultKind::GuardedHistogramQuery(sink) = data.result() else {
             continue;
         };
-        if candidate(plan, &actions, &uses, id).as_ref() != Some(sink) {
+        if candidate(plan, actions, &uses, id).as_ref() != Some(sink) {
             return Err(BAD);
         }
         for (ordinal, step) in sink.steps().iter().enumerate() {
@@ -50,7 +58,7 @@ pub(super) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
     Ok(())
 }
 pub(crate) fn lower(plan: &mut Plan) -> Result<(), &'static str> {
-    let actions = semantic_actions(plan)?;
+    let actions = semantic_actions(plan)?.into_owned();
     let uses = reads(plan, &actions)?;
     for id in 0..plan.collections.len() {
         if !matches!(plan.collections[id].result(), ResultKind::Materialized) {

@@ -1,0 +1,146 @@
+{
+  "schema": "mech.canonical-knucleotide-policy-timing-10m.v1",
+  "status": "MEASURED_10M_DRIVER_FORMAT_LIMITATIONS_BLOCKING_PERFORMANCE_REGRESSION_STANDARD125M_FAILED_ADMISSION",
+  "subsequent_performance_qualification": "canonical-knucleotide-performance-regression-v1.json records the actual same-input legacy remeasurement, CPU profile and failed corrected-driver125M attempt. This historical receipt's raw timings, source, policy and oracle are unchanged. It is correctness/measurement evidence, not successful performance qualification.",
+  "source": {
+    "qualified_commit": "64a62bb8f178102aa70982f1195b372c0ad186f6",
+    "parent_commit": "fb2a6d0a4482fe1221cfcb1231e2c6661e3ce400",
+    "stack_base_commit": "651d138040de24a292ddebb4d2a89d6aa7889199",
+    "program": "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+    "program_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+    "precision": "Unchanged Mech F64 source; exact existing C/F32 reference output. No tolerance, precision switch, source rewrite or oracle replacement.",
+    "scope": "Complete original and bytecode-decoded canonical artifacts: record selection, case conversion, seven overlapping-window widths, histograms/frequency ordering and queries expressed in Mech. No packed-windows replacement, whole-program Rust bridge, source parser, JIT or resident-body fallback at execution."
+  },
+  "machine": {"cpu": "Apple M1", "architecture": "arm64", "memory_bytes": 8589934592, "os": "macOS 15.6.1"},
+  "build": {
+    "toolchain": "nightly-2026-03-03",
+    "dependencies": "Locked offline generated builds; one build job; runtime-only dependency closure independently reconciled against actual Cargo metadata and compiler-artifact messages.",
+    "rust_profile": "release",
+    "actual_rust_root_opt_level": "3",
+    "object_optimization": "none",
+    "whole_program_optimized": false,
+    "binary_sha256_both_variants": "d6f7d712cbcf96dfe9a5d74e358cc82b8b51b91e2631f695c437c645edec3c85",
+    "bytecode_sha256_both_variants": "f21b64c3d63bf12772f16939e122cb17fd78b71b5bae547d53e64f49a5e93a8e",
+    "object_sha256_both_variants": "439dcc9c4c85020e0d48c93993baeb1386d96b77414fc9aa6438dc2de32b2e9a",
+    "identity_sha256_both_variants": "392a72924877ef1ea6cd13efeab3b9b830fa3a91dc50be25ab4d45316889cba1",
+    "program_revision": "f8482138161d79dd8e18a474d8719587a56a68a45a26e6b36f44664b7b3d7b41",
+    "abi_version": 8,
+    "typed_ir_version": 10,
+    "work_policy_version": 21
+  },
+  "input": {
+    "FASTA_N": 2000000,
+    "THREE_bases_independently_scanned": 10000000,
+    "bytes": 20333411,
+    "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b",
+    "oracle_bytes": 254,
+    "oracle_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
+    "reference_provenance": "Same fasta-gcc-1.c, knucleotide-gcc-1.c and khash.h sources pinned in native-io-migration-timing-v1.json, using N=2000000. Reference generation is not a C benchmark sample.",
+    "standard_size": false
+  },
+  "finite_launch": {
+    "grants": [
+      {"target": "cli/stdin", "paths": ["text"], "operations": ["read"]},
+      {"target": "cli/stdout", "paths": ["text"], "operations": ["write"]}
+    ],
+    "max_ports": 16,
+    "input_text_bytes": 20333411,
+    "output_text_bytes": 1048576,
+    "memory_bytes": 1073741824,
+    "work": 70368744177664,
+    "transport_bytes": 16777216,
+    "native_stack_bytes": 1048576,
+    "library": {"output_elements": 1000000, "output_bytes": 134217728, "temporary_bytes": 536870912, "cloned_bytes": 536870912, "retained_nodes": 1000000, "compute_work": 1099511627776, "comparison_work": 4294967296},
+    "base_sha256": "ec79f588345186db7f8646e52158d494628c6eb69b94ebdb269ddcf5dbe1c87a",
+    "secured_sha256": "ffa228f92a9a466318ce3f23e71fb38f8f7e4510790748e484943dec867b037c",
+    "trusted_sha256": "259b9ebae318943f36103c1156ddae053d2879038abc01b461c24e2148b66440",
+    "derivation": "Both owned read-only launch files differ from the unchanged strict base policy only by explicit benchmark_policy=secured or trusted. Every cap and both grants are identical."
+  },
+  "policy_scope": {
+    "feature": "canonical-native-benchmark-policy",
+    "production": "Normal generated CLI remains secured and rejects the benchmark-policy JSON field and legacy trusted environment request.",
+    "trusted": "Benchmark-only bypass of resource/operation matching with a real live same-subject in-scope unlimited grant carrier. Real identity, revocation, exclusion, finite-use/usage behavior, checkpoints, provider acquisition, work, memory, transactions, output and shutdown remain. Not a bypass of all safety costs."
+  },
+  "qualification": {
+    "small_application_controls": 55,
+    "small_expected_denials_or_postcommit_failures": 42,
+    "same_full_driver_small_protocol_controls": 4,
+    "generated_template_unit_passes_per_variant": 8,
+    "pin_mutation_build_rejections": 9,
+    "pin_restoration_build_exit": 0,
+    "production_controls": 3,
+    "large_correctness_processes_before_timing": 4,
+    "large_correctness": "Both original/decoded variants and both policies exit0, exact oracle bytes, empty stderr, correct route/revision/launch hash, native AOT only and completed shutdown. This historical driver's automatic accounting gate compared each policy pair, not all four rows. The independent subsequent audit established identical accounting across all 16 actual large runs; the stronger gate added afterward is not retroactively attributed to this driver.",
+    "all_application_outcomes_including_samples": 71,
+    "success_reports_independently_reconciled": 29,
+    "generated_input_pins_reconciled": 24,
+    "source_state_before_and_after": "Exact clean 64a62bb8f178102aa70982f1195b372c0ad186f6; unchanged saved parent test executable SHA256 7a4fdd8f527eee553f4311cea2fc26a844fbcc8198d6a4a5a597c56aeb04e3bd.",
+    "supervisor": {"reason": "exit", "command_exit_status": 0, "owned_group_cleanup": "complete", "elapsed_seconds": 1585.1568183749914},
+    "enclosing_qualification_utc": {"started": "2026-10-19T23:07:24Z", "finished": "2026-10-19T23:33:47Z", "scope": "Includes build and qualification; not a benchmark latency sample."}
+  },
+  "measurement": {
+    "method": "Three serial fresh-process samples per variant AND policy, after all builds, template/pin controls and four large exact-correctness trials. Policy order reverses on alternate rounds. Warm executable/input filesystem caches from integrity reads and qualification. No competing local build, test, reference run, formatter or benchmark during collection.",
+    "timed_scope": "Spawn through observed child exit, including CLI acquisition, native computation, output/report and shutdown;1ms exit polling. Build, hashing and parent output/report validation excluded. Not cold-cache or kernel-only time.",
+    "deadline_seconds_per_child": 300,
+    "timing_attempts": 12,
+    "timed_process_starts_confirmed": 12,
+    "timed_process_starts_unknown": 0,
+    "successful_timed_samples": 12,
+    "published_timing_samples": 12,
+    "unit": "nanoseconds",
+    "original_secured": {"samples": [73536783875,73523561542,73773456708], "median": 73536783875},
+    "original_trusted": {"samples": [73451059542,73577599250,77404713125], "median": 73577599250},
+    "decoded_secured": {"samples": [73649162291,73858251709,74589283792], "median": 73858251709},
+    "decoded_trusted": {"samples": [73456734292,73463867417,75102962209], "median": 73463867417},
+    "outliers": "All requested samples are retained, including the77.404713125s original/trusted run; none removed or replaced."
+  },
+  "identical_native_accounting_each_large_run": {"native_work": 2827398102582, "native_comparison_work": 1381822373, "native_visits": 1053000483, "native_transport_bytes": 32568, "host_result_carrier_bytes": 216},
+  "separate_memory_inspection": {
+    "status": "PASS; not another benchmark sample",
+    "same_binary_and_policy": "Exact qualified original/secured binary, owned read-only10M input and launch; before/after binary/input/source pins unchanged, exact output and empty native stderr.",
+    "maximum_resident_bytes": 175898624,
+    "peak_memory_footprint_bytes": 101336704,
+    "metrics_sha256": "ea6a9ec2e0aa4c9c6ef17a9d92eec5a107c3943c3dfebb04e6a2113750bbc7fd",
+    "report_sha256": "9f4282b6b87ebd6ea5dc8488b8b72c13e946ca49ae702bed126cad5df4159f9c",
+    "supervisor": {"reason": "exit", "command_exit_status": 0, "owned_group_cleanup": "complete", "elapsed_seconds": 74.61351633397862},
+    "limits": "Managed1GiB admission is NOT a process-RSS limit. Provider raw acquisition/decoded String and OS/Rust input acquisition are outside that account. A10M observation does not establish a full125M peak or sufficient larger allowance."
+  },
+  "interpretation": [
+    "Original secured/trusted medians are73.5368s/73.5776s; decoded medians73.8583s/73.4639s. Three samples per group do not establish a significant matching-cost penalty or prove that checks are free.",
+    "The large common runtime remains in both modes. This experiment isolates only the explicit policy difference, not every shared safety/accounting or native-computation cost; those costs are not causally apportioned by these measurements.",
+    "This10M result must not be ranked against standard125M cohorts or divided directly by historical old-source/legacy-emitter measurements. No M3 denominator, other-language sample replacement or benchmark-site publication.",
+    "The canonical AOT source executes without a resident-body fallback, but Rust releaseO3 does not make its checked Object optimized: the Object remains opt_level=none."
+  ],
+  "reproduction": {
+    "test_target": "canonical_hosted_artifact",
+    "exact_ignored_test": "linked::benchmark::complete_original_and_decoded_knucleotide_same_binary_policy_controls",
+    "cargo_parent_build": ["cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j1", "-p", "mech-gpu", "--no-default-features", "--features", "canonical-native-benchmark-policy", "--test", "canonical_hosted_artifact", "--no-run"],
+    "parent_environment": {"CARGO_TARGET_DIR": "Separate validation target directory; recorded run reused tmp/pr-stack-901/target", "CARGO_BUILD_JOBS": "1", "CARGO_PROFILE_DEV_DEBUG": "0", "CARGO_PROFILE_TEST_DEBUG": "0", "CARGO_PROFILE_TEST_OPT_LEVEL": "0", "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true", "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true", "CARGO_INCREMENTAL": "0", "CARGO_NET_OFFLINE": "true", "CARGO_TERM_COLOR": "never", "RUST_BACKTRACE": "1"},
+    "required_environment": {"MECH_CANONICAL_HOSTED_PROFILE": "release", "MECH_CANONICAL_POLICY_SOURCE_COMMIT": "64a62bb8f178102aa70982f1195b372c0ad186f6", "MECH_CANONICAL_POLICY_EVIDENCE_DIR": "NEW absolute directory outside the clean checkout", "MECH_CANONICAL_HOSTED_FULL_INPUT_CONFIG": "Absolute frozen schema mech.canonical-hosted-full-input-config.v1, exact input/oracle/base-launch SHA256 above, deadline300,samples3", "MECH_CANONICAL_HOSTED_TIMING_SERIAL": "1"},
+    "unset_environment": ["MECH_CANONICAL_HOSTED_STAGED_INPUT_CONFIG", "MECH_NATIVE_SECURITY", "RUST_MIN_STACK"],
+    "invoke_parent": ["<positively selected test executable>", "--ignored", "--exact", "linked::benchmark::complete_original_and_decoded_knucleotide_same_binary_policy_controls", "--test-threads=1", "--nocapture"]
+  },
+  "local_evidence": {
+    "root": "tmp/pr-stack-evidence/",
+    "qualification_directory": "policy-scale-three-10000000-release-v654/",
+    "qualification_result_sha256": "8c1b9d321d6ece286ce432142f7773d6bb9f304c7356971baa1d309250240e76",
+    "full_input_result_sha256": "e155d8651d01d7ecac36d644165a52bfa60222e9360a2a08235dfe45c16157bf",
+    "configuration": {"path": "policy-scale-three-10000000-v651.json", "sha256": "4e21603f3707d4628219f72e0d7fa2a6f1940159b49f05b004e0f49a77c336e2"},
+    "driver": {"path": "qualify-policy-scale-three-10000000-v654.zsh", "sha256": "7d65b9a96bfaf4790e7197aa0f5afd2cc450ed16ad7df8ec2907bc817b191a72"},
+    "independent_auditor": {"path": "audit-policy-scale-v657.js", "sha256": "c17d98d5386a723b30ace756bb70b2cd1cd23b5401c0e2e5e7e8afddb1c184cc", "actual_node_exit": 0, "result": "audit-policy-scale-v657-result.json", "result_sha256": "06c34b4282ec02f9595f337c9e2bf47b8e12499128bc637e71748f2ec0e6b389"},
+    "auditor_development_note": "The first auditor invocation incorrectly required uppercase FASTA and failed its final geometry assertion; input is ordinary lowercase FASTA. Only that audit regexp was corrected to accept both cases. No source/oracle/input/sample changed. Its initial tee-only pipeline masked Node's failure; the successful rerun explicitly enabled pipefail and reconciled all raw evidence.",
+    "memory_directory": "knucleotide-10m-memory-inspection-v658/",
+    "availability": "Raw generated projects, compiled-unit messages, streams, reports, immutable input copies, binaries, supervisor logs and auditor are local evidence, not all committed here. This receipt preserves exact reconstruction inputs and scoped results. All historical cohorts and qualification records remain unchanged."
+  },
+  "post_measurement_driver_review": {
+    "reviewed_head": "98b170ed4fd8944b3b4dfe7ff18d81c3fa349dab",
+    "findings": [
+      "The automatic four-process gate checked accounting only within each original/decoded policy pair. Actual recorded counters nevertheless match across all 16 runs, as the independent audit established.",
+      "Derived launch evidence incorrectly used the base launch as requested_path, despite its different bytes. The separately retained base launch and actual derived owned paths/hashes authenticate the executed files. Raw historical receipts are not rewritten to hide this format defect.",
+      "Comparison-only fields leaked into the production full-input v1 receipt. These measurements use the separate comparison schema, not that production format, but the prior production-format isolation claim was incorrect."
+    ],
+    "correction_scope": "Subsequent driver corrections in this PR compare all four rows with one baseline, make derived launch evidence self-authenticating with separate base provenance, and restore the legacy production initial/attempt/summary key sets. Three regressions first failed against the old driver; six added regressions pass after the fixes. These are driver-only corrections, not a change to this measured source, oracle, limits or native computation.",
+    "stopped_full_size_attempt": "The first standard125M attempt was intentionally stopped during its first release build when these notes arrived. No full-size application or timing ran. Its partial logs and cleanup error/manual process reconciliation are retained; it is not qualified full-size evidence."
+  },
+  "remaining": "Corrected-driver clean-source release/production-format qualification passed subsequently. The first actual corrected-driver125M trial failed TemporaryBytes admission before timings; full-size correctness/timings remain unqualified. The same-input comparison shows a blocking whole-implementation performance regression. Restore fast compiled computation within ONE canonical security round before expanding to another benchmark. Broader all-ten/publication scope is not complete. Require fresh review and full green CI for new pushed code; keep draft and unmerged for the user's decision."
+}

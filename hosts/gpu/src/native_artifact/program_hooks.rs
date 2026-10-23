@@ -11,11 +11,124 @@ pub(super) struct Hooks {
     context: Value,
     pub result: Value,
     #[cfg(feature = "canonical-native-program")]
-    arguments: Value,
+    pub(super) arguments: Value,
     #[cfg(feature = "canonical-native-program")]
     argument_capacity: Value,
 }
 impl Hooks {
+    #[cfg(feature = "canonical-native-program")]
+    pub fn string_map_region(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        site: usize,
+        region: &mech_engine::native_artifact::NativeStringMapRegion,
+        function: cranelift_codegen::ir::FuncRef,
+        locals: Value,
+        counter_slot: usize,
+        exit: Block,
+        error: Block,
+    ) -> Result<(), NativeCompileError> {
+        use super::compiler::offset;
+        use super::program_abi::{STRING_MAP_FINISH, STRING_MAP_PREPARE};
+        use cranelift_codegen::ir::MemFlags;
+        let enough = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, self.argument_capacity, 5);
+        guard(b, enough, error, super::abi::STATUS_ABI);
+        let remaining = b
+            .ins()
+            .load(types::I64, MemFlags::new(), locals, offset(counter_slot)?);
+        let collection = b.ins().iconst(types::I64, region.collection() as i64);
+        let zero = b.ins().iconst(types::I64, 0);
+        self.call(
+            b,
+            site,
+            STRING_MAP_PREPARE,
+            [remaining, collection, zero],
+            error,
+        );
+        let ready = b.ins().load(types::I64, MemFlags::new(), self.result, 0);
+        let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
+        let native = b.create_block();
+        let ordinary = b.create_block();
+        b.ins().brif(ready, native, &[], ordinary, &[]);
+        b.switch_to_block(native);
+        let words = (0..5)
+            .map(|index| {
+                Ok(b.ins()
+                    .load(types::I64, MemFlags::new(), self.arguments, offset(index)?))
+            })
+            .collect::<Result<Vec<_>, NativeCompileError>>()?;
+        let call = b.ins().call(function, &words);
+        let processed = b.inst_results(call)[0];
+        self.call(
+            b,
+            site,
+            STRING_MAP_FINISH,
+            [processed, collection, zero],
+            error,
+        );
+        b.ins().jump(exit, &[]);
+        b.switch_to_block(ordinary);
+        Ok(())
+    }
+    #[cfg(feature = "canonical-native-program")]
+    pub fn window_region(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        site: usize,
+        region: &mech_engine::native_artifact::NativeWindowRegion,
+        function: cranelift_codegen::ir::FuncRef,
+        locals: Value,
+        counter_slot: usize,
+        exit: Block,
+        error: Block,
+    ) -> Result<(), NativeCompileError> {
+        use super::{
+            compiler::{guard, offset},
+            program_abi::{WINDOW_FINISH, WINDOW_PREPARE},
+        };
+        use cranelift_codegen::ir::MemFlags;
+        let required =
+            b.ins()
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, self.argument_capacity, 5);
+        guard(b, required, error, super::abi::STATUS_ABI);
+        let width = super::control_compiler::load(b, locals, region.width())?;
+        let length = super::control_compiler::load(b, locals, region.length())?;
+        // Only attempt representation binding at the first header. A declined
+        // Unicode/CRLF variant must not rescan or rebind on each iteration.
+        let ordinary = b.create_block();
+        let attempt = b.create_block();
+        let remaining = b
+            .ins()
+            .load(types::I64, MemFlags::new(), locals, offset(counter_slot)?);
+        let initial = b.ins().iadd_imm(length, 1);
+        let first = b.ins().icmp(IntCC::Equal, remaining, initial);
+        b.ins().brif(first, attempt, &[], ordinary, &[]);
+        b.switch_to_block(attempt);
+        let collection = b.ins().iconst(types::I64, region.collection() as i64);
+        self.call(b, site, WINDOW_PREPARE, [width, length, collection], error);
+        let ready = b.ins().load(types::I64, MemFlags::new(), self.result, 0);
+        let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
+        let native = b.create_block();
+        b.ins().brif(ready, native, &[], ordinary, &[]);
+        b.switch_to_block(native);
+        let words = (0..5)
+            .map(|index| {
+                Ok(b.ins()
+                    .load(types::I64, MemFlags::new(), self.arguments, offset(index)?))
+            })
+            .collect::<Result<Vec<_>, NativeCompileError>>()?;
+        // Direct call to code emitted from THIS plan, not a runtime executor
+        // or source helper. The entire loop contains no callback/admission.
+        let call = b.ins().call(function, &words);
+        let count = b.inst_results(call)[0];
+        let zero = b.ins().iconst(types::I64, 0);
+        self.call(b, site, WINDOW_FINISH, [count, collection, zero], error);
+        b.ins().jump(exit, &[]);
+        b.switch_to_block(ordinary);
+        Ok(())
+    }
     pub fn load<M: Module>(
         mixed: bool,
         b: &mut FunctionBuilder<'_>,
@@ -133,6 +246,16 @@ impl Hooks {
         error: Block,
     ) {
         let site = b.ins().iconst(types::I64, site as i64);
+        self.call_at(b, site, operation, args, error);
+    }
+    pub fn call_at(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        site: Value,
+        operation: u64,
+        args: [Value; 3],
+        error: Block,
+    ) {
         let operation = b.ins().iconst(types::I64, operation as i64);
         let call = b.ins().call_indirect(
             self.signature,

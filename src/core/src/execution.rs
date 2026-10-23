@@ -74,6 +74,7 @@ pub struct ExecutionHostFunctionRequest {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct ExecutionResourceRequest {
     pub base_uri: String,
     pub path: String,

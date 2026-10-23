@@ -1,0 +1,567 @@
+{
+  "schema": "mech.canonical-knucleotide-capture-transfer-footprint.v1",
+  "status": "QUALIFIED",
+  "measured_source_commit": "c0271df4fa28f7cc91e73a6383281473890e303e",
+  "implementation_source_commit": "1b3eef881497fcbb5246a737e66ae35370dcdb60",
+  "prior_secured_source_commit": "7f5475450fbe7befdf35d685fe378771e6aee168",
+  "implementation": {
+    "capture": "The existing CLI provider consumes acquired raw bytes through RuntimeHostInputValue::string_from_utf8_bytes instead of copying decoded text. Both that boundary and ordinary ValueDraft String finalization use one StringSnapshotConstructor and shared metadata allocator.",
+    "construction": "Prepare the same schema, shape, byte and metadata admissions before consuming the String. Private metadata is not exposed as a Value or frozen identity. Finish requires the exact funded byte length and exclusive metadata owners, then publishes a genuine canonical String.",
+    "failure": "Invalid UTF8 and preparation/finish errors restore the exact original Vec bytes. Repeated mixed text/byte reads, one acquisition, cached diagnostics and immutable aliases retain their prior behavior. Tests cover real pointer reuse and each of the five admission denials.",
+    "unchanged": "Same complete Mech source, canonical semantic graph modulo nominal/constant renaming, generated instructions modulo exact constant-slot immediates, maintained factory closure, native counters, grants, finite policy, one secured round and atomic output publication. No new resource URI, workload-specific Rust body or alternate evaluator.",
+    "versions": {
+      "abi": 8,
+      "typed_ir": 21,
+      "work_policy": 31
+    }
+  },
+  "platform": {
+    "architecture": "arm64",
+    "cpu_and_memory": "Apple M1\n8\n8\n8589934592"
+  },
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "workloads": [
+    {
+      "label": "10m",
+      "input": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/knucleotide-large-controls-v564/fasta-n-2000000.txt",
+        "bytes": 20333411,
+        "three_bases": 10000000,
+        "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b"
+      },
+      "oracle": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/legacy-native-10m-measurement-v677/full-qualification-historical-fast.stdout",
+        "bytes": 254,
+        "sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+      }
+    },
+    {
+      "label": "125m",
+      "input": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/input",
+        "bytes": 254166745,
+        "three_bases": 125000000,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa"
+      },
+      "oracle": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/oracle",
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      }
+    }
+  ],
+  "finite_launch_policy": {
+    "grants": [
+      {
+        "target": "cli/stdin",
+        "paths": [
+          "text"
+        ],
+        "operations": [
+          "read"
+        ]
+      },
+      {
+        "target": "cli/stdout",
+        "paths": [
+          "text"
+        ],
+        "operations": [
+          "write"
+        ]
+      }
+    ],
+    "max_ports": 16,
+    "input_text_bytes": 254166745,
+    "output_text_bytes": 1048576,
+    "memory_bytes": 3221225472,
+    "work": 562949953421312,
+    "transport_bytes": 16777216,
+    "native_stack_bytes": 1048576,
+    "library": {
+      "output_elements": 8388608,
+      "output_bytes": 536870912,
+      "temporary_bytes": 1073741824,
+      "cloned_bytes": 536870912,
+      "retained_nodes": 16777216,
+      "compute_work": 8796093022208,
+      "comparison_work": 68719476736
+    }
+  },
+  "method": {
+    "timing": "Twelve serial rounds per input size: all six permutations twice, so every variant occupies every position four times. One separate correctness/warmup per variant per size. Identical Node synchronous observer and regular-file descriptors opened before timing. Spawn through exit including secured report generation is timed; compilation, integrity hashing and parent validation excluded.",
+    "memory": "Six serial fresh-process runs per implementation and input size; macOS /usr/bin/time -l, maximum resident set size in bytes per local getrusage(2) documentation. All six implementation-order permutations, one per round. Whole-process peak RSS, not managed-budget usage or isolated capability overhead. Separate diagnostic, no runtime timing credit.",
+    "exact_timed_outputs": 78,
+    "timing_samples": 72,
+    "exact_timed_secured_reports": 52,
+    "separate_memory_processes": 36,
+    "qualification": "The release build and two full-size correctness runs requested zero timing samples and overlapped static correctness tests. Both were authoritatively terminal before the isolated balanced timing and separate memory batches started."
+  },
+  "measurements": {
+    "10m": {
+      "timing_seconds": {
+        "legacy-direct": {
+          "samples": 12,
+          "median": 0.0922224165,
+          "minimum": 0.09161275,
+          "maximum": 0.093857084
+        },
+        "secured-before": {
+          "samples": 12,
+          "median": 0.072147958,
+          "minimum": 0.070465459,
+          "maximum": 0.072782583
+        },
+        "secured-capture": {
+          "samples": 12,
+          "median": 0.070146687,
+          "minimum": 0.068753834,
+          "maximum": 0.07032325
+        }
+      },
+      "process_memory_bytes": {
+        "legacy-direct": {
+          "median_peak_rss_bytes": 55197696,
+          "rss_range_bytes": [
+            55132160,
+            62504960
+          ],
+          "median_peak_footprint_bytes": 31352128
+        },
+        "secured-before": {
+          "median_peak_rss_bytes": 83197952,
+          "rss_range_bytes": [
+            83197952,
+            83197952
+          ],
+          "median_peak_footprint_bytes": 63980544
+        },
+        "secured-capture": {
+          "median_peak_rss_bytes": 62898176,
+          "rss_range_bytes": [
+            62898176,
+            62898176
+          ],
+          "median_peak_footprint_bytes": 47186880
+        }
+      },
+      "candidate_faster_paired_rounds_than_secured": 12,
+      "candidate_faster_paired_rounds_than_legacy": 12
+    },
+    "125m": {
+      "timing_seconds": {
+        "legacy-direct": {
+          "samples": 12,
+          "median": 0.9763012085,
+          "minimum": 0.969994917,
+          "maximum": 0.982281166
+        },
+        "secured-before": {
+          "samples": 12,
+          "median": 0.6587175215,
+          "minimum": 0.654517083,
+          "maximum": 0.680081167
+        },
+        "secured-capture": {
+          "samples": 12,
+          "median": 0.639091833,
+          "minimum": 0.631950916,
+          "maximum": 0.650525
+        }
+      },
+      "process_memory_bytes": {
+        "legacy-direct": {
+          "median_peak_rss_bytes": 195362816,
+          "rss_range_bytes": [
+            170131456,
+            228835328
+          ],
+          "median_peak_footprint_bytes": 171451968
+        },
+        "secured-before": {
+          "median_peak_rss_bytes": 585465856,
+          "rss_range_bytes": [
+            551911424,
+            585465856
+          ],
+          "median_peak_footprint_bytes": 570402848
+        },
+        "secured-capture": {
+          "median_peak_rss_bytes": 482320384,
+          "rss_range_bytes": [
+            481738752,
+            498515968
+          ],
+          "median_peak_footprint_bytes": 466847584
+        }
+      },
+      "candidate_faster_paired_rounds_than_secured": 12,
+      "candidate_faster_paired_rounds_than_legacy": 12
+    }
+  },
+  "binaries": [
+    {
+      "name": "legacy-direct",
+      "bytes": 3159168,
+      "sha256": "e11bf3a7f10ed5ed6232d9bc88a4527d2ea6e0cf3fc96ee38978808e258a6be4"
+    },
+    {
+      "name": "secured-before",
+      "bytes": 6827104,
+      "sha256": "ad01c253c4f45ab9755b01f541720bd51201a869a96b8c431ccaa55d10dc6a43"
+    },
+    {
+      "name": "secured-capture",
+      "bytes": 6842992,
+      "sha256": "198daadc873bdf91cb5fcd148ba5847e94852aef99792d372c6d185734b848cc"
+    }
+  ],
+  "assessment": {
+    "full125m_runtime_change_percent": -2.9793785438269826,
+    "full125m_peak_rss_change_bytes": -103145472,
+    "full125m_peak_rss_change_percent": -17.617675043376057,
+    "executable_change_bytes": 15888,
+    "interpretation": "The matched batch shows faster execution and substantially lower peak RSS, with a small executable-size increase. This removes an explicit acquisition copy, not whole-input retention or streaming; the remaining footprint target is not achieved."
+  },
+  "qualification": {
+    "original_and_decoded_full125m_processes": 2,
+    "original_and_decoded_full125m_timing_samples": 0,
+    "original_and_decoded_binary_identical": true,
+    "emitted_mech_machine_code_bytes": 24704,
+    "emitted_mech_machine_code_sha256": "d8358ac559191d3a9975c4f0785b848835f580a6f43bdf3733a1e0c0f04247f4",
+    "unchanged_relocations": [
+      "0000000000004c34 ARM64_RELOC_BRANCH26     _mech_window_region_2",
+      "0000000000004030 ARM64_RELOC_BRANCH26     _mech_window_region_5",
+      "0000000000003460 ARM64_RELOC_BRANCH26     _mech_string_map_region_0"
+    ],
+    "constant_slot_instruction_remaps": [
+      {
+        "instruction_offset": 3228,
+        "candidate_constant_slot": 2,
+        "baseline_constant_slot": 3
+      },
+      {
+        "instruction_offset": 3236,
+        "candidate_constant_slot": 3,
+        "baseline_constant_slot": 4
+      },
+      {
+        "instruction_offset": 3244,
+        "candidate_constant_slot": 4,
+        "baseline_constant_slot": 5
+      },
+      {
+        "instruction_offset": 3252,
+        "candidate_constant_slot": 5,
+        "baseline_constant_slot": 6
+      },
+      {
+        "instruction_offset": 3260,
+        "candidate_constant_slot": 6,
+        "baseline_constant_slot": 7
+      },
+      {
+        "instruction_offset": 3268,
+        "candidate_constant_slot": 7,
+        "baseline_constant_slot": 8
+      },
+      {
+        "instruction_offset": 5508,
+        "candidate_constant_slot": 6,
+        "baseline_constant_slot": 7
+      },
+      {
+        "instruction_offset": 5588,
+        "candidate_constant_slot": 6,
+        "baseline_constant_slot": 7
+      },
+      {
+        "instruction_offset": 5772,
+        "candidate_constant_slot": 3,
+        "baseline_constant_slot": 4
+      },
+      {
+        "instruction_offset": 5784,
+        "candidate_constant_slot": 6,
+        "baseline_constant_slot": 7
+      },
+      {
+        "instruction_offset": 6704,
+        "candidate_constant_slot": 7,
+        "baseline_constant_slot": 8
+      },
+      {
+        "instruction_offset": 6768,
+        "candidate_constant_slot": 7,
+        "baseline_constant_slot": 8
+      },
+      {
+        "instruction_offset": 10140,
+        "candidate_constant_slot": 2,
+        "baseline_constant_slot": 3
+      },
+      {
+        "instruction_offset": 10336,
+        "candidate_constant_slot": 3,
+        "baseline_constant_slot": 4
+      },
+      {
+        "instruction_offset": 10400,
+        "candidate_constant_slot": 3,
+        "baseline_constant_slot": 4
+      },
+      {
+        "instruction_offset": 15288,
+        "candidate_constant_slot": 2,
+        "baseline_constant_slot": 3
+      },
+      {
+        "instruction_offset": 15728,
+        "candidate_constant_slot": 2,
+        "baseline_constant_slot": 3
+      },
+      {
+        "instruction_offset": 15992,
+        "candidate_constant_slot": 3,
+        "baseline_constant_slot": 4
+      },
+      {
+        "instruction_offset": 17156,
+        "candidate_constant_slot": 2,
+        "baseline_constant_slot": 3
+      },
+      {
+        "instruction_offset": 17472,
+        "candidate_constant_slot": 2,
+        "baseline_constant_slot": 3
+      },
+      {
+        "instruction_offset": 18360,
+        "candidate_constant_slot": 2,
+        "baseline_constant_slot": 3
+      },
+      {
+        "instruction_offset": 18804,
+        "candidate_constant_slot": 2,
+        "baseline_constant_slot": 3
+      },
+      {
+        "instruction_offset": 19068,
+        "candidate_constant_slot": 3,
+        "baseline_constant_slot": 4
+      },
+      {
+        "instruction_offset": 20324,
+        "candidate_constant_slot": 3,
+        "baseline_constant_slot": 4
+      },
+      {
+        "instruction_offset": 21736,
+        "candidate_constant_slot": 5,
+        "baseline_constant_slot": 6
+      },
+      {
+        "instruction_offset": 22336,
+        "candidate_constant_slot": 3,
+        "baseline_constant_slot": 4
+      },
+      {
+        "instruction_offset": 22944,
+        "candidate_constant_slot": 3,
+        "baseline_constant_slot": 4
+      },
+      {
+        "instruction_offset": 23416,
+        "candidate_constant_slot": 3,
+        "baseline_constant_slot": 4
+      },
+      {
+        "instruction_offset": 23696,
+        "candidate_constant_slot": 3,
+        "baseline_constant_slot": 4
+      },
+      {
+        "instruction_offset": 23784,
+        "candidate_constant_slot": 3,
+        "baseline_constant_slot": 4
+      },
+      {
+        "instruction_offset": 24128,
+        "candidate_constant_slot": 3,
+        "baseline_constant_slot": 4
+      }
+    ],
+    "unchanged_native_counters": {
+      "effects": 1,
+      "host_result_carrier_bytes": 192,
+      "hosted_phases": "admit-activate-capture-resume",
+      "input_acquisition_byte_cap": 254166745,
+      "jit": false,
+      "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+      "native_aot": true,
+      "native_comparison_work": 6041695262,
+      "native_transport_bytes": 32472,
+      "native_visits": 474,
+      "native_work": 709766994147,
+      "observations": 1,
+      "payload_argument_snapshot_reserved_bytes": 16,
+      "policy": "secured",
+      "program_revision": "3b77b1f0df1a806eeaae7748d4223ac413390e2e896b100e038629da2c6a533b",
+      "requirements": 2,
+      "resident_body_evaluation": false,
+      "route": "canonical-artifact-program-object-secured-cli",
+      "schema": "mech.canonical-hosted-native-execution.v1",
+      "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+      "shutdown": "completed",
+      "source_parser": false
+    },
+    "core_tests": 308,
+    "memory_runtime_tests": 48,
+    "runtime_tests": 302,
+    "native_host_unit_tests": 162,
+    "native_program_tests": 134,
+    "hosted_application_tests": 44,
+    "provider_tests": 48,
+    "memory_contract_mutation_tests": 155,
+    "memory_contract_mutation_scope": "Every maintained unittest case and its subtests, partitioned exactly once across four independent fixture workers. The interrupted earlier sequential run is not counted as a pass.",
+    "no_std_core_check": true,
+    "minimal_runtime_check": true,
+    "formatting_and_diff_checks": "PASS"
+  },
+  "footprint_target": {
+    "status": "NOT_ACHIEVED",
+    "peak_rss_reference_approximate_bytes": [
+      180000000,
+      200000000
+    ],
+    "executable_reference_bytes": 3159168,
+    "remaining": "Whole-input capture alone retains 254166745 bytes. General proved streaming/retention elimination within the existing authorized resource path and further host trimming remain necessary; performance takes priority."
+  },
+  "limitations": [
+    "Whole-process implementation comparison, not isolated capability overhead. Timing and memory are separate serial batches on this M1; RSS and the distinct OS footprint metric are both retained.",
+    "Exact-capacity byte-transfer tests preserve backing pointers. String-to-Box capacity shrinking may still reallocate for other capacities; this is not a universal zero-copy guarantee.",
+    "Fresh-process RSS varies; current matched baselines and ranges, not a previous single figure, support the comparison.",
+    "Building the generated host still uses Cargo/Rust. Prebuilt host distribution, OS process sandboxing and streaming are not implemented by this change.",
+    "PR909 remains draft/unmerged. New-head review and green CI are independent requirements, not implied by local benchmark qualification."
+  ],
+  "pins": [
+    {
+      "path": "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+      "sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f"
+    },
+    {
+      "path": "hosts/terminal/src/provider.rs",
+      "sha256": "e6ac43d803a820d86b4296c476ea136711c2623c1aeb505d083c9f8057d10764"
+    },
+    {
+      "path": "src/core/src/snapshot/string_constructor.rs",
+      "sha256": "e65e82faa418254f673c9e572378a76f35dd9ba35936e5faeaf414405b743728"
+    },
+    {
+      "path": "src/core/src/snapshot/validation.rs",
+      "sha256": "c4065b5ad47a9dc6f992e8035066e74c91522793cae8a69b249b34a0466b47d3"
+    },
+    {
+      "path": "src/runtime/src/input.rs",
+      "sha256": "a7f5f63592c7deb2b725dd7f362b6ccc90bf9626e8cdb40ce20d69b43b4372ae"
+    },
+    {
+      "path": "src/runtime/src/input_string.rs",
+      "sha256": "936675655ff44b11407a9792469926f4ba551c724faa8ca8ac15d8bd90e77756"
+    },
+    {
+      "path": "scripts/check-memory-runtime.py",
+      "sha256": "e1f8b7a14a7efcbc343f134d8e2461b1e7ee4fc457e43479d390447d83c9cddb"
+    },
+    {
+      "path": "scripts/tests/test_check_memory_runtime.py",
+      "sha256": "613607d39593b044d61e73ae65a7e1789ce0d6e0d9fdefc747a1e976a151ba69"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "3e4f2f8857a194fd5eb17aea311b03d57ca0ce514358f3c7a056669c64a4e579"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-transfer-preparation-v1095b.json",
+      "sha256": "4da3cc42efc73e89cffecb6c2656efb5485409420ef5714504d045dd7c4c48e4"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-transfer-standard125m-release-v1096/hosted-linked-result.json",
+      "sha256": "16dcff9bc774957404518ed9173e4c20477e04fb5450ea6b808c7afdf34bca28"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/audit-capture-transfer-full125m-v1097-result.json",
+      "sha256": "3a672c16d0d3e92e93e13d3f98dfeb2dfc428d8268ef7cbafb6a5a808c084396"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-transfer-three-way-v1098/measurement.json",
+      "sha256": "8b34ab746bbdd77a04c841a6ec8b729c0f6214d3d93e421ebe4960c669a1f908"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-transfer-memory-v1099/measurement.json",
+      "sha256": "f976baa5b0a5def98e9d679fb80e33257460690a0731fd6a3770df3761a1677b"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-transfer-comparison-audit-v1100.json",
+      "sha256": "686df773b98f2df0f7659090db7824fc0c3b4ecc8d5db9cfc81480d4f7b3dc98"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-capture-transfer-three-way-v1098.cjs",
+      "sha256": "f5c97970045d49d783ea0e18c32ea287efa1749b2bff952927d64bbe5e94e14e"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-capture-transfer-memory-v1099.cjs",
+      "sha256": "775c17ded3aaeed81d07a365fe4219b28b3eb9803c36ecf8e9a88b80aa49dc94"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/audit-capture-transfer-full125m-v1097.cjs",
+      "sha256": "d976b8dfa9226746be2435872ef2d2a94b6ad916528c1530bf74ef28b9121317"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/audit-capture-transfer-comparison-v1100.cjs",
+      "sha256": "7bab2cf14859a13c93e61d50bd8ba65ad9dcc6873605418281d9230aa62cc7a6"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/prepared-string-memory-mutations-parallel-v1095/result.json",
+      "sha256": "e42a2582d580c544a6e9892a9c3604550819976aeb90334126028a1b15018760"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/run-memory-mutations-parallel-v1095.cjs",
+      "sha256": "acb2987c655d1c769ab68cefcc8867c1cdfc6b1919b09b2e56dd08db6acd6dc3"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/prepared-string-core-broad-v1091.log",
+      "sha256": "33ee0ae1b1399d07c6c1d8a1ddbf7d4f5de704754a6bf3fdd0941b0acd60809c"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/prepared-string-native-broad-v1094.log",
+      "sha256": "bb2d5fc0eca273e278cfcb38f938a9e85c641f7087ddc23e43f0c45710e7cdf7"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/prepared-string-runtime-broad-v1094.log",
+      "sha256": "a7e132b4205caf596159377c467256475bf562e056af5d0cba9d583a4925f46e"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/prepared-string-provider-enabled-v1092.log",
+      "sha256": "7604a978fdb19c229fcd0e6e032bbf011036a8ebe36c9a98913d46470f80e802"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-transfer-hosted-tests-v1095b.log",
+      "sha256": "90fac9004871d8999a3ea1fef15bbe1de23203300dd3fc4def24f8d8479f26a3"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/prepared-string-core-no-std-final-v1092.log",
+      "sha256": "0211395bdc24f16439ca91c56361a55721c5e66c6735360040aa79fe0c45fa77"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/prepared-string-runtime-minimal-v1095.log",
+      "sha256": "150ac630398018671f6da5f48a053f14db1a946e3a5f415a16ea29badb98bd8c"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/prepared-string-memory-contract-v1095.log",
+      "sha256": "0b66ce89f3e8d72fa0cd91e51007a7a3c72a511c29feaa32ceba110951cd076a"
+    }
+  ]
+}

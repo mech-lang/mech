@@ -1,0 +1,317 @@
+{
+  "schema": "mech.canonical-native-line-storage.v1",
+  "status": "COMPONENT_QUALIFIED_PRODUCTION_STREAMING_NOT_ENABLED",
+  "implementation_parent_commit": "f311150db5d213599e56aadfd5fac92e25284052",
+  "versions": {
+    "abi": 11,
+    "typed_ir": 24,
+    "work_policy": 34
+  },
+  "scope": "Bounded packed text/lines row loans feed the same emitted Mech scanner. A genuine full snapshot still supplies original producer admissions, Unicode fallback and final join in this qualification. No new resource, canonical partial Value, Rust workload body, or second runtime authority.",
+  "storage": [
+    "The actual selected text/lines factory prepares one owning chunk store. UTF-8 payloads use packed allocations with four-byte newline offsets; cross-fragment lines grow amortized backing.",
+    "A synchronous row loan borrows that immutable store through row-table and reservation retirement. Explicit global first/count coordinates keep generated addresses inside the actual row allocation; no pointer is biased before its backing.",
+    "Only intersecting chunks are visited when building a bounded row table. The table does not grow with all previously retained lines, and directory search is not repeated for every row.",
+    "Metadata, payloads, replacement coexistence, framing and row loans use the original shared program/library account. One cumulative selected-producer allowance includes lookup work. The program meter already observes these debits; there is no duplicate charge or per-chunk refill.",
+    "Each loan binds to its exact selected producer and work ledger. Generated carrier instructions choose the monotonic lower bound or sealed returned range; Rust validates coordinates and owns/releases backing, without interpreting source states or headers.",
+    "Open retention clamps to completed input, permitting forward-jumping indices without reviving discarded data. Retention min/range calculations execute on the pause path, not the normal per-line path.",
+    "Only successful EOF publishes descriptive final geometry. Incomplete/failed storage never publishes a canonical String, Matrix, numeric length, output or permission."
+  ],
+  "qualification": {
+    "status": "PASS",
+    "gates": [
+      {
+        "name": "prefix",
+        "status": "PASS"
+      },
+      {
+        "name": "storage",
+        "status": "PASS"
+      },
+      {
+        "name": "window-storage",
+        "status": "PASS"
+      },
+      {
+        "name": "native-windows",
+        "status": "PASS"
+      },
+      {
+        "name": "retention",
+        "status": "PASS"
+      },
+      {
+        "name": "native",
+        "status": "PASS"
+      },
+      {
+        "name": "hosted",
+        "status": "PASS"
+      },
+      {
+        "name": "runtime-only",
+        "status": "PASS"
+      },
+      {
+        "name": "check-rust-module-layout",
+        "status": "PASS"
+      },
+      {
+        "name": "check-native-build-analysis-layout",
+        "status": "PASS"
+      },
+      {
+        "name": "check-production-resident-routing",
+        "status": "PASS"
+      },
+      {
+        "name": "check-warning-policy",
+        "status": "PASS"
+      },
+      {
+        "name": "check-memory-planner",
+        "status": "PASS"
+      },
+      {
+        "name": "check-memory-runtime",
+        "status": "PASS"
+      },
+      {
+        "name": "check-value-system-contract",
+        "status": "PASS"
+      },
+      {
+        "name": "check-type-memory-boundary",
+        "status": "PASS"
+      },
+      {
+        "name": "unsafe",
+        "status": "PASS"
+      },
+      {
+        "name": "ci-contract",
+        "status": "PASS"
+      },
+      {
+        "name": "format",
+        "status": "PASS"
+      },
+      {
+        "name": "diff",
+        "status": "PASS"
+      }
+    ],
+    "native_host_tests": 119,
+    "compiler_proof_tests": 53,
+    "storage_tests": 13,
+    "hosted_tests": 53,
+    "workflow_tests": 166,
+    "continuation_tests_included_in_native_host_count": 14,
+    "retention_validation_test_included_in_native_host_count": 1,
+    "explicit_ignored_diagnostics": {
+      "native_host": 3,
+      "hosted": 2
+    },
+    "actual_full_source": "Original and decoded complete k-nucleotide artifacts execute the actual emitted scanner from bounded packed row tables with real global ordinal bases. Captured row pointers/counts/bases are observed, and every output's canonical snapshot bytes match ordinary native snapshot execution. Complete snapshots still supply original producer/length admissions, Unicode fallback and final join; EOF admission deferral is not yet implemented.",
+    "storage_capacity_witness": "The 32 MiB generated-input discarded-prefix fixture retains under 8 KiB live store capacity and under 16 KiB peak store capacity. This is not whole-process RSS.",
+    "boundary_cases": "Nine chunk-store, four row-loan and five additional generated-window tests cover UTF-8/CRLF splits, Unicode fallback, empty/missing/unterminated input, forward jumps, bounded row capacity, exact/one-short memory and compute, foreign producers/ledgers, false extent/EOF, and a one-short GLOBAL work denial before generated prefix entry. Existing cleared-lane, fuel, cumulative comparison and forged-checkpoint probes also pass.",
+    "runtime_only_compilation": "PASS"
+  },
+  "performance": {
+    "new_whole_program_measurements": null,
+    "last_qualified_receipt": "docs/validation/canonical-knucleotide-capture-transfer-footprint-v1.json",
+    "last_measured_source_commit": "c0271df4fa28f7cc91e73a6383281473890e303e",
+    "caveat": "The production session still captures complete snapshots and rejects scoped text. The row-window prototype retains genuine complete snapshots for producer admissions, Unicode fallback and final join. These component results claim no whole-process timing, RSS or executable-size improvement."
+  },
+  "remaining": [
+    "Replace the prototype's complete-snapshot producer/length admissions with genuine EOF geometry on the same selected factories. Semantic count aliases must not contain a prefix-valued fake count.",
+    "Preserve capture/producer errors ahead of speculative body failures, including work/memory admission priority; use the existing shared account, not another runtime/work authority.",
+    "Wire the existing single-use text resource adapter and native session through one secured round with the same grants, finite cumulative budgets, source ownership and atomic effects.",
+    "Construct the final genuine String from the retained packed range while retiring consumed chunks, without keeping the original full source alive.",
+    "Qualify original/decoded production binaries and remeasure matched 10M/125M speed, whole-process RSS and executable/bundle size before claiming gains. Performance takes priority.",
+    "Further host trimming and prebuilt-host distribution remain unfinished; preserve panic containment. Fresh current-head review and full green CI remain required; keep draft/unmerged until user authorization."
+  ],
+  "program": {
+    "path": "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+    "bytes": 2621,
+    "sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f"
+  },
+  "source_pins": [
+    {
+      "path": ".github/workflows/ci-full.yml",
+      "sha256": "92eba12e6d11e0e3687260556b4e3c27204db2b0a284335b1f16307ea4bf3bba"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "3e4f2f8857a194fd5eb17aea311b03d57ca0ce514358f3c7a056669c64a4e579"
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "a7464505e99edd2b1d59b012bc560a7966a0c65e2539884afa912f2adc41c876"
+    },
+    {
+      "path": "hosts/gpu/Cargo.toml",
+      "sha256": "adb2170d69b512c9afffd75eb2b73067df8f34559beb402fe4c06f37dddc8027"
+    },
+    {
+      "path": "hosts/gpu/README.md",
+      "sha256": "708b658b344414457fcdbc222fb108003ed5006efd1c981fafbd3c43f109cac6"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_abi.rs",
+      "sha256": "46e02145e4fe462ced7fd0efef8edc01cc4069739f3a95d66900796353810378"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_borrowed_codegen.rs",
+      "sha256": "07f6244f89922020e8467a1ed9df9703820168e078e1ed8d3beb75907de4ca21"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_borrowed_layout.rs",
+      "sha256": "0676e48310c3f8bc28f2f23bf0627c711b15d50a3861e9cd2b04b71c2499d802"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_borrowed_strings.rs",
+      "sha256": "8a094be29bc993f7f8996bbcfc965a6e236ffffaeaf0602c0fd1c89cb17511b9"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_compiler.rs",
+      "sha256": "261be627fa1daccec03601fe8708f374d48c9a87a950b084c56d409675f6929f"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_descriptor.rs",
+      "sha256": "e886ccbd04f3138e4e27beeef14d1fc9b3d37476ecb8f74ed238be57c0564047"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_identity.rs",
+      "sha256": "19bc011c11b9b4e89d85261c350ee5b6bd02f66d282b4b49d21dbcc0fa7c8b4f"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_line_matrix_tests.rs",
+      "sha256": "c2cbe504b9de7cbbba25954c39eb3d7749ab492564431aa7417a6765c94119d3"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_linked.rs",
+      "sha256": "596269535ead987b793903bb18fa5f8fbd2083a7608aca7ce63016b8f4f49dc0"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_prefix_codegen.rs",
+      "sha256": "b4fc891e95745b10edbdda42816d4c638cf1cc188086cb0bbf6febb2e5fe9d2b"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_prefix_runtime.rs",
+      "sha256": "efccbc3bf69a879203d17b20b2edeaaffa587b7a0791eed202f6021460d90ce0"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_prefix_tests.rs",
+      "sha256": "819ea3edcfa8d1130483aaa5679ad0c1d9e4dd4a891cc3baedc3a54de9143b8d"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_prefix_window_tests.rs",
+      "sha256": "f4e35a702faa8e4377de080d1e7b9fc2b2bbb2bb9fbe1b3c9ccbab42186d3168"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_runtime.rs",
+      "sha256": "5e082259761154da82d2b327f502f4535f8d07eb5f6be5c2af0d1c6abaadeebb"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program_session.rs",
+      "sha256": "be4dc7de4de12d2052cfbfe991a4204677df826d11f5127f05ba9d1e7a216688"
+    },
+    {
+      "path": "src/engine/Cargo.toml",
+      "sha256": "dca80aa8ffdef465c114680179c04f574bac42b22a5aa2eb393a1d7aee9fbe26"
+    },
+    {
+      "path": "src/engine/src/native_artifact/mod.rs",
+      "sha256": "d8d3280294375616a86e7f1cd960c041e5d6ce4093ee67caabfd50ed5ef27367"
+    },
+    {
+      "path": "src/engine/src/resident/general/native_collection_calls.rs",
+      "sha256": "9176361d700fd3c1c9f99b8b73fb26973e48cf9b7298c63956f7956b34e324f8"
+    },
+    {
+      "path": "src/engine/src/resident/general/native_collection_prepared.rs",
+      "sha256": "6a39b0efce872e3780db7b76d7a5e43014cd7a60e355b428ea5094bb1811cf98"
+    },
+    {
+      "path": "src/engine/src/resident/general/native_collection_text_lines.rs",
+      "sha256": "17e9a5be381b72a5833cd2b3303f7493a1fe1d543f23a9ecd2528e37b9d27ef8"
+    },
+    {
+      "path": "src/engine/src/resident/general/native_text_line_chunk_allocation.rs",
+      "sha256": "0d5bd6461f6fe4d2db3cab5412bbf9b13132a3ae43f01865e2d6d43e3d616ece"
+    },
+    {
+      "path": "src/engine/src/resident/general/native_text_line_chunk_tests.rs",
+      "sha256": "f89660d9ad1094f9c1afd1f5a0127a3c5a7031277f307e292dd11ea8da54a488"
+    },
+    {
+      "path": "src/engine/src/resident/general/native_text_line_chunks.rs",
+      "sha256": "aa8ddc614657baa4da3c94975cb7bba64afa0e137b556a3478ea2b75d848c6b7"
+    },
+    {
+      "path": "src/engine/src/resident/general/native_text_line_window.rs",
+      "sha256": "aa5dde9a66f9871eb7d9a0478335a89e225809fa55c967f9bca9c5cb0fe082c4"
+    },
+    {
+      "path": "src/engine/src/resident/general/native_text_line_window_tests.rs",
+      "sha256": "54fcf1df6e93b040c19bd57884684eff917088a5591965cda32064ac3cd82adb"
+    },
+    {
+      "path": "src/runtime/Cargo.toml",
+      "sha256": "4cd4d3334be4ca0f93a7b25b3dfc9b3b38302915854dcafe0fb844656637d306"
+    },
+    {
+      "path": "src/stdlib/Cargo.toml",
+      "sha256": "8ab8293f25f07ee66909fd404131351d3e78ba203819e9cd0f3ce13e51da7b75"
+    }
+  ],
+  "local_evidence": {
+    "availability": "Raw logs, qualification receipts, audit and test binaries are retained locally; these tmp paths are not committed repository files.",
+    "qualification": {
+      "path": "tmp/pr-stack-evidence/native-prefix-qualification-IF0Jpm/receipt.json",
+      "bytes": 24631,
+      "sha256": "c8b32c6c7daa7278630f6d21e5fe35449da3706982aa646ea9f7a43973e4aa6f"
+    },
+    "auditor": {
+      "path": "tmp/pr-stack-evidence/audit-native-line-windows-v1132.cjs",
+      "bytes": 2366,
+      "sha256": "99fd82f596f358d591039a013c133b0b795ce38db19ca5d75f8e64b683ab5161",
+      "template": {
+        "path": "tmp/pr-stack-evidence/audit-native-line-storage-v1128.cjs",
+        "bytes": 4579,
+        "sha256": "b0f53477baf438710550a0f9c1cc3b75f8a143ae0a319d90cde85d3394d8e9ae"
+      }
+    },
+    "executed_test_binaries": [
+      {
+        "path": "tmp/pr-stack-901/target/debug/deps/mech_core-a64533609d7ed5a1",
+        "sha256": "6f4e8bf1e4b168c596a4bbf5f08c7171a83c81ce61683cc8fc63a9c7257807d6"
+      },
+      {
+        "path": "tmp/pr-stack-901/target/debug/deps/mech_engine-903bf253d2eb905a",
+        "sha256": "e7736b4549abf8dd5b2cbe39d1813730c76cd47a508f59e5d247ae3b1fc33ea7"
+      },
+      {
+        "path": "tmp/pr-stack-901/target/debug/deps/mech_gpu-c0554e42f8c90e10",
+        "sha256": "e6cc4db068e51a67d6603bc848c26774562e26943dba4d23e6602aca646508d8"
+      },
+      {
+        "path": "tmp/pr-stack-901/target/debug/deps/mech_runtime-88895ff74c84f831",
+        "sha256": "38ff5dc78603389d4594518c5b81a1f7bde022318c78777deab1aa93bc516f4b"
+      },
+      {
+        "path": "tmp/pr-stack-901/target/debug/deps/mech_stdlib-a8efe07d92e5e8c8",
+        "sha256": "53b2c7f9e1558b2a326dbf8c268d1695ee0494c4762244caa5bc6cfb3132147c"
+      },
+      {
+        "path": "tmp/pr-stack-901/target/debug/deps/mech_syntax-47bac888325609f8",
+        "sha256": "c6a2d34b4bc3737dee2d3ff568355e241378319b2f9c45e7b192efccbcef2e5b"
+      },
+      {
+        "path": "tmp/pr-stack-901/target/debug/deps/canonical_hosted_artifact-3007e36d1f41010f",
+        "sha256": "78a0c86c8ae30ccd03408dd8f34f6b99c0df80ac4b62d2ae5589a997fc1efb7f"
+      }
+    ]
+  }
+}

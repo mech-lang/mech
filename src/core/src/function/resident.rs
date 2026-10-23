@@ -769,6 +769,7 @@ pub type ResidentKernelFactory =
     fn(&ResidentKernelBindRequest<'_>) -> Result<BoundResidentKernel, ResidentKernelBindError>;
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct ResidentOperationKey {
     pub module_path: Box<[String]>,
     pub operation_name: String,

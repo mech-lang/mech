@@ -130,18 +130,20 @@ are documented in
 Recorded workload timings, compiler snapshots and optimization ledgers remain
 in the benchmark repository.
 
-That source-native route is legacy: it still uses independent source lowering
-and is not the completed canonical AOT route. The checked canonical artifact
-APIs now provide generated managed control, selected collection operations and
-a capability-secured resource-hosted application boundary. The generated
-standalone shell uses that boundary; the normal production native-build route
-has not been migrated to it. Production CLI migration, full-input execution
-and benchmark qualification remain unfinished. The legacy divergence is an
-unresolved migration, not a supported second semantic authority. See the recorded
+The `mech-native-*` test tools retain legacy independent source lowering; they
+are not the canonical AOT route. The public `mech build --backend cranelift`
+adapter now uses maintained canonical source compilation or explicitly
+source-unpaired `.mecb` decoding, then the same checked Object generator and
+capability-secured resource-hosted shell. It does not fall back to the legacy
+frontend or resident evaluator when lowering rejects a program. The default
+`--backend resident`, `mech run`, and `mech serve` remain resident products.
+The complete canonical k-nucleotide application is qualified below; broader
+native coverage remains unfinished. The legacy tools are not a supported second
+semantic authority. See the recorded
 [`follow_up_roadmap`](../../docs/validation/checked-aot-workload-progress-v1.json)
 for migration context; current implemented and pending scope is detailed below.
 
-Resource-hosted checked-native execution has one phased entry route. After
+Resource-hosted checked-native execution shares one admission/commit pipeline. After
 the runtime admits every original requirement and provider contract,
 `prepare_hosted` executes the generated closed activation prefix and returns an
 owning session before any provider read. The runtime then captures observations;
@@ -153,61 +155,82 @@ owns capture, effect staging and commit, and raw pure evaluation refuses
 resource-bearing artifacts. Unsupported programs remain rejected. This entry
 contract is not a claim that whole-benchmark qualification is complete.
 
+### Canonical k-nucleotide performance
+
+The [current measurements and pins](../../docs/validation/canonical-knucleotide-final-host-link-v1.json)
+use the full Mech source, the same M1, inputs, finite policy and output oracles.
+Twelve alternating pairs include startup, one secured round and report publication.
+
+| Build | 10M bases | 125M bases | 125M peak RSS | Executable |
+| --- | ---: | ---: | ---: | ---: |
+| Published secured Mech, remeasured | 0.05715 s | 0.52576 s | 147.32 MB | 6.630 MB |
+| Current secured Mech | 0.05616 s | 0.52518 s | 146.90 MB | 5.833 MB |
+
+Final-binary-only fat LTO reduces the Rust host by 12.0%, with no observed
+slowdown. Dependency profiles, speed optimization level and unwind behavior
+remain unchanged. Paired median ratios are 0.99093/0.99902; the candidate wins
+11/12 and 8/12 pairs. RSS is the median of three separate processes; MB is decimal.
+The 0.0582-second 10M target and 200 MB RSS reference remain met.
+
+Cranelift compiles Mech source; LLVM compiles the linked Rust host and libraries.
+The existing capability/provider/transaction authority, finite accounts and
+work policy remain unchanged. Fresh original/decoded builds at `dcf8091393`
+produce identical executables and pass permission denials, launcher tests,
+all nine tamper checks, exact restored-binary checks and full-input correctness.
+A separate audit verifies 64 outputs and complete security reports. Local
+validation and retained unchanged-package results are detailed in the linked record.
+
+Startup artifact decoding and descriptor preparation still contribute to host
+size. This is a desktop executable, not an ESP32 deployment profile.
+The [previous measurements](../../docs/validation/canonical-knucleotide-capture-pages-v1.json)
+retain the earlier Rust #7 results; Rust was not remeasured in this batch.
+The [direct-I/O comparison](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
+retains the distinct approximately 0.975-second Rust-backed Mech control.
+Clean review and green CI remain required; PR909 stays draft and unmerged
+pending user direction.
+
+### Canonical native architecture and limits
+
 The [canonical k-nucleotide source](tests/fixtures/native/knucleotide-idiomatic.mec)
-expresses record selection, overlapping String windows, frequency widths and
-queries in Mech, using comprehensions and general-purpose library primitives
-such as `map/histogram`. Keep that algorithm in the language: packing, streaming,
-fusion and parallel execution should be compiler optimizations over its canonical
-semantics, not a benchmark-sized external helper. The checked native backend
-now lowers scalar/String matrix comprehensions and shape-preserving unary
-pattern-function lifting to generated loops, including filters and nested
-generators. It uses the same artifact, current-visit proof, scalar emitter and
-invocation budgets; collection helpers project elements and stage results,
-never interpret body operations. Maintained numeric ranges, String grapheme
-indexing/slicing, shallow matrix conversion and closed pure initialization
-have historical standalone receipts for their recorded source identities;
-those receipts do not qualify the current complete hosted application. The
-current managed lowerer additionally supports selected shallow matrix/map
-access, canonical matrix-to-Set conversion and membership, shallow
-composite/enum values, String equality/concatenation, maintained sorting and sums,
-and tail-recursive
-FSM control. The complete k-nucleotide source uses these language-level
-operations, not a workload-sized Rust helper.
+expresses record selection, normalization, overlapping windows, histograms and
+queries in Mech. General proofs optimize its canonical artifact into native
+control, mapping, query and histogram loops; collection helpers project and
+stage values, never interpret the Mech body. Private line views and selected
+joins retain genuine owners without fabricating canonical matrices. Unicode or
+escaping values keep ordinary canonical operations; an unsupported whole program
+is rejected, not silently sent to another evaluator.
 
-Each native invocation still measures its current payloads and funds the same
-maintained kernels, fresh memory plans and atomic publication. Its bounded
-per-site binding cache exists only for structurally repeatable loop-body sites.
-Canonical validation contracts nested loops and proves the remaining root CFG
-acyclic; the consuming activation/turn session continues that same path without
-replaying its prefix. Root-scope calls, including nested Match arms, therefore
-use the same maintained uncached leaf directly and retain no bound/planner cache.
-The full concrete once/repeated slot lane is still admitted before creation.
-Repeatable sites' binding cache holds only one exact geometry at a time, never arguments,
-results or provider permissions. A shape miss admits replacement work and finite
-policy before retiring the old prepaid binding, then acquires its replacement
-reservation before allocation; old/new binding allocations do not coexist.
-Every hit and miss uses the same cumulative ledger and finite policy. The
-same guarded binding may reuse immutable planning metadata only after matching
-the complete fresh payload facts. Snapshot String selection may additionally
-retain weak-storage-identity grapheme-index metadata, never the source payload.
-Compact byte ordinals are used only after canonical grapheme segmentation
-proves every grapheme has one byte, so CRLF and Unicode keep their usual meaning.
-Index construction and eventual retirement are prepaid; its independently
-reserved bytes and nodes remain part of every finite call admission. The
-maintained selector still reads the actual current String and selector and
-publishes through the same atomic output boundary. The
-managed Object pins include the ABI, typed-IR and work-policy identities;
-old work-policy receipts
-must not be presented as qualification of changed accounting. Scalar/control
-legacy identities remain separate and unchanged.
+Generated launchers install the 27 maintained factories selected from the full
+artifact closure, including cold/nested code. Missing private registration
+evidence retains the complete catalog. Those same maintained declarations and
+owner-specified build features supply both profiles; the factory profile is
+packaging metadata, not execution or capability authority.
 
-Implemented lowering and secured JIT correctness are not standalone execution
-or full-input performance qualification by themselves. Clean source
-`f176277d87feeae4a66167d7e11eb2b731acc2a0` passed actual secured Object-linked
-execution of the complete original/decoded k-nucleotide source on small fixtures;
-see [the exact-source receipt](../../docs/validation/canonical-hosted-native-linked-v1.json).
-This does not qualify standard-size input, timings or the production native-build
-CLI. The secured gate is
+Generated standalone hosts enable `canonical-native-resources`, not
+`resident-routing`. Both profiles share the original admission implementation;
+the build/test frontend retains resident APIs. This packaging boundary removes
+resident session state from the native host, not security checks or semantics.
+
+The complete schema closure also selects existing core type features. Closed,
+known-registration applications omit unused numeric converters; dynamic/reified
+value schemas and unknown registrations retain complete conversion support.
+Ordinary library defaults and canonical wire tags remain unchanged.
+
+Native regions admit complete work and scratch before entry on one cumulative
+account. Repeated-site binding caches retain bounded planning metadata, never
+arguments or permissions; a miss must fund replacement before allocation. All
+real owners and fresh payload facts remain checked. The ABI, typed IR, work policy
+and actual selected semantics are pinned to each Object. Old policy receipts do
+not qualify changed accounting.
+
+The executable includes its host and libraries and runs without Rust installed.
+Cranelift emits Mech code; Cargo currently compiles the generated Rust launcher.
+Prebuilt host distribution is not implemented. Stateless native invocations do
+not establish persistent-reactive or all-program coverage.
+
+### Reproduce linked qualification
+
+The secured gate is
 `canonical_hosted_artifact`'s ignored test
 `linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned`.
 It builds and runs both complete original/decoded canonical artifacts with
@@ -241,8 +264,35 @@ Set `MECH_CANONICAL_HOSTED_PROFILE=release` to qualify the release Rust shell an
 library code. The default is `debug`; other values are rejected. Both original
 and decoded builds, including pin-mutation rejection and restored builds, use
 the chosen profile. The receipt records the actual Cargo compiler profiles.
-The checked Cranelift Object still uses `opt_level=none`; a release shell is not
-a claim of optimized whole-program Mech code, full-size correctness or timing.
+The checked Cranelift Object uses `opt_level=speed`; the Rust profile is a
+separate setting. A release shell alone does not establish whole-program
+optimization, full-size correctness or timing.
+
+The explicitly opt-in `canonical-native-benchmark-policy` generator feature
+adds `generate_linked_benchmark_program_application`, not another evaluator or
+production CLI option. Its runtime-only executable requires a launch JSON
+`benchmark_policy` of exactly `secured` or `trusted` and runs the same checked
+Object, phased session, CLI providers, finite budgets and lifecycle in either
+mode. Trusted mode bypasses capability-specific authorization decisions using
+real live, in-scope, unlimited-use grant identities; subjects, revocation,
+transaction scope and finite-use checks remain enforced. The experiment is not
+a measurement of all safety overhead and is not safe to ship as a secured
+production binary. No environment variable enables it in the production shell.
+The required `canonical-policy` CI job tests actual original/decoded
+same-binary controls and separately checks that the production binary rejects
+both the benchmark JSON field and the legacy trusted environment bypass.
+These controls alone are not full-input correctness or timing results.
+
+That benchmark profile can use the same full-input or staged configuration
+below, with a base launch containing the unchanged two grants and finite caps
+but **no** `benchmark_policy` field. The driver freezes the common input,
+oracle and base policy, then derives two immutable launch files differing only
+in that field. Both original/decoded binaries must pass both modes' exact output,
+report and native-accounting checks before any samples start. Timing alternates
+policy order across rounds and reports each variant/policy separately. The
+production entry still runs secured-only; it cannot select the comparison.
+The required comparison CI uses release binaries and a four-process, zero-sample
+small-fixture driver control, not a full-size benchmark or CI timing run.
 
 The optional full-input phase uses those same two release executables after
 all builds and pin-mutation/restoration checks finish. Add
@@ -317,12 +367,9 @@ and report publication, excluding builds, hashing and parent validation—not
 cold-cache or kernel time. This facility alone is not a full-size correctness
 or timing result.
 
-Persistent state, broader matrix/map/recursive operations, element-wise counts,
-all-ten-program coverage, standard-size input and whole-program optimization
-remain separate work. Release comparisons must follow exact-source
-correctness/admission qualification and identify the source, input, execution
-route and finite policy. This generated shell is secured-only; the legacy
-trusted-mode environment setting does not change its grants. No timings of
-this language-level target are qualified yet. Older `sequence/packed-windows`
-timings are separately scoped migration diagnostics, not completion of this
-target.
+Persistent state, broader matrix/map/recursive operations, element-wise counts
+and all-ten-program coverage remain separate work. The complete k-nucleotide
+source is qualified at the two sizes recorded above; this does not qualify other
+programs or future revisions. Release comparisons must identify the exact
+source, input, execution route and finite policy. The production shell is
+secured-only; legacy trusted-mode environment settings do not change its grants.

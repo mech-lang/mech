@@ -1,0 +1,115 @@
+{
+  "schema": "mech.canonical-knucleotide-performance-regression.v1",
+  "status": "BLOCKING_PERFORMANCE_REGRESSION_NOT_QUALIFIED_FOR_COMPLETION",
+  "required_contract": {
+    "rounds": 1,
+    "sequence": ["authorize and capture input", "execute fast compiled computation", "stage output", "commit"],
+    "clarification": "The user explicitly requires the original fast compiled computational body within ONE security round. Per-node native visit/admission guards are not the round protocol. Computational bounds and resource safety must be compiled or amortized without introducing per-operation round admission.",
+    "scope": "One canonical ProgramArtifact/catalog and runtime authority; no legacy source frontend, evaluator fallback, unaccounted whole-workload helper or production trusted switch. No next benchmark until the performance premise is recovered and measured."
+  },
+  "machine": {"cpu": "Apple M1", "architecture": "arm64", "memory_bytes": 8589934592, "os": "macOS 15.6.1 build24G90"},
+  "matching_input": {
+    "FASTA_N": 2000000,
+    "THREE_bases": 10000000,
+    "bytes": 20333411,
+    "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b",
+    "oracle_bytes": 254,
+    "oracle_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
+    "standard125M": false,
+    "qualification": "All four freshly remeasured legacy variants and all retained canonical original/decoded secured/trusted outcomes match these same exact oracle bytes. No precision/tolerance/oracle changes."
+  },
+  "legacy_remeasurement": {
+    "binary_source_commit": "933117167d212ae7e13bcd0de83cad320603a7e2",
+    "checkout_observed_during_rerun": "9330a29727c8125d00a904ccc2fcaf809570db91",
+    "provenance": "Already-built binaries authenticated against the immutable earlier same-M1 v321 receipt. No recompilation from the later checkout; no M3 timing is used.",
+    "binary_sha256": {
+      "selected_direct_io": "e11bf3a7f10ed5ed6232d9bc88a4527d2ea6e0cf3fc96ee38978808e258a6be4",
+      "unfused_direct_io": "5680cda32b0bf8389ed5358126838eb5f700d99f167cbc2aa310d41a21a31268",
+      "secured_and_trusted_host": "7ca406bec79090df6a0e81adefa8d19ac146aa3ee091c2cc56ed8e0a9e6c0f0d"
+    },
+    "samples_seconds": {
+      "selected_direct_io": [0.091974792,0.093390958,0.092041625,0.092515208,0.091487042,0.091282375,0.092053875],
+      "unfused_direct_io": [0.084701,0.083915875,0.083429459,0.082254,0.082137708,0.082766542,0.08363775],
+      "secured_host": [0.124079458,0.123282834,0.124015375,0.123658291,0.123106583,0.123527167,0.124030833],
+      "trusted_host": [0.122545833,0.125741917,0.123435708,0.123590625,0.124217958,0.123290541,0.12286625]
+    },
+    "medians_seconds": {"selected_direct_io":0.092041625,"unfused_direct_io":0.083429459,"secured_host":0.123658291,"trusted_host":0.123435708},
+    "method": "Pinned original legacy driver, seven serial rotated-order fresh-process samples per variant after exact-output qualification/warmup; synchronous child completion and pipe capture. All samples retained.",
+    "runtime_environment": {"MECH_SEQUENCE_PARTITIONS":"4","MECH_SEQUENCE_NARROW":"1","MECH_SEQUENCE_STD_MAP":"1","MECH_SEQUENCE_PROFILE":"0","MECH_SEQUENCE_ASYNC":"0","MECH_SEQUENCE_BUFFER_REUSE":"0","MECH_ARRAY_GRAIN":"16"},
+    "outcomes": {"total":41,"successful":37,"expected_denials":4,"samples":28},
+    "supervisor": {"exit":0,"cleanup":"complete","elapsed_seconds":4.206382500007749}
+  },
+  "canonical_measurement": {
+    "receipt": "canonical-knucleotide-policy-timing-10m-v1.json",
+    "binary_source_commit": "64a62bb8f178102aa70982f1195b372c0ad186f6",
+    "binary_sha256": "d6f7d712cbcf96dfe9a5d74e358cc82b8b51b91e2631f695c437c645edec3c85",
+    "medians_seconds": {"original_secured":73.536783875,"original_trusted":73.57759925,"decoded_secured":73.858251709,"decoded_trusted":73.463867417},
+    "samples_per_group": 3,
+    "original_secured_over_selected_legacy_direct_io": 798.9513861255708,
+    "original_secured_over_legacy_secured_host": 594.6773425406631,
+    "accounting_each_large_run": {"native_visits":1053000483,"native_work":2827398102582,"native_comparison_work":1381822373},
+    "native_visits_per_THREE_base": 105.3000483,
+    "rust_opt_level": "3",
+    "object_opt_level": "none",
+    "scope": "Same-size whole-implementation contrast, not an isolated capability cost. Both canonical policy modes retain shared accounting/runtime safety. Historical driver-format defects remain documented in its original receipt, not silently repaired or attributed to the corrected head."
+  },
+  "cpu_profile": {
+    "kind": "Separate sampling diagnostic, zero additional benchmark-sample credit",
+    "same_measured_binary_input_launch": true,
+    "application_exit": 0,
+    "exact_output": true,
+    "stderr_bytes": 0,
+    "sampled_main_thread_stacks": 57774,
+    "disjoint_stack_weights": {"runtime_helper_subtrees":44504,"native_visit_admission_subtrees":11230,"generated_body_self":622,"other":1418},
+    "percent": {"runtime_helper_subtrees":77.03119050091736,"native_visit_admission_subtrees":19.43780939522969,"generated_body_self":1.076608855194378,"other":2.454391248658566},
+    "selected_inclusive_hotspots_percent": {"string_span_projection":19.943227057153738,"work_meter_charge":17.706926991380204,"range_selector":13.61512098868003,"range_cardinality":11.835773877522762,"current_cached_library_invocation":9.905839997230588,"shape_for_resolved_extents":8.169764946169558},
+    "interpretation": "The generated computation repeatedly crosses per-node admission/helper boundaries; it did not preserve the old optimized computational lowering. The helper category includes actual operation work as well as metadata/accounting, not exclusively overhead. These are sampled stack proportions, not exact causal wall-time allocations, and the inclusive hotspots overlap.",
+    "symbolication": "Exact original executable nm table/preferred VM base plus cached rustc-demangle0.1.28; no workload rebuild. Raw original profile remains unchanged. Some system-library addresses and optimized/deduplicated/inlined functions cannot be fully attributed.",
+    "runtime_source_reconciliation": "Actual git diff confirms no changes in hosts/gpu/src, src/core/src, src/engine/src or src/runtime/src between measured64a and corrected-driver19034af3c1a4a74062e42562734feb6f75a0e2fc.",
+    "source_evidence": [
+      "hosts/gpu/src/native_artifact/iteration_compiler.rs:define_cfg emits admit for every reachable block before its action",
+      "hosts/gpu/src/native_artifact/program_runtime.rs:Context::visit validates previous helper consumption, selected boundaries and control progress",
+      "hosts/gpu/src/native_artifact/iteration_runtime.rs:Context::visit validates successors and charges each visited site",
+      "src/engine/src/resident/general/native_collection_prepared.rs:selected_u64_range_cardinality repeats shape_for_resolved_extents",
+      "src/engine/src/resident/general/native_collection_string_span.rs:selected_u64_string_span enters per-call limits, owner/coexistence checks and selected projection/index handling"
+    ]
+  },
+  "full125M_attempt": {
+    "source_commit": "19034af3c1a4a74062e42562734feb6f75a0e2fc",
+    "status": "FAILED_FIRST_CORRECTNESS_TRIAL_ZERO_TIMING_ATTEMPTS",
+    "input_bytes":254166745,
+    "input_sha256":"3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+    "oracle_sha256":"f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+    "binary_sha256":"e9b07e2829e6edf97d233db5d43f81d8c1c0196f1a9052b7e6ba044e8e49b8a7",
+    "actual_application_starts":1,
+    "application_exit":1,
+    "timing_attempts":0,
+    "timing_samples":0,
+    "stdout_bytes":0,
+    "stderr_bytes":471,
+    "success_report":false,
+    "failure":{"commit":"BeforeCommit","phase":"native execution / Admission","origin_node":2,"dimension":"TemporaryBytes","required":2391669562,"limit":1072785920},
+    "fixed_launch":{"managed_native_bytes":3221225472,"temporary_bytes":1073741824,"output_bytes":536870912,"cloned_bytes":536870912},
+    "launch_sha256":"00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+    "supervisor":{"exit":101,"cleanup":"complete","elapsed_seconds":403.9853938749875},
+    "meaning":"A real finite temporary-allocation admission failure, not timeout, demonstrated OOM, correctness success or an oracle-rounding mismatch. No cap increase, oracle change or retry. Original partial evidence retained."
+  },
+  "limitations": [
+    "Old code uses packed-window operations/legacy optimized lowering; canonical code uses idiomatic generic Mech. Source form, algorithm/lowering and runtime settings differ, so the ratio is the whole implementation gap, not security overhead alone.",
+    "Legacy timings use synchronous child completion/pipe capture; canonical timings use1ms exit polling/file capture. They are separate non-overlapping batches with7 versus3 samples per group, not an interleaved experiment.",
+    "No standard125M language ranking, historical M3 denominator, cohort replacement or benchmark-site publication.",
+    "A clean review or green CI is not evidence that this performance requirement is satisfied."
+  ],
+  "local_evidence": {
+    "root":"tmp/pr-stack-evidence/",
+    "legacy_result":{"path":"legacy-native-10m-measurement-v677/measurement.json","sha256":"916d03cc3898537eaa2406d3ed8c30731f2b340b2afbfc95e1fc6a07a86a992e"},
+    "legacy_wrapper":{"path":"remeasure-legacy-native-10m-v677.cjs","sha256":"c75aad044118855d68e2fe72dbf5debe8d1d262c6151cddb1e6cf773ec5e5d42"},
+    "matching_input_audit":{"path":"audit-legacy-canonical-10m-v678-result.json","sha256":"85b6acfd7eacec8a5bfa279c0bb0b0761a2901e9d3734def95e173c3a656f195","actual_node_exit":0},
+    "original_cpu_profile":{"path":"canonical-10m-cpu-profile-v679/sample.txt","sha256":"95d172410fbd20f4e1531e81ff1a635a53ce9cd4a353634a70736d1384b0c237"},
+    "profile_analysis":{"path":"canonical-10m-cpu-profile-v679/profile-analysis.json","sha256":"85128549dc42dad41d58bcc38823d8d823ba7641756a45e20766525158cb54c4"},
+    "full_failure_result":{"path":"policy-standard-125m-release-v674/full-input/full-input-result.json","sha256":"de9d3e87152be4085f938024f0555697ecc8321e1df082abb12c6a8248088a3b"},
+    "failure_and_disjoint_profile_audit":{"path":"performance-qualification-audit-v681-result.json","sha256":"98e16130aa00a910f4a7a3b7bea1a17c3c382cd876cf06b33ccb1e6922550176","actual_node_exit":0},
+    "availability":"Raw streams, generated projects, binaries and profiles remain local. This committed receipt preserves the measured negative result and pins; historical receipts/cohorts are unchanged."
+  },
+  "remaining":"Restore fast compiled computation within the single canonical round and measure the same input immediately. Prove retained authorization, admission limits, exact output, atomic failure and recovery without a second runtime authority. Full125M correctness/timings remain unqualified. Do not advance to another benchmark, mark ready or merge automatically."
+}

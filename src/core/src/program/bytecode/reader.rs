@@ -15,6 +15,10 @@ use crate::{MResult, MechError, Value, ValueCell, hash_str};
 
 use super::*;
 
+#[path = "reader_canonical.rs"]
+mod canonical;
+pub use canonical::{CanonicalArtifactBytecode, CanonicalArtifactBytecodeError};
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ParsedProgram {
     pub header: BytecodeHeader,
@@ -72,7 +76,10 @@ pub fn load_program_from_bytes(bytes: &[u8]) -> MResult<ParsedProgram> {
     ParsedProgram::from_bytes(bytes)
 }
 
-fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedProgram> {
+fn parse_envelope(
+    bytes: &[u8],
+    limits: &BytecodeReadLimits,
+) -> MResult<(BytecodeHeader, Vec<BytecodeSectionEntry>)> {
     if bytes.len() > limits.max_file_bytes {
         return invalid("bytecode file exceeds read limit");
     }
@@ -87,6 +94,11 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
     validate_checksum(bytes, header.checksum_offset)?;
     let sections = parse_sections(bytes, &header)?;
     validate_sections(bytes, &sections, header.checksum_offset)?;
+    Ok((header, sections))
+}
+
+fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedProgram> {
+    let (header, sections) = parse_envelope(bytes, limits)?;
     let section = |kind| sections.iter().find(|entry| entry.kind == kind).unwrap();
 
     let types_section = section(BytecodeSectionKind::Types);
@@ -156,6 +168,83 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         dictionary_section.item_count,
     )?;
 
+    let requirements = parse_application_requirements(bytes, &sections, limits)?;
+
+    let artifact = parse_artifact_sections(bytes, &sections, limits)?;
+
+    for (id, _) in &symbols {
+        let name = dictionary.get(id).ok_or_else(|| {
+            invalid::<()>("symbol is missing its exact dictionary name").unwrap_err()
+        })?;
+        if hash_str(name) != *id {
+            return invalid("symbol dictionary hash mismatch");
+        }
+    }
+    if let Some(id) = dictionary.keys().find(|id| !symbols.contains_key(id)) {
+        return invalid(format!(
+            "dictionary entry {id} is not referenced by a symbol"
+        ));
+    }
+    let initialized = validate_instructions(
+        &instructions,
+        &header,
+        constants.len(),
+        requirements.len(),
+        !artifact.is_empty(),
+    )?;
+    validate_composite_packs(
+        &instructions,
+        header.register_count as usize,
+        &types,
+        &constants,
+        &constant_blob,
+    )?;
+    validate_constant_and_requirement_reachability(
+        &instructions,
+        constants.len(),
+        requirements.len(),
+        !artifact.is_empty(),
+    )?;
+    for register in symbols.values().copied() {
+        if !initialized[register as usize] {
+            return invalid(format!(
+                "symbol register {register} is uninitialized after instruction validation"
+            ));
+        }
+    }
+    let canonical_register_count = initialized
+        .iter()
+        .rposition(|initialized| *initialized)
+        .map(|register| register + 1)
+        .unwrap_or(0);
+    if header.register_count as usize != canonical_register_count {
+        return invalid(format!(
+            "register count {} does not match highest referenced register count {canonical_register_count}",
+            header.register_count,
+        ));
+    }
+
+    Ok(ParsedProgram {
+        header,
+        sections,
+        types,
+        constants,
+        constant_blob,
+        symbols,
+        mutable_symbols,
+        instructions,
+        dictionary,
+        requirements,
+        artifact,
+    })
+}
+
+fn parse_application_requirements(
+    bytes: &[u8],
+    sections: &[BytecodeSectionEntry],
+    limits: &BytecodeReadLimits,
+) -> MResult<Vec<ApplicationRequirement>> {
+    let section = |kind| sections.iter().find(|entry| entry.kind == kind).unwrap();
     let requirements_section = section(BytecodeSectionKind::ApplicationRequirements);
     if requirements_section.item_count > limits.max_requirements {
         return invalid("application requirement count exceeds read limit");
@@ -170,6 +259,15 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         return invalid("application requirements are not strictly sorted and deduplicated");
     }
 
+    Ok(requirements)
+}
+
+fn parse_artifact_sections(
+    bytes: &[u8],
+    sections: &[BytecodeSectionEntry],
+    limits: &BytecodeReadLimits,
+) -> MResult<BytecodeArtifactSections> {
+    let section = |kind| sections.iter().find(|entry| entry.kind == kind).unwrap();
     let artifact_kinds = [
         BytecodeSectionKind::ArtifactSchemas,
         BytecodeSectionKind::ArtifactConstants,
@@ -253,71 +351,7 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         return invalid("compute-region metadata requires a ProgramArtifact");
     }
 
-    for (id, _) in &symbols {
-        let name = dictionary.get(id).ok_or_else(|| {
-            invalid::<()>("symbol is missing its exact dictionary name").unwrap_err()
-        })?;
-        if hash_str(name) != *id {
-            return invalid("symbol dictionary hash mismatch");
-        }
-    }
-    if let Some(id) = dictionary.keys().find(|id| !symbols.contains_key(id)) {
-        return invalid(format!(
-            "dictionary entry {id} is not referenced by a symbol"
-        ));
-    }
-    let initialized = validate_instructions(
-        &instructions,
-        &header,
-        constants.len(),
-        requirements.len(),
-        !artifact.is_empty(),
-    )?;
-    validate_composite_packs(
-        &instructions,
-        header.register_count as usize,
-        &types,
-        &constants,
-        &constant_blob,
-    )?;
-    validate_constant_and_requirement_reachability(
-        &instructions,
-        constants.len(),
-        requirements.len(),
-        !artifact.is_empty(),
-    )?;
-    for register in symbols.values().copied() {
-        if !initialized[register as usize] {
-            return invalid(format!(
-                "symbol register {register} is uninitialized after instruction validation"
-            ));
-        }
-    }
-    let canonical_register_count = initialized
-        .iter()
-        .rposition(|initialized| *initialized)
-        .map(|register| register + 1)
-        .unwrap_or(0);
-    if header.register_count as usize != canonical_register_count {
-        return invalid(format!(
-            "register count {} does not match highest referenced register count {canonical_register_count}",
-            header.register_count,
-        ));
-    }
-
-    Ok(ParsedProgram {
-        header,
-        sections,
-        types,
-        constants,
-        constant_blob,
-        symbols,
-        mutable_symbols,
-        instructions,
-        dictionary,
-        requirements,
-        artifact,
-    })
+    Ok(artifact)
 }
 
 fn validate_composite_packs(

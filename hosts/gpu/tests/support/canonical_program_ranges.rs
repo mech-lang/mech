@@ -3,7 +3,8 @@ use super::{artifacts, equal, inputs, limits, reference, reference_result};
 use mech_core::snapshot::{F32Bits, F64Bits};
 use mech_core::{ManagedMemoryBudget, ResidentKernelError, ValueDataDraft as Data};
 use mech_gpu::native_artifact::{
-    JitProgramArtifact, NativeProgramExecutionError, emit_program_object,
+    JitProgramArtifact, NativeExecutionError, NativeProgramExecutionError, NativeValueError,
+    emit_program_object,
 };
 
 fn exercise(source: &str, calls: &[[Data; 3]]) {
@@ -171,5 +172,134 @@ fn wide_endpoints_and_descending_float_ranges_do_not_narrow_or_change_bits() {
         jit.evaluate_into(&args, &mut output, limits(), &memory)
             .unwrap();
         equal(&artifact, &output, &expected);
+    }
+}
+
+#[test]
+fn materialized_numeric_range_keeps_exact_work_finite_denials_and_atomic_recovery() {
+    for source in [
+        "start<u64>..end<u64>\n",
+        "expand(x<u64>, y<u64>) => (out<[u64]>) := out := x..y.\nexpand(start<u64>, end<u64>)\n",
+    ] {
+        for artifact in artifacts(source).0 {
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let args = inputs(
+                &artifact,
+                &[("start", Data::U64(7)), ("end", Data::U64(40))],
+                &memory,
+            );
+            let expected = reference(&artifact, &args);
+            let mut output = vec![None; artifact.outputs().len()];
+            let report = jit
+                .evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            equal(&artifact, &output, &expected);
+            // Empty output slots have no prior ownership to retire. Prove
+            // their exact boundary independently of replacing a published root.
+            let mut fresh = vec![None; artifact.outputs().len()];
+            let mut exact = limits();
+            exact.execution.max_work = report.work;
+            assert_eq!(
+                jit.evaluate_into(&args, &mut fresh, exact, &memory)
+                    .unwrap(),
+                report
+            );
+            equal(&artifact, &fresh, &expected);
+            drop(fresh);
+            let mut fresh = vec![None; artifact.outputs().len()];
+            let before = memory.used_bytes();
+            exact.execution.max_work -= 1;
+            let error = jit
+                .evaluate_into(&args, &mut fresh, exact, &memory)
+                .unwrap_err();
+            assert!(
+                matches!(
+                    error,
+                    NativeProgramExecutionError::Value(NativeValueError::Base(
+                        NativeExecutionError::WorkLimit { required, limit, .. }
+                    )) if required > limit && limit == report.work - 1
+                ),
+                "{error:?}"
+            );
+            assert!(fresh.iter().all(Option::is_none));
+            assert_eq!(memory.used_bytes(), before);
+
+            // The existing publication protocol prepays retirement of each
+            // caller-visible root: 4 * retained bytes + 32. It is not range
+            // construction work, and must not disappear with packed storage.
+            let retirement = output
+                .iter()
+                .flatten()
+                .map(|value| value.memory_budget_retained_bytes(&memory).unwrap() * 4 + 32)
+                .sum::<u64>();
+            let mut replacement_report = report;
+            replacement_report.work += retirement;
+            exact.execution.max_work = replacement_report.work;
+            assert_eq!(
+                jit.evaluate_into(&args, &mut output, exact, &memory)
+                    .unwrap(),
+                replacement_report
+            );
+            let prior = output.clone();
+            for dimension in 0..7 {
+                let mut denied = limits();
+                match dimension {
+                    0 => denied.execution.max_work = replacement_report.work - 1,
+                    1 => denied.library.max_compute_work = Some(0),
+                    2 => denied.library.max_temporary_bytes = Some(0),
+                    3 => denied.library.max_retained_nodes = Some(0),
+                    4 => denied.library.max_output_elements = Some(32),
+                    5 => denied.library.max_output_bytes = Some(0),
+                    _ => denied.library.max_cloned_bytes = Some(0),
+                }
+                let before = memory.used_bytes();
+                let error = jit
+                    .evaluate_into(&args, &mut output, denied, &memory)
+                    .expect_err(&format!("dimension {dimension}"));
+                if dimension == 0 {
+                    assert!(
+                        matches!(
+                            error,
+                            NativeProgramExecutionError::Value(NativeValueError::Base(
+                                NativeExecutionError::WorkLimit { required, limit, .. }
+                            )) if required > limit && limit == replacement_report.work - 1
+                        ),
+                        "{error:?}"
+                    );
+                }
+                assert_eq!(memory.used_bytes(), before);
+                for (actual, previous) in output.iter().zip(&prior) {
+                    assert!(
+                        actual
+                            .as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(previous.as_ref().unwrap())
+                    );
+                }
+            }
+            // A truly shared account with no remaining capacity cannot let a
+            // smaller physical constructor bypass the original admission.
+            let claim = memory
+                .reserve_capacity(256 * 1024 * 1024 - memory.used_bytes())
+                .unwrap();
+            let before = memory.used_bytes();
+            assert!(
+                jit.evaluate_into(&args, &mut output, limits(), &memory)
+                    .is_err()
+            );
+            assert_eq!(memory.used_bytes(), before);
+            equal(&artifact, &output, &expected);
+            drop(claim);
+            assert_eq!(
+                jit.evaluate_into(&args, &mut output, limits(), &memory)
+                    .unwrap(),
+                replacement_report
+            );
+            equal(&artifact, &output, &expected);
+            drop((args, output, prior, expected));
+            assert_eq!(memory.used_bytes(), 0);
+        }
     }
 }

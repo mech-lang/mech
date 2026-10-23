@@ -9,7 +9,7 @@ use mech_core::{
     AccessMode, DeliveryMode, DimensionExpr, EffectContract, EffectDeliveryPolicy,
     ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, IntegerWidth,
     MResult, MechError, MechErrorKind, OperationContractDeclaration, Schema, SchemaBody,
-    SchemaDraft, SchemaTableBuilder, Value, ValueCell, ValueData,
+    SchemaDraft, SchemaTableBuilder, Value, ValueData,
     snapshot::{SequenceView, SnapshotValidationContext, ValueDataDraft, ValueDraft},
 };
 use mech_runtime::{
@@ -69,6 +69,37 @@ pub trait CliBackend: std::fmt::Debug {
     /// for both success and failure; the provider caches that one acquisition.
     fn stdin_bytes(&self) -> Option<MResult<Vec<u8>>> {
         None
+    }
+    /// Explicit host promise: this backend is dedicated to ONE native capture
+    /// followed by shutdown, not reusable/mixed snapshot observations. Ordinary
+    /// CLI backends remain false and retain their existing immutable cache.
+    fn supports_single_use_stdin_text_capture(&self) -> bool {
+        false
+    }
+    /// Synchronously lend that one source; do not observe it outside `capture`.
+    /// The shared runtime, not this backend, validates chunks and bounds reads.
+    fn with_single_use_stdin_text_reader(
+        &self,
+        _capture: &mut dyn FnMut(&mut dyn Read) -> MResult<()>,
+    ) -> MResult<()> {
+        Err(cli_error(
+            "cli://stdin".into(),
+            "one-shot text capture is unavailable",
+        ))
+    }
+    fn text_capture_error(
+        &self,
+        resource: &str,
+        error: mech_runtime::RuntimeTextCaptureError<std::convert::Infallible>,
+    ) -> MechError {
+        use mech_runtime::RuntimeTextCaptureError as Error;
+        let reason = match error {
+            Error::Acquisition(error) => error.to_string(),
+            Error::InputLimit { .. } => "input exceeds its finite acquisition cap".into(),
+            Error::InvalidUtf8 { .. } => "standard input is not valid UTF-8".into(),
+            Error::Consumer(never) => match never {},
+        };
+        cli_error(resource.into(), reason)
     }
     fn write_stdout(&mut self, text: &str) -> MResult<()>;
     fn write_stderr(&mut self, text: &str) -> MResult<()>;
@@ -133,6 +164,22 @@ impl<B: CliBackend> CliBackend for ArgumentSnapshotCliBackend<B> {
 
     fn stdin_bytes(&self) -> Option<MResult<Vec<u8>>> {
         self.backend.stdin_bytes()
+    }
+    fn supports_single_use_stdin_text_capture(&self) -> bool {
+        self.backend.supports_single_use_stdin_text_capture()
+    }
+    fn with_single_use_stdin_text_reader(
+        &self,
+        capture: &mut dyn FnMut(&mut dyn Read) -> MResult<()>,
+    ) -> MResult<()> {
+        self.backend.with_single_use_stdin_text_reader(capture)
+    }
+    fn text_capture_error(
+        &self,
+        resource: &str,
+        error: mech_runtime::RuntimeTextCaptureError<std::convert::Infallible>,
+    ) -> MechError {
+        self.backend.text_capture_error(resource, error)
     }
 
     fn write_stdout(&mut self, text: &str) -> MResult<()> {
@@ -227,7 +274,13 @@ impl CliBackend for StdCliBackend {
 #[derive(Debug)]
 enum CliStdinAcquisition {
     Raw(Vec<u8>),
+    // The successful immutable text cache preserves the exact UTF-8 bytes.
+    // Future byte reads borrow that backing; no duplicate raw buffer is kept.
+    Decoded,
     LegacyText,
+    // Only an explicitly dedicated backend may opt in. No partial snapshot is
+    // cached, and a failed/successful exclusive acquisition is never replayed.
+    SingleUseText,
 }
 
 #[derive(Debug, Default)]
@@ -236,6 +289,10 @@ struct CliStdinSnapshot {
     text: Option<MResult<Value>>,
     bytes: Option<MResult<Value>>,
 }
+
+#[cfg(test)]
+#[path = "provider_snapshot_tests.rs"]
+mod snapshot_tests;
 
 #[derive(Debug)]
 pub struct CliResourceProvider<B: CliBackend> {
@@ -359,6 +416,64 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
         ]
     }
 
+    fn supports_single_use_text_capture(&self, request: &RuntimeResourceReadRequest) -> bool {
+        if !self.matches_base(&request.base_uri, "stdin")
+            || request.path != "text"
+            || validate_stdin_read(request).is_err()
+        {
+            return false;
+        }
+        let Ok(snapshot) = self.stdin_snapshot.lock() else {
+            return false;
+        };
+        snapshot.acquisition.is_none()
+            && self
+                .backend
+                .lock()
+                .is_ok_and(|backend| backend.supports_single_use_stdin_text_capture())
+    }
+
+    fn with_single_use_text_reader(
+        &self,
+        request: RuntimeResourceReadRequest,
+        capture: &mut dyn FnMut(&mut dyn Read) -> MResult<()>,
+    ) -> MResult<()> {
+        validate_stdin_read(&request)?;
+        if !self.matches_base(&request.base_uri, "stdin") || request.path != "text" {
+            return Err(cli_error(
+                request.base_uri,
+                "one-shot capture requires stdin text",
+            ));
+        }
+        let mut snapshot = self
+            .stdin_snapshot
+            .lock()
+            .map_err(|_| cli_error(request.base_uri.clone(), "CLI stdin snapshot lock poisoned"))?;
+        let backend = self
+            .backend
+            .lock()
+            .map_err(|_| cli_error(request.base_uri.clone(), "CLI backend lock poisoned"))?;
+        if snapshot.acquisition.is_some() || !backend.supports_single_use_stdin_text_capture() {
+            return Err(cli_error(
+                request.base_uri,
+                "stdin is not a fresh dedicated text source",
+            ));
+        }
+        snapshot.acquisition = Some(Ok(CliStdinAcquisition::SingleUseText));
+        backend.with_single_use_stdin_text_reader(capture)
+    }
+
+    fn text_capture_error(
+        &self,
+        request: &RuntimeResourceReadRequest,
+        error: mech_runtime::RuntimeTextCaptureError<std::convert::Infallible>,
+    ) -> MechError {
+        match self.backend.lock() {
+            Ok(backend) => backend.text_capture_error(&request.base_uri, error),
+            Err(_) => cli_error(request.base_uri.clone(), "CLI backend lock poisoned"),
+        }
+    }
+
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if self.matches_base(&request.base_uri, "env") {
             validate_env_key(&request.path)?;
@@ -425,22 +540,51 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                     None => Ok(CliStdinAcquisition::LegacyText),
                 }
             });
-            match acquired {
+            let result = match acquired {
                 Err(error) => Err(error.clone()),
                 Ok(CliStdinAcquisition::Raw(raw)) if request.path == "bytes" => bytes
                     .get_or_insert_with(|| byte_row_value(raw, &request.base_uri))
                     .clone(),
                 Ok(CliStdinAcquisition::Raw(raw)) => text
                     .get_or_insert_with(|| {
-                        let decoded = std::str::from_utf8(raw).map_err(|_| {
-                            cli_error(
-                                request.base_uri.clone(),
-                                "standard input is not valid UTF-8",
-                            )
-                        })?;
-                        RuntimeHostInputValue::String(decoded.to_owned()).into_value()
+                        RuntimeHostInputValue::string_from_utf8_bytes(raw).map_err(|error| {
+                            match error {
+                                mech_runtime::RuntimeHostStringError::InvalidUtf8(_) => cli_error(
+                                    request.base_uri.clone(),
+                                    "standard input is not valid UTF-8",
+                                ),
+                                mech_runtime::RuntimeHostStringError::Snapshot(error) => error,
+                            }
+                        })
                     })
                     .clone(),
+                Ok(CliStdinAcquisition::Decoded) => {
+                    let Some(Ok(value)) = text.as_ref() else {
+                        return Err(cli_error(
+                            request.base_uri,
+                            "decoded stdin snapshot has no retained text",
+                        ));
+                    };
+                    if request.path == "bytes" {
+                        bytes
+                            .get_or_insert_with(|| match value.data() {
+                                ValueData::String(decoded) => {
+                                    byte_row_value(decoded.as_bytes(), &request.base_uri)
+                                }
+                                _ => Err(cli_error(
+                                    request.base_uri.clone(),
+                                    "decoded stdin snapshot is not String",
+                                )),
+                            })
+                            .clone()
+                    } else {
+                        Ok(value.clone())
+                    }
+                }
+                Ok(CliStdinAcquisition::SingleUseText) => Err(cli_error(
+                    request.base_uri.clone(),
+                    "dedicated stdin text capture already consumed its one acquisition",
+                )),
                 Ok(CliStdinAcquisition::LegacyText) if request.path == "bytes" => bytes
                     .get_or_insert_with(|| {
                         Err(cli_error(
@@ -461,7 +605,17 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                         RuntimeHostInputValue::String(decoded).into_value()
                     })
                     .clone(),
+            };
+            if request.path == "text"
+                && result.is_ok()
+                && matches!(acquired, Ok(CliStdinAcquisition::Raw(_)))
+            {
+                // Commit the storage transition only after canonical text
+                // construction succeeds. Decode/construction failures retain
+                // the original bytes and their existing cached diagnostics.
+                *acquired = Ok(CliStdinAcquisition::Decoded);
             }
+            result
         } else if self.matches_base(&request.base_uri, "stdout")
             || self.matches_base(&request.base_uri, "stderr")
         {
@@ -638,13 +792,51 @@ fn argument_count_value(count: u64) -> MResult<Value> {
 fn byte_row_value(bytes: &[u8], resource: &str) -> MResult<Value> {
     let columns = u64::try_from(bytes.len())
         .map_err(|_| cli_error(resource.into(), "byte input length exceeds u64"))?;
-    ValueCell::dynamic_matrix(
-        SchemaBody::UnsignedInteger(IntegerWidth::W8),
-        Box::new([1, columns]),
-        bytes.iter().copied().map(ValueDataDraft::U8).collect(),
-    )?
-    .snapshot()
+    // Keep the existing turn-scoped matrix schema, but publish its immutable
+    // packed bytes directly. No mutable cell or per-byte drafts are needed.
+    let schema = SchemaDraft {
+        dimension_parameters: (0..2)
+            .map(|index| mech_core::DimensionParameterDeclaration {
+                id: mech_core::DimensionParameterId::new(index),
+                origin: mech_core::DimensionParameterOrigin::Inferred,
+                lifetime: mech_core::DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            })
+            .collect(),
+        body: SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+            dimensions: (0..2)
+                .map(|index| DimensionExpr::Parameter(mech_core::DimensionParameterId::new(index)))
+                .collect(),
+        },
+    }
+    .finalize()
+    .map_err(|error| byte_snapshot_error(error.into()))?;
+    let shape = schema
+        .instantiate_shape(Box::new([1, columns]))
+        .map_err(|error| byte_snapshot_error(error.into()))?;
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder
+        .insert(schema)
+        .map_err(|error| byte_snapshot_error(error.into()))?;
+    let built = builder
+        .finish()
+        .map_err(|error| byte_snapshot_error(error.into()))?;
+    let id = built
+        .resolve(handle)
+        .map_err(|error| byte_snapshot_error(error.into()))?;
+    Value::from_u8_matrix(id, shape, bytes.into(), Arc::new(built.table))
+        .map_err(byte_snapshot_error)
 }
+
+fn byte_snapshot_error(error: mech_core::SnapshotValueError) -> MechError {
+    MechError::new(mech_core::ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+}
+
+#[cfg(test)]
+#[path = "provider_byte_snapshot_tests.rs"]
+mod byte_snapshot_tests;
 
 fn byte_row_schema(schema: &Schema, resource: &str) -> MResult<ResourceSchemaPreflight> {
     let SchemaBody::Matrix {

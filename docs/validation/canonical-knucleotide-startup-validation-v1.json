@@ -1,0 +1,920 @@
+{
+  "schema": "mech.canonical-knucleotide-startup-validation.v1",
+  "status": "FRESH_QUALIFIED_10M_TARGET_MET_FOOTPRINT_UNFINISHED",
+  "source_commit": "8c06ac99390dbc4e261936da41e7d44eec79f429",
+  "source_tree": "ff663d269d3fb72e49428a2b032399d697f1be6c",
+  "source_provenance": "Fresh original/decoded full-source qualification and matched timings used this exact clean commit. The following snapshot-accessor correction changes integration tests only; publication documentation is not a new executable measurement.",
+  "measured_utc": {
+    "started": "2026-10-22T00:04:39.037Z",
+    "finished": "2026-10-22T00:05:20.470Z"
+  },
+  "target": {
+    "size": "10m",
+    "requested_seconds": 0.0582,
+    "candidate_median_seconds": 0.0574647085,
+    "meets_requested_target": true,
+    "fresh_rust7_median_seconds": 0.0585605205,
+    "note": "The requested absolute target is reported separately from the freshly remeasured Rust comparator; neither defines correctness PASS.",
+    "samples_below_target": 10,
+    "total_samples": 12,
+    "scope": "End-to-end median at 10 million THREE-record bases on this M1, including secured round and execution-report publication."
+  },
+  "assessment": {
+    "ten_m": "Mech median 0.062367146 to 0.0574647085 seconds. Median paired ratio 0.9221928139288815: 7.78072% less elapsed time, 4.845688 ms saved; 12/12 faster pairs.",
+    "ten_m_rust": "Standalone Rust #7 median 0.0585605205 seconds. Mech wins 6/12 paired rounds; paired median ratio 0.9881573087395674. Treat this as approximate parity at 10M, not a decisive Rust speed advantage. Retain Rust's 0.158476-second sample and all other samples.",
+    "full125m": "Mech median 0.560156792 to 0.559036187 seconds. Median paired ratio 0.9961497873485995: 0.38502% less elapsed time; 8/12 faster pairs. Slower pairs remain included.",
+    "full125m_rust": "Standalone Rust #7 median 0.6712691665 seconds. Mech's paired median ratio 0.8323305506263499 is 16.76694% less elapsed time; 12/12 faster pairs.",
+    "footprint": "125M median peak RSS 270319616 to 270729216 bytes; executable 6712944 to 6712992 bytes. This change does not reduce memory or binary size. Physical footprint is separately recorded.",
+    "limitations": "Same-machine measurements of these exact implementations and recorded recipes. Only within-batch paired results attribute changes. Not a universal guarantee, a language ranking, an isolated capability cost, or a claim that Rust#7 is optimally tuned for this M1.",
+    "reference_footprint_target_met": false
+  },
+  "implementation": {
+    "typed_ir_version": 27,
+    "abi_version": 12,
+    "work_policy_version": 36,
+    "startup_change": "Within each immutable native validation invocation, derive semantic use counts once and lazily expand semantic actions once; share those same-plan descriptions across all existing fusion validators.",
+    "order_and_errors": "Keep validator order TextJoin, guarded query, full histogram, String span, String-map projection. Construct counts and actions at their original first-use points. Differential tests preserve malformed-plan rejection, cold/escaping reads, lazy expansion and first-selected diagnostics.",
+    "authority_and_lifetime": "The inventory is dropped within the same immutable validation invocation. No cache spans artifacts or mutation. Admission, provider contracts, transaction, shape checks, original visits and cumulative finite work accounting remain.",
+    "preceding_change": "The preceding qualified Mech baseline already includes generic safe64-byte SIMD LF-offset enumeration with a bounded scalar tail. The latest paired measurement isolates startup inventory sharing, not the preceding newline scan improvement.",
+    "compilation": "Full unchanged idiomatic Mech source through canonical Cranelift Object generation. Default opt-level3/ThinLTO/strip Rust host/library build, with original unwind/codegen-unit defaults. LLVM compiles linked Rust primitives; no workload-sized Rust k-nucleotide implementation is substituted."
+  },
+  "hardware": {
+    "architecture": "arm64",
+    "cpu_and_memory": "Apple M1\n8\n8\n8589934592",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90",
+    "power_source": "Now drawing from 'AC Power'"
+  },
+  "source": {
+    "path": "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+    "bytes": 2621,
+    "sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f"
+  },
+  "variants": [
+    {
+      "name": "standalone-rust7",
+      "binary": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/rust7-m1-build-v1168/knucleotide-rust-7",
+        "bytes": 758208,
+        "sha256": "6a0c71d8a7bf27683e71e0d23e0ade4e468b51c1dee8792f6f3a6d9b3f2a7ab1"
+      },
+      "secure": false,
+      "source": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/rust7-m1-build-v1168/knucleotide-rust-7.rs",
+        "bytes": 4988,
+        "sha256": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851"
+      },
+      "archive_commit": "7a6cd876b2fe111546b5872318b3ea44a896a900",
+      "recipe": {
+        "edition": "2021",
+        "opt_level": 3,
+        "target_cpu": "native",
+        "codegen_units": 1,
+        "lto": "default",
+        "panic": "default unwind",
+        "strip": "unchanged default"
+      },
+      "rustc_version": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-apple-darwin\nrelease: 1.98.1\nLLVM version: 22.1.8",
+      "parallelism": "Unchanged tokio ThreadPool::new; seven histogram tasks; default pool size determined by library/host CPUs.",
+      "description": "Exact archived standalone Rust#7 source and dependencies, compiled locally for this M1; no source edits or thread-pool overrides. Not the historical Rust-backed Mech control."
+    },
+    {
+      "name": "qualified-mech-v1166",
+      "binary": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-offsets-release-v1166/variant-0/native-executable",
+        "bytes": 6712944,
+        "sha256": "ae9d8a32a94d0fab8890739ca629afd8e7084eb4bf3035649c59b4460b98a022"
+      },
+      "secure": true,
+      "program_revision": "0facecde01d79a28295970c687747c206c30924741c50dbc9bcf8c8f5a04fa07"
+    },
+    {
+      "name": "candidate-mech-v1175",
+      "binary": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/validation-inventory-release-v1175/variant-0/native-executable",
+        "bytes": 6712992,
+        "sha256": "bb5bae13bdbe57db60033c3a9756434f60ef5904227bdf6e31aa467afd4ecbf1"
+      },
+      "source_commit": "8c06ac99390dbc4e261936da41e7d44eec79f429",
+      "program_revision": "c8d2662bc9875c2ef93602b773b48cd0752d0881b6c2b32c077cb30809ec522f",
+      "typed_ir_version": 27,
+      "work_policy_version": 36,
+      "wrapper": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/validation-inventory-qualification-v1175/result.json",
+        "bytes": 23127,
+        "sha256": "6732e251cbe4f7024706abca72ff8a4a74622e65de03137d3ebf8c7b86390a68"
+      },
+      "qualification": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/validation-inventory-release-v1175/hosted-linked-result.json",
+        "bytes": 590735,
+        "sha256": "48b78a27dc0cc2d3e848e085703d4c5b55275a0cdd9e010a9dd2c6b36984caa8"
+      },
+      "original_decoded_binary_pins": [
+        {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/validation-inventory-release-v1175/variant-0/native-executable",
+          "bytes": 6712992,
+          "sha256": "bb5bae13bdbe57db60033c3a9756434f60ef5904227bdf6e31aa467afd4ecbf1"
+        },
+        {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/validation-inventory-release-v1175/variant-1/native-executable",
+          "bytes": 6712992,
+          "sha256": "bb5bae13bdbe57db60033c3a9756434f60ef5904227bdf6e31aa467afd4ecbf1"
+        }
+      ],
+      "source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+      "secure": true
+    }
+  ],
+  "inputs_and_oracles": [
+    {
+      "label": "10m",
+      "input": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/knucleotide-large-controls-v564/fasta-n-2000000.txt",
+        "bytes": 20333411,
+        "three_bases": 10000000,
+        "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b"
+      },
+      "oracle": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/legacy-native-10m-measurement-v677/full-qualification-historical-fast.stdout",
+        "bytes": 254,
+        "sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+      }
+    },
+    {
+      "label": "125m",
+      "input": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/input",
+        "bytes": 254166745,
+        "three_bases": 125000000,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa"
+      },
+      "oracle": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/oracle",
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      }
+    }
+  ],
+  "finite_launch_policy": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/policy-standard-125m-launch-v660.json",
+    "sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+    "finite_policy": {
+      "grants": [
+        {
+          "operations": [
+            "read"
+          ],
+          "paths": [
+            "text"
+          ],
+          "target": "cli/stdin"
+        },
+        {
+          "operations": [
+            "write"
+          ],
+          "paths": [
+            "text"
+          ],
+          "target": "cli/stdout"
+        }
+      ],
+      "input_text_bytes": 254166745,
+      "library": {
+        "cloned_bytes": 536870912,
+        "comparison_work": 68719476736,
+        "compute_work": 8796093022208,
+        "output_bytes": 536870912,
+        "output_elements": 8388608,
+        "retained_nodes": 16777216,
+        "temporary_bytes": 1073741824
+      },
+      "max_ports": 16,
+      "memory_bytes": 3221225472,
+      "native_stack_bytes": 1048576,
+      "output_text_bytes": 1048576,
+      "transport_bytes": 16777216,
+      "work": 562949953421312
+    }
+  },
+  "method": {
+    "timing": "Twelve balanced three-way rounds per size, all six permutations twice. Serial fresh-process spawn-through-exit wall time; input/output descriptors opened before the clock. Warmups, hashing, validation and process checks are untimed.",
+    "correctness": "Every stdout must byte-exactly match the same pinned oracle and every stderr must be empty. No whitespace, float, line-order or security-report normalization.",
+    "security": "Both Mech versions use the SAME pinned finite capability policy. Baseline reports must equal pinned v1169 reports. Every candidate125M report must equal its fresh v1175 qualification; every repeat equals its exact variant/size warmup. Cross-Mech reports are compared field by field: only each actual manifest-pinned program_revision may differ; no counter, shape, or other field is removed or normalized. Standalone Rust#7 is an unsecured control.",
+    "memory": "Three separate macOS time -l processes per binary/size; maximum RSS and physical footprint separately retained, never mixed into timing samples.",
+    "lifecycle": "Fixed native leaves (threads allowed, no child-process work) have a10s deadline. RSS wrapper uses the reviewed owned-tree/group guard with15s deadline and bounded2s termination. No process polling inside timed samples.",
+    "interference": "At least40GiB free and no compiler/test/benchmark/profiler before/after each process. Immutable source/build/binary/input/policy pins verified between phases; hardware/OS/power unchanged.",
+    "packaging": "Executable bytes are recorded only for provenance, NOT a size-fair comparison: upstream Rust recipe leaves symbols unstripped while the maintained Mech profile strips symbols. Build settings and thread defaults are preserved, not normalized.",
+    "scope": "Same-machine same-input comparison of these exact implementations and recorded build recipes, not a general language ranking or isolated capability overhead measurement. Both Mech versions and Rust are freshly remeasured; historical measurements are provenance only."
+  },
+  "results": {
+    "10m": {
+      "standalone-rust7": {
+        "executable_bytes": 758208,
+        "timing_samples_ns": [
+          63237416,
+          58819750,
+          55881792,
+          158476000,
+          58301291,
+          57007208,
+          56063375,
+          55473709,
+          62735792,
+          60642584,
+          57348208,
+          63104833
+        ],
+        "median_seconds": 0.0585605205,
+        "minimum_seconds": 0.055473709,
+        "maximum_seconds": 0.158476,
+        "peak_rss_samples_bytes": [
+          35241984,
+          35127296,
+          35291136
+        ],
+        "median_peak_rss_bytes": 35241984,
+        "peak_footprint_samples_bytes": [
+          21840960,
+          21791872,
+          22070592
+        ],
+        "median_peak_footprint_bytes": 21840960
+      },
+      "qualified-mech-v1166": {
+        "executable_bytes": 6712944,
+        "timing_samples_ns": [
+          62318917,
+          62237334,
+          62554709,
+          62243375,
+          62499750,
+          62675916,
+          62460084,
+          62415375,
+          62200125,
+          62186292,
+          62299041,
+          62433625
+        ],
+        "median_seconds": 0.062367146,
+        "minimum_seconds": 0.062186292,
+        "maximum_seconds": 0.062675916,
+        "peak_rss_samples_bytes": [
+          29425664,
+          29425664,
+          30064640
+        ],
+        "median_peak_rss_bytes": 29425664,
+        "peak_footprint_samples_bytes": [
+          15532864,
+          15532864,
+          15549312
+        ],
+        "median_peak_footprint_bytes": 15532864
+      },
+      "candidate-mech-v1175": {
+        "executable_bytes": 6712992,
+        "timing_samples_ns": [
+          57466542,
+          57398333,
+          57466958,
+          57462875,
+          60019667,
+          58553208,
+          57431209,
+          57291375,
+          57726541,
+          57586250,
+          57375750,
+          57443708
+        ],
+        "median_seconds": 0.0574647085,
+        "minimum_seconds": 0.057291375,
+        "maximum_seconds": 0.060019667,
+        "peak_rss_samples_bytes": [
+          29442048,
+          29442048,
+          29442048
+        ],
+        "median_peak_rss_bytes": 29442048,
+        "peak_footprint_samples_bytes": [
+          15188800,
+          15188800,
+          15205248
+        ],
+        "median_peak_footprint_bytes": 15188800
+      }
+    },
+    "125m": {
+      "standalone-rust7": {
+        "executable_bytes": 758208,
+        "timing_samples_ns": [
+          656053750,
+          690784750,
+          712218667,
+          768623500,
+          687397833,
+          655117792,
+          694916291,
+          672847542,
+          661473958,
+          658525292,
+          669690791,
+          659174000
+        ],
+        "median_seconds": 0.6712691665,
+        "minimum_seconds": 0.655117792,
+        "maximum_seconds": 0.7686235,
+        "peak_rss_samples_bytes": [
+          204652544,
+          171130880,
+          171327488
+        ],
+        "median_peak_rss_bytes": 171327488,
+        "peak_footprint_samples_bytes": [
+          195954304,
+          162399744,
+          162662144
+        ],
+        "median_peak_footprint_bytes": 162662144
+      },
+      "qualified-mech-v1166": {
+        "executable_bytes": 6712944,
+        "timing_samples_ns": [
+          559928666,
+          568453542,
+          560140459,
+          559322833,
+          559117875,
+          561243667,
+          562202250,
+          558716833,
+          561696875,
+          569960542,
+          560173125,
+          558940375
+        ],
+        "median_seconds": 0.560156792,
+        "minimum_seconds": 0.558716833,
+        "maximum_seconds": 0.569960542,
+        "peak_rss_samples_bytes": [
+          270319616,
+          270319616,
+          270319616
+        ],
+        "median_peak_rss_bytes": 270319616,
+        "peak_footprint_samples_bytes": [
+          147719360,
+          147735808,
+          147702912
+        ],
+        "median_peak_footprint_bytes": 147719360
+      },
+      "candidate-mech-v1175": {
+        "executable_bytes": 6712992,
+        "timing_samples_ns": [
+          556721833,
+          560978709,
+          578025917,
+          561015875,
+          560048583,
+          557550959,
+          559347166,
+          558725208,
+          553868666,
+          561139916,
+          558704333,
+          557524792
+        ],
+        "median_seconds": 0.559036187,
+        "minimum_seconds": 0.553868666,
+        "maximum_seconds": 0.578025917,
+        "peak_rss_samples_bytes": [
+          270729216,
+          270729216,
+          270352384
+        ],
+        "median_peak_rss_bytes": 270729216,
+        "peak_footprint_samples_bytes": [
+          155403520,
+          155387008,
+          155026560
+        ],
+        "median_peak_footprint_bytes": 155387008
+      }
+    }
+  },
+  "paired": {
+    "10m": {
+      "qualified-mech-v1166_over_standalone-rust7": {
+        "candidate": "qualified-mech-v1166",
+        "control": "standalone-rust7",
+        "median_ratio": 1.0650579002824383,
+        "median_delta_ms": 3.8080214999999997,
+        "faster_rounds": 4,
+        "total_rounds": 12,
+        "ratios": [
+          0.9854753869133426,
+          1.0581026610959754,
+          1.1194112923221933,
+          0.3927621532597996,
+          1.0720131394689012,
+          1.0994384429421626,
+          1.1140978223305322,
+          1.1251343406657737,
+          0.9914615408059246,
+          1.025455841393566,
+          1.08632934092727,
+          0.989363603893857
+        ],
+        "deltas_ms": [
+          -0.918499,
+          3.417584,
+          6.672917,
+          -96.232625,
+          4.198459,
+          5.668708,
+          6.396709,
+          6.941666,
+          -0.535667,
+          1.543708,
+          4.950833,
+          -0.671208
+        ]
+      },
+      "candidate-mech-v1175_over_standalone-rust7": {
+        "candidate": "candidate-mech-v1175",
+        "control": "standalone-rust7",
+        "median_ratio": 0.9881573087395674,
+        "median_delta_ms": -0.6969375,
+        "faster_rounds": 6,
+        "total_rounds": 12,
+        "ratios": [
+          0.9087427291463016,
+          0.9758343583575245,
+          1.028366413160122,
+          0.36259670233978647,
+          1.0294740643050255,
+          1.027119377605723,
+          1.0243979960178995,
+          1.0327662605000867,
+          0.9201532197122816,
+          0.9496008613353283,
+          1.0004802591216102,
+          0.9102901516275307
+        ],
+        "deltas_ms": [
+          -5.770874,
+          -1.421417,
+          1.585166,
+          -101.013125,
+          1.718376,
+          1.546,
+          1.367834,
+          1.817666,
+          -5.009251,
+          -3.056334,
+          0.027542,
+          -5.661125
+        ]
+      },
+      "candidate-mech-v1175_over_qualified-mech-v1166": {
+        "candidate": "candidate-mech-v1175",
+        "control": "qualified-mech-v1166",
+        "median_ratio": 0.9221928139288815,
+        "median_delta_ms": -4.845688,
+        "faster_rounds": 12,
+        "total_rounds": 12,
+        "ratios": [
+          0.9221364036220334,
+          0.9222492242357296,
+          0.9186671781975678,
+          0.9231966454261197,
+          0.960318513274053,
+          0.934221814963183,
+          0.9194865796209944,
+          0.9179048431576354,
+          0.9280775721913742,
+          0.9260280384622386,
+          0.9209732458000437,
+          0.9200764491890387
+        ],
+        "deltas_ms": [
+          -4.852375,
+          -4.839001,
+          -5.087751,
+          -4.7805,
+          -2.480083,
+          -4.122708,
+          -5.028875,
+          -5.124,
+          -4.473584,
+          -4.600042,
+          -4.923291,
+          -4.989917
+        ]
+      }
+    },
+    "125m": {
+      "qualified-mech-v1166_over_standalone-rust7": {
+        "candidate": "qualified-mech-v1166",
+        "control": "standalone-rust7",
+        "median_ratio": 0.833420946606121,
+        "median_delta_ms": -111.8241875,
+        "faster_rounds": 12,
+        "total_rounds": 12,
+        "ratios": [
+          0.8534798650263031,
+          0.8229098022213143,
+          0.786472589042657,
+          0.7276941610554453,
+          0.8133832377094503,
+          0.8567064943948278,
+          0.8090215429990545,
+          0.8303765684262543,
+          0.8491594691018811,
+          0.8655104806513643,
+          0.8364653247859877,
+          0.8479405665271992
+        ],
+        "deltas_ms": [
+          -96.125084,
+          -122.331208,
+          -152.078208,
+          -209.300667,
+          -128.279958,
+          -93.874125,
+          -132.714041,
+          -114.130709,
+          -99.777083,
+          -88.56475,
+          -109.517666,
+          -100.233625
+        ]
+      },
+      "candidate-mech-v1175_over_standalone-rust7": {
+        "candidate": "candidate-mech-v1175",
+        "control": "standalone-rust7",
+        "median_ratio": 0.8323305506263499,
+        "median_delta_ms": -112.554396,
+        "faster_rounds": 12,
+        "total_rounds": 12,
+        "ratios": [
+          0.8485918005956067,
+          0.8120890175991871,
+          0.8115849019160852,
+          0.7298968545718417,
+          0.8147371960074247,
+          0.8510697859355345,
+          0.8049130136164846,
+          0.8303890155253031,
+          0.8373249759894553,
+          0.8521159670204436,
+          0.8342720857273965,
+          0.8457930561581616
+        ],
+        "deltas_ms": [
+          -99.331917,
+          -129.806041,
+          -134.19275,
+          -207.607625,
+          -127.34925,
+          -97.566833,
+          -135.569125,
+          -114.122334,
+          -107.605292,
+          -97.385376,
+          -110.986458,
+          -101.649208
+        ]
+      },
+      "candidate-mech-v1175_over_qualified-mech-v1166": {
+        "candidate": "candidate-mech-v1175",
+        "control": "qualified-mech-v1166",
+        "median_ratio": 0.9961497873485995,
+        "median_delta_ms": -2.161938,
+        "faster_rounds": 8,
+        "total_rounds": 12,
+        "ratios": [
+          0.9942727829548201,
+          0.9868505824175162,
+          1.031930309108416,
+          1.0030269495541941,
+          1.0016646006890766,
+          0.9934204905692058,
+          0.9949216069483892,
+          1.0000149897040957,
+          0.9860632854686969,
+          0.9845241462346704,
+          0.9973779677488098,
+          0.9974673810243176
+        ],
+        "deltas_ms": [
+          -3.206833,
+          -7.474833,
+          17.885458,
+          1.693042,
+          0.930708,
+          -3.692708,
+          -2.855084,
+          0.008375,
+          -7.828209,
+          -8.820626,
+          -1.468792,
+          -1.415583
+        ]
+      }
+    }
+  },
+  "complete_report_comparisons": [
+    {
+      "size": "10m",
+      "baseline_report": {
+        "effects": 1,
+        "host_result_carrier_bytes": 192,
+        "hosted_phases": "admit-activate-capture-resume",
+        "input_acquisition_byte_cap": 254166745,
+        "input_storage": "bounded-lines",
+        "jit": false,
+        "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+        "native_aot": true,
+        "native_comparison_work": 483361822,
+        "native_transport_bytes": 32480,
+        "native_visits": 474,
+        "native_work": 57976721126,
+        "observations": 1,
+        "payload_argument_snapshot_reserved_bytes": 16,
+        "policy": "secured",
+        "program_revision": "0facecde01d79a28295970c687747c206c30924741c50dbc9bcf8c8f5a04fa07",
+        "requirements": 2,
+        "resident_body_evaluation": false,
+        "route": "canonical-artifact-program-object-secured-cli",
+        "schema": "mech.canonical-hosted-native-execution.v1",
+        "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+        "shutdown": "completed",
+        "source_parser": false
+      },
+      "candidate_report": {
+        "effects": 1,
+        "host_result_carrier_bytes": 192,
+        "hosted_phases": "admit-activate-capture-resume",
+        "input_acquisition_byte_cap": 254166745,
+        "input_storage": "bounded-lines",
+        "jit": false,
+        "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+        "native_aot": true,
+        "native_comparison_work": 483361822,
+        "native_transport_bytes": 32480,
+        "native_visits": 474,
+        "native_work": 57976721126,
+        "observations": 1,
+        "payload_argument_snapshot_reserved_bytes": 16,
+        "policy": "secured",
+        "program_revision": "c8d2662bc9875c2ef93602b773b48cd0752d0881b6c2b32c077cb30809ec522f",
+        "requirements": 2,
+        "resident_body_evaluation": false,
+        "route": "canonical-artifact-program-object-secured-cli",
+        "schema": "mech.canonical-hosted-native-execution.v1",
+        "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+        "shutdown": "completed",
+        "source_parser": false
+      },
+      "differences": [
+        {
+          "key": "program_revision",
+          "baseline": "0facecde01d79a28295970c687747c206c30924741c50dbc9bcf8c8f5a04fa07",
+          "candidate": "c8d2662bc9875c2ef93602b773b48cd0752d0881b6c2b32c077cb30809ec522f",
+          "numeric_delta": null
+        }
+      ]
+    },
+    {
+      "size": "125m",
+      "baseline_report": {
+        "effects": 1,
+        "host_result_carrier_bytes": 192,
+        "hosted_phases": "admit-activate-capture-resume",
+        "input_acquisition_byte_cap": 254166745,
+        "input_storage": "bounded-lines",
+        "jit": false,
+        "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+        "native_aot": true,
+        "native_comparison_work": 6041695262,
+        "native_transport_bytes": 32480,
+        "native_visits": 474,
+        "native_work": 718418123927,
+        "observations": 1,
+        "payload_argument_snapshot_reserved_bytes": 16,
+        "policy": "secured",
+        "program_revision": "0facecde01d79a28295970c687747c206c30924741c50dbc9bcf8c8f5a04fa07",
+        "requirements": 2,
+        "resident_body_evaluation": false,
+        "route": "canonical-artifact-program-object-secured-cli",
+        "schema": "mech.canonical-hosted-native-execution.v1",
+        "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+        "shutdown": "completed",
+        "source_parser": false
+      },
+      "candidate_report": {
+        "effects": 1,
+        "host_result_carrier_bytes": 192,
+        "hosted_phases": "admit-activate-capture-resume",
+        "input_acquisition_byte_cap": 254166745,
+        "input_storage": "bounded-lines",
+        "jit": false,
+        "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+        "native_aot": true,
+        "native_comparison_work": 6041695262,
+        "native_transport_bytes": 32480,
+        "native_visits": 474,
+        "native_work": 718418123927,
+        "observations": 1,
+        "payload_argument_snapshot_reserved_bytes": 16,
+        "policy": "secured",
+        "program_revision": "c8d2662bc9875c2ef93602b773b48cd0752d0881b6c2b32c077cb30809ec522f",
+        "requirements": 2,
+        "resident_body_evaluation": false,
+        "route": "canonical-artifact-program-object-secured-cli",
+        "schema": "mech.canonical-hosted-native-execution.v1",
+        "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+        "shutdown": "completed",
+        "source_parser": false
+      },
+      "differences": [
+        {
+          "key": "program_revision",
+          "baseline": "0facecde01d79a28295970c687747c206c30924741c50dbc9bcf8c8f5a04fa07",
+          "candidate": "c8d2662bc9875c2ef93602b773b48cd0752d0881b6c2b32c077cb30809ec522f",
+          "numeric_delta": null
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "outputs": 96,
+    "complete_mech_reports": 64,
+    "independent_physical_and_statistics_audit": {
+      "status": "PASS",
+      "physical_files_rehashed": 562,
+      "scope": "Rehash preserved pins and all measured outputs, stderr and reports; independently recompute all timing medians, paired ratios/deltas/wins, balanced orders and RSS medians. Compare entire cross-Mech reports, allowing only actual manifest revisions."
+    },
+    "cross_mech_difference": "Only each actual manifest-pinned program_revision differs; no work counter or other report field differs.",
+    "fresh_qualification": {
+      "status": "PASS",
+      "source_commit": "8c06ac99390dbc4e261936da41e7d44eec79f429",
+      "source_snapshot": {
+        "commit": "8c06ac99390dbc4e261936da41e7d44eec79f429",
+        "tree": "ff663d269d3fb72e49428a2b032399d697f1be6c"
+      },
+      "driver": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/qualify-validation-inventory-v1175.cjs",
+        "bytes": 11225,
+        "sha256": "7c907a449929d2e1b44e66c7a693f37a872c36320938c312f7bd753073d2803b"
+      },
+      "qualification": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/validation-inventory-release-v1175/hosted-linked-result.json",
+        "bytes": 590735,
+        "sha256": "48b78a27dc0cc2d3e848e085703d4c5b55275a0cdd9e010a9dd2c6b36984caa8"
+      },
+      "validation": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/validation-inventory-v1176/result.json",
+        "bytes": 14496,
+        "sha256": "ff06f78daa558baf53a61d7b5e3f6a3a9742491cb13610358bf58e372d08aa9a"
+      },
+      "scope": "Both original/decoded13-case security sets,8 generated-launcher tests each,9 original pin-mutation rejections plus restored binary,2full-size correctness runs and6timed full-size runs. Original/decoded source,Object,bytecode,identity,revision and binary hashes match."
+    },
+    "selected_local_validation": {
+      "status": "PASS",
+      "source_snapshot": {
+        "commit": "8c06ac99390dbc4e261936da41e7d44eec79f429",
+        "tree": "ff663d269d3fb72e49428a2b032399d697f1be6c"
+      },
+      "driver": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/validate-validation-inventory-v1176.cjs",
+        "bytes": 5790,
+        "sha256": "1ad54e9461bb2fe2c890edf3bf2a62ed346977252c15013c3f66da8ff3ed8420"
+      },
+      "checks": [
+        {
+          "name": "build",
+          "exit": 0,
+          "test_summaries": []
+        },
+        {
+          "name": "inventory-regressions",
+          "exit": 0,
+          "test_summaries": [
+            "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 960 filtered out; finished in 1.63s"
+          ]
+        },
+        {
+          "name": "engine-native",
+          "exit": 0,
+          "test_summaries": [
+            "test result: ok. 65 passed; 0 failed; 0 ignored; 0 measured; 899 filtered out; finished in 21.70s"
+          ]
+        },
+        {
+          "name": "gpu-native",
+          "exit": 0,
+          "test_summaries": [
+            "test result: ok. 146 passed; 0 failed; 3 ignored; 0 measured; 58 filtered out; finished in 59.54s"
+          ]
+        },
+        {
+          "name": "artifact-contract",
+          "exit": 0,
+          "test_summaries": [
+            "test result: ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s"
+          ]
+        },
+        {
+          "name": "hosted-contract",
+          "exit": 0,
+          "test_summaries": [
+            "test result: ok. 53 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 29.00s"
+          ]
+        },
+        {
+          "name": "runtime-only",
+          "exit": 0,
+          "test_summaries": []
+        },
+        {
+          "name": "minimal-native-artifact",
+          "exit": 0,
+          "test_summaries": []
+        },
+        {
+          "name": "diff-check",
+          "exit": 0,
+          "test_summaries": []
+        }
+      ]
+    },
+    "ci_snapshot_accessor_correction": {
+      "commit": "7c96ca058ec48a841385da20da3efc0654a5c4ae",
+      "scope": "Test-only unwrap of guaranteed Snapshot source/rows, preserving all prior storage,shape,count,pointer,byte and release assertions.",
+      "validation": {
+        "receipt": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-program-ci-v1181/result.json",
+          "bytes": 10450,
+          "sha256": "608a9f04a73274486649016dc1f072e7e51eda0ea3b62c3adcfca720383aaad8"
+        },
+        "status": "PASS",
+        "profile": "Exact canonical-native-program CI integration target; full nonignored suite, not the entire workspace.",
+        "source_snapshot": {
+          "commit": "7c96ca058ec48a841385da20da3efc0654a5c4ae",
+          "tree": "d7e8550f1f0807f4c5c630a79442d2c1e0730d46"
+        },
+        "test_counts": {
+          "passed": 134,
+          "failed": 0,
+          "ignored": 2,
+          "filtered_out": 0
+        },
+        "focused_tests": [
+          "text_line_matrix_qualification::text_line_matrix_view_matches_canonical_utf8_crlf_empty_shape_and_bytes",
+          "text_line_matrix_qualification::text_line_matrix_denials_keep_the_same_account_and_release_all_metadata",
+          "text_line_matrix_qualification::selected_line_matrix_reuses_ordinary_positions_errors_shape_and_join"
+        ],
+        "ignored_linked_registration_verified": true,
+        "scope": "Local compilation/execution check only. The ignored linked qualifier is listed, not executed; no benchmark or clean-source linked qualification claim."
+      }
+    }
+  },
+  "provenance": {
+    "raw_evidence": "Raw measurement, inputs, projects, executables and logs are retained locally under tmp/pr-stack-evidence, not committed repository artifacts. Their actual hashes, byte counts, samples and input/oracle identities are included here.",
+    "pins": [
+      {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/validation-inventory-rust7-three-way-v1178/measurement.json",
+        "bytes": 410692,
+        "sha256": "7e3187ecfdf7bb782392d997a7d45f34b77fea0c4e2c51dcb3ae4b9b1fbfbd69"
+      },
+      {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/validation-inventory-qualification-v1175/result.json",
+        "bytes": 23127,
+        "sha256": "6732e251cbe4f7024706abca72ff8a4a74622e65de03137d3ebf8c7b86390a68"
+      },
+      {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/validation-inventory-v1176/result.json",
+        "bytes": 14496,
+        "sha256": "ff06f78daa558baf53a61d7b5e3f6a3a9742491cb13610358bf58e372d08aa9a"
+      },
+      {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-validation-inventory-rust7-three-way-v1178.cjs",
+        "bytes": 33517,
+        "sha256": "b24a2a0343bda3ff1485549fd87ebd7b447925ab38df6388a5f16e4a37fd6909"
+      },
+      {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-program-ci-v1181/result.json",
+        "bytes": 10450,
+        "sha256": "608a9f04a73274486649016dc1f072e7e51eda0ea3b62c3adcfca720383aaad8"
+      }
+    ],
+    "rust_source": "Unchanged archived benchmark-game Rust#7 source; independently compiled on this M1. The historical approximately0.975-second direct-I/O result was Rust-backed Mech, not standalone Rust#7.",
+    "rust_packaging": "The recorded Rust#7 executable retains upstream recipe symbols, whereas Mech strips symbols. Executable byte counts are provenance; this is not a packaging-normalized size comparison.",
+    "preceding_measurement": "canonical-knucleotide-line-geometry-v1.json",
+    "review_and_ci": "Publication requires new review and green CI. Keep PR909 draft and unmerged until user direction."
+  }
+}

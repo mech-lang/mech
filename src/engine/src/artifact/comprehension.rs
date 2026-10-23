@@ -3,7 +3,7 @@
 
 use mech_core::{ConstantId, OperationContractId, SchemaId};
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum ComprehensionValue {
     Constant(ConstantId),
     /// Ordinal in the enclosing node's input bindings.
@@ -53,7 +53,7 @@ pub enum ComprehensionStep<C = OperationContractId, S = SchemaId, V = Comprehens
     Filter(V),
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum MatrixBlockRows {
     /// The first yielded block supplies the row count; no yields produce 0x0.
     InferOrZero,
@@ -64,7 +64,7 @@ pub enum MatrixBlockRows {
     InputMatrixElements { input: u16 },
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum ComprehensionKind {
     Matrix,
     /// Elementwise construction that retains the sole generator matrix shape.

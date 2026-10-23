@@ -36,6 +36,12 @@ pub fn generate_linked_program_application(
         binary_name,
         LinkedApplicationInputs {
             profile: LinkedApplicationProfile::ManagedProgram,
+            schemas: artifact.schemas(),
+            factory_linkage:
+                mech_engine::linked_factories::NativeFactoryLinkageProfile::derive_native_image(
+                    object.descriptor().plan(),
+                    catalog,
+                ),
             source_provenance,
             bytecode,
             object: object.bytes(),
@@ -44,7 +50,14 @@ pub fn generate_linked_program_application(
             revision: artifact.revision().as_bytes(),
             typed_ir_sha256: object.descriptor().typed_ir_sha256(),
             object_metadata: object.metadata(),
+            descriptor_image: Some(
+                object
+                    .descriptor()
+                    .encode_build_owned_image()
+                    .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?,
+            ),
             manifest_schema: "mech.canonical-linked-program-application.v1",
+            resource_image: None,
             route: "canonical-artifact-program-cranelift-object",
         },
     )
@@ -63,6 +76,53 @@ pub fn generate_linked_hosted_program_application(
     catalog: &FunctionCatalog,
     source_provenance: &[u8],
 ) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
+    generate_hosted(
+        workspace,
+        directory,
+        binary_name,
+        artifact,
+        catalog,
+        source_provenance,
+        false,
+    )
+}
+
+/// Explicit experiment using the SAME Object, provider and phased launcher.
+/// The generated binary requires a launch-time `benchmark_policy` of secured
+/// or trusted; no environment switch or production default enables it.
+/// Trusted bypasses resource/operation decisions for live in-scope unlimited
+/// launch grants, not memory/work/schema/transaction/provider/lifecycle checks.
+/// Do not distribute this benchmark binary as a secured production executable.
+#[cfg(feature = "canonical-native-benchmark-policy")]
+pub fn generate_linked_benchmark_program_application(
+    workspace: &Path,
+    directory: &Path,
+    binary_name: &str,
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    source_provenance: &[u8],
+) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
+    generate_hosted(
+        workspace,
+        directory,
+        binary_name,
+        artifact,
+        catalog,
+        source_provenance,
+        true,
+    )
+}
+
+#[cfg(feature = "canonical-native-program-host")]
+fn generate_hosted(
+    workspace: &Path,
+    directory: &Path,
+    binary_name: &str,
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    source_provenance: &[u8],
+    benchmark_policy: bool,
+) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
     let workspace = prepare_destination(workspace, directory, binary_name)?;
     if !artifact.inputs().is_empty() {
         return Err(NativeApplicationError::Invalid(
@@ -71,28 +131,35 @@ pub fn generate_linked_hosted_program_application(
     }
     // Metadata only: exact contracts, original Live observations, Snapshot sends
     // and shared canonical effect order. No provider/input is observed here.
-    let ports = mech_runtime::CanonicalNativeResourcePlan::select(artifact, usize::MAX)
+    let resources = mech_runtime::CanonicalNativeResourceMetadata::prepare(artifact, usize::MAX)
         .map_err(|error| NativeApplicationError::Encoding(format!("{error:?}")))?;
-    if ports.requirements().is_empty() {
-        return Err(NativeApplicationError::Invalid(
-            "hosted application requires original canonical resource requirements",
-        ));
-    }
     let object =
         super::emit_program_object(artifact, catalog).map_err(NativeApplicationError::Compile)?;
     let bytecode = encode_program_artifact_bytecode_v1(artifact)
         .map_err(|error| NativeApplicationError::Encoding(format!("{error:?}")))?;
-    let main = render_main(
-        include_str!("templates/linked_hosted_program_main.rs.in"),
+    let route = if benchmark_policy {
+        "canonical-artifact-program-object-benchmark-cli"
+    } else {
+        "canonical-artifact-program-object-secured-cli"
+    };
+    let main = render_hosted_main(
         object.identity().symbol(),
         &bytecode,
+        route,
+        benchmark_policy,
     );
     write_linked_application(
         &workspace,
         directory,
         binary_name,
         LinkedApplicationInputs {
-            profile: LinkedApplicationProfile::HostedManagedProgram,
+            profile: LinkedApplicationProfile::HostedManagedProgram { benchmark_policy },
+            schemas: artifact.schemas(),
+            factory_linkage:
+                mech_engine::linked_factories::NativeFactoryLinkageProfile::derive_native_image(
+                    object.descriptor().plan(),
+                    catalog,
+                ),
             source_provenance,
             bytecode,
             object: object.bytes(),
@@ -101,8 +168,60 @@ pub fn generate_linked_hosted_program_application(
             revision: artifact.revision().as_bytes(),
             typed_ir_sha256: object.descriptor().typed_ir_sha256(),
             object_metadata: object.metadata(),
-            manifest_schema: "mech.canonical-linked-hosted-program-application.v1",
-            route: "canonical-artifact-program-object-secured-cli",
+            descriptor_image: Some(
+                object
+                    .descriptor()
+                    .encode_build_owned_image()
+                    .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?,
+            ),
+            resource_image: Some(
+                resources
+                    .encode_build_owned_image()
+                    .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?,
+            ),
+            manifest_schema: if benchmark_policy {
+                "mech.canonical-linked-benchmark-program-application.v1"
+            } else {
+                "mech.canonical-linked-hosted-program-application.v1"
+            },
+            route,
         },
     )
+}
+
+#[cfg(feature = "canonical-native-program-host")]
+fn render_hosted_main(symbol: &str, bytecode: &[u8], route: &str, benchmark: bool) -> String {
+    let main = render_main(
+        include_str!("templates/linked_hosted_program_main.rs.in"),
+        symbol,
+        bytecode,
+    );
+    let controls = if benchmark {
+        [
+            "use mech_gpu::native_artifact::{NativeBenchmarkCapabilityKernel, NativeBenchmarkPolicy};",
+            "benchmark_policy: String,",
+            "let benchmark_policy = NativeBenchmarkPolicy::parse(&launch.benchmark_policy).map_err(diagnostic)?;",
+            ".capability_kernel(NativeBenchmarkCapabilityKernel::new(benchmark_policy, launch.grants.len(), &memory).map_err(diagnostic)?)",
+            "benchmark_policy.name()",
+        ]
+    } else {
+        ["", "", "", "", "\"secured\""]
+    };
+    let mut main = main.replace(
+        "@HOSTED_ROUTE_LITERAL@",
+        &serde_json::to_string(route).unwrap(),
+    );
+    for (marker, replacement) in [
+        "@BENCHMARK_POLICY_IMPORT@",
+        "@BENCHMARK_POLICY_FIELD@",
+        "@BENCHMARK_POLICY_PARSE@",
+        "@BENCHMARK_POLICY_KERNEL@",
+        "@HOSTED_POLICY_EXPRESSION@",
+    ]
+    .into_iter()
+    .zip(controls)
+    {
+        main = main.replace(marker, replacement);
+    }
+    main
 }

@@ -1,0 +1,71 @@
+{
+  "schema": "mech.canonical-knucleotide-paired-legacy-standard125m.v1",
+  "status": "PERFORMANCE_TARGET_MET_FOR_THIS_WORKLOAD_REVIEW_AND_CI_PENDING",
+  "canonical_source_commit": "61bd12d439a30f5adaa658a558b3f559f4124bc0",
+  "legacy_build_source_commit": "933117167d212ae7e13bcd0de83cad320603a7e2",
+  "platform": "Apple M1, arm64, 8 physical/logical cores, 8GiB memory; both retained applications measured now on the same machine",
+  "input": {
+    "three_bases": 125000000,
+    "bytes": 254166745,
+    "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+    "oracle_bytes": 259,
+    "oracle_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+  },
+  "method": {
+    "scope": "Warm-cache whole fresh-process implementations, not kernel timing, cold-cache timing, isolated capability overhead or a language ranking.",
+    "observer": "Identical Node synchronous child observation and regular-file stdout/stderr capture for both. Descriptors open before timing; spawn through child completion is timed, including secured report generation. No rebuilding, hashing, validation or other local work while a measured child runs.",
+    "order": "Eight paired rounds, alternating legacy/canonical and canonical/legacy: four of each order. One separate full-input correctness/warmup process per variant precedes all retained samples.",
+    "series_boundary": "This is a new common-observer comparison, not extra samples for the earlier canonical Rust 1ms-observer or historical pipe-capture series. Do not splice the series or attribute their duration difference solely to observer overhead.",
+    "per_process_timeout_seconds": 15,
+    "supervisor_timeout_seconds": 180
+  },
+  "legacy": {
+    "binary_sha256": "e11bf3a7f10ed5ed6232d9bc88a4527d2ea6e0cf3fc96ee38978808e258a6be4",
+    "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+    "configuration": "The original selected historical-fast executable, packed/narrow counters, standard map, four partitions; original environment authenticated against the retained v321 receipt. No rebuild or source substitution.",
+    "samples_ns": [976253417, 982744958, 975707500, 977111417, 969363791, 969634416, 977957500, 973027709],
+    "median_seconds": 0.9759804585,
+    "range_seconds": [0.969363791, 0.982744958],
+    "retained_build_receipt_sha256": "fe1f4902b89d54e9912f221fd8bbc7a8b39c83284cfa40daf8ef83a3cf559560"
+  },
+  "canonical": {
+    "qualification_receipt": "canonical-knucleotide-line-count-standard125m-v1.json",
+    "binary_sha256": "08bed1df4645a503478d9836afc47d20f630a7c39b19c6b9a5b8a4729de34165",
+    "source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+    "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+    "samples_ns": [949172916, 950102292, 952434750, 961726458, 949548708, 953187083, 958793833, 953317416],
+    "median_seconds": 0.9528109165,
+    "range_seconds": [0.949172916, 0.961726458],
+    "policy": "secured",
+    "route": "canonical-artifact-program-object-secured-cli",
+    "native_aot": true,
+    "source_parser": false,
+    "jit": false,
+    "resident_body_evaluation": false,
+    "native_work": 711679780391,
+    "native_comparison_work": 6041695270,
+    "observations": 1,
+    "effects": 1,
+    "safety": "All nine actual secured reports exactly equal the original full-input qualification report. Complete finite policy, real owners, granted stdin/stdout operations, cumulative accounts and one atomic host round are unchanged; previously disclosed OS/Rust argv and stdin provider-cache account exclusions remain."
+  },
+  "comparison": {
+    "canonical_over_legacy": 0.9762602398457756,
+    "wall_time_reduction_fraction": 0.02373976015422441,
+    "canonical_faster_pairs": 8,
+    "paired_rounds": 8,
+    "median_definition": "Arithmetic mean of the two middle durations for eight samples.",
+    "interpretation": "The secured canonical application is about 2.4% faster at the medians and faster in all eight pairs. This meets the selected legacy speed target for this exact input and machine; it is not proof of a universal speedup or an optimization ceiling."
+  },
+  "verification": {
+    "qualified_processes": 2,
+    "timed_processes": 16,
+    "exact_physical_outputs": 18,
+    "unchanged_secured_reports": 9,
+    "measurement_sha256": "b9dceb9386b61dacc072693e15347e8b53bc79b9d177111568fd0588da0dffcd",
+    "audit_sha256": "6fd444ad7977061c43b0432fc091652cdf16b46bec3e62dc1a5d86e7625e9afe",
+    "physical_audit": "v965 rehashes both retained binaries, input/oracle/launch, all output/error/report files and both provenance receipts; checks identical secured reports/policy, exact case/sample ordering, balanced pairs and recomputed medians/ratios.",
+    "supervision": "v964 exited 0 with owned cleanup complete in 17.98925s; this total includes qualification and is not an individual timing.",
+    "preservation": "Original measurements remain unchanged. The new driver, actual outputs/reports and measurement remain in tmp/pr-stack-evidence/paired-legacy-line-count-full125m-v964 with supervisor and independent audit v965."
+  },
+  "outstanding": "Fresh current-head review and green CI remain required. Keep PR909 draft and unmerged; neither this timing result nor clean checks authorize readiness or merge."
+}

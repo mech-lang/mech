@@ -1,9 +1,9 @@
 //! Read-only, witness-derived scalar control flow. A plan is constructor-private.
 use super::{NativeInput, NativeScalarOp, NativeScalarType, NativeScalarValue};
-use mech_core::{CallMemoryPlan, CellSlotId, NodeId, OutputId};
+use mech_core::{CellSlotId, NodeId, OutputId};
 
 /// Scalar word identity within one complete native invocation.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeMatchValue(pub(crate) u32);
 impl NativeMatchValue {
     pub const fn get(self) -> u32 {
@@ -12,7 +12,7 @@ impl NativeMatchValue {
 }
 
 /// Source identity for errors and admissions, including lexical block locals.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeMatchOrigin {
     pub(crate) node: NodeId,
     pub(crate) block: Option<u32>,
@@ -32,13 +32,12 @@ impl NativeMatchOrigin {
 
 /// One admitted scalar operation. Each operation occupies its own CFG block,
 /// so an earlier arithmetic error precedes admission of a later operation.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub enum NativeMatchAction {
     Primitive {
         op: NativeScalarOp,
         operands: Box<[NativeMatchValue]>,
         output: NativeMatchValue,
-        memory_plan: CallMemoryPlan,
     },
     Copy {
         source: NativeMatchValue,
@@ -47,7 +46,7 @@ pub enum NativeMatchAction {
     None,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeMatchTerminator {
     Jump(u32),
     Branch {
@@ -68,7 +67,7 @@ pub enum NativeMatchTerminator {
     Reject,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeMatchBlock {
     pub(crate) origin: NativeMatchOrigin,
     pub(crate) action: NativeMatchAction,
@@ -86,7 +85,7 @@ impl NativeMatchBlock {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeMatchInput {
     pub(crate) declaration: NativeInput,
     pub(crate) value: NativeMatchValue,
@@ -100,7 +99,7 @@ impl NativeMatchInput {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeMatchConstant {
     pub(crate) value: NativeMatchValue,
     pub(crate) scalar: NativeScalarValue,
@@ -114,7 +113,7 @@ impl NativeMatchConstant {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeMatchOutput {
     pub(crate) output: OutputId,
     pub(crate) slot: CellSlotId,

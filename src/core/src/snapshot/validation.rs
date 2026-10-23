@@ -11,9 +11,28 @@ use crate::{
 };
 use core::cell::{Cell, OnceCell};
 
+#[path = "string_matrix.rs"]
+mod string_matrix;
+pub use string_matrix::StringMatrixSnapshotConstructor;
+
+#[path = "numeric_matrix.rs"]
+mod numeric_matrix;
+
 #[cfg(test)]
 #[path = "frozen_identity_tests.rs"]
 mod frozen_identity_tests;
+
+#[cfg(test)]
+#[path = "resident_token_tests.rs"]
+mod resident_token_tests;
+
+#[path = "owned_string.rs"]
+mod owned_string;
+pub use owned_string::{OwnedSnapshotBytes, OwnedSnapshotString, StringOwnershipTransfer};
+
+#[path = "string_constructor.rs"]
+mod string_constructor;
+pub use string_constructor::StringSnapshotConstructor;
 
 #[cfg(feature = "no_std")]
 use alloc::{
@@ -267,11 +286,16 @@ impl<'a> SnapshotValidationContext<'a> {
         })
     }
 
-    fn try_boxed_str(&self, value: String) -> Result<Box<str>, SnapshotValueError> {
-        let bytes = u64::try_from(value.len()).unwrap_or(u64::MAX);
+    fn admit_string_backing(&self, length: usize) -> Result<(), SnapshotValueError> {
+        let bytes = u64::try_from(length).unwrap_or(u64::MAX);
         if let Some(authority) = self.construction_authority {
             authority.admit_snapshot_allocation(bytes, 1)?;
         }
+        Ok(())
+    }
+
+    fn try_boxed_str(&self, value: String) -> Result<Box<str>, SnapshotValueError> {
+        self.admit_string_backing(value.len())?;
         Ok(value.into_boxed_str())
     }
 
@@ -328,7 +352,6 @@ pub struct Value {
     schema_key: SchemaKey,
     shape: Arc<ShapeInstance>,
     root: Arc<FrozenSnapshotStorage>,
-    resident_token: u64,
     schemas: Option<Arc<SchemaTable>>,
 }
 
@@ -408,6 +431,11 @@ impl SnapshotBudgetRegistration {
 #[derive(Debug)]
 struct FrozenSnapshotData {
     data: ValueData,
+    // This receipt fingerprint is not validation, ownership or capability
+    // authority. Retain its exact deterministic algorithm, but walk payloads
+    // only if a receipt requests it. The admitted immutable owner contains the
+    // complete once-cell; initialization neither allocates nor changes data.
+    resident_token: SharedOwnershipCell<u64>,
     // The same immutable shape owner is shared by every ordinary Value clone.
     // Physical and imported-root tickets retain its real allocation as part
     // of this data owner, rather than charging a detached metadata copy.
@@ -456,8 +484,11 @@ impl FrozenSnapshotData {
     }
 }
 
-impl Drop for FrozenSnapshotStorage {
-    fn drop(&mut self) {
+impl FrozenSnapshotStorage {
+    // Shared by ordinary destruction and consuming ownership transfer. Only
+    // unlink here: the caller keeps the charge alive until backing is retired
+    // or transferred. Ordinary field-drop order remains data before charge.
+    fn unlink_budget_registration(&self) {
         let Some(ownership) = &self.memory_budget else {
             return;
         };
@@ -484,6 +515,12 @@ impl Drop for FrozenSnapshotStorage {
         });
         // This wrapper still owns the registration Arc. Its admitted node is
         // freed outside the registry gate during normal field destruction.
+    }
+}
+
+impl Drop for FrozenSnapshotStorage {
+    fn drop(&mut self) {
+        self.unlink_budget_registration();
     }
 }
 
@@ -972,7 +1009,6 @@ impl Value {
                 schema_key: target_entry.key(),
                 shape: self.shape.clone(),
                 root: self.root.clone(),
-                resident_token: self.resident_token,
                 schemas: Some(context.try_clone_schemas()?),
             });
         }
@@ -1011,7 +1047,6 @@ impl Value {
                     schema_key: target_entry.key(),
                     shape: self.shape.clone(),
                     root: self.root.clone(),
-                    resident_token: self.resident_token,
                     schemas: Some(context.try_clone_schemas()?),
                 });
             }
@@ -1106,12 +1141,21 @@ impl Value {
         canonical_data_to_draft(schema.body(), &self.root.data.data, &SnapshotPath::root())
     }
 
-    /// Compact deterministic token computed when the finalized value is
-    /// constructed. Resident receipts use it without consulting schemas or
-    /// re-encoding immutable payloads during a turn.
+    /// Compact deterministic receipt token, computed at most once per immutable
+    /// owner on demand. The exact hash algorithm is unchanged. Construction and
+    /// import work bounds remain conservative for the complete payload walk;
+    /// callers must retain those bounds even when a token is never requested.
+    /// No schema lookup, encoding, allocation or authority is introduced here.
     #[doc(hidden)]
-    pub const fn resident_token(&self) -> u64 {
-        self.resident_token
+    pub fn resident_token(&self) -> u64 {
+        *self.root.data.resident_token.get_or_init(|| {
+            let mut token = token_bytes(RESIDENT_TOKEN_SEED, self.schema_key.as_bytes());
+            token = token_word(token, self.shape.parameter_values().len() as u64);
+            for value in self.shape.parameter_values() {
+                token = token_word(token, *value);
+            }
+            token_data(token, &self.root.data.data)
+        })
     }
 
     pub fn validate_against<'a>(
@@ -2444,12 +2488,6 @@ fn finalized_value(
     data: ValueData,
     schemas: Option<Arc<SchemaTable>>,
 ) -> Value {
-    let mut resident_token = token_bytes(RESIDENT_TOKEN_SEED, schema_key.as_bytes());
-    resident_token = token_word(resident_token, shape.parameter_values().len() as u64);
-    for value in shape.parameter_values() {
-        resident_token = token_word(resident_token, *value);
-    }
-    resident_token = token_data(resident_token, &data);
     let shape = Arc::new(shape);
     Value {
         schema,
@@ -2458,13 +2496,13 @@ fn finalized_value(
         root: Arc::new(FrozenSnapshotStorage {
             data: Arc::new(FrozenSnapshotData {
                 data,
+                resident_token: SharedOwnershipCell::new(),
                 shape,
                 ownership: SharedOwnershipCell::new(),
                 budget_imports: SnapshotBudgetRegistry::default(),
             }),
             memory_budget: None,
         }),
-        resident_token,
         schemas,
     }
 }
@@ -2477,18 +2515,28 @@ fn finalized_value_with_construction(
     schemas: Option<Arc<SchemaTable>>,
     context: &SnapshotValidationContext<'_>,
 ) -> Result<Value, SnapshotValueError> {
-    let mut resident_token = token_bytes(RESIDENT_TOKEN_SEED, schema_key.as_bytes());
-    resident_token = token_word(resident_token, shape.parameter_values().len() as u64);
-    for value in shape.parameter_values() {
-        resident_token = token_word(resident_token, *value);
-    }
-    resident_token = token_data(resident_token, &data);
+    let (shape, root) = prepared_snapshot_storage(shape, data, context)?;
+    Ok(Value {
+        schema,
+        schema_key,
+        shape,
+        root,
+        schemas,
+    })
+}
+
+fn prepared_snapshot_storage(
+    shape: ShapeInstance,
+    data: ValueData,
+    context: &SnapshotValidationContext<'_>,
+) -> Result<(Arc<ShapeInstance>, Arc<FrozenSnapshotStorage>), SnapshotValueError> {
     // Final Arc allocations are directly owned by the immutable tree. They
     // consume the admitted finalization byte allowance, not mutable-envelope
     // block registrations, and cannot grow that registry during construction.
     let shape = context.try_arc(shape)?;
     let data = context.try_arc(FrozenSnapshotData {
         data,
+        resident_token: SharedOwnershipCell::new(),
         shape: shape.clone(),
         ownership: SharedOwnershipCell::new(),
         budget_imports: SnapshotBudgetRegistry::default(),
@@ -2497,14 +2545,7 @@ fn finalized_value_with_construction(
         data,
         memory_budget: None,
     })?;
-    Ok(Value {
-        schema,
-        schema_key,
-        shape,
-        root,
-        resident_token,
-        schemas,
-    })
+    Ok((shape, root))
 }
 
 fn dynamic_canonical(
@@ -3539,7 +3580,20 @@ pub(super) fn finalize_value(
             })?;
     let shape = entry.schema().instantiate_shape(draft.shape_values)?;
     let path = SnapshotPath::root();
-    let data = finalize_data(entry.schema().body(), draft.data, &shape, context, &path)?;
+    let data = match (entry.schema().body(), draft.data) {
+        (SchemaBody::String, ValueDataDraft::String(text)) => {
+            return StringSnapshotConstructor::from_validated_shape(
+                draft.schema,
+                entry.key(),
+                shape,
+                text.len(),
+                context,
+            )?
+            .finish(text)
+            .map_err(|(_, error)| error);
+        }
+        (body, data) => finalize_data(body, data, &shape, context, &path)?,
+    };
     let schemas = context.try_clone_schemas()?;
     finalized_value_with_construction(
         draft.schema,

@@ -35,9 +35,9 @@ fn run() -> Result<(), String> {
         .stack_size(64 * 1024 * 1024)
         .spawn(|| -> Result<_, String> {
             let mut builder = mech_core::FunctionCatalogBuilder::new();
-            mech_stdlib::install_native_plan(&mut builder).map_err(|error| format!("{error:?}"))?;
-            mech_engine::install_intrinsic_resident(&mut builder)
-                .map_err(|error| format!("{error:?}"))?;
+            // Canonical artifacts bind through resident entries, not legacy
+            // bytecode runtime factories. Do not retain their unused callees.
+@INSTALL_CANONICAL_FACTORIES@
             builder.build().map_err(|error| format!("{error:?}"))
         })
         .map_err(|error| error.to_string())?

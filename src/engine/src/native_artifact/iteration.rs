@@ -7,13 +7,13 @@ use super::{NativeMatchAction, NativeMatchOrigin, NativeMatchTerminator, NativeM
 
 /// The lexical invocation that owns an immutable result word. Carrier words
 /// have a separate role: only their own initializer and latch may replace them.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeIterationValueScope {
     Immutable { iteration: Option<u32> },
     Carrier { iteration: u32 },
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub enum NativeIterationAction {
     Scalar(NativeMatchAction),
     /// A schema-checked structural observation. This never dispatches an arm
@@ -84,7 +84,7 @@ pub enum NativeIterationAction {
     },
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeIterationTerminator {
     Scalar(NativeMatchTerminator),
     /// A work-metered synchronous tail loop has no invented iteration count.
@@ -100,13 +100,13 @@ pub enum NativeIterationTerminator {
     },
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeStructuralStep {
     EnumPayload { ordinal: u32 },
     TupleItem { ordinal: u32 },
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeStructuralObservation {
     EnumOrdinal { ordinal: u32 },
     U64,
@@ -119,7 +119,7 @@ impl From<NativeMatchTerminator> for NativeIterationTerminator {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeIterationBlock {
     pub(crate) origin: NativeMatchOrigin,
     pub(crate) action: NativeIterationAction,
@@ -143,7 +143,7 @@ impl NativeIterationBlock {
 
 /// One literal-count carrier transition, linked to its exact lexical body.
 /// Private scalar carrier and counter storage is independent of `count`.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeIterationLoop {
     pub(crate) origin: NativeMatchOrigin,
     pub(crate) count: u64,

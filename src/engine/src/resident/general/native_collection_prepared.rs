@@ -17,6 +17,10 @@ use mech_core::{
 };
 use std::sync::Arc;
 
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[path = "native_collection_prepared_image.rs"]
+mod image;
+
 #[path = "native_collection_histogram.rs"]
 mod histogram;
 #[path = "native_collection_string_map_entry.rs"]
@@ -24,14 +28,32 @@ mod string_map_entry;
 #[path = "native_collection_string_span.rs"]
 mod string_span;
 pub use string_span::NativeSelectedStringSpanSelector;
+#[cfg(feature = "pure_text")]
+#[path = "native_collection_selected_join.rs"]
+mod selected_join;
+#[cfg(feature = "pure_text")]
+pub use selected_join::NativeSelectedStringMatrix;
+#[cfg(feature = "pure_text")]
+#[path = "native_collection_text_lines.rs"]
+mod text_lines;
+#[cfg(feature = "pure_text")]
+pub use text_lines::{
+    NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineMatrix,
+    NativeTextLineMatrixChoice, NativeTextLineWindow,
+};
 
 /// Compiler-owned selection/immutable schemas, not a bound runtime call or
 /// authority to enter its source site. No artifact/catalog traversal occurs
 /// during invoke_current. Its complete temporary binding is admitted first.
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize)]
 pub struct NativePreparedLibraryCall {
     template: NativeProgramLibraryTemplate,
+    // The enclosing descriptor exports the SAME canonical schema table once.
+    #[serde(skip)]
     schemas: Arc<SchemaTable>,
+    // A build image names the selected implementation through template, never
+    // a process address. Loading must resolve its exact build-owned binding.
+    #[serde(skip)]
     factory: ResidentKernelFactory,
     binding_bytes: u64,
     binding_work: u64,
@@ -41,9 +63,14 @@ pub struct NativePreparedLibraryCall {
     output_key: mech_core::SchemaKey,
     lookup_work: u64,
     output_follows_input: bool,
+    #[serde(skip)]
     cache_identity: Arc<()>,
     span_selector_metadata_bytes: u64,
     span_selector_work: u64,
+    #[cfg(feature = "pure_text")]
+    selection_shape_bounds: (u64, u64),
+    #[cfg(feature = "pure_text")]
+    selection_range_shape_bounds: (u64, u64),
 }
 
 /// One owning native invocation's lazy per-site binding slot. This retains
@@ -171,6 +198,32 @@ pub fn prepare_native_program_library_call(
     );
     let (span_selector_metadata_bytes, span_selector_work) =
         string_span::selector_geometry_bounds(&template).ok_or_else(|| super::invalid(node))?;
+    #[cfg(feature = "pure_text")]
+    let selection_shape_bounds = if matches!(
+        template.primitive(),
+        crate::native_artifact::NativeCollectionPrimitive::MatrixRangeAccess
+            | crate::native_artifact::NativeCollectionPrimitive::TextLines
+    ) {
+        string_span::selector_schema_geometry_bounds(template.output())
+            .ok_or_else(|| super::invalid(node))?
+    } else {
+        (0, 0)
+    };
+    #[cfg(feature = "pure_text")]
+    let selection_range_shape_bounds = if template.primitive()
+        == crate::native_artifact::NativeCollectionPrimitive::MatrixRangeAccess
+    {
+        template
+            .inputs()
+            .get(1)
+            .and_then(string_span::selector_schema_geometry_bounds)
+            // Optional strategy metadata must not reject other ordinary
+            // MatrixRangeAccess programs. Eligible Range output schemas have
+            // already passed this same bound during their preparation.
+            .unwrap_or((0, 0))
+    } else {
+        (0, 0)
+    };
     Ok(NativePreparedLibraryCall {
         template,
         schemas: Arc::new(artifact.schemas().clone()),
@@ -186,6 +239,10 @@ pub fn prepare_native_program_library_call(
         cache_identity: Arc::new(()),
         span_selector_metadata_bytes,
         span_selector_work,
+        #[cfg(feature = "pure_text")]
+        selection_shape_bounds,
+        #[cfg(feature = "pure_text")]
+        selection_range_shape_bounds,
     })
 }
 

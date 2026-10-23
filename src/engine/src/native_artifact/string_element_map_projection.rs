@@ -4,7 +4,7 @@ use super::iteration_validation::ControlPlan;
 use super::{NativeIterationAction as Action, NativeProgramArtifactPlan as Plan};
 
 /// Constructor-private proof; neither semantic String is a materialized Value.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeStringElementMapProjection {
     pub(crate) iteration: u32,
     pub(crate) element_site: u32,
@@ -79,7 +79,7 @@ fn candidate(
     plan: &impl ControlPlan,
     id: usize,
     counts: &[usize],
-    actions: &[Action],
+    actions: &super::fusion_semantics::SemanticActions<'_>,
 ) -> Option<NativeStringElementMapProjection> {
     use super::iteration_validation::ControlType;
     use super::{
@@ -198,13 +198,13 @@ fn candidate(
     _: &impl ControlPlan,
     _: usize,
     _: &[usize],
-    _: &[Action],
+    _: &super::fusion_semantics::SemanticActions<'_>,
 ) -> Option<NativeStringElementMapProjection> {
     None
 }
 
 pub(crate) fn lower(plan: &mut Plan) -> Result<(), &'static str> {
-    let actions = super::fusion_semantics::semantic_actions(plan)?;
+    let actions = super::fusion_semantics::semantic_actions(plan)?.into_owned();
     let counts = super::fusion_semantics::semantic_use_counts(plan)?;
     for id in 0..plan.collections.len() {
         let Some(projection) = candidate(plan, id, &counts, &actions) else {
@@ -225,15 +225,18 @@ pub(crate) fn lower(plan: &mut Plan) -> Result<(), &'static str> {
     Ok(())
 }
 
-pub(super) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
-    let actions = super::fusion_semantics::semantic_actions(plan)?;
-    let counts = super::fusion_semantics::semantic_use_counts(plan)?;
+pub(super) fn validate(
+    inputs: &super::fusion_semantics::ValidationInputs<'_, impl ControlPlan>,
+) -> Result<(), &'static str> {
+    let plan = inputs.plan();
+    let actions = inputs.actions()?;
+    let counts = inputs.counts();
     let mut expected = vec![None; plan.blocks().len()];
     for (id, data) in plan.collections().iter().enumerate() {
         let Some(p) = data.string_element_map_projection() else {
             continue;
         };
-        if candidate(plan, id, &counts, &actions).as_ref() != Some(p)
+        if candidate(plan, id, counts, actions).as_ref() != Some(p)
             || expected
                 .get_mut(p.selection_site as usize)
                 .ok_or(BAD)?

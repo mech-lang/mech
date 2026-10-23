@@ -11,6 +11,13 @@ use mech_core::{
 };
 use std::{rc::Rc, sync::Arc};
 
+#[path = "native_live_measurement.rs"]
+mod measurement;
+
+#[cfg(all(test, any(feature = "full_source", feature = "full_compiler")))]
+#[path = "native_live_measurement_tests.rs"]
+mod measurement_tests;
+
 /// An optional optimization of this already-bound maintained leaf. A capacity
 /// refusal is sticky until the binding geometry itself is replaced.
 #[derive(Debug, Default)]
@@ -478,21 +485,7 @@ impl NativeCollectionCall {
             .as_ref()
             .map(|cache| cache.begin_data_measurements())
             .transpose()?;
-        let mut check = |footprint: CurrentMemoryFootprint, observed: ResourceDemand| {
-            budget::observe_control_work(observed).map_err(measurement_error)?;
-            let mut observed = observed;
-            observed.turn_peak_bytes = observed
-                .turn_peak_bytes
-                .checked_add(self.invocation_metadata_bytes)
-                .and_then(|n| n.checked_add(cache.as_ref().map_or(0, |cache| cache.bytes())))
-                .ok_or(MemoryPlanError::TargetAddressOverflow)?;
-            observed.retained_nodes = observed
-                .retained_nodes
-                .max(footprint.retained_nodes)
-                .checked_add(cache.as_ref().map_or(0, |cache| cache.index_nodes()))
-                .ok_or(MemoryPlanError::TargetAddressOverflow)?;
-            live::check_measurement_with_limits(footprint, observed, self.memory.target.limits)
-        };
+        let mut check = measurement::NativeMeasurementCheck::new(self, cache.as_deref(), &memory);
         let turn = if let Some(cache) = &cache {
             cache.with_facts(
                 |facts| -> Result<Arc<TurnMemoryPlan>, NativeCollectionInvocationError> {

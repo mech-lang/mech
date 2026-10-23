@@ -32,6 +32,10 @@ impl NativeSelectedStringSpanSelector {
     pub const fn count(&self) -> u64 {
         self.count
     }
+    #[cfg(feature = "pure_text")]
+    pub(super) const fn schema_key(&self) -> SchemaKey {
+        self.schema_key
+    }
 }
 
 fn dimension_geometry(expression: &DimensionExpr) -> Option<(u64, u64)> {
@@ -96,7 +100,7 @@ fn direct_selector_witnesses(body: &SchemaBody, parameters: usize) -> bool {
     }))
 }
 
-fn selector_schema_geometry_bounds(schema: &mech_core::Schema) -> Option<(u64, u64)> {
+pub(super) fn selector_schema_geometry_bounds(schema: &mech_core::Schema) -> Option<(u64, u64)> {
     let SchemaBody::Matrix { dimensions, .. } = schema.body() else {
         return Some((0, 0));
     };

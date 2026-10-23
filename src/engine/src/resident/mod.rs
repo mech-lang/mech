@@ -23,6 +23,8 @@ pub(crate) mod matrix_literal;
 ))]
 pub(crate) mod native_collection_semantics;
 #[cfg(feature = "resident-artifact")]
+pub(crate) mod native_factory_linkage;
+#[cfg(feature = "resident-artifact")]
 pub(crate) mod native_semantics;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod numeric;

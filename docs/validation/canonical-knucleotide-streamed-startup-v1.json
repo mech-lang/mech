@@ -1,0 +1,97 @@
+{
+  "schema": "mech.canonical-knucleotide-streamed-startup.v1",
+  "status": "QUALIFIED_IMPROVEMENT_SMALL_INPUT_GAP_REMAINS",
+  "measured_source_commit": "f7161344dc733f99016ad8a88f2cff2eb3a88e85",
+  "platform": "Apple M1, 8 physical/logical cores, 8 GiB memory; same machine for every implementation",
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "implementation": {
+    "change": "Stream the existing semantic read inventory into checked use counts. Borrow ordinary instruction descriptions instead of deep-cloning them and allocating per-value read lists. Mutable rewriting passes retain their owned snapshots and virtual actions retain their checked semantic expansion.",
+    "scope": "Generic compiler analysis used during compilation and secured linked startup, not a k-nucleotide special case or a change to the compiled computation.",
+    "preserved": "Every read, virtual-action metadata check, invalid-reference rejection and checked count increment remains. Same canonical artifact/catalog/compiler, real owners, finite cumulative budgets, capability grants and one host round. No validation bypass, persistent cache, alternate executor, source change or ABI/IR/work-policy change."
+  },
+  "measurement": {
+    "method": "Twelve serial warm-cache fresh-process rounds per input size. All six orders of the three implementations occur twice; each occupies every position four times. One separate correctness/warmup per implementation per size. Identical Node synchronous observer and regular-file capture, with descriptors opened before timing. Spawn through exit includes secured report generation; compilation, hashing and parent verification are excluded.",
+    "exact_outputs": 78,
+    "timed_samples": 72,
+    "secured_reports": 52,
+    "reports": "Every secured report exactly matches the qualified report for that input and its pinned program revision. All policy, work, comparison, visits, transport, ownership, phase, route and completion fields remain unchanged.",
+    "10m": {
+      "three_bases": 10000000,
+      "input_bytes": 20333411,
+      "input_sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b",
+      "oracle_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
+      "legacy_samples_ns": [93592125, 92109875, 95197167, 91749834, 92074875, 90824500, 94360709, 91656542, 91502250, 91902500, 92131583, 92239208],
+      "secured_before_samples_ns": [108876667, 109647209, 107489416, 109300167, 107500792, 107622916, 107701750, 108132666, 107792375, 108143250, 107792166, 107824875],
+      "secured_streamed_samples_ns": [98298625, 97572417, 97715417, 97523458, 97530416, 98826333, 98006875, 98004833, 97612000, 98278125, 97559834, 99304291],
+      "legacy_median_seconds": 0.092092375,
+      "secured_before_median_seconds": 0.107808625,
+      "secured_streamed_median_seconds": 0.097860125,
+      "streamed_over_before": 0.9077207412672224,
+      "streamed_over_legacy": 1.0626300494476335,
+      "saved_milliseconds": 9.9485,
+      "remaining_gap_milliseconds": 5.76775,
+      "faster_rounds_than_secured_before": 12,
+      "faster_rounds_than_legacy": 0,
+      "native_work": 57454288125,
+      "native_comparison_work": 483361830
+    },
+    "125m": {
+      "three_bases": 125000000,
+      "input_bytes": 254166745,
+      "input_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "oracle_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "legacy_samples_ns": [972200500, 986296959, 969537167, 1012194667, 977521208, 972975750, 976849084, 972111500, 980716084, 978857167, 968491334, 970781875],
+      "secured_before_samples_ns": [980072125, 995196958, 995764250, 990887875, 1000872792, 982863542, 994009666, 971154167, 978978750, 990230042, 978355250, 992659458],
+      "secured_streamed_samples_ns": [965670583, 973799208, 974049459, 966885792, 980779250, 985145000, 967535916, 973153583, 975797000, 974111625, 976701625, 960785916],
+      "legacy_median_seconds": 0.974912417,
+      "secured_before_median_seconds": 0.9905589585,
+      "secured_streamed_median_seconds": 0.9739243335,
+      "streamed_over_before": 0.9832068299849716,
+      "streamed_over_legacy": 0.9989864899833356,
+      "faster_rounds_than_secured_before": 10,
+      "faster_rounds_than_legacy": 7,
+      "interpretation": "Rough parity with legacy, not a demonstrated 0.1% advantage. Sample ranges overlap. The retained pre-change secured binary was also remeasured; earlier 0.9528-second results are historical observations, not a guarantee of the same absolute time in every later session.",
+      "native_work": 711679780391,
+      "native_comparison_work": 6041695270
+    }
+  },
+  "pins": {
+    "legacy_binary_sha256": "e11bf3a7f10ed5ed6232d9bc88a4527d2ea6e0cf3fc96ee38978808e258a6be4",
+    "secured_before_binary_sha256": "08bed1df4645a503478d9836afc47d20f630a7c39b19c6b9a5b8a4729de34165",
+    "both_candidate_binary_sha256": "55c63fe02774c127f700e7e2ceec5669ba11bc67f92d0d86c05eb1003563e0f7",
+    "candidate_bytecode_sha256": "71d6f45476603b844406a4cb75ff0656399b67a3dfa9ffade183f093b9c23932",
+    "candidate_object_sha256": "0164617cca3a0263c0e9e0c98fc3cb744a06581614ed9c682199e96dbaf0d3d3",
+    "candidate_identity_sha256": "1e191f3be512ccf2eba7df225cd90a4b5c88c3e00c26e6cc7be422866444a0ff",
+    "candidate_program_revision": "abfac8725dfa0da2960e4a987353495350875b60e8d96bc0ab37652435c936cb",
+    "unchanged_machine_code_sha256": "9acbe991a4d1dc076b4dff1c06f0fa377e90c8d940110e551d42d8d44fca8b00",
+    "unchanged_machine_code_bytes_including_alignment": 24704,
+    "unchanged_launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+    "identity_explanation": "The existing runtime compiler allocates a fresh standalone document owner, giving its FSM a distinct nominal type key. The bytecode audit permits exactly that one schema key difference and requires every other section to match. All emitted machine instructions and all three relocations are identical. Each build still checks its own exact artifact, Object and identity pins; original and decoded candidates are byte-identical."
+  },
+  "qualification": {
+    "distinct_selected_rust_tests": 407,
+    "suite_counts": {"engine_proof": 29, "gpu_boundary_codegen": 96, "canonical_state": 115, "generated_program": 129, "hosted": 37, "publication_replay": 1},
+    "workflow_tests": 165,
+    "new_tests": "Three tests cover original/decoded scalar, range, ordinary library call, map projection, String span, join, histogram and guarded query plans; all six virtual action classes; pointer-identical borrowing of ordinary actions; inventory/count equivalence; invalid values, branch reads, virtual metadata, strategy and query-step rejection.",
+    "guards": "Formatting, diff, warning, production routing, module/native-build layout, runtime boundary audit and fixtures, unsafe, value and memory planner/runtime checks pass.",
+    "release": "Both original and decoded release applications pass real secured CLI success, denial, cleanup and pin checks. Separate full125M qualification has eight exact outputs and six timing samples, not mixed into the three-way comparison.",
+    "separate_original_samples_ns": [973460708, 976820750, 989109584],
+    "separate_decoded_samples_ns": [980018667, 985375167, 1010030625],
+    "supervision": "v976 tests, v973 release qualification and v975 matched measurement all exited 0 with owned cleanup complete. The 416.1-second release-stage duration includes compilation and qualification; it is not benchmark runtime.",
+    "preserved_failures": [
+      "v971's coverage assertion found no ordinary library call in the fully fused fixtures. Added a standalone join fixture without weakening the assertions or changing production behavior.",
+      "v974's audit incorrectly required the same nominal identity for independent standalone document owners. v978 proves the sole nominal-key difference and identical instructions/relocations rather than ignoring arbitrary artifact differences."
+    ]
+  },
+  "evidence": {
+    "directory": "tmp/pr-stack-evidence",
+    "matched_receipt": "semantic-startup-three-way-v975/measurement.json",
+    "matched_receipt_sha256": "e09aea4f59d9b71b8c3ceb015757a4c9c3d062a07ebbf5270fb04674a44733df",
+    "matched_physical_audit_sha256": "c6fb7bfb72ee52640887ca69e0b15fbee56f441be21517730435ff815d7c1702",
+    "identity_audit_sha256": "44422fa7c60a98d960a45649dc740f20ca9bd3aea978c00f00af9623dd6e9d56",
+    "release_audit_sha256": "cb49fb54bc542f519a41d059507463e00eb27797a2123c017ab28715719ab527",
+    "release_result_sha256": "5c03513882f8b374fed78babe88090d5db2fbe4bedf7970339923a946101461e",
+    "linked_result_sha256": "570ee8bdff7985adc21676b5cabe55cf1c586014dd9d06e19fdbf5df74212e8d"
+  },
+  "outstanding": "The 10M case remains 6.3% slower than legacy; continue profiling the remaining startup gap. Full125M is approximately tied in this session. Fresh review and green CI are still required. Keep PR909 draft and unmerged; readiness and merging require the user's direction."
+}

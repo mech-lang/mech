@@ -1,0 +1,73 @@
+{
+  "schema": "mech.canonical-knucleotide-window-recovery.v1",
+  "status": "PARTIAL_RECOVERY_STILL_PERFORMANCE_BLOCKING",
+  "measured_source_commit": "e5a9713d6471467d972b82d4e4ccd3db71719f80",
+  "platform": "same Apple M1 as the retained local old/new 10M comparison",
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "input": {
+    "fasta_n": 2000000,
+    "three_bases": 10000000,
+    "bytes": 20333411,
+    "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b",
+    "oracle_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+  },
+  "unchanged_launch_sha256": "ec79f588345186db7f8646e52158d494628c6eb69b94ebdb269ddcf5dbe1c87a",
+  "new_measurement": {
+    "route": "canonical-artifact-program-object-secured-cli",
+    "policy": "secured",
+    "rust_optimization": "3",
+    "object_optimization": "speed",
+    "abi": 8,
+    "typed_ir": 11,
+    "work_policy": 22,
+    "binary_sha256_both_variants": "5dd32d53f39014d639485b162180cf4902e64d3055a69634e53e860f7882ef58",
+    "object_sha256_both_variants": "1487164676671cb55b9a99393f99700f0a21ef65de532b3707c22c1c132d35d8",
+    "identity_sha256_both_variants": "e95c15be9b980ff9b911e03d3a5533dbf6fd619eb5dbdff13e59c7da58d62bf1",
+    "raw_samples_ns": {"original": [34255289333], "decoded": [34347620666]},
+    "large_correctness_processes": 2,
+    "successful_timing_samples": 2,
+    "exact_output_all_four_processes": true,
+    "native_visits_all_four": 353000671,
+    "native_work_all_four": 1311555026991,
+    "native_comparison_work_all_four": 981822677,
+    "observations": 1,
+    "effects": 1,
+    "source_parser": false,
+    "jit": false,
+    "resident_body_evaluation": false,
+    "scope": "Warm-cache fresh-process spawn through observed child exit, including CLI input/output and report; 1ms exit polling. Build, hashes and parent validation excluded. One sample per variant, NOT a new multi-sample median or final qualification."
+  },
+  "same_input_baselines_seconds": {
+    "old_selected_direct_median_of_7": 0.092041625,
+    "old_secured_host_median_of_7": 0.123658291,
+    "prior_canonical_original_secured_median_of_3": 73.536783875
+  },
+  "original_sample_comparison": {
+    "speedup_from_prior_canonical": 2.1467278574161095,
+    "slowdown_against_old_selected_direct": 372.1717139718035,
+    "slowdown_against_old_secured_host": 277.0157104386959,
+    "operation_visits_removed": 699999812
+  },
+  "implementation": [
+    "Recognize a closed ordinary Mech window/query loop from canonical selected operations and complete CFG, not source names, hashes or a workload-sized runtime helper.",
+    "Bind genuine same-account source/query owners, check ASCII without CRLF once, admit the finite loop bound before entry, then call a directly emitted callback-free native loop.",
+    "Keep canonical Unicode/CRLF behavior in the same compiler for unsupported byte representations; retain original sink construction, atomic publication and failure recovery.",
+    "The security protocol is ONE containing host round: authorize/capture input, compiled computation, stage output, commit. Native regions are NOT additional rounds.",
+    "Cranelift speed and compiled window regions changed together. This is not an isolated capability-cost experiment."
+  ],
+  "later_proof_correction": "IR12 additionally rejects exclusive inner selectors and records why the existing outer 0..=length layout bound covers every fitting inclusive inner selector. The unchanged measured benchmark already uses inclusive selectors. Its measurements remain attributed to e5a9713/IR11, NOT relabeled as later-head measurements.",
+  "verification": {
+    "canonical_and_secured_host_regressions": "134 executed tests passed at initial integration; four explicit ignores, no benchmark credit.",
+    "final_finite_setup_focused_tests": "4 passed plus 1 explicit diagnostic ignore; complete secured-source checks 2 passed.",
+    "later_IR12_proof_tests": "5 passed plus 1 explicit diagnostic ignore, including actual original/decoded execution of exclusive inner selectors against the canonical reference, preserving shorter-window counts and empty-range failure/publication semantics.",
+    "production_linked_qualification": "Actual saved-harness selection executed one ignored-by-default qualification, passed, all input/source pins unchanged and owned cleanup complete after 498.468s. This duration is NOT a benchmark sample.",
+    "physical_audit": "audit-window-recovery-v698-result.json: actual exit0, all four raw streams/reports, both binaries, generated pins, owned input/oracle/launch and sample rows reconciled."
+  },
+  "local_evidence": {
+    "root": "tmp/pr-stack-evidence/",
+    "full_result": {"path": "window-recovery-10m-release-v696/full-input/full-input-result.json", "sha256": "17d879d25440a319b3bb74d67c86f7816baabd3d95c6402482885c134e3b92bd"},
+    "linked_result": {"path": "window-recovery-10m-release-v696/hosted-linked-result.json", "sha256": "d0168166712bda6eb4dd31afb5053bad53a7803a5e9453f2c1bf57536e31d665"},
+    "physical_audit": {"path": "audit-window-recovery-v698-result.json", "sha256": "3ccd3b889a59bf196a9fbbb2a3cd8ebdfa1c4840ed945a9c52dabb7cf5fe5135"}
+  },
+  "remaining": "353000671 operation visits remain in other hot loops, principally histogram, uppercase mapping and record traversal. Recover those compiled bodies under the same single round. Standard125M remains unqualified after the earlier fixed temporary-memory denial; no cap bump or oracle change. No next benchmark, automatic readiness or merge."
+}

@@ -32,7 +32,8 @@ pub(super) fn hash_file(path: &Path) -> Result<String, String> {
     }
     Ok(hex(hash.finalize()))
 }
-#[derive(Debug)]
+// Clone copies path/hash metadata, never the immutable input payload.
+#[derive(Clone, Debug)]
 pub(super) struct Frozen {
     pub path: PathBuf,
     pub sha256: String,
@@ -87,6 +88,9 @@ pub(super) fn freeze(spec: &FileSpec, path: &Path, cap: u64) -> Result<Frozen, S
             spec.path.display()
         ));
     }
+    finish_frozen(path, digest, bytes)
+}
+fn finish_frozen(path: &Path, digest: String, bytes: u64) -> Result<Frozen, String> {
     let mut permissions = fs::metadata(path).map_err(|e| e.to_string())?.permissions();
     permissions.set_readonly(true);
     fs::set_permissions(path, permissions).map_err(|e| e.to_string())?;
@@ -97,6 +101,23 @@ pub(super) fn freeze(spec: &FileSpec, path: &Path, cap: u64) -> Result<Frozen, S
     };
     frozen.check()?;
     Ok(frozen)
+}
+/// Persist a driver-derived launch with the same immutable-file guarantees.
+pub(super) fn freeze_bytes(path: &Path, bytes: &[u8], cap: u64) -> Result<Frozen, String> {
+    let count = u64::try_from(bytes.len()).map_err(|_| "derived file size overflows")?;
+    if count > cap {
+        return Err("derived file exceeds explicit finite cap".into());
+    }
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .map_err(|e| e.to_string())?;
+    file.write_all(bytes)
+        .and_then(|_| file.flush())
+        .map_err(|e| e.to_string())?;
+    drop(file);
+    finish_frozen(path, hex(Sha256::digest(bytes)), count)
 }
 pub(super) fn equal_files(left: &Path, right: &Path) -> Result<bool, String> {
     if fs::metadata(left).map_err(|e| e.to_string())?.len()

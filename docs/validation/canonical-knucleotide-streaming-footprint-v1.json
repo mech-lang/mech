@@ -1,0 +1,1749 @@
+{
+  "schema": "mech.canonical-knucleotide-streaming-footprint.v1",
+  "later_compact_selector_measurement": "canonical-knucleotide-compact-selector-v1.json",
+  "status": "CLEAN_QUALIFIED_TWO_SIZE_RUNTIME_PARITY_FOOTPRINT_UNFINISHED",
+  "qualification_kind": "FRESH_CLEAN_SOURCE_ORIGINAL_AND_DECODED_DEFAULT_PROFILE",
+  "measurement_label": "v1145",
+  "source_commit": "3470ea678111865140b9aa5008f90b645eeff300",
+  "measured_utc": {
+    "started": "2026-10-21T20:35:07.546Z",
+    "finished": "2026-10-21T20:35:51.667Z"
+  },
+  "assessment": {
+    "ten_m": "Near parity with retained secured execution: 0.068333833 versus 0.068391333 seconds, with 7 of 12 paired rounds faster. Do not interpret this approximately 0.084% median difference as a reliable speedup.",
+    "full125m": "Fresh default-profile execution measures 0.6267824375 seconds versus 0.643116208 for retained secured execution and 0.9726336045 for the authenticated tuned legacy direct-I/O binary. It is faster in all 12 paired rounds against each control in this batch.",
+    "footprint": "Peak RSS at 125M is 287293440 bytes for fresh streaming, 506511360 for retained secured and 178782208 for tuned legacy in this batch. Executables are 7063168, 6842992 and 3159168 bytes respectively. The approximately 200 MB/3.16 MB footprint target remains unmet.",
+    "ten_m_ratio_of_medians": 0.9991592501932957,
+    "full125m_ratio_of_medians": 0.9746021476417213,
+    "full125m_over_legacy_ratio_of_medians": 0.6444178307228124,
+    "full125m_peak_rss_reduction_percent": 43.27996118389132,
+    "reference_footprint_target_met": false,
+    "clean_default_profile_qualification_complete": true,
+    "interpretation": "No additional runtime optimization was implemented between v1144 and v1145. The same effective opt-level-3/ThinLTO configuration now comes from the generated default, with fresh original/decoded artifacts. The 0.6268 versus earlier 0.6327-second result is a new batch observation, not an extra optimization benefit. The earlier approximately 0.639-second secured baseline remains valid historical evidence. This three-implementation comparison is not an isolated capability-overhead measurement or general language ranking; qualification does not authorize readiness or merge."
+  },
+  "hardware": {
+    "architecture": "arm64",
+    "cpu_and_memory": "Apple M1\n8\n8\n8589934592",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90",
+    "power_source": "Now drawing from 'AC Power'"
+  },
+  "hardware_provenance": "Established same-M1 machine context from the prior matched batches. The v1145 observer pins binaries, inputs, policy and idle checks; it does not record a new hardware probe.",
+  "inputs_and_oracles": [
+    {
+      "label": "10m",
+      "input": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/knucleotide-large-controls-v564/fasta-n-2000000.txt",
+        "bytes": 20333411,
+        "three_bases": 10000000,
+        "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b"
+      },
+      "oracle": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/legacy-native-10m-measurement-v677/full-qualification-historical-fast.stdout",
+        "bytes": 254,
+        "sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+      }
+    },
+    {
+      "label": "125m",
+      "input": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/input",
+        "bytes": 254166745,
+        "three_bases": 125000000,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa"
+      },
+      "oracle": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/oracle",
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      }
+    }
+  ],
+  "finite_launch_policy": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/policy-standard-125m-launch-v660.json",
+    "sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+    "finite_policy": {
+      "grants": [
+        {
+          "operations": [
+            "read"
+          ],
+          "paths": [
+            "text"
+          ],
+          "target": "cli/stdin"
+        },
+        {
+          "operations": [
+            "write"
+          ],
+          "paths": [
+            "text"
+          ],
+          "target": "cli/stdout"
+        }
+      ],
+      "input_text_bytes": 254166745,
+      "library": {
+        "cloned_bytes": 536870912,
+        "comparison_work": 68719476736,
+        "compute_work": 8796093022208,
+        "output_bytes": 536870912,
+        "output_elements": 8388608,
+        "retained_nodes": 16777216,
+        "temporary_bytes": 1073741824
+      },
+      "max_ports": 16,
+      "memory_bytes": 3221225472,
+      "native_stack_bytes": 1048576,
+      "output_text_bytes": 1048576,
+      "transport_bytes": 16777216,
+      "work": 562949953421312
+    }
+  },
+  "implementation": {
+    "abi_version": 12,
+    "typed_ir_version": 26,
+    "work_policy_version": 35,
+    "streaming": "One admitted CLI text observation feeds generated Mech scanner continuations through bounded UTF-8 line windows. Proven dead prefixes and consumed final-join chunks are released. EOF admits genuine full count/shape and original producer/length semantics before saved body failures. Same capability/provider/transaction authority and cumulative finite ledger; no Rust workload scanner.",
+    "descriptor_preparation": "Derive the complete line-retention frontier inventory once during descriptor preparation and share that same freshly derived inventory with prefix layout and typed-IR identity hashing. Preserve unsupported/multiple-frontier handling, complete identity serialization, capture eligibility, all resource limits and work debits.",
+    "packaging": "Generated normal release profile uses ThinLTO, opt-level 3 and symbol stripping with unchanged default unwind/codegen units. No CLI/profile environment override. The Mech source is compiled through the maintained Cranelift Object route; ThinLTO optimizes linked Rust host/libraries, not the already-native Mech Object.",
+    "retained_optimizations": [
+      "Hoist only invocation-stable prefix/EOF/availability facts into generated entry SSA values; preserve mutable local/work loads and all semantic guards.",
+      "Cache exact full-chunk payload totals in immutable offset backing and sum chunks once per window, retaining ordinary cell inspection at partial edges. Ownership, reservations and cumulative charges remain unchanged.",
+      "Count line separators with bounded narrow partial sums before widening; preserve ordinary text/lines and chunk framing semantics for arbitrary input.",
+      "Reduce ASCII high bits and carriage-return masks independently, combining them only after scanning; preserve Unicode and CRLF semantics without an owner cache, allocation or changed work debit."
+    ],
+    "retained_review_corrections": [
+      "Keep returned forward ranges open until their real endpoint is available, cap the live lower bound to the delivered extent, and preserve ordinary full-EOF errors and late source-failure priority.",
+      "Require every deferred count comparison to use the proved current row index; unproved lookahead or unrelated expressions select the existing snapshot strategy before acquisition.",
+      "Reject zero-valued live retention seed fields so unsupported seeds select the existing snapshot strategy instead of creating an invalid capture frontier."
+    ],
+    "identity_and_accounting": "Fresh source compilation supplies its actual new nominal revision from the generated manifest. At both sizes the fresh complete report equals v1144 with only that known revision changed. Every repeated fresh/decoded execution must match this full report exactly, including work counters, bounded-lines storage, one observation/effect and the unchanged finite policy. No counter normalization or security relaxation."
+  },
+  "method": {
+    "timing": "12 serial rounds per size, all six orders twice; monotonic spawn-to-exit wall time with descriptors opened before timing. Includes startup and complete execution, including one secured round and report publication for secured variants. Warmups and hashing outside timing.",
+    "memory": "3 separate macOS time -l RSS runs per variant/size; not used as timing samples.",
+    "policy": "Fresh default and retained secured use the exact finite launch. Legacy direct I/O is an explicitly unsecured historical control; it does not emit a security report.",
+    "identity": "Fresh source compilation has a new actual nominal revision. Before timing, every fresh report must equal the v1144 report with only that known revision substituted, and both fresh original/decoded125M reports already match it. Repeated runs match full reports exactly; no counter normalization.",
+    "scope": "Same-M1 same-input comparison, not an isolated capability-overhead experiment or general language ranking.",
+    "interference": "The observer checks for active compilers, relevant tests, benchmarks and profilers before and after every process and verifies all immutable pins before/after the batch.",
+    "legacy_environment": "The explicitly unsecured legacy control uses the exact seven-variable tuned environment authenticated by native-io-measurement-v321/measurement.json; fresh and retained secured controls receive no MECH tuning overrides.",
+    "units": "Seconds, bytes and decimal MB. RSS samples are separate fresh processes and receive no timing credit."
+  },
+  "current_matched_batch": {
+    "10m": {
+      "legacy-direct": {
+        "median_seconds": 0.0916314375,
+        "minimum_seconds": 0.091271791,
+        "maximum_seconds": 0.093258667,
+        "timing_samples_ns": [
+          93258667,
+          92375916,
+          92056250,
+          91416750,
+          91314584,
+          91639250,
+          91623625,
+          92203667,
+          91271791,
+          91325792,
+          91472625,
+          92196167
+        ],
+        "executable_bytes": 3159168,
+        "median_peak_rss_bytes": 55083008,
+        "peak_rss_samples_bytes": [
+          55083008,
+          54870016,
+          55345152
+        ]
+      },
+      "secured-retained": {
+        "median_seconds": 0.068391333,
+        "minimum_seconds": 0.068096833,
+        "maximum_seconds": 0.069648667,
+        "timing_samples_ns": [
+          68096833,
+          68389333,
+          68580500,
+          68301334,
+          68393333,
+          68148000,
+          69648667,
+          68490750,
+          68351250,
+          68650750,
+          68567041,
+          68366625
+        ],
+        "executable_bytes": 6842992,
+        "median_peak_rss_bytes": 55869440,
+        "peak_rss_samples_bytes": [
+          55869440,
+          55869440,
+          55869440
+        ]
+      },
+      "fresh-default": {
+        "median_seconds": 0.068333833,
+        "minimum_seconds": 0.068061,
+        "maximum_seconds": 0.068671583,
+        "timing_samples_ns": [
+          68244167,
+          68315666,
+          68310083,
+          68397625,
+          68537875,
+          68484958,
+          68671583,
+          68507666,
+          68247666,
+          68061000,
+          68341458,
+          68326208
+        ],
+        "executable_bytes": 7063168,
+        "median_peak_rss_bytes": 31031296,
+        "peak_rss_samples_bytes": [
+          31031296,
+          31031296,
+          31637504
+        ]
+      }
+    },
+    "125m": {
+      "legacy-direct": {
+        "median_seconds": 0.9726336045,
+        "minimum_seconds": 0.964005584,
+        "maximum_seconds": 0.977394875,
+        "timing_samples_ns": [
+          969312333,
+          964911459,
+          970928792,
+          973367959,
+          971899250,
+          977346833,
+          975719167,
+          964005584,
+          977394875,
+          975869375,
+          969863709,
+          974291708
+        ],
+        "executable_bytes": 3159168,
+        "median_peak_rss_bytes": 178782208,
+        "peak_rss_samples_bytes": [
+          170213376,
+          185712640,
+          178782208
+        ]
+      },
+      "secured-retained": {
+        "median_seconds": 0.643116208,
+        "minimum_seconds": 0.634416333,
+        "maximum_seconds": 0.662256,
+        "timing_samples_ns": [
+          638917042,
+          662256000,
+          652937792,
+          641698459,
+          642686375,
+          634416333,
+          653229541,
+          656078250,
+          635118833,
+          642527792,
+          643546041,
+          650786000
+        ],
+        "executable_bytes": 6842992,
+        "median_peak_rss_bytes": 506511360,
+        "peak_rss_samples_bytes": [
+          515653632,
+          506511360,
+          498515968
+        ]
+      },
+      "fresh-default": {
+        "median_seconds": 0.6267824375,
+        "minimum_seconds": 0.624594667,
+        "maximum_seconds": 0.629925166,
+        "timing_samples_ns": [
+          627845708,
+          628304291,
+          624781417,
+          629925166,
+          627326500,
+          624594667,
+          626843958,
+          625481750,
+          626720917,
+          626449917,
+          625773542,
+          628210375
+        ],
+        "executable_bytes": 7063168,
+        "median_peak_rss_bytes": 287293440,
+        "peak_rss_samples_bytes": [
+          287293440,
+          287293440,
+          289603584
+        ]
+      }
+    }
+  },
+  "macos_peak_physical_footprint": {
+    "metric": "macOS /usr/bin/time -l: peak memory footprint",
+    "scope": "Additional metric extracted from the same 18 separate RSS runs in the existing v1145 matched batch, not new benchmark executions. Peak physical footprint and peak RSS are distinct OS-reported measurements and must not be substituted for each other.",
+    "units": "Exact bytes; README converts to decimal MB.",
+    "samples_per_variant_per_size": 3,
+    "current_v1145": {
+      "10m": {
+        "legacy-direct": {
+          "samples_bytes": [
+            31114432,
+            31081664,
+            31409472
+          ],
+          "median_bytes": 31114432
+        },
+        "secured-retained": {
+          "samples_bytes": [
+            40059776,
+            40109120,
+            40076224
+          ],
+          "median_bytes": 40076224
+        },
+        "fresh-default": {
+          "samples_bytes": [
+            16892800,
+            16892800,
+            19022976
+          ],
+          "median_bytes": 16892800
+        }
+      },
+      "125m": {
+        "legacy-direct": {
+          "samples_bytes": [
+            146294208,
+            160286528,
+            154945280
+          ],
+          "median_bytes": 154945280
+        },
+        "secured-retained": {
+          "samples_bytes": [
+            500188992,
+            490981184,
+            483034944
+          ],
+          "median_bytes": 490981184
+        },
+        "fresh-default": {
+          "samples_bytes": [
+            164414592,
+            164431040,
+            165020928
+          ],
+          "median_bytes": 164431040
+        }
+      }
+    },
+    "raw_evidence": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-clean-three-way-v1145/measurement.json",
+      "bytes": 278043,
+      "sha256": "c6f42707b2f96a39120ed3758ea066e8e998bf5afa04c956706c3428bda9fb6b"
+    },
+    "rss_unchanged": "Fresh125M median peak RSS remains 287293440 bytes. Its median peak physical footprint is 164431040 bytes; neither this sample nor the inspection below proves memory always remains below 200 MB or resolves the peak-RSS target.",
+    "post_input_allocator_inspection": {
+      "label": "v1149",
+      "status": "INSPECTED_NON_TIMING_DIAGNOSTIC",
+      "binary_source_commit": "3470ea678111865140b9aa5008f90b645eeff300",
+      "binary": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/variant-0/native-executable",
+        "bytes": 7063168,
+        "sha256": "a15b40d0bb4a37cfa7de5edff2f27df8e35cf822ff0c6f6dd88a3abf2cb42532"
+      },
+      "stage": "One owned full125M child after all 254166745 input bytes were consumed, kept alive by a prefilled stdout pipe. The exact instruction/program counter was not captured; the script infers publication blocking from the full pipe, input position and continued liveness.",
+      "live_malloc_nodes": 5041,
+      "live_malloc_bytes": 1495664,
+      "vmmap_display": {
+        "physical_footprint_current": "12.8M",
+        "physical_footprint_peak": "156.9M",
+        "malloc_large_reusable_resident": "135.1M",
+        "malloc_medium_empty_resident": "86.7M",
+        "units": "Verbatim rounded tool displays, not exact-byte benchmark values."
+      },
+      "interpretation": "Large reusable and mostly empty allocator regions remain resident at this late-run snapshot while live malloc allocations are small. This is evidence of substantial allocator retention in the post-input resident total, not a decomposition of peak RSS or a fix for its measured high-water mark.",
+      "complete_security_report_matches_v1145": true,
+      "matched_security_report": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-clean-three-way-v1145/125m-warmup-0-fresh-default.report.json",
+        "bytes": 1122,
+        "sha256": "6a49ec117d24546dc02842734ace3782097927472546c618c219cf6107cd4441"
+      },
+      "output_validation": "The inspection driver asserted exact oracle output after draining its prefilled pipe and recorded output_exact=true. It did not retain the raw stdout for a second independent byte comparison.",
+      "limitations": [
+        "A single paused-process heap snapshot does not measure maximum live allocations during computation; heap malloc totals exclude other process memory.",
+        "Inspection and stdout blocking perturb execution. This run supplies no timing sample and does not replace the matched RSS/physical-footprint measurements.",
+        "The observer hard-pins the binary but does not pre/post-hash input, launch and oracle files. Their qualified pins remain those of v1145; the complete resulting security report independently matches v1145 without exceptions.",
+        "No claim that RSS is fixed, that all of its excess is allocator retention, or that memory always stays below 200 MB."
+      ],
+      "evidence": {
+        "observer": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/inspect-streaming-postrun-v1149.py",
+          "bytes": 3686,
+          "sha256": "08f0b122298af202982192f9d5fc538ed7cb396336d53a253c3dd093c16fb925"
+        },
+        "inspection": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-postrun-inspection-v1149.json",
+          "bytes": 16060,
+          "sha256": "67d7811ff3f8660956fe2ed52ba8ef149a82c0ee91e96d940fab11e3960367ae"
+        }
+      }
+    },
+    "independent_audit": {
+      "status": "PASS",
+      "physical_metric_files_verified": 18,
+      "complete_inspection_security_report_verified": true,
+      "inspection_summary_checked_against_embedded_vmmap_and_heap_output": true,
+      "persisted_separate_audit_artifact": false
+    }
+  },
+  "paired_current_over_controls": {
+    "10m": {
+      "legacy-direct": {
+        "median_ratio": 0.7461898356060273,
+        "median_delta_ms": -23.209542,
+        "faster_rounds": 12,
+        "total_rounds": 12
+      },
+      "secured-retained": {
+        "median_ratio": 0.9991658244091837,
+        "median_delta_ms": -0.057041999999999995,
+        "faster_rounds": 7,
+        "total_rounds": 12
+      }
+    },
+    "125m": {
+      "legacy-direct": {
+        "median_ratio": 0.6450023804099665,
+        "median_delta_ms": -345.32704149999995,
+        "faster_rounds": 12,
+        "total_rounds": 12
+      },
+      "secured-retained": {
+        "median_ratio": 0.9736803186319987,
+        "median_delta_ms": -16.925187,
+        "faster_rounds": 12,
+        "total_rounds": 12
+      }
+    }
+  },
+  "verified_exact_outputs": 98,
+  "verified_secured_reports": 66,
+  "variants": [
+    {
+      "name": "legacy-direct",
+      "binary": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-901/target/release/historical-fast",
+      "sha256": "e11bf3a7f10ed5ed6232d9bc88a4527d2ea6e0cf3fc96ee38978808e258a6be4",
+      "executable_bytes": 3159168,
+      "secure": false,
+      "environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_STD_MAP": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_ASYNC": "0",
+        "MECH_SEQUENCE_BUFFER_REUSE": "0",
+        "MECH_ARRAY_GRAIN": "16"
+      }
+    },
+    {
+      "name": "secured-retained",
+      "binary": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-transfer-standard125m-release-v1096/variant-0/native-executable",
+      "sha256": "198daadc873bdf91cb5fcd148ba5847e94852aef99792d372c6d185734b848cc",
+      "environment": {},
+      "secure": true,
+      "revision": "3b77b1f0df1a806eeaae7748d4223ac413390e2e896b100e038629da2c6a533b",
+      "executable_bytes": 6842992,
+      "streaming": false
+    },
+    {
+      "name": "fresh-default",
+      "binary": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/variant-0/native-executable",
+      "sha256": "a15b40d0bb4a37cfa7de5edff2f27df8e35cf822ff0c6f6dd88a3abf2cb42532",
+      "executable_bytes": 7063168,
+      "secure": true,
+      "streaming": true,
+      "revision": "2e0254100cd787c391ebcd973eb2792429a3b16f24eb963481b41cb3cbad0d23"
+    }
+  ],
+  "current_provenance": {
+    "source_commit": "3470ea678111865140b9aa5008f90b645eeff300",
+    "source_clean_before_and_after_qualification": true,
+    "qualification": "The maintained fresh clean-source original/decoded build and its pins are recorded in fresh_default_profile_qualification below. The matched observer runs those immutable binaries without a build or regeneration.",
+    "source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+    "original_decoded": [
+      {
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/variant-0/native-executable",
+          "bytes": 7063168,
+          "sha256": "a15b40d0bb4a37cfa7de5edff2f27df8e35cf822ff0c6f6dd88a3abf2cb42532"
+        },
+        "revision": "2e0254100cd787c391ebcd973eb2792429a3b16f24eb963481b41cb3cbad0d23",
+        "object_sha256": "546d7b6f173828310192d970d8741c00480ad3bb2f878e32c602e8284c5615ca",
+        "bytecode_sha256": "bc511b57f473cb411db0eeb43c2e5997e0f68f358f1d0c2f89ba6e4cde4dfabb",
+        "identity_sha256": "dd158a03373e24e2dd9cf589872634cb0b00c55836a2307103d7a68850a715e1"
+      },
+      {
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/variant-1/native-executable",
+          "bytes": 7063168,
+          "sha256": "a15b40d0bb4a37cfa7de5edff2f27df8e35cf822ff0c6f6dd88a3abf2cb42532"
+        },
+        "revision": "2e0254100cd787c391ebcd973eb2792429a3b16f24eb963481b41cb3cbad0d23",
+        "object_sha256": "546d7b6f173828310192d970d8741c00480ad3bb2f878e32c602e8284c5615ca",
+        "bytecode_sha256": "bc511b57f473cb411db0eeb43c2e5997e0f68f358f1d0c2f89ba6e4cde4dfabb",
+        "identity_sha256": "dd158a03373e24e2dd9cf589872634cb0b00c55836a2307103d7a68850a715e1"
+      }
+    ],
+    "generated_manifest": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/linked-manifest.json",
+      "bytes": 2720,
+      "sha256": "03c03e4dd0dfd21333154bbc23c5341c383a0e74080d5a7044a536529a88728c"
+    },
+    "resolved_lockfile": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/Cargo.lock",
+      "bytes": 35469,
+      "sha256": "dcb094e2225f372251f939286eba54f1edfabef2a98a5dae457fb5c87406de73"
+    },
+    "profile": "Normal generated release ThinLTO; no diagnostic CLI override.",
+    "legacy_tuning_receipt": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-io-measurement-v321/measurement.json",
+      "bytes": 43543,
+      "sha256": "fe1f4902b89d54e9912f221fd8bbc7a8b39c83284cfa40daf8ef83a3cf559560"
+    },
+    "prior_security_report_reference": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-three-way-v1144/measurement.json",
+      "bytes": 344876,
+      "sha256": "7e32fd9cedace8cffe83b6804abfa175d23417e38f8c81475d63024236cee94b"
+    }
+  },
+  "current_security_reports": {
+    "10m": {
+      "secured-retained": {
+        "effects": 1,
+        "host_result_carrier_bytes": 192,
+        "hosted_phases": "admit-activate-capture-resume",
+        "input_acquisition_byte_cap": 254166745,
+        "jit": false,
+        "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+        "native_aot": true,
+        "native_comparison_work": 483361822,
+        "native_transport_bytes": 32472,
+        "native_visits": 474,
+        "native_work": 57293335199,
+        "observations": 1,
+        "payload_argument_snapshot_reserved_bytes": 16,
+        "policy": "secured",
+        "program_revision": "3b77b1f0df1a806eeaae7748d4223ac413390e2e896b100e038629da2c6a533b",
+        "requirements": 2,
+        "resident_body_evaluation": false,
+        "route": "canonical-artifact-program-object-secured-cli",
+        "schema": "mech.canonical-hosted-native-execution.v1",
+        "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+        "shutdown": "completed",
+        "source_parser": false
+      },
+      "fresh-default": {
+        "effects": 1,
+        "host_result_carrier_bytes": 192,
+        "hosted_phases": "admit-activate-capture-resume",
+        "input_acquisition_byte_cap": 254166745,
+        "input_storage": "bounded-lines",
+        "jit": false,
+        "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+        "native_aot": true,
+        "native_comparison_work": 483361822,
+        "native_transport_bytes": 32480,
+        "native_visits": 474,
+        "native_work": 58002815343,
+        "observations": 1,
+        "payload_argument_snapshot_reserved_bytes": 16,
+        "policy": "secured",
+        "program_revision": "2e0254100cd787c391ebcd973eb2792429a3b16f24eb963481b41cb3cbad0d23",
+        "requirements": 2,
+        "resident_body_evaluation": false,
+        "route": "canonical-artifact-program-object-secured-cli",
+        "schema": "mech.canonical-hosted-native-execution.v1",
+        "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+        "shutdown": "completed",
+        "source_parser": false
+      }
+    },
+    "125m": {
+      "secured-retained": {
+        "effects": 1,
+        "host_result_carrier_bytes": 192,
+        "hosted_phases": "admit-activate-capture-resume",
+        "input_acquisition_byte_cap": 254166745,
+        "jit": false,
+        "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+        "native_aot": true,
+        "native_comparison_work": 6041695262,
+        "native_transport_bytes": 32472,
+        "native_visits": 474,
+        "native_work": 709766994147,
+        "observations": 1,
+        "payload_argument_snapshot_reserved_bytes": 16,
+        "policy": "secured",
+        "program_revision": "3b77b1f0df1a806eeaae7748d4223ac413390e2e896b100e038629da2c6a533b",
+        "requirements": 2,
+        "resident_body_evaluation": false,
+        "route": "canonical-artifact-program-object-secured-cli",
+        "schema": "mech.canonical-hosted-native-execution.v1",
+        "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+        "shutdown": "completed",
+        "source_parser": false
+      },
+      "fresh-default": {
+        "effects": 1,
+        "host_result_carrier_bytes": 192,
+        "hosted_phases": "admit-activate-capture-resume",
+        "input_acquisition_byte_cap": 254166745,
+        "input_storage": "bounded-lines",
+        "jit": false,
+        "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+        "native_aot": true,
+        "native_comparison_work": 6041695262,
+        "native_transport_bytes": 32480,
+        "native_visits": 474,
+        "native_work": 718630134843,
+        "observations": 1,
+        "payload_argument_snapshot_reserved_bytes": 16,
+        "policy": "secured",
+        "program_revision": "2e0254100cd787c391ebcd973eb2792429a3b16f24eb963481b41cb3cbad0d23",
+        "requirements": 2,
+        "resident_body_evaluation": false,
+        "route": "canonical-artifact-program-object-secured-cli",
+        "schema": "mech.canonical-hosted-native-execution.v1",
+        "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+        "shutdown": "completed",
+        "source_parser": false
+      }
+    }
+  },
+  "independent_read_only_audit": {
+    "status": "PASS",
+    "scope": [
+      "Re-read all 98 physical outputs and require the exact size-specific oracle, with empty stderr and successful process exits.",
+      "Re-read all 66 complete secured reports and require exact retained/fresh expectations; the fresh nominal revision is pinned to the actual manifest at both sizes.",
+      "Verify all observer pins, both full input/oracle files, the authenticated v321 legacy environment and original/decoded artifact identities.",
+      "Recompute every timing median/range, paired ratio/delta/win count and RSS median from raw samples; verify all 18 physical RSS metric files and all balanced serial orders."
+    ],
+    "persisted_separate_audit_artifact": false
+  },
+  "fresh_default_profile_qualification": {
+    "label": "v1145",
+    "status": "PASS_FRESH_CLEAN_SOURCE_ORIGINAL_AND_DECODED_125M",
+    "scope": "Separate maintained qualification of freshly generated original/decoded applications. This does not relabel or replace the historical v1144 host-only matched timing/RSS evidence.",
+    "source_commit": "3470ea678111865140b9aa5008f90b645eeff300",
+    "source_clean_before_and_after": true,
+    "qualification_elapsed_seconds": 431.982739666,
+    "profile": {
+      "origin": "Both generated Cargo.toml files contain the normal release default lto=\"thin\" and opt-level=3; no command-line or environment profile override.",
+      "panic": "unchanged default unwind",
+      "codegen_units": "unchanged default",
+      "object_optimization": "speed",
+      "mech_object_route": "Cranelift Object linked unchanged; ThinLTO applies to the Rust host/libraries."
+    },
+    "program_revision": "2e0254100cd787c391ebcd973eb2792429a3b16f24eb963481b41cb3cbad0d23",
+    "original_decoded_byte_identical": [
+      "source",
+      "bytecode",
+      "program.o",
+      "object identity",
+      "generated launcher",
+      "Cargo manifest",
+      "Cargo.lock",
+      "build script",
+      "factory profile",
+      "linked manifest",
+      "native executable"
+    ],
+    "checks": {
+      "small_cases_per_variant": 13,
+      "generated_template_tests_per_variant": 8,
+      "tamper_rejections": 9,
+      "full125m_correctness_processes": 2,
+      "full125m_timed_processes": 6,
+      "physical_full125m_outputs_and_reports_verified": 8,
+      "audit": "Independently re-read all eight physical full-input stdout/stderr/report triples, checked exact oracle output and identical complete security reports, verified all generated pins and original/decoded byte equality, and checked 183 unique physical file hashes against the final receipts. No separate persisted audit artifact is claimed."
+    },
+    "full125m": {
+      "input_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "input_bytes": 254166745,
+      "oracle_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+      "finite_policy_unchanged": true,
+      "report_sha256": "6a49ec117d24546dc02842734ace3782097927472546c618c219cf6107cd4441",
+      "input_storage": "bounded-lines",
+      "original_samples_ns": [
+        630119250,
+        638467458,
+        633763083
+      ],
+      "decoded_samples_ns": [
+        629727250,
+        630187625,
+        628488875
+      ],
+      "original_median_seconds": 0.633763083,
+      "decoded_median_seconds": 0.62972725,
+      "interpretation": "Three fresh-process samples per variant confirm approximately 0.63-second execution with the adopted default profile. Original and decoded executables are byte-identical: the small sample difference is not a decoded-path speedup. Warm-cache spawn-through-observed-exit timing includes CLI acquisition, output and report publication; these six samples are not a new matched-control comparison.",
+      "new_10m_or_rss_measurement": false
+    },
+    "pins": {
+      "wrapper": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/qualify-streaming-default-v1145.cjs",
+        "bytes": 4375,
+        "sha256": "105bf81a0bea3b93a2c259eec44b80b3b479687924035fbcde1ec2c635970026"
+      },
+      "wrapper_result": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-qualification-v1145/result.json",
+        "bytes": 3759,
+        "sha256": "7d24cc3c045e7f42df334357a791257327b942333591d02d30c0eeac05ce96d9"
+      },
+      "configuration": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-full-config-v1145.json",
+        "bytes": 884,
+        "sha256": "9a640dcc84f6fe18cb6c2d53d1041853b310121c1410cc180cc3542c943aec0f"
+      },
+      "qualification_result": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/hosted-linked-result.json",
+        "bytes": 589294,
+        "sha256": "58af8dcb09b40b93709874b194fddeb415896a295fd5c52d0e465b7a205b1d9a"
+      },
+      "full_input_result": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/full-input/full-input-result.json",
+        "bytes": 25110,
+        "sha256": "f148ad1e4a61a190376c81712cba504c02d1daf868351d2f0ba7fcf4e9091f75"
+      },
+      "linked_manifest": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/linked-manifest.json",
+        "bytes": 2720,
+        "sha256": "03c03e4dd0dfd21333154bbc23c5341c383a0e74080d5a7044a536529a88728c"
+      },
+      "cargo_manifest": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/Cargo.toml",
+        "bytes": 3041,
+        "sha256": "2b2bc30300490c47a602da873a9c7e59b88f698a99d1bdcdd88cc0fbe03cc631"
+      },
+      "resolved_lockfile": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/Cargo.lock",
+        "bytes": 35469,
+        "sha256": "dcb094e2225f372251f939286eba54f1edfabef2a98a5dae457fb5c87406de73"
+      },
+      "object": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/program.o",
+        "bytes": 26920,
+        "sha256": "546d7b6f173828310192d970d8741c00480ad3bb2f878e32c602e8284c5615ca"
+      },
+      "bytecode": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/program.mecb",
+        "bytes": 33723,
+        "sha256": "bc511b57f473cb411db0eeb43c2e5997e0f68f358f1d0c2f89ba6e4cde4dfabb"
+      },
+      "identity": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/project-0/object-identity.bin",
+        "bytes": 192,
+        "sha256": "dd158a03373e24e2dd9cf589872634cb0b00c55836a2307103d7a68850a715e1"
+      },
+      "original_executable": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/variant-0/native-executable",
+        "bytes": 7063168,
+        "sha256": "a15b40d0bb4a37cfa7de5edff2f27df8e35cf822ff0c6f6dd88a3abf2cb42532"
+      },
+      "decoded_executable": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/variant-1/native-executable",
+        "bytes": 7063168,
+        "sha256": "a15b40d0bb4a37cfa7de5edff2f27df8e35cf822ff0c6f6dd88a3abf2cb42532"
+      }
+    }
+  },
+  "capture_chunk_diagnostic": {
+    "label": "v1147",
+    "status": "PASS_DIAGNOSTIC_NO_ADOPTION",
+    "scope": "Private generated capture-buffer-size experiment using the exact retained v1142 Object/bytecode/identity. This is not fresh clean-source production qualification and does not replace the current v1145 matched results.",
+    "measured_utc": {
+      "started": "2026-10-21T20:51:13.980Z",
+      "finished": "2026-10-21T20:51:38.472Z"
+    },
+    "conclusion": {
+      "memory_hypothesis": "Disproved for these tested sizes: increasing capture chunks from 64KiB to 256KiB or 1MiB did not reduce peak RSS. At 125M the medians were 287293440, 287440896 and 289472512 bytes respectively; both larger sizes also increased 10M RSS.",
+      "performance": "1MiB measured 0.6228949375 versus 0.6327250625 seconds at 125M, a modest approximately 1.5% paired gain (6/6 faster rounds). The 10M timings were noisy, with the 1MiB median slightly slower than 64KiB; this is not a general performance win.",
+      "adoption": "None. Production capture remains 65536 bytes. The temporary three-file generator diagnostic was removed after measurement; its exact measured source copies and all raw logs remain pinned.",
+      "size": "All three executables are 7063168 bytes; this experiment produced no executable-size reduction."
+    },
+    "method": {
+      "timing_samples_per_variant_per_size": 6,
+      "balanced_orders": "All six permutations once at each size.",
+      "rss_samples_per_variant_per_size": 3,
+      "physical_outputs_and_full_reports": 60,
+      "timing_samples_total": 36,
+      "rss_samples_total": 18,
+      "raw_samples": "All 36 timings, all 18 RSS/footprint metric files and six warmup reports are retained in the pinned measurement; compact summaries follow.",
+      "inputs_and_policy": "Exactly the existing inputs_and_oracles and finite_launch_policy above; no authority, policy, input-cap or artifact change.",
+      "hardware": "Recorded Apple M1/8GiB on AC power before/after, matching the established machine context."
+    },
+    "summary": {
+      "10m": {
+        "65536": {
+          "median_seconds": 0.068692062,
+          "range_seconds": [
+            0.068358541,
+            0.072903791
+          ],
+          "median_peak_rss_bytes": 31031296,
+          "range_peak_rss_bytes": [
+            31031296,
+            31031296
+          ]
+        },
+        "262144": {
+          "median_seconds": 0.0678993125,
+          "range_seconds": [
+            0.06759325,
+            0.068278959
+          ],
+          "median_peak_rss_bytes": 31621120,
+          "range_peak_rss_bytes": [
+            31621120,
+            31621120
+          ]
+        },
+        "1048576": {
+          "median_seconds": 0.0691372295,
+          "range_seconds": [
+            0.067999791,
+            0.078003958
+          ],
+          "median_peak_rss_bytes": 33636352,
+          "range_peak_rss_bytes": [
+            33636352,
+            33636352
+          ]
+        }
+      },
+      "125m": {
+        "65536": {
+          "median_seconds": 0.6327250625,
+          "range_seconds": [
+            0.630791292,
+            0.640812
+          ],
+          "median_peak_rss_bytes": 287293440,
+          "range_peak_rss_bytes": [
+            287293440,
+            287293440
+          ]
+        },
+        "262144": {
+          "median_seconds": 0.6292305,
+          "range_seconds": [
+            0.624043625,
+            0.634458833
+          ],
+          "median_peak_rss_bytes": 287440896,
+          "range_peak_rss_bytes": [
+            287309824,
+            287703040
+          ]
+        },
+        "1048576": {
+          "median_seconds": 0.6228949375,
+          "range_seconds": [
+            0.620780917,
+            0.63069
+          ],
+          "median_peak_rss_bytes": 289472512,
+          "range_peak_rss_bytes": [
+            289472512,
+            289832960
+          ]
+        }
+      }
+    },
+    "paired_full125m_over_64k": {
+      "capture-262144": {
+        "median_ratio": 0.9930873703934737,
+        "faster_rounds": 5,
+        "total_rounds": 6
+      },
+      "capture-1048576": {
+        "median_ratio": 0.9848323856153656,
+        "faster_rounds": 6,
+        "total_rounds": 6
+      }
+    },
+    "accounting": {
+      "actual_differing_keys": [
+        "native_work"
+      ],
+      "native_work_by_input_and_chunk": {
+        "10m": {
+          "65536": 58002815343,
+          "262144": 57994758207,
+          "1048576": 57992748671
+        },
+        "125m": {
+          "65536": 718630134843,
+          "262144": 718532834635,
+          "1048576": 718508514131
+        }
+      },
+      "invariants": "The 64KiB report exactly matches v1144. Only cumulative chunk-related native_work changes for larger buffers; native_visits, native_comparison_work, transport/carrier bytes, argument reservation, input cap, nominal revision, bounded-lines storage and every authority field remain identical. Every repeated complete report equals its variant/size warmup exactly."
+    },
+    "source_at_measurement": {
+      "base_commit": "e21000b3751c685869f6753f8d07e1b5cfd14413",
+      "git_diff_sha256": "e942209f9eb44848f65d9775829072ce774222c4cb9772ad69007a2b12394e1e",
+      "untracked_test": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-v1147/source-files/hosts/gpu/src/native_artifact/program_application_capture_tests.rs",
+        "bytes": 6688,
+        "sha256": "4baba9cdeb59a2ed5dea8a7b4908065f5b6b43e951709d9a9b863fa1201fa83b"
+      },
+      "source_copies": "The build receipt pins all three preserved source-files copies and source.diff. These describe the measured temporary generator patch, not the checkout after it was removed."
+    },
+    "retained_artifact": {
+      "program_revision": "2749f8cd8f09131fc58bb8cfffdd0c79fe64a8f31152264787cd488a8e5a01a0",
+      "object_sha256": "970ea4d8e31645203432045e6579fe26a49e0a53fc628c4f4d25d5d00b14418f",
+      "bytecode_sha256": "f1e0ca1fd73905fc274b14a31609f0b389ba87551b959dfe097a16c9179e0f39",
+      "identity_sha256": "cdcd6383fda17159f7ef5a728bef043482eb51415f7b46277240178971f5f949"
+    },
+    "executables": {
+      "directory": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-v1147",
+      "filename_pattern": "native-executable-<chunk_bytes>",
+      "bytes_each": 7063168,
+      "sha256_by_chunk": {
+        "65536": "280f91edbc83a668cb2bba4ca81d353ec9e03594c70840922cf996ef00cdcd39",
+        "262144": "f173048fcf56a14777dd2f0742d5f3ff0418864cc55d35a99423fcbece956ca3",
+        "1048576": "0313fb2007db3c1f4c1a7ff041f98dd95d9e5865ec34ea47a2f2ca9212dfbad4"
+      }
+    },
+    "build_recovery": "The v1146 guard rejected a stale Cargo Fresh result before copying or timing the wrong 256KiB binary. v1147 preserved the valid 64KiB binary and performed package-scoped host cleans before relinking 256KiB/1MiB; generated projects and dependency cache were retained. Both build receipts and logs remain pinned.",
+    "independent_audit": {
+      "status": "PASS",
+      "physical_pins_verified": 286,
+      "outputs_and_full_reports_verified": 60,
+      "rss_metric_files_verified": 18,
+      "scope": "Re-read exact output/security reports, recompute all medians/ranges/paired ratios and order checks, verify project/Object/input/policy/build/script pins, and validate measured source against immutable preserved copies rather than the subsequently restored checkout.",
+      "persisted_separate_audit_artifact": false
+    },
+    "evidence": {
+      "measurement": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-three-way-v1147/measurement.json",
+        "bytes": 242946,
+        "sha256": "e22fc02252cdb371e3b2e88e8cdda574771cea0855d8e77ad6cb21c67d702129"
+      },
+      "observer": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-streaming-capture-chunks-v1147.cjs",
+        "bytes": 20340,
+        "sha256": "ee2d4cc954c601c62417f8c636ef44990afd8976d11a1e8cd4e6119cfa675b79"
+      },
+      "build": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-v1147/build-result.json",
+        "bytes": 39661,
+        "sha256": "c8d70e22200f54a240f47b711d2d176786811a3753eb3ee631adb79f21346f4e"
+      },
+      "generation": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-v1147/generation.json",
+        "bytes": 3886,
+        "sha256": "6d162f4390fd715b635353860edb4ffbd16dafe890c3ad06865d11af137192cd"
+      },
+      "rejected_predecessor_build": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-v1146/build-result.json",
+        "bytes": 18654,
+        "sha256": "209040003e5fb3b7ea51dd3a3e8e7cf7b547cb9594c6d00e202d2f52edcccf81"
+      }
+    }
+  },
+  "canonical_envelope_host_diagnostic": {
+    "label": "v1150",
+    "status": "PASS_HOST_READER_DIAGNOSTIC",
+    "scope": "HOST_READER_DIAGNOSTIC_RETAINED_OBJECT_NOT_CLEAN_SOURCE_QUALIFICATION",
+    "conclusion": {
+      "executable": "6713008 bytes versus 7063168: 350160 bytes (4.9575%) smaller. Approximately 0.63-second full-size performance is preserved with no material regression observed in this batch; this is not a speedup or proof of zero overhead.",
+      "timing": "Paired median candidate/baseline ratios are 1.0014123506252575 at 125M (+0.14%) and 1.0009650435444448 at 10M (+0.0965%). Ratios of independently computed medians are not substituted for paired ratios.",
+      "memory": "No meaningful memory improvement: 125M median peak RSS is 287080448 versus 287293440 bytes, and physical footprint is 164414592 versus 164414656 bytes. The peak-RSS and executable-size targets remain unmet.",
+      "qualification": "Host-only diagnostic with the unchanged retained v1142 program and 64KiB capture project. The current v1145 clean-qualified table remains unchanged; this reader change still needs fresh clean-source/default-profile qualification."
+    },
+    "change": "The engine admits canonical artifacts through the existing shared envelope/header/directory/checksum/requirements/artifact checks, rejecting nonempty legacy execution authority without decoding that forbidden payload. Full semantic decoding/finalization and exact outer/embedded requirement matching remain in the same engine. No new wire format, executor, capability authority or Mech compiler path is introduced.",
+    "source": {
+      "base_commit": "6bd26b07e5e690f9d64a1cb2bb5fb3741ef7f874",
+      "tracked_patch_sha256": "3d44c53d6866902a6941164c69100baee53bbf7165b4bf25ca84966f066588d7",
+      "files_sha256": {
+        "src/core/src/program/bytecode/reader.rs": "b40c9911e625be51b1dc4914868870022065f11afe2dcaf8d544dd6849f67159",
+        "src/core/src/program/bytecode/reader_canonical.rs": "a10245f97a499148c2282e87e22368bac19366f32524a234709cce17922a0221",
+        "src/core/src/program/bytecode/reader_canonical_tests.rs": "bce3ac6f95fbc55915b63cfa15e8ec8a8cc35f24af85911667a4b7ce9568007b",
+        "src/engine/src/artifact/bytecode.rs": "240bcf8cb92045d81a4badade4e3ce101854e4d74e7191d294393734d060a20b",
+        "src/core/src/program/bytecode/aggregates.rs": "bd50973691529fc3dbe4c61dae0ceb1a39d3c342ffe1d6bc4dfef51fa4c3eee4",
+        "src/core/src/program/bytecode/validation.rs": "69d68bc662d09f5ce27ebd48b1b63b2dbbb777053b888db74bce4f3c8f0e27e3",
+        "src/core/src/program/bytecode/constants/canonical.rs": "46d15d27afd2c799d6f982405d20ca304c99788f9f296180d9da8bf97b789aae"
+      }
+    },
+    "unchanged_program": {
+      "program_revision": "2749f8cd8f09131fc58bb8cfffdd0c79fe64a8f31152264787cd488a8e5a01a0",
+      "pins_sha256": {
+        "application.mec": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+        "program.mecb": "f1e0ca1fd73905fc274b14a31609f0b389ba87551b959dfe097a16c9179e0f39",
+        "program.o": "970ea4d8e31645203432045e6579fe26a49e0a53fc628c4f4d25d5d00b14418f",
+        "object-identity.bin": "cdcd6383fda17159f7ef5a728bef043482eb51415f7b46277240178971f5f949"
+      },
+      "chunk_bytes": 65536,
+      "profile": "The same generated default opt-level3/ThinLTO/strip-symbols profile; default unwind/codegen units unchanged, no CLI profile override. Diagnostic linking adds a link map only.",
+      "inputs_and_policy": "The exact 10M/125M input/oracle hashes and finite policy are unchanged from the current receipt; pinned measurement.sizes and measurement.launch retain every value. All 64 full reports match the retained 64KiB baseline exactly, with no field exclusions or revision normalization."
+    },
+    "binaries": [
+      {
+        "name": "baseline-64k",
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-capture-chunks-v1147/native-executable-65536",
+          "bytes": 7063168,
+          "sha256": "280f91edbc83a668cb2bba4ca81d353ec9e03594c70840922cf996ef00cdcd39"
+        }
+      },
+      {
+        "name": "strict-envelope-64k",
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-host-v1150/native-executable",
+          "bytes": 6713008,
+          "sha256": "58a7f9179fb6c50e8ddc2c61b5537caf535276500b7f2bb944251f1ff5919b5f"
+        }
+      }
+    ],
+    "method": {
+      "timing": "12 serial paired rounds per input size, alternating AB/BA six times each. Monotonic spawn-through-exit time includes startup, secured round and report publication; descriptors opened first. Warmups and validation are untimed.",
+      "memory": "Three separate macOS time -l executions per variant/size; RSS and physical footprint retained separately. Memory executions provide no timing samples.",
+      "verified_outputs": 64,
+      "verified_security_reports": 64,
+      "raw_samples": "All 48 timings, 12 separate RSS/physical-footprint samples and 4 warmups remain in the pinned measurement with individual output/report/metric hashes. Hardware/OS/power is unchanged before/after; no interfering process was recorded.",
+      "independent_audit": "Re-read and verified all 64 physical stdout/security reports, empty stderr, 12 metric files, sample counts/order, medians/paired ratios, binary/source/build/validation/link-map pins. Input file hashes were not independently recomputed in this documentation audit; the observer verifies them before and after phases."
+    },
+    "summary": {
+      "10m": {
+        "baseline-64k": {
+          "median_seconds": 0.068067167,
+          "range_seconds": [
+            0.067939458,
+            0.068418125
+          ],
+          "median_peak_rss_bytes": 31031296,
+          "median_peak_physical_footprint_bytes": 16876352
+        },
+        "strict-envelope-64k": {
+          "median_seconds": 0.0681730835,
+          "range_seconds": [
+            0.067900083,
+            0.069109584
+          ],
+          "median_peak_rss_bytes": 31096832,
+          "median_peak_physical_footprint_bytes": 17023872
+        }
+      },
+      "125m": {
+        "baseline-64k": {
+          "median_seconds": 0.6286386665,
+          "range_seconds": [
+            0.626171417,
+            0.636332667
+          ],
+          "median_peak_rss_bytes": 287293440,
+          "median_peak_physical_footprint_bytes": 164414656
+        },
+        "strict-envelope-64k": {
+          "median_seconds": 0.629134312,
+          "range_seconds": [
+            0.627782292,
+            0.635081417
+          ],
+          "median_peak_rss_bytes": 287080448,
+          "median_peak_physical_footprint_bytes": 164414592
+        }
+      }
+    },
+    "paired_candidate_over_baseline": {
+      "10m": {
+        "median_ratio": 1.0009650435444448,
+        "median_delta_ms": 0.065687,
+        "faster_rounds": 5,
+        "total_rounds": 12
+      },
+      "125m": {
+        "median_ratio": 1.0014123506252575,
+        "median_delta_ms": 0.8897075,
+        "faster_rounds": 4,
+        "total_rounds": 12
+      }
+    },
+    "link_map": {
+      "live_legacy_symbols_absent": [
+        "decode_value_payload",
+        "decode_constants",
+        "validate_composite_packs",
+        "rebuild_canonical_bytecode_composite",
+        "parse_program"
+      ],
+      "interpretation": "Legacy payload decoder/validation functions are absent from the live linked symbol map; canonical envelope and semantic validation remain required. This does not claim every legacy-named helper was removed."
+    },
+    "local_validation": {
+      "inherited_passed_tests": 325,
+      "inherited_ignored_tests": 5,
+      "inherited_scope": "Executed before the three cfg-only import fixes; not rerun on this seven-file snapshot.",
+      "passed_by_suite": {
+        "core_bytecode": 75,
+        "engine_artifact_bytecode": 19,
+        "gpu_native_artifact": 141,
+        "program_artifact_contract": 37,
+        "canonical_hosted_artifact": 53
+      },
+      "cfg_only_followup": "The first validation completed all 325 tests and runtime-only checking, then failed no_std,program. Three exact import-only changes keep std-active code identical; the follow-up passed no_std,program, maintained no_std, runtime-only and diff checks. Tests were not rerun on the seven-file snapshot.",
+      "original_validation": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-validation-v1150/result.json",
+        "bytes": 9525,
+        "sha256": "ffc53100a260f8ba4fb4e010b6799201d0271e89440a36aa1e69bfdea9ea59db"
+      },
+      "followup_validation": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-validation-v1150b/result.json",
+        "bytes": 11367,
+        "sha256": "3bd66ee0e0fdfc260e80195cc00c67552fc33c4f48e3d8a8c987cbc3cd3672fc"
+      }
+    },
+    "evidence": {
+      "measurement": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-host-measurement-v1150/measurement.json",
+        "bytes": 251973,
+        "sha256": "332d7c3573bfe59c92eed9be3fea82654f2f8d02f1cf425d30fe44e72d10fd7f"
+      },
+      "observer": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-canonical-envelope-host-v1150.cjs",
+        "bytes": 16598,
+        "sha256": "106e79ee9b9edb8679813c7cbf985f22d5217200e06ed3bac7f45c96ace005bf"
+      },
+      "build": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-host-v1150/build-result.json",
+        "bytes": 18239,
+        "sha256": "9fb21b0fa50cb3781f523986279d93db0cad9d55cf15f38f0ddaebc996100ced"
+      },
+      "build_driver": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/build-canonical-envelope-host-v1150.cjs",
+        "bytes": 6573,
+        "sha256": "447f6b7bd86fe3c41c04791b052138b567621549a5c6140c3709b0e38ad3f0a0"
+      },
+      "link_map": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-host-v1150/host.map",
+        "bytes": 6557044,
+        "sha256": "2f7cfb39bb786afa2d3fdc504e53bcfba48d628873d3a3c423a2d84428a5b764"
+      }
+    }
+  },
+  "canonical_envelope_fresh_qualification": {
+    "label": "v1151",
+    "status": "PASS",
+    "source_commit": "a8e334004f609e6de1c0e3fc17aaaaea35a12819",
+    "original_and_decoded_executables_identical": true,
+    "executable_bytes": 6713008,
+    "executable_sha256": "375468ecee1f64a58503663435de7b42fbdd81f29f42652f07d5033e7952fcf3",
+    "full125m_qualification_median_seconds": { "original": 0.6341435, "decoded": 0.628591 },
+    "samples_per_variant": 3,
+    "security": "Original and decoded complete reports match exactly. Against v1145, only the independent nominal program revision differs. Physical audit verified all project pins, 26 small security cases, 16 launcher tests, 9 tamper rejections and 8 full-input outputs/reports.",
+    "interpretation": "Maintained fresh clean-source default-profile qualification of the strict reader change, separate from the retained-Object v1150 diagnostic. These qualification samples are not a new paired-performance or RSS measurement and do not replace the v1145 three-way table.",
+    "wrapper": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-qualification-v1151/result.json",
+      "bytes": 4698,
+      "sha256": "090d59de4915785a8d32ff7d379a577145712eb7e507c2161999c4dc443bcf33"
+    },
+    "qualification": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-release-v1151/hosted-linked-result.json",
+      "bytes": 589833,
+      "sha256": "091080f52da2310f90f7e6e7ee64ae1f4f5ddb056d7ca52e26929420bd4d2161"
+    }
+  },
+  "remaining": [
+    "Reduce executable size and peak memory toward the approximately 200 MB/3.16 MB reference footprint without sacrificing runtime.",
+    "Obtain clean review and green CI; remain draft/unmerged until user direction."
+  ],
+  "evidence": {
+    "measurement": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-clean-three-way-v1145/measurement.json",
+      "bytes": 278043,
+      "sha256": "c6f42707b2f96a39120ed3758ea066e8e998bf5afa04c956706c3428bda9fb6b"
+    },
+    "observer": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-streaming-clean-three-way-v1145.cjs",
+      "bytes": 11686,
+      "sha256": "6b8d207dfd09dd3f3cc731497ff2c04d8939951a2249c3fbf4434145c61c67dc"
+    },
+    "observer_helper": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-common-v1142.cjs",
+      "bytes": 4225,
+      "sha256": "6aa79521d734b6d17b514208fecdce408a5400fda0e1ccf937f9b787efc45e38"
+    },
+    "legacy_tuning": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-io-measurement-v321/measurement.json",
+      "bytes": 43543,
+      "sha256": "fe1f4902b89d54e9912f221fd8bbc7a8b39c83284cfa40daf8ef83a3cf559560"
+    },
+    "qualification": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-release-v1145/hosted-linked-result.json",
+      "bytes": 589294,
+      "sha256": "58af8dcb09b40b93709874b194fddeb415896a295fd5c52d0e465b7a205b1d9a"
+    },
+    "qualification_wrapper_result": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-default-qualification-v1145/result.json",
+      "bytes": 3759,
+      "sha256": "7d24cc3c045e7f42df334357a791257327b942333591d02d30c0eeac05ce96d9"
+    }
+  },
+  "historical_batches": {
+    "v1144": {
+      "label": "Prior host-only descriptor-frontier diagnostic with retained v1142 Object and explicit CLI ThinLTO; not the fresh default-profile v1145 batch.",
+      "complete_committed_receipt": {
+        "git_reference": "3470ea678111865140b9aa5008f90b645eeff300:docs/validation/canonical-knucleotide-streaming-footprint-v1.json",
+        "git_blob": "edfbdb650c4dcb307511f423c19ab04c9a4de895",
+        "bytes": 71818,
+        "sha256": "9dbb9cc79ffd58f48c5ce0c9acbae6d902d7153c2a8498827ce59ddc2ac61e1e"
+      },
+      "source_snapshot": {
+        "base_commit": "09f8bfaa85236086ccc3e32b4caae5a9ddf5b142",
+        "status": " M hosts/gpu/src/native_artifact/program_descriptor.rs\n M hosts/gpu/src/native_artifact/program_identity.rs\n M hosts/gpu/src/native_artifact/program_prefix_layout.rs\n M hosts/gpu/src/native_artifact/program_prefix_tests.rs\n",
+        "git_binary_patch_sha256": "1b45ce1e28ffae6b3f8d6e7ce1d24839f86c42c8d89cf84999d0fbdd13f7d946",
+        "untracked": [],
+        "source_snapshot_sha256": "6741977c470cc880fcd33d5fabe526b499a4877c4153818bbd01959757bfb38f"
+      },
+      "profile_override": {
+        "cargo_config": "profile.release.lto=\"thin\"",
+        "lto": "thin",
+        "opt_level": 3,
+        "panic": "unwind",
+        "strip": "symbols",
+        "codegen_units": "unchanged default"
+      },
+      "summary": {
+        "10m": {
+          "secured-retained": {
+            "executable_bytes": 6842992,
+            "median_seconds": 0.068913917,
+            "minimum_seconds": 0.06873875,
+            "maximum_seconds": 0.072614625,
+            "median_peak_rss_bytes": 55869440,
+            "median_peak_footprint_bytes": 40076224
+          },
+          "streaming-thinlto-v1143": {
+            "executable_bytes": 7063136,
+            "median_seconds": 0.071131021,
+            "minimum_seconds": 0.070933041,
+            "maximum_seconds": 0.0714225,
+            "median_peak_rss_bytes": 31031296,
+            "median_peak_footprint_bytes": 16892736
+          },
+          "streaming-frontier-v1144": {
+            "executable_bytes": 7063168,
+            "median_seconds": 0.068642396,
+            "minimum_seconds": 0.06827975,
+            "maximum_seconds": 0.070408542,
+            "median_peak_rss_bytes": 31424512,
+            "median_peak_footprint_bytes": 17482752
+          }
+        },
+        "125m": {
+          "secured-retained": {
+            "executable_bytes": 6842992,
+            "median_seconds": 0.6488789585,
+            "minimum_seconds": 0.641718416,
+            "maximum_seconds": 0.65671775,
+            "median_peak_rss_bytes": 482295808,
+            "median_peak_footprint_bytes": 466896704
+          },
+          "streaming-thinlto-v1143": {
+            "executable_bytes": 7063136,
+            "median_seconds": 0.636499854,
+            "minimum_seconds": 0.633931458,
+            "maximum_seconds": 0.649060583,
+            "median_peak_rss_bytes": 287440896,
+            "median_peak_footprint_bytes": 164447424
+          },
+          "streaming-frontier-v1144": {
+            "executable_bytes": 7063168,
+            "median_seconds": 0.632705958,
+            "minimum_seconds": 0.630611333,
+            "maximum_seconds": 0.646257625,
+            "median_peak_rss_bytes": 287670272,
+            "median_peak_footprint_bytes": 164431040
+          }
+        }
+      },
+      "raw_evidence": {
+        "build": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-build-v1144/result.json",
+          "bytes": 48975,
+          "sha256": "c8f9289625ba2120d39ef23d61f6028b7925e80d41c079870ef9c7ca19561d0d"
+        },
+        "measurement": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-three-way-v1144/measurement.json",
+          "bytes": 344876,
+          "sha256": "7e32fd9cedace8cffe83b6804abfa175d23417e38f8c81475d63024236cee94b"
+        },
+        "local_validation": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-frontier-validation-v1144/result.json",
+          "bytes": 11621,
+          "sha256": "b7e94f8f3b3dd4e64c8be8a0390c4b3cd7841ec185a6d18f2925068e51d4b4fb"
+        },
+        "observer": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-streaming-frontier-three-way-v1144.cjs",
+          "bytes": 25221,
+          "sha256": "61795b1ce946968b4f7e94c890e04cbae32cdb7b3735cb11a16977d6030778f9"
+        }
+      }
+    },
+    "complete_prior_committed_receipt": {
+      "revision": "09f8bfaa85236086ccc3e32b4caae5a9ddf5b142",
+      "path": "docs/validation/canonical-knucleotide-streaming-footprint-v1.json",
+      "object": "09f8bfaa85236086ccc3e32b4caae5a9ddf5b142:docs/validation/canonical-knucleotide-streaming-footprint-v1.json",
+      "blob_id": "7627f4feb5081a60d9b5ff7b9de23cebed9c266d",
+      "bytes": 58148,
+      "sha256": "805eec3f58251970114500eb6b3c39af5f8af2e6783eae15de99358c7596184f",
+      "scope": "Complete v1142, v1139, v1136 and v1134 provenance, raw-sample values, historical assessments and commands are retained in this immutable Git blob. v1143 followed that commit and is retained in its separately hashed local raw receipts below."
+    },
+    "v1143": {
+      "label": "Earlier packaging-only ThinLTO diagnostic on the clean pre-frontier host; not the current v1144 source or current matched batch",
+      "source_revision": "09f8bfaa85236086ccc3e32b4caae5a9ddf5b142",
+      "source_tree": "ede621199fc44022d581de168915ad5795f33982",
+      "compiled_code_matches_measured_v1142": true,
+      "measured_source_snapshot": {
+        "base_commit": "41c754ae2f76c776c9d4cc3e7f5e6bcedd65f7c2",
+        "git_binary_patch_sha256": "1c25b042b6608082884cf754769a468aaa8ba57adb59605da344ec7f9f9421ff",
+        "untracked": [
+          {
+            "path": "hosts/gpu/src/native_artifact/program_prefix_codegen_tests.rs",
+            "bytes": 3455,
+            "sha256": "696b6736e07ecca384af7a361da63751c8e3ceb93960eecb6fafe53de766ff26"
+          }
+        ],
+        "source_snapshot_sha256": "66bacba67c928eb635a447eab5f38212ac8234df1a9aa1145f654c1a47f04c6b"
+      },
+      "profile_override": {
+        "cargo_config": "profile.release.lto=\"thin\"",
+        "lto": "thin",
+        "opt_level": 3,
+        "panic": "unwind",
+        "strip": "symbols",
+        "codegen_units": "unchanged default"
+      },
+      "program_revision": "2749f8cd8f09131fc58bb8cfffdd0c79fe64a8f31152264787cd488a8e5a01a0",
+      "summary": {
+        "10m": {
+          "secured-retained": {
+            "median_seconds": 0.0688825625,
+            "minimum_seconds": 0.068446292,
+            "maximum_seconds": 0.07026625,
+            "median_peak_rss_bytes": 55869440,
+            "median_peak_footprint_bytes": 40076224,
+            "executable_bytes": 6842992
+          },
+          "streaming-v1142": {
+            "median_seconds": 0.0720281455,
+            "minimum_seconds": 0.071809833,
+            "maximum_seconds": 0.073337833,
+            "median_peak_rss_bytes": 30998528,
+            "median_peak_footprint_bytes": 16925568,
+            "executable_bytes": 7095056
+          },
+          "streaming-thinlto-v1143": {
+            "median_seconds": 0.071030792,
+            "minimum_seconds": 0.070828666,
+            "maximum_seconds": 0.07155875,
+            "median_peak_rss_bytes": 31031296,
+            "median_peak_footprint_bytes": 16909184,
+            "executable_bytes": 7063136
+          }
+        },
+        "125m": {
+          "secured-retained": {
+            "median_seconds": 0.646065625,
+            "minimum_seconds": 0.63721925,
+            "maximum_seconds": 0.649593541,
+            "median_peak_rss_bytes": 498515968,
+            "median_peak_footprint_bytes": 483051392,
+            "executable_bytes": 6842992
+          },
+          "streaming-v1142": {
+            "median_seconds": 0.641045021,
+            "minimum_seconds": 0.63883975,
+            "maximum_seconds": 0.643806458,
+            "median_peak_rss_bytes": 287883264,
+            "median_peak_footprint_bytes": 164463808,
+            "executable_bytes": 7095056
+          },
+          "streaming-thinlto-v1143": {
+            "median_seconds": 0.636313896,
+            "minimum_seconds": 0.633395667,
+            "maximum_seconds": 0.639267666,
+            "median_peak_rss_bytes": 287293440,
+            "median_peak_footprint_bytes": 164430976,
+            "executable_bytes": 7063136
+          }
+        }
+      },
+      "raw_evidence": {
+        "build": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-thinlto-build-v1143/result.json",
+          "bytes": 41327,
+          "sha256": "2e212e430004fa4708b899958139d6597c7a40c4c43370a3c77b524904462b7c"
+        },
+        "measurement": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-packaging-three-way-v1143/measurement.json",
+          "bytes": 328917,
+          "sha256": "209a253550c5bd13ab07e481e7914a5a64de85c766154a50b5ce97ca9e734369"
+        }
+      }
+    },
+    "v1142": {
+      "label": "Preserved v1142 fresh original/decoded dirty-source diagnostic with the original default host profile; not relabeled as a ThinLTO or v1144 measurement",
+      "source_snapshot": {
+        "base_commit": "41c754ae2f76c776c9d4cc3e7f5e6bcedd65f7c2",
+        "git_binary_patch_sha256": "1c25b042b6608082884cf754769a468aaa8ba57adb59605da344ec7f9f9421ff",
+        "untracked": [
+          {
+            "path": "hosts/gpu/src/native_artifact/program_prefix_codegen_tests.rs",
+            "bytes": 3455,
+            "sha256": "696b6736e07ecca384af7a361da63751c8e3ceb93960eecb6fafe53de766ff26"
+          }
+        ],
+        "source_snapshot_sha256": "66bacba67c928eb635a447eab5f38212ac8234df1a9aa1145f654c1a47f04c6b"
+      },
+      "source_snapshot_record": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/source-snapshot.json",
+        "bytes": 1528,
+        "sha256": "d23191ef5bb62e8a60b40b4b5c044d3ec097b9d77f722d9c84b0376a028f51c5"
+      },
+      "program_revision": "2749f8cd8f09131fc58bb8cfffdd0c79fe64a8f31152264787cd488a8e5a01a0",
+      "profile": "Original generated opt-level 3/unwind release profile; no explicit ThinLTO override.",
+      "summary": {
+        "10m": {
+          "secured-retained": {
+            "median_seconds": 0.0688478955,
+            "minimum_seconds": 0.068212458,
+            "maximum_seconds": 0.070415542,
+            "median_peak_rss_bytes": 55869440,
+            "median_peak_footprint_bytes": 40109120,
+            "executable_bytes": 6842992
+          },
+          "streaming-v1139": {
+            "median_seconds": 0.0732861665,
+            "minimum_seconds": 0.072974792,
+            "maximum_seconds": 0.077299042,
+            "median_peak_rss_bytes": 30998528,
+            "median_peak_footprint_bytes": 16925568,
+            "executable_bytes": 7095056
+          },
+          "streaming-v1142": {
+            "median_seconds": 0.071842125,
+            "minimum_seconds": 0.071430792,
+            "maximum_seconds": 0.075349291,
+            "median_peak_rss_bytes": 30998528,
+            "median_peak_footprint_bytes": 16925568,
+            "executable_bytes": 7095056
+          }
+        },
+        "125m": {
+          "secured-retained": {
+            "median_seconds": 0.6504109795,
+            "minimum_seconds": 0.63694225,
+            "maximum_seconds": 0.673145416,
+            "median_peak_rss_bytes": 506511360,
+            "median_peak_footprint_bytes": 491014080,
+            "executable_bytes": 6842992
+          },
+          "streaming-v1139": {
+            "median_seconds": 0.6581526465,
+            "minimum_seconds": 0.656148417,
+            "maximum_seconds": 0.665525542,
+            "median_peak_rss_bytes": 287260672,
+            "median_peak_footprint_bytes": 164463808,
+            "executable_bytes": 7095056
+          },
+          "streaming-v1142": {
+            "median_seconds": 0.641408125,
+            "minimum_seconds": 0.639632917,
+            "maximum_seconds": 0.647876209,
+            "median_peak_rss_bytes": 287260672,
+            "median_peak_footprint_bytes": 164447360,
+            "executable_bytes": 7095056
+          }
+        }
+      },
+      "raw_evidence": {
+        "independent_audit": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-v1142-independent-audit.json",
+          "sha256": "5624285b30215f606f7050d1511ed02488459564b8f7b672b1cbdb3c82de2f90"
+        },
+        "build": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1142/result.json",
+          "bytes": 39072,
+          "sha256": "eb875c17af5abf54c4a3a39709b95b3b1923342a5daba6a401caeee3c07b7ce1"
+        },
+        "measurement": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-three-way-v1142/measurement.json",
+          "bytes": 319042,
+          "sha256": "00282b7fa6def101db1e986d41e36f9df3a22c244bc8b21064308dcf69ecaaac"
+        },
+        "observer": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/measure-streaming-diagnostic-three-way-v1142.cjs",
+          "bytes": 18160,
+          "sha256": "38554a4504c1b159b12e69ac26115f98236115ce51b4b7aed5d8647db6f3a891"
+        },
+        "previous_build": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1139/result.json",
+          "bytes": 28563,
+          "sha256": "229b75adbfad25d453d13dac61b4cef72dd65c4f435b83d30008a638c685ca2a"
+        },
+        "previous_measurement": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-three-way-v1139/measurement.json",
+          "bytes": 308523,
+          "sha256": "58aa25975e9b5b48db738a2109b932fb84e2be211c6fe01342e47f4763d91feb"
+        },
+        "historical_capture_transfer": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-canonical-native-access/docs/validation/canonical-knucleotide-capture-transfer-footprint-v1.json",
+          "bytes": 22230,
+          "sha256": "e37c658def285a62caf5b45386604e133845083c4d4693671b5407eaa16955aa"
+        }
+      }
+    },
+    "v1139": {
+      "label": "Earlier separate diagnostic batch, not the current matched controls",
+      "source_snapshot": {
+        "base_commit": "41c754ae2f76c776c9d4cc3e7f5e6bcedd65f7c2",
+        "git_binary_patch_sha256": "cf580902f52149883abe2eedfea63aeaaf52c3594d29224e2179a03415c51db5",
+        "untracked": [
+          {
+            "path": "hosts/gpu/src/native_artifact/program_prefix_codegen_tests.rs",
+            "bytes": 3455,
+            "sha256": "696b6736e07ecca384af7a361da63751c8e3ceb93960eecb6fafe53de766ff26"
+          }
+        ],
+        "source_snapshot_sha256": "4cde7c5c1d5ababfbfbe59c14207304490e25d827dff62b3e814ac50923585b3"
+      },
+      "program_revision": "8f2e5731b9e8525a56e274ab6bf033425feedfba634a6b9960a289649cac7b60",
+      "summary": {
+        "10m": {
+          "secured-retained": {
+            "median_seconds": 0.068597542,
+            "minimum_seconds": 0.068328875,
+            "maximum_seconds": 0.069937542,
+            "median_peak_rss_bytes": 56229888,
+            "median_peak_footprint_bytes": 40420288,
+            "executable_bytes": 6842992
+          },
+          "streaming-v1136": {
+            "median_seconds": 0.078324271,
+            "minimum_seconds": 0.077857625,
+            "maximum_seconds": 0.079542458,
+            "median_peak_rss_bytes": 31014912,
+            "median_peak_footprint_bytes": 16925568,
+            "executable_bytes": 7095072
+          },
+          "streaming-v1139": {
+            "median_seconds": 0.073344188,
+            "minimum_seconds": 0.073205084,
+            "maximum_seconds": 0.074822625,
+            "median_peak_rss_bytes": 30998528,
+            "median_peak_footprint_bytes": 16925568,
+            "executable_bytes": 7095056
+          }
+        },
+        "125m": {
+          "secured-retained": {
+            "median_seconds": 0.6399472085,
+            "minimum_seconds": 0.633353208,
+            "maximum_seconds": 0.649206333,
+            "median_peak_rss_bytes": 481705984,
+            "median_peak_footprint_bytes": 466241344,
+            "executable_bytes": 6842992
+          },
+          "streaming-v1136": {
+            "median_seconds": 0.7152533755,
+            "minimum_seconds": 0.713217958,
+            "maximum_seconds": 0.723030459,
+            "median_peak_rss_bytes": 287621120,
+            "median_peak_footprint_bytes": 164791488,
+            "executable_bytes": 7095072
+          },
+          "streaming-v1139": {
+            "median_seconds": 0.6528499165,
+            "minimum_seconds": 0.651518125,
+            "maximum_seconds": 0.65523325,
+            "median_peak_rss_bytes": 287981568,
+            "median_peak_footprint_bytes": 164775104,
+            "executable_bytes": 7095056
+          }
+        }
+      },
+      "raw_evidence": {
+        "build": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1139/result.json",
+          "bytes": 28563,
+          "sha256": "229b75adbfad25d453d13dac61b4cef72dd65c4f435b83d30008a638c685ca2a"
+        },
+        "measurement": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-three-way-v1139/measurement.json",
+          "bytes": 308523,
+          "sha256": "58aa25975e9b5b48db738a2109b932fb84e2be211c6fe01342e47f4763d91feb"
+        }
+      }
+    },
+    "v1136": {
+      "label": "Earlier helper-only dirty-source diagnostic reusing the qualified v1134 Cranelift object; not fresh generation or the current matched batch.",
+      "source_snapshot": {
+        "base_commit": "7227f235630bb6c571b2e0652f274b80010546c2",
+        "git_binary_patch_sha256": "9e44f8669882e79a622db2e19b6930d455f91a4cc9c18376b658cf756ec98aff",
+        "untracked": [],
+        "source_snapshot_sha256": "6a56b267c5acd6b189c2e17e5bbca5f675f64e7677b9893c865e7066acf32f00"
+      },
+      "retained_cranelift_object": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-standard125m-release-v1134/project-0/program.o",
+        "sha256": "a1530b7de292492907159ccba1c7fa94e3b0ba4d6327821e2d67632e4c865a65"
+      },
+      "summary": {
+        "10m": {
+          "secured-retained": {
+            "median_seconds": 0.068057479,
+            "minimum_seconds": 0.067884625,
+            "maximum_seconds": 0.070270625,
+            "median_peak_rss_bytes": 57131008,
+            "executable_bytes": 6842992
+          },
+          "streaming-qualified": {
+            "median_seconds": 0.0903354165,
+            "minimum_seconds": 0.0901235,
+            "maximum_seconds": 0.090687583,
+            "median_peak_rss_bytes": 30998528,
+            "executable_bytes": 7141408
+          },
+          "streaming-diagnostic": {
+            "median_seconds": 0.077734333,
+            "minimum_seconds": 0.077607,
+            "maximum_seconds": 0.0779125,
+            "median_peak_rss_bytes": 31014912,
+            "executable_bytes": 7095072
+          }
+        },
+        "125m": {
+          "secured-retained": {
+            "median_seconds": 0.630468125,
+            "minimum_seconds": 0.627907291,
+            "maximum_seconds": 0.647992375,
+            "median_peak_rss_bytes": 506511360,
+            "executable_bytes": 6842992
+          },
+          "streaming-qualified": {
+            "median_seconds": 0.8804567915,
+            "minimum_seconds": 0.879621042,
+            "maximum_seconds": 0.884902042,
+            "median_peak_rss_bytes": 287260672,
+            "executable_bytes": 7141408
+          },
+          "streaming-diagnostic": {
+            "median_seconds": 0.7111716045,
+            "minimum_seconds": 0.710190917,
+            "maximum_seconds": 0.716426166,
+            "median_peak_rss_bytes": 287424512,
+            "executable_bytes": 7095072
+          }
+        }
+      },
+      "raw_evidence": {
+        "build": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-build-v1136/result.json",
+          "sha256": "8fa08f718fe0b6d369b44c31112ab9ae3748b01c6f7a3c77a782c5bb1ff6d983"
+        },
+        "measurement": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-diagnostic-three-way-v1136/measurement.json",
+          "sha256": "aeaf4014538f773151e4bdda00c33666b1e910f5ebd530d4925b1e106a9a4b2a"
+        },
+        "profile": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-full125m-profile-v1135/profile-analysis-symbolized-v1135.json",
+          "sha256": "5e2e8b83271c770178a3386916c8e5cf76ced6b3eface98c2d3f049bdc6d5052"
+        }
+      }
+    },
+    "v1134": {
+      "label": "Earlier clean-source qualified initial streaming and its separate matched legacy/secured/streaming batch; not the current implementation.",
+      "source_revision": "7227f235630bb6c571b2e0652f274b80010546c2",
+      "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+      "retained_cranelift_object": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-standard125m-release-v1134/project-0/program.o",
+        "sha256": "a1530b7de292492907159ccba1c7fa94e3b0ba4d6327821e2d67632e4c865a65"
+      },
+      "summary": {
+        "10m": {
+          "legacy-direct": {
+            "median_seconds": 0.091837875,
+            "minimum_seconds": 0.091148625,
+            "maximum_seconds": 0.107720166,
+            "median_peak_rss_bytes": 55214080,
+            "executable_bytes": 3159168
+          },
+          "secured-retained": {
+            "median_seconds": 0.0685023125,
+            "minimum_seconds": 0.06826775,
+            "maximum_seconds": 0.070093042,
+            "median_peak_rss_bytes": 55869440,
+            "executable_bytes": 6842992
+          },
+          "secured-streaming": {
+            "median_seconds": 0.090655146,
+            "minimum_seconds": 0.0902635,
+            "maximum_seconds": 0.091299291,
+            "median_peak_rss_bytes": 30998528,
+            "executable_bytes": 7141408
+          }
+        },
+        "125m": {
+          "legacy-direct": {
+            "median_seconds": 0.975588875,
+            "minimum_seconds": 0.964342792,
+            "maximum_seconds": 0.99318475,
+            "median_peak_rss_bytes": 228917248,
+            "executable_bytes": 3159168
+          },
+          "secured-retained": {
+            "median_seconds": 0.6462101665,
+            "minimum_seconds": 0.637124792,
+            "maximum_seconds": 0.652234042,
+            "median_peak_rss_bytes": 481705984,
+            "executable_bytes": 6842992
+          },
+          "secured-streaming": {
+            "median_seconds": 0.8868122085,
+            "minimum_seconds": 0.885090917,
+            "maximum_seconds": 0.896476125,
+            "median_peak_rss_bytes": 287834112,
+            "executable_bytes": 7141408
+          }
+        }
+      },
+      "raw_evidence": {
+        "qualification": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-standard125m-release-v1134/hosted-linked-result.json",
+          "sha256": "14391e7a58654bf5c28cba90fc28a15830f178512a14ade8edfa1611598d893c"
+        },
+        "measurement": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/streaming-three-way-v1134/measurement.json",
+          "sha256": "32a39dba5e5f54292e7a619b70356d6a6f6bc20fc39d99c25dd87edef43b2848"
+        }
+      }
+    }
+  }
+}

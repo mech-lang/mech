@@ -34,8 +34,20 @@ mod range_cursor_qualification;
 #[path = "support/canonical_program_text_join_sink.rs"]
 mod text_join_sink_qualification;
 
+#[path = "support/canonical_program_selected_join.rs"]
+mod selected_join_qualification;
+
+#[path = "support/canonical_program_text_line_matrix.rs"]
+mod text_line_matrix_qualification;
+
+#[path = "support/canonical_program_line_reads.rs"]
+mod line_read_qualification;
+
 #[path = "support/canonical_program_histogram_query.rs"]
 mod histogram_query_qualification;
+
+#[path = "support/canonical_program_window_round.rs"]
+mod window_round_qualification;
 
 #[path = "support/canonical_program_histogram_sink.rs"]
 mod histogram_sink_qualification;
@@ -51,8 +63,12 @@ mod access_qualification;
 #[path = "support/canonical_program_nested_conversion.rs"]
 mod nested_conversion_qualification;
 
+#[path = "support/canonical_program_borrowed_strings.rs"]
+mod borrowed_string_qualification;
 #[path = "support/canonical_program_tail.rs"]
 mod tail_qualification;
+#[path = "support/canonical_program_text_length.rs"]
+mod text_length_qualification;
 
 #[path = "support/canonical_program_activation.rs"]
 mod activation_qualification;
@@ -662,3 +678,7 @@ fn generated_arithmetic_denial_after_a_library_call_keeps_prior_typed_roots() {
         equal(&artifact, &output, &prior);
     }
 }
+#[path = "support/canonical_program_closed_tail.rs"]
+mod closed_tail_qualification;
+#[path = "support/canonical_program_string_matrix.rs"]
+mod string_matrix_qualification;

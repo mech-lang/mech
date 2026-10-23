@@ -7,10 +7,16 @@ use std::{
 };
 #[path = "canonical_hosted_full_config.rs"]
 mod config;
+#[path = "canonical_hosted_full_attempt.rs"]
+mod execution;
+#[path = "canonical_hosted_full_policy.rs"]
+mod policy;
 #[path = "canonical_hosted_full_process.rs"]
 mod process;
 #[path = "canonical_hosted_full_stages.rs"]
 mod stages;
+use execution::{attempt, report_issues};
+use policy::{RunSet, TrialPolicy};
 
 struct Binary {
     variant: u64,
@@ -30,9 +36,24 @@ impl Inputs {
         self.launch.check()
     }
 }
-fn binaries(results: &[Value]) -> Result<Vec<Binary>, String> {
+fn binaries(results: &[Value], set: RunSet) -> Result<Vec<Binary>, String> {
     if results.len() != 2 {
         return Err("expected both already-qualified binaries".into());
+    }
+    if set != RunSet::Production {
+        for field in [
+            "binary_sha256",
+            "source_sha256",
+            "bytecode_sha256",
+            "object_sha256",
+            "identity_sha256",
+        ] {
+            if results[0][field].as_str().is_none() || results[0][field] != results[1][field] {
+                return Err(format!(
+                    "comparison requires the SAME original/decoded {field}"
+                ));
+            }
+        }
     }
     results
         .iter()
@@ -70,146 +91,6 @@ fn binaries(results: &[Value]) -> Result<Vec<Binary>, String> {
         })
         .collect()
 }
-fn report_issues(report: &Value, revision: &str, launch: &str, input_cap: u64) -> Vec<String> {
-    let mut issues = Vec::new();
-    for (key, expected) in [
-        ("schema", json!("mech.canonical-hosted-native-execution.v1")),
-        (
-            "route",
-            json!("canonical-artifact-program-object-secured-cli"),
-        ),
-        ("policy", json!("secured")),
-        ("program_revision", json!(revision)),
-        ("launch_sha256", json!(launch)),
-        ("native_aot", json!(true)),
-        ("hosted_phases", json!("admit-activate-capture-resume")),
-        ("source_parser", json!(false)),
-        ("jit", json!(false)),
-        ("resident_body_evaluation", json!(false)),
-        ("shutdown", json!("completed")),
-        ("requirements", json!(2)),
-        ("observations", json!(1)),
-        ("effects", json!(1)),
-        ("input_acquisition_byte_cap", json!(input_cap)),
-    ] {
-        if report[key] != expected {
-            issues.push(format!("report {key} differs"));
-        }
-    }
-    for key in [
-        "native_work",
-        "native_comparison_work",
-        "native_visits",
-        "native_transport_bytes",
-        "host_result_carrier_bytes",
-    ] {
-        if report[key].as_u64().is_none() {
-            issues.push(format!("report {key} missing"));
-        }
-    }
-    issues
-}
-fn attempt(
-    binary: &Binary,
-    inputs: &Inputs,
-    policy: &Value,
-    directory: &Path,
-    label: &str,
-    deadline: u64,
-    timing: bool,
-) -> Value {
-    let before = inputs.check().and_then(|_| {
-        if process::hash_file(&binary.path)? != binary.sha256 {
-            Err("binary changed before invocation".into())
-        } else {
-            Ok(())
-        }
-    });
-    if let Err(error) = before {
-        return json!({"variant":binary.variant, "label":label, "ok":false,
-            "process_started":false, "driver_error":error});
-    }
-    let capture = match process::invoke(
-        &binary.path,
-        &inputs.launch.path,
-        &inputs.input.path,
-        directory,
-        label,
-        deadline,
-    ) {
-        Ok(capture) => capture,
-        Err(error) => {
-            return json!({"variant":binary.variant, "label":label, "ok":false,
-            "driver_error":error, "stdout_path":directory.join(format!("{label}.stdout")),
-            "stderr_path":directory.join(format!("{label}.stderr")),
-            "report_path":directory.join(format!("{label}.report.json"))});
-        }
-    };
-    let mut issues = Vec::new();
-    if !capture.success {
-        issues.push("process did not succeed".into());
-    }
-    if capture.timed_out {
-        issues.push("process deadline exceeded".into());
-    }
-    let observed = (|| -> Result<Value, String> {
-        let stdout_bytes = fs::metadata(&capture.stdout)
-            .map_err(|e| e.to_string())?
-            .len();
-        let stderr_bytes = fs::metadata(&capture.stderr)
-            .map_err(|e| e.to_string())?
-            .len();
-        if !process::equal_files(&capture.stdout, &inputs.oracle.path)? {
-            issues.push("stdout differs from exact oracle".into());
-        }
-        if stderr_bytes != 0 {
-            issues.push("stderr is not empty".into());
-        }
-        let report = if capture.report.exists() {
-            match serde_json::from_slice::<Value>(&process::small_file(&capture.report)?) {
-                Ok(report) => {
-                    issues.extend(report_issues(
-                        &report,
-                        &binary.revision,
-                        &inputs.launch.sha256,
-                        policy["input_text_bytes"].as_u64().unwrap(),
-                    ));
-                    report
-                }
-                Err(error) => {
-                    issues.push(format!("report JSON: {error}"));
-                    Value::Null
-                }
-            }
-        } else {
-            issues.push("no success report published".into());
-            Value::Null
-        };
-        inputs.check()?;
-        if process::hash_file(&binary.path)? != binary.sha256 {
-            return Err("binary changed during invocation".into());
-        }
-        Ok(
-            json!({"stdout_bytes":stdout_bytes, "stderr_bytes":stderr_bytes,
-            "stdout_sha256":process::hash_file(&capture.stdout)?,
-            "stderr_sha256":process::hash_file(&capture.stderr)?, "report":report,
-            "report_sha256":if capture.report.exists() {Some(process::hash_file(&capture.report)?)} else {None}}),
-        )
-    })();
-    let observed = match observed {
-        Ok(value) => value,
-        Err(error) => {
-            issues.push(error);
-            Value::Null
-        }
-    };
-    json!({"variant":binary.variant, "label":label, "ok":issues.is_empty(),
-        "process_started":true, "exit":capture.exit, "deadline_exceeded":capture.timed_out,
-        "status":capture.status,
-        "issues":issues, "stdout_path":capture.stdout, "stderr_path":capture.stderr,
-        "report_path":capture.report, "observed":observed, "binary":binary.path,
-        "binary_sha256":binary.sha256, "elapsed_ns":if timing {Some(capture.elapsed_ns)} else {None}})
-}
 fn save(directory: &Path, value: &Value) {
     fs::write(
         directory.join("full-input-result.json"),
@@ -217,12 +98,8 @@ fn save(directory: &Path, value: &Value) {
     )
     .unwrap();
 }
-fn may_time(rows: &[Value]) -> bool {
-    rows.len() == 2
-        && rows
-            .iter()
-            .enumerate()
-            .all(|(index, row)| row["variant"].as_u64() == Some(index as u64) && row["ok"] == true)
+fn may_time(rows: &[Value], set: RunSet) -> bool {
+    set.qualifies(rows)
 }
 fn execute(
     profile: Profile,
@@ -230,6 +107,7 @@ fn execute(
     results: &[Value],
     configuration: &std::ffi::OsStr,
     stop_on_failure: bool,
+    set: RunSet,
 ) -> Result<Value, String> {
     if !profile.release() {
         return Err("full-input driver requires actual release qualifier binaries".into());
@@ -241,8 +119,7 @@ fn execute(
     let owned = directory.join("owned-inputs");
     fs::create_dir(&owned).map_err(|e| e.to_string())?;
     let launch = process::freeze(&config.launch, &owned.join("launch.json"), 65536)?;
-    let policy: Value =
-        serde_json::from_slice(&process::small_file(&launch.path)?).map_err(|e| e.to_string())?;
+    let policy = policy::decode(&process::small_file(&launch.path)?)?;
     config::policy(&policy, &super::launch(), 0, 0)?;
     let input = process::freeze(
         &config.input,
@@ -260,15 +137,17 @@ fn execute(
         oracle,
         launch,
     };
-    let binaries = binaries(results)?;
+    let binaries = binaries(results, set)?;
+    let launches = set.launches(&inputs, &policy, &owned)?;
+    let stop_on_failure = stop_on_failure || set != RunSet::Production;
     let mut receipt = json!({
-        "schema":"mech.canonical-hosted-full-input-result.v1", "ok":false, "qualified":false,
+        "schema":set.result_schema(), "ok":false, "qualified":false,
         "configuration_path":config.path, "configuration_sha256":super::hash(&bytes),
         "external_input_label":config.external_label, "external_label_is_size_authority":false,
         "input":inputs.input.evidence(&config.input.path), "oracle":inputs.oracle.evidence(&config.oracle.path),
         "launch":inputs.launch.evidence(&config.launch.path), "finite_scale_policy":policy,
         "small_gate_policy_unchanged":true, "rust_profile":"release",
-        "object_optimization":"none", "whole_program_optimized":false,
+        "object_optimization":"speed", "whole_program_optimized":false,
         "complete_source_sha256":super::hash(super::FULL.as_bytes()),
         "qualification":[], "samples":[], "timing_samples":0, "timing_attempts":0,
         "timed_process_starts_confirmed":0, "timed_process_starts_unknown":0,
@@ -279,63 +158,96 @@ fn execute(
         "cache_state":"integrity prehash and mandatory correctness runs deliberately warm executable/input filesystem caches; warm-cache fresh-process end-to-end wall time, not cold-cache or kernel timing",
         "no_overlap":"all owned build/pin-mutation jobs completed before this driver; samples require explicit operator SERIAL=1 attestation, not an ambient process-scan claim",
     });
+    if set != RunSet::Production {
+        receipt["policy_launches"] = json!(
+            launches
+                .iter()
+                .map(|(mode, trial)| json!({
+            "policy":mode.name(),"route":mode.route(),
+            "base_launch":inputs.launch.evidence(&config.launch.path),
+            "launch":trial.launch.evidence(&trial.launch.path)}))
+                .collect::<Vec<_>>()
+        );
+        receipt["expected_qualification_trials"] = json!(set.trials());
+        receipt["requested_samples_per_variant_and_policy"] = json!(config.samples);
+        receipt["qualification_policy_order"] = json!(
+            set.modes()
+                .iter()
+                .map(|mode| mode.name())
+                .collect::<Vec<_>>()
+        );
+        receipt["timing_policy_order"] =
+            json!("selected policy order reverses on alternate rounds");
+    }
     let mut qualified = Vec::new();
     for binary in &binaries {
-        qualified.push(attempt(
-            binary,
-            &inputs,
-            &policy,
-            directory,
-            &format!("qualify-{}", binary.variant),
-            config.deadline_seconds,
-            false,
-        ));
-        receipt["qualification"] = json!(qualified);
-        save(directory, &receipt); // Real exit/typed denial is durable BEFORE fail.
-        if stop_on_failure && qualified.last().is_some_and(|row| row["ok"] != true) {
-            receipt["qualification_passed"] = json!(false);
-            save(directory, &receipt);
-            return Ok(receipt);
+        for (mode, inputs) in &launches {
+            qualified.push(attempt(
+                binary,
+                inputs,
+                &policy,
+                directory,
+                &mode.label(&format!("qualify-{}", binary.variant)),
+                config.deadline_seconds,
+                false,
+                *mode,
+            ));
+            receipt["qualification"] = json!(qualified);
+            save(directory, &receipt); // Actual exit/typed denial is durable BEFORE fail.
+            if stop_on_failure && qualified.last().is_some_and(|row| row["ok"] != true) {
+                receipt["qualification_passed"] = json!(false);
+                save(directory, &receipt);
+                return Ok(receipt);
+            }
         }
     }
-    receipt["qualification_passed"] = json!(may_time(&qualified));
-    if !may_time(&qualified) {
+    receipt["qualification_passed"] = json!(may_time(&qualified, set));
+    if !may_time(&qualified, set) {
+        if set != RunSet::Production && qualified.iter().all(|row| row["ok"] == true) {
+            receipt["qualification_error"] =
+                json!("variant/policy coverage or native accounting differs");
+        }
         save(directory, &receipt);
         return Ok(receipt);
     }
     let mut samples = Vec::new();
     for round in 0..config.samples {
         for binary in &binaries {
-            let row = attempt(
-                binary,
-                &inputs,
-                &policy,
-                directory,
-                &format!("sample-{round}-{}", binary.variant),
-                config.deadline_seconds,
-                true,
-            );
-            let ok = row["ok"] == true;
-            samples.push(row);
-            receipt["samples"] = json!(samples);
-            receipt["timing_attempts"] = json!(samples.len());
-            receipt["timed_process_starts_confirmed"] = json!(
-                samples
-                    .iter()
-                    .filter(|row| row["process_started"] == true)
-                    .count()
-            );
-            receipt["timed_process_starts_unknown"] = json!(
-                samples
-                    .iter()
-                    .filter(|row| row["process_started"].is_null())
-                    .count()
-            );
-            receipt["successful_timed_samples"] =
-                json!(samples.iter().filter(|row| row["ok"] == true).count());
-            save(directory, &receipt);
-            if !ok {
-                return Ok(receipt);
+            for offset in 0..launches.len() {
+                let index = set.sample_slot(round, offset);
+                let (mode, inputs) = &launches[index];
+                let row = attempt(
+                    binary,
+                    inputs,
+                    &policy,
+                    directory,
+                    &mode.label(&format!("sample-{round}-{}", binary.variant)),
+                    config.deadline_seconds,
+                    true,
+                    *mode,
+                );
+                let ok = row["ok"] == true;
+                samples.push(row);
+                receipt["samples"] = json!(samples);
+                receipt["timing_attempts"] = json!(samples.len());
+                receipt["timed_process_starts_confirmed"] = json!(
+                    samples
+                        .iter()
+                        .filter(|row| row["process_started"] == true)
+                        .count()
+                );
+                receipt["timed_process_starts_unknown"] = json!(
+                    samples
+                        .iter()
+                        .filter(|row| row["process_started"].is_null())
+                        .count()
+                );
+                receipt["successful_timed_samples"] =
+                    json!(samples.iter().filter(|row| row["ok"] == true).count());
+                save(directory, &receipt);
+                if !ok {
+                    return Ok(receipt);
+                }
             }
         }
     }
@@ -345,16 +257,7 @@ fn execute(
     receipt["timing_summary"] = json!(
         binaries
             .iter()
-            .map(|binary| {
-                let mut ns = samples
-                    .iter()
-                    .filter(|row| row["variant"] == binary.variant)
-                    .map(|row| row["elapsed_ns"].as_u64().unwrap())
-                    .collect::<Vec<_>>();
-                ns.sort_unstable();
-                json!({"variant":binary.variant, "samples":ns.len(), "min_ns":ns.first(),
-            "median_upper_ns":ns.get(ns.len()/2), "max_ns":ns.last()})
-            })
+            .flat_map(|binary| set.summaries(binary.variant, &samples))
             .collect::<Vec<_>>()
     );
     save(directory, &receipt);
@@ -362,7 +265,30 @@ fn execute(
 }
 /// Called only after BOTH builds and ALL pin-mutation/recovery builds ended.
 pub(super) fn run(profile: Profile, evidence: &Path, results: &[Value]) -> Value {
-    if let Some(receipt) = stages::run_if_configured(profile, evidence, results) {
+    run_for(profile, evidence, results, RunSet::Production)
+}
+#[cfg(feature = "canonical-native-benchmark-policy")]
+pub(super) fn run_comparison(profile: Profile, evidence: &Path, results: &[Value]) -> Value {
+    run_for(profile, evidence, results, RunSet::BenchmarkComparison)
+}
+#[cfg(feature = "canonical-native-benchmark-policy")]
+pub(super) fn comparison_control(
+    profile: Profile,
+    directory: &Path,
+    results: &[Value],
+    configuration: &std::ffi::OsStr,
+) -> Result<Value, String> {
+    execute(
+        profile,
+        directory,
+        results,
+        configuration,
+        true,
+        RunSet::BenchmarkComparison,
+    )
+}
+fn run_for(profile: Profile, evidence: &Path, results: &[Value], set: RunSet) -> Value {
+    if let Some(receipt) = stages::run_if_configured(profile, evidence, results, set) {
         return receipt;
     }
     let Some(configuration) = env::var_os(config::ENV) else {
@@ -375,12 +301,13 @@ pub(super) fn run(profile: Profile, evidence: &Path, results: &[Value]) -> Value
         serde_json::to_vec_pretty(results).unwrap(),
     )
     .unwrap();
-    let receipt = execute(profile, &directory, results, &configuration, false).unwrap_or_else(|error| {
-        json!({"schema":"mech.canonical-hosted-full-input-result.v1", "ok":false, "qualified":false,
+    let receipt =
+        execute(profile, &directory, results, &configuration, false, set).unwrap_or_else(|error| {
+            json!({"schema":set.result_schema(), "ok":false, "qualified":false,
             "preflight_error":error, "qualification":[], "samples":[], "timing_samples":0,
             "timing_attempts":0, "timed_process_starts_confirmed":0,
             "timed_process_starts_unknown":0, "successful_timed_samples":0})
-    });
+        });
     save(&directory, &receipt);
     assert_eq!(
         receipt["ok"],
@@ -394,3 +321,7 @@ pub(super) fn run(profile: Profile, evidence: &Path, results: &[Value]) -> Value
 #[cfg(test)]
 #[path = "canonical_hosted_full_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "canonical_hosted_full_receipt_tests.rs"]
+mod receipt_tests;

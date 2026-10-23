@@ -1,0 +1,112 @@
+{
+  "schema": "mech.canonical-knucleotide-string-map-recovery.v1",
+  "status": "PARTIAL_RECOVERY_STILL_PERFORMANCE_BLOCKING",
+  "measured_source_commit": "9628699565e844713f1bdaff7bda0a62eefbea01",
+  "platform": "same Apple M1 as the retained local old/new 10M comparison",
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "input": {
+    "fasta_n": 2000000,
+    "three_bases": 10000000,
+    "bytes": 20333411,
+    "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b",
+    "oracle_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+  },
+  "unchanged_launch_sha256": "ec79f588345186db7f8646e52158d494628c6eb69b94ebdb269ddcf5dbe1c87a",
+  "measurement": {
+    "route": "canonical-artifact-program-object-secured-cli",
+    "policy": "secured",
+    "rust_optimization": "3",
+    "object_optimization": "speed",
+    "abi": 8,
+    "typed_ir": 14,
+    "work_policy": 24,
+    "binary_sha256_both_variants": "f068910293731ed6da2cc4b6b69bbbaf10b4e9b427c92e8ccec87cf2fca162b3",
+    "object_sha256_both_variants": "9b46d3b474c837d7a804d42254e5d5cdba1047fe451ad2b0ca416fd0ebb5bf27",
+    "identity_sha256_both_variants": "a8b96f50d941fcb16e60eb6f908f94fc8d4af023ee83bdfa0df99aa312e8f728",
+    "raw_samples_ns": {
+      "original": [
+        9635080917
+      ],
+      "decoded": [
+        9628706708
+      ]
+    },
+    "large_correctness_processes": 2,
+    "successful_timing_samples": 2,
+    "exact_output_all_four_processes": true,
+    "native_visits_all_four": 13000661,
+    "native_work_all_four": 666362554330,
+    "native_comparison_work_all_four": 442528830,
+    "observations": 1,
+    "effects": 1,
+    "source_parser": false,
+    "jit": false,
+    "resident_body_evaluation": false,
+    "scope": "Warm-cache fresh-process spawn through observed child exit, including CLI input/output/report; 1ms exit polling. Build, hashes and parent validation excluded. One sample per variant, not a multi-sample median or final qualification."
+  },
+  "same_input_baselines_seconds": {
+    "old_selected_direct_median_of_7": 0.092041625,
+    "old_secured_host_median_of_7": 0.123658291,
+    "prior_canonical_original_secured_median_of_3": 73.536783875,
+    "previous_window_query_original_secured_single_sample": 34.255289333,
+    "previous_histogram_original_secured_single_sample": 17.149854292
+  },
+  "comparison": {
+    "speedup_from_previous_histogram_sample": 1.779938792391566,
+    "slowdown_against_old_direct_median": 104.68177758704282,
+    "visits_removed_from_previous": 60000000
+  },
+  "implementation": [
+    "General closed String iteration -> actual selected Map entry -> TextJoin proof; complete CFG and sole-use/immutable-capture checks reject extra operations, filters, consumers or loops. No benchmark/source/name/hash specialization.",
+    "For ASCII without CRLF, empty separator and matching single-byte map entries, bind the real source and Map owners, construct a lookup table from actual dictionary entries, reserve output/scratch and finite whole-loop work, then execute an emitted callback-free native byte loop.",
+    "Unsupported representations use the ordinary canonical CFG. Empty input preserves lazy map access. Missing keys invoke the original selected access at the first missing position, retain its error origin and discard the private partial output.",
+    "Canonical TextJoin shape and result publication remain. Genuine frozen source generation and both owner roots stay pinned through native writes. The same cumulative budgets and atomic output apply.",
+    "ONE host round still owns authorize/capture, compiled computation, staging and commit. Native regions are not additional security rounds."
+  ],
+  "fresh_profiles": {
+    "scope": "Exact retained executable, same input/launch/oracle; CPU stack-sampling diagnostic, NOT a timing sample. Actual output matched.",
+    "current_9_6s": {
+      "main_thread_stacks": 7456,
+      "runtime_helper_percent": 95.8422746781116,
+      "per_operation_admission_percent": 2.2398068669527897,
+      "compiled_window_loops_percent": 1.4082618025751072,
+      "compiled_string_map_loop_percent": 0.06706008583690987,
+      "maintained_library_category_percent": 78.2725321888412,
+      "grapheme_iterator_inclusive_percent": 20.52038626609442,
+      "text_length_inclusive_percent": 17.288090128755364,
+      "enum_pack_inclusive_percent": 7.349785407725322
+    },
+    "caveat": "Helpers include real computation as well as bookkeeping. Percentages are sample proportions, not exact causal wall-time attribution. Inclusive functions overlap; ancestor categories are disjoint but heuristic. Inlining/deduplicated symbols limit detail.",
+    "next": "Record traversal repeatedly calls selected String length/selection, matrix access and scalar-payload FSM packing. The new map loop and existing window loops together are under 1.5% of samples. Prioritize reusable native lowering of remaining typed control/data access; do not treat all helper time as pure security overhead."
+  },
+  "verification": {
+    "regressions": "Five executed focused String-map tests and two complete actual secured-host tests passed at current implementation. Covers original/decoded/reference parity, constant callback count, ASCII/NUL/DEL, empty input/map, first missing-key origin and atomic failure, Unicode/CRLF and replacement/separator fallback, finite work denial and recovery.",
+    "guards": "Production routing, unsafe boundaries, module layout, native build analysis layout, format and diff checks passed.",
+    "qualification": "Actual pinned release harness passed, all source/input/harness pins unchanged; owned process cleanup complete. 416.686s total qualification/build duration is not a benchmark sample.",
+    "physical_audit": "v716 independently reconciles all four raw streams/reports, exact output, binaries, object identities, manifest pins, read-only owned inputs, root Rust release profiles and measured samples."
+  },
+  "local_evidence": {
+    "root": "tmp/pr-stack-evidence/",
+    "full_result": {
+      "path": "string-map-recovery-10m-release-v715/full-input/full-input-result.json",
+      "sha256": "5d6388c5ea3a493252b2f8e7b0edce0fbee73fc43cd9c7c227ae52165795b87a"
+    },
+    "linked_result": {
+      "path": "string-map-recovery-10m-release-v715/hosted-linked-result.json",
+      "sha256": "fc776cd1c76beb43690967915fd7de6b31c551bc6f88292e16ae0764993e9785"
+    },
+    "audit": {
+      "path": "audit-string-map-recovery-v716-result.json",
+      "sha256": "0fe7fb1bb8b00833c874aea714f7aabfd1948f7a0f164942bd2077128323ebdb"
+    },
+    "profile": {
+      "path": "string-map-recovery-cpu-profile-v717/profile-analysis.json",
+      "sha256": "9bc2630eda0ffeb6c8499c28075221bbdfba4ad172fdc00474f87f3762f75a58"
+    },
+    "raw_profile": {
+      "path": "string-map-recovery-cpu-profile-v717/sample.txt",
+      "sha256": "53aa64f31dd04ac142edd6a8b27dcdc1e74bd9b123753d685695c892ae2bcf00"
+    }
+  },
+  "remaining": "Still roughly 105x old same-input direct I/O; 13 million per-operation visits remain. Full125M remains unqualified after the prior fixed temporary-memory denial. No cap increase, changed oracle, language ranking, next benchmark, automatic ready or merge."
+}

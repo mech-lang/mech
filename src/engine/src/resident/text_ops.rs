@@ -10,7 +10,7 @@ use mech_core::{
     SchemaId, SchemaKey, ShapeInstance, ShapeRule, ValueData, ValueDataDraft, ValueDraft,
     snapshot::{
         SequenceView, SnapshotCanonicalizationBudget, SnapshotValidationContext,
-        prospective_string_value_footprint,
+        StringMatrixSnapshotConstructor, prospective_string_value_footprint,
     },
 };
 use std::sync::Arc;
@@ -235,6 +235,35 @@ fn copy_text(source: &str) -> Result<String, ResidentKernelError> {
     result.push_str(source);
     Ok(result)
 }
+
+/// Shared geometry for the ordinary constructor and a compiler-private view.
+/// The caller must admit the delimiter scan and declared-shape solver first.
+pub(in crate::resident) fn line_shape(
+    kernel: &BoundResidentKernel,
+    text: &str,
+) -> Result<(usize, ShapeInstance), ResidentKernelError> {
+    let metadata = kernel
+        .snapshot_output()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schema = schemas
+        .get(metadata.schema)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let count = primitives::line_count(text);
+    Ok((count, line_shape_from_count(schema, count)?))
+}
+
+/// Resolve the actual declared line-matrix schema from an established final
+/// count. Incremental physical availability is never a language shape.
+pub(in crate::resident) fn line_shape_from_count(
+    schema: &mech_core::Schema,
+    count: usize,
+) -> Result<ShapeInstance, ResidentKernelError> {
+    mech_core::shape_for_resolved_extents(schema, &[1, budget::checked_u64(count)?])
+        .map_err(|_| ResidentKernelError::InvalidShape)
+}
 fn execute_lines(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -275,9 +304,7 @@ fn execute_lines(
     )
     .admit()?
     .into_plan();
-    let count = text.lines().count();
-    let shape = mech_core::shape_for_resolved_extents(schema, &[1, budget::checked_u64(count)?])
-        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let (count, shape) = line_shape(kernel, text)?;
     let prospective = prospective_string_value_footprint(
         shape.parameter_values().len(),
         true,
@@ -300,8 +327,8 @@ fn execute_lines(
     } else {
         0
     };
-    let draft_bytes = count
-        .checked_mul(core::mem::size_of::<ValueDataDraft>())
+    let staging_bytes = count
+        .checked_mul(core::mem::size_of::<Box<str>>())
         .ok_or(ResidentKernelError::InvalidShape)?;
     let finalization_work = budget::checked_u64(text.len())?
         .checked_mul(8)
@@ -313,28 +340,25 @@ fn execute_lines(
         comparison_work: measured.comparison_work().checked_add(comparison).ok_or(ResidentKernelError::InvalidShape)?,
         compute_work: measured.compute_work().checked_add(finalization_work).and_then(|work| work.checked_add(budget::checked_u64(scan).ok()?)).and_then(|work| work.checked_add(comparison)).ok_or(ResidentKernelError::InvalidShape)?,
         output_elements: count, output_bytes: prospective.retained_bytes,
-        temporary_bytes: prospective.retained_bytes.checked_add(budget::checked_u64(draft_bytes)?).and_then(|bytes| bytes.checked_add(shape_scratch)).ok_or(ResidentKernelError::InvalidShape)?,
+        temporary_bytes: prospective.retained_bytes.checked_add(budget::checked_u64(staging_bytes)?).and_then(|bytes| bytes.checked_add(shape_scratch)).ok_or(ResidentKernelError::InvalidShape)?,
         cloned_bytes: text.len().checked_mul(2).ok_or(ResidentKernelError::InvalidShape)?, retained_nodes: prospective.node_count.checked_mul(2).ok_or(ResidentKernelError::InvalidShape)?,
         ..budget::KernelCostEstimate::default()
     }).admit()?.into_plan();
+    let constructor =
+        StringMatrixSnapshotConstructor::bind(metadata.schema, shape, Arc::clone(schemas))
+            .map_err(|_| ResidentKernelError::InvalidOutput)?;
     let mut lines = Vec::new();
     lines
         .try_reserve_exact(count)
         .map_err(|_| ResidentKernelError::InvalidShape)?;
     for line in text.lines() {
-        lines.push(ValueDataDraft::String(copy_text(line)?));
+        lines.push(copy_text(line)?.into_boxed_str());
     }
-    let canonical = SnapshotCanonicalizationBudget::new(finalization_work);
-    let next = ValueDraft {
-        schema: metadata.schema,
-        shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
-        data: ValueDataDraft::Matrix(lines.into_boxed_slice()),
-    }
-    .finalize(
-        &SnapshotValidationContext::with_shared_schemas(schemas)
-            .with_canonicalization_budget(&canonical),
-    )
-    .map_err(|_| ResidentKernelError::InvalidOutput)?;
+    // Same canonical String sequence, built directly from its already-paid
+    // UTF-8 owners instead of a large generic draft array and repacking pass.
+    let next = constructor
+        .construct(lines.into_boxed_slice())
+        .map_err(|_| ResidentKernelError::InvalidOutput)?;
     let changed = match target.as_ref() {
         Some(previous) => !previous
             .snapshot_eq(schemas, &next, schemas)

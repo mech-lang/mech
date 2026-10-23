@@ -1,0 +1,83 @@
+{
+  "schema": "mech.canonical-knucleotide-compact-string-memory-progress.v1",
+  "status": "MEMORY_PROGRESS_CPU_PERFORMANCE_STILL_BLOCKING",
+  "measured_source_commit": "67a5d73583e21c69d14ddfca40f02e3e32d9b11d",
+  "platform": "Same Apple M1 as the old direct-I/O and canonical10M measurements",
+  "source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "input": {
+    "three_bases": 10000000,
+    "bytes": 20333411,
+    "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b",
+    "oracle_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5",
+    "unchanged_launch_sha256": "ec79f588345186db7f8646e52158d494628c6eb69b94ebdb269ddcf5dbe1c87a"
+  },
+  "measurement": {
+    "original_samples_ns": [500309875, 495613750, 495070166],
+    "decoded_samples_ns": [495082375, 496570250, 496478625],
+    "original_median_seconds": 0.495613750,
+    "decoded_median_seconds": 0.496478625,
+    "qualification_processes": 2,
+    "timed_processes": 6,
+    "all_eight_exact_output": true,
+    "route": "canonical-artifact-program-object-secured-cli",
+    "policy": "secured",
+    "native_visits": 474,
+    "native_work": 54299290682,
+    "native_comparison_work": 483362918,
+    "native_transport_bytes": 33552,
+    "host_result_carrier_bytes": 216,
+    "observations": 1,
+    "effects": 1,
+    "native_aot": true,
+    "jit": false,
+    "source_parser": false,
+    "resident_body_evaluation": false,
+    "shutdown": "completed",
+    "rust_optimization": "3",
+    "object_optimization": "speed",
+    "both_binaries_sha256": "5e9844eb97718cd245f329b9d70352b4e7012e8ee5c54fd64d7cf8490f97edfc",
+    "both_objects_sha256": "106f624ffc4f4fae7c7bc79d0189288e848d28ade62d90341fa41f0d24d953ea",
+    "both_identities_sha256": "a476df6b59b4a0d0c782cdd877e156752ba30731108908082fd974d1b0cbcd50",
+    "program_revision": "927dfc6ddfccbfb5d8c87376c453b2304a9039dc487d4bf650d10c882fb0ce7b",
+    "scope": "Retained v776 release binaries; serial warm-cache fresh-process spawnSync-through-observed-exit time including secured CLI capture/output/report. Build, hashing and parent checks excluded. Node synchronous observer differs from prior v763 Rust1ms polling; this is not a kernel or full125M timing.",
+    "conclusion": "Essentially unchanged versus prior0.4966s. This is memory progress, not a claimed CPU speedup or an isolated capability-overhead measurement."
+  },
+  "same_input_old_direct_median_of_seven_seconds": 0.092041625,
+  "slowdown_against_old_direct": 5.3846697078631545,
+  "full125M_unchanged_policy_gates": [
+    {
+      "source_commit": "35b2b36ccd5c7701fe8200525fcf602e721b44b3",
+      "stage": "v774",
+      "qualified": false,
+      "timing_samples": 0,
+      "both_variants_fail_before_commit": true,
+      "origin": "TextLines NodeId2",
+      "dimension": "TemporaryBytes",
+      "required": 2391669562,
+      "effective_limit": 1072785920,
+      "reason": "Compact construction was implemented but the obsolete generic draft/finalizer declaration still reserved its removed workspace.",
+      "result_sha256": "309e61790e44d82fd9e1433b599132de837449e4838dba16e0508f8433d0a736"
+    },
+    {
+      "source_commit": "67a5d73583e21c69d14ddfca40f02e3e32d9b11d",
+      "stage": "v776",
+      "qualified": false,
+      "timing_samples": 0,
+      "both_variants_fail_before_commit": true,
+      "origin": "MatrixRangeAccess NodeId5 block1 local1 (site140)",
+      "dimension": "TemporaryBytes",
+      "required": 1591668190,
+      "effective_limit": 1072556032,
+      "reason": "TextLines now passes after its workspace declaration matches its checked constructor; matrix slicing is the next materialization gate.",
+      "result_sha256": "c6e91bc5d1f27a9894467b6c433a0d0e7a4b73066586d161657e4c4eff6bd1e1"
+    }
+  ],
+  "verification": {
+    "measured_revision": "v775:116 generated and37 hosted tests passed,2 explicit ignored per suite; routing/layout/native-build-layout/unsafe/format/diff guards pass; owned cleanup complete.",
+    "review": "The cardinality error finding was answered/resolved with the ordinary ensure_cardinality helper and exact error-equivalence regression. Clean review6284032049 covers67a5; no ready or merge authorization.",
+    "audit": "v781 independently rehashes all8 raw outputs/reports, both executable/Object/identity pins and manifests, source/input/oracle/launch, actual release profiles, complete counters and medians. It also checks both failed full125M gates and parses back the emitted audit JSON.",
+    "measurement_sha256": "e13a3fe8e6ee645250165dca1b09de2652df611a028d8e7a46ac33e0423ea2f6",
+    "audit_sha256": "ed0bcd922d8d9266ba8e4a06ad198d6979b99fe5b2b910c36766d9b663cffd77"
+  },
+  "next_work": "Qualify compact canonical String-matrix selection under the same finite policy, then recover generic query/representation-scan CPU costs. No standard125M timing or completed performance-goal claim."
+}

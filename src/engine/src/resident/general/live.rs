@@ -7,6 +7,39 @@ use mech_core::{CallMemoryPlan, PortDirection, RegionPolicy, ResourceDemand, Val
 
 pub(super) use crate::memory_planner::has_invariant_resident_memory_facts as has_invariant_memory_facts;
 
+/// Ordinary callers retain incremental checks. Only the native call boundary
+/// can prepay a proved metadata scan using its same finite budget authorities.
+pub(super) trait MeasurementCheck {
+    fn check(
+        &mut self,
+        footprint: CurrentMemoryFootprint,
+        work: ResourceDemand,
+    ) -> Result<(), MemoryPlanError>;
+
+    fn try_metadata_scan(
+        &mut self,
+        _value: &Value,
+        _body: &mech_core::SchemaBody,
+        _footprint: CurrentMemoryFootprint,
+        _work: ResourceDemand,
+    ) -> Result<bool, MemoryPlanError> {
+        Ok(false)
+    }
+}
+
+impl<F> MeasurementCheck for F
+where
+    F: FnMut(CurrentMemoryFootprint, ResourceDemand) -> Result<(), MemoryPlanError>,
+{
+    fn check(
+        &mut self,
+        footprint: CurrentMemoryFootprint,
+        work: ResourceDemand,
+    ) -> Result<(), MemoryPlanError> {
+        self(footprint, work)
+    }
+}
+
 fn add(left: u64, right: u64) -> Result<u64, MemoryPlanError> {
     left.checked_add(right)
         .ok_or(MemoryPlanError::ArithmeticOverflow {
@@ -28,7 +61,7 @@ pub(super) fn footprint_with_check(
     descriptor: &mech_core::ResolvedValueDescriptor,
     _schemas: &mech_core::SchemaTable,
     work: &mut ResourceDemand,
-    check: &mut impl FnMut(CurrentMemoryFootprint, ResourceDemand) -> Result<(), MemoryPlanError>,
+    check: &mut impl MeasurementCheck,
 ) -> Result<CurrentMemoryFootprint, MemoryPlanError> {
     footprint_impl(value, descriptor, work, check, InputDataMemo::None)
 }
@@ -41,7 +74,7 @@ pub(super) fn footprint_with_data_check(
     value: ResidentValueRef<'_>,
     descriptor: &mech_core::ResolvedValueDescriptor,
     work: &mut ResourceDemand,
-    check: &mut impl FnMut(CurrentMemoryFootprint, ResourceDemand) -> Result<(), MemoryPlanError>,
+    check: &mut impl MeasurementCheck,
     transaction: &crate::resident::budget::native_turn_plan_cache::DataFootprintTransaction<'_>,
     ordinal: usize,
     key: mech_core::SchemaKey,
@@ -136,7 +169,7 @@ fn footprint_impl(
     value: ResidentValueRef<'_>,
     descriptor: &mech_core::ResolvedValueDescriptor,
     work: &mut ResourceDemand,
-    check: &mut impl FnMut(CurrentMemoryFootprint, ResourceDemand) -> Result<(), MemoryPlanError>,
+    check: &mut impl MeasurementCheck,
     memo: InputDataMemo<'_>,
 ) -> Result<CurrentMemoryFootprint, MemoryPlanError> {
     // Only a single native Snapshot input is a memo candidate. All other
@@ -163,7 +196,7 @@ fn footprint_impl(
                 result.retained_nodes = add(result.retained_nodes, 1)?;
                 // Reading a length is O(1), not a scan of the string contents.
                 work.work.compute = add(work.work.compute, 1)?;
-                check(result, *work)?;
+                check.check(result, *work)?;
             }
         }
         ResidentValueRef::Snapshot(values) => {
@@ -179,7 +212,7 @@ fn footprint_impl(
                     .entry(value.schema())
                     .ok_or(MemoryPlanError::DescriptorMismatch)?;
                 work.work.compute = add(work.work.compute, entry.canonical_bytes().len() as u64)?;
-                check(result, *work)?;
+                check.check(result, *work)?;
                 let schema = value
                     .validate_against(&owner)
                     .map_err(|_| MemoryPlanError::DescriptorMismatch)?;
@@ -203,12 +236,21 @@ fn footprint_impl(
                     add(core::mem::size_of::<Value>() as u64, shape_bytes)?,
                 )?;
                 result.retained_nodes = add(result.retained_nodes, 1)?;
+                // Memoized inputs retain their existing transaction protocol.
+                // This only coalesces the uncached, fixed-count metadata walk;
+                // Core still supplies every actual footprint chunk below.
+                let prepaid = matches!(memo, InputDataMemo::None)
+                    && check.try_metadata_scan(value, schema.body(), result, *work)?;
                 let consume = |chunk: mech_core::snapshot::ValueFootprint, compute| {
                     result.payload_bytes = add(result.payload_bytes, chunk.retained_bytes)?;
                     result.encoded_bytes = add(result.encoded_bytes, chunk.encoded_bytes)?;
                     result.retained_nodes = add(result.retained_nodes, chunk.node_count)?;
                     work.work.compute = add(work.work.compute, compute)?;
-                    check(result, *work)
+                    if prepaid {
+                        Ok(())
+                    } else {
+                        check.check(result, *work)
+                    }
                 };
                 memo.measure(value, schema.body(), consume)?;
             }
@@ -236,7 +278,7 @@ fn footprint_impl(
                 .ok_or(MemoryPlanError::TargetAddressOverflow)?
         }
     }
-    check(result, *work)?;
+    check.check(result, *work)?;
     Ok(result)
 }
 

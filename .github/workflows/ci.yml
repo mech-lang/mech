@@ -156,6 +156,7 @@ jobs:
             tests.ci.test_ci_impact \
             tests.ci.test_ci_full_contract \
             tests.ci.test_ci_test_inventory \
+            scripts.tests.test_native_macos_ci \
             tests.browser.harness.test_chrome_session \
             tests.browser.harness.test_completion_server
           python3 scripts/check-production-resident-routing.py
@@ -394,7 +395,9 @@ jobs:
     needs: impact
     if: needs.impact.outputs.owner_shards != '[]'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    # Runtime's cold build (6m11s) plus its tests (5m21s) exhausted 12m
+    # including setup/cleanup. Keep a finite budget with cold-run headroom.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:

@@ -29,6 +29,7 @@ REQUIRED = (
     "src/core/src/execution.rs",
     "src/core/src/snapshot/encoding.rs",
     "src/core/src/snapshot/validation.rs",
+    "src/core/src/snapshot/string_constructor.rs",
     "include/project.js",
     "machines/string/src/lib.rs",
     "machines/matrix/src/transpose.rs",
@@ -234,7 +235,6 @@ def frozen_rebind_returns_preserve_ownership(body: str, schema_owner: str) -> bo
         "schema_key": "target_entry.key()",
         "shape": "self.shape.clone()",
         "root": "self.root.clone()",
-        "resident_token": "self.resident_token",
         "schemas": compact(schema_owner.split(":", 1)[1]),
     }
     clones = shared = 0
@@ -450,6 +450,7 @@ def failures(root: Path) -> list[str]:
     snapshot = rust_code(sources.get("src/core/src/snapshot/validation.rs", ""))
     finalizers = list(function_bodies(snapshot, "finalize_data"))
     finalized_values = list(function_bodies(snapshot, "finalized_value_with_construction"))
+    prepared_storage = list(function_bodies(snapshot, "prepared_snapshot_storage"))
     admitted_finalizers = list(function_bodies(cell, "finalize_draft_with_construction"))
     if (
         "SnapshotConstructionAuthority" not in snapshot
@@ -459,11 +460,43 @@ def failures(root: Path) -> list[str]:
         or "context.try_vec_with_capacity" not in finalizers[0]
         or "context.try_boxed_str" not in finalizers[0]
         or "finalized_value_with_construction" not in snapshot
-        or not finalized_values
-        or finalized_values[0].count("context.try_arc(") < 2
+        or len(finalized_values) != 1
+        or "prepared_snapshot_storage(shape, data, context)?" not in finalized_values[0]
         or "Arc::new(" in finalized_values[0]
+        or len(prepared_storage) != 1
+        or prepared_storage[0].count("context.try_arc(") != 3
+        or "Arc::new(" in prepared_storage[0]
     ):
         found.append("common canonical finalization bypasses construction authority")
+    string_constructor = rust_code(
+        sources.get("src/core/src/snapshot/string_constructor.rs", "")
+    )
+    string_preparers = list(function_bodies(string_constructor, "from_validated_shape"))
+    string_finishers = list(function_bodies(string_constructor, "finish"))
+    value_finalizers = list(function_bodies(snapshot, "finalize_value"))
+    boxed_strings = list(function_bodies(snapshot, "try_boxed_str"))
+    if (
+        len(string_preparers) != 1
+        or "context.admit_string_backing(length)?" not in string_preparers[0]
+        or "context.try_clone_schemas()?" not in string_preparers[0]
+        or not re.search(r"\bprepared_snapshot_storage\s*\(", string_preparers[0])
+        or "Arc::new(" in string_preparers[0]
+        or len(string_finishers) != 1
+        or "text.len() != self.length" not in string_finishers[0]
+        or "Arc::get_mut(&mut self.root)" not in string_finishers[0]
+        or "Arc::get_mut(&mut storage.data)" not in string_finishers[0]
+        or not (
+            string_finishers[0].find("text.len() != self.length")
+            < string_finishers[0].find("Arc::get_mut(&mut self.root)")
+            < string_finishers[0].find("text.into_boxed_str()")
+            < string_finishers[0].find("Ok(Value {")
+        )
+        or len(value_finalizers) != 1
+        or "StringSnapshotConstructor::from_validated_shape(" not in value_finalizers[0]
+        or len(boxed_strings) != 1
+        or "self.admit_string_backing(value.len())?" not in boxed_strings[0]
+    ):
+        found.append("prepared canonical String construction bypasses authority or ownership")
     if (
         "shared_schemas: OnceCell<Arc<SchemaTable>>" not in snapshot
         or "self.shared_schemas.get()" not in snapshot
@@ -485,8 +518,32 @@ def failures(root: Path) -> list[str]:
     )
     frozen_data = balanced_body(snapshot, "FrozenSnapshotData")
     frozen_storage = balanced_body(snapshot, "FrozenSnapshotStorage")
+    value_layout = balanced_body(snapshot, "Value")
+    receipt_tokens = list(function_bodies(snapshot, "resident_token"))
+    plain_finalizers = list(function_bodies(snapshot, "finalized_value"))
+    # The receipt cache moved inside the shared data owner. Rebinds must keep
+    # that owner, not copy or manufacture an independent token. Retain the
+    # closed return-field inventory above and check the new owner explicitly.
+    shared_receipt_cache = (
+        frozen_data is not None
+        and "resident_token:SharedOwnershipCell<u64>" in re.sub(r"\s+", "", frozen_data)
+        and value_layout is not None
+        and not re.search(r"\bresident_token\s*:", value_layout)
+        and len(receipt_tokens) == 1
+        and re.sub(r"\s+", "", receipt_tokens[0]).startswith(
+            "*self.root.data.resident_token.get_or_init(||{"
+        )
+        and len(plain_finalizers) == 1
+        and len(finalized_values) == 1
+        and len(prepared_storage) == 1
+        and all(
+            "resident_token:SharedOwnershipCell::new()" in re.sub(r"\s+", "", body)
+            for body in [plain_finalizers[0], prepared_storage[0]]
+        )
+    )
     if (
         "FrozenSnapshotData" not in snapshot
+        or not shared_receipt_cache
         or not rebinds
         or not rebind_ownership
         or any(

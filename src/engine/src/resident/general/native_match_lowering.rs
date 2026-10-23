@@ -422,7 +422,7 @@ impl Builder<'_> {
                     })
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let (kernel, memory_plan) = bind_operation_for_target(
+        let (kernel, _memory_plan) = bind_operation_for_target(
             self.artifact,
             self.catalog,
             at.node(),
@@ -452,7 +452,6 @@ impl Builder<'_> {
                 op: public_op(semantics.op()),
                 operands: arguments.into(),
                 output,
-                memory_plan,
             },
         )
     }

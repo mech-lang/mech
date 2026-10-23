@@ -278,14 +278,106 @@ pub(super) fn define_cfg<M: Module>(
         plan.value_count() as u64,
         limits.max_nodes.saturating_mul(8),
     )?;
+    #[cfg(feature = "canonical-native-program")]
+    let aggregates = match plan {
+        super::iteration_code_plan::CodePlan::Program(program) => program.scalar_aggregates(),
+        _ => Default::default(),
+    };
+    #[cfg(feature = "canonical-native-program")]
+    let aggregate_words = aggregates.words();
+    #[cfg(not(feature = "canonical-native-program"))]
+    let aggregate_words = 0;
+    #[cfg(feature = "canonical-native-program")]
+    let borrowed = match plan {
+        super::iteration_code_plan::CodePlan::Program(program) => {
+            super::program_borrowed_layout::Layout::derive(program).map_err(backend)?
+        }
+        _ => Default::default(),
+    };
+    #[cfg(feature = "canonical-native-program")]
+    let borrowed_words = borrowed.words;
+    #[cfg(not(feature = "canonical-native-program"))]
+    let borrowed_words = 0;
+    #[cfg(feature = "canonical-native-program")]
+    let (closed, prefix) = match plan {
+        super::iteration_code_plan::CodePlan::Program(program) => {
+            // No completion block belongs to a closed Tail. Its completion
+            // envelope is irrelevant to the body bound, not a second work policy.
+            let mut visits = super::iteration_abi::control_visits(
+                program.blocks(),
+                program.iterations().iter().map(Into::into),
+                0,
+            )
+            .map_err(backend)?;
+            super::program_selected_join_layout::Layout::derive(program)
+                .map_err(backend)?
+                .fund_visit_checks(&mut visits)
+                .map_err(backend)?;
+            let prefix = super::program_prefix_layout::derive(program, &borrowed, &visits)
+                .map_err(backend)?;
+            for (site, visit) in visits.iter_mut().enumerate() {
+                visit.work = visit
+                    .work
+                    .checked_add(borrowed.extra_work(site).map_err(backend)?)
+                    .and_then(|work| {
+                        work.checked_add(super::program_prefix_layout::extra_work(
+                            prefix.as_ref(),
+                            site,
+                        ))
+                    })
+                    .ok_or_else(|| backend("Tail visit cost overflow"))?;
+            }
+            (
+                super::program_tail_layout::Layout::derive(program, &borrowed, &visits)
+                    .map_err(backend)?,
+                prefix,
+            )
+        }
+        _ => (Default::default(), None),
+    };
+    #[cfg(feature = "canonical-native-program")]
+    let closed_words = closed.words;
+    #[cfg(not(feature = "canonical-native-program"))]
+    let closed_words = 0;
     let local_count = plan
         .value_count()
         .checked_add(plan.iteration_count())
+        .and_then(|n| n.checked_add(aggregate_words))
+        .and_then(|n| n.checked_add(borrowed_words))
+        .and_then(|n| n.checked_add(closed_words))
         .ok_or_else(|| backend("iteration local count overflow"))?;
     offset(local_count)?;
     offset(plan.input_count())?;
     offset(plan.output_count())?;
     plan.validate()?;
+    #[cfg(feature = "canonical-native-program")]
+    let window_functions = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+        program
+            .window_regions()
+            .into_iter()
+            .map(|region| {
+                let (function, _, stack, code) =
+                    super::program_compiler::window_codegen::define(module, &region)?;
+                Ok((region, function, stack, code))
+            })
+            .collect::<Result<Vec<_>, NativeCompileError>>()?
+    } else {
+        Vec::new()
+    };
+    #[cfg(feature = "canonical-native-program")]
+    let map_functions = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+        program
+            .string_map_regions()
+            .into_iter()
+            .map(|region| {
+                let (function, stack, code) =
+                    super::program_compiler::string_map_codegen::define(module, &region)?;
+                Ok((region, function, stack, code))
+            })
+            .collect::<Result<Vec<_>, NativeCompileError>>()?
+    } else {
+        Vec::new()
+    };
     let mut signature_entry = module.make_signature();
     signature_entry.params.push(AbiParam::new(types::I64));
     signature_entry.returns.push(AbiParam::new(types::I64));
@@ -364,7 +456,11 @@ pub(super) fn define_cfg<M: Module>(
             let valid = b.ins().icmp_imm(
                 IntCC::UnsignedLessThanOrEqual,
                 phase,
-                super::program_abi::PHASE_TURN as i64,
+                if prefix.is_some() {
+                    super::program_abi::PHASE_CAPTURE_TAIL
+                } else {
+                    super::program_abi::PHASE_TURN
+                } as i64,
             );
             guard(&mut b, valid, error, STATUS_ABI);
             Some(phase)
@@ -373,10 +469,18 @@ pub(super) fn define_cfg<M: Module>(
         };
         #[cfg(not(feature = "canonical-native-program"))]
         let program_phase: Option<cranelift_codegen::ir::Value> = None;
+        #[cfg(feature = "canonical-native-program")]
+        let prefix_facts = prefix.as_ref().map(|_| {
+            super::program_compiler::prefix_codegen::EntryFacts::load(
+                &mut b,
+                frame,
+                program_phase.expect("managed prefix phase"),
+            )
+        });
         let resume_block = if let Some(phase) = program_phase {
             let initialize = b.create_block();
             let resume = b.create_block();
-            let is_resume = b.ins().icmp_imm(IntCC::Equal, phase, 1);
+            let is_resume = b.ins().icmp_imm(IntCC::NotEqual, phase, 0);
             b.ins().brif(is_resume, resume, &[], initialize, &[]);
             b.switch_to_block(initialize);
             Some(resume)
@@ -413,6 +517,8 @@ pub(super) fn define_cfg<M: Module>(
             }
         }
         let callback_signature = b.import_signature(callback_signature);
+        #[cfg(feature = "canonical-native-program")]
+        super::program_compiler::scalar_aggregates::constants(&mut b, locals, &aggregates)?;
         let mut reachable = vec![false; plan.blocks().len()];
         let mut pending = vec![plan.entry() as usize];
         while let Some(id) = pending.pop() {
@@ -438,12 +544,78 @@ pub(super) fn define_cfg<M: Module>(
             let boundary = plan
                 .activation_boundary()
                 .ok_or_else(|| backend("managed plan has no activation checkpoint"))?;
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(region) = &prefix {
+                let snapshot = b.create_block();
+                let dispatch = b.create_block();
+                let phase = program_phase.expect("managed resume phase");
+                let capture_tail = b.create_block();
+                let scan_or_snapshot = b.create_block();
+                let is_capture_tail = b.ins().icmp_imm(
+                    IntCC::Equal,
+                    phase,
+                    super::program_abi::PHASE_CAPTURE_TAIL as i64,
+                );
+                b.ins()
+                    .brif(is_capture_tail, capture_tail, &[], scan_or_snapshot, &[]);
+                b.switch_to_block(capture_tail);
+                let target = frame_load(
+                    &mut b,
+                    frame,
+                    core::mem::offset_of!(super::program_abi::Frame, resume_site),
+                );
+                let at_exit = b
+                    .ins()
+                    .icmp_imm(IntCC::Equal, target, i64::from(region.tail.exit()));
+                guard(&mut b, at_exit, error, STATUS_ABI);
+                let facts = prefix_facts.expect("managed prefix entry facts");
+                guard(&mut b, facts.final_input, error, STATUS_ABI);
+                b.ins().jump(
+                    blocks[region.tail.exit() as usize].expect("reachable scan exit"),
+                    &[],
+                );
+                b.switch_to_block(scan_or_snapshot);
+                b.ins().brif(facts.is_prefix, dispatch, &[], snapshot, &[]);
+                b.switch_to_block(dispatch);
+                let target = frame_load(
+                    &mut b,
+                    frame,
+                    core::mem::offset_of!(super::program_abi::Frame, resume_site),
+                );
+                let at_boundary = b.ins().icmp_imm(IntCC::Equal, target, i64::from(boundary));
+                let at_header =
+                    b.ins()
+                        .icmp_imm(IntCC::Equal, target, i64::from(region.tail.header()));
+                let valid = b.ins().bor(at_boundary, at_header);
+                guard(&mut b, valid, error, STATUS_ABI);
+                let reopen = b.create_block();
+                b.ins().brif(at_header, reopen, &[], snapshot, &[]);
+                b.switch_to_block(reopen);
+                super::program_compiler::prefix_codegen::resume(
+                    &mut b,
+                    locals,
+                    region,
+                    &borrowed,
+                    &closed,
+                    hooks.as_ref().expect("managed hooks"),
+                    error,
+                )?;
+                b.ins().jump(
+                    blocks[region.tail.header() as usize].expect("reachable prefix header"),
+                    &[],
+                );
+                b.switch_to_block(snapshot);
+            }
             b.ins().jump(
                 blocks[boundary as usize].expect("reachable checkpoint"),
                 &[],
             );
         }
+        let body_error = b.create_block();
+        b.append_block_param(body_error, types::I64);
+        b.set_cold_block(body_error);
         for (index, block) in plan.blocks().iter().enumerate() {
+            let error = body_error;
             if !reachable[index] {
                 continue;
             }
@@ -462,6 +634,44 @@ pub(super) fn define_cfg<M: Module>(
                 b.ins().return_(&[status]);
                 b.switch_to_block(turn);
             }
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(region) = &prefix
+                && region.tail.header() as usize == index
+            {
+                super::program_compiler::prefix_codegen::gate(
+                    &mut b,
+                    locals,
+                    prefix_facts.expect("managed prefix entry facts"),
+                    region,
+                    &borrowed,
+                    &closed,
+                    hooks.as_ref().expect("managed hooks"),
+                    error,
+                )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
+            let admission_join = if let Some(hooks) = &hooks {
+                super::program_compiler::tail_codegen::admission(
+                    &mut b, locals, &closed, index, hooks, error,
+                )?
+            } else {
+                None
+            };
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(region) = &prefix
+                && region.tail.exit() as usize == index
+            {
+                super::program_compiler::prefix_codegen::scanned(
+                    &mut b,
+                    locals,
+                    prefix_facts.expect("managed prefix entry facts"),
+                    region,
+                    &borrowed,
+                    &closed,
+                    hooks.as_ref().expect("managed hooks"),
+                    error,
+                )?;
+            }
             admit(
                 &mut b,
                 callback_signature,
@@ -470,7 +680,90 @@ pub(super) fn define_cfg<M: Module>(
                 index,
                 error,
             );
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(joined) = admission_join {
+                b.ins().jump(joined, &[]);
+                b.switch_to_block(joined);
+            }
+            #[cfg(feature = "canonical-native-program")]
+            if let NativeIterationTerminator::Header {
+                iteration, exit, ..
+            } = block.terminator()
+                && let Some((region, function, _, _)) = window_functions
+                    .iter()
+                    .find(|(region, ..)| region.iteration() == iteration)
+            {
+                let function = module.declare_func_in_func(*function, b.func);
+                hooks
+                    .as_ref()
+                    .ok_or_else(|| backend("compiled window has no owner hooks"))?
+                    .window_region(
+                        &mut b,
+                        index,
+                        region,
+                        function,
+                        locals,
+                        plan.value_count() + iteration as usize,
+                        blocks[exit as usize].expect("reachable window exit"),
+                        error,
+                    )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
+            if let NativeIterationTerminator::Header {
+                iteration, exit, ..
+            } = block.terminator()
+                && let Some((region, function, _, _)) = map_functions
+                    .iter()
+                    .find(|(region, ..)| region.iteration() == iteration)
+            {
+                let function = module.declare_func_in_func(*function, b.func);
+                hooks
+                    .as_ref()
+                    .ok_or_else(|| backend("compiled String map has no owner hooks"))?
+                    .string_map_region(
+                        &mut b,
+                        index,
+                        region,
+                        function,
+                        locals,
+                        plan.value_count() + iteration as usize,
+                        blocks[exit as usize].expect("reachable map exit"),
+                        error,
+                    )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(hooks) = &hooks {
+                super::program_compiler::borrowed_codegen::prepare(
+                    &mut b, locals, &borrowed, index, hooks, error,
+                )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
+            let borrowed_join = super::program_compiler::borrowed_codegen::emit(
+                &mut b,
+                locals,
+                &borrowed,
+                &closed,
+                index,
+                hooks.as_ref(),
+                error,
+            )?;
+            #[cfg(feature = "canonical-native-program")]
+            let aggregate = super::program_compiler::scalar_aggregates::emit(
+                &mut b,
+                locals,
+                &aggregates,
+                index,
+                error,
+            )?;
+            #[cfg(not(feature = "canonical-native-program"))]
+            let aggregate = false;
             match block.action() {
+                _ if aggregate
+                    && !matches!(
+                        block.action(),
+                        NativeIterationAction::Initialize { .. }
+                            | NativeIterationAction::Latch { .. }
+                    ) => {}
                 NativeIterationAction::PrepareStringSpanSelector { collection } => {
                     #[cfg(feature = "canonical-native-program")]
                     {
@@ -541,6 +834,15 @@ pub(super) fn define_cfg<M: Module>(
                         error,
                     )?;
                     if plan.kind(*output).is_some() {
+                        #[cfg(feature = "canonical-native-program")]
+                        let count_join = prefix_facts.and_then(|facts| {
+                            super::program_compiler::prefix_codegen::count_store(
+                                &mut b,
+                                facts,
+                                prefix.as_ref(),
+                                index,
+                            )
+                        });
                         let value = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
                         b.ins().store(
                             MemFlags::new(),
@@ -548,10 +850,33 @@ pub(super) fn define_cfg<M: Module>(
                             locals,
                             offset(output.get() as usize)?,
                         );
+                        #[cfg(feature = "canonical-native-program")]
+                        if let Some(joined) = count_join {
+                            b.ins().jump(joined, &[]);
+                            b.switch_to_block(joined);
+                        }
                     }
                 }
                 NativeIterationAction::Scalar(action) => {
-                    if let NativeMatchAction::Copy { output, .. } = action
+                    #[cfg(feature = "canonical-native-program")]
+                    let count_action = if let Some(facts) = prefix_facts {
+                        super::program_compiler::prefix_codegen::count_action(
+                            &mut b,
+                            locals,
+                            facts,
+                            prefix.as_ref(),
+                            index,
+                            action,
+                            error,
+                        )?
+                    } else {
+                        false
+                    };
+                    #[cfg(not(feature = "canonical-native-program"))]
+                    let count_action = false;
+                    if count_action {
+                        // The selected EOF-dependent action was emitted above.
+                    } else if let NativeMatchAction::Copy { output, .. } = action
                         && plan.kind(*output).is_none()
                     {
                         let hooks = hooks
@@ -568,7 +893,9 @@ pub(super) fn define_cfg<M: Module>(
                         mech_engine::native_artifact::NativeControlLoopRef::Iteration(
                             iteration,
                         ) => {
-                            if plan.kind(iteration.carrier()).is_some() {
+                            if aggregate {
+                                // The fixed-width carrier words were copied above.
+                            } else if plan.kind(iteration.carrier()).is_some() {
                                 let value = load(&mut b, locals, iteration.seed())?;
                                 b.ins().store(
                                     MemFlags::new(),
@@ -594,11 +921,13 @@ pub(super) fn define_cfg<M: Module>(
                             b.ins().load(types::I64, MemFlags::new(), hooks.result, 0)
                         }
                         mech_engine::native_artifact::NativeControlLoopRef::Tail(_) => {
-                            let hooks = hooks
-                                .as_ref()
-                                .ok_or_else(|| backend("missing tail initializer hook"))?;
                             let zero = b.ins().iconst(types::I64, 0);
-                            hooks.call(&mut b, index, 1, [zero; 3], error);
+                            if !aggregate {
+                                hooks
+                                    .as_ref()
+                                    .ok_or_else(|| backend("missing tail initializer hook"))?
+                                    .call(&mut b, index, 1, [zero; 3], error);
+                            }
                             zero
                         }
                     };
@@ -610,11 +939,13 @@ pub(super) fn define_cfg<M: Module>(
                         plan.iteration(*iteration as usize),
                         mech_engine::native_artifact::NativeControlLoopRef::Tail(_)
                     ) {
-                        let hooks = hooks
-                            .as_ref()
-                            .ok_or_else(|| backend("missing tail latch hook"))?;
-                        let zero = b.ins().iconst(types::I64, 0);
-                        hooks.call(&mut b, index, 1, [zero; 3], error);
+                        if !aggregate {
+                            let hooks = hooks
+                                .as_ref()
+                                .ok_or_else(|| backend("missing tail latch hook"))?;
+                            let zero = b.ins().iconst(types::I64, 0);
+                            hooks.call(&mut b, index, 1, [zero; 3], error);
+                        }
                     } else {
                         let id = *iteration as usize;
                         let counter = b.ins().load(
@@ -629,7 +960,9 @@ pub(super) fn define_cfg<M: Module>(
                             iteration,
                         ) = plan.iteration(id)
                         {
-                            if plan.kind(iteration.carrier()).is_some() {
+                            if aggregate {
+                                // Copy was emitted above; counted-loop progress is unchanged.
+                            } else if plan.kind(iteration.carrier()).is_some() {
                                 let next = load(&mut b, locals, iteration.next())?;
                                 b.ins().store(
                                     MemFlags::new(),
@@ -726,6 +1059,17 @@ pub(super) fn define_cfg<M: Module>(
                     }
                 }
             }
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(joined) = borrowed_join {
+                b.ins().jump(joined, &[]);
+                b.switch_to_block(joined);
+            }
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(hooks) = &hooks {
+                super::program_compiler::tail_codegen::prepare(
+                    &mut b, locals, &closed, index, hooks, error,
+                )?;
+            }
             match block.terminator() {
                 NativeIterationTerminator::TailHeader { body, .. } => {
                     b.ins()
@@ -820,6 +1164,17 @@ pub(super) fn define_cfg<M: Module>(
                     super::iteration_abi::helper_operand_work(block.action()).map_err(backend)?,
                 )
                 .ok_or_else(|| backend("iteration operand work overflow"))?;
+            #[cfg(feature = "canonical-native-program")]
+            let bound = bound
+                .checked_add(borrowed.extra_work(index).map_err(backend)?)
+                .and_then(|n| n.checked_add(closed.extra_work(index)))
+                .and_then(|n| {
+                    n.checked_add(super::program_prefix_layout::extra_work(
+                        prefix.as_ref(),
+                        index,
+                    ))
+                })
+                .ok_or_else(|| backend("borrowed String instruction work overflow"))?;
             if emitted.checked_add(128).is_none_or(|total| total > bound) {
                 return Err(NativeCompileError::InvalidPlan {
                     node: Some(block.origin().node()),
@@ -827,6 +1182,16 @@ pub(super) fn define_cfg<M: Module>(
                 });
             }
         }
+        b.switch_to_block(body_error);
+        let status = b.block_params(body_error)[0];
+        #[cfg(feature = "canonical-native-program")]
+        if let Some(hooks) = &hooks {
+            let site = frame_load(&mut b, frame, core::mem::offset_of!(Frame, error_node));
+            super::program_compiler::tail_codegen::abort(
+                &mut b, locals, &closed, site, hooks, error,
+            )?;
+        }
+        b.ins().jump(error, &[status.into()]);
         b.switch_to_block(error);
         let status = b.block_params(error)[0];
         b.ins().return_(&[status]);
@@ -843,6 +1208,25 @@ pub(super) fn define_cfg<M: Module>(
         })?;
     let stack = compiled_stack_bytes(&compiled.buffer)?;
     let code = compiled.code_info().total_size as u64;
+    #[cfg(feature = "canonical-native-program")]
+    let (stack, code) = (
+        stack
+            .checked_add(
+                window_functions
+                    .iter()
+                    .map(|(_, _, stack, _)| *stack)
+                    .chain(map_functions.iter().map(|(_, _, stack, _)| *stack))
+                    .max()
+                    .unwrap_or(0),
+            )
+            .ok_or_else(|| backend("compiled region stack overflow"))?,
+        window_functions
+            .iter()
+            .map(|(_, _, _, code)| *code)
+            .chain(map_functions.iter().map(|(_, _, _, code)| *code))
+            .try_fold(code, |total, code| total.checked_add(code))
+            .ok_or_else(|| backend("compiled region code overflow"))?,
+    );
     limit("Iteration stack", stack, limits.max_stack_bytes)?;
     limit("Iteration code", code, limits.max_code_bytes)?;
     Ok((function, stack, code))

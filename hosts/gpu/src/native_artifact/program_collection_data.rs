@@ -31,7 +31,7 @@ pub(super) fn count(value: &Value) -> Result<u64, Error> {
     let count = match value.data() {
         ValueData::Matrix(matrix) => matrix.elements().len(),
         ValueData::Set(set) => set.elements().len(),
-        ValueData::String(text) => grapheme::Graphemes::from_usvs(text).iter().count(),
+        ValueData::String(text) => mech_engine::intrinsics::text_graphemes::count(text),
         _ => return Err(invalid("native generator source is not a sequence")),
     };
     u64::try_from(count).map_err(|_| invalid("generator count exceeds u64"))

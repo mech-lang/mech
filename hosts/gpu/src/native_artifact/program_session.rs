@@ -1,11 +1,23 @@
 //! Owning two-phase state for ONE generated CFG invocation. Raw frame pointers
 //! are reconstructed from admitted owned backing for each synchronous entry;
 //! neither caller pointers nor self-referential borrowed state are retained.
-use super::super::program_abi::{PHASE_ACTIVATION, PHASE_TURN, STATUS_ACTIVATED};
+use super::super::program_abi::{
+    PHASE_ACTIVATION, PHASE_CAPTURE_TAIL, PHASE_PREFIX, PHASE_TURN, STATUS_ACTIVATED,
+    STATUS_INPUT_PENDING, STATUS_INPUT_SCANNED,
+};
 use super::*;
 
 #[path = "program_call_cache_allocation.rs"]
 mod call_cache_allocation;
+
+#[path = "program_capture.rs"]
+mod capture;
+#[cfg(feature = "canonical-native-program-host-runtime")]
+#[path = "program_capture_admission.rs"]
+mod capture_admission;
+#[cfg(feature = "canonical-native-program-host-runtime")]
+#[path = "program_capture_host.rs"]
+mod capture_host;
 
 #[cfg(test)]
 #[path = "program_observation_tests.rs"]
@@ -14,6 +26,78 @@ mod observation_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_call_cache_tests.rs"]
 mod call_cache_tests;
+#[cfg(all(test, feature = "canonical-native-program-host"))]
+#[path = "program_capture_host_tests.rs"]
+mod capture_host_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_capture_tests.rs"]
+mod capture_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_identity_inventory_tests.rs"]
+mod identity_inventory_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_prefix_tests.rs"]
+mod prefix_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_prefix_window_tests.rs"]
+mod prefix_window_tests;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_output_retirement_tests.rs"]
+mod output_retirement_tests;
+
+/// Validate and fund retirement of the caller's existing output roots before
+/// native publication. The shared account remains available even if a failed
+/// speculative scanner has already retired its non-runnable execution state.
+fn admit_output_retirement(
+    descriptor: &NativeProgramDescriptor,
+    outputs: &[Option<Value>],
+    memory: &ManagedMemoryBudget,
+    library: &NativeLibraryWorkBudget,
+) -> Result<(), NativeProgramExecutionError> {
+    let plan = &descriptor.plan;
+    if outputs.len() != plan.transport_output_count() {
+        return Err(NativeExecutionError::InvalidOutputs {
+            expected: plan.transport_output_count(),
+            actual: outputs.len(),
+        }
+        .into());
+    }
+    for (index, value) in outputs
+        .iter()
+        .enumerate()
+        .filter_map(|(index, value)| value.as_ref().map(|value| (index, value)))
+    {
+        let ty = plan.transport_output_type(index);
+        if value.schema() != ty.schema() || value.schema_key() != ty.schema_key() {
+            return Err(NativeValueError::TypeMismatch.into());
+        }
+        let retained = value
+            .memory_budget_retained_bytes(memory)
+            .ok_or(NativeValueError::UnadmittedPayload)?;
+        let debit = retained
+            .checked_mul(4)
+            .and_then(|bytes| bytes.checked_add(32))
+            .ok_or_else(|| invalid("output retirement overflow"))?;
+        library.charge(debit, 0).map_err(|error| match error {
+            mech_core::ResidentKernelError::ResourceLimit {
+                dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                required,
+                limit,
+                ..
+            } => NativeExecutionError::WorkLimit {
+                phase: NativeExecutionPhase::Setup,
+                required,
+                limit,
+            },
+            error => NativeExecutionError::LibraryWork {
+                phase: NativeExecutionPhase::Setup,
+                error,
+            },
+        })?;
+    }
+    Ok(())
+}
 
 /// Native ownership admission for the selected zero-parameter String lane.
 /// Immutable payload sharing never substitutes for full capacity admission.
@@ -198,6 +282,7 @@ impl CallCacheLane {
 struct OwnedState<'a> {
     // Preserve collection-before-arena retirement ordering.
     collections: Option<collection::State>,
+    line_matrices: line_matrices::State,
     arena: NativeValueArena<'a>,
     call_inputs: NativeTypedStorage<Option<Value>>,
     call_caches: CallCacheLane,
@@ -221,6 +306,10 @@ pub(super) struct Prepared<'a> {
     progress: usize,
     bytes: u64,
     activated: bool,
+    prefix: Option<prefix::Input>,
+    paused: Option<u32>,
+    retention: Option<prefix::Retention>,
+    window_work_seen: u64,
 }
 
 impl<'a> Prepared<'a> {
@@ -263,6 +352,9 @@ impl<'a> Prepared<'a> {
             .values()
             .len()
             .checked_add(plan.iterations().len())
+            .and_then(|n| n.checked_add(descriptor.scalar_aggregates.words()))
+            .and_then(|n| n.checked_add(descriptor.borrowed_strings.words))
+            .and_then(|n| n.checked_add(descriptor.closed_tails.words))
             .ok_or_else(|| invalid("local count overflow"))?;
         let progress = plan
             .iterations()
@@ -294,8 +386,14 @@ impl<'a> Prepared<'a> {
                     .ok()?,
                 )
             })
-            .and_then(|n| n.checked_add(collection::State::metadata_bytes(plan).ok()?))
+            .and_then(|n| n.checked_add(collection::State::metadata_bytes(descriptor).ok()?))
             .and_then(|n| n.checked_add(CallCacheLane::metadata_bytes(plan.blocks().len()).ok()?))
+            .and_then(|n| {
+                n.checked_add(
+                    line_matrices::State::metadata_bytes(descriptor.line_matrices.regions.len())
+                        .ok()?,
+                )
+            })
             .ok_or_else(|| invalid("combined transport overflow"))?;
         if bytes > limits.execution.max_transport_bytes {
             return Err(NativeExecutionError::TransportLimit {
@@ -365,6 +463,12 @@ impl<'a> Prepared<'a> {
             memory,
             &mut work,
         )?;
+        let line_matrices = line_matrices::State::new(
+            descriptor,
+            limits.execution.max_transport_bytes,
+            memory,
+            &mut work,
+        )?;
         Ok(Self {
             descriptor,
             storage,
@@ -374,8 +478,13 @@ impl<'a> Prepared<'a> {
             progress,
             bytes,
             activated: false,
+            prefix: None,
+            paused: None,
+            retention: None,
+            window_work_seen: 0,
             state: Some(OwnedState {
                 collections,
+                line_matrices,
                 arena,
                 call_inputs,
                 call_caches,
@@ -426,39 +535,13 @@ impl<'a> Prepared<'a> {
                 "captured observation count differs from exact native plan",
             ));
         }
-        if outputs.len() != plan.transport_output_count() {
-            return Err(NativeExecutionError::InvalidOutputs {
-                expected: plan.transport_output_count(),
-                actual: outputs.len(),
-            }
-            .into());
-        }
         let state = self
             .state
             .as_mut()
             .ok_or_else(|| invalid("consumed native state"))?;
         // Old caller-visible roots are not examined until closed activation
         // has succeeded. Publication still cannot fail partway through.
-        for (index, value) in outputs
-            .iter()
-            .enumerate()
-            .filter_map(|(index, value)| value.as_ref().map(|v| (index, v)))
-        {
-            let ty = plan.transport_output_type(index);
-            if value.schema() != ty.schema() || value.schema_key() != ty.schema_key() {
-                return Err(NativeValueError::TypeMismatch.into());
-            }
-            let retained = value
-                .memory_budget_retained_bytes(&self.memory)
-                .ok_or(NativeValueError::UnadmittedPayload)?;
-            state.work.charge(
-                NativeExecutionPhase::Setup,
-                retained
-                    .checked_mul(4)
-                    .and_then(|n| n.checked_add(32))
-                    .ok_or_else(|| invalid("output retirement overflow"))?,
-            )?;
-        }
+        admit_output_retirement(descriptor, outputs, &self.memory, &state.library)?;
         for (index, value) in inputs.iter().enumerate() {
             state
                 .arena
@@ -524,6 +607,16 @@ impl<'a> Prepared<'a> {
         }
         imported?;
         self.run(entry, PHASE_TURN)?;
+        self.publish(outputs)
+    }
+
+    fn publish(
+        mut self,
+        outputs: &mut [Option<Value>],
+    ) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError> {
+        if self.paused.is_some() || !self.state.as_ref().is_some_and(|state| state.completed) {
+            return Err(invalid("publication before exact native completion"));
+        }
         let state = self
             .state
             .as_mut()
@@ -548,24 +641,192 @@ impl<'a> Prepared<'a> {
         })
     }
 
+    // Exercise the real generated protocol before exposing any incremental
+    // capture API. This test-only driver imports ONE genuine full snapshot;
+    // neither a partial canonical Value nor a prefix-valued count is created.
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    fn run_prefix<F: FnMut(*mut Frame) -> u64>(
+        &mut self,
+        entry: &mut F,
+        available: u64,
+        eof: bool,
+    ) -> Result<(), NativeProgramExecutionError> {
+        self.run_prefix_window(entry, available, eof, None)
+    }
+
+    #[cfg(any(
+        feature = "canonical-native-program-host-runtime",
+        all(test, feature = "canonical-native-program")
+    ))]
+    fn run_prefix_window<F: FnMut(*mut Frame) -> u64>(
+        &mut self,
+        entry: &mut F,
+        available: u64,
+        eof: bool,
+        window: Option<&mech_engine::native_artifact::NativeTextLineWindow<'_>>,
+    ) -> Result<(), NativeProgramExecutionError> {
+        if !self.activated
+            || self.descriptor.prefix.is_none()
+            || self.state.as_ref().is_none_or(|state| state.completed)
+            || self
+                .prefix
+                .is_some_and(|prior| prior.eof || available < prior.available)
+        {
+            return Err(invalid("invalid, regressing or completed native prefix"));
+        }
+        if eof && self.prefix.is_none() {
+            if let Some(window) = window {
+                // Reject a false EOF extent, producer or account before even
+                // the snapshot prelude can enter native code. Binding debits
+                // the existing source account; it creates no new allowance.
+                let state = self.state.as_ref().unwrap();
+                prefix::validate_window(
+                    self.descriptor,
+                    Some(prefix::Input {
+                        resume_site: self
+                            .descriptor
+                            .plan
+                            .activation_boundary()
+                            .ok_or_else(|| invalid("prefix lacks exact resume boundary"))?,
+                        available,
+                        eof,
+                    }),
+                    window,
+                    &state.library,
+                )?;
+            }
+            // A snapshot driver can receive EOF before its first window (in
+            // particular for empty input). Execute the original source/length
+            // visits and stop at the zero-available header before inspecting
+            // their genuine final geometry. No count slot is initialized by
+            // this pre-EOF entry, and no finished window is mislabelled pending.
+            self.run_prefix_window(entry, 0, false, None)?;
+        }
+        let resume_site = self
+            .paused
+            .or(self.descriptor.plan.activation_boundary())
+            .ok_or_else(|| invalid("prefix lacks exact resume boundary"))?;
+        if eof {
+            self.install_final_line_count(available)?;
+        }
+        self.prefix = Some(prefix::Input {
+            resume_site,
+            available,
+            eof,
+        });
+        self.run_with_window(entry, PHASE_PREFIX, window)?;
+        if eof
+            && self
+                .state
+                .as_ref()
+                .is_some_and(|state| state.line_matrices.captured.is_none())
+        {
+            self.resume_capture_tail(entry)?;
+        }
+        Ok(())
+    }
+
+    #[cfg(any(
+        feature = "canonical-native-program-host-runtime",
+        all(test, feature = "canonical-native-program")
+    ))]
+    fn resume_capture_tail<F: FnMut(*mut Frame) -> u64>(
+        &mut self,
+        entry: &mut F,
+    ) -> Result<(), NativeProgramExecutionError> {
+        let exit = self
+            .descriptor
+            .prefix
+            .as_ref()
+            .ok_or_else(|| invalid("capture tail has no scan proof"))?
+            .tail
+            .exit();
+        let input = self
+            .prefix
+            .as_mut()
+            .ok_or_else(|| invalid("capture tail lost EOF"))?;
+        if !input.eof || self.paused != Some(exit) {
+            return Err(invalid("capture tail before exact scanner exit"));
+        }
+        input.resume_site = exit;
+        self.run_with_window(entry, PHASE_CAPTURE_TAIL, None)
+    }
+
     fn run<F: FnMut(*mut Frame) -> u64>(
         &mut self,
         entry: &mut F,
         phase: u64,
     ) -> Result<(), NativeProgramExecutionError> {
+        self.run_with_window(entry, phase, None)
+    }
+
+    fn run_with_window<F: FnMut(*mut Frame) -> u64>(
+        &mut self,
+        entry: &mut F,
+        phase: u64,
+        line_window: Option<&mech_engine::native_artifact::NativeTextLineWindow<'_>>,
+    ) -> Result<(), NativeProgramExecutionError> {
+        if phase == PHASE_CAPTURE_TAIL && line_window.is_some() {
+            return Err(invalid("capture tail cannot retain a scanner row loan"));
+        }
         let descriptor = self.descriptor;
         let plan = &descriptor.plan;
         let boundary = plan
             .activation_boundary()
             .ok_or_else(|| invalid("missing certified activation boundary"))?;
+        let prefix_input = if phase == PHASE_PREFIX || phase == PHASE_CAPTURE_TAIL {
+            let input = self
+                .prefix
+                .ok_or_else(|| invalid("prefix entry without owned continuation facts"))?;
+            if input.resume_site != self.paused.unwrap_or(boundary)
+                || !self.activated
+                || descriptor.prefix.is_none()
+            {
+                return Err(invalid("prefix entry outside owned resume boundary"));
+            }
+            Some(input)
+        } else {
+            if self.prefix.is_some() || self.paused.is_some() {
+                return Err(invalid("ordinary entry cannot replay a prefix invocation"));
+            }
+            None
+        };
         let mut state = self
             .state
             .take()
             .ok_or_else(|| invalid("consumed native state"))?;
+        if let Some(window) = line_window {
+            prefix::validate_window(descriptor, prefix_input, window, &state.library)?;
+            let spent = window.producer_compute_work();
+            if spent < self.window_work_seen {
+                return Err(invalid("line window work regressed"));
+            }
+            // NativeWorkMeter already owns this SAME shared library account.
+            // Framing/row-loan debits are included immediately, not billed twice.
+            self.window_work_seen = spent;
+        } else if self.window_work_seen != 0 && phase != PHASE_CAPTURE_TAIL {
+            return Err(invalid("line window continuation lost its owning source"));
+        }
+        let checkpoint_work = if prefix_input.is_some() {
+            amount(prefix::checkpoint_words(descriptor)?, 16, 256)?
+        } else {
+            0
+        };
         // Both entry prologues and checkpoint verification are paid on this
         // SAME ledger before entering native code or scanning progress arrays.
         let transition_work = amount(plan.iterations().len(), 32, 512)?
             .checked_add(amount(plan.collections().len(), 32, 0)?)
+            .and_then(|work| work.checked_add(checkpoint_work))
+            .and_then(|work| {
+                work.checked_add(if prefix_input.is_some() {
+                    descriptor
+                        .prefix
+                        .as_ref()
+                        .map_or(0, |region| region.header_work)
+                } else {
+                    0
+                })
+            })
             .ok_or_else(|| invalid("native phase work overflow"))?;
         let transitioned = state
             .work
@@ -606,6 +867,7 @@ impl<'a> Prepared<'a> {
                 error: None,
             },
             collections: state.collections,
+            line_matrices: state.line_matrices,
             arena: state.arena,
             library: state.library,
             limits: self.limits.library,
@@ -618,6 +880,12 @@ impl<'a> Prepared<'a> {
             output_cursor: state.output_cursor,
             error: None,
             activation_phase: phase == PHASE_ACTIVATION,
+            window_region: None,
+            borrowed_strings: None,
+            closed_tail: None,
+            selected_join: None,
+            prefix: prefix_input.map(|input| prefix::State::new(input, self.retention)),
+            line_window,
         };
         let context_pointer = (&mut context as *mut Context<'_, '_>).cast::<c_void>();
         let mut frame = Frame {
@@ -638,6 +906,9 @@ impl<'a> Prepared<'a> {
             arguments: argument_pointer,
             argument_capacity: descriptor.max_library_inputs as u64,
             phase,
+            resume_site: prefix_input.map_or(0, |input| u64::from(input.resume_site)),
+            available_lines: prefix_input.map_or(0, |input| input.available),
+            input_eof: prefix_input.map_or(0, |input| u64::from(input.eof)),
         };
         let status = entry(&mut frame);
         #[cfg(all(
@@ -648,6 +919,13 @@ impl<'a> Prepared<'a> {
         setup_work_diagnostic::checkpoint(context.control.work.used());
         if let Some(error) = context.error.take() {
             return Err(error);
+        }
+        if context.window_region.is_some()
+            || context.borrowed_strings.is_some()
+            || context.closed_tail.is_some()
+            || context.selected_join.is_some()
+        {
+            return Err(invalid("native entry returned with compiled String loans"));
         }
         let f = &frame.base;
         if f.version != VERSION
@@ -664,6 +942,9 @@ impl<'a> Prepared<'a> {
             || frame.arguments != argument_pointer
             || frame.argument_capacity != descriptor.max_library_inputs as u64
             || frame.phase != phase
+            || frame.resume_site != prefix_input.map_or(0, |input| u64::from(input.resume_site))
+            || frame.available_lines != prefix_input.map_or(0, |input| input.available)
+            || frame.input_eof != prefix_input.map_or(0, |input| u64::from(input.eof))
         {
             return Err(invalid("program entry changed immutable frame"));
         }
@@ -692,7 +973,7 @@ impl<'a> Prepared<'a> {
             }
         } else {
             match status {
-                STATUS_OK if phase == PHASE_TURN => {
+                STATUS_OK if phase == PHASE_TURN || phase == PHASE_CAPTURE_TAIL => {
                     if !context.control.completed
                         || f.error_node != NO_NODE
                         || context.output_cursor != plan.transport_output_count()
@@ -702,6 +983,44 @@ impl<'a> Prepared<'a> {
                     {
                         return Err(invalid("program omitted atomic completion"));
                     }
+                    self.paused = None;
+                }
+                STATUS_INPUT_PENDING if phase == PHASE_PREFIX => {
+                    let site = context
+                        .prefix
+                        .as_ref()
+                        .and_then(|prefix| prefix.paused)
+                        .ok_or_else(|| invalid("native entry forged an input checkpoint"))?;
+                    if f.error_node != u64::from(site) || prefix_input.is_none_or(|input| input.eof)
+                    {
+                        return Err(invalid("native entry returned the wrong input checkpoint"));
+                    }
+                    // check_prefix_header deliberately rejects an already
+                    // marked pause. Recheck its invariant without granting a visit.
+                    context.prefix.as_mut().unwrap().paused = None;
+                    context.check_prefix_header(site)?;
+                    prefix::check_cleared(descriptor, values, arguments)?;
+                    self.retention =
+                        Some(context.prefix.as_ref().unwrap().retained.ok_or_else(|| {
+                            invalid("native checkpoint omitted retention coordinates")
+                        })?);
+                    self.paused = Some(site);
+                }
+                STATUS_INPUT_SCANNED if phase == PHASE_PREFIX => {
+                    let site = context
+                        .prefix
+                        .as_ref()
+                        .and_then(|prefix| prefix.scanned)
+                        .ok_or_else(|| invalid("native entry forged scanner completion"))?;
+                    if f.error_node != u64::from(site)
+                        || prefix_input.is_none_or(|input| !input.eof)
+                    {
+                        return Err(invalid("native scanner returned wrong EOF checkpoint"));
+                    }
+                    context.prefix.as_mut().unwrap().scanned = None;
+                    context.check_prefix_exit(site)?;
+                    prefix::check_cleared(descriptor, values, arguments)?;
+                    self.paused = Some(site);
                 }
                 STATUS_ARITHMETIC | STATUS_REJECT => {
                     let id = context
@@ -731,6 +1050,7 @@ impl<'a> Prepared<'a> {
         }
         self.state = Some(OwnedState {
             collections: context.collections,
+            line_matrices: context.line_matrices,
             arena: context.arena,
             call_inputs: context.call_inputs,
             call_caches: context.call_caches,
@@ -775,6 +1095,8 @@ pub struct NativeProgramExecutionSession<'a> {
     prepared: Prepared<'a>,
     entry: CheckedEntry,
     invocation: mech_runtime::CanonicalNativeResourceInvocation,
+    capture_offered: bool,
+    capture: Option<capture_host::Capture>,
 }
 #[cfg(feature = "canonical-native-program-host-runtime")]
 impl<'a> NativeProgramExecutionSession<'a> {
@@ -787,12 +1109,15 @@ impl<'a> NativeProgramExecutionSession<'a> {
     ) -> Result<Self, NativeProgramExecutionError> {
         verify_hosted_plan(descriptor, admission.program_revision(), admission.plan())?;
         let invocation = admission.invocation();
+        let capture_offered = admission.text_capture_site().is_some();
         let mut prepared = Prepared::new(descriptor, limits, memory)?;
         prepared.activate(&mut |frame| entry.invoke(frame))?;
         Ok(Self {
             prepared,
             entry,
             invocation,
+            capture_offered,
+            capture: None,
         })
     }
     pub fn resume_hosted_into(
@@ -807,6 +1132,11 @@ impl<'a> NativeProgramExecutionSession<'a> {
             ));
         }
         verify_hosted_turn(self.prepared.descriptor, &turn)?;
+        if self.capture.is_some() {
+            return self.finish_text_capture(turn, inputs, outputs);
+        } else if turn.text_capture().is_some() {
+            return Err(invalid("native snapshot session received scoped capture"));
+        }
         let Self {
             prepared,
             mut entry,

@@ -30,7 +30,13 @@ resident-artifact = [
   "dep:libm",
   "f64", "matrixd", "row_vectord",
 ]
-native-artifact = ["std", "resident-artifact", "bool", "u64", "i64"]
+# Canonical scalar words support signed integers without enabling legacy I64
+# cells in every native host. Generated applications select value gates from
+# their complete declared schema closure (including nested signed payloads).
+native-artifact = ["std", "resident-artifact", "bool", "u64", "native-capture-pages"]
+# Private Unix capture backing; the same executor retains its small-buffer and
+# budget-limited heap fallback. Non-Unix targets keep ordinary heap storage.
+native-capture-pages = ["dep:libc"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
 source = ["runtime", "artifact-codec", "dep:mech-syntax", "mech-core/range"]
@@ -493,7 +499,7 @@ tinyvec = { version = "=1.12.0", default-features = false }
 nalgebra = { version = "0.34.1", optional = true }
 indexmap = { version = "2.13.0", optional = true }
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = { version = "1.0.149", optional = true }
+serde_json = { version = "1.0.149", optional = true, features = ["raw_value"] }
 sha2 = "0.10"
 
 [dependencies.num-traits]
@@ -501,6 +507,9 @@ version = "0.2.19"
 default-features = false
 features = ["libm"]
 optional = true
+
+[target.'cfg(unix)'.dependencies]
+libc = { version = "=0.2.189", optional = true }
 
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
 web-time = "1.1.0"

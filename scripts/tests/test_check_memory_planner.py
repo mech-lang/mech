@@ -228,10 +228,19 @@ class MemoryPlannerCheckerTests(unittest.TestCase):
         self.replace(
             root,
             "src/engine/src/resident/budget.rs",
-            "demand: ResourceDemand,",
-            "demand: ResourceDemand,\n    bytes: u64,",
+            "pub(crate) struct KernelCostEstimate {\n    demand: ResourceDemand,",
+            "pub(crate) struct KernelCostEstimate {\n    demand: ResourceDemand,\n    bytes: u64,",
         )
         self.assert_failure(root, "second Resident resource authority")
+
+    def test_18_function_parameters_are_not_a_second_resident_estimate(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/engine/src/resident/budget.rs",
+            "\nfn ordinary_preview(demand: ResourceDemand, bytes: u64) {}\n",
+        )
+        self.assertEqual(CHECKER.failures(root), [])
 
     def test_19_managed_allocator_concept_fails(self):
         root = self.fixture()

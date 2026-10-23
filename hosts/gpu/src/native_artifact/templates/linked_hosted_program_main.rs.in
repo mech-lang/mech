@@ -1,12 +1,14 @@
-//! Same-Object canonical native application with ordinary capability-secured CLI.
+//! Shared same-Object launcher; production is capability-secured.
 //! No source parsing, JIT, resident graph execution or source-native fallback.
 use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, Value};
 use mech_gpu::native_artifact::{
     LinkedProgramArtifact, NATIVE_PROGRAM_LINK_IDENTITY_BYTES,
     NativeExecutionLimits, NativeProgramExecutionLimits,
 };
+@BENCHMARK_POLICY_IMPORT@
 use mech_runtime::{
     CanonicalNativeResourceCompletion, CanonicalNativeResourceLimits,
+    CanonicalNativeResourceMetadata, CanonicalNativeResourceRunError,
     ConfigValue, HostInstanceConfig, NativeResourceBindingError,
     RunResourceGrantConfig, RuntimeBuilder, RuntimeProgramRoute,
 };
@@ -35,6 +37,7 @@ struct LibraryLimits {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Launch {
+    @BENCHMARK_POLICY_FIELD@
     grants: Vec<Grant>,
     max_ports: usize,
     input_text_bytes: u64,
@@ -151,6 +154,12 @@ impl CliBackend for BoundedStdin {
     fn stdin_text(&self) -> mech_core::MResult<String> {
         Err(io_error("bounded backend requires the provider's raw snapshot path"))
     }
+    fn supports_single_use_stdin_text_capture(&self) -> bool { true }
+    fn with_single_use_stdin_text_reader(
+        &self, capture: &mut dyn FnMut(&mut dyn Read) -> mech_core::MResult<()>,
+    ) -> mech_core::MResult<()> {
+        capture(&mut std::io::stdin().lock())
+    }
     fn write_stdout(&mut self, text: &str) -> mech_core::MResult<()> {
         StdCliBackend.write_stdout(text)
     }
@@ -181,32 +190,29 @@ fn run() -> Result<(), String> {
         64 * 1024,
     )?;
     let launch: Launch = serde_json::from_slice(&launch_bytes).map_err(|error| error.to_string())?;
+    @BENCHMARK_POLICY_PARSE@
     launch.input_text_bytes.checked_add(1).ok_or("input acquisition cap overflows")?;
     let memory = ManagedMemoryBudget::new(launch.memory_bytes);
     let mut payload_arguments = bounded_arguments(arguments, launch.input_text_bytes, &memory)?;
-    let bytecode = include_bytes!("../program.mecb");
-    if hex(&Sha256::digest(bytecode)) != "@BYTECODE_SHA256@" {
-        return Err("embedded canonical bytecode identity mismatch".into());
-    }
-    let artifact = mech_engine::decode_program_artifact_bytecode_v1(bytecode)
-        .map_err(diagnostic)?;
     let catalog = std::thread::Builder::new().name("canonical-native-catalog".into())
         .stack_size(64 * 1024 * 1024)
         .spawn(|| -> Result<_, String> {
             let mut builder = mech_core::FunctionCatalogBuilder::new();
-            mech_stdlib::install_native_plan(&mut builder).map_err(diagnostic)?;
-            mech_engine::install_intrinsic_resident(&mut builder).map_err(diagnostic)?;
+            // Canonical artifacts bind through resident entries, not legacy
+            // bytecode runtime factories. Do not retain their unused callees.
+@INSTALL_CANONICAL_FACTORIES@
             builder.build().map_err(diagnostic)
         }).map_err(|error| error.to_string())?
         .join().map_err(|_| "canonical metadata catalog construction panicked")??;
     // SAFETY: build.rs pins the original source/bytecode/Object and all
     // generated inputs. Identity+entry are process-lifetime symbols from that
     // SAME checked Object. No caller-provided entry or metadata authenticates
-    // arbitrary code. The constructor rederives exact current canonical
-    // selection, CFG, resource descriptors, target and ABI/work identity.
+    // arbitrary code. The pinned descriptor was prepared by that SAME build;
+    // loading checks actual selected factories and the complete Object identity
+    // without rerunning the compiler's lowering/analysis inside the executable.
     let linked = unsafe {
-        LinkedProgramArtifact::from_build_owned_entry(
-            &artifact, &catalog, &LINKED_IDENTITY, linked_entry,
+        LinkedProgramArtifact::from_build_owned_image(
+            include_bytes!("../native-descriptor.bin"), &catalog, &LINKED_IDENTITY, linked_entry,
         )
     }.map_err(diagnostic)?;
     if !linked.descriptor().plan().inputs().is_empty() {
@@ -255,6 +261,7 @@ fn run() -> Result<(), String> {
         std::mem::take(&mut payload_arguments.arguments),
     );
     let mut builder = RuntimeBuilder::new()
+        @BENCHMARK_POLICY_KERNEL@
         .host_factory(Box::new(CliHostFactory::with_backend(backend).map_err(diagnostic)?))
         .map_err(diagnostic)?
         .host_instance(HostInstanceConfig {
@@ -267,8 +274,22 @@ fn run() -> Result<(), String> {
         });
     }
     let mut runtime = builder.build().map_err(diagnostic)?;
-    let execution = runtime.with_canonical_native_resources_phased(
-        &artifact,
+    // SAFETY: build.rs pins this complete resource image alongside the SAME
+    // source/bytecode/Object and native descriptor. Its canonical revision and
+    // schemas are checked below. No program graph is decoded at startup; fresh
+    // runtime authority and port caps remain mandatory on every invocation.
+    let program_revision = linked.descriptor().plan().program_revision();
+    let resource_metadata = unsafe {
+        CanonicalNativeResourceMetadata::decode_build_owned_image(
+            include_bytes!("../native-resources.json"), program_revision,
+            linked.descriptor().schemas().clone(),
+        )
+    };
+    drop(catalog);
+    let execution = resource_metadata.map_err(|error| CanonicalNativeResourceRunError::BeforeCommit {
+        phase: "admission", error, cleanup: None,
+    }).and_then(|resource_metadata| runtime.with_prepared_canonical_native_resources_phased_text(
+        &resource_metadata,
         CanonicalNativeResourceLimits {
             max_ports: launch.max_ports,
             max_input_text_bytes: launch.input_text_bytes,
@@ -278,8 +299,12 @@ fn run() -> Result<(), String> {
         // canonical admission -> generated closed activation -> provider
         // capture -> native resume. No parser, evaluator or callee graph.
         |admission| linked.prepare_hosted(admission, limits, &memory)
+            .and_then(|session| session.with_text_capture(launch.input_text_bytes, 64 * 1024))
+            .map_err(|error| mech_core::MechError::new(error, None)),
+        |session, chunk| session.capture_chunk(chunk)
             .map_err(|error| mech_core::MechError::new(error, None)),
         |session, turn| {
+            let captured_lines = turn.text_capture().is_some();
             let report = session.resume_hosted_into(turn, &[], &mut candidates)
                 .map_err(|error| mech_core::MechError::new(error, None))?;
             let first_effect = candidates.len().checked_sub(effect_count)
@@ -289,11 +314,11 @@ fn run() -> Result<(), String> {
                     .ok_or_else(|| io_error("native completion omitted an effect payload"))?);
             }
             Ok(CanonicalNativeResourceCompletion {
-                result: report,
+                result: (report, captured_lines),
                 effects: effect_values.into_boxed_slice(),
             })
         },
-    );
+    ));
     // This CLI runtime supplies authority/provider/transaction services only.
     // No resident artifact is activated or evaluated by a native application.
     let route = runtime.program_execution_info();
@@ -303,7 +328,7 @@ fn run() -> Result<(), String> {
         && route.resident_rejected_turns == 0;
     let shutdown = runtime.shutdown().map_err(diagnostic);
     let execution = execution.map_err(diagnostic);
-    let native = match (execution, shutdown) {
+    let (native, captured_lines) = match (execution, shutdown) {
         (Ok(native), Ok(())) => native,
         (Err(error), Ok(())) | (Ok(_), Err(error)) => return Err(error),
         (Err(error), Err(cleanup)) => return Err(format!("{error}; shutdown: {cleanup}")),
@@ -312,12 +337,13 @@ fn run() -> Result<(), String> {
     if report != "-" {
         let document = serde_json::json!({
             "schema": "mech.canonical-hosted-native-execution.v1",
-            "route": "canonical-artifact-program-object-secured-cli",
-            "policy": "secured",
-            "program_revision": hex(artifact.revision().as_bytes()),
+            "route": @HOSTED_ROUTE_LITERAL@,
+            "policy": @HOSTED_POLICY_EXPRESSION@,
+            "program_revision": hex(program_revision.as_bytes()),
             "launch_sha256": hex(&Sha256::digest(&launch_bytes)),
             "native_aot": true,
             "hosted_phases": "admit-activate-capture-resume",
+            "input_storage": if captured_lines { "bounded-lines" } else { "snapshot" },
             "source_parser": false,
             "jit": false,
             "resident_body_evaluation": false,

@@ -1,0 +1,387 @@
+{
+  "schema": "mech.canonical-knucleotide-ci-portability.v1",
+  "status": "QUALIFIED_NEAR_LEGACY_PERFORMANCE_BOTH_INPUT_SIZES",
+  "measured_source_commit": "cb52cb9dc786b13995a9456a0e8b81e8325307d3",
+  "prior_secured_source_commit": "2a5cd26fbcf0f01543c031fbedad05b756865d3d",
+  "platform": {
+    "architecture": "arm64",
+    "cpu_and_memory": "Apple M1\n8\n8\n8589934592"
+  },
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "implementation": {
+    "change": "Gate code-generation-only descriptor fields out of runtime-only builds while preserving unconditional checked layout arithmetic and overlap validation. Replace four test-only platform-size constants with exact target-derived requirements; retain one-short denials and prior-output preservation.",
+    "scope": "No benchmark source, production numeric arithmetic, native computation, capability grants, finite policy, work policy, ABI or IR change."
+  },
+  "workloads": {
+    "10m": {
+      "input": {
+        "bytes": 20333411,
+        "three_bases": 10000000,
+        "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b"
+      },
+      "oracle": {
+        "bytes": 254,
+        "sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+      }
+    },
+    "125m": {
+      "input": {
+        "bytes": 254166745,
+        "three_bases": 125000000,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa"
+      },
+      "oracle": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      }
+    }
+  },
+  "measurement": {
+    "method": "Twelve serial rounds per input size: all six permutations twice, so every variant occupies every position four times. One separate correctness/warmup per variant per size. Identical Node synchronous observer and regular-file descriptors opened before timing. Spawn through exit including secured report generation is timed; compilation, integrity hashing and parent validation excluded.",
+    "exact_outputs": 78,
+    "timed_samples": 72,
+    "secured_reports": 52,
+    "summary": {
+      "10m": {
+        "variants": {
+          "legacy-direct": {
+            "samples_ns": [
+              91349250,
+              91789542,
+              92377333,
+              91509917,
+              91344541,
+              91259125,
+              91937542,
+              91337500,
+              91921916,
+              91501458,
+              91894083,
+              90281209
+            ],
+            "median_ns": 91505687.5,
+            "min_ns": 90281209,
+            "max_ns": 92377333
+          },
+          "secured-before": {
+            "samples_ns": [
+              91841417,
+              91930667,
+              93489166,
+              92238292,
+              92390917,
+              92107291,
+              93115167,
+              92049958,
+              92054125,
+              93405834,
+              92860958,
+              92454292
+            ],
+            "median_ns": 92314604.5,
+            "min_ns": 91841417,
+            "max_ns": 93489166
+          },
+          "secured-current": {
+            "samples_ns": [
+              92838792,
+              93924542,
+              92027875,
+              92688792,
+              92424583,
+              92412709,
+              92262750,
+              91922583,
+              92280917,
+              93126875,
+              91812500,
+              92746167
+            ],
+            "median_ns": 92418646,
+            "min_ns": 91812500,
+            "max_ns": 93924542
+          }
+        },
+        "current_over_before": 1.0011270318555068,
+        "current_over_legacy": 1.009977068365286,
+        "current_faster_rounds_than_before": 5,
+        "current_faster_rounds_than_legacy": 2
+      },
+      "125m": {
+        "variants": {
+          "legacy-direct": {
+            "samples_ns": [
+              973910042,
+              969968583,
+              975784250,
+              971399917,
+              972827709,
+              979763000,
+              972830125,
+              975964125,
+              983503250,
+              1046794000,
+              983304125,
+              970230916
+            ],
+            "median_ns": 974847146,
+            "min_ns": 969968583,
+            "max_ns": 1046794000
+          },
+          "secured-before": {
+            "samples_ns": [
+              964205625,
+              969734750,
+              973250292,
+              965321875,
+              968030667,
+              964604042,
+              968466250,
+              977413959,
+              975374750,
+              1010670458,
+              972096375,
+              975972209
+            ],
+            "median_ns": 970915562.5,
+            "min_ns": 964205625,
+            "max_ns": 1010670458
+          },
+          "secured-current": {
+            "samples_ns": [
+              962398916,
+              975003375,
+              972833792,
+              963539166,
+              962410834,
+              970954166,
+              971338500,
+              975219375,
+              971030792,
+              972078958,
+              975137875,
+              971621041
+            ],
+            "median_ns": 971479770.5,
+            "min_ns": 962398916,
+            "max_ns": 975219375
+          }
+        },
+        "current_over_before": 1.0005811092352328,
+        "current_over_legacy": 0.9965457400026075,
+        "current_faster_rounds_than_before": 8,
+        "current_faster_rounds_than_legacy": 10
+      }
+    },
+    "interpretation": "Current versus previous secured medians differ by +0.11% at 10M and +0.06% at 125M, with overlapping ranges: no clear regression from the portability fix. Current secured versus legacy is +0.913 ms (+1.00%) at 10M and -3.367 ms (-0.35%) at 125M. Report the small short-input gap rather than treating overlap as proof of equality. Full-size ranges overlap and do not establish a stable speed advantage. All samples, including the slower legacy/prior-secured round, are retained."
+  },
+  "pins": {
+    "legacy_binary": "e11bf3a7f10ed5ed6232d9bc88a4527d2ea6e0cf3fc96ee38978808e258a6be4",
+    "prior_secured_binary": "5ce33ac27f36aa379384f005ce9591af1b4d9b24ade872a76d4c22c0dc77ba63",
+    "current_original_and_decoded_binary": "2784a3d6d408c6a9c228888a4f9b226bab205cd7614e393b0de27184cf900660",
+    "bytecode": "9763671db1dcf1acca45102eebd2da0ff3b9732ef5569d0acddfd84aac93a006",
+    "object": "3abcf39bc8b03e7fac03ff87320ec2f05ab75beeeb458c8c2b9821f8852ce4f9",
+    "identity": "3ae8435fc7f57916d4d53718b42d39ad7ac8f805a7d6c4a3063c740c09fbe274",
+    "program_revision": "9f42f0afa0740217c5f0aaba2fb970f9b7032c7a09ee2f86b7f47188922ac258",
+    "unchanged_emitted_machine_code": "9acbe991a4d1dc076b4dff1c06f0fa377e90c8d940110e551d42d8d44fca8b00",
+    "unchanged_launch": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257"
+  },
+  "identity_audit": {
+    "machine_code_bytes_including_alignment": 24704,
+    "identical_relocations": [
+      "0000000000004c34 ARM64_RELOC_BRANCH26     _mech_window_region_2",
+      "0000000000004030 ARM64_RELOC_BRANCH26     _mech_window_region_5",
+      "0000000000003460 ARM64_RELOC_BRANCH26     _mech_string_map_region_0"
+    ],
+    "bytecode_identity_changes": {
+      "nominal_key": {
+        "path": "ArtifactSchemas[13].body.Enum.key",
+        "before": [
+          33,
+          241,
+          205,
+          229,
+          77,
+          172,
+          38,
+          107,
+          45,
+          239,
+          75,
+          167,
+          170,
+          237,
+          226,
+          251,
+          133,
+          49,
+          150,
+          13,
+          135,
+          103,
+          13,
+          148,
+          155,
+          218,
+          6,
+          78,
+          42,
+          164,
+          37,
+          112
+        ],
+        "after": [
+          180,
+          43,
+          226,
+          169,
+          121,
+          102,
+          171,
+          176,
+          81,
+          77,
+          253,
+          84,
+          217,
+          184,
+          115,
+          1,
+          157,
+          126,
+          37,
+          36,
+          148,
+          97,
+          138,
+          154,
+          77,
+          116,
+          200,
+          116,
+          160,
+          105,
+          64,
+          159
+        ]
+      },
+      "constant_id_remap_candidate_to_baseline": [
+        1,
+        2,
+        0,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37
+      ],
+      "reference_remaps": [
+        {
+          "path": "section-13.nodes.10.body.Comprehension.steps.0.Generator.source.Constant",
+          "candidate": 1,
+          "baseline": 2
+        },
+        {
+          "path": "section-14.22.Input.source.Constant",
+          "candidate": 2,
+          "baseline": 0
+        }
+      ]
+    },
+    "reason": "The unchanged runtime source compiler gives independently created standalone documents distinct UUID-based nominal owners. Nominal identity can reorder the constant pool; the auditor proves a bijection and corresponding references, comparing all other section bytes exactly. These differences are not ignored by execution: each build retains and checks its own exact artifact/Object/identity pins."
+  },
+  "qualification": {
+    "selected_rust_tests": 558,
+    "suite_counts": {
+      "numeric": 150,
+      "engine_proof": 30,
+      "gpu_boundary_codegen": 96,
+      "canonical_state": 115,
+      "generated_program": 129,
+      "hosted": 37,
+      "publication_replay": 1
+    },
+    "native_feature_profiles": [
+      "canonical-native-program-runtime",
+      "canonical-native-program-host-runtime",
+      "canonical-native-program"
+    ],
+    "release": "Both original and decoded release builds pass actual secured CLI success, denial, delivery-failure and pin checks. Eight exact full125M outputs and six separate timing samples; not mixed into the matched comparison.",
+    "release_medians_seconds": [
+      0.973890666,
+      0.97417425
+    ],
+    "accounting": "Every matched secured report equals the previously qualified report for its size except its own pinned program revision. One observation and one effect in one host round; 474 native callbacks; no JIT, source parser or resident-body execution.",
+    "supervision": "Release and matched drivers exited 0. Timed children had explicit deadlines, all exits were checked and serial comparison confirmed no competing build/profile workload before and after."
+  },
+  "evidence": {
+    "root": "tmp/pr-stack-evidence",
+    "availability": "The following raw run and audit files are retained local evidence, not committed repository files. Both workload input/oracle byte counts and SHA-256 pins are recorded directly in workloads above; the timing samples are recorded directly in measurement.summary.",
+    "files": [
+      {
+        "path": "ci-portability-preparation-v1002.json",
+        "sha256": "0a0e2e576baf97e782a6018c2af1db41f554bf76b697c36c094508764fa2e534"
+      },
+      {
+        "path": "ci-portability-standard125m-release-v1003/hosted-linked-result.json",
+        "sha256": "7807dc2c628806f5f96c9bf2ce0ed489275d606a0c44149fbc798cf305a587d3"
+      },
+      {
+        "path": "ci-portability-standard125m-release-v1003/full-input/full-input-result.json",
+        "sha256": "c809da86432338d1ed383182cf6fdf12a3bf2e6747b76a41bb01a8e1e91744ab"
+      },
+      {
+        "path": "ci-portability-release-completion-v1003.json",
+        "sha256": "c341d4c9d19dfc232f876b029250a31d11f846c7bd7f9d62de0a8f00c6a4e91f"
+      },
+      {
+        "path": "audit-ci-portability-full125m-v1004-result.json",
+        "sha256": "4b8ea076c4545da657886c7c671fe2b4c3049a663d153da239354f978bc3a795"
+      },
+      {
+        "path": "ci-portability-three-way-v1005/measurement.json",
+        "sha256": "67a4c8ea5f0e0ff0d7b6e142f1bfccc181ba320af1c6ad2ffac1103174e2b04c"
+      },
+      {
+        "path": "ci-portability-comparison-completion-v1005.json",
+        "sha256": "0f412091911833111dba230b2327086f26a53bdce717cd75ea71b083e3862390"
+      },
+      {
+        "path": "audit-ci-portability-three-way-v1006-result.json",
+        "sha256": "af4b43e4a304043ce0844c95b6460ddc7d5dbbbf71ab081c741e3366fd893f13"
+      }
+    ]
+  },
+  "limitations": "Whole-implementation comparison, not isolated capability cost, an optimization floor or language ranking. This M1, two pinned inputs, warm-cache fresh processes. OS/Rust argv acquisition and stdin provider cache remain outside the managed account. No OS process sandbox is added or measured.",
+  "outstanding": "Full clean CI and clean review remain required for the final PR revision. Keep PR909 draft and unmerged; readiness and merge require user direction."
+}

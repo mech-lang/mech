@@ -1,6 +1,8 @@
 //! Selected collection-leaf metadata, never an executor or a complete program.
 //! No live shape, binder, kernel, source parser or preflight is invoked here.
 use super::{node_inputs, node_output_slot};
+#[path = "native_collection_template_image.rs"]
+mod image;
 use crate::native_artifact::NativeArtifactLoweringError as Error;
 pub use crate::resident::native_collection_semantics::NativeCollectionPrimitive;
 use crate::{ArtifactSource, ExecutableNodeBody, OperationReference, ProgramArtifact};
@@ -13,7 +15,7 @@ use mech_core::{
 /// and its symbolic canonical schemas. It is not permission to execute a call:
 /// native consumers must still derive current NativeHost descriptors, validate
 /// geometry, construct the exact BoundCall and admit storage/work before use.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeCollectionOperationTemplate {
     revision: ProgramRevision,
     node: NodeId,
@@ -22,13 +24,14 @@ pub struct NativeCollectionOperationTemplate {
     leaf: SelectedCollectionLeaf,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 struct SelectedCollectionLeaf {
     selected_key: ResidentOperationKey,
     primitive: NativeCollectionPrimitive,
     inputs: Box<[Schema]>,
     output: Schema,
     contract: ResolvedOperationContract,
+    #[serde(serialize_with = "image::serialize_memory")]
     implementation_memory: ImplementationMemoryClass,
 }
 impl NativeCollectionOperationTemplate {
@@ -66,7 +69,7 @@ impl NativeCollectionOperationTemplate {
 }
 
 /// Exact lexical operand identity, not a reconstructed root slot or a value.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeCollectionLexicalSource {
     Control(crate::ControlValue),
     Comprehension(crate::ComprehensionValue),
@@ -75,7 +78,7 @@ pub enum NativeCollectionLexicalSource {
 /// A selected leaf inside the actual canonical Match/Activation, iteration or
 /// comprehension tree. Its constructor searches that tree; callers cannot
 /// substitute a fabricated block with a coincidentally equal block number.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeCollectionLexicalTemplate {
     revision: ProgramRevision,
     owner: NodeId,
@@ -547,29 +550,7 @@ fn select_leaf(
     // These are branches of the SAME maintained access factories, not new
     // kernels. Specialize only after private factory provenance is established;
     // the exact selected schemas/arity/contract still have to validate below.
-    let primitive = match primitive {
-        NativeCollectionPrimitive::CompositePack(_) => {
-            NativeCollectionPrimitive::CompositePack(input_ids.len())
-        }
-        NativeCollectionPrimitive::StringScalarAccess => match inputs.first().map(Schema::body) {
-            Some(SchemaBody::Matrix { .. }) => NativeCollectionPrimitive::MatrixScalarAccess,
-            Some(SchemaBody::Map { .. }) => NativeCollectionPrimitive::MapKeyAccess,
-            _ => primitive,
-        },
-        NativeCollectionPrimitive::StringRangeAccess
-            if input_ids.len() == 2
-                && matches!(
-                    inputs.first().map(Schema::body),
-                    Some(SchemaBody::Matrix { .. })
-                ) =>
-        {
-            NativeCollectionPrimitive::MatrixRangeAccess
-        }
-        NativeCollectionPrimitive::StringRangeAccess if input_ids.len() == 1 => {
-            NativeCollectionPrimitive::StringAllAccess
-        }
-        _ => primitive,
-    };
+    let primitive = image::specialize_primitive(primitive, &inputs);
     if !validate_schemas(primitive, &inputs, &output) {
         return Err(Error::WitnessTypeMismatch { node });
     }

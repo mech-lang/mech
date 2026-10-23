@@ -53,33 +53,36 @@ fn lexical_captures_alias_exact_scalar_values_and_keep_all_certified_operations(
                     op,
                     operands,
                     output,
-                    memory_plan,
-                } => Some((block.origin(), *op, operands, *output, memory_plan)),
+                } => Some((block.origin(), *op, operands, *output)),
                 _ => None,
             })
             .collect::<Vec<_>>();
         assert_eq!(ops.len(), 3);
         assert!(
             ops.iter()
-                .all(|(_, op, _, _, _)| *op == NativeScalarOp::U64Add)
+                .all(|(_, op, _, _)| *op == NativeScalarOp::U64Add)
         );
         let captured = ops
             .iter()
-            .find(|(at, _, _, _, _)| at.block().is_none())
+            .find(|(at, _, _, _)| at.block().is_none())
             .unwrap()
             .3;
         assert_eq!(
             ops.iter()
-                .filter(|(at, _, args, _, _)| at.block().is_some() && args.contains(&captured))
+                .filter(|(at, _, args, _)| at.block().is_some() && args.contains(&captured))
                 .count(),
             2
         );
-        for (_, _, _, _, memory) in ops {
-            assert_eq!(memory.target.kind, mech_core::MemoryTargetKind::NativeHost);
-            assert_eq!(
-                memory.bound_call.target(),
-                mech_core::ExecutionTarget::Native
-            );
+        // The CFG retains selected scalar witnesses and exact value layouts,
+        // not process-local binding plans from compiler-time validation.
+        for (_, _, operands, output) in ops {
+            assert_eq!(operands.len(), 2);
+            for value in operands.iter().chain(std::iter::once(&output)) {
+                assert_eq!(
+                    plan.values()[value.get() as usize].kind(),
+                    NativeScalarKind::U64
+                );
+            }
         }
         for (actual, expected) in plan.outputs().iter().zip(artifact.outputs()) {
             assert_eq!(actual.output(), expected.output);
@@ -192,8 +195,9 @@ fn wider_scalar_matches_share_the_selected_cast_witness_and_exact_types() {
             let plan =
                 lower_scalar_match_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
             assert!(plan.blocks().iter().any(|block| matches!(block.action(),
-                NativeMatchAction::Primitive { op: actual, memory_plan, .. }
-                    if *actual == op && memory_plan.bound_call.target() == mech_core::ExecutionTarget::Native)));
+                NativeMatchAction::Primitive { op: actual, operands, output }
+                    if *actual == op && operands.len() == 1
+                        && plan.values()[output.get() as usize].kind() == kind)));
             assert!(
                 plan.outputs()
                     .iter()

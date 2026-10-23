@@ -1,4 +1,4 @@
-//! Managed ABI8 invocation. This boundary never evaluates a graph: generated
+//! Managed ABI12 invocation. This boundary never evaluates a graph: generated
 //! blocks choose every successor and run every scalar/counter instruction.
 use super::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
@@ -23,10 +23,22 @@ use mech_engine::native_artifact::{
 };
 use std::ffi::c_void;
 
+#[path = "program_borrowed_strings.rs"]
+mod borrowed;
+#[path = "program_tail_runtime.rs"]
+mod closed_tail;
 #[path = "program_collection.rs"]
 mod collection;
+#[path = "program_line_matrices.rs"]
+mod line_matrices;
+#[path = "program_prefix_runtime.rs"]
+mod prefix;
+#[path = "program_selected_join.rs"]
+mod selected_join;
 #[path = "program_session.rs"]
 mod session;
+#[path = "program_window_round.rs"]
+mod window_round;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub(super) use session::CheckedEntry;
 #[cfg(feature = "canonical-native-program-host-runtime")]
@@ -112,6 +124,44 @@ fn amount(count: usize, scale: u64, base: u64) -> Result<u64, NativeProgramExecu
         .and_then(|n| n.checked_add(base))
         .ok_or_else(|| invalid("program size/work overflow"))
 }
+#[cfg(all(test, feature = "canonical-native-program"))]
+fn test_corrupt_prefix_checkpoint(frame: *mut Frame, field: u8) {
+    // SAFETY: only the synchronous owning Prepared test driver calls this,
+    // after the retained checked JIT returned. Descriptor offsets name its
+    // exact admitted lanes; no poisoned word is subsequently executed.
+    unsafe {
+        let frame = &mut *frame;
+        assert_eq!(frame.phase, super::program_abi::PHASE_PREFIX);
+        let context = &*frame.base.context.cast::<Context<'_, '_>>();
+        let descriptor = context.control.descriptor;
+        let region = descriptor.prefix.as_ref().unwrap();
+        let borrowed = &descriptor.borrowed_strings.regions[region.borrowed];
+        match field {
+            0..=2 => {
+                let word = match field {
+                    0 => borrowed.ready,
+                    1 => borrowed.end - 1,
+                    _ => {
+                        descriptor.closed_tails.regions
+                            [descriptor.closed_tails.sites[region.tail.header() as usize].unwrap()]
+                        .words
+                            + 1
+                    }
+                };
+                assert!(word < frame.base.local_count as usize);
+                *frame.base.locals.add(word) = 1;
+            }
+            3 => {
+                assert!(frame.argument_capacity > 0);
+                *frame.arguments = 1;
+            }
+            4 => frame.resume_site ^= 1,
+            5 => frame.available_lines ^= 1,
+            6 => frame.input_eof ^= 1,
+            _ => panic!("unknown checkpoint corruption"),
+        }
+    }
+}
 fn bits(value: &Value, kind: NativeScalarKind) -> Result<u64, NativeProgramExecutionError> {
     match (kind, value.data()) {
         (NativeScalarKind::Bool, ValueData::Bool(v)) => Ok(u64::from(*v)),
@@ -127,6 +177,10 @@ struct Context<'plan, 'visit> {
     // Sources are cheap shared roots from the arena; drop collection state
     // first, while that arena still owns their prepaid retirement obligation.
     collections: Option<collection::State>,
+    borrowed_strings: Option<borrowed::State>,
+    closed_tail: Option<closed_tail::State>,
+    selected_join: Option<selected_join::State>,
+    line_matrices: line_matrices::State,
     arena: NativeValueArena<'plan>,
     library: NativeLibraryWorkBudget,
     limits: MemoryBudgetLimits,
@@ -139,9 +193,54 @@ struct Context<'plan, 'visit> {
     output_cursor: usize,
     error: Option<NativeProgramExecutionError>,
     activation_phase: bool,
+    window_region: Option<(u32, u64)>,
+    prefix: Option<prefix::State>,
+    // The borrow pins real UTF-8 backing for this synchronous entry only.
+    line_window: Option<&'visit mech_engine::native_artifact::NativeTextLineWindow<'visit>>,
 }
 impl Context<'_, '_> {
+    fn write_borrowed_word(
+        &mut self,
+        index: usize,
+        word: u64,
+    ) -> Result<(), NativeProgramExecutionError> {
+        if self.arguments.is_null() || index >= self.argument_capacity {
+            return Err(invalid("borrowed String capture lane is too small"));
+        }
+        // SAFETY: the owning session registers this exact admitted lane.
+        // Generated code is suspended; no reference survives this callback.
+        unsafe {
+            *self.arguments.add(index) = word;
+        }
+        Ok(())
+    }
+    fn write_window_arguments(
+        &mut self,
+        words: [u64; 5],
+    ) -> Result<(), NativeProgramExecutionError> {
+        if self.arguments.is_null() || self.argument_capacity < words.len() {
+            return Err(invalid("compiled region argument lane is too small"));
+        }
+        // SAFETY: the owning session registers this exact disjoint five-word
+        // lane. Generated code is suspended in this callback, and the loaned
+        // canonical owners in call_inputs outlive its subsequent native read.
+        unsafe { core::slice::from_raw_parts_mut(self.arguments, words.len()) }
+            .copy_from_slice(&words);
+        Ok(())
+    }
     fn needs_move(&self, site: usize) -> Option<(NativeMatchValue, NativeMatchValue)> {
+        if self.borrowed_action(site).is_some() {
+            return None;
+        }
+        if self
+            .control
+            .descriptor
+            .scalar_aggregates
+            .action(site)
+            .is_some()
+        {
+            return None;
+        }
         let plan = &self.control.descriptor.plan;
         let pair = match plan.blocks()[site].action() {
             NativeIterationAction::Scalar(NativeMatchAction::Copy { source, output }) => {
@@ -177,6 +276,18 @@ impl Context<'_, '_> {
             .then_some(pair)
     }
     fn action_required(&self, site: usize) -> bool {
+        if self.borrowed_action(site).is_some() {
+            return false;
+        }
+        if self
+            .control
+            .descriptor
+            .scalar_aggregates
+            .action(site)
+            .is_some()
+        {
+            return false;
+        }
         matches!(
             self.control.descriptor.plan.blocks()[site].action(),
             NativeIterationAction::LibraryCall { .. }
@@ -241,6 +352,31 @@ impl Context<'_, '_> {
         operation: u64,
         args: [u64; 3],
     ) -> Result<Option<u64>, NativeProgramExecutionError> {
+        if self
+            .prefix
+            .as_ref()
+            .is_some_and(|prefix| prefix.paused.is_some())
+        {
+            return Err(invalid("helper after native prefix checkpoint"));
+        }
+        if operation == super::program_abi::CLOSED_TAIL_END {
+            let site = usize::try_from(site).map_err(|_| invalid("closed Tail site overflow"))?;
+            return self.end_closed_tail(site, args);
+        }
+        if self.closed_tail.is_some() {
+            return Err(invalid(
+                "ordinary helper while closed Tail fuel is outstanding",
+            ));
+        }
+        if matches!(
+            operation,
+            super::program_abi::PREFIX_PAUSE
+                | super::program_abi::PREFIX_BORROWED_RESUME
+                | super::program_abi::PREFIX_TAIL_RESUME
+                | super::program_abi::PREFIX_SCANNED
+        ) {
+            return self.prefix_helper(site, operation, args);
+        }
         if self.control.previous.map(u64::from) != Some(site) {
             return Err(invalid("helper outside exact admitted visit"));
         }
@@ -248,7 +384,32 @@ impl Context<'_, '_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         collection::before_span_helper(self, site)?;
         let descriptor = self.control.descriptor;
-        if operation == 0xffff_ffff_ffff_fff0 {
+        if operation == super::program_abi::CLOSED_TAIL_BEGIN {
+            return self.begin_closed_tail(site, args);
+        }
+        if operation == super::program_abi::BORROWED_STRINGS_PREPARE {
+            return self.prepare_borrowed_strings(site, args);
+        }
+        if operation == super::program_abi::BORROWED_STRING_FAILURE {
+            return self.borrowed_string_failure(site, args);
+        }
+        if self.borrowed_action(site).is_some() {
+            return Err(invalid("ordinary helper at native borrowed String site"));
+        }
+        if descriptor.scalar_aggregates.action(site).is_some() {
+            return Err(invalid("helper at native-only aggregate site"));
+        }
+        if operation == super::program_abi::WINDOW_PREPARE {
+            self.prepare_window_region(site, args)
+        } else if operation == super::program_abi::WINDOW_FINISH {
+            self.finish_window_region(site, args)
+        } else if operation == super::program_abi::STRING_MAP_PREPARE {
+            self.prepare_string_map_region(site, args)
+        } else if operation == super::program_abi::STRING_MAP_FINISH {
+            self.finish_string_map_region(site, args)
+        } else if self.window_region.is_some() {
+            Err(invalid("helper while compiled String loans are active"))
+        } else if operation == 0xffff_ffff_ffff_fff0 {
             if self.consumed || args != [0; 3] {
                 return Err(invalid("duplicate or malformed structural observation"));
             }
@@ -351,6 +512,18 @@ impl Context<'_, '_> {
             // the synchronous entry. Native code is suspended in this callback;
             // no Rust reference to the lane survives across native writes.
             let words = unsafe { core::slice::from_raw_parts(self.arguments, operands.len()) };
+            if let Some(result) = self.line_matrix_call(site, words)? {
+                self.consumed = true;
+                return Ok(result);
+            }
+            if self.captured_line_element_call(site, words)? {
+                self.consumed = true;
+                return Ok(None);
+            }
+            if self.selected_join_call(site, words)? {
+                self.consumed = true;
+                return Ok(None);
+            }
             for (index, &operand) in operands.iter().enumerate() {
                 let value = if descriptor.plan.values()[operand.get() as usize]
                     .scalar_kind()
@@ -460,6 +633,21 @@ impl Context<'_, '_> {
         }
     }
     fn visit(&mut self, site: u64) -> Result<(), NativeProgramExecutionError> {
+        if self
+            .prefix
+            .as_ref()
+            .is_some_and(|prefix| prefix.paused.is_some())
+        {
+            return Err(invalid("visit after native prefix checkpoint"));
+        }
+        if self.closed_tail.is_some() {
+            return Err(invalid(
+                "ordinary visit while closed Tail fuel is outstanding",
+            ));
+        }
+        if self.window_region.is_some() {
+            return Err(invalid("compiled String loans escaped their region"));
+        }
         if self.activation_phase
             && self
                 .control
@@ -479,6 +667,26 @@ impl Context<'_, '_> {
         {
             return Err(invalid("entry omitted current required helper"));
         }
+        // A native aggregate latch has no managed move callback. Retire the
+        // OTHER managed loop locals after that generated copy, before the next
+        // visit, exactly as the managed latch used to do. Aggregate words own
+        // no heap payload and are absent from the retirement inventory.
+        if let Some(previous) = self.control.previous
+            && self
+                .control
+                .descriptor
+                .scalar_aggregates
+                .action(previous as usize)
+                .is_some()
+            && let NativeIterationAction::Latch { iteration } =
+                self.control.descriptor.plan.blocks()[previous as usize].action()
+            && matches!(
+                self.control.descriptor.plan.iterations()[*iteration as usize],
+                mech_engine::native_artifact::NativeControlLoop::Tail(_)
+            )
+        {
+            self.retire_tail_locals(*iteration, RetirementKind::TailLatch)?;
+        }
         let index =
             usize::try_from(site).map_err(|_| invalid("program visit site outside descriptor"))?;
         let block = self
@@ -488,11 +696,32 @@ impl Context<'_, '_> {
             .blocks()
             .get(index)
             .ok_or_else(|| invalid("program visit site outside descriptor"))?;
+        self.validate_selected_join_boundary(index)?;
         if let Some(state) = &self.collections {
             state.validate_span_boundary(block.action())?;
         }
         self.control.visit(site)?;
         let descriptor = self.control.descriptor;
+        if let Some(mech_engine::native_artifact::NativeBorrowedStringAction::Equal { .. }) =
+            self.borrowed_action(index)
+        {
+            self.library.charge(32, 32).map_err(|error| {
+                NativeProgramExecutionError::Collection {
+                    origin: block.origin(),
+                    error,
+                }
+            })?;
+        }
+        if let super::iteration_abi::Progress::Exit(iteration) = descriptor.visits[index].progress
+            && self.borrowed_strings.as_ref().is_some_and(|state| {
+                descriptor.borrowed_strings.regions[state.region]
+                    .proof
+                    .iteration()
+                    == iteration
+            })
+        {
+            self.borrowed_strings = None;
+        }
         if let super::iteration_abi::Progress::Exit(iteration) =
             descriptor.visits[site as usize].progress
             && matches!(
@@ -751,7 +980,12 @@ fn verify_hosted_turn(
     turn: &mech_runtime::CanonicalNativeResourceTurn<'_>,
 ) -> Result<(), NativeProgramExecutionError> {
     verify_hosted_plan(descriptor, turn.program_revision(), turn.plan())?;
-    if turn.observations().len() != descriptor.plan.observations().len() {
+    let expected = if turn.text_capture().is_some() {
+        0
+    } else {
+        descriptor.plan.observations().len()
+    };
+    if turn.observations().len() != expected {
         return Err(invalid(
             "captured observation count differs from exact native plan",
         ));
@@ -2062,7 +2296,7 @@ mod histogram_observation_tests {
             .map(|call| call.binding_metadata_bytes())
             .max()
             .unwrap();
-        binding + collection::State::metadata_bytes(jit.descriptor().plan()).unwrap()
+        binding + collection::State::metadata_bytes(jit.descriptor()).unwrap()
     }
     fn captured_roots(bytes: usize, count: u8) -> Vec<String> {
         (0..count)
@@ -3190,7 +3424,7 @@ mod tests {
                             *frame.arguments = 1;
                         }
                     }
-                    // SAFETY: arguments remain within the retained ABI8 boundary;
+                    // SAFETY: arguments remain within the retained ABI12 boundary;
                     // wrong metadata/pointer is rejected before dereference.
                     let status = unsafe {
                         (frame.helper)(
@@ -3802,7 +4036,7 @@ mod tests {
             4,
             "one outer source plus a fresh inner source for each of three visits"
         );
-        let fixed_metadata = collection::State::metadata_bytes(&jit.descriptor().plan).unwrap();
+        let fixed_metadata = collection::State::metadata_bytes(jit.descriptor()).unwrap();
         assert!(
             rows.iter().any(|row| row.live_bytes > fixed_metadata),
             "inner preparation must coexist with already-retained builder drafts"
@@ -3994,6 +4228,10 @@ mod tests {
                 (32, 2u64),
                 (32, 3u64),
                 (32, 4u64),
+                (16, 24u64),
+                (16, 25u64),
+                (24, 11u64),
+                (32, 34u64),
                 (112, 0u64),
                 (120, 0u64),
             ] {
@@ -4009,8 +4247,10 @@ mod tests {
         }
     }
     #[test]
-    fn abi8_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 8);
+    fn abi12_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
+        assert_eq!(VERSION, 12);
+        assert_eq!(super::super::program_abi::PHASE_CAPTURE_TAIL, 3);
+        assert_eq!(super::super::program_abi::STATUS_INPUT_SCANNED, 7);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);
         assert_eq!(
             core::mem::offset_of!(Frame, helper),
@@ -4033,8 +4273,20 @@ mod tests {
             core::mem::size_of::<NativeEntryFrame>() + 32
         );
         assert_eq!(
-            core::mem::size_of::<Frame>(),
+            core::mem::offset_of!(Frame, resume_site),
             core::mem::size_of::<NativeEntryFrame>() + 40
+        );
+        assert_eq!(
+            core::mem::offset_of!(Frame, available_lines),
+            core::mem::size_of::<NativeEntryFrame>() + 48
+        );
+        assert_eq!(
+            core::mem::offset_of!(Frame, input_eof),
+            core::mem::size_of::<NativeEntryFrame>() + 56
+        );
+        assert_eq!(
+            core::mem::size_of::<Frame>(),
+            core::mem::size_of::<NativeEntryFrame>() + 64
         );
     }
 }

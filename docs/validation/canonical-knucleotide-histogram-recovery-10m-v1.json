@@ -1,0 +1,114 @@
+{
+  "schema": "mech.canonical-knucleotide-histogram-recovery.v1",
+  "status": "PARTIAL_RECOVERY_STILL_PERFORMANCE_BLOCKING",
+  "measured_source_commit": "d8550bc248db49828277f4dfe84db85547a42cfc",
+  "platform": "same Apple M1 as the retained local old/new 10M comparison",
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "input": {
+    "fasta_n": 2000000,
+    "three_bases": 10000000,
+    "bytes": 20333411,
+    "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b",
+    "oracle_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+  },
+  "unchanged_launch_sha256": "ec79f588345186db7f8646e52158d494628c6eb69b94ebdb269ddcf5dbe1c87a",
+  "measurement": {
+    "route": "canonical-artifact-program-object-secured-cli",
+    "policy": "secured",
+    "rust_optimization": "3",
+    "object_optimization": "speed",
+    "abi": 8,
+    "typed_ir": 13,
+    "work_policy": 23,
+    "binary_sha256_both_variants": "2dec04447259c973f77da0762d65060dbcd6f793f23be2ab424789608e7a7341",
+    "object_sha256_both_variants": "546b8b56b390b2921ee1e680c2c2335f3e856ea5691322c25d4703516a62caee",
+    "identity_sha256_both_variants": "2ff1a10c95cc2830d26cb84144145a827cb922a8b22c22e0835af1596da309ab",
+    "raw_samples_ns": {
+      "original": [
+        17149854292
+      ],
+      "decoded": [
+        17159389750
+      ]
+    },
+    "large_correctness_processes": 2,
+    "successful_timing_samples": 2,
+    "exact_output_all_four_processes": true,
+    "native_visits_all_four": 73000661,
+    "native_work_all_four": 696333871370,
+    "native_comparison_work_all_four": 892528830,
+    "observations": 1,
+    "effects": 1,
+    "source_parser": false,
+    "jit": false,
+    "resident_body_evaluation": false,
+    "scope": "Warm-cache fresh-process spawn through observed child exit, including CLI input/output/report; 1ms exit polling. Build, hashes and parent validation excluded. One sample per variant, not a multi-sample median or final qualification."
+  },
+  "same_input_baselines_seconds": {
+    "old_selected_direct_median_of_7": 0.092041625,
+    "old_secured_host_median_of_7": 0.123658291,
+    "prior_canonical_original_secured_median_of_3": 73.536783875,
+    "previous_window_query_original_secured_single_sample": 34.255289333
+  },
+  "comparison": {
+    "speedup_from_previous_window_query_sample": 1.9974099342044718,
+    "slowdown_against_old_direct_median": 186.32715678368348,
+    "visits_removed_from_previous": 280000010
+  },
+  "implementation": [
+    "The same closed canonical window CFG proof now selects full Histogram and guarded query consumers. No source/name/hash specialization or external algorithm helper.",
+    "For ASCII without CRLF and widths 1 or 2, admit real source/scratch owners and finite whole-loop work before emitted native byte counting. Other representations/widths retain ordinary canonical CFG.",
+    "Dense counters use base-128 key ordering and actual canonical Map finalization; original selected producer shape, output caps, finite cumulative account and atomic publication remain.",
+    "ONE host round still owns authorize/capture, compiled computation, staging and commit. Native regions are not additional security rounds."
+  ],
+  "fresh_profiles": {
+    "scope": "Exact retained executables, same input/launch/oracle; sampling diagnostics, NOT timing samples. All actual outputs matched.",
+    "previous_34s": {
+      "binary_commit": "e5a9713d6471467d972b82d4e4ccd3db71719f80",
+      "main_thread_stacks": 27053,
+      "runtime_helper_percent": 83.09244815732082,
+      "per_operation_admission_percent": 14.242413041067534,
+      "compiled_query_percent": 0.3363767419509851
+    },
+    "current_17s": {
+      "main_thread_stacks": 13428,
+      "runtime_helper_percent": 92.50074471254096,
+      "per_operation_admission_percent": 6.091748585046172,
+      "compiled_window_loops_percent": 0.7670539171879655,
+      "string_map_entry_inclusive_percent": 25.342567768841228,
+      "histogram_category_percent": 0.07447125409591898
+    },
+    "caveat": "Helpers include real computation as well as bookkeeping. Percentages are sample proportions, not exact causal wall-time attribution. Inclusive functions overlap; ancestor categories are disjoint but heuristic. Inlining/deduplicated symbols limit detail.",
+    "next": "Uppercase String map/join and ordinary record traversal/managed state operations now dominate. Profile each subsequent measured executable before choosing further lowering."
+  },
+  "verification": {
+    "regressions": "137 executed tests passed: 100 canonical program and 37 actual secured host; four explicit ignored diagnostics. Tests compare original/decoded maps to canonical reference for all ASCII bytes in bounded cases, overlap/empty/Unicode/CRLF/wider fallback, constant callback count, finite denial and recovery.",
+    "guards": "Production routing, unsafe boundaries, module layout, native build analysis layout and diff formatting passed.",
+    "qualification": "Actual pinned release harness passed, all source/input/harness pins unchanged; owned process cleanup complete. 439.643s total qualification/build duration is not a benchmark sample.",
+    "physical_audit": "v709 independently reconciles all four raw streams/reports, exact output, binaries, object identities, manifest pins, read-only owned inputs, root Rust release profiles and measured samples."
+  },
+  "local_evidence": {
+    "root": "tmp/pr-stack-evidence/",
+    "full_result": {
+      "path": "histogram-recovery-10m-release-v707/full-input/full-input-result.json",
+      "sha256": "b938495bc32cdb32a1e66c3b04fe48c5c7936e0d6b688f386303acbdd23eda5d"
+    },
+    "linked_result": {
+      "path": "histogram-recovery-10m-release-v707/hosted-linked-result.json",
+      "sha256": "0ceef80ad34bfabcce18f356710aa06cb4b8a13f3f060defe33cc7c90daf154f"
+    },
+    "audit": {
+      "path": "audit-histogram-recovery-v709-result.json",
+      "sha256": "a36fc23d5bc85ed8650af925a3c757ff4e99a90199f5ab857d2e1282af9427e5"
+    },
+    "profile": {
+      "path": "histogram-recovery-cpu-profile-v708/profile-analysis.json",
+      "sha256": "24f6cdd1ea78d44548b35c5662e1b3e4628f05bbd0836189ae9873ac037fa2a6"
+    },
+    "raw_profile": {
+      "path": "histogram-recovery-cpu-profile-v708/sample.txt",
+      "sha256": "c8b86dc469b10195775194c966372cbf00c43234edd8650907f9f8c6ee25a585"
+    }
+  },
+  "remaining": "Still roughly 186x old same-input direct I/O; 73 million per-operation visits remain. Full125M remains unqualified after the prior fixed temporary-memory denial. No cap increase, changed oracle, language ranking, next benchmark, automatic ready or merge."
+}

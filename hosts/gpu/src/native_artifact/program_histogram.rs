@@ -1,5 +1,5 @@
-//! One admitted full String histogram sink. Generated code still evaluates
-//! every source/body/filter/yield. This helper consumes one selected String.
+//! One admitted full String histogram sink. Ordinary generated CFG consumes
+//! each selected String; proved window regions can fill its accumulator in bulk.
 use super::{Context, Dimension, Error, State, add, check, invalid, mul};
 use core::mem::size_of;
 use mech_core::ManagedMemoryReservation;
@@ -10,6 +10,8 @@ mod finish;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_histogram_observation.rs"]
 mod observation;
+#[path = "program_window_histogram_binding.rs"]
+mod window;
 #[cfg(all(test, feature = "canonical-native-program"))]
 pub(in crate::native_artifact) use observation::{HistogramDemand, HistogramStage, HistogramVisit};
 
@@ -20,6 +22,7 @@ struct Entry {
 pub(super) struct Builder {
     // Actual payload/vector owners precede their exact capacity reservations.
     entries: Vec<Entry>,
+    compiled_bins: Option<window::Bins>,
     key_payload: u64,
     accepted: u64,
     pub(super) comparisons: u64,
@@ -221,6 +224,7 @@ impl State {
         let memory = ctx.library.memory_budget();
         self.builder(id)?.histogram = Some(Builder {
             entries: Vec::new(),
+            compiled_bins: None,
             key_payload: 0,
             accepted: 0,
             comparisons: 0,

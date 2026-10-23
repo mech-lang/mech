@@ -15,6 +15,7 @@ fn maintained_catalog_has_no_open_or_unclassified_memory_implementation() {
             | ImplementationMemoryClass::ExternalMarshalling
             | ImplementationMemoryClass::MatrixSolve
             | ImplementationMemoryClass::CanonicalFinalize
+            | ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize
             | ImplementationMemoryClass::CanonicalSortUnique => {}
         }
     }

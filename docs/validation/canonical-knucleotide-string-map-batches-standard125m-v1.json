@@ -1,0 +1,82 @@
+{
+  "schema": "mech.canonical-knucleotide-string-map-batches-standard125m.v1",
+  "status": "QUALIFIED_INTERMEDIATE_NO_SIGNIFICANT_SPEEDUP_ESTABLISHED",
+  "measured_source_commit": "3aee69ed131cc43396772bb2a46cd26f5b04a98e",
+  "platform": "Apple M1; same full 125-million-base input as the preceding canonical and legacy measurements",
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "input": {
+    "three_bases": 125000000,
+    "bytes": 254166745,
+    "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+    "oracle_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+  },
+  "unchanged_launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+  "measurement": {
+    "scope": "Serial warm-cache fresh processes, spawn through observed exit, including secured CLI input/output/report and standard Rust 1ms exit polling. Compilation, integrity hashing and validation excluded. Not kernel timing or isolated security overhead.",
+    "original_samples_ns": [1019341792, 1017091625, 1019204958],
+    "decoded_samples_ns": [1012937459, 1010054209, 1008785250],
+    "original_median_seconds": 1.019204958,
+    "decoded_median_seconds": 1.010054209,
+    "correctness_processes": 2,
+    "timed_samples": 6,
+    "all_eight_exact_output": true,
+    "both_binary_sha256": "ba8c845381cb3524c8a5e0d5eb4caa20c69d1c47191e3687f714c010723f65d0",
+    "both_object_sha256": "2ad2aafe4b5a67333f01c52dc91c02ce8f31c0702002db5319a2054b6a5771ab",
+    "both_identity_sha256": "3c8e4297984637624dc2c1165ed3b864cedb68f04050ff0ec6ff9679aa8a3e85",
+    "program_revision": "26534d966ddb883391e8694c2279637e906e81e548f3cb9b0abea1ec601142d9",
+    "rust_optimization": "3; actual application and Engine release profiles verified",
+    "object_optimization": "speed",
+    "abi": 8,
+    "typed_ir": 19,
+    "work_policy": 29,
+    "native_work": 711679780391,
+    "native_comparison_work": 6041695270,
+    "native_visits": 474,
+    "native_transport_bytes": 31744,
+    "host_result_carrier_bytes": 192,
+    "route": "canonical-artifact-program-object-secured-cli",
+    "policy": "secured",
+    "native_aot": true,
+    "source_parser": false,
+    "jit": false,
+    "resident_body_evaluation": false,
+    "observations": 1,
+    "effects": 1,
+    "shutdown": "completed"
+  },
+  "comparison": {
+    "previous_receipt": "canonical-knucleotide-packed-ranges-standard125m-v1.json",
+    "previous_original_median_seconds": 1.023801709,
+    "wall_time_reduction_fraction": 0.004489884085551954,
+    "interpretation": "The 0.45% lower median is within the preceding run's variation; this does not establish a significant speedup. Preserve the intermediate result rather than presenting it as a large performance win."
+  },
+  "implementation": [
+    "The existing canonical ASCII String-map loop batches eight bounded byte lookups into one word store. Every entry must exist before the batch writes anything.",
+    "A missing entry resumes the unchanged scalar loop at the unwritten batch start, preserving the exact first missing key and valid output prefix. Pure lookahead into the admitted 128-cell table has no observable effect.",
+    "Explicit little-endian word loads/stores preserve byte order. Native-endian u16 table entries, actual owner loans, original buffer bounds, reservations, complete region work, scalar fallback and atomic publication are unchanged.",
+    "No extra runtime buffer, unsafe code, workload/alphabet specialization, alternate executor, permission source, account renewal or second host round."
+  ],
+  "verification": {
+    "distinct_selected_rust_tests": 403,
+    "suite_counts": [26, 96, 115, 128, 37, 1],
+    "ci_python_tests": 165,
+    "regressions": "Original and decoded generated execution covers all 128 ASCII replacements, short and vector-boundary lengths, all batch positions for missing keys, multiple missing keys, Unicode/CRLF fallback, finite work denial, prior publication, owner retention and cleanup. Short cases also match the ordinary resident reference; every case matches an independent byte-map oracle.",
+    "guards": "Routing, warning, layout/native-build layout, runtime boundary and fixtures, unsafe, value, memory planner/runtime, formatting and diff checks passed.",
+    "supervision": "Focused v948 and broad v949 exited 0 with owned cleanup complete; focused tests are included in the broad count. Release v951 exited 0 with cleanup complete; its 407.67685s build/qualification duration is not a timing sample.",
+    "audit": "v952 checks all eight physical outputs/reports, source/input/oracle/launch/binary/Object/identity pins, common counters, release profiles and recomputed medians. The complete finite policy is independently compared with the preceding v933 record.",
+    "full_result_sha256": "2e3b0e3c23b0ef5811e2f5895c73cb38f3a916b2a85ac4c4eddfc74e76c1504a",
+    "linked_result_sha256": "5c4ec6d9ae0d4e1df83b34a2bb365cebcb4c9a3f36cc8ce9ea3d795ce42fe0de",
+    "audit_sha256": "c04ecb65258e7f48e31caefb98cfc3d125b9aa4528bed0a199fcb6ceb2f68c0b",
+    "failures_preserved": "v946 exposed a new fixture's Box<str>/String mismatch. v947 exceeded the ordinary reference evaluator's unchanged compute cap for long 128-entry maps. The corrected tests retain short reference comparisons and independent exact oracles for all lengths; no native production behavior or allowance was weakened."
+  },
+  "profile": {
+    "scope": "v953/v954 sample the exact measured binary; exact output and unchanged accounting. Sampling weights are not causal wall-time attribution and inclusive functions overlap.",
+    "sampled_main_thread_stacks": 665,
+    "compiled_string_map_self_samples": 38,
+    "text_lines_inclusive_samples": 164,
+    "raw_sha256": "2aa93bc58b72f7137e99efbe6a2e966ef51f33c5feec56853c301e383702e999",
+    "analysis_sha256": "f6b1e1de9e9b74004f0a0286fd49285047eadb75b76b3647c1a86e55bda365b1"
+  },
+  "preservation": "Actual binaries, Objects, reports, inputs, profiles, drivers and failed runs remain under tmp/pr-stack-evidence/string-map-batches-* v946-v954. Shared harness pin: 9476c306371bd8e0d64c77e8d253c80e0577446ba18400455977e982d298701f. No duplicate disposable harness archive.",
+  "follow_up": "canonical-knucleotide-line-count-standard125m-v1.json records the subsequent shared line-count reduction; do not relabel this intermediate measurement as that later revision."
+}

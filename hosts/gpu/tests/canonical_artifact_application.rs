@@ -1178,12 +1178,18 @@ fn compiled_feature_closure(metadata: &Value, build_stdout: &[u8]) -> Vec<Value>
         }
     }
     assert!(result.iter().any(|unit| unit["id"] == root));
-    for required in ["mech-core", "mech-engine", "mech-gpu", "mech-stdlib"] {
+    for required in ["mech-core", "mech-engine", "mech-gpu"] {
         assert!(
             seen_packages.contains(required),
             "missing compiled {required}"
         );
     }
+    let requires_stdlib = packages[root]["dependencies"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|dependency| dependency["name"] == "mech-stdlib");
+    assert_eq!(seen_packages.contains("mech-stdlib"), requires_stdlib);
     result.sort_by(|a, b| a["id"].as_str().cmp(&b["id"].as_str()));
     result
 }
@@ -1504,6 +1510,41 @@ fn linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic() 
     assert_eq!(pin(&workspace.join("Cargo.lock")), lock);
     clean(&workspace, &evidence, &commit, "after");
     fs::write(evidence.join("qualification.json"),serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-artifact-linked-qualification.v1","source_commit":commit,"source_checkout_clean_before_and_after":true,"route":"canonical-artifact-cranelift-object","linked":true,"executed":true,"benchmark_measurements":0,"applications":applications})).unwrap()).unwrap();
+}
+
+#[test]
+#[ignore = "explicit selected-factory owner-feature regression; clean pinned checkout and fresh external evidence required"]
+fn linked_scalar_factory_owner_features_preserve_checked_execution() {
+    let workspace = workspace().canonicalize().unwrap();
+    let commit = std::env::var("MECH_CANONICAL_NATIVE_SOURCE_COMMIT").expect("pin immutable HEAD");
+    assert_eq!(commit.len(), 40);
+    assert!(commit.bytes().all(|byte| byte.is_ascii_hexdigit()));
+    let evidence = PathBuf::from(
+        std::env::var_os("MECH_CANONICAL_NATIVE_EVIDENCE_DIR")
+            .expect("new external evidence directory"),
+    );
+    assert!(evidence.is_absolute());
+    fs::create_dir(&evidence).unwrap();
+    let evidence = evidence.canonicalize().unwrap();
+    assert!(!evidence.starts_with(&workspace));
+    clean(&workspace, &evidence, &commit, "before");
+    let lock = pin(&workspace.join("Cargo.lock"));
+    // FLOATS includes numeric equality. The source catalog's maintained entry
+    // is owned by the collection module, absent from the old scalar closure.
+    let application = qualify(&evidence, "canonical-linked-floats", FLOATS);
+    assert_eq!(pin(&workspace.join("Cargo.lock")), lock);
+    clean(&workspace, &evidence, &commit, "after");
+    fs::write(
+        evidence.join("qualification.json"),
+        serde_json::to_vec_pretty(&json!({
+            "schema":"mech.canonical-selected-factory-owner-features.v1",
+            "source_commit":commit,"source_checkout_clean_before_and_after":true,
+            "route":"canonical-artifact-cranelift-object","linked":true,"executed":true,
+            "benchmark_measurements":0,"applications":[application]
+        }))
+        .unwrap(),
+    )
+    .unwrap();
 }
 
 #[test]

@@ -512,9 +512,16 @@ jobs:
 
   canonical-applications:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') || contains(fromJSON(inputs.contract_families), 'language') }}
-    name: Canonical applications and native witnesses
+    name: Canonical applications and native witnesses (${{ matrix.suite }})
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    # Cold builds of the independent feature profiles exhausted the shared
+    # 90-minute job at the last CLI link. Keep EVERY command, but qualify the
+    # independent source/native/CLI suites concurrently under the same gate.
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [source, native, cli]
     env:
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_INCREMENTAL: 0
@@ -543,11 +550,13 @@ jobs:
       - name: Fetch locked application dependencies
         run: cargo +nightly-2026-03-03 fetch --locked
       - name: Execute canonical resident applications and retained tail controls
+        if: ${{ matrix.suite == 'source' }}
         run: |
           cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib \
             --no-default-features --features full_compiler \
             --test applications --test tail_control -- --test-threads=1
       - name: Execute canonical collection and text source contracts
+        if: ${{ matrix.suite == 'source' }}
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib
           --no-default-features --features full_compiler
@@ -564,11 +573,13 @@ jobs:
           --test text_operations --test u64_float_conversion_source
           --test underscore_addressing -- --test-threads=1
       - name: Execute source assignment and fixed-shape specialization contracts
+        if: ${{ matrix.suite == 'source' }}
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib
           --no-default-features --features full_compiler,matrix2,vector2
           --test source_op_assign_contract --test specialization_contract -- --test-threads=1
       - name: Execute canonical native lowering and selected implementation witnesses
+        if: ${{ matrix.suite == 'native' }}
         run: |
           cargo +nightly-2026-03-03 test --locked --offline -p mech-core \
             --no-default-features --features functions \
@@ -585,6 +596,12 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_compiler,native-artifact \
             --lib resident::general::native_collection_templates::tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact \
+            --lib native_text_line_chunk_tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact \
+            --lib native_text_line_window_tests -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_compiler,native-artifact \
             --lib resident::set_conversion:: -- --test-threads=1
@@ -614,6 +631,15 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program \
             --lib native_artifact::program_runtime::tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-program \
+            --lib native_artifact::program_runtime::session::prefix_tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-program \
+            --lib native_artifact::program_runtime::session::prefix_window_tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-program \
+            --lib native_artifact::program_runtime::prefix::retention_tests -- --test-threads=1
           cargo +nightly-2026-03-03 check --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program-runtime --lib
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
@@ -627,11 +653,13 @@ jobs:
           cargo +nightly-2026-03-03 check --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-runtime --lib
       - name: Execute secured canonical reference bytecode admission
+        if: ${{ matrix.suite == 'cli' }}
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-runtime
           --no-default-features --features full_compiler,resident-routing-source
           --example canonical_host_reference -- --test-threads=1
       - name: Execute canonical CLI byte and resource contracts
+        if: ${{ matrix.suite == 'cli' }}
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-build
           --no-default-features --features standard-hosts
@@ -1723,6 +1751,11 @@ jobs:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') }}
     name: Native generated applications (macOS)
     runs-on: macos-latest
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
@@ -1742,12 +1775,36 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
-      - name: Build selected native fixture families
+      # Cold compiler-owner construction has a separate bounded budget; fixture
+      # execution must consume those runners rather than starting hidden builds.
+      - name: Prepare macOS native owner runners
+        timeout-minutes: 75
+        env:
+          MECH_NATIVE_OWNER_BUILD_TIMEOUT_SECS: "1800"
         run: |
-          for case in scalar fixed-matrix dynamic-matrix cli console time-once; do
-            MECH_NATIVE_GENERATED_CASE="$case" \
-              cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts --test native_generated_end_to_end -- --nocapture
-          done
+          python3 scripts/run-native-plan-stage.py --stage macos-owner-prepare --timeout-secs 4200 -- \
+            cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts \
+            --test native_generated_end_to_end -- --ignored --exact prepare_generated_owner_runners --test-threads=1 --nocapture
+      - name: Build selected native fixture families
+        timeout-minutes: 95
+        env:
+          MECH_NATIVE_OWNER_REQUIRE_PREBUILT: "1"
+          MECH_NATIVE_GENERATED_CASE: scalar,fixed-matrix,dynamic-matrix,cli,console,time-once
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage macos-generated --timeout-secs 5400 -- \
+            cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts \
+            --test native_generated_end_to_end -- --exact every_generated_application_fixture_builds_and_executes --test-threads=1 --nocapture
+
+      - name: Retain macOS native application diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-macos-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/native-plan-logs
+            target/bytecode-v1-fixtures/owner-runner/logs
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Check native cache and input ownership on macOS
         timeout-minutes: 20

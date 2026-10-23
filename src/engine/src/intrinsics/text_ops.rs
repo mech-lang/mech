@@ -3,6 +3,15 @@ use crate::*;
 use mech_core::snapshot::{SequenceView, prospective_string_value_footprint};
 use std::sync::LazyLock;
 
+#[path = "text_line_count.rs"]
+mod text_line_count;
+pub(crate) use text_line_count::count as line_count;
+#[cfg(feature = "native-artifact")]
+#[path = "text_line_offsets.rs"]
+mod text_line_offsets;
+#[cfg(feature = "native-artifact")]
+pub(crate) use text_line_offsets::try_for_each_lf;
+
 pub(crate) fn invalid(message: &'static str) -> MechError {
     MechError::new(
         GenericError {
@@ -196,7 +205,7 @@ impl TextRuntime {
             let ValueData::String(text) = inputs[0].data() else {
                 return Err(invalid("text/lines expects String"));
             };
-            let count = text.lines().count();
+            let count = line_count(text);
             let mut lines = text.lines();
             let values = construction.try_boxed_slice_with(count, |construction, _| {
                 Ok(ValueDataDraft::String(

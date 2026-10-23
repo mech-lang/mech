@@ -83,8 +83,11 @@ fn universal(input: &mech_core::Schema, output: &mech_core::Schema) -> bool {
             &&cardinality==&CardinalitySpec::Dynamic{upper_bound:None})
 }
 
-pub(super) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
-    let uses = super::guarded_histogram_query::semantic_use_counts(plan)?;
+pub(super) fn validate(
+    inputs: &super::fusion_semantics::ValidationInputs<'_, impl ControlPlan>,
+) -> Result<(), &'static str> {
+    let plan = inputs.plan();
+    let uses = inputs.counts();
     for (id, collection) in plan.collections().iter().enumerate() {
         let ResultKind::Histogram(sink) = collection.result() else {
             continue;

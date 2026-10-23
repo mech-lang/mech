@@ -1,12 +1,18 @@
-//! Explicit program IR/ABI8 identity. No Debug or pointer serialization.
+//! Explicit program IR/ABI12 identity. No Debug or pointer serialization.
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
-    NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind,
+    NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind, NativeSelectedTextJoin,
+    NativeTextLineMatrixRegion, NativeTextLineRetentionFrontier,
 };
 use sha2::{Digest, Sha256};
+// Identity construction runs once per descriptor, outside generated execution.
+// Keep the streaming hash update out of its hundreds of serialization sites;
+// this shares code without changing a single byte of the identity transcript.
+#[inline(never)]
 fn word(hash: &mut Sha256, value: u64) {
     hash.update(value.to_le_bytes());
 }
+#[inline(never)]
 fn bytes(hash: &mut Sha256, value: &[u8]) {
     word(hash, value.len() as u64);
     hash.update(value);
@@ -48,12 +54,20 @@ fn selected_template(
         M::MatrixSolve => (5, 0, 0),
         M::CanonicalFinalize => (6, 0, 0),
         M::CanonicalSortUnique => (7, 0, 0),
+        M::PackedStringMatrixOrCanonicalFinalize => (8, 0, 0),
     };
     for number in [tag as u64, a as u64, b as u64] {
         word(hash, number);
     }
 }
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 10;
+// IR25 pins deferred final counts, bounded scan progress and the unvisited
+// EOF exit boundary before captured-source consumers acquire ownership.
+// IR26 keeps a returned range open until its requested endpoint is physically
+// available. The frontier itself is unchanged, so its old hash cannot safely
+// authenticate Objects emitted before the corrected retention instructions.
+// IR27 pins the optional sole-use Range producer/endpoints/inclusivity in the
+// selected matrix-join proof. The three original LibraryCall visits remain.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 27;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -90,7 +104,40 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 10;
 // Policy21 composes recursive declared-schema conversion binding and staging
 // with the collection strategies above. Present Matrix axes remain witnessed;
 // every invocation keeps fresh admission and atomic publication obligations.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 21;
+// Policy22/IR11 emit closed canonical window-query loops as native regions.
+// Their finite byte/compare/instruction bound is charged before entry, not
+// by visiting each operation. Existing activation, capture and atomic commit
+// remain ONE round. Genuine String owners are loaned only across that body.
+// Policy23 prepays a complete native histogram region and finite dense scratch.
+// Policy24 prepays byte-map table/output and one complete String map loop.
+// Policy25 admits private aggregate words once in the session's transport;
+// no repeated canonical heap ownership is created for those unobservable values.
+// Policy26 admits String owner tables once; bounded native equality charges
+// the same cumulative comparison ledger and each generated visit covers its code.
+// Policy27 funds the conditional selector elision; ordinary fallback and
+// failure-only reconstruction retain the original selected maintained leaves.
+// Policy28 funds one acyclic Tail traversal before native execution and
+// reconciles its finite cumulative fuel before every callback/region exit.
+// Policy29 preserves both original selection/join visits while charging their
+// private metadata and complete canonical String construction on the same ledger.
+// Policy30 admits private line geometry and its immutable String owner instead
+// of copied line payloads. Original producer/length/selection visits remain;
+// Unicode fallback inherits the same original call's already-spent allowance.
+// Policy31 funds exact current-alias retirement and ownership handoff before
+// a closed String map loop; copied/shared fallback stays on the same ledger.
+// Policy32 funds header pauses/re-entry on the SAME cumulative account.
+// Policy33 funds emitted retention min/range rules on that same account.
+// Policy34 binds line-store/window debits to the existing shared program ledger.
+// Policy35 funds EOF source admission, symbolic-count branches, scoped Unicode
+// cell construction and scan-exit loan retirement on that same finite account.
+// Policy36 admits actual fixed range geometry instead of allocating a dead
+// numeric selector. Original-site shape/index errors and one ledger remain;
+// less actual work/storage may let formerly budget-denied programs succeed.
+// Policy37 admits one same-entry immutable representation-fact slot and its
+// complete weak identity shell before use. It never retains source payloads
+// or permissions; every call still pays the original full scan bound and
+// validates its fresh owners, shapes and finite limits on the same ledger.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 37;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -145,13 +192,52 @@ impl NativeProgramObjectIdentity {
         &self.symbol
     }
 }
-pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
+pub(super) fn typed_ir_sha256(
+    plan: &NativeProgramArtifactPlan,
+    frontiers: &[NativeTextLineRetentionFrontier],
+    joins: &[NativeSelectedTextJoin],
+    lines: &[NativeTextLineMatrixRegion],
+) -> [u8; 32] {
     let mut hash = Sha256::new();
     hash.update(b"mech.canonical-managed-program-cfg\0");
     word(&mut hash, NATIVE_PROGRAM_TYPED_IR_VERSION); // Separate control IR version.
     word(&mut hash, super::program_abi::VERSION);
     word(&mut hash, NATIVE_PROGRAM_WORK_POLICY_VERSION);
     hash.update(plan.program_revision().as_bytes());
+    word(&mut hash, frontiers.len() as u64);
+    for frontier in frontiers {
+        word(&mut hash, u64::from(frontier.iteration()));
+        match frontier.scans_per_ordinal() {
+            Some(bound) => {
+                hash.update([1]);
+                word(&mut hash, bound);
+            }
+            None => hash.update([0]),
+        }
+        word(
+            &mut hash,
+            u64::from(frontier.read().count().lines().matrix().get()),
+        );
+        word(&mut hash, frontier.states().len() as u64);
+        for state in frontier.states() {
+            word(&mut hash, u64::from(state.ordinal()));
+            word(
+                &mut hash,
+                state.index_field().map_or(u64::MAX, |field| field as u64),
+            );
+            word(&mut hash, state.keep_fields().len() as u64);
+            for field in state.keep_fields() {
+                word(&mut hash, *field as u64);
+            }
+            let (first, end) = state
+                .returned_range()
+                .map_or((u64::MAX, u64::MAX), |(first, end)| {
+                    (first as u64, end as u64)
+                });
+            word(&mut hash, first);
+            word(&mut hash, end);
+        }
+    }
     word(&mut hash, plan.entry() as u64);
     word(&mut hash, plan.values().len() as u64);
     for ty in plan.values() {
@@ -172,6 +258,23 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
     word(&mut hash, plan.activation_nodes().len() as u64);
     for node in plan.activation_nodes() {
         word(&mut hash, u64::from(node.get()));
+    }
+    let string_maps = plan.string_map_regions();
+    word(&mut hash, string_maps.len() as u64);
+    for region in string_maps {
+        for field in [
+            region.collection(),
+            region.iteration(),
+            region.source().get(),
+            region.map().get(),
+            region.selection_site(),
+        ] {
+            word(&mut hash, u64::from(field));
+        }
+        word(&mut hash, region.owned_source_slots().len() as u64);
+        for value in region.owned_source_slots() {
+            word(&mut hash, u64::from(value.get()));
+        }
     }
     word(&mut hash, plan.inputs().len() as u64);
     for input in plan.inputs() {
@@ -373,6 +476,7 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
                     M::MatrixSolve => (5, 0, 0),
                     M::CanonicalFinalize => (6, 0, 0),
                     M::CanonicalSortUnique => (7, 0, 0),
+                    M::PackedStringMatrixOrCanonicalFinalize => (8, 0, 0),
                 };
                 for n in [tag, a as u64, b as u64] {
                     word(&mut hash, n);
@@ -804,6 +908,42 @@ pub(super) fn typed_ir_sha256(plan: &NativeProgramArtifactPlan) -> [u8; 32] {
         word(&mut hash, output.slot().get() as u64);
         bytes(&mut hash, output.name().as_bytes());
         word(&mut hash, output.value().get() as u64);
+    }
+    word(&mut hash, joins.len() as u64);
+    for join in joins {
+        word(&mut hash, u64::from(join.selection()));
+        word(&mut hash, u64::from(join.consumer()));
+        for value in [
+            join.source(),
+            join.selector(),
+            join.selected(),
+            join.separator(),
+            join.output(),
+        ] {
+            word(&mut hash, u64::from(value.get()));
+        }
+        match join.range() {
+            Some(range) => {
+                hash.update([1]);
+                word(&mut hash, u64::from(range.producer()));
+                word(&mut hash, u64::from(range.start().get()));
+                word(&mut hash, u64::from(range.end().get()));
+                hash.update([u8::from(range.inclusive())]);
+            }
+            None => hash.update([0]),
+        }
+    }
+    word(&mut hash, lines.len() as u64);
+    for line in lines {
+        word(&mut hash, u64::from(line.producer()));
+        word(&mut hash, u64::from(line.source().get()));
+        word(&mut hash, u64::from(line.matrix().get()));
+        for sites in [line.lengths(), line.borrowed_regions(), line.selections()] {
+            word(&mut hash, sites.len() as u64);
+            for &site in sites {
+                word(&mut hash, u64::from(site));
+            }
+        }
     }
     hash.finalize().into()
 }

@@ -6,6 +6,8 @@
 mod abi;
 #[cfg(feature = "canonical-native")]
 mod application;
+#[cfg(feature = "canonical-native-benchmark-policy-runtime")]
+mod benchmark_policy;
 #[cfg(feature = "canonical-native")]
 mod compiler;
 mod identity;
@@ -18,7 +20,10 @@ pub use abi::{NATIVE_ARTIFACT_ABI_VERSION, NATIVE_ARTIFACT_ENTRY_SYMBOL, NativeA
 #[cfg(feature = "canonical-native")]
 pub use application::{
     GeneratedLinkedApplication, NativeApplicationError, generate_linked_application,
+    validate_linked_application_binary_name,
 };
+#[cfg(feature = "canonical-native-benchmark-policy-runtime")]
+pub use benchmark_policy::{NativeBenchmarkCapabilityKernel, NativeBenchmarkPolicy};
 #[cfg(feature = "canonical-native")]
 pub use compiler::{
     JitArtifact, NativeCompileError, NativeCompileLimits, NativeObject, emit_object,
@@ -72,15 +77,29 @@ mod iteration_runtime;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_abi;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod program_borrowed_layout;
+#[cfg(feature = "canonical-native-program-runtime")]
 mod program_descriptor;
 #[cfg(feature = "canonical-native")]
 mod program_hooks;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_identity;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod program_image_packing;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_line_matrix_layout;
+#[cfg(feature = "canonical-native-program-runtime")]
 mod program_linked;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod program_prefix_layout;
+#[cfg(feature = "canonical-native-program-runtime")]
 mod program_runtime;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_selected_join_layout;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_tail_layout;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_window_histogram_layout;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub use program_linked::LinkedProgramArtifact;
 #[cfg(feature = "canonical-native-program")]
@@ -101,6 +120,8 @@ pub use iteration_identity::{
 };
 pub use iteration_linked::LinkedIterationArtifact;
 pub use iteration_runtime::{NativeIterationExecutionError, NativeIterationExecutionReport};
+#[cfg(feature = "canonical-native-benchmark-policy")]
+pub use program_application::generate_linked_benchmark_program_application;
 #[cfg(feature = "canonical-native-program-host")]
 pub use program_application::generate_linked_hosted_program_application;
 #[cfg(feature = "canonical-native-program")]

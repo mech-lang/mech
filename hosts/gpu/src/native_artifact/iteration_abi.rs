@@ -11,7 +11,7 @@ pub(super) const ENTRY: &str = "mech_canonical_scalar_iteration_entry_v1";
 pub(super) const STATUS_REJECT: u64 = 4;
 #[cfg(feature = "canonical-native")]
 pub(super) use super::abi::RawEntry as Entry;
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub(super) enum Progress {
     Normal,
     Initialize(u32),
@@ -19,7 +19,7 @@ pub(super) enum Progress {
     Latch(u32),
     Exit(u32),
 }
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, serde::Serialize)]
 pub struct NativeIterationVisit {
     pub(super) origin: NativeMatchOrigin,
     pub(super) successors: [Option<u32>; 2],

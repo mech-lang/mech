@@ -22,6 +22,12 @@ const EMPTY_OUTPUT: &str =
 #[path = "support/canonical_hosted_fixture.rs"]
 mod fixture;
 use fixture::{artifacts, bridge_limits, execute, limits, no_resident, quiet, runtime};
+#[path = "support/canonical_native_plan_image.rs"]
+mod plan_image;
+#[path = "support/canonical_prepared_metadata.rs"]
+mod prepared_metadata;
+#[path = "support/canonical_hosted_text_capture.rs"]
+mod text_capture;
 #[test]
 fn larger_scalar_string_observation_uses_real_secured_capture_and_atomic_publication() {
     let (variants, catalog) = artifacts(ECHO);
@@ -75,6 +81,87 @@ fn complete_knucleotide_original_and_decoded_run_through_actual_secured_cli() {
     let (variants, catalog) = artifacts(FULL);
     for artifact in variants {
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        assert_eq!(
+            mech_gpu::native_artifact::emit_program_object(&artifact, &catalog)
+                .unwrap()
+                .metadata()["compiled_header_continuation_regions"],
+            1,
+            "the actual program selects the generic header protocol; acquisition remains snapshot-only"
+        );
+        assert_eq!(
+            mech_gpu::native_artifact::emit_program_object(&artifact, &catalog)
+                .unwrap()
+                .metadata()["closed_tail_regions"],
+            1,
+            "the actual secured artifact must select callback-free Tail control"
+        );
+        assert_eq!(
+            jit.descriptor().plan().borrowed_string_regions().len(),
+            1,
+            "the complete record scanner must select owner-bound native String reads"
+        );
+        let lines = jit.descriptor().plan().text_line_matrix_regions();
+        assert_eq!(
+            lines.len(),
+            1,
+            "the secured source must prove its private line matrix"
+        );
+        assert_eq!(lines[0].borrowed_regions(), [0]);
+        assert_eq!(lines[0].lengths().len(), 1);
+        assert_eq!(lines[0].selections().len(), 1);
+        let frontiers = jit.descriptor().plan().text_line_count_frontiers();
+        assert_eq!(
+            frontiers.len(),
+            1,
+            "the actual secured source must prove its EOF-dependent count uses"
+        );
+        assert_eq!(frontiers[0].guards().len(), 2);
+        assert!(!frontiers[0].exact().is_empty());
+        let reads = jit.descriptor().plan().text_line_read_frontiers();
+        assert_eq!(
+            reads.len(),
+            1,
+            "the actual secured source must guard every borrowed line in its current Tail visit"
+        );
+        assert_eq!(reads[0].reads().len(), 2);
+        let retention = jit.descriptor().plan().text_line_retention_frontiers();
+        assert_eq!(
+            retention.len(),
+            1,
+            "the actual secured source must retain every future selected-range start"
+        );
+        assert_eq!(retention[0].states().len(), 3);
+        assert_eq!(
+            jit.descriptor().plan().borrowed_string_regions()[0]
+                .actions()
+                .iter()
+                .filter(|(_, action)| matches!(
+                    action,
+                    mech_engine::native_artifact::NativeBorrowedStringAction::ConstantRange { .. }
+                ))
+                .count(),
+            1,
+            "the actual hosted source must elide its private constant selector"
+        );
+        assert!(
+            jit.descriptor().plan().scalar_aggregates().value_count() > 0,
+            "the complete source must use native scalar FSM state, not repeated heap packing"
+        );
+        assert_eq!(
+            jit.descriptor().plan().window_query_regions().len(),
+            1,
+            "the full five-query program must use the same compiled window body"
+        );
+        assert_eq!(
+            jit.descriptor().plan().window_histogram_regions().len(),
+            1,
+            "both frequency widths must use the same compiled Histogram body"
+        );
+        assert_eq!(
+            jit.descriptor().plan().string_map_regions().len(),
+            1,
+            "uppercase map/join must use the same generic compiled byte-map body"
+        );
         assert_eq!(
             jit.descriptor()
                 .plan()
@@ -896,3 +983,13 @@ mod linked;
 
 #[path = "support/canonical_hosted_scaling.rs"]
 mod scaling;
+
+#[path = "support/canonical_hosted_zero_resources.rs"]
+mod zero_resources;
+
+#[path = "support/canonical_hosted_factory_linkage.rs"]
+mod factory_linkage;
+
+#[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+#[path = "support/canonical_program_alignment.rs"]
+mod program_alignment;

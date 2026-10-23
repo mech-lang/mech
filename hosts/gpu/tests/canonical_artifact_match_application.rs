@@ -723,12 +723,18 @@ fn compiled_feature_closure(metadata: &Value, build_stdout: &[u8]) -> Vec<Value>
         }
     }
     assert!(result.iter().any(|unit| unit["id"] == root));
-    for required in ["mech-core", "mech-engine", "mech-gpu", "mech-stdlib"] {
+    for required in ["mech-core", "mech-engine", "mech-gpu"] {
         assert!(
             seen_packages.contains(required),
             "missing compiled {required}"
         );
     }
+    let requires_stdlib = packages[root]["dependencies"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|dependency| dependency["name"] == "mech-stdlib");
+    assert_eq!(seen_packages.contains("mech-stdlib"), requires_stdlib);
     result.sort_by(|a, b| a["id"].as_str().cmp(&b["id"].as_str()));
     result
 }

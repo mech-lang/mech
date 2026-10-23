@@ -7,7 +7,7 @@ use super::{
 
 /// A source strategy derived from actual selected canonical operations. A
 /// cursor is NOT a Matrix Value: its semantic result slot is never initialized.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeCollectionSource {
     Value(NativeMatchValue),
     U64Range(NativeU64RangeCursor),
@@ -30,7 +30,7 @@ impl NativeCollectionSource {
 
 /// Exact maintained-factory proof for an unstepped U64 range used by one
 /// generator. Preparation remains at the original range's error boundary.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeU64RangeCursor {
     pub(crate) prepare: u32,
     pub(crate) template: NativeProgramLibraryTemplate,
@@ -56,7 +56,7 @@ impl NativeU64RangeCursor {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub enum NativeControlLoop {
     Iteration(NativeIterationLoop),
     Collection(NativeCollectionLoop),
@@ -75,7 +75,7 @@ impl NativeControlLoop {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, serde::Serialize)]
 pub enum NativeControlLoopRef<'a> {
     Iteration(&'a NativeIterationLoop),
     Collection(&'a NativeCollectionLoop),
@@ -120,7 +120,7 @@ impl NativeControlLoopRef<'_> {
 
 /// One source generator. Its element is defined by an explicit generated
 /// element-read visit, never carried forward from a previous body invocation.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeCollectionLoop {
     pub(crate) origin: NativeMatchOrigin,
     pub(crate) parent: Option<u32>,
@@ -159,7 +159,7 @@ impl NativeCollectionLoop {
 /// The carried state and final result may have different canonical schemas.
 /// There is one generated backedge and one return edge, both structurally
 /// checked. Work admission, not a fabricated count, bounds execution.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeTailLoop {
     pub(crate) origin: NativeMatchOrigin,
     pub(crate) parent: Option<u32>,
@@ -195,14 +195,14 @@ impl NativeTailLoop {
 
 /// An explicit result strategy. A fused producer does NOT define its Matrix
 /// semantic output; only the selected consumer later defines a String.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeCollectionResult {
     Materialized,
     TextJoin(NativeTextJoinSink),
     GuardedHistogramQuery(NativeGuardedHistogramQuery),
     Histogram(NativeHistogramSink),
 }
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeHistogramSink {
     pub(crate) consumer: u32,
     pub(crate) template: NativeProgramLibraryTemplate,
@@ -221,7 +221,7 @@ impl NativeHistogramSink {
 }
 
 /// Stages are provenance/lifecycle, never alternate language Values.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeHistogramQueryPhase {
     ProducerReady,
     HistogramReady,
@@ -230,7 +230,7 @@ pub enum NativeHistogramQueryPhase {
     Guarded,
     LookupRead,
 }
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeHistogramQueryStepKind {
     Histogram,
     Keys,
@@ -240,7 +240,7 @@ pub enum NativeHistogramQueryStepKind {
     Cleanup,
     Alias { phase: NativeHistogramQueryPhase },
 }
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeHistogramQueryStep {
     pub(crate) site: u32,
     pub(crate) kind: NativeHistogramQueryStepKind,
@@ -291,12 +291,12 @@ impl NativeHistogramQueryStep {
         }
     }
 }
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeHistogramQuerySetShape {
     Dynamic,
     FreeExact,
 }
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeGuardedHistogramQuery {
     pub(crate) query: NativeMatchValue,
     pub(crate) steps: Box<[NativeHistogramQueryStep]>,
@@ -333,7 +333,7 @@ impl NativeGuardedHistogramQuery {
         self.false_copy
     }
 }
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeTextJoinSink {
     pub(crate) consumer: u32,
     pub(crate) template: NativeProgramLibraryTemplate,
@@ -357,7 +357,7 @@ impl NativeTextJoinSink {
 
 /// A selected range/String selection's unobserved intermediate storage strategy.
 /// The selector and output are semantic identities, NEVER materialized Values.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeStringSpanProjection {
     pub(crate) range_site: u32,
     pub(crate) selection_site: u32,
@@ -389,7 +389,7 @@ impl NativeStringSpanProjection {
 
 /// One staged result builder, separate from immutable language Values. All
 /// generators run in emitted code; the builder only receives selected yields.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeProgramCollection {
     pub(crate) origin: NativeMatchOrigin,
     pub(crate) parent: Option<u32>,

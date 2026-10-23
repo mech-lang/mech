@@ -5,8 +5,10 @@
 //! The invocation closure is privileged Rust host code, not a source-callable
 //! function or evidence that a supplied implementation is native/AOT.
 //!
-//! Input text caps below apply after the provider returns and before retention
-//! by this bridge. They do NOT bound a provider's stream acquisition or cache.
+//! Snapshot text caps apply after the provider returns, not to its acquisition
+//! or cache. An explicitly dedicated one-shot provider can instead lend its
+//! reader to the SAME runtime pipeline's bounded UTF-8 capture. Ordinary cached
+//! providers do not opt in. No reader or permission callback reaches native.
 //! The caller still owns shutdown on every application exit path. Native input
 //! rebinding/import and effect construction require the native caller's ordinary
 //! finite memory/work admission; this bridge does not grant an unmetered import.
@@ -16,22 +18,37 @@ use std::collections::BTreeMap;
 use mech_core::{
     ApplicationRequirement, ApplicationRequirementId, CellSlotId, ExecutionResourceRequest,
     MResult, MechError, NodeId, ProgramRevision, ResourceDelivery, ResourceIntent, SchemaBody,
-    SchemaId, SchemaKey, Value, ValueData,
+    SchemaId, SchemaKey, SchemaTable, Value, ValueData,
 };
-use mech_engine::{ArtifactSource, ExecutableNodeBody, ProgramArtifact, SlotRole};
+use mech_engine::{
+    ApplicationRequirementTable, ArtifactSource, ExecutableNodeBody, ProgramArtifact, SlotRole,
+};
+
+#[path = "prepared_metadata.rs"]
+mod prepared_metadata;
+pub use prepared_metadata::CanonicalNativeResourceMetadata;
+
+struct ResourceMetadataView<'a> {
+    plan: &'a CanonicalNativeResourcePlan,
+    requirements: &'a ApplicationRequirementTable,
+    schemas: &'a SchemaTable,
+}
 
 use crate::{
-    ResourceSchemaPreflight, RuntimeCommitOutcome, RuntimeContext, RuntimeId, TransactionId,
+    ResourceSchemaPreflight, RuntimeCommitOutcome, RuntimeContext, RuntimeId,
+    RuntimeResourceReadRequest, RuntimeTextCaptureBuffer, RuntimeTextCaptureSummary, TransactionId,
     compute_effect_contract, preflight_artifact_resource_schemas, resource_observation_contract,
     validate_artifact_resource_schema_contract,
 };
 
 use super::{MechRuntime, NativeResourceBindingError};
+use crate::resource_text_capture::ConsumerFailure;
 use crate::runtime::transaction::RuntimeCommitResolution;
 
 /// Descriptive action owned by a site selected from the original artifact.
 /// Constructing a copy of an action grants neither I/O nor native-entry authority.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "canonical-native-images", derive(serde::Serialize))]
 pub enum CanonicalNativeResourceAction {
     Observation {
         output: CellSlotId,
@@ -44,6 +61,7 @@ pub enum CanonicalNativeResourceAction {
 
 /// Constructor-private port identity. There is no request replacement API.
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "canonical-native-images", derive(serde::Serialize))]
 pub struct CanonicalNativeResourceSite {
     node: NodeId,
     requirement: ApplicationRequirementId,
@@ -73,9 +91,10 @@ impl CanonicalNativeResourceSite {
     }
 }
 
-/// Host-side descriptor only, never another serialized or executable program.
+/// Host-side descriptor only, never another executable program.
 /// The canonical revision commits to requirements, contracts and bindings.
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "canonical-native-images", derive(serde::Serialize))]
 pub struct CanonicalNativeResourcePlan {
     revision: ProgramRevision,
     requirements: Box<[ExecutionResourceRequest]>,
@@ -250,6 +269,7 @@ pub struct CanonicalNativeResourceInvocation {
 pub struct CanonicalNativeResourceAdmission<'a> {
     plan: &'a CanonicalNativeResourcePlan,
     invocation: CanonicalNativeResourceInvocation,
+    text_capture_site: Option<&'a CanonicalNativeResourceSite>,
     _private: (),
 }
 impl CanonicalNativeResourceAdmission<'_> {
@@ -262,6 +282,61 @@ impl CanonicalNativeResourceAdmission<'_> {
     pub const fn invocation(&self) -> CanonicalNativeResourceInvocation {
         self.invocation
     }
+    /// An effect-free provider/lifecycle offer, not a compiler proof. A native
+    /// preparer may select it only after proving its complete source uses; it
+    /// otherwise returns snapshot preparation and retains ordinary semantics.
+    pub fn text_capture_site(&self) -> Option<&CanonicalNativeResourceSite> {
+        self.text_capture_site
+    }
+}
+
+/// The privileged native preparer's owning state and its optional pre-admitted
+/// capture scratch. This is storage selection, not another execution authority.
+pub struct CanonicalNativeResourcePrepared<S> {
+    state: S,
+    text_capture: Option<RuntimeTextCaptureBuffer>,
+}
+impl<S> CanonicalNativeResourcePrepared<S> {
+    pub fn snapshot(state: S) -> Self {
+        Self {
+            state,
+            text_capture: None,
+        }
+    }
+    pub fn single_use_text(state: S, buffer: RuntimeTextCaptureBuffer) -> Self {
+        Self {
+            state,
+            text_capture: Some(buffer),
+        }
+    }
+}
+
+/// One borrowed fragment, issued only inside the SAME authorized capture and
+/// transaction as prepare. No runtime, resource reader or effect callback is
+/// exposed to native code. It is not a partial canonical String observation.
+pub struct CanonicalNativeResourceTextChunk<'a> {
+    site: &'a CanonicalNativeResourceSite,
+    revision: ProgramRevision,
+    invocation: CanonicalNativeResourceInvocation,
+    offset: u64,
+    text: &'a str,
+}
+impl CanonicalNativeResourceTextChunk<'_> {
+    pub fn site(&self) -> &CanonicalNativeResourceSite {
+        self.site
+    }
+    pub const fn program_revision(&self) -> ProgramRevision {
+        self.revision
+    }
+    pub const fn invocation(&self) -> CanonicalNativeResourceInvocation {
+        self.invocation
+    }
+    pub const fn offset(&self) -> u64 {
+        self.offset
+    }
+    pub fn text(&self) -> &str {
+        self.text
+    }
 }
 
 /// Opaque authority/capture proof issued only inside the runtime's open turn.
@@ -272,6 +347,7 @@ pub struct CanonicalNativeResourceTurn<'a> {
     plan: &'a CanonicalNativeResourcePlan,
     observations: &'a [Value],
     invocation: CanonicalNativeResourceInvocation,
+    text_capture: Option<RuntimeTextCaptureSummary>,
     _private: (),
 }
 impl CanonicalNativeResourceTurn<'_> {
@@ -286,6 +362,12 @@ impl CanonicalNativeResourceTurn<'_> {
     }
     pub fn program_revision(&self) -> ProgramRevision {
         self.plan.program_revision()
+    }
+    /// Successful complete capture of the plan's SOLE observation. Its Value
+    /// lane is absent, not a fabricated/truncated canonical String. Existing
+    /// snapshot-only native entry APIs must reject this representation.
+    pub const fn text_capture(&self) -> Option<RuntimeTextCaptureSummary> {
+        self.text_capture
     }
 }
 
@@ -473,18 +555,140 @@ impl MechRuntime {
             CanonicalNativeResourceTurn<'_>,
         ) -> MResult<CanonicalNativeResourceCompletion<R>>,
     ) -> Result<R, CanonicalNativeResourceRunError> {
+        self.with_canonical_native_resources_delivery(
+            artifact,
+            limits,
+            false,
+            |admission| prepare(admission).map(CanonicalNativeResourcePrepared::snapshot),
+            |_, _| invalid("snapshot delivery cannot receive native text chunks"),
+            invoke,
+        )
+    }
+
+    /// One-shot capture option over the SAME admission/transaction pipeline.
+    /// A dedicated provider must explicitly opt in and the plan must have one
+    /// plain-String observation. The native preparer separately proves closure
+    /// and supplies scratch on its original memory account. Declining the offer
+    /// selects the ordinary immutable snapshot path BEFORE observing any input.
+    ///
+    /// Chunks may drive only the already prepared native session. All consumer
+    /// errors/panics remain speculative until complete acquisition and UTF-8
+    /// validation, and no completion token/effect is issued on capture failure.
+    /// A chunk error means the native checkpoint cannot continue. Speculative
+    /// language/selected-call failures whose prerequisites depend on EOF must
+    /// instead remain in that native session until its original admissions can
+    /// be resolved in canonical order; this adapter does not evaluate them.
+    /// The dedicated source is consumed even on failure: this host lifecycle
+    /// must shut down after the one invocation, never retry/reuse it as a cache.
+    pub fn with_canonical_native_resources_phased_text<S, R>(
+        &mut self,
+        artifact: &ProgramArtifact,
+        limits: CanonicalNativeResourceLimits,
+        prepare: impl FnOnce(
+            CanonicalNativeResourceAdmission<'_>,
+        ) -> MResult<CanonicalNativeResourcePrepared<S>>,
+        chunk: impl FnMut(&mut S, CanonicalNativeResourceTextChunk<'_>) -> MResult<()>,
+        invoke: impl FnOnce(
+            S,
+            CanonicalNativeResourceTurn<'_>,
+        ) -> MResult<CanonicalNativeResourceCompletion<R>>,
+    ) -> Result<R, CanonicalNativeResourceRunError> {
+        self.with_canonical_native_resources_delivery(
+            artifact, limits, true, prepare, chunk, invoke,
+        )
+    }
+
+    fn with_canonical_native_resources_delivery<S, R>(
+        &mut self,
+        artifact: &ProgramArtifact,
+        limits: CanonicalNativeResourceLimits,
+        offer_text: bool,
+        prepare: impl FnOnce(
+            CanonicalNativeResourceAdmission<'_>,
+        ) -> MResult<CanonicalNativeResourcePrepared<S>>,
+        chunk: impl FnMut(&mut S, CanonicalNativeResourceTextChunk<'_>) -> MResult<()>,
+        invoke: impl FnOnce(
+            S,
+            CanonicalNativeResourceTurn<'_>,
+        ) -> MResult<CanonicalNativeResourceCompletion<R>>,
+    ) -> Result<R, CanonicalNativeResourceRunError> {
         let plan =
             CanonicalNativeResourcePlan::select(artifact, limits.max_ports).map_err(preflight)?;
+        self.with_selected_native_resources_delivery(
+            ResourceMetadataView {
+                plan: &plan,
+                requirements: artifact.requirements(),
+                schemas: artifact.schemas(),
+            },
+            limits,
+            offer_text,
+            prepare,
+            chunk,
+            invoke,
+        )
+    }
+
+    fn with_selected_native_resources_delivery<S, R>(
+        &mut self,
+        metadata: ResourceMetadataView<'_>,
+        limits: CanonicalNativeResourceLimits,
+        offer_text: bool,
+        prepare: impl FnOnce(
+            CanonicalNativeResourceAdmission<'_>,
+        ) -> MResult<CanonicalNativeResourcePrepared<S>>,
+        mut chunk: impl FnMut(&mut S, CanonicalNativeResourceTextChunk<'_>) -> MResult<()>,
+        invoke: impl FnOnce(
+            S,
+            CanonicalNativeResourceTurn<'_>,
+        ) -> MResult<CanonicalNativeResourceCompletion<R>>,
+    ) -> Result<R, CanonicalNativeResourceRunError> {
+        let ResourceMetadataView {
+            plan,
+            requirements,
+            schemas,
+        } = metadata;
+        // Prepared metadata is not a policy decision. Reapply this invocation's
+        // finite port limits before authority selection or provider callbacks.
+        if requirements.len() > limits.max_ports {
+            return Err(preflight(error(
+                "native resource requirement count exceeds its finite port cap",
+            )));
+        }
+        if plan
+            .observations
+            .len()
+            .checked_add(plan.effects.len())
+            .is_none_or(|count| count > limits.max_ports)
+        {
+            return Err(preflight(error(
+                "native resource site count exceeds its finite port cap",
+            )));
+        }
         // Reuse the SAME canonical session admission proof, including the
         // finite-use-capability rejection. This does not activate/evaluate a
         // resident instance or introduce another capability-policy authority.
-        let authority = self.build_resident_authority(artifact).map_err(preflight)?;
+        let authority = self
+            .build_requirement_authority(requirements)
+            .map_err(preflight)?;
         // Binding checks EVERY original requirement before observations or
         // provider preparation. Actual reads/sends recheck ordinary authority.
         let bindings = self
             .bind_native_resources_with_driverless_live_reads(&plan.requirements, true)
             .map_err(preflight)?;
         authority.revalidate(self).map_err(preflight)?;
+        let text_capture_site = if offer_text && plan.observations.len() == 1 {
+            let site = &plan.observations[0];
+            self.resources
+                .supports_single_use_text_capture(&RuntimeResourceReadRequest {
+                    base_uri: site.request.base_uri.clone(),
+                    path: site.request.path.clone(),
+                    context_name: site.request.context_name.clone(),
+                })
+                .map_err(preflight)?
+                .then_some(site)
+        } else {
+            None
+        };
         let mut context = self.runtime_context().map_err(preflight)?;
         let transaction_id = self.begin_transaction(&mut context).map_err(preflight)?;
         let invocation = CanonicalNativeResourceInvocation {
@@ -497,12 +701,21 @@ impl MechRuntime {
             active: true,
         };
 
-        let prepared = prepare(CanonicalNativeResourceAdmission {
-            plan: &plan,
+        let mut prepared = prepare(CanonicalNativeResourceAdmission {
+            plan,
             invocation,
+            text_capture_site,
             _private: (),
         })
         .map_err(|error| transaction.reject("native activation", error))?;
+        if let Some(buffer) = &prepared.text_capture
+            && (text_capture_site.is_none() || buffer.input_limit() != limits.max_input_text_bytes)
+        {
+            return Err(transaction.reject(
+                "native activation",
+                error("native text capture lacks the exact provider offer/input cap"),
+            ));
+        }
         authority
             .revalidate(transaction.runtime)
             .map_err(|error| transaction.reject("authorization before capture", error))?;
@@ -510,41 +723,109 @@ impl MechRuntime {
         let mut input_bytes = 0;
         let mut cache = BTreeMap::<ApplicationRequirementId, Value>::new();
         let mut inputs = Vec::with_capacity(plan.observations.len());
-        for site in &plan.observations {
-            let value = if let Some(value) = cache.get(&site.requirement) {
-                value.clone()
-            } else {
-                let value = transaction
-                    .runtime
-                    .read_native_resource_with_context(
-                        &bindings,
-                        site.requirement.get() as usize,
-                        &mut transaction.context,
-                    )
-                    .map_err(|error| transaction.reject("capture", error))?;
-                cache.insert(site.requirement, value.clone());
-                value
-            };
-            admit_text(&value, &mut input_bytes, limits.max_input_text_bytes)
+        let mut consumer_failure = None;
+        let text_capture = if let Some(buffer) = prepared.text_capture.take() {
+            let site = text_capture_site.unwrap();
+            let mut offset = 0u64;
+            let result = transaction
+                .runtime
+                .read_resource_with_context_delivery(
+                    &mut transaction.context,
+                    RuntimeResourceReadRequest {
+                        base_uri: site.request.base_uri.clone(),
+                        path: site.request.path.clone(),
+                        context_name: site.request.context_name.clone(),
+                    },
+                    |resources, request, staged| {
+                        resources.capture_text(
+                            request,
+                            staged,
+                            site.schema_key,
+                            buffer,
+                            &mut |text| {
+                                chunk(
+                                    &mut prepared.state,
+                                    CanonicalNativeResourceTextChunk {
+                                        site,
+                                        revision: plan.revision,
+                                        invocation,
+                                        offset,
+                                        text,
+                                    },
+                                )?;
+                                offset =
+                                    offset.checked_add(text.len() as u64).ok_or_else(|| {
+                                        error("native text delivery offset overflows")
+                                    })?;
+                                Ok(())
+                            },
+                        )
+                    },
+                )
                 .map_err(|error| transaction.reject("capture", error))?;
-            if value.schema_key() != site.schema_key {
-                return Err(transaction.reject(
-                    "capture",
-                    error("provider String schema differs from canonical observation"),
-                ));
+            match result {
+                Ok(result) => {
+                    if result.input_bytes() != offset {
+                        return Err(transaction.reject(
+                            "capture",
+                            error("native text capture omitted a valid fragment"),
+                        ));
+                    }
+                    Some(result)
+                }
+                Err(error) => {
+                    consumer_failure = Some(error);
+                    None
+                }
             }
-            inputs.push(value);
-        }
+        } else {
+            for site in &plan.observations {
+                let value = if let Some(value) = cache.get(&site.requirement) {
+                    value.clone()
+                } else {
+                    let value = transaction
+                        .runtime
+                        .read_native_resource_with_context(
+                            &bindings,
+                            site.requirement.get() as usize,
+                            &mut transaction.context,
+                        )
+                        .map_err(|error| transaction.reject("capture", error))?;
+                    cache.insert(site.requirement, value.clone());
+                    value
+                };
+                admit_text(&value, &mut input_bytes, limits.max_input_text_bytes)
+                    .map_err(|error| transaction.reject("capture", error))?;
+                if value.schema_key() != site.schema_key {
+                    return Err(transaction.reject(
+                        "capture",
+                        error("provider String schema differs from canonical observation"),
+                    ));
+                }
+                inputs.push(value);
+            }
+            None
+        };
         authority
             .revalidate(transaction.runtime)
             .map_err(|error| transaction.reject("authorization after capture", error))?;
+        // Preserve the ordinary capture -> revalidate -> native failure order.
+        // Propagate a consumer panic only after provider/reader loans are gone.
+        match consumer_failure {
+            Some(ConsumerFailure::Error(error)) => {
+                return Err(transaction.reject("native execution", error));
+            }
+            Some(ConsumerFailure::Panic(payload)) => std::panic::resume_unwind(payload),
+            None => {}
+        }
 
         let completion = invoke(
-            prepared,
+            prepared.state,
             CanonicalNativeResourceTurn {
-                plan: &plan,
+                plan,
                 observations: &inputs,
                 invocation,
+                text_capture,
                 _private: (),
             },
         )
@@ -568,14 +849,12 @@ impl MechRuntime {
                     error("native effect type differs from canonical plan"),
                 ));
             }
-            value
-                .validate_against(artifact.schemas())
-                .map_err(|error| {
-                    transaction.reject(
-                        "effect materialization",
-                        self::error(format!("invalid native effect snapshot: {error:?}")),
-                    )
-                })?;
+            value.validate_against(schemas).map_err(|error| {
+                transaction.reject(
+                    "effect materialization",
+                    self::error(format!("invalid native effect snapshot: {error:?}")),
+                )
+            })?;
         }
         authority.revalidate(transaction.runtime).map_err(|error| {
             transaction.reject("authorization before effect preparation", error)

@@ -1,4 +1,4 @@
-//! Same-artifact metadata for generated ABI8, not an evaluator.
+//! Same-artifact metadata for generated ABI12, not an evaluator.
 use super::{NativeValueSlot, iteration_abi::NativeIterationVisit};
 use mech_core::{FunctionCatalog, SchemaTable, Value};
 use mech_engine::{
@@ -10,13 +10,17 @@ use mech_engine::{
 };
 use std::sync::Arc;
 
+#[path = "program_descriptor_image.rs"]
+pub(super) mod image;
+
 #[path = "program_retirement.rs"]
 mod retirement;
 pub(super) use retirement::{RetirementKind, RetirementTables};
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize)]
 pub struct NativeProgramDescriptor {
     pub(super) plan: NativeProgramArtifactPlan,
+    #[serde(serialize_with = "image::serialize_schemas")]
     pub(super) schemas: Arc<SchemaTable>,
     // Query entries are prepared from their SAME sink step and fully checked
     // by validate_query_stages before this immutable descriptor can escape.
@@ -29,6 +33,16 @@ pub struct NativeProgramDescriptor {
     pub(super) scalar_bytes: u64,
     pub(super) observation_schema_bytes: u64,
     pub(super) max_library_inputs: usize,
+    // Derived from this SAME immutable plan; callers cannot inject a region
+    // from another artifact or rebind one to a different selected factory.
+    pub(super) window_regions: Box<[mech_engine::native_artifact::NativeWindowRegion]>,
+    pub(super) string_map_regions: Box<[mech_engine::native_artifact::NativeStringMapRegion]>,
+    pub(super) scalar_aggregates: mech_engine::native_artifact::NativeScalarAggregates,
+    pub(super) borrowed_strings: super::program_borrowed_layout::Layout,
+    pub(super) closed_tails: super::program_tail_layout::Layout,
+    pub(super) selected_joins: super::program_selected_join_layout::Layout,
+    pub(super) line_matrices: super::program_line_matrix_layout::Layout,
+    pub(super) prefix: Option<super::program_prefix_layout::Region>,
     pub(super) stack: u64,
     pub(super) code: u64,
     pub(super) identity: [u8; 32],
@@ -51,13 +65,49 @@ impl NativeProgramDescriptor {
             .and_then(|n| n.checked_add((plan.iterations().len() as u64).checked_mul(8)?))
             .and_then(|n| n.checked_add(256))
             .ok_or("program completion overflow")?;
-        let visits = super::iteration_abi::control_visits(
+        let borrowed_strings = super::program_borrowed_layout::Layout::derive(&plan)?;
+        let selected_joins = super::program_selected_join_layout::Layout::derive(&plan)?;
+        let line_matrices = super::program_line_matrix_layout::Layout::derive(&plan)?;
+        let mut visits = super::iteration_abi::control_visits(
             plan.blocks(),
             plan.iterations().iter().map(Into::into),
             completion,
         )
-        .map_err(str::to_owned)?
-        .into();
+        .map_err(str::to_owned)?;
+        selected_joins
+            .fund_visit_checks(&mut visits)
+            .map_err(str::to_owned)?;
+        // Derive this proof once from the SAME immutable plan. Both layout and
+        // identity inspect the complete result, including unsupported/multiple
+        // frontiers; no caller-provided or persistent proof cache is consulted.
+        let line_retention_frontiers = plan.text_line_retention_frontiers();
+        let prefix = super::program_prefix_layout::derive_with_frontiers(
+            &plan,
+            &borrowed_strings,
+            &visits,
+            &line_retention_frontiers,
+        )?;
+        for (site, visit) in visits.iter_mut().enumerate() {
+            visit.work = visit
+                .work
+                .checked_add(borrowed_strings.extra_work(site)?)
+                .and_then(|work| {
+                    work.checked_add(super::program_prefix_layout::extra_work(
+                        prefix.as_ref(),
+                        site,
+                    ))
+                })
+                .ok_or("borrowed String visit work overflow")?;
+        }
+        let closed_tails =
+            super::program_tail_layout::Layout::derive(&plan, &borrowed_strings, &visits)?;
+        for (site, visit) in visits.iter_mut().enumerate() {
+            visit.work = visit
+                .work
+                .checked_add(closed_tails.extra_work(site))
+                .ok_or("closed Tail work overflow")?;
+        }
+        let visits = visits.into();
         let calls = plan
             .blocks()
             .iter()
@@ -152,6 +202,9 @@ impl NativeProgramDescriptor {
             })
             .collect::<Result<Box<[_]>, _>>()?;
         validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
+        let window_regions = plan.window_regions().into_boxed_slice();
+        let string_map_regions = plan.string_map_regions().into_boxed_slice();
+        let scalar_aggregates = plan.scalar_aggregates();
         let max_library_inputs = plan
             .blocks()
             .iter()
@@ -160,7 +213,27 @@ impl NativeProgramDescriptor {
                 _ => None,
             })
             .max()
-            .unwrap_or(0);
+            .unwrap_or(0)
+            .max(
+                if window_regions.is_empty() && string_map_regions.is_empty() {
+                    0
+                } else {
+                    5
+                },
+            )
+            .max(
+                borrowed_strings
+                    .regions
+                    .iter()
+                    .map(|r| r.capture_words())
+                    .max()
+                    .unwrap_or(0),
+            )
+            .max(if closed_tails.regions.is_empty() {
+                0
+            } else {
+                2
+            });
         let types = plan
             .values()
             .iter()
@@ -197,7 +270,15 @@ impl NativeProgramDescriptor {
             .and_then(|n| n.checked_mul(4))
             .and_then(|n| n.checked_add(4096))
             .ok_or("scalar ownership bound overflows")?;
-        let identity = super::program_identity::typed_ir_sha256(&plan);
+        // These complete inventories were derived above from this SAME
+        // immutable plan. Hash every proof in its original order, including
+        // proofs not selected by the capture prefix, without deriving again.
+        let identity = super::program_identity::typed_ir_sha256(
+            &plan,
+            &line_retention_frontiers,
+            &selected_joins.regions,
+            &line_matrices.regions,
+        );
         Ok(Self {
             plan,
             schemas: Arc::new(artifact.schemas().clone()),
@@ -209,6 +290,14 @@ impl NativeProgramDescriptor {
             scalar_bytes,
             observation_schema_bytes,
             max_library_inputs,
+            window_regions,
+            string_map_regions,
+            scalar_aggregates,
+            borrowed_strings,
+            closed_tails,
+            selected_joins,
+            line_matrices,
+            prefix,
             stack,
             code,
             identity,
@@ -216,6 +305,10 @@ impl NativeProgramDescriptor {
     }
     pub fn plan(&self) -> &NativeProgramArtifactPlan {
         &self.plan
+    }
+    /// Immutable canonical types shared by this build's native/resource metadata.
+    pub fn schemas(&self) -> &SchemaTable {
+        &self.schemas
     }
     /// Fixed-header association only, not a new semantic or visit authority.
     /// prepare checked full selected-template equality against the actual

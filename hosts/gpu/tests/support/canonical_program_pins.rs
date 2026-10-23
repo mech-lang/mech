@@ -38,6 +38,8 @@ enum Mutation {
     Flip(usize),
     AppendWhitespace,
     ManifestPin,
+    DescriptorWork,
+    ResourceRequirements,
 }
 fn build(
     project: &GeneratedLinkedApplication,
@@ -45,7 +47,9 @@ fn build(
     target: &Path,
     release: bool,
 ) -> Command {
-    let mut command = CargoInvocation::build(
+    // Rejection and restored builds must use the same final-link policy as
+    // production. Debug remains identical to the ordinary Cargo build.
+    let mut command = CargoInvocation::build_linked_native_host(
         project.manifest_path(),
         binary_name,
         None,
@@ -130,7 +134,32 @@ pub(super) fn qualify(
             Mutation::AppendWhitespace,
             "changed generated input Cargo.toml",
         ),
-    ] {
+    ]
+    .into_iter()
+    .chain(
+        [
+            (
+                "packed-descriptor",
+                "native-descriptor.bin",
+                Mutation::Flip(24),
+                "changed generated input native-descriptor.bin",
+            ),
+            (
+                "descriptor-work",
+                "native-descriptor.json",
+                Mutation::DescriptorWork,
+                "changed generated input native-descriptor.json",
+            ),
+            (
+                "resource-requirements",
+                "native-resources.json",
+                Mutation::ResourceRequirements,
+                "changed generated input native-resources.json",
+            ),
+        ]
+        .into_iter()
+        .filter(|(_, file, _, _)| project.pins().contains_key(*file)),
+    ) {
         let path = project.root().join(file);
         let original = fs::read(&path).unwrap();
         let original_pin = hash(&original);
@@ -149,6 +178,23 @@ pub(super) fn qualify(
                 let mut manifest: Value = serde_json::from_slice(&changed).unwrap();
                 manifest["pins"]["program.o"] = json!("0".repeat(64));
                 changed = serde_json::to_vec(&manifest).unwrap();
+            }
+            Mutation::DescriptorWork => {
+                let mut image: Value = serde_json::from_slice(&changed).unwrap();
+                let work = image["descriptor"]["visits"][0]["work"].as_u64().unwrap();
+                image["descriptor"]["visits"][0]["work"] = json!(work.checked_add(1).unwrap());
+                changed = serde_json::to_vec(&image).unwrap();
+            }
+            Mutation::ResourceRequirements => {
+                let mut image: Value = serde_json::from_slice(&changed).unwrap();
+                assert!(
+                    image["plan"]["requirements"]
+                        .as_array_mut()
+                        .unwrap()
+                        .pop()
+                        .is_some()
+                );
+                changed = serde_json::to_vec(&image).unwrap();
             }
         }
         let changed_pin = hash(&changed);

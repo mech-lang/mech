@@ -8,7 +8,7 @@ use mech_core::{ManagedMemoryBudget, MemoryDomainId, SchemaId, SchemaKey, Value}
 /// Descriptive slot type from the checked native plan. It grants no execution
 /// authority; every inserted Value must already have canonical validation and
 /// complete immutable ownership in the invocation's same memory account.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, serde::Serialize)]
 pub struct NativeValueSlot {
     pub schema: SchemaId,
     pub key: SchemaKey,
@@ -276,6 +276,32 @@ impl<'a> NativeValueArena<'a> {
                 .ok_or(NativeValueError::GenerationExhausted)?;
             self.generations.values_mut()[index] = next;
             *value = None;
+        }
+        Ok(())
+    }
+
+    /// Retirement only, not an ownership/last-use proof. The generated caller
+    /// supplies its immutable complete-use inventory and retains `owner` while
+    /// matching current frozen allocations. A later generation is never swept.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(super) fn retire_current_matching(
+        &mut self,
+        slot: u32,
+        owner: &Value,
+        work: &mut NativeWorkMeter,
+    ) -> Result<(), NativeValueError> {
+        self.check_work(work)?;
+        work.charge(NativeExecutionPhase::Setup, 16)?;
+        let value = self
+            .values
+            .values()
+            .get(slot as usize)
+            .ok_or(NativeValueError::InvalidSlot)?;
+        if value
+            .as_ref()
+            .is_some_and(|value| value.shares_frozen_storage(owner))
+        {
+            self.retire_current(slot, work)?;
         }
         Ok(())
     }

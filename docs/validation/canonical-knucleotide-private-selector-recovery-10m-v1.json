@@ -1,0 +1,218 @@
+{
+  "schema": "mech.canonical-knucleotide-private-selector-recovery.v1",
+  "status": "PARTIAL_RECOVERY_STILL_PERFORMANCE_BLOCKING",
+  "measured_source_commit": "5837b29cb2c42813879943bf73d3e929feb7f03d",
+  "platform": "Same Apple M1 as retained old/new10M measurements; no M3 timing used",
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "input": {
+    "fasta_n": 2000000,
+    "three_bases": 10000000,
+    "bytes": 20333411,
+    "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b",
+    "oracle_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+  },
+  "unchanged_launch_sha256": "ec79f588345186db7f8646e52158d494628c6eb69b94ebdb269ddcf5dbe1c87a",
+  "measurement": {
+    "route": "canonical-artifact-program-object-secured-cli",
+    "policy": "secured",
+    "rust_optimization": "3",
+    "object_optimization": "speed",
+    "abi": 8,
+    "typed_ir": 17,
+    "work_policy": 27,
+    "binary_sha256_both_variants": "db83c922d8ebd85ee40c2be608b28a33b840e29894fbc4ccb529f2aecaeec859",
+    "object_sha256_both_variants": "febb1eb4cd0a8b7da3c62cfdc75caa223f71e2741d47b0cfb525782b2f492e0a",
+    "identity_sha256_both_variants": "f11d16b5aeb48a8cd733fff4a9688346c4dd9359f14057a2f71bdf0f18a2f447",
+    "results": [
+      {
+        "variant": 0,
+        "samples_ns": [
+          767291542,
+          774412375,
+          767684542
+        ],
+        "median_seconds": 0.767684542
+      },
+      {
+        "variant": 1,
+        "samples_ns": [
+          768212458,
+          765830375,
+          770083083
+        ],
+        "median_seconds": 0.768212458
+      }
+    ],
+    "large_correctness_processes": 2,
+    "successful_timing_samples": 6,
+    "exact_output_all_eight_processes": true,
+    "native_accounting_all_eight": {
+      "native_visits": 13000661,
+      "native_work": 23800157462,
+      "native_comparison_work": 440695494,
+      "native_transport_bytes": 33528,
+      "host_result_carrier_bytes": 216
+    },
+    "observations": 1,
+    "effects": 1,
+    "jit": false,
+    "source_parser": false,
+    "resident_body_evaluation": false,
+    "scope": "Warm-cache fresh-process spawnSync through observed child exit, including CLI input/output/report; build, hashes and validation excluded. Three samples per variant, not standard125M qualification.",
+    "observer_change": "v754 uses a synchronous Node child observer, as did the old direct baseline. Previous canonical measurements used Rust1ms exit polling. Do not treat the timing delta as a controlled measurement of a single micro-cost.",
+    "failed_predecessor": "v753 built both exact binaries and completed small-input, template and pin-mutation checks, but rejected the132-byte experiment label before launching any large-input process. Overall v753 test exit101 remains a failure. v754 is a separate retained-binary diagnostic, not a rewritten passing v753 test."
+  },
+  "previous_shared_length": {
+    "source_commit": "97c222933ad1b7635fe80ea776c3be443066752e",
+    "abi": 8,
+    "typed_ir": 16,
+    "work_policy": 26,
+    "original_single_sample_seconds": 1.491297875,
+    "decoded_single_sample_seconds": 1.488137,
+    "large_processes": 4,
+    "exact_output_all_four": true,
+    "measurement": "v745 standard Rust driver; one sample per variant plus two correctness processes, audited v746",
+    "profile": "v748/v749 exact measured binary:998 main-thread stacks,67.03% helper callbacks,20.14% admission callbacks,10.82% compiled window loops. Repeated range allocation became the next target; profile proportions are not causal wall times."
+  },
+  "same_input_baselines_seconds": {
+    "old_selected_direct_median_of_7": 0.092041625,
+    "old_secured_host_median_of_7": 0.123658291,
+    "initial_canonical_secured_median_of_3": 73.536783875,
+    "previous_borrowed_string_original_single_sample": 2.761554125
+  },
+  "comparison": {
+    "speedup_from_previous_shared_length_sample": 1.9425920328092265,
+    "slowdown_against_old_direct_median": 8.340623516805575,
+    "speedup_from_initial_canonical_median": 95.7903668131955,
+    "visits_removed": 0,
+    "scope": "Whole implementation difference, NOT isolated capability overhead. Old source used packed-operation lowering, four partitions and compact counters."
+  },
+  "implementation": [
+    "Shared ASCII grapheme length is byte length minus CRLF pairs; non-ASCII retains the canonical segmenter. Both maintained text length and compiled collection cardinality use the same function. No allocation, new unsafe boundary, changed work accounting or benchmark/alphabet/name specialization.",
+    "IR17/work27 proves a constant ascending nonzero U64 range of at most32 cells is private, immutable inside the selected Tail iteration, and every semantic read is an already-proved native String fixed-range selection. Other consumers or escaping/implicit reads retain the original range call.",
+    "In the active native String region, the private range is represented by proved bounds instead of repeatedly allocating a Matrix. Bounds are still checked at each String selection site; fallback executes the unchanged selected range operation.",
+    "On failing bounds, reconstruct the elided selector through its original prepared canonical leaf with the same cumulative library budget, then invoke the original String leaf for its exact error. Admitted owners remain alive; failure cannot publish or resume.",
+    "Finite cumulative work/comparison limits, real admitted owners and one host round remain unchanged. Charged work drops when actual repeated range calls/allocations disappear;13,000,661 per-operation control visits remain."
+  ],
+  "verification": {
+    "shared_length": "v744:110 generated tests and37 hosted tests passed; two explicit ignored diagnostics in each. Exhaustive all16,384 ASCII byte pairs plus boundary checks; original/decoded/JIT/reference ASCII/NUL/CRLF/Unicode coverage.",
+    "selector": "v751:111 generated tests and37 hosted tests passed; two explicit ignored diagnostics in each. v752:four identity/retirement tests passed. Complete-use escape rejection, original/decoded/JIT/reference fallback, U64MAX bounds, exact failures, atomicity and recovery covered. One new v750 test source had a syntax error; corrected before the v751 run.",
+    "guards": "Production routing, Rust module layout, native build analysis layout, unsafe-boundary audit, formatting and diff checks passed before frozen measurement.",
+    "retained_release": "Both actual release binaries passed13 small process cases and8 generated-template cases each; original variant passed9 generated-pin mutation rejections and restored-build recovery before the v753 label rejection.",
+    "measurement": "v754 supervisor exit0 and owned cleanup complete7.2695s total. v758 independent physical audit exit0 reconciles all8 raw reports/outputs, input/launch pins, binaries/Object identities, manifests and strict root release profiles.",
+    "audit_correction": "The first v756 audit attempt contained a mistyped expected commit and failed before producing a result. The successful v756 result had an incorrect label-length annotation; v758 re-ran all assertions and checks the actual132-byte label. Earlier evidence remains preserved.",
+    "current_review_ci": "These implementations require fresh PR909 review and CI. Prior clean review6282638411 only covers1482024543. Keep draft/unmerged."
+  },
+  "fresh_profile": {
+    "kind": "Exact measured binary; same input/launch/oracle. CPU sampling diagnostic, NOT timing sample.",
+    "main_thread_stacks": 442,
+    "boundary_weights": [
+      {
+        "function_name": "per_operation_admission_callbacks",
+        "samples": 158,
+        "percent": 35.74660633484163
+      },
+      {
+        "function_name": "runtime_helper_callbacks",
+        "samples": 155,
+        "percent": 35.067873303167424
+      },
+      {
+        "function_name": "compiled_window_loops",
+        "samples": 106,
+        "percent": 23.981900452488688
+      },
+      {
+        "function_name": "other",
+        "samples": 15,
+        "percent": 3.3936651583710407
+      },
+      {
+        "function_name": "compiled_string_map_loops",
+        "samples": 6,
+        "percent": 1.3574660633484164
+      },
+      {
+        "function_name": "generated_main_body_self",
+        "samples": 2,
+        "percent": 0.45248868778280543
+      }
+    ],
+    "native_accounting": {
+      "effects": 1,
+      "host_result_carrier_bytes": 216,
+      "hosted_phases": "admit-activate-capture-resume",
+      "input_acquisition_byte_cap": 20333411,
+      "jit": false,
+      "launch_sha256": "ec79f588345186db7f8646e52158d494628c6eb69b94ebdb269ddcf5dbe1c87a",
+      "native_aot": true,
+      "native_comparison_work": 440695494,
+      "native_transport_bytes": 33528,
+      "native_visits": 13000661,
+      "native_work": 23800157462,
+      "observations": 1,
+      "payload_argument_snapshot_reserved_bytes": 16,
+      "policy": "secured",
+      "program_revision": "7c89a6f1ff576118b2b371d5bbcf91e0a45c443c905204af1bf0c0f89b54226e",
+      "requirements": 2,
+      "resident_body_evaluation": false,
+      "route": "canonical-artifact-program-object-secured-cli",
+      "schema": "mech.canonical-hosted-native-execution.v1",
+      "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+      "shutdown": "completed",
+      "source_parser": false
+    },
+    "caveat": "Single short442-stack profile; optimized inlining and deduplicated symbols limit attribution. Inclusive functions overlap. Sample proportions are not exact causal wall time.",
+    "next": "Prioritize compiler-proved closed Tail execution without per-operation control callbacks, retaining finite cumulative fuel and exact failure atomicity. Also address remaining generic collection access and repeated representation scans; then reuse/adapt old packed/SIMD kernels and proven partitioning."
+  },
+  "local_evidence": {
+    "root": "tmp/pr-stack-evidence/",
+    "files": [
+      {
+        "path": "private-selector-retained-10m-v754/measurement.json",
+        "sha256": "5b7c4b8ff11aa9548ce5e7da673d4020dfe12d34d61e7dab9c7afb3e799b09eb"
+      },
+      {
+        "path": "audit-private-selector-recovery-v758-result.json",
+        "sha256": "fca2fbb04893c86bbc85911352b93c75e31408bbd76139e26695cedce3153f86"
+      },
+      {
+        "path": "private-selector-recovery-cpu-profile-v755/profile-analysis.json",
+        "sha256": "ccc58fbfdd0b283349bfaa9514863fb297cd97fe3dd83f2f78131dcd63bd3c53"
+      },
+      {
+        "path": "private-selector-recovery-cpu-profile-v755/sample.txt",
+        "sha256": "cd9434062e903f946750f0586249f19207c19b7d8eb35d10f037264781b8d2fb"
+      },
+      {
+        "path": "measure-private-selector-retained-v754.cjs",
+        "sha256": "e7cfc9a5cbcca71ac23e3ee0540128ddefbcde7ad9309717d0e97a650df0e1ba"
+      },
+      {
+        "path": "audit-private-selector-recovery-v756.cjs",
+        "sha256": "c8208c3de56596bb91fcb8c32b496d47ced4aff8d21a891654640490937a07a4"
+      },
+      {
+        "path": "shared-text-length-recovery-10m-release-v745/full-input/full-input-result.json",
+        "sha256": "9c5fcc4fc7be482b871e9f6c94bec9a9c56a9db1af8eaf881279016009fe4245"
+      },
+      {
+        "path": "shared-text-length-recovery-10m-release-v745/hosted-linked-result.json",
+        "sha256": "993a5f39c5f39eddca37cc0d77820affeaf8a40f81f435b3abcedb714cc82441"
+      },
+      {
+        "path": "audit-shared-text-length-recovery-v746-result.json",
+        "sha256": "0225162ff12c19c1655d6336163b6411314fac40f03e5a92a44598fd874d057a"
+      },
+      {
+        "path": "shared-text-length-recovery-cpu-profile-v748/profile-analysis.json",
+        "sha256": "5a295e1d76da5388d61199cf5b05d1cb439e33e052c29c26dc6932835333b70c"
+      },
+      {
+        "path": "shared-text-length-recovery-cpu-profile-v748/sample.txt",
+        "sha256": "d5714d93a2487982d642c47c55cc60f834cc9166ed794267409349729e4ab569"
+      }
+    ]
+  },
+  "remaining": "Still8.34x the old same-input direct median. Full125M remains unqualified after the earlier fixed temporary-memory denial. No cap increase, changed oracle, language ranking, ready, merge or performance-completion claim."
+}

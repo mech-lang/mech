@@ -159,7 +159,7 @@ fn guarded_histogram_query_proved_identity_alias_is_private_not_a_fake_value_cop
         let (id, sink) = demand(&plan);
         let mut original = plan.clone();
         let actions = semantic_actions(&plan).unwrap();
-        for (block, action) in original.blocks.iter_mut().zip(actions) {
+        for (block, action) in original.blocks.iter_mut().zip(actions.iter().cloned()) {
             block.action = action;
         }
         original.collections[id].result = ResultKind::Materialized;

@@ -16,6 +16,9 @@ use std::{
 #[path = "linked_process.rs"]
 mod process;
 use process::{assert_no_ambient_cargo_config, bounded, clean, closure, hash, pin, workspace};
+#[cfg(feature = "canonical-native-benchmark-policy")]
+#[path = "canonical_hosted_benchmark.rs"]
+mod benchmark;
 #[path = "canonical_hosted_full.rs"]
 mod full;
 #[path = "canonical_hosted_profile.rs"]
@@ -186,7 +189,10 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
             String::from_utf8_lossy(&metadata_output.stderr)
         );
         let metadata: Value = serde_json::from_slice(&metadata_output.stdout).unwrap();
-        let target = evidence.join("cargo-target");
+        let target = std::env::var_os("MECH_CANONICAL_HOSTED_TARGET_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| evidence.join("cargo-target"));
+        assert!(target.is_absolute(), "qualification cache must be absolute");
         let mut command = profile
             .invocation(&project.manifest_path(), binary_name, &target)
             .with_current_dir(isolated)
@@ -433,7 +439,7 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
         "schema":"mech.canonical-hosted-linked-qualification.v1",
         "source_commit":commit, "results":results, "timing_samples":full_result["timing_samples"].as_u64().unwrap_or(0),
         "full_input":full_result,
-        "rust_profile":profile.name(), "object_optimization":"none", "whole_program_optimized":false,
+        "rust_profile":profile.name(), "object_optimization":"speed", "whole_program_optimized":false,
         "scope":"actual full original/decoded canonical artifacts; same checked phased Object route with activation before capture and same-session resume, real CLI provider/capability system, no parser/JIT/resident body",
     })).unwrap()).unwrap();
     clean(&evidence, &commit, "after");

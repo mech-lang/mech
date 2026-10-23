@@ -24,6 +24,11 @@ pub use prepared::{
     NativePreparedLibraryCall, NativePreparedLibraryCallCache, NativeSelectedStringSpanSelector,
     prepare_native_program_library_call,
 };
+#[cfg(feature = "pure_text")]
+pub use prepared::{
+    NativeSelectedStringMatrix, NativeTextLineCaptureFacts, NativeTextLineChunks,
+    NativeTextLineMatrix, NativeTextLineMatrixChoice, NativeTextLineWindow,
+};
 
 /// A constructor-private binding of one actual artifact call at its current
 /// shapes. The selected factory, canonical contracts, actual handle
