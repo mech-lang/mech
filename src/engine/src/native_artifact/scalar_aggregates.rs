@@ -18,6 +18,14 @@ pub enum NativeScalarAggregateAction {
         source: Value,
         output: Value,
     },
+    /// A guarded fixed-width slice. Used only by a separately derived private
+    /// owner layout; an opaque word never becomes a canonical Value here.
+    Project {
+        source: Value,
+        offset: usize,
+        guards: Box<[(usize, u32)]>,
+        output: Value,
+    },
     Observe {
         source: Value,
         offset: usize,
@@ -35,6 +43,7 @@ pub enum NativeAggregateWord {
 super::program_image_proofs::image_enum!(NativeScalarAggregateAction {
     Pack { output: Value, words: Box<[NativeAggregateWord]> },
     Copy { source: Value, output: Value },
+    Project { source: Value, offset: usize, guards: Box<[(usize, u32)]>, output: Value },
     Observe { source: Value, offset: usize, ordinal: Option<u32>, guards: Box<[(usize, u32)]>, output: Value },
 });
 impl super::program_image_proofs::ImageRead for NativeAggregateWord {
@@ -54,10 +63,10 @@ impl super::program_image_proofs::ImageRead for NativeAggregateWord {
 }
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct NativeScalarAggregates {
-    slots: Box<[Option<(usize, usize)>]>,
-    actions: Box<[Option<NativeScalarAggregateAction>]>,
-    constants: Box<[(Value, Box<[u64]>)]>,
-    words: usize,
+    pub(super) slots: Box<[Option<(usize, usize)>]>,
+    pub(super) actions: Box<[Option<NativeScalarAggregateAction>]>,
+    pub(super) constants: Box<[(Value, Box<[u64]>)]>,
+    pub(super) words: usize,
 }
 crate::native_artifact::program_image_proofs::image_struct!(NativeScalarAggregates {
     slots: Box<[Option<(usize, usize)>]>, actions: Box<[Option<NativeScalarAggregateAction>]>, constants: Box<[(Value, Box<[u64]>)]>, words: usize,

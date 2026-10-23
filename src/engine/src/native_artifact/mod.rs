@@ -123,3 +123,8 @@ pub use map_write_uses::NativeMapWriteUses;
 mod map_owner_region;
 #[cfg(feature = "map_ops")]
 pub use map_owner_region::NativeMapOwnerRegion;
+
+#[cfg(feature = "map_ops")]
+mod map_owner_words;
+#[cfg(feature = "map_ops")]
+pub use map_owner_words::NativeMapOwnerWords;
