@@ -118,6 +118,7 @@ struct Descriptor<'a> {
     #[serde(deserialize_with = "proof")]
     map_owner_words: Option<NativeMapOwnerWords>,
     map_admission: native::program_map_admission::Layout,
+    parallel: native::program_parallel_layout::Layout,
     borrowed_strings: native::program_borrowed_layout::Layout,
     closed_tails: native::program_tail_layout::Layout,
     selected_joins: native::program_selected_join_layout::Layout,
@@ -210,6 +211,7 @@ pub(super) fn decode(
         scalar_aggregates: w.scalar_aggregates,
         map_owner_words: w.map_owner_words,
         map_admission: w.map_admission,
+        parallel: w.parallel,
         borrowed_strings: w.borrowed_strings,
         closed_tails: w.closed_tails,
         selected_joins: w.selected_joins,

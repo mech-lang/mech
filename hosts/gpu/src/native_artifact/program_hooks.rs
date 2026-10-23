@@ -17,6 +17,11 @@ pub(super) struct Hooks {
 }
 impl Hooks {
     #[cfg(feature = "canonical-native-program")]
+    pub fn require_argument_words(&self, b: &mut FunctionBuilder<'_>, count: usize, error: Block) {
+        let enough = b.ins().icmp_imm(IntCC::UnsignedGreaterThanOrEqual, self.argument_capacity, count as i64);
+        guard(b, enough, error, super::abi::STATUS_ABI);
+    }
+    #[cfg(feature = "canonical-native-program")]
     pub fn write_entry_words(&self, b: &mut FunctionBuilder<'_>, words: &[Value],
         error: Block) -> Result<(), NativeCompileError>
     {
