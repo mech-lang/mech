@@ -445,3 +445,90 @@ fn native_structural_projection_requires_owned_inputs_and_funds_denial_and_retry
         assert!(work.used().0 > 0 && work.used().1 > 0);
     }
 }
+
+#[test]
+fn native_map_write_use_analysis_keeps_state_updates_eligible() {
+    for width in [1, 2, 3, 4, 6, 12, 18] {
+        let source =
+            format!("{COUNT}\n#Count(\"ACGTACGTNACGTTACGTACGTACGT\", {width}u64, 26u64, empty)\n");
+        for artifact in artifacts(&source) {
+            let plan =
+                lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let facts = plan.map_write_uses().unwrap();
+            assert_eq!(facts.len(), 1);
+            assert!(facts[0].carrier_derived());
+            assert!(
+                facts[0].late_reads().is_empty(),
+                "width {width}: late reads: {:?}",
+                facts[0].late_reads()
+            );
+        }
+    }
+}
+
+fn checked_map_alias_source(body: &str) -> String {
+    format!(
+        r#"+> map
++> number
+check(h<{{string:u64}}>) => (found<bool>) :=
+{body}
+#Check(initial<{{string:u64}}>) => <bool>
+  | :Run(h<{{string:u64}}>)
+  | :Done(found<bool>).
+#Check(initial) -> :Run(initial)
+  :Run(h)
+    | * -> :Done(check(h))
+  :Done(found) => found.
+empty<{{string:u64}}> := map/new()
+#Check(empty)
+"#
+    )
+}
+
+#[test]
+fn native_map_write_use_analysis_rejects_direct_and_aggregate_old_version_reads() {
+    let bodies = [
+        "  next := map/insert(h, \"1\", 1u64)\n  key := number/format(next{\"1\"}, 0u64)\n  found := key ∈ h.",
+        "  saved := (h, 0u64)\n  next := map/insert(h, \"1\", 1u64)\n  key := number/format(next{\"1\"}, 0u64)\n  found := (saved? | (prior, unused) => key ∈ prior).",
+    ];
+    for body in bodies {
+        for artifact in artifacts(&checked_map_alias_source(body)) {
+            let plan =
+                lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let facts = plan.map_write_uses().unwrap();
+            assert_eq!(facts.len(), 1);
+            assert!(facts[0].carrier_derived());
+            assert!(!facts[0].late_reads().is_empty());
+        }
+    }
+}
+
+#[test]
+fn native_map_write_use_analysis_allows_reads_of_the_updated_version() {
+    let source = checked_map_alias_source(
+        "  next := map/insert(h, \"1\", 1u64)\n  key := number/format(next{\"1\"}, 0u64)\n  found := key ∈ next.",
+    );
+    for artifact in artifacts(&source) {
+        let plan =
+            lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let facts = plan.map_write_uses().unwrap();
+        assert_eq!(facts.len(), 1);
+        assert!(facts[0].carrier_derived());
+        assert!(facts[0].late_reads().is_empty());
+    }
+}
+
+#[test]
+fn native_map_write_use_analysis_does_not_confuse_a_local_map_with_the_carrier() {
+    let source = checked_map_alias_source(
+        "  spare := {\"seed\": 0u64}\n  next := map/insert(spare, \"1\", 1u64)\n  found := \"1\" ∈ next.",
+    );
+    for artifact in artifacts(&source) {
+        let plan =
+            lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let facts = plan.map_write_uses().unwrap();
+        assert_eq!(facts.len(), 1);
+        assert!(!facts[0].carrier_derived());
+        assert!(facts[0].late_reads().is_empty());
+    }
+}
