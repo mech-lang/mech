@@ -86,11 +86,12 @@ fn frozen_storage_rejects_duplicate_unreachable_control_and_count_corruption() {
 fn frozen_validation_and_queries_keep_one_finite_call_scope_and_cleanup_on_denial() {
     let memory = ManagedMemoryBudget::new(64 << 20);
     let work = new_work(&memory);
+    let ledger_claims = (memory.used_bytes(), memory.retained_nodes());
     let mut map = PackedMap::new(work.clone(), limits(), 1, body(), 0).unwrap();
     for byte in b"abcdef" { put(&mut map, &[*byte], u64::from(*byte)); }
     map.limits.max_comparison_work = Some(16); // One group succeeds; the complete second key cannot renew it.
     assert!(matches!(map.freeze(), Err(Error::Work(_))));
-    assert_eq!(memory.used_bytes(), 0);
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), ledger_claims);
     let mut map = PackedMap::new(work.clone(), limits(), 1, body(), 0).unwrap();
     put(&mut map, b"a", 0);
     let frozen = map.freeze().unwrap();

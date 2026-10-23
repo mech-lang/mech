@@ -334,7 +334,7 @@ empty<{string:u64}> := map/new()
 
     #[test]
     fn frozen_map_proof_follows_complete_aliases_and_arbitrary_query_branches() {
-        let source = lookup("  alias := counts\n  result := (query ∈ alias)? | true => alias{query} | false => 0u64.",
+        let source = lookup("  alias := counts\n  selected := (query ∈ alias)? | true => alias{query} | false => 0u64.\n  result := selected.",
             "lookup(text<string>, query<string>)");
         let original = artifact(&source);
         let decoded = mech_engine::decode_program_artifact_bytecode_v1(
@@ -366,7 +366,7 @@ empty<{string:u64}> := map/new()
 
     #[test]
     fn frozen_map_proof_keeps_each_worker_visit_local() {
-        let source = lookup("  result := (query ∈ counts)? | true => counts{query} | false => 0u64.",
+        let source = lookup("  selected := (query ∈ counts)? | true => counts{query} | false => 0u64.\n  result := selected.",
             "[lookup(text<string>, q) | q <- queries<[string]>]");
         let (plan, owners, closed) = parts(&artifact(&source));
         let layout = Layout::derive(&plan, &owners, &closed).unwrap();

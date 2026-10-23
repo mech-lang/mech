@@ -74,9 +74,20 @@ fn query_input(artifact: &mech_engine::ProgramArtifact, text: &str, memory: &Man
     value.into_memory_budget(&mut reservation).unwrap()
 }
 fn source(text: &str, width: usize, increment: u64, expression: &str) -> String {
-    format!("{}\nlookup(query<string>) => (result<u64>) :=\n  h := #Count({}, {width}u64, {}u64, empty)\n  alias := h\n  result := {expression}.\nlookup(query<string>)\n",
+    let expression = if expression.contains('?') { format!("{expression}.") } else { expression.to_owned() };
+    format!("{}\nlookup(query<string>) => (result<u64>) :=\n  h := #Count({}, {width}u64, {}u64, empty)\n  alias := h\n  selected := {expression}\n  result := selected.\nlookup(query<string>)\n",
         structural_projection_tests::COUNT.replace("previous + 1u64", &format!("previous + {increment}u64")),
         serde_json::to_string(text).unwrap(), text.len())
+}
+
+fn require_selected(descriptor: &NativeProgramDescriptor) {
+    if descriptor.frozen_maps.regions.is_empty() {
+        eprintln!("FROZEN_REJECTION_PLAN {}", serde_json::to_string(&serde_json::json!({
+            "plan": descriptor.plan, "closed": descriptor.closed_tails,
+            "owners": descriptor.map_owner_words,
+        })).unwrap());
+    }
+    assert_eq!(descriptor.frozen_maps.regions.len(), 1);
 }
 
 #[test]
@@ -93,7 +104,7 @@ fn frozen_queries_keep_complete_maps_arbitrary_strings_zero_values_and_restored_
         for artifact in [original, decoded] {
             let catalog = mech_stdlib::source_catalog();
             let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-            assert_eq!(jit.descriptor().frozen_maps.regions.len(), 1);
+            require_selected(jit.descriptor());
             let image = jit.descriptor().encode_build_owned_image().unwrap();
             let restored = unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
             for descriptor in [jit.descriptor(), &restored] {
@@ -131,7 +142,7 @@ fn frozen_missing_get_keeps_original_library_origin_and_releases_every_owner() {
     let artifact = tests::artifact_source(&source("abcabc", 1, 0, "alias{query}"));
     let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
     let descriptor = jit.descriptor();
-    assert_eq!(descriptor.frozen_maps.regions.len(), 1);
+    require_selected(descriptor);
     let site = descriptor.frozen_maps.reads.iter().position(Option::is_some).unwrap();
     for disabled in [false, true] {
         let memory = ManagedMemoryBudget::new(256 << 20);
