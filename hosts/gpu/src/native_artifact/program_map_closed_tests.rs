@@ -575,6 +575,8 @@ fn packed_ssa_preserves_carriers_across_refill_growth_and_branch_merges() {
 
 #[path = "program_packed_origin_tests.rs"]
 mod cold_origins;
+#[path = "program_scalar_edge_fact_tests.rs"]
+mod edge_facts;
 
 #[test]
 fn packed_generated_controls_compare_colliding_keys_across_wrap_and_growth() {

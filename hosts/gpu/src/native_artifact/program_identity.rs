@@ -87,7 +87,9 @@ fn selected_template(
 // SSA bodies, retaining every canonical String map key and worker boundary.
 // IR42 probes eight admitted control bytes with SIMD equality, retaining full
 // packed-key verification, bounded wraparound and original source updates.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 42;
+// IR43 substitutes only scalar guards/arithmetic proved by bounded exact
+// current-traversal edge facts; source CFG, work charges and ABI are unchanged.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 43;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

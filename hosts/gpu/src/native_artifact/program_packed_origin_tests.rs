@@ -79,7 +79,11 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
             &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
         for artifact in [original, decoded] {
             let catalog = mech_stdlib::source_catalog();
+            use crate::native_artifact::program_compiler::packed_loop_codegen::take_edge_fact_emissions;
+            take_edge_fact_emissions();
             let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let emissions = take_edge_fact_emissions();
+            assert!(emissions.0 >= 8, "{failure:?}: error fixture must use the edge-fact substitutions: {emissions:?}");
             let image = jit.descriptor().encode_build_owned_image().unwrap();
             // SAFETY: the image is from this exact still-owned generated entry.
             let restored = unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
