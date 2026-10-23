@@ -201,7 +201,7 @@ fn spill(b: &mut FunctionBuilder<'_>, packed: &FrameState,
 /// Called at the ordinary header before its per-visit dispatch. The fast
 /// version returns only at the original exit/error boundary; declined runtime
 /// entry continues emitting and executing the untouched ordinary header.
-pub(super) fn emit_entry(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value,
+pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value,
     code: CodePlan<'_>, closed: &Layout, owner: Option<&NativeMapOwnerWords>,
     aggregates: &NativeScalarAggregates, site: usize, hooks: &Hooks,
     ordinary_blocks: &[Option<Block>], error: Block) -> Result<(), NativeCompileError>
