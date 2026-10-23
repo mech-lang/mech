@@ -10,8 +10,10 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub source_edge_facts: EdgeFacts,
     pub tag_threading: TagThreading,
     pub frame_effects: FrameEffects,
+    pub guarded_loops: GuardedLoops,
     substitutions: usize,
     tag_records: usize,
+    guarded_records: usize,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct EdgeFacts {
@@ -53,6 +55,17 @@ struct TagRegion {
     folded_branches: Vec<usize>,
     known_latches: Vec<usize>,
 }
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct GuardedLoops { complete: bool, regions: Vec<GuardedRegion> }
+impl Default for GuardedLoops { fn default() -> Self { Self { complete: true, regions: Vec::new() } } }
+#[derive(serde::Serialize)]
+struct GuardedRegion {
+    header: usize, index_word: usize, width_word: usize, limit_word: usize, active_tag: u32,
+    stop_guards: [usize; 3], range_site: usize, recurrence_latches: Vec<usize>,
+    emitted_nodes: usize, certified_range_versions: Vec<usize>,
+    fixed_template_instructions: usize,
+    checked_fallback: bool,
+}
 
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct FrameEffects { complete: bool, regions: Vec<FrameRegion> }
@@ -84,6 +97,19 @@ impl CodegenReport {
             .map(|(operation, emitted_calls, before, after)| FrameOperation {
                 operation, emitted_calls, stored_words: words(before), reloaded_words: words(after),
             }).collect() });
+    }
+    pub fn guarded_loop(&mut self, header: usize, index_word: usize, width_word: usize, limit_word: usize,
+        active_tag: u32, stop_guards: [usize; 3], range_site: usize, recurrence_latches: Vec<usize>,
+        emitted_nodes: usize, certified_range_versions: Vec<usize>, fixed_template_instructions: usize)
+    {
+        let count = 3usize.saturating_add(recurrence_latches.len()).saturating_add(certified_range_versions.len());
+        if self.guarded_loops.regions.len() == MAX_REGIONS || self.guarded_records.saturating_add(count) > MAX_SUBSTITUTIONS {
+            self.guarded_loops.complete = false; return;
+        }
+        self.guarded_records += count;
+        self.guarded_loops.regions.push(GuardedRegion { header, index_word, width_word, limit_word, active_tag,
+            stop_guards, range_site, recurrence_latches, emitted_nodes, certified_range_versions,
+            fixed_template_instructions, checked_fallback: true });
     }
     /// Called after emitting the complete selected product graph. Source
     /// sites may repeat because distinct tag versions retain the same origin.
@@ -169,5 +195,13 @@ mod tests {
         report.frame_effects(0, vec![(0, 1, 0, 0); 15]);
         assert!(!report.frame_effects.complete);
         assert!(report.frame_effects.regions.is_empty());
+        let mut report = CodegenReport::default();
+        for header in 0..MAX_REGIONS {
+            report.guarded_loop(header, 1, 2, 3, 0, [4,5,6], 7, vec![8], 64, vec![39], 1024);
+        }
+        assert!(report.guarded_loops.complete);
+        report.guarded_loop(0, 1, 2, 3, 0, [4,5,6], 7, vec![8], 64, vec![39], 1024);
+        assert!(!report.guarded_loops.complete);
+        assert_eq!(report.guarded_loops.regions.len(), MAX_REGIONS);
     }
 }

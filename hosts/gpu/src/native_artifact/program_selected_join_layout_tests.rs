@@ -81,7 +81,7 @@ fn compact_range_layout_and_identity_preserve_original_decoded_library_visits() 
                 u64::from_le_bytes(current[16..24].try_into().unwrap()),
                 NATIVE_PROGRAM_TYPED_IR_VERSION
             );
-            assert_eq!(u64::from_le_bytes(current[24..32].try_into().unwrap()), 24);
+            assert_eq!(u64::from_le_bytes(current[24..32].try_into().unwrap()), 25);
             assert_eq!(
                 u64::from_le_bytes(current[32..40].try_into().unwrap()),
                 NATIVE_PROGRAM_WORK_POLICY_VERSION
@@ -100,7 +100,7 @@ fn compact_range_layout_and_identity_preserve_original_decoded_library_visits() 
                 )
                 .is_ok()
             );
-            for (offset, preceding) in [(16, 26u64), (32, 35u64)] {
+            for (offset, preceding) in [(16, 26u64), (32, 35u64), (16, 47), (24, 24)] {
                 let mut old = current;
                 old[offset..offset + 8].copy_from_slice(&preceding.to_le_bytes());
                 assert!(

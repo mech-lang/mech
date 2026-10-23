@@ -96,7 +96,7 @@ fn dominates(visits: &[NativeIterationVisit], entry: u32, definition: usize, use
         && !reachable(visits, entry, use_site, Some(definition))
 }
 
-fn invariant(plan: &Plan, visits: &[NativeIterationVisit], value: Value, iteration: u32) -> bool {
+pub(super) fn invariant(plan: &Plan, visits: &[NativeIterationVisit], value: Value, iteration: u32) -> bool {
     if !u64_value(plan, value) { return false; }
     let Some(Scope::Immutable { iteration: scope }) = plan.value_scopes().get(value.get() as usize)
         else { return false; };

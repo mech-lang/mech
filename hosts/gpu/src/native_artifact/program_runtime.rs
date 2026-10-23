@@ -131,6 +131,8 @@ pub struct NativeProgramExecutionReport {
     pub packed_map_updates: u64,
     /// Completed packed regions that entered the versioned SSA CFG.
     pub packed_ssa_regions: u64,
+    /// Completed regions whose actual guarded-loop selector chose the fast CFG.
+    pub guarded_loop_regions: u64,
     /// Source comprehensions whose original child bodies completed in workers.
     pub parallel_regions: u64,
     /// Completed dispatches; one dispatch may cover several source regions.
@@ -227,6 +229,7 @@ struct Context<'plan, 'visit> {
     packed_map_regions: u64,
     packed_map_updates: u64,
     packed_ssa_regions: u64,
+    guarded_loop_regions: u64,
     parallel_regions: u64,
     parallel_batches: u64,
     parallel_tasks: u64,
@@ -4341,7 +4344,7 @@ mod tests {
     }
     #[test]
     fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 24);
+        assert_eq!(VERSION, 25);
         assert_eq!(super::super::program_abi::PHASE_CAPTURE_TAIL, 3);
         assert_eq!(super::super::program_abi::STATUS_INPUT_SCANNED, 7);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);

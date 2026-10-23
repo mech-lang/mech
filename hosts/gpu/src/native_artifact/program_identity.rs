@@ -96,7 +96,10 @@ fn selected_template(
 // IR46 emits the ABI24 folded-product hash in generated packed probes.
 // IR47 synchronizes proved private helper read/write sets in packed SSA;
 // the ABI, source work, finite charges and full exit/error spills are unchanged.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 47;
+// IR48 adds a source-proved unsigned stop/range version, selected only when
+// invariant widths/limits fit the actual pinned source. Original work remains.
+// ABI25 binds private op14's validated, once-per-invocation selection receipt.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 48;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

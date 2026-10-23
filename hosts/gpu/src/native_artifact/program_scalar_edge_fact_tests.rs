@@ -31,6 +31,9 @@ impl Pass {
     }
 }
 
+#[path = "program_loop_bounds_tests.rs"]
+mod loop_bounds_tests;
+
 type PublicationFrontier = (u64, u64, u64, (u64, u64));
 thread_local! {
     static PUBLICATION_FRONTIERS: RefCell<Vec<PublicationFrontier>> = const { RefCell::new(Vec::new()) };
@@ -167,12 +170,12 @@ fn tag_threading_accepts_reordered_variants_and_an_initial_terminal_state() {
         let plain = without_tag_threading(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
         assert_eq!(take_tag_thread_emissions(), (0, 0, 0));
         let mut executions = Vec::new();
-        for jit in [&threaded, &plain] {
+        for (version, jit) in [&threaded, &plain].into_iter().enumerate() {
             PUBLICATION_FRONTIERS.with(|records| records.borrow_mut().clear());
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
             let mut outputs = vec![None];
             let entry = jit.test_checked_entry();
-            let report = execute(jit.descriptor(), |frame| {
+            let mut report = execute(jit.descriptor(), |frame| {
                 // SAFETY: same synchronous owning entry/observer as above.
                 let old = unsafe { (*frame).helper };
                 unsafe { (*frame).helper = observe_publication_frontier; }
@@ -182,6 +185,8 @@ fn tag_threading_accepts_reordered_variants_and_an_initial_terminal_state() {
             }, &[], &mut outputs, tests::limits(), &memory).unwrap();
             assert_eq!((report.packed_map_regions, report.packed_ssa_regions, report.packed_map_updates),
                 (1, 1, if terminal { 0 } else { 3 }));
+            assert_eq!(report.guarded_loop_regions, u64::from(version == 0));
+            report.guarded_loop_regions = 0;
             let ValueData::Map(map) = outputs[0].as_ref().unwrap().data() else { panic!("map"); };
             let pairs = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
                 (ValueData::String(key), ValueData::U64(value)) => (key.to_string(), *value),
@@ -304,7 +309,7 @@ fn changed_input_equivalence(pass: Pass) {
         }
         for (text, extent, n) in cases {
             let mut executions = Vec::new();
-            for jit in [&optimized, &unchanged] {
+            for (version, jit) in [&optimized, &unchanged].into_iter().enumerate() {
                 PUBLICATION_FRONTIERS.with(|records| records.borrow_mut().clear());
                 OBS.with(|records| *records.borrow_mut() = Observation::default());
                 let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
@@ -352,7 +357,13 @@ fn changed_input_equivalence(pass: Pass) {
                         assert_eq!(&records.bound[1..7], &[0; 6]);
                     });
                 }
-                let result = outcome.map_err(|error| format!("{error:?}"));
+                let mut result = outcome.map_err(|error| format!("{error:?}"));
+                if let Ok(report) = &mut result {
+                    let selected = u64::from((version == 0 || !matches!(pass, Pass::TagThreading)) && report.packed_ssa_regions == 1
+                        && extent > 0 && extent <= n && n <= text.len() as u64);
+                    assert_eq!(report.guarded_loop_regions, selected);
+                    report.guarded_loop_regions = 0;
+                }
                 let pairs = outputs[0].as_ref().map(|value| {
                     let ValueData::Map(map) = value.data() else { panic!("map"); };
                     map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {

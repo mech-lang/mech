@@ -39,6 +39,7 @@ pub(super) struct Receipt {
     pub packed_regions: u64,
     pub packed_updates: u64,
     pub packed_ssa_regions: u64,
+    pub guarded_loop_regions: u64,
 }
 pub(super) struct Worker {
     pub region: usize,
@@ -284,6 +285,7 @@ impl Context<'_, '_> {
             self.packed_map_regions = self.packed_map_regions.checked_add(result.packed_regions).ok_or_else(|| invalid("parallel packed region overflow"))?;
             self.packed_map_updates = self.packed_map_updates.checked_add(result.packed_updates).ok_or_else(|| invalid("parallel packed update overflow"))?;
             self.packed_ssa_regions = self.packed_ssa_regions.checked_add(result.packed_ssa_regions).ok_or_else(|| invalid("parallel SSA region overflow"))?;
+            self.guarded_loop_regions = self.guarded_loop_regions.checked_add(result.guarded_loop_regions).ok_or_else(|| invalid("parallel guarded loop count overflow"))?;
         }
         let mut pending = VecDeque::new();
         pending.try_reserve_exact(ready.len()).map_err(|_| invalid("parallel pending group allocation"))?;
@@ -355,7 +357,7 @@ impl Context<'_, '_> {
         self.worker.as_mut().unwrap().result = Some(Receipt { value, previous,
             visits: self.control.visits, hash_regions: self.hash_table_regions, hash_updates: self.hash_table_updates,
             packed_regions: self.packed_map_regions, packed_updates: self.packed_map_updates,
-            packed_ssa_regions: self.packed_ssa_regions });
+            packed_ssa_regions: self.packed_ssa_regions, guarded_loop_regions: self.guarded_loop_regions });
         Ok(Some(1))
     }
 }

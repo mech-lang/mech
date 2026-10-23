@@ -1,8 +1,9 @@
-//! Mixed-value ABI24 binds matching runtime/generated folded-product hashes.
+//! Mixed-value ABI25 retains folded-product hashes and adds the private
+//! guarded-loop actual-selection receipt.
 //! Entry phases, control pointer and scalar transport stay unchanged.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 24;
+pub(super) const VERSION: u64 = 25;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
 pub(super) const PHASE_PREFIX: u64 = 2;
