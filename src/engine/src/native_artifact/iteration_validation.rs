@@ -679,6 +679,9 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 let target = ty(*output)?.definition().ok_or(BAD)?;
                 if !target.dimension_parameters().is_empty()
                     || !match observation {
+                        Observation::CanonicalValue => {
+                            target.body() == body && super::structural_values::supported(body)
+                        }
                         Observation::U64 => {
                             body == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
                                 && target.body() == body

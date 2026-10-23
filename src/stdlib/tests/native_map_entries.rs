@@ -133,23 +133,14 @@ empty<{string:u64}> := map/new()
 "#;
 
 #[test]
-fn native_counting_state_machine_reports_map_payload_binding_gap() {
+fn native_counting_state_machine_lowers_all_seven_widths() {
     for width in [1, 2, 3, 4, 6, 12, 18] {
         let source =
             format!("{COUNT}\n#Count(\"ACGTACGTNACGTTACGTACGTACGT\", {width}u64, 26u64, empty)\n");
         for artifact in artifacts(&source) {
-            let error = lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog())
-                .unwrap_err();
-            assert!(
-                matches!(
-                    error,
-                    mech_engine::native_artifact::NativeArtifactLoweringError::UnsupportedNode {
-                        feature: "non-U64 structural native binding",
-                        ..
-                    }
-                ),
-                "width {width}: {error:?}"
-            );
+            let plan = lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog())
+                .unwrap_or_else(|error| panic!("width {width}: {error:?}"));
+            plan.validate_current_visits().unwrap();
         }
     }
 }
@@ -308,5 +299,149 @@ fn native_map_leaf_calls_publish_canonical_values_and_preserve_output_on_denial(
             output.as_ref().unwrap().data(),
             ValueData::Bool(true)
         ));
+    }
+}
+
+#[test]
+fn native_structural_projection_requires_owned_inputs_and_funds_denial_and_retry() {
+    use mech_core::{ManagedMemoryBudget, SchemaBody, ValueData, ValueDataDraft, ValueDraft};
+    use mech_engine::native_artifact::{
+        NativeIterationAction, NativeLibraryWorkBudget, NativeStructuralObservation,
+        native_project_structural_value,
+    };
+    fn data(body: &SchemaBody) -> ValueDataDraft {
+        match body {
+            SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64) => ValueDataDraft::U64(0),
+            SchemaBody::Tuple(items) => ValueDataDraft::Tuple(items.iter().map(data).collect()),
+            SchemaBody::Enum { variants, .. } => {
+                ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
+                    ordinal: 0,
+                    payload: variants[0]
+                        .payload
+                        .as_ref()
+                        .map(|body| Box::new(data(body))),
+                })
+            }
+            SchemaBody::Map { .. } => ValueDataDraft::Map(
+                vec![mech_core::snapshot::MapEntryDraft {
+                    items: vec![
+                        ValueDataDraft::String("é\0x".into()),
+                        ValueDataDraft::U64(17),
+                    ]
+                    .into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+            _ => panic!("unexpected carrier {body:?}"),
+        }
+    }
+    for artifact in artifacts(&format!("{COUNT}\n#Count(\"ACGT\", 1u64, 4u64, empty)\n")) {
+        let plan =
+            lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let (site, source) = plan
+            .blocks()
+            .iter()
+            .enumerate()
+            .find_map(|(site, block)| match block.action() {
+                NativeIterationAction::Structural {
+                    source,
+                    output,
+                    observation: NativeStructuralObservation::CanonicalValue,
+                    ..
+                } if matches!(
+                    plan.values()[output.get() as usize].definition().body(),
+                    SchemaBody::Map { .. }
+                ) =>
+                {
+                    Some((site, *source))
+                }
+                _ => None,
+            })
+            .unwrap();
+        let ty = &plan.values()[source.get() as usize];
+        let schemas = std::sync::Arc::new(artifact.schemas().clone());
+        let memory = ManagedMemoryBudget::new(16 * 1024 * 1024);
+        let foreign = ManagedMemoryBudget::new(16 * 1024 * 1024);
+        let input = |budget: &ManagedMemoryBudget| {
+            let value = ValueDraft {
+                schema: ty.schema(),
+                shape_values: Box::new([]),
+                data: data(ty.definition().body()),
+            }
+            .finalize(
+                &mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(&schemas),
+            )
+            .unwrap();
+            let mut reservation = budget
+                .reserve_capacity(value.memory_budget_admission_bytes(budget).unwrap())
+                .unwrap();
+            value.into_memory_budget(&mut reservation).unwrap()
+        };
+        let source = input(&memory);
+        let foreign_source = input(&foreign);
+        let work = NativeLibraryWorkBudget::new(100_000_000, 10_000_000, &memory).unwrap();
+        let mut limits = mech_core::TargetMemoryProfile::current_resident_cpu()
+            .unwrap()
+            .limits;
+        limits.max_compute_work = Some(10_000_000);
+        limits.max_comparison_work = Some(1_000_000);
+        limits.max_temporary_bytes = Some(8 * 1024 * 1024);
+        assert!(
+            native_project_structural_value(
+                &plan,
+                site,
+                &schemas,
+                &foreign_source,
+                None,
+                limits,
+                &work
+            )
+            .is_err()
+        );
+        assert_eq!(work.used(), (0, 0));
+        let output =
+            native_project_structural_value(&plan, site, &schemas, &source, None, limits, &work)
+                .unwrap();
+        let ValueData::Map(map) = output.data() else {
+            panic!("map")
+        };
+        assert!(
+            matches!((map.entries()[0].key().data(), map.entries()[0].value()), (ValueData::String(key), ValueData::U64(17)) if key.as_ref() == "é\0x")
+        );
+        let retained = memory.used_bytes();
+        let original = source.frozen_storage_identity();
+        for tight in [0, 1] {
+            let mut denied = limits;
+            denied.max_output_bytes = Some(tight);
+            assert!(
+                native_project_structural_value(
+                    &plan,
+                    site,
+                    &schemas,
+                    &source,
+                    Some(&output),
+                    denied,
+                    &work
+                )
+                .is_err()
+            );
+            assert_eq!(memory.used_bytes(), retained);
+            assert!(original.matches(&source));
+        }
+        let retry = native_project_structural_value(
+            &plan,
+            site,
+            &schemas,
+            &source,
+            Some(&output),
+            limits,
+            &work,
+        )
+        .unwrap();
+        assert_eq!(
+            retry.canonical_snapshot_bytes(&schemas).unwrap(),
+            output.canonical_snapshot_bytes(&schemas).unwrap()
+        );
+        assert!(work.used().0 > 0 && work.used().1 > 0);
     }
 }

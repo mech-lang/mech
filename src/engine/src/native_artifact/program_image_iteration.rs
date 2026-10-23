@@ -16,6 +16,7 @@ enum Step {
 enum Observation {
     EnumOrdinal { ordinal: u32 },
     U64,
+    CanonicalValue,
     StringEqual { peer: u32 },
 }
 #[derive(Deserialize)]
@@ -131,6 +132,7 @@ pub(super) unsafe fn block(
                     NativeStructuralObservation::EnumOrdinal { ordinal }
                 }
                 Observation::U64 => NativeStructuralObservation::U64,
+                Observation::CanonicalValue => NativeStructuralObservation::CanonicalValue,
                 Observation::StringEqual { peer } => NativeStructuralObservation::StringEqual {
                     peer: NativeMatchValue(peer),
                 },

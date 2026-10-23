@@ -108,3 +108,8 @@ pub use crate::resident::general::native_collection_calls::{
     bind_native_collection_lexical, bind_native_collection_operation,
     bind_native_program_library_call, prepare_native_program_library_call,
 };
+
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+pub use crate::resident::general::native_structural_projection::native_project_structural_value;
+
+pub(crate) mod structural_values;

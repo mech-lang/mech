@@ -443,6 +443,45 @@ impl Context<'_, '_> {
             let root = self
                 .arena
                 .copy_current(source.get(), &mut self.control.work)?;
+            if *observation == Observation::CanonicalValue {
+                let NativeIterationAction::Structural { output, .. } =
+                    descriptor.plan.blocks()[site].action()
+                else {
+                    unreachable!()
+                };
+                let prior = if self
+                    .arena
+                    .current_retained_bytes(output.get(), &mut self.control.work)?
+                    .is_some()
+                {
+                    Some(
+                        self.arena
+                            .copy_current(output.get(), &mut self.control.work)?,
+                    )
+                } else {
+                    None
+                };
+                let result = mech_engine::native_artifact::native_project_structural_value(
+                    &descriptor.plan,
+                    site,
+                    &descriptor.schemas,
+                    &root,
+                    prior.as_ref(),
+                    self.limits,
+                    &self.library,
+                )
+                .map_err(|error| NativeProgramExecutionError::Library {
+                    origin: descriptor.plan.blocks()[site].origin(),
+                    error,
+                })?;
+                self.arena
+                    .put(output.get(), &result, &mut self.control.work)?;
+                self.consumed = true;
+                return descriptor.plan.values()[output.get() as usize]
+                    .scalar_kind()
+                    .map(|kind| bits(&result, kind))
+                    .transpose();
+            }
             let mut data = root.data();
             for step in path {
                 data = match (step, data) {
@@ -4295,3 +4334,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_structural_projection_tests.rs"]
+mod structural_projection_tests;

@@ -222,7 +222,7 @@ fn bind_selected(
     )
 }
 
-fn finite_limits(node: NodeId, limits: MemoryBudgetLimits) -> Result<(), Error> {
+pub(super) fn finite_limits(node: NodeId, limits: MemoryBudgetLimits) -> Result<(), Error> {
     if [
         limits.max_output_elements,
         limits.max_output_bytes,
