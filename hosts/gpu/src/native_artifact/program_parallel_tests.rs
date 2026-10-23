@@ -142,6 +142,59 @@ first + ";" + second
 }
 
 #[test]
+fn parallel_compact_domains_preserve_all_seven_source_maps_and_shared_cleanup() {
+    let source = source("number/format(h{\"A\"}, 0u64)", r#"
+first-items := [4u64 8u64]
+second-items := [1u64 2u64 3u64 4u64 5u64]
+first := text/join([count-text(text, width, n) | n <- first-items], "|")
+second := text/join([count-text(text, width, n) | n <- second-items], ",")
+first + ";" + second
+"#).replace("text := seed<string>", r#"letters := {"a":"A", "b":"B", ":":"C"}
+text := text/join([letters{char} | char <- seed<string>], "")"#);
+    let original = tests::artifact_source(&source);
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+    for artifact in [original, decoded] {
+        let catalog = mech_stdlib::source_catalog();
+        let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        assert_eq!(jit.descriptor().parallel.regions.len(), 2);
+        let image = jit.descriptor().encode_build_owned_image().unwrap();
+        // SAFETY: restored metadata and the retained generated entry share this build.
+        let restored = unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
+        for descriptor in [jit.descriptor(), &restored] {
+            let domains = descriptor.closed_tails.regions.iter()
+                .filter_map(|region| region.packed.as_ref())
+                .map(|proof| (proof.packing_domain().bits(), proof.packing_domain().shift()))
+                .collect::<Vec<_>>();
+            assert_eq!(domains, [(2, Some(0)), (2, Some(0))]);
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = vec![input(&artifact, &memory)];
+            let baseline = (memory.used_bytes(), memory.retained_nodes());
+            let mut serial = vec![None; artifact.outputs().len()];
+            let serial_report = observed_with_nodes(descriptor, jit.test_checked_entry(), &args,
+                &mut serial, &memory, 1, false, 1_048_576).unwrap();
+            let mut parallel = vec![None; artifact.outputs().len()];
+            let report = observed_with_nodes(descriptor, jit.test_checked_entry(), &args,
+                &mut parallel, &memory, 8, false, 1_048_576).unwrap();
+            assert_eq!((report.parallel_batches, report.parallel_regions, report.parallel_tasks), (1, 2, 7));
+            assert_eq!((report.packed_map_regions, report.packed_ssa_regions, report.packed_map_updates), (7, 7, 27));
+            assert_eq!((serial_report.packed_map_regions, serial_report.packed_ssa_regions,
+                serial_report.packed_map_updates), (7, 7, 27));
+            for (left, right) in serial.iter().zip(&parallel) {
+                assert_eq!(left.as_ref().unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap(),
+                    right.as_ref().unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap());
+            }
+            assert!(matches!(parallel.last().unwrap().as_ref().unwrap().data(),
+                ValueData::String(text) if text.as_ref() == "2|3;1,1,1,2,2"));
+            drop((serial, parallel));
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
+            drop(args);
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+        }
+    }
+}
+
+#[test]
 fn prior_push_failure_precedes_later_worker_arithmetic_and_retires_pending_results() {
     let source = source("number/format(h{\"a\"} + 8u64 / (8u64 - n), 0u64)",
         r#"
