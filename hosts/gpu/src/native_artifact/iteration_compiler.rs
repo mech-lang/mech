@@ -229,12 +229,16 @@ fn load(
     super::control_compiler::load(b, locals, value)
 }
 
+#[path = "iteration_codegen_report.rs"]
+mod codegen_report;
+pub(super) use codegen_report::{CodegenReport, RegionToken};
+
 fn define<M: Module>(
     plan: &NativeIterationArtifactPlan,
     module: &mut M,
     limits: NativeCompileLimits,
 ) -> Result<(FuncId, NativeIterationDescriptor), NativeCompileError> {
-    let (function, stack, code) = define_cfg(
+    let (function, stack, code, _) = define_cfg(
         super::iteration_code_plan::CodePlan::Scalar(plan),
         ENTRY,
         VERSION,
@@ -253,7 +257,8 @@ pub(super) fn define_cfg<M: Module>(
     version: u64,
     module: &mut M,
     limits: NativeCompileLimits,
-) -> Result<(FuncId, u64, u64), NativeCompileError> {
+) -> Result<(FuncId, u64, u64, CodegenReport), NativeCompileError> {
+    let mut report = CodegenReport::default();
     host_supported()?;
     if module.target_config().pointer_type() != types::I64 {
         return Err(NativeCompileError::UnsupportedHost);
@@ -666,7 +671,7 @@ pub(super) fn define_cfg<M: Module>(
             if let Some(hooks) = &hooks {
                 super::program_compiler::packed_loop_codegen::emit_entry(
                     &mut b, frame, locals, plan, &closed, owner.as_ref(), &aggregates,
-                    index, hooks, &blocks, error,
+                    index, hooks, &blocks, error, &mut report,
                 )?;
             }
             let before = b.func.dfg.num_insts();
@@ -1316,5 +1321,5 @@ pub(super) fn define_cfg<M: Module>(
     );
     limit("Iteration stack", stack, limits.max_stack_bytes)?;
     limit("Iteration code", code, limits.max_code_bytes)?;
-    Ok((function, stack, code))
+    Ok((function, stack, code, report))
 }

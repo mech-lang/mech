@@ -6,6 +6,84 @@ use crate::native_artifact::program_compiler::packed_loop_codegen::{
 };
 use crate::native_artifact::JitProgramArtifact;
 
+type PublicationFrontier = (u64, u64, u64, (u64, u64));
+thread_local! {
+    static PUBLICATION_FRONTIERS: RefCell<Vec<PublicationFrontier>> = const { RefCell::new(Vec::new()) };
+}
+unsafe extern "C" fn observe_publication_frontier(raw: *mut c_void, site: u64, op: u64,
+    first: u64, second: u64, third: u64, result: *mut u64) -> u64
+{
+    if op == CLOSED_TAIL_END {
+        // SAFETY: this observer receives the same pinned owned context as the
+        // maintained helper. Capture before table import/publication, whose
+        // independently seeded hash iteration can change heapsort's work.
+        let ctx = unsafe { &*raw.cast::<Context<'_, '_>>() };
+        PUBLICATION_FRONTIERS.with(|records| records.borrow_mut().push((site, first,
+            ctx.control.work.used(), ctx.library.used())));
+    }
+    // SAFETY: unchanged arguments and original maintained helper contract.
+    unsafe { helper(raw, site, op, first, second, third, result) }
+}
+
+fn structural_report(report: &NativeProgramExecutionReport) -> [u64; 11] {
+    [report.visits, report.transport_bytes, report.hash_table_regions, report.hash_table_updates,
+        report.packed_map_regions, report.packed_map_updates, report.packed_ssa_regions,
+        report.parallel_regions, report.parallel_batches, report.parallel_tasks, report.parallel_peak_workers]
+}
+
+#[test]
+fn object_metadata_records_actual_source_edge_substitutions_and_disabled_absence() {
+    let artifact = tests::artifact_source(&format!("{}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n",
+        structural_projection_tests::COUNT));
+    let catalog = mech_stdlib::source_catalog();
+    take_edge_fact_emissions();
+    let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+    let emitted = take_edge_fact_emissions();
+    let metadata = object.metadata();
+    let receipt = &metadata["compiled_source_edge_facts"];
+    assert_eq!(receipt["complete"], true);
+    let regions = receipt["regions"].as_array().unwrap();
+    assert_eq!(regions.len(), 1);
+    let descriptor = object.descriptor();
+    let closed = descriptor.closed_tails.regions.iter().find(|r| r.packed.is_some()).unwrap();
+    assert_eq!(regions[0]["header"], closed.tail.header());
+    let guards = regions[0]["guards"].as_array().unwrap();
+    let arithmetic = regions[0]["arithmetic"].as_array().unwrap();
+    assert_eq!((guards.len(), arithmetic.len()), emitted);
+    assert!(emitted.0 >= 8 && emitted.1 >= 4, "actual object substitutions: {emitted:?}");
+    let owner = descriptor.map_owner_words.as_ref().unwrap();
+    for record in guards {
+        let site = record["site"].as_u64().unwrap() as usize;
+        let action = if owner.action_region(site) == closed.map {
+            owner.aggregates().action(site)
+        } else { descriptor.scalar_aggregates.action(site) }.unwrap();
+        use mech_engine::native_artifact::NativeScalarAggregateAction as Aggregate;
+        let (source, guards) = match action {
+            Aggregate::Observe { source, guards, .. } | Aggregate::Project { source, guards, .. } => (source, guards),
+            _ => panic!("reported source guard site"),
+        };
+        assert_eq!(record["source"], serde_json::to_value(source).unwrap());
+        assert!(guards.iter().any(|&(offset, ordinal)| record["offset"] == offset && record["ordinal"] == ordinal));
+    }
+    for record in arithmetic {
+        let site = record["site"].as_u64().unwrap() as usize;
+        let NativeIterationAction::Scalar(NativeMatchAction::Primitive { op, operands, .. }) =
+            descriptor.plan.blocks()[site].action() else { panic!("reported arithmetic source site"); };
+        assert_eq!(record["op"], serde_json::to_value(op).unwrap());
+        assert_eq!(record["operands"], serde_json::to_value(operands).unwrap());
+    }
+    let disabled = without_edge_facts(|| crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
+    assert_eq!(take_edge_fact_emissions(), (0, 0));
+    let metadata = disabled.metadata();
+    let receipt = &metadata["compiled_source_edge_facts"];
+    assert_eq!(receipt["complete"], true);
+    let regions = receipt["regions"].as_array().unwrap();
+    assert_eq!(regions.len(), 1, "SSA remains selected when only edge substitutions are disabled");
+    assert_eq!(regions[0]["header"], closed.tail.header());
+    assert!(regions[0]["guards"].as_array().unwrap().is_empty());
+    assert!(regions[0]["arithmetic"].as_array().unwrap().is_empty());
+}
+
 #[test]
 fn current_edge_facts_preserve_changed_inputs_source_names_and_exact_work() {
     // These are ordinary typed parameters, not constants captured from the
@@ -34,6 +112,7 @@ fn current_edge_facts_preserve_changed_inputs_source_names_and_exact_work() {
         ] {
             let mut executions = Vec::new();
             for jit in [&optimized, &unchanged] {
+                PUBLICATION_FRONTIERS.with(|records| records.borrow_mut().clear());
                 let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
                 let inputs = artifact.inputs().iter().map(|input| {
                     let name = mech_engine::decode_source_input_name(&input.name).unwrap();
@@ -54,7 +133,10 @@ fn current_edge_facts_preserve_changed_inputs_source_names_and_exact_work() {
                 let outcome = execute(jit.descriptor(), |frame| {
                     // SAFETY: this is the owning, synchronous checked entry;
                     // the session's frame and context are live until return.
+                    let old = unsafe { (*frame).helper };
+                    unsafe { (*frame).helper = observe_publication_frontier; }
                     let status = unsafe { entry(frame) };
+                    unsafe { (*frame).helper = old; }
                     let ctx = unsafe { &*(*frame).base.context.cast::<Context<'_, '_>>() };
                     terminal.set(Some((status, (status != STATUS_OK).then(|| unsafe { (*frame).base.error_node }),
                         ctx.control.work.used(), ctx.library.used())));
@@ -84,11 +166,29 @@ fn current_edge_facts_preserve_changed_inputs_source_names_and_exact_work() {
                     assert!(result.is_err(), "actual source bound must still fail");
                     assert!(pairs.is_none());
                 }
-                executions.push((result, pairs, terminal.get().unwrap()));
+                let frontiers = PUBLICATION_FRONTIERS.with(|records| core::mem::take(&mut *records.borrow_mut()));
+                if result.is_ok() && !text.is_empty() { assert_eq!(frontiers.len(), 1); }
+                executions.push((result, pairs, terminal.get().unwrap(), frontiers));
                 drop((outputs, inputs));
                 assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
             }
-            assert_eq!(executions[0], executions[1], "{text:?}, extent={extent}, n={n}: unchanged source work and failures");
+            let (left, right) = (&executions[0], &executions[1]);
+            assert_eq!(left.1, right.1, "canonical result");
+            assert_eq!((left.2.0, left.2.1), (right.2.0, right.2.1), "source status/origin");
+            assert_eq!(left.3, right.3, "{text:?}, extent={extent}, n={n}: exact pre-publication work and remaining fuel");
+            match (&left.0, &right.0) {
+                (Ok(a), Ok(b)) => assert_eq!(structural_report(a), structural_report(b)),
+                _ => assert_eq!(left.0, right.0, "identical source failure"),
+            }
+            // HashMap iteration is independently seeded for the publication
+            // bridge. A multi-key heapsort can take a different number of
+            // charged sift steps; do not attribute those to generated code.
+            // Empty/one-key publication and pre-publication failures supply
+            // deterministic end-to-end work witnesses as well.
+            if left.0.is_err() || left.1.as_ref().is_some_and(|map| map.len() <= 1) {
+                assert_eq!(left.0, right.0, "deterministic full report");
+                assert_eq!(left.2, right.2, "deterministic total native/library spend");
+            }
         }
     }
 }

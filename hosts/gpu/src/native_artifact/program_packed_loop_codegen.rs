@@ -11,6 +11,7 @@ use mech_engine::native_artifact::{NativeAggregateWord as Word, NativeIterationA
     NativeMatchTerminator as Branch, NativeMatchValue, NativeScalarAggregateAction as Aggregate,
     NativeScalarAggregates, NativeScalarKind, NativeCollectionPrimitive as P};
 use std::collections::{BTreeMap, BTreeSet};
+use super::super::iteration_compiler::{CodegenReport, RegionToken};
 #[path = "program_scalar_edge_facts.rs"]
 mod edge_facts;
 
@@ -170,7 +171,8 @@ impl Words {
 }
 
 fn emit_aggregate(b: &mut FunctionBuilder<'_>, state: &Words, layout: &NativeScalarAggregates,
-    action: &Aggregate, site: usize, facts: &edge_facts::Proof, error: Block) -> Result<(), NativeCompileError>
+    action: &Aggregate, site: usize, facts: &edge_facts::Proof, error: Block,
+    report: &mut CodegenReport, report_region: Option<RegionToken>) -> Result<(), NativeCompileError>
 {
     let at = |value, index| field(layout, value, index).ok_or_else(|| backend("packed SSA aggregate field"));
     let (output, values) = match action {
@@ -191,7 +193,11 @@ fn emit_aggregate(b: &mut FunctionBuilder<'_>, state: &Words, layout: &NativeSca
         }
         Aggregate::Project { source, offset, guards, output } => {
             for &(index, ordinal) in guards {
-                if facts.guard(site, *source, index, ordinal) { note_edge_fact(false); continue; }
+                if facts.guard(site, *source, index, ordinal) {
+                    note_edge_fact(false);
+                    report.guard(report_region, site, *source, index, ordinal);
+                    continue;
+                }
                 let tag = state.read(b, at(*source, index)?);
                 let valid = b.ins().icmp_imm(IntCC::Equal, tag, i64::from(ordinal));
                 guard(b, valid, error, super::super::abi::STATUS_ABI);
@@ -203,7 +209,11 @@ fn emit_aggregate(b: &mut FunctionBuilder<'_>, state: &Words, layout: &NativeSca
         }
         Aggregate::Observe { source, offset, ordinal, guards, output } => {
             for &(index, ordinal) in guards {
-                if facts.guard(site, *source, index, ordinal) { note_edge_fact(false); continue; }
+                if facts.guard(site, *source, index, ordinal) {
+                    note_edge_fact(false);
+                    report.guard(report_region, site, *source, index, ordinal);
+                    continue;
+                }
                 let tag = state.read(b, at(*source, index)?);
                 let valid = b.ins().icmp_imm(IntCC::Equal, tag, i64::from(ordinal));
                 guard(b, valid, error, super::super::abi::STATUS_ABI);
@@ -236,7 +246,7 @@ fn spill(b: &mut FunctionBuilder<'_>, packed: &FrameState,
 pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value,
     code: CodePlan<'_>, closed: &Layout, owner: Option<&NativeMapOwnerWords>,
     aggregates: &NativeScalarAggregates, site: usize, hooks: &Hooks,
-    ordinary_blocks: &[Option<Block>], error: Block) -> Result<(), NativeCompileError>
+    ordinary_blocks: &[Option<Block>], error: Block, report: &mut CodegenReport) -> Result<(), NativeCompileError>
 {
     let Some(id) = closed.sites.get(site).copied().flatten() else { return Ok(()); };
     let region = &closed.regions[id];
@@ -249,6 +259,7 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
     let facts = edge_facts::derive(code, closed, id, owner, aggregates, &slots).unwrap_or_default();
     #[cfg(test)]
     let facts = if EDGE_FACTS_DISABLED.with(std::cell::Cell::get) { edge_facts::Proof::default() } else { facts };
+    let report_region = report.packed_ssa_region(site);
     let owner_index = region.map.unwrap();
     let ordinary = b.create_block();
     let inspect = b.create_block();
@@ -304,7 +315,7 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
             packed.write(b, core::mem::offset_of!(Frame, fuel), fuel);
         }
         if let Some((layout, action)) = aggregate_at(owner, aggregates, owner_index, index) {
-            emit_aggregate(b, &words, layout, action, index, &facts, fail_at)?;
+            emit_aggregate(b, &words, layout, action, index, &facts, fail_at, report, report_region)?;
         } else if let Some(span) = owner.span_site(index).map(|i| &owner.spans()[i]) {
             if span.range_site() as usize == index {
                 let first = words.read(b, span.operands()[0].get() as usize);
@@ -327,11 +338,13 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
                     let value = if facts.arithmetic(index, *op, operands) {
                         use mech_engine::native_artifact::NativeScalarOp as Op;
                         note_edge_fact(true);
-                        match op {
+                        let value = match op {
                             Op::U64Add => b.ins().iadd(args[0], args[1]),
                             Op::U64Sub => b.ins().isub(args[0], args[1]),
                             _ => unreachable!("edge proof certifies only unsigned add/subtract"),
-                        }
+                        };
+                        report.arithmetic(report_region, index, *op, [operands[0], operands[1]]);
+                        value
                     } else { primitive(b, *op, &args, fail_at) };
                     words.write(b, output.get() as usize, value);
                 }
