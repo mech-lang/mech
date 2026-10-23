@@ -347,6 +347,7 @@ impl NativePreparedLibraryCall {
                         limits,
                         work: work.clone(),
                         projection_count: Some(selector.count),
+                        binding_nodes: self.binding_nodes,
                         projection_index: Default::default(),
                         _reservation: reservation,
                     }));

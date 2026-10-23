@@ -41,6 +41,8 @@ mod session;
 mod window_round;
 #[path = "program_caller_geometry.rs"]
 mod caller_geometry;
+#[path = "program_map_owner_runtime.rs"]
+mod map_owners;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub(super) use session::CheckedEntry;
 #[cfg(feature = "canonical-native-program-host-runtime")]
