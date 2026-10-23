@@ -181,6 +181,7 @@ impl NativeProgramObject {
             "code_bytes": self.descriptor.code_bytes(),
             "object_bytes": self.bytes.len(),
             "object_optimization": "speed",
+            "compiled_window_accumulator": "hashbrown-0.15.5-entry-updates",
             "compiled_window_query_regions": self.descriptor.window_regions.iter().filter(|region| region.query().is_some()).count(),
             "compiled_window_histogram_regions": self.descriptor.window_regions.iter().filter(|region| region.query().is_none()).count(),
             "compiled_string_map_regions": self.descriptor.string_map_regions.len(),

@@ -2,7 +2,7 @@
 //! allowing row loans to retire without changing the frozen scalar-frame prefix.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 12;
+pub(super) const VERSION: u64 = 13;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
 pub(super) const PHASE_PREFIX: u64 = 2;

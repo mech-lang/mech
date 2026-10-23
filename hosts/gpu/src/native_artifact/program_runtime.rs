@@ -194,6 +194,7 @@ struct Context<'plan, 'visit> {
     error: Option<NativeProgramExecutionError>,
     activation_phase: bool,
     window_region: Option<(u32, u64)>,
+    window_hashes: Option<Box<window_round::hashes::WindowHashes>>,
     prefix: Option<prefix::State>,
     // The borrow pins real UTF-8 backing for this synchronous entry only.
     line_window: Option<&'visit mech_engine::native_artifact::NativeTextLineWindow<'visit>>,

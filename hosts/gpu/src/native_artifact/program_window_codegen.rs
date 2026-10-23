@@ -1,6 +1,6 @@
 //! Whole-loop machine code selected by the canonical window/histogram proof.
-//! No source frontend, evaluator, allocation or admission callback in this body.
-//! The canonical caller retains genuine source/query or scratch owners, checks representation and
+//! Source iteration is generated code; every window updates a library hash table.
+//! The canonical caller retains genuine source/query and accumulator owners, checks representation and
 //! admits finite region memory/work within the containing round before entry.
 use super::{NativeCompileError, backend};
 use cranelift_codegen::ir::{AbiParam, Endianness, InstBuilder, MemFlags, condcodes::IntCC, types};
@@ -13,17 +13,17 @@ mod histogram;
 
 #[path = "program_window_query_codegen.rs"]
 mod query;
+#[path = "program_window_hash_codegen.rs"]
+mod hashes;
 
-// (source pointer, source bytes, query pointer, query bytes, width) -> count.
+// (unused, accepted starts, accumulator owner, library update callback, width) -> completed.
 // Caller must prove that source is ASCII without CRLF grapheme pairs. Then
 // byte indices are EXACT ordinary String/grapheme indices, including NUL.
 pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
     region: &NativeWindowRegion,
 ) -> Result<(FuncId, String, u64, u64), NativeCompileError> {
-    let vectorized =
-        module.isa().name() == "aarch64" && module.isa().endianness() == Endianness::Little;
-    define_impl(module, region, vectorized)
+    define_with(module, region, hashes::emit)
 }
 
 fn define_impl<M: Module>(
