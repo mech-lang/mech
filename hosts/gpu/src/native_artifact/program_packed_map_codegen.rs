@@ -1,13 +1,25 @@
 //! Generated storage operations over an invocation-owned explicit table layout.
 //! Source control flow and replacement arithmetic remain in the original CFG.
 use super::super::{NativeCompileError, compiler::offset, program_hooks::Hooks,
-    program_packed_map::{Frame, Slot, GROUP, narrow, slot_bytes, value_offset}, program_key_domain::Domain};
+    program_packed_map::{Frame, Slot, GROUP, HASH_FIRST, HASH_SECOND, narrow, slot_bytes, value_offset}, program_key_domain::Domain};
 use cranelift_codegen::ir::{Block, Endianness, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 
 #[path = "program_packed_frame_codegen.rs"]
 mod frame_state;
 pub(in crate::native_artifact) use frame_state::FrameState;
+
+#[cfg(test)]
+#[path = "program_packed_hash_tests.rs"]
+mod hash_tests;
+
+fn hash_words(b: &mut FunctionBuilder<'_>, low: Value, high: Value) -> Value {
+    let left = b.ins().bxor_imm(low, HASH_FIRST as i64);
+    let right = b.ins().bxor_imm(high, HASH_SECOND as i64);
+    let product_low = b.ins().imul(left, right);
+    let product_high = b.ins().umulhi(left, right);
+    b.ins().bxor(product_low, product_high)
+}
 
 fn get(b: &mut FunctionBuilder<'_>, frame: Value, at: usize) -> Value {
     b.ins().load(types::I64, MemFlags::new(), frame, at as i32)
@@ -213,18 +225,7 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     b.switch_to_block(setup);
     let low = read!(b, frame, key_low);
     let high = if narrow { zero } else { read!(b, frame, key_high) };
-    let hash = if narrow { low } else {
-        let rotated = b.ins().rotl_imm(high, 29);
-        b.ins().bxor(low, rotated)
-    };
-    let shifted = b.ins().ushr_imm(hash, 30);
-    let hash = b.ins().bxor(hash, shifted);
-    let hash = b.ins().imul_imm(hash, 0xbf58476d1ce4e5b9u64 as i64);
-    let shifted = b.ins().ushr_imm(hash, 27);
-    let hash = b.ins().bxor(hash, shifted);
-    let hash = b.ins().imul_imm(hash, 0x94d049bb133111ebu64 as i64);
-    let shifted = b.ins().ushr_imm(hash, 31);
-    let hash = b.ins().bxor(hash, shifted);
+    let hash = hash_words(b, low, high);
     let mask = b.ins().iadd_imm(capacity, -1);
     let index = b.ins().band(hash, mask);
     let tag = b.ins().ushr_imm(hash, 57);

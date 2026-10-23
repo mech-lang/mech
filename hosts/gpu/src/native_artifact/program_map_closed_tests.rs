@@ -111,6 +111,10 @@ fn packed_domain_boundaries_execute_rolling_keys_and_restore_descriptors_lossles
         (cross_word.clone(), 16, 4, Some(0), false),
         (cross_word, 17, 4, Some(0), false),
         (ascii, 18, 7, Some(0), true),
+        // The first two aligned keys share their low word and differ only in
+        // their high word. The runtime's insert/rehash and generated probes
+        // must agree on the full-width hash, including after restoration.
+        ("abcdefghijklmnopqrAbcdefghijklmnopqr".repeat(2), 18, 7, Some(0), true),
         ("ABDH".repeat(12), 18, 7, Some(0), false),
     ] {
         let argument = if runtime_input { "text<string>".to_owned() } else { format!("\"{text}\"") };
