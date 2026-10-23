@@ -94,6 +94,47 @@ struct CachedBinding {
     _reservation: ManagedMemoryReservation,
 }
 
+impl NativePreparedLibraryCallCache {
+    /// Read this cache's admitted metadata demand without inspecting Values,
+    /// rebuilding plans or renewing a call allowance. This grants no selected
+    /// site/visit permission. Canonical payloads belong to the caller's separate
+    /// snapshot census; this cache retains no input or output Values.
+    pub fn retained_metadata_demand(
+        &self,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<ResourceDemand, InvokeError> {
+        let Some(binding) = self.binding.as_ref() else {
+            work.charge(256, 0)?;
+            return Ok(ResourceDemand::default());
+        };
+        if !binding.work.shares_account(work)
+            || binding._reservation.budget() != work.memory_budget()
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        work.charge(256, 0)?;
+        // Static binding/kernel/schema metadata may contain recursive trees.
+        // Its admitted byte capacity safely bounds their node population. The
+        // separately reserved dynamic index already has its own node witness.
+        let metadata = binding._reservation.capacity_bytes();
+        let mut demand = ResourceDemand {
+            turn_peak_bytes: metadata.checked_add(binding.projection_index.bytes())
+                .ok_or(InvokeError::InvalidInput)?,
+            retained_nodes: metadata.checked_add(binding.projection_index.nodes())
+                .ok_or(InvokeError::InvalidInput)?,
+            ..ResourceDemand::default()
+        };
+        if let NativePlanCacheState::Cached(plans) = &binding.plans {
+            let plans = plans.retained_metadata_demand(work)?;
+            demand.turn_peak_bytes = demand.turn_peak_bytes.checked_add(plans.turn_peak_bytes)
+                .ok_or(InvokeError::InvalidInput)?;
+            demand.retained_nodes = demand.retained_nodes.checked_add(plans.retained_nodes)
+                .ok_or(InvokeError::InvalidInput)?;
+        }
+        Ok(demand)
+    }
+}
+
 /// Prepare only the actual current private-witness-selected site. This is
 /// compiler/setup allocation; it does not enter a work scope or execute a leaf.
 pub fn prepare_native_program_library_call(
