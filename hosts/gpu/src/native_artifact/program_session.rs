@@ -615,7 +615,7 @@ impl<'a> Prepared<'a> {
         if !super::parallel_admission::supported(descriptor, worker.region) {
             return Err(invalid("worker constructor lacks shared private-node admission"));
         }
-        if worker.index >= worker.count || worker.count < 2 || worker.result.is_some()
+        if worker.index >= worker.count || worker.count == 0 || worker.result.is_some()
             || captures.len() != region.captures.len() {
             return Err(invalid("worker constructor capture/count mismatch"));
         }

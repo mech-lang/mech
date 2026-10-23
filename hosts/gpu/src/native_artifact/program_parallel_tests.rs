@@ -161,6 +161,32 @@ first + ";" + second
 }
 
 #[test]
+fn independent_singleton_regions_share_one_parallel_batch() {
+    let source = source("number/format(h{\"a\"}, 0u64)", r#"
+first-items := [4u64]
+second-items := [8u64]
+first := text/join([count-text(text, width, n) | n <- first-items], "|")
+second := text/join([count-text(text, width, n) | n <- second-items], ",")
+first + ";" + second
+"#);
+    let artifact = tests::artifact_source(&source);
+    let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+    assert_eq!(jit.descriptor().parallel.regions[0].group.as_ref(), &[0, 1]);
+    let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+    let args = vec![input(&artifact, &memory)];
+    let baseline = (memory.used_bytes(), memory.retained_nodes());
+    let mut output = vec![None; artifact.outputs().len()];
+    let report = observed(jit.descriptor(), jit.test_checked_entry(), &args, &mut output,
+        &memory, 8, false).unwrap();
+    assert_eq!((report.parallel_batches, report.parallel_regions, report.parallel_tasks), (1, 2, 2));
+    assert!((1..=2).contains(&report.parallel_peak_workers));
+    assert!(matches!(output.last().unwrap().as_ref().unwrap().data(),
+        ValueData::String(text) if text.as_ref() == "2;3"));
+    drop(output);
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
+}
+
+#[test]
 fn result_dependent_sibling_capture_keeps_separate_source_groups() {
     let source = source("number/format(h{\"a\"}, 0u64)", r#"
 first-items := [4u64 8u64]
