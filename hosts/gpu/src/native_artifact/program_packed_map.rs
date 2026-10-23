@@ -127,10 +127,10 @@ fn finite(limits: MemoryBudgetLimits) -> Result<(), Error> {
 /// Emit this exact wrapping mix in generated lookup. The table also bounds
 /// complete collisions; hashing quality confers no work-budget exemption.
 pub(super) fn hash(low: u64, high: u64) -> u64 {
-    let mut value = low ^ high.rotate_left(29);
-    value = (value ^ (value >> 30)).wrapping_mul(HASH_FIRST);
-    value = (value ^ (value >> 27)).wrapping_mul(HASH_SECOND);
-    value ^ (value >> 31)
+    // Fold a complete unsigned product, rather than serially mixing two
+    // truncated products. Both key words participate, even in the wide layout.
+    let product = u128::from(low ^ HASH_FIRST) * u128::from(high ^ HASH_SECOND);
+    product as u64 ^ (product >> 64) as u64
 }
 fn fingerprint(hash: u64) -> u8 { (hash >> 57) as u8 }
 fn table_bytes(domain: Domain, capacity: u64) -> Result<u64, Error> {
