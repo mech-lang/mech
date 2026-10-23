@@ -15,6 +15,7 @@ pub(super) struct Owner<'plan> {
     selector: Option<NativeSelectedStringSpanSelector>,
     selector_current: bool,
     key: Option<core::ops::Range<usize>>,
+    probe: Option<crate::native_artifact::owned_map_binding::NativeProbe>,
     work: NativeLibraryWorkBudget,
     limits: MemoryBudgetLimits,
     outside_nodes: u64,
@@ -40,6 +41,7 @@ impl Owner<'_> {
             self.funded = add(self.funded, count)?;
             self.selector_current = false;
             self.key = None;
+            self.probe = None;
             return Ok(count);
         }
         if op == 1 {
@@ -54,6 +56,7 @@ impl Owner<'_> {
             self.selector = Some(selector);
             self.selector_current = true;
             self.key = None;
+            self.probe = None;
             return Ok(0);
         }
         let ValueData::String(text) = self.source.data() else {
@@ -83,7 +86,7 @@ impl Owner<'_> {
         let bytes = self.key.as_ref().ok_or_else(|| invalid("closed map operation without key"))?;
         let key = text.get(bytes.clone()).ok_or_else(|| invalid("closed map key bounds"))?;
         match op {
-            3 | 4 => self.binding.native_read(key, op == 3, self.limits).map_err(storage_error),
+            3 | 4 => self.binding.native_read(key, op == 3, &mut self.probe, self.limits).map_err(storage_error),
             5 => {
                 let geometry = PublicationGeometry {
                     live_bytes: self.work.memory_budget().used_bytes(),
@@ -91,7 +94,7 @@ impl Owner<'_> {
                         self.binding.retained_nodes().map_err(storage_error)?)?,
                 };
                 let next = add(self.updates, 1)?;
-                let result = self.binding.native_insert(key, args[2], geometry, self.limits)
+                let result = self.binding.native_insert(key, args[2], &mut self.probe, geometry, self.limits)
                     .map_err(storage_error)?;
                 self.updates = next;
                 Ok(result)
@@ -169,7 +172,7 @@ impl<'plan> State<'plan> {
             .and_then(|n| n.checked_add(bytes)).ok_or_else(|| invalid("closed map census overflow"))?;
         let binding = self.slots[index].binding.take().unwrap();
         let mut owner = Box::new(Owner { binding, source, range, descriptor: self.descriptor,
-            selector: None, selector_current: false, key: None,
+            selector: None, selector_current: false, key: None, probe: None,
             work: ctx.library.clone(), limits: ctx.limits, outside_nodes,
             body_work: proof.compute, funded: 0, updates: 0, result: ctx.result,
             error: None, _reservation: reservation });

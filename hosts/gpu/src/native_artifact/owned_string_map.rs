@@ -159,7 +159,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
     }
     // Bound a full collision chain before lookup. Raw String equality can
     // inspect at most all stored key bytes plus fixed bucket/header work.
-    fn lookup_work(&self, key: &str, calls: u64) -> Result<(), Error> {
+    pub(super) fn lookup_work(&self, key: &str, calls: u64) -> Result<(), Error> {
         let probes = add(mul(self.values.capacity() as u64, 4)?, 32)?;
         let bytes = add(add(self.keys.capacity_bytes(), key.len() as u64)?, probes)?;
         self.work

@@ -208,3 +208,57 @@ fn closed_map_rechecks_changed_widths_and_current_string_bounds() {
         }
     }
 }
+
+#[test]
+fn closed_map_reuses_only_current_lookup_and_keeps_zero_values_and_growth() {
+    for text in ["aaaaa", "abcdefghijklmnop"] {
+        let source = format!("{}\n#Count(\"{text}\", 1u64, {}u64, empty)\n",
+            structural_projection_tests::COUNT.replace("previous + 1u64", "9u64 - previous"), text.len());
+        let original = tests::artifact_source(&source);
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+        let mut expected = std::collections::BTreeMap::new();
+        for character in text.chars() {
+            let key = character.to_string();
+            let previous = expected.get(&key).copied().unwrap_or(0);
+            expected.insert(key, 9 - previous);
+        }
+        for artifact in [original, decoded] {
+            let catalog = mech_stdlib::source_catalog();
+            let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let image = jit.descriptor().encode_build_owned_image().unwrap();
+            // SAFETY: retain the exact compilation and its generated entry.
+            let restored = unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
+            for descriptor in [jit.descriptor(), &restored] {
+                MODE.with(|v| v.set(Mode::Native));
+                OBS.with(|v| *v.borrow_mut() = Observation::default());
+                crate::native_artifact::owned_map_binding::take_native_probe_counts();
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let mut output = vec![None];
+                let entry = jit.test_checked_entry();
+                let report = execute(descriptor, |frame| {
+                    // SAFETY: observe only the synchronous owned native entry.
+                    let old = unsafe { (*frame).helper };
+                    unsafe { (*frame).helper = observe; }
+                    let status = unsafe { entry(frame) };
+                    unsafe { (*frame).helper = old; }
+                    status
+                }, &[], &mut output, tests::limits(), &memory).unwrap();
+                let observed = OBS.with(|v| core::mem::take(&mut *v.borrow_mut()));
+                assert!(observed.errors.is_empty(), "{observed:?}");
+                assert_eq!((observed.entries, observed.guarded), (1, 0));
+                assert_eq!((report.hash_table_regions, report.hash_table_updates), (1, text.len() as u64));
+                let probes = crate::native_artifact::owned_map_binding::take_native_probe_counts();
+                assert_eq!(probes, ((2 * text.len() - expected.len()) as u64, text.len() as u64));
+                let ValueData::Map(map) = output[0].as_ref().unwrap().data() else { panic!("map"); };
+                let actual = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
+                    (ValueData::String(key), ValueData::U64(value)) => (key.to_string(), *value),
+                    _ => panic!("String/U64 map"),
+                }).collect::<std::collections::BTreeMap<_, _>>();
+                assert_eq!(actual, expected);
+                drop(output);
+                assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+            }
+        }
+    }
+}

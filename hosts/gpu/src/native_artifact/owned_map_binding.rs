@@ -155,12 +155,33 @@ fn seed<'a>(
     Ok(())
 }
 
+/// Private observation of one pinned immutable key. Only a closed-loop owner
+/// retains this between calls; the source String stays alive and unchanged.
+/// A table token, mutation version and exact key span must all still match.
+pub(super) struct NativeProbe {
+    token: u64,
+    version: u64,
+    address: usize,
+    bytes: usize,
+    value: Option<u64>,
+}
+
+#[cfg(test)]
+thread_local! {
+    static NATIVE_PROBE_COUNTS: std::cell::Cell<(u64, u64)> = const { std::cell::Cell::new((0, 0)) };
+}
+#[cfg(test)]
+pub(super) fn take_native_probe_counts() -> (u64, u64) {
+    NATIVE_PROBE_COUNTS.with(|counts| counts.replace((0, 0)))
+}
+
 pub(super) struct Binding<'plan> {
     // Retire actual table/keys before the enclosing binding's reservation.
     map: Option<OwnedStringMap>,
     plan: &'plan Plan,
     region: &'plan NativeMapOwnerRegion,
     token: u64,
+    native_version: u64,
     work: NativeLibraryWorkBudget,
     metadata: ManagedMemoryReservation,
 }
@@ -309,6 +330,7 @@ impl<'plan> Binding<'plan> {
                         plan,
                         region,
                         token,
+                        native_version: 0,
                         work: work.clone(),
                         metadata,
                     },
@@ -528,28 +550,53 @@ impl<'plan> Binding<'plan> {
     /// compiler's linear-use proof excludes any observer of an intermediate
     /// version, so its private token stays stable until canonical publication.
     /// This is still generic storage: the generated caller supplies the value.
-    pub(super) fn native_read(&self, key: &str, contains: bool,
+    fn native_lookup(&self, key: &str, probe: &mut Option<NativeProbe>) -> Result<Option<u64>, Error> {
+        let map = self.current(self.token)?;
+        if let Some(cached) = probe.as_ref().filter(|cached|
+            cached.token == self.token && cached.version == self.native_version
+                && cached.address == key.as_ptr() as usize && cached.bytes == key.len())
+        {
+            // Preserve the complete original lookup debit before observing
+            // its cached scalar, including current per-call/root caps.
+            map.lookup_work(key, 1)?;
+            #[cfg(test)]
+            NATIVE_PROBE_COUNTS.with(|counts| { let (hits, misses) = counts.get(); counts.set((hits + 1, misses)); });
+            return Ok(cached.value);
+        }
+        let value = map.get(key)?;
+        *probe = Some(NativeProbe { token: self.token, version: self.native_version,
+            address: key.as_ptr() as usize, bytes: key.len(), value });
+        #[cfg(test)]
+        NATIVE_PROBE_COUNTS.with(|counts| { let (hits, misses) = counts.get(); counts.set((hits, misses + 1)); });
+        Ok(value)
+    }
+    pub(super) fn native_read(&self, key: &str, contains: bool, probe: &mut Option<NativeProbe>,
         limits: MemoryBudgetLimits) -> Result<u64, Error>
     {
         self.work.with_call_limits(cap(limits.max_compute_work)?,
             cap(limits.max_comparison_work)?, || {
-                let found = self.current(self.token)?.get(key)?;
+                let found = self.native_lookup(key, probe)?;
                 if contains { Ok(u64::from(found.is_some())) }
                 else { found.ok_or(Error::Binding("missing map key")) }
             })?
     }
-    pub(super) fn native_insert(&mut self, key: &str, value: u64,
+    pub(super) fn native_insert(&mut self, key: &str, value: u64, probe: &mut Option<NativeProbe>,
         geometry: Geometry, limits: MemoryBudgetLimits) -> Result<u64, Error>
     {
         let work = self.work.clone();
         work.with_call_limits(cap(limits.max_compute_work)?,
             cap(limits.max_comparison_work)?, || {
+                let fresh = self.native_lookup(key, probe)?.is_none();
                 let map = self.current(self.token)?;
-                let fresh = map.get(key)?.is_none();
                 let count = add(map.len() as u64, u64::from(fresh))?;
                 let cloned = if fresh { key.len() as u64 } else { 0 };
                 let storage = self.geometry(self.token, geometry, limits,
                     count, add(map.key_bytes(), cloned)?, cloned)?;
+                let next_version = self.native_version.checked_add(1).ok_or(Error::Overflow)?;
+                // Retire every old observation before storage can mutate,
+                // including replacement without growth and failed attempts.
+                self.native_version = next_version;
+                *probe = None;
                 let map = self.map.as_mut().ok_or(Error::Binding("closed owner"))?;
                 map.set_limits(storage);
                 map.insert(key, value)?;
