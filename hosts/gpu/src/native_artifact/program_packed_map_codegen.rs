@@ -74,6 +74,14 @@ pub(super) fn select(b: &mut FunctionBuilder<'_>, frame: Value, domain: Domain, 
 pub(super) fn select_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, start: Value, end: Value,
     hooks: &Hooks, function: Value, context: Value, site: usize, error: Block)
 {
+    select_state_with_bounds(b, frame, start, end, hooks, function, context, site, error, false)
+}
+
+// Only the compiler's source-loop certificate selects `proved`. The original
+// range call cap still runs at its source site, before any selected byte read.
+pub(super) fn select_state_with_bounds(b: &mut FunctionBuilder<'_>, frame: &FrameState, start: Value, end: Value,
+    hooks: &Hooks, function: Value, context: Value, site: usize, error: Block, proved: bool)
+{
     let bits = i64::from(frame.domain.bits());
     let narrow = narrow(frame.domain);
     let allowed = read!(b, frame, range_call_allowed);
@@ -83,22 +91,25 @@ pub(super) fn select_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, star
     let source = read!(b, frame, source_ptr);
     let length = read!(b, frame, source_len);
     let begin = b.ins().iadd_imm(start, -1);
-    let (finish, overflow) = b.ins().uadd_overflow(begin, width);
-    let positive = b.ins().icmp_imm(IntCC::UnsignedGreaterThan, start, 0);
-    let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, finish, length);
-    let no_overflow = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
-    let valid = b.ins().band(positive, fits);
-    let valid = b.ins().band(valid, no_overflow);
-    let checked = b.create_block();
-    let bad = b.create_block();
-    b.ins().brif(valid, checked, &[], bad, &[]);
-    b.switch_to_block(bad);
-    // Delegate only failure formatting to the maintained range/selection,
-    // retaining its original origin and precise semantic error.
-    frame.call(b, hooks, function, context, site, 6, [start, end, zero], error);
-    fail(b, frame, hooks, function, context, site, 9, error);
-    b.ins().jump(checked, &[]);
-    b.switch_to_block(checked);
+    let finish = if proved { b.ins().iadd(begin, width) } else {
+        let (finish, overflow) = b.ins().uadd_overflow(begin, width);
+        let positive = b.ins().icmp_imm(IntCC::UnsignedGreaterThan, start, 0);
+        let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, finish, length);
+        let no_overflow = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+        let valid = b.ins().band(positive, fits);
+        let valid = b.ins().band(valid, no_overflow);
+        let checked = b.create_block();
+        let bad = b.create_block();
+        b.ins().brif(valid, checked, &[], bad, &[]);
+        b.switch_to_block(bad);
+        // Delegate only failure formatting to the maintained range/selection,
+        // retaining its original origin and precise semantic error.
+        frame.call(b, hooks, function, context, site, 6, [start, end, zero], error);
+        fail(b, frame, hooks, function, context, site, 9, error);
+        b.ins().jump(checked, &[]);
+        b.switch_to_block(checked);
+        finish
+    };
     let previous = read!(b, frame, previous_start);
     let next = b.ins().iadd_imm(previous, 1);
     let adjacent = b.ins().icmp(IntCC::Equal, begin, next);

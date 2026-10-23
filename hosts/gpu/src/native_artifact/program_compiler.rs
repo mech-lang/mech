@@ -204,6 +204,7 @@ impl NativeProgramObject {
             "compiled_source_edge_facts": &self.codegen.source_edge_facts,
             "compiled_tag_threading": &self.codegen.tag_threading,
             "compiled_frame_effects": &self.codegen.frame_effects,
+            "compiled_guarded_loops": &self.codegen.guarded_loops,
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }

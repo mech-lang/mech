@@ -83,12 +83,13 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
         for artifact in [original, decoded] {
             let catalog = mech_stdlib::source_catalog();
             use crate::native_artifact::program_compiler::packed_loop_codegen::{take_edge_fact_emissions,
-                take_tag_thread_emissions, take_frame_effect_emissions, without_frame_effects};
+                take_tag_thread_emissions, take_frame_effect_emissions, without_frame_effects, take_loop_bounds_emissions};
             let mut executions = Vec::new();
             for disabled in [false, true] {
                 take_edge_fact_emissions();
                 take_tag_thread_emissions();
                 take_frame_effect_emissions();
+                take_loop_bounds_emissions();
                 let compile = || crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog);
                 let jit = if disabled { without_frame_effects(compile) } else { compile() }.unwrap();
                 let emissions = take_edge_fact_emissions();
@@ -96,6 +97,8 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
                 let threading = take_tag_thread_emissions();
                 assert!(threading.0 > 0 && threading.1 >= 4 && threading.2 >= 2,
                     "{failure:?}: error fixture must use tag threading: {threading:?}");
+                assert!(take_loop_bounds_emissions().0 > 0,
+                    "{failure:?}: guarded graph must be present even for unknown tags and failed runtime selectors");
                 let effects = take_frame_effect_emissions();
                 if disabled { assert_eq!(effects, (0, 0, 0)); }
                 else { assert!(effects.0 > 0 && effects.1 < 14 * effects.0 && effects.2 < 14 * effects.0); }
@@ -166,6 +169,8 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
                     assert!(observed.errors.is_empty(), "{failure:?}: {observed:?}");
                     assert_eq!((observed.entries, observed.packed, observed.guarded, observed.bound[13]),
                         (1, 1, 0, 1), "{failure:?}: actual packed SSA selection");
+                    assert_eq!(observed.bound[14], u64::from(!matches!(failure, Failure::Selection)),
+                        "{failure:?}: actual guarded selector, including invalid tag and first-header denial");
                     let (status, site, work, library_work) = terminal.get().expect("generated failure must leave its original site");
                     let site = usize::try_from(site).unwrap();
                     assert!(descriptor.closed_tails.sites[site].is_some(), "{failure:?}");

@@ -19,6 +19,8 @@ use super::super::iteration_compiler::{CodegenReport, RegionToken};
 mod edge_facts;
 #[path = "program_tag_threading.rs"]
 mod tag_threading;
+#[path = "program_loop_bounds.rs"]
+mod loop_bounds;
 
 #[cfg(test)]
 thread_local! {
@@ -26,6 +28,18 @@ thread_local! {
     static EDGE_FACTS_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static TAG_THREADING_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static TAG_THREAD_EMISSIONS: std::cell::Cell<(usize, usize, usize)> = const { std::cell::Cell::new((0, 0, 0)) };
+    static LOOP_BOUNDS_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static LOOP_BOUNDS_EMISSIONS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn without_loop_bounds<T>(f: impl FnOnce() -> T) -> T {
+    struct Restore(bool);
+    impl Drop for Restore { fn drop(&mut self) { LOOP_BOUNDS_DISABLED.with(|v| v.set(self.0)); } }
+    let _restore = Restore(LOOP_BOUNDS_DISABLED.with(|v| v.replace(true))); f()
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn take_loop_bounds_emissions() -> (usize, usize) {
+    LOOP_BOUNDS_EMISSIONS.with(|v| v.replace((0, 0)))
 }
 #[cfg(test)]
 pub(in crate::native_artifact) fn take_edge_fact_emissions() -> (usize, usize) {
@@ -280,6 +294,9 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
     let threaded = tag_threading::derive(code, closed, id, owner, aggregates);
     #[cfg(test)]
     let threaded = if TAG_THREADING_DISABLED.with(std::cell::Cell::get) { None } else { threaded };
+    let bounds = threaded.as_ref().and_then(|graph| loop_bounds::derive(code, closed, id, owner, aggregates, graph, &slots));
+    #[cfg(test)]
+    let bounds = if LOOP_BOUNDS_DISABLED.with(std::cell::Cell::get) { None } else { bounds };
     #[cfg(test)]
     let facts = if EDGE_FACTS_DISABLED.with(std::cell::Cell::get) { edge_facts::Proof::default() } else { facts };
     let report_region = report.packed_ssa_region(site);
@@ -313,25 +330,54 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
     b.set_cold_block(failed);
     let source_sites = closed.sites.iter().enumerate().filter_map(|(index, candidate)|
         (*candidate == Some(id)).then_some(index)).collect::<Vec<_>>();
-    let emitted_sites = threaded.as_ref().map_or_else(|| source_sites.clone(),
+    let mut emitted_sites = threaded.as_ref().map_or_else(|| source_sites.clone(),
         |graph| graph.nodes.iter().map(|node| node.site).collect());
+    let version_nodes = emitted_sites.len();
+    if bounds.is_some() { emitted_sites.extend_from_within(..); }
     let blocks = emitted_sites.iter().map(|_| b.create_block()).collect::<Vec<_>>();
     let original_target = |next: u32| if next == region.tail.exit() { exit } else {
         blocks[source_sites.binary_search(&(next as usize)).unwrap()]
     };
-    let graph_target = |target: tag_threading::Target| match target {
-        tag_threading::Target::Node(index) => blocks[index], tag_threading::Target::Exit => exit,
+    let graph_target = |target: tag_threading::Target, guarded: bool| match target {
+        tag_threading::Target::Node(index) => blocks[index + if guarded { version_nodes } else { 0 }], tag_threading::Target::Exit => exit,
     };
-    b.ins().jump(if threaded.is_some() { blocks[0] } else { original_target(site as u32) }, &[]);
+    let trip_end = if let Some(proof) = &bounds {
+        let width = words.read(b, proof.width_word);
+        let limit = words.read(b, proof.limit_word);
+        let length = packed.read(b, core::mem::offset_of!(Frame, source_len));
+        let nonzero = b.ins().icmp_imm(IntCC::UnsignedGreaterThan, width, 0);
+        let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, width, limit);
+        let actual = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, limit, length);
+        let valid = b.ins().band(nonzero, fits);
+        let valid = b.ins().band(valid, actual);
+        // Wrapping arithmetic has no source effect on the declined branch.
+        // In the selected branch, 1<=width<=limit proves this exact endpoint.
+        let end = b.ins().isub(limit, width);
+        let end = b.ins().iadd_imm(end, 1);
+        let selected_bounds = b.create_block();
+        b.ins().brif(valid, selected_bounds, &[], blocks[0], &[]);
+        b.switch_to_block(selected_bounds);
+        // This receipt runs exactly once, only after the actual selector has
+        // succeeded and before any original header debit or source action.
+        hooks.bound_call(b, function, context, site, 14, [width, limit, zero], error);
+        b.ins().jump(blocks[version_nodes], &[]);
+        Some(end)
+    } else {
+        b.ins().jump(if threaded.is_some() { blocks[0] } else { original_target(site as u32) }, &[]);
+        None
+    };
     let entry_template_work = b.func.dfg.num_insts() - entry_template_start;
     let mut dispatch_template_work = 0;
     let mut folded_branches = Vec::new();
     let mut known_latches = Vec::new();
     let mut header_versions = 0;
+    let mut certified_ranges = Vec::new();
     for (version, &index) in emitted_sites.iter().enumerate() {
         let block = &code.blocks()[index];
         let current = blocks[version];
-        let threaded_node = threaded.as_ref().map(|graph| &graph.nodes[version]);
+        let guarded = version >= version_nodes;
+        let graph_node = version % version_nodes;
+        let threaded_node = threaded.as_ref().map(|graph| &graph.nodes[graph_node]);
         // The entry frame observes a source origin only when control leaves
         // this private CFG. Each helper already receives its precise site.
         // Preserve that origin on every failing edge, without writing it for
@@ -368,7 +414,9 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
             if span.range_site() as usize == index {
                 let first = words.read(b, span.operands()[0].get() as usize);
                 let last = words.read(b, span.operands()[1].get() as usize);
-                packed_maps::select_state(b, &packed, first, last, hooks, function, context, index, fail_at);
+                let certified = guarded && bounds.as_ref().is_some_and(|proof| proof.ranges.contains(&graph_node));
+                if certified { certified_ranges.push(version); }
+                packed_maps::select_state_with_bounds(b, &packed, first, last, hooks, function, context, index, fail_at, certified);
             }
         } else if owner.call_region(index) == Some(owner_index) {
             let Action::LibraryCall { template, operands, output } = block.action() else { unreachable!() };
@@ -406,8 +454,17 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
         if let Some(node) = threaded_node {
             if node.folded_branch { folded_branches.push(index); }
             if node.known_latch { known_latches.push(index); }
-            match &node.edge {
-                tag_threading::Edge::Jump(target) => { b.ins().jump(graph_target(*target), &[]); }
+            if guarded && bounds.as_ref().is_some_and(|proof| proof.first == graph_node) {
+                let proof = bounds.as_ref().unwrap();
+                let index = words.read(b, proof.index_word);
+                let stop = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, index, trip_end.unwrap());
+                let tag_threading::Edge::Branch { yes, no } = node.edge else { unreachable!() };
+                b.ins().brif(stop, graph_target(yes, true), &[], graph_target(no, true), &[]);
+            } else if guarded && bounds.as_ref().is_some_and(|proof| proof.later.contains(&graph_node)) {
+                let tag_threading::Edge::Branch { no, .. } = node.edge else { unreachable!() };
+                b.ins().jump(graph_target(no, true), &[]);
+            } else { match &node.edge {
+                tag_threading::Edge::Jump(target) => { b.ins().jump(graph_target(*target, guarded), &[]); }
                 tag_threading::Edge::Dispatch { cases, other } => {
                     // Dispatch follows the original header debit. Each arm
                     // enters a body version, so no traversal is charged twice.
@@ -416,10 +473,10 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
                     for &(ordinal, target) in cases {
                         let next = b.create_block();
                         let equal = b.ins().icmp_imm(IntCC::Equal, value, i64::from(ordinal));
-                        b.ins().brif(equal, graph_target(target), &[], next, &[]);
+                        b.ins().brif(equal, graph_target(target, guarded), &[], next, &[]);
                         b.switch_to_block(next);
                     }
-                    b.ins().jump(graph_target(*other), &[]);
+                    b.ins().jump(graph_target(*other, guarded), &[]);
                     // At most eight comparisons/branches plus a jump. Count
                     // this on EVERY traversal, including unknown backedges.
                     let work = b.func.dfg.num_insts() - before;
@@ -435,10 +492,10 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
                             Term::Scalar(Branch::Branch { yes, .. } | Branch::LiteralBranch { yes, .. }) => yes,
                             _ => unreachable!(),
                         };
-                        graph_target(if next == source_yes { *yes } else { *no })
+                        graph_target(if next == source_yes { *yes } else { *no }, guarded)
                     });
                 }
-            }
+            }}
         } else {
             emit_source_terminator(b, &words, code, block.terminator(), fail_at, original_target);
         }
@@ -451,10 +508,10 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
         #[cfg(test)]
         TAG_THREAD_EMISSIONS.with(|counts| {
             let previous = counts.get();
-            counts.set((previous.0 + graph.nodes.len(), previous.1 + folded_branches.len(), previous.2 + known_latches.len()));
+            counts.set((previous.0 + emitted_sites.len(), previous.1 + folded_branches.len(), previous.2 + known_latches.len()));
         });
         report.tag_threading(site, graph.carrier_word, graph.variants.clone(), source_sites.len(),
-            graph.nodes.len(), header_versions, folded_branches, known_latches);
+            emitted_sites.len(), header_versions, folded_branches, known_latches);
     }
     let boundary_start = b.func.dfg.num_insts();
     b.switch_to_block(exit);
@@ -485,6 +542,13 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
         return Err(backend("packed SSA templates exceed fixed per-traversal envelope"));
     }
     report.frame_effects(site, packed.effect_emissions());
+    if let Some(proof) = &bounds {
+        #[cfg(test)]
+        LOOP_BOUNDS_EMISSIONS.with(|counts| { let old = counts.get(); counts.set((old.0 + 1, old.1 + certified_ranges.len())); });
+        report.guarded_loop(site, proof.index_word, proof.width_word, proof.limit_word,
+            proof.active_tag, proof.guard_sites, proof.range_site, proof.recurrence_sites.clone(),
+            emitted_sites.len(), certified_ranges, entry_template_work + dispatch_template_work + boundary_work);
+    }
     b.switch_to_block(ordinary);
     Ok(())
 }

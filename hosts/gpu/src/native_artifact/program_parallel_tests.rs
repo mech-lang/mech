@@ -143,6 +143,7 @@ first + ";" + second
 
 #[test]
 fn parallel_narrow_compact_domains_preserve_all_seven_source_maps_and_shared_cleanup() {
+    use crate::native_artifact::program_compiler::packed_loop_codegen::take_loop_bounds_emissions;
     let source = source("number/format(h{\"A\"}, 0u64)", r#"
 first-items := [4u64 8u64]
 second-items := [1u64 2u64 3u64 4u64 5u64]
@@ -156,7 +157,9 @@ text := text/join([letters{char} | char <- seed<string>], "")"#);
         &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
     for artifact in [original, decoded] {
         let catalog = mech_stdlib::source_catalog();
+        take_loop_bounds_emissions();
         let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        assert_eq!(take_loop_bounds_emissions().0, 2, "both worker source bodies have guarded versions");
         assert_eq!(jit.descriptor().parallel.regions.len(), 2);
         let image = jit.descriptor().encode_build_owned_image().unwrap();
         // SAFETY: restored metadata and the retained generated entry share this build.
@@ -183,6 +186,8 @@ text := text/join([letters{char} | char <- seed<string>], "")"#);
             assert_eq!((report.packed_map_regions, report.packed_ssa_regions, report.packed_map_updates), (7, 7, 27));
             assert_eq!((serial_report.packed_map_regions, serial_report.packed_ssa_regions,
                 serial_report.packed_map_updates), (7, 7, 27));
+            assert_eq!((serial_report.guarded_loop_regions, report.guarded_loop_regions), (7, 7),
+                "every child must actually select the fast version, not only compile it");
             for (left, right) in serial.iter().zip(&parallel) {
                 assert_eq!(left.as_ref().unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap(),
                     right.as_ref().unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap());

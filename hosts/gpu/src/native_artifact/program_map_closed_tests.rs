@@ -11,7 +11,7 @@ mod narrow_codegen;
 enum Mode { Native, Decline, OneShort, Renew, TightCall, TightWrite, LimitedInsert }
 #[derive(Default, Debug)]
 struct Observation {
-    entries: u64, packed: u64, guarded: u64, rejected: u64, errors: Vec<&'static str>, bound: [u64; 14],
+    entries: u64, packed: u64, guarded: u64, rejected: u64, errors: Vec<&'static str>, bound: [u64; 15],
 }
 thread_local! {
     static MODE: Cell<Mode> = const { Cell::new(Mode::Native) };
