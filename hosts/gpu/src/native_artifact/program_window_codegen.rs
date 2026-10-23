@@ -3,20 +3,25 @@
 //! The canonical caller retains genuine source/query and accumulator owners, checks representation and
 //! admits finite region memory/work within the containing round before entry.
 use super::{NativeCompileError, backend};
-use cranelift_codegen::ir::{AbiParam, Endianness, InstBuilder, MemFlags, condcodes::IntCC, types};
+use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, condcodes::IntCC, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::NativeWindowRegion;
 
+#[cfg(all(test, feature = "canonical-native-program-host"))]
+use cranelift_codegen::ir::Endianness;
+
+#[cfg(all(test, feature = "canonical-native-program-host"))]
 #[path = "program_window_histogram_codegen.rs"]
 mod histogram;
 
+#[cfg(all(test, feature = "canonical-native-program-host"))]
 #[path = "program_window_query_codegen.rs"]
 mod query;
 #[path = "program_window_hash_codegen.rs"]
 mod hashes;
 
-// (unused, accepted starts, accumulator owner, library update callback, width) -> completed.
+// (source pointer, source bytes, accumulator owner, library update callback, width) -> completed.
 // Caller must prove that source is ASCII without CRLF grapheme pairs. Then
 // byte indices are EXACT ordinary String/grapheme indices, including NUL.
 pub(in crate::native_artifact) fn define<M: Module>(
@@ -26,6 +31,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
     define_with(module, region, hashes::emit)
 }
 
+#[cfg(all(test, feature = "canonical-native-program-host"))]
 fn define_impl<M: Module>(
     module: &mut M,
     region: &NativeWindowRegion,

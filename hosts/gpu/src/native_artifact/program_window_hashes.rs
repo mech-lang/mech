@@ -13,11 +13,12 @@ pub(in crate::native_artifact::program_runtime) struct WindowHashes {
     counts: HashMap<u128, u64>,
     backing: ManagedMemoryReservation,
     _metadata: ManagedMemoryReservation,
-    source: *const u8,
     length: usize,
     width: u64,
     accepted: u64,
     updated: u64,
+    prepaid_updates: u64,
+    prepaid_capacity: u64,
     collection: u32,
     origin: NativeMatchOrigin,
     work: NativeLibraryWorkBudget,
@@ -52,7 +53,6 @@ fn allocation_bound(capacity: usize) -> Result<u64, Error> {
 
 impl WindowHashes {
     pub(super) fn new(
-        source: *const u8,
         length: usize,
         width: u64,
         accepted: u64,
@@ -66,7 +66,7 @@ impl WindowHashes {
         } else {
             0
         };
-        if source.is_null() || width > MAX_WIDTH || accepted != expected {
+        if width > MAX_WIDTH || accepted != expected {
             return Err(invalid("hash window is outside its source proof"));
         }
         let metadata = size_of::<Self>() as u64;
@@ -81,11 +81,12 @@ impl WindowHashes {
             counts: HashMap::new(),
             backing: memory.reserve_capacity(0)?,
             _metadata: memory.reserve_capacity(metadata)?,
-            source,
             length,
             width,
             accepted,
             updated: 0,
+            prepaid_updates: 0,
+            prepaid_capacity: 0,
             collection,
             origin,
             work,
@@ -103,25 +104,45 @@ impl WindowHashes {
             })
     }
 
-    fn update(&mut self, index: u64) -> Result<(), Error> {
+    // Fund at most 1024 starts on the SAME account. If the table grows,
+    // prepay the capacity delta for every remaining start BEFORE its lookup.
+    // No renewal/refund, favourable-hash assumption or discounted final work.
+    fn fund_updates(&mut self) -> Result<(), Error> {
+        let capacity = self.counts.capacity() as u64;
+        if self.prepaid_updates == 0 {
+            let count = (self.accepted - self.updated).min(1024);
+            let probes = add(mul(capacity, 4)?, 32)?;
+            let compute = add(mul(probes, 64)?, mul(self.width, 32)?)?;
+            self.charge(mul(count, compute)?, mul(count, probes)?)?;
+            self.prepaid_updates = count;
+            self.prepaid_capacity = capacity;
+        } else if capacity > self.prepaid_capacity {
+            let delta = mul(capacity - self.prepaid_capacity, 4)?;
+            self.charge(
+                mul(mul(self.prepaid_updates, delta)?, 64)?,
+                mul(self.prepaid_updates, delta)?,
+            )?;
+            self.prepaid_capacity = capacity;
+        }
+        self.prepaid_updates -= 1;
+        Ok(())
+    }
+
+    fn update(&mut self, index: u64, key: u128) -> Result<(), Error> {
         if self.error.is_some() || index != self.updated || index >= self.accepted {
             return Err(invalid(
                 "hash window update outside sequential admitted starts",
             ));
         }
         let start = usize::try_from(index).map_err(|_| invalid("hash window start"))?;
-        let end = start
+        let _end = start
             .checked_add(self.width as usize)
             .filter(|end| *end <= self.length)
             .ok_or_else(|| invalid("hash window read outside admitted source"))?;
-        // A conservative finite collision/probe envelope is paid BEFORE the
-        // library lookup. No assumption about favourable hashing buys fuel.
-        let probes = add(mul(self.counts.capacity() as u64, 4)?, 32)?;
-        self.charge(add(mul(probes, 64)?, mul(self.width, 32)?)?, probes)?;
-        // SAFETY: preparation retains the actual ASCII source Value through
-        // finish; the bounds above cover this complete synchronous byte loan.
-        let bytes = unsafe { std::slice::from_raw_parts(self.source.add(start), end - start) };
-        let key = pack(bytes).ok_or_else(|| invalid("hash window lost its ASCII proof"))?;
+        if key >> (self.width * 7) != 0 {
+            return Err(invalid("hash window packed key exceeds admitted width"));
+        }
+        self.fund_updates()?;
         if let Some(count) = self.counts.get_mut(&key) {
             *count = count
                 .checked_add(1)
@@ -182,6 +203,7 @@ impl WindowHashes {
         }
         if self.collection != collection
             || self.accepted != accepted
+            || self.prepaid_updates != 0
             || self.updated != accepted
             || completed != accepted
         {
@@ -225,11 +247,16 @@ fn pack(bytes: &[u8]) -> Option<u128> {
     })
 }
 
-pub(super) unsafe extern "C" fn update(owner: *mut WindowHashes, index: u64) -> u64 {
+pub(super) unsafe extern "C" fn update(
+    owner: *mut WindowHashes,
+    index: u64,
+    low: u64,
+    high: u64,
+) -> u64 {
     // SAFETY: only our emitted loop receives this private function/owner pair;
     // Box storage is stable and exclusively loaned until synchronous finish.
     let owner = unsafe { &mut *owner };
-    match owner.update(index) {
+    match owner.update(index, (u128::from(high) << 64) | u128::from(low)) {
         Ok(()) => 1,
         Err(error) => {
             owner.error = Some(error);

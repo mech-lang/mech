@@ -73,7 +73,6 @@ impl Context<'_, '_> {
             .ok_or_else(|| invalid("hash window requires finite temporary bytes"))?
             .saturating_sub(memory.used_bytes());
         let hashes = hashes::WindowHashes::new(
-            text.as_ptr(),
             text.len(),
             args[0],
             accepted,
@@ -86,8 +85,8 @@ impl Context<'_, '_> {
         self.window_region = Some((region.collection(), accepted));
         let owner = self.window_hashes.as_mut().unwrap().as_mut() as *mut hashes::WindowHashes;
         self.write_window_arguments([
-            0,
-            accepted,
+            text.as_ptr() as u64,
+            text.len() as u64,
             owner as u64,
             hashes::update as *const () as u64,
             args[0],
