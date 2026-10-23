@@ -302,6 +302,7 @@ impl CallCacheLane {
 
 struct OwnedState<'a> {
     // Preserve collection-before-arena retirement ordering.
+    map_owners: map_owners::Session<'a>,
     collections: Option<collection::State>,
     line_matrices: line_matrices::State,
     arena: NativeValueArena<'a>,
@@ -506,6 +507,7 @@ impl<'a> Prepared<'a> {
             retention: None,
             window_work_seen: 0,
             state: Some(OwnedState {
+                map_owners: map_owners::Session::new(descriptor),
                 collections,
                 line_matrices,
                 arena,
@@ -873,6 +875,7 @@ impl<'a> Prepared<'a> {
                 visits: state.visits,
                 error: None,
             },
+            map_owners: state.map_owners,
             collections: state.collections,
             line_matrices: state.line_matrices,
             arena: state.arena,
@@ -1054,6 +1057,7 @@ impl<'a> Prepared<'a> {
             }
         }
         self.state = Some(OwnedState {
+            map_owners: context.map_owners,
             collections: context.collections,
             line_matrices: context.line_matrices,
             arena: context.arena,

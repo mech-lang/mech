@@ -9,6 +9,19 @@ use crate::native_artifact::{
 use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, Value};
 use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMapOwnerRegion};
 
+/// Lazy owning-session lane. No table metadata is allocated merely because a
+/// descriptor has a candidate; entry must request and admit it explicitly.
+pub(super) struct Session<'plan> {
+    descriptor: &'plan NativeProgramDescriptor,
+    state: Option<State<'plan>>,
+    refused_visit: Option<u64>,
+}
+impl<'plan> Session<'plan> {
+    pub(super) fn new(descriptor: &'plan NativeProgramDescriptor) -> Self {
+        Self { descriptor, state: None, refused_visit: None }
+    }
+}
+
 struct Slot<'plan> {
     binding: Option<Binding<'plan>>,
 }
@@ -36,32 +49,42 @@ fn add(a: u64, b: u64) -> Result<u64, Error> {
 }
 
 impl<'plan> State<'plan> {
+    #[cfg(test)]
     pub(super) fn new(
         descriptor: &'plan NativeProgramDescriptor,
         memory: &ManagedMemoryBudget,
         work: &mut NativeWorkMeter,
         limit: u64,
     ) -> Result<Self, Error> {
+        Self::try_new(descriptor, memory, work, limit)?
+            .ok_or_else(|| invalid("retained map owner lane admission refused"))
+    }
+
+    fn try_new(
+        descriptor: &'plan NativeProgramDescriptor,
+        memory: &ManagedMemoryBudget,
+        work: &mut NativeWorkMeter,
+        limit: u64,
+    ) -> Result<Option<Self>, Error> {
         work.check_memory_budget(memory)?;
         let count = descriptor.map_owner_words.as_ref()
             .map_or(0, |layout| layout.regions().len());
         let bytes = amount(count, (2 * core::mem::size_of::<Slot<'plan>>()) as u64,
             (core::mem::size_of::<Self>() + 128) as u64)?;
         if bytes > limit {
-            return Err(invalid("retained map owner lane exceeds its metadata cap"));
+            return Ok(None);
         }
         work.charge(Phase::Setup, amount(count, 512, 512)?)?;
-        let reservation = memory.reserve_capacity(bytes)?;
+        let Ok(reservation) = memory.reserve_capacity(bytes) else { return Ok(None); };
         let mut slots = Vec::new();
-        slots.try_reserve_exact(count).map_err(|_| invalid("retained map lane allocation"))?;
-        if slots.capacity() != count {
-            return Err(invalid("retained map lane capacity differs"));
+        if slots.try_reserve_exact(count).is_err() || slots.capacity() != count {
+            return Ok(None);
         }
         slots.resize_with(count, || Slot { binding: None });
-        Ok(Self {
+        Ok(Some(Self {
             slots: slots.into_boxed_slice(), descriptor,
             work_identity: work.identity(), last_owned_visit: None, reservation,
-        })
+        }))
     }
 
     fn guard(&self, ctx: &Context<'_, '_>, site: usize) -> Result<(), Error> {
@@ -192,3 +215,50 @@ impl<'plan> State<'plan> {
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_map_owner_runtime_tests.rs"]
 mod tests;
+
+impl Context<'_, '_> {
+    pub(super) fn begin_retained_map(&mut self, site: usize) -> Result<Option<InitialWords>, Error> {
+        // Check authority before lazy allocation, including refused-entry replay.
+        if !core::ptr::eq(self.map_owners.descriptor, self.control.descriptor)
+            || self.control.previous != u32::try_from(site).ok()
+            || self.control.completed || self.consumed
+            || self.map_owners.refused_visit == Some(self.control.visits)
+            || self.map_owners.descriptor.map_owner_words.as_ref()
+                .and_then(|layout| layout.initializer(site)).is_none()
+        {
+            return Err(invalid("retained map session entry outside fresh initializer"));
+        }
+        if self.map_owners.state.is_none() {
+            let memory = self.library.memory_budget().clone();
+            let limit = self.limits.max_temporary_bytes
+                .ok_or_else(|| invalid("retained map session requires finite metadata cap"))?;
+            let Some(state) = State::try_new(self.map_owners.descriptor,
+                &memory, &mut self.control.work, limit)? else {
+                self.map_owners.refused_visit = Some(self.control.visits);
+                return Ok(None);
+            };
+            self.map_owners.state = Some(state);
+        }
+        let mut state = self.map_owners.state.take().unwrap();
+        let result = state.begin(self, site);
+        // Restore on both success and failure. No new ledger or permit is made.
+        self.map_owners.state = Some(state);
+        result
+    }
+
+    pub(super) fn call_retained_map(&mut self, site: usize, words: &[u64]) -> Result<u64, Error> {
+        let mut state = self.map_owners.state.take()
+            .ok_or_else(|| invalid("retained map session call before admitted entry"))?;
+        let result = state.call(self, site, words);
+        self.map_owners.state = Some(state);
+        result
+    }
+
+    pub(super) fn finish_retained_map(&mut self, site: usize, token: u64) -> Result<Value, Error> {
+        let mut state = self.map_owners.state.take()
+            .ok_or_else(|| invalid("retained map session publication before admitted entry"))?;
+        let result = state.finish(self, site, token);
+        self.map_owners.state = Some(state);
+        result
+    }
+}

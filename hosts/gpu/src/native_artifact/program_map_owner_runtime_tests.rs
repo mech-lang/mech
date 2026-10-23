@@ -5,7 +5,7 @@ use super::super::*;
 use std::cell::{Cell, RefCell};
 
 #[derive(Clone, Copy, PartialEq)]
-enum Mode { Mirror, ForeignDescriptor, ForeignLedger, RefuseEntry }
+enum Mode { SessionMirror, SessionRefuseEntry, SessionAbort, Mirror, ForeignDescriptor, ForeignLedger, RefuseEntry }
 #[derive(Default, Debug)]
 struct Report {
     entries: u64, reads: u64, writes: u64, exits: u64,
@@ -28,8 +28,27 @@ fn map_pairs(value: &Value) -> Option<Vec<(String, u64)>> {
     }).collect()
 }
 
+enum Lane<'a, 'plan> { External(&'a mut State<'plan>), Session }
+impl Lane<'_, '_> {
+    fn begin(&mut self, ctx: &mut Context<'_, '_>, site: usize)
+        -> Result<Option<crate::native_artifact::owned_map_binding::InitialWords>, NativeProgramExecutionError>
+    {
+        match self { Self::External(state) => state.begin(ctx, site), Self::Session => ctx.begin_retained_map(site) }
+    }
+    fn call(&mut self, ctx: &mut Context<'_, '_>, site: usize, words: &[u64])
+        -> Result<u64, NativeProgramExecutionError>
+    {
+        match self { Self::External(state) => state.call(ctx, site, words), Self::Session => ctx.call_retained_map(site, words) }
+    }
+    fn finish(&mut self, ctx: &mut Context<'_, '_>, site: usize, token: u64)
+        -> Result<Value, NativeProgramExecutionError>
+    {
+        match self { Self::External(state) => state.finish(ctx, site, token), Self::Session => ctx.finish_retained_map(site, token) }
+    }
+}
+
 fn shadow(
-    state: &mut State<'_>, ctx: &mut Context<'_, '_>, site: usize, operation: u64,
+    state: &mut Lane<'_, '_>, ctx: &mut Context<'_, '_>, site: usize, operation: u64,
 ) -> Result<Option<u64>, NativeProgramExecutionError> {
     let descriptor = ctx.control.descriptor;
     let Some(layout) = descriptor.map_owner_words.as_ref() else { return Ok(None); };
@@ -40,7 +59,7 @@ fn shadow(
             return Ok(None);
         }
         let memory = ctx.library.memory_budget();
-        let blocker = if MODE.with(Cell::get) == Mode::RefuseEntry {
+        let blocker = if matches!(MODE.with(Cell::get), Mode::RefuseEntry | Mode::SessionRefuseEntry) {
             Some(memory.reserve_capacity(memory.limit_bytes() - memory.used_bytes())?)
         } else { None };
         let initial = state.begin(ctx, site)?;
@@ -110,15 +129,31 @@ unsafe extern "C" fn observe(
 ) -> u64 {
     let mut expected = None;
     let owner = OWNER.with(Cell::get);
-    if !owner.is_null() {
+    if matches!(MODE.with(Cell::get), Mode::SessionMirror | Mode::SessionRefuseEntry | Mode::SessionAbort) {
+        // SAFETY: the owning session pins this exact context for the callback.
+        let ctx = unsafe { &mut *context.cast::<Context<'_, '_>>() };
+        match shadow(&mut Lane::Session, ctx, site as usize, operation) {
+            Ok(value) => expected = value,
+            Err(error) => record(|r| r.errors.push(format!("site {site}: {error:?}"))),
+        }
+    } else if !owner.is_null() {
         // SAFETY: run retains the descriptor, lane and real Context through
         // each synchronous entry. Both exclusive borrows end before helper.
         let state = unsafe { &mut *owner.cast::<State<'_>>() };
         let ctx = unsafe { &mut *context.cast::<Context<'_, '_>>() };
-        match shadow(state, ctx, site as usize, operation) {
+        match shadow(&mut Lane::External(state), ctx, site as usize, operation) {
             Ok(value) => expected = value,
             Err(error) => record(|r| r.errors.push(format!("site {site}: {error:?}"))),
         }
+    }
+    if MODE.with(Cell::get) == Mode::SessionAbort
+        && REPORT.with(|report| report.borrow().writes > 0)
+    {
+        // SAFETY: this live context is owned by the synchronous session. Stop
+        // after retained insertion, before publication, to exercise unwinding.
+        let ctx = unsafe { &mut *context.cast::<Context<'_, '_>>() };
+        ctx.error = Some(invalid("injected retained map abort"));
+        return STATUS_ADMISSION;
     }
     // SAFETY: call the real canonical helper with every original operand.
     let status = unsafe { helper(context, site, operation, first, second, third, result) };
@@ -144,7 +179,8 @@ fn run(
         lane_descriptor.map_owner_words.as_ref().unwrap().regions().len()]);
     let entry = jit.test_checked_entry();
     let result = execute(jit.descriptor(), |raw| {
-        if state.is_none() && setup_error.is_none() {
+        if state.is_none() && setup_error.is_none()
+            && !matches!(mode, Mode::SessionMirror | Mode::SessionRefuseEntry | Mode::SessionAbort) {
             // SAFETY: the owning session supplies this exact Context and pins
             // it through the actual generated entry, as in production.
             let ctx = unsafe { &mut *(*raw).base.context.cast::<Context<'_, '_>>() };
@@ -175,7 +211,11 @@ fn run(
         status
     }, &[], &mut outputs, tests::limits(), &memory);
     assert!(setup_error.is_none(), "{setup_error:?}");
-    result.unwrap();
+    if mode == Mode::SessionAbort {
+        assert!(format!("{:?}", result.unwrap_err()).contains("injected retained map abort"));
+    } else {
+        result.unwrap();
+    }
     drop((outputs, state));
     assert_eq!(memory.retained_snapshot_nodes(), 0);
     assert_eq!(memory.used_bytes(), 0);
@@ -227,5 +267,36 @@ fn actual_generated_visits_reject_foreign_descriptors_and_preserve_refused_entry
         assert_eq!(refused.declined, 1);
         assert_eq!(refused.entries + refused.writes + refused.exits, 0);
         assert!(refused.rejected > 0);
+    }
+}
+
+#[test]
+fn owning_session_lazily_admits_maps_and_retires_tables_without_external_owner() {
+    for artifact in variants() {
+        let jit = crate::native_artifact::JitProgramArtifact::compile(
+            &artifact, &mech_stdlib::source_catalog()).unwrap();
+        let report = run(&jit, jit.descriptor(), Mode::SessionMirror);
+        assert!(report.errors.is_empty(), "{report:?}");
+        assert_eq!(report.mismatches, 0, "{report:?}");
+        assert_eq!((report.entries, report.exits, report.writes), (1, 1, 3));
+        assert!(report.reads >= 3 && report.rejected >= 8, "{report:?}");
+        let refused = run(&jit, jit.descriptor(), Mode::SessionRefuseEntry);
+        assert!(refused.errors.is_empty(), "{refused:?}");
+        assert_eq!(refused.mismatches, 0, "{refused:?}");
+        assert_eq!(refused.declined, 1);
+        assert_eq!(refused.entries + refused.writes + refused.exits, 0);
+        assert!(refused.rejected > 0);
+    }
+}
+
+#[test]
+fn owning_session_failure_retires_an_unpublished_live_table() {
+    for artifact in variants() {
+        let jit = crate::native_artifact::JitProgramArtifact::compile(
+            &artifact, &mech_stdlib::source_catalog()).unwrap();
+        let report = run(&jit, jit.descriptor(), Mode::SessionAbort);
+        assert!(report.errors.is_empty(), "{report:?}");
+        assert_eq!(report.mismatches, 0, "{report:?}");
+        assert_eq!((report.entries, report.writes, report.exits), (1, 1, 0));
     }
 }
