@@ -1,8 +1,8 @@
-//! Mixed-value ABI16 adds checked retained-map entry/call/publication helpers.
+//! Mixed-value ABI17 adds checked selected map-key range/String helpers.
 //! The scalar-frame prefix and disjoint transport lanes remain unchanged.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 16;
+pub(super) const VERSION: u64 = 17;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
 pub(super) const PHASE_PREFIX: u64 = 2;
@@ -32,6 +32,7 @@ pub(super) const PREFIX_SCANNED: u64 = u64::MAX - 12;
 pub(super) const MAP_OWNER_BEGIN: u64 = u64::MAX - 16;
 pub(super) const MAP_OWNER_CALL: u64 = u64::MAX - 17;
 pub(super) const MAP_OWNER_END: u64 = u64::MAX - 18;
+pub(super) const MAP_OWNER_SPAN: u64 = u64::MAX - 19;
 pub(super) type Helper =
     unsafe extern "C" fn(*mut c_void, u64, u64, u64, u64, u64, *mut u64) -> u64;
 #[repr(C)]

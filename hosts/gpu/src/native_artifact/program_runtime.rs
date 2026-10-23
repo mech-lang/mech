@@ -395,10 +395,12 @@ impl Context<'_, '_> {
         collection::before_span_helper(self, site)?;
         let descriptor = self.control.descriptor;
         if matches!(operation, super::program_abi::MAP_OWNER_BEGIN
-            | super::program_abi::MAP_OWNER_CALL | super::program_abi::MAP_OWNER_END) {
+            | super::program_abi::MAP_OWNER_CALL | super::program_abi::MAP_OWNER_END
+            | super::program_abi::MAP_OWNER_SPAN) {
             return self.retained_map_helper(site, operation, args);
         }
-        if self.retained_native_action(site) || self.retained_native_call(site) || self.retained_native_exit(site) {
+        if self.retained_native_action(site) || self.retained_native_call(site) || self.retained_native_exit(site)
+            || self.retained_native_span(site) {
             return Err(invalid("ordinary helper at retained native map site"));
         }
         if operation == super::program_abi::CLOSED_TAIL_BEGIN {
@@ -824,6 +826,7 @@ impl Context<'_, '_> {
         iteration: u32,
         kind: RetirementKind,
     ) -> Result<(), NativeProgramExecutionError> {
+        self.retire_map_keys(iteration)?;
         let slots = self
             .control
             .descriptor
@@ -4307,8 +4310,8 @@ mod tests {
         }
     }
     #[test]
-    fn abi16_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 16);
+    fn abi17_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
+        assert_eq!(VERSION, 17);
         assert_eq!(super::super::program_abi::PHASE_CAPTURE_TAIL, 3);
         assert_eq!(super::super::program_abi::STATUS_INPUT_SCANNED, 7);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);

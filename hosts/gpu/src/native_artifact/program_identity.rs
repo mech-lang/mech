@@ -73,7 +73,8 @@ fn selected_template(
 // IR30 pins the explicit owner boundary after borrowed/closed-loop storage;
 // candidate words may not overlap those separately retained metadata lanes.
 // IR31 selects conditional owner words and per-region live flags.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 31;
+// IR32 pins non-escaping range/String projections used by retained map keys.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 32;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -168,7 +169,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 31;
 // Policy47 funds owner transport and retained session entry/call/exit operations.
 // Policy48 maintains call-cache metadata totals at mutation boundaries rather
 // than scanning every unrelated cache during each retained-map operation.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 48;
+// Policy49 funds selected map-key metadata and genuine-owner projection lanes.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 49;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
