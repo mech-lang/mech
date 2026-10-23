@@ -56,6 +56,9 @@ mod map_admission_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_map_closed_tests.rs"]
 mod map_closed_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_frozen_map_tests.rs"]
+mod frozen_map_tests;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub(super) use session::CheckedEntry;
 #[cfg(feature = "canonical-native-program-host-runtime")]
@@ -141,6 +144,10 @@ pub struct NativeProgramExecutionReport {
     pub packed_ssa_regions: u64,
     /// Completed regions whose actual guarded-loop selector chose the fast CFG.
     pub guarded_loop_regions: u64,
+    /// Complete packed maps actually retained at their original output boundary.
+    pub frozen_map_regions: u64,
+    /// Successful original source queries against those complete private maps.
+    pub frozen_map_reads: u64,
     /// Source comprehensions whose original child bodies completed in workers.
     pub parallel_regions: u64,
     /// Completed dispatches; one dispatch may cover several source regions.
@@ -238,6 +245,8 @@ struct Context<'plan, 'visit> {
     packed_map_updates: u64,
     packed_ssa_regions: u64,
     guarded_loop_regions: u64,
+    frozen_map_regions: u64,
+    frozen_map_reads: u64,
     parallel_regions: u64,
     parallel_batches: u64,
     parallel_tasks: u64,
@@ -458,7 +467,10 @@ impl Context<'_, '_> {
             | super::program_abi::MAP_OWNER_SPAN) {
             return self.retained_map_helper(site, operation, args);
         }
-        if self.retained_native_action(site) || self.retained_native_call(site) || self.retained_native_exit(site)
+        if matches!(operation, super::program_abi::FROZEN_MAP_COPY | super::program_abi::FROZEN_MAP_READ) {
+            return self.frozen_map_helper(site, operation, args);
+        }
+        if self.frozen_native_action(site) || self.retained_native_action(site) || self.retained_native_call(site) || self.retained_native_exit(site)
             || self.retained_native_span(site) {
             return Err(invalid("ordinary helper at retained native map site"));
         }
@@ -934,6 +946,7 @@ impl Context<'_, '_> {
         kind: RetirementKind,
     ) -> Result<(), NativeProgramExecutionError> {
         self.retire_map_keys(iteration)?;
+        self.retire_frozen_maps(iteration)?;
         let slots = self
             .control
             .descriptor

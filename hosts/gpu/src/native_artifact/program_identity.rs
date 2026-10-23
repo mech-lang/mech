@@ -99,7 +99,8 @@ fn selected_template(
 // IR48 adds a source-proved unsigned stop/range version, selected only when
 // invariant widths/limits fit the actual pinned source. Original work remains.
 // ABI25 binds private op14's validated, once-per-invocation selection receipt.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 48;
+// IR49 binds complete-use frozen owners and private same-scope read helpers.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 49;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -225,7 +226,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 48;
 // Policy64 prices the actual domain-selected slot backing and its concurrent
 // growth. Full-chain body prices, source-call caps and shared claims remain.
 // ABI23 binds both payload layouts; the packed Frame remains nineteen words.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 64;
+// Policy65 prices complete frozen-map validation and private read probes;
+// physical canonical-map import, sorting and allocation are genuinely absent.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 65;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -286,6 +289,7 @@ pub(super) fn typed_ir_sha256(
     joins: &[NativeSelectedTextJoin],
     lines: &[NativeTextLineMatrixRegion],
     map_owners: Option<&mech_engine::native_artifact::NativeMapOwnerWords>,
+    frozen_maps: &super::program_frozen_map_layout::Layout,
 ) -> [u8; 32] {
     let mut hash = Sha256::new();
     hash.update(b"mech.canonical-managed-program-cfg\0");
@@ -293,6 +297,9 @@ pub(super) fn typed_ir_sha256(
     word(&mut hash, super::program_abi::VERSION);
     word(&mut hash, NATIVE_PROGRAM_WORK_POLICY_VERSION);
     hash.update(plan.program_revision().as_bytes());
+    bytes(&mut hash, b"mech.complete-frozen-map-layout.v1");
+    serde_json::to_writer(ProofDigest(&mut hash), frozen_maps)
+        .expect("frozen map proof contains only finite ordered integer fields");
     // These proof records contain only ordered struct/enum fields, arrays and
     // integer words (no maps, floats, pointers or Debug output). Stream their
     // complete encoding, including lengths and otherwise unused candidates,

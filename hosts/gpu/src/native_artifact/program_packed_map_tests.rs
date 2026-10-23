@@ -4,6 +4,8 @@ use std::collections::BTreeMap;
 
 #[path = "program_packed_narrow_tests.rs"]
 mod narrow_tests;
+#[path = "program_frozen_packed_map_tests.rs"]
+mod frozen_tests;
 
 fn limits() -> MemoryBudgetLimits {
     MemoryBudgetLimits {

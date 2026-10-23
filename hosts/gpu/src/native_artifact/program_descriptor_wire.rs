@@ -117,6 +117,7 @@ struct Descriptor<'a> {
     scalar_aggregates: NativeScalarAggregates,
     #[serde(deserialize_with = "proof")]
     map_owner_words: Option<NativeMapOwnerWords>,
+    frozen_maps: native::program_frozen_map_layout::Layout,
     map_admission: native::program_map_admission::Layout,
     parallel: native::program_parallel_layout::Layout,
     borrowed_strings: native::program_borrowed_layout::Layout,
@@ -195,6 +196,12 @@ pub(super) fn decode(
     {
         return Err("descriptor image inventory differs from its plan".into());
     }
+    let frozen_maps = w.map_owner_words.as_ref().map(|owner|
+        native::program_frozen_map_layout::Layout::derive(&plan, owner, &w.closed_tails))
+        .transpose().map_err(str::to_owned)?.unwrap_or_default();
+    if frozen_maps != w.frozen_maps {
+        return Err("frozen-map descriptor proof differs from its complete source uses".into());
+    }
     let descriptor = NativeProgramDescriptor {
         plan,
         schemas,
@@ -210,6 +217,7 @@ pub(super) fn decode(
         string_map_regions: w.string_map_regions,
         scalar_aggregates: w.scalar_aggregates,
         map_owner_words: w.map_owner_words,
+        frozen_maps,
         map_admission: w.map_admission,
         parallel: w.parallel,
         borrowed_strings: w.borrowed_strings,

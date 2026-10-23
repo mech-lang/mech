@@ -15,6 +15,11 @@ mod spans;
 mod caller_geometry;
 #[path = "program_map_closed_runtime.rs"]
 mod closed;
+#[path = "program_frozen_map_runtime.rs"]
+pub(in crate::native_artifact::program_runtime) mod frozen;
+use frozen::FrozenSlot;
+
+pub(super) enum Publication { Canonical(Value), Frozen(u64) }
 
 /// Lazy owning-session lane. No table metadata is allocated merely because a
 /// descriptor has a candidate; entry must request and admit it explicitly.
@@ -37,6 +42,7 @@ impl<'plan> Session<'plan> {
 struct Slot<'plan> {
     binding: Option<Binding<'plan>>,
     closed: Option<Box<closed::Owner<'plan>>>,
+    frozen: Option<FrozenSlot>,
 }
 pub(super) struct State<'plan> {
     // Tables/keys retire before the enclosing admitted fixed lane.
@@ -101,7 +107,7 @@ impl<'plan> State<'plan> {
         if slots.try_reserve_exact(count).is_err() || slots.capacity() != count {
             return Ok(None);
         }
-        slots.resize_with(count, || Slot { binding: None, closed: None });
+        slots.resize_with(count, || Slot { binding: None, closed: None, frozen: None });
         let mut spans = Vec::new();
         if spans.try_reserve_exact(span_count).is_err() || spans.capacity() != span_count {
             return Ok(None);
@@ -143,6 +149,9 @@ impl<'plan> State<'plan> {
             amount(self.spans.len(), 64, 64)?)?)?;
         geometry.live_nodes = add(geometry.live_nodes, self.reservation.capacity_bytes())?;
         for slot in &self.slots {
+            if let Some(frozen) = &slot.frozen {
+                geometry.live_nodes = add(geometry.live_nodes, frozen.map.retained_nodes())?;
+            }
             if let Some(binding) = &slot.binding {
                 geometry.live_nodes = add(geometry.live_nodes, binding.retained_nodes().map_err(storage_error)?)?;
             }
@@ -165,7 +174,8 @@ impl<'plan> State<'plan> {
         let index = self.descriptor.map_owner_words.as_ref().and_then(|layout| layout.initializer(site))
             .ok_or_else(|| invalid("retained map entry outside initializer"))?;
         let region = self.region(index)?;
-        if ctx.control.current != Some(region.iteration()) || self.slots[index].binding.is_some() {
+        if ctx.control.current != Some(region.iteration()) || self.slots[index].binding.is_some()
+            || self.slots[index].frozen.is_some() {
             return Err(invalid("retained map entry overlaps another live owner"));
         }
         let Some(geometry) = self.geometry(ctx, site)? else {
@@ -253,7 +263,7 @@ impl<'plan> State<'plan> {
 
     pub(super) fn finish(
         &mut self, ctx: &mut Context<'_, '_>, site: usize, token: u64,
-    ) -> Result<Value, Error> {
+    ) -> Result<Publication, Error> {
         self.guard(ctx, site)?;
         let index = self.descriptor.map_owner_words.as_ref().and_then(|layout| layout.exit(site))
             .ok_or_else(|| invalid("retained map publication outside selected exit"))?;
@@ -261,9 +271,26 @@ impl<'plan> State<'plan> {
             return Err(invalid("retained map publication outside parent scope"));
         }
         let geometry = self.geometry(ctx, site)?.ok_or_else(|| invalid("retained map publication lost caller geometry"))?;
-        let value = self.slots[index].binding.as_mut()
-            .ok_or_else(|| invalid("retained map publication lacks owner"))?
-            .finish(site, token, &self.descriptor.schemas, geometry, ctx.limits).map_err(storage_error)?;
+        let slot = &mut self.slots[index];
+        let binding = slot.binding.as_mut()
+            .ok_or_else(|| invalid("retained map publication lacks owner"))?;
+        let value = if let Some(frozen) = slot.frozen.as_ref() {
+            let proof = self.descriptor.frozen_maps.exits.get(site).copied().flatten()
+                .and_then(|id| self.descriptor.frozen_maps.regions.get(id))
+                .ok_or_else(|| invalid("frozen publication lacks complete-use proof"))?;
+            if proof.owner != index || frozen.parent != proof.parent || frozen.token != 0 {
+                return Err(invalid("frozen publication owner/phase differs"));
+            }
+            let schema = binding.frozen_exit_schema(site, token, &self.descriptor.schemas)
+                .map_err(storage_error)?;
+            frozen.map.admit_output(&self.descriptor.schemas, schema, ctx.limits).map_err(storage_error)?;
+            slot.frozen.as_mut().unwrap().token = token;
+            ctx.frozen_map_regions = add(ctx.frozen_map_regions, 1)?;
+            Publication::Frozen(token)
+        } else {
+            Publication::Canonical(binding.finish(site, token, &self.descriptor.schemas, geometry, ctx.limits)
+                .map_err(storage_error)?)
+        };
         self.active_tables = self.active_tables.checked_sub(1)
             .ok_or_else(|| invalid("retained map owner count underflow"))?;
         drop(self.slots[index].binding.take());
@@ -340,7 +367,7 @@ impl Context<'_, '_> {
         result
     }
 
-    pub(super) fn finish_retained_map(&mut self, site: usize, token: u64) -> Result<Value, Error> {
+    pub(super) fn finish_retained_map(&mut self, site: usize, token: u64) -> Result<Publication, Error> {
         let mut state = self.map_owners.state.take()
             .ok_or_else(|| invalid("retained map session publication before admitted entry"))?;
         let result = state.finish(self, site, token);
@@ -422,10 +449,15 @@ impl Context<'_, '_> {
                     return Err(invalid("retained map exit lacks canonical destination"));
                 };
             let output = *output;
-            let value = self.finish_retained_map(site, args[0])?;
-            self.arena.put(output.get(), &value, &mut self.control.work)?;
+            let token = match self.finish_retained_map(site, args[0])? {
+                Publication::Canonical(value) => {
+                    self.arena.put(output.get(), &value, &mut self.control.work)?;
+                    0
+                }
+                Publication::Frozen(token) => token,
+            };
             self.consumed = true;
-            Ok(None)
+            Ok(Some(token))
         } else { Err(invalid("unknown retained map helper")) }
     }
 }

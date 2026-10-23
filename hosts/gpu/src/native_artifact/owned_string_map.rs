@@ -48,6 +48,7 @@ impl std::fmt::Display for Error {
 #[path = "owned_string_map_publication.rs"]
 mod publication;
 pub(super) use publication::Geometry as PublicationGeometry;
+pub(super) use publication::{string_u64_schema, logical_map_bytes, logical_map_limits};
 impl std::error::Error for Error {}
 impl From<MemoryRuntimeError> for Error {
     fn from(error: MemoryRuntimeError) -> Self {

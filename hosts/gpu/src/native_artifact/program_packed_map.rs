@@ -77,6 +77,10 @@ pub(super) use payload::{narrow, slot_bytes, value_offset};
 use payload::NarrowSlot;
 use payload::Slots;
 
+#[path = "program_frozen_packed_map.rs"]
+mod frozen;
+pub(super) use frozen::FrozenPackedMap;
+
 /// Counts bound one complete acyclic source-body traversal, including branches
 /// not taken. These are descriptor-derived counts, never user-supplied fuel.
 #[derive(Clone, Copy, Debug)]
@@ -334,6 +338,11 @@ impl PackedMap {
         true
     }
     fn probe(slots: &Slots, controls: &[u8], low: u64, high: u64) -> Result<usize, Error> {
+        Self::probe_debits(slots, controls, low, high, &mut |_, _| Ok(()))
+    }
+    fn probe_debits(slots: &Slots, controls: &[u8], low: u64, high: u64,
+        charge: &mut impl FnMut(u64, u64) -> Result<(), mech_core::ResidentKernelError>,
+    ) -> Result<usize, Error> {
         let mask = slots.len().checked_sub(1).ok_or(Error::Binding("empty packed table"))?;
         if slots.len() < GROUP || !slots.len().is_power_of_two()
             || controls.len() != slots.len().checked_add(GROUP - 1).ok_or(Error::Overflow)? {
@@ -347,6 +356,9 @@ impl PackedMap {
         // so these bounded groups inspect each bucket exactly once, even when
         // the first group wraps. A fingerprint never replaces full-key equality.
         for _ in 0..slots.len() / GROUP {
+            // Frozen operations pay for each actual bounded group. Existing
+            // mutation callers already prepay their whole-body envelope.
+            charge(1024, 16)?;
             let group = &controls[index..index + GROUP];
             for (lane, &control) in group.iter().enumerate() {
                 if control == tag {

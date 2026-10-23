@@ -197,6 +197,7 @@ impl NativeProgramObject {
             "unboxed_scalar_aggregate_values": self.descriptor.scalar_aggregates.value_count(),
             "borrowed_string_regions": self.descriptor.borrowed_strings.regions.len(),
             "closed_tail_regions": self.descriptor.closed_tails.regions.len(),
+            "private_frozen_map_candidates": self.descriptor.frozen_maps.regions.len(),
             "retained_map_scalar_admission_groups": self.descriptor.map_admission.groups.len(),
             "selected_matrix_join_regions": self.descriptor.selected_joins.regions.len(),
             "private_line_matrix_regions": self.descriptor.line_matrices.regions.len(),

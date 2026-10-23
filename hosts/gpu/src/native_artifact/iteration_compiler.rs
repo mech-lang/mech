@@ -373,6 +373,10 @@ pub(super) fn define_cfg<M: Module>(
         (!layout.regions().is_empty()).then_some(layout)
     } else { None };
     #[cfg(feature = "canonical-native-program")]
+    let frozen = if let (super::iteration_code_plan::CodePlan::Program(program), Some(owner)) = (plan, owner.as_ref()) {
+        super::program_frozen_map_layout::Layout::derive(program, owner, &closed).map_err(backend)?
+    } else { Default::default() };
+    #[cfg(feature = "canonical-native-program")]
     let local_count = owner.as_ref().map_or(Ok(canonical_local_count),
         super::program_map_owner_layout::local_words).map_err(backend)?;
     #[cfg(not(feature = "canonical-native-program"))]
@@ -819,7 +823,7 @@ pub(super) fn define_cfg<M: Module>(
             )?;
             #[cfg(feature = "canonical-native-program")]
             let (owner_join, owner_handled) = super::program_compiler::map_owner_codegen::emit(
-                &mut b, locals, owner.as_ref(), &closed, index, hooks.as_ref(), plan, error,
+                &mut b, locals, owner.as_ref(), &closed, &frozen, index, hooks.as_ref(), plan, error,
             )?;
             #[cfg(not(feature = "canonical-native-program"))]
             let owner_handled = false;

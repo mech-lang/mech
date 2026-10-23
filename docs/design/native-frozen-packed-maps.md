@@ -1,6 +1,7 @@
 # Retaining packed maps through private read-only uses
 
-Status: design only. No implementation or performance result is claimed.
+Status: implementation candidate; execution validation and performance measurements
+are pending. The design below records its proof and accounting obligations.
 
 The current native compiler keeps a source-written String/U64 map in packed
 storage while a proved closed Tail executes. At successful completion,
@@ -114,7 +115,9 @@ must remain atomic and belong to the same capped account, including overlap if
 canonical fallback constructs a new owner.
 
 Keep source-level schema/cardinality and logical output-element/output-byte/
-clone-size checks at the original Tail exit. Factor the relevant demand formulas
+clone-size checks at the original result-copy boundary (`MAP_OWNER_END`), after
+that source visit's debit. Complete packed-storage validation remains at the
+earlier closed-tail exit. Factor the relevant demand formulas
 from `OwnedStringMap::publication_plan`; private representation must not bypass
 those declared limits or postpone a boundary failure until a later query. Error
 origins and the order of actual source operations stay unchanged. Never evaluate
@@ -156,3 +159,38 @@ smaller, independent change affecting every table probe/store; it may better
 address the full-input counting loop. Both require measurements.
 
 Evidence: [SIMD benchmark and profile records](https://github.com/mech-lang/benchmarks/tree/c1532d3bf/experiments/mech/native-owner-aot-v1).
+
+## Private read-only owner implementation
+
+The first implementation accepts only complete maps whose original result and
+all copy aliases stay in the same immutable parent visit. Its consumers are
+ordinary `MapContainsKey` and `MapKeyAccess` calls with String queries. Any map
+output, enumeration, mutation, capture, join of different producers, or virtual
+consumer declines the representation before execution. The serialized layout is
+included in the artifact identity and rederived from the same plan when loading
+an image.
+
+The original closed-tail exit checks every occupied control, complete packed
+key, probe reachability, uniqueness, cardinality, update count, and funded
+traversal count. It retains the whole table and all of its existing byte/node
+claims. No requested-key set is supplied. The original result-copy step checks
+the schema and logical output/clone limits, then publishes an invocation-unique
+private token. No canonical Map handle is fabricated. Original source copies
+carry that token, and each original read checks the exact source site, parent
+visit, token, and same-account owner before accepting the query.
+
+String queries validate byte length and membership before encoding, including
+both packed words. Absence and a stored zero are distinct. A missing key access
+returns the original library `InvalidInput` error at the original source origin.
+Parent latch/exit retirement releases the owner; root and worker teardown cover
+completion and every failure. Worker receipts carry only the original scalar or
+String output, never a map token or table.
+
+Work policy 65 charges complete validation and actual bounded probe groups.
+Allocation-free validation uses the existing bounded exact-debit batch: it
+reserves no speculative worker credits and cannot renew per-call limits. The
+canonical import, key allocation, and publication sort are physically absent,
+so their former physical work charges are absent as well. Mutation-body charges,
+source updates, source control flow, and finite logical result limits remain.
+Actual execution reports expose `native_frozen_map_regions` and
+`native_frozen_map_reads`; candidate metadata by itself does not claim selection.

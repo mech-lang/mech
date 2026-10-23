@@ -3,7 +3,7 @@
 use super::super::{
     NativeCompileError, compiler::{backend, offset}, iteration_code_plan::CodePlan,
     program_hooks::Hooks, program_map_owner_layout as layout,
-    program_abi::{MAP_OWNER_BEGIN, MAP_OWNER_CALL, MAP_OWNER_END, MAP_OWNER_SPAN},
+    program_abi::{MAP_OWNER_BEGIN, MAP_OWNER_CALL, MAP_OWNER_END, MAP_OWNER_SPAN, FROZEN_MAP_COPY, FROZEN_MAP_READ},
 };
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
@@ -45,15 +45,20 @@ pub(in crate::native_artifact) fn admission(
 pub(in crate::native_artifact) fn emit(
     b: &mut FunctionBuilder<'_>, locals: Value, owner: Option<&NativeMapOwnerWords>,
     closed: &super::super::program_tail_layout::Layout,
+    frozen: &super::super::program_frozen_map_layout::Layout,
     site: usize, hooks: Option<&Hooks>, code: CodePlan<'_>, error: Block,
 ) -> Result<(Option<Block>, bool), NativeCompileError> {
     let Some(owner) = owner else { return Ok((None, false)); };
+    let frozen_copy = frozen.copies.get(site).copied().flatten();
+    let frozen_read = frozen.reads.get(site).copied().flatten();
+    let frozen_id = frozen_copy.or(frozen_read);
     let entry = owner.initializer(site);
     let exit = owner.exit(site);
     let call = layout::call_region(owner, site);
     let action = layout::action_region(owner, site);
     let span = owner.span_site(site).map(|index| &owner.spans()[index]);
     let Some(index) = entry.or(exit).or(call).or(action).or(span.map(|span| span.region()))
+        .or(frozen_id.map(|id| frozen.regions[id].owner))
         else { return Ok((None, false)); };
     let hooks = hooks.ok_or_else(|| backend("map owner transport lacks checked hooks"))?;
     let region = &owner.regions()[index];
@@ -88,6 +93,24 @@ pub(in crate::native_artifact) fn emit(
     let active = b.ins().icmp_imm(IntCC::NotEqual, active, 0);
     b.ins().brif(active, native, &[], ordinary, &[]);
     b.switch_to_block(native);
+    if let Some(id) = frozen_id {
+        let proof = &frozen.regions[id];
+        let (source, output, operation) = match code.blocks()[site].action() {
+            NativeIterationAction::Scalar(mech_engine::native_artifact::NativeMatchAction::Copy { source, output })
+                if frozen_copy.is_some() => (*source, *output, FROZEN_MAP_COPY),
+            NativeIterationAction::LibraryCall { operands, output, .. } if frozen_read.is_some()
+                => (operands[0], *output, FROZEN_MAP_READ),
+            _ => return Err(backend("frozen map site differs from complete-use proof")),
+        };
+        if proof.owner != index { return Err(backend("frozen map owner mismatch")); }
+        let token = load(b, locals, source.get() as usize)?;
+        hooks.call(b, site, operation, [token, zero, zero], error);
+        let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+        store(b, locals, output.get() as usize, word)?;
+        b.ins().jump(joined, &[]);
+        b.switch_to_block(ordinary);
+        return Ok((Some(joined), false));
+    }
     if (span.is_some() || call.is_some())
         && let Some(id) = closed.sites.get(site).copied().flatten()
         && closed.regions[id].map == Some(index)
@@ -171,7 +194,13 @@ pub(in crate::native_artifact) fn emit(
     } else if exit.is_some() {
         let token = load(b, locals, region.tail().returned().get() as usize)?;
         hooks.call(b, site, MAP_OWNER_END, [token, zero, zero], error);
-        store(b, locals, flag, zero)?;
+        let token = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+        store(b, locals, flag, token)?;
+        // Canonical publication returns zero; private publication returns the
+        // invocation/generation token. No canonical Map is forged in the arena.
+        let NativeIterationAction::Scalar(mech_engine::native_artifact::NativeMatchAction::Copy { output, .. })
+            = code.blocks()[site].action() else { return Err(backend("map exit lacks copy")); };
+        store(b, locals, output.get() as usize, token)?;
     } else if call.is_some() {
         let NativeIterationAction::LibraryCall { operands, output, .. } = code.blocks()[site].action()
             else { return Err(backend("map owner call is not a library action")); };

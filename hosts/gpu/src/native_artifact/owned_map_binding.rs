@@ -617,6 +617,23 @@ impl<'plan> Binding<'plan> {
                 Ok(self.token)
             })?
     }
+    /// Check the same original publication boundary without materializing a
+    /// canonical map. Complete frozen storage and logical caps are checked by
+    /// the private caller before this binding is retired.
+    pub(super) fn frozen_exit_schema(&self, site: usize, token: u64, schemas: &Arc<SchemaTable>)
+        -> Result<mech_core::SchemaId, Error>
+    {
+        self.current(token)?;
+        if site != self.region.tail().exit() as usize {
+            return Err(Error::Binding("unselected frozen owner exit"));
+        }
+        let ty = &self.plan.values()[self.region.tail().result().get() as usize];
+        if schemas.get(ty.schema()) != Some(ty.definition()) {
+            return Err(Error::Binding("frozen result schema context"));
+        }
+        Ok(ty.schema())
+    }
+
     pub(super) fn finish(
         &mut self,
         site: usize,

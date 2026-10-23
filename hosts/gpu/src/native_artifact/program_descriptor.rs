@@ -41,6 +41,7 @@ pub struct NativeProgramDescriptor {
     // Complete same-plan candidate layout, preserved through standalone images.
     // Merely carrying this metadata does not select retained runtime storage.
     pub(super) map_owner_words: Option<mech_engine::native_artifact::NativeMapOwnerWords>,
+    pub(super) frozen_maps: super::program_frozen_map_layout::Layout,
     pub(super) map_admission: super::program_map_admission::Layout,
     pub(super) parallel: super::program_parallel_layout::Layout,
     pub(super) borrowed_strings: super::program_borrowed_layout::Layout,
@@ -298,12 +299,16 @@ impl NativeProgramDescriptor {
         // These complete inventories were derived above from this SAME
         // immutable plan. Hash every proof in its original order, including
         // proofs not selected by the capture prefix, without deriving again.
+        let frozen_maps = map_owner_words.as_ref().map(|owner|
+            super::program_frozen_map_layout::Layout::derive(&plan, owner, &closed_tails))
+            .transpose().map_err(str::to_owned)?.unwrap_or_default();
         let identity = super::program_identity::typed_ir_sha256(
             &plan,
             &line_retention_frontiers,
             &selected_joins.regions,
             &line_matrices.regions,
             map_owner_words.as_ref(),
+            &frozen_maps,
         );
         Ok(Self {
             plan,
@@ -320,6 +325,7 @@ impl NativeProgramDescriptor {
             string_map_regions,
             scalar_aggregates,
             map_owner_words,
+            frozen_maps,
             map_admission,
             parallel,
             borrowed_strings,
