@@ -245,15 +245,21 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
     b.ins().jump(blocks[site].unwrap(), &[]);
     for (index, block) in code.blocks().iter().enumerate() {
         let Some(current) = blocks[index] else { continue; };
+        // The entry frame observes a source origin only when control leaves
+        // this private CFG. Each helper already receives its precise site.
+        // Preserve that origin on every failing edge, without writing it for
+        // successful empty blocks, projections, arithmetic or map operations.
+        let fail_at = b.create_block();
+        b.append_block_param(fail_at, types::I64);
+        b.set_cold_block(fail_at);
         b.switch_to_block(current);
-        set_origin(b, frame, index as u64);
         if index == site {
             let fuel = packed.read(b, core::mem::offset_of!(Frame, fuel));
             let replenish = b.create_block();
             let funded = b.create_block();
             b.ins().brif(fuel, funded, &[], replenish, &[]);
             b.switch_to_block(replenish);
-            packed.call(b, hooks, function, context, index, 0, [zero; 3], failed);
+            packed.call(b, hooks, function, context, index, 0, [zero; 3], fail_at);
             let count = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
             packed.write(b, core::mem::offset_of!(Frame, fuel), count);
             b.ins().jump(funded, &[]);
@@ -263,12 +269,12 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
             packed.write(b, core::mem::offset_of!(Frame, fuel), fuel);
         }
         if let Some((layout, action)) = aggregate_at(owner, aggregates, owner_index, index) {
-            emit_aggregate(b, &words, layout, action, failed)?;
+            emit_aggregate(b, &words, layout, action, fail_at)?;
         } else if let Some(span) = owner.span_site(index).map(|i| &owner.spans()[i]) {
             if span.range_site() as usize == index {
                 let first = words.read(b, span.operands()[0].get() as usize);
                 let last = words.read(b, span.operands()[1].get() as usize);
-                packed_maps::select_state(b, &packed, first, last, hooks, function, context, index, failed);
+                packed_maps::select_state(b, &packed, first, last, hooks, function, context, index, fail_at);
             }
         } else if owner.call_region(index) == Some(owner_index) {
             let Action::LibraryCall { template, operands, output } = block.action() else { unreachable!() };
@@ -276,14 +282,14 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
             let replacement = if operation == 5 { words.read(b, operands[2].get() as usize) } else { zero };
             let token = words.read(b, operands[0].get() as usize);
             let value = packed_maps::operation_state(b, &packed, operation, replacement,
-                token, hooks, function, context, index, failed);
+                token, hooks, function, context, index, fail_at);
             words.write(b, output.get() as usize, value);
         } else {
             match block.action() {
                 Action::Scalar(Scalar::None) => {}
                 Action::Scalar(Scalar::Primitive { op, operands, output, .. }) => {
                     let args = operands.iter().map(|v| words.read(b, v.get() as usize)).collect::<Vec<_>>();
-                    let value = primitive(b, *op, &args, failed);
+                    let value = primitive(b, *op, &args, fail_at);
                     words.write(b, output.get() as usize, value);
                 }
                 Action::Scalar(Scalar::Copy { source, output }) => {
@@ -315,10 +321,14 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
                 // Exhaustive source matches retain their fail-closed default
                 // arm. Preserve its origin and unwind the owned frame/fuel.
                 let status = b.ins().iconst(types::I64, super::super::control_abi::STATUS_REJECT as i64);
-                b.ins().jump(failed, &[status.into()]);
+                b.ins().jump(fail_at, &[status.into()]);
             }
             _ => unreachable!("checked packed SSA terminator"),
         }
+        b.switch_to_block(fail_at);
+        let status = b.block_params(fail_at)[0];
+        set_origin(b, frame, index as u64);
+        b.ins().jump(failed, &[status.into()]);
     }
     b.switch_to_block(exit);
     // Tail validation confines source locals/carriers to this invocation and

@@ -5,7 +5,7 @@ use crate::native_artifact::program_abi::{CLOSED_TAIL_BEGIN, CLOSED_TAIL_END,
 use std::cell::{Cell, RefCell};
 
 #[derive(Clone, Copy, PartialEq)]
-enum Mode { Native, Decline, OneShort, Renew, TightCall }
+enum Mode { Native, Decline, OneShort, Renew, TightCall, TightWrite }
 #[derive(Default, Debug)]
 struct Observation {
     entries: u64, packed: u64, guarded: u64, rejected: u64, errors: Vec<&'static str>, bound: [u64; 14],
@@ -28,6 +28,9 @@ unsafe extern "C" fn observe(raw: *mut c_void, site: u64, op: u64,
     let mode = MODE.with(Cell::get);
     if op == CLOSED_TAIL_BEGIN && mode == Mode::Decline { ctx.limits.max_temporary_bytes = Some(0); }
     if op == CLOSED_TAIL_BEGIN && mode == Mode::TightCall { ctx.limits.max_comparison_work = Some(0); }
+    // One byte plus the initial eight-slot census admits a read (65), but
+    // refuses the first write (195). The root account retains its own limit.
+    if op == CLOSED_TAIL_BEGIN && mode == Mode::TightWrite { ctx.limits.max_comparison_work = Some(65); }
     if matches!(op, MAP_OWNER_CALL | MAP_OWNER_SPAN) { note(|r| r.guarded += 1); }
     let first = if op == CLOSED_TAIL_END && mode == Mode::Renew { u64::MAX } else { first };
     // SAFETY: unchanged maintained helper and its exact result lane.
@@ -461,3 +464,6 @@ fn packed_ssa_preserves_carriers_across_refill_growth_and_branch_merges() {
         assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
     }
 }
+
+#[path = "program_packed_origin_tests.rs"]
+mod cold_origins;
