@@ -1,8 +1,8 @@
-//! Mixed-value ABI19 admits native map paths at their observable frontiers.
+//! Mixed-value ABI20 binds private storage calls to closed native map loops.
 //! The scalar-frame prefix and disjoint transport lanes remain unchanged.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 19;
+pub(super) const VERSION: u64 = 20;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
 pub(super) const PHASE_PREFIX: u64 = 2;

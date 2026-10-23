@@ -98,6 +98,11 @@ unsafe extern "C" fn observe(
         }
     }
     let old_limits = ctx.limits;
+    // This suite exercises the guarded per-operation transport deliberately.
+    // The closed-loop transport has separate actual-entry/fuel tests.
+    if operation == crate::native_artifact::program_abi::CLOSED_TAIL_BEGIN {
+        ctx.limits.max_temporary_bytes = Some(0);
+    }
     if operation == MAP_OWNER_BEGIN && mode == Mode::RefuseEntry {
         // Refuse fixed lane metadata without starving the canonical MOVE.
         ctx.limits.max_temporary_bytes = Some(0);

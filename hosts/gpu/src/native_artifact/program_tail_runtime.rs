@@ -1,4 +1,4 @@
-//! Reconcile a callback-free compiled Tail to the SAME invocation account.
+//! Reconcile a closed generated Tail to the SAME invocation account.
 //! The generated body consumes finite native fuel; this never executes a loop.
 use super::super::NativeExecutionPhase;
 use super::{Context, NativeProgramExecutionError as Error, amount, invalid};
@@ -30,10 +30,11 @@ impl Context<'_, '_> {
         args: [u64; 3],
         region: usize,
     ) -> Result<Option<u64>, Error> {
+        let proof = &self.control.descriptor.closed_tails.regions[region];
         if args != [0; 3]
             || self.closed_tail.is_some()
             || self.window_region.is_some()
-            || self.consumed
+            || (self.consumed && proof.map.is_none())
         {
             return Err(invalid("duplicate or malformed closed Tail entry"));
         }
@@ -60,8 +61,13 @@ impl Context<'_, '_> {
         let Some(remaining) = self.library.unscoped_remaining() else {
             return Ok(Some(0));
         };
-        self.write_borrowed_word(0, remaining.0)?;
-        self.write_borrowed_word(1, remaining.1)?;
+        if proof.map.is_some() {
+            let Some(words) = self.begin_closed_map(region)? else { return Ok(Some(0)); };
+            for (index, word) in words.into_iter().enumerate() { self.write_borrowed_word(index, word)?; }
+        } else {
+            self.write_borrowed_word(0, remaining.0)?;
+            self.write_borrowed_word(1, remaining.1)?;
+        }
         self.closed_tail = Some(State {
             region,
             used: self.library.used(),
@@ -89,31 +95,37 @@ impl Context<'_, '_> {
         if self.control.previous != Some(state.entry)
             || self.control.current != Some(proof.iteration)
             || self.control.progress[proof.iteration as usize * 2..][..2] != [0, 1]
-            || self.library.used() != state.used
-            || self.library.unscoped_remaining() != Some(state.remaining)
+            || (proof.map.is_none() && (self.library.used() != state.used
+                || self.library.unscoped_remaining() != Some(state.remaining)))
         {
             return Err(invalid(
                 "closed Tail account or entry changed during native execution",
             ));
         }
-        let compute = state
-            .remaining
-            .0
-            .checked_sub(args[0])
-            .ok_or_else(|| invalid("closed Tail compute fuel was renewed"))?;
-        let comparison = state
-            .remaining
-            .1
-            .checked_sub(args[1])
-            .ok_or_else(|| invalid("closed Tail comparison fuel was renewed"))?;
-        let traversals = compute / proof.compute;
-        if compute % proof.compute != 0
-            || traversals.checked_mul(proof.comparison) != Some(comparison)
-        {
-            return Err(invalid(
-                "closed Tail fuel differs from proved body envelope",
-            ));
-        }
+        let (compute, comparison, traversals) = if proof.map.is_some() {
+            if args[1] != 0 { return Err(invalid("closed map comparison lane changed")); }
+            (0, 0, self.end_closed_map(state.region, args[0])?)
+        } else {
+            let compute = state
+                .remaining
+                .0
+                .checked_sub(args[0])
+                .ok_or_else(|| invalid("closed Tail compute fuel was renewed"))?;
+            let comparison = state
+                .remaining
+                .1
+                .checked_sub(args[1])
+                .ok_or_else(|| invalid("closed Tail comparison fuel was renewed"))?;
+            let traversals = compute / proof.compute;
+            if compute % proof.compute != 0
+                || traversals.checked_mul(proof.comparison) != Some(comparison)
+            {
+                return Err(invalid(
+                    "closed Tail fuel differs from proved body envelope",
+                ));
+            }
+            (compute, comparison, traversals)
+        };
         let previous = match args[2] {
             0 if site == proof.tail.exit() as usize && traversals > 0 => proof.tail.finish(),
             // No fuel for a complete body: reconcile before the ordinary header
@@ -144,6 +156,9 @@ impl Context<'_, '_> {
         // This is one proved bulk transition, not fabricated/replayed per-op
         // visits. The report counts the remaining actual admitted CFG visits.
         self.control.previous = Some(previous);
+        if proof.map.is_some() && args[2] == 0 {
+            self.map_owners.closed_exit = Some((previous, proof.tail.exit()));
+        }
         self.consumed = false;
         if args[2] == 3 {
             // Arithmetic/rejection exits have no leaf callback to consume the

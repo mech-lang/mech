@@ -524,6 +524,38 @@ impl<'plan> Binding<'plan> {
             },
         )?
     }
+    /// Only the invocation's closed-loop owner may call these methods. The
+    /// compiler's linear-use proof excludes any observer of an intermediate
+    /// version, so its private token stays stable until canonical publication.
+    /// This is still generic storage: the generated caller supplies the value.
+    pub(super) fn native_read(&self, key: &str, contains: bool,
+        limits: MemoryBudgetLimits) -> Result<u64, Error>
+    {
+        self.work.with_call_limits(cap(limits.max_compute_work)?,
+            cap(limits.max_comparison_work)?, || {
+                let found = self.current(self.token)?.get(key)?;
+                if contains { Ok(u64::from(found.is_some())) }
+                else { found.ok_or(Error::Binding("missing map key")) }
+            })?
+    }
+    pub(super) fn native_insert(&mut self, key: &str, value: u64,
+        geometry: Geometry, limits: MemoryBudgetLimits) -> Result<u64, Error>
+    {
+        let work = self.work.clone();
+        work.with_call_limits(cap(limits.max_compute_work)?,
+            cap(limits.max_comparison_work)?, || {
+                let map = self.current(self.token)?;
+                let fresh = map.get(key)?.is_none();
+                let count = add(map.len() as u64, u64::from(fresh))?;
+                let cloned = if fresh { key.len() as u64 } else { 0 };
+                let storage = self.geometry(self.token, geometry, limits,
+                    count, add(map.key_bytes(), cloned)?, cloned)?;
+                let map = self.map.as_mut().ok_or(Error::Binding("closed owner"))?;
+                map.set_limits(storage);
+                map.insert(key, value)?;
+                Ok(self.token)
+            })?
+    }
     pub(super) fn finish(
         &mut self,
         site: usize,

@@ -44,6 +44,7 @@ pub(in crate::native_artifact) fn admission(
 /// action, and whether entry was completely emitted (including fallback MOVE).
 pub(in crate::native_artifact) fn emit(
     b: &mut FunctionBuilder<'_>, locals: Value, owner: Option<&NativeMapOwnerWords>,
+    closed: &super::super::program_tail_layout::Layout,
     site: usize, hooks: Option<&Hooks>, code: CodePlan<'_>, error: Block,
 ) -> Result<(Option<Block>, bool), NativeCompileError> {
     let Some(owner) = owner else { return Ok((None, false)); };
@@ -87,6 +88,43 @@ pub(in crate::native_artifact) fn emit(
     let active = b.ins().icmp_imm(IntCC::NotEqual, active, 0);
     b.ins().brif(active, native, &[], ordinary, &[]);
     b.switch_to_block(native);
+    if (span.is_some() || call.is_some())
+        && let Some(id) = closed.sites.get(site).copied().flatten()
+        && closed.regions[id].map == Some(index)
+    {
+        let proof = &closed.regions[id];
+        let ready = load(b, locals, proof.words)?;
+        let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
+        let thin = b.create_block();
+        let guarded = b.create_block();
+        b.ins().brif(ready, thin, &[], guarded, &[]);
+        b.switch_to_block(thin);
+        let function = load(b, locals, proof.words + 3)?;
+        let context = load(b, locals, proof.words + 4)?;
+        let (op, args, output) = if let Some(span) = span {
+            if span.range_site() as usize == site {
+                (1, [load(b, locals, span.operands()[0].get() as usize)?,
+                     load(b, locals, span.operands()[1].get() as usize)?, zero], None)
+            } else { (2, [zero; 3], None) }
+        } else {
+            use mech_engine::native_artifact::NativeCollectionPrimitive as P;
+            let NativeIterationAction::LibraryCall { template, operands, output } = code.blocks()[site].action()
+                else { return Err(backend("closed map call lacks library action")); };
+            let op = match template.primitive() {
+                P::MapContainsKey => 3, P::MapKeyAccess => 4, P::MapInsert => 5,
+                _ => return Err(backend("closed map call kind")),
+            };
+            let value = if op == 5 { load(b, locals, operands[2].get() as usize)? } else { zero };
+            (op, [zero, zero, value], Some(*output))
+        };
+        hooks.bound_call(b, function, context, site, op, args, error);
+        if let Some(output) = output {
+            let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+            store(b, locals, output.get() as usize, word)?;
+        }
+        b.ins().jump(joined, &[]);
+        b.switch_to_block(guarded);
+    }
     if let Some(span) = span {
         let args = if span.range_site() as usize == site {
             [load(b, locals, span.operands()[0].get() as usize)?,

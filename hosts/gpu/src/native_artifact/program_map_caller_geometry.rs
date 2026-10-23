@@ -48,7 +48,10 @@ impl State<'_> {
     {
         let cached = self.caller.as_ref().filter(|caller|
             ctx.control.current == Some(caller.iteration)
-                && self.descriptor.plan.blocks()[site].iteration() == Some(caller.iteration));
+                && (self.descriptor.plan.blocks()[site].iteration() == Some(caller.iteration)
+                    || self.descriptor.map_owner_words.as_ref().unwrap().initializer(site)
+                        .is_some_and(|id| self.descriptor.map_owner_words.as_ref().unwrap()
+                            .regions()[id].iteration() == caller.iteration)));
         #[cfg(all(test, feature = "canonical-native-program"))]
         super::tests::observe_geometry(cached.is_some());
         let Some(caller) = cached else { return ctx.retained_caller_geometry(site); };
@@ -61,7 +64,7 @@ impl State<'_> {
         // detects drift after map growth, cache population and view retirement.
         #[cfg(all(test, feature = "canonical-native-program"))]
         {
-            let expected = ctx.retained_caller_geometry(site)?
+            let expected = ctx.retained_caller_inventory(site)?
                 .ok_or_else(|| invalid("closed map census lost caller geometry"))?;
             if (expected.live_bytes, expected.live_nodes) != (geometry.live_bytes, geometry.live_nodes) {
                 return Err(invalid("closed map caller census differs from complete inventory"));

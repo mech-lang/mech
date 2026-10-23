@@ -17,6 +17,18 @@ pub(super) struct Hooks {
 }
 impl Hooks {
     #[cfg(feature = "canonical-native-program")]
+    pub fn bound_call(&self, b: &mut FunctionBuilder<'_>, function: Value,
+        context: Value, site: usize, operation: u64, args: [Value; 3], error: Block)
+    {
+        let site = b.ins().iconst(types::I64, site as i64);
+        let operation = b.ins().iconst(types::I64, operation as i64);
+        let call = b.ins().call_indirect(self.signature, function,
+            &[context, site, operation, args[0], args[1], args[2], self.result]);
+        let status = b.inst_results(call)[0];
+        let ok = b.ins().icmp_imm(IntCC::Equal, status, 0);
+        guard(b, ok, error, super::abi::STATUS_ADMISSION);
+    }
+    #[cfg(feature = "canonical-native-program")]
     pub fn string_map_region(
         &self,
         b: &mut FunctionBuilder<'_>,

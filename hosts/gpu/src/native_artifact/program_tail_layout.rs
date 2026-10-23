@@ -14,6 +14,9 @@ pub(super) struct Region {
     #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub tail: NativeTailLoop,
     pub borrowed: Option<usize>,
+    /// Exclusive retained-map owner. Its private storage callbacks may debit
+    /// the same account; scalar body work is prepaid in bounded batches.
+    pub map: Option<usize>,
     // Emission and checkpoint validation use the identical admitted word lane.
     pub words: usize,
     pub compute: u64,
@@ -41,6 +44,7 @@ impl Layout {
             ..Self::default()
         };
         let aggregates = plan.scalar_aggregates();
+        let owners = plan.map_owner_words()?;
         let base = plan
             .values()
             .len()
@@ -52,7 +56,17 @@ impl Layout {
             let NativeControlLoop::Tail(tail) = control else {
                 continue;
             };
-            if tail.parent().is_some() || aggregates.action(tail.initialize() as usize).is_none() {
+            let map = owners.initializer(tail.initialize() as usize).filter(|&owner| {
+                let spans = owners.spans().iter().enumerate()
+                    .filter(|(_, span)| span.region() == owner).collect::<Vec<_>>();
+                // One non-escaping projection over an invariant String. The
+                // source body still computes every range endpoint and value.
+                spans.len() == 1 && owners.regions()[owner].reads().iter()
+                    .chain(owners.regions()[owner].writes())
+                    .all(|&site| owners.call_span(site as usize) == Some(spans[0].0))
+            });
+            if tail.parent().is_some() || (map.is_none()
+                && aggregates.action(tail.initialize() as usize).is_none()) {
                 continue;
             }
             let mut sites = Vec::new();
@@ -67,6 +81,10 @@ impl Layout {
                 let block = &plan.blocks()[site as usize];
                 let native = aggregates.action(site as usize).is_some()
                     || borrowed.action(site as usize).is_some()
+                    || map.is_some_and(|owner| owners.action_region(site as usize) == Some(owner)
+                        || owners.call_region(site as usize) == Some(owner)
+                        || owners.span_site(site as usize)
+                            .is_some_and(|id| owners.spans()[id].region() == owner))
                     || matches!(
                         block.action(),
                         Action::Scalar(Scalar::None | Scalar::Primitive { .. })
@@ -75,6 +93,7 @@ impl Layout {
                         if plan.values()[output.get() as usize].scalar_kind().is_some());
                 if block.iteration() != Some(iteration as u32)
                     || !native
+                    || (map.is_some() && borrowed.action(site as usize).is_some())
                     || plan.activation_boundary() == Some(site)
                 {
                     closed = false;
@@ -156,11 +175,13 @@ impl Layout {
                 iteration: iteration as u32,
                 tail: tail.clone(),
                 borrowed: borrowed.initializers[tail.initialize() as usize],
+                map,
                 words: _word_offset,
                 compute,
                 comparison,
             });
-            layout.words = layout.words.checked_add(3).ok_or("Tail words overflow")?;
+            layout.words = layout.words.checked_add(if map.is_some() { 5 } else { 3 })
+                .ok_or("Tail words overflow")?;
         }
         Ok(layout)
     }

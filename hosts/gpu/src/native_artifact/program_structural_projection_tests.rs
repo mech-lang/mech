@@ -89,9 +89,9 @@ fn native_structural_map_states_execute_all_seven_counting_widths() {
             crate::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
                 .unwrap();
         let identity = object.identity().bytes();
-        assert_eq!(u64::from_le_bytes(identity[16..24].try_into().unwrap()), 34);
-        assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 19);
-        assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 52);
+        assert_eq!(u64::from_le_bytes(identity[16..24].try_into().unwrap()), 35);
+        assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 20);
+        assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 53);
         assert!(jit.descriptor().plan().blocks().iter().any(|block| matches!(block.action(), NativeIterationAction::Structural { observation: mech_engine::native_artifact::NativeStructuralObservation::CanonicalValue, .. })));
         for units in [
             "ACGTACGTNACGTTACGTACGTACGT".split("").filter(|s| !s.is_empty()).collect::<Vec<_>>(),
@@ -132,8 +132,17 @@ fn native_structural_map_states_execute_all_seven_counting_widths() {
                 let updates = if width <= units.len() { units.len() - width + 1 } else { 0 };
                 map_owners::tests::evaluate_count_case(&jit, &inputs, &mut output, limits, &memory, updates as u64)
                     .unwrap();
+                let mut native_output = vec![None; artifact.outputs().len()];
+                let report = jit.evaluate_into(&inputs, &mut native_output, limits, &memory).unwrap();
+                assert_eq!(report.hash_table_updates, updates as u64);
+                let mut restored_output = vec![None; artifact.outputs().len()];
+                let entry = jit.test_checked_entry();
+                // SAFETY: restored metadata was produced by this unchanged JIT.
+                let report = execute(&restored, |frame| unsafe { entry(frame) },
+                    &inputs, &mut restored_output, limits, &memory).unwrap();
+                assert_eq!(report.hash_table_updates, updates as u64);
                 assert_eq!(output.len(), 1);
-                for actual in &output {
+                for actual in output.iter().chain(&native_output).chain(&restored_output) {
                     let mut expected = BTreeMap::<String, u64>::new();
                     if width <= units.len() {
                         for window in units.windows(width) {
