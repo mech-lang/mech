@@ -118,3 +118,8 @@ pub(crate) mod structural_values;
 mod map_write_uses;
 #[cfg(feature = "map_ops")]
 pub use map_write_uses::NativeMapWriteUses;
+
+#[cfg(feature = "map_ops")]
+mod map_owner_region;
+#[cfg(feature = "map_ops")]
+pub use map_owner_region::NativeMapOwnerRegion;
