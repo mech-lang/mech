@@ -104,7 +104,7 @@ impl Context<'_, '_> {
         }
         let (compute, comparison, traversals) = if proof.map.is_some() {
             if args[1] != 0 { return Err(invalid("closed map comparison lane changed")); }
-            (0, 0, self.end_closed_map(state.region, args[0])?)
+            (0, 0, self.end_closed_map(state.region, args[0], args[2])?)
         } else {
             let compute = state
                 .remaining

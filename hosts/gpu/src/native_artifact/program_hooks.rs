@@ -1,7 +1,7 @@
 //! Emission of explicit leaf/transport hooks, never a graph evaluator.
 use super::NativeCompileError;
 use super::compiler::guard;
-use cranelift_codegen::ir::{Block, InstBuilder, SigRef, Value, condcodes::IntCC, types};
+use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, SigRef, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use cranelift_module::Module;
 
@@ -16,6 +16,19 @@ pub(super) struct Hooks {
     argument_capacity: Value,
 }
 impl Hooks {
+    #[cfg(feature = "canonical-native-program")]
+    pub fn write_entry_words(&self, b: &mut FunctionBuilder<'_>, words: &[Value],
+        error: Block) -> Result<(), NativeCompileError>
+    {
+        let enough = b.ins().icmp_imm(IntCC::UnsignedGreaterThanOrEqual,
+            self.argument_capacity, words.len() as i64);
+        guard(b, enough, error, super::abi::STATUS_ABI);
+        for (index, &word) in words.iter().enumerate() {
+            b.ins().store(MemFlags::new(), word, self.arguments,
+                super::compiler::offset(index)?);
+        }
+        Ok(())
+    }
     #[cfg(feature = "canonical-native-program")]
     pub fn bound_call(&self, b: &mut FunctionBuilder<'_>, function: Value,
         context: Value, site: usize, operation: u64, args: [Value; 3], error: Block)

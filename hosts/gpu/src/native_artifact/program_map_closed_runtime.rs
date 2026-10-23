@@ -6,8 +6,13 @@ use mech_core::{ManagedMemoryReservation, MemoryBudgetLimits, Value, ValueData};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativePreparedLibraryCall,
     NativeSelectedStringSpanSelector};
 use core::ffi::c_void;
+use crate::native_artifact::program_packed_map::{PackedMap, BodyPrice};
 
+#[repr(C)]
 pub(super) struct Owner<'plan> {
+    // Private generated-code prefix. No source Value can carry this address.
+    packed_frame: u64,
+    packed: Option<PackedMap>,
     binding: Binding<'plan>,
     source: Value,
     range: &'plan NativePreparedLibraryCall,
@@ -33,6 +38,11 @@ impl Owner<'_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         super::super::map_closed_tests::record_bound_call(op);
         if op == 0 {
+            if let Some(packed) = self.packed.as_mut() {
+                let count = packed.refill().map_err(storage_error)?;
+                self.funded = add(self.funded, count)?;
+                return Ok(count);
+            }
             // A finite prepayment, never a renewed allowance. Unused final
             // batch fuel stays spent. Storage debits share this SAME account.
             let remaining = self.work.unscoped_remaining()
@@ -46,6 +56,22 @@ impl Owner<'_> {
             self.key = None;
             self.probe = None;
             return Ok(count);
+        }
+        if op == 7 {
+            let packed = self.packed.as_mut().ok_or_else(|| invalid("packed insert without owner"))?;
+            let frame = packed.frame();
+            // SAFETY: the private Box owns this frame; no Rust borrow survives
+            // the synchronous generated call, which supplied these exact keys.
+            let (low, high) = unsafe { ((*frame).key_low, (*frame).key_high) };
+            packed.insert_missing(low, high, args[2]).map_err(storage_error)?;
+            return Ok(0);
+        }
+        if op == 8 { return Err(storage_error(super::StorageError::Binding("missing map key"))); }
+        if op == 9 { return Err(invalid("invalid generated packed-map operation")); }
+        if matches!(op, 10..=12) {
+            let packed = self.packed.as_ref().ok_or_else(|| invalid("packed call cap without owner"))?;
+            packed.check_call(match op { 10 => 6, 11 => 3, _ => 5 }).map_err(storage_error)?;
+            return Err(invalid("packed call flag denied an allowed operation"));
         }
         if op == 1 || op == 6 {
             let selector = self.work.with_call_limits(self.limits.max_compute_work.unwrap(),
@@ -177,13 +203,67 @@ impl<'plan> State<'plan> {
         let reservation = ctx.library.memory_budget().reserve_capacity(bytes)?;
         let outside_nodes = geometry.live_nodes.checked_sub(nodes)
             .and_then(|n| n.checked_add(bytes)).ok_or_else(|| invalid("closed map census overflow"))?;
+        let mut packed = None;
+        if let Some(packed_proof) = proof.packed.as_ref()
+            && binding.native_seed_is_empty().map_err(storage_error)?
+        {
+            if ctx.arguments.is_null() || ctx.argument_capacity < 2 {
+                return Err(invalid("packed map offset lane is too small"));
+            }
+            // SAFETY: the checked owning session pins this exact argument
+            // lane. Generated entry wrote its two proved native scalar words;
+            // copy them before begin_closed_region writes return words 0..4.
+            // Computed scalars need not have a canonical arena allocation.
+            let [first, last] = unsafe { [*ctx.arguments, *ctx.arguments.add(1)] };
+            if (packed_proof.start_offset().is_none() && first != 0)
+                || (packed_proof.end_offset().is_none() && last != 0)
+            { return Err(invalid("packed map absent offset is not zero")); }
+            let width = last.checked_sub(first)
+                .and_then(|width| width.checked_add(u64::from(packed_proof.inclusive())));
+            if let Some(width) = width.filter(|width| (1..=18).contains(width)) {
+                let end = width + u64::from(!packed_proof.inclusive());
+                // Shape/schema validation happens once; changed-width or
+                // unrepresentable regions retain the general closed owner.
+                // If setup cannot fit the call cap, decline without rejecting
+                // a source branch that might never execute the range at all.
+                let compute = range.selected_u64_string_span_selector_work();
+                let admitted = if compute <= ctx.limits.max_compute_work.unwrap() {
+                    ctx.library.with_call_limits(ctx.limits.max_compute_work.unwrap(),
+                        ctx.limits.max_comparison_work.unwrap(), || {
+                            ctx.library.charge(compute, 0)?;
+                            Ok::<_, mech_core::ResidentKernelError>(
+                                range.selected_u64_string_span_selector(1, end).is_ok())
+                        }).map_err(super::StorageError::Work).map_err(storage_error)?
+                        .map_err(super::StorageError::Work).map_err(storage_error)?
+                } else { false };
+                if admitted {
+                    let region = &layout.regions()[index];
+                    packed = Some(PackedMap::new(ctx.library.clone(), ctx.limits, width,
+                        BodyPrice { scalar_compute: proof.compute,
+                            range_compute: range.selected_u64_string_span_selector_work(),
+                            reads: region.reads().len() as u64, writes: region.writes().len() as u64 },
+                        outside_nodes).map_err(storage_error)?);
+                }
+            }
+        }
         let binding = self.slots[index].binding.take().unwrap();
-        let mut owner = Box::new(Owner { binding, source, range,
+        let mut owner = Box::new(Owner { packed_frame: 0, packed, binding, source, range,
             selection_site: span.selection_site() as usize, descriptor: self.descriptor,
             selector: None, selector_current: false, key: None, probe: None,
             work: ctx.library.clone(), limits: ctx.limits, outside_nodes,
             body_work: proof.compute, funded: 0, updates: 0, result: ctx.result,
             error: None, _reservation: reservation });
+        if let Some(packed) = owner.packed.as_mut() {
+            let frame = packed.frame();
+            let ValueData::String(text) = owner.source.data() else { unreachable!() };
+            // SAFETY: both owners remain pinned in this Box for the entire
+            // synchronous generated entry. The source cannot mutate.
+            unsafe { (*frame).source_ptr = text.as_ptr() as u64; (*frame).source_len = text.len() as u64; }
+            owner.packed_frame = frame as u64;
+            ctx.packed_map_regions = add(ctx.packed_map_regions, 1)?;
+            #[cfg(all(test, feature = "canonical-native-program"))]
+            super::super::map_closed_tests::record_packed_entry();
+        }
         let pointer = (&mut *owner as *mut Owner<'plan>) as u64;
         self.slots[index].closed = Some(owner);
         Ok(Some([0, 0, call as *const () as u64, pointer]))
@@ -197,16 +277,30 @@ impl<'plan, 'a> Context<'plan, 'a> {
         self.map_owners.state = Some(state);
         result
     }
-    pub(in crate::native_artifact::program_runtime) fn end_closed_map(&mut self, region: usize, remaining: u64) -> Result<u64, Error> {
+    pub(in crate::native_artifact::program_runtime) fn end_closed_map(&mut self, region: usize, remaining: u64, mode: u64) -> Result<u64, Error> {
+        if !matches!(mode, 0 | 2 | 3) { return Err(invalid("closed map cannot suspend")); }
         let index = self.control.descriptor.closed_tails.regions[region].map.unwrap();
         let state = self.map_owners.state.as_mut().ok_or_else(|| invalid("closed map session lost"))?;
         let owner = state.slots[index].closed.take().ok_or_else(|| invalid("closed map owner lost"))?;
-        let Owner { binding, funded, updates, error, .. } = *owner;
-        state.slots[index].binding = Some(binding);
-        if let Some(error) = error { return Err(error); }
+        let Owner { mut binding, packed, funded, mut updates, error, .. } = *owner;
+        if let Some(error) = error { state.slots[index].binding = Some(binding); return Err(error); }
         let traversals = funded.checked_sub(remaining)
             .ok_or_else(|| invalid("closed map body fuel was renewed"))?;
+        let is_packed = packed.is_some();
+        if let Some(packed) = packed {
+            if packed.remaining() != remaining || packed.funded() != funded {
+                return Err(invalid("packed map fuel differs from generated body"));
+            }
+            updates = packed.updates();
+            if mode == 0 {
+                let (map, written, consumed) = packed.finish().map_err(storage_error)?;
+                if written != updates || consumed != traversals { return Err(invalid("packed map completion differs")); }
+                binding.install_native_map(map).map_err(storage_error)?;
+            }
+        }
+        state.slots[index].binding = Some(binding);
         self.hash_table_updates = add(self.hash_table_updates, updates)?;
+        if is_packed { self.packed_map_updates = add(self.packed_map_updates, updates)?; }
         Ok(traversals)
     }
 }

@@ -152,6 +152,16 @@ fn prepare_region(
     error: Block,
 ) -> Result<(), NativeCompileError> {
     let zero = b.ins().iconst(types::I64, 0);
+    if let Some(packed) = region.packed.as_ref() {
+        let mut offsets = [zero; 2];
+        for (word, value) in offsets.iter_mut().zip([packed.start_offset(), packed.end_offset()]) {
+            if let Some(value) = value { *word = load(b, locals, value as usize)?; }
+        }
+        // The map initializer's output words have already been copied into
+        // locals. Reuse words 0/1 as input, consumed before the entry callback
+        // replaces words 0..4 with its private return values.
+        hooks.write_entry_words(b, &offsets, error)?;
+    }
     hooks.call(b, site, operation, [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     store(b, locals, region.words, ready)?;
@@ -205,6 +215,19 @@ pub(in crate::native_artifact) fn admission(
         let remaining = load(b, locals, region.words + 1)?;
         let remaining = b.ins().iadd_imm(remaining, -1);
         store(b, locals, region.words + 1, remaining)?;
+        if region.packed.is_some() {
+            let context = load(b, locals, region.words + 4)?;
+            let frame = b.ins().load(types::I64, MemFlags::new(), context, 0);
+            let selected = b.ins().icmp_imm(IntCC::NotEqual, frame, 0);
+            let sync = b.create_block();
+            let ready = b.create_block();
+            b.ins().brif(selected, sync, &[], ready, &[]);
+            b.switch_to_block(sync);
+            b.ins().store(MemFlags::new(), remaining, frame,
+                core::mem::offset_of!(super::super::program_packed_map::Frame, fuel) as i32);
+            b.ins().jump(ready, &[]);
+            b.switch_to_block(ready);
+        }
     } else if site == region.tail.header() as usize {
         let compute = load(b, locals, region.words + 1)?;
         let comparison = load(b, locals, region.words + 2)?;

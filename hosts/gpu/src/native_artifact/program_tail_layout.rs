@@ -17,6 +17,8 @@ pub(super) struct Region {
     /// Exclusive retained-map owner. Its private storage callbacks may debit
     /// the same account; scalar body work is prepaid in bounded batches.
     pub map: Option<usize>,
+    /// Invariant key width only; actual packed storage requires runtime entry.
+    pub packed: Option<super::program_map_packed_layout::Proof>,
     // Emission and checkpoint validation use the identical admitted word lane.
     pub words: usize,
     pub compute: u64,
@@ -179,6 +181,8 @@ impl Layout {
                 tail: tail.clone(),
                 borrowed: borrowed.initializers[tail.initialize() as usize],
                 map,
+                packed: map.and_then(|owner|
+                    super::program_map_packed_layout::derive(plan, &owners, owner, visits)),
                 words: _word_offset,
                 compute,
                 comparison,

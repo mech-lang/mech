@@ -101,6 +101,38 @@ pub(in crate::native_artifact) fn emit(
         b.switch_to_block(thin);
         let function = load(b, locals, proof.words + 3)?;
         let context = load(b, locals, proof.words + 4)?;
+        if proof.packed.is_some() {
+            // Constructor-owned prefix: zero declines packed storage while
+            // retaining the existing closed String-map implementation.
+            let frame = b.ins().load(types::I64, MemFlags::new(), context, 0);
+            let selected = b.ins().icmp_imm(IntCC::NotEqual, frame, 0);
+            let packed = b.create_block();
+            let general = b.create_block();
+            b.ins().brif(selected, packed, &[], general, &[]);
+            b.switch_to_block(packed);
+            if let Some(span) = span {
+                if span.range_site() as usize == site {
+                    let first = load(b, locals, span.operands()[0].get() as usize)?;
+                    let last = load(b, locals, span.operands()[1].get() as usize)?;
+                    super::packed_maps::select(b, frame, first, last, hooks,
+                        function, context, site, error);
+                }
+            } else {
+                use mech_engine::native_artifact::NativeCollectionPrimitive as P;
+                let NativeIterationAction::LibraryCall { template, operands, output } = code.blocks()[site].action()
+                    else { return Err(backend("packed map call lacks library action")); };
+                let op = match template.primitive() {
+                    P::MapContainsKey => 3, P::MapKeyAccess => 4, P::MapInsert => 5,
+                    _ => return Err(backend("packed map call kind")),
+                };
+                let value = if op == 5 { load(b, locals, operands[2].get() as usize)? } else { zero };
+                let token = load(b, locals, operands[0].get() as usize)?;
+                super::packed_maps::operation(b, frame, op, value, locals,
+                    output.get() as usize, token, hooks, function, context, site, error)?;
+            }
+            b.ins().jump(joined, &[]);
+            b.switch_to_block(general);
+        }
         let (op, args, output) = if let Some(span) = span {
             if span.range_site() as usize == site {
                 // The selected-pair proof permits only empty scalar blocks

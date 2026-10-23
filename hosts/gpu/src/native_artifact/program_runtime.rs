@@ -118,6 +118,10 @@ pub struct NativeProgramExecutionReport {
     pub transport_bytes: u64,
     pub hash_table_regions: u64,
     pub hash_table_updates: u64,
+    /// Regions that actually selected packed storage at runtime.
+    pub packed_map_regions: u64,
+    /// Updates completed by those selected packed regions.
+    pub packed_map_updates: u64,
 }
 fn invalid(reason: &'static str) -> NativeProgramExecutionError {
     NativeExecutionError::Descriptor { reason }.into()
@@ -200,6 +204,8 @@ struct Context<'plan, 'visit> {
     activation_phase: bool,
     hash_table_regions: u64,
     hash_table_updates: u64,
+    packed_map_regions: u64,
+    packed_map_updates: u64,
     window_region: Option<(u32, u64)>,
     window_hashes: Option<Box<window_round::hashes::WindowHashes>>,
     prefix: Option<prefix::State>,
