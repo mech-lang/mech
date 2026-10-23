@@ -113,3 +113,8 @@ pub use crate::resident::general::native_collection_calls::{
 pub use crate::resident::general::native_structural_projection::native_project_structural_value;
 
 pub(crate) mod structural_values;
+
+#[cfg(feature = "map_ops")]
+mod map_write_uses;
+#[cfg(feature = "map_ops")]
+pub use map_write_uses::NativeMapWriteUses;
