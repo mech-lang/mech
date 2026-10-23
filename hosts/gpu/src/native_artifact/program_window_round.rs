@@ -125,6 +125,14 @@ impl Context<'_, '_> {
             .take()
             .ok_or_else(|| invalid("compiled window lost its hash table"))?;
         hashes.validate(collection, accepted, args[0])?;
+        self.hash_table_regions = self
+            .hash_table_regions
+            .checked_add(1)
+            .ok_or_else(|| invalid("hash table region witness overflow"))?;
+        self.hash_table_updates = self
+            .hash_table_updates
+            .checked_add(hashes.completed_updates())
+            .ok_or_else(|| invalid("hash table update witness overflow"))?;
         let counted = if region.query().is_some() {
             let query = self.call_inputs.values()[1]
                 .as_ref()

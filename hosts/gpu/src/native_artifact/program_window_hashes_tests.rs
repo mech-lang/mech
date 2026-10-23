@@ -171,3 +171,87 @@ fn hash_window_generated_loop_performs_library_updates_and_stops_on_failure() {
     assert!(table.validate(0, count, completed).is_err());
     assert!(table.counts.is_empty());
 }
+
+#[test]
+fn hash_windows_original_and_decoded_programs_report_actual_table_work() {
+    use mech_core::{ValueDataDraft as Data, ValueDraft, snapshot::SnapshotValidationContext};
+    for (source, widths) in [
+        (
+            include_str!("../../tests/fixtures/native/window-histogram.mec"),
+            &[1, 2][..],
+        ),
+        (
+            include_str!("../../tests/fixtures/native/window-query.mec"),
+            &[3, 4, 6, 12, 18][..],
+        ),
+    ] {
+        let original = super::super::super::tests::artifact_source(source);
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
+        )
+        .unwrap();
+        for artifact in [original, decoded] {
+            let catalog = mech_stdlib::source_catalog();
+            let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            for width in widths {
+                let text = "ABACABADABACABADABACABADABACABA";
+                let query = &text[..*width as usize];
+                let memory = mech_core::ManagedMemoryBudget::new(256 << 20);
+                let args = artifact
+                    .inputs()
+                    .iter()
+                    .map(|input| {
+                        let name = mech_engine::decode_source_input_name(&input.name).unwrap();
+                        let data = match name.as_str() {
+                            "input" => Data::String(text.into()),
+                            "width" => Data::U64(*width),
+                            "query" => Data::String(query.into()),
+                            _ => panic!("unexpected input {name}"),
+                        };
+                        let value = ValueDraft {
+                            schema: input.schema,
+                            shape_values: Box::new([]),
+                            data,
+                        }
+                        .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                        .unwrap();
+                        let mut claim = memory
+                            .reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap())
+                            .unwrap();
+                        value.into_memory_budget(&mut claim).unwrap()
+                    })
+                    .collect::<Vec<_>>();
+                let mut output = vec![None; artifact.outputs().len()];
+                let mut limits = super::super::super::tests::limits();
+                limits.library.max_compute_work = Some(1 << 50);
+                limits.library.max_comparison_work = Some(1 << 50);
+                limits.execution.max_work = 1 << 52;
+                let report = jit
+                    .evaluate_into(&args, &mut output, limits, &memory)
+                    .unwrap();
+                assert_eq!(report.hash_table_regions, 1);
+                assert_eq!(report.hash_table_updates, text.len() as u64 - width + 1);
+                if *width > 2 {
+                    let expected = text
+                        .as_bytes()
+                        .windows(*width as usize)
+                        .filter(|part| *part == query.as_bytes())
+                        .count() as u64;
+                    assert_eq!(
+                        output
+                            .last()
+                            .unwrap()
+                            .as_ref()
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        Data::U64(expected)
+                    );
+                }
+                drop(output);
+                drop(args);
+                assert_eq!(memory.used_bytes(), 0);
+            }
+        }
+    }
+}

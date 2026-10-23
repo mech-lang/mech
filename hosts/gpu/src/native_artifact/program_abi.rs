@@ -1,4 +1,4 @@
-//! Mixed-value ABI12 ends the input scan before final captured-source consumers,
+//! Mixed-value ABI13 ends the input scan before final captured-source consumers,
 //! allowing row loans to retire without changing the frozen scalar-frame prefix.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
