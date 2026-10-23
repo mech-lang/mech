@@ -88,7 +88,7 @@ impl Context<'_, '_> {
             text.as_ptr() as u64,
             text.len() as u64,
             owner as u64,
-            hashes::update as *const () as u64,
+            hashes::update_batch as *const () as u64,
             args[0],
         ])?;
         Ok(Some(1))

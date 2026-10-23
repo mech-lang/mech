@@ -1,4 +1,4 @@
-//! Explicit program IR/ABI14 identity. No Debug or pointer serialization.
+//! Explicit program IR/ABI15 identity. No Debug or pointer serialization.
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
     NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind, NativeSelectedTextJoin,
@@ -144,7 +144,10 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 27;
 // Policy39 produces rolling ASCII keys in the emitted loop and amortizes
 // finite work on the same account. Capacity changes prepay remaining deltas;
 // every window still updates the library table. ABI14 binds packed-key loans.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 39;
+// Policy40 batches at most 128 initialized rolling keys in descriptor-admitted
+// stack storage. ABI15 binds the private batch callback contract; every key
+// retains its original table update and finite accounting.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 40;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

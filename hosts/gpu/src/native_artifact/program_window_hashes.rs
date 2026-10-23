@@ -247,22 +247,37 @@ fn pack(bytes: &[u8]) -> Option<u128> {
     })
 }
 
-pub(super) unsafe extern "C" fn update(
+pub(super) unsafe extern "C" fn update_batch(
     owner: *mut WindowHashes,
-    index: u64,
-    low: u64,
-    high: u64,
+    start: u64,
+    keys: *const u64,
+    count: u64,
 ) -> u64 {
-    // SAFETY: only our emitted loop receives this private function/owner pair;
-    // Box storage is stable and exclusively loaned until synchronous finish.
+    // SAFETY: only our emitted code receives this owner/function pair. Its
+    // descriptor-admitted stack slot contains count initialized low/high pairs,
+    // remains live for the synchronous call, and does not alias the owner.
     let owner = unsafe { &mut *owner };
-    match owner.update(index, (u128::from(high) << 64) | u128::from(low)) {
-        Ok(()) => 1,
-        Err(error) => {
+    if count == 0
+        || count > 128
+        || start != owner.updated
+        || start
+            .checked_add(count)
+            .is_none_or(|end| end > owner.accepted)
+    {
+        owner.error = Some(invalid("hash window batch outside admitted starts"));
+        return 0;
+    }
+    for offset in 0..count {
+        // No Rust u128 alignment or native-endian pair-layout assumption.
+        let low = unsafe { keys.add((offset * 2) as usize).read() };
+        let high = unsafe { keys.add((offset * 2 + 1) as usize).read() };
+        let key = (u128::from(high) << 64) | u128::from(low);
+        if let Err(error) = owner.update(start + offset, key) {
             owner.error = Some(error);
-            0
+            return 0;
         }
     }
+    1
 }
 
 #[cfg(test)]
