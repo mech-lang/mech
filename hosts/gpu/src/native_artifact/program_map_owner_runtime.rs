@@ -11,6 +11,8 @@ use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMapOwn
 
 #[path = "program_map_key_span.rs"]
 mod spans;
+#[path = "program_map_caller_geometry.rs"]
+mod caller_geometry;
 
 /// Lazy owning-session lane. No table metadata is allocated merely because a
 /// descriptor has a candidate; entry must request and admit it explicitly.
@@ -40,6 +42,7 @@ pub(super) struct State<'plan> {
     work_identity: u64,
     active_tables: u64,
     last_owned_visit: Option<u64>,
+    caller: Option<caller_geometry::Caller>,
     reservation: ManagedMemoryReservation,
 }
 
@@ -100,7 +103,8 @@ impl<'plan> State<'plan> {
         spans.resize_with(span_count, || None);
         Ok(Some(Self {
             slots: slots.into_boxed_slice(), spans: spans.into_boxed_slice(), descriptor,
-            work_identity: work.identity(), active_tables: 0, last_owned_visit: None, reservation,
+            work_identity: work.identity(), active_tables: 0, last_owned_visit: None,
+            caller: None, reservation,
         }))
     }
 
@@ -128,15 +132,15 @@ impl<'plan> State<'plan> {
     fn geometry(&self, ctx: &mut Context<'_, '_>, site: usize)
         -> Result<Option<PublicationGeometry>, Error>
     {
-        let Some(mut geometry) = ctx.retained_caller_geometry(site)? else { return Ok(None); };
-        ctx.control.work.charge(Phase::Setup, amount(self.slots.len(), 128, 128)?)?;
+        let Some(mut geometry) = self.caller_geometry(ctx, site)? else { return Ok(None); };
+        ctx.control.work.charge(Phase::Setup, add(amount(self.slots.len(), 128, 128)?,
+            amount(self.spans.len(), 64, 64)?)?)?;
         geometry.live_nodes = add(geometry.live_nodes, self.reservation.capacity_bytes())?;
         for slot in &self.slots {
             if let Some(binding) = &slot.binding {
                 geometry.live_nodes = add(geometry.live_nodes, binding.retained_nodes().map_err(storage_error)?)?;
             }
         }
-        ctx.control.work.charge(Phase::Setup, amount(self.spans.len(), 64, 64)?)?;
         for span in &self.spans {
             if matches!(span, Some(spans::Lane::Span { .. })) {
                 geometry.live_nodes = add(geometry.live_nodes, 2)?;
@@ -167,11 +171,13 @@ impl<'plan> State<'plan> {
             &source, ctx.library.clone(), geometry, ctx.limits);
         match imported {
             Ok((binding, words)) => {
+                let caller = self.capture_caller(ctx, index)?;
                 self.active_tables = self.active_tables.checked_add(1)
                     .ok_or_else(|| invalid("retained map owner count overflow"))?;
                 ctx.hash_table_regions = ctx.hash_table_regions.checked_add(1)
                     .ok_or_else(|| invalid("retained map table counter overflow"))?;
                 self.slots[index].binding = Some(binding);
+                self.caller = caller;
                 self.last_owned_visit = Some(ctx.control.visits);
                 Ok(Some(words))
             }
@@ -255,6 +261,9 @@ impl<'plan> State<'plan> {
         self.active_tables = self.active_tables.checked_sub(1)
             .ok_or_else(|| invalid("retained map owner count underflow"))?;
         drop(self.slots[index].binding.take());
+        if self.caller.as_ref().is_some_and(|caller| caller.iteration == self.region(index).unwrap().iteration()) {
+            self.caller = None;
+        }
         let layout = self.descriptor.map_owner_words.as_ref().unwrap();
         ctx.control.work.charge(Phase::Setup, amount(layout.spans().len(), 128, 128)?)?;
         for (id, span) in layout.spans().iter().enumerate() {

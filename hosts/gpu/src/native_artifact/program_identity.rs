@@ -173,7 +173,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 33;
 // Policy49 funds selected map-key metadata and genuine-owner projection lanes.
 // Policy50 prepays straight-line native groups, retaining per-block canonical
 // fallback prices and all library/ownership/loop admission boundaries.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 50;
+// Policy51 admits an immutable outer caller census for closed map loops.
+// Snapshot and cache holdings stay dynamic; each loop invocation owns its census.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 51;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

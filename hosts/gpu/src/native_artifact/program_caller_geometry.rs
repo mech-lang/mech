@@ -8,6 +8,14 @@ fn add(a: u64, b: u64) -> Result<u64, Error> {
 }
 
 impl Context<'_, '_> {
+    pub(super) fn retained_caller_dynamic_nodes(&self, site: usize) -> Result<u64, Error> {
+        add(self.library.memory_budget().retained_snapshot_nodes(),
+            self.call_caches.caller_retained_nodes(&self.library)
+                .map_err(|error| Error::Library {
+                    origin: self.control.descriptor.plan.blocks()[site].origin(), error,
+                })?)
+    }
+
     pub(super) fn retained_caller_geometry(
         &mut self,
         site: usize,
