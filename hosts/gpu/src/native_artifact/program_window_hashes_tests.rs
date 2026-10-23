@@ -22,17 +22,7 @@ fn owner(
     } else {
         0
     };
-    WindowHashes::new(
-        source.as_ptr(),
-        source.len(),
-        width,
-        count,
-        0,
-        origin(),
-        work,
-        temporary,
-    )
-    .unwrap()
+    WindowHashes::new(source.len(), width, count, 0, origin(), work, temporary).unwrap()
 }
 
 #[test]
@@ -51,7 +41,7 @@ fn hash_windows_update_every_key_for_all_seven_widths_and_release_all_backing() 
         let mut expected = std::collections::BTreeMap::new();
         for (i, bytes) in source.as_bytes().windows(width as usize).enumerate() {
             *expected.entry(bytes.to_vec()).or_insert(0u64) += 1;
-            table.update(i as u64).unwrap();
+            table.update(i as u64, pack(bytes).unwrap()).unwrap();
         }
         table.validate(0, table.accepted, table.accepted).unwrap();
         assert_eq!(table.updated, (source.len() - width as usize + 1) as u64);
@@ -75,12 +65,19 @@ fn hash_windows_keep_full_width_ascii_keys_and_reject_replays() {
     let source = "\0abcdefghijklmnopq\0abcdefghijklmnopr";
     let memory = mech_core::ManagedMemoryBudget::new(1 << 20);
     let mut table = owner(source, 18, &memory, 1 << 40, 1 << 20);
-    assert!(table.update(1).is_err());
+    assert!(table.update(1, 0).is_err());
     assert_eq!(table.updated, 0);
-    table.update(0).unwrap();
-    assert!(table.update(0).is_err());
+    table
+        .update(0, pack(&source.as_bytes()[..18]).unwrap())
+        .unwrap();
+    assert!(table.update(0, 0).is_err());
     for index in 1..table.accepted {
-        table.update(index).unwrap();
+        table
+            .update(
+                index,
+                pack(&source.as_bytes()[index as usize..index as usize + 18]).unwrap(),
+            )
+            .unwrap();
     }
     assert_eq!(table.count(&source.as_bytes()[..18]).unwrap(), 1);
     assert_eq!(table.count(&source.as_bytes()[18..]).unwrap(), 1);
@@ -104,14 +101,14 @@ fn hash_windows_deny_growth_and_work_before_mutating_table() {
         size_of::<WindowHashes>() as u64,
     );
     let before = memory.used_bytes();
-    assert!(table.update(0).is_err());
+    assert!(table.update(0, 0).is_err());
     assert_eq!(table.updated, 0);
     assert!(table.counts.is_empty());
     assert_eq!(memory.used_bytes(), before);
     drop(table);
     assert_eq!(memory.used_bytes(), 0);
     let mut table = owner(source, 1, &memory, 0, 1 << 20);
-    assert!(table.update(0).is_err());
+    assert!(table.update(0, 0).is_err());
     assert_eq!(table.updated, 0);
     assert_eq!(table.counts.allocation_size(), 0);
 }
@@ -138,16 +135,18 @@ fn hash_window_generated_loop_performs_library_updates_and_stops_on_failure() {
     type Entry = unsafe extern "C" fn(u64, u64, u64, u64, u64) -> u64;
     // SAFETY: exact five-word emitted signature; module retains code below.
     let entry: Entry = unsafe { std::mem::transmute(module.get_finalized_function(id)) };
-    let source = "ABACABADABACABA";
+    let source = (0..512)
+        .map(|i| char::from(((i * 73) % 128) as u8))
+        .collect::<String>();
     let memory = mech_core::ManagedMemoryBudget::new(1 << 20);
-    for width in [1, 2, 3, 4, 6, 12, 18] {
-        let mut table = owner(source, width, &memory, 1 << 40, 1 << 20);
+    for width in [0, 1, 2, 3, 4, 6, 9, 10, 12, 18] {
+        let mut table = owner(&source, width, &memory, 1 << 40, 1 << 20);
         let count = table.accepted;
         // SAFETY: stable exclusive owner and source remain live across entry.
         let completed = unsafe {
             entry(
-                0,
-                count,
+                source.as_ptr() as u64,
+                source.len() as u64,
                 (&mut table as *mut WindowHashes) as u64,
                 update as *const () as u64,
                 width,
@@ -155,13 +154,29 @@ fn hash_window_generated_loop_performs_library_updates_and_stops_on_failure() {
         };
         table.validate(0, count, completed).unwrap();
         assert_eq!(table.counts.values().sum::<u64>(), count);
+        if width > 0 {
+            let mut expected = std::collections::BTreeMap::new();
+            for bytes in source.as_bytes().windows(width as usize) {
+                *expected.entry(bytes.to_vec()).or_insert(0u64) += 1;
+            }
+            let actual = table
+                .entries()
+                .map(|(key, count)| {
+                    let bytes = (0..width)
+                        .map(|i| ((key >> ((width - i - 1) * 7)) & 127) as u8)
+                        .collect::<Vec<_>>();
+                    (bytes, count)
+                })
+                .collect::<std::collections::BTreeMap<_, _>>();
+            assert_eq!(actual, expected, "width {width}");
+        }
     }
-    let mut table = owner(source, 1, &memory, 0, 1 << 20);
+    let mut table = owner(&source, 1, &memory, 0, 1 << 20);
     let count = table.accepted;
     let completed = unsafe {
         entry(
-            0,
-            count,
+            source.as_ptr() as u64,
+            source.len() as u64,
             (&mut table as *mut WindowHashes) as u64,
             update as *const () as u64,
             1,
@@ -254,4 +269,32 @@ fn hash_windows_original_and_decoded_programs_report_actual_table_work() {
             }
         }
     }
+}
+
+#[test]
+fn hash_window_amortized_work_matches_the_original_collision_and_growth_envelope() {
+    let source = (0..3000)
+        .map(|i| char::from(((i * 73) % 128) as u8))
+        .collect::<String>();
+    let memory = mech_core::ManagedMemoryBudget::new(16 << 20);
+    let mut table = owner(&source, 18, &memory, 1 << 50, 8 << 20);
+    let (mut compute, mut comparisons) = (0, 0);
+    for (i, bytes) in source.as_bytes().windows(18).enumerate() {
+        let key = pack(bytes).unwrap();
+        let probes = table.counts.capacity() as u64 * 4 + 32;
+        compute += probes * 64 + 18 * 32;
+        comparisons += probes;
+        if !table.counts.contains_key(&key) && table.counts.len() == table.counts.capacity() {
+            let target = (table.counts.capacity() * 2).max(4);
+            compute += allocation_bound(target).unwrap() * 32 + (target as u64).pow(2) * 64;
+        }
+        table.update(i as u64, key).unwrap();
+    }
+    table.validate(0, table.accepted, table.accepted).unwrap();
+    assert_eq!(table.prepaid_updates, 0);
+    assert_eq!(
+        table.work.used(),
+        (compute, comparisons),
+        "grouping must never discount or renew work"
+    );
 }
