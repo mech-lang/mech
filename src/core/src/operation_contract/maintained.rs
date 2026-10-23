@@ -140,6 +140,7 @@ pub fn maintained_operation_contract(
     match name {
         "sequence/sort-indices" if input_count == 4 => Some(full(ShapeRule::Declared)),
         "map/new" if input_count == 0 => Some(full(ShapeRule::Declared)),
+        "map/insert" if input_count == 3 => Some(full(ShapeRule::Declared)),
         "map/histogram" | "map/keys" | "map/values" if input_count == 1 => {
             Some(full(ShapeRule::Declared))
         }

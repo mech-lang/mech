@@ -8,41 +8,41 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "full_runtime")]
-const EXPECTED_RUNTIME_FACTORIES: usize = 9_726;
+const EXPECTED_RUNTIME_FACTORIES: usize = 9_728;
 #[cfg(feature = "full_source")]
-const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_728;
+const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_730;
 #[cfg(feature = "full_source")]
 const EXPECTED_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST: &str =
     "ab6547f38932ef29a675a3aef0e6c11a6db59e7fc712adc2f4a51bb85b961793";
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_425;
+const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_427;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 73;
+const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 75;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
     "a5c6a86ad547f744aeb16abb17ccd4a2faa54509d58b69e7fc1715e165a49bde";
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
-const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 15_705;
+const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 15_707;
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
 const EXPECTED_FULL_SOURCE_RUNTIME_SURFACE_DIGEST: &str =
     "c5c2bae913e4482925289b54e58559b7676bb9ad66aede1e2ce6caf9501f2745";
 #[cfg(feature = "full_compiler")]
-const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 15_709;
+const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 15_711;
 #[cfg(feature = "full_compiler")]
 const EXPECTED_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
     "3b4c4ee4f6c5978e8bc5bbe7800630a25664cd1ddaf69aa8a5b03b426ad89740";
 #[cfg(feature = "full_runtime")]
-const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 122_093;
+const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 122_095;
 #[cfg(feature = "full_source")]
-const EXPECTED_NAMED_SPECIALIZERS: usize = 129;
+const EXPECTED_NAMED_SPECIALIZERS: usize = 131;
 #[cfg(feature = "full_source")]
 const EXPECTED_INTRINSIC_SPECIALIZERS: usize = 13;
 #[cfg(feature = "full_source")]
 const EXPECTED_PRELUDE_EXPORTS: usize = 52;
 #[cfg(feature = "full_source")]
-const EXPECTED_MODULE_EXPORTS: usize = 60;
+const EXPECTED_MODULE_EXPORTS: usize = 62;
 #[cfg(feature = "full_source")]
-const EXPECTED_ALL_EXPORTS: usize = 130;
+const EXPECTED_ALL_EXPORTS: usize = 132;
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_SURFACE_FILE_SHA256: &str =
     "bcd742d6c4857b06d538f087c7024fd4d82fbf9d292699c0619868b967b073da";
@@ -54,13 +54,13 @@ const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
 // Historical retained projections remain independently asserted below.
 #[cfg(feature = "full_runtime")]
 const EXPECTED_CURRENT_RUNTIME_SURFACE_DIGEST: &str =
-    "3ab7408f06e6a8459a410804854e35ee751ad08092e4fdb33a3152878b1ec21e";
+    "652fc265866a732e920a953914c3e546e84e6d31527634298503e5d2e1628184";
 #[cfg(feature = "full_source")]
 const EXPECTED_CURRENT_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST: &str =
-    "a74bcef6119bd7a06ad15a4c95f3d32851e8ce12136a40ce7812593bbfe50da9";
+    "45832100403c6e3717263b559e9c00434c0f3813e6d329d8c78068368c004651";
 #[cfg(feature = "full_compiler")]
 const EXPECTED_CURRENT_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "2ab905a5774fbe6fccc6ce7c5df3a3a5d7536d136816d0b10be26cd4e2438923";
+    "6fb149e4d4591925a607b2b07641fc6a1a6ee4ebbeb968a8cc3bf02032aba9e8";
 
 static CATALOG_TEST_LOCK: Mutex<()> = Mutex::new(());
 
@@ -131,7 +131,7 @@ fn canonical_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
 }
 
 /// Preserve every historical profile digest as an independent compatibility
-/// check. Only the four exact text/number additions, the three exact map
+/// check. Only the four exact text/number additions, the five exact map
 /// additions, and the three exact ordinary sort/text additions, independently
 /// checked below, are removed from the historical projection; current fixtures
 /// include every addition too.
@@ -263,7 +263,7 @@ fn retained_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
 }
 
 #[cfg(any(feature = "full_runtime", feature = "standard_compiler"))]
-fn assert_map_runtime_additions(catalog: &FunctionCatalog) -> [&'static str; 3] {
+fn assert_map_runtime_additions(catalog: &FunctionCatalog) -> [&'static str; 5] {
     use mech_core::{
         ExecutionTarget, FunctionValueRepresentation as Value, ImplementationMemoryClass,
         OperationId, RuntimeFunctionId, RuntimeFunctionSignature, RuntimeOperationBinding,
@@ -313,7 +313,7 @@ fn assert_map_runtime_additions(catalog: &FunctionCatalog) -> [&'static str; 3] 
         assert_eq!(entry.implementation_memory_class(), memory);
         assert_eq!(
             entry.operation_contract(operation),
-            Some(&map_operation_contract())
+            Some(&map_operation_contract(1))
         );
         assert!(entry.supports_target(ExecutionTarget::DirectRuntime));
         #[cfg(feature = "native-plan")]
@@ -335,21 +335,86 @@ fn assert_map_runtime_additions(catalog: &FunctionCatalog) -> [&'static str; 3] 
         #[cfg(not(feature = "native-plan"))]
         let _ = installer;
     }
-    ["map/histogram", "map/keys", "map/values"]
+    for (name, arity, installer, signature) in [
+        (
+            "map/new",
+            0,
+            "install_map_new",
+            RuntimeFunctionSignature::nullary(Value::AnyValue),
+        ),
+        (
+            "map/insert",
+            3,
+            "install_map_insert",
+            RuntimeFunctionSignature::ternary(
+                Value::AnyValue,
+                Value::AnyValue,
+                Value::AnyValue,
+                Value::AnyValue,
+            ),
+        ),
+    ] {
+        let operation = OperationId::from_name(name);
+        let entry = catalog
+            .runtime_entry(RuntimeFunctionId::from_name(name))
+            .unwrap();
+        assert_eq!(entry.name, name);
+        assert_eq!(entry.signature(), signature);
+        assert_eq!(
+            entry.output_alias_policy(),
+            RuntimeOutputAliasPolicy::DisallowInputAlias
+        );
+        assert_eq!(
+            entry.implementation_memory_class(),
+            ImplementationMemoryClass::CanonicalFinalize
+        );
+        assert_eq!(
+            entry.operation_contract(operation),
+            Some(&map_operation_contract(arity))
+        );
+        assert!(entry.supports_target(ExecutionTarget::DirectRuntime));
+        #[cfg(feature = "native-plan")]
+        {
+            let linkage = entry.native_linkage.as_ref().expect("map native linkage");
+            assert_eq!(
+                linkage.installer_path,
+                format!("mech_engine::__mech_native::{installer}")
+            );
+            assert_eq!(
+                linkage.cargo_features,
+                ["map_ops", "native-link", "runtime"]
+            );
+        }
+        #[cfg(not(feature = "native-plan"))]
+        let _ = installer;
+    }
+    [
+        "map/histogram",
+        "map/keys",
+        "map/values",
+        "map/new",
+        "map/insert",
+    ]
 }
 
 #[cfg(any(feature = "full_runtime", feature = "standard_compiler"))]
-fn map_operation_contract() -> mech_core::OperationContractDeclaration {
+fn map_operation_contract(input_count: usize) -> mech_core::OperationContractDeclaration {
     use mech_core::{
         AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction,
         InputPortLayout, InputPortPolicy, OperationContractDeclaration, OutputConstruction,
         OutputPortPolicy, ShapeRule,
     };
     OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(Box::new([InputPortPolicy {
-            access: AccessMode::Read,
-            delivery: DeliveryMode::Signal,
-        }])),
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                };
+                input_count
+            ]
+            .into_boxed_slice(),
+        ),
         outputs: Box::new([OutputPortPolicy {
             access: AccessMode::Write,
             delivery: DeliveryMode::Signal,
@@ -366,6 +431,11 @@ fn map_operation_contract() -> mech_core::OperationContractDeclaration {
 #[cfg(any(feature = "full_source", feature = "standard_compiler"))]
 fn assert_map_source_exports(catalog: &FunctionCatalog) {
     for (item, id) in [
+        ("new", mech_core::OperationId::from_name("map/new").raw()),
+        (
+            "insert",
+            mech_core::OperationId::from_name("map/insert").raw(),
+        ),
         ("histogram", 0x0089_e5df_42d1_3de4),
         ("keys", 0x0054_5bda_103a_f406),
         ("values", 0x009a_fda2_41ea_5663),
@@ -388,11 +458,23 @@ fn assert_map_source_exports(catalog: &FunctionCatalog) {
         assert_eq!(export.exposure, FunctionExposure::ModuleOnly);
         assert_eq!(catalog.exports_for_operation(operation).len(), 1);
         assert_eq!(
-            catalog.source_operation_contract(&name, 1, item != "histogram"),
-            Some(&map_operation_contract())
+            catalog.source_operation_contract(
+                &name,
+                match item {
+                    "new" => 0,
+                    "insert" => 3,
+                    _ => 1,
+                },
+                matches!(item, "keys" | "values")
+            ),
+            Some(&map_operation_contract(match item {
+                "new" => 0,
+                "insert" => 3,
+                _ => 1,
+            }))
         );
     }
-    assert_eq!(catalog.module_exports("map").len(), 3);
+    assert_eq!(catalog.module_exports("map").len(), 5);
 }
 
 #[cfg(any(feature = "full_runtime", feature = "standard_compiler"))]
@@ -701,7 +783,10 @@ fn distribution_size_report_catalog_counts() {
 fn frozen_runtime_surface() -> BTreeMap<String, String> {
     let frozen: FrozenRuntimeSurface =
         serde_json::from_slice(RUNTIME_SURFACE).expect("frozen runtime surface must be valid JSON");
-    assert_eq!(frozen.runtime_factories.len(), EXPECTED_RUNTIME_FACTORIES);
+    assert_eq!(
+        frozen.runtime_factories.len(),
+        EXPECTED_RUNTIME_FACTORIES - 2
+    );
     frozen
         .runtime_factories
         .into_iter()
@@ -748,6 +833,7 @@ fn assert_runtime_surface(catalog: &FunctionCatalog) {
     let expected = frozen_runtime_surface();
     let actual = catalog
         .runtime_entries()
+        .filter(|entry| !matches!(entry.name.as_str(), "map/new" | "map/insert"))
         .map(|entry| (id_hex(entry.id.raw()), entry.name.clone()))
         .collect::<BTreeMap<_, _>>();
     assert_eq!(
@@ -813,6 +899,12 @@ fn assert_source_surface(catalog: &FunctionCatalog) {
 
     let mut actual_specializers = catalog
         .all_specializers()
+        .filter(|entry| {
+            !matches!(
+                entry.operation.canonical_name.as_ref(),
+                "map/new" | "map/insert"
+            )
+        })
         .map(|entry| FrozenSpecializer {
             name: entry.operation.canonical_name.to_string(),
             id_hex: id_hex(entry.operation.id.raw()),
@@ -842,6 +934,7 @@ fn assert_source_surface(catalog: &FunctionCatalog) {
 
     let mut actual_modules = catalog
         .all_exports()
+        .filter(|export| !matches!(export.canonical_name.as_str(), "map/new" | "map/insert"))
         .filter_map(|export| match (&export.module, &export.item) {
             (Some(module), Some(item)) => Some(FrozenModuleExport {
                 module: module.clone(),
@@ -860,7 +953,7 @@ fn assert_source_surface(catalog: &FunctionCatalog) {
             &right.canonical_name,
         ))
     });
-    assert_eq!(actual_modules.len(), EXPECTED_MODULE_EXPORTS);
+    assert_eq!(actual_modules.len() + 2, EXPECTED_MODULE_EXPORTS);
     assert_eq!(actual_modules, frozen.module_exports);
 }
 

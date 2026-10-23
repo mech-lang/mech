@@ -426,6 +426,14 @@ fn bind_values(
 #[cfg(feature = "map_ops")]
 pub(super) fn register_maps(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     MAP_NEW.install(builder)?;
+    // General functional entry insertion currently uses the admitted resident
+    // kernel. A native lowering witness is a separate qualification step.
+    builder.insert_resident_factory(
+        ["map"],
+        "insert",
+        ImplementationMemoryClass::CanonicalFinalize,
+        super::numeric::bind_map_insert,
+    )?;
     MAP_HISTOGRAM.install(builder)?;
     MAP_KEYS.install(builder)?;
     MAP_VALUES.install(builder)
