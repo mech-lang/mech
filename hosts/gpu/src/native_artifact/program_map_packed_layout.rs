@@ -31,6 +31,9 @@ impl Proof {
     pub fn range_site(&self) -> u32 { self.range_site }
     pub fn selection_site(&self) -> u32 { self.selection_site }
     pub fn domain(&self) -> Option<super::program_key_domain::Domain> { self.domain }
+    pub fn packing_domain(&self) -> super::program_key_domain::Domain {
+        self.domain.unwrap_or_else(super::program_key_domain::Domain::ascii).packing()
+    }
 }
 
 fn u64_value(plan: &Plan, value: Value) -> bool {

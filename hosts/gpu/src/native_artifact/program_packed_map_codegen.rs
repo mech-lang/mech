@@ -1,7 +1,7 @@
 //! Generated storage operations over an invocation-owned explicit table layout.
 //! Source control flow and replacement arithmetic remain in the original CFG.
 use super::super::{NativeCompileError, compiler::offset, program_hooks::Hooks,
-    program_packed_map::{Frame, Slot}};
+    program_packed_map::{Frame, Slot}, program_key_domain::Domain};
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 
@@ -14,6 +14,10 @@ fn get(b: &mut FunctionBuilder<'_>, frame: Value, at: usize) -> Value {
 }
 fn put(b: &mut FunctionBuilder<'_>, frame: Value, at: usize, value: Value) {
     b.ins().store(MemFlags::new(), value, frame, at as i32);
+}
+fn encode(b: &mut FunctionBuilder<'_>, byte: Value, domain: Domain) -> Value {
+    let shifted = b.ins().ushr_imm(byte, i64::from(domain.shift().expect("packed bit window")));
+    b.ins().band_imm(shifted, (1i64 << domain.bits()) - 1)
 }
 macro_rules! read {
     ($b:expr, $f:expr, $field:ident) => { $f.read($b, core::mem::offset_of!(Frame, $field)) };
@@ -47,15 +51,17 @@ fn check_call(b: &mut FunctionBuilder<'_>, frame: &FrameState, allowed: Value, h
     b.switch_to_block(accepted);
 }
 
-pub(super) fn select(b: &mut FunctionBuilder<'_>, frame: Value, start: Value, end: Value,
+pub(super) fn select(b: &mut FunctionBuilder<'_>, frame: Value, domain: Domain, start: Value, end: Value,
     hooks: &Hooks, function: Value, context: Value, site: usize, error: Block)
 {
-    select_state(b, &FrameState::memory(frame), start, end, hooks, function, context, site, error)
+    select_state(b, &FrameState::memory(frame, domain), start, end, hooks, function, context, site, error)
 }
 
 pub(super) fn select_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, start: Value, end: Value,
     hooks: &Hooks, function: Value, context: Value, site: usize, error: Block)
 {
+    let bits = i64::from(frame.domain.bits());
+    let narrow = u64::from(frame.domain.bits()) * super::super::program_packed_map::MAX_WIDTH <= 64;
     let allowed = read!(b, frame, range_call_allowed);
     check_call(b, frame, allowed, hooks, function, context, site, 10, error);
     let zero = b.ins().iconst(types::I64, 0);
@@ -94,20 +100,23 @@ pub(super) fn select_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, star
     b.ins().brif(rolling, reuse, &[], fresh, &[]);
     b.switch_to_block(reuse);
     let old_low = read!(b, frame, key_low);
-    let old_high = read!(b, frame, key_high);
     let last = b.ins().iadd_imm(finish, -1);
     let address = b.ins().iadd(source, last);
     let byte = b.ins().load(types::I8, MemFlags::new(), address, 0);
     let byte = b.ins().uextend(types::I64, byte);
-    let low = b.ins().ishl_imm(old_low, 7);
+    let byte = encode(b, byte, frame.domain);
+    let low = b.ins().ishl_imm(old_low, bits);
     let low = b.ins().bor(low, byte);
-    let carry = b.ins().ushr_imm(old_low, 57);
-    let high = b.ins().ishl_imm(old_high, 7);
-    let high = b.ins().bor(high, carry);
+    let high = if narrow { zero } else {
+        let old_high = read!(b, frame, key_high);
+        let carry = b.ins().ushr_imm(old_low, 64 - bits);
+        let high = b.ins().ishl_imm(old_high, bits);
+        let high = b.ins().bor(high, carry);
+        let high_mask = read!(b, frame, high_mask);
+        b.ins().band(high, high_mask)
+    };
     let low_mask = read!(b, frame, low_mask);
-    let high_mask = read!(b, frame, high_mask);
     let low = b.ins().band(low, low_mask);
-    let high = b.ins().band(high, high_mask);
     b.ins().jump(done, &[low.into(), high.into()]);
     b.switch_to_block(fresh);
     b.ins().jump(loop_head, &[zero.into(), zero.into(), zero.into()]);
@@ -121,11 +130,14 @@ pub(super) fn select_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, star
     let address = b.ins().iadd(source, position);
     let byte = b.ins().load(types::I8, MemFlags::new(), address, 0);
     let byte = b.ins().uextend(types::I64, byte);
-    let carry = b.ins().ushr_imm(low, 57);
-    let next_low = b.ins().ishl_imm(low, 7);
+    let byte = encode(b, byte, frame.domain);
+    let next_low = b.ins().ishl_imm(low, bits);
     let next_low = b.ins().bor(next_low, byte);
-    let next_high = b.ins().ishl_imm(high, 7);
-    let next_high = b.ins().bor(next_high, carry);
+    let next_high = if narrow { zero } else {
+        let carry = b.ins().ushr_imm(low, 64 - bits);
+        let high = b.ins().ishl_imm(high, bits);
+        b.ins().bor(high, carry)
+    };
     let index = b.ins().iadd_imm(index, 1);
     b.ins().jump(loop_head, &[index.into(), next_low.into(), next_high.into()]);
     b.switch_to_block(done);
@@ -140,6 +152,7 @@ pub(super) fn select_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, star
 fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     function: Value, context: Value, site: usize, error: Block) -> Value
 {
+    let narrow = u64::from(frame.domain.bits()) * super::super::program_packed_map::MAX_WIDTH <= 64;
     let zero = b.ins().iconst(types::I64, 0);
     let one = b.ins().iconst(types::I64, 1);
     let known = read!(b, frame, entry_known);
@@ -168,9 +181,11 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     b.ins().brif(nonempty, setup, &[], absent, &[]);
     b.switch_to_block(setup);
     let low = read!(b, frame, key_low);
-    let high = read!(b, frame, key_high);
-    let rotated = b.ins().rotl_imm(high, 29);
-    let hash = b.ins().bxor(low, rotated);
+    let high = if narrow { zero } else { read!(b, frame, key_high) };
+    let hash = if narrow { low } else {
+        let rotated = b.ins().rotl_imm(high, 29);
+        b.ins().bxor(low, rotated)
+    };
     let shifted = b.ins().ushr_imm(hash, 30);
     let hash = b.ins().bxor(hash, shifted);
     let hash = b.ins().imul_imm(hash, 0xbf58476d1ce4e5b9u64 as i64);
@@ -192,10 +207,12 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     b.ins().brif(live, occupied, &[], absent, &[]);
     b.switch_to_block(occupied);
     let stored_low = get(b, address, core::mem::offset_of!(Slot, low));
-    let stored_high = get(b, address, core::mem::offset_of!(Slot, high));
     let same_low = b.ins().icmp(IntCC::Equal, low, stored_low);
-    let same_high = b.ins().icmp(IntCC::Equal, high, stored_high);
-    let same = b.ins().band(same_low, same_high);
+    let same = if narrow { same_low } else {
+        let stored_high = get(b, address, core::mem::offset_of!(Slot, high));
+        let same_high = b.ins().icmp(IntCC::Equal, high, stored_high);
+        b.ins().band(same_low, same_high)
+    };
     b.ins().brif(same, found, &[address.into()], advance, &[]);
     b.switch_to_block(advance);
     let inspected = b.ins().iadd_imm(inspected, 1);
@@ -219,11 +236,11 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     b.block_params(done)[0]
 }
 
-pub(super) fn operation(b: &mut FunctionBuilder<'_>, frame: Value, op: u64, replacement: Value,
+pub(super) fn operation(b: &mut FunctionBuilder<'_>, frame: Value, domain: Domain, op: u64, replacement: Value,
     locals: Value, output: usize, token: Value, hooks: &Hooks, function: Value,
     context: Value, site: usize, error: Block) -> Result<(), NativeCompileError>
 {
-    let value = operation_state(b, &FrameState::memory(frame), op, replacement,
+    let value = operation_state(b, &FrameState::memory(frame, domain), op, replacement,
         token, hooks, function, context, site, error);
     b.ins().store(MemFlags::new(), value, locals, offset(output)?);
     Ok(())

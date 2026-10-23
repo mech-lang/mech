@@ -2,6 +2,7 @@
 //! Generated Mech code owns iteration, branches, lookup and replacement values.
 //! Rust owns admission, distinct-key insertion, growth and final publication.
 use super::owned_string_map::{Error, Limits, OwnedStringMap};
+use super::program_key_domain::Domain;
 use mech_core::{ManagedMemoryReservation, ManagedNodeReservation, MemoryBudgetLimits, Value, ValueData};
 use mech_engine::native_artifact::NativeLibraryWorkBudget;
 
@@ -91,6 +92,8 @@ pub(super) struct PackedMap {
     limits: MemoryBudgetLimits,
     outside_nodes: u64,
     width: u64,
+    domain: Domain,
+    decode: [u8; 128],
     body: BodyPrice,
     issued: u64,
     funded: u64,
@@ -126,6 +129,12 @@ impl PackedMap {
     pub(super) fn new(work: NativeLibraryWorkBudget, limits: MemoryBudgetLimits,
         width: u64, body: BodyPrice, outside_nodes: u64) -> Result<Self, Error>
     {
+        Self::new_encoded(work, limits, width, body, outside_nodes, Domain::ascii())
+    }
+
+    pub(super) fn new_encoded(work: NativeLibraryWorkBudget, limits: MemoryBudgetLimits,
+        width: u64, body: BodyPrice, outside_nodes: u64, domain: Domain) -> Result<Self, Error>
+    {
         finite(limits)?;
         if width > MAX_WIDTH || body.writes == 0 {
             return Err(Error::Binding("unsupported packed-map source proof"));
@@ -142,14 +151,17 @@ impl PackedMap {
         let nodes = memory.reserve_nodes(add(bytes, 3)?)?;
         let metadata = memory.reserve_capacity(bytes)?;
         let backing = memory.reserve_capacity(0)?;
+        let domain = domain.packing();
+        let (_, decode) = domain.tables();
+        let key_bits = width * u64::from(domain.bits());
         let mut owner = Self {
             slots: Vec::new(), frame: Box::new(Frame { slots: 0, capacity: 0, len: 0,
                 fuel: 0, updates: 0, key_low: 0, key_high: 0, entry_pointer: 0, entry_known: 0,
                 source_ptr: 0, source_len: 0, width, previous_start: u64::MAX,
-                low_mask: if width * 7 < 64 { (1u64 << (width * 7)) - 1 } else { u64::MAX },
-                high_mask: if width * 7 > 64 { (1u64 << (width * 7 - 64)) - 1 } else { 0 },
+                low_mask: if key_bits < 64 { (1u64 << key_bits) - 1 } else { u64::MAX },
+                high_mask: if key_bits > 64 { (1u64 << (key_bits - 64)) - 1 } else { 0 },
                 range_call_allowed: 0, read_call_allowed: 0, write_call_allowed: 0 }),
-            backing, metadata, nodes, work, limits, outside_nodes, width, body, issued: 0, funded: 0,
+            backing, metadata, nodes, work, limits, outside_nodes, width, domain, decode, body, issued: 0, funded: 0,
         };
         // Even an empty table has a finite, generated-probe-compatible shape.
         owner.allocate_initial()?;
@@ -280,8 +292,15 @@ impl PackedMap {
     }
 
     fn valid_key(&self, low: u64, high: u64) -> bool {
-        let key = (u128::from(high) << 64) | u128::from(low);
-        key >> (self.width * 7) == 0
+        let mut key = (u128::from(high) << 64) | u128::from(low);
+        let bits = self.domain.bits();
+        if key >> (self.width * u64::from(bits)) != 0 { return false; }
+        let mask = (1u128 << bits) - 1;
+        for _ in 0..self.width {
+            if self.decode[(key & mask) as usize] == u8::MAX { return false; }
+            key >>= bits;
+        }
+        true
     }
     fn probe(slots: &[Slot], low: u64, high: u64) -> Result<usize, Error> {
         let mask = slots.len().checked_sub(1).ok_or(Error::Binding("empty packed table"))?;
@@ -342,7 +361,8 @@ impl PackedMap {
         // defensive lookup and repeat probe after growth.
         let probes = add(add(old_capacity, capacity)?,
             if growth { mul(old_capacity, capacity)? } else { 0 })?;
-        let extra = Price { compute: add(add(mul(probes, 128)?, mul(table_bytes, 32)?)?,
+        let recheck = if growth { mul(mul(old_capacity, self.width)?, 32)? } else { 0 };
+        let extra = Price { compute: add(add(add(mul(probes, 128)?, recheck)?, mul(table_bytes, 32)?)?,
             add(mul(self.width, 32)?, 256)?)?, comparison: mul(probes, 2)? };
         let write = self.write_price(old_capacity, self.frame.len)?;
         self.check_call_price(Price { compute: add(write.compute, extra.compute)?,
@@ -426,6 +446,8 @@ impl PackedMap {
             entries: self.frame.len, retained_bytes: remaining, temporary_bytes: remaining,
         }, self.metadata.budget())?;
         let mut count = 0;
+        let bits = self.domain.bits();
+        let mask = (1u128 << bits) - 1;
         for slot in &self.slots {
             if slot.occupied == 0 { continue; }
             if slot.occupied != 1 || !self.valid_key(slot.low, slot.high) {
@@ -434,8 +456,8 @@ impl PackedMap {
             let mut key = (u128::from(slot.high) << 64) | u128::from(slot.low);
             let mut bytes = [0u8; MAX_WIDTH as usize];
             for index in (0..self.width as usize).rev() {
-                bytes[index] = (key & 127) as u8;
-                key >>= 7;
+                bytes[index] = self.decode[(key & mask) as usize];
+                key >>= bits;
             }
             let text = std::str::from_utf8(&bytes[..self.width as usize])
                 .map_err(|_| Error::Binding("non-ASCII packed-map publication"))?;

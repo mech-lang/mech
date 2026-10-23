@@ -232,7 +232,7 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
     hooks.bound_call(b, function, context, site, 13, [zero; 3], error);
     let setup = b.func.dfg.num_insts();
     let words = Words::new(b, locals, code, slots)?;
-    let packed = FrameState::registers(b, pointer);
+    let packed = FrameState::registers(b, pointer, region.packed.as_ref().unwrap().packing_domain());
     let entry_work = (b.func.dfg.num_insts() - setup) as u64;
     // The existing closed-body envelope includes 1024 fixed setup units.
     if entry_work > 512 { return Err(backend("packed SSA entry exceeds closed setup envelope")); }

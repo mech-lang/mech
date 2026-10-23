@@ -253,11 +253,11 @@ impl<'plan> State<'plan> {
                 } else { false };
                 if admitted {
                     let region = &layout.regions()[index];
-                    packed = Some(PackedMap::new(ctx.library.clone(), ctx.limits, width,
+                    packed = Some(PackedMap::new_encoded(ctx.library.clone(), ctx.limits, width,
                         BodyPrice { scalar_compute: proof.compute,
                             range_compute: range.selected_u64_string_span_selector_work(),
                             reads: region.reads().len() as u64, writes: region.writes().len() as u64 },
-                        outside_nodes).map_err(storage_error)?);
+                        outside_nodes, packed_proof.packing_domain()).map_err(storage_error)?);
                 }
             }
         }
