@@ -4227,7 +4227,10 @@ pub(super) fn bind_map_contains_key(
     };
     if map.kind != ResidentValueKind::Snapshot
         || map.shape != ResidentShape::SCALAR
-        || request.output.kind != ResidentValueKind::Bool
+        || !matches!(
+            request.output.kind,
+            ResidentValueKind::Bool | ResidentValueKind::Snapshot
+        )
         || request.output.shape != ResidentShape::SCALAR
         || request
             .schemas
@@ -4235,23 +4238,24 @@ pub(super) fn bind_map_contains_key(
             .map(|s| s.body())
             != Some(&SchemaBody::Bool)
         || request.schemas.get(key.schema_id).map(|s| s.body()) != Some(key_body.as_ref())
-        || !scalar_layout_matches_schema_body(key, key_body)
+        || !access_selector_layout_matches_schema(key, key_body)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    Ok(
-        bound(map_contains_key, Vec::<u64>::new().into_boxed_slice())?
-            .with_retained_state(Arc::new(MapContainsPlan {
-                map_schema: map.schema_id,
-                map_key: map.schema_key,
-                selector: SnapshotAccessSelectorLayout {
-                    schema: key.schema_id,
-                    shape: key.shape_instance.clone(),
-                    resident_shape: key.shape,
-                },
-            }))
-            .with_snapshot_schemas(request.schemas.clone()),
-    )
+    let kernel = bound(map_contains_key, Vec::<u64>::new().into_boxed_slice())?
+        .with_retained_state(Arc::new(MapContainsPlan {
+            map_schema: map.schema_id,
+            map_key: map.schema_key,
+            selector: SnapshotAccessSelectorLayout {
+                schema: key.schema_id,
+                shape: key.shape_instance.clone(),
+                resident_shape: key.shape,
+            },
+        }))
+        .with_snapshot_schemas(request.schemas.clone());
+    Ok(crate::resident::set::membership_output::bind(
+        kernel, request,
+    ))
 }
 
 #[cfg(feature = "map_ops")]
@@ -4263,9 +4267,12 @@ fn map_contains_key(
     if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let ResidentValueMut::Bool([target]) = output else {
+    if !matches!(
+        &output,
+        ResidentValueMut::Bool([_]) | ResidentValueMut::Snapshot([_])
+    ) {
         return Err(ResidentKernelError::InvalidOutput);
-    };
+    }
     let plan = kernel
         .retained_state::<MapContainsPlan>()
         .ok_or(ResidentKernelError::InvalidInput)?;
@@ -4292,18 +4299,17 @@ fn map_contains_key(
     snapshot_selector_materialization_cost(schemas, &plan.selector, input(inputs, 1)?, &mut meter)?;
     let mut publication = super::budget::KernelCostEstimate::default();
     publication.set_compute_work(1)?;
-    publication.set_output_elements(1);
-    publication.set_output_bytes(1);
+    let footprint = crate::resident::set::membership_output::footprint(kernel)?;
+    publication.set_output_elements(footprint.elements);
+    publication.set_output_bytes(footprint.retained_bytes);
+    publication.set_retained_nodes(footprint.retained_nodes);
     super::budget::PreparedKernel::new((), publication)
         .admit()?
         .into_plan();
     let found =
         map_optional_entry_for_selector_with_meter(map, key, input(inputs, 1)?, &mut meter)?
             .is_some();
-    let next = u8::from(found);
-    let changed = *target != next;
-    *target = next;
-    Ok(changed)
+    crate::resident::set::membership_output::write(kernel, output, found)
 }
 
 /// Pure entry insertion uses the same admitted single-entry builder as
@@ -4354,7 +4360,7 @@ pub(super) fn bind_map_insert(
         || base.shape != ResidentShape::SCALAR
         || request.output.kind != ResidentValueKind::Snapshot
         || request.output.shape != ResidentShape::SCALAR
-        || !scalar_layout_matches_schema_body(key, key_body)
+        || !access_selector_layout_matches_schema(key, key_body)
         || !access_selector_layout_matches_schema(value, value_body)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);

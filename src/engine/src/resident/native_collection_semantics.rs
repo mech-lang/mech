@@ -50,6 +50,12 @@ pub enum NativeCollectionPrimitive {
     #[cfg(feature = "pure_text")]
     NumberFormat,
     #[cfg(feature = "map_ops")]
+    MapNew,
+    #[cfg(feature = "map_ops")]
+    MapInsert,
+    #[cfg(feature = "map_ops")]
+    MapContainsKey,
+    #[cfg(feature = "map_ops")]
     StringHistogram,
     #[cfg(feature = "map_ops")]
     StringMapKeys,
@@ -264,7 +270,17 @@ pub mod linkage_factories {
     factory!(
         @features MAP_NEW, &["map_ops"], &["map"], "new", CanonicalFinalize,
         super::super::composite::bind_composite_pack,
-        NativeCollectionPrimitive::CompositePack(0)
+        NativeCollectionPrimitive::MapNew
+    );
+    #[cfg(feature = "map_ops")]
+    factory!(
+        @features MAP_INSERT, &["map_ops"], &["map"], "insert", CanonicalFinalize,
+        super::super::numeric::bind_map_insert, NativeCollectionPrimitive::MapInsert
+    );
+    #[cfg(feature = "map_ops")]
+    factory!(
+        @features MAP_CONTAINS_KEY, &["map_ops"], &["map"], "contains-key", NoAdditionalScratch,
+        super::super::numeric::bind_map_contains_key, NativeCollectionPrimitive::MapContainsKey
     );
     #[cfg(feature = "map_ops")]
     factory!(
@@ -426,20 +442,8 @@ fn bind_values(
 #[cfg(feature = "map_ops")]
 pub(super) fn register_maps(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     MAP_NEW.install(builder)?;
-    builder.insert_resident_factory(
-        ["map"],
-        "contains-key",
-        ImplementationMemoryClass::NoAdditionalScratch,
-        super::numeric::bind_map_contains_key,
-    )?;
-    // General functional entry insertion currently uses the admitted resident
-    // kernel. A native lowering witness is a separate qualification step.
-    builder.insert_resident_factory(
-        ["map"],
-        "insert",
-        ImplementationMemoryClass::CanonicalFinalize,
-        super::numeric::bind_map_insert,
-    )?;
+    MAP_INSERT.install(builder)?;
+    MAP_CONTAINS_KEY.install(builder)?;
     MAP_HISTOGRAM.install(builder)?;
     MAP_KEYS.install(builder)?;
     MAP_VALUES.install(builder)
