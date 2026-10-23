@@ -395,10 +395,9 @@ empty<{string:u64}> := map/new()
             lookup("  chosen := (query == \"a\")? | true => counts | false => empty.\n  result := chosen{query}.", "lookup(text<string>, query<string>)"),
             // A descendant comprehension captures this map: its lifetime and
             // current visit need a separate proof, even though every use reads.
-            lookup("  values := [counts{q} | q <- [query]]\n  result := sequence/length(values).", "lookup(text<string>, query<string>)"),
+            format!("{COUNT}\nlookup(s<string>, queries<[string]>) => (result<u64>) :=\n  counts := #Accumulate(s, 1u64, 6u64, empty)\n  values := [counts{{q}} | q <- queries]\n  result := sequence/length(values).\nlookup(text<string>, queries<[string]>)\n"),
         ];
-        for (case, source) in cases.into_iter().enumerate() {
-            eprintln!("FROZEN_NEGATIVE_CASE {case}: {source}");
+        for source in cases {
             let (plan, owners, closed) = parts(&artifact(&source));
             assert!(closed.regions.iter().any(|region| region.packed.is_some()),
                 "the negative fixture must reach the prior packed-owner proof");
