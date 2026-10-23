@@ -24,6 +24,14 @@ impl Context<'_, '_> {
         if self.control.previous != Some(current) || self.control.completed || self.consumed {
             return Err(invalid("caller geometry outside fresh current visit"));
         }
+        self.retained_caller_inventory(site)
+    }
+
+    /// Inventory only; no visit or storage permission. The closed map entry
+    /// uses this after its initializer was consumed, under that owner's proof.
+    pub(super) fn retained_caller_inventory(&mut self, site: usize)
+        -> Result<Option<PublicationGeometry>, Error>
+    {
         // A source/window loan needs its own live-owner witness. Decline this
         // view instead of treating borrowed producer storage as empty. Ordinary
         // canonical execution remains available to the future selecting caller.

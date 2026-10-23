@@ -254,7 +254,7 @@ impl NativeProgramDescriptor {
             .max(if closed_tails.regions.is_empty() {
                 0
             } else {
-                2
+                4
             });
         let types = plan
             .values()

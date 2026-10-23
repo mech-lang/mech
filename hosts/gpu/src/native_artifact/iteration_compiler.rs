@@ -682,10 +682,6 @@ pub(super) fn define_cfg<M: Module>(
                 &mut b, locals, owner.as_ref(), &map_admission, index,
             )?;
             #[cfg(feature = "canonical-native-program")]
-            if admission_join.is_some() && map_admission_join.is_some() {
-                return Err(backend("overlapping closed Tail and map admission groups"));
-            }
-            #[cfg(feature = "canonical-native-program")]
             if let Some(region) = &prefix
                 && region.tail.exit() as usize == index
             {
@@ -709,7 +705,12 @@ pub(super) fn define_cfg<M: Module>(
                 error,
             );
             #[cfg(feature = "canonical-native-program")]
-            if let Some(joined) = admission_join.or(map_admission_join) {
+            if let Some(joined) = map_admission_join {
+                b.ins().jump(joined, &[]);
+                b.switch_to_block(joined);
+            }
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(joined) = admission_join {
                 b.ins().jump(joined, &[]);
                 b.switch_to_block(joined);
             }
@@ -777,7 +778,7 @@ pub(super) fn define_cfg<M: Module>(
             )?;
             #[cfg(feature = "canonical-native-program")]
             let (owner_join, owner_handled) = super::program_compiler::map_owner_codegen::emit(
-                &mut b, locals, owner.as_ref(), index, hooks.as_ref(), plan, error,
+                &mut b, locals, owner.as_ref(), &closed, index, hooks.as_ref(), plan, error,
             )?;
             #[cfg(not(feature = "canonical-native-program"))]
             let owner_handled = false;

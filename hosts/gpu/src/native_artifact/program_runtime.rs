@@ -46,6 +46,9 @@ mod map_owners;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_map_admission_tests.rs"]
 mod map_admission_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_map_closed_tests.rs"]
+mod map_closed_tests;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub(super) use session::CheckedEntry;
 #[cfg(feature = "canonical-native-program-host-runtime")]
@@ -399,6 +402,9 @@ impl Context<'_, '_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         collection::before_span_helper(self, site)?;
         let descriptor = self.control.descriptor;
+        if operation == super::program_abi::CLOSED_TAIL_BEGIN {
+            return self.begin_closed_tail(site, args);
+        }
         if matches!(operation, super::program_abi::MAP_OWNER_BEGIN
             | super::program_abi::MAP_OWNER_CALL | super::program_abi::MAP_OWNER_END
             | super::program_abi::MAP_OWNER_SPAN) {
@@ -407,9 +413,6 @@ impl Context<'_, '_> {
         if self.retained_native_action(site) || self.retained_native_call(site) || self.retained_native_exit(site)
             || self.retained_native_span(site) {
             return Err(invalid("ordinary helper at retained native map site"));
-        }
-        if operation == super::program_abi::CLOSED_TAIL_BEGIN {
-            return self.begin_closed_tail(site, args);
         }
         if operation == super::program_abi::BORROWED_STRINGS_PREPARE {
             return self.prepare_borrowed_strings(site, args);
@@ -731,7 +734,12 @@ impl Context<'_, '_> {
         {
             return Err(invalid("entry omitted current required helper"));
         }
-        let previous = if let Some(previous) = self.control.previous
+        let previous = if let Some((from, to)) = self.map_owners.closed_exit {
+            if self.control.previous != Some(from) || site != u64::from(to) {
+                return Err(invalid("visit outside closed map exit frontier"));
+            }
+            Some(from)
+        } else if let Some(previous) = self.control.previous
             && let Some(group) = self.control.descriptor.map_admission.group(previous as usize)
             && self.map_owners.active(group.owner)
         {
@@ -779,6 +787,7 @@ impl Context<'_, '_> {
             return Err(invalid("ordinary visit inside admitted scalar group"));
         }
         self.control.visit_from(site, group.map(|group| group.work), previous)?;
+        self.map_owners.closed_exit = None;
         let descriptor = self.control.descriptor;
         if let Some(mech_engine::native_artifact::NativeBorrowedStringAction::Equal { .. }) =
             self.borrowed_action(index)
@@ -4280,7 +4289,7 @@ mod tests {
     }
     #[test]
     fn abi18_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 19);
+        assert_eq!(VERSION, 20);
         assert_eq!(super::super::program_abi::PHASE_CAPTURE_TAIL, 3);
         assert_eq!(super::super::program_abi::STATUS_INPUT_SCANNED, 7);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);

@@ -13,6 +13,8 @@ use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMapOwn
 mod spans;
 #[path = "program_map_caller_geometry.rs"]
 mod caller_geometry;
+#[path = "program_map_closed_runtime.rs"]
+mod closed;
 
 /// Lazy owning-session lane. No table metadata is allocated merely because a
 /// descriptor has a candidate; entry must request and admit it explicitly.
@@ -20,10 +22,11 @@ pub(super) struct Session<'plan> {
     descriptor: &'plan NativeProgramDescriptor,
     state: Option<State<'plan>>,
     refused_visit: Option<u64>,
+    pub(super) closed_exit: Option<(u32, u32)>,
 }
 impl<'plan> Session<'plan> {
     pub(super) fn new(descriptor: &'plan NativeProgramDescriptor) -> Self {
-        Self { descriptor, state: None, refused_visit: None }
+        Self { descriptor, state: None, refused_visit: None, closed_exit: None }
     }
     pub(super) fn active(&self, index: usize) -> bool {
         self.state.as_ref().and_then(|state| state.slots.get(index))
@@ -33,6 +36,7 @@ impl<'plan> Session<'plan> {
 
 struct Slot<'plan> {
     binding: Option<Binding<'plan>>,
+    closed: Option<Box<closed::Owner<'plan>>>,
 }
 pub(super) struct State<'plan> {
     // Tables/keys retire before the enclosing admitted fixed lane.
@@ -95,7 +99,7 @@ impl<'plan> State<'plan> {
         if slots.try_reserve_exact(count).is_err() || slots.capacity() != count {
             return Ok(None);
         }
-        slots.resize_with(count, || Slot { binding: None });
+        slots.resize_with(count, || Slot { binding: None, closed: None });
         let mut spans = Vec::new();
         if spans.try_reserve_exact(span_count).is_err() || spans.capacity() != span_count {
             return Ok(None);
