@@ -4,6 +4,9 @@ use crate::native_artifact::program_abi::{CLOSED_TAIL_BEGIN, CLOSED_TAIL_END,
     MAP_OWNER_CALL, MAP_OWNER_SPAN};
 use std::cell::{Cell, RefCell};
 
+#[path = "program_packed_narrow_codegen_tests.rs"]
+mod narrow_codegen;
+
 #[derive(Clone, Copy, PartialEq)]
 enum Mode { Native, Decline, OneShort, Renew, TightCall, TightWrite }
 #[derive(Default, Debug)]
@@ -129,6 +132,8 @@ fn packed_domain_boundaries_execute_rolling_keys_and_restore_descriptors_lossles
             for descriptor in [jit.descriptor(), &restored] {
                 let proof = descriptor.closed_tails.regions.iter().find_map(|region| region.packed.as_ref()).unwrap();
                 assert_eq!((proof.packing_domain().bits(), proof.packing_domain().shift()), (bits, shift));
+                assert_eq!(crate::native_artifact::program_packed_map::slot_bytes(proof.packing_domain()),
+                    if bits <= 3 { 16 } else { 24 });
                 if runtime_input { assert!(proof.domain().is_none()); }
                 if text.starts_with("ABDH") { assert_eq!(proof.domain().unwrap().shift(), None); }
                 let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);

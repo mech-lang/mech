@@ -2,6 +2,9 @@ use super::*;
 use mech_core::ManagedMemoryBudget;
 use std::collections::BTreeMap;
 
+#[path = "program_packed_narrow_tests.rs"]
+mod narrow_tests;
+
 fn limits() -> MemoryBudgetLimits {
     MemoryBudgetLimits {
         max_output_elements: Some(1), max_output_bytes: Some(16 * 1024 * 1024),
@@ -45,8 +48,8 @@ fn begin_key(map: &mut PackedMap, key: &[u8]) -> Option<u64> {
     let index = PackedMap::probe(&map.slots, &map.controls, low, high).unwrap();
     map.frame.entry_known = 1;
     if map.controls[index] != EMPTY {
-        map.frame.entry_pointer = (&mut map.slots[index] as *mut Slot) as u64;
-        Some(map.slots[index].value)
+        map.frame.entry_pointer = map.slots.entry_address(index);
+        Some(map.slots.get(index).value)
     } else { None }
 }
 fn put(map: &mut PackedMap, key: &[u8], value: u64) {
@@ -56,8 +59,8 @@ fn put(map: &mut PackedMap, key: &[u8], value: u64) {
         let updates = map.frame.updates.checked_add(1).unwrap();
         // SAFETY: begin_key located a live entry in this exclusively owned
         // table; there has been no growth or callback since taking its address.
-        let slot = unsafe { &mut *(map.frame.entry_pointer as *mut Slot) };
-        slot.value = value;
+        let count = (map.frame.entry_pointer + value_offset(map.domain) as u64) as *mut u64;
+        unsafe { *count = value; }
         map.frame.updates = updates;
     } else {
         let (low, high) = encoded(key, map.domain);
@@ -260,7 +263,7 @@ fn packed_control_rehash_admits_old_and_new_backing_bytes_before_mutation() {
         let metadata = (size_of::<PackedMap>() + size_of::<Frame>()) as u64;
         let mut caps = limits();
         caps.max_temporary_bytes = Some(work_bytes + metadata
-            + table_bytes(8).unwrap() + table_bytes(16).unwrap() - short);
+            + table_bytes(Domain::ascii(), 8).unwrap() + table_bytes(Domain::ascii(), 16).unwrap() - short);
         let mut map = PackedMap::new(work.clone(), caps, 1, body(), 0).unwrap();
         for key in 0..7 { put(&mut map, &[key], key as u64); }
         assert_eq!(begin_key(&mut map, &[7]), None);
@@ -276,7 +279,7 @@ fn packed_control_rehash_admits_old_and_new_backing_bytes_before_mutation() {
         } else {
             result.unwrap();
             assert_eq!((map.frame.capacity, map.frame.len, map.updates()), (16, 8, 8));
-            assert_eq!(memory.used_bytes(), work_bytes + metadata + table_bytes(16).unwrap());
+            assert_eq!(memory.used_bytes(), work_bytes + metadata + table_bytes(Domain::ascii(), 16).unwrap());
         }
         drop((map, work));
         assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
@@ -347,6 +350,9 @@ fn packed_finite_domains_publish_every_original_key_and_preserve_replacements() 
 fn packed_layout_matches_generated_word_offsets() {
     assert_eq!(size_of::<Frame>(), FRAME_WORDS * 8);
     assert_eq!(size_of::<Slot>(), SLOT_WORDS * 8);
+    assert_eq!(size_of::<NarrowSlot>(), 16);
+    assert_eq!(core::mem::offset_of!(NarrowSlot, low), 0);
+    assert_eq!(core::mem::offset_of!(NarrowSlot, value), 8);
     assert_eq!(std::mem::offset_of!(Frame, slots), SLOTS * 8);
     assert_eq!(std::mem::offset_of!(Frame, capacity), CAPACITY * 8);
     assert_eq!(std::mem::offset_of!(Frame, len), LENGTH * 8);
@@ -499,7 +505,7 @@ fn packed_map_handles_deliberate_probe_collisions_and_bounds_full_tables() {
     for (index, key) in keys[..7].iter().enumerate() {
         let (low, high) = packed(key);
         let at = PackedMap::probe(&map.slots, &map.controls, low, high).unwrap();
-        assert_eq!((map.controls[at] != EMPTY, map.slots[at].value), (true, index as u64));
+        assert_eq!((map.controls[at] != EMPTY, map.slots.get(at).value), (true, index as u64));
     }
     assert_eq!(begin_key(&mut map, &keys[7]), None);
     put(&mut map, &keys[7], 700);
@@ -511,7 +517,7 @@ fn packed_map_handles_deliberate_probe_collisions_and_bounds_full_tables() {
     assert_eq!(begin_key(&mut map, &keys[8]), Some(800));
     assert_eq!(begin_key(&mut map, &keys[9]), None);
     for capacity in [8, 16, 32] {
-        let full = vec![Slot { low: 0, high: 0, value: 0 }; capacity];
+        let full = Slots::new(Domain::ascii(), capacity).unwrap();
         let controls = vec![fingerprint(hash(1, 0)); capacity + GROUP - 1];
         assert!(PackedMap::probe(&full, &controls, 1, 0).is_err());
     }
@@ -582,7 +588,7 @@ fn packed_map_missing_insert_rejects_forgery_and_denial_without_mutation() {
             2 => { work.restrict(used.0, used.1).unwrap(); }
             3 => { map.limits.max_cloned_bytes = Some(0); }
             4 => {
-                map.limits.max_temporary_bytes = Some(memory.used_bytes() + table_bytes(16).unwrap() - 1);
+                map.limits.max_temporary_bytes = Some(memory.used_bytes() + table_bytes(map.domain, 16).unwrap() - 1);
             }
             _ => { map.limits.max_output_bytes = Some(0); }
         }
@@ -621,7 +627,7 @@ fn packed_map_growth_refreshes_entry_and_prepays_remaining_body_delta() {
     assert!(after.0 - before.0 >= (next_price.compute - old_price.compute) * pending);
     assert!(after.1 - before.1 >= (next_price.comparison - old_price.comparison) * pending);
     let at = PackedMap::probe(&map.slots, &map.controls, low, high).unwrap();
-    assert_eq!((map.controls[at] != EMPTY, map.slots[at].value), (true, 27));
+    assert_eq!((map.controls[at] != EMPTY, map.slots.get(at).value), (true, 27));
     drop(map);
     drop(work);
     assert_eq!(memory.used_bytes(), 0);

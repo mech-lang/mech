@@ -142,7 +142,7 @@ first + ";" + second
 }
 
 #[test]
-fn parallel_compact_domains_preserve_all_seven_source_maps_and_shared_cleanup() {
+fn parallel_narrow_compact_domains_preserve_all_seven_source_maps_and_shared_cleanup() {
     let source = source("number/format(h{\"A\"}, 0u64)", r#"
 first-items := [4u64 8u64]
 second-items := [1u64 2u64 3u64 4u64 5u64]
@@ -167,6 +167,9 @@ text := text/join([letters{char} | char <- seed<string>], "")"#);
                 .map(|proof| (proof.packing_domain().bits(), proof.packing_domain().shift()))
                 .collect::<Vec<_>>();
             assert_eq!(domains, [(2, Some(0)), (2, Some(0))]);
+            for proof in descriptor.closed_tails.regions.iter().filter_map(|region| region.packed.as_ref()) {
+                assert_eq!(crate::native_artifact::program_packed_map::slot_bytes(proof.packing_domain()), 16);
+            }
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
             let args = vec![input(&artifact, &memory)];
             let baseline = (memory.used_bytes(), memory.retained_nodes());

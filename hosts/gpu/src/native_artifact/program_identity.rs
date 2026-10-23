@@ -89,7 +89,9 @@ fn selected_template(
 // packed-key verification, bounded wraparound and original source updates.
 // IR43 substitutes only scalar guards/arithmetic proved by bounded exact
 // current-traversal edge facts; source CFG, work charges and ABI are unchanged.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 43;
+// IR44 selects a one-word key only when every admitted width fits the proved
+// source domain; both representations retain the complete U64 source count.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 44;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -212,7 +214,10 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 43;
 // finite loop, growth and publication bounds, with shared worker claims intact.
 // Policy63 admits both control/slot containers and their simultaneous growth;
 // ABI22 pins the new control pointer and three-word payload slot layout.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 63;
+// Policy64 prices the actual domain-selected slot backing and its concurrent
+// growth. Full-chain body prices, source-call caps and shared claims remain.
+// ABI23 binds both payload layouts; the packed Frame remains nineteen words.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 64;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

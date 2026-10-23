@@ -89,9 +89,9 @@ fn native_structural_map_states_execute_all_seven_counting_widths() {
             crate::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
                 .unwrap();
         let identity = object.identity().bytes();
-        assert_eq!(u64::from_le_bytes(identity[16..24].try_into().unwrap()), 43);
-        assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 22);
-        assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 63);
+        assert_eq!(u64::from_le_bytes(identity[16..24].try_into().unwrap()), 44);
+        assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 23);
+        assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 64);
         assert!(jit.descriptor().plan().blocks().iter().any(|block| matches!(block.action(), NativeIterationAction::Structural { observation: mech_engine::native_artifact::NativeStructuralObservation::CanonicalValue, .. })));
         for units in [
             "ACGTACGTNACGTTACGTACGTACGT".split("").filter(|s| !s.is_empty()).collect::<Vec<_>>(),

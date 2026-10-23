@@ -1,8 +1,8 @@
-//! Mixed-value ABI22 adds a pinned packed-map control pointer and changes the
-//! private packed slot layout. Entry phases and scalar transport stay unchanged.
+//! Mixed-value ABI23 binds domain-selected two- or three-word packed slots.
+//! Entry phases, control pointer and scalar transport stay unchanged.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 22;
+pub(super) const VERSION: u64 = 23;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
 pub(super) const PHASE_PREFIX: u64 = 2;
