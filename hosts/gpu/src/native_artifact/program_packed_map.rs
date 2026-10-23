@@ -2,7 +2,7 @@
 //! Generated Mech code owns iteration, branches, lookup and replacement values.
 //! Rust owns admission, distinct-key insertion, growth and final publication.
 use super::owned_string_map::{Error, Limits, OwnedStringMap};
-use mech_core::{ManagedMemoryReservation, MemoryBudgetLimits, Value, ValueData};
+use mech_core::{ManagedMemoryReservation, ManagedNodeReservation, MemoryBudgetLimits, Value, ValueData};
 use mech_engine::native_artifact::NativeLibraryWorkBudget;
 
 pub(super) const MAX_WIDTH: u64 = 18;
@@ -86,6 +86,7 @@ pub(super) struct PackedMap {
     frame: Box<Frame>,
     backing: ManagedMemoryReservation,
     metadata: ManagedMemoryReservation,
+    nodes: ManagedNodeReservation,
     work: NativeLibraryWorkBudget,
     limits: MemoryBudgetLimits,
     outside_nodes: u64,
@@ -134,8 +135,13 @@ impl PackedMap {
             cap(limits.max_temporary_bytes)?, "temporary bytes")?;
         check(add(outside_nodes, bytes)?, cap(limits.max_retained_nodes)?, "retained nodes")?;
         work.charge(add(mul(bytes, 8)?, 128)?, 0)?;
-        let metadata = work.memory_budget().reserve_capacity(bytes)?;
-        let backing = work.memory_budget().reserve_capacity(0)?;
+        let memory = work.memory_budget().with_limits(cap(limits.max_temporary_bytes)?,
+            cap(limits.max_retained_nodes)?);
+        // Only this owner's real private geometry is claimed. outside_nodes
+        // describes caller state already covered by its own shared claims.
+        let nodes = memory.reserve_nodes(add(bytes, 3)?)?;
+        let metadata = memory.reserve_capacity(bytes)?;
+        let backing = memory.reserve_capacity(0)?;
         let mut owner = Self {
             slots: Vec::new(), frame: Box::new(Frame { slots: 0, capacity: 0, len: 0,
                 fuel: 0, updates: 0, key_low: 0, key_high: 0, entry_pointer: 0, entry_known: 0,
@@ -143,7 +149,7 @@ impl PackedMap {
                 low_mask: if width * 7 < 64 { (1u64 << (width * 7)) - 1 } else { u64::MAX },
                 high_mask: if width * 7 > 64 { (1u64 << (width * 7 - 64)) - 1 } else { 0 },
                 range_call_allowed: 0, read_call_allowed: 0, write_call_allowed: 0 }),
-            backing, metadata, work, limits, outside_nodes, width, body, issued: 0, funded: 0,
+            backing, metadata, nodes, work, limits, outside_nodes, width, body, issued: 0, funded: 0,
         };
         // Even an empty table has a finite, generated-probe-compatible shape.
         owner.allocate_initial()?;
@@ -174,7 +180,7 @@ impl PackedMap {
         check(add(self.work.memory_budget().used_bytes(), bytes)?,
             cap(self.limits.max_temporary_bytes)?, "temporary bytes")?;
         self.work.charge(add(mul(bytes, 32)?, 128)?, 0)?;
-        let pending = self.work.memory_budget().reserve_capacity(bytes)?;
+        let pending = self.metadata.budget().reserve_capacity(bytes)?;
         let mut slots = Vec::new();
         slots.try_reserve_exact(8).map_err(|_| Error::Allocation)?;
         if slots.capacity() != 8 { return Err(Error::Allocation); }
@@ -355,9 +361,16 @@ impl PackedMap {
         if self.slots[old_index].occupied != 0 {
             return Err(Error::Binding("forged packed-map missing-key proof"));
         }
+        let memory = self.metadata.budget();
+        let new_entry = memory.reserve_nodes(1)?;
+        // A replacement table temporarily duplicates all occupied slots and
+        // its container. Admission precedes allocation and remains until the
+        // old table has retired; failures release both pending claims.
+        let _rehash = memory.reserve_nodes(if growth { add(self.frame.len, 1)? } else { 0 })?;
         let index;
+        let mut replacement = None;
         if growth {
-            let reservation = self.work.memory_budget().reserve_capacity(table_bytes)?;
+            let reservation = memory.reserve_capacity(table_bytes)?;
             let count = usize::try_from(capacity).map_err(|_| Error::Overflow)?;
             let mut slots = Vec::new();
             slots.try_reserve_exact(count).map_err(|_| Error::Allocation)?;
@@ -373,12 +386,16 @@ impl PackedMap {
                 slots[at] = *slot;
             }
             index = Self::probe(&slots, low, high)?;
-            // All fallible work completed before replacing the retained table.
+            replacement = Some((slots, reservation));
+        } else { index = old_index; }
+        self.nodes.merge(new_entry)?;
+        // All fallible work completed before replacing the retained table.
+        if let Some((slots, reservation)) = replacement {
             self.slots = slots;
             self.backing = reservation;
             self.frame.slots = self.slots.as_mut_ptr() as u64;
             self.frame.capacity = capacity;
-        } else { index = old_index; }
+        }
         self.slots[index] = Slot { low, high, value, occupied: 1 };
         self.frame.len = count;
         self.frame.updates = updates;
@@ -405,9 +422,9 @@ impl PackedMap {
         self.work.charge(add(mul(self.frame.capacity, 64)?, mul(self.frame.len, self.width * 32)?)?, 0)?;
         let remaining = cap(self.limits.max_temporary_bytes)?
             .checked_sub(self.work.memory_budget().used_bytes()).ok_or(Error::Overflow)?;
-        let mut output = OwnedStringMap::new(self.work.clone(), Limits {
+        let mut output = OwnedStringMap::new_with_memory(self.work.clone(), Limits {
             entries: self.frame.len, retained_bytes: remaining, temporary_bytes: remaining,
-        })?;
+        }, self.metadata.budget())?;
         let mut count = 0;
         for slot in &self.slots {
             if slot.occupied == 0 { continue; }

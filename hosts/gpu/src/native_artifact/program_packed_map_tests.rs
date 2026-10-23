@@ -61,6 +61,82 @@ fn table(map: &PackedMap) -> Vec<(u64, u64, u64, u64)> {
 }
 
 #[test]
+fn packed_maps_share_private_claims_without_claiming_the_same_caller_twice() {
+    let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+    let base = (size_of::<PackedMap>() + size_of::<Frame>()) as u64 + 3;
+    let work = new_work(&memory.with_limits(u64::MAX, 2 * base + 2));
+    let mut left = PackedMap::new(work.clone(), limits(), 1, body(), 64).unwrap();
+    let mut right = PackedMap::new(work.clone(), limits(), 1, body(), 64).unwrap();
+    // outside_nodes is descriptive local geometry, not a new shared claim.
+    assert_eq!(memory.retained_nodes(), 2 * base);
+    assert_eq!(memory.retained_snapshot_nodes(), 0);
+    put(&mut left, b"a", 1);
+    put(&mut right, b"b", 2);
+    assert_eq!(memory.retained_nodes(), 2 * base + 2);
+    assert_eq!(begin_key(&mut left, b"c"), None);
+    let old = table(&left);
+    let key = packed(b"c");
+    assert!(matches!(left.insert_missing(key.0, key.1, 3), Err(Error::Memory(_))));
+    assert_eq!(table(&left), old);
+    assert_eq!((left.frame.len, left.updates()), (1, 1));
+    assert_eq!(memory.retained_nodes(), 2 * base + 2);
+    drop(right);
+    left.insert_missing(key.0, key.1, 3).unwrap();
+    assert_eq!(memory.retained_nodes(), base + 2);
+    drop((left, work));
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+}
+
+#[test]
+fn packed_rehash_admits_simultaneous_old_and_new_nodes_before_table_mutation() {
+    let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+    let base = (size_of::<PackedMap>() + size_of::<Frame>()) as u64 + 3;
+    let work = new_work(&memory.with_limits(u64::MAX, base + 8));
+    let mut map = PackedMap::new(work.clone(), limits(), 1, body(), 0).unwrap();
+    for key in 0..7 { put(&mut map, &[key], key as u64); }
+    let old = table(&map);
+    let bytes = memory.used_bytes();
+    assert_eq!(begin_key(&mut map, &[7]), None);
+    let key = packed(&[7]);
+    assert!(matches!(map.insert_missing(key.0, key.1, 7), Err(Error::Memory(_))));
+    assert_eq!(table(&map), old);
+    assert_eq!((map.frame.capacity, map.frame.len, map.updates()), (8, 7, 7));
+    assert_eq!(memory.used_bytes(), bytes);
+    assert_eq!(memory.retained_nodes(), base + 7);
+    drop((map, work));
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+}
+
+#[test]
+fn packed_conversion_holds_both_owners_and_releases_all_claims_on_denial() {
+    let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+    let base = (size_of::<PackedMap>() + size_of::<Frame>()) as u64 + 3;
+    let work = new_work(&memory.with_limits(u64::MAX, base + 3));
+    let work_bytes = memory.used_bytes();
+    let mut map = PackedMap::new(work.clone(), limits(), 1, body(), 0).unwrap();
+    put(&mut map, b"a", 1);
+    put(&mut map, b"b", 2);
+    assert!(matches!(map.finish(), Err(Error::Memory(_))));
+    assert_eq!(memory.used_bytes(), work_bytes);
+    assert_eq!(memory.retained_nodes(), 0);
+    drop(work);
+    assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
+fn successful_packed_conversion_keeps_only_the_returned_owner_claim() {
+    let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+    let work = new_work(&memory);
+    let mut map = PackedMap::new(work.clone(), limits(), 1, body(), 0).unwrap();
+    for key in 0..16 { put(&mut map, &[key], key as u64); }
+    let (output, _, _) = map.finish().unwrap();
+    assert_eq!(memory.retained_nodes(), 17);
+    assert_eq!(memory.retained_snapshot_nodes(), 0);
+    drop((output, work));
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+}
+
+#[test]
 fn packed_layout_matches_generated_word_offsets() {
     assert_eq!(size_of::<Frame>(), FRAME_WORDS * 8);
     assert_eq!(size_of::<Slot>(), SLOT_WORDS * 8);

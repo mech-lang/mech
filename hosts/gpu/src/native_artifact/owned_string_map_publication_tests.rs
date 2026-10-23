@@ -77,6 +77,32 @@ fn contents(value: &Value) -> BTreeMap<String, u64> {
 }
 
 #[test]
+fn publication_counts_other_private_owners_and_canonical_output_atomically() {
+    let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+    // One retained entry is 2 private nodes. Its canonical form is 4 nodes;
+    // publication admits two forms of scratch plus that final canonical owner.
+    let view = memory.with_limits(u64::MAX, 14);
+    let mut map = table(&view);
+    map.insert("key", 9).unwrap();
+    let (schemas, schema) = dynamic();
+    let other = view.reserve_nodes(1).unwrap();
+    let bytes = memory.used_bytes();
+    assert!(matches!(map.publish(&schemas, schema, geometry(&map), limits()), Err(Error::Memory(_))));
+    assert_eq!(memory.used_bytes(), bytes);
+    assert_eq!(memory.retained_nodes(), 3);
+    assert_eq!(memory.retained_snapshot_nodes(), 0);
+    drop(other);
+    let output = map.publish(&schemas, schema, geometry(&map), limits()).unwrap();
+    assert_eq!(memory.retained_snapshot_nodes(), 4);
+    assert_eq!(memory.retained_nodes(), 6);
+    assert_eq!(contents(&output), BTreeMap::from([("key".to_owned(), 9)]));
+    drop(map);
+    assert_eq!(memory.retained_nodes(), 4);
+    drop(output);
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+}
+
+#[test]
 fn owned_map_publication_preserves_arbitrary_values_and_independent_prior_snapshots() {
     let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
     let (schemas, schema) = dynamic();

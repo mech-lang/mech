@@ -3,7 +3,7 @@
 //! lives here; integrating this owner into a native region requires a separate
 //! ownership/representation proof.
 use hashbrown::{DefaultHashBuilder, HashMap};
-use mech_core::{ManagedMemoryReservation, MemoryRuntimeError, ResidentKernelError};
+use mech_core::{ManagedMemoryReservation, ManagedNodeReservation, MemoryRuntimeError, ResidentKernelError};
 use mech_engine::native_artifact::NativeLibraryWorkBudget;
 use std::hash::BuildHasher;
 
@@ -102,12 +102,18 @@ pub(super) struct OwnedStringMap<S = DefaultHashBuilder> {
     table: ManagedMemoryReservation,
     keys: ManagedMemoryReservation,
     metadata: ManagedMemoryReservation,
+    nodes: ManagedNodeReservation,
     work: NativeLibraryWorkBudget,
     limits: Limits,
 }
 impl OwnedStringMap {
     pub(super) fn new(work: NativeLibraryWorkBudget, limits: Limits) -> Result<Self, Error> {
         Self::with_hasher_fn(work, limits, DefaultHashBuilder::default)
+    }
+    pub(super) fn new_with_memory(work: NativeLibraryWorkBudget, limits: Limits,
+        memory: mech_core::ManagedMemoryBudget) -> Result<Self, Error>
+    {
+        Self::with_hasher_memory_fn(work, limits, memory, DefaultHashBuilder::default)
     }
 }
 impl<S: BuildHasher> OwnedStringMap<S> {
@@ -124,17 +130,28 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         limits: Limits,
         hasher: impl FnOnce() -> S,
     ) -> Result<Self, Error> {
+        let memory = work.memory_budget();
+        Self::with_hasher_memory_fn(work, limits, memory, hasher)
+    }
+    fn with_hasher_memory_fn(
+        work: NativeLibraryWorkBudget, limits: Limits, memory: mech_core::ManagedMemoryBudget,
+        hasher: impl FnOnce() -> S,
+    ) -> Result<Self, Error> {
+        if memory != work.memory_budget() { return Err(Error::Binding("foreign map memory account")); }
+        let admitted = work.memory_budget();
+        let memory = admitted.with_limits(memory.limit_bytes(), memory.limit_nodes());
         let bytes = size_of::<Self>() as u64;
         check(bytes, limits.retained_bytes, "retained bytes")?;
         check(bytes, limits.temporary_bytes, "temporary bytes")?;
         work.charge(add(mul(bytes, 8)?, 64)?, 0)?;
-        let memory = work.memory_budget();
+        let nodes = memory.reserve_nodes(1)?;
         let metadata = memory.reserve_capacity(bytes)?;
         Ok(Self {
             values: HashMap::with_hasher(hasher()),
             table: memory.reserve_capacity(0)?,
             keys: memory.reserve_capacity(0)?,
             metadata,
+            nodes,
             work,
             limits,
         })
@@ -221,7 +238,13 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         };
         self.work
             .charge(add(growth_work, add(mul(key_bytes, 32)?, 128)?)?, 0)?;
-        let memory = self.work.memory_budget();
+        let memory = self.metadata.budget();
+        let new_entry = memory.reserve_nodes(1)?;
+        // Key construction and replacement table storage coexist with the
+        // original map. Claims retire on every failure, never after allocating
+        // first and checking a global census that another worker can change.
+        let _staging = memory.reserve_nodes(add(2,
+            if growth { add(self.values.len() as u64, 1)? } else { 0 })?)?;
         let mut new_key = memory.reserve_capacity(mul(key_bytes, 3)?)?;
         let mut new_table = memory.reserve_capacity(table_bytes)?;
         // Key allocation happens before table growth, so allocator failure
@@ -254,6 +277,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         // Same-account split/merge arithmetic was checked before allocation.
         new_key.resize_capacity(key_bytes)?;
         self.keys.merge_capacity(new_key)?;
+        self.nodes.merge(new_entry)?;
         Ok(self.values.insert(key, value))
     }
     pub(super) fn entries(&self) -> Result<impl ExactSizeIterator<Item = (&str, u64)>, Error> {

@@ -3,12 +3,13 @@
 //! synthetic selector Value, map algorithm or canonical key is constructed.
 use super::{Context, Error, State, add, invalid};
 use crate::native_artifact::{NativeExecutionPhase as Phase, NativeValueHandle};
-use mech_core::{MemoryBudgetDimension as Dimension, ResourceDemand, Value, ValueData};
+use mech_core::{ManagedNodeReservation, MemoryBudgetDimension as Dimension, ResourceDemand, Value, ValueData};
 use mech_engine::native_artifact::NativeSelectedStringSpanSelector;
 
 pub(super) enum Lane {
     Selector { selector: NativeSelectedStringSpanSelector },
-    Span { handle: NativeValueHandle, owner: Value, bytes: core::ops::Range<usize> },
+    Span { handle: NativeValueHandle, owner: Value, bytes: core::ops::Range<usize>,
+        _nodes: ManagedNodeReservation },
 }
 
 impl State<'_> {
@@ -51,6 +52,9 @@ impl State<'_> {
                 return Err(invalid("map key selection before its range"));
             };
             let selector = *selector;
+            let nodes = ctx.library.memory_budget().with_limits(
+                ctx.limits.max_temporary_bytes.unwrap_or(0), ctx.limits.max_retained_nodes.unwrap_or(0))
+                .reserve_nodes(2)?;
             let handle = ctx.arena.current_handle(proof.source().get(), &mut ctx.control.work)?;
             let owner = ctx.arena.get(handle, &mut ctx.control.work)?.clone();
             let super::super::session::CallCacheEntry::Repeated(cache, _) = &ctx.call_caches.entries[site]
@@ -69,7 +73,7 @@ impl State<'_> {
             if !matches!(owner.data(), ValueData::String(text) if text.get(bytes.clone()).is_some()) {
                 return Err(invalid("map key planner returned invalid bounds"));
             }
-            self.spans[id] = Some(Lane::Span { handle, owner, bytes });
+            self.spans[id] = Some(Lane::Span { handle, owner, bytes, _nodes: nodes });
         }
         self.last_owned_visit = Some(ctx.control.visits);
         Ok(())
