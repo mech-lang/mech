@@ -70,7 +70,7 @@ impl State<'_> {
                 let work = ctx.library.clone();
                 // One finite original call scope covers the full byte/probe
                 // work and typed output. No per-key or per-probe cap renewal.
-                work.with_call_limits(cap(ctx.limits.max_compute_work)?, cap(ctx.limits.max_comparison_work)?, || {
+                work.with_call_limits(cap(ctx.limits.max_compute_work)?, cap(ctx.limits.max_comparison_work)?, || -> Result<u64, Error> {
                     let found = frozen.map.lookup(text).map_err(storage_error)?;
                     let word = if contains { u64::from(found.is_some()) } else {
                         found.ok_or(Error::Library { origin: block.origin(),
