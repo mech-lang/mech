@@ -320,6 +320,9 @@ impl<'plan> Binding<'plan> {
             self.metadata.capacity_bytes(),
         )
     }
+    pub(super) fn retained_nodes(&self) -> Result<u64, Error> {
+        self.map.as_ref().map_or(Ok(1), |map| add(map.len() as u64, 3))
+    }
     fn site(
         &self,
         site: usize,

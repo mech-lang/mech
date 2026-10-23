@@ -165,16 +165,15 @@ impl NativeTurnPlanCache {
         if !self.validate(self.limits, work) {
             return Err(ResidentKernelError::InvalidInput);
         }
-        // The reservation covers only planning/fact/schema metadata. Each
-        // retained node occupies at least a byte, so its capacity is a safe
-        // conservative bound without inspecting the cached plan trees.
-        // The independently admitted String index can scale with the source:
-        // use its actual node witness rather than treating offset bytes as nodes.
+        // Planning/fact/schema metadata remains fully byte-admitted, including
+        // unused coexistence capacity. Count its one cache owner, then the
+        // existing index/weak-data witnesses, as maintained planner admission
+        // does. Reserved bytes are not live semantic/data nodes.
         let metadata = self.reservation.capacity_bytes();
         Ok(ResourceDemand {
             turn_peak_bytes: metadata.checked_add(self.snapshot_index.bytes())
                 .ok_or(ResidentKernelError::InvalidShape)?,
-            retained_nodes: metadata.checked_add(self.snapshot_index.nodes())
+            retained_nodes: 1u64.checked_add(self.snapshot_index.nodes())
                 .and_then(|n| n.checked_add(self.data_nodes))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             ..ResourceDemand::default()

@@ -147,6 +147,9 @@ fn generated_caller_geometry_covers_live_collection_builder_families() {
             let mut outputs = vec![None; artifact.outputs().len()];
             let (result, rows) = run(&jit, &mut outputs, &memory);
             result.unwrap();
+            let node_limit = tests::limits().library.max_retained_nodes.unwrap();
+            assert!(rows.iter().all(|row| row.nodes <= node_limit),
+                "small live callers must fit the unchanged node cap {node_limit}: {rows:?}");
             let seen = rows.iter().fold(0, |bits, row| bits | row.builders);
             assert!(seen & expected_kind != 0, "missing builder {expected_kind} for {expression}: {rows:?}");
             kinds |= seen;

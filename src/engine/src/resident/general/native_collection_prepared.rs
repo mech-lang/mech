@@ -90,6 +90,7 @@ struct CachedBinding {
     limits: MemoryBudgetLimits,
     work: NativeLibraryWorkBudget,
     projection_count: Option<u64>,
+    binding_nodes: u64,
     projection_index: crate::resident::text_index::snapshot::Slot,
     _reservation: ManagedMemoryReservation,
 }
@@ -113,14 +114,15 @@ impl NativePreparedLibraryCallCache {
             return Err(InvokeError::InvalidInput);
         }
         work.charge(256, 0)?;
-        // Static binding/kernel/schema metadata may contain recursive trees.
-        // Its admitted byte capacity safely bounds their node population. The
-        // separately reserved dynamic index already has its own node witness.
+        // Fixed binding metadata is one retained owner, rather than one node
+        // per reserved byte. Recursive conversion plans retain their prepared
+        // staging-node witness; dynamic indexes have their own witness below.
         let metadata = binding._reservation.capacity_bytes();
         let mut demand = ResourceDemand {
             turn_peak_bytes: metadata.checked_add(binding.projection_index.bytes())
                 .ok_or(InvokeError::InvalidInput)?,
-            retained_nodes: metadata.checked_add(binding.projection_index.nodes())
+            retained_nodes: 1u64.checked_add(if binding.call.is_some() { binding.binding_nodes } else { 0 })
+                .and_then(|n| n.checked_add(binding.projection_index.nodes()))
                 .ok_or(InvokeError::InvalidInput)?,
             ..ResourceDemand::default()
         };
@@ -621,6 +623,7 @@ impl NativePreparedLibraryCall {
                             limits,
                             work: work.clone(),
                             projection_count: None,
+                            binding_nodes: self.binding_nodes,
                             projection_index: Default::default(),
                             _reservation: reservation,
                         }));

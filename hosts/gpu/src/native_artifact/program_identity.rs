@@ -160,7 +160,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 30;
 // complete owner size, including that claim, remains part of byte admission.
 // Policy44 removes the superseded per-slot node census. The account-wide
 // snapshot claim still covers admitted owners, including caller-held roots.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 44;
+// Policy45 retains the recursive binding node witness independently of byte
+// reservations. Older Objects must not reuse the preceding binding layout price.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 45;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
