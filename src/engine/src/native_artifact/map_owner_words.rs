@@ -1,0 +1,267 @@
+//! Fixed native word transport for CLOSED map-owner candidates. This is not
+//! default storage selection. A runtime owner must supply/check opaque tokens
+//! at every entry, selected map call and canonical exit before this can run.
+use super::{
+    NativeAggregateWord as Word, NativeCollectionPrimitive as Primitive,
+    NativeIterationAction as Action, NativeMapOwnerRegion, NativeMatchAction as Scalar,
+    NativeMatchValue as Value, NativeProgramArtifactPlan as Plan,
+    NativeScalarAggregateAction as Transport, NativeScalarAggregates,
+    NativeStructuralObservation as Observation, NativeStructuralStep as Step,
+};
+use mech_core::{IntegerWidth, SchemaBody as Schema, ValueData};
+
+#[derive(Clone, Debug)]
+pub struct NativeMapOwnerWords {
+    regions: Box<[NativeMapOwnerRegion]>,
+    aggregates: NativeScalarAggregates,
+    initializers: Box<[Option<usize>]>,
+    exits: Box<[Option<usize>]>,
+    frame_words: usize,
+}
+impl NativeMapOwnerWords {
+    pub fn regions(&self) -> &[NativeMapOwnerRegion] {
+        &self.regions
+    }
+    pub const fn aggregates(&self) -> &NativeScalarAggregates {
+        &self.aggregates
+    }
+    pub fn initializer(&self, site: usize) -> Option<usize> {
+        self.initializers.get(site).copied().flatten()
+    }
+    pub fn exit(&self, site: usize) -> Option<usize> {
+        self.exits.get(site).copied().flatten()
+    }
+    pub const fn frame_words(&self) -> usize {
+        self.frame_words
+    }
+}
+
+fn width(schema: &Schema) -> Result<usize, &'static str> {
+    match schema {
+        Schema::UnsignedInteger(IntegerWidth::W64) | Schema::Map { .. } => Ok(1),
+        Schema::Tuple(items) => items.iter().try_fold(0usize, |n, item| {
+            n.checked_add(width(item)?)
+                .ok_or("map state width overflow")
+        }),
+        Schema::Enum { variants, .. } => variants
+            .iter()
+            .try_fold(0usize, |n, variant| -> Result<usize, &'static str> {
+                Ok(n.max(width(
+                    variant.payload.as_ref().ok_or("map state empty payload")?,
+                )?))
+            })?
+            .checked_add(1)
+            .ok_or("map state width overflow"),
+        _ => Err("unsupported private map state word kind"),
+    }
+}
+fn map(schema: &Schema) -> bool {
+    matches!(schema, Schema::Map { .. })
+}
+fn pack(plan: &Plan, action: &Action) -> Result<Option<Transport>, &'static str> {
+    let Action::LibraryCall {
+        template,
+        operands,
+        output,
+    } = action
+    else {
+        return Ok(None);
+    };
+    let schema = |value: Value| plan.values()[value.get() as usize].definition().body();
+    let words = match template.primitive() {
+        Primitive::CompositePack(_) => operands
+            .iter()
+            .map(|&value| {
+                if map(schema(value)) {
+                    Word::Field(value, 0)
+                } else {
+                    Word::Scalar(value)
+                }
+            })
+            .collect::<Vec<_>>(),
+        Primitive::EnumPack => {
+            let [tag, payload] = operands.as_ref() else {
+                return Err("map state enum pack arity");
+            };
+            let ordinal = plan
+                .constants()
+                .iter()
+                .find_map(|entry| {
+                    if entry.value() != *tag {
+                        return None;
+                    }
+                    let ValueData::Index(value) = entry.constant().data() else {
+                        return None;
+                    };
+                    value.checked_sub(1)
+                })
+                .ok_or("map state requires selected constant constructor ordinal")?;
+            let mut words = vec![Word::Constant(ordinal)];
+            words.extend((0..width(schema(*payload))?).map(|i| Word::Field(*payload, i)));
+            words.resize(width(schema(*output))?, Word::Constant(0));
+            words
+        }
+        _ => return Ok(None),
+    };
+    if words.len() != width(schema(*output))? {
+        return Err("map state constructor width mismatch");
+    }
+    Ok(Some(Transport::Pack {
+        output: *output,
+        words: words.into(),
+    }))
+}
+fn project(plan: &Plan, action: &Action) -> Result<Transport, &'static str> {
+    let Action::Structural {
+        source,
+        path,
+        observation,
+        output,
+    } = action
+    else {
+        return Err("map state projection action");
+    };
+    let mut schema = plan.values()[source.get() as usize].definition().body();
+    let mut offset = 0usize;
+    let mut guards = Vec::new();
+    for step in path {
+        schema = match (step, schema) {
+            (Step::EnumPayload { ordinal }, Schema::Enum { variants, .. }) => {
+                guards.push((offset, *ordinal));
+                offset = offset
+                    .checked_add(1)
+                    .ok_or("map state projection overflow")?;
+                variants
+                    .get(*ordinal as usize)
+                    .and_then(|v| v.payload.as_ref())
+                    .ok_or("map state projection variant")?
+            }
+            (Step::TupleItem { ordinal }, Schema::Tuple(items)) => {
+                let ordinal = *ordinal as usize;
+                for item in items.get(..ordinal).ok_or("map state projection field")? {
+                    offset = offset
+                        .checked_add(width(item)?)
+                        .ok_or("map state projection overflow")?;
+                }
+                items.get(ordinal).ok_or("map state projection field")?
+            }
+            _ => return Err("map state projection path"),
+        };
+    }
+    match observation {
+        Observation::CanonicalValue => {
+            if schema != plan.values()[output.get() as usize].definition().body() {
+                return Err("map state projection output kind");
+            }
+            Ok(Transport::Project {
+                source: *source,
+                offset,
+                guards: guards.into(),
+                output: *output,
+            })
+        }
+        Observation::U64 | Observation::EnumOrdinal { .. } => Ok(Transport::Observe {
+            source: *source,
+            offset,
+            ordinal: match observation {
+                Observation::EnumOrdinal { ordinal } => Some(*ordinal),
+                _ => None,
+            },
+            guards: guards.into(),
+            output: *output,
+        }),
+        _ => Err("unsupported private map state observation"),
+    }
+}
+impl Plan {
+    /// Explicit compiler groundwork, not the default aggregate selection.
+    /// Runtime lifetime/geometry/site checks remain required before emission
+    /// of a full program can adopt these opaque owner words.
+    pub fn map_owner_words(&self) -> Result<NativeMapOwnerWords, &'static str> {
+        let regions = self.map_owner_regions()?;
+        let ordinary = self.scalar_aggregates();
+        let mut end = self
+            .values()
+            .len()
+            .checked_add(self.iterations().len())
+            .and_then(|n| n.checked_add(ordinary.words()))
+            .ok_or("map state frame overflow")?;
+        let base = self
+            .values()
+            .len()
+            .checked_add(self.iterations().len())
+            .ok_or("map state frame overflow")?;
+        // Preserve every existing scalar component and its offsets. New owner
+        // words append after that complete layout; no strategy replaces it.
+        let mut slots = ordinary.slots.to_vec();
+        let mut actions = ordinary.actions.to_vec();
+        let mut initializers = vec![None; self.blocks().len()];
+        let mut exits = vec![None; self.blocks().len()];
+        for (index, region) in regions.iter().enumerate() {
+            initializers[region.tail().initialize() as usize] = Some(index);
+            exits[region.tail().exit() as usize] = Some(index);
+            let selected = |value: Value| region.values().contains(&value);
+            for &value in region.values() {
+                let definition = self.values()[value.get() as usize].definition();
+                let words = width(definition.body())?;
+                let at = if map(definition.body()) {
+                    value.get() as usize
+                } else {
+                    let at = end;
+                    end = end.checked_add(words).ok_or("map state frame overflow")?;
+                    at
+                };
+                if slots[value.get() as usize].replace((at, words)).is_some()
+                    || ordinary.slot(value).is_some()
+                {
+                    return Err("overlapping map state word selection");
+                }
+            }
+            for (site, block) in self.blocks().iter().enumerate() {
+                let action = match block.action() {
+                    Action::Scalar(Scalar::Copy { source, output }) if selected(*output) => {
+                        if !selected(*source) {
+                            return Err("foreign map state copy");
+                        }
+                        // A root binding is the zero-offset form of the same
+                        // fixed slice used by structural payload bindings.
+                        Some(Transport::Project {
+                            source: *source,
+                            offset: 0,
+                            guards: Box::new([]),
+                            output: *output,
+                        })
+                    }
+                    Action::Structural { source, .. } if selected(*source) => {
+                        Some(project(self, block.action())?)
+                    }
+                    Action::LibraryCall { output, .. } if selected(*output) => {
+                        pack(self, block.action())?
+                    }
+                    Action::Latch { iteration } if *iteration == region.iteration() => {
+                        Some(Transport::Copy {
+                            source: region.tail().next(),
+                            output: region.tail().carrier(),
+                        })
+                    }
+                    _ => None,
+                };
+                if action.is_some() && actions[site].replace(action.unwrap()).is_some() {
+                    return Err("overlapping map state transport actions");
+                }
+            }
+        }
+        Ok(NativeMapOwnerWords {
+            regions,
+            initializers: initializers.into(),
+            exits: exits.into(),
+            frame_words: end,
+            aggregates: NativeScalarAggregates {
+                slots: slots.into(),
+                actions: actions.into(),
+                constants: ordinary.constants.clone(),
+                words: end - base,
+            },
+        })
+    }
+}

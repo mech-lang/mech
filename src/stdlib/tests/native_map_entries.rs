@@ -575,6 +575,16 @@ fn native_map_owner_regions_close_source_states_and_chained_updates() {
             assert!(region.values().contains(&region.tail().returned()));
             assert!(!region.values().contains(&region.tail().seed()));
             assert!(!region.values().contains(&region.tail().result()));
+            let words = plan.map_owner_words().unwrap();
+            assert_eq!(words.regions().len(), 1);
+            let transport = words.aggregates();
+            assert!(transport.slot(region.tail().seed()).is_none());
+            assert!(transport.slot(region.tail().result()).is_none());
+            for &value in region.values() {
+                let (start, count) = transport.slot(value).unwrap();
+                assert!(start.checked_add(count).unwrap() <= words.frame_words());
+                assert!(plan.scalar_aggregates().slot(value).is_none());
+            }
         }
     }
 }
