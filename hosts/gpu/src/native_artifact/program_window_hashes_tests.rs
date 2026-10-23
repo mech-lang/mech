@@ -126,7 +126,11 @@ fn hash_window_generated_loop_performs_library_updates_and_stops_on_failure() {
         cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
             .unwrap();
     let mut module = cranelift_jit::JITModule::new(builder);
-    let (id, ir, _, _) = window_codegen::define(&mut module, &region).unwrap();
+    let (id, ir, stack, _) = window_codegen::define(&mut module, &region).unwrap();
+    assert!(
+        stack >= 128 * 16,
+        "batch scratch must be in the admitted stack: {stack}"
+    );
     assert!(
         ir.contains("call_indirect"),
         "every window must update the table: {ir}"
@@ -148,7 +152,7 @@ fn hash_window_generated_loop_performs_library_updates_and_stops_on_failure() {
                 source.as_ptr() as u64,
                 source.len() as u64,
                 (&mut table as *mut WindowHashes) as u64,
-                update as *const () as u64,
+                update_batch as *const () as u64,
                 width,
             )
         };
@@ -178,13 +182,37 @@ fn hash_window_generated_loop_performs_library_updates_and_stops_on_failure() {
             source.as_ptr() as u64,
             source.len() as u64,
             (&mut table as *mut WindowHashes) as u64,
-            update as *const () as u64,
+            update_batch as *const () as u64,
             1,
         )
     };
     assert_eq!(completed, 0);
     assert!(table.validate(0, count, completed).is_err());
     assert!(table.counts.is_empty());
+}
+
+#[test]
+fn hash_window_batch_bounds_and_partial_failure_prevent_publication() {
+    let source = "A".repeat(129);
+    let memory = mech_core::ManagedMemoryBudget::new(1 << 20);
+    for (start, count) in [(0, 0), (0, 129), (1, 1), (128, 2), (u64::MAX, 1)] {
+        let mut table = owner(&source, 1, &memory, 1 << 40, 1 << 20);
+        // The rejected batch must not dereference its key pointer.
+        let status = unsafe { update_batch(&mut table, start, std::ptr::null(), count) };
+        assert_eq!(status, 0);
+        assert_eq!(table.updated, 0);
+        assert!(table.counts.is_empty());
+        assert!(table.validate(0, table.accepted, 0).is_err());
+    }
+    let mut table = owner(&source, 1, &memory, 1 << 40, 1 << 20);
+    // One valid pair followed by a key outside the width proof. A partly
+    // updated table must remain unpublishable after the callback fails.
+    let pairs = [u64::from(b'A'), 0, u64::from(b'A'), 1];
+    assert_eq!(unsafe { update_batch(&mut table, 0, pairs.as_ptr(), 2) }, 0);
+    assert_eq!(table.updated, 1);
+    assert!(table.validate(0, table.accepted, 1).is_err());
+    drop(table);
+    assert_eq!(memory.used_bytes(), 0);
 }
 
 #[test]

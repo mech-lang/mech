@@ -1,4 +1,4 @@
-//! Same-artifact metadata for generated ABI14, not an evaluator.
+//! Same-artifact metadata for generated ABI15, not an evaluator.
 use super::{NativeValueSlot, iteration_abi::NativeIterationVisit};
 use mech_core::{FunctionCatalog, SchemaTable, Value};
 use mech_engine::{

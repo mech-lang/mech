@@ -1,6 +1,8 @@
 //! Rolling ASCII keys in generated code; every window updates the library table.
 use super::*;
-use cranelift_codegen::ir::Signature;
+use cranelift_codegen::ir::{Signature, StackSlotData, StackSlotKind};
+
+const BATCH: i64 = 128;
 
 pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     let entry = b.create_block();
@@ -9,13 +11,16 @@ pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     let head = b.create_block();
     let body = b.create_block();
     let update = b.create_block();
+    let flush = b.create_block();
+    let flushed = b.create_block();
     let advance = b.create_block();
     let done = b.create_block();
     b.append_block_params_for_function_params(entry);
-    for _ in 0..3 {
+    for _ in 0..4 {
         b.append_block_param(head, types::I64);
     }
     b.append_block_param(done, types::I64);
+    b.append_block_param(advance, types::I64);
     b.switch_to_block(entry);
     let args = b.block_params(entry).to_vec();
     let (source, length, owner, callback, width) = (args[0], args[1], args[2], args[3], args[4]);
@@ -44,10 +49,18 @@ pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     let high = b.ins().ishl(one, high_bits);
     let high = b.ins().iadd_imm(high, -1);
     let high_mask = b.ins().select(narrow, zero, high);
-    b.ins().jump(head, &[zero.into(), zero.into(), zero.into()]);
+    let slot = b.create_sized_stack_slot(StackSlotData::new(
+        StackSlotKind::ExplicitSlot,
+        (BATCH * 16) as u32,
+        4,
+    ));
+    let scratch = b.ins().stack_addr(types::I64, slot, 0);
+    b.ins()
+        .jump(head, &[zero.into(), zero.into(), zero.into(), zero.into()]);
     b.switch_to_block(head);
     let params = b.block_params(head).to_vec();
-    let (index, previous_low, previous_high) = (params[0], params[1], params[2]);
+    let (index, previous_low, previous_high, buffered) =
+        (params[0], params[1], params[2], params[3]);
     let more = b.ins().icmp(IntCC::UnsignedLessThan, index, length);
     b.ins().brif(more, body, &[], done, &[accepted.into()]);
     b.switch_to_block(body);
@@ -65,9 +78,24 @@ pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     let high = b.ins().band(high, high_mask);
     let next = b.ins().iadd_imm(index, 1);
     let complete = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, next, width);
-    b.ins().brif(complete, update, &[], advance, &[]);
+    b.ins()
+        .brif(complete, update, &[], advance, &[buffered.into()]);
     b.switch_to_block(update);
-    let start = b.ins().isub(next, width);
+    // The fixed, aligned stack slot is part of the compiled stack descriptor.
+    // Only initialized pairs are loaned to the synchronous library callback.
+    let offset = b.ins().ishl_imm(buffered, 4);
+    let destination = b.ins().iadd(scratch, offset);
+    b.ins().store(MemFlags::new(), low, destination, 0);
+    b.ins().store(MemFlags::new(), high, destination, 8);
+    let count = b.ins().iadd_imm(buffered, 1);
+    let full = b.ins().icmp_imm(IntCC::Equal, count, BATCH);
+    let final_byte = b.ins().icmp(IntCC::Equal, next, length);
+    let ready = b.ins().bor(full, final_byte);
+    b.ins().brif(ready, flush, &[], advance, &[count.into()]);
+    b.switch_to_block(flush);
+    let completed = b.ins().isub(next, width);
+    let completed = b.ins().iadd_imm(completed, 1);
+    let start = b.ins().isub(completed, count);
     let mut signature = Signature::new(b.func.signature.call_conv);
     signature.params = vec![AbiParam::new(types::I64); 4];
     signature.returns.push(AbiParam::new(types::I64));
@@ -75,11 +103,17 @@ pub(super) fn emit(b: &mut FunctionBuilder<'_>) {
     // Private owner/function pair; no arbitrary program-supplied pointer.
     let call = b
         .ins()
-        .call_indirect(signature, callback, &[owner, start, low, high]);
+        .call_indirect(signature, callback, &[owner, start, scratch, count]);
     let updated = b.inst_results(call)[0];
-    b.ins().brif(updated, advance, &[], done, &[start.into()]);
+    b.ins().brif(updated, flushed, &[], done, &[start.into()]);
+    b.switch_to_block(flushed);
+    b.ins().jump(advance, &[zero.into()]);
     b.switch_to_block(advance);
-    b.ins().jump(head, &[next.into(), low.into(), high.into()]);
+    let buffered = b.block_params(advance)[0];
+    b.ins().jump(
+        head,
+        &[next.into(), low.into(), high.into(), buffered.into()],
+    );
     b.switch_to_block(done);
     let completed = b.block_params(done)[0];
     b.ins().return_(&[completed]);
