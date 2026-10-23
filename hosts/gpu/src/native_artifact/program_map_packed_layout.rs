@@ -21,6 +21,7 @@ pub(super) struct Proof {
     inclusive: bool,
     range_site: u32,
     selection_site: u32,
+    domain: Option<super::program_key_domain::Domain>,
 }
 impl Proof {
     /// None denotes the literal zero in an unmodified base endpoint.
@@ -29,6 +30,7 @@ impl Proof {
     pub fn inclusive(&self) -> bool { self.inclusive }
     pub fn range_site(&self) -> u32 { self.range_site }
     pub fn selection_site(&self) -> u32 { self.selection_site }
+    pub fn domain(&self) -> Option<super::program_key_domain::Domain> { self.domain }
 }
 
 fn u64_value(plan: &Plan, value: Value) -> bool {
@@ -158,6 +160,7 @@ pub(super) fn derive(plan: &Plan, owners: &NativeMapOwnerWords, owner: usize,
                 inclusive,
                 range_site: span.range_site(),
                 selection_site: span.selection_site(),
+                domain: super::program_key_domain::derive(plan, span.source()),
             });
         }
     }
@@ -280,5 +283,35 @@ text/join([count-text(width) | width <- [1u64 2u64]], "")
             assert!(dominates(&visits, 0, 1, 3));
             assert!(!dominates(&visits, 0, 2, 3));
         });
+    }
+
+    #[test]
+    fn packed_domain_comes_from_source_map_values_and_join_separator() {
+        for (mapping, separator, symbols) in [
+            (r#"{"a": "A", "c": "C", "g": "G", "t": "T"}"#, "", Some("ACGT")),
+            (r#"{"a": "A", "c": "C", "g": "G", "t": "T"}"#, ":", Some(":ACGT")),
+            (r#"{"a": "ab", "b": "bc"}"#, "", Some("abc")),
+            (r#"{"a": "é", "b": "b"}"#, "", None),
+            (r#"{"a": replacement<string>, "b": "b"}"#, "", None),
+        ] {
+            let source = format!(r#"{COUNT}
++> text
+mapping := {mapping}
+copy := mapping
+sequence := text/join([copy{{char}} | char <- input<string>], "{separator}")
+#Count(sequence, 2u64, 4u64, empty)
+"#);
+            each_plan(&source, |plan, owners, visits| {
+                let domain = derive(plan, owners, 0, visits).unwrap().domain();
+                match symbols {
+                    Some(symbols) => {
+                        let domain = domain.expect("proved finite output alphabet");
+                        for byte in 0..128u8 { assert_eq!(domain.contains(byte), symbols.as_bytes().contains(&byte)); }
+                        if symbols == "ACGT" { assert_eq!((domain.bits(), domain.shift()), (2, Some(1))); }
+                    }
+                    None => assert!(domain.is_none()),
+                }
+            });
+        }
     }
 }
