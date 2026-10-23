@@ -24,6 +24,11 @@ mod borrowed_metadata_scan_tests;
 pub(crate) mod native_turn_plan_cache;
 #[path = "payload_budget.rs"]
 pub(crate) mod payload;
+#[cfg(feature = "native-artifact")]
+#[path = "native_worker_budget.rs"]
+mod workers;
+#[cfg(feature = "native-artifact")]
+pub use workers::{NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerWorkLoan};
 
 #[derive(Default)]
 struct DisplayByteCounter(usize);
@@ -207,7 +212,7 @@ thread_local! {
 // Repeated control execution accumulates the costs admitted by the existing
 // kernel budget authority. Each invocation contributes its maximum observed
 // demand once; incremental estimates within that invocation are not summed.
-#[derive(Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 struct ControlWork {
     compute: u64,
     comparison: u64,
@@ -217,9 +222,12 @@ struct ControlWork {
 struct ControlWorkAccount {
     identity: u64,
     used: ControlWork,
+    reserved: ControlWork,
     compute_limit: u64,
     comparison_limit: u64,
     _reservation: Option<mech_core::ManagedMemoryReservation>,
+    #[cfg(feature = "native-artifact")]
+    worker: Option<NativeWorkerWorkLoan>,
 }
 static NEXT_CONTROL_WORK_ID: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 fn next_control_work_identity() -> u64 {
@@ -236,9 +244,12 @@ impl Default for ControlWorkAccount {
         Self {
             identity: next_control_work_identity(),
             used: ControlWork::default(),
+            reserved: ControlWork::default(),
             compute_limit: mech_core::RESIDENT_MAX_COMPUTE_WORK,
             comparison_limit: mech_core::RESIDENT_MAX_COMPARISON_WORK,
             _reservation: None,
+            #[cfg(feature = "native-artifact")]
+            worker: None,
         }
     }
 }
@@ -265,9 +276,11 @@ impl NativeLibraryWorkBudget {
             account: std::rc::Rc::new(std::cell::RefCell::new(ControlWorkAccount {
                 identity: next_control_work_identity(),
                 used: ControlWork::default(),
+                reserved: ControlWork::default(),
                 compute_limit,
                 comparison_limit,
                 _reservation: Some(reservation),
+                worker: None,
             })),
         })
     }
@@ -300,16 +313,22 @@ impl NativeLibraryWorkBudget {
             .with(|v| v.get())
             .unwrap_or((u64::MAX, u64::MAX));
         let state = self.account.borrow();
-        Some((
+        let local = (
             state
                 .compute_limit
                 .min(root.0)
-                .checked_sub(state.used.compute)?,
+                .checked_sub(state.used.compute)?.checked_sub(state.reserved.compute)?,
             state
                 .comparison_limit
                 .min(root.1)
-                .checked_sub(state.used.comparison)?,
-        ))
+                .checked_sub(state.used.comparison)?.checked_sub(state.reserved.comparison)?,
+        );
+        if let Some(worker) = &state.worker {
+            let shared = worker.remaining()?;
+            Some((local.0.min(shared.0), local.1.min(shared.1)))
+        } else {
+            Some(local)
+        }
     }
 
     /// Identity of the account that admitted this ledger's actual backing.
@@ -426,6 +445,7 @@ impl NativeLibraryWorkBudget {
                     .used
                     .compute
                     .checked_add(compute)
+                    .and_then(|used| used.checked_add(state.reserved.compute))
                     .ok_or(ResidentKernelError::InvalidShape)?,
                 compute_limit,
                 MemoryBudgetDimension::ComputeWork,
@@ -435,6 +455,7 @@ impl NativeLibraryWorkBudget {
                     .used
                     .comparison
                     .checked_add(comparison)
+                    .and_then(|used| used.checked_add(state.reserved.comparison))
                     .ok_or(ResidentKernelError::InvalidShape)?,
                 comparison_limit,
                 MemoryBudgetDimension::ComparisonWork,
@@ -675,9 +696,10 @@ fn checked_control_account_work(
         .checked_add(comparison)
         .ok_or(ResidentKernelError::InvalidShape)?;
     for (required, limit, dimension) in [
-        (compute, compute_limit, MemoryBudgetDimension::ComputeWork),
+        (compute.checked_add(account.reserved.compute).ok_or(ResidentKernelError::InvalidShape)?,
+            compute_limit, MemoryBudgetDimension::ComputeWork),
         (
-            comparison,
+            comparison.checked_add(account.reserved.comparison).ok_or(ResidentKernelError::InvalidShape)?,
             comparison_limit,
             MemoryBudgetDimension::ComparisonWork,
         ),
@@ -691,6 +713,10 @@ fn checked_control_account_work(
             });
         }
     }
+    #[cfg(feature = "native-artifact")]
+    if let Some(worker) = &account.worker {
+        worker.preview(compute - account.used.compute, comparison - account.used.comparison)?;
+    }
     Ok(ControlWork {
         compute,
         comparison,
@@ -702,7 +728,14 @@ fn charge_control_account(
     compute: u64,
     comparison: u64,
 ) -> Result<(), ResidentKernelError> {
-    account.used = checked_control_account_work(account, compute, comparison)?;
+    let next = checked_control_account_work(account, compute, comparison)?;
+    #[cfg(feature = "native-artifact")]
+    if let Some(worker) = &account.worker {
+        // Local call caps were checked first. Both shared dimensions commit
+        // together before the infallible local-counter assignment.
+        worker.charge(compute, comparison)?;
+    }
+    account.used = next;
     Ok(())
 }
 
