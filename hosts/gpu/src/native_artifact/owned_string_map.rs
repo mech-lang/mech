@@ -24,6 +24,7 @@ pub(super) enum Error {
     },
     Overflow,
     Allocation,
+    Publication(&'static str),
 }
 impl std::fmt::Display for Error {
     fn fmt(&self, out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -37,9 +38,14 @@ impl std::fmt::Display for Error {
             } => write!(out, "owned map {field}: {required} exceeds {limit}"),
             Self::Overflow => out.write_str("owned map size arithmetic overflow"),
             Self::Allocation => out.write_str("owned map allocation failed"),
+            Self::Publication(reason) => write!(out, "owned map publication: {reason}"),
         }
     }
 }
+
+#[path = "owned_string_map_publication.rs"]
+mod publication;
+pub(super) use publication::Geometry as PublicationGeometry;
 impl std::error::Error for Error {}
 impl From<MemoryRuntimeError> for Error {
     fn from(error: MemoryRuntimeError) -> Self {
