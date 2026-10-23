@@ -51,6 +51,7 @@ impl std::error::Error for NativeValueError {}
 pub struct NativeValueArena<'a> {
     values: NativeTypedStorage<Option<Value>>,
     generations: NativeWordStorage,
+    live_nodes: u64,
     types: &'a [NativeValueSlot],
     budget: ManagedMemoryBudget,
     work_identity: u64,
@@ -65,7 +66,7 @@ impl<'a> NativeValueArena<'a> {
         let count = u32::try_from(types.len()).map_err(|_| NativeValueError::InvalidSlot)?;
         let bytes = u64::from(count)
             .checked_mul(
-                (core::mem::size_of::<Option<Value>>() + core::mem::size_of::<u64>()) as u64,
+                (core::mem::size_of::<Option<Value>>() + 2 * core::mem::size_of::<u64>()) as u64,
             )
             .ok_or(NativeExecutionError::Descriptor {
                 reason: "native value transport size overflows",
@@ -81,18 +82,25 @@ impl<'a> NativeValueArena<'a> {
         // Covers both initialization passes and their bounded metadata. This
         // debits the caller's ledger, not a fresh per-arena work allowance.
         let setup = u64::from(count)
-            .checked_mul(24)
+            .checked_mul(32)
             .and_then(|n| n.checked_add(256))
             .ok_or(NativeExecutionError::Descriptor {
                 reason: "native value setup work overflows",
             })?;
         work.charge(NativeExecutionPhase::Setup, setup)?;
         let values = NativeTypedStorage::new_values(types.len(), max_transport_bytes, budget)?;
-        let generations = NativeWordStorage::new(types.len(), max_transport_bytes, Some(budget))?;
+        // Interleave generation and cached node count in one admitted lane.
+        let metadata_words = types
+            .len()
+            .checked_mul(2)
+            .ok_or(NativeValueError::InvalidSlot)?;
+        let generations =
+            NativeWordStorage::new(metadata_words, max_transport_bytes, Some(budget))?;
         work.bind_memory_budget(budget)?;
         Ok(Self {
             values,
             generations,
+            live_nodes: 0,
             types,
             budget: budget.clone(),
             work_identity: work.identity(),
@@ -117,7 +125,15 @@ impl<'a> NativeValueArena<'a> {
         let retained = value
             .memory_budget_retained_bytes(&self.budget)
             .ok_or(NativeValueError::UnadmittedPayload)?;
-        let generation = self.generations.values()[index]
+        let nodes = value
+            .memory_budget_retained_nodes(&self.budget)
+            .ok_or(NativeValueError::UnadmittedPayload)?;
+        let live_nodes = self
+            .live_nodes
+            .checked_sub(self.generations.values()[index * 2 + 1])
+            .and_then(|n| n.checked_add(nodes))
+            .ok_or(NativeValueError::InvalidSlot)?;
+        let generation = self.generations.values()[index * 2]
             .checked_add(1)
             .ok_or(NativeValueError::GenerationExhausted)?;
         // Prepay retirement before retaining a root: eventual replacement or
@@ -132,7 +148,9 @@ impl<'a> NativeValueArena<'a> {
             })?;
         work.charge(NativeExecutionPhase::Setup, retirement)?;
         self.values.values_mut()[index] = Some(value.clone());
-        self.generations.values_mut()[index] = generation;
+        self.generations.values_mut()[index * 2] = generation;
+        self.generations.values_mut()[index * 2 + 1] = nodes;
+        self.live_nodes = live_nodes;
         Ok(NativeValueHandle {
             domain: self.values.domain_id(),
             slot,
@@ -152,7 +170,7 @@ impl<'a> NativeValueArena<'a> {
     fn index(&self, handle: NativeValueHandle) -> Result<usize, NativeValueError> {
         let index = handle.slot as usize;
         if handle.domain != self.values.domain_id()
-            || self.generations.values().get(index) != Some(&handle.generation)
+            || self.generations.values().get(index * 2) != Some(&handle.generation)
             || self
                 .values
                 .values()
@@ -227,7 +245,7 @@ impl<'a> NativeValueArena<'a> {
         Ok(NativeValueHandle {
             domain: self.values.domain_id(),
             slot,
-            generation: self.generations.values()[index],
+            generation: self.generations.values()[index * 2],
         })
     }
 
@@ -254,6 +272,18 @@ impl<'a> NativeValueArena<'a> {
             .transpose()
     }
 
+    /// Conservative sum over current arena slots, including repeated aliases.
+    /// Replacement/retirement update it without a payload or schema traversal.
+    /// Other caller-owned roots and private builders remain the caller's duty.
+    pub(super) fn retained_node_upper_bound(
+        &self,
+        work: &mut NativeWorkMeter,
+    ) -> Result<u64, NativeValueError> {
+        self.check_work(work)?;
+        work.charge(NativeExecutionPhase::Setup, 16)?;
+        Ok(self.live_nodes)
+    }
+
     /// Only the certified generated caller may retire a lexical local. Payload
     /// retirement was prepaid by put; invalidate its handle before releasing it.
     #[cfg(feature = "canonical-native-program-runtime")]
@@ -271,10 +301,16 @@ impl<'a> NativeValueArena<'a> {
             .get_mut(index)
             .ok_or(NativeValueError::InvalidSlot)?;
         if value.is_some() {
-            let next = self.generations.values()[index]
+            let next = self.generations.values()[index * 2]
                 .checked_add(1)
                 .ok_or(NativeValueError::GenerationExhausted)?;
-            self.generations.values_mut()[index] = next;
+            let nodes = self
+                .live_nodes
+                .checked_sub(self.generations.values()[index * 2 + 1])
+                .ok_or(NativeValueError::InvalidSlot)?;
+            self.generations.values_mut()[index * 2] = next;
+            self.generations.values_mut()[index * 2 + 1] = 0;
+            self.live_nodes = nodes;
             *value = None;
         }
         Ok(())
@@ -354,7 +390,13 @@ impl<'a> NativeValueArena<'a> {
             .generation
             .checked_add(1)
             .ok_or(NativeValueError::GenerationExhausted)?;
-        self.generations.values_mut()[index] = next;
+        let nodes = self
+            .live_nodes
+            .checked_sub(self.generations.values()[index * 2 + 1])
+            .ok_or(NativeValueError::InvalidSlot)?;
+        self.generations.values_mut()[index * 2] = next;
+        self.generations.values_mut()[index * 2 + 1] = 0;
+        self.live_nodes = nodes;
         self.values.values_mut()[index]
             .take()
             .ok_or(NativeValueError::StaleHandle)
@@ -369,6 +411,89 @@ mod tests {
         SchemaBody, SchemaDraft, SchemaTableBuilder, ValueData, ValueDataDraft, ValueDraft,
     };
     const TRANSPORT_LIMIT: u64 = 1024 * 1024;
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    #[test]
+    fn arena_node_bound_tracks_aliases_replacement_retirement_and_take() {
+        let budget = ManagedMemoryBudget::new(16 * 1024 * 1024);
+        let (text_ty, raw_a) = text(&"λ".repeat(8192));
+        let (_, raw_b) = text("replacement");
+        let (map_ty, raw_map) = value(
+            SchemaBody::Map {
+                key: Box::new(SchemaBody::String),
+                value: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+                cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+            ValueDataDraft::Map(
+                [("a", 1), ("b", u64::MAX)]
+                    .into_iter()
+                    .map(|(key, value)| MapEntryDraft {
+                        items: vec![
+                            ValueDataDraft::String(key.into()),
+                            ValueDataDraft::U64(value),
+                        ]
+                        .into_boxed_slice(),
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        );
+        let a = admit(&raw_a, &budget);
+        let b = admit(&raw_b, &budget);
+        let map = admit(&raw_map, &budget);
+        assert_eq!(a.memory_budget_retained_nodes(&budget), Some(2));
+        assert_eq!(map.memory_budget_retained_nodes(&budget), Some(6));
+        let types = [text_ty, text_ty, map_ty];
+        let mut work = NativeWorkMeter::new(100_000_000).unwrap();
+        let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &budget, &mut work).unwrap();
+        assert_eq!(arena.retained_node_upper_bound(&mut work).unwrap(), 0);
+        let before = budget.used_bytes();
+        arena.put(0, &a, &mut work).unwrap();
+        arena.put(1, &a, &mut work).unwrap();
+        let handle = arena.put(2, &map, &mut work).unwrap();
+        assert_eq!(arena.retained_node_upper_bound(&mut work).unwrap(), 10);
+        assert_eq!(
+            budget.used_bytes(),
+            before,
+            "no census allocation on put/read"
+        );
+        assert!(matches!(
+            arena.put(2, &a, &mut work),
+            Err(NativeValueError::TypeMismatch)
+        ));
+        assert_eq!(arena.retained_node_upper_bound(&mut work).unwrap(), 10);
+        arena.put(0, &b, &mut work).unwrap();
+        arena.retire_current_matching(1, &a, &mut work).unwrap();
+        assert_eq!(arena.retained_node_upper_bound(&mut work).unwrap(), 8);
+        arena.retire_current(1, &mut work).unwrap();
+        assert_eq!(arena.retained_node_upper_bound(&mut work).unwrap(), 8);
+        let taken = arena.take(handle, &mut work).unwrap();
+        assert_eq!(arena.retained_node_upper_bound(&mut work).unwrap(), 2);
+        assert!(matches!(
+            arena.get(handle, &mut work),
+            Err(NativeValueError::StaleHandle)
+        ));
+        let mut foreign_work = NativeWorkMeter::new(1_000_000).unwrap();
+        assert!(matches!(
+            arena.retained_node_upper_bound(&mut foreign_work),
+            Err(NativeValueError::WrongWorkLedger)
+        ));
+        arena.retire_current(0, &mut work).unwrap();
+        assert_eq!(arena.retained_node_upper_bound(&mut work).unwrap(), 0);
+        drop((
+            arena,
+            a,
+            b,
+            map,
+            raw_a,
+            raw_b,
+            raw_map,
+            taken,
+            work,
+            foreign_work,
+        ));
+        assert_eq!(budget.used_bytes(), 0);
+    }
 
     fn value(body: SchemaBody, data: ValueDataDraft) -> (NativeValueSlot, Value) {
         let schema = SchemaDraft {

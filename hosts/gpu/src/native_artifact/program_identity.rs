@@ -150,7 +150,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 28;
 // retains its original table update and finite accounting.
 // Policy41 admits canonical structural child measurement, copying and finalization
 // on the same invocation ledger before publishing the bound value.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 41;
+// Policy42 retains admitted node witnesses and funds per-slot node metadata;
+// old Objects must not reuse the earlier snapshot/transport allocation prices.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 42;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

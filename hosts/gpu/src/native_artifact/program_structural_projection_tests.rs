@@ -90,7 +90,7 @@ fn native_structural_map_states_execute_all_seven_counting_widths() {
         let identity = object.identity().bytes();
         assert_eq!(u64::from_le_bytes(identity[16..24].try_into().unwrap()), 28);
         assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 15);
-        assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 41);
+        assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 42);
         assert!(jit.descriptor().plan().blocks().iter().any(|block| matches!(block.action(), NativeIterationAction::Structural { observation: mech_engine::native_artifact::NativeStructuralObservation::CanonicalValue, .. })));
         for text in ["ACGTACGTNACGTTACGTACGTACGT", "", "GGTAGGT"] {
             for width in widths {
