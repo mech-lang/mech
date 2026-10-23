@@ -36,10 +36,7 @@ impl State<'_> {
         }
         if self.caller.is_some() { return Err(invalid("overlapping closed map caller census")); }
         let site = layout.regions()[owner].tail().initialize() as usize;
-        let Some(geometry) = ctx.retained_caller_geometry(site)? else { return Ok(None); };
-        let dynamic = ctx.retained_caller_dynamic_nodes(site)?;
-        let fixed_nodes = geometry.live_nodes.checked_sub(dynamic)
-            .ok_or_else(|| invalid("map caller census is smaller than its dynamic holdings"))?;
+        let Some(fixed_nodes) = ctx.retained_caller_fixed_geometry(site)? else { return Ok(None); };
         Ok(Some(Caller { iteration, fixed_nodes }))
     }
 
@@ -60,13 +57,15 @@ impl State<'_> {
             live_bytes: ctx.library.memory_budget().used_bytes(),
             live_nodes: add(caller.fixed_nodes, ctx.retained_caller_dynamic_nodes(site)?)?,
         };
-        // Independent complete census during real generated-code tests. This
-        // detects drift after map growth, cache population and view retirement.
+        // Independently check the retained local component. Shared snapshots
+        // and bytes may change between observations as peer workers run; their
+        // atomic reservations, not equality across two censuses, enforce the
+        // combined limit. Cache metadata remains a fresh observation above.
         #[cfg(all(test, feature = "canonical-native-program"))]
         {
-            let expected = ctx.retained_caller_inventory(site)?
+            let expected = ctx.retained_caller_fixed_inventory()?
                 .ok_or_else(|| invalid("closed map census lost caller geometry"))?;
-            if (expected.live_bytes, expected.live_nodes) != (geometry.live_bytes, geometry.live_nodes) {
+            if expected != caller.fixed_nodes {
                 return Err(invalid("closed map caller census differs from complete inventory"));
             }
         }
