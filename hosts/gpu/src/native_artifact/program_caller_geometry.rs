@@ -27,11 +27,23 @@ impl Context<'_, '_> {
         &mut self,
         site: usize,
     ) -> Result<Option<PublicationGeometry>, Error> {
+        self.check_caller_geometry_visit(site)?;
+        self.retained_caller_inventory(site)
+    }
+
+    fn check_caller_geometry_visit(&self, site: usize) -> Result<(), Error> {
         let current = u32::try_from(site).map_err(|_| invalid("caller geometry site overflows"))?;
         if self.control.previous != Some(current) || self.control.completed || self.consumed {
             return Err(invalid("caller geometry outside fresh current visit"));
         }
-        self.retained_caller_inventory(site)
+        Ok(())
+    }
+
+    pub(super) fn retained_caller_fixed_geometry(&mut self, site: usize)
+        -> Result<Option<u64>, Error>
+    {
+        self.check_caller_geometry_visit(site)?;
+        self.retained_caller_fixed_inventory()
     }
 
     /// Inventory only; no visit or storage permission. The closed map entry
@@ -39,6 +51,17 @@ impl Context<'_, '_> {
     pub(super) fn retained_caller_inventory(&mut self, site: usize)
         -> Result<Option<PublicationGeometry>, Error>
     {
+        let Some(fixed) = self.retained_caller_fixed_inventory()? else { return Ok(None); };
+        let nodes = add(fixed, self.retained_caller_dynamic_nodes(site)?)?;
+        Ok(Some(PublicationGeometry {
+            live_bytes: self.library.memory_budget().used_bytes(), live_nodes: nodes,
+        }))
+    }
+
+    /// Only this invocation's private holdings. Shared snapshot counts can
+    /// change when another worker publishes or retires a value, so a stable
+    /// local census must never be obtained by subtracting two shared samples.
+    pub(super) fn retained_caller_fixed_inventory(&mut self) -> Result<Option<u64>, Error> {
         // A source/window loan needs its own live-owner witness. Decline this
         // view instead of treating borrowed producer storage as empty. Ordinary
         // canonical execution remains available to the future selecting caller.
@@ -53,8 +76,7 @@ impl Context<'_, '_> {
         self.control.work.charge(NativeExecutionPhase::Setup, 512)?;
         // Fixed invocation/frame/transport roots. This bound excludes variable
         // payload backing, so a long String is never priced as one node/byte.
-        let fixed = fixed_nodes()?;
-        let mut nodes = add(memory.retained_snapshot_nodes(), fixed)?;
+        let mut nodes = fixed_nodes()?;
         if let Some(collections) = &self.collections {
             nodes = add(nodes, collections.caller_retained_nodes(&mut self.control.work)?)?;
         }
@@ -67,11 +89,7 @@ impl Context<'_, '_> {
         if let Some(selected) = &self.selected_join {
             nodes = add(nodes, selected.caller_retained_nodes()?)?;
         }
-        nodes = add(nodes, self.call_caches.caller_retained_nodes(&self.library)
-            .map_err(|error| Error::Library {
-                origin: self.control.descriptor.plan.blocks()[site].origin(), error,
-            })?)?;
-        Ok(Some(PublicationGeometry { live_bytes: memory.used_bytes(), live_nodes: nodes }))
+        Ok(Some(nodes))
     }
 }
 

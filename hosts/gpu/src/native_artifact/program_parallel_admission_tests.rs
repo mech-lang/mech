@@ -23,6 +23,8 @@ fn complete_invocation_metadata_is_shared_and_denied_without_leaking_prior_state
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
     let parent = session::Prepared::new(descriptor, tests::limits(), &memory).unwrap();
     let baseline = (memory.used_bytes(), memory.retained_nodes(), memory.retained_snapshot_nodes());
+    assert_eq!(baseline.1 - baseline.2, session::Prepared::worker_setup_nodes(descriptor).unwrap(),
+        "fixed setup helper must equal the actual private constructor claims");
     assert!(baseline.1 > baseline.2 + caller_geometry::fixed_nodes().unwrap());
     let capped = memory.with_limits(memory.limit_bytes(), baseline.1 * 2 - 1);
     let error = session::Prepared::new(descriptor, tests::limits(), &capped).err()
@@ -66,7 +68,8 @@ fn ordinary_nested_join_body_retains_parallel_node_admission() {
             }
             let _restore = Restore(parallel::TEST_WORKERS.with(|value| value.replace(Some(workers))));
             let mut outputs = vec![None; artifact.outputs().len()];
-            let report = jit.evaluate_into(&args, &mut outputs, tests::limits(), &memory).unwrap();
+            let report = jit.evaluate_into(&args, &mut outputs, tests::limits(), &memory)
+                .unwrap_or_else(|error| panic!("workers={workers}: {error:?}"));
             assert_eq!(report.parallel_tasks, if workers == 1 { 0 } else { 2 });
             let output = outputs.last().unwrap().as_ref().unwrap();
             assert!(matches!(output.data(), ValueData::String(text) if text.as_ref() == "2,2|4,4"));

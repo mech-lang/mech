@@ -389,6 +389,24 @@ pub(super) struct Prepared<'a> {
 }
 
 impl<'a> Prepared<'a> {
+    /// Exact fixed private node claims made by `new_with_budget`. This is a
+    /// necessary simultaneous setup floor, not a promise that later canonical
+    /// constants, cache entries, builders or map contents will fit. Those keep
+    /// their existing atomic admission at construction/publication.
+    pub(super) fn worker_setup_nodes(
+        descriptor: &NativeProgramDescriptor,
+    ) -> Result<u64, NativeProgramExecutionError> {
+        let fixed = super::caller_geometry::fixed_nodes()?;
+        let collections = collection::State::metadata_bytes(descriptor)?;
+        let call_caches = CallCacheLane::metadata_bytes(descriptor.plan.blocks().len())?;
+        let line_matrices = u64::from(!descriptor.line_matrices.regions.is_empty());
+        let total = fixed.checked_add(collections)
+            .and_then(|n| n.checked_add(call_caches))
+            .and_then(|n| n.checked_add(line_matrices))
+            .ok_or_else(|| invalid("worker fixed setup node count overflow"))?;
+        Ok(total)
+    }
+
     pub(super) fn new(
         descriptor: &'a NativeProgramDescriptor,
         limits: NativeProgramExecutionLimits,
