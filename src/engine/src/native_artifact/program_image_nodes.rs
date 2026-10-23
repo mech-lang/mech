@@ -110,18 +110,19 @@ pub(super) fn input(image: &Json, schemas: &SchemaTable) -> Result<NativeProgram
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Constant {
+struct Constant<'a> {
     value: u32,
-    constant: Json,
+    #[serde(borrow)]
+    constant: &'a serde_json::value::RawValue,
 }
 pub(super) fn constant(
-    image: &Json,
+    image: &serde_json::value::RawValue,
     schemas: &SchemaTable,
 ) -> Result<NativeProgramConstant, String> {
-    let r: Constant = wire(image)?;
+    let r: Constant<'_> = serde_json::from_str(image.get()).map_err(|e| e.to_string())?;
     Ok(NativeProgramConstant {
         value: NativeMatchValue(r.value),
-        constant: values::constant(&r.constant, schemas)?,
+        constant: values::constant_bytes(r.constant.get().as_bytes(), schemas)?,
     })
 }
 #[derive(Deserialize)]

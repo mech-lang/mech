@@ -11,6 +11,10 @@ use serde::Deserialize;
 #[path = "program_image_canonical_json.rs"]
 pub(crate) mod canonical_json;
 
+#[path = "program_image_raw_json.rs"]
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+pub(crate) mod raw_json;
+
 #[path = "program_image_plan.rs"]
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 mod plan;
