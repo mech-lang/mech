@@ -348,7 +348,9 @@ empty<{string:u64}> := map/new()
             assert_eq!(region.parent, None);
             assert!(region.aliases.contains(&region.output));
             assert_eq!(layout.reads.iter().flatten().count(), 2);
-            assert!(!layout.copies.iter().all(Option::is_none));
+            // The source alias is eliminated before this plan; both reads
+            // reference the same completed result rather than a host copy.
+            assert_eq!(region.aliases, vec![region.output]);
             for (site, selected) in layout.reads.iter().enumerate() {
                 if selected.is_none() { continue; }
                 let Action::LibraryCall { operands, .. } = plan.blocks()[site].action() else { panic!("ordinary read only"); };
@@ -395,7 +397,8 @@ empty<{string:u64}> := map/new()
             // current visit need a separate proof, even though every use reads.
             lookup("  values := [counts{q} | q <- [query]]\n  result := sequence/length(values).", "lookup(text<string>, query<string>)"),
         ];
-        for source in cases {
+        for (case, source) in cases.into_iter().enumerate() {
+            eprintln!("FROZEN_NEGATIVE_CASE {case}: {source}");
             let (plan, owners, closed) = parts(&artifact(&source));
             assert!(closed.regions.iter().any(|region| region.packed.is_some()),
                 "the negative fixture must reach the prior packed-owner proof");
