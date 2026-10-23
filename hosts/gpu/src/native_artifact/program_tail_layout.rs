@@ -65,7 +65,10 @@ impl Layout {
                     .chain(owners.regions()[owner].writes())
                     .all(|&site| owners.call_span(site as usize) == Some(spans[0].0))
             });
-            if tail.parent().is_some() || (map.is_none()
+            // A closed map body may run inside an ordinary comprehension.
+            // Its own body must still contain no child loop; the parent is
+            // suspended until this private owner publishes at the Tail exit.
+            if (tail.parent().is_some() && map.is_none()) || (map.is_none()
                 && aggregates.action(tail.initialize() as usize).is_none()) {
                 continue;
             }
