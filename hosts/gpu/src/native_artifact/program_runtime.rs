@@ -182,6 +182,7 @@ struct Context<'plan, 'visit> {
     control: Control<'visit, NativeProgramDescriptor>,
     // Sources are cheap shared roots from the arena; drop collection state
     // first, while that arena still owns their prepaid retirement obligation.
+    map_owners: map_owners::Session<'plan>,
     collections: Option<collection::State>,
     borrowed_strings: Option<borrowed::State>,
     closed_tail: Option<closed_tail::State>,

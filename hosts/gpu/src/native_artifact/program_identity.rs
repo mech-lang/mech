@@ -162,7 +162,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 30;
 // snapshot claim still covers admitted owners, including caller-held roots.
 // Policy45 retains the recursive binding node witness independently of byte
 // reservations. Older Objects must not reuse the preceding binding layout price.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 45;
+// Policy46 retains lazy map-owner session metadata through entry boundaries.
+// Fixed caller geometry includes that state; table allocations remain lazy.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 46;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
