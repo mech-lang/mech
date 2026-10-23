@@ -39,6 +39,8 @@ mod selected_join;
 mod session;
 #[path = "program_parallel_runtime.rs"]
 mod parallel;
+#[path = "program_parallel_admission.rs"]
+mod parallel_admission;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_parallel_tests.rs"]
 mod parallel_tests;

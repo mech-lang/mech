@@ -1,0 +1,81 @@
+//! Admission boundaries use real owning invocation state and generated bodies.
+use super::super::*;
+
+fn source() -> String {
+    format!(r#"{}
++> number
++> text
++> sequence
+render(s<string>, n<u64>) => (out<string>) :=
+  h := #Count(s, 1u64, n, empty)
+  out := text/join([number/format(h{{key}}, 0u64) | key <- ["a", "b"]], ",").
+text := seed<string>
+text/join([render(text, n) | n <- [4u64 8u64]], "|")
+"#, structural_projection_tests::COUNT)
+}
+
+#[test]
+fn complete_invocation_metadata_is_shared_and_denied_without_leaking_prior_state() {
+    let artifact = tests::artifact_source(&source());
+    let jit = crate::native_artifact::JitProgramArtifact::compile(
+        &artifact, &mech_stdlib::source_catalog()).unwrap();
+    let descriptor = jit.descriptor();
+    let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+    let parent = session::Prepared::new(descriptor, tests::limits(), &memory).unwrap();
+    let baseline = (memory.used_bytes(), memory.retained_nodes(), memory.retained_snapshot_nodes());
+    assert!(baseline.1 > baseline.2 + caller_geometry::fixed_nodes().unwrap());
+    let capped = memory.with_limits(memory.limit_bytes(), baseline.1 * 2 - 1);
+    let error = session::Prepared::new(descriptor, tests::limits(), &capped).err()
+        .expect("two independent complete metadata inventories cannot fit one node short");
+    assert!(format!("{error:?}").contains("retained node admission"));
+    assert_eq!((memory.used_bytes(), memory.retained_nodes(), memory.retained_snapshot_nodes()), baseline);
+    let exact = memory.with_limits(memory.limit_bytes(), baseline.1 * 2);
+    let child = session::Prepared::new(descriptor, tests::limits(), &exact).unwrap();
+    assert_eq!(memory.retained_nodes(), baseline.1 * 2);
+    drop(child);
+    assert_eq!((memory.used_bytes(), memory.retained_nodes(), memory.retained_snapshot_nodes()), baseline);
+    drop(parent);
+    assert_eq!((memory.used_bytes(), memory.retained_nodes(), memory.retained_snapshot_nodes()), (0, 0, 0));
+}
+
+#[test]
+fn ordinary_nested_join_body_retains_parallel_node_admission() {
+    let original = tests::artifact_source(&source());
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+    for artifact in [original, decoded] {
+        let jit = crate::native_artifact::JitProgramArtifact::compile(
+            &artifact, &mech_stdlib::source_catalog()).unwrap();
+        assert!(!jit.descriptor().parallel.regions.is_empty());
+        assert!(jit.descriptor().parallel.regions.iter().enumerate()
+            .all(|(id, _)| super::supported(jit.descriptor(), id)));
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024)
+            .with_limits(256 * 1024 * 1024, 1 << 24);
+        let value = ValueDraft { schema: artifact.inputs()[0].schema, shape_values: Box::new([]),
+            data: ValueDataDraft::String("abababab".into()) }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas())).unwrap();
+        let mut bytes = memory.reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap()).unwrap();
+        let args = [value.into_memory_budget(&mut bytes).unwrap()];
+        drop(bytes);
+        let baseline = (memory.used_bytes(), memory.retained_nodes());
+        let mut snapshots = Vec::new();
+        for workers in [1, 8] {
+            struct Restore(Option<usize>);
+            impl Drop for Restore {
+                fn drop(&mut self) { parallel::TEST_WORKERS.with(|value| value.set(self.0)); }
+            }
+            let _restore = Restore(parallel::TEST_WORKERS.with(|value| value.replace(Some(workers))));
+            let mut outputs = vec![None; artifact.outputs().len()];
+            let report = jit.evaluate_into(&args, &mut outputs, tests::limits(), &memory).unwrap();
+            assert_eq!(report.parallel_tasks, if workers == 1 { 0 } else { 2 });
+            let output = outputs.last().unwrap().as_ref().unwrap();
+            assert!(matches!(output.data(), ValueData::String(text) if text.as_ref() == "2,2|4,4"));
+            snapshots.push(output.canonical_snapshot_bytes(artifact.schemas()).unwrap());
+            drop(outputs);
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
+        }
+        assert_eq!(snapshots[0], snapshots[1]);
+        drop(args);
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+    }
+}

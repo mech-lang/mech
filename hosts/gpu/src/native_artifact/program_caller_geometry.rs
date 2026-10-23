@@ -7,6 +7,13 @@ fn add(a: u64, b: u64) -> Result<u64, Error> {
     a.checked_add(b).ok_or_else(|| invalid("native caller node geometry overflows"))
 }
 
+pub(super) fn fixed_nodes() -> Result<u64, Error> {
+    (core::mem::size_of::<Context<'_, '_>>() as u64)
+        .checked_add(core::mem::size_of::<Frame>() as u64)
+        .and_then(|n| n.checked_add(128))
+        .ok_or_else(|| invalid("native caller fixed geometry overflows"))
+}
+
 impl Context<'_, '_> {
     pub(super) fn retained_caller_dynamic_nodes(&self, site: usize) -> Result<u64, Error> {
         add(self.library.memory_budget().retained_snapshot_nodes(),
@@ -46,10 +53,7 @@ impl Context<'_, '_> {
         self.control.work.charge(NativeExecutionPhase::Setup, 512)?;
         // Fixed invocation/frame/transport roots. This bound excludes variable
         // payload backing, so a long String is never priced as one node/byte.
-        let fixed = (core::mem::size_of::<Context<'_, '_>>() as u64)
-            .checked_add(core::mem::size_of::<Frame>() as u64)
-            .and_then(|n| n.checked_add(128))
-            .ok_or_else(|| invalid("native caller fixed geometry overflows"))?;
+        let fixed = fixed_nodes()?;
         let mut nodes = add(memory.retained_snapshot_nodes(), fixed)?;
         if let Some(collections) = &self.collections {
             nodes = add(nodes, collections.caller_retained_nodes(&mut self.control.work)?)?;

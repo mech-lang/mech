@@ -97,6 +97,7 @@ impl Context<'_, '_> {
         #[cfg(test)]
         let workers = TEST_WORKERS.with(|override_| override_.get().unwrap_or(workers)).min(32);
         if count < 2 || count > workers as u64 { return Ok(Some(0)); }
+        let Some(_parent_nodes) = self.parallel_admission(&[id])? else { return Ok(Some(0)); };
         let Some((compute, _)) = self.library.unscoped_remaining() else { return Ok(Some(0)); };
         if compute == 0 { return Ok(Some(0)); }
         if args[0] == 0 || args[1] == 0 { return Err(invalid("parallel dispatch lost checked entry")); }
