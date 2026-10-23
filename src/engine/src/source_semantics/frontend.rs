@@ -2501,6 +2501,62 @@ fn materialize_source_output_draft(
         ResolvedOutputSchemaRule::FromResolvedType => {
             schema_draft_from_resolved(resolved, anchor, inputs)
         }
+        ResolvedOutputSchemaRule::DynamicMap => {
+            let draft = schema_draft_from_resolved(resolved, anchor, inputs)?;
+            let SchemaBody::Map {
+                key,
+                value,
+                cardinality,
+            } = &draft.body
+            else {
+                return Err(internal(
+                    anchor,
+                    "map output rule requires a map kind".to_owned(),
+                ));
+            };
+            let removed = match cardinality {
+                CardinalitySpec::Exact(DimensionExpr::Parameter(id)) => Some(*id),
+                _ => None,
+            };
+            let replacements = draft
+                .dimension_parameters
+                .iter()
+                .filter(|declaration| Some(declaration.id) != removed)
+                .enumerate()
+                .map(|(index, declaration)| {
+                    (declaration.id, DimensionParameterId::new(index as u32))
+                })
+                .collect::<BTreeMap<_, _>>();
+            let error = || internal(anchor, "map output dimensions are not closed".to_owned());
+            let parameters = draft
+                .dimension_parameters
+                .iter()
+                .filter(|declaration| Some(declaration.id) != removed)
+                .map(|declaration| {
+                    Ok(DimensionParameterDeclaration {
+                        id: replacements[&declaration.id],
+                        origin: declaration.origin,
+                        lifetime: declaration.lifetime,
+                        lower_bound: remap_dimension_expr(&declaration.lower_bound, &replacements)
+                            .map_err(|_| error())?,
+                        upper_bound: declaration
+                            .upper_bound
+                            .as_ref()
+                            .map(|bound| remap_dimension_expr(bound, &replacements))
+                            .transpose()
+                            .map_err(|_| error())?,
+                    })
+                })
+                .collect::<Result<Vec<_>, SourceSemanticError>>()?;
+            Ok(SchemaDraft {
+                dimension_parameters: parameters.into_boxed_slice(),
+                body: SchemaBody::Map {
+                    key: Box::new(remap_schema_body(key, &replacements).map_err(|_| error())?),
+                    value: Box::new(remap_schema_body(value, &replacements).map_err(|_| error())?),
+                    cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                },
+            })
+        }
         ResolvedOutputSchemaRule::FromInput(index) => {
             let input = inputs.get(*index).ok_or_else(|| {
                 internal(
@@ -4567,11 +4623,20 @@ impl SemanticBuilder {
                                 })?;
                     }
                     let detail = Some(format!("{function_name}({})", names.join(",")));
-                    let (inputs, output) = self.resolve_declared_call(
+                    // Nullary generic constructors infer their result kinds
+                    // from the lexical annotation, since they have no inputs.
+                    let expected_output = if inputs.is_empty() {
+                        expected.map(|context| context.schema().clone())
+                    } else {
+                        None
+                    };
+                    let (inputs, output) = self.resolve_declared_call_context(
                         &function_name,
                         inputs,
                         value.syntax(),
                         declaration,
+                        None,
+                        expected_output,
                     )?;
                     self.emit_with_schema_draft(
                         &function_name,
@@ -4622,10 +4687,22 @@ impl SemanticBuilder {
     fn resolve_declared_call_with_destination(
         &mut self,
         name: &str,
+        inputs: Vec<PendingValue>,
+        syntax: &SyntaxNode,
+        declaration: mech_core::FunctionTypeDeclaration,
+        destination: Option<SchemaDraft>,
+    ) -> Result<(Vec<PendingValue>, SchemaDraft), SourceSemanticError> {
+        self.resolve_declared_call_context(name, inputs, syntax, declaration, destination, None)
+    }
+
+    fn resolve_declared_call_context(
+        &mut self,
+        name: &str,
         mut inputs: Vec<PendingValue>,
         syntax: &SyntaxNode,
         mut declaration: mech_core::FunctionTypeDeclaration,
         destination: Option<SchemaDraft>,
+        expected_output: Option<SchemaDraft>,
     ) -> Result<(Vec<PendingValue>, SchemaDraft), SourceSemanticError> {
         // Both operator and call syntax enter this inference boundary. These
         // peer operations infer an undeclared input from the other operand;
@@ -4739,11 +4816,24 @@ impl SemanticBuilder {
                 scheme: &overload.scheme,
             })
             .collect::<Vec<_>>();
+        let expected_outputs = expected_output
+            .as_ref()
+            .map(|schema| {
+                ResolvedType::from_schema_body(&schema.body, &schema.dimension_parameters)
+                    .map(|output| vec![output])
+                    .map_err(|error| {
+                        internal(
+                            SourceSemanticAnchor::for_node(syntax),
+                            format!("invalid maintained call result schema: {error}"),
+                        )
+                    })
+            })
+            .transpose()?;
         let resolved = mech_core::resolve_type_overloads(
             TypeConstraintOrigin::new(name.to_owned(), None),
             &candidates,
             &input_types,
-            None,
+            expected_outputs.as_deref(),
         )
         .map_err(|error| SourceSemanticError {
             code: "source-semantics/incompatible-call-kind",

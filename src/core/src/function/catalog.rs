@@ -753,6 +753,7 @@ pub fn maintained_source_type_declaration(
     }
     validate_type_declaration(canonical_name, &declaration)?;
     let output_rule = match canonical_name {
+        "map/new" => Some(ResolvedOutputSchemaRule::DynamicMap),
         "map/histogram" => Some(ResolvedOutputSchemaRule::Declared(crate::SchemaBody::Map {
             key: Box::new(crate::SchemaBody::String),
             value: Box::new(crate::SchemaBody::UnsignedInteger(crate::IntegerWidth::W64)),

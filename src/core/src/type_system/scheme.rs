@@ -1183,6 +1183,23 @@ fn text_join() -> Result<KindScheme, SemanticModelError> {
     )
 }
 
+fn new_map() -> Result<KindScheme, SemanticModelError> {
+    make(
+        2,
+        1,
+        Vec::new(),
+        vec![KindExpr::Map {
+            key: Box::new(kind(0)),
+            value: Box::new(kind(1)),
+            cardinality: dim(0),
+        }],
+        vec![KindConstraint::Satisfies {
+            kind: kind(0),
+            predicate: BuiltinKindPredicate::Keyable,
+        }],
+    )
+}
+
 fn string_count_map(cardinality: DimensionExpr) -> KindExpr {
     KindExpr::Map {
         key: Box::new(BuiltinScalarKind::String.kind_expr()),
@@ -1715,6 +1732,7 @@ pub fn maintained_source_schemes(
         "sequence/sort-indices" => vec![sequence_sort_indices()?],
         "text/lines" => vec![text_lines()?],
         "text/join" => vec![text_join()?],
+        "map/new" => vec![new_map()?],
         "map/histogram" => vec![string_histogram()?],
         "map/keys" => vec![string_count_projection(true)?],
         "map/values" => vec![string_count_projection(false)?],

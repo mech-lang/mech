@@ -66,12 +66,26 @@ pub(in crate::resident) fn find(
     })
 }
 
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
 pub(super) fn find_with_compare(
     map: &MapValue,
     candidate_work: u64,
     meter: &mut impl Budget,
-    mut compare: impl FnMut(&ValueData) -> Result<core::cmp::Ordering, ResidentKernelError>,
+    compare: impl FnMut(&ValueData) -> Result<core::cmp::Ordering, ResidentKernelError>,
 ) -> Result<usize, ResidentKernelError> {
+    find_optional_with_compare(map, candidate_work, meter, compare)?
+        .ok_or(ResidentKernelError::InvalidInput)
+}
+
+pub(super) fn find_optional_with_compare(
+    map: &MapValue,
+    candidate_work: u64,
+    meter: &mut impl Budget,
+    mut compare: impl FnMut(&ValueData) -> Result<core::cmp::Ordering, ResidentKernelError>,
+) -> Result<Option<usize>, ResidentKernelError> {
     let mut largest_key_work = candidate_work;
     let mut key_bytes = 0u64;
     for entry in map.entries() {
@@ -111,8 +125,8 @@ pub(super) fn find_with_compare(
         match compare(map.entries()[middle].key().data())? {
             core::cmp::Ordering::Less => upper = middle,
             core::cmp::Ordering::Greater => lower = middle + 1,
-            core::cmp::Ordering::Equal => return Ok(middle),
+            core::cmp::Ordering::Equal => return Ok(Some(middle)),
         }
     }
-    Err(ResidentKernelError::InvalidInput)
+    Ok(None)
 }

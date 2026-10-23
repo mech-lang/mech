@@ -10423,13 +10423,26 @@ fn aggregate_assignment_data(
             let replacement = source
                 .canonical_data_draft()
                 .map_err(|_| ResidentKernelError::InvalidInput)?;
-            let selected = resolved_ordinal.ok_or(ResidentKernelError::InvalidInput)?;
-            let value = entries
-                .get_mut(selected)
-                .and_then(|entry| entry.items.get_mut(1))
-                .ok_or(ResidentKernelError::InvalidInput)?;
-            *value = replacement;
-            Ok(ValueDataDraft::Map(entries))
+            if let Some(selected) = resolved_ordinal {
+                let value = entries
+                    .get_mut(selected)
+                    .and_then(|entry| entry.items.get_mut(1))
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                *value = replacement;
+                Ok(ValueDataDraft::Map(entries))
+            } else {
+                let key = selector
+                    .canonical_data_draft()
+                    .map_err(|_| ResidentKernelError::InvalidInput)?;
+                let mut entries = entries.into_vec();
+                entries
+                    .try_reserve_exact(1)
+                    .map_err(|_| ResidentKernelError::InvalidShape)?;
+                entries.push(mech_core::snapshot::MapEntryDraft {
+                    items: vec![key, replacement].into_boxed_slice(),
+                });
+                Ok(ValueDataDraft::Map(entries.into_boxed_slice()))
+            }
         }
         SchemaBody::Table { columns, .. } => {
             let ValueData::Id(_) = selector.data() else {
@@ -10508,12 +10521,12 @@ fn indexed_assign_snapshot_aggregate(
     )?;
     let execution_ordinal = match (current_schema.body(), current.data()) {
         (SchemaBody::Map { key, .. }, ValueData::Map(map)) => {
-            Some(map_access_entry_for_selector_with_meter(
+            map_optional_entry_for_selector_with_meter(
                 map,
                 key,
                 input(inputs, 1)?,
                 &mut footprint_meter,
-            )?)
+            )?
         }
         (SchemaBody::Record(fields), ValueData::Record(_)) => {
             let selected = named_schema_ordinal_with_meter(
@@ -10545,6 +10558,54 @@ fn indexed_assign_snapshot_aggregate(
         }
         _ => plan.aggregate_ordinal,
     };
+    let inserting =
+        matches!(current_schema.body(), SchemaBody::Map { .. }) && execution_ordinal.is_none();
+    let insertion_work = if inserting {
+        let ValueData::Map(map) = current.data() else {
+            unreachable!()
+        };
+        let SchemaBody::Map { cardinality, .. } = current_schema.body() else {
+            unreachable!()
+        };
+        let limit = match cardinality {
+            mech_core::CardinalitySpec::Exact(mech_core::DimensionExpr::Constant(limit))
+            | mech_core::CardinalitySpec::Dynamic {
+                upper_bound: Some(mech_core::DimensionExpr::Constant(limit)),
+            } => Some(*limit),
+            _ => None,
+        };
+        if limit.is_some_and(|limit| map.entries().len() as u64 >= limit) {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        current_footprint
+            .encoded_bytes
+            .checked_add(selector_cost.retained_bytes)
+            .and_then(|n| n.checked_add(128))
+            .and_then(|n| n.checked_mul(map.entries().len() as u64 + 1))
+            .and_then(|n| n.checked_mul(8))
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        0
+    };
+    // Only a new entry retains its selector as a key in the resulting tree.
+    // All insertion lookup, growth and canonical sorting is admitted before
+    // materialization; existing-key writes retain their preceding accounting.
+    let retained_key_bytes = if inserting {
+        selector_cost
+            .retained_bytes
+            .checked_add(128)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        0
+    };
+    let retained_key_nodes = if inserting {
+        selector_cost
+            .retained_nodes
+            .checked_add(2)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        0
+    };
     let mut finalization_work = snapshot_data_finalization_work(
         &mut footprint_meter,
         current_schema.body(),
@@ -10562,6 +10623,9 @@ fn indexed_assign_snapshot_aggregate(
             )?)
             .ok_or(ResidentKernelError::InvalidShape)?;
     }
+    finalization_work = finalization_work
+        .checked_add(insertion_work)
+        .ok_or(ResidentKernelError::InvalidShape)?;
     let materialized_bytes = source_cost
         .retained_bytes
         .checked_mul(2)
@@ -10570,10 +10634,14 @@ fn indexed_assign_snapshot_aggregate(
         .ok_or(ResidentKernelError::InvalidShape)?;
     let output_bytes = current_bytes
         .checked_add(source_cost.retained_bytes)
+        .and_then(|n| n.checked_add(retained_key_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let (final_output_nodes, node_phases) = snapshot_aggregate_assignment_node_phases(
         current_nodes,
-        source_cost.retained_nodes,
+        source_cost
+            .retained_nodes
+            .checked_add(retained_key_nodes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
         selector_cost.retained_nodes,
     )?;
     let measured_nodes = node_phases
@@ -10592,6 +10660,7 @@ fn indexed_assign_snapshot_aggregate(
         encoded_bytes: current_footprint
             .encoded_bytes
             .checked_add(source_cost.retained_bytes)
+            .and_then(|n| n.checked_add(retained_key_bytes))
             .ok_or(ResidentKernelError::InvalidShape)?,
         retained_bytes: output_bytes,
         node_count: final_output_nodes,
@@ -10607,14 +10676,17 @@ fn indexed_assign_snapshot_aggregate(
     let footprint_work = footprint_meter.estimate();
     let cost = super::budget::resident_cost! {
         comparison_work: footprint_work.comparison_work()
-            .checked_add(publication_equality_work)
+            .checked_add(insertion_work)
+            .and_then(|n| n.checked_add(publication_equality_work))
             .ok_or(ResidentKernelError::InvalidShape)?,
         compute_work: measured_nodes
             .checked_add(footprint_work.compute_work())
             .and_then(|work| work.checked_add(publication_equality_work))
+            .and_then(|work| work.checked_add(insertion_work))
             .ok_or(ResidentKernelError::InvalidShape)?,
         temporary_bytes: current_bytes
             .checked_add(materialized_bytes)
+            .and_then(|n| n.checked_add(retained_key_bytes))
             .ok_or(ResidentKernelError::InvalidShape)?,
         cloned_bytes: output_bytes
             .checked_add(source_cost.cloned_bytes)
@@ -15776,6 +15848,16 @@ fn map_access_entry_for_selector_with_meter(
     selector: ResidentValueRef<'_>,
     meter: &mut super::budget::ResidentBudgetMeter,
 ) -> Result<usize, ResidentKernelError> {
+    map_optional_entry_for_selector_with_meter(map, key_schema, selector, meter)?
+        .ok_or(ResidentKernelError::InvalidInput)
+}
+
+fn map_optional_entry_for_selector_with_meter(
+    map: &mech_core::snapshot::MapValue,
+    key_schema: &SchemaBody,
+    selector: ResidentValueRef<'_>,
+    meter: &mut super::budget::ResidentBudgetMeter,
+) -> Result<Option<usize>, ResidentKernelError> {
     let compare = |candidate: &ValueData| -> Result<core::cmp::Ordering, ResidentKernelError> {
         let ordering = match selector {
             ResidentValueRef::Snapshot([Some(value)]) => {
@@ -15826,7 +15908,7 @@ fn map_access_entry_for_selector_with_meter(
         _ => return Err(ResidentKernelError::InvalidInput),
     };
     if matches!(key_schema, SchemaBody::String) {
-        return string_map_access::find_with_compare(map, candidate_work, meter, compare);
+        return string_map_access::find_optional_with_compare(map, candidate_work, meter, compare);
     } else {
         for entry in map.entries() {
             super::budget::charge_canonical_key_footprint(meter, key_schema, entry.key().data())?;
@@ -15844,10 +15926,10 @@ fn map_access_entry_for_selector_with_meter(
         match compare(map.entries()[middle].key().data())? {
             core::cmp::Ordering::Less => upper = middle,
             core::cmp::Ordering::Greater => lower = middle + 1,
-            core::cmp::Ordering::Equal => return Ok(middle),
+            core::cmp::Ordering::Equal => return Ok(Some(middle)),
         }
     }
-    Err(ResidentKernelError::InvalidInput)
+    Ok(None)
 }
 
 #[cfg(test)]

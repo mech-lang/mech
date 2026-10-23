@@ -262,6 +262,12 @@ pub mod linkage_factories {
     );
     #[cfg(feature = "map_ops")]
     factory!(
+        @features MAP_NEW, &["map_ops"], &["map"], "new", CanonicalFinalize,
+        super::super::composite::bind_composite_pack,
+        NativeCollectionPrimitive::CompositePack(0)
+    );
+    #[cfg(feature = "map_ops")]
+    factory!(
         @features MAP_HISTOGRAM, &["map_ops"],
         &["map"],
         "histogram",
@@ -419,6 +425,7 @@ fn bind_values(
 
 #[cfg(feature = "map_ops")]
 pub(super) fn register_maps(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    MAP_NEW.install(builder)?;
     MAP_HISTOGRAM.install(builder)?;
     MAP_KEYS.install(builder)?;
     MAP_VALUES.install(builder)
