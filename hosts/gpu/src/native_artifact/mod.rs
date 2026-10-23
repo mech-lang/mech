@@ -143,3 +143,6 @@ pub use program_runtime::NativeProgramExecutionSession;
 pub use program_runtime::{
     NativeProgramExecutionError, NativeProgramExecutionLimits, NativeProgramExecutionReport,
 };
+
+#[cfg(feature = "canonical-native-program-runtime")]
+mod owned_string_map;
