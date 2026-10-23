@@ -4,6 +4,7 @@
 use super::super::program_abi::{
     PHASE_ACTIVATION, PHASE_CAPTURE_TAIL, PHASE_PREFIX, PHASE_TURN, STATUS_ACTIVATED,
     STATUS_INPUT_PENDING, STATUS_INPUT_SCANNED,
+    PHASE_WORKER, STATUS_WORKER_RESULT,
 };
 use super::*;
 
@@ -374,6 +375,7 @@ pub(super) struct Prepared<'a> {
     paused: Option<u32>,
     retention: Option<prefix::Retention>,
     window_work_seen: u64,
+    worker: Option<parallel::Worker>,
 }
 
 impl<'a> Prepared<'a> {
@@ -381,6 +383,15 @@ impl<'a> Prepared<'a> {
         descriptor: &'a NativeProgramDescriptor,
         limits: NativeProgramExecutionLimits,
         memory: &ManagedMemoryBudget,
+    ) -> Result<Self, NativeProgramExecutionError> {
+        Self::new_with_budget(descriptor, limits, memory, None)
+    }
+
+    fn new_with_budget(
+        descriptor: &'a NativeProgramDescriptor,
+        limits: NativeProgramExecutionLimits,
+        memory: &ManagedMemoryBudget,
+        worker_budget: Option<NativeLibraryWorkBudget>,
     ) -> Result<Self, NativeProgramExecutionError> {
         let plan = &descriptor.plan;
         if plan.activation_boundary().is_none() {
@@ -468,7 +479,9 @@ impl<'a> Prepared<'a> {
             }
             .into());
         }
-        let mut work = NativeWorkMeter::new(limits.execution.max_work)?;
+        let mut work = if let Some(library) = &worker_budget {
+            NativeWorkMeter::from_worker_budget(library.clone(), memory)?
+        } else { NativeWorkMeter::new(limits.execution.max_work)? };
         work.charge(NativeExecutionPhase::Setup, amount(words, 4, 256)?)?;
         work.charge(
             NativeExecutionPhase::Setup,
@@ -478,11 +491,10 @@ impl<'a> Prepared<'a> {
                 4096,
             )?,
         )?;
-        let library = work.shared_library_budget(
-            NativeExecutionPhase::Setup,
-            caps.max_comparison_work.unwrap(),
-            memory,
-        )?;
+        let library = if let Some(library) = worker_budget { library } else {
+            work.shared_library_budget(NativeExecutionPhase::Setup,
+                caps.max_comparison_work.unwrap(), memory)?
+        };
         let mut storage =
             NativeWordStorage::new(words, limits.execution.max_transport_bytes, Some(memory))?;
         // The exact table occupies the disjoint final lane of this SAME
@@ -548,6 +560,7 @@ impl<'a> Prepared<'a> {
             paused: None,
             retention: None,
             window_work_seen: 0,
+            worker: None,
             state: Some(OwnedState {
                 map_owners: map_owners::Session::new(descriptor),
                 collections,
@@ -570,6 +583,67 @@ impl<'a> Prepared<'a> {
                 output_cursor: 0,
             }),
         })
+    }
+
+    pub(super) fn run_worker(
+        descriptor: &'a NativeProgramDescriptor,
+        entry: super::super::program_abi::Entry,
+        limits: NativeProgramExecutionLimits,
+        memory: &ManagedMemoryBudget,
+        library: NativeLibraryWorkBudget,
+        worker: parallel::Worker,
+        captures: Vec<parallel::Capture>,
+    ) -> Result<parallel::Receipt, NativeProgramExecutionError> {
+        let region = descriptor.parallel.regions.get(worker.region)
+            .ok_or_else(|| invalid("worker constructor has no same-plan proof"))?;
+        if worker.index >= worker.count || worker.count < 2 || worker.result.is_some()
+            || captures.len() != region.captures.len() {
+            return Err(invalid("worker constructor capture/count mismatch"));
+        }
+        let mut prepared = Self::new_with_budget(descriptor, limits, memory, Some(library))?;
+        let locals_start = descriptor.plan.transport_input_count();
+        let state = prepared.state.as_mut().unwrap();
+        // A worker skips whole-program activation, but retains the SAME
+        // immutable constants. Its private local lanes receive their original
+        // words; no source computation or observation is rerun here.
+        for constant in descriptor.plan.constants() {
+            if let Some(kind) = descriptor.plan.values()[constant.value().get() as usize].scalar_kind() {
+                prepared.storage.values_mut()[locals_start + constant.value().get() as usize] = bits(constant.constant(), kind)?;
+            }
+        }
+        for (target, words) in descriptor.scalar_aggregates.constants() {
+            let (start, count) = descriptor.scalar_aggregates.slot(*target)
+                .ok_or_else(|| invalid("worker aggregate constant has no words"))?;
+            if count != words.len() { return Err(invalid("worker aggregate constant shape")); }
+            prepared.storage.values_mut()[locals_start + start..locals_start + start + count].copy_from_slice(words);
+        }
+        for (&expected, capture) in region.captures.iter().zip(captures) {
+            match capture {
+                parallel::Capture::Word(slot, word) if slot == expected => {
+                    let kind = descriptor.plan.values()[slot as usize].scalar_kind()
+                        .ok_or_else(|| invalid("worker scalar capture type"))?;
+                    if kind == NativeScalarKind::Bool && word > 1 { return Err(invalid("worker Bool capture")); }
+                    prepared.storage.values_mut()[locals_start + slot as usize] = word;
+                }
+                parallel::Capture::Value(slot, value) if slot == expected => {
+                    if descriptor.plan.values()[slot as usize].scalar_kind().is_some() { return Err(invalid("worker managed capture type")); }
+                    state.arena.put(slot, &value, &mut state.work)?;
+                }
+                _ => return Err(invalid("worker capture inventory differs")),
+            }
+        }
+        prepared.worker = Some(worker);
+        prepared.activated = true;
+        prepared.run(&mut |frame| {
+            // SAFETY: the scoped parent retains this exact checked code owner;
+            // this constructor owns all of the child's disjoint frame lanes.
+            unsafe { entry(frame) }
+        }, PHASE_WORKER)?;
+        let receipt = prepared.worker.as_mut().and_then(|worker| worker.result.take())
+            .ok_or_else(|| invalid("worker omitted its owned result"))?;
+        // Retire every Rc work account before returning across the thread join.
+        drop(prepared);
+        Ok(receipt)
     }
 
     pub(super) fn activate<F: FnMut(*mut Frame) -> u64>(
@@ -829,6 +903,9 @@ impl<'a> Prepared<'a> {
         phase: u64,
         line_window: Option<&mech_engine::native_artifact::NativeTextLineWindow<'_>>,
     ) -> Result<(), NativeProgramExecutionError> {
+        if (phase == PHASE_WORKER) != self.worker.is_some() {
+            return Err(invalid("worker phase requires constructor-owned state"));
+        }
         if phase == PHASE_CAPTURE_TAIL && line_window.is_some() {
             return Err(invalid("capture tail cannot retain a scanner row loan"));
         }
@@ -938,6 +1015,9 @@ impl<'a> Prepared<'a> {
             output_cursor: state.output_cursor,
             error: None,
             activation_phase: phase == PHASE_ACTIVATION,
+            execution_limits: self.limits.execution,
+            worker: self.worker.take(),
+            parallel_batch: None,
             hash_table_regions: state.hash_table_regions,
             hash_table_updates: state.hash_table_updates,
             packed_map_regions: state.packed_map_regions,
@@ -970,10 +1050,15 @@ impl<'a> Prepared<'a> {
             arguments: argument_pointer,
             argument_capacity: descriptor.max_library_inputs as u64,
             phase,
-            resume_site: prefix_input.map_or(0, |input| u64::from(input.resume_site)),
-            available_lines: prefix_input.map_or(0, |input| input.available),
-            input_eof: prefix_input.map_or(0, |input| u64::from(input.eof)),
+            resume_site: context.worker.as_ref().map_or_else(
+                || prefix_input.map_or(0, |input| u64::from(input.resume_site)),
+                |worker| u64::from(descriptor.parallel.regions[worker.region].begin)),
+            available_lines: context.worker.as_ref().map_or_else(
+                || prefix_input.map_or(0, |input| input.available), |worker| worker.index),
+            input_eof: context.worker.as_ref().map_or_else(
+                || prefix_input.map_or(0, |input| u64::from(input.eof)), |worker| worker.count),
         };
+        let phase_words = (frame.resume_site, frame.available_lines, frame.input_eof);
         let status = entry(&mut frame);
         if let Some(error) = context.error.take() {
             return Err(error);
@@ -1001,9 +1086,7 @@ impl<'a> Prepared<'a> {
             || frame.arguments != argument_pointer
             || frame.argument_capacity != descriptor.max_library_inputs as u64
             || frame.phase != phase
-            || frame.resume_site != prefix_input.map_or(0, |input| u64::from(input.resume_site))
-            || frame.available_lines != prefix_input.map_or(0, |input| input.available)
-            || frame.input_eof != prefix_input.map_or(0, |input| u64::from(input.eof))
+            || (frame.resume_site, frame.available_lines, frame.input_eof) != phase_words
         {
             return Err(invalid("program entry changed immutable frame"));
         }
@@ -1032,6 +1115,16 @@ impl<'a> Prepared<'a> {
             }
         } else {
             match status {
+                STATUS_WORKER_RESULT if phase == PHASE_WORKER => {
+                    let worker = context.worker.as_ref().ok_or_else(|| invalid("worker state lost"))?;
+                    let region = &descriptor.parallel.regions[worker.region];
+                    if worker.result.is_none() || f.error_node != u64::from(region.push)
+                        || context.control.completed || context.output_cursor != 0
+                        || context.control.current != Some(region.iteration)
+                        || context.parallel_batch.is_some() {
+                        return Err(invalid("worker omitted exact source result frontier"));
+                    }
+                }
                 STATUS_OK if phase == PHASE_TURN || phase == PHASE_CAPTURE_TAIL => {
                     if !context.control.completed
                         || f.error_node != NO_NODE
@@ -1101,6 +1194,8 @@ impl<'a> Prepared<'a> {
                 _ => return Err(NativeExecutionError::InvalidStatus { status }.into()),
             }
         }
+        if context.parallel_batch.is_some() { return Err(invalid("native phase left pending parallel results")); }
+        self.worker = context.worker;
         self.state = Some(OwnedState {
             map_owners: context.map_owners,
             collections: context.collections,

@@ -132,10 +132,27 @@ impl<D: VisitPlan> Context<'_, D> {
     pub(super) fn visit_from(&mut self, raw: u64, group_work: Option<u64>, previous: Option<u32>)
         -> Result<(), NativeIterationExecutionError>
     {
+        self.visit_from_entry(raw, group_work, previous, self.descriptor.entry())
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(super) fn visit_outlined_entry(&mut self, raw: u64, entry: u32)
+        -> Result<(), NativeIterationExecutionError>
+    {
+        if self.previous.is_some() || self.current.is_some() || self.completed
+            || self.progress.iter().any(|&word| word != 0) {
+            return Err(invalid("outlined entry requires fresh worker control"));
+        }
+        self.visit_from_entry(raw, None, None, entry)
+    }
+
+    fn visit_from_entry(&mut self, raw: u64, group_work: Option<u64>, previous: Option<u32>, entry: u32)
+        -> Result<(), NativeIterationExecutionError>
+    {
         let id = u32::try_from(raw).ok();
         let allowed = !self.completed
             && match previous {
-                None => id == Some(self.descriptor.entry()),
+                None => id == Some(entry),
                 Some(previous) => {
                     let prior = &self.descriptor.visits()[previous as usize];
                     if let Progress::Header(iteration) = prior.progress {

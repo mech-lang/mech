@@ -42,6 +42,8 @@ pub(super) mod map_owner_codegen;
 pub(super) mod packed_maps;
 #[path = "program_packed_loop_codegen.rs"]
 pub(super) mod packed_loop_codegen;
+#[path = "program_parallel_codegen.rs"]
+pub(super) mod parallel_codegen;
 #[path = "program_string_map_codegen.rs"]
 pub(super) mod string_map_codegen;
 #[path = "program_tail_codegen.rs"]

@@ -42,6 +42,7 @@ pub struct NativeProgramDescriptor {
     // Merely carrying this metadata does not select retained runtime storage.
     pub(super) map_owner_words: Option<mech_engine::native_artifact::NativeMapOwnerWords>,
     pub(super) map_admission: super::program_map_admission::Layout,
+    pub(super) parallel: super::program_parallel_layout::Layout,
     pub(super) borrowed_strings: super::program_borrowed_layout::Layout,
     pub(super) closed_tails: super::program_tail_layout::Layout,
     pub(super) selected_joins: super::program_selected_join_layout::Layout,
@@ -63,6 +64,7 @@ impl NativeProgramDescriptor {
             return Err("mixed canonical revision mismatch".into());
         }
         plan.validate_current_visits().map_err(str::to_owned)?;
+        let parallel = super::program_parallel_layout::Layout::derive(&plan).map_err(str::to_owned)?;
         let retirements = RetirementTables::derive(&plan).map_err(str::to_owned)?;
         let completion = (plan.transport_output_count() as u64)
             .checked_mul(64)
@@ -251,6 +253,7 @@ impl NativeProgramDescriptor {
                     .unwrap_or(0),
             )
             .max(map_owner_words.as_ref().map_or(0, super::program_map_owner_layout::initial_words))
+            .max(usize::from(!parallel.regions.is_empty()))
             .max(if closed_tails.regions.is_empty() {
                 0
             } else {
@@ -318,6 +321,7 @@ impl NativeProgramDescriptor {
             scalar_aggregates,
             map_owner_words,
             map_admission,
+            parallel,
             borrowed_strings,
             closed_tails,
             selected_joins,

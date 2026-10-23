@@ -37,6 +37,11 @@ mod prefix;
 mod selected_join;
 #[path = "program_session.rs"]
 mod session;
+#[path = "program_parallel_runtime.rs"]
+mod parallel;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_parallel_tests.rs"]
+mod parallel_tests;
 #[path = "program_window_round.rs"]
 mod window_round;
 #[path = "program_caller_geometry.rs"]
@@ -204,6 +209,9 @@ struct Context<'plan, 'visit> {
     output_cursor: usize,
     error: Option<NativeProgramExecutionError>,
     activation_phase: bool,
+    execution_limits: NativeExecutionLimits,
+    worker: Option<parallel::Worker>,
+    parallel_batch: Option<parallel::Batch>,
     hash_table_regions: u64,
     hash_table_updates: u64,
     packed_map_regions: u64,
@@ -384,6 +392,12 @@ impl Context<'_, '_> {
             return Err(invalid(
                 "ordinary helper while closed Tail fuel is outstanding",
             ));
+        }
+        if matches!(operation, super::program_abi::PARALLEL_RUN
+            | super::program_abi::PARALLEL_TAKE | super::program_abi::PARALLEL_YIELD
+            | super::program_abi::PARALLEL_ENTER) {
+            return self.parallel_helper(usize::try_from(site)
+                .map_err(|_| invalid("parallel helper site overflow"))?, operation, args);
         }
         if matches!(
             operation,
@@ -779,6 +793,11 @@ impl Context<'_, '_> {
         }
         let index =
             usize::try_from(site).map_err(|_| invalid("program visit site outside descriptor"))?;
+        if let Some(worker) = &self.worker
+            && !self.control.descriptor.parallel.regions.get(worker.region)
+                .is_some_and(|region| region.contains(index as u32)) {
+            return Err(invalid("worker visited outside its outlined source body"));
+        }
         let block = self
             .control
             .descriptor
@@ -795,7 +814,17 @@ impl Context<'_, '_> {
         if group.is_some_and(|group| u64::from(group.start()) != site) {
             return Err(invalid("ordinary visit inside admitted scalar group"));
         }
-        self.control.visit_from(site, group.map(|group| group.work), previous)?;
+        if previous.is_none() && self.worker.is_some() {
+            let worker = self.worker.as_ref().unwrap();
+            let region = self.control.descriptor.parallel.regions.get(worker.region)
+                .ok_or_else(|| invalid("worker entry proof missing"))?;
+            if site != u64::from(region.begin) || group.is_some() {
+                return Err(invalid("worker entry outside constructor proof"));
+            }
+            self.control.visit_outlined_entry(site, region.begin)?;
+        } else {
+            self.control.visit_from(site, group.map(|group| group.work), previous)?;
+        }
         self.map_owners.closed_exit = None;
         let descriptor = self.control.descriptor;
         if let Some(mech_engine::native_artifact::NativeBorrowedStringAction::Equal { .. }) =

@@ -59,6 +59,7 @@ struct Source {
     // Present only for a certified borrowed String-element generator.
     handle: Option<NativeValueHandle>,
     count: u64,
+    index_offset: u64,
     byte_offset: usize,
     element: Option<(NativeValueHandle, u64)>,
 }
@@ -505,11 +506,21 @@ impl State {
                 if cost != 0 {
                     self.account(ctx, definition.collection(), 0, cost)?;
                 }
+                let (count, index_offset) = if let Some(worker) = &ctx.worker
+                    && descriptor.parallel.regions[worker.region].iteration == *iteration {
+                    if count != worker.count || worker.index >= count
+                        || !matches!(&backing, SourceBacking::Value(value)
+                            if matches!(value.data(), ValueData::Matrix(_) | ValueData::Set(_))) {
+                        return Err(invalid("worker source differs from admitted original sequence"));
+                    }
+                    (1, worker.index)
+                } else { (count, 0) };
                 ctx.control.bind_collection_count(*iteration, count)?;
                 self.sources[*iteration as usize] = Some(Source {
                     backing,
                     handle,
                     count,
+                    index_offset,
                     byte_offset: 0,
                     element: None,
                 });
@@ -532,7 +543,9 @@ impl State {
                     .count
                     .checked_sub(ctx.control.progress[*iteration as usize * 2])
                     .filter(|index| *index < source.count)
-                    .ok_or_else(|| invalid("collection element outside current count"))?;
+                    .ok_or_else(|| invalid("collection element outside current count"))?
+                    .checked_add(source.index_offset)
+                    .ok_or_else(|| invalid("worker source index overflow"))?;
                 let Some(output) = definition.element() else {
                     return Ok(None);
                 };

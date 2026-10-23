@@ -285,6 +285,12 @@ pub(super) fn define_cfg<M: Module>(
     };
     #[cfg(feature = "canonical-native-program")]
     let aggregate_words = aggregates.words();
+    #[cfg(feature = "canonical-native-program")]
+    let parallel = match plan {
+        super::iteration_code_plan::CodePlan::Program(program) =>
+            super::program_parallel_layout::Layout::derive(program).map_err(backend)?,
+        _ => Default::default(),
+    };
     #[cfg(not(feature = "canonical-native-program"))]
     let aggregate_words = 0;
     #[cfg(feature = "canonical-native-program")]
@@ -467,13 +473,18 @@ pub(super) fn define_cfg<M: Module>(
             error,
         )?;
         #[cfg(feature = "canonical-native-program")]
+        let parallel_entry = if plan.is_program() {
+            let reference = module.declare_func_in_func(function, b.func);
+            Some(b.ins().func_addr(types::I64, reference))
+        } else { None };
+        #[cfg(feature = "canonical-native-program")]
         let program_phase = if plan.is_program() {
             let phase = frame_load(
                 &mut b,
                 frame,
                 core::mem::offset_of!(super::program_abi::Frame, phase),
             );
-            let valid = b.ins().icmp_imm(
+            let ordinary = b.ins().icmp_imm(
                 IntCC::UnsignedLessThanOrEqual,
                 phase,
                 if prefix.is_some() {
@@ -482,6 +493,10 @@ pub(super) fn define_cfg<M: Module>(
                     super::program_abi::PHASE_TURN
                 } as i64,
             );
+            let valid = if parallel.regions.is_empty() { ordinary } else {
+                let worker = b.ins().icmp_imm(IntCC::Equal, phase, super::program_abi::PHASE_WORKER as i64);
+                b.ins().bor(ordinary, worker)
+            };
             guard(&mut b, valid, error, STATUS_ABI);
             Some(phase)
         } else {
@@ -561,6 +576,13 @@ pub(super) fn define_cfg<M: Module>(
             .jump(blocks[plan.entry() as usize].expect("reachable entry"), &[]);
         if let Some(resume) = resume_block {
             b.switch_to_block(resume);
+            #[cfg(feature = "canonical-native-program")]
+            if !parallel.regions.is_empty() {
+                super::program_compiler::parallel_codegen::dispatch(
+                    &mut b, program_phase.expect("managed worker phase"), frame,
+                    &parallel, &blocks, hooks.as_ref().expect("managed worker hooks"), error,
+                );
+            }
             let boundary = plan
                 .activation_boundary()
                 .ok_or_else(|| backend("managed plan has no activation checkpoint"))?;
@@ -649,6 +671,13 @@ pub(super) fn define_cfg<M: Module>(
             }
             let before = b.func.dfg.num_insts();
             set_origin(&mut b, frame, index as u64);
+            #[cfg(feature = "canonical-native-program")]
+            if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+                super::program_compiler::parallel_codegen::before_visit(
+                    &mut b, program, &parallel, index, program_phase.expect("managed worker phase"),
+                    frame, locals, hooks.as_ref().expect("managed worker hooks"), error,
+                )?;
+            }
             if plan.activation_boundary() == Some(index as u32) {
                 let phase =
                     program_phase.ok_or_else(|| backend("checkpoint without managed phase"))?;
@@ -1118,6 +1147,14 @@ pub(super) fn define_cfg<M: Module>(
             if let Some(hooks) = &hooks {
                 super::program_compiler::tail_codegen::prepare(
                     &mut b, locals, &closed, index, hooks, error,
+                )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
+            if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+                super::program_compiler::parallel_codegen::after_action(
+                    &mut b, program, &parallel, index, program_phase.expect("managed worker phase"),
+                    frame, parallel_entry.expect("managed checked entry"), locals, &blocks,
+                    hooks.as_ref().expect("managed worker hooks"), error,
                 )?;
             }
             match block.terminator() {
