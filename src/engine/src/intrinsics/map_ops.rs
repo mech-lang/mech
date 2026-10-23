@@ -81,7 +81,8 @@ pub(crate) fn sort_positions<'a>(
             let (mut left, mut right) = (start, middle);
             for output in &mut scratch[start..end] {
                 if left < middle
-                    && (right == end || key(order[left]).as_bytes() <= key(order[right]).as_bytes())
+                    && (right == end
+                        || histogram_key_order(key(order[left]), key(order[right])).is_le())
                 {
                     *output = order[left];
                     left += 1;
@@ -96,6 +97,364 @@ pub(crate) fn sort_positions<'a>(
         width = width.saturating_mul(2);
     }
 }
+
+/// Workspace for an iterative most-significant-byte radix sort. Live frames
+/// describe disjoint ranges with at least two keys, so `order.len()` slots
+/// suffice independently of key length. No recursive host stack is used.
+#[cfg(any(test, feature = "resident-artifact"))]
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct StringRadixFrame {
+    start: usize,
+    end: usize,
+    byte: usize,
+}
+
+#[cfg(feature = "resident-artifact")]
+pub(crate) const STRING_RADIX_FIXED_BYTES: usize =
+    2 * 257 * core::mem::size_of::<usize>() + 5 * core::mem::size_of::<u64>();
+
+/// Every key contributes at most one terminal symbol and its UTF-8 bytes.
+/// Each level counts, redistributes and copies indices, and visits only the
+/// occupied buckets (a bitset avoids scanning 257 empty buckets per prefix).
+/// Each resolved bucket writes its run markers once; a subsequent linear pass
+/// compacts them. Those writes and scans fit within the additional 16*count.
+/// This is compute work, not a reservation to compare arbitrary string pairs.
+#[cfg(any(test, feature = "resident-artifact"))]
+pub(crate) fn string_radix_compute_bound(count: usize, bytes: usize) -> Option<usize> {
+    bytes
+        .checked_add(count)?
+        .checked_mul(256)?
+        .checked_add(count.checked_mul(16)?)?
+        .checked_add(1_024)
+}
+
+/// One frame counts and redistributes `count` symbols, copies its indices,
+/// scans two five-word occupied bitsets and visits at most `count` buckets.
+/// Sixty-four units per key plus sixty-four frame units cover those bounded
+/// metadata/byte visits, bucket markers and frame scheduling. Every frame has
+/// at least two keys, so all frame charges together are at most 96*(bytes+n),
+/// below the complete bound above. No recursive or length-product work hides
+/// behind this charge. It must be admitted before reading any frame key.
+#[cfg(any(test, feature = "resident-artifact"))]
+pub(crate) fn string_radix_frame_compute_work(count: usize) -> Option<u64> {
+    u64::try_from(count).ok()?.checked_mul(64)?.checked_add(64)
+}
+
+#[cfg(any(test, feature = "resident-artifact"))]
+#[derive(Debug)]
+pub(crate) enum StringRadixError<E> {
+    InvalidWorkspace,
+    Overflow,
+    FrameBound,
+    Admission(E),
+}
+
+/// Allocation-free byte radix ordering agrees with the core String key
+/// relation. Symbol zero is end-of-key; byte b has symbol b+1, preserving both
+/// embedded NULs and byte-prefix ordering. The caller admits all buffers and
+/// 16*n+1024 setup/compaction work before this helper touches them; the callback
+/// admits each frame before its first key access. On return,
+/// `scratch` contains one at each equal-key run's start and zero elsewhere;
+/// grouping needs no additional String-pair comparisons.
+#[cfg(any(test, feature = "resident-artifact"))]
+pub(crate) fn radix_sort_string_positions<'a, E>(
+    order: &mut [usize],
+    scratch: &mut [usize],
+    frames: &mut [StringRadixFrame],
+    key: impl Fn(usize) -> &'a str,
+    mut admit_frame: impl FnMut(u64) -> Result<(), E>,
+) -> Result<u64, StringRadixError<E>> {
+    if scratch.len() != order.len() || frames.len() < order.len() {
+        return Err(StringRadixError::InvalidWorkspace);
+    }
+    for (index, slot) in order.iter_mut().enumerate() {
+        *slot = index;
+    }
+    if order.len() < 2 {
+        if let Some(marker) = scratch.first_mut() {
+            *marker = 1;
+        }
+        return Ok(0);
+    }
+    let mut counts = [0usize; 257];
+    let mut cursors = [0usize; 257];
+    let mut pending = 1;
+    let mut visits = 0u64;
+    frames[0] = StringRadixFrame {
+        start: 0,
+        end: order.len(),
+        byte: 0,
+    };
+    while pending != 0 {
+        pending -= 1;
+        let StringRadixFrame { start, end, byte } = frames[pending];
+        let frame_work =
+            string_radix_frame_compute_work(end - start).ok_or(StringRadixError::Overflow)?;
+        admit_frame(frame_work).map_err(StringRadixError::Admission)?;
+        let mut occupied = [0u64; 5];
+        for &index in &order[start..end] {
+            let symbol = key(index)
+                .as_bytes()
+                .get(byte)
+                .map_or(0, |value| usize::from(*value) + 1);
+            counts[symbol] += 1;
+            occupied[symbol / 64] |= 1u64 << (symbol % 64);
+            visits = visits.checked_add(1).ok_or(StringRadixError::Overflow)?;
+        }
+        let mut position = start;
+        for (word, &bits) in occupied.iter().enumerate() {
+            let mut bits = bits;
+            while bits != 0 {
+                let symbol = word * 64 + bits.trailing_zeros() as usize;
+                cursors[symbol] = position;
+                position += counts[symbol];
+                bits &= bits - 1;
+            }
+        }
+        for &index in &order[start..end] {
+            let symbol = key(index)
+                .as_bytes()
+                .get(byte)
+                .map_or(0, |value| usize::from(*value) + 1);
+            scratch[cursors[symbol]] = index;
+            cursors[symbol] += 1;
+            visits = visits.checked_add(1).ok_or(StringRadixError::Overflow)?;
+        }
+        order[start..end].copy_from_slice(&scratch[start..end]);
+        for (word, &bits) in occupied.iter().enumerate() {
+            let mut bits = bits;
+            while bits != 0 {
+                let symbol = word * 64 + bits.trailing_zeros() as usize;
+                let count = counts[symbol];
+                let bucket_start = cursors[symbol] - count;
+                if symbol == 0 || count == 1 {
+                    // A terminal bucket contains identical complete keys; a
+                    // singleton bucket is already unique. Pending frames cover
+                    // only disjoint unresolved ranges, so these markers survive
+                    // later distributions in the shared scratch buffer.
+                    scratch[bucket_start..cursors[symbol]].fill(0);
+                    scratch[bucket_start] = 1;
+                } else {
+                    let slot = frames
+                        .get_mut(pending)
+                        .ok_or(StringRadixError::FrameBound)?;
+                    *slot = StringRadixFrame {
+                        start: bucket_start,
+                        end: cursors[symbol],
+                        byte: byte.checked_add(1).ok_or(StringRadixError::Overflow)?,
+                    };
+                    pending += 1;
+                }
+                counts[symbol] = 0;
+                bits &= bits - 1;
+            }
+        }
+    }
+    Ok(visits)
+}
+
+/// Compact the radix run markers to sorted run starts in the same buffer.
+/// At each write the output index is at most the read index, so no unread
+/// marker is overwritten. This scans only integer metadata, not String keys.
+#[cfg(any(test, feature = "resident-artifact"))]
+pub(crate) fn compact_string_radix_runs(scratch: &mut [usize]) -> usize {
+    let mut count = 0;
+    for position in 0..scratch.len() {
+        if scratch[position] == 1 {
+            scratch[count] = position;
+            count += 1;
+        }
+    }
+    count
+}
+
+#[cfg(test)]
+mod string_radix_tests {
+    use super::*;
+
+    fn check(strings: &[String]) {
+        let mut order = vec![usize::MAX; strings.len()];
+        let mut scratch = vec![usize::MAX; strings.len()];
+        let mut frames = vec![StringRadixFrame::default(); strings.len()];
+        let mut frame_work = 0u64;
+        let visits = radix_sort_string_positions(
+            &mut order,
+            &mut scratch,
+            &mut frames,
+            |index| strings[index].as_str(),
+            |work| {
+                frame_work = frame_work.checked_add(work).unwrap();
+                Ok::<_, core::convert::Infallible>(())
+            },
+        )
+        .unwrap();
+        let actual = order
+            .iter()
+            .map(|&index| strings[index].as_str())
+            .collect::<Vec<_>>();
+        let mut expected = strings.iter().map(String::as_str).collect::<Vec<_>>();
+        expected.sort();
+        assert_eq!(actual, expected);
+        let expected_starts = expected
+            .iter()
+            .enumerate()
+            .filter_map(|(index, key)| (index == 0 || *key != expected[index - 1]).then_some(index))
+            .collect::<Vec<_>>();
+        for (index, &marker) in scratch.iter().enumerate() {
+            assert_eq!(marker, usize::from(expected_starts.contains(&index)));
+        }
+        let count = compact_string_radix_runs(&mut scratch);
+        assert_eq!(&scratch[..count], expected_starts);
+        let mut actual_counts = std::collections::BTreeMap::new();
+        for run in 0..count {
+            let start = scratch[run];
+            let end = if run + 1 < count {
+                scratch[run + 1]
+            } else {
+                order.len()
+            };
+            actual_counts.insert(strings[order[start]].as_str(), end - start);
+        }
+        let mut expected_counts = std::collections::BTreeMap::new();
+        for text in strings {
+            *expected_counts.entry(text.as_str()).or_insert(0usize) += 1;
+        }
+        assert_eq!(actual_counts, expected_counts);
+        let bytes = strings.iter().map(String::len).sum::<usize>();
+        assert!(visits <= 2 * (bytes + strings.len()) as u64);
+        assert!(string_radix_compute_bound(strings.len(), bytes).unwrap() >= visits as usize);
+        assert!(frame_work <= 96 * (bytes + strings.len()) as u64);
+        order.sort_unstable();
+        assert_eq!(order, (0..strings.len()).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn string_radix_orders_empty_prefix_nul_unicode_and_duplicate_keys() {
+        let values = [
+            "", "a", "a\0", "a\0z", "a\0a", "aa", "a", "é", "e\u{301}", "🦀", "\0", "\0\0", "z",
+        ];
+        for rotation in 0..values.len() {
+            let strings = values
+                .iter()
+                .cycle()
+                .skip(rotation)
+                .take(values.len())
+                .map(|text| (*text).to_owned())
+                .collect::<Vec<_>>();
+            check(&strings);
+        }
+        check(&[]);
+        check(&[String::new()]);
+        check(&vec![String::new(); 400]);
+    }
+
+    #[test]
+    fn string_radix_handles_long_common_prefixes_without_recursion_or_length_product() {
+        let prefix = "x".repeat(40_000);
+        check(&[
+            format!("{prefix}b"),
+            format!("{prefix}a"),
+            prefix.clone(),
+            prefix,
+        ]);
+        // A single long key must not cause repeated passes over many empty keys.
+        let mut strings = vec![String::new(); 1_000];
+        strings.push("x".repeat(40_000));
+        check(&strings);
+    }
+
+    #[test]
+    fn string_radix_preserves_every_key_for_varied_deterministic_inputs() {
+        let mut state = 17u64;
+        let mut strings = Vec::new();
+        for count in 0..512 {
+            let mut text = String::new();
+            for _ in 0..count % 19 {
+                state = state
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1);
+                text.push(char::from((state >> 32) as u8));
+            }
+            strings.push(text);
+        }
+        check(&strings);
+        assert!(string_radix_compute_bound(usize::MAX, 0).is_none());
+        assert!(string_radix_compute_bound(1, usize::MAX).is_none());
+    }
+
+    #[test]
+    fn string_radix_admits_each_frame_before_reading_keys_and_can_retry() {
+        use core::cell::Cell;
+        let strings = ["aa", "ab", "aa", "ac"];
+        let mut order = [usize::MAX; 4];
+        let mut scratch = [usize::MAX; 4];
+        let mut frames = [StringRadixFrame::default(); 4];
+        let reads = Cell::new(0);
+        for allowance in [0, string_radix_frame_compute_work(4).unwrap()] {
+            reads.set(0);
+            let mut admitted = 0;
+            let result = radix_sort_string_positions(
+                &mut order,
+                &mut scratch,
+                &mut frames,
+                |index| {
+                    reads.set(reads.get() + 1);
+                    strings[index]
+                },
+                |work| {
+                    let required = admitted + work;
+                    if required > allowance {
+                        return Err((required, allowance));
+                    }
+                    admitted = required;
+                    Ok(())
+                },
+            );
+            assert!(
+                matches!(result, Err(StringRadixError::Admission((required, limit))) if required > limit && limit == allowance)
+            );
+            assert_eq!(reads.get(), if allowance == 0 { 0 } else { 8 });
+        }
+        radix_sort_string_positions(
+            &mut order,
+            &mut scratch,
+            &mut frames,
+            |index| strings[index],
+            |_| Ok::<_, core::convert::Infallible>(()),
+        )
+        .unwrap();
+        assert_eq!(order.map(|index| strings[index]), ["aa", "aa", "ab", "ac"]);
+        assert_eq!(scratch, [1, 0, 1, 1]);
+        check(&strings.map(str::to_owned));
+        if usize::BITS == 64 {
+            assert!(string_radix_frame_compute_work(usize::MAX).is_none());
+        }
+    }
+
+    #[test]
+    fn string_radix_does_not_charge_unvisited_singleton_suffixes() {
+        let strings = [String::new(), "x".repeat(40_000)];
+        let mut order = [0; 2];
+        let mut scratch = [0; 2];
+        let mut frames = [StringRadixFrame::default(); 2];
+        let mut charged = 0;
+        radix_sort_string_positions(
+            &mut order,
+            &mut scratch,
+            &mut frames,
+            |index| strings[index].as_str(),
+            |work| {
+                charged += work;
+                Ok::<_, core::convert::Infallible>(())
+            },
+        )
+        .unwrap();
+        assert_eq!(charged, string_radix_frame_compute_work(2).unwrap());
+        assert_eq!(scratch, [1, 1]);
+        check(&strings);
+    }
+}
+
 pub(crate) fn run_end<'a>(order: &[usize], start: usize, key: impl Fn(usize) -> &'a str) -> usize {
     let mut end = start + 1;
     while end < order.len() && key(order[start]) == key(order[end]) {
@@ -112,11 +471,43 @@ pub(crate) fn run_count<'a>(order: &[usize], key: impl Fn(usize) -> &'a str) -> 
     }
     count
 }
+/// Exact String key order used by the ordinary family and selected native sink.
+pub(crate) fn histogram_key_order(left: &str, right: &str) -> core::cmp::Ordering {
+    left.as_bytes().cmp(right.as_bytes())
+}
+
+pub(crate) fn increment_histogram_count(count: u64) -> Option<u64> {
+    count.checked_add(1)
+}
+
+/// The ordinary resident family and selected sink share these literal prices.
+#[cfg(feature = "resident-artifact")]
+pub(crate) fn canonical_finalization_work(count: u64, payload: u64) -> Option<u64> {
+    payload
+        .checked_mul(3)?
+        .checked_add(count.checked_mul(8)?)?
+        .checked_add(8)
+}
+
+#[cfg(feature = "resident-artifact")]
+pub(crate) fn canonical_draft_bytes(count: u64) -> Option<u64> {
+    count.checked_mul(
+        (core::mem::size_of::<MapEntryDraft>()
+            + 2 * core::mem::size_of::<mech_core::snapshot::ValueDataDraft>()
+            + core::mem::size_of::<String>()) as u64,
+    )
+}
+
+#[cfg(feature = "resident-artifact")]
+pub(crate) fn histogram_scratch_bytes(count: usize) -> Option<usize> {
+    count
+        .checked_mul(2 * core::mem::size_of::<usize>() + core::mem::size_of::<StringRadixFrame>())?
+        .checked_add(STRING_RADIX_FIXED_BYTES)
+}
+
 pub(crate) fn count_run(start: usize, end: usize) -> MResult<u64> {
     (start..end).try_fold(0u64, |count, _| {
-        count
-            .checked_add(1)
-            .ok_or_else(|| invalid("histogram count exceeds u64::MAX"))
+        increment_histogram_count(count).ok_or_else(|| invalid("histogram count exceeds u64::MAX"))
     })
 }
 

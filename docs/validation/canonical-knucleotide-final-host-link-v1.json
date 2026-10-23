@@ -1,0 +1,250 @@
+{
+  "schema": "mech.canonical-knucleotide-final-host-link.v1",
+  "status": "QUALIFIED_SMALLER_HOST_NO_OBSERVED_SLOWDOWN",
+  "source_snapshot": {
+    "commit": "dcf8091393004095c53ded946ab268ef75c97538",
+    "tree": "ac7c777c8cc1d2c6c31beeda53bea1ed047b2a07"
+  },
+  "measured_utc": {
+    "started": "2026-10-22T16:13:38.558Z",
+    "finished": "2026-10-22T16:14:00.132Z"
+  },
+  "hardware": {
+    "architecture": "arm64",
+    "cpu_and_memory": "Apple M1\n8\n8\n8589934592",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90",
+    "power_source": "Now drawing from 'AC Power'"
+  },
+  "method": "12 alternating-order serial fresh-process timing pairs per size; three separate owned-tree-guarded time -l RSS samples per binary and size. Descriptor setup and exact output/report validation outside the timing clock. Only the independently compiled manifest-bound program_revision may differ; no observed reports rewritten. Same finite policy, inputs and Mech source. Fat LTO and one launcher codegen unit versus published ThinLTO; no panic-policy or dependency-profile override.",
+  "measurements": [
+    {
+      "size": "10m",
+      "control_median_seconds": 0.057145896,
+      "candidate_median_seconds": 0.056157083,
+      "paired_ratio_median": 0.9909285545204154,
+      "candidate_faster_pairs": 11,
+      "control_median_rss_bytes": 22085632,
+      "candidate_median_rss_bytes": 21659648,
+      "control_seconds": [
+        0.059308125,
+        0.057349667,
+        0.056942125,
+        0.057400917,
+        0.060718666,
+        0.056423875,
+        0.056824083,
+        0.0577245,
+        0.057637291,
+        0.054714875,
+        0.055027459,
+        0.055070416
+      ],
+      "candidate_seconds": [
+        0.05802175,
+        0.0583415,
+        0.05657675,
+        0.056449292,
+        0.05469,
+        0.056108,
+        0.056378916,
+        0.056206166,
+        0.05470425,
+        0.054446584,
+        0.054727375,
+        0.054502708
+      ],
+      "control_rss_bytes": [
+        22462464,
+        22085632,
+        22085632
+      ],
+      "candidate_rss_bytes": [
+        21659648,
+        21659648,
+        21659648
+      ]
+    },
+    {
+      "size": "125m",
+      "control_median_seconds": 0.5257633955,
+      "candidate_median_seconds": 0.525175,
+      "paired_ratio_median": 0.9990159481079416,
+      "candidate_faster_pairs": 8,
+      "control_median_rss_bytes": 147324928,
+      "candidate_median_rss_bytes": 146898944,
+      "control_seconds": [
+        0.525661875,
+        0.525163625,
+        0.525246792,
+        0.52627675,
+        0.526362416,
+        0.5253955,
+        0.526249625,
+        0.525570458,
+        0.525646541,
+        0.525864916,
+        0.532165709,
+        0.526217125
+      ],
+      "candidate_seconds": [
+        0.523690667,
+        0.524881125,
+        0.531475416,
+        0.523921667,
+        0.525609625,
+        0.525468875,
+        0.523599125,
+        0.525906541,
+        0.532247917,
+        0.525682167,
+        0.524734417,
+        0.524770708
+      ],
+      "control_rss_bytes": [
+        147324928,
+        147324928,
+        147324928
+      ],
+      "candidate_rss_bytes": [
+        146898944,
+        146898944,
+        146898944
+      ]
+    }
+  ],
+  "binaries": [
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/final-host-link-release-v1333/variant-0/native-executable",
+      "bytes": 5832528,
+      "sha256": "8a3a937f137bdf6a2493c466ef33bdc476545a86a30a39a287c860699c2b75bb"
+    },
+    {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/final-host-link-release-v1333/variant-1/native-executable",
+      "bytes": 5832528,
+      "sha256": "8a3a937f137bdf6a2493c466ef33bdc476545a86a30a39a287c860699c2b75bb"
+    }
+  ],
+  "qualification": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/final-host-link-qualification-v1333/result.json",
+    "bytes": 4942,
+    "sha256": "d357179ed11b9ef3efdab13649422e142ebad69d0bc37675c43bca36a6b551c7"
+  },
+  "validation": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/final-host-link-validation-v1332/result.json",
+    "bytes": 14736,
+    "sha256": "2249624e874fe8b2b0504c8d028442781cf12971ab176f372659cb9d0418f1a0"
+  },
+  "measurement": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/final-host-link-paired-v1334/measurement.json",
+    "bytes": 136868,
+    "sha256": "171903454de0e3776ca61f9157034da98c2cfb4cd751774d09efdc4e6c322e52"
+  },
+  "audit": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/final-host-link-audit-v1335.json",
+    "bytes": 811,
+    "sha256": "14ebedfc3e76b6dc804eb464ae098b0e6b8805eaa0b37cb89bceafb63166c2c6"
+  },
+  "implementation": {
+    "host": "cargo rustc --release -- -C lto=fat -C codegen-units=1; flags apply only to the final Rust host binary, preserving the generated ThinLTO dependency profile, speed optimization level and unwind policy",
+    "compiler": "Mech source still compiles through canonical Cranelift. No runtime or compiler-lowering implementation changes in this batch.",
+    "build_fix": "Standalone build feature now includes its required planning-host catalog; config and discovery adapters compile without unrelated command features.",
+    "qualification_fix": "Tamper and restored builds use the same production final-link invocation; exact restored binary identity remains required."
+  },
+  "validation_scope": {
+    "builder_tests": 137,
+    "builder_tests_note": "Retained passing result at 032544082: builder package source and package-selected feature request unchanged.",
+    "hosted_tests": 53,
+    "profile_regression": 1,
+    "gpu_tests": 216,
+    "gpu_tests_note": "Retained result at 4c3a2db731; core, engine, runtime, syntax, machines and GPU implementation source are unchanged.",
+    "public_cli": "Fresh no-default-features full_compiler,cranelift_build check passed.",
+    "release": "Identical original/decoded binaries; 13 permission/error cases per variant, 8 launcher tests per variant, 9 tamper rejections with exact restored binary, full-input correctness and 6 full-input timed samples.",
+    "paired_audit": "236 pinned files, 64 exact outputs and complete security reports verified. Only expected manifest-bound program revision may differ."
+  },
+  "limits": [
+    "Rust #7 was not remeasured in this paired batch.",
+    "Desktop host only; no ESP32 code-generation backend or bounded-memory embedded host is provided by this change.",
+    "Startup artifact decoding and descriptor preparation remain linked; further size reduction is unfinished.",
+    "Local qualification is not a clean PR review or green CI; keep draft and do not merge without user direction."
+  ],
+  "previous_measurements": "canonical-knucleotide-capture-pages-v1.json",
+  "source": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-native-validation-inventory/hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+    "bytes": 2621,
+    "sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f"
+  },
+  "workloads": [
+    {
+      "label": "10m",
+      "input": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/knucleotide-large-controls-v564/fasta-n-2000000.txt",
+        "bytes": 20333411,
+        "three_bases": 10000000,
+        "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b"
+      },
+      "oracle": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/legacy-native-10m-measurement-v677/full-qualification-historical-fast.stdout",
+        "bytes": 254,
+        "sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+      }
+    },
+    {
+      "label": "125m",
+      "input": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/input",
+        "bytes": 254166745,
+        "three_bases": 125000000,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa"
+      },
+      "oracle": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/oracle",
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      }
+    }
+  ],
+  "launch": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/policy-standard-125m-launch-v660.json",
+    "sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+    "finite_policy": {
+      "grants": [
+        {
+          "operations": [
+            "read"
+          ],
+          "paths": [
+            "text"
+          ],
+          "target": "cli/stdin"
+        },
+        {
+          "operations": [
+            "write"
+          ],
+          "paths": [
+            "text"
+          ],
+          "target": "cli/stdout"
+        }
+      ],
+      "input_text_bytes": 254166745,
+      "library": {
+        "cloned_bytes": 536870912,
+        "comparison_work": 68719476736,
+        "compute_work": 8796093022208,
+        "output_bytes": 536870912,
+        "output_elements": 8388608,
+        "retained_nodes": 16777216,
+        "temporary_bytes": 1073741824
+      },
+      "max_ports": 16,
+      "memory_bytes": 3221225472,
+      "native_stack_bytes": 1048576,
+      "output_text_bytes": 1048576,
+      "transport_bytes": 16777216,
+      "work": 562949953421312
+    }
+  },
+  "evidence_availability": "The byte counts and SHA-256 values above identify the measured source, inputs, expected outputs and finite launch policy. Absolute paths identify retained local evidence; tmp/pr-stack-evidence is not committed to GitHub."
+}
+

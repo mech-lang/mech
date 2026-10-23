@@ -1,0 +1,212 @@
+{
+  "schema": "mech.canonical-knucleotide-closed-tail-recovery.v1",
+  "status": "PARTIAL_RECOVERY_STILL_PERFORMANCE_BLOCKING",
+  "measured_source_commit": "be90f41d9abe487352e21896fb9dab00f72c16ba",
+  "platform": "Same Apple M1 as retained old/new10M measurements",
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "input": {
+    "fasta_n": 2000000,
+    "three_bases": 10000000,
+    "bytes": 20333411,
+    "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b",
+    "oracle_sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+  },
+  "unchanged_launch_sha256": "ec79f588345186db7f8646e52158d494628c6eb69b94ebdb269ddcf5dbe1c87a",
+  "measurement": {
+    "route": "canonical-artifact-program-object-secured-cli",
+    "policy": "secured",
+    "rust_optimization": "3",
+    "object_optimization": "speed",
+    "abi": 8,
+    "typed_ir": 18,
+    "work_policy": 28,
+    "variants": [
+      {
+        "variant": 0,
+        "binary_sha256": "031b074505e202678d30800c82991ed3b94f46bfae0a97993adc5860187649ea",
+        "object_sha256": "dc4175cd33a2be6cd35c5e931ffee1f9755276d965af3e5696edd497fe7e548e",
+        "identity_sha256": "a1f62cf268b5e711360aef5395eb52b26afe2c4ba9ff11168144d46eac419050"
+      },
+      {
+        "variant": 1,
+        "binary_sha256": "031b074505e202678d30800c82991ed3b94f46bfae0a97993adc5860187649ea",
+        "object_sha256": "dc4175cd33a2be6cd35c5e931ffee1f9755276d965af3e5696edd497fe7e548e",
+        "identity_sha256": "a1f62cf268b5e711360aef5395eb52b26afe2c4ba9ff11168144d46eac419050"
+      }
+    ],
+    "original_samples_ns": [
+      495130625,
+      503078166,
+      496633542
+    ],
+    "decoded_samples_ns": [
+      496806666,
+      496692917,
+      497768584
+    ],
+    "original_median_seconds": 0.496633542,
+    "decoded_median_seconds": 0.496806666,
+    "large_correctness_processes": 2,
+    "timing_samples": 6,
+    "all_eight_exact_output": true,
+    "native_visits": 474,
+    "previous_native_visits": 13000661,
+    "native_work": 54299356218,
+    "native_comparison_work": 483362918,
+    "native_transport_bytes": 33552,
+    "host_result_carrier_bytes": 216,
+    "observations": 1,
+    "effects": 1,
+    "jit": false,
+    "source_parser": false,
+    "resident_body_evaluation": false,
+    "scope": "Warm-cache fresh-process spawn through observed child exit, including CLI capture/output/report; standard Rust1ms exit polling. Three samples per variant plus two correctness processes. Build, integrity hashing and parent validation excluded.",
+    "accounting": "Conservative full-body traversal admission increases charged work/comparison versus previous path-specific visits. Finite invocation limits are unchanged. Visits count actual callback-admitted CFG blocks, without replaying the13M skipped operations."
+  },
+  "same_input_baselines_seconds": {
+    "old_selected_direct_median_of_7": 0.092041625,
+    "old_secured_host_median_of_7": 0.123658291,
+    "initial_canonical_secured_median_of_3": 73.536783875,
+    "previous_private_selector_original_median_of_3": 0.767684542
+  },
+  "comparison": {
+    "speedup_from_previous": 1.5457766684635248,
+    "slowdown_against_old_direct": 5.395749390561064,
+    "speedup_from_initial_canonical": 148.07051408340035,
+    "scope": "Whole implementation difference, not isolated capability overhead. Old source used packed lowering, compact counters and four partitions. Previous0.768s retained-binary diagnostic used a synchronous Node observer; this run uses standard Rust1ms polling."
+  },
+  "implementation": [
+    "Derive a closed root Tail from the same canonical CFG, native aggregate proof and owner-bound String proof. Every body action must already execute on admitted native words/views; an ordinary library/managed action declines the region.",
+    "Remove the declared latch backedge and require the remaining body to be acyclic. Summing every block envelope and bounded comparison admits any single traversal. Three additional admitted words retain the ready flag and finite compute/comparison fuel.",
+    "Observe the SAME cumulative account and effective root limits at entry; nested maintained-call scopes decline. Generated code debits a complete traversal envelope at each header. The funded body makes no Rust admission/helper callback.",
+    "Reconcile spent fuel before the original exit visit. If another complete traversal cannot be funded, reconcile and resume the ordinary checked header with the current native carrier; no allowance is refilled.",
+    "Bounds failures reconcile before the original selected leaf. Arithmetic/rejection exits reconcile and drop owner loans before returning the original typed error. Atomic output, ABI8 and one host round remain."
+  ],
+  "verification": {
+    "generated": "v761:114 passed,2 explicit ignored diagnostics.",
+    "hosted": "v761:37 passed,2 explicit ignored diagnostics, including complete original/decoded secured source and100/400-base stages.",
+    "budget_identity": "v762:9 cumulative-work tests and4 retirement/old-policy identity rejection tests passed.",
+    "coverage": "Constant actual callback count across0/8/128 transitions while work increases; nonterminating machine exhausts finite fuel without refill/publication; native-to-ordinary fuel fallback; arithmetic, bounds and comparison-denial origins, atomicity, cleanup/reuse; ASCII/NUL/Unicode/CRLF; complete hosted source selects closed Tail.",
+    "initial_failure": "v760:112 passed and one new arithmetic fixture failed canonical lowering before execution. Corrected to the existing Count fixture with a division-by-zero body; v761 passes.",
+    "guards": "Production routing, Rust module layout, native build analysis layout, unsafe audit, formatting and diff checks passed.",
+    "release": "v763 standard release qualifier and timing passed; frozen pins unchanged. Supervisor exit0, owned cleanup complete369.7229907s total build/qualification duration (not sample time).",
+    "audit": "v769 independent physical audit reconciles all8 raw outputs/reports, input/source/bytecode/manifests, binary/Object identities, strict root release profiles and all counters. Result JSON was parsed and compared back to the result object before success.",
+    "audit_correction": "The earlier v764 computational audit passed its assertions but wrote a literal backslash-n after its result, producing invalid JSON. The malformed file remains preserved; corrected v769 re-runs the full audit and validates the emitted JSON.",
+    "review": "Clean review6283357480 covers implementationbe90f41d9a. CI39369159276 is pending; keep draft/unmerged."
+  },
+  "profile": {
+    "kind": "Exact retained measured binary; same input/launch/oracle; one CPU sampling diagnostic",
+    "main_thread_stacks": 225,
+    "boundary_weights": [
+      {
+        "function_name": "compiled_window_loops",
+        "samples": 106,
+        "percent": 47.111111111111114
+      },
+      {
+        "function_name": "runtime_helper_callbacks",
+        "samples": 105,
+        "percent": 46.666666666666664
+      },
+      {
+        "function_name": "other",
+        "samples": 9,
+        "percent": 4
+      },
+      {
+        "function_name": "compiled_string_map_loops",
+        "samples": 5,
+        "percent": 2.2222222222222223
+      }
+    ],
+    "top_exclusive": [
+      {
+        "function_name": "mech_window_region_5",
+        "samples": 90,
+        "percent": 40
+      },
+      {
+        "function_name": "<core::slice::iter::Windows<u8> as core::iter::traits::iterator::Iterator>::try_fold::<(), core::iter::traits::iterator::Iterator::any::check<&[u8], <mech_gpu::native_artifact::program_runtime::collection::State>::prepare_compiled_window::{closure#0}>::{closure#0}, core::ops::control_flow::ControlFlow<()>>",
+        "samples": 28,
+        "percent": 12.444444444444445
+      },
+      {
+        "function_name": "mech_core::snapshot::validation::token_data",
+        "samples": 24,
+        "percent": 10.666666666666666
+      },
+      {
+        "function_name": "mech_engine::intrinsics::text_graphemes::count",
+        "samples": 19,
+        "percent": 8.444444444444445
+      },
+      {
+        "function_name": "mech_window_region_2",
+        "samples": 16,
+        "percent": 7.111111111111111
+      },
+      {
+        "function_name": "mech_core::snapshot::validation::token_sequence",
+        "samples": 13,
+        "percent": 5.777777777777778
+      },
+      {
+        "function_name": "mech_string_map_region_0",
+        "samples": 5,
+        "percent": 2.2222222222222223
+      },
+      {
+        "function_name": "core::slice::ascii::is_ascii::runtime",
+        "samples": 4,
+        "percent": 1.7777777777777777
+      }
+    ],
+    "caveat": "Short225-stack sample; proportions are not exact causal wall time. Inclusive functions overlap and optimized inlining/deduplicated symbols limit attribution. No admission callback was sampled, which does not prove zero admission cost.",
+    "next": "Compiled query comparisons, repeated ASCII/CRLF/length scans and Matrix selection/finalization. Resolve full-size TextLines temporary construction before standard-size qualification."
+  },
+  "full125M": {
+    "status": "FAILED_BEFORE_COMMIT_NO_TIMING_SAMPLES",
+    "same_retained_binary": true,
+    "unchanged_prior_standard_launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+    "input_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+    "oracle_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+    "selected_origin": "NodeId2, root TextLines at site3; independently confirmed for original/decoded current artifacts by the selected-site metadata diagnostic.",
+    "temporary_bytes_required": 2391669562,
+    "temporary_bytes_limit": 1072785920,
+    "original_variant_attempts": 1,
+    "decoded_variant_attempts": 0,
+    "timing_samples": 0,
+    "supervisor": "v767 exit1, owned cleanup complete1.7802s. Original process exit1; no successful output/report. Stop at first failed correctness gate.",
+    "next": "Eliminate temporary draft/intermediate construction while preserving result and limits; no cap increase or changed oracle."
+  },
+  "local_evidence": {
+    "root": "tmp/pr-stack-evidence/",
+    "files": [
+      {
+        "path": "closed-tail-recovery-10m-release-v763/full-input/full-input-result.json",
+        "sha256": "b1e4b6cae2ebf8b33eaf4cea32599a4d00c6e752cb5f1b1fab20994b6bddcaaa"
+      },
+      {
+        "path": "closed-tail-recovery-10m-release-v763/hosted-linked-result.json",
+        "sha256": "683ba4de5d0e3deae18b25076dfa7a86538302fd05bf3f2e97296f9059ca67b4"
+      },
+      {
+        "path": "audit-closed-tail-recovery-v769-result.json",
+        "sha256": "3c648fb59be7b2c1e5afb4628e1a751ffacdac216c37852d4fab0c92e839aaa0"
+      },
+      {
+        "path": "closed-tail-recovery-cpu-profile-v765/profile-analysis.json",
+        "sha256": "6c6b733144162120119d7fd729fb589747f372e6768935fa557a5ba18f951ae9"
+      },
+      {
+        "path": "closed-tail-recovery-cpu-profile-v765/sample.txt",
+        "sha256": "46deb8eaf7c13ddfa9cf96818716fad5b7e11712227c23f172975ed689a867ba"
+      },
+      {
+        "path": "closed-tail-retained-125m-v767/qualification.json",
+        "sha256": "367874e6ee68820c994fde73f3a5717d2335797befad59cedbeb8bfe27a2e289"
+      }
+    ]
+  },
+  "remaining": "Still5.40x old same-input direct median; full125M unqualified. Goal remains active. Further compiler/library representation and loop improvements are required; no ranking, ready or merge."
+}

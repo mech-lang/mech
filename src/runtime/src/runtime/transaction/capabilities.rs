@@ -568,7 +568,7 @@ impl MechRuntime {
         )
     }
 
-    #[cfg(any(test, feature = "resident-routing"))]
+    #[cfg(any(test, feature = "canonical-native-resources"))]
     pub(crate) fn get_capability(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>> {
         self.store.get_capability(id)
     }

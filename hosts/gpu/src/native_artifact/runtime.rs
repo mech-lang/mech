@@ -1,4 +1,5 @@
 //! Checked invocation boundary for the private nonprinting native scalar ABI.
+use super::NativeWorkMeter;
 use super::abi::{
     ABI_VERSION, NO_NODE, NativeAbiDescriptor, NativeEntryFrame as Frame, STATUS_ABI,
     STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK, primitive_work,
@@ -58,6 +59,10 @@ pub enum NativeExecutionError {
         phase: NativeExecutionPhase,
         required: u64,
         limit: u64,
+    },
+    LibraryWork {
+        phase: NativeExecutionPhase,
+        error: mech_core::ResidentKernelError,
     },
     StackLimit {
         required: u64,
@@ -129,8 +134,7 @@ fn completion_work(outputs: u64) -> Result<u64, NativeExecutionError> {
 
 struct ExecutionContext<'a> {
     descriptor: &'a NativeAbiDescriptor,
-    limit: u64,
-    work: u64,
+    work: NativeWorkMeter,
     next_ordinal: u64,
     completion: u64,
     error: Option<NativeExecutionError>,
@@ -141,23 +145,7 @@ impl ExecutionContext<'_> {
         phase: NativeExecutionPhase,
         amount: u64,
     ) -> Result<(), NativeExecutionError> {
-        let required = self
-            .work
-            .checked_add(amount)
-            .ok_or(NativeExecutionError::WorkLimit {
-                phase,
-                required: u64::MAX,
-                limit: self.limit,
-            })?;
-        if required > self.limit {
-            return Err(NativeExecutionError::WorkLimit {
-                phase,
-                required,
-                limit: self.limit,
-            });
-        }
-        self.work = required;
-        Ok(())
+        self.work.charge(phase, amount)
     }
 
     fn admit(&mut self, ordinal: u64) -> Result<(), NativeExecutionError> {
@@ -266,8 +254,7 @@ where
     let output_count = as_u64(outputs.len())?;
     let mut context = ExecutionContext {
         descriptor,
-        limit: limits.max_work,
-        work: 0,
+        work: NativeWorkMeter::new(limits.max_work)?,
         next_ordinal: 0,
         completion: local_count,
         error: None,
@@ -283,6 +270,7 @@ where
             (NativeScalarValue::Bool(_), NativeScalarKind::Bool)
                 | (NativeScalarValue::U64(_), NativeScalarKind::U64)
                 | (NativeScalarValue::I64(_), NativeScalarKind::I64)
+                | (NativeScalarValue::F64(_), NativeScalarKind::F64)
         ) {
             return Err(NativeExecutionError::InputType {
                 input: index,
@@ -297,6 +285,7 @@ where
             NativeScalarValue::Bool(value) => u64::from(*value),
             NativeScalarValue::U64(value) => *value,
             NativeScalarValue::I64(value) => *value as u64,
+            NativeScalarValue::F64(value) => value.bits(),
         };
     }
     let input_pointer = input_words.as_ptr();
@@ -399,10 +388,13 @@ where
             NativeScalarKind::Bool => NativeScalarValue::Bool(*word != 0),
             NativeScalarKind::U64 => NativeScalarValue::U64(*word),
             NativeScalarKind::I64 => NativeScalarValue::I64(*word as i64),
+            NativeScalarKind::F64 => {
+                NativeScalarValue::F64(mech_core::snapshot::F64Bits::from_bits(*word))
+            }
         };
     }
     Ok(NativeExecutionReport {
-        work: context.work,
+        work: context.work.used(),
         transport_bytes: bytes,
         completed_nodes: descriptor.lets().len(),
     })

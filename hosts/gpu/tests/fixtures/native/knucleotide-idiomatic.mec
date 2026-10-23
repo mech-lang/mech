@@ -10,12 +10,12 @@ histogram(s<string>, width<u64>) => (counts<{string:u64}>) :=
   n := sequence/length(s)
   words := [
     s[(i + 1u64)..=(i + width)]
-    | i <- 0u64..n, width > 0u64, width <= n - i
+    | i <- 0u64..=n, width > 0u64, width <= n - i
   ]
   counts := map/histogram(words).
 
 frequencies(h<{string:u64}>) => (output<string>) :=
-  keys := map/keys(h)
+  keys := h_keys
   counts := map/values(h)
   order := sequence/sort-indices(counts, "desc", keys, "asc")
   values<[f64]> := counts
@@ -27,7 +27,7 @@ frequencies(h<{string:u64}>) => (output<string>) :=
   output := text/join(lines, "\n") + "\n\n".
 
 lookup(counts<{string:u64}>, query<string>) => (output<string>) :=
-  keys := {key | key <- map/keys(counts)}
+  keys<{string}> := counts_keys
   count := (query ∈ keys)?
     | true => counts{query}
     | false => 0u64.
@@ -82,9 +82,12 @@ sequence := text/join([uppercase{char} | char <- record], "")
 
 queries := ["GGT" "GGTA" "GGTATT" "GGTATTTTAATT" "GGTATTTTAATTTATAGT"]
 
-@out/text <- frequencies(histogram(sequence, 1u64))
-@out/text <- frequencies(histogram(sequence, 2u64))
-@out/text <- text/join([
+frequency-text := text/join([
+  frequencies(histogram(sequence, width))
+  | width <- [1u64 2u64]
+], "")
+query-text := text/join([
   lookup(histogram(sequence, sequence/length(query)), query)
   | query <- queries
 ], "")
+@out/text <- frequency-text + query-text

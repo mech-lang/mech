@@ -352,7 +352,7 @@ pub struct SlotDeclaration {
     pub initializer: Option<InitializerReference>,
 }
 
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, serde::Serialize)]
 pub enum ArtifactSource {
     Constant(ConstantId),
     Slot(CellSlotId),
@@ -551,7 +551,7 @@ pub struct OutputDeclaration {
 /// `artifact_source` identifies the semantic producer, while `storage` is the
 /// live resident cell used to inspect it. Several lexical names may therefore
 /// share the same source and storage without sharing an interface name.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct InteractiveSymbolBinding {
     pub lexical_name: String,
     pub artifact_source: ArtifactSource,

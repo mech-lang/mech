@@ -4,6 +4,8 @@ use mech_core::{
     ApplicationRequirement, MResult, MechError, MechErrorKind,
     canonical_application_requirement_bytes,
 };
+use mech_engine::ApplicationRequirementTable;
+#[cfg(feature = "resident-routing")]
 use mech_engine::ProgramArtifact;
 
 use crate::{
@@ -85,14 +87,25 @@ impl ResidentAdmissionProof {
 }
 
 impl MechRuntime {
+    #[cfg(feature = "resident-routing")]
     pub(crate) fn build_resident_authority(
         &self,
         artifact: &ProgramArtifact,
     ) -> MResult<ResidentAdmissionProof> {
+        self.build_requirement_authority(artifact.requirements())
+    }
+
+    /// Admit the complete canonical requirement table, including unused ports.
+    /// Metadata carries no permission: every invocation selects and revalidates
+    /// capabilities against this runtime's current authority.
+    pub(crate) fn build_requirement_authority(
+        &self,
+        table: &ApplicationRequirementTable,
+    ) -> MResult<ResidentAdmissionProof> {
         let context = self.runtime_context()?;
-        let mut grants = Vec::with_capacity(artifact.requirements().len());
+        let mut grants = Vec::with_capacity(table.len());
         let mut requirements = BTreeSet::new();
-        for (_, requirement) in artifact.requirements().iter() {
+        for (_, requirement) in table.iter() {
             let ApplicationRequirement::Resource(resource) = requirement else {
                 return Err(route_failure(
                     ResidentRouteFailureClass::SemanticUnsupported,
@@ -144,6 +157,7 @@ impl MechRuntime {
         Ok(grant_set)
     }
 
+    #[cfg(feature = "resident-routing")]
     pub(crate) fn revalidate_active_resident_grants(&self) -> MResult<()> {
         let super::super::ActiveProgramExecution::ResidentExternal(execution) =
             &self.active_program

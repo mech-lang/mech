@@ -706,7 +706,14 @@ def reachable_generator_commands(module: ast.Module):
 
 def feature_closure(manifest: dict, command: dict) -> set[str]:
     declared = manifest.get("features", {})
-    enabled = set(command["features"])
+    package = manifest.get("package", {}).get("name")
+    enabled = set()
+    for feature in command["features"]:
+        owner, separator, name = feature.partition("/")
+        if not separator:
+            enabled.add(feature)
+        elif owner == package:
+            enabled.add(name)
     if command["default"]:
         enabled.add("default")
     if command["all_features"]:

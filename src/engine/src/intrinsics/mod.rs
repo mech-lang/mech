@@ -74,6 +74,10 @@ impl MechErrorKind for IndexOutOfBoundsError {
 #[cfg(feature = "functions")]
 pub mod catalog;
 
+#[cfg(feature = "pure_text")]
+#[doc(hidden)]
+pub mod text_graphemes;
+
 #[cfg(feature = "semantic-compiler")]
 pub mod aggregate;
 #[cfg(all(feature = "semantic-compiler", feature = "convert"))]

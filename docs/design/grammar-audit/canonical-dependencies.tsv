@@ -228,7 +228,7 @@ http-prefix	none	paragraph-text|raw-hyperlink
 hyperlink	inline-paragraph|left-bracket|left-parenthesis|right-bracket|right-parenthesis|text	paragraph-element
 idea-block	idea-sigil|paragraph-newline|space-tab0	not-mech-code|section-element
 idea-sigil	none	idea-block|paragraph
-identifier	alpha-token|digit-token|emoji|identifier-symbol	application-stage|atom|binding|call-arg-with-binding|context-base-context|context-capability-declaration|context-declaration|dot-subscript|enum-define|enum-variant|export-declaration|field|fsm|fsm-implementation|fsm-instance|fsm-specification|function-arg|function-call|function-define|header-field|invariant-define|kind-atom|kind-define|kind-record|kind-scalar|kind-table|option-mapping|option-value|pattern-atom-struct|pattern-tuple-struct|slice|slice-ref|swizzle-subscript|title-front-matter|tuple-destructure|tuple-struct|typed-integer|ul-subtitle|var
+identifier	alpha-token|digit-token|emoji|identifier-symbol|underscore	application-stage|atom|binding|call-arg-with-binding|context-base-context|context-capability-declaration|context-declaration|dot-subscript|enum-define|enum-variant|export-declaration|field|fsm|fsm-implementation|fsm-instance|fsm-specification|function-arg|function-call|function-define|header-field|invariant-define|kind-atom|kind-define|kind-record|kind-scalar|kind-table|option-mapping|option-value|pattern-atom-struct|pattern-tuple-struct|slice|slice-ref|swizzle-subscript|title-front-matter|tuple-destructure|tuple-struct|typed-integer|ul-subtitle|var
 identifier-path-segment	alpha-token|dash|digit-token|identifier-path-segment-emoji	module-import-alias-segment|module-import-name-segment|module-root|prefixed-context-path
 identifier-path-segment-emoji	asterisk|colon|comma|emoji|equal|left-brace|new-line|right-brace|slash|space|tab|underscore	identifier-path-segment
 identifier-symbol	ampersand|asterisk|backslash|caret|dash|dollar|hashtag|percent|plus|slash|tilde	identifier
@@ -519,7 +519,7 @@ ul-subtitle	alpha-token|dash|digit-token|identifier|new-line|paragraph-newline|p
 unchecked-item	dash|left-bracket|paragraph-newline|right-bracket|whitespace0	check-list-item
 underline	paragraph-element|underscore	paragraph-element
 underline-sigil	none	none
-underscore	none	context-address-path-token|context-base-resource-uri|context-capability-path-token|empty|hexadecimal-literal|identifier-path-segment-emoji|kind-empty|module-import-intrinsic-segment|paragraph-text|source-path-component-token|symbol|underline|underscore-digit
+underscore	none	context-address-path-token|context-base-resource-uri|context-capability-path-token|empty|hexadecimal-literal|identifier|identifier-path-segment-emoji|kind-empty|module-import-intrinsic-segment|paragraph-text|source-path-component-token|symbol|underline|underscore-digit
 underscore-digit	digit-token|underscore	digit-sequence
 union-op	ws0e	set-operator
 unordered-list	sublist|unordered-list-item	mechdown-list|sublist

@@ -149,11 +149,11 @@ fn replacement_catalog() -> FunctionCatalog {
             .insert_resident_factory(
                 key.module_path.iter().cloned(),
                 key.operation_name.clone(),
-                entry.implementation_memory,
+                entry.implementation_memory(),
                 if replace {
                     unclassified_bind
                 } else {
-                    entry.factory
+                    entry.factory()
                 },
             )
             .unwrap();

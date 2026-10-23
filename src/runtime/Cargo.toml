@@ -23,7 +23,12 @@ runtime_bench_probes = ["mech-engine/runtime_bench_probes"]
 resident_ekf_benchmarks = ["compiler", "mech-engine/resident-artifact"]
 resident-external = ["runtime", "string", "mech-engine/resident-artifact"]
 resident_external_test_support = ["resident-routing-source", "compiler_default"]
-resident-routing = ["resident-external"]
+# Shared artifact resource admission/delivery, without resident session routing.
+# Native and resident hosts use the SAME capability/provider/transaction checks.
+canonical-native-resources = ["resident-external"]
+# Build-owned image codec is not needed by ordinary resource-only hosts.
+canonical-native-images = ["canonical-native-resources", "serde", "dep:serde_json"]
+resident-routing = ["canonical-native-resources"]
 resident-routing-source = ["resident-routing", "semantic-compiler"]
 compute = ["resident-routing-source", "f32", "f64", "string", "matrixd", "dep:mech-compute"]
 native-link = ["runtime", "string"]
@@ -220,6 +225,7 @@ mech-compute = { version = "0.3.5", path = "../compute", optional = true }
 mech-syntax = { version = "0.3.5", path = "../syntax", default-features = false, optional = true }
 serde = { version = "1.0.228", optional = true }
 serde_derive = { version = "1.0.228", optional = true }
+serde_json = { version = "1.0.150", optional = true }
 tracing = { version = "0.1.41", optional = true }
 ignore = {version = "0.4.24", optional = true }
 uuid = { version = "1.23.1", features = ["v7", "serde"] }
@@ -236,6 +242,12 @@ web-time = "1.1.0"
 name = "transactional_runtime"
 path = "examples/transactional_runtime.rs"
 required-features = ["runtime_default"]
+
+[[example]]
+name = "canonical_host_reference"
+path = "examples/canonical_host_reference.rs"
+required-features = ["full_compiler", "resident-routing-source"]
+test = true
 
 [[test]]
 name = "config_profile"

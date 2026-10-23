@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import shutil
 import tempfile
 import unittest
@@ -43,12 +44,66 @@ class MemoryRuntimeCheckerTests(unittest.TestCase):
         self.assertIn(old, source)
         self.write(root, relative, source.replace(old, new, 1))
 
+    def mutate_each_snapshot_rebind(self, old: str, new: str) -> None:
+        """Independently damage every fast/general occurrence, never just first."""
+        path = "src/core/src/snapshot/validation.rs"
+        source = (REPOSITORY / path).read_text(encoding="utf-8")
+        code = CHECKER.rust_code(source)
+        signatures = list(re.finditer(r"\bfn\s+rebind_with_context\b[^{;]*\{", code))
+        bodies = list(CHECKER.function_bodies(code, "rebind_with_context"))
+        self.assertTrue(signatures, "contextual rebind mutation target is missing")
+        self.assertEqual(len(signatures), len(bodies))
+        mutations = []
+        for signature, body in zip(signatures, bodies):
+            start = signature.end()
+            self.assertEqual(code[start:start + len(body)], body)
+            mutations.extend(
+                start + match.start()
+                for match in re.finditer(re.escape(old), code[start:start + len(body)])
+            )
+        self.assertTrue(mutations, f"rebind mutation anchor is missing: {old}")
+        for index, offset in enumerate(mutations):
+            with self.subTest(return_path=index + 1):
+                root = self.fixture()
+                self.write(root, path, source[:offset] + new + source[offset + len(old):])
+                self.assert_failure(root, "do not preserve shared frozen ownership")
+
     def assert_failure(self, root: Path, expected: str) -> None:
         found = CHECKER.failures(root)
         self.assertTrue(any(expected in item for item in found), found)
 
     def test_00_repository_fixture_passes(self):
         self.assertEqual(CHECKER.failures(self.fixture()), [])
+
+    def test_00b_receipt_cache_must_live_on_the_shared_data_owner(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "resident_token: SharedOwnershipCell<u64>", "resident_token: u64")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_00c_receipt_cache_must_not_be_an_independent_value_field(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "pub struct Value {", "pub struct Value {\n    resident_token: u64,")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_00d_receipt_lookup_must_use_the_actual_owner_cache(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "*self.root.data.resident_token.get_or_init", "*SharedOwnershipCell::new().get_or_init")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_00e_each_finalizer_must_initialize_a_fresh_owner_cache(self):
+        path = "src/core/src/snapshot/validation.rs"
+        source = (REPOSITORY / path).read_text(encoding="utf-8")
+        anchor = "resident_token: SharedOwnershipCell::new()"
+        positions = [match.start() for match in re.finditer(re.escape(anchor), source)]
+        self.assertEqual(len(positions), 2)
+        for index, offset in enumerate(positions):
+            with self.subTest(finalizer=index):
+                root = self.fixture()
+                self.write(root, path, source[:offset] + "resident_token: SharedOwnershipCell::from(0)" + source[offset + len(anchor):])
+                self.assert_failure(root, "do not preserve shared frozen ownership")
 
     def test_01_runtime_receipt_serialization_fails(self):
         root = self.fixture()
@@ -546,34 +601,40 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         self.assert_failure(root, "do not refresh live and prospective footprints")
 
     def test_49_snapshot_rebind_must_keep_frozen_ownership(self):
-        root = self.fixture()
-        self.replace(
-            root,
-            "src/core/src/snapshot/validation.rs",
+        self.mutate_each_snapshot_rebind(
             "return Ok(self.clone());",
             "return Ok(rebuild_without_owner());",
         )
-        self.assert_failure(root, "do not preserve shared frozen ownership")
 
     def test_49b_snapshot_rebind_must_keep_the_admitted_shared_schema_owner(self):
-        root = self.fixture()
-        self.replace(
-            root,
-            "src/core/src/snapshot/validation.rs",
+        self.mutate_each_snapshot_rebind(
             "schemas: Some(context.try_clone_schemas()?),",
             "schemas: Some(Arc::new(context.schemas().clone())),",
         )
-        self.assert_failure(root, "do not preserve shared frozen ownership")
 
     def test_49c_snapshot_rebind_must_not_clone_the_local_schema_alias(self):
-        root = self.fixture()
-        self.replace(
-            root,
-            "src/core/src/snapshot/validation.rs",
+        self.mutate_each_snapshot_rebind(
             "schemas: Some(context.try_clone_schemas()?),",
             "schemas: Some(Arc::new(schemas.clone())),",
         )
-        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_49d_each_shared_rebind_return_must_keep_its_frozen_root(self):
+        self.mutate_each_snapshot_rebind(
+            "root: self.root.clone(),",
+            "root: rebuild_without_owner(),",
+        )
+
+    def test_49e_unknown_rebind_return_must_not_hide_behind_an_intact_branch(self):
+        self.mutate_each_snapshot_rebind(
+            "return Ok(self.clone());",
+            "return rebuild_without_owner();",
+        )
+
+    def test_49f_rebuilding_rebind_must_keep_contextual_finalization(self):
+        self.mutate_each_snapshot_rebind(
+            ".finalize(context)",
+            ".finalize_without_owner(context)",
+        )
 
     def test_50_payload_nodes_use_declared_not_allocator_capacity(self):
         root = self.fixture()
@@ -826,6 +887,55 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
             "let root = Arc::new(FrozenSnapshotStorage {",
         )
         self.assert_failure(root, "common canonical finalization bypasses")
+
+    def test_74a_common_finalizer_must_call_the_checked_storage_helper(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "prepared_snapshot_storage(shape, data, context)?",
+                     "unadmitted_snapshot_storage(shape, data, context)?")
+        self.assert_failure(root, "common canonical finalization bypasses")
+
+    def test_74b_finalizer_shape_owner_must_use_construction_authority(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "let shape = context.try_arc(shape)?;",
+                     "let shape = Arc::new(shape);")
+        self.assert_failure(root, "common canonical finalization bypasses")
+
+    def test_74c_prepared_string_must_admit_its_backing_and_schema_owner(self):
+        for old in ("context.admit_string_backing(length)?;",
+                    "context.try_clone_schemas()?"):
+            with self.subTest(admission=old):
+                root = self.fixture()
+                self.replace(root, "src/core/src/snapshot/string_constructor.rs", old, "unadmitted()")
+                self.assert_failure(root, "prepared canonical String construction bypasses")
+
+    def test_74d_prepared_string_must_share_the_checked_metadata_constructor(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/string_constructor.rs",
+                     "prepared_snapshot_storage(", "unadmitted_snapshot_storage(")
+        self.assert_failure(root, "prepared canonical String construction bypasses")
+
+    def test_74e_prepared_string_must_keep_length_and_both_owner_guards(self):
+        for old in ("text.len() != self.length",
+                    "Arc::get_mut(&mut self.root)",
+                    "Arc::get_mut(&mut storage.data)"):
+            with self.subTest(guard=old):
+                root = self.fixture()
+                self.replace(root, "src/core/src/snapshot/string_constructor.rs", old, "unchecked()")
+                self.assert_failure(root, "prepared canonical String construction bypasses")
+
+    def test_74f_ordinary_string_finalization_must_share_the_prepared_leaf(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "StringSnapshotConstructor::from_validated_shape(", "unchecked_string_constructor(")
+        self.assert_failure(root, "prepared canonical String construction bypasses")
+
+    def test_74g_packed_string_finalization_must_still_admit_backing(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "self.admit_string_backing(value.len())?;", "unadmitted();")
+        self.assert_failure(root, "prepared canonical String construction bypasses")
 
     def test_75_recursive_values_must_share_one_schema_owner(self):
         root = self.fixture()

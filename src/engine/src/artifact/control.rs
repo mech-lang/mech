@@ -8,7 +8,7 @@ use crate::structural_coverage::{
 };
 
 /// Dense preorder identity within one root control declaration.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct ControlBlockId(pub u32);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -57,7 +57,7 @@ pub struct ControlParameter {
     pub schema: SchemaId,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum ControlValue {
     Constant(ConstantId),
     Parameter { block: ControlBlockId, ordinal: u16 },

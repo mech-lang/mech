@@ -514,6 +514,12 @@ pub struct FunctionSpecializerEntry {
 }
 
 impl FunctionSpecializerEntry {
+    /// All registered semantic contract variants, for descriptive tooling.
+    /// Returning metadata does not select a contract or authorize execution.
+    pub fn operation_contracts(&self) -> &[OperationContractDeclaration] {
+        &self.operation_contracts
+    }
+
     fn operation_contract_for_output_shape(
         &self,
         input_count: usize,
@@ -1638,7 +1644,35 @@ impl FunctionCatalogBuilder {
             )
             .with_compiler_loc());
         };
-        if self.resident_factories.contains_key(&key) {
+        self.insert_resident_factory_entry(ResidentKernelFactoryEntry::new(
+            key,
+            implementation_memory,
+            factory,
+        ))
+    }
+
+    /// Installs an unchanged implementation entry. Existing registration
+    /// callers use insert_resident_factory and start without an attachment.
+    pub fn insert_resident_factory_entry(
+        &mut self,
+        entry: ResidentKernelFactoryEntry,
+    ) -> MResult<()> {
+        let key = entry.key();
+        if key.module_path.is_empty()
+            || key.module_path.iter().any(String::is_empty)
+            || key.operation_name.is_empty()
+        {
+            return Err(MechError::new(
+                FunctionCatalogInvalidName {
+                    category: "resident function",
+                    name: String::new(),
+                    id: 0,
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        if self.resident_factories.contains_key(key) {
             return Err(MechError::new(
                 FunctionCatalogInvalidName {
                     category: "duplicate resident function",
@@ -1649,14 +1683,7 @@ impl FunctionCatalogBuilder {
             )
             .with_compiler_loc());
         }
-        self.resident_factories.insert(
-            key.clone(),
-            ResidentKernelFactoryEntry {
-                key,
-                implementation_memory,
-                factory,
-            },
-        );
+        self.resident_factories.insert(key.clone(), entry);
         Ok(())
     }
 

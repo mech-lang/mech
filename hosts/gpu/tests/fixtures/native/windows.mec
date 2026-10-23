@@ -1,0 +1,8 @@
++> sequence
+
+windows(s<string>, width<u64>) => (out<[string]>) :=
+  n := sequence/length(s)
+  out := [
+    s[(i + 1u64)..=(i + width)]
+    | i <- 0u64..=n, width > 0u64, width <= n - i
+  ].

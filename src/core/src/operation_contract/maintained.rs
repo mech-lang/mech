@@ -318,6 +318,7 @@ pub fn maintained_operation_contract(
             ))
         }
         "option/some" => Some(full(ShapeRule::Declared)),
+        "convert/set" if input_count == 1 => Some(full(ShapeRule::Declared)),
         "convert/kind" | "core/assign" => Some(full(ShapeRule::SameAsInput { input: 0 })),
         "matrix/matmul" | "matrix/dot" => Some(declaration(
             fixed(),

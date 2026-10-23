@@ -1,10 +1,7 @@
 use crate::MResult;
 
 #[cfg(all(feature = "no_std", not(feature = "std")))]
-use alloc::{
-    string::{String, ToString},
-    vec::Vec,
-};
+use alloc::{string::String, vec::Vec};
 
 use super::invalid;
 

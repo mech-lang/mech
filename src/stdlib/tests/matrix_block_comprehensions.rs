@@ -671,7 +671,7 @@ fn observed_division_bind(
     let entry = maintained
         .resident_factory(&["math".into()], "div")
         .unwrap();
-    let delegate = (entry.factory)(request)?;
+    let delegate = (entry.factory())(request)?;
     let output = delegate.snapshot_output().cloned();
     let mut kernel = BoundResidentKernel::new(observed_division, Box::new([]))
         .with_snapshot_schemas(request.schemas.clone())
@@ -694,11 +694,11 @@ fn observed_division_catalog() -> FunctionCatalog {
             .insert_resident_factory(
                 key.module_path.iter().cloned(),
                 key.operation_name.clone(),
-                entry.implementation_memory,
+                entry.implementation_memory(),
                 if selected {
                     observed_division_bind
                 } else {
-                    entry.factory
+                    entry.factory()
                 },
             )
             .unwrap();

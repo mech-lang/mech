@@ -1,0 +1,443 @@
+{
+  "schema": "mech.canonical-knucleotide-compact-selector.v1",
+  "later_geometry_measurement": "canonical-knucleotide-line-geometry-v1.json",
+  "status": "FRESH_QUALIFIED_MATCHED_IMPROVEMENT_FOOTPRINT_UNFINISHED",
+  "measurement_label": "v1154",
+  "source_commit": "3779fd61c648e9258c109ca49b9f039407d2ba94",
+  "source_provenance": "Fresh original/decoded default-profile qualification and matched measurement used this exact clean commit. Subsequent publication documentation is not a fresh executable qualification.",
+  "measured_utc": {
+    "started": "2026-10-21T22:05:30.396Z",
+    "finished": "2026-10-21T22:05:56.597Z"
+  },
+  "assessment": {
+    "full125m": "Median 0.620660667 seconds versus 0.6310515; 12/12 paired rounds faster, median paired ratio 0.9834734108979346. Same complete Mech source, input, oracle and finite launch policy.",
+    "memory": "Median peak RSS falls by 16285696 bytes (5.67%), from 287080448 to 270794752. Separate physical-footprint samples are not RSS and do not satisfy the approximately 200 MB RSS target.",
+    "size": "Executable increases by 16480 bytes, from 6713008 to 6729488. This small cost is retained for the measured runtime and memory improvements; the approximately 3.16 MB target remains unmet.",
+    "interpretation": "Compare paired results in this batch to attribute this optimization's effect. Earlier approximately 0.639-second measurements remain valid historical evidence; their entire difference from this batch is not attributable to this change. No universal language ranking or isolated capability-overhead claim.",
+    "reference_footprint_target_met": false
+  },
+  "implementation": {
+    "abi_version": 12,
+    "typed_ir_version": 27,
+    "work_policy_version": 36,
+    "optimization": "Prove exact sole-use adjacent same-scope U64 unit Range -> String-matrix Select -> TextJoin. Preserve every original visit; replace only the dead intermediate index-array representation with checked immutable start/count/schema metadata.",
+    "semantics": "Use the maintained range cardinality, shape/layout and matrix positional conversion, including portable u32 index limits and InvalidInput errors. Escapes, reuse, barriers and unsupported schemas keep canonical range execution. Private views retain real owners, never fabricate canonical Matrix values.",
+    "authority": "Same capability/provider/transaction authority, one text observation and one effect, one finite cumulative ledger. Complete source/UTF-8/acquisition failures precede deferred body failures. Range witness scratch ends at its call; pending state keeps only its real live reservation.",
+    "compilation": "Unchanged idiomatic Mech source compiled to a Cranelift Object. Generated default opt-level3/ThinLTO/strip profile optimizes linked Rust host and libraries; unwind and codegen-unit defaults unchanged."
+  },
+  "hardware": {
+    "architecture": "arm64",
+    "cpu_and_memory": "Apple M1\n8\n8\n8589934592",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90",
+    "power_source": "Now drawing from 'AC Power'"
+  },
+  "source": {
+    "path": "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+    "bytes": 2621,
+    "sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f"
+  },
+  "variants": [
+    {
+      "name": "baseline-v1151",
+      "binary": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-release-v1151/variant-0/native-executable",
+        "bytes": 6713008,
+        "sha256": "375468ecee1f64a58503663435de7b42fbdd81f29f42652f07d5033e7952fcf3"
+      },
+      "source_commit": "a8e334004f609e6de1c0e3fc17aaaaea35a12819",
+      "program_revision": "2ac13fcbabb35da0c654185cc32154b36e933404aa23c0b2b055507894897b25",
+      "typed_ir_version": 26,
+      "work_policy_version": 35,
+      "wrapper": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-qualification-v1151/result.json",
+        "bytes": 4698,
+        "sha256": "090d59de4915785a8d32ff7d379a577145712eb7e507c2161999c4dc443bcf33"
+      },
+      "qualification": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/canonical-envelope-release-v1151/hosted-linked-result.json",
+        "bytes": 589833,
+        "sha256": "091080f52da2310f90f7e6e7ee64ae1f4f5ddb056d7ca52e26929420bd4d2161"
+      }
+    },
+    {
+      "name": "compact-range-v1153",
+      "binary": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/compact-range-release-v1153/variant-0/native-executable",
+        "bytes": 6729488,
+        "sha256": "7617e0392559f89e2d6db9a07293c378f30ea0027823304a30a887cda59417a4"
+      },
+      "source_commit": "3779fd61c648e9258c109ca49b9f039407d2ba94",
+      "program_revision": "de650b928994ff2b6f02dfa769a18037a9c297fec2d956cddf69e114223cdea9",
+      "typed_ir_version": 27,
+      "work_policy_version": 36,
+      "wrapper": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/compact-range-qualification-v1153/result.json",
+        "bytes": 4715,
+        "sha256": "9c69f7dc282772913ec0d320ef44036866eb2dfd381badcec1cb416434c01f94"
+      },
+      "qualification": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/compact-range-release-v1153/hosted-linked-result.json",
+        "bytes": 587050,
+        "sha256": "d4babda9179eb29b6b64a9183fe1de3cd497bcac5b66b3c1b5a7740f31a7d74c"
+      }
+    }
+  ],
+  "inputs_and_oracles": [
+    {
+      "label": "10m",
+      "input": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/knucleotide-large-controls-v564/fasta-n-2000000.txt",
+        "bytes": 20333411,
+        "three_bases": 10000000,
+        "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b"
+      },
+      "oracle": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/legacy-native-10m-measurement-v677/full-qualification-historical-fast.stdout",
+        "bytes": 254,
+        "sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+      }
+    },
+    {
+      "label": "125m",
+      "input": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/input",
+        "bytes": 254166745,
+        "three_bases": 125000000,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa"
+      },
+      "oracle": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/oracle",
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      }
+    }
+  ],
+  "finite_launch_policy": {
+    "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/policy-standard-125m-launch-v660.json",
+    "sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+    "finite_policy": {
+      "grants": [
+        {
+          "operations": [
+            "read"
+          ],
+          "paths": [
+            "text"
+          ],
+          "target": "cli/stdin"
+        },
+        {
+          "operations": [
+            "write"
+          ],
+          "paths": [
+            "text"
+          ],
+          "target": "cli/stdout"
+        }
+      ],
+      "input_text_bytes": 254166745,
+      "library": {
+        "cloned_bytes": 536870912,
+        "comparison_work": 68719476736,
+        "compute_work": 8796093022208,
+        "output_bytes": 536870912,
+        "output_elements": 8388608,
+        "retained_nodes": 16777216,
+        "temporary_bytes": 1073741824
+      },
+      "max_ports": 16,
+      "memory_bytes": 3221225472,
+      "native_stack_bytes": 1048576,
+      "output_text_bytes": 1048576,
+      "transport_bytes": 16777216,
+      "work": 562949953421312
+    }
+  },
+  "method": {
+    "timing": "12 serial paired rounds per input size, alternating AB/BA six times each. Monotonic spawn-through-exit time includes startup, secured round and report publication; descriptors opened first. Warmups and validation are untimed.",
+    "memory": "Three separate macOS time -l executions per variant/size. RSS and physical footprint are separate metrics, never timing samples.",
+    "process_lifetime": "RSS wrappers run in owned detached groups with tracked-tree termination on deadline. Direct leaf timing samples retain their synchronous launch/clock path; no process scans or guard timers run inside timed intervals.",
+    "reports": "Every repeated report equals that exact variant/size warmup in full. Both125M warmups must equal their respective maintained qualification reports. Cross-variant differences are enumerated, not normalized away; only actual program_revision and native_work may differ.",
+    "identity": "Both fresh original/decoded pairs must have internally identical binary/Object/bytecode/identity pins. The two versions use the exact same Mech source/input/oracle/policy, not the same compiled Object or revision.",
+    "interference": "Reject compiler/test/benchmark/profiler interference and less than40GiB free before and after each process. Reverify clean candidate commit and immutable pins between phases; require unchanged hardware/OS/power."
+  },
+  "results": {
+    "10m": {
+      "baseline-v1151": {
+        "executable_bytes": 6713008,
+        "timing_samples_ns": [
+          68064792,
+          68006625,
+          67957208,
+          67956375,
+          68647250,
+          67945416,
+          68099417,
+          68472417,
+          67875417,
+          67879667,
+          68168416,
+          68076000
+        ],
+        "median_seconds": 0.0680357085,
+        "minimum_seconds": 0.067875417,
+        "maximum_seconds": 0.06864725,
+        "peak_rss_samples_bytes": [
+          31162368,
+          30818304,
+          30818304
+        ],
+        "median_peak_rss_bytes": 30818304,
+        "peak_footprint_samples_bytes": [
+          17236864,
+          16876352,
+          16892800
+        ],
+        "median_peak_footprint_bytes": 16892800
+      },
+      "compact-range-v1153": {
+        "executable_bytes": 6729488,
+        "timing_samples_ns": [
+          67294959,
+          67108458,
+          67187541,
+          66998791,
+          67199375,
+          67055542,
+          67476167,
+          67247542,
+          66983417,
+          67266834,
+          67100875,
+          67228458
+        ],
+        "median_seconds": 0.067193458,
+        "minimum_seconds": 0.066983417,
+        "maximum_seconds": 0.067476167,
+        "peak_rss_samples_bytes": [
+          29769728,
+          29425664,
+          29425664
+        ],
+        "median_peak_rss_bytes": 29425664,
+        "peak_footprint_samples_bytes": [
+          15893376,
+          15549312,
+          15549312
+        ],
+        "median_peak_footprint_bytes": 15549312
+      }
+    },
+    "125m": {
+      "baseline-v1151": {
+        "executable_bytes": 6713008,
+        "timing_samples_ns": [
+          630889541,
+          635224958,
+          636122416,
+          633745208,
+          631216500,
+          631829750,
+          630524667,
+          630132000,
+          630126166,
+          631213459,
+          630816125,
+          629103000
+        ],
+        "median_seconds": 0.6310515,
+        "minimum_seconds": 0.629103,
+        "maximum_seconds": 0.636122416,
+        "peak_rss_samples_bytes": [
+          287506432,
+          287080448,
+          287080448
+        ],
+        "median_peak_rss_bytes": 287080448,
+        "peak_footprint_samples_bytes": [
+          163038592,
+          164414656,
+          164414592
+        ],
+        "median_peak_footprint_bytes": 164414592
+      },
+      "compact-range-v1153": {
+        "executable_bytes": 6729488,
+        "timing_samples_ns": [
+          620607125,
+          622649542,
+          624734250,
+          624693292,
+          620624875,
+          619793208,
+          619960292,
+          622928417,
+          623671292,
+          619185125,
+          620682459,
+          620638875
+        ],
+        "median_seconds": 0.620660667,
+        "minimum_seconds": 0.619185125,
+        "maximum_seconds": 0.62473425,
+        "peak_rss_samples_bytes": [
+          271384576,
+          270319616,
+          270794752
+        ],
+        "median_peak_rss_bytes": 270794752,
+        "peak_footprint_samples_bytes": [
+          145638784,
+          147735808,
+          147342656
+        ],
+        "median_peak_footprint_bytes": 147342656
+      }
+    }
+  },
+  "paired_candidate_over_baseline": {
+    "10m": {
+      "median_ratio": 0.9868806903210234,
+      "median_delta_ms": -0.8909370000000001,
+      "faster_rounds": 12,
+      "total_rounds": 12,
+      "ratios": [
+        0.9886897031875158,
+        0.9867929484811222,
+        0.988674240413173,
+        0.9859088422535781,
+        0.9789084777613087,
+        0.9869031046921547,
+        0.9908479392709045,
+        0.9821114099126952,
+        0.9868582759498922,
+        0.9909717736240515,
+        0.9843396537188132,
+        0.9875500616957518
+      ],
+      "deltas_ms": [
+        -0.769833,
+        -0.898167,
+        -0.769667,
+        -0.957584,
+        -1.447875,
+        -0.889874,
+        -0.62325,
+        -1.224875,
+        -0.892,
+        -0.612833,
+        -1.067541,
+        -0.847542
+      ]
+    },
+    "125m": {
+      "median_ratio": 0.9834734108979346,
+      "median_delta_ms": -10.4233955,
+      "faster_rounds": 12,
+      "total_rounds": 12,
+      "ratios": [
+        0.9837017174453364,
+        0.9802032085773305,
+        0.9820975244488162,
+        0.9857167898301489,
+        0.9832202976316367,
+        0.9809497067841456,
+        0.9832451043505329,
+        0.9885681365174281,
+        0.9897562197091813,
+        0.9809441103821583,
+        0.9839356262492497,
+        0.9865457246269689
+      ],
+      "deltas_ms": [
+        -10.282416,
+        -12.575416,
+        -11.388166,
+        -9.051916,
+        -10.591625,
+        -12.036542,
+        -10.564375,
+        -7.203583,
+        -6.454874,
+        -12.028334,
+        -10.133666,
+        -8.464125
+      ]
+    }
+  },
+  "security": {
+    "verified_outputs": 64,
+    "verified_complete_security_reports": 64,
+    "cross_version_differences": [
+      {
+        "size": "10m",
+        "differences": [
+          {
+            "key": "native_work",
+            "baseline": 58002815343,
+            "candidate": 57976721126,
+            "numeric_delta": -26094217
+          },
+          {
+            "key": "program_revision",
+            "baseline": "2ac13fcbabb35da0c654185cc32154b36e933404aa23c0b2b055507894897b25",
+            "candidate": "de650b928994ff2b6f02dfa769a18037a9c297fec2d956cddf69e114223cdea9",
+            "numeric_delta": null
+          }
+        ]
+      },
+      {
+        "size": "125m",
+        "differences": [
+          {
+            "key": "native_work",
+            "baseline": 718630134843,
+            "candidate": 718418123927,
+            "numeric_delta": -212010916
+          },
+          {
+            "key": "program_revision",
+            "baseline": "2ac13fcbabb35da0c654185cc32154b36e933404aa23c0b2b055507894897b25",
+            "candidate": "de650b928994ff2b6f02dfa769a18037a9c297fec2d956cddf69e114223cdea9",
+            "numeric_delta": null
+          }
+        ]
+      }
+    ],
+    "original_decoded": "Byte-identical binary and artifact pins within each independently qualified version. Each version's 125M warmup matches its maintained qualification report exactly; every repeated report matches its version/size warmup in full.",
+    "qualification": "Fresh original/decoded builds passed 26 small security cases, 16 generated-launcher tests, 9 pin-rejection cases, and 8 full-size outputs/reports. Qualification sample timings are not substituted for this paired batch."
+  },
+  "validation": {
+    "targeted_tests_passed": 254,
+    "intentionally_ignored": 5,
+    "suites": {
+      "proof": 6,
+      "numeric": 3,
+      "captured_lines": 9,
+      "gpu_native": 146,
+      "artifact_contract": 37,
+      "hosted_contract": 53
+    },
+    "runtime_only_check": "PASS",
+    "test_source": "v1152b tests ran against the exact precommit patch and added-file hashes subsequently committed as 3779fd61; v1153 and v1154 used the clean commit.",
+    "local_source_audit": "Independent read-only review found no concrete blocker in the full 18-file change. This does not substitute for a new GitHub review or green CI.",
+    "evidence": [
+      {
+        "path": "tmp/pr-stack-evidence/compact-range-validation-v1152b/result.json",
+        "bytes": 13738,
+        "sha256": "2f41cc84d1469b4752b7275315e5c91d54a8bd0b10c8d11e62f8713340e21155"
+      },
+      {
+        "path": "tmp/pr-stack-evidence/compact-range-measurement-v1154/measurement.json",
+        "bytes": 405429,
+        "sha256": "95ad32c368977d95f20f4a32c52afe7189a10bd7f9fd4b3986a7aa54f4538aa1"
+      }
+    ],
+    "evidence_location": "Raw files and generated projects are retained locally under the repository's ignored tmp/pr-stack-evidence directory. Paths and hashes identify those receipts; this summary is not a public raw-data archive."
+  },
+  "remaining": [
+    "Reduce peak RSS and executable size toward the approximately 200 MB/3.16 MB reference without sacrificing runtime.",
+    "Obtain clean GitHub review and green CI for the published change; remain draft and unmerged until user direction."
+  ]
+}

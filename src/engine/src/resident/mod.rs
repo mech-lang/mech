@@ -17,6 +17,13 @@ mod kernel;
 pub(crate) mod map_ops;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod matrix_literal;
+#[cfg(all(
+    feature = "resident-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(crate) mod native_collection_semantics;
+#[cfg(feature = "resident-artifact")]
+pub(crate) mod native_factory_linkage;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod native_semantics;
 #[cfg(feature = "resident-artifact")]
@@ -27,6 +34,8 @@ pub(crate) mod pure_text;
 pub(crate) mod sequence_sort;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod set;
+#[cfg(all(feature = "resident-artifact", feature = "convert"))]
+pub(crate) mod set_conversion;
 #[cfg(all(feature = "resident-artifact", feature = "table"))]
 pub(crate) mod table;
 #[cfg(feature = "resident-artifact")]
@@ -56,7 +65,8 @@ pub use general::{
     ResidentActivationOptions, ResidentContinuationScheduler, ResidentContinuationWakeup,
     ResidentExecutionError, ResidentExternalAdmission, ResidentExternalPublicationAuthority,
     ResidentIntegrityMode, ResidentTurnSummary, ResidentValueBorrow, StateMigrationMapping,
-    activate, activate_with_options, preflight_resident_target,
+    activate, activate_with_options, canonical_resource_activation_required,
+    canonical_resource_effect_order, preflight_resident_target,
 };
 
 #[cfg(feature = "resident-artifact")]
@@ -66,5 +76,12 @@ pub use general::{
     ResidentActivationPreflight, ResidentStructuralProbe, preflight_activation,
 };
 
+#[cfg(all(
+    test,
+    feature = "resident-artifact",
+    feature = "pure_text",
+    feature = "map_ops"
+))]
+mod canonical_text_tests;
 #[cfg(test)]
 mod tests;

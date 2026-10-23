@@ -1,0 +1,1115 @@
+{
+  "schema": "mech.canonical-knucleotide-capture-pages.v1",
+  "status": "FRESH_QUALIFIED_SPEED_AND_RSS_TARGETS_MET",
+  "source_commit": "4c3a2db731dee2d86fdfc23780966248d3c17fa4",
+  "source_tree": "9a19bb4c884121147465329c10d0c7720a456364",
+  "publication_equivalent_source_commit": "4c3a2db731dee2d86fdfc23780966248d3c17fa4",
+  "source_provenance": "Qualification and measurements use this exact clean source. The publication branch fast-forwards to the SAME commit; only hosts/gpu/README.md and this validation summary differ in the documentation follow-up.",
+  "measured_utc": {
+    "started": "2026-10-22T13:44:41.875Z",
+    "finished": "2026-10-22T13:45:07.689Z"
+  },
+  "hardware": {
+    "architecture": "arm64",
+    "cpu_and_memory": "Apple M1\n8\n8\n8589934592",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90",
+    "power_source": "Now drawing from 'AC Power'"
+  },
+  "source": {
+    "path": "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+    "bytes": 2621,
+    "sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f"
+  },
+  "target": {
+    "size": "10m",
+    "requested_seconds": 0.0582,
+    "candidate_median_seconds": 0.054806563,
+    "meets_requested_target": true,
+    "peak_rss_reference_bytes": 200000000,
+    "candidate_125m_peak_rss_bytes": 147324928,
+    "meets_rss_reference": true,
+    "executable_size": "Both current paired executables6,630,400B. No file-size growth for this speed optimization; necessary secured-host cost remains substantially larger than Rust#7."
+  },
+  "implementation": {
+    "typed_ir": 27,
+    "abi": 12,
+    "work_policy": 37,
+    "capture": "Private append-only anonymous Unix slabs retain immutable UTF-8 slices under Rc. The existing consuming join unmaps source slabs after their last slice retires instead of leaving malloc medium-region pages resident. Small fragments, insufficient headroom and mapping failure retain the ordinary heap path; non-Unix targets use heap storage. Directory replacement, offsets and unfinished tail backing are funded before choosing an optional slab, so the slab cannot crowd out the rest of that fragment.",
+    "accounting": "Every real slab and owner header is reserved on the existing managed memory account before physical allocation. Optional admission previews the same cumulative work ledger without spending on a declined preference; failed physical allocation remains charged once. No ledger renewal, per-operation protocol, new resource route or secondary executor.",
+    "size_and_startup": "Hash complete, already-derived same-plan join and line proof inventories instead of rebuilding them. Share repeated streaming identity hash updates out of line; the identity transcript is unchanged.",
+    "compiler": "Full idiomatic Mech source through canonical Cranelift Object compilation. LLVM compiles linked Rust host/library routines, not the Mech body. Default opt-level3, ThinLTO, stripped symbols, unchanged unwind and codegen-unit defaults.",
+    "code_generation_proof": {
+      "old_object": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-release-v1283/project-0/program.o",
+        "bytes": 27368,
+        "sha256": "181591212ebcf90a308301358f30ac314f694271759812de82e4c8f15fdaba22"
+      },
+      "fresh_object": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-release-v1294/project-0/program.o",
+        "bytes": 27368,
+        "sha256": "6712479fbc6002517e68170587de244437d8a5876480405dc24a9bb14e5a949c"
+      },
+      "old": {
+        "bytes": 26496,
+        "sha256": "88c0528234fd3242b742e5a0db9a037f309df6c6912b543129060e9e26dde646",
+        "relocation_bytes": 24,
+        "relocation_sha256": "d3bbcd0e2d5c6350f703b16013bc0a9c97b823e087d1890ad259590b860ea988"
+      },
+      "fresh": {
+        "bytes": 26496,
+        "sha256": "41d14901c3c9cbd17a30a10e6308bc05e1d3b0e7372bf207356637bd23aa8eed",
+        "relocation_bytes": 24,
+        "relocation_sha256": "d3bbcd0e2d5c6350f703b16013bc0a9c97b823e087d1890ad259590b860ea988"
+      },
+      "byte_identical": false,
+      "instruction_differences": [
+        {
+          "offset": 3756,
+          "old_word": 4177539682,
+          "new_word": 4177538658,
+          "old_local_offset": 96,
+          "fresh_local_offset": 88
+        },
+        {
+          "offset": 3760,
+          "old_word": 4177540719,
+          "new_word": 4177539695,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 3764,
+          "old_word": 4177541729,
+          "new_word": 4177540705,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 7836,
+          "old_word": 4181735009,
+          "new_word": 4181733985,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 7900,
+          "old_word": 4181736033,
+          "new_word": 4181735009,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 9024,
+          "old_word": 4181735019,
+          "new_word": 4181733995,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 9132,
+          "old_word": 4181736032,
+          "new_word": 4181735008,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 9248,
+          "old_word": 4181736032,
+          "new_word": 4181735008,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 9468,
+          "old_word": 4181735008,
+          "new_word": 4181733984,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 10024,
+          "old_word": 4181735008,
+          "new_word": 4181733984,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 12460,
+          "old_word": 4181735008,
+          "new_word": 4181733984,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 20856,
+          "old_word": 4181736033,
+          "new_word": 4181735009,
+          "old_local_offset": 112,
+          "fresh_local_offset": 104
+        },
+        {
+          "offset": 20904,
+          "old_word": 4181735009,
+          "new_word": 4181733985,
+          "old_local_offset": 104,
+          "fresh_local_offset": 96
+        },
+        {
+          "offset": 25480,
+          "old_word": 4181733999,
+          "new_word": 4181732975,
+          "old_local_offset": 96,
+          "fresh_local_offset": 88
+        }
+      ],
+      "comparison": "Same section size, relocation bytes, opcodes, registers and control flow. Actual changed words, if any, are only local-buffer load/store address immediates; all hashes remain pinned. The change reuses admitted immutable-text facts for sequence sizing and byte-map guards; generated Mech semantics and complete work charges stay unchanged."
+    },
+    "selected_library_features": {
+      "mode": "artifact-selected",
+      "change": "Omit the broad mech-stdlib dependency when all maintained factory registrations are selected. Preserve complete-catalog dependency/features for unrecognized registrations. Existing owner features remain derived from the complete artifact kernel closure.",
+      "removed_resolved_packages": [
+        "mech-combinatorics",
+        "mech-compare",
+        "mech-logic",
+        "mech-math",
+        "mech-matrix",
+        "mech-range",
+        "mech-set",
+        "mech-stats",
+        "mech-stdlib",
+        "mech-string"
+      ],
+      "limitation": "Canonical snapshot types and their generic converters are still broader than this program. This dependency cleanup did not reduce measured executable size or time."
+    },
+    "value_feature_selection": "Derive existing core type features from every artifact schema, recursively including cold/nested payloads. Known registration closures with no Dynamic/ReifiedType value schemas enable selective-convert. Unknown registrations and open value schemas retain complete numeric conversion semantics. Canonical wire variants/tags and the ordinary library default are unchanged.",
+    "required_core_value_features": [
+      "bool",
+      "enum",
+      "f64",
+      "map",
+      "matrixd",
+      "set",
+      "string",
+      "tuple",
+      "u64"
+    ],
+    "histogram_banks": "The general ASCII one/two-grapheme histogram lowering uses four disjoint counter banks after128/16,384 logical cells have at least eight starts each. Admission reserves every physical counter plus worst-case Entry/key backing before entry, checks local/global headroom, and retains serial storage on short input, tight headroom or a lost shared reservation race. Existing finite work bounds cover zeroing, counting, reduction and materialization; no per-start callbacks, extra permission protocol or new resource authority.",
+    "immutable_text_fact": "One same-entry fixed weak frozen-storage identity caches ASCII-without-CRLF, never source payloads or permissions. Admission includes the inline slot plus complete weak Arc shell (144B on this target,1152 work units); replacement drops the old weak token first. Every invocation still pays the existing complete scan-work bound and validates source kind, genuine owner, geometry and finite limits. New entry/round state reacquires facts. Work policy37 rejects old36 receipts; ABI12 and typed IR27 are unchanged.",
+    "native_host_features": "canonical-native-resources reuses the original artifact admission, capability preview/revalidation, provider/schema checks and transaction pipeline without enabling resident-routing in deployed native hosts. Resident routing depends on that SAME shared feature; the build/test frontend retains resident APIs. No copied authority, new executor, changed artifact wire format, relaxed safety check or release-profile change. Route introspection reports None when no resident execution support exists.",
+    "immutable_text_fact_usage": "Window-bearing descriptors already admit the fixed144B fact slot. Collection sizing and compiled byte-map guards now use that SAME one-slot weak identity cache after the original full fresh scan-work charges. A positive ASCII-without-CRLF fact permits byte-length counting; Unicode/CRLF retain maintained grapheme counting and ordinary mapping. Programs without an admitted window fact keep their existing path. No payload/permission retention, extra metadata, reduced charge or new work policy."
+  },
+  "qualification": {
+    "wrapper": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-qualification-v1294/result.json",
+      "bytes": 17987,
+      "sha256": "e8089ee79957bb39dc17e8b7d8c080e43416c18b946e8adfaec62ac8c7a985a3"
+    },
+    "receipt": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-release-v1294/hosted-linked-result.json",
+      "bytes": 564319,
+      "sha256": "4a44f1ab8324bac2b8df557b469b8a39d2d2d0bc3a3f0b425af1415a190b6992"
+    },
+    "original_decoded_binaries": [
+      {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-release-v1294/variant-0/native-executable",
+        "bytes": 6630400,
+        "sha256": "9d0c7def0b45eb48a13c7a07638575cab318fbe0f2a91eb6500ff2ee3047a028"
+      },
+      {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-release-v1294/variant-1/native-executable",
+        "bytes": 6630400,
+        "sha256": "9d0c7def0b45eb48a13c7a07638575cab318fbe0f2a91eb6500ff2ee3047a028"
+      }
+    ],
+    "original_decoded_byte_identical": true,
+    "program_revision": "85a2f100a5bee66778916c9cb63675d04e9fb5ad8adf59d52a18604eff6181f2",
+    "security_cases_per_variant": 13,
+    "generated_launcher_tests_per_variant": 8,
+    "mutated_pins_rejected": 9,
+    "restored_build_passed": true,
+    "full_input_correctness_processes": 2,
+    "full_input_timing_processes": 6,
+    "local_validation": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-validation-v1293/result.json",
+      "bytes": 11141,
+      "sha256": "5f0dafca4cbb0fe2a980c9ada9b76675bdcb563d274d6fe968992b1e89952729"
+    },
+    "local_validation_scope": "216 GPU unit tests (including six immutable-text fact regressions),53 hosted contracts, focused generated-manifest regression, formatting, warning-policy and diff checks pass. Original/decoded repeated mappings and histograms preserve ASCII, Unicode and CRLF results, cache hit/scan counts and complete account cleanup. Fresh release advertised runtime_features and both actual Cargo feature graphs agree on the shared resource profile, excluding resident routing.",
+    "resident_profile_validation": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resident-profile-v1289/result.json",
+      "bytes": 3621,
+      "sha256": "7ecfc6ae2008d12fa225851c715a9c7606d562480bbe5b7d51e81fe08a6d98b4"
+    },
+    "resident_profile_scope": "357 passed at46c42d21c8; runtime source is unchanged, not a claim that this suite was rerun at the current whole-tree commit.",
+    "unchanged_runtime_implementation": {
+      "source_commit": "46c42d21c88f45c4dfea3ad8178b470ffc7a240c",
+      "native_profile_validation": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-validation-v1284/result.json",
+        "bytes": 13066,
+        "sha256": "4fda5eeabc14a17f291364085d6fae7621f0bed13f24c98bc012fd2fa045fdd0"
+      },
+      "native_profile_tests": 351,
+      "resident_profile_validation": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resident-profile-v1289/result.json",
+        "bytes": 3621,
+        "sha256": "7ecfc6ae2008d12fa225851c715a9c7606d562480bbe5b7d51e81fe08a6d98b4"
+      },
+      "resident_profile_tests": 357,
+      "scope": "These runtime suites were run at the recorded earlier commit. Git diff verifies no tracked src/runtime file differs from that tested source; this candidate changes GPU helper/generation code and its tests only."
+    }
+  },
+  "matched_measurement": {
+    "receipt": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-paired-v1295/measurement.json",
+      "bytes": 348501,
+      "sha256": "acddcf451613e0cf857d70ff382f0d01659ba79151cfa5fa8ad089fd170b5551"
+    },
+    "method": {
+      "timing": "Twelve alternating-order paired rounds per size. Serial fresh-process spawn-through-exit wall time; input/output descriptors opened before the clock. Warmups, hashing, validation and process checks are untimed.",
+      "correctness": "Every stdout must byte-exactly match the same pinned oracle and every stderr must be empty. No whitespace, float, line-order or security-report normalization.",
+      "security": "Same pinned finite policy. Baseline reports equal v1277; candidate125M equals fresh v1283 qualification, and candidate10M retains every prior field except its actual manifest-bound revision. Observed reports are never rewritten; no execution counter delta allowed.",
+      "memory": "Three separate macOS time -l processes per binary/size; maximum RSS and physical footprint separately retained, never mixed into timing samples.",
+      "lifecycle": "Fixed native leaves (threads allowed, no child-process work) have a10s deadline. RSS wrapper uses the reviewed owned-tree/group guard with15s deadline and bounded2s termination. No process polling inside timed samples.",
+      "interference": "At least40GiB free and no compiler/test/benchmark/profiler before/after each process. Immutable source/build/binary/input/policy pins verified between phases; hardware/OS/power unchanged.",
+      "packaging": "Both Mech executables use the maintained opt-level3/ThinLTO/strip profile. No release-profile or thread-default changes.",
+      "scope": "Same-machine same-input paired comparison of the two Mech builds. Rust is retained only as pinned historical context and is not rerun in this experiment."
+    },
+    "rounds_per_size": 12,
+    "orders": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0
+      ]
+    ],
+    "outputs_verified": 64,
+    "complete_mech_reports_verified": 64,
+    "rss_processes_per_variant_per_size": 3,
+    "sizes": [
+      {
+        "label": "10m",
+        "input": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/knucleotide-large-controls-v564/fasta-n-2000000.txt",
+          "bytes": 20333411,
+          "three_bases": 10000000,
+          "sha256": "dfeed46a116a3889241719a54afa876aa8812c3da33f2af20af8b41760f4eb5b"
+        },
+        "oracle": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/legacy-native-10m-measurement-v677/full-qualification-historical-fast.stdout",
+          "bytes": 254,
+          "sha256": "612054af37290db10b917fb8f1ff444c8efb90aa20bec00a43a42b05f75298d5"
+        }
+      },
+      {
+        "label": "125m",
+        "input": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/input",
+          "bytes": 254166745,
+          "three_bases": 125000000,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa"
+        },
+        "oracle": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/line-count-standard125m-release-v958/full-input/owned-inputs/oracle",
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+        }
+      }
+    ],
+    "launch": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/policy-standard-125m-launch-v660.json",
+      "sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+      "finite_policy": {
+        "grants": [
+          {
+            "operations": [
+              "read"
+            ],
+            "paths": [
+              "text"
+            ],
+            "target": "cli/stdin"
+          },
+          {
+            "operations": [
+              "write"
+            ],
+            "paths": [
+              "text"
+            ],
+            "target": "cli/stdout"
+          }
+        ],
+        "input_text_bytes": 254166745,
+        "library": {
+          "cloned_bytes": 536870912,
+          "comparison_work": 68719476736,
+          "compute_work": 8796093022208,
+          "output_bytes": 536870912,
+          "output_elements": 8388608,
+          "retained_nodes": 16777216,
+          "temporary_bytes": 1073741824
+        },
+        "max_ports": 16,
+        "memory_bytes": 3221225472,
+        "native_stack_bytes": 1048576,
+        "output_text_bytes": 1048576,
+        "transport_bytes": 16777216,
+        "work": 562949953421312
+      }
+    },
+    "builds": [
+      {
+        "name": "qualified-mech-v1283",
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-release-v1283/variant-0/native-executable",
+          "bytes": 6630400,
+          "sha256": "e14bde55ded84da30e925171e4731d1475bb0ac86b81ce64651334c25eb0f760"
+        },
+        "program_revision": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
+        "source_commit": "46c42d21c88f45c4dfea3ad8178b470ffc7a240c",
+        "work_policy_version": 37
+      },
+      {
+        "name": "candidate-mech-v1294",
+        "binary": {
+          "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-release-v1294/variant-0/native-executable",
+          "bytes": 6630400,
+          "sha256": "9d0c7def0b45eb48a13c7a07638575cab318fbe0f2a91eb6500ff2ee3047a028"
+        },
+        "program_revision": "85a2f100a5bee66778916c9cb63675d04e9fb5ad8adf59d52a18604eff6181f2",
+        "source_commit": "4c3a2db731dee2d86fdfc23780966248d3c17fa4",
+        "work_policy_version": 37
+      }
+    ],
+    "summary": {
+      "10m": {
+        "qualified-mech-v1283": {
+          "executable_bytes": 6630400,
+          "timing_samples_ns": [
+            55497125,
+            54672125,
+            55049958,
+            54929834,
+            55110125,
+            57841500,
+            56512500,
+            55235000,
+            55109667,
+            55327625,
+            54826500,
+            55003375
+          ],
+          "median_seconds": 0.055109896,
+          "minimum_seconds": 0.054672125,
+          "maximum_seconds": 0.0578415,
+          "peak_rss_samples_bytes": [
+            22462464,
+            22085632,
+            22396928
+          ],
+          "median_peak_rss_bytes": 22396928,
+          "peak_footprint_samples_bytes": [
+            16008192,
+            15614848,
+            15959040
+          ],
+          "median_peak_footprint_bytes": 15959040
+        },
+        "candidate-mech-v1294": {
+          "executable_bytes": 6630400,
+          "timing_samples_ns": [
+            54884459,
+            55220500,
+            54700209,
+            54601042,
+            54683833,
+            54728667,
+            54970458,
+            55282084,
+            55072291,
+            55144416,
+            54613125,
+            54673542
+          ],
+          "median_seconds": 0.054806563,
+          "minimum_seconds": 0.054601042,
+          "maximum_seconds": 0.055282084,
+          "peak_rss_samples_bytes": [
+            22085632,
+            22085632,
+            22085632
+          ],
+          "median_peak_rss_bytes": 22085632,
+          "peak_footprint_samples_bytes": [
+            15614848,
+            15598400,
+            15614848
+          ],
+          "median_peak_footprint_bytes": 15614848
+        }
+      },
+      "125m": {
+        "qualified-mech-v1283": {
+          "executable_bytes": 6630400,
+          "timing_samples_ns": [
+            533479875,
+            533763542,
+            533511917,
+            534551709,
+            534165000,
+            534891916,
+            533750833,
+            532944334,
+            533421750,
+            537648833,
+            534006584,
+            535504875
+          ],
+          "median_seconds": 0.533885063,
+          "minimum_seconds": 0.532944334,
+          "maximum_seconds": 0.537648833,
+          "peak_rss_samples_bytes": [
+            147324928,
+            147324928,
+            147701760
+          ],
+          "median_peak_rss_bytes": 147324928,
+          "peak_footprint_samples_bytes": [
+            140952832,
+            140952832,
+            141296832
+          ],
+          "median_peak_footprint_bytes": 140952832
+        },
+        "candidate-mech-v1294": {
+          "executable_bytes": 6630400,
+          "timing_samples_ns": [
+            531282750,
+            533906167,
+            531123458,
+            532014708,
+            531802000,
+            531893500,
+            532356750,
+            532215833,
+            530998667,
+            531167292,
+            530410958,
+            532901875
+          ],
+          "median_seconds": 0.53184775,
+          "minimum_seconds": 0.530410958,
+          "maximum_seconds": 0.533906167,
+          "peak_rss_samples_bytes": [
+            147324928,
+            147324928,
+            147701760
+          ],
+          "median_peak_rss_bytes": 147324928,
+          "peak_footprint_samples_bytes": [
+            140936384,
+            140936384,
+            141313280
+          ],
+          "median_peak_footprint_bytes": 140936384
+        }
+      }
+    },
+    "paired": {
+      "10m": {
+        "candidate-mech-v1294_over_qualified-mech-v1283": {
+          "candidate": "candidate-mech-v1294",
+          "control": "qualified-mech-v1283",
+          "median_ratio": 0.9940088658891786,
+          "median_delta_ms": -0.3293125,
+          "faster_rounds": 10,
+          "total_rounds": 12,
+          "ratios": [
+            0.9889604011018589,
+            1.0100302485041508,
+            0.9936466981500695,
+            0.9940143274418051,
+            0.9922647244948183,
+            0.9461833977334613,
+            0.9727132581287325,
+            1.0008524305241242,
+            0.9993217886800151,
+            0.9966886523685049,
+            0.9961081776148395,
+            0.9940034043365521
+          ],
+          "deltas_ms": [
+            -0.612666,
+            0.548375,
+            -0.349749,
+            -0.328792,
+            -0.426292,
+            -3.112833,
+            -1.542042,
+            0.047084,
+            -0.037376,
+            -0.183209,
+            -0.213375,
+            -0.329833
+          ]
+        }
+      },
+      "125m": {
+        "candidate-mech-v1294_over_qualified-mech-v1283": {
+          "candidate": "candidate-mech-v1294",
+          "control": "qualified-mech-v1283",
+          "median_ratio": 0.9954903054339062,
+          "median_delta_ms": -2.405771,
+          "faster_rounds": 11,
+          "total_rounds": 12,
+          "ratios": [
+            0.9958815222411155,
+            1.0002672063353477,
+            0.9955231384269154,
+            0.9952539652249058,
+            0.9955762732489025,
+            0.9943943516244879,
+            0.9973881389708295,
+            0.9986330636174847,
+            0.9954574724408969,
+            0.9879446571773736,
+            0.9932667009963307,
+            0.9951391665668776
+          ],
+          "deltas_ms": [
+            -2.197125,
+            0.142625,
+            -2.388459,
+            -2.537001,
+            -2.363,
+            -2.998416,
+            -1.394083,
+            -0.728501,
+            -2.423083,
+            -6.481541,
+            -3.595626,
+            -2.603
+          ]
+        }
+      }
+    },
+    "report_differences": [
+      {
+        "size": "10m",
+        "baseline_report": {
+          "effects": 1,
+          "host_result_carrier_bytes": 192,
+          "hosted_phases": "admit-activate-capture-resume",
+          "input_acquisition_byte_cap": 254166745,
+          "input_storage": "bounded-lines",
+          "jit": false,
+          "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+          "native_aot": true,
+          "native_comparison_work": 483361822,
+          "native_transport_bytes": 32624,
+          "native_visits": 474,
+          "native_work": 57898058510,
+          "observations": 1,
+          "payload_argument_snapshot_reserved_bytes": 16,
+          "policy": "secured",
+          "program_revision": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
+          "requirements": 2,
+          "resident_body_evaluation": false,
+          "route": "canonical-artifact-program-object-secured-cli",
+          "schema": "mech.canonical-hosted-native-execution.v1",
+          "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+          "shutdown": "completed",
+          "source_parser": false
+        },
+        "candidate_report": {
+          "effects": 1,
+          "host_result_carrier_bytes": 192,
+          "hosted_phases": "admit-activate-capture-resume",
+          "input_acquisition_byte_cap": 254166745,
+          "input_storage": "bounded-lines",
+          "jit": false,
+          "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+          "native_aot": true,
+          "native_comparison_work": 483361822,
+          "native_transport_bytes": 32624,
+          "native_visits": 474,
+          "native_work": 57898058510,
+          "observations": 1,
+          "payload_argument_snapshot_reserved_bytes": 16,
+          "policy": "secured",
+          "program_revision": "85a2f100a5bee66778916c9cb63675d04e9fb5ad8adf59d52a18604eff6181f2",
+          "requirements": 2,
+          "resident_body_evaluation": false,
+          "route": "canonical-artifact-program-object-secured-cli",
+          "schema": "mech.canonical-hosted-native-execution.v1",
+          "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+          "shutdown": "completed",
+          "source_parser": false
+        },
+        "differences": [
+          {
+            "key": "program_revision",
+            "baseline": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
+            "candidate": "85a2f100a5bee66778916c9cb63675d04e9fb5ad8adf59d52a18604eff6181f2",
+            "numeric_delta": null
+          }
+        ]
+      },
+      {
+        "size": "125m",
+        "baseline_report": {
+          "effects": 1,
+          "host_result_carrier_bytes": 192,
+          "hosted_phases": "admit-activate-capture-resume",
+          "input_acquisition_byte_cap": 254166745,
+          "input_storage": "bounded-lines",
+          "jit": false,
+          "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+          "native_aot": true,
+          "native_comparison_work": 6041695262,
+          "native_transport_bytes": 32624,
+          "native_visits": 474,
+          "native_work": 717409671679,
+          "observations": 1,
+          "payload_argument_snapshot_reserved_bytes": 16,
+          "policy": "secured",
+          "program_revision": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
+          "requirements": 2,
+          "resident_body_evaluation": false,
+          "route": "canonical-artifact-program-object-secured-cli",
+          "schema": "mech.canonical-hosted-native-execution.v1",
+          "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+          "shutdown": "completed",
+          "source_parser": false
+        },
+        "candidate_report": {
+          "effects": 1,
+          "host_result_carrier_bytes": 192,
+          "hosted_phases": "admit-activate-capture-resume",
+          "input_acquisition_byte_cap": 254166745,
+          "input_storage": "bounded-lines",
+          "jit": false,
+          "launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+          "native_aot": true,
+          "native_comparison_work": 6041695262,
+          "native_transport_bytes": 32624,
+          "native_visits": 474,
+          "native_work": 717409671679,
+          "observations": 1,
+          "payload_argument_snapshot_reserved_bytes": 16,
+          "policy": "secured",
+          "program_revision": "85a2f100a5bee66778916c9cb63675d04e9fb5ad8adf59d52a18604eff6181f2",
+          "requirements": 2,
+          "resident_body_evaluation": false,
+          "route": "canonical-artifact-program-object-secured-cli",
+          "schema": "mech.canonical-hosted-native-execution.v1",
+          "scope": "complete original canonical artifact; shared CLI capability/provider/transaction services; argv snapshot has an aggregate acquisition cap and same-account reservation; OS/Rust argv acquisition and stdin provider cache bytes are outside the managed account",
+          "shutdown": "completed",
+          "source_parser": false
+        },
+        "differences": [
+          {
+            "key": "program_revision",
+            "baseline": "1fa53e8727fa692fe731b647f3d5088be6d359141fcecfcc00edd445b442a218",
+            "candidate": "85a2f100a5bee66778916c9cb63675d04e9fb5ad8adf59d52a18604eff6181f2",
+            "numeric_delta": null
+          }
+        ]
+      }
+    ]
+  },
+  "independent_audit": {
+    "receipt": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-measurement-audit-v1296.json",
+      "bytes": 995,
+      "sha256": "307d942e1cfcac79e8f5a7293e12d7326f7b00c8d5e71ae71878430408022974"
+    },
+    "status": "PASS",
+    "physical_files_verified": 468
+  },
+  "assessment": {
+    "speed": "Modest matched gain: paired median ratios0.9940088659/0.9954903054 (10M/125M),10/12 and11/12 faster pairs. Candidate medians0.054806563s/0.53184775s; control0.055109896s/0.533885063s. Raw control outliers remain; no language-wide ranking or fresh Rust comparison.",
+    "footprint": "Both files6,630,400B and both median125M RSS147,324,928B. Identical raw125M RSS samples147,324,928/147,324,928/147,701,760B. Physical footprint remains separate. Live code4,937,640B (+336B) and exception/unwind1,059,808B (+4B); padding absorbs file growth. Emitted Mech26,496B retains opcodes/registers/control flow/relocations;14 local-buffer address immediates differ. No byte-identical body or memory-win claim.",
+    "limits": "One M1, two inputs,12 alternating-order pairs,3 RSS processes per variant/size. Raw outliers remain; no language-wide ranking. Rust was not rerun in this batch.",
+    "outstanding": "Further compiler/host optimization remains possible; no claim that all unused host support has been eliminated.",
+    "completion_gate": "Clean review and green CI on publication head; keep draft and unmerged until user direction."
+  },
+  "historical": {
+    "previous_qualified_measurement": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/native-host-resource-gates-paired-v1285/measurement.json",
+      "bytes": 349429,
+      "sha256": "78ba861e01bddfbbf11b660e57495131e68a24726b9d119cbbb2b0bb11063231"
+    },
+    "previous_published_results": "https://github.com/mech-lang/mech/blob/3a1f71b91ad0b6d20af376ebfb65b6d012b0da8a/docs/validation/canonical-knucleotide-capture-pages-v1.json",
+    "rust7": {
+      "median_10m_seconds": 0.060849687,
+      "median_125m_seconds": 0.662864583,
+      "median_125m_rss_bytes": 175439872,
+      "executable_bytes": 758208,
+      "scope": "Earlier same-machine batch, not newly rerun and not a fresh head-to-head comparison. Historical Rust variability and original pins remain in the previous published evidence chain."
+    },
+    "direct_io": "canonical-knucleotide-streaming-footprint-v1.json"
+  },
+  "linked_code_attribution": {
+    "receipt": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-linkmap-analysis-v1298.json",
+      "bytes": 18285,
+      "sha256": "a84bf1d27bb492aff43179eba0ddd8fb6b2072a3c31db7030bb4049dddff83d4"
+    },
+    "sections_identical": true,
+    "code_bytes": 4937640,
+    "unwind_bytes": 1059808,
+    "by_object_origin": [
+      {
+        "origin": "mech_engine",
+        "code_bytes": 1942908,
+        "other_symbol_bytes": 463400,
+        "symbols": 11624
+      },
+      {
+        "origin": "mech_core",
+        "code_bytes": 1183664,
+        "other_symbol_bytes": 270717,
+        "symbols": 7109
+      },
+      {
+        "origin": "mech_runtime",
+        "code_bytes": 759404,
+        "other_symbol_bytes": 208144,
+        "symbols": 5916
+      },
+      {
+        "origin": "mech_gpu",
+        "code_bytes": 417444,
+        "other_symbol_bytes": 128025,
+        "symbols": 3449
+      },
+      {
+        "origin": "generated_launcher_monomorphizations",
+        "code_bytes": 256248,
+        "other_symbol_bytes": 128014,
+        "symbols": 2953
+      },
+      {
+        "origin": "std",
+        "code_bytes": 175464,
+        "other_symbol_bytes": 44358,
+        "symbols": 1281
+      },
+      {
+        "origin": "core",
+        "code_bytes": 41668,
+        "other_symbol_bytes": 16298,
+        "symbols": 375
+      },
+      {
+        "origin": "mech_terminal",
+        "code_bytes": 41436,
+        "other_symbol_bytes": 16052,
+        "symbols": 572
+      },
+      {
+        "origin": "emitted_mech_object",
+        "code_bytes": 26496,
+        "other_symbol_bytes": 192,
+        "symbols": 5
+      },
+      {
+        "origin": "rustc_demangle",
+        "code_bytes": 23236,
+        "other_symbol_bytes": 5719,
+        "symbols": 246
+      },
+      {
+        "origin": "blake3",
+        "code_bytes": 13632,
+        "other_symbol_bytes": 2106,
+        "symbols": 69
+      },
+      {
+        "origin": "libm",
+        "code_bytes": 13328,
+        "other_symbol_bytes": 8184,
+        "symbols": 59
+      },
+      {
+        "origin": "serde_json",
+        "code_bytes": 11632,
+        "other_symbol_bytes": 7848,
+        "symbols": 149
+      },
+      {
+        "origin": "sha2",
+        "code_bytes": 8332,
+        "other_symbol_bytes": 416,
+        "symbols": 22
+      },
+      {
+        "origin": "gimli",
+        "code_bytes": 5240,
+        "other_symbol_bytes": 2423,
+        "symbols": 81
+      },
+      {
+        "origin": "alloc",
+        "code_bytes": 2940,
+        "other_symbol_bytes": 1683,
+        "symbols": 58
+      },
+      {
+        "origin": "uuid",
+        "code_bytes": 2716,
+        "other_symbol_bytes": 1409,
+        "symbols": 36
+      },
+      {
+        "origin": "compiler_builtins",
+        "code_bytes": 1924,
+        "other_symbol_bytes": 504,
+        "symbols": 25
+      },
+      {
+        "origin": "object",
+        "code_bytes": 1700,
+        "other_symbol_bytes": 373,
+        "symbols": 11
+      },
+      {
+        "origin": "crc32fast",
+        "code_bytes": 1552,
+        "other_symbol_bytes": 16484,
+        "symbols": 5
+      },
+      {
+        "origin": "serde_core",
+        "code_bytes": 1524,
+        "other_symbol_bytes": 752,
+        "symbols": 51
+      },
+      {
+        "origin": "seahash",
+        "code_bytes": 1288,
+        "other_symbol_bytes": 0,
+        "symbols": 1
+      },
+      {
+        "origin": "zmij",
+        "code_bytes": 1048,
+        "other_symbol_bytes": 17744,
+        "symbols": 4
+      },
+      {
+        "origin": "addr2line",
+        "code_bytes": 916,
+        "other_symbol_bytes": 288,
+        "symbols": 11
+      },
+      {
+        "origin": "itoa",
+        "code_bytes": 644,
+        "other_symbol_bytes": 321,
+        "symbols": 4
+      },
+      {
+        "origin": "panic_unwind",
+        "code_bytes": 500,
+        "other_symbol_bytes": 449,
+        "symbols": 17
+      },
+      {
+        "origin": "unicode_segmentation",
+        "code_bytes": 480,
+        "other_symbol_bytes": 21772,
+        "symbols": 11
+      },
+      {
+        "origin": "getrandom",
+        "code_bytes": 180,
+        "other_symbol_bytes": 267,
+        "symbols": 10
+      },
+      {
+        "origin": "serde",
+        "code_bytes": 92,
+        "other_symbol_bytes": 113,
+        "symbols": 5
+      },
+      {
+        "origin": "libcommonCrypto.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 20,
+        "symbols": 2
+      },
+      {
+        "origin": "libsystem_c.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 488,
+        "symbols": 49
+      },
+      {
+        "origin": "libunwind.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 240,
+        "symbols": 24
+      },
+      {
+        "origin": "libsystem_kernel.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 280,
+        "symbols": 28
+      },
+      {
+        "origin": "libdyld.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 108,
+        "symbols": 11
+      },
+      {
+        "origin": "libsystem_malloc.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 100,
+        "symbols": 10
+      },
+      {
+        "origin": "libdispatch.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 80,
+        "symbols": 8
+      },
+      {
+        "origin": "libsystem_m.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 120,
+        "symbols": 12
+      },
+      {
+        "origin": "libsystem_pthread.tbd",
+        "code_bytes": 0,
+        "other_symbol_bytes": 360,
+        "symbols": 36
+      },
+      {
+        "origin": "linker_synthesized",
+        "code_bytes": 0,
+        "other_symbol_bytes": 115676,
+        "symbols": 107
+      },
+      {
+        "origin": "hashbrown",
+        "code_bytes": 0,
+        "other_symbol_bytes": 95,
+        "symbols": 3
+      }
+    ],
+    "caveat": "Object-origin attribution includes generic monomorphizations in the crate that emitted them. Diagnostic relink has a different whole-file hash; section comparisons are explicit. No speed, memory, removable-byte or panic-policy claim."
+  },
+  "review_corrections": [
+    {
+      "thread": "https://github.com/mech-lang/mech/pull/909#discussion_r4343832793",
+      "commit": "d94d0b7cca2145a006b37a46cdbb32a70575bb3e",
+      "problem": "An optional 2 MiB slab could fit alone but leave too little room for mandatory offsets, directory growth or an unfinished tail in the same input fragment.",
+      "change": "Reserve each fragment's mandatory backing before selecting page or heap storage. Keep the same finite memory account and cumulative work ledger; declined slab preference spends no speculative work.",
+      "red": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-envelope-red-v1208/result.json",
+        "bytes": 3847,
+        "sha256": "8b948d2949778f640f7605af932b8fdb629fec03787d87dc5ce0cac18f5fc66e"
+      },
+      "green": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-envelope-green-v1208/result.json",
+        "bytes": 3856,
+        "sha256": "53b6b0597a65666bab97d20a2cb4e68c3b0ad581239eb1ecc12849ccfd8aa67d"
+      },
+      "regressions": "Three tests failed on the published implementation and pass after the fix. Dense offsets and unfinished-tail cases cover both global memory and local temporary limits; directory growth has an exact remaining-capacity regression.",
+      "selected_local_tests_passed": 341
+    },
+    {
+      "thread": "https://github.com/mech-lang/mech/pull/909#discussion_r4344052670",
+      "commit": "fb7e00da8f3b0f624348a213934525f936eb0a82",
+      "problem": "Holding a new unfinished tail during old/new directory replacement increased the transient peak beyond an otherwise sufficient final memory budget.",
+      "change": "Reserve and release replaced directory backing before acquiring offsets and unfinished-tail backing; fund all mandatory backing before optional pages.",
+      "red": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-directory-order-red-v1215/result.json",
+        "bytes": 3920,
+        "sha256": "4ae372e26d114f20dd922d3a16a481659c8ed17848adfd4d86e269bbade605bd"
+      },
+      "green": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/capture-directory-order-green-v1215/result.json",
+        "bytes": 3929,
+        "sha256": "3bbb87016bd1240bdf9b1bdf20246010e1ef14af2e765d728a8b28aa10455082"
+      },
+      "regressions": "Both global and local exact-final-capacity cases fail before the correction and pass after it.",
+      "selected_local_tests_passed": 343
+    },
+    {
+      "thread": "https://github.com/mech-lang/mech/pull/909#discussion_r4348850684",
+      "commit": "15631a1cd8ab9c68dcc3553cce3967ad00093fa8",
+      "problem": "The real generated Cargo graph used canonical-native-resources, but descriptive runtime_features still advertised resident-routing.",
+      "change": "Use one local hosted_runtime_feature value for both Cargo and linked-manifest metadata. Extend the original/decoded manifest regression to require the shared feature and reject the stale routing label.",
+      "validation": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-validation-v1293/result.json",
+        "bytes": 11141,
+        "sha256": "5f0dafca4cbb0fe2a980c9ada9b76675bdcb563d274d6fe968992b1e89952729"
+      },
+      "fresh_release_qualification": {
+        "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/collection-text-facts-qualification-v1294/result.json",
+        "bytes": 17987,
+        "sha256": "e8089ee79957bb39dc17e8b7d8c080e43416c18b946e8adfaec62ac8c7a985a3"
+      },
+      "scope": "Focused metadata regression and53 hosted tests pass. Both fresh release manifests and actual compiler profiles agree; no security checks are skipped."
+    }
+  ],
+  "ci_fix": {
+    "cause": "Document lifecycle Chrome startup reused a Rust-cache-restored fixed profile containing another runner singleton lock; browser assertions had not started.",
+    "change": "Fresh per-invocation temporary profile, scoped cleanup, no alteration of cached/live profiles and no skipped assertions.",
+    "unit_tests_passed": 179,
+    "real_headless_startup": {
+      "path": "/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/fresh-browser-profile-v1279/result.json",
+      "bytes": 1015,
+      "sha256": "9aba0bef4dcdff1b3ae603305de706112576338071eecf698bda5f0058f691d9"
+    },
+    "scope": "Real headless startup/evaluation/cleanup regression passed; this local test is not the full browser lifecycle canary. Publication CI must still pass."
+  }
+}

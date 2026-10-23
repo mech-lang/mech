@@ -4,8 +4,8 @@ use mech_core::snapshot::{
     SequenceView, SnapshotCanonicalizationBudget, SnapshotValueError, ValueFootprint,
 };
 use mech_core::{
-    ResidentKernelError, ResidentValueKind, ResourceDemand, SchemaBody, SchemaId, SchemaTable,
-    Value, ValueData,
+    MemoryBudgetDimension, ResidentKernelError, ResidentValueKind, ResourceDemand, SchemaBody,
+    SchemaId, SchemaTable, Value, ValueData,
 };
 
 use crate::memory_planner::{
@@ -13,6 +13,15 @@ use crate::memory_planner::{
     try_admit_fixed_turn_memory,
 };
 
+#[cfg(test)]
+#[path = "borrowed_metadata_scan_tests.rs"]
+mod borrowed_metadata_scan_tests;
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+#[path = "native_turn_plan_cache.rs"]
+pub(crate) mod native_turn_plan_cache;
 #[path = "payload_budget.rs"]
 pub(crate) mod payload;
 
@@ -198,20 +207,308 @@ thread_local! {
 // Repeated control execution accumulates the costs admitted by the existing
 // kernel budget authority. Each invocation contributes its maximum observed
 // demand once; incremental estimates within that invocation are not summed.
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct ControlWork {
     compute: u64,
     comparison: u64,
 }
 
+#[derive(Debug)]
+struct ControlWorkAccount {
+    used: ControlWork,
+    compute_limit: u64,
+    comparison_limit: u64,
+    _reservation: Option<mech_core::ManagedMemoryReservation>,
+}
+impl Default for ControlWorkAccount {
+    fn default() -> Self {
+        Self {
+            used: ControlWork::default(),
+            compute_limit: mech_core::RESIDENT_MAX_COMPUTE_WORK,
+            comparison_limit: mech_core::RESIDENT_MAX_COMPARISON_WORK,
+            _reservation: None,
+        }
+    }
+}
+
+/// A shared library-work account for one native invocation, not permission to
+/// execute a call. Actual NativeHost call plans and payload admission remain
+/// mandatory. Clones retain the same spent work and can never renew limits.
+#[cfg(feature = "native-artifact")]
+#[derive(Clone, Debug)]
+pub struct NativeLibraryWorkBudget {
+    account: std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>,
+}
+#[cfg(feature = "native-artifact")]
+impl NativeLibraryWorkBudget {
+    pub fn new(
+        compute_limit: u64,
+        comparison_limit: u64,
+        memory: &mech_core::ManagedMemoryBudget,
+    ) -> mech_core::MemoryRuntimeResult<Self> {
+        let bytes = (core::mem::size_of::<std::cell::RefCell<ControlWorkAccount>>()
+            + 2 * core::mem::size_of::<usize>()) as u64;
+        let reservation = memory.reserve_capacity(bytes)?;
+        Ok(Self {
+            account: std::rc::Rc::new(std::cell::RefCell::new(ControlWorkAccount {
+                used: ControlWork::default(),
+                compute_limit,
+                comparison_limit,
+                _reservation: Some(reservation),
+            })),
+        })
+    }
+
+    /// Private identity check for invocation-owned prepared metadata. Equal
+    /// limits or an equal memory account cannot renew a different work ledger.
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    pub(crate) fn shares_account(&self, other: &Self) -> bool {
+        std::rc::Rc::ptr_eq(&self.account, &other.account)
+    }
+
+    /// These are observations of this exact account, not caller-supplied cost
+    /// certificates. The native owner reconciles its other work against them.
+    pub fn used(&self) -> (u64, u64) {
+        let state = self.account.borrow();
+        (state.used.compute, state.used.comparison)
+    }
+
+    /// Observe finite fuel for synchronous, callback-free generated code.
+    /// Nested maintained-call scopes must use their ordinary accounting path.
+    /// This neither reserves nor renews work: the owner must reconcile actual
+    /// debits to this SAME account before any helper or publication can occur.
+    pub fn unscoped_remaining(&self) -> Option<(u64, u64)> {
+        if CONTROL_WORK.with(|v| v.borrow().is_some())
+            || CONTROL_WORK_SCOPE.with(|v| v.borrow().is_some())
+        {
+            return None;
+        }
+        let root = CONTROL_ROOT_LIMITS
+            .with(|v| v.get())
+            .unwrap_or((u64::MAX, u64::MAX));
+        let state = self.account.borrow();
+        Some((
+            state
+                .compute_limit
+                .min(root.0)
+                .checked_sub(state.used.compute)?,
+            state
+                .comparison_limit
+                .min(root.1)
+                .checked_sub(state.used.comparison)?,
+        ))
+    }
+
+    /// Identity of the account that admitted this ledger's actual backing.
+    /// A mixed invocation must keep its values and work metadata together.
+    pub fn memory_budget(&self) -> mech_core::ManagedMemoryBudget {
+        self.account
+            .borrow()
+            ._reservation
+            .as_ref()
+            .expect("native work metadata has an admitted owner")
+            .budget()
+    }
+
+    /// An independent native meter must not bypass an active invocation.
+    /// Callers must reuse that invocation's account or reject nested entry.
+    pub fn has_active_scope() -> bool {
+        CONTROL_WORK.with(|active| active.borrow().is_some())
+    }
+
+    /// A reusable measured summary requires a real paid native scope, not
+    /// merely an account installed beside an absent or foreign observer.
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    pub(in crate::resident) fn has_matching_active_scope(&self) -> bool {
+        CONTROL_WORK.with(|active| {
+            active
+                .borrow()
+                .as_ref()
+                .is_some_and(|current| std::rc::Rc::ptr_eq(current, &self.account))
+        }) && CONTROL_WORK_SCOPE.with(|active| {
+            active
+                .borrow()
+                .as_ref()
+                .is_some_and(|scope| std::rc::Rc::ptr_eq(&scope.total, &self.account))
+        })
+    }
+
+    /// Generated scalar/control work and maintained leaf work debit this same
+    /// account. This method never replaces the current invocation's account.
+    pub fn charge(&self, compute: u64, comparison: u64) -> Result<(), ResidentKernelError> {
+        CONTROL_WORK.with(|active| {
+            if active
+                .borrow()
+                .as_ref()
+                .is_some_and(|current| !std::rc::Rc::ptr_eq(current, &self.account))
+            {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            Ok(())
+        })?;
+        charge_control_account(&mut self.account.borrow_mut(), compute, comparison)
+    }
+
+    /// Preview the same account's debit before optional backing is selected.
+    /// A declined storage preference must neither spend work nor renew fuel.
+    #[cfg(all(
+        unix,
+        feature = "native-artifact",
+        feature = "native-capture-pages",
+        feature = "pure_text"
+    ))]
+    pub(in crate::resident) fn preview_allocation_charge(
+        &self,
+        compute: u64,
+    ) -> Result<(), ResidentKernelError> {
+        CONTROL_WORK.with(|active| {
+            if active
+                .borrow()
+                .as_ref()
+                .is_some_and(|current| !std::rc::Rc::ptr_eq(current, &self.account))
+            {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            Ok(())
+        })?;
+        checked_control_account_work(&self.account.borrow(), compute, 0).map(drop)
+    }
+
+    /// Other native work may only reduce the allowance left to library calls.
+    /// A failed restriction leaves both limits and spent work unchanged.
+    pub fn restrict(
+        &self,
+        compute_limit: u64,
+        comparison_limit: u64,
+    ) -> Result<(), ResidentKernelError> {
+        self.restrict_and_charge(compute_limit, comparison_limit, 0, 0)
+    }
+
+    /// Commit a restriction and its setup debit together. A denial must not
+    /// narrow the allowance of handles the caller already holds.
+    pub fn restrict_and_charge(
+        &self,
+        compute_limit: u64,
+        comparison_limit: u64,
+        compute: u64,
+        comparison: u64,
+    ) -> Result<(), ResidentKernelError> {
+        CONTROL_WORK.with(|active| {
+            if active
+                .borrow()
+                .as_ref()
+                .is_some_and(|current| !std::rc::Rc::ptr_eq(current, &self.account))
+            {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            Ok(())
+        })?;
+        let mut state = self.account.borrow_mut();
+        if compute_limit > state.compute_limit || comparison_limit > state.comparison_limit {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        for (required, limit, dimension) in [
+            (
+                state
+                    .used
+                    .compute
+                    .checked_add(compute)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                compute_limit,
+                MemoryBudgetDimension::ComputeWork,
+            ),
+            (
+                state
+                    .used
+                    .comparison
+                    .checked_add(comparison)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                comparison_limit,
+                MemoryBudgetDimension::ComparisonWork,
+            ),
+        ] {
+            if required > limit {
+                return Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension,
+                    required,
+                    limit,
+                });
+            }
+        }
+        // This also applies the enclosing call/Resident caps before either
+        // the used counters or the account's limits can change.
+        charge_control_account(&mut state, compute, comparison)?;
+        state.compute_limit = compute_limit;
+        state.comparison_limit = comparison_limit;
+        Ok(())
+    }
+
+    /// Nested native/resident leaf execution must inherit the same account.
+    /// Replacing a live caller's account, even with equal limits, is rejected.
+    pub fn with_scope<T>(&self, execute: impl FnOnce() -> T) -> Result<T, ResidentKernelError> {
+        struct Guard(Option<std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>>);
+        impl Drop for Guard {
+            fn drop(&mut self) {
+                CONTROL_WORK.with(|active| *active.borrow_mut() = self.0.take());
+            }
+        }
+        let previous = CONTROL_WORK.with(|active| {
+            let mut active = active.borrow_mut();
+            if active
+                .as_ref()
+                .is_some_and(|current| !std::rc::Rc::ptr_eq(current, &self.account))
+            {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            Ok(active.replace(self.account.clone()))
+        })?;
+        let _guard = Guard(previous);
+        let _scope = ControlWorkScopeGuard::enter();
+        Ok(execute())
+    }
+
+    /// A call may impose a tighter relative allowance on this same account.
+    /// Leaving a call restores its enclosing cap, never spent work. Nested
+    /// scopes cannot exceed either the enclosing call or invocation allowance.
+    pub fn with_call_limits<T>(
+        &self,
+        compute: u64,
+        comparison: u64,
+        execute: impl FnOnce() -> T,
+    ) -> Result<T, ResidentKernelError> {
+        self.with_scope(|| {
+            struct Guard(Option<(u64, u64)>);
+            impl Drop for Guard {
+                fn drop(&mut self) {
+                    CONTROL_ROOT_LIMITS.with(|active| active.set(self.0));
+                }
+            }
+            let used = self.used();
+            let previous = CONTROL_ROOT_LIMITS.with(|active| {
+                let previous = active.get();
+                let enclosing = previous.unwrap_or((u64::MAX, u64::MAX));
+                active.set(Some((
+                    used.0.saturating_add(compute).min(enclosing.0),
+                    used.1.saturating_add(comparison).min(enclosing.1),
+                )));
+                previous
+            });
+            let _guard = Guard(previous);
+            execute()
+        })
+    }
+}
+
 struct ControlWorkScope {
-    total: std::rc::Rc<std::cell::RefCell<ControlWork>>,
+    total: std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>,
     observed: ControlWork,
 }
 
 thread_local! {
-    static CONTROL_WORK: std::cell::RefCell<Option<std::rc::Rc<std::cell::RefCell<ControlWork>>>> = const { std::cell::RefCell::new(None) };
+    static CONTROL_WORK: std::cell::RefCell<Option<std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>>> = const { std::cell::RefCell::new(None) };
     static CONTROL_WORK_SCOPE: std::cell::RefCell<Option<ControlWorkScope>> = const { std::cell::RefCell::new(None) };
+    static CONTROL_ROOT_LIMITS: std::cell::Cell<Option<(u64, u64)>> = const { std::cell::Cell::new(None) };
     static PLANNING_STEPS: std::cell::RefCell<Option<PlanningSteps>> = const { std::cell::RefCell::new(None) };
 }
 
@@ -268,10 +565,14 @@ pub(crate) fn charge_planning_step() -> Result<(), super::general::ResidentExecu
 }
 
 pub(crate) fn with_control_work_budget<T>(execute: impl FnOnce() -> T) -> T {
-    struct Guard(Option<std::rc::Rc<std::cell::RefCell<ControlWork>>>);
+    struct Guard {
+        previous: Option<std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>>,
+        limits: Option<(u64, u64)>,
+    }
     impl Drop for Guard {
         fn drop(&mut self) {
-            CONTROL_WORK.with(|active| *active.borrow_mut() = self.0.take());
+            CONTROL_WORK.with(|active| *active.borrow_mut() = self.previous.take());
+            CONTROL_ROOT_LIMITS.with(|active| active.set(self.limits));
         }
     }
     let previous = CONTROL_WORK.with(|active| {
@@ -279,14 +580,25 @@ pub(crate) fn with_control_work_budget<T>(execute: impl FnOnce() -> T) -> T {
         let total = active.clone().unwrap_or_default();
         active.replace(total)
     });
-    let _guard = Guard(previous);
+    // Native callers cannot lift a resident program's original whole-turn
+    // caps. Nested work inherits the tighter limits without a fresh account.
+    let limits = CONTROL_ROOT_LIMITS.with(|active| {
+        let previous = active.get();
+        let (compute, comparison) = previous.unwrap_or((u64::MAX, u64::MAX));
+        active.set(Some((
+            compute.min(mech_core::RESIDENT_MAX_COMPUTE_WORK),
+            comparison.min(mech_core::RESIDENT_MAX_COMPARISON_WORK),
+        )));
+        previous
+    });
+    let _guard = Guard { previous, limits };
     execute()
 }
 
-struct ControlWorkScopeGuard(Option<ControlWorkScope>);
+pub(super) struct ControlWorkScopeGuard(Option<ControlWorkScope>);
 
 impl ControlWorkScopeGuard {
-    fn enter() -> Self {
+    pub(super) fn enter() -> Self {
         let next = CONTROL_WORK
             .with(|active| active.borrow().clone())
             .map(|total| ControlWorkScope {
@@ -303,48 +615,372 @@ impl Drop for ControlWorkScopeGuard {
     }
 }
 
-fn observe_control_work(demand: ResourceDemand) -> Result<(), ResidentKernelError> {
+fn checked_control_account_work(
+    account: &ControlWorkAccount,
+    compute: u64,
+    comparison: u64,
+) -> Result<ControlWork, ResidentKernelError> {
+    let (root_compute, root_comparison) = CONTROL_ROOT_LIMITS
+        .with(|active| active.get())
+        .unwrap_or((u64::MAX, u64::MAX));
+    let compute_limit = account.compute_limit.min(root_compute);
+    let comparison_limit = account.comparison_limit.min(root_comparison);
+    let compute = account
+        .used
+        .compute
+        .checked_add(compute)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let comparison = account
+        .used
+        .comparison
+        .checked_add(comparison)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    for (required, limit, dimension) in [
+        (compute, compute_limit, MemoryBudgetDimension::ComputeWork),
+        (
+            comparison,
+            comparison_limit,
+            MemoryBudgetDimension::ComparisonWork,
+        ),
+    ] {
+        if required > limit {
+            return Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension,
+                required,
+                limit,
+            });
+        }
+    }
+    Ok(ControlWork {
+        compute,
+        comparison,
+    })
+}
+
+fn charge_control_account(
+    account: &mut ControlWorkAccount,
+    compute: u64,
+    comparison: u64,
+) -> Result<(), ResidentKernelError> {
+    account.used = checked_control_account_work(account, compute, comparison)?;
+    Ok(())
+}
+
+// Eligibility only: a failed whole-scan preview must not spend work or change
+// the observer high-water mark before the original incremental path runs.
+pub(in crate::resident) fn preview_control_work(
+    demand: ResourceDemand,
+) -> Result<(), ResidentKernelError> {
+    CONTROL_WORK_SCOPE.with(|active| {
+        let active = active.borrow();
+        let Some(scope) = active.as_ref() else {
+            return Ok(());
+        };
+        checked_control_account_work(
+            &scope.total.borrow(),
+            demand.work.compute.saturating_sub(scope.observed.compute),
+            demand
+                .work
+                .comparison
+                .saturating_sub(scope.observed.comparison),
+        )
+        .map(drop)
+    })
+}
+
+pub(crate) fn observe_control_work(demand: ResourceDemand) -> Result<(), ResidentKernelError> {
     CONTROL_WORK_SCOPE.with(|active| {
         let mut active = active.borrow_mut();
         let Some(scope) = active.as_mut() else {
             return Ok(());
         };
-        let mut total = scope.total.borrow_mut();
-        let compute = total
-            .compute
-            .checked_add(demand.work.compute.saturating_sub(scope.observed.compute))
-            .ok_or(ResidentKernelError::InvalidShape)?;
-        let comparison = total
-            .comparison
-            .checked_add(
-                demand
-                    .work
-                    .comparison
-                    .saturating_sub(scope.observed.comparison),
-            )
-            .ok_or(ResidentKernelError::InvalidShape)?;
-        if compute > mech_core::RESIDENT_MAX_COMPUTE_WORK {
-            return Err(ResidentKernelError::ResourceLimit {
-                phase: mech_core::ResidentResourcePhase::Admission,
-                dimension: mech_core::MemoryBudgetDimension::ComputeWork,
-                required: compute,
-                limit: mech_core::RESIDENT_MAX_COMPUTE_WORK,
-            });
-        }
-        if comparison > mech_core::RESIDENT_MAX_COMPARISON_WORK {
-            return Err(ResidentKernelError::ResourceLimit {
-                phase: mech_core::ResidentResourcePhase::Admission,
-                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
-                required: comparison,
-                limit: mech_core::RESIDENT_MAX_COMPARISON_WORK,
-            });
-        }
-        total.compute = compute;
-        total.comparison = comparison;
+        let mut account = scope.total.borrow_mut();
+        charge_control_account(
+            &mut account,
+            demand.work.compute.saturating_sub(scope.observed.compute),
+            demand
+                .work
+                .comparison
+                .saturating_sub(scope.observed.comparison),
+        )?;
         scope.observed.compute = scope.observed.compute.max(demand.work.compute);
         scope.observed.comparison = scope.observed.comparison.max(demand.work.comparison);
         Ok(())
     })
+}
+
+#[cfg(all(test, feature = "native-artifact"))]
+mod native_library_work_tests {
+    use super::*;
+
+    fn demand(compute: u64, comparison: u64) -> ResourceDemand {
+        let mut demand = ResourceDemand::default();
+        demand.work.compute = compute;
+        demand.work.comparison = comparison;
+        demand
+    }
+
+    #[test]
+    fn native_scalar_debits_and_library_observations_use_one_counter() {
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let budget = NativeLibraryWorkBudget::new(8, 4, &memory).unwrap();
+        budget.charge(2, 1).unwrap();
+        budget
+            .with_scope(|| observe_control_work(demand(5, 2)))
+            .unwrap()
+            .unwrap();
+        assert_eq!(budget.used(), (7, 3));
+        assert!(budget.charge(2, 0).is_err());
+        assert_eq!(budget.used(), (7, 3));
+        budget.with_scope(|| budget.charge(1, 1)).unwrap().unwrap();
+        assert_eq!(budget.used(), (8, 4));
+        let fresh = NativeLibraryWorkBudget::new(8, 4, &memory).unwrap();
+        assert_eq!(
+            budget.with_scope(|| fresh.charge(1, 0)).unwrap(),
+            Err(ResidentKernelError::InvalidInput)
+        );
+        assert_eq!(fresh.used(), (0, 0));
+    }
+
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[test]
+    fn reusable_measurement_requires_matching_account_and_paid_observer_scope() {
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let budget = NativeLibraryWorkBudget::new(8, 4, &memory).unwrap();
+        let other = NativeLibraryWorkBudget::new(8, 4, &memory).unwrap();
+        let cloned = budget.clone();
+        assert!(!budget.has_matching_active_scope());
+        budget
+            .with_scope(|| {
+                assert!(budget.has_matching_active_scope());
+                assert!(cloned.has_matching_active_scope());
+                assert!(!other.has_matching_active_scope());
+                {
+                    let _restore = ControlWorkScopeGuard(
+                        CONTROL_WORK_SCOPE.with(|active| active.replace(None)),
+                    );
+                    assert!(!budget.has_matching_active_scope());
+                    // Observing no scope is deliberately a no-op elsewhere;
+                    // that success must never authenticate a cached summary.
+                    observe_control_work(demand(100, 0)).unwrap();
+                    assert_eq!(budget.used(), (0, 0));
+                }
+                {
+                    let _restore = ControlWorkScopeGuard(CONTROL_WORK_SCOPE.with(|active| {
+                        active.replace(Some(ControlWorkScope {
+                            total: other.account.clone(),
+                            observed: ControlWork::default(),
+                        }))
+                    }));
+                    assert!(!budget.has_matching_active_scope());
+                    assert!(!other.has_matching_active_scope());
+                }
+                assert!(budget.has_matching_active_scope());
+            })
+            .unwrap();
+        assert!(!budget.has_matching_active_scope());
+        assert_eq!(budget.used(), (0, 0));
+        assert_eq!(other.used(), (0, 0));
+    }
+
+    #[test]
+    fn native_per_call_caps_share_root_work_and_never_refill_the_invocation() {
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let budget = NativeLibraryWorkBudget::new(10, 4, &memory).unwrap();
+        budget.charge(2, 0).unwrap();
+        budget
+            .with_call_limits(3, 1, || {
+                budget.charge(2, 1).unwrap();
+                assert!(budget.charge(2, 0).is_err());
+                budget
+                    .with_call_limits(9, 9, || {
+                        assert!(budget.charge(2, 0).is_err());
+                        budget.charge(1, 0).unwrap();
+                    })
+                    .unwrap();
+            })
+            .unwrap();
+        assert_eq!(budget.used(), (5, 1));
+        budget
+            .with_call_limits(3, 1, || budget.charge(3, 1))
+            .unwrap()
+            .unwrap();
+        assert_eq!(budget.used(), (8, 2));
+        budget
+            .with_call_limits(3, 1, || {
+                assert!(budget.charge(3, 0).is_err());
+                budget.charge(2, 1).unwrap();
+            })
+            .unwrap();
+        assert_eq!(budget.used(), (10, 3));
+        assert!(budget.charge(1, 0).is_err());
+    }
+
+    #[test]
+    fn native_library_clones_and_repeated_scopes_share_spent_work_and_reject_replacement() {
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let budget = NativeLibraryWorkBudget::new(8, 4, &memory).unwrap();
+        let cloned = budget.clone();
+        budget
+            .with_scope(|| observe_control_work(demand(5, 2)))
+            .unwrap()
+            .unwrap();
+        cloned
+            .with_scope(|| observe_control_work(demand(3, 1)))
+            .unwrap()
+            .unwrap();
+        assert_eq!(budget.used(), (8, 3));
+        assert!(matches!(
+            budget
+                .with_scope(|| observe_control_work(demand(1, 0)))
+                .unwrap(),
+            Err(ResidentKernelError::ResourceLimit {
+                dimension: MemoryBudgetDimension::ComputeWork,
+                required: 9,
+                limit: 8,
+                ..
+            })
+        ));
+        assert_eq!(cloned.used(), (8, 3));
+        let fresh = NativeLibraryWorkBudget::new(8, 4, &memory).unwrap();
+        assert_eq!(
+            budget.with_scope(|| fresh.with_scope(|| ())).unwrap(),
+            Err(ResidentKernelError::InvalidInput)
+        );
+        assert_eq!(fresh.used(), (0, 0));
+        budget
+            .with_scope(|| cloned.with_scope(|| observe_control_work(demand(0, 1))))
+            .unwrap()
+            .unwrap()
+            .unwrap();
+        assert_eq!(budget.used(), (8, 4));
+    }
+
+    #[test]
+    fn native_library_limits_only_decrease_and_failed_restrictions_are_atomic() {
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let budget = NativeLibraryWorkBudget::new(8, 4, &memory).unwrap();
+        budget
+            .with_scope(|| observe_control_work(demand(5, 2)))
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            budget.restrict(9, 4),
+            Err(ResidentKernelError::InvalidInput)
+        );
+        assert!(matches!(
+            budget.restrict(4, 4),
+            Err(ResidentKernelError::ResourceLimit {
+                dimension: MemoryBudgetDimension::ComputeWork,
+                required: 5,
+                limit: 4,
+                ..
+            })
+        ));
+        assert!(matches!(
+            budget.restrict(8, 1),
+            Err(ResidentKernelError::ResourceLimit {
+                dimension: MemoryBudgetDimension::ComparisonWork,
+                required: 2,
+                limit: 1,
+                ..
+            })
+        ));
+        assert_eq!(budget.used(), (5, 2));
+        budget.restrict(6, 3).unwrap();
+        assert!(
+            budget
+                .with_scope(|| observe_control_work(demand(2, 0)))
+                .unwrap()
+                .is_err()
+        );
+        assert_eq!(budget.used(), (5, 2));
+        budget
+            .with_scope(|| observe_control_work(demand(1, 1)))
+            .unwrap()
+            .unwrap();
+        assert_eq!(budget.used(), (6, 3));
+    }
+
+    #[test]
+    fn native_restriction_and_setup_debit_are_atomic_under_root_and_call_caps() {
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let budget = NativeLibraryWorkBudget::new(10, 4, &memory).unwrap();
+        budget.charge(9, 0).unwrap();
+        assert!(budget.restrict_and_charge(10, 2, 2, 0).is_err());
+        assert_eq!(budget.used(), (9, 0));
+        budget
+            .with_call_limits(0, 4, || {
+                assert!(budget.restrict_and_charge(10, 1, 1, 0).is_err());
+            })
+            .unwrap();
+        assert_eq!(budget.used(), (9, 0));
+        budget.charge(0, 4).unwrap();
+        assert!(budget.restrict_and_charge(10, 3, 1, 0).is_err());
+        assert_eq!(budget.used(), (9, 4));
+        budget.restrict_and_charge(10, 4, 1, 0).unwrap();
+        assert_eq!(budget.used(), (10, 4));
+    }
+
+    #[test]
+    fn native_library_metadata_has_one_account_owner_and_resident_defaults_stay_unchanged() {
+        let empty = mech_core::ManagedMemoryBudget::new(0);
+        assert!(NativeLibraryWorkBudget::new(1, 1, &empty).is_err());
+        assert_eq!(empty.used_bytes(), 0);
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let budget = NativeLibraryWorkBudget::new(
+            2 * mech_core::RESIDENT_MAX_COMPUTE_WORK,
+            2 * mech_core::RESIDENT_MAX_COMPARISON_WORK,
+            &memory,
+        )
+        .unwrap();
+        let before = memory.used_bytes();
+        assert!(before > 0);
+        let cloned = budget.clone();
+        assert_eq!(memory.used_bytes(), before);
+        budget
+            .with_scope(|| {
+                observe_control_work(demand(mech_core::RESIDENT_MAX_COMPUTE_WORK + 1, 0))
+            })
+            .unwrap()
+            .unwrap();
+        with_control_work_budget(|| {
+            let _scope = ControlWorkScopeGuard::enter();
+            assert!(matches!(
+                observe_control_work(demand(mech_core::RESIDENT_MAX_COMPUTE_WORK + 1, 0)),
+                Err(ResidentKernelError::ResourceLimit {
+                    dimension: MemoryBudgetDimension::ComputeWork,
+                    limit: mech_core::RESIDENT_MAX_COMPUTE_WORK,
+                    ..
+                })
+            ));
+            assert_eq!(
+                budget.with_scope(|| ()),
+                Err(ResidentKernelError::InvalidInput)
+            );
+        });
+        assert_eq!(cloned.used().0, mech_core::RESIDENT_MAX_COMPUTE_WORK + 1);
+        budget
+            .with_scope(|| {
+                with_control_work_budget(|| {
+                    let _scope = ControlWorkScopeGuard::enter();
+                    assert!(matches!(
+                        observe_control_work(demand(1, 0)),
+                        Err(ResidentKernelError::ResourceLimit {
+                            dimension: MemoryBudgetDimension::ComputeWork,
+                            limit: mech_core::RESIDENT_MAX_COMPUTE_WORK,
+                            ..
+                        })
+                    ));
+                })
+            })
+            .unwrap();
+        drop(budget);
+        assert_eq!(memory.used_bytes(), before);
+        drop(cloned);
+        assert_eq!(memory.used_bytes(), 0);
+    }
 }
 
 pub(crate) fn with_payload_admission<T>(
@@ -362,9 +998,66 @@ pub(crate) fn with_payload_admission<T>(
     execute()
 }
 
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(in crate::resident) fn record_native_index_memory_error(
+    error: mech_core::MemoryRuntimeError,
+) -> ResidentKernelError {
+    ACTIVE_PAYLOAD_ADMISSION.with(|active| {
+        if let Some(admission) = active.borrow().as_ref() {
+            admission.record_error(error);
+        }
+    });
+    ResidentKernelError::InvalidShape
+}
+
 fn admit_payload_plan(plan: &TurnMemoryPlan) -> Result<(), ResidentKernelError> {
     ACTIVE_PAYLOAD_ADMISSION.with(|active| {
         if let Some(admission) = active.borrow().as_ref() {
+            if plan
+                .call
+                .as_ref()
+                .is_some_and(|call| call.target.kind == mech_core::MemoryTargetKind::NativeHost)
+            {
+                let mut demand = plan.demand;
+                demand.turn_peak_bytes = demand
+                    .turn_peak_bytes
+                    .checked_add(admission.auxiliary_bytes())
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                #[cfg(all(
+                    feature = "native-artifact",
+                    any(feature = "pure_text", feature = "map_ops")
+                ))]
+                {
+                    // Cache capacity is independently reserved on this exact
+                    // work/memory account. Count it in the finite call cap,
+                    // but do not reserve the same bytes a second time.
+                    demand.turn_peak_bytes = demand
+                        .turn_peak_bytes
+                        .checked_add(native_turn_plan_cache::retained_bytes())
+                        .ok_or(ResidentKernelError::InvalidShape)?;
+                    demand.retained_nodes = demand
+                        .retained_nodes
+                        .checked_add(native_turn_plan_cache::retained_index_nodes())
+                        .ok_or(ResidentKernelError::InvalidShape)?;
+                }
+                if let Some(violation) = mech_core::evaluate_call_memory_budget(
+                    mech_core::MemoryObjectOwner::NodeOutput {
+                        node: plan.node,
+                        port: 0,
+                    },
+                    demand,
+                    plan.output_bytes,
+                    plan.storage_buffer_bytes,
+                    plan.budget_limits,
+                )
+                .first()
+                {
+                    return Err(resource_budget_error(violation));
+                }
+            }
             admission
                 .admit_plan(plan)
                 .map_err(|_| ResidentKernelError::InvalidShape)?;
@@ -452,6 +1145,11 @@ pub(crate) fn with_resident_turn_plan<T>(
     execute: impl FnOnce() -> T,
 ) -> T {
     let previous = with_active_turn_plan(|active| active.replace(plan.into()));
+    #[cfg(all(
+        feature = "native-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    ))]
+    let _cache_guard = native_turn_plan_cache::suspend();
     let _guard = ActiveTurnPlanGuard(previous);
     let _work_scope = ControlWorkScopeGuard::enter();
     execute()
@@ -707,6 +1405,17 @@ impl KernelCostEstimate {
                     _demand: demand,
                 });
             }
+            #[cfg(all(
+                feature = "native-artifact",
+                any(feature = "pure_text", feature = "map_ops")
+            ))]
+            if !super::text_index::has_index_scope()
+                && index_growth(&active)? == (0, 0)
+                && let Some(result) =
+                    native_turn_plan_cache::refine(&active, self.demand, final_output)
+            {
+                return result;
+            }
             return apply_observed_turn_demand((*active).clone(), self.demand, final_output)
                 .map_err(memory_plan_kernel_error)
                 .and_then(ResidentBudgetPermit::from_turn_plan);
@@ -725,6 +1434,10 @@ impl KernelCostEstimate {
     // publication. Complete candidate facts still require `turn_plan`.
     fn check_planning_progress(self) -> Result<(), ResidentKernelError> {
         observe_control_work(self.demand)?;
+        self.check_planning_limits()
+    }
+
+    fn check_planning_limits(self) -> Result<(), ResidentKernelError> {
         let result = with_active_turn_plan(|active| {
             active.as_ref().map(|plan| {
                 check_turn_planning_progress(plan, self.demand)
@@ -912,6 +1625,70 @@ pub(crate) fn resource_budget_error(
         limit: violation.limit,
     }
 }
+
+#[cfg(test)]
+thread_local! {
+    // Fixed scalar evidence only; no allocation or assertion in a callback.
+    static OUTPUT_ELEMENT_PREFLIGHT: std::cell::Cell<(u64, u64, u64)> =
+        const { std::cell::Cell::new((0, 0, 0)) };
+}
+
+/// Check prospective element count before a selected-cell walk or draft.
+/// This is only a current-policy guard, never a materialization permit.
+pub(crate) fn check_output_element_count(required: u64) -> Result<(), ResidentKernelError> {
+    let current = with_active_turn_plan(|active| {
+        active.as_ref().map(|plan| {
+            let limit = plan
+                .budget_limits
+                .max_output_elements
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            #[cfg(test)]
+            OUTPUT_ELEMENT_PREFLIGHT.with(|observed| {
+                observed.set((observed.get().0.saturating_add(1), required, limit));
+            });
+            if required <= limit {
+                return Ok(());
+            }
+            let demand = ResourceDemand {
+                output_elements: required,
+                ..ResourceDemand::default()
+            };
+            if let Some(violation) = mech_core::evaluate_call_memory_budget(
+                mech_core::MemoryObjectOwner::NodeOutput {
+                    node: plan.node,
+                    port: 0,
+                },
+                demand,
+                0,
+                0,
+                plan.budget_limits,
+            )
+            .first()
+            {
+                return Err(resource_budget_error(violation));
+            }
+            Err(ResidentKernelError::InvalidInput)
+        })
+    });
+    if let Some(result) = current {
+        return result;
+    }
+    // Closed/ordinary analysis has no selected current invocation policy.
+    // Preserve its historical default and error exactly.
+    if required > MAX_RESIDENT_OUTPUT_ELEMENTS {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(())
+}
+
+#[cfg(all(
+    test,
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops"),
+    any(feature = "full_source", feature = "full_compiler")
+))]
+#[path = "snapshot_output_element_tests.rs"]
+mod snapshot_output_element_tests;
 
 pub(crate) fn memory_plan_kernel_error(error: mech_core::MemoryPlanError) -> ResidentKernelError {
     match error {
@@ -1319,6 +2096,35 @@ pub(crate) struct BorrowedFootprintSchemaProof {
     supported: bool,
 }
 
+/// A bounded binding-time proof for the common scalar/packed-matrix layouts.
+/// It inspects at most two schema variants, allocates nothing and grants no
+/// concrete value footprint. Other schemas retain the metered recursive proof.
+pub(crate) fn shallow_borrowed_footprint_schema_proof(
+    schema: &mech_core::Schema,
+) -> Option<BorrowedFootprintSchemaProof> {
+    let scalar = |body: &SchemaBody| {
+        matches!(
+            body,
+            SchemaBody::Bool
+                | SchemaBody::UnsignedInteger(_)
+                | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Complex(_)
+                | SchemaBody::Rational64
+                | SchemaBody::String
+                | SchemaBody::Id
+                | SchemaBody::Index
+                | SchemaBody::Atom(_)
+        )
+    };
+    let supported = scalar(schema.body())
+        || matches!(schema.body(), SchemaBody::Matrix { element, .. } if scalar(element));
+    supported.then_some(BorrowedFootprintSchemaProof {
+        key: schema.key(),
+        supported,
+    })
+}
+
 fn borrowed_footprint_schema_supported(
     meter: &mut ResidentBudgetMeter,
     schema: &SchemaBody,
@@ -1389,17 +2195,36 @@ fn measure_proven_borrowed_canonical_data_footprint(
     data: &ValueData,
     retain_nodes: bool,
 ) -> Result<ValueFootprint, ResidentKernelError> {
+    // A packed String matrix has exactly one matrix chunk, one sequence chunk
+    // and one chunk per cell. Its immutable, actual slice length therefore
+    // proves the entire metadata scan's work before any cell is visited.
+    // Unsupported layouts and tight budgets retain the incremental visitor,
+    // including its first-denied requirement and already-spent work prefix.
+    let whole_scan = if let (SchemaBody::Matrix { element, .. }, ValueData::Matrix(matrix)) =
+        (schema, data)
+        && matches!(element.as_ref(), SchemaBody::String)
+        && let SequenceView::String(strings) = matrix.elements()
+        && let Some(nodes) = u64::try_from(strings.len())
+            .ok()
+            .and_then(|count| count.checked_add(2))
+    {
+        meter.try_charge_borrowed_metadata_scan(nodes, retain_nodes)?
+    } else {
+        false
+    };
     let mut footprint = ValueFootprint::zero();
     mech_core::snapshot::visit_canonical_data_work(schema, data, |chunk| {
         // The core visitor reports retained/encoded sizes before descent. For
         // the proven schema branches it reads lengths and container metadata;
         // packed numeric bytes and String UTF-8 payloads are not traversed.
-        meter.charge_compute_work(checked_cost_product(&[
-            BORROWED_FOOTPRINT_METADATA_WORK,
-            chunk.node_count.max(1),
-        ])?)?;
-        if retain_nodes {
-            meter.charge_retained_nodes(chunk.node_count)?;
+        if !whole_scan {
+            meter.charge_compute_work(checked_cost_product(&[
+                BORROWED_FOOTPRINT_METADATA_WORK,
+                chunk.node_count.max(1),
+            ])?)?;
+            if retain_nodes {
+                meter.charge_retained_nodes(chunk.node_count)?;
+            }
         }
         footprint = footprint
             .checked_add(ValueFootprint {
@@ -1448,6 +2273,19 @@ pub(crate) fn measure_borrowed_canonical_value_footprint(
     measure_borrowed_canonical_value_footprint_with_proof(meter, value, schemas, &mut proof)
 }
 
+/// The snapshot-access source alone may reuse a complete DATA-only summary
+/// owned by the current native invocation. Current schema support, wrapper,
+/// shape and retained nodes are still measured/admitted here on every use.
+/// Ordinary execution and unsupported layouts retain the original visitor.
+pub(crate) fn measure_snapshot_access_source_footprint(
+    meter: &mut ResidentBudgetMeter,
+    value: &Value,
+    schemas: &SchemaTable,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    let mut proof = None;
+    measure_borrowed_value_footprint(meter, value, schemas, &mut proof, true)
+}
+
 /// Measures a borrowed value while reusing only the immutable schema-support
 /// proof. Concrete shape, retained nodes, and selected data are charged on
 /// every call.
@@ -1456,6 +2294,16 @@ pub(crate) fn measure_borrowed_canonical_value_footprint_with_proof(
     value: &Value,
     schemas: &SchemaTable,
     proof: &mut Option<BorrowedFootprintSchemaProof>,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    measure_borrowed_value_footprint(meter, value, schemas, proof, false)
+}
+
+fn measure_borrowed_value_footprint(
+    meter: &mut ResidentBudgetMeter,
+    value: &Value,
+    schemas: &SchemaTable,
+    proof: &mut Option<BorrowedFootprintSchemaProof>,
+    source_cache: bool,
 ) -> Result<ValueFootprint, ResidentKernelError> {
     meter.charge_compute_work(BORROWED_FOOTPRINT_METADATA_WORK)?;
     let entry = schemas
@@ -1481,6 +2329,26 @@ pub(crate) fn measure_borrowed_canonical_value_footprint_with_proof(
     }
     let shape_parameters = value.shape().parameter_values().len();
     meter.charge_retained_nodes(1)?;
+    #[cfg(all(
+        feature = "native-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    ))]
+    if source_cache
+        && let Some(data) =
+            native_turn_plan_cache::borrowed_data_footprint(value, entry.key(), |work| {
+                meter.charge_compute_work(work)
+            })?
+    {
+        // Reusing a successful immutable DATA measurement eliminates the
+        // visitor, not the source's full current retained-node obligation.
+        meter.charge_retained_nodes(data.node_count)?;
+        return projected_canonical_value_footprint(data, shape_parameters);
+    }
+    #[cfg(not(all(
+        feature = "native-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    )))]
+    let _ = source_cache;
     let data =
         measure_proven_borrowed_canonical_data_footprint(meter, schema.body(), value.data(), true)?;
     projected_canonical_value_footprint(data, shape_parameters)
@@ -1509,6 +2377,57 @@ impl<P> AdmittedMutationPlan<P> {
 }
 
 impl ResidentBudgetMeter {
+    /// Prepay a fixed-count metadata scan, never payload work, allocation or
+    /// publication. The preview uses the same authorities as ordinary charges
+    /// and is side-effect free; a rejected preview is only a fast-path miss.
+    pub(super) fn try_charge_borrowed_metadata_scan(
+        &mut self,
+        nodes: u64,
+        retain_nodes: bool,
+    ) -> Result<bool, ResidentKernelError> {
+        let Some(work) = nodes.checked_mul(BORROWED_FOOTPRINT_METADATA_WORK) else {
+            return Ok(false);
+        };
+        let Some(next) = self.preview_compute_and_nodes(work, if retain_nodes { nodes } else { 0 })
+        else {
+            return Ok(false);
+        };
+        self.charge(|cost| {
+            *cost = next;
+            Ok(())
+        })?;
+        Ok(true)
+    }
+
+    /// Eligibility, not a permit or debit. A caller may use a conservative
+    /// bound to prove a prepaid metadata scan can finish, then charge only
+    /// the exact measured copy work before ordinary candidate admission.
+    pub(super) fn can_charge_compute_and_nodes(&self, compute: u64, nodes: u64) -> bool {
+        self.preview_compute_and_nodes(compute, nodes).is_some()
+    }
+
+    fn preview_compute_and_nodes(&self, compute: u64, nodes: u64) -> Option<KernelCostEstimate> {
+        let mut next = self.accumulated;
+        next.set_compute_work(next.compute_work().checked_add(compute)?)
+            .ok()?;
+        next.set_retained_nodes(next.retained_nodes().checked_add(nodes)?);
+        let fits = if let Some((compute, comparison)) = self.analysis_allowance {
+            next.check_analysis_limits().is_ok()
+                && next.compute_work() <= compute
+                && next.comparison_work() <= comparison
+        } else {
+            // A preview must not enter the detached test-only admission path,
+            // which can observe work. Production scans require a real turn.
+            with_active_turn_plan(|active| active.is_some())
+                && preview_control_work(next.demand).is_ok()
+                && next.check_planning_limits().is_ok()
+        };
+        if !fits {
+            return None;
+        }
+        Some(next)
+    }
+
     /// Explicit borrowed measurement outside a turn. Default meters retain
     /// their turn-only authority in both production and test builds.
     pub(crate) fn for_closed_analysis(compute: u64, comparison: u64) -> Self {
@@ -1785,6 +2704,181 @@ mod tests {
                 mech_core::DimensionExpr::Constant(1),
                 mech_core::DimensionExpr::Constant(count as u64),
             ]),
+        }
+    }
+
+    #[test]
+    fn snapshot_access_source_without_active_native_cache_keeps_original_visitor() {
+        use mech_core::{ValueDataDraft, snapshot::OptionDraft};
+
+        let empty =
+            borrowed_retention_value(SchemaBody::String, ValueDataDraft::String(String::new()));
+        let matrix = borrowed_retention_value(
+            borrowed_retention_matrix(SchemaBody::String, 3),
+            ValueDataDraft::Matrix(
+                vec![
+                    ValueDataDraft::String("e\u{301}👩‍👩‍👧‍👦".to_owned()),
+                    ValueDataDraft::String("é".repeat(40_000)),
+                    ValueDataDraft::String(String::new()),
+                ]
+                .into_boxed_slice(),
+            ),
+        );
+        let mut body = SchemaBody::Bool;
+        let mut data = ValueDataDraft::Bool(true);
+        for _ in 0..40 {
+            body = SchemaBody::Option(Box::new(body));
+            data = ValueDataDraft::Option(OptionDraft {
+                present: true,
+                value: Some(Box::new(data)),
+            });
+        }
+        let deep = borrowed_retention_value(body, data);
+        for (value, schemas) in [empty, matrix, deep] {
+            for compute in [128, 1_000_000] {
+                let mut original = ResidentBudgetMeter::for_closed_analysis(compute, 1_000_000);
+                let expected =
+                    measure_borrowed_canonical_value_footprint(&mut original, &value, &schemas);
+                let mut source = ResidentBudgetMeter::for_closed_analysis(compute, 1_000_000);
+                assert_eq!(
+                    measure_snapshot_access_source_footprint(&mut source, &value, &schemas),
+                    expected,
+                );
+                assert_eq!(source.estimate(), original.estimate());
+            }
+        }
+        let (number, number_owner) = borrowed_retention_value(
+            SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+            ValueDataDraft::U64(7),
+        );
+        let (text, text_owner) =
+            borrowed_retention_value(SchemaBody::String, ValueDataDraft::String("x".to_owned()));
+        assert_eq!(number.schema(), text.schema());
+        assert_ne!(number.schema_key(), text.schema_key());
+        assert_ne!(
+            number_owner.entry(number.schema()).unwrap().key(),
+            text.schema_key()
+        );
+        let mut original = ResidentBudgetMeter::for_closed_analysis(1_024, 1_024);
+        let expected =
+            measure_borrowed_canonical_value_footprint(&mut original, &text, &number_owner);
+        let mut source = ResidentBudgetMeter::for_closed_analysis(1_024, 1_024);
+        assert_eq!(
+            measure_snapshot_access_source_footprint(&mut source, &text, &number_owner),
+            expected,
+        );
+        assert_eq!(source.estimate(), original.estimate());
+        assert!(text.validate_against(&text_owner).is_ok());
+    }
+
+    #[test]
+    fn shallow_borrowed_proofs_do_not_cache_concrete_shape_or_payload() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, IntegerWidth, SchemaDraft, SchemaTableBuilder,
+            ValueDataDraft, ValueDraft, snapshot::SnapshotValidationContext,
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: vec![DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Inferred,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: None,
+                    }]
+                    .into_boxed_slice(),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                        dimensions: Box::new([
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        ]),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let schema = built.resolve(handle).unwrap();
+        let mut proof = shallow_borrowed_footprint_schema_proof(built.table.get(schema).unwrap());
+        assert!(proof.is_some());
+        let mut compute = None;
+        for count in [1usize, 10_000, 0, 3] {
+            let value = ValueDraft {
+                schema,
+                shape_values: vec![count as u64].into_boxed_slice(),
+                data: ValueDataDraft::Matrix(
+                    vec![ValueDataDraft::U64(7); count].into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&built.table))
+            .unwrap();
+            let mut meter = ResidentBudgetMeter::for_closed_analysis(1_024, 0);
+            let footprint = measure_borrowed_canonical_value_footprint_with_proof(
+                &mut meter,
+                &value,
+                &built.table,
+                &mut proof,
+            )
+            .unwrap();
+            assert_eq!(footprint, value.retained_footprint(&built.table).unwrap());
+            assert_eq!(footprint.encoded_bytes, count as u64 * 8);
+            assert_eq!(meter.estimate().comparison_work(), 0);
+            let observed = meter.estimate().compute_work();
+            assert_eq!(*compute.get_or_insert(observed), observed);
+            assert!(observed > 0);
+        }
+    }
+
+    #[test]
+    fn shallow_borrowed_proofs_recheck_current_owner_semantic_identity() {
+        let (number, number_owner) = borrowed_retention_value(
+            SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+            mech_core::ValueDataDraft::U64(7),
+        );
+        let (text, text_owner) = borrowed_retention_value(
+            SchemaBody::String,
+            mech_core::ValueDataDraft::String("x".repeat(40_000)),
+        );
+        assert_eq!(number.schema(), text.schema());
+        assert_ne!(number.schema_key(), text.schema_key());
+        let original =
+            shallow_borrowed_footprint_schema_proof(number_owner.get(number.schema()).unwrap());
+        let mut proof = original;
+        let mut meter = ResidentBudgetMeter::for_closed_analysis(1_024, 0);
+        let footprint = measure_borrowed_canonical_value_footprint_with_proof(
+            &mut meter,
+            &text,
+            &text_owner,
+            &mut proof,
+        )
+        .unwrap();
+        assert_eq!(footprint, text.retained_footprint(&text_owner).unwrap());
+        assert_ne!(proof, original);
+        assert_eq!(
+            meter.estimate().compute_work(),
+            3 * BORROWED_FOOTPRINT_METADATA_WORK
+        );
+    }
+
+    #[test]
+    fn shallow_borrowed_proofs_decline_recursive_and_dynamic_layouts() {
+        for body in [
+            SchemaBody::Dynamic,
+            SchemaBody::Tuple(vec![SchemaBody::Bool; 1_000].into_boxed_slice()),
+            borrowed_retention_matrix(SchemaBody::Dynamic, 1),
+        ] {
+            let schema = mech_core::SchemaDraft {
+                body,
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap();
+            assert!(shallow_borrowed_footprint_schema_proof(&schema).is_none());
         }
     }
 

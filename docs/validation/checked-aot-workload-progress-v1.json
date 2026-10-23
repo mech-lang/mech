@@ -1,0 +1,887 @@
+{
+  "schema": "mech.checked-aot-workload-progress.v1",
+  "status": "INCOMPLETE_IMPLEMENTATION_NOT_BENCHMARK_QUALIFIED",
+  "latest_qualification": "canonical_hosted_full_source_small_fixture_qualification",
+  "pull_request": "https://github.com/mech-lang/mech/pull/907",
+  "foundations_pull_request": "https://github.com/mech-lang/mech/pull/905",
+  "baseline": "c4190315672337f039efc743a970263627f75834",
+  "foundations_pr_scope": {
+    "title": "Add canonical native control and collection foundations",
+    "delivered": "Reduced redundant resident comparison/collection work; checked canonical scalar arithmetic/casts, Match and scalar literal loops; admitted typed managed-value storage and one cumulative native/library account; selected maintained root/lexical collection binding; generated mixed JIT control through the shared emitter/current-visit checker. The ownership correction bounds deregistration and exact same-owner reuse independently of later foreign imports.",
+    "boundary": "PR905 foundations are not completed production canonical AOT or a benchmark-qualified workload. The subsequent PR906 continuation qualifies actual linked mixed programs and native matrix comprehensions as recorded below; those results do not establish full resource integration or the benchmark. The independent raw-source native fallback chain remains unresolved, not an accepted second canonical runtime authority.",
+    "remaining_work": "follow_up_roadmap",
+    "change_policy": "After the concrete ownership correction and accurate scope/evidence, stop adding compiler features to PR905. Handle corrective review/CI findings through existing gates. Do not mark ready or merge without explicit user approval; no new PR is authorized by this roadmap."
+  },
+  "follow_up_roadmap": {
+    "status": "REQUIRED_FULL_OBJECTIVE_INCOMPLETE_NOT_BENCHMARK_QUALIFIED",
+    "purpose": "One ordered continuation of the complete implementation/benchmark brief, not a replacement by the smaller foundations scope. Historical receipts below retain their original source identities and qualification limits.",
+    "original_handoff": "docs/validation/benchmark-agent-handoff-v1.json",
+    "milestones": [
+      {
+        "order": 1,
+        "name": "Qualify generated mixed execution through an actual linked process",
+        "current_state": "PR906 source7606c5c3768479a004e89e8f745eca9eed0dc1ae corrects body-String temporary coexistence and canonical matrix node admission, and replaces the obsolete runtime live-range rejection with positive original/decoded geometry/denial/recovery checks. Frozen prelink134Rust/155CI and exact failed runtime target pass; clean-source5actual executables/74runtimecases/9negativebuilds+restored recovery pass. Independent reconciliation checks85pins/148runtime streams/20build streams. ManagedABI6/IR2/work4; scalar ABIs/default limits unchanged. Runtime-only closures exclude source/parser/codegen. See collection_publication_accounting_and_runtime_ci; production/resource/full-workload and fresh exact-head review/full green CI remain incomplete.",
+        "completion_criteria": [
+          "Build and actually execute mixed linked applications using the same canonical artifact, selected maintained root/lexical bindings, arena, current-visit checks, finite memory policy and single cumulative work account as JIT execution.",
+          "Reconcile original/decoded resident, JIT and linked outputs, error ordering, denial atomicity and next-invocation recovery. Qualify linked metadata/provenance and mutation rejection rather than inferring them from Object metadata.",
+          "Pin source, artifact/IR/ABI/work identities, generated binary and complete process streams. Inspect the actual runtime compiled dependency closure, keeping parser/JIT/compiler out of the runtime-only linked executable."
+        ]
+      },
+      {
+        "order": 2,
+        "name": "Complete canonical production and native resource integration",
+        "completion_criteria": [
+          "Route production native builds through the same validated canonical ProgramArtifact and selected operation bindings. Remove the raw-source sequence/control/grid fallback chain from the route presented as canonical AOT. Unsupported constructs fail explicitly at that boundary; no whole-program interpreter fallback, competing semantic authority or workload-sized Rust bridge.",
+          "Complete general native collections/matrices, comprehensions, element-wise application counts, computed activation/state and FSM control through canonical language semantics and shared validation/publication machinery. Preserve checked arithmetic/casts, source error order, exact geometry, cumulative work and memory admission, and failure recovery.",
+          "Connect typed argv/stdin/stdout/raw-byte capabilities, strict immutable payload argument separation/count, observations, ordered effects, output staging/flush, shutdown and errors. Keep compilation separate from live drivers, transactions and replay; hosted resident success does not establish native AOT resource support.",
+          "Audit and close borrowed structural projection metadata charges in initial/refined plans including budget None, without double charging. Provide genuine recursive tree/reference allocation and arena/frame lifetimes, non-tail recursive work, bigint primitives and byte operations where the ten programs require them; retain original failing fixtures and unchanged admission limits.",
+          "Parse, compile and execute all ten canonical idiomatic programs with full input/output and required-work contracts, including ordinary functions/captures, named outputs, pipelines, repeated application, Match and state machines. Validate publication LOC from the executed sources, not archived unrun candidates."
+        ]
+      },
+      {
+        "order": 3,
+        "name": "Qualify the full workload, then measure and optimize",
+        "completion_criteria": [
+          "Reduce actual general collection/histogram work and provide canonical packed/streaming execution for all seven k-nucleotide histograms, not just the two short keys or workload-specific helpers. Run standard FASTA N=25000000 and its full THREE=125000000-base record with exact independent output and complete resource lifecycle.",
+          "Retain ordinary 100/400-base success and 4000-base denial/recovery under unchanged defaults. Qualify finite explicit full-input policy separately; do not raise, reset, discount or bypass admission to make a fixture pass.",
+          "Qualify trusted and secured modes of the SAME AOT executable across startup, arguments, inputs, work, output/flush, shutdown and errors before timing. Preserve executable/source/configuration/input pins and complete raw streams.",
+          "Run release Mech-only measurements serially after correctness/admission gates pass. Publish raw samples, reproducible commands, lifecycle/mode definitions and security overhead. Preserve existing other-language cohorts and historical optimization evidence; never overlap measurements.",
+          "Analyze the actual generated executable, binary size, hot paths and dependencies; optimize the real canonical path, remeasure, and expose explicit checked-AOT configuration while retaining admission, exact results and failure behavior. Do not substitute scalar samples, hosted runtime timings or copied old measurements for full-program native results.",
+          "Resolve all current review findings and obtain fresh clean review plus complete exact-head green CI. Leave readiness and merging to explicit user approval."
+        ]
+      }
+    ],
+    "new_benchmark_samples_in_this_correction": 0
+  },
+  "reproduction": {
+    "test": "ordinary_program_handles_hundred_and_four_hundred_bases_without_raising_limits",
+    "result": "FAILS_AT_100_BASES_BEFORE_CORRECTION",
+    "dimension": "ComparisonWork",
+    "required": 69986,
+    "limit": 65536,
+    "source_owner": "matrix/comprehension, node 33, source range 2469..2554",
+    "local_log": "tmp/pr-stack-evidence/checked-aot-v201-knucleotide-regression.log",
+    "log_sha256": "c5dc1f71472de2632b9e6c1ac04cc4cefc8edb9f80835b4a8e76e0648d489533"
+  },
+  "diagnosis": {
+    "local_log": "tmp/pr-stack-evidence/checked-aot-v204-control-total-trace.log",
+    "log_sha256": "814a0da456b0b31d4025addd56b9670c0e4e57380b5558481162bc1d1b9f0dfe",
+    "diagnostic_diff_sha256": "505357e74ac18a59c735f34a07dddbf378f980e8a5e9bc434be366386f65028c",
+    "finding": "Nested control correctly shares a cumulative authority. Histogram node 144 requests 15041 units after a total of 54945. Scalar comparison preparation charges encoded payload work for metadata inspection before separately reserving actual comparisons. String set normalization also retains a broad sorting bound. The unrelated-schema-scan hypothesis was not implicated by this trace.",
+    "instrumentation": "Temporary local logging only; removed before implementation qualification. No limits or admission decisions changed."
+  },
+  "scalar_metadata_correction": {
+    "source_file": "src/engine/src/resident/numeric/mod.rs",
+    "source_file_sha256": "f5bbf56cf9efd29df912b5e9ded8192c481e6ebacb5d2e3d3d2d6910cdfac553",
+    "implementation_diff_sha256": "c0d35d8bdefa9c24020987928fa87a3ff61168f6726b509083535d9c932d26ee",
+    "change": "Known one-chunk scalar layouts use the maintained metered borrowed-footprint inspection. The caller still reserves the same encoded-byte work for every actual comparison and broadcast occurrence. Composite and interval layouts retain their original recursive path.",
+    "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-engine --no-default-features --features full_compiler,resident-artifact --lib resident::numeric::tests:: -- --nocapture --test-threads=1",
+    "result": { "passed": 147, "failed": 0, "ignored": 0, "filtered": 581 },
+    "local_log": "tmp/pr-stack-evidence/checked-aot-v205-comparison-metadata.log",
+    "log_sha256": "5696dcc092a45b1cbb35abf79953421825c05086d06d246b7e076776b9a8d15f",
+    "new_boundary_test": "snapshot_comparison_preparation_measures_metadata_but_reserves_payload_work",
+    "limits_changed": false
+  },
+  "resident_collection_work_followup": {
+    "as_of_utc": "2026-10-18T06:14:01Z",
+    "status": "PARTIAL_PROGRESS_400_BASE_REGRESSION_STILL_RED",
+    "tested_base": "f7b36537309438e5383727424dca1cb5bb6eddee",
+    "tested_implementation_diff_sha256": "009b1a7f50ae523bd7cf7ff90714975a13444cfa93fdb72ca8692be31e46e6ac",
+    "source_files_sha256": {
+      "src/engine/src/intrinsics/map_ops.rs": "bf242650f2786142062e6de14553cf80775340a5119ee21eef93d796ab38c7c2",
+      "src/engine/src/resident/budget.rs": "4c00f39d9ff6bf5e76ef892f694704fec519aae940daebb4c81a72f5c5d76f46",
+      "src/engine/src/resident/general/comprehension_execution.rs": "6c99a92e05d8c03ad796ccd329120a80f67a8b03cf4eabadc70daa98902b4af4",
+      "src/engine/src/resident/map_ops.rs": "50ba68cdb3a4eaaca7a960dcb672b2911d8809a24979296ee1e6592db2855411",
+      "src/engine/src/resident/numeric/mod.rs": "c2c429f0be31cdfd99e8d1695104056aeb5b355cc745c8c65ba09480aaa086e7",
+      "src/stdlib/tests/knucleotide_record_source.rs": "0648f1607d63832047daa60aba0c80f77d73bf1e53757a5742e4f62469380b80"
+    },
+    "changes": [
+      "General iterative String-byte radix ordering with occupied-bucket bitsets, bounded admitted workspace and no recursive host stack. All byte distribution is compute-metered. One equality pass saves run starts for histogram construction instead of repeating key comparisons and count loops.",
+      "String map lookup inspects immutable key headers with compute metering, then admits the largest encoded key/selector times the worst-case binary-search path before any comparison. Initial selector comparison, temporary-storage and retained-node reservations remain. Missing keys and late hits have the same admission boundary; recursive non-String keys retain their original path.",
+      "Private, exact-SchemaKey shallow support proofs are built for scalar/packed-matrix schemas in the activated projection table. Their actual retained metadata is accounted. Current owner identity, concrete shapes and payload footprints are still checked/measured; no content token or concrete value cache grants authority.",
+      "Comprehension yield reuses the immutable local prefix already measured within that generator invocation and measures its remaining suffix. Generator suffix disposal and per-iteration evidence boundaries remain unchanged.",
+      "String set comparison reservation is derived from bounded heapsort, deduplication and sorted core finalization. Each comparison consumes its byte allowance before the shared core key relation runs; core finalization receives only the remainder of the same reservation. The broader metadata/payload-move compute bound remains.",
+      "Snapshot pattern binding excludes its prior target from the same unchanged local measurement using checked footprint subtraction, including all repeated matching regions. It no longer traverses all other locals twice before the first scratch write."
+    ],
+    "full_engine_units": {
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-engine --no-default-features --features full_compiler,resident-artifact --lib -- --nocapture --test-threads=1",
+      "passed": 737,
+      "failed": 0,
+      "ignored": 0,
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v214-binding-footprint-reuse.log",
+      "log_sha256": "ec239d46283ccf13433fa55f5b30865005fec452535864db74ddf39b0d9d2c21"
+    },
+    "ordinary_workload": {
+      "program_algorithm_changed": false,
+      "default_limits_changed": false,
+      "hundred_base_original_artifact": "Completes with the exact independent output oracle before the later 400-base rejection. This does not qualify 100/400 bases through both artifacts.",
+      "four_hundred_bases": {
+        "status": "STILL_FAILS_ORIGINAL_ARTIFACT_DECODED_NOT_REACHED",
+        "dimension": "ComputeWork",
+        "required": 16777278,
+        "limit": 16777216,
+        "node": 33,
+        "source_owner": "matrix/comprehension, source range 2469..2554"
+      },
+      "regression_removed_or_ignored": false,
+      "ci_selects_regression": ".github/workflows/ci-full.yml selects the complete knucleotide_record_source integration target. The failing method remains a readiness blocker."
+    },
+    "separately_executed_contracts": {
+      "methods": [
+        "ordinary_program_work_denial_preserves_publication_and_allows_recovery",
+        "ordinary_program_produces_exact_knucleotide_output_after_record_selection",
+        "record_bounds_handle_descriptions_empty_absent_terminal_headers_and_crlf",
+        "complete_ordinary_knucleotide_fixture_parses_without_record_or_translation_helpers"
+      ],
+      "passed": 4,
+      "failed": 0,
+      "boundary": "Each exact method was executed separately after the complete target had aborted on its still-failing 400-base method. This is partial qualification, not a passing full integration target.",
+      "denial_recovery": "Original and decoded artifacts each produce the four-base literal output, reject 4000 bases at the unchanged 65536 comparison-work limit without advancing the published epoch or changing any output, then successfully produce the independent eight-base mixed-case literal output.",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v215-knucleotide-contracts.log",
+      "log_sha256": "e22f6be1b78a7724174c7993f84aef6728ecba0305929433e5b24c439290b954"
+    },
+    "not_established": [
+      "Successful 400-base or full standard-input resident execution",
+      "Actual CLI/resource-host execution on the changed product source",
+      "Canonical full-program native control/collection/resource execution",
+      "Packed/streaming full-workload support, optimized/configurable checked AOT or generated-binary analysis",
+      "New benchmark timing, security-overhead ratio, clean review or complete green CI"
+    ]
+  },
+  "borrowed_numeric_operand_followup": {
+    "as_of_utc": "2026-10-18T07:06:56Z",
+    "status": "PARTIAL_PROGRESS_400_BASE_COMPARISON_REGRESSION_STILL_RED",
+    "tested_base": "3571d9a0e8bef3b39789711dd39687c92bd3970f",
+    "tested_numeric_diff_sha256": "86951d9d8a9807f880cc64dc25048fe582c41eda4daa22419d8e47c1953b2b25",
+    "source_files_sha256": {
+      "src/core/src/snapshot/sequence.rs": "8966652ca732d8462a39831e5c43dadede7e6ed01f76736de049f506bdbf7ae5",
+      "src/engine/src/resident/numeric/mod.rs": "a72e772c26a8a0363185c3a6ace9dbcf1f065b6c82fe0432e7df1d1ec493e47d"
+    },
+    "changes": [
+      "Snapshot binary arithmetic borrows canonical packed or dense F64 inputs instead of materializing whole input draft vectors. Scalar results also avoid a result Vec. Core element conversion and the maintained numeric arithmetic/rational-power implementation remain the semantic authority.",
+      "Every fixed-width operand read occurrence, including broadcasts, is compute-reserved. The current input/output retention measurements, output construction, publication equality and full rational-power Euclidean allowance remain. Conservative memory, clone and node bounds are retained; default limits are unchanged.",
+      "Boundary coverage checks packed integer extrema, exact floating bit patterns, row-major canonical versus column-major dense geometry, empty axes, rational-power denial without publication, and required-minus-one versus exact-required work limits."
+    ],
+    "engine_units": {
+      "passed": 739,
+      "failed": 0,
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v218-borrowed-numeric-boundaries.log",
+      "log_sha256": "05921da3efa3b8e84faabc5970cef2463d1585726861db9724c962d30832d4e8"
+    },
+    "complete_workload_target": {
+      "status": "STILL_FAILS_ORIGINAL_400_BASE_TURN_DECODED_NOT_REACHED",
+      "hundred_base_original_artifact": "Completes with the independent exact output oracle before the later rejection.",
+      "dimension": "ComparisonWork",
+      "required": 65544,
+      "limit": 65536,
+      "node": 33,
+      "previous_compute_rejection": "The same unchanged 400-base workload now gets past its previous compute-work rejection, but it still does not complete.",
+      "regression_removed_or_ignored": false,
+      "default_limits_changed": false
+    },
+    "separate_contracts": {
+      "passed": 4,
+      "failed": 0,
+      "scope": "The other four integration methods were executed individually after the complete target aborted. Both original and decoded artifacts retain exact small-input output, 4000-base admission denial with unchanged publication, and successful next-turn recovery. This is not a passing complete workload target.",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v219-borrowed-numeric-contracts.log",
+      "log_sha256": "3ca514006132c677a5c1334d6f6bcfe4f6682dd2ee4507dbf74ffba524250e82"
+    }
+  },
+  "canonical_native_loop_foundation": {
+    "as_of_utc": "2026-10-18T07:06:56Z",
+    "status": "METADATA_AND_CURRENT_VISIT_PROOF_QUALIFIED_NOT_MACHINE_CODE_EXECUTION",
+    "source_archive": "69bbfb71e8f3e4b422aec2bed844bbb9bf9558b7",
+    "archive_patch_sha256": "6b2ed53b61e03d7a9b5263d8bd5759cf94852f0e2e6d4b4980177988e3a90201",
+    "composition": "Additive engine-only composition, not an archived whole-file replacement. Existing Bool/U64/I64/F64 types, constants, casts and selected private scalar witnesses are retained. Match and loop views share one Builder and lexical block lowering. Archived GPU emitter/runtime/application files have not been applied or qualified.",
+    "before_files_sha256": {
+      "src/engine/src/resident/general/native_match_lowering.rs": "7214a113638ba60e05475e9466a13f64775f6e474100fb8be6d4e78415f8a3c9",
+      "src/engine/src/native_artifact/mod.rs": "975abce12fa29c3f4c30ab999b606555f8d039ff14c74e4b10501e9b62054f0c"
+    },
+    "source_files_sha256": {
+      "src/engine/src/resident/general/native_match_lowering.rs": "d2335423e1dedcdd5dddb32a880b63e203fde7defaab28ba9bcf22d16d7a56af",
+      "src/engine/src/native_artifact/mod.rs": "95bbf5544441d223e0697407c40b076a996ca357f4e21fd44176e6838c4ef5a7",
+      "src/engine/src/native_artifact/iteration.rs": "9949b07cc155a09316be014cf15ef46348385d68ca626a80242262ac5f46dcf4",
+      "src/engine/src/native_artifact/iteration_validation.rs": "6ab6461fcde957f103107fbff6aa2867c263caa9a2464fb87e1663a42d3bf515",
+      "src/stdlib/tests/native_artifact_iteration_lowering.rs": "63fa3315b28989e819a67ad5f6151bb3afeb24fc6853127f3a6bd4dacdf48fb2"
+    },
+    "proof": "Constructor-private structured initialization/header/latch/exit ownership with bounded lexical DAG analysis. A fresh body visit begins with admitted ancestor values plus its private carrier, never previous-visit locals. Private mutation tests reject stale results, unowned backedges and forged carrier scopes.",
+    "qualification": {
+      "tested_base": "3571d9a0e8bef3b39789711dd39687c92bd3970f",
+      "tracked_diff_sha256": "bec18315b0ed561cf4b3ba1fd53e7a42ded75a462f5e76ec92dee3f35258946c",
+      "new_files": "The complete new-file hashes above were pinned separately because git diff does not include untracked files. The driver checked both tracked diff and new-file hashes unchanged through completion.",
+      "engine_unit_methods": 741,
+      "native_lowering_methods": 31,
+      "native_lowering_targets": ["native_artifact_lowering", "native_artifact_i64_lowering", "native_artifact_f64_lowering", "native_artifact_cast_lowering", "native_artifact_match_lowering", "native_artifact_output_initializers", "native_artifact_iteration_lowering"],
+      "ci_contract_methods": 75,
+      "failed": 0,
+      "profile": "nightly-2026-03-03; locked/offline; serial; full_compiler,native-artifact; debug assertions and overflow checks enabled",
+      "format_and_diff_checks": "Full-workspace cargo fmt --check and git diff --check pass on the final product source.",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v223-native-iteration-lowering.log",
+      "log_sha256": "0832f2298f65690c3afae1d6b2ec6c2411d1e8b493e1919baff9dda5120f5ac5"
+    },
+    "ci": "The complete new lowering target and private current-visit proof tests are selected explicitly in ci-full.yml and protected by an executed CI-contract test.",
+    "not_established": [
+      "Native JIT, emitted Object or actual linked loop execution on this new source",
+      "Native element-wise count matrices, aggregate carriers, comprehensions, FSM/lifecycle or resource I/O",
+      "Full-input packed/streaming workload support or optimized/configurable checked AOT",
+      "Benchmark measurements, same-binary security overhead, clean review or complete green CI"
+    ]
+  },
+  "canonical_native_loop_codegen": {
+    "as_of_utc": "2026-10-18T07:33:25Z",
+    "status": "SCALAR_JIT_QUALIFIED_LINKED_EXECUTION_PENDING_FULL_PROGRAM_INCOMPLETE",
+    "tested_base": "73b9663a462ac92903b6acb6760a7fb71b5fb2ed",
+    "tracked_diff_sha256": "9d7e6f04b2de9bfbde0e07e434890e321c041d2772feefd20ebebbc2415c35dc",
+    "source_files_sha256": {
+      "hosts/gpu/src/native_artifact/control_compiler.rs": "39e08e5be7a131d77e76ce4fcfb666b1cf4aa64c7a9f5f1c3cfd752e4ed0c293",
+      "hosts/gpu/src/native_artifact/mod.rs": "a1e87ec4e472c3d8b5a6fa022cf2d78b62ce05d972854745dd64ad19db3e88b3",
+      "hosts/gpu/src/native_artifact/iteration_abi.rs": "829ec13e6cd51b9f09410a24b17991b1b7efe51310ed8963399f08abf02ac3a6",
+      "hosts/gpu/src/native_artifact/iteration_application.rs": "396b8a1d6d5ef374b022874fa257f24cc1d6863899a45645966056abc6ffa96a",
+      "hosts/gpu/src/native_artifact/iteration_compiler.rs": "12720147107bdf996917b920b6fa42a1ff8a2095da60b2b268a69f50233b03c0",
+      "hosts/gpu/src/native_artifact/iteration_identity.rs": "2855366ce025cb1e78f10c59d34048e5aade8a84eaad73e69e1ec87a2f0b5de6",
+      "hosts/gpu/src/native_artifact/iteration_linked.rs": "5df98b3e94946aa6284fbe2916481f792b3fac10bb4db83c0f3a2fe3dd3c9441",
+      "hosts/gpu/src/native_artifact/iteration_runtime.rs": "8bc8f36f916ab2863aafeb5662038793c784f57c229a73ce0f4d8d961a180f64",
+      "hosts/gpu/src/native_artifact/templates/linked_iteration_main.rs.in": "c6e12ed0f10a37d4c2d7bf968b74850bf28d5ce8148862532cf98b1c9def97a2",
+      "hosts/gpu/tests/canonical_artifact_iteration.rs": "832155682c11c854a8eef32f4f4f14584c0584606df5975b62edf3a11ef0c0f5",
+      "hosts/gpu/tests/support/canonical_iteration_linked.rs": "35f17114df223fe9151608ec59dc7297d0a7fdf0818064ac1dd9365205917797"
+    },
+    "implementation": [
+      "Shared JIT/Object definition emits actual initialization, header, latch and backedge machine code. Every loop has private carrier/counter storage independent of its literal count.",
+      "Match and loops use one maintained scalar action/literal-branch emitter, preserving Bool/U64/I64/F64 arithmetic, checked casts, signed-zero equality and NaN behavior. No source parser, resident whole-program executor or older source-native compiler substitutes for generated control.",
+      "ABI3 admission checks exact legal visits and count progress using disjoint managed progress storage. Cumulative work remains finite; setup/transport/shared-budget checks precede input traversal and all typed output publication is staged atomically. Existing scalar ABI1 and Match ABI2 remain separate and unchanged.",
+      "Typed object identity explicitly binds revision, types, raw constants, selected operations, scopes, counts, CFG, entry, target and work-policy versions. Runtime-only linked construction and generation use the existing common shell and generated-input pinning."
+    ],
+    "qualification": {
+      "new_loop_execution_methods": 10,
+      "existing_native_execution_methods": 29,
+      "private_abi_admission_identity_methods": 11,
+      "runtime_only_build_check": true,
+      "ci_contract_methods": 76,
+      "failed": 0,
+      "explicit_linked_test_selection_nonempty": true,
+      "linked_test_execution": "NOT_YET_RUN; the clean-source committed qualification is a separate next gate",
+      "coverage": "Original and decoded artifacts versus canonical resident and real JIT results; zero/one/25/64/max counts; nested carriers/captures; lazy Match and retained dead checked nodes; all four scalar kinds; exact floating values, negative zero and NaN bits; checked casts; mid-loop overflow; cumulative denial, output atomicity and same-entry recovery. A four-sibling-loop interactive fixture retains and checks all six canonical outputs, including aliases.",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v229-native-iteration-codegen.log",
+      "log_sha256": "10fdfd65b96ac39919aa8762ccfa83a1b5cbc3d318e6d2d51fa8c8cf72bef104",
+      "source_pin": "Tracked diff and all nine new-file hashes were verified unchanged by the driver. Full workspace format and diff checks pass."
+    },
+    "not_established": [
+      "Actual linked loop execution or runtime compiled-dependency closure on this new source",
+      "Native element-count matrices, aggregate carriers, comprehensions, FSM/lifecycle, collections or resources",
+      "Successful 400-base/full-input resident workload, general packed/streaming support or whole-program canonical AOT",
+      "Release trusted/secured timings, security-overhead ratio, emitted full-program binary analysis or optimization/configuration completion",
+      "Clean review or complete green CI"
+    ]
+  },
+  "canonical_native_loop_linked_followup": {
+    "as_of_utc": "2026-10-18T07:37:41Z",
+    "status": "FOUR_KIND_SCALAR_LINKED_LIFECYCLE_QUALIFIED_FULL_PROGRAM_INCOMPLETE",
+    "source_commit": "7f272863bc65132c0159118a4803879e58991294",
+    "source_tree": "0a308ec2b82bffecf3c709afba9a79df3e3a7d16",
+    "source_immutable": "Clean exact source commit checked before/after; generated Object, bytecode, shell/build inputs and the executable were pinned and checked unchanged.",
+    "program_sha256": "879a05c0c1bf51217599ac6409386930a350c3874a64c1d730a72784f2648970",
+    "program_revision": "f46d88828d4483972c68068e612668572bdb70456c9254a2778ec570e41029a0",
+    "typed_ir_sha256": "12c1077dab5f2a5814e153ddcaef54cc40115b78ccde5c43f72f057cef03e0d4",
+    "object_sha256": "9c43fbfd9bab14115b02b37b818b524d6f6a57280b61a4328b13b63377f39e31",
+    "bytecode_sha256": "bde9ffb5d62d1c486f48dbab786fbff23caa8d8b4eec093b2442d62d4f9c22b9",
+    "resolved_lock_sha256": "5eaae2f68f2975d8720d1adad18569c9ddbc8e6060b528dd0dceb21d6c877fa5",
+    "binary_sha256": "f65f7adf1ac4530f459948ec6af31a1196bd2e5395cf6a98257a1dd8d3ec59ea",
+    "builds": 1,
+    "object_emissions": 2,
+    "original_decoded_generation_pins_equal": true,
+    "actual_linked_executables": 1,
+    "fresh_process_cases": 17,
+    "cases": "Three exact six-output successes, five work/completion/transport/stack/shared-budget denials, unsigned overflow, signed underflow, missing/extra inputs, malformed Bool/U64/I64/F64 inputs, and a successful exact-work boundary after the failures. Complete stdout/stderr and exit codes are retained. All calls use the same unchanged executable.",
+    "reference": "Original and decoded canonical resident and real JIT results agree; valid linked streams use independent literal output oracles, including values above2^53 and negative zero. Native-denial diagnostics match the JIT's same native policy; Object stack metadata supplies its own exact stack requirement.",
+    "compiled_units": {
+      "count": 114,
+      "source": "Actual Cargo compiler-artifact messages, including fresh units; not the union of optional metadata edges.",
+      "mech_crates_from_pinned_workspace": true,
+      "mech_source_parser_compiled": false,
+      "cranelift_compiled": false,
+      "host_features": ["canonical-native-runtime"],
+      "retained_build_stdout_sha256": "54d621a9e7a0093907070cb03d7bece58df2de0657b3700ee599342a81ffef28",
+      "retained_metadata_sha256": "5eda8ed937f27565744d4cfa6c66bbf9bef8e79fabb1feeeaf1b3701052cb9df"
+    },
+    "object_inspection": {
+      "tool": "otool -tV and nm -g, macOS AArch64",
+      "code_bytes": 2052,
+      "stack_bytes": 64,
+      "loop_backedges": ["0x6a0 -> 0x170", "0x5e4 -> 0x208", "0x52c -> 0x2b0", "0x47c -> 0x340"],
+      "native_arithmetic": "Unsigned adds/carry guard at0x638; signed subs/overflow guard at0x580; scalar fmul at0x4d8. Only the entry and digest-qualified identity are exported by the Object; it has no interpreter or arithmetic-helper imports. Indirect calls in the entry are the explicit admission callback.",
+      "remaining_optimization": "Unoptimized code retains per-visit admission calls and redundant moves. This inspection identifies structure, not a measured hot-path cost or security-overhead ratio. Full-program binary analysis and optimization remain required.",
+      "local_disassembly": "tmp/pr-stack-evidence/linked-iteration-v230/program-object-disassembly.txt",
+      "disassembly_sha256": "d55a0aac2c587187c6d48e89b568e088496190a4055e30045c1c50bdba913893"
+    },
+    "local_receipt": "tmp/pr-stack-evidence/linked-iteration-v230/qualification.json",
+    "receipt_sha256": "a308117c06c55c5b3c075151e1a133298d5609cb1b1fdf5b7c9d4433fad50c67",
+    "local_log": "tmp/pr-stack-evidence/checked-aot-v230-linked-iteration.log",
+    "log_sha256": "a622ea20411966e24f75a932d708ab4e1de3d5d23c4212181c4560e4061ff81c",
+    "benchmark_measurements": 0,
+    "not_established": "This is fixed scalar literal-loop qualification only. Native element-count matrices, aggregate carriers, comprehensions, FSM/lifecycle and resources, the full k-nucleotide workload, packed/streaming operations, release trusted/secured timings, optimized/configurable checked AOT, clean review and full CI remain unfinished."
+  },
+  "resident_radix_run_and_frame_followup": {
+    "as_of_utc": "2026-10-18T08:15:16Z",
+    "status": "ORIGINAL_AND_DECODED_100_AND_400_BASE_LIBRARY_QUALIFICATION_PASSES_NOT_FULL_BENCHMARK",
+    "tested_base": "67811ac603d86a6e35668625f564dfb4269f6fce",
+    "tested_implementation_diff_sha256": "6806e63ece940d75251a221b0b628f79405f97c43d486653742f457f31557d02",
+    "source_files_sha256": {
+      "src/engine/src/intrinsics/map_ops.rs": "b1ec84588f612068db49df996de1c98cacb54df86c56bb3eb973ec60455722a0",
+      "src/engine/src/resident/map_ops.rs": "1525497c541361d4ccd7d583efeb03c1554eaba8574a491c555794967b88eedc",
+      "src/stdlib/tests/map_source.rs": "dba264eb9bfa9c8aa33d342a79dd0b1ec661cebf929ed2447781d495bd847110",
+      "src/stdlib/tests/knucleotide_record_source.rs": "0648f1607d63832047daa60aba0c80f77d73bf1e53757a5742e4f62469380b80"
+    },
+    "diagnostic": {
+      "result": "The unchanged 400-base original artifact requested ComparisonWork=65544/65536. The final rejected request came from memory node143; histogram node144 had already requested11859 and repeated numeric comparison nodes137/139 requested17451 each. Temporary per-node instrumentation was removed; budget.rs was restored to SHA2564c00f39d9ff6bf5e76ef892f694704fec519aae940daebb4c81a72f5c5d76f46.",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v231-resident-comparison-profile.log",
+      "instrumentation_limits_or_decisions_changed": false
+    },
+    "changes": [
+      "Iterative byte radix sorting retains equal-key run starts when terminal or singleton buckets are resolved. Its existing scratch buffer carries markers, then compacts to sorted run starts. Histogram construction no longer performs a second String-pair equality pass; only the reservation for that removed pass is eliminated.",
+      "All buffers and16*n+1024 setup/compaction work are admitted before allocation/use. Each visited range admits64*count+64 compute before reading any key. Two symbol passes, index copies, occupied-bitset scans, at most count bucket visits, marker writes and frame scheduling are bounded by that charge. Every frame has at least two keys, so cumulative frame charges are at most96*(bytes+n), within the previous complete worst-case bound. Singleton suffixes are not visited or billed as if scanned.",
+      "The same incremental ResidentBudgetMeter carries every admitted frame into final admission. Core canonical finalization, output equality, full memory/node/clone reservations, shared control accounting and default limits remain. Actual admission errors propagate unchanged; there is no refund, reset or independent allowance.",
+      "The stale merge-sort-derived denial input in map_source is replaced by an input exceeding the remaining real finalization comparison reservation. The test now checks the exact ComparisonWork denial, unchanged prior output and recovery. Managed admission/allocation failure injection remains exercised."
+    ],
+    "intermediate_run": {
+      "result": "Run markers alone removed the earlier comparison rejection, but the unchanged400-base case then requested ComputeWork=18034397/16777216. The intermediate map_source denial expectation also exposed the stale merge-sort boundary; neither failure was ignored.",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v232-radix-run-boundaries.log",
+      "log_sha256": "b3acc3c26bdf873e9d23d3b647e45f84f4524d8233742354d603fe942a0e40c5"
+    },
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-radix-run-boundaries-v233.zsh",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v233-radix-run-boundaries.log",
+      "log_sha256": "f51bc214655f238dbe63f08ebf75a1665de62facd68819339efb334cc73aa576",
+      "source_unchanged_through_run": true,
+      "serial_locked_offline_debug_tests": true,
+      "format_check": "PASS",
+      "engine_unit_methods": 743,
+      "integration_methods": { "knucleotide_record_source": 5, "map_source": 7, "map_keys_comprehensions": 3, "pure_text_managed": 4 },
+      "ci_contract_methods": 76,
+      "exit_code": 0,
+      "run_marker_coverage": "Independent sorted-key, boundary and BTreeMap count oracles cover empty, singleton, duplicate, prefix, NUL, Unicode, deterministic varied and40000-byte common-prefix cases. Admission callback tests reject before first/later key reads, then reuse the same scratch for a successful retry; singleton suffixes incur no later frame charge.",
+      "workload": "The complete knucleotide_record_source target passes. Both original and decoded artifacts produce exact independent output for4,100,400 and4 bases in sequence. Both reject4000 bases at the unchanged65536 ComparisonWork limit without advancing published epoch or changing output, then recover with exact mixed-case8-base output.",
+      "boundary": "Library execution of the actual ordinary algorithm with only provider bindings/delivery removed by the existing test helper. Actual CLI/resource lifecycle and full-program native execution are separate, still unqualified routes."
+    },
+    "default_limits_changed": false,
+    "benchmark_program_algorithm_changed": false,
+    "benchmark_samples": 0,
+    "not_established": "Full125-million-base input, actual changed-source CLI/resource execution, whole-program canonical AOT, packed/streaming support, same-binary release trusted/secured timings, full-program binary/hot-path analysis, optimized/configurable checked AOT, clean review or complete green CI."
+  },
+  "release_cli_resource_route_qualification": {
+    "as_of_utc": "2026-10-18T09:19:00Z",
+    "status": "PASS_SMALL_RELEASE_RESIDENT_HOST_CASES_NOT_AOT_OR_BENCHMARK",
+    "source_commit": "e072b15570cdccbc59bed91939151cb3b2c92478",
+    "source_tree": "991f39003b8c00720f3b947a8bc27c73b1ac64e6",
+    "clean_source_and_binary_unchanged_through_run": true,
+    "program": "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+    "program_sha256": "503a0a315d7b6e30de5d10561e865cd901883b8f32985fee9617f47cd02f4de0",
+    "build": {
+      "command": "cargo +nightly-2026-03-03 build --release --locked --offline -j1 -p mech --bin mech --no-default-features --features run,full_compiler,pretty_print",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v235-release-cli-build.log",
+      "log_sha256": "b1a58a24e4cde483bb1fdc264ea3d6c0927677882234f194d2e24e4a768a7055",
+      "exit_code": 0,
+      "binary_sha256": "c2f6b5fb9e203590bf8d1c1068c787f498f69d859f175fd55521ad6f3300ad08",
+      "preserved_binary": "tmp/pr-stack-evidence/mech-release-e072b155-c2f6b5fb.bin"
+    },
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-cli-route-v235.cjs",
+      "driver_sha256": "bf198d0237bb9c70fe3220fe4801c5226a48006327fd8e201fea696467b04624",
+      "local_receipt": "tmp/pr-stack-evidence/cli-route-v235-yAnYGJ/qualification.json",
+      "receipt_sha256": "c60e2c0bb7b9d2ea6b8147ab3a1d4ced777e7c0ee581fe4c3d9a097501527bd4",
+      "exit_code": 0,
+      "fresh_process_cases": 10,
+      "successful_cases": [
+        "Exact complete output for periodic4,100 and400-base inputs",
+        "Mixed-case CRLF input excludes a THREEX record",
+        "Selected terminal record without trailing newline",
+        "Fresh process produces exact output after all denial cases"
+      ],
+      "expected_denials": [
+        "Missing explicit stdin capability",
+        "Missing explicit stdout capability",
+        "Missing explicit source filesystem grant",
+        "4000 bases exceed unchanged65536 ComparisonWork allowance before application output"
+      ],
+      "oracle": "Independent JavaScript substring-count oracle, complete stdout including CLI prefix and final-value echo, empty success stderr and exit0. Every success reports require-resident, resident-external, requirements2, observations1, effects3, accepted1 and rejected0 at the same program revision.",
+      "boundary": "Actual fresh release CLI process loads config/source, admits explicit capabilities, reads real stdin, executes the unchanged complete ordinary algorithm with provider bindings and delivery expressions retained, flushes all stdout and exits. Default capability/cwd grants are disabled; no inherited MECH_* overrides, trusted bypass or quota changes."
+    },
+    "preceding_debug_result": "The independently qualified debug CLI passed4 bases but rejected100 bases at publication because turn_duration_ms requested1449 against the unchanged1000 limit. It was not retried with a relaxed timer; release qualification used the same program, grants and default limits.",
+    "benchmark_samples": 0,
+    "not_established": "Full125-million-base input, native whole-program AOT, canonical packed/streaming execution, same-binary trusted/secured timing, security overhead, full-program binary/hot-path analysis, optimized/configurable checked AOT, clean review or complete green CI."
+  },
+  "selected_native_collection_template_qualification": {
+    "as_of_utc": "2026-10-18T09:56:19Z",
+    "status": "PASS_SELECTED_ROOT_AND_LEXICAL_METADATA_NOT_EXECUTION",
+    "qualified_source_commit": "a484c36f9831f37bc30db460fd36798ecdee3359",
+    "tested_base": "e072b15570cdccbc59bed91939151cb3b2c92478",
+    "tested_tracked_diff_sha256": "a0657dac42cb6531a02ec9f7e29ac9f6e73fa717e83695cd8720dba6144d16ae",
+    "new_source_files_sha256": {
+      "src/core/tests/resident_factory_lowering_attachment.rs": "12a5690e900bd7c982ad70a6d970ef4e0c7c0afa6959680a2fcc217c3e001914",
+      "src/engine/src/resident/native_collection_semantics.rs": "1e04a97d599356f26b522e5d7b91ec34d93ab5c325a51718992200ff1803c864",
+      "src/engine/src/resident/general/native_collection_templates.rs": "ffc2897397a98b6f0d3d7b1472878e70f31d409e28543dd61594e715a04b5c47",
+      "src/stdlib/tests/native_collection_templates.rs": "340fd8a06b7e99fe173fb5d10a398be919c16ffad0c0098be7fafca4accf4dad"
+    },
+    "changes": [
+      "Constructor-private selected-factory attachment is retained by unchanged clones and invalidated by every semantic/key/cost replacement, including replacement with the same public value. Public descriptive opcodes are not authority.",
+      "Seven maintained String/matrix/map leaves are certified at actual canonical root and lexical Match/Activation, comprehension and iteration sites. Lexical sources retain original block/local/parameter identities, actual symbolic schemas, exact contracts and selected factory provenance. No binder, preflight, executor, parser or value folding runs during template selection.",
+      "Resident-only builds do not allocate unused native factory attachments. Native opcode fields and their consumer are feature-gated without lint suppressions.",
+      "Resident radix helpers are feature-gated for resident/test builds; the fixed-workspace constant is resident-only. Iteration reuses the existing raw entry function-pointer type, while its three real compiler/runtime/linked unsafe boundaries have exact reviewed file-specific invariants. ABI versions and identities remain distinct."
+    ],
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-native-collection-ci-v240.zsh",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v240-native-collection-ci.log",
+      "log_sha256": "3aaf44e3895957f70939ff2bd57d076f9b56a101821c8bf5540e71ebcbe6ba5e",
+      "exit_code": 0,
+      "source_unchanged_through_run": true,
+      "format_warning_policy_unsafe_audit_and_negative_audit_fixtures": "PASS",
+      "ci_contract_methods": 77,
+      "core_factory_methods": 4,
+      "engine_unit_methods": 745,
+      "native_lowering_methods": 35,
+      "resident_integration_methods": 22,
+      "compile_checks": "All stdlib native-feature integration targets; nonresident engine full_runtime and stdlib full_compiler; resident-only engine full_runtime,resident-artifact.",
+      "negative_coverage": "Original/decoded artifacts reject replacement factories, forged public opcodes, altered contracts/schemas and fabricated lexical sites without invoking the replacement binder. Existing full workload denial/publication/recovery and constructor-replacement tests remain active."
+    },
+    "preceding_failures": "v237 exposed a mismatched turn-shaped versus fixed-shape Match test fixture; v239 exposed one remaining old public factory-field test access. Both were corrected, not ignored. Static inspection also found an unaudited conditional warning suppression, which was removed before the final full qualification.",
+    "ci_diagnosis": "Run39110851697 tested integration merge210336ea106084934c848f3c8a5f72b354f049d4, with parents89f417d5317981516666368c3f9f457ffe165138 ande072b15570cdccbc59bed91939151cb3b2c92478. The different68c02e42f7b0ca360fef82d45b55ae0ae911cfea exact-ref lines are contract-test fixture output, not the job checkout. That run failed the resident-disabled dead-code builds and iteration unsafe audit; local checks for both now pass. Remote CI on the correction is still required.",
+    "not_established": "These are selected-leaf templates, not complete mixed-value NativeHost call descriptors, runtime library calls, native comprehensions/FSM/resource I/O, whole-program AOT, full-size packed/streaming execution, benchmark timing, clean review or complete green CI."
+  },
+  "native_canonical_value_transport_qualification": {
+    "as_of_utc": "2026-10-18T10:10:33Z",
+    "status": "PASS_MANAGED_STORAGE_AND_EXISTING_NATIVE_REGRESSIONS_NOT_COLLECTION_CALLS",
+    "qualified_source_commit": "b6ee04a379e196b0a2c786ed4533002bf52df30f",
+    "tested_base": "865e5d97a71c31c733e402e5683492ed1c200ea9",
+    "tested_tracked_diff_sha256": "daf94af8642a16477ddd18d2cda214e71e4a3921fa5074e6fed2bfad1730562d",
+    "new_source_files_sha256": {
+      "hosts/gpu/src/native_artifact/values.rs": "3365a02248a7c568400740d366e21cb80ae382d777601891beed16f5b6e203a4",
+      "hosts/gpu/src/native_artifact/work.rs": "d47fe099df5381f5ec9548d8b736c241a788cd35a983628b21c813d6e49f9a48"
+    },
+    "changes": [
+      "Canonical immutable values and generation lanes occupy actual typed planned Host arenas on the caller's existing finite account. Core projection independently checks slot type, layout and admitted backing. The original private U64 transport now uses the same generic arena helper.",
+      "Only already fully admitted same-account values with exact schema ID/key enter a slot. Retaining them does not import, unpack or clone payloads. Slot replacement/take validates all fallible conditions before mutation; opaque domain/slot/generation handles reject cross-arena substitution, stale reuse and generation wrap.",
+      "One non-resettable work ledger accumulates setup/access/retirement work. Each arena is bound to that exact ledger's private unique identity, so a fresh meter cannot renew its allowance. Retained-root retirement is conservatively prepaid before ownership is cloned. The frozen scalar invocation uses the same ledger with its original charges; no ABI or default limit changes."
+    ],
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-native-value-storage-v242.zsh",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v242-native-value-storage.log",
+      "log_sha256": "119aadbf926a419f1c12bb49fa3daa9cc772246fcca34b07d7b30a5c95ef6247",
+      "exit_code": 0,
+      "source_unchanged_through_run": true,
+      "format_warning_policy_unsafe_audit_runtime_only_build": "PASS",
+      "private_runtime_methods": 18,
+      "new_methods": "Five canonical storage methods and two shared work-ledger methods, including actual String/map/max-U64 values, complete account release, wrong-schema/unadmitted/foreign-account rejection, stale/cross-arena handles, memory/transport/work denials, rejected fresh-ledger substitution and generation overflow.",
+      "native_execution_methods": { "scalar": 8, "i64": 4, "f64": 5, "casts": 4, "match": 8, "iteration": 10 },
+      "ignored_methods": "The existing explicit linked iteration process qualification is intentionally ignored in the default native target. This run did not execute it and does not replace its earlier pinned linked receipt.",
+      "ci_contract_methods": 77
+    },
+    "not_established": "Current-visit mixed-value NativeHost call descriptors, actual native library calls, native comprehensions/FSM/resource lifecycle, full-size packed/streaming execution, new linked-process qualification, benchmarks, optimized/configurable whole-program AOT or complete green CI/clean review."
+  },
+  "canonical_string_leaf_transport_qualification": {
+    "as_of_utc": "2026-10-18T10:48:58Z",
+    "status": "PASS_SHARED_LIBRARY_LEAVES_NOT_NATIVE_PROGRAM_EXECUTION",
+    "qualified_source_commit": "3f56954a4ea7b104c7f622ebd6a16726ef421d0f",
+    "integrated_source_commit": "27a1197f336b8f7c24bd441bf72214a24fb8ac72",
+    "tested_base": "a484c36f9831f37bc30db460fd36798ecdee3359",
+    "tested_tracked_diff_sha256": "f2d9b27cc1a1e7990db7c78ed5473b085b98070d3b72fe08d68f47b0f31a1cad",
+    "new_test_source_sha256": "22815e34005d3b54202d0d39388fd769ab79c25e8bc18b9cf78a92c17c8dc965",
+    "changes": "The actual maintained text/lines, text/join, sequence/length and number/format factories now accept canonical scalar String/numeric transport where needed, and join/format can produce canonical String results. Dense paths retain the same algorithms and policies. Canonical String inputs are borrowed without dense-copy bridges; ID/key and representation substitution checks precede use. Canonical outputs reserve their real construction/finalization/temporary/equality demand before publication. No second program evaluator or workload-sized Rust implementation is introduced.",
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-canonical-text-final-v247.zsh",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v247-canonical-text-final.log",
+      "log_sha256": "c630f82c166dde71905eb1b509a288a491f0a9dfdf89daf9ddc4cd2d949f9d9c",
+      "exit_code": 0,
+      "source_unchanged_through_run": true,
+      "new_library_methods": 4,
+      "engine_unit_methods": 749,
+      "integration_methods": { "native_collection_templates": 4, "knucleotide_record_source": 5, "map_source": 7, "map_keys_comprehensions": 3, "pure_text_managed": 4 },
+      "format_warning_policy_and_resident_only_build": "PASS",
+      "coverage": "All seven maintained text/length/format/histogram/key/value leaves compose using canonical values. Exact U64 maxima, aligned counts, Unicode grapheme length, forged keys, wrong kinds, dense substitution, unchanged output, error recovery, percentage rounding, negative zero and invalid precision are checked. The complete unchanged ordinary 100/400-base original/decoded workload and its denial/publication/recovery contract remain green."
+    },
+    "preceding_environmental_failure": "v243 passed three new methods and748 engine units but LLVM failed while compiling mech-math because the disk filled. After recoverably archiving only exact inactive old test executables, v246 completed all23 integrations and checks on the same unchanged source. v247 then independently qualifies the final source with additional canonical F64 coverage and preserved legacy dense-layout acceptance.",
+    "default_limits_changed": false,
+    "benchmark_program_algorithm_changed": false,
+    "not_established": "These are library-kernel transport tests, not complete NativeHost call-plan or generated-program execution. Native mixed control/comprehensions/FSM/resources, packed/streaming full125M support, linked lifecycle/timing, optimization/configuration and complete green CI remain required."
+  },
+  "native_shared_library_work_qualification": {
+    "as_of_utc": "2026-10-18T11:55:57Z",
+    "status": "PASS_SHARED_NATIVE_LIBRARY_ACCOUNT_NOT_GENERATED_LIBRARY_CALLS",
+    "qualified_source_commit": "3b64240f1321ff8ab6d24b3a1cc51fe5b7698d6e",
+    "tested_base": "67978915ed1bee74f1a4ffdc1fef670738658c1d",
+    "changes": [
+      "Maintained leaf observations and direct native scalar debits can use one shared, cumulative compute/comparison account. A nested caller cannot replace the active account, even with equal limits. Clones and repeated scopes retain spent work; restrictions only lower limits and failures are atomic.",
+      "The existing native scalar meter promotes lazily, transferring all already-spent work into the same account before any mixed library use. Scalar-only ABI storage and charges remain unchanged. Native metadata is admitted before allocation on the caller's finite memory account.",
+      "A successful value-arena construction or work promotion binds the invocation's memory identity. Both creation orders reject foreign accounts before allocation without changing existing values or renewing work. Failed construction retains spent work and does not prevent the original supported recovery path.",
+      "Resident whole-turn compute/comparison defaults remain strict even when a native caller has a larger explicit account. No resident cap, ordinary workload algorithm or scalar work-policy identity is changed."
+    ],
+    "full_qualification_before_final_gpu_memory_guard": {
+      "driver": "tmp/pr-stack-evidence/qualify-native-shared-work-v250.zsh",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v250-native-shared-work.log",
+      "log_sha256": "6ab496f90b22d2dbebaa98303a441e3884bcebc882f57e9e3e746b382d9b5577",
+      "tracked_diff_sha256": "6f230d5dd260a472200464180479a3724869c3c0d1c733be40d801133da66216",
+      "exit_code": 0,
+      "engine_unit_methods": 754,
+      "integration_methods": 23,
+      "private_native_methods": 22,
+      "native_execution_methods": 39,
+      "ci_contract_methods": 77,
+      "checks": "Formatting, resident-only and native-runtime-only compilation, unsafe-boundary audit and warning policy all pass. Four engine budget methods and one actual maintained-leaf method cover cumulative work, nested account refusal, strict resident defaults, one metadata owner and unchanged output on denial."
+    },
+    "final_gpu_guard_qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-native-shared-memory-v251.zsh",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v251-native-shared-memory.log",
+      "log_sha256": "b4f85cde58665ce527c389772e08ea463a3685055a3e3512507cc397ac424aa4",
+      "tracked_diff_sha256": "ca084d58aadb21889a01e046a0934f50d052e7ed039cb0922ab1eb2961cfba3f",
+      "exit_code": 0,
+      "private_native_methods": 24,
+      "native_execution_methods": 39,
+      "ci_contract_methods": 77,
+      "checks": "Formatting, native-runtime-only compilation, unsafe-boundary audit and warning policy all pass. The two additional real-arena tests cover both creation orders, stable live handles/counters, foreign-account refusal before work/allocation and complete account release. Engine source is unchanged from the passing754-unit/23-integration v250 gate."
+    },
+    "engine_source_sha256": {
+      "src/engine/src/resident/budget.rs": "464dd8dd690b88d1027293bd476192706a2823a057618dbd54c9d593fbfefeb3",
+      "src/engine/src/native_artifact/mod.rs": "bfdcce7b7b77d8a9813b1b0fdfa5a738d3caf84f16c2b05bc0141330819c8c43",
+      "src/engine/src/resident/canonical_text_tests.rs": "ca153d4f2d40e65b37d70e1cd2e05e8c35da23eaa34fc4b0d56397f6033229af"
+    },
+    "preceding_failures": "v248 failed compilation on a missing MemoryBudgetDimension import; v249 failed two test assertions that incorrectly required PartialEq on canonical Value/ValueData. Both are corrected, their failed logs remain failures, and the final source passes the independently pinned v250/v251 gates.",
+    "ignored_linked_qualifier": "The existing explicit linked iteration process qualifier remains ignored in these default native test invocations. These runs do not replace its historical pinned actual-linked receipt.",
+    "not_established": "Complete current-visit NativeHost library invocation, generated mixed-value control/comprehensions/FSM/resources, full125M packed/streaming execution, new linked lifecycle, benchmark timing, optimized/configurable whole-program AOT or complete green CI/fresh review. The separate call-binding worktree is not included in this source commit."
+  },
+  "native_library_invocation_qualification": {
+    "as_of_utc": "2026-10-18T13:36:17Z",
+    "status": "PASS_ACTUAL_MAINTAINED_LEAF_INVOCATION_NOT_GENERATED_PROGRAM_EXECUTION",
+    "qualified_source_commit": "27b9397cf1c516113ce5c273c13ce0f8ed9a0b0d",
+    "qualified_source_tree": "6d652c2e190a0d48d0b84f66eb0ffdda90b14f07",
+    "tested_base": "ca647c991b43e8bd13e25eb97db1701d912049af",
+    "tested_tracked_diff_sha256": "fa6043a8acb5772fbdfdc79f953d3f9333c0263f121c7058595ebe9846f9fd2b",
+    "new_invocation_source_sha256": "f845b5cfe6cf941743d17e9279c0d505eadd5eed48566317fb59f0c26f5516cd",
+    "source_commit_verification": "The committed binary diff excluding the separately pinned new invocation file exactly matches the tracked diff tested throughout v261. The new file hash also matches. No compiled source changed during the serial qualification.",
+    "implementation": [
+      "Constructor-private NativeCollectionCall bindings now invoke their actual selected maintained text/lines, text/join, sequence/length, number/format, map/histogram, map/keys and map/values leaves. Original and decoded canonical artifacts use the same factories; there is no graph scheduler, second program evaluator or workload-sized Rust bridge.",
+      "Input and prior-output schema IDs, keys, actual current shape parameters and complete same-account immutable payload ownership are checked. Unadmitted or foreign-account values cannot be imported implicitly. Live footprints feed the actual NativeHost CallMemoryPlan and its real allocation family, not a detached or relabeled ResidentCpu plan.",
+      "The invocation account supplies relative finite per-call work caps without refilling root work. Metadata is precharged and its temporary envelope is checked before private owner construction; planner/descriptor/fact-map coexistence is reserved before allocation. Measured traversal and candidate construction remain under the actual call policy and shared memory account.",
+      "A private candidate uses the existing shared payload admission and maintained kernel. Failure preserves the caller's published root; complete same-account ownership transfer precedes successful publication. Successful semantic equality follows the maintained leaf's existing behavior and does not promise root pointer identity."
+    ],
+    "review_corrections": {
+      "4306949290": "Repeated work-account promotion commits its tighter comparison limit and eight-unit setup debit atomically. Denial leaves existing limits, counters and memory unchanged, including an enclosing per-call cap.",
+      "4306949295": "Independent native entry is rejected while a library invocation account is active, before transport allocation or output changes. Scalar, Match and iteration execution now use the same NativeWorkMeter protection. New and preexisting unpromoted meters cannot bypass the active account; legitimate matching promoted work still shares it.",
+      "4306949299": "Each of all seven maintained leaf entries starts a fresh work-observation scope while retaining the same cumulative account. Two calls inside one outer scope charge the sum of their work, not the maximum."
+    },
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-native-review-final-v261.zsh",
+      "driver_sha256": "a71d0f4a97f049708e19c625d1a857049fd3c707efd95af604c94b68485937dd",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v261-native-review-final.log",
+      "log_sha256": "085ac526e2ca84ea91ab69de5848ec2a1b32aebe9848b4393840682a6e3b4bd1",
+      "exit_code": 0,
+      "engine_unit_methods": 757,
+      "stdlib_integration_methods": { "native_collection_templates": 9, "knucleotide_record_source": 5, "map_source": 7, "map_keys_comprehensions": 3, "pure_text_managed": 4 },
+      "private_native_methods": 26,
+      "native_execution_methods": { "scalar": 9, "i64": 4, "f64": 5, "casts": 4, "match": 9, "iteration": 11 },
+      "ci_contract_methods": 151,
+      "other_checks": "Formatting, native-runtime-only and resident-only compilation, unsafe-boundary audit, warning policy, diff check and exact source immutability all pass.",
+      "new_coverage": "All seven actual leaf families compose with same-account results and release their memory. Reused bindings, current-shape substitution, wrong precision, root work and tighter per-call policy denial, full global memory, atomic error publication and same-account recovery are checked through original and decoded artifacts. Actual scalar/Match/iteration JIT nested entries reject absent, same and foreign memory accounts without work refill or publication, then recover outside the scope.",
+      "ignored_linked_qualifier": "One explicit linked iteration qualifier remains intentionally ignored in the default integration run. No new actual linked-process execution, release timing or benchmark sample is credited by v261."
+    },
+    "preceding_failures": "v253 passed757 engine units before test-only Box<str> assertions failed to compile; those borrows were corrected. v254 exhausted disk while building mech-math, before native tests ran. v258 rejected a zero-cap test fixture during legitimate fixed-metadata binding, so the invocation test now uses valid constructible tighter caps. v259 exposed an incorrect test assumption about root pointer identity after a successful unchanged result; the maintained semantic equality contract is now asserted. All failed logs remain failures. The final same-source v260 gate passes all9 binding/invocation methods, followed by full v261 qualification.",
+    "default_limits_changed": false,
+    "benchmark_program_algorithm_changed": false,
+    "not_established": "The generated caller still needs actual current-visit mixed-value CFG/library calls, native comprehensions/FSM/typed resource lifecycle and whole-program canonical AOT. General packed/streaming all-seven-histogram execution, full125M workload, new linked lifecycle, same-binary trusted/secured timings, binary/hot-path/dependency analysis and optimized/configurable checked AOT remain unfinished. Local qualification does not establish fresh clean review or complete GitHub CI."
+  },
+  "mixed_native_control_lowering_qualification": {
+    "as_of_utc": "2026-10-18T14:21:24Z",
+    "status": "PASS_MIXED_CONTROL_LOWERING_AND_SHARED_PROOF_NOT_NATIVE_MIXED_EXECUTION",
+    "qualified_source_commit": "18644b5437ff07520dcbbb9b39e8612e1008cc6c",
+    "qualified_source_tree": "14965ab6cfc2733ce18aa0beef43bbf08ad88e88",
+    "tested_base": "373b748a42087ced4d310ccfd7cd09f5f43f8414",
+    "tested_tracked_diff_sha256": "c99d415bcec9101607a8a98a315959aea99f27e1de41eee982ac38c670bb0642",
+    "new_program_source_sha256": "0fadfa2e3c9f8be5eb716d32e43c3a53b4358e01e657b3946515227fe99d4444",
+    "source_verification": "Both serial gates freeze the same source. After commit, its binary diff excluding the separately pinned new program.rs exactly matches the tested tracked diff, and the new file hash matches too.",
+    "implementation": [
+      "NativeProgramArtifactPlan is an immutable compiler view of the existing canonical ProgramArtifact. The SAME native Match/iteration Builder now lowers scalar and managed values, rather than introducing another source compiler, serialized program format, graph lowerer or evaluator. Legacy scalar views convert through that same builder and preserve their strict scalar types.",
+      "Mixed types retain exact symbolic canonical schemas, real immutable constants and actual selected root/lexical library provenance. Managed String/matrix/map values are not mislabeled as integer words or one-by-one semantic shapes. All seven maintained library families can coexist with certified scalar arithmetic in the lowered graph.",
+      "One shared current-visit and structurally owned-loop proof checks both scalar and mixed views. Library operands must be current definitions; schema IDs, complete symbolic definitions, exact source site and revision are checked. Branch joins, nested managed carriers, ancestor captures and per-visit local definitions use the same ownership/definition analysis and existing depth/analysis bounds.",
+      "Scalar native interfaces do not gain managed transport implicitly: scalar-plan conversion, the scalar proof and scalar emission reject managed LibraryCall actions. Valid scalar CFG identity encodings and ABI1/2/3 are unchanged. There is no new mixed-value execution ABI or generated library-call execution in this commit."
+    ],
+    "lowering_and_proof_gate": {
+      "driver": "tmp/pr-stack-evidence/qualify-mixed-control-v263.zsh",
+      "driver_sha256": "0360e045bd0a84bc595ccb343070f437b0fb1477a8d346f6408e58e67ff23d36",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v263-mixed-control.log",
+      "log_sha256": "a4cc0d0fd8e7c71fa56360e5f038b82a5c1e850a0c4e3ff7f72d7d2358303a33",
+      "exit_code": 0,
+      "engine_unit_methods": 758,
+      "stdlib_integration_methods": { "native_collection_templates": 12, "native_artifact_iteration_lowering": 5, "native_artifact_match_lowering": 5 },
+      "ci_contract_methods": 151,
+      "other_checks": "Formatting, native-runtime-only and canonical-native compilation, unsafe/warning audits, diff check and source immutability pass.",
+      "new_coverage": "Original and decoded artifacts lower all seven actual library families plus scalar arithmetic; lexical length/format calls remain inside their real Match/iteration scope; managed String loop carriers and source-site identities are retained. Replacement factories are rejected without invoking their binders. The engine regression rejects stale managed results, forged carrier ownership and backedges bypassing the declared header, including nested zero-count cases."
+    },
+    "execution_compatibility_gate": {
+      "driver": "tmp/pr-stack-evidence/qualify-mixed-native-execution-v264.zsh",
+      "driver_sha256": "77958f50fbb30d6ff49a0ff8e533450b6fe208ff08c18dc49d2cd051ed8d7ec4",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v264-mixed-native-execution.log",
+      "log_sha256": "4a23e15c44e9ac195e90979a75e8b88ed9bb7c64a444192bbf23191e4c341c7b",
+      "exit_code": 0,
+      "private_native_methods": 26,
+      "native_execution_methods": { "scalar": 9, "i64": 4, "f64": 5, "casts": 4, "match": 9, "iteration": 11 },
+      "ordinary_workload_and_leaf_methods": { "knucleotide_record_source": 5, "map_source": 7, "map_keys_comprehensions": 3, "pure_text_managed": 4 },
+      "other_checks": "Resident-only compilation, formatting, diff check and exact source immutability pass. The unchanged ordinary100/400-base workload, exact original/decoded output, denial/publication/recovery behavior and all existing scalar native execution contracts remain green. Separately, the actual repository memory-planner baseline and synthetic-plan mutation regressions both pass (2 methods).",
+      "ignored_linked_qualifier": "The one explicit linked iteration process qualifier remains intentionally ignored in this default run. No new actual linked-process run or benchmark timing is credited."
+    },
+    "default_limits_changed": false,
+    "benchmark_program_algorithm_changed": false,
+    "not_established": "The new mixed control plan is NOT emitted or executed yet. Generated admitted library callbacks, current-geometry binding for lexical calls, managed transport through actual native control, element-count matrices, comprehensions, FSM and typed resource lifecycle remain required. General packed/streaming all-seven-histogram support, full125M execution, same-executable trusted/secured release samples, binary/hot-path/dependency analysis, optimization/configuration and complete exact-head GitHub CI/fresh review also remain unfinished."
+  },
+  "lexical_native_library_binding_qualification": {
+    "as_of_utc": "2026-10-18T15:03:01Z",
+    "status": "PASS_SHARED_ROOT_LEXICAL_CALL_BOUNDARY_NOT_GENERATED_MIXED_EXECUTION",
+    "qualified_source_commit": "7f3a1936dae4b677ff3660e901d9ad1e960b6033",
+    "qualified_source_tree": "d914aaf9c153fd74b6097a0466cde9d4cd503567",
+    "tested_base": "f6446818c71d77e9d6412693eaae1c3a2d92b962",
+    "tested_tracked_diff_sha256": "d67326c008f73444a046f43d0e3d8bd2185c37f0681660e6fc5d031fb364400d",
+    "source_verification": "One serial pipeline froze the complete tracked diff through its terminal exit. The committed binary diff matches that exact tested hash. This qualification record is added separately after code qualification.",
+    "implementation": [
+      "Root and genuine lexical library sites use the SAME NativeCollectionCall binding and invocation implementation. NativeProgramLibraryTemplate retains the full selected root/lexical template; its origin and implementation-memory class feed the existing actual NativeHost BoundCall/planner/kernel boundary. No second leaf executor, source compiler, graph dispatcher or scheduling loop is introduced.",
+      "bind_native_collection_lexical resolves the actual canonical declaration tree before binding. bind_native_program_library_call rederives the current selected site and requires full retained-template equality, including revision, scope, sources, destination, canonical schemas, contract, selected implementation and memory class. A replaced factory is rejected before its binder runs; a properly cloned maintained catalog remains accepted.",
+      "Actual lexical calls reuse the existing same-account input/output ownership checks, finite call policy, cumulative work ledger, payload scope, current geometry, planning, private candidate and atomic publication/recovery. The template accessor now exposes the unified program template; root-only source/target details remain available through its root accessor.",
+      "These are binding/setup APIs: they allocate descriptor/catalog metadata. Generated runtime callers still must pre-admit that metadata before binding at a live geometry. This change does not introduce a generated mixed-value ABI, emit managed moves/library calls, or execute a whole program through Rust control flow."
+    ],
+    "gate": {
+      "driver": "tmp/pr-stack-evidence/qualify-lexical-native-calls-v270.zsh",
+      "driver_sha256": "04843afe99fbf1411b50325238f907ccf94327cd14094dab39dbb9d09444aa61",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v270-lexical-calls.log",
+      "log_sha256": "c33788f2e693d56ed13a5e86ffa20dc9ba7b7102a847a261de1d98517e895bec",
+      "exit_code": 0,
+      "engine_unit_methods": 758,
+      "stdlib_integration_methods": { "native_collection_templates": 13, "native_artifact_iteration_lowering": 5, "native_artifact_match_lowering": 5, "knucleotide_record_source": 5, "map_source": 7, "map_keys_comprehensions": 3, "pure_text_managed": 4 },
+      "ci_contract_methods": 152,
+      "memory_planner_baseline_and_mutation_methods": 2,
+      "other_checks": "Formatting, runtime-only native closure, canonical-native compilation, resident-only compilation, unsafe and warning audits, diff checks and source immutability pass.",
+      "new_coverage": "Original and decoded root and counted-function artifacts bind all seven real library families at actual canonical sites. Their NativeHost plans and complete retained CFG templates agree. All seven real lexical factories execute with same-account output ownership and full teardown; changed data-dependent shapes, memory/work/temporary denial, unadmitted or foreign inputs, unchanged prior publication and same-account recovery use the existing shared invocation implementation. These tests do not drive a generated whole-program CFG."
+    },
+    "default_limits_changed": false,
+    "benchmark_program_algorithm_changed": false,
+    "new_linked_execution_or_benchmark_samples": 0,
+    "not_established": "Mixed managed control still needs actual shared native emission and admitted callbacks/transport, including pre-admitted live-shape binding and scalar/canonical construction. Comprehensions, FSM, element-count matrices and typed resource lifecycle still need native execution. General packed/streaming all-seven-histogram operations, the full125M workload, same-executable trusted/secured release timing, binary/hot-path/dependency analysis, optimization/configuration and final-head clean review/full green GitHub CI remain required."
+  },
+  "prepared_native_library_call_qualification": {
+    "as_of_utc": "2026-10-18T15:49:54Z",
+    "status": "PASS_PRE_ADMITTED_LIVE_LIBRARY_BINDING_NOT_GENERATED_PROGRAM_EXECUTION",
+    "qualified_source_commit": "e03fad5939d51566b5cc87e88912040ce83e7445",
+    "qualified_source_tree": "31716e211960d1803cd9b709af3ff6ba46fd4132",
+    "tested_base": "a6a806fda21def95b0d6cbd1019bc74c33bc4583",
+    "tested_tracked_diff_sha256": "7d86e16dbc4690c42b9dbaae5719b0c6f62e6ebf3a725dc57a4d9c1deef9d796",
+    "source_verification": "The final serial qualification froze the entire tracked diff, including the new prepared-call source, through terminal exit0. The committed binary diff matches this exact tested hash. The qualification document is added separately afterward.",
+    "implementation": [
+      "Compiler/setup preparation revalidates the genuine canonical site and current private-witness selection, then retains its exact template, immutable schemas and actual maintained factory. Live invocation performs no ProgramArtifact declaration search or FunctionCatalog lookup; admitted schema/plan/kernel construction still occurs.",
+      "Before constructing runtime argument/shape vectors, template/schema clones, plans or the kernel, invoke_current charges cached construction/retirement work and reserves the complete binding metadata envelope on the existing invocation account. The envelope shares the maintained call metadata model and a sealed-family structural plan-entry bound; numeric extents do not create plan entries, while arbitrary schema/rank metadata is covered by the full schema clone bound.",
+      "The same outer finite call scope covers binding AND the existing NativeCollectionCall invocation. Its nested work scope cannot renew the relative allowance. The still-live binding reservation is subtracted from the inner temporary policy, so coexistence counts toward both the per-call temporary cap and the shared memory account.",
+      "All leaf execution, same-account values, current geometry, actual NativeHost planning, private payload construction, ownership transfer, atomic publication and recovery remain in the existing shared binder/invocation implementation. No alternate graph executor, Rust scheduling loop, source compiler or scalar ABI change is introduced."
+    ],
+    "gate": {
+      "driver": "tmp/pr-stack-evidence/qualify-prepared-native-calls-v276.zsh",
+      "driver_sha256": "073984bd1a3d86309410004c79251609dc5dc3e82cb84af5b64d25531d8e6b2f",
+      "local_log": "tmp/pr-stack-evidence/checked-aot-v276-prepared-calls.log",
+      "log_sha256": "085a8c940cb76879e7c248aa8972c57a7274cfc699bd8fe548464630f10cfdd9",
+      "exit_code": 0,
+      "engine_unit_methods": 758,
+      "stdlib_integration_methods": { "native_collection_templates": 14, "native_artifact_iteration_lowering": 5, "native_artifact_match_lowering": 5, "knucleotide_record_source": 5, "map_source": 7, "map_keys_comprehensions": 3, "pure_text_managed": 4 },
+      "ci_contract_methods": 153,
+      "memory_planner_baseline_and_mutation_methods": 2,
+      "other_checks": "Formatting, compiler precheck, runtime-only/native/resident-only builds, unsafe/warning audits, source immutability and diff checks pass.",
+      "new_coverage": "Original/decoded root and lexical calls execute all seven maintained families through both existing and prepared paths. Repeated prepared use follows changed actual shapes. Binding that consumes the complete work allowance cannot refill it for the leaf. Separate checks deny before binding, deny when binding alone fits but binding plus invocation does not fit memory or temporary policy, retain prior output and recover on the same account. Unadmitted/foreign inputs and an independent nested work account are rejected. Actual NativeHost plan-entry counts satisfy the structural bound for all seven families at extents0/1/17/127."
+    },
+    "explicit_test_policy": "Prepared-path fixtures explicitly configure134217728 compute-work units and128MiB temporary capacity to cover conservative live binding; their enclosing account remains finite. This is not a change to any product default or a resident-limit qualification. Existing ordinary100/400-base and denial/recovery tests retain their original limits.",
+    "default_limits_changed": false,
+    "benchmark_program_algorithm_changed": false,
+    "new_linked_execution_or_benchmark_samples": 0,
+    "not_established": "The prepared entry point is not yet called by generated mixed native code. Shared CFG emission, admitted managed moves, scalar/canonical construction and constant ownership, comprehensions/FSM/element-count matrices/typed resource lifecycle, general packed/streaming all-seven-histogram support, full125M execution, same-binary trusted/secured release samples, binary/hot-path/dependency analysis and optimized/configurable checked AOT remain required. Metadata bounds are conservative and live binding is not cached; no performance improvement is claimed. Fresh final-head review and full GitHub CI remain required."
+  },
+  "generated_mixed_program_execution_qualification": {
+    "status": "GENERATED_MIXED_CFG_EXECUTES_NOT_FULL_PROGRAM_OR_BENCHMARK_QUALIFIED",
+    "source_commit": "6e11860ad3e4dcfd7c15c06fb0ef3034cfbba8ba",
+    "tested_base": "d2b5e6bf37824b8f47f74c3af525ca4c928aebdf",
+    "complete_frozen_diff_sha256": "48694b7bbbff63de3c3929b2682bf60bf78055afc59d1ed0b29e33b9429c6e1d",
+    "architecture": [
+      "The SAME iteration_compiler define_cfg pass emits scalar and mixed modes for both JIT and Object. The SAME scalar action/branch emitters and managed current-visit/progress checker remain authoritative. Generated code owns arithmetic, branches, carrier counters and real backedges; Rust does not schedule or interpret the graph.",
+      "Explicit ABI4 preserves the frozen scalar-frame prefix and adds a checked leaf/managed-move helper plus a disjoint private result word. Exact current-site/action-once checks select only the retained private-witness-derived maintained call. The helper receives scalar operand words directly rather than aliasing generated locals. Managed copies, carriers and private output slots use typed same-account NativeValueArena storage.",
+      "All control/setup/leaf/retirement work debits one non-refillable ledger. Seven finite library dimensions and a ManagedMemoryBudget are required. Constant ownership and scalar canonical construction use precharged work and pre-admitted bounds before wrappers/finalization. Prior-output retirement is prepaid; all typed outputs publish together only after complete success.",
+      "Runtime-only LinkedProgramArtifact rederives selection and exact Object identity against the actual artifact/catalog and shares the JIT invocation boundary. Its unsafe build-provenance obligation is explicit. This boundary has NOT yet been qualified by a newly linked mixed-program process. Object emission/identity are not credited as execution."
+    ],
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-generated-program-v280.zsh",
+      "driver_sha256": "4ff2460c184e2b2b77a886900c5cd73002312c25393894ba6a5a77c51ce34d7a",
+      "log": "tmp/pr-stack-evidence/checked-aot-v280-generated-program.log",
+      "log_sha256": "1aa6ee30e2b2008c20aa5edb0e35b31d7405f762cd102f66dd568307db26eb57",
+      "completed_utc": "2026-10-18T16:41:15Z",
+      "exit": 0,
+      "generated_mixed_integration_methods": 7,
+      "private_native_methods": 30,
+      "existing_scalar_control_execution_methods": 42,
+      "ci_contracts": 154,
+      "other": "Runtime-only build, unsafe-boundary audit, formatting, diff checks and source immutability pass. The existing explicitly ignored linked-iteration process qualifier was not rerun.",
+      "coverage": "Original/decoded canonical values match ordinary resident outputs for all seven actual root and lexical library families plus scalar arithmetic. Zero/nonzero managed loops, both Match arms, nested managed carriers and scalar captures execute. Arithmetic after a leaf and work/transport/library/memory-policy denial preserve every prior typed output and recover. Foreign ownership is rejected. Private tests reject wrong site/kind/result pointer, duplicate/omitted helpers, setup admission before entry, and independent entry under an active account; ABI4 prefix/lanes are checked."
+    },
+    "runtime_closure": {
+      "driver": "tmp/pr-stack-evidence/qualify-generated-program-static-v281.zsh",
+      "log": "tmp/pr-stack-evidence/checked-aot-v281-generated-static.log",
+      "log_sha256": "aca2de4409aa48279b34466c966482697d55023b81fe9dfa3214bcf0f00e76d6",
+      "graph": "tmp/pr-stack-evidence/checked-aot-v281-runtime-graph.txt",
+      "graph_sha256": "cd5c1834edbaf6bad08888ed66ea027f7b0e16ebb3a4a3dc0429be4c90e8ad1d",
+      "result": "Same frozen source passes warning policy, Rust module layout and old scalar runtime-only build. Normal dependency graph for canonical-native-program-runtime excludes Cranelift, mech-syntax, mech-stdlib and mech-runtime. This graph check is not an analysis of a newly linked executable."
+    },
+    "preceding_failure": "v278 passed its five actual generated-entry methods but failed runtime-only compilation because the common hex encoder was compiler-feature-gated. The shared encoder's gate was corrected; v280/v281 requalify the complete final source, with stronger execution/protocol tests. The failed receipt is retained at tmp/pr-stack-evidence/checked-aot-v278-generated-program.log (SHA256 1f0601f09c408903df584ef09e1af6be09b05931582ea31d081f27a6063cca51).",
+    "explicit_test_policy": "Finite qualification policy: global compute1B, library compute134217728, comparison1M and temporary128MiB on a256MiB memory account. These conservative binding/construction envelopes are NOT product-default/resident-limit or performance claims. No product defaults or benchmark source algorithms changed.",
+    "new_linked_process_executions": 0,
+    "new_benchmark_samples": 0,
+    "not_established": "Newly linked mixed-entry process execution and metadata/provenance mutation qualification; native element-count matrices/comprehensions/FSM/typed resource lifecycle and whole-program canonical AOT; general packed/streaming all-seven-histogram operations; full125M exact workload; same-executable trusted/secured release samples; actual full-program binary/hot-path/dependency analysis and optimized/configurable checked AOT. The independent legacy source compiler remains unresolved, not an accepted second runtime authority. Fresh final-head review and complete GitHub CI remain required."
+  },
+  "bounded_snapshot_ownership_qualification": {
+    "status": "FOCUSED_CORRECTIVE_BOUNDARY_QUALIFIED_NOT_FULL_WORKLOAD_OR_BENCHMARK",
+    "source_commit": "3769baa7bb5457a008b788dbd164bb743907aa71",
+    "tested_base": "bf10ff6a8ad430a25f81db9e0f1ff2ddafb3c502",
+    "complete_frozen_diff_sha256": "a58a5b85c880a28ed2ec85cd297fa396cb7e9a68b16be895241414b9fcb8472e",
+    "correction": [
+      "Stable admitted Arc registration identity and weak-previous/strong-next links permit direct deregistration of self and at most two neighbors. The shared data registry gate protects all link edits; no raw pointers or manual unsafe Send/Sync promise are introduced. The node detaches its strong next link before retirement.",
+      "Exact same-budget AND retained-schema-owner reuse returns before registry lookup, allocation or reservation transfer in both memory_budget_admission_bytes and into_memory_budget. Other ownership cases retain validation, allocation failure checks and reservation behavior. Registration Arc metadata is included in admission; registration and schema-owner references retire before the import capacity claim.",
+      "Precharged raw native constants use the same ownership implementation with an independently admitted wrapper instead of searching aliases. The complete unshared wrapper claim is required; immutable data and physical ownership remain shared. No work multiplier or admission default is increased."
+    ],
+    "focused_regressions": [
+      "Existing core validation suite: zero same-owner and independent-constant lookup steps; at most three link accesses for direct removal with 0/1/16 later foreign imports plus an earlier tail; surviving imports stay valid and all claims eventually release.",
+      "Existing native arena suite: replace or tear down A's last wrapper after 16 later foreign imports under unchanged prepaid work, retaining foreign owners.",
+      "Existing all-seven-library integration method: repeated unchanged text/join through original/decoded root/lexical legacy/prepared invocation with 16 live foreign imports, stable memory and unchanged charged-work delta.",
+      "Existing generated denial/recovery method: exposed raw constants have 16 live foreign-budget imports before invocation. Existing memory-runtime coverage retains schema-owner separation, failure injection/rollback and detached Send/physical-ticket behavior."
+    ],
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-ownership-corrected-ci-v293.zsh",
+      "driver_sha256": "fb978d38131a1a23b3dffc055b57575241beb110ebfd992a9ccf14378cc05f78",
+      "log": "tmp/pr-stack-evidence/checked-aot-v293-ownership-corrected-ci.log",
+      "log_sha256": "32db74661e4862f3b714c81f52e8f47f4ead1fff14e74a973cd4d248510c1db4",
+      "started_utc": "2026-10-18T17:39:27Z",
+      "completed_utc": "2026-10-18T17:41:06Z",
+      "exit": 0,
+      "execution": "One serial source-frozen pipeline, nightly-2026-03-03, locked/offline Cargo, one build job, debug/test optimization0, debug assertions/overflow checks enabled and no incremental compilation. Full command arrays and actual workflow-extracted ownership step are retained in driver/log.",
+      "environment": { "CARGO_BUILD_JOBS": "1", "CARGO_PROFILE_DEV_DEBUG": "0", "CARGO_PROFILE_TEST_DEBUG": "0", "CARGO_PROFILE_TEST_OPT_LEVEL": "0", "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true", "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true", "CARGO_INCREMENTAL": "0", "CARGO_NET_OFFLINE": "true", "python": "Python3 with PyYAML6.0.3" },
+      "commands": [
+        ["cargo", "+nightly-2026-03-03", "test", "--locked", "-p", "mech-core", "--all-features", "--lib", "snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports", "--", "--list", "--exact"],
+        ["cargo", "+nightly-2026-03-03", "test", "--locked", "-p", "mech-core", "--all-features", "--lib", "snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports", "--", "--exact", "--test-threads=1"],
+        ["cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1", "-p", "mech-core", "--all-features", "--test", "memory_runtime", "--", "--test-threads=1"],
+        ["cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1", "-p", "mech-stdlib", "-p", "mech-gpu", "--no-default-features", "--features", "mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-program", "--test", "native_collection_templates", "--test", "knucleotide_record_source", "--test", "canonical_artifact_program", "--", "--test-threads=1"],
+        ["cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1", "-p", "mech-stdlib", "-p", "mech-gpu", "--no-default-features", "--features", "mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-program", "--lib", "native_artifact::values::tests", "--", "--test-threads=1"],
+        ["cargo", "+nightly-2026-03-03", "check", "--locked", "--offline", "-j", "1", "-p", "mech-core", "--no-default-features", "--features", "no_std"],
+        ["cargo", "+nightly-2026-03-03", "check", "--locked", "--offline", "-j", "1", "-p", "mech-gpu", "--no-default-features", "--features", "canonical-native-program-runtime", "--lib"],
+        ["python3", "-B", "-m", "unittest", "discover", "-s", "tests/ci", "-p", "test_*.py"],
+        ["sh", "scripts/check-unsafe-boundaries.sh"],
+        ["python3", "-B", "scripts/check-warning-policy.py"],
+        ["cargo", "+nightly-2026-03-03", "fmt", "--all", "--", "--check"],
+        ["git", "diff", "--check"]
+      ],
+      "rust_methods": { "core_structural_ownership": 1, "core_memory_runtime": 48, "generated_mixed_program": 7, "ordinary_knucleotide": 5, "native_collection_templates": 14, "native_arena": 8, "total": 83 },
+      "ci_contracts": 155,
+      "other": "Core no_std and canonical-native-program-runtime builds; unsafe-boundary and warning-policy audits; formatting, diff and unchanged-source fingerprint checks all pass. The actual CI list guard selects exactly one structural method before executing it. Its dedicated step preserves straight-line inventory credit for the existing memory conformance tests."
+    },
+    "retained_attempts": [
+      { "log": "tmp/pr-stack-evidence/checked-aot-v285-ownership-final.log", "sha256": "fd4bf4df732ab069172bd8803c43ffb78b1e766832395e42b75215debbf72aa3", "result": "Terminal101: disk exhaustion creating libmech_math.rlib after the core structural and 48 memory methods passed. Not full qualification credit." },
+      { "log": "tmp/pr-stack-evidence/checked-aot-v289-ownership-recovery.log", "sha256": "0d19e62fc8abc2e6e40f19794bbe56ee8c17e4f49f4602bd193195ec1fbe8681", "result": "Terminal1: all83 Rust methods passed;154/155 CI contracts passed. The ownership shell guard in the memory conformance block prevented the conservative inventory verifier from crediting eight existing targets. Moved the guard to a dedicated workflow step without weakening the verifier; v293 requalifies the complete final diff." }
+    ],
+    "not_established": "Fresh final-head clean review/full GitHub CI, newly linked mixed execution, complete production canonical AOT, native resources/full workload, new benchmark samples or performance improvement. The full objective remains follow_up_roadmap."
+  },
+  "registration_and_current_geometry_review_corrections": {
+    "status": "FOCUSED_REVIEW_FIXES_LOCALLY_QUALIFIED_FRESH_REVIEW_AND_CI_REQUIRED",
+    "source_commit": "19e0686754639db14b21db1e6e9ce63c84b1f451",
+    "tested_base": "08893dc9fa2d7af090686fba3d4e6ad83b6866b1",
+    "complete_frozen_diff_sha256": "5b22b521c006c9b0e55543b59cb0fe7364d44da3252577859881281785d4ef26",
+    "source_attribution": "The serial run tested the frozen diff on tested_base. The committed source range has independently verified byte-identical binary diff and the file pins below; the run is not relabeled as a clean-checkout execution.",
+    "findings": [
+      {
+        "thread": "https://github.com/mech-lang/mech/pull/905#discussion_r4308064415",
+        "correction": "One shared allocation-size helper now supplies the complete registration Arc allocation, including control block and padding, to allocation checks, public claim metadata and unshared admission/retained reservation transfer.",
+        "coverage": "The existing bounded-ownership structural method checks the full admission amount, exact-minus-one import rejection without consuming the reservation, exact-budget retained charge and full release. Existing alias/removal bounds and all48 memory-runtime methods remain selected."
+      },
+      {
+        "thread": "https://github.com/mech-lang/mech/pull/905#discussion_r4308064418",
+        "correction": "Prepared FullWrite/SameAsInput calls derive current logical input extents and resolve the output schema's own shape parameters after binding admission. Prior publication dimensions do not override that current contract. Only this verified construction permits a prior output with different shape parameters; schema/key/account checks, actual prior-footprint measurement and other geometry guards remain.",
+        "coverage": "One added maintained-template method exercises original/decoded root and lexical matrix number/format without a prior result and across3/0/1/5columns, checking exact packed Strings and same-account retention. One added generated-program method compares original/decoded resident and real JIT results plus Object identity in root and both Match arms at3/0/1columns."
+      }
+    ],
+    "source_files_sha256": {
+      "src/core/src/snapshot/validation.rs": "77d2b78a52d8def732da2505e241fa409ac952bca226b3e8c55520bb186d58f1",
+      "src/engine/src/resident/general/native_collection_invocation.rs": "e1da621f23d5d1a9906b15184c9ab038d4a50e43d95ce8c5b5bd9c45a4baaf73",
+      "src/engine/src/resident/general/native_collection_prepared.rs": "88c63ad9f51783ea0fe39a24b4d2e16b37db68beec97691caf0ffe97e76ce1f8",
+      "src/stdlib/tests/native_collection_templates.rs": "3af2416a0b06eee4dc99d153188d3291dbbf201150a45c1eb30f586d9dd065e2",
+      "hosts/gpu/tests/canonical_artifact_program.rs": "2f6741b3194f118ba682f5ceec0e90554ec669466758af616cdd201f27e469da"
+    },
+    "qualification": {
+      "driver": "tmp/pr-stack-evidence/qualify-registration-and-shape-v304.zsh",
+      "driver_sha256": "807037329ccfc0569674159defd379769836a23db1d32e2939a4ab93c70ae273",
+      "log": "tmp/pr-stack-evidence/checked-aot-v304-registration-and-shape.log",
+      "log_sha256": "b3c15174e9467b7209a73f9f1c65a5b01c9fe4ed89c54d196cd282112c4855d7",
+      "started_utc": "2026-10-18T19:04:37Z",
+      "completed_utc": "2026-10-18T19:07:13Z",
+      "exit": 0,
+      "commands": "The command arrays in bounded_snapshot_ownership_qualification.qualification.commands are executed unchanged by the pinned v293 driver, wrapped only with the current base/diff and fresh v304 log. The actual workflow ownership list/execute guard is extracted and executed; exact-one selection succeeds. No test-only filter removes the two new integration methods.",
+      "execution": "One serial source-frozen pipeline; nightly2026-03-03, locked/offline, one build job, opt0/debug0 tests, debug assertions and overflow checks enabled, no incremental compilation.",
+      "rust_methods": { "core_structural_ownership": 1, "core_memory_runtime": 48, "generated_mixed_program": 8, "ordinary_knucleotide": 5, "native_collection_templates": 15, "native_arena": 8, "total": 85 },
+      "ci_contracts": 155,
+      "other": "Core no_std and native-program runtime-only checks, unsafe and warning audits, formatting, diff and unchanged-source fingerprint all pass. Separate python3 -B scripts/check-rust-module-layout.py passes after the terminal run.",
+      "unchanged_workload": "Ordinary100/400-base success and4000-base denial/recovery still pass with unchanged source algorithm and default limits."
+    },
+    "retained_attempts": [
+      { "log": "tmp/pr-stack-evidence/checked-aot-v300-registration-and-shape.log", "sha256": "9d3061e9529dd008a7ab1953e04c2dd86730aa775ec0d3295887bba27017b3bd", "result": "Terminal101 after structural1/memory48 and7existing generated methods passed. The added generated matrix method failed during resident-reference activation (KernelBind UnsupportedLayout), before native invocation. Extra input-only activation shape seeds were removed from the reference helper; its normal dynamic-shape activation accepts actual Turn values without changing the cases or their required outputs." },
+      { "log": "tmp/pr-stack-evidence/checked-aot-v303-matrix-reference.log", "sha256": "eb04400992e9a6f091642a9af5cc827720b9546cc88e18e36dcb3440d1a4185c", "result": "Terminal0 for the exact added matrix method on the final5b22b521diff. The complete v304 run then requalifies all85Rust and155CI methods."
+      }
+    ],
+    "default_limits_changed": false,
+    "benchmark_algorithm_changed": false,
+    "new_linked_executions_or_benchmark_samples": 0,
+    "not_established": "Fresh final-head review and complete GitHub CI; full linked mixed/native-resource and workload qualification; old bypassing-I/O versus existing secured-path performance or full native security overhead. The full objective remains follow_up_roadmap."
+  },
+  "native_comprehension_linked_qualification": {
+    "pull_request": "https://github.com/mech-lang/mech/pull/906",
+    "source_commit": "226450bd46395e8c9fd190c74ac34782c6aa1df1",
+    "source_tree": "c81f40f275168103dd697eb40a8e0e7f00a6d545",
+    "finished_utc": "2026-10-18T23:17:12Z",
+    "receipt": "canonical-managed-native-linked-v1.json native_comprehension_and_broadcast_qualification",
+    "status": "NATIVE_MATRIX_COMPREHENSION_FOUNDATION_QUALIFIED_FULL_OBJECTIVE_INCOMPLETE",
+    "implemented": "Generated Matrix/MatrixPreserveShape mapping, filters, nested generators/builders/literal folds and shape-preserving unary pattern-function application. Closed Bool/U64/I64/F64/String yields and Matrix/Set/String sources use the existing canonical artifact, shared current-visit proof/emitter, admitted transport and one cumulative native/library work/memory account. Helpers never evaluate the body. ManagedABI5/typedIR2/workPolicy2 are explicit; scalar ABIs remain unchanged.",
+    "executed": "64Rust conformance/protocol/proof methods, scalar and managed runtime-only builds,4actual linked executables/58processcases (19success/recovery,39required errors),155CIcontracts and static gates. The read-only reconciliation checks68binary/generated pins,116complete process streams and actual runtime compiled-unit records against Cargo output.",
+    "language_level_target": "The current knucleotide-idiomatic.mec defines overlapping String windows and histogram composition in Mech, maps frequency widths and queries using comprehensions, and emits one joined result. General map/histogram, slicing, joining and sorting remain library primitives. Packing/streaming/fusion/parallelism must be compiler optimizations over those semantics, not an external whole-program implementation.",
+    "not_established": "The complete target still needs native Set/composite/matrix-block outputs, element-wise counts, FSM/state and typed resource lifecycle plus remaining general library/projection/ownership/bigint/byte support. No full125M canonical native workload, new canonical timing, same-binary full security-overhead result, full-program optimization or complete current-head CI/review is established. Earlier default100/400success4000denial/recovery and legacy timing evidence retain their original executed source pins; they are not relabeled to this native foundation.",
+    "benchmark_samples": 0,
+    "readiness": "Keep draft and unmerged. The full follow_up_roadmap remains required, as do fixes/replies/resolutions for any new notes, fresh clean exact-head review and complete green CI."
+  },
+  "collection_accounting_and_link_provenance_correction": {
+    "pull_request": "https://github.com/mech-lang/mech/pull/906",
+    "source_commit": "77aec3f74060d1b7a570b687e1f3c63924f03fb3",
+    "source_tree": "a6f50cfbdd0d6bdbda546998b40057b49ba72348",
+    "finished_utc": "2026-10-18T23:50:27Z",
+    "receipt": "canonical-managed-native-linked-v1.json collection_accounting_and_link_provenance_correction",
+    "status": "CURRENT_REVIEW_FIXES_LOCALLY_QUALIFIED_FULL_OBJECTIVE_INCOMPLETE",
+    "corrections": "Every wildcard/bound generator visit reaches cumulative collection ComputeWork and the same native ledger. Temporary admission includes the prior String element through replacement allocation, and removes its retained charge only with actual generation-checked retirement; metered certified scope cleanup preserves ancestor captures and independent yields. Source metadata admission follows actual enlarged storage. Managed work policy3 rejects old2; ABI5/typedIR2 and scalar ABIs unchanged; default limits unchanged.",
+    "qualification": "Retained v368 before-fix log shows both new regressions wrongly succeed. After-fix original/decoded regressions check typed resource denial, unchanged publication, complete workspace return and sameJIT recovery. New nestedString/capture/alias/fold and private handle/ledger tests pass. Frozen prelink69Rust+155CI/statics, then clean-source4actual linked binaries/58runtimecases+9negativebuilds+restoredbuild/recovery+155CI/statics pass. Independent read-only reconciliation checks68binary/generatedpins,116runtime streams,9savedmutations,20build streams, current identity versions, restored hashes and actual runtime-only compiled closures.",
+    "benchmark_samples": 0,
+    "not_established": "Fresh exact-head clean review and complete GitHub CI; remaining native constructs and canonical capability-host/resource/publication integration; allten programs, full125M/all7native histogram workload; same-binary trusted/secured release timing, full-program profiling/optimization/configuration. Older evidence retains original sources. Keep draft/unmerged; entire follow_up_roadmap still required."
+  },
+  "native_ranges_string_selection_and_pure_activation": {
+    "source_commit": "e7c0e8c224ae317eb85ad07f2bc8ed7cdd1d2ff9",
+    "receipt": "canonical-managed-native-linked-v1.json native_ranges_string_selection_and_pure_activation",
+    "implemented": "Actual maintained range/String selection/matrix conversion leaves, ABI6 three-operand helper, canonical snapshot grapheme selection, live resident root range geometry and generated closed pure activation on fresh stateless invocations. Scalar-only Hooks::output cfg fixes published CI without suppressing warnings.",
+    "qualification": "Broad pre-cfg1044Rust/155CI plus4isolatedprofiles pass; post-cfg exact failing target compiles/discovers and31managed methods pass. Clean committed source passes5actual linked executables/74runtimecases,9negativebuildmutations/restored build/recovery and155CI/statics. Independently reconciled85pins/148runtime streams/20build streams. No product defaults changed; no benchmark samples.",
+    "not_established": "General matrix/map access and remaining operations, element-wise counts, persistent state/FSM, full capability hosts and canonical CLI migration, allten programs/full125M/all7histograms, same-binary secured/trusted release timings/optimization and fresh clean review/full green CI remain required. Keep draft/unmerged; the full follow_up_roadmap is unchanged."
+  },
+  "collection_publication_accounting_and_runtime_ci": {
+    "source_commit": "7606c5c3768479a004e89e8f745eca9eed0dc1ae",
+    "receipt": "canonical-managed-native-linked-v1.json collection_publication_accounting_and_runtime_ci",
+    "implemented": "Body-produced String is admitted through yield-draft copying without double charging source aliases; collection push/finish use the core prospective canonical matrix node count. Managedwork4 rejects old3; ABI6/IR2/scalarABIs/defaultlimits unchanged. Exact Owner9 CI failure now positively tests original/decoded live ranges and atomic denial/recovery while retaining closed oversized rejection.",
+    "qualification": "Both new regressions fail before the fix and pass after. Frozen prelink134Rust/155CI and isolated profiles/statics pass. Clean committed source passes5actual linked executables/74runtimecases/9negativebuilds+restored build/recovery and155CI/statics;85pins/148runtime streams/20build streams independently reconcile. Zero new benchmark samples. Historical results remain attributed to their original sources.",
+    "not_established": "Fresh exact-head clean review and full green GitHub CI remain required. The complete follow_up_roadmap, remaining language/resource/production integration, allten programs/full125M/all7histograms, same-binary secured/trusted release timing and optimization are unchanged requirements. Keep draft and unmerged."
+  },
+  "canonical_hosted_full_source_small_fixture_qualification": {
+    "source_commit": "f176277d87feeae4a66167d7e11eb2b731acc2a0",
+    "receipt": "canonical-hosted-native-linked-v1.json",
+    "status": "LOCALLY_LINKED_FULL_SOURCE_SMALL_FIXTURES_NOT_BENCHMARK_QUALIFIED",
+    "current_milestone_summary": "Generated mixed linked execution and the selected driverless String resource-hosted boundary now execute the complete original/decoded k-nucleotide source through real secured CLI providers. Production native-build migration, broader language/state support and full-input/performance milestones remain incomplete. Earlier milestone current_state and receipt entries are retained as historical checkpoints, not rewritten to the new identity.",
+    "qualification": "Clean committed source passes the actual ignored Object-linked qualifier:2artifact variants with identical binary pins,20runtime cases (6successes/14required errors),9generated-input build denials and restored build. ABI8/IR5/work11; every raw compiled unit excludes parser/compiler/JIT/source-native. Source is complete but fixtures are only four-base THREE and empty THREE. Zero benchmark samples.",
+    "accounting": "Exact one-entry per-site geometry binding reuse retains no arguments/results/permissions. Maintained invocation semantics, current-value measurements and finite cumulative account remain; ordinary fixture work743675194 is under unchanged1e9 fixture cap, not an elapsed timing.",
+    "not_established": "Full125M/all7histogram or allten-program execution, production CLI migration, persistent state/broader recursion/element-wise counts, trusted/secured release comparison, performance or fresh exact-head clean review/full green GitHub CI. Keep draft and unmerged; explicit user approval remains required."
+  },
+  "remaining": ["Complete follow_up_roadmap in its stated order; the foundations correction does not discharge the full implementation/benchmark brief."],
+  "benchmark_samples": 0
+}

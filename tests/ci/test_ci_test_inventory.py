@@ -60,6 +60,26 @@ class IntegrationInventoryTests(unittest.TestCase):
         self.assertIn("minimal", feature_closure(manifest, self.command([])))
         self.assertIn("native", feature_closure(manifest, self.command(["--all-features"])))
 
+    def test_qualified_features_enable_only_the_named_package_and_its_closure(self):
+        manifest = {
+            "package": {"name": "sample"},
+            "features": {
+                "default": ["minimal"], "minimal": [],
+                "full": ["source"], "source": ["native"], "native": [],
+            },
+        }
+        for features, expected in (
+            ("sample/full", {"full", "source", "native"}),
+            ("foreign/full", set()),
+            ("full", {"full", "source", "native"}),
+            ("sample/full,foreign/minimal", {"full", "source", "native"}),
+            ("sample/native,foreign/full", {"native"}),
+            ("foreign/full,minimal", {"minimal"}),
+        ):
+            with self.subTest(features=features):
+                command = self.command(["--no-default-features", "--features", features])
+                self.assertEqual(feature_closure(manifest, command), expected)
+
     def test_cargo_output_only_and_unmodeled_options_cannot_own_tests(self):
         for options in (
             ["--unit-graph"], ["-Z", "unstable-options", "--unit-graph"],

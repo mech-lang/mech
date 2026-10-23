@@ -450,6 +450,10 @@ fn preflight_string_conversion(
 }
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    super::set_conversion::install(builder)?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_conversion(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     builder.insert_resident_factory(
         ["convert"],
         "kind",
@@ -476,7 +480,37 @@ struct ResidentConversionPlan {
     resolve_live_matrix_shape: bool,
 }
 
-fn bind_kind_conversion(
+// This decision inspects the actual selected immutable conversion plan, after
+// its core planner has succeeded. Names, public tags and caller-supplied
+// parameters cannot request this private semantic certificate.
+fn native_scalar_cast(
+    plan: &ResidentConversionPlan,
+) -> Option<super::native_semantics::NativeScalarOp> {
+    use super::native_semantics::NativeScalarOp as Op;
+    use mech_core::{BuiltinScalarKind as K, ConversionMode, ConversionStep, ScalarConversion};
+    if plan.wrap_present || plan.dynamic_payload.is_some() || plan.resolve_live_matrix_shape {
+        return None;
+    }
+    let ConversionStep::Scalar(ScalarConversion::Builtin {
+        source,
+        target,
+        mode: ConversionMode::Explicit,
+    }) = &plan.conversion.step
+    else {
+        return None;
+    };
+    Some(match (source, target) {
+        (K::U64, K::I64) => Op::U64ToI64,
+        (K::I64, K::U64) => Op::I64ToU64,
+        (K::U64, K::F64) => Op::U64ToF64,
+        (K::I64, K::F64) => Op::I64ToF64,
+        (K::F64, K::U64) => Op::F64ToU64,
+        (K::F64, K::I64) => Op::F64ToI64,
+        _ => return None,
+    })
+}
+
+pub(super) fn bind_kind_conversion(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_conversion(request, false)
@@ -577,6 +611,20 @@ fn bind_conversion(
     };
     let conversion = plan_explicit_cast(&source, conversion_target)
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+    // Shape-changing collection conversion has its own admitted factory and
+    // Declared-shape contract. Never run its sort under matrix-copy admission.
+    fn changes_collection(step: &mech_core::ConversionStep) -> bool {
+        match step {
+            mech_core::ConversionStep::MatrixToSet(_) => true,
+            mech_core::ConversionStep::MatrixElements(inner)
+            | mech_core::ConversionStep::OptionPayload(inner)
+            | mech_core::ConversionStep::OptionPresent(inner) => changes_collection(&inner.step),
+            _ => false,
+        }
+    }
+    if changes_collection(&conversion.step) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     let plan = ResidentConversionPlan {
         source: source_schema.body().clone(),
         source_layout: input.shape,
@@ -587,18 +635,22 @@ fn bind_conversion(
         dynamic_payload,
         resolve_live_matrix_shape,
     };
-    Ok(
-        BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
-            .with_retained_state(Arc::new(plan))
-            .with_snapshot_output(ResidentSnapshotOutput {
-                schema: request.output.schema_id,
-                schema_key: request.output.schema_key,
-                shape: request.output.shape_instance.clone(),
-                exact_cardinality: None,
-                maximum_cardinality: None,
-            })
-            .with_snapshot_schemas(request.schemas.clone()),
-    )
+    let native_cast = native_scalar_cast(&plan);
+    let kernel = BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
+        .with_retained_state(Arc::new(plan))
+        .with_snapshot_output(ResidentSnapshotOutput {
+            schema: request.output.schema_id,
+            schema_key: request.output.schema_key,
+            shape: request.output.shape_instance.clone(),
+            exact_cardinality: None,
+            maximum_cardinality: None,
+        })
+        .with_snapshot_schemas(request.schemas.clone());
+    // Attach last: subsequent semantic builder mutations must clear the proof.
+    Ok(match native_cast {
+        Some(op) => super::native_semantics::certify(request, kernel, op),
+        None => kernel,
+    })
 }
 
 fn layout_matches_schema(kind: ResidentValueKind, schema: &SchemaBody) -> bool {
@@ -795,9 +847,9 @@ fn conversion_presence_depth(step: &mech_core::ConversionStep) -> u64 {
     use mech_core::ConversionStep;
     match step {
         ConversionStep::OptionPresent(inner) => 1 + conversion_presence_depth(&inner.step),
-        ConversionStep::MatrixElements(inner) | ConversionStep::OptionPayload(inner) => {
-            conversion_presence_depth(&inner.step)
-        }
+        ConversionStep::MatrixElements(inner)
+        | ConversionStep::MatrixToSet(inner)
+        | ConversionStep::OptionPayload(inner) => conversion_presence_depth(&inner.step),
         ConversionStep::Identity | ConversionStep::Scalar(_) => 0,
     }
 }
@@ -835,18 +887,20 @@ fn snapshot_presence_count(
             ValueData::Option(None) => Ok(0),
             _ => Err(ResidentKernelError::InvalidInput),
         },
-        ConversionStep::MatrixElements(inner) => match source {
-            ValueData::Matrix(matrix) => match matrix.elements() {
-                SequenceView::Values(values) => values.iter().try_fold(0, |count, value| {
-                    checked_cost_sum(&[count, snapshot_presence_count(&inner.step, value)?])
-                }),
-                values => checked_cost_product(&[
-                    checked_u64(values.len())?,
-                    conversion_presence_depth(&inner.step),
-                ]),
-            },
-            _ => Err(ResidentKernelError::InvalidInput),
-        },
+        ConversionStep::MatrixElements(inner) | ConversionStep::MatrixToSet(inner) => {
+            match source {
+                ValueData::Matrix(matrix) => match matrix.elements() {
+                    SequenceView::Values(values) => values.iter().try_fold(0, |count, value| {
+                        checked_cost_sum(&[count, snapshot_presence_count(&inner.step, value)?])
+                    }),
+                    values => checked_cost_product(&[
+                        checked_u64(values.len())?,
+                        conversion_presence_depth(&inner.step),
+                    ]),
+                },
+                _ => Err(ResidentKernelError::InvalidInput),
+            }
+        }
         ConversionStep::Identity | ConversionStep::Scalar(_) => Ok(0),
     }
 }

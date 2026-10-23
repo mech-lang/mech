@@ -4,6 +4,12 @@
 //! finalization. Only immutable compilation products and detached typed
 //! initialization values escape this module.
 
+#[path = "compiler_retained_input.rs"]
+mod retained_input;
+pub use retained_input::{
+    CanonicalCompilationSource, CanonicalCompilationSources, RetainedCanonicalCompilation,
+};
+
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
     sync::Arc,
@@ -423,6 +429,23 @@ impl ProgramCompiler {
         self.compile_document(&document)
     }
 
+    /// Admit acquired source bytes before UTF-8 decoding, then use the same
+    /// canonical source entry point. File/stream callers remain responsible
+    /// for bounding acquisition; a limit+1 prefix may end inside a character.
+    pub fn compile_canonical_source_bytes(
+        &mut self,
+        source: &[u8],
+    ) -> MResult<ProgramCompilationProduct> {
+        super::super::limits::enforce_source_byte_limit(
+            self.max_source_bytes,
+            u64::try_from(source.len()).unwrap_or(u64::MAX),
+        )?;
+        let source = std::str::from_utf8(source).map_err(|error| {
+            canonical_compilation_error(format!("source is not valid UTF-8: {error}"))
+        })?;
+        self.compile_canonical_source(source)
+    }
+
     /// Compiles source for immediate artifact activation without returning or
     /// retaining a duplicate durable bytecode container.
     pub fn compile_source_artifact(
@@ -598,6 +621,7 @@ pub(crate) struct ProgramCompilerView<'a> {
     module_manifests: &'a ModuleManifestCatalog,
     max_planning_steps: usize,
     max_source_bytes: Option<u64>,
+    retained_sources: Option<&'a std::cell::RefCell<retained_input::RetainedSourceCollector>>,
 }
 
 /// One resolution/planning session. Module versions use the same ModuleBuilder
@@ -673,6 +697,7 @@ impl<'a> ProgramCompilerView<'a> {
             module_manifests,
             max_planning_steps,
             max_source_bytes,
+            retained_sources: None,
         }
     }
 
@@ -1161,6 +1186,12 @@ impl<'a> ProgramCompilerView<'a> {
                     .map_err(|error| canonical_compilation_error(error.to_string()))?
             };
             if is_mixed {
+                let root = &resolved[0];
+                self.retain_compilation_source(
+                    &root.canonical_uri,
+                    root.source_document().expect("validated retained root"),
+                    true,
+                );
                 #[cfg(feature = "compute")]
                 {
                     let mixed = self.compile_canonical_mixed_resolved_root(
@@ -1198,12 +1229,11 @@ impl<'a> ProgramCompilerView<'a> {
         let mut ordinal = 0;
         while ordinal < resolved.len() {
             let uri = resolved[ordinal].canonical_uri.clone();
-            let index = resolved[ordinal]
-                .source_document()
-                .ok_or_else(|| {
-                    canonical_compilation_error("ordered root has no retained document")
-                })?
-                .index_with_diagnostics()?;
+            let document = resolved[ordinal].source_document().ok_or_else(|| {
+                canonical_compilation_error("ordered root has no retained document")
+            })?;
+            self.retain_compilation_source(&uri, document, ordinal < requested_roots);
+            let index = document.index_with_diagnostics()?;
             let mut detached = index.root.clone();
             let mut imports = Vec::new();
             for declaration in index.root.program_imports() {
@@ -1833,6 +1863,11 @@ impl<'a> ProgramCompilerView<'a> {
                 )));
             }
             if !context.exports.contains_key(&dependency.canonical_uri) {
+                self.retain_compilation_source(
+                    &dependency.canonical_uri,
+                    dependency_document,
+                    false,
+                );
                 let program =
                     self.compile_canonical_graph_document(&dependency, context, true, false)?;
                 let artifact = program.compile_artifact_with_external_contracts(

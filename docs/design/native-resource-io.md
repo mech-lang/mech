@@ -87,3 +87,23 @@ output delivery and shutdown. Both modes use the same executable hash and input.
 Compiler and browser work must stop during timing collection. Existing timings
 retain their original source and artifact provenance; revised source programs
 require their own qualification and measurements.
+
+The [full-input I/O migration diagnostic](../validation/native-io-migration-timing-v1.json)
+compares the preserved packed k-nucleotide source's direct process I/O with an
+I/O-only rewrite using this existing host. It records actual release samples,
+independent exact output, denied launches and separate memory/Object inspection.
+That diagnostic uses the older source-based sequence compiler; it does not
+qualify the canonical production build route or its whole-program accounting.
+The separate [canonical managed linked qualification](../validation/canonical-managed-native-linked-v1.json)
+records earlier runtime-only canonical Objects before resource-host integration;
+it retains its own source and policy identities.
+
+The [canonical hosted linked receipt](../validation/canonical-hosted-native-linked-v1.json)
+now records clean source `f176277d87feeae4a66167d7e11eb2b731acc2a0` executing
+the complete original/decoded k-nucleotide canonical artifacts through real CLI
+providers and capability transactions. Its 20 process cases and nine generated-input
+build denials qualify small four-base/empty fixtures, not standard benchmark input
+or timings. The two-policy shell described above is the older source-native route;
+the canonical generated hosted shell is secured-only, and the legacy trusted
+environment setting cannot grant authority. Ordinary production native-build CLI
+migration, full-input qualification and performance comparisons remain unfinished.

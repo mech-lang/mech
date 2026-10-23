@@ -402,8 +402,8 @@ fn actual_full_ordinary_knucleotide_output_survives_long_fasta_prefixes() {
         })
         .collect::<Vec<_>>()
         .join("\n");
-    assert_eq!(delivered, 3);
-    source.push_str("\n(delivery-1, delivery-2, delivery-3)\n");
+    assert_eq!(delivered, 1);
+    source.push_str("\ndelivery-1\n");
     let expected = concat!(
         "G 50.000\nA 25.000\nT 25.000\n\n",
         "GG 33.333\nGT 33.333\nTA 33.333\n\n",
@@ -419,20 +419,10 @@ fn actual_full_ordinary_knucleotide_output_survives_long_fasta_prefixes() {
             );
             turn(&mut instance, ResidentValueRef::String(&[text])).unwrap();
             let value = instance.copied_output(output).unwrap();
-            let ValueData::Tuple(parts) = value.data() else {
+            let ValueData::String(actual) = value.data() else {
                 panic!("{value:?}")
             };
-            assert_eq!(parts.len(), 3);
-            let actual = parts
-                .iter()
-                .map(|part| {
-                    let ValueData::String(text) = part else {
-                        panic!("{part:?}")
-                    };
-                    text.as_ref()
-                })
-                .collect::<String>();
-            assert_eq!(actual, expected);
+            assert_eq!(actual.as_ref(), expected);
         }
     }
 }

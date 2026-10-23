@@ -1,6 +1,12 @@
 //! Schema-driven activation for the pre-launch dense numeric resident profile.
 
 mod closed_comprehension;
+#[cfg(all(
+    test,
+    any(feature = "full_source", feature = "full_compiler"),
+    feature = "convert"
+))]
+mod closed_set_conversion_tests;
 mod comprehension;
 mod execution;
 mod iteration;
@@ -8,8 +14,24 @@ pub use comprehension::{
     ActivatedCollectionStep, ActivatedComprehensionNode, ActivatedPatternBinding,
 };
 mod live;
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(crate) mod native_collection_calls;
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(crate) mod native_collection_templates;
+#[cfg(feature = "native-artifact")]
+pub(crate) mod native_comprehension_lowering;
 #[cfg(feature = "native-artifact")]
 pub(crate) mod native_lowering;
+#[cfg(feature = "native-artifact")]
+pub(crate) mod native_match_lowering;
+#[cfg(feature = "native-artifact")]
+mod native_tail_lowering;
 
 pub use execution::*;
 
@@ -3299,14 +3321,6 @@ fn classify_nodes(
     Ok(classes.into_boxed_slice())
 }
 
-fn operation_requires_activation_fixed_range_shape(operation: &OperationReference) -> bool {
-    operation.module_path.as_ref() == ["range"]
-        && matches!(
-            operation.operation_name.as_str(),
-            "exclusive" | "exclusive-increment" | "inclusive" | "inclusive-increment"
-        )
-}
-
 fn source_schema_and_shape(
     artifact: &ProgramArtifact,
     source: ArtifactSource,
@@ -3381,6 +3395,9 @@ fn source_has_activation_shape_fact(
             }
             None => false,
         };
+    }
+    if slot_has_runtime_shape_seed(artifact, slot, facts) {
+        return false;
     }
     if facts.slot_shapes.contains_key(&slot) {
         return true;
@@ -4893,6 +4910,9 @@ fn closed_conversion_presence_count(
         ConversionStep::OptionPayload(inner) => {
             closed_conversion_presence_count(&inner.step, element_count)
         }
+        // Sorting/deduplication is executed by the admitted conversion
+        // factory, never by this closed matrix-copy analysis path.
+        ConversionStep::MatrixToSet(_) => None,
         ConversionStep::Identity | ConversionStep::Scalar(_) => Some(0),
     }
 }
@@ -5395,6 +5415,7 @@ fn closed_producer_disposition(
             && operation.operation_name == "composite-pack")
         || closed_enum_pack_operation(operation)
         || (operation.module_path.as_ref() == ["convert"] && operation.operation_name == "kind")
+        || closed_set_conversion_operation(operation)
         || closed_present_option_operation(operation)
         || closed_string_concat_operation(operation)
         || closed_set_definition_operation(operation)
@@ -5473,6 +5494,12 @@ fn closed_producer_disposition(
 
 fn closed_iterative_operand_producer(operation: &OperationReference) -> bool {
     closed_producer_disposition(operation) == Some(ClosedProducerDisposition::Value)
+}
+
+fn closed_set_conversion_operation(operation: &OperationReference) -> bool {
+    cfg!(feature = "convert")
+        && operation.module_path.as_ref() == ["convert"]
+        && operation.operation_name == "set"
 }
 
 fn closed_ekf_operation(
@@ -9241,6 +9268,65 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     &SnapshotValidationContext::new(artifact.schemas())
                         .with_canonicalization_budget(budget),
                 )
+            } else if closed_set_conversion_operation(operation.operation) {
+                #[cfg(not(feature = "convert"))]
+                return Ok(None);
+                #[cfg(feature = "convert")]
+                {
+                    let [input] = inputs.as_slice() else {
+                        return Ok(None);
+                    };
+                    let Some(source) = constant_comparison_operand_at_depth(
+                        artifact,
+                        node,
+                        *input,
+                        facts,
+                        next_depth,
+                        budget,
+                        analysis,
+                        allow_large_direct_dense,
+                    )?
+                    else {
+                        return Ok(None);
+                    };
+                    let Some(schemas) = analysis
+                        .schemas
+                        .admitted_schemas(artifact, &analysis.construction)
+                    else {
+                        return Ok(None);
+                    };
+                    let mut target_shape_error = None;
+                    let result = super::set_conversion::fold_closed(
+                        &schemas,
+                        &source.value,
+                        target_schema_id,
+                        || {
+                            slot_shape(artifact, slot, facts).map_err(|error| {
+                                target_shape_error = Some(error);
+                                ResidentKernelError::InvalidShape
+                            })
+                        },
+                        || analysis.construction.preparation_meter(),
+                        |cost| {
+                            if analysis.construction.charge_compute_with_comparison(
+                                cost.temporary_bytes(),
+                                cost.compute_work(),
+                                cost.comparison_work(),
+                            ) {
+                                Ok(())
+                            } else {
+                                Err(ResidentKernelError::InvalidShape)
+                            }
+                        },
+                    );
+                    if let Some(error) = target_shape_error {
+                        return Err(error);
+                    }
+                    let Ok(value) = result else {
+                        return Ok(None);
+                    };
+                    Ok(value)
+                }
             } else if operation.operation.module_path.as_ref() == ["convert"]
                 && operation.operation.operation_name == "kind"
             {
@@ -11252,6 +11338,21 @@ fn complete_activation_shape_facts_with_analysis(
             .schemas()
             .get(artifact.slots()[output.get() as usize].schema)
             .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?;
+        if class != NodeClass::Activation
+            && node.operation.resolved_range_mode().is_some()
+            && !output_schema.dimension_parameters().is_empty()
+        {
+            // A live range owns a per-turn canonical matrix, not a variable
+            // number of physical arena lanes. Supplied geometry is an initial
+            // seed, never proof that live endpoints stay invariant. Alias
+            // layout/fixedness follow this same producer through the helpers.
+            let seed = facts.slot_shapes.remove(&output).unwrap_or(
+                mech_core::shape_for_declared_lower_bounds(output_schema)
+                    .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?,
+            );
+            facts.slot_shape_seeds.entry(output).or_insert(seed);
+            facts.resident_snapshot_slots.insert(output);
+        }
         if node.operation.module_path.as_ref() == ["logic"]
             || (node.operation.module_path.as_ref() == ["core"]
                 && node.operation.operation_name == "assign"
@@ -12485,6 +12586,11 @@ fn resident_slot_lifetime(
     }
 }
 
+#[cfg(test)]
+thread_local! {
+    static SLOT_SHAPE_PARAMETER_COPIES: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
 fn slot_shape(
     artifact: &ProgramArtifact,
     slot: CellSlotId,
@@ -12518,6 +12624,11 @@ fn slot_shape(
             .entry(declaration.schema)
             .expect("validated slot schema")
             .schema();
+        if shape.parameter_values().len() != schema.dimension_parameters().len() {
+            return Err(ResidentActivationError::UnresolvedShape { slot });
+        }
+        #[cfg(test)]
+        SLOT_SHAPE_PARAMETER_COPIES.with(|copies| copies.set(copies.get().saturating_add(1)));
         return schema
             .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
             .map_err(|_| ResidentActivationError::UnresolvedShape { slot });
@@ -12528,6 +12639,11 @@ fn slot_shape(
             .entry(declaration.schema)
             .expect("validated slot schema")
             .schema();
+        if shape.parameter_values().len() != schema.dimension_parameters().len() {
+            return Err(ResidentActivationError::UnresolvedShape { slot });
+        }
+        #[cfg(test)]
+        SLOT_SHAPE_PARAMETER_COPIES.with(|copies| copies.set(copies.get().saturating_add(1)));
         return schema
             .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
             .map_err(|_| ResidentActivationError::UnresolvedShape { slot });
@@ -12584,6 +12700,9 @@ fn slot_has_activation_fixed_shape(
             None => false,
         };
     }
+    if slot_has_runtime_shape_seed(artifact, slot, facts) {
+        return false;
+    }
     if facts.slot_shapes.contains_key(&slot) {
         return true;
     }
@@ -12606,6 +12725,19 @@ fn slot_has_activation_fixed_shape(
         } => slot_has_activation_fixed_shape(artifact, source, facts),
         _ => artifact.slot_shape_hint(slot).is_some(),
     }
+}
+
+fn slot_has_runtime_shape_seed(
+    artifact: &ProgramArtifact,
+    slot: CellSlotId,
+    facts: &ActivationFacts,
+) -> bool {
+    let Ok(ArtifactSource::Slot(source)) =
+        forwarded_output_source(artifact, ArtifactSource::Slot(slot))
+    else {
+        return false;
+    };
+    facts.slot_shape_seeds.contains_key(&source)
 }
 
 fn value_layout(
@@ -12887,7 +13019,7 @@ fn bind_operation_for_target(
                 operation.operation_name.clone(),
             )
         },
-        |entry| Some(entry.key.clone()),
+        |entry| Some(entry.key().clone()),
     );
     let resident_operation = resident_operation.ok_or(ResidentActivationError::KernelBind {
         node: node_id,
@@ -12922,7 +13054,7 @@ fn bind_operation_for_target(
     };
     let implementation_memory = resident_entry
         .map_or(ImplementationMemoryClass::NoAdditionalScratch, |entry| {
-            entry.implementation_memory
+            entry.implementation_memory()
         });
     let memory_plan = if target == ExecutionTarget::ResidentCpu {
         resident_call_memory_plan(
@@ -12952,7 +13084,7 @@ fn bind_operation_for_target(
         output: output_layout,
     };
     let kernel = if let Some(factory) = resident_entry {
-        (factory.factory)(&bind_request)
+        (factory.factory())(&bind_request)
     } else {
         #[cfg(feature = "dynamic-modules")]
         {
@@ -13213,13 +13345,12 @@ fn build_plan(
             OutputConstruction::ReadModifyWrite { base_input, .. } => Some(base_input as usize),
             _ => None,
         };
-        // Resident storage has a fixed physical extent for the lifetime of an
-        // activated plan. A range whose endpoints depend on turn inputs or
-        // mutable state can legitimately change cardinality in the source
-        // runtime, so reject that target capability before a bytecode-backed
-        // instance is emitted instead of failing on a later execution turn.
+        // Dense arena lanes still require fixed physical geometry. Live
+        // ranges now use one admitted Snapshot lane with current shape in the
+        // value; keep this guard against accidentally selecting dense storage.
         if class != NodeClass::Activation
-            && operation_requires_activation_fixed_range_shape(&node.operation)
+            && node.operation.resolved_range_mode().is_some()
+            && output.region.kind != ResidentValueKind::Snapshot
         {
             return Err(ResidentActivationError::KernelBind {
                 node: node.node,
@@ -14210,6 +14341,9 @@ fn operation_storage_descriptor(
         SchemaBody::SignedInteger(mech_core::IntegerWidth::W64) => {
             mech_core::FunctionValueRepresentation::I64
         }
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => {
+            mech_core::FunctionValueRepresentation::F64
+        }
         _ => return Err(MemoryPlanError::UnsupportedStorageLayout),
     };
     Ok(mech_core::physical_storage_descriptor(
@@ -14633,6 +14767,36 @@ fn build_activation_schedule(
         artifact_to_activated,
         topology,
     })
+}
+
+/// Reports whether this original artifact has closed computations that the
+/// canonical resident path executes BEFORE observing provider inputs. Metadata
+/// only: uses the SAME classifier, never binds or evaluates a graph. Hosted
+/// native lowering and legacy bridge guards share this classification.
+pub fn canonical_resource_activation_required(
+    artifact: &ProgramArtifact,
+) -> Result<bool, ResidentActivationError> {
+    let classes = classify_nodes(artifact, ResidentExternalAdmission::StructuralOnly)?;
+    Ok(classes.iter().any(|class| *class == NodeClass::Activation))
+}
+
+/// Analyze the original artifact's effect order using the SAME canonical
+/// classification/dependency schedule as resident activation. This metadata
+/// neither binds providers nor grants authority, observes values, or executes
+/// any program body. Effect ordinals remain original artifact-node identities;
+/// callers must not replace them with positions in this returned schedule.
+pub fn canonical_resource_effect_order(
+    artifact: &ProgramArtifact,
+) -> Result<Box<[NodeId]>, ResidentActivationError> {
+    let classes = classify_nodes(artifact, ResidentExternalAdmission::StructuralOnly)?;
+    let schedule = build_activation_schedule(artifact, &classes)?;
+    Ok(schedule
+        .nodes
+        .into_vec()
+        .into_iter()
+        .filter(|node| classes[node.get() as usize] == NodeClass::External)
+        .collect::<Vec<_>>()
+        .into_boxed_slice())
 }
 
 fn stable_topological_order(downstream: &[Vec<usize>], keys: &[u32]) -> Option<Vec<usize>> {
@@ -15358,7 +15522,7 @@ mod shape_fact_tests {
         snapshot::{F32Bits, F64Bits, SnapshotValidationContext},
     };
 
-    #[cfg(feature = "full_source")]
+    #[cfg(any(feature = "full_source", feature = "full_compiler"))]
     pub(super) fn closed_collection_source(source: &str) -> ProgramArtifact {
         use mech_syntax::document::{
             AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
@@ -22253,8 +22417,8 @@ mod shape_fact_tests {
             .insert_resident_factory(
                 ["math"],
                 "conformance-test-producer",
-                numeric.implementation_memory,
-                numeric.factory,
+                numeric.implementation_memory(),
+                numeric.factory(),
             )
             .unwrap();
         let extended = extended.build().unwrap();
@@ -22304,6 +22468,8 @@ mod shape_fact_tests {
             (&["core"], "composite-pack"),
             (&["core"], "enum-pack"),
             (&["convert"], "kind"),
+            #[cfg(feature = "convert")]
+            (&["convert"], "set"),
             (&["option"], "some"),
             (&["string"], "concat"),
             (&["set"], "define"),
@@ -22477,7 +22643,8 @@ mod shape_fact_tests {
                     | ["compare"]
                     | ["math"]
                     | ["math", "bessel"]
-            ) {
+            ) || cfg!(feature = "convert") && module_path == ["convert"]
+            {
                 let module_path = module_path
                     .iter()
                     .map(|segment| (*segment).to_owned())

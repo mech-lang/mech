@@ -80,6 +80,18 @@ impl FunctionEnvironment {
         }
     }
 
+    /// Current exact source spellings for one registered operation. Import
+    /// replacements are respected: an enabled but shadowed spelling is absent.
+    pub fn visible_operation_names(
+        &self,
+        operation: OperationId,
+    ) -> impl Iterator<Item = &str> + '_ {
+        self.dictionary.values().filter_map(move |name| {
+            (self.resolve_name(name) == Some(FunctionBinding::CatalogOperation(operation)))
+                .then_some(name.as_str())
+        })
+    }
+
     pub fn bind_catalog_export(
         &mut self,
         export: &FunctionExport,

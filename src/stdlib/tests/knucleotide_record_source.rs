@@ -2,8 +2,12 @@
 #![cfg(feature = "full_compiler")]
 
 use mech_core::{ReactiveInstanceId, ResidentValueRef, Value, ValueData};
-use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
-use mech_engine::{CanonicalSourceFrontend, ProgramArtifact, SourceDocumentOutputKind};
+use mech_engine::resident::{
+    ActivationFacts, CapturedSignalInput, ResidentExecutionError, activate,
+};
+use mech_engine::{
+    CanonicalSourceFrontend, ProgramArtifact, SourceDocumentOutputKind, SourceSemanticMap,
+};
 use mech_syntax::document::{
     AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
     parse_canonical_document,
@@ -25,7 +29,7 @@ fn document(source: &str) -> DocumentSyntax {
     DocumentSyntax::cast(parsed.syntax()).unwrap()
 }
 
-fn compile(source: &str) -> ([ProgramArtifact; 2], Vec<usize>) {
+fn compile(source: &str) -> ([ProgramArtifact; 2], Vec<usize>, SourceSemanticMap) {
     let program = CanonicalSourceFrontend
         .compile_document_with_catalog(&document(source), mech_stdlib::source_catalog())
         .unwrap_or_else(|error| panic!("{source}: {error:?}"));
@@ -39,7 +43,7 @@ fn compile(source: &str) -> ([ProgramArtifact; 2], Vec<usize>) {
     assert!(original.requirements().is_empty());
     let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
-    ([original, decoded], outputs)
+    ([original, decoded], outputs, program.source_map().clone())
 }
 
 // Keep the actual fixture's ordinary program and remove only its provider
@@ -61,8 +65,8 @@ fn ordinary_fixture() -> String {
         .collect::<Vec<_>>()
         .join("\n")
         + "\n";
-    assert_eq!(deliveries, 3);
-    source.push_str("(delivery-1, delivery-2, delivery-3)\n");
+    assert_eq!(deliveries, 1);
+    source.push_str("delivery-1\n");
     source
 }
 
@@ -82,7 +86,7 @@ sequence := text/join([uppercase{{char}} | char <- record], "")
 }
 
 fn check(source: &str, inputs: &[&str], expected: impl Fn(usize, &[Value])) {
-    let (artifacts, outputs) = compile(source);
+    let (artifacts, outputs, source_map) = compile(source);
     assert!(!outputs.is_empty());
     for (ordinal, artifact) in artifacts.iter().enumerate() {
         let mut instance = activate(
@@ -91,7 +95,27 @@ fn check(source: &str, inputs: &[&str], expected: impl Fn(usize, &[Value])) {
             &mech_stdlib::source_catalog(),
             &ActivationFacts::default(),
         )
-        .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        .unwrap_or_else(|error| {
+            if let mech_engine::resident::ResidentActivationError::UnsupportedControlLayout {
+                node,
+            } = &error
+            {
+                eprintln!(
+                    "activation source owner: {:?}",
+                    source_map.nodes.get(node.get() as usize)
+                );
+            }
+            for (ordinal, entry) in artifact.schemas().entries().enumerate() {
+                if let Err(shape_error) = mech_core::shape_for_declared_lower_bounds(entry.schema())
+                {
+                    eprintln!(
+                        "unseedable schema {ordinal}: {shape_error:?}; {:?}",
+                        entry.schema()
+                    );
+                }
+            }
+            panic!("{source}: {error:?}")
+        });
         assert_eq!(instance.plan.inputs.len(), 1);
         let slot = instance.plan.inputs[0].slot;
         for (turn, text) in inputs.iter().enumerate() {
@@ -101,7 +125,16 @@ fn check(source: &str, inputs: &[&str], expected: impl Fn(usize, &[Value])) {
                     slot,
                     value: ResidentValueRef::String(&input),
                 }])
-                .unwrap_or_else(|error| panic!("turn {turn}, {text:?}: {error:?}"));
+                .unwrap_or_else(|error| {
+                    let node = match &error {
+                        ResidentExecutionError::Kernel { node, .. }
+                        | ResidentExecutionError::MemoryPlan { node, .. }
+                        | ResidentExecutionError::ResourceAdmission { node, .. } => Some(*node),
+                        _ => None,
+                    };
+                    let origin = node.and_then(|node| source_map.nodes.get(node.get() as usize));
+                    panic!("turn {turn}, {text:?}: {error:?}; root source owner: {origin:?}")
+                });
             assert!(!instance.has_ready_continuation());
             let values = outputs
                 .iter()
@@ -110,6 +143,14 @@ fn check(source: &str, inputs: &[&str], expected: impl Fn(usize, &[Value])) {
             expected(turn, &values);
         }
     }
+}
+
+fn delivery_text(outputs: &[Value]) -> String {
+    assert_eq!(outputs.len(), 1);
+    let ValueData::String(text) = outputs[0].data() else {
+        panic!("{:?}", outputs[0])
+    };
+    text.to_string()
 }
 
 #[test]
@@ -171,22 +212,131 @@ fn ordinary_program_produces_exact_knucleotide_output_after_record_selection() {
             ">THREE\r\nGGTA\r\n",
             ">THREE\nGGTA",
         ],
-        |_, outputs| {
-            assert_eq!(outputs.len(), 1);
-            let ValueData::Tuple(deliveries) = outputs[0].data() else {
-                panic!("{:?}", outputs[0])
-            };
-            assert_eq!(deliveries.len(), 3);
-            let actual = deliveries
-                .iter()
-                .map(|value| {
-                    let ValueData::String(text) = value else {
-                        panic!("{value:?}")
-                    };
-                    text.as_ref()
-                })
-                .collect::<String>();
-            assert_eq!(actual, expected);
-        },
+        |_, outputs| assert_eq!(delivery_text(outputs), expected),
     );
+}
+
+#[test]
+fn complete_ordinary_program_handles_empty_and_absent_records_without_empty_ranges() {
+    let expected = concat!(
+        "\n\n\n\n",
+        "0\tGGT\n0\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+    );
+    check(
+        &ordinary_fixture(),
+        &["", ">ONE\nAAAA\n", ">THREE", ">THREE\n", ">THREE\n>NEXT\n"],
+        |_, outputs| assert_eq!(delivery_text(outputs), expected),
+    );
+}
+
+#[test]
+fn ordinary_program_handles_hundred_and_four_hundred_bases_without_raising_limits() {
+    // These are the two real-host inputs rejected by the first timing attempt.
+    // Qualify the unchanged complete algorithm through original and decoded
+    // artifacts, including growth and a later small-input refresh. Host/native
+    // execution and the full standard workload remain separate qualifications.
+    let repeats = [1, 25, 100, 1];
+    let inputs = repeats
+        .iter()
+        .map(|count| {
+            format!(
+                ">ONE\nAAAA\n>THREE timing\n{}\n>FOUR\nCC\n",
+                "GGTA".repeat(*count)
+            )
+        })
+        .collect::<Vec<_>>();
+    let expected = repeats
+        .iter()
+        .map(|count| {
+            let windows = 4 * count - 1;
+            let common = 100.0 * *count as f64 / windows as f64;
+            let other = if *count > 1 {
+                format!("AG {:.3}\n", 100.0 * (*count - 1) as f64 / windows as f64)
+            } else {
+                String::new()
+            };
+            format!(
+                "G 50.000\nA 25.000\nT 25.000\n\nGG {common:.3}\nGT {common:.3}\nTA {common:.3}\n{other}\n{count}\tGGT\n{count}\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n"
+            )
+        })
+        .collect::<Vec<_>>();
+    check(
+        &ordinary_fixture(),
+        &inputs.iter().map(String::as_str).collect::<Vec<_>>(),
+        |turn, outputs| assert_eq!(delivery_text(outputs), expected[turn]),
+    );
+}
+
+#[test]
+fn ordinary_program_work_denial_preserves_publication_and_allows_recovery() {
+    use mech_core::{MemoryBudgetDimension, ResidentKernelError, ResidentResourcePhase};
+    use mech_engine::resident::ReactiveInstance;
+
+    let (artifacts, outputs, _) = compile(&ordinary_fixture());
+    let read = |instance: &ReactiveInstance| {
+        delivery_text(
+            &outputs
+                .iter()
+                .map(|output| instance.copied_output(*output).unwrap())
+                .collect::<Vec<_>>(),
+        )
+    };
+    let expected = concat!(
+        "G 50.000\nA 25.000\nT 25.000\n\n",
+        "GG 33.333\nGT 33.333\nTA 33.333\n\n",
+        "1\tGGT\n1\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+    );
+    let recovered = concat!(
+        "G 50.000\nA 25.000\nT 25.000\n\n",
+        "GG 28.571\nGT 28.571\nTA 28.571\nAG 14.286\n\n",
+        "2\tGGT\n2\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+    );
+    for (ordinal, artifact) in artifacts.iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x46415355, ordinal as u32),
+            artifact,
+            &mech_stdlib::source_catalog(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let slot = instance.plan.inputs[0].slot;
+        let first = [">THREE\nGGTA\n".to_owned()];
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&first),
+            }])
+            .unwrap();
+        assert_eq!(read(&instance), expected);
+        let epoch = instance.published_epoch();
+        let large = [format!(">THREE\n{}\n", "GGTA".repeat(1_000))];
+        let error = instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&large),
+            }])
+            .unwrap_err();
+        assert!(
+            matches!(error, ResidentExecutionError::Kernel {
+            error: ResidentKernelError::ResourceLimit {
+                phase: ResidentResourcePhase::Admission,
+                dimension: MemoryBudgetDimension::ComparisonWork,
+                required,
+                limit: 65_536,
+            }, ..
+        } if required > 65_536),
+            "{error:?}"
+        );
+        assert_eq!(instance.published_epoch(), epoch);
+        assert_eq!(read(&instance), expected);
+        let next = [">THREE\ngGtagGtA\n".to_owned()];
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&next),
+            }])
+            .unwrap();
+        assert_eq!(read(&instance), recovered);
+        assert!(!instance.has_ready_continuation());
+    }
 }

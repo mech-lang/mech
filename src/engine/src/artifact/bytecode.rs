@@ -9,9 +9,9 @@ use mech_core::{
     BytecodeProgram, CellSlotId, ComputePlacement, ConstantId, ConstantStore, ConstantStoreBuilder,
     DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin,
     ExecutionHostFunctionRequest, ExecutionResourceRequest, InputId, IntegrityConstraintId,
-    MechError, NodeId, OperationContractId, OperationContractTable, OutputId, ParsedProgram,
-    ResourceDelivery, ResourceIntent, SchemaDraft, SchemaId, SchemaTable, SchemaTableBuilder,
-    SemanticModelError, SnapshotValueError, Value, ValueDraft, write_bytecode_with_artifact,
+    MechError, NodeId, OperationContractId, OperationContractTable, OutputId, ResourceDelivery,
+    ResourceIntent, SchemaDraft, SchemaId, SchemaTable, SchemaTableBuilder, SemanticModelError,
+    SnapshotValueError, Value, ValueDraft, write_bytecode_with_artifact,
 };
 use serde::{
     Deserialize, Serialize,
@@ -687,45 +687,23 @@ pub fn encode_program_artifact_sections(
 pub fn decode_program_artifact_bytecode_v1(
     bytes: &[u8],
 ) -> Result<ProgramArtifact, ArtifactBytecodeError> {
-    let parsed = ParsedProgram::from_bytes(bytes)?;
-    validate_artifact_execution_authority(&parsed)?;
+    let parsed =
+        mech_core::CanonicalArtifactBytecode::from_bytes(bytes).map_err(|error| match error {
+            mech_core::CanonicalArtifactBytecodeError::CoreBytecode(error) => {
+                ArtifactBytecodeError::CoreBytecode(error)
+            }
+            mech_core::CanonicalArtifactBytecodeError::MissingArtifactSections => {
+                ArtifactBytecodeError::MissingArtifactSections
+            }
+            mech_core::CanonicalArtifactBytecodeError::ParallelLegacyExecutionAuthority {
+                sections,
+            } => ArtifactBytecodeError::ParallelLegacyExecutionAuthority { sections },
+        })?;
     decode_program_artifact_sections_with_requirements(
         &parsed.artifact,
         Some(parsed.requirements),
         ArtifactDecodeLimits::default(),
     )
-}
-
-/// All executable bytecode entry points must admit the complete envelope.
-/// Section decoding alone cannot verify that the outer requirement table and
-/// executable authority agree with the retained semantic artifact.
-fn validate_artifact_execution_authority(
-    program: &ParsedProgram,
-) -> Result<(), ArtifactBytecodeError> {
-    if program.artifact.is_empty() {
-        return Err(ArtifactBytecodeError::MissingArtifactSections);
-    }
-    let mut sections = Vec::new();
-    for (present, section) in [
-        (program.header.register_count != 0, "registers"),
-        (program.header.instruction_count != 0, "instruction header"),
-        (!program.types.is_empty(), "types"),
-        (!program.constants.is_empty(), "constants"),
-        (!program.constant_blob.is_empty(), "constant blob"),
-        (!program.symbols.is_empty(), "symbols"),
-        (!program.mutable_symbols.is_empty(), "mutable symbols"),
-        (!program.instructions.is_empty(), "instructions"),
-        (!program.dictionary.is_empty(), "dictionary"),
-    ] {
-        if present {
-            sections.push(section);
-        }
-    }
-    if sections.is_empty() {
-        Ok(())
-    } else {
-        Err(ArtifactBytecodeError::ParallelLegacyExecutionAuthority { sections })
-    }
 }
 
 pub fn decode_program_artifact_sections(
@@ -2849,6 +2827,18 @@ mod execution_authority_tests {
             encode_program_artifact_bytecode_v1(&decoded).unwrap(),
             bytes
         );
+    }
+
+    #[test]
+    fn full_decoder_keeps_semantic_section_validation_after_strict_envelope() {
+        let mut sections = encode_program_artifact_sections(&empty_artifact()).unwrap();
+        sections.schemas = b"null".to_vec();
+        let bytes = write_bytecode_with_artifact(&empty_envelope(), &sections).unwrap();
+        assert!(mech_core::CanonicalArtifactBytecode::from_bytes(&bytes).is_ok());
+        assert!(matches!(
+            decode_program_artifact_bytecode_v1(&bytes),
+            Err(ArtifactBytecodeError::Json(_))
+        ));
     }
 }
 

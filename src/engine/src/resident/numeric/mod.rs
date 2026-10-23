@@ -1,6 +1,13 @@
+mod compact_range;
+mod compact_string_access;
+pub mod linkage_factories;
 mod nested_assignment;
 mod promoted_assignment;
+mod selected_string_footprint;
+#[cfg(all(feature = "native-artifact", feature = "pure_text"))]
+pub(in crate::resident) mod selected_string_matrix;
 mod selection_address;
+pub(in crate::resident) mod string_map_access;
 
 #[cfg(test)]
 use mech_core::PORTABLE_SELECTOR_INDEX_MAX as PORTABLE_INDEX_MAX;
@@ -90,12 +97,39 @@ fn snapshot_element_comparison_work(
     data: &ValueData,
     index: usize,
 ) -> Result<u64, ResidentKernelError> {
+    fn scalar_work(
+        meter: &mut super::budget::ResidentBudgetMeter,
+        body: &SchemaBody,
+        data: &ValueData,
+    ) -> Result<u64, ResidentKernelError> {
+        if !matches!(
+            body,
+            SchemaBody::Bool
+                | SchemaBody::Index
+                | SchemaBody::String
+                | SchemaBody::UnsignedInteger(_)
+                | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Rational64
+                | SchemaBody::Complex(_)
+        ) {
+            return super::budget::measure_canonical_data_comparison_work(meter, body, data);
+        }
+        // These scalar layouts have one canonical chunk. Inspecting its
+        // immutable metadata does not scan its payload. The caller separately
+        // reserves the returned work for EVERY actual comparison occurrence,
+        // including scalar broadcasts. Composite/interval layouts keep their
+        // original recursive comparison reservation.
+        let footprint =
+            super::budget::measure_borrowed_canonical_data_footprint(meter, body, data)?;
+        Ok(footprint.encoded_bytes.max(footprint.node_count).max(1))
+    }
     match (body, data) {
         (SchemaBody::Matrix { element, .. }, ValueData::Matrix(matrix)) => {
             match matrix.elements() {
                 SequenceView::Values(values) => {
                     let value = values.get(index).ok_or(ResidentKernelError::InvalidShape)?;
-                    super::budget::measure_canonical_data_comparison_work(meter, element, value)
+                    scalar_work(meter, element, value)
                 }
                 values => {
                     let footprint =
@@ -105,9 +139,7 @@ fn snapshot_element_comparison_work(
                 }
             }
         }
-        (_, _) if index == 0 => {
-            super::budget::measure_canonical_data_comparison_work(meter, body, data)
-        }
+        (_, _) if index == 0 => scalar_work(meter, body, data),
         _ => Err(ResidentKernelError::InvalidShape),
     }
 }
@@ -661,6 +693,9 @@ struct SnapshotAccessPlan {
     source_dimensions: Option<(usize, usize)>,
     output_dimensions: Option<(usize, usize)>,
     output_dimensions_dynamic: bool,
+    // Orientation is semantic schema evidence, not inferred from a transient
+    // 1x1/empty output seed. Positional linear gathers preserve either vector.
+    linear_gather_row: bool,
     output_geometry: ResolvedAccessGeometry,
     aggregate_ordinal: Option<usize>,
     output_schema: SchemaId,
@@ -706,169 +741,116 @@ impl SemanticComparison {
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     // ProgramArtifact nodes carry semantic identities. These factories select
     // the resident implementation from the resolved contract and layouts.
-    register_no_additional_scratch(builder, &["math"], "add", bind_add)?;
-    register_no_additional_scratch(builder, &["math"], "add-assign", bind_semantic_add_assign)?;
-    register_no_additional_scratch(builder, &["math"], "div-assign", bind_div_assign)?;
-    register_no_additional_scratch(builder, &["math"], "mul-assign", bind_mul_assign)?;
-    register_no_additional_scratch(builder, &["math"], "sub-assign", bind_semantic_sub_assign)?;
-    register_no_additional_scratch(
-        builder,
-        &["math", "add-assign"],
-        "range-all",
-        bind_add_indexed_rows,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["math", "sub-assign"],
-        "range-all",
-        bind_sub_indexed_rows,
-    )?;
-    register_no_additional_scratch(builder, &["math"], "sub", bind_sub)?;
-    register_no_additional_scratch(builder, &["math"], "mul", bind_semantic_mul)?;
-    register_no_additional_scratch(builder, &["math"], "div", bind_div)?;
-    register_no_additional_scratch(builder, &["math"], "mod", bind_remainder)?;
-    register_no_additional_scratch(builder, &["math"], "neg", bind_negate)?;
-    register_no_additional_scratch(builder, &["math"], "pow", bind_pow)?;
-    register_no_additional_scratch(builder, &["math"], "abs", bind_abs)?;
-    register_no_additional_scratch(builder, &["math"], "acos", bind_math_acos)?;
-    register_no_additional_scratch(builder, &["math"], "acosh", bind_math_acosh)?;
-    register_no_additional_scratch(builder, &["math"], "acot", bind_math_acot)?;
-    register_no_additional_scratch(builder, &["math"], "acsc", bind_math_acsc)?;
-    register_no_additional_scratch(builder, &["math"], "asec", bind_math_asec)?;
-    register_no_additional_scratch(builder, &["math"], "asin", bind_math_asin)?;
-    register_no_additional_scratch(builder, &["math"], "asinh", bind_math_asinh)?;
-    register_no_additional_scratch(builder, &["math"], "atan", bind_math_atan)?;
-    register_no_additional_scratch(builder, &["math"], "copysign", bind_math_copysign)?;
-    register_no_additional_scratch(builder, &["math"], "atanh", bind_math_atanh)?;
-    register_no_additional_scratch(builder, &["math"], "cbrt", bind_math_cbrt)?;
-    register_no_additional_scratch(builder, &["math"], "ceil", bind_math_ceil)?;
-    register_no_additional_scratch(builder, &["math"], "cosh", bind_math_cosh)?;
-    register_no_additional_scratch(builder, &["math"], "cot", bind_math_cot)?;
-    register_no_additional_scratch(builder, &["math"], "csc", bind_math_csc)?;
-    register_no_additional_scratch(builder, &["math"], "erf", bind_math_erf)?;
-    register_no_additional_scratch(builder, &["math"], "erfc", bind_math_erfc)?;
-    register_no_additional_scratch(builder, &["math"], "fdim", bind_math_fdim)?;
-    register_no_additional_scratch(builder, &["math"], "floor", bind_floor)?;
-    register_no_additional_scratch(builder, &["math"], "fmod", bind_math_fmod)?;
-    register_no_additional_scratch(builder, &["math"], "lgamma", bind_math_lgamma)?;
-    register_no_additional_scratch(builder, &["math"], "log", bind_math_log)?;
-    register_no_additional_scratch(builder, &["math"], "log10", bind_math_log10)?;
-    register_no_additional_scratch(builder, &["math"], "log1p", bind_math_log1p)?;
-    register_no_additional_scratch(builder, &["math"], "log2", bind_math_log2)?;
-    register_no_additional_scratch(builder, &["math"], "nextafter", bind_math_nextafter)?;
-    register_no_additional_scratch(builder, &["math"], "remainder", bind_math_remainder)?;
-    register_no_additional_scratch(builder, &["math"], "rint", bind_math_rint)?;
-    register_no_additional_scratch(builder, &["math"], "round", bind_math_round)?;
-    register_no_additional_scratch(builder, &["math"], "roundeven", bind_math_roundeven)?;
-    register_no_additional_scratch(builder, &["math"], "sec", bind_math_sec)?;
-    register_no_additional_scratch(builder, &["math"], "sqrt", bind_sqrt)?;
-    register_no_additional_scratch(builder, &["math"], "sinh", bind_math_sinh)?;
-    register_no_additional_scratch(builder, &["math"], "tan", bind_math_tan)?;
-    register_no_additional_scratch(builder, &["math"], "tanh", bind_math_tanh)?;
-    register_no_additional_scratch(builder, &["math"], "tgamma", bind_math_tgamma)?;
-    register_no_additional_scratch(builder, &["math"], "trunc", bind_math_trunc)?;
-    register_no_additional_scratch(builder, &["math"], "atan2", bind_atan2)?;
-    register_no_additional_scratch(builder, &["math"], "cos", bind_cos)?;
-    register_no_additional_scratch(builder, &["math"], "sin", bind_sin)?;
-    register_no_additional_scratch(builder, &["math", "bessel"], "j0", bind_math_bessel_j0)?;
-    register_no_additional_scratch(builder, &["math", "bessel"], "j1", bind_math_bessel_j1)?;
-    register_no_additional_scratch(builder, &["math", "bessel"], "jn", bind_math_bessel_jn)?;
-    register_no_additional_scratch(builder, &["math", "bessel"], "y0", bind_math_bessel_y0)?;
-    register_no_additional_scratch(builder, &["math", "bessel"], "y1", bind_math_bessel_y1)?;
-    register_no_additional_scratch(builder, &["math", "bessel"], "yn", bind_math_bessel_yn)?;
-    register_no_additional_scratch(builder, &["logic"], "and", bind_semantic_bool_and)?;
-    register_no_additional_scratch(builder, &["logic"], "or", bind_semantic_bool_or)?;
-    register_no_additional_scratch(builder, &["logic"], "xor", bind_semantic_bool_xor)?;
-    register_no_additional_scratch(builder, &["logic"], "not", bind_bool_not)?;
-    register_no_additional_scratch(builder, &["compare"], "eq", bind_semantic_equal)?;
-    register_no_additional_scratch(builder, &["compare"], "neq", bind_semantic_not_equal)?;
-    register_no_additional_scratch(builder, &["compare"], "lt", bind_semantic_less)?;
-    register_no_additional_scratch(builder, &["compare"], "lte", bind_semantic_less_equal)?;
-    register_no_additional_scratch(builder, &["compare"], "gt", bind_semantic_greater)?;
-    register_no_additional_scratch(builder, &["compare"], "gte", bind_semantic_greater_equal)?;
-    register_no_additional_scratch(builder, &["compare"], "seq", bind_strict_equal)?;
-    register_no_additional_scratch(builder, &["compare"], "sneq", bind_strict_not_equal)?;
-    register_canonical_finalize(builder, &["access"], "scalar", bind_semantic_scalar_access)?;
-    register_canonical_finalize(builder, &["access"], "column", bind_snapshot_access)?;
-    register_canonical_finalize(builder, &["access"], "rows", bind_semantic_rows_access)?;
-    register_canonical_finalize(
-        builder,
-        &["access"],
-        "columns",
-        bind_semantic_columns_access,
-    )?;
-    register_no_additional_scratch(builder, &["access"], "index", bind_scalar_index)?;
-    register_canonical_finalize(builder, &["access"], "range", bind_semantic_range_access)?;
-    register_canonical_finalize(
-        builder,
-        &["access"],
-        "rectangle",
-        bind_semantic_range_access,
-    )?;
-    register_canonical_finalize(builder, &["matrix"], "horzcat", bind_horizontal)?;
-    register_canonical_finalize(builder, &["matrix"], "vertcat", bind_vertical)?;
-    register_canonical_finalize(
-        builder,
-        &["matrix"],
-        "comprehension",
-        bind_matrix_comprehension,
-    )?;
+    linkage_factories::NUMERIC_MATH_ADD.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ADD_ASSIGN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_DIV_ASSIGN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_MUL_ASSIGN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SUB_ASSIGN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ADD_ASSIGN_RANGE_ALL.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SUB_ASSIGN_RANGE_ALL.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SUB.install(builder)?;
+    linkage_factories::NUMERIC_MATH_MUL.install(builder)?;
+    linkage_factories::NUMERIC_MATH_DIV.install(builder)?;
+    linkage_factories::NUMERIC_MATH_MOD.install(builder)?;
+    linkage_factories::NUMERIC_MATH_NEG.install(builder)?;
+    linkage_factories::NUMERIC_MATH_POW.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ABS.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ACOS.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ACOSH.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ACOT.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ACSC.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ASEC.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ASIN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ASINH.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ATAN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_COPYSIGN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ATANH.install(builder)?;
+    linkage_factories::NUMERIC_MATH_CBRT.install(builder)?;
+    linkage_factories::NUMERIC_MATH_CEIL.install(builder)?;
+    linkage_factories::NUMERIC_MATH_COSH.install(builder)?;
+    linkage_factories::NUMERIC_MATH_COT.install(builder)?;
+    linkage_factories::NUMERIC_MATH_CSC.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ERF.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ERFC.install(builder)?;
+    linkage_factories::NUMERIC_MATH_FDIM.install(builder)?;
+    linkage_factories::NUMERIC_MATH_FLOOR.install(builder)?;
+    linkage_factories::NUMERIC_MATH_FMOD.install(builder)?;
+    linkage_factories::NUMERIC_MATH_LGAMMA.install(builder)?;
+    linkage_factories::NUMERIC_MATH_LOG.install(builder)?;
+    linkage_factories::NUMERIC_MATH_LOG10.install(builder)?;
+    linkage_factories::NUMERIC_MATH_LOG1P.install(builder)?;
+    linkage_factories::NUMERIC_MATH_LOG2.install(builder)?;
+    linkage_factories::NUMERIC_MATH_NEXTAFTER.install(builder)?;
+    linkage_factories::NUMERIC_MATH_REMAINDER.install(builder)?;
+    linkage_factories::NUMERIC_MATH_RINT.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ROUND.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ROUNDEVEN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SEC.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SQRT.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SINH.install(builder)?;
+    linkage_factories::NUMERIC_MATH_TAN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_TANH.install(builder)?;
+    linkage_factories::NUMERIC_MATH_TGAMMA.install(builder)?;
+    linkage_factories::NUMERIC_MATH_TRUNC.install(builder)?;
+    linkage_factories::NUMERIC_MATH_ATAN2.install(builder)?;
+    linkage_factories::NUMERIC_MATH_COS.install(builder)?;
+    linkage_factories::NUMERIC_MATH_SIN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_BESSEL_J0.install(builder)?;
+    linkage_factories::NUMERIC_MATH_BESSEL_J1.install(builder)?;
+    linkage_factories::NUMERIC_MATH_BESSEL_JN.install(builder)?;
+    linkage_factories::NUMERIC_MATH_BESSEL_Y0.install(builder)?;
+    linkage_factories::NUMERIC_MATH_BESSEL_Y1.install(builder)?;
+    linkage_factories::NUMERIC_MATH_BESSEL_YN.install(builder)?;
+    linkage_factories::NUMERIC_LOGIC_AND.install(builder)?;
+    linkage_factories::NUMERIC_LOGIC_OR.install(builder)?;
+    linkage_factories::NUMERIC_LOGIC_XOR.install(builder)?;
+    linkage_factories::NUMERIC_LOGIC_NOT.install(builder)?;
+    // The entry witness describes only the exact String branch. Numeric
+    // scalar binders keep their separate finished-kernel semantic seals.
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_string_comparisons(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    {
+        linkage_factories::NUMERIC_COMPARE_EQ.install(builder)?;
+        linkage_factories::NUMERIC_COMPARE_NEQ.install(builder)?;
+    }
+    linkage_factories::NUMERIC_COMPARE_LT.install(builder)?;
+    linkage_factories::NUMERIC_COMPARE_LTE.install(builder)?;
+    linkage_factories::NUMERIC_COMPARE_GT.install(builder)?;
+    linkage_factories::NUMERIC_COMPARE_GTE.install(builder)?;
+    linkage_factories::NUMERIC_COMPARE_SEQ.install(builder)?;
+    linkage_factories::NUMERIC_COMPARE_SNEQ.install(builder)?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_access(builder, true)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    linkage_factories::NUMERIC_ACCESS_SCALAR.install(builder)?;
+    linkage_factories::NUMERIC_ACCESS_COLUMN.install(builder)?;
+    linkage_factories::NUMERIC_ACCESS_ROWS.install(builder)?;
+    linkage_factories::NUMERIC_ACCESS_COLUMNS.install(builder)?;
+    linkage_factories::NUMERIC_ACCESS_INDEX.install(builder)?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_access(builder, false)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    linkage_factories::NUMERIC_ACCESS_RANGE.install(builder)?;
+    linkage_factories::NUMERIC_ACCESS_RECTANGLE.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_HORZCAT.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_VERTCAT.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_COMPREHENSION.install(builder)?;
     // Bytecode-v1 artifacts emitted before matrix/matmul became the canonical
     // identity persist matrix/multiply. Keep that stable operation loadable.
-    register_no_additional_scratch(builder, &["matrix"], "multiply", bind_matmul)?;
-    register_no_additional_scratch(builder, &["matrix"], "matmul", bind_matmul)?;
-    register_no_additional_scratch(builder, &["matrix"], "dot", bind_matrix_dot)?;
-    register_with_memory_class(
-        builder,
-        &["matrix"],
-        "solve",
-        ImplementationMemoryClass::MatrixSolve,
-        bind_matrix_solve,
-    )?;
-    register_canonical_finalize(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
-    register_canonical_finalize(builder, &["core"], "assign", bind_hold_state)?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "whole-value",
-        bind_whole_matrix_assign,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "indexed-axis",
-        bind_indexed_assign,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "indexed-rows",
-        bind_indexed_assign_rows,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "indexed-columns",
-        bind_indexed_assign_columns,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "indexed-rectangle",
-        bind_indexed_assign_rectangle,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "collection-entry",
-        bind_collection_entry_assign,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "single-element",
-        bind_single_element_assign,
-    )?;
+    linkage_factories::NUMERIC_MATRIX_MULTIPLY.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_MATMUL.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_DOT.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_SOLVE.install(builder)?;
+    linkage_factories::NUMERIC_MATRIX_TRANSPOSE.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_WHOLE_VALUE.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_AXIS.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_ROWS.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_COLUMNS.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_RECTANGLE.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_COLLECTION_ENTRY.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_SINGLE_ELEMENT.install(builder)?;
     macro_rules! compound_selection {
         ($name:literal, $operation:literal) => {
             for (selection, factory) in [
@@ -892,24 +874,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
             }
         };
     }
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "identity-indices",
-        selection_address::bind_identity_indices,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "selection-order",
-        selection_address::bind_selection_order,
-    )?;
-    register_canonical_finalize(
-        builder,
-        &["core", "assign"],
-        "broadcast",
-        selection_address::bind_broadcast,
-    )?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_IDENTITY_INDICES.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_SELECTION_ORDER.install(builder)?;
+    linkage_factories::NUMERIC_CORE_ASSIGN_BROADCAST.install(builder)?;
     compound_selection!("add", 0);
     compound_selection!("sub", 1);
     compound_selection!("mul", 2);
@@ -930,113 +897,43 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     nested_selection!("mul", 2);
     nested_selection!("div", 3);
     nested_selection!("pow", 5);
-    register_no_additional_scratch(builder, &["range"], "exclusive", bind_range_exclusive)?;
-    register_no_additional_scratch(
-        builder,
-        &["range"],
-        "exclusive-increment",
-        bind_range_increment_exclusive,
-    )?;
-    register_no_additional_scratch(builder, &["range"], "inclusive", bind_range_inclusive)?;
-    register_no_additional_scratch(
-        builder,
-        &["range"],
-        "inclusive-increment",
-        bind_range_increment_inclusive,
-    )?;
-    register_no_additional_scratch(builder, &["combinatorics"], "n-choose-k", bind_n_choose_k)?;
-    register_no_additional_scratch(builder, &["stats", "sum"], "column", bind_sum_columns)?;
-    register_no_additional_scratch(builder, &["stats", "sum"], "row", bind_sum_rows)?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_ranges(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    {
+        linkage_factories::NUMERIC_RANGE_EXCLUSIVE.install(builder)?;
+        linkage_factories::NUMERIC_RANGE_EXCLUSIVE_INCREMENT.install(builder)?;
+        linkage_factories::NUMERIC_RANGE_INCLUSIVE.install(builder)?;
+        linkage_factories::NUMERIC_RANGE_INCLUSIVE_INCREMENT.install(builder)?;
+    }
+    linkage_factories::NUMERIC_COMBINATORICS_N_CHOOSE_K.install(builder)?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_sums(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    {
+        linkage_factories::NUMERIC_STATS_SUM_COLUMN.install(builder)?;
+        linkage_factories::NUMERIC_STATS_SUM_ROW.install(builder)?;
+    }
 
-    register_no_additional_scratch(builder, &["ekf"], "trigonometric-state", bind_ekf_trig)?;
-    register_no_additional_scratch(builder, &["ekf"], "motion-jacobian", bind_ekf_motion)?;
-    register_no_additional_scratch(builder, &["ekf"], "control-jacobian", bind_ekf_control)?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "predicted-state",
-        bind_ekf_predicted_state,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "predicted-covariance",
-        bind_ekf_predicted_covariance,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "landmark-delta-and-range",
-        bind_ekf_landmark,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "predicted-measurement",
-        bind_ekf_measurement,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "measurement-jacobian",
-        bind_ekf_measurement_jacobian,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "innovation-covariance",
-        bind_ekf_innovation_covariance,
-    )?;
-    register_no_additional_scratch(builder, &["ekf"], "solve-2x2", bind_ekf_solve)?;
-    register_no_additional_scratch(builder, &["ekf"], "kalman-gain", bind_ekf_gain)?;
-    register_no_additional_scratch(builder, &["ekf"], "innovation", bind_ekf_innovation)?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "corrected-state",
-        bind_ekf_corrected_state,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "joseph-covariance-update",
-        bind_ekf_joseph,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "covariance-symmetrization",
-        bind_ekf_symmetrize,
-    )?;
-    register_no_additional_scratch(builder, &["ekf"], "candidate-finite", bind_ekf_finite)?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "covariance-positive-diagonal",
-        bind_ekf_positive_diagonal,
-    )?;
-    register_no_additional_scratch(
-        builder,
-        &["ekf"],
-        "covariance-symmetric",
-        bind_ekf_symmetric,
-    )?;
+    linkage_factories::NUMERIC_EKF_TRIGONOMETRIC_STATE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_MOTION_JACOBIAN.install(builder)?;
+    linkage_factories::NUMERIC_EKF_CONTROL_JACOBIAN.install(builder)?;
+    linkage_factories::NUMERIC_EKF_PREDICTED_STATE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_PREDICTED_COVARIANCE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_LANDMARK_DELTA_AND_RANGE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_PREDICTED_MEASUREMENT.install(builder)?;
+    linkage_factories::NUMERIC_EKF_MEASUREMENT_JACOBIAN.install(builder)?;
+    linkage_factories::NUMERIC_EKF_INNOVATION_COVARIANCE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_SOLVE_2X2.install(builder)?;
+    linkage_factories::NUMERIC_EKF_KALMAN_GAIN.install(builder)?;
+    linkage_factories::NUMERIC_EKF_INNOVATION.install(builder)?;
+    linkage_factories::NUMERIC_EKF_CORRECTED_STATE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_JOSEPH_COVARIANCE_UPDATE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_COVARIANCE_SYMMETRIZATION.install(builder)?;
+    linkage_factories::NUMERIC_EKF_CANDIDATE_FINITE.install(builder)?;
+    linkage_factories::NUMERIC_EKF_COVARIANCE_POSITIVE_DIAGONAL.install(builder)?;
+    linkage_factories::NUMERIC_EKF_COVARIANCE_SYMMETRIC.install(builder)?;
     Ok(())
-}
-
-fn register_no_additional_scratch(
-    builder: &mut FunctionCatalogBuilder,
-    module: &[&str],
-    operation: &str,
-    factory: mech_core::ResidentKernelFactory,
-) -> MResult<()> {
-    register_with_memory_class(
-        builder,
-        module,
-        operation,
-        ImplementationMemoryClass::NoAdditionalScratch,
-        factory,
-    )
 }
 
 fn register_canonical_finalize(
@@ -1549,7 +1446,13 @@ fn bind_negate(
         if request.inputs[0].shape != request.output.shape {
             return Err(ResidentKernelBindError::UnsupportedLayout);
         }
-        bound(negate, Vec::<u64>::new().into_boxed_slice())
+        bound(negate, Vec::<u64>::new().into_boxed_slice()).map(|kernel| {
+            super::native_semantics::certify(
+                request,
+                kernel,
+                super::native_semantics::NativeScalarOp::F64Neg,
+            )
+        })
     };
     dense().or_else(|_| bind_snapshot_numeric_negate(request))
 }
@@ -1893,7 +1796,17 @@ fn bind_floor(
 fn bind_sqrt(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_unary_float(request, square_root, square_root_f32)
+    // The dense executor uses the platform sqrt. The distinct Snapshot
+    // fallback uses libm and receives no platform-sqrt semantic witness.
+    bind_unary_f64(request, square_root)
+        .map(|kernel| {
+            super::native_semantics::certify(
+                request,
+                kernel,
+                super::native_semantics::NativeScalarOp::F64Sqrt,
+            )
+        })
+        .or_else(|_| bind_unary_float_snapshot(request, square_root_f32))
 }
 
 fn bind_sin(
@@ -2027,6 +1940,13 @@ fn bind_sub(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, subtract)
+        .map(|kernel| {
+            super::native_semantics::certify(
+                request,
+                kernel,
+                super::native_semantics::NativeScalarOp::F64Sub,
+            )
+        })
         .or_else(|_| bind_snapshot_numeric_binary(request, SemanticArithmetic::Subtract))
 }
 
@@ -2034,13 +1954,26 @@ fn bind_add(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, add)
+        .map(|kernel| {
+            super::native_semantics::certify(
+                request,
+                kernel,
+                super::native_semantics::NativeScalarOp::F64Add,
+            )
+        })
         .or_else(|_| bind_snapshot_numeric_binary(request, SemanticArithmetic::Add))
 }
 
 fn bind_mul(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary(request, multiply)
+    bind_binary(request, multiply).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Mul,
+        )
+    })
 }
 
 fn bind_semantic_mul(
@@ -2055,6 +1988,13 @@ fn bind_div(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, divide)
+        .map(|kernel| {
+            super::native_semantics::certify(
+                request,
+                kernel,
+                super::native_semantics::NativeScalarOp::F64Div,
+            )
+        })
         .or_else(|_| bind_snapshot_numeric_binary(request, SemanticArithmetic::Divide))
 }
 
@@ -2094,10 +2034,16 @@ fn bind_f64_comparison(
 fn bind_f64_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_comparison(request, f64_equal)
+    bind_f64_comparison(request, f64_equal).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Eq,
+        )
+    })
 }
 
-fn bind_semantic_equal(
+pub(super) fn bind_semantic_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_equal(request)
@@ -2458,7 +2404,7 @@ fn bind_snapshot_equality(
     Ok(bound(executor, Vec::<u64>::new())?.with_snapshot_schemas(request.schemas.clone()))
 }
 
-fn bind_semantic_not_equal(
+pub(super) fn bind_semantic_not_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_not_equal(request)
@@ -2522,13 +2468,25 @@ fn bind_f64_vector_comparison(
 fn bind_f64_not_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_comparison(request, f64_not_equal)
+    bind_f64_comparison(request, f64_not_equal).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Ne,
+        )
+    })
 }
 
 fn bind_f64_less(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_comparison(request, f64_less)
+    bind_f64_comparison(request, f64_less).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Lt,
+        )
+    })
 }
 
 fn bind_semantic_less(
@@ -2542,7 +2500,13 @@ fn bind_semantic_less(
 fn bind_f64_less_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_comparison(request, f64_less_equal)
+    bind_f64_comparison(request, f64_less_equal).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Le,
+        )
+    })
 }
 
 fn bind_semantic_less_equal(
@@ -2556,7 +2520,13 @@ fn bind_semantic_less_equal(
 fn bind_f64_greater(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_comparison(request, f64_greater)
+    bind_f64_comparison(request, f64_greater).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Gt,
+        )
+    })
 }
 
 fn bind_semantic_greater(
@@ -2570,7 +2540,13 @@ fn bind_semantic_greater(
 fn bind_f64_greater_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_f64_comparison(request, f64_greater_equal)
+    bind_f64_comparison(request, f64_greater_equal).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::F64Ge,
+        )
+    })
 }
 
 fn bind_semantic_greater_equal(
@@ -3695,7 +3671,7 @@ fn bind_semantic_transpose(
     bind_transpose(request).or_else(|_| super::text::bind_string_transpose(request))
 }
 
-fn bind_sum_columns(
+pub(super) fn bind_sum_columns(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_full_write(
@@ -3719,7 +3695,7 @@ fn bind_sum_columns(
     bind_snapshot_sum(request, true)
 }
 
-fn bind_sum_rows(
+pub(super) fn bind_sum_rows(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_full_write(
@@ -4350,6 +4326,71 @@ fn resident_shape_from_dimensions(
     })
 }
 
+fn linear_gather_output_is_row(request: &ResidentKernelBindRequest<'_>) -> bool {
+    request
+        .schemas
+        .get(request.output.schema_id)
+        .is_some_and(|schema| {
+            matches!(schema.body(), SchemaBody::Matrix { dimensions, .. }
+            if dimensions.len() == 2
+                && dimensions[0] == mech_core::DimensionExpr::Constant(1))
+        })
+}
+
+fn validate_linear_gather_geometry(
+    request: &ResidentKernelBindRequest<'_>,
+    dimensions: Option<(usize, usize)>,
+    selector_count: usize,
+    logical: bool,
+    source_count: Option<usize>,
+) -> Result<ResolvedAccessGeometry, ResidentKernelBindError> {
+    let (rows, columns) = dimensions.ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let SchemaBody::Matrix {
+        dimensions: axes, ..
+    } = schema.body()
+    else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if axes.len() != 2 {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let row = linear_gather_output_is_row(request);
+    let (fixed_axis, count_axis, count) = if row { (0, 1, columns) } else { (1, 0, rows) };
+    if axes[fixed_axis] != mech_core::DimensionExpr::Constant(1)
+        || if row { rows != 1 } else { columns != 1 }
+        // A mask's population may vary, but its length always addresses the
+        // complete actual source axis whenever that geometry is known.
+        || (logical && source_count.is_some_and(|source| source != selector_count))
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let dynamic_count = request.output.kind == ResidentValueKind::Snapshot
+        && request.output.shape == ResidentShape::SCALAR
+        && !request.output.activation_fixed_shape
+        && !schema.dimension_parameters().is_empty()
+        && !matches!(axes[count_axis], mech_core::DimensionExpr::Constant(_));
+    // Only a genuinely parameterized Snapshot result may use the current
+    // empty/previous-output seed. Fixed outputs, dense buffers and committed
+    // activation-fixed geometry retain the exact old cardinality checks.
+    if !dynamic_count
+        && if logical {
+            count > selector_count
+        } else {
+            count != selector_count
+        }
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(ResolvedAccessGeometry {
+        logical_output_rows: rows,
+        logical_output_columns: columns,
+    })
+}
+
 fn validate_snapshot_access_geometry(
     request: &ResidentKernelBindRequest<'_>,
     source_dimensions: Option<(usize, usize)>,
@@ -4431,23 +4472,13 @@ fn validate_snapshot_access_geometry(
                     logical_output_columns: 1,
                 }
             }
-            ResolvedSelectionMode::LinearGather => {
-                let (output_rows, output_columns) =
-                    output_dimensions.ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-                if output_columns != 1
-                    || if first_logical {
-                        first_count != source_cardinality || output_rows > first_count
-                    } else {
-                        output_rows != first_count
-                    }
-                {
-                    return Err(ResidentKernelBindError::UnsupportedLayout);
-                }
-                ResolvedAccessGeometry {
-                    logical_output_rows: output_rows,
-                    logical_output_columns: 1,
-                }
-            }
+            ResolvedSelectionMode::LinearGather => validate_linear_gather_geometry(
+                request,
+                output_dimensions,
+                first_count,
+                first_logical,
+                Some(source_cardinality),
+            )?,
             ResolvedSelectionMode::Rows => {
                 let (output_rows, output_columns) =
                     output_dimensions.ok_or(ResidentKernelBindError::UnsupportedLayout)?;
@@ -4539,23 +4570,13 @@ fn validate_snapshot_access_geometry(
                             logical_output_columns: 1,
                         }
                     }
-                    ResolvedSelectionMode::LinearGather => {
-                        let (output_rows, output_columns) =
-                            output_dimensions.ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-                        if output_columns != 1
-                            || if first_logical {
-                                output_rows > first_count
-                            } else {
-                                output_rows != first_count
-                            }
-                        {
-                            return Err(ResidentKernelBindError::UnsupportedLayout);
-                        }
-                        ResolvedAccessGeometry {
-                            logical_output_rows: output_rows,
-                            logical_output_columns: 1,
-                        }
-                    }
+                    ResolvedSelectionMode::LinearGather => validate_linear_gather_geometry(
+                        request,
+                        output_dimensions,
+                        first_count,
+                        first_logical,
+                        None,
+                    )?,
                     ResolvedSelectionMode::Rows => {
                         let (output_rows, output_columns) =
                             output_dimensions.ok_or(ResidentKernelBindError::UnsupportedLayout)?;
@@ -5172,7 +5193,7 @@ fn bind_vertical(
     bind_matrix_constructor(request, false)
 }
 
-fn bind_range_inclusive(
+pub(super) fn bind_range_inclusive(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_build(request, 2, &["range"], "inclusive-output")?;
@@ -5192,7 +5213,7 @@ fn bind_range_inclusive(
     bind_snapshot_range(request, true, false)
 }
 
-fn bind_range_exclusive(
+pub(super) fn bind_range_exclusive(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_build(request, 2, &["range"], "exclusive-output")?;
@@ -5212,7 +5233,7 @@ fn bind_range_exclusive(
     bind_snapshot_range(request, false, false)
 }
 
-fn bind_range_increment_inclusive(
+pub(super) fn bind_range_increment_inclusive(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_build(request, 3, &["range"], "inclusive-increment-output")?;
@@ -5239,7 +5260,7 @@ fn bind_range_increment_inclusive(
     bind_snapshot_range(request, true, true)
 }
 
-fn bind_range_increment_exclusive(
+pub(super) fn bind_range_increment_exclusive(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_build(request, 3, &["range"], "exclusive-increment-output")?;
@@ -5304,7 +5325,7 @@ fn bind_index_range(
     )
 }
 
-fn is_range_snapshot_element(body: &SchemaBody) -> bool {
+pub(super) fn is_range_snapshot_element(body: &SchemaBody) -> bool {
     matches!(
         body,
         SchemaBody::Index
@@ -5751,7 +5772,7 @@ fn bind_snapshot_scalar_index(
     )
 }
 
-fn bind_semantic_scalar_access(
+pub(super) fn bind_semantic_scalar_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_scalar_access_1d(request)
@@ -5890,6 +5911,7 @@ fn bind_all_elements_range(
         source_dimensions: fixed_geometry.then_some((rows, columns)),
         output_dimensions: Some((count, 1)),
         output_dimensions_dynamic: !fixed_geometry,
+        linear_gather_row: false,
         output_geometry: ResolvedAccessGeometry {
             logical_output_rows: count,
             logical_output_columns: 1,
@@ -5911,7 +5933,7 @@ fn bind_all_elements_range(
     )
 }
 
-fn bind_semantic_range_access(
+pub(super) fn bind_semantic_range_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_all_elements_range(request)
@@ -6110,6 +6132,7 @@ fn bind_dense_source_snapshot_access_mode(
         // population, rather than its lower-bound placeholder, determines the
         // result axes at execution.
         output_dimensions_dynamic: true,
+        linear_gather_row: linear_gather_output_is_row(request),
         output_geometry,
         aggregate_ordinal: None,
         output_schema: request.output.schema_id,
@@ -6364,6 +6387,7 @@ fn bind_snapshot_access_mode(
         source_dimensions,
         output_dimensions,
         output_dimensions_dynamic,
+        linear_gather_row: linear_gather_output_is_row(request),
         output_geometry,
         aggregate_ordinal,
         output_schema: request.output.schema_id,
@@ -14684,21 +14708,15 @@ fn range_snapshot(
         .and_then(|call| call.inputs().first())
         .ok_or(ResidentKernelError::InvalidInput)?
         .schema();
-    let elements = canonical_range_draft_values(
+    let next = compact_range::construct(
+        kernel,
         &values[..expected_inputs],
         input_schema.body(),
         inclusive,
         incremented,
         count,
     )?;
-    let output_shape = resolved_snapshot_output_shape(kernel, 1, count)?;
-    write_snapshot_data_for_shape_with_work_budget(
-        kernel,
-        output,
-        &output_shape,
-        ValueDataDraft::Matrix(elements.into_boxed_slice()),
-        Some(0),
-    )
+    write_snapshot_value(kernel, output, next)
 }
 
 fn n_choose_k(
@@ -15804,19 +15822,16 @@ fn map_access_entry_for_selector_with_meter(
             meter.charge_retained_nodes(1)?;
             8
         }
-        ResidentValueRef::String([value]) => {
-            let work = super::budget::checked_u64(value.len())?
-                .checked_add(8)
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            meter.charge_comparison_work(work)?;
-            meter.charge_retained_nodes(1)?;
-            work
-        }
+        ResidentValueRef::String([value]) => string_map_access::candidate_work(value, meter)?,
         _ => return Err(ResidentKernelError::InvalidInput),
     };
-    for entry in map.entries() {
-        super::budget::charge_canonical_key_footprint(meter, key_schema, entry.key().data())?;
-        meter.charge_comparison_work(candidate_work)?;
+    if matches!(key_schema, SchemaBody::String) {
+        return string_map_access::find_with_compare(map, candidate_work, meter, compare);
+    } else {
+        for entry in map.entries() {
+            super::budget::charge_canonical_key_footprint(meter, key_schema, entry.key().data())?;
+            meter.charge_comparison_work(candidate_work)?;
+        }
     }
     let cost = meter.estimate();
     super::budget::PreparedKernel::new((), cost)
@@ -16490,6 +16505,7 @@ fn snapshot_access_output_cost(
     plan: &SnapshotAccessPlan,
     inputs: &dyn ResidentKernelInputs,
     meter: &mut super::budget::ResidentBudgetMeter,
+    source_measurement: Option<&selected_string_footprint::SourceMeasurement<'_>>,
 ) -> Result<SnapshotAccessOutputCost, ResidentKernelError> {
     let selector = |index: usize| {
         inputs
@@ -16567,30 +16583,42 @@ fn snapshot_access_output_cost(
             if elements.len() != source_len {
                 return Err(ResidentKernelError::InvalidShape);
             }
+            let packed_strings = matches!(element.as_ref(), SchemaBody::String)
+                && matches!(elements, SequenceView::String(_))
+                && source_measurement.is_some();
+            let mut summaries = [None, None];
+            let mut count_selector = |index: usize, upper: usize| {
+                if packed_strings {
+                    let summary = selected_string_footprint::summarize(selector(index)?, upper)?;
+                    summaries[index] = Some(summary);
+                    Ok(summary.count)
+                } else {
+                    selector_access_count(selector(index)?, upper)
+                }
+            };
             let resolved_output_dimensions = if plan.matrix_constructor.is_some() {
                 plan.output_dimensions
             } else {
                 match plan.matrix_mode {
                     Some(ResolvedSelectionMode::LinearScalar) => None,
-                    Some(ResolvedSelectionMode::LinearGather) => Some((
-                        if plan.selectors.is_empty() {
+                    Some(ResolvedSelectionMode::LinearGather) => {
+                        let count = if plan.selectors.is_empty() {
                             source_len
                         } else {
-                            selector_access_count(selector(0)?, source_len)?
-                        },
-                        1,
-                    )),
-                    Some(ResolvedSelectionMode::Rows) => {
-                        Some((selector_access_count(selector(0)?, rows)?, columns))
+                            count_selector(0, source_len)?
+                        };
+                        Some(if plan.linear_gather_row {
+                            (1, count)
+                        } else {
+                            (count, 1)
+                        })
                     }
+                    Some(ResolvedSelectionMode::Rows) => Some((count_selector(0, rows)?, columns)),
                     Some(ResolvedSelectionMode::Columns) => {
-                        Some((rows, selector_access_count(selector(0)?, columns)?))
+                        Some((rows, count_selector(0, columns)?))
                     }
                     Some(ResolvedSelectionMode::Rectangle) => {
-                        let selected = (
-                            selector_access_count(selector(0)?, rows)?,
-                            selector_access_count(selector(1)?, columns)?,
-                        );
+                        let selected = (count_selector(0, rows)?, count_selector(1, columns)?);
                         if plan.output_dimensions.is_none() {
                             if selected != (1, 1) {
                                 return Err(ResidentKernelError::InvalidShape);
@@ -16614,11 +16642,7 @@ fn snapshot_access_output_cost(
                     .ok_or(ResidentKernelError::InvalidShape)?,
                 None => 1,
             };
-            if u64::try_from(expected_count).map_or(true, |count| {
-                count > super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS
-            }) {
-                return Err(ResidentKernelError::InvalidShape);
-            }
+            super::budget::check_output_element_count(super::budget::checked_u64(expected_count)?)?;
             if plan.matrix_constructor.is_some() {
                 if expected_count != source_len {
                     return Err(ResidentKernelError::InvalidShape);
@@ -16651,20 +16675,46 @@ fn snapshot_access_output_cost(
             }
             let mut footprint = ValueFootprint::zero();
             let mut finalization_work = 0_u64;
+            // Keep the exact already-validated immutable selector references
+            // with their proof; do not re-fetch a possibly different carrier.
+            let selector = |index: usize| {
+                summaries
+                    .get(index)
+                    .and_then(|summary| summary.map(|summary| summary.value()))
+                    .or_else(|| inputs.get(index + 1))
+                    .ok_or(ResidentKernelError::InvalidInput)
+            };
+            let whole_scan = packed_strings
+                && selected_string_footprint::try_begin(
+                    meter,
+                    source,
+                    source_measurement,
+                    expected_count,
+                    plan,
+                    (rows, columns),
+                    &summaries,
+                )?;
+            let mut visit_cell = |index: usize| {
+                if whole_scan {
+                    selected_string_footprint::add_cell(&mut footprint, element, elements, index)
+                } else {
+                    selected_sequence_footprint_with_finalization(
+                        &mut footprint,
+                        &mut finalization_work,
+                        meter,
+                        element,
+                        elements,
+                        index,
+                    )
+                }
+            };
             let (count, index_elements) = match plan.matrix_mode {
                 Some(ResolvedSelectionMode::LinearScalar) => {
                     let mut count = 0usize;
                     selector_for_each_access_index(selector(0)?, source_len, |linear| {
                         let row = linear % rows;
                         let column = linear / rows;
-                        selected_sequence_footprint_with_finalization(
-                            &mut footprint,
-                            &mut finalization_work,
-                            meter,
-                            element,
-                            elements,
-                            row * columns + column,
-                        )?;
+                        visit_cell(row * columns + column)?;
                         count = count
                             .checked_add(1)
                             .ok_or(ResidentKernelError::InvalidShape)?;
@@ -16677,14 +16727,7 @@ fn snapshot_access_output_cost(
                     let mut visit = |linear: usize| {
                         let row = linear % rows;
                         let column = linear / rows;
-                        selected_sequence_footprint_with_finalization(
-                            &mut footprint,
-                            &mut finalization_work,
-                            meter,
-                            element,
-                            elements,
-                            row * columns + column,
-                        )?;
+                        visit_cell(row * columns + column)?;
                         count = count
                             .checked_add(1)
                             .ok_or(ResidentKernelError::InvalidShape)?;
@@ -16706,14 +16749,7 @@ fn snapshot_access_output_cost(
                         .ok_or(ResidentKernelError::InvalidShape)?;
                     selector_for_each_access_index(selector(0)?, rows, |row| {
                         for column in 0..columns {
-                            selected_sequence_footprint_with_finalization(
-                                &mut footprint,
-                                &mut finalization_work,
-                                meter,
-                                element,
-                                elements,
-                                row * columns + column,
-                            )?;
+                            visit_cell(row * columns + column)?;
                         }
                         Ok(())
                     })?;
@@ -16731,14 +16767,7 @@ fn snapshot_access_output_cost(
                         .ok_or(ResidentKernelError::InvalidShape)?;
                     for row in 0..rows {
                         selector_for_each_access_index(selector(0)?, columns, |column| {
-                            selected_sequence_footprint_with_finalization(
-                                &mut footprint,
-                                &mut finalization_work,
-                                meter,
-                                element,
-                                elements,
-                                row * columns + column,
-                            )
+                            visit_cell(row * columns + column)
                         })?;
                     }
                     (
@@ -16755,14 +16784,7 @@ fn snapshot_access_output_cost(
                         .ok_or(ResidentKernelError::InvalidShape)?;
                     selector_for_each_access_index(selector(0)?, rows, |row| {
                         selector_for_each_access_index(selector(1)?, columns, |column| {
-                            selected_sequence_footprint_with_finalization(
-                                &mut footprint,
-                                &mut finalization_work,
-                                meter,
-                                element,
-                                elements,
-                                row * columns + column,
-                            )
+                            visit_cell(row * columns + column)
                         })
                     })?;
                     (
@@ -16776,6 +16798,11 @@ fn snapshot_access_output_cost(
             };
             if count != expected_count {
                 return Err(ResidentKernelError::InvalidShape);
+            }
+            if whole_scan {
+                // Metadata was prepaid. Debit only the measured copy work,
+                // before the existing final candidate/allocation admission.
+                meter.charge_compute_work(footprint.retained_bytes)?;
             }
             Ok(SnapshotAccessOutputCost {
                 footprint,
@@ -17191,11 +17218,9 @@ fn snapshot_access_from_source(
         .validate_against(schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
-    let source_footprint = super::budget::measure_borrowed_canonical_value_footprint(
-        &mut footprint_meter,
-        source,
-        schemas,
-    )?;
+    let source_measurement =
+        selected_string_footprint::measure_source(&mut footprint_meter, source, schemas)?;
+    let source_footprint = source_measurement.footprint();
     let snapshot_output = matches!(&output, ResidentValueMut::Snapshot(_));
     let dense_string_current_bytes = match &output {
         ResidentValueMut::String(values) => values.iter().try_fold(0_u64, |total, value| {
@@ -17273,6 +17298,7 @@ fn snapshot_access_from_source(
         plan,
         inputs,
         &mut footprint_meter,
+        Some(&source_measurement),
     )?;
     // Resolve parameterized result axes before admission. This validates
     // fixed axes independently even when a compensating axis would preserve
@@ -17322,9 +17348,14 @@ fn snapshot_access_from_source(
         .index_elements
         .checked_mul(core::mem::size_of::<usize>())
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let compact_strings = snapshot_output && compact_string_access::supports(kernel, source, plan);
     let output_draft_bytes = output_cost
         .count
-        .checked_mul(core::mem::size_of::<ValueDataDraft>())
+        .checked_mul(if compact_strings {
+            core::mem::size_of::<Box<str>>()
+        } else {
+            core::mem::size_of::<ValueDataDraft>()
+        })
         .ok_or(ResidentKernelError::InvalidShape)?;
     let selector_vector_bytes = plan
         .selectors
@@ -17394,6 +17425,48 @@ fn snapshot_access_from_source(
     )?
     .admit()?
     .into_plan();
+    if compact_strings {
+        let selectors = plan
+            .selectors
+            .iter()
+            .enumerate()
+            .map(|(index, layout)| {
+                selector_value(
+                    schemas,
+                    layout,
+                    inputs
+                        .get(index + 1)
+                        .ok_or(ResidentKernelError::InvalidInput)?,
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let next = compact_string_access::construct(
+            kernel,
+            source,
+            source_schema.body(),
+            &selectors,
+            plan,
+            &output_cost,
+            resolved_output_shape
+                .as_ref()
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )?;
+        let ResidentValueMut::Snapshot([target]) = output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        let changed = target
+            .as_ref()
+            .map(|previous| {
+                previous
+                    .snapshot_eq(schemas, &next, schemas)
+                    .map(|same| !same)
+            })
+            .transpose()
+            .map_err(|_| ResidentKernelError::InvalidOutput)?
+            .unwrap_or(true);
+        *target = Some(next);
+        return Ok(changed);
+    }
     if let Some(constructor) = &plan.matrix_constructor {
         let (rows, columns) = plan
             .source_dimensions
@@ -17877,13 +17950,112 @@ fn preflight_snapshot_arithmetic(
     output_elements: usize,
     additional_compute_work: usize,
 ) -> Result<(), ResidentKernelError> {
+    preflight_snapshot_arithmetic_with_input_work(
+        kernel,
+        schemas,
+        inputs,
+        output,
+        input_elements,
+        output_elements,
+        additional_compute_work,
+        None,
+    )
+}
+
+// Physical representability shared by the ordinary materializing arithmetic
+// leaf and a certified elided U64 range selector. This is NOT a memory permit
+// or a charge for allocations that the selected strategy does not construct.
+fn snapshot_arithmetic_storage_geometry(
+    input_elements: usize,
+    output_elements: usize,
+    output_element: &SchemaBody,
+) -> Result<(u64, u64, u64), ResidentKernelError> {
+    let draft_elements = input_elements
+        .checked_add(output_elements)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let drafts = core::alloc::Layout::array::<ValueDataDraft>(draft_elements)
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let output = core::alloc::Layout::array::<ValueDataDraft>(output_elements)
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let encoded = output_elements
+        .checked_mul(
+            snapshot_fixed_element_encoded_bytes(output_element)
+                .ok_or(ResidentKernelError::InvalidOutput)?,
+        )
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    // The packed sequence/encoding must fit Rust's real allocation layout as
+    // well as usize/u64 arithmetic. Never let elision make a formerly
+    // unrepresentable public selector count appear representable.
+    core::alloc::Layout::array::<u8>(encoded).map_err(|_| ResidentKernelError::InvalidShape)?;
+    Ok((
+        super::budget::checked_u64(drafts.size())?,
+        super::budget::checked_u64(output.size())?,
+        super::budget::checked_u64(encoded)?,
+    ))
+}
+
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(super) fn canonical_u64_range_selector_representation(
+    count: u64,
+) -> Result<(), ResidentKernelError> {
+    let count = usize::try_from(count).map_err(|_| ResidentKernelError::InvalidShape)?;
+    snapshot_arithmetic_storage_geometry(
+        2,
+        count,
+        &SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+    )?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod arithmetic_storage_geometry_tests {
+    use super::*;
+
+    #[test]
+    fn elided_range_and_materializing_arithmetic_share_real_layout_limits() {
+        let element = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
+        let largest = isize::MAX as usize / core::mem::size_of::<ValueDataDraft>() - 2;
+        assert!(snapshot_arithmetic_storage_geometry(2, largest, &element).is_ok());
+        assert_eq!(
+            snapshot_arithmetic_storage_geometry(2, largest + 1, &element),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(
+            snapshot_arithmetic_storage_geometry(2, usize::MAX, &element),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        let (drafts, output, encoded) =
+            snapshot_arithmetic_storage_geometry(2, 3, &element).unwrap();
+        assert_eq!(drafts, 5 * core::mem::size_of::<ValueDataDraft>() as u64);
+        assert_eq!(output, 3 * core::mem::size_of::<ValueDataDraft>() as u64);
+        assert_eq!(encoded, 24);
+    }
+}
+
+fn preflight_snapshot_arithmetic_with_input_work(
+    kernel: &BoundResidentKernel,
+    schemas: &mech_core::SchemaTable,
+    inputs: &[&mech_core::Value],
+    output: &ResidentValueMut<'_>,
+    input_elements: usize,
+    output_elements: usize,
+    additional_compute_work: usize,
+    borrowed_input_read_work: Option<usize>,
+) -> Result<(), ResidentKernelError> {
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
     let (cloned_bytes, _input_nodes) =
         inputs
             .iter()
             .try_fold((0u64, 0u64), |(bytes, nodes), value| {
-                let (next_bytes, next_nodes) =
-                    snapshot_operand_copy_cost(&mut footprint_meter, value, schemas, true)?;
+                let (next_bytes, next_nodes) = snapshot_operand_copy_cost(
+                    &mut footprint_meter,
+                    value,
+                    schemas,
+                    borrowed_input_read_work.is_none(),
+                )?;
                 Ok::<_, ResidentKernelError>((
                     bytes
                         .checked_add(next_bytes)
@@ -17905,19 +18077,10 @@ fn preflight_snapshot_arithmetic(
         },
         _ => return Err(ResidentKernelError::InvalidOutput),
     };
-    let draft_elements = input_elements
-        .checked_add(output_elements)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    let draft_bytes = super::budget::checked_u64(
-        draft_elements
-            .checked_mul(core::mem::size_of::<ValueDataDraft>())
-            .ok_or(ResidentKernelError::InvalidShape)?,
-    )?;
-    let output_bytes = super::budget::checked_u64(
-        output_elements
-            .checked_mul(core::mem::size_of::<ValueDataDraft>())
-            .ok_or(ResidentKernelError::InvalidShape)?,
-    )?;
+    // A borrowed binary operand is not unpacked into a whole draft vector.
+    // Reserve every fixed-width read occurrence, including broadcasts, plus
+    // the result draft. Keep the older conservative storage/node/clone bounds;
+    // this change does not grant any extra memory authority.
     let output_metadata = kernel
         .snapshot_output()
         .ok_or(ResidentKernelError::InvalidOutput)?;
@@ -17930,16 +18093,18 @@ fn preflight_snapshot_arithmetic(
         SchemaBody::Matrix { element, .. } => (element.as_ref(), 3),
         scalar => (scalar, 2),
     };
-    let output_encoded_bytes = output_elements
-        .checked_mul(
-            snapshot_fixed_element_encoded_bytes(output_element)
-                .ok_or(ResidentKernelError::InvalidOutput)?,
-        )
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    let (draft_bytes, output_bytes, output_encoded_bytes) =
+        snapshot_arithmetic_storage_geometry(input_elements, output_elements, output_element)?;
+    let construction_work = match borrowed_input_read_work {
+        Some(reads) => output_bytes
+            .checked_add(super::budget::checked_u64(reads)?)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        None => draft_bytes,
+    };
     let output_footprint = ValueFootprint {
         // Fixed-width primitive matrices encode as the packed element
         // population; wrapper and packed-sequence visits use node_count.
-        encoded_bytes: super::budget::checked_u64(output_encoded_bytes)?,
+        encoded_bytes: output_encoded_bytes,
         retained_bytes: output_bytes,
         node_count: output_nodes,
     };
@@ -17970,7 +18135,7 @@ fn preflight_snapshot_arithmetic(
             compute_work: super::budget::checked_u64(output_elements)?
                 .checked_add(super::budget::checked_u64(additional_compute_work)?)
                 .and_then(|work| work.checked_add(measured.compute_work()))
-                .and_then(|work| work.checked_add(draft_bytes))
+                .and_then(|work| work.checked_add(construction_work))
                 .and_then(|work| work.checked_add(publication_work))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             output_elements,
@@ -18182,8 +18347,19 @@ fn snapshot_numeric_binary(
     } else {
         0
     };
+    let fixed_read_width = |schema: Option<&mech_core::Schema>| match schema {
+        Some(schema) => {
+            snapshot_fixed_element_encoded_bytes(comparison_element_body(schema.body()))
+                .ok_or(ResidentKernelError::InvalidInput)
+        }
+        None => Ok(core::mem::size_of::<f64>()),
+    };
+    let borrowed_input_read_work = fixed_read_width(left_schema)?
+        .checked_add(fixed_read_width(right_schema)?)
+        .and_then(|width| width.checked_mul(output_len))
+        .ok_or(ResidentKernelError::InvalidShape)?;
     match (left, right, snapshot_output) {
-        (Some(left), Some(right), true) => preflight_snapshot_arithmetic(
+        (Some(left), Some(right), true) => preflight_snapshot_arithmetic_with_input_work(
             kernel,
             schemas,
             &[left, right],
@@ -18191,16 +18367,20 @@ fn snapshot_numeric_binary(
             input_elements,
             output_len,
             additional_compute_work,
+            Some(borrowed_input_read_work),
         )?,
-        (Some(input), None, true) | (None, Some(input), true) => preflight_snapshot_arithmetic(
-            kernel,
-            schemas,
-            &[input],
-            &output,
-            input_elements,
-            output_len,
-            additional_compute_work,
-        )?,
+        (Some(input), None, true) | (None, Some(input), true) => {
+            preflight_snapshot_arithmetic_with_input_work(
+                kernel,
+                schemas,
+                &[input],
+                &output,
+                input_elements,
+                output_len,
+                additional_compute_work,
+                Some(borrowed_input_read_work),
+            )?
+        }
         (Some(left), Some(right), false) => preflight_snapshot_dense_f64_output(
             schemas,
             &[left, right],
@@ -18213,34 +18393,49 @@ fn snapshot_numeric_binary(
         }
         (None, None, _) => return Err(ResidentKernelError::InvalidInput),
     }
-    let left = match left {
-        Some(value) => snapshot_numeric_elements(value)?,
-        None => dense_f64_canonical_drafts(left_input, left_dimensions.0, left_dimensions.1)?,
+    let left = BorrowedNumericOperand::new(left, left_schema, left_input, left_dimensions)?;
+    let right = BorrowedNumericOperand::new(right, right_schema, right_input, right_dimensions)?;
+    let apply = |row, column| {
+        let left = left.at(snapshot_binary_broadcast_index(
+            left_mode, row, column, columns,
+        ))?;
+        let right = right.at(snapshot_binary_broadcast_index(
+            right_mode, row, column, columns,
+        ))?;
+        if rational_power {
+            numeric_rational_power(left, right)
+        } else {
+            numeric_arithmetic(arithmetic, left, right)
+        }
     };
-    let right = match right {
-        Some(value) => snapshot_numeric_elements(value)?,
-        None => dense_f64_canonical_drafts(right_input, right_dimensions.0, right_dimensions.1)?,
-    };
+    if let Some(output_shape) = &output_shape {
+        let output_schema = schemas
+            .get(
+                kernel
+                    .snapshot_output()
+                    .ok_or(ResidentKernelError::InvalidOutput)?
+                    .schema,
+            )
+            .ok_or(ResidentKernelError::InvalidOutput)?;
+        if !matches!(output_schema.body(), SchemaBody::Matrix { .. }) {
+            if output_len != 1 {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            // Scalar arithmetic needs no operand or result Vec allocations.
+            let data = apply(0, 0)?;
+            return write_snapshot_data_for_shape_with_work_budget(
+                kernel,
+                output,
+                output_shape,
+                data,
+                Some(0),
+            );
+        }
+    }
     let mut result = Vec::with_capacity(output_len);
     for row in 0..rows {
         for column in 0..columns {
-            let left = left
-                .get(snapshot_binary_broadcast_index(
-                    left_mode, row, column, columns,
-                ))
-                .ok_or(ResidentKernelError::InvalidShape)?
-                .clone();
-            let right = right
-                .get(snapshot_binary_broadcast_index(
-                    right_mode, row, column, columns,
-                ))
-                .ok_or(ResidentKernelError::InvalidShape)?
-                .clone();
-            result.push(if rational_power {
-                numeric_rational_power(left, right)?
-            } else {
-                numeric_arithmetic(arithmetic, left, right)?
-            });
+            result.push(apply(row, column)?);
         }
     }
     if let Some(output_shape) = output_shape {
@@ -19858,6 +20053,91 @@ pub(super) fn numeric_float_binary_snapshot(
     }
 }
 
+/// One validated operand, borrowed for the complete synchronous arithmetic
+/// call. Canonical matrices are row-major; dense F64 transport is column-major.
+/// Element reads use the core conversion rather than another numeric relation.
+enum BorrowedNumericOperand<'a> {
+    Snapshot {
+        value: &'a mech_core::Value,
+        element: &'a SchemaBody,
+    },
+    DenseF64 {
+        values: &'a [f64],
+        rows: usize,
+        columns: usize,
+    },
+}
+
+impl<'a> BorrowedNumericOperand<'a> {
+    fn new(
+        value: Option<&'a mech_core::Value>,
+        schema: Option<&'a mech_core::Schema>,
+        input: ResidentValueRef<'a>,
+        (rows, columns): (usize, usize),
+    ) -> Result<Self, ResidentKernelError> {
+        if let (Some(value), Some(schema)) = (value, schema) {
+            return Ok(Self::Snapshot {
+                value,
+                element: comparison_element_body(schema.body()),
+            });
+        }
+        let ResidentValueRef::F64(values) = input else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        if values.len()
+            != rows
+                .checked_mul(columns)
+                .ok_or(ResidentKernelError::InvalidShape)?
+        {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        Ok(Self::DenseF64 {
+            values,
+            rows,
+            columns,
+        })
+    }
+
+    fn at(&self, index: usize) -> Result<ValueDataDraft, ResidentKernelError> {
+        match self {
+            Self::Snapshot { value, element } => {
+                if let ValueData::Matrix(matrix) = value.data() {
+                    let data = matrix
+                        .elements()
+                        .value_at(index)
+                        .ok_or(ResidentKernelError::InvalidShape)?;
+                    canonical_snapshot_data_draft(element, &data)
+                        .map_err(|_| ResidentKernelError::InvalidInput)
+                } else if index == 0 {
+                    canonical_snapshot_data_draft(element, value.data())
+                        .map_err(|_| ResidentKernelError::InvalidInput)
+                } else {
+                    Err(ResidentKernelError::InvalidShape)
+                }
+            }
+            Self::DenseF64 {
+                values,
+                rows,
+                columns,
+            } => {
+                if *columns == 0 || index >= values.len() {
+                    return Err(ResidentKernelError::InvalidShape);
+                }
+                let row = index / columns;
+                let column = index % columns;
+                let offset = column
+                    .checked_mul(*rows)
+                    .and_then(|offset| offset.checked_add(row))
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                let value = values
+                    .get(offset)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                Ok(ValueDataDraft::F64(F64Bits::from_f64(*value)))
+            }
+        }
+    }
+}
+
 fn snapshot_numeric_elements(
     value: &mech_core::Value,
 ) -> Result<Vec<ValueDataDraft>, ResidentKernelError> {
@@ -19892,7 +20172,7 @@ fn snapshot_numeric_element_count(value: &mech_core::Value) -> Result<usize, Res
     }
 }
 
-fn write_snapshot_data_with_work_budget(
+pub(super) fn write_snapshot_data_with_work_budget(
     kernel: &BoundResidentKernel,
     output: ResidentValueMut<'_>,
     data: ValueDataDraft,
@@ -19925,6 +20205,14 @@ fn write_snapshot_data_for_shape_with_work_budget(
         data,
         canonicalization_work_limit,
     )?;
+    write_snapshot_value(kernel, output, next)
+}
+
+fn write_snapshot_value(
+    kernel: &BoundResidentKernel,
+    output: ResidentValueMut<'_>,
+    next: mech_core::Value,
+) -> Result<bool, ResidentKernelError> {
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
@@ -21031,6 +21319,109 @@ fn indexed_rows(
 mod tests {
     use super::*;
 
+    #[test]
+    fn borrowed_numeric_operands_preserve_packed_values_without_unpacking() {
+        for (element, data) in [
+            (
+                SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                vec![ValueDataDraft::U64(0), ValueDataDraft::U64(u64::MAX)],
+            ),
+            (
+                SchemaBody::SignedInteger(IntegerWidth::W64),
+                vec![ValueDataDraft::I64(i64::MIN), ValueDataDraft::I64(i64::MAX)],
+            ),
+            (
+                SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+                vec![
+                    ValueDataDraft::F64(F64Bits::from_f64(-0.0)),
+                    ValueDataDraft::F64(F64Bits::from_f64(f64::NAN)),
+                ],
+            ),
+        ] {
+            let body = SchemaBody::Matrix {
+                element: Box::new(element),
+                dimensions: Box::new([
+                    mech_core::DimensionExpr::Constant(1),
+                    mech_core::DimensionExpr::Constant(2),
+                ]),
+            };
+            let (schemas, ids) = test_schema_table([body]);
+            let value = test_value(
+                &schemas,
+                ids[0],
+                ValueDataDraft::Matrix(data.into_boxed_slice()),
+            );
+            let storage = [Some(value.clone())];
+            let operand = BorrowedNumericOperand::new(
+                Some(&value),
+                Some(schemas.get(ids[0]).unwrap()),
+                ResidentValueRef::Snapshot(&storage),
+                (1, 2),
+            )
+            .unwrap();
+            let expected = snapshot_numeric_elements(&value).unwrap();
+            for (index, expected) in expected.iter().enumerate() {
+                assert_eq!(&operand.at(index).unwrap(), expected);
+            }
+            assert!(operand.at(2).is_err());
+        }
+    }
+
+    #[test]
+    fn borrowed_dense_numeric_operands_preserve_column_major_geometry_and_empty_axes() {
+        let values = [1.0, 4.0, 2.0, 5.0, 3.0, 6.0];
+        let operand =
+            BorrowedNumericOperand::new(None, None, ResidentValueRef::F64(&values), (2, 3))
+                .unwrap();
+        for index in 0..6 {
+            assert_eq!(
+                operand.at(index).unwrap(),
+                ValueDataDraft::F64(F64Bits::from_f64(index as f64 + 1.0))
+            );
+        }
+        assert!(operand.at(6).is_err());
+        assert!(
+            BorrowedNumericOperand::new(None, None, ResidentValueRef::F64(&values), (3, 3))
+                .is_err()
+        );
+        for shape in [(0, 3), (3, 0)] {
+            let empty =
+                BorrowedNumericOperand::new(None, None, ResidentValueRef::F64(&[]), shape).unwrap();
+            assert!(empty.at(0).is_err());
+        }
+    }
+
+    #[test]
+    fn snapshot_comparison_preparation_measures_metadata_but_reserves_payload_work() {
+        let mut metadata_work = None;
+        for text in [String::new(), "é".repeat(1_024), "x".repeat(40_000)] {
+            let bytes = text.len() as u64;
+            let data = ValueData::String(text.into_boxed_str());
+            let mut meter =
+                super::super::budget::ResidentBudgetMeter::for_closed_analysis(1_024, 0);
+            let comparison =
+                snapshot_element_comparison_work(&mut meter, &SchemaBody::String, &data, 0)
+                    .unwrap();
+            assert_eq!(comparison, bytes + 8);
+            assert_eq!(meter.estimate().comparison_work(), 0);
+            let compute = meter.estimate().compute_work();
+            assert!(compute > 0);
+            assert_eq!(*metadata_work.get_or_insert(compute), compute);
+            // Metadata inspection grants no payload comparison. Its returned
+            // reservation still has an exact deny/allow boundary.
+            let mut denied = super::super::budget::ResidentBudgetMeter::for_closed_analysis(
+                1_000_000,
+                comparison - 1,
+            );
+            assert!(denied.charge_comparison_work(comparison).is_err());
+            let mut admitted = super::super::budget::ResidentBudgetMeter::for_closed_analysis(
+                1_000_000, comparison,
+            );
+            admitted.charge_comparison_work(comparison).unwrap();
+            assert_eq!(admitted.estimate().comparison_work(), comparison);
+        }
+    }
+
     fn primitive_constructor_fixture(
         element: SchemaBody,
         count: usize,
@@ -21280,8 +21671,8 @@ mod tests {
             Err(ResidentKernelError::ResourceLimit {
                 phase: mech_core::ResidentResourcePhase::Admission,
                 dimension: mech_core::MemoryBudgetDimension::OutputBytes,
-                required: 128,
-                limit: 127
+                required: expected.retained_bytes,
+                limit: expected.retained_bytes - 1,
             }),
             "scalar retention alone must not authorize a new packed matrix buffer",
         );
@@ -26504,6 +26895,47 @@ mod tests {
         let prior = rational(0, 1);
         let expected = rational(3_372_041_405_099_481_409, 8_828_119_010_022_395_329);
 
+        // Borrowed operands no longer allocate two whole draft vectors or
+        // copy their immutable Value owners. Every concrete retention scan,
+        // fixed-width operand read and the full Euclidean power allowance
+        // remains. Derive the target-sized overhead instead of freezing the
+        // removed allocation path's numeric total.
+        let mut retention = super::super::budget::ResidentBudgetMeter::default();
+        for value in [
+            base[0].as_ref().unwrap(),
+            exponent[0].as_ref().unwrap(),
+            &prior,
+        ] {
+            super::super::budget::measure_borrowed_canonical_value_footprint(
+                &mut retention,
+                value,
+                &schemas,
+            )
+            .unwrap();
+        }
+        let prior_footprint = prior.retained_footprint(&schemas).unwrap();
+        let publication = super::super::budget::projected_language_equality_work(
+            &schemas,
+            &prior,
+            prior_footprint,
+            *rational_schema,
+            0,
+            ValueFootprint {
+                encoded_bytes: 16,
+                retained_bytes: core::mem::size_of::<ValueDataDraft>() as u64,
+                node_count: 2,
+            },
+        )
+        .unwrap();
+        let required_compute = RATIONAL_POWER_ELEMENT_COMPUTE_WORK as u64
+            + retention.estimate().compute_work()
+            + core::mem::size_of::<ValueDataDraft>() as u64
+            + 16
+            + 4
+            + 1
+            + publication;
+        assert!(required_compute >= RATIONAL_POWER_ELEMENT_COMPUTE_WORK as u64);
+
         let node = mech_core::NodeId::new(0);
         let program = crate::memory_planner::ProgramMemoryPlan {
             allocations: vec![mech_core::AllocationPlan {
@@ -26541,10 +26973,20 @@ mod tests {
                 Err(ResidentKernelError::ResourceLimit {
                     phase: mech_core::ResidentResourcePhase::Admission,
                     dimension: mech_core::MemoryBudgetDimension::ComputeWork,
-                    required: 130_083,
+                    required: required_compute,
                     limit: 1_000,
                 }),
             ),
+            (
+                required_compute - 1,
+                Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                    required: required_compute,
+                    limit: required_compute - 1,
+                }),
+            ),
+            (required_compute, Ok(true)),
         ] {
             let mut bounded = plan.clone();
             bounded.budget_limits.max_compute_work = Some(remaining_work);
@@ -26706,6 +27148,22 @@ mod tests {
         const F92: u64 = 7_540_113_804_746_346_429;
         let left = [Some(matrix(F91, F92))];
         let right = [Some(matrix(F90, F91 as u64))];
+        // Each operand inspects a wrapper, two schema nodes and three data
+        // chunks (six 64-unit metadata steps), then funds its retained copy.
+        // Value wrapper size differs across supported targets.
+        let input_copy_work = 2 * 6 * 64
+            + left[0]
+                .as_ref()
+                .unwrap()
+                .retained_footprint(&schemas)
+                .unwrap()
+                .retained_bytes
+            + right[0]
+                .as_ref()
+                .unwrap()
+                .retained_footprint(&schemas)
+                .unwrap()
+                .retained_bytes;
         let inputs = [
             ResidentValueRef::Snapshot(&left),
             ResidentValueRef::Snapshot(&right),
@@ -26756,12 +27214,12 @@ mod tests {
             for (remaining_work, expected_result) in [
                 (10_000, Ok(true)),
                 (
-                    1_000,
+                    input_copy_work - 1,
                     Err(ResidentKernelError::ResourceLimit {
                         phase: mech_core::ResidentResourcePhase::Admission,
                         dimension: mech_core::MemoryBudgetDimension::ComputeWork,
-                        required: 1_040,
-                        limit: 1_000,
+                        required: input_copy_work,
+                        limit: input_copy_work - 1,
                     }),
                 ),
             ] {
@@ -26781,6 +27239,27 @@ mod tests {
                     expected.canonical_data_draft().unwrap(),
                 );
             }
+            // This allowance funds metadata and staging preparation but not
+            // the Euclidean reduction itself. Preserve the prior publication.
+            let mut bounded = plan.clone();
+            bounded.budget_limits.max_compute_work = Some(2_000);
+            let mut output = [Some(prior.clone())];
+            let result = super::super::budget::with_resident_turn_plan(bounded, || {
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output))
+            });
+            assert!(matches!(
+                result,
+                Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                    required,
+                    limit: 2_000,
+                }) if required >= RATIONAL_REDUCTION_TERM_COMPUTE_WORK as u64
+            ));
+            assert_eq!(
+                output[0].as_ref().unwrap().canonical_data_draft().unwrap(),
+                prior.canonical_data_draft().unwrap(),
+            );
         }
     }
 
@@ -27935,12 +28414,30 @@ mod tests {
         );
         let mut output = [Some(current.clone())];
 
+        // Retain the current value, both source copies, the selector and the
+        // complete replacement draft using this target's real value layout.
+        let current_footprint = current.retained_footprint(&schemas).unwrap();
+        let source_footprint = source[0]
+            .as_ref()
+            .unwrap()
+            .retained_footprint(&schemas)
+            .unwrap();
+        let selector_footprint = selector[0]
+            .as_ref()
+            .unwrap()
+            .retained_footprint(&schemas)
+            .unwrap();
+        let required_temporary_bytes = current_footprint.retained_bytes
+            + 2 * source_footprint.retained_bytes
+            + selector_footprint.retained_bytes
+            + (current_footprint.node_count + source_footprint.node_count)
+                * core::mem::size_of::<ValueDataDraft>() as u64;
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
             Err(ResidentKernelError::ResourceLimit {
                 phase: mech_core::ResidentResourcePhase::Admission,
                 dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
-                required: 18875225,
+                required: required_temporary_bytes,
                 limit: 16777216
             }),
         );
@@ -28370,7 +28867,7 @@ mod tests {
             map_access_entry_for_selector(map, &string_body, ResidentValueRef::String(&selector))
                 .unwrap();
         assert_eq!(ordinal, 2);
-        let expected_work = map
+        let largest_key = map
             .entries()
             .iter()
             .map(|entry| {
@@ -28381,8 +28878,12 @@ mod tests {
                 .unwrap()
             })
             .map(|footprint| footprint.encoded_bytes.max(footprint.node_count).max(1))
-            .sum::<u64>()
-            + (selector[0].len() as u64 + 8) * (map.entries().len() as u64 + 1);
+            .max()
+            .unwrap();
+        let expected_work = selector[0].len() as u64
+            + 8
+            + largest_key.max(selector[0].len() as u64 + 8)
+                * u64::from(map.entries().len().ilog2() + 1);
         assert_eq!(comparison_work, expected_work);
     }
 
@@ -28813,6 +29314,9 @@ mod tests {
 
     #[test]
     fn access_binders_reject_same_cardinality_wrong_output_dimensions() {
+        // A declared row vector is now also valid for linear gathering.
+        // The invalid gather case below uses the wrong count, while Rows,
+        // Columns, Rectangle and table-axis checks stay exact.
         let matrix = |element, rows, columns| SchemaBody::Matrix {
             element: Box::new(element),
             dimensions: vec![
@@ -28974,7 +29478,7 @@ mod tests {
                 ResolvedSelectionMode::LinearGather,
                 vec![*selector_2x1],
                 *selector_2x1,
-                *snapshot_1x2,
+                *snapshot_2x2,
             ),
             (
                 ResolvedSelectionMode::Rows,
@@ -29382,6 +29886,7 @@ mod tests {
             // individual axes do not.
             output_dimensions: Some((1, 4)),
             output_dimensions_dynamic: false,
+            linear_gather_row: false,
             output_geometry: ResolvedAccessGeometry {
                 logical_output_rows: 1,
                 logical_output_columns: 4,
@@ -29402,8 +29907,216 @@ mod tests {
                 &plan,
                 &Inputs(&inputs),
                 &mut super::super::budget::ResidentBudgetMeter::default(),
+                None,
             ),
             Err(ResidentKernelError::InvalidShape),
+        ));
+    }
+
+    #[test]
+    fn snapshot_linear_gather_preserves_declared_vectors_and_only_defers_dynamic_snapshot_count() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, SchemaDraft, SchemaTableBuilder,
+        };
+        let matrix = |element, rows, columns| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![
+                DimensionExpr::Constant(rows),
+                DimensionExpr::Constant(columns),
+            ]
+            .into(),
+        };
+        let dynamic = |row| {
+            SchemaDraft {
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime: DimensionLifetime::Turn,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: Some(DimensionExpr::Constant(8)),
+                }]
+                .into(),
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::String),
+                    dimensions: if row {
+                        vec![
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        ]
+                    } else {
+                        vec![
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                            DimensionExpr::Constant(1),
+                        ]
+                    }
+                    .into(),
+                },
+            }
+            .finalize()
+            .unwrap()
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let source = builder
+            .insert(test_schema(matrix(SchemaBody::String, 1, 4)))
+            .unwrap();
+        let selector = builder
+            .insert(test_schema(matrix(
+                SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+                1,
+                2,
+            )))
+            .unwrap();
+        let wrong_mask = builder
+            .insert(test_schema(matrix(SchemaBody::Bool, 1, 3)))
+            .unwrap();
+        let fixed_output = builder
+            .insert(test_schema(matrix(SchemaBody::String, 1, 1)))
+            .unwrap();
+        let row_output = builder.insert(dynamic(true)).unwrap();
+        let column_output = builder.insert(dynamic(false)).unwrap();
+        let built = builder.finish().unwrap();
+        let source = built.resolve(source).unwrap();
+        let selector = built.resolve(selector).unwrap();
+        let wrong_mask = built.resolve(wrong_mask).unwrap();
+        let fixed_output = built.resolve(fixed_output).unwrap();
+        let row_output = built.resolve(row_output).unwrap();
+        let column_output = built.resolve(column_output).unwrap();
+        let (schemas, _) = built.into_parts();
+        let source_value = Some(test_value(
+            &schemas,
+            source,
+            ValueDataDraft::Matrix(
+                ["a", "b", "c", "d"]
+                    .into_iter()
+                    .map(|text| ValueDataDraft::String(text.to_owned()))
+                    .collect::<Vec<_>>()
+                    .into(),
+            ),
+        ));
+        let selector_value = Some(test_value(
+            &schemas,
+            selector,
+            ValueDataDraft::Matrix([ValueDataDraft::U64(2), ValueDataDraft::U64(4)].into()),
+        ));
+        let source_layout = test_layout(
+            &schemas,
+            source,
+            ResidentValueKind::Snapshot,
+            ResidentShape::SCALAR,
+        );
+        let selector_layout = test_layout(
+            &schemas,
+            selector,
+            ResidentValueKind::Snapshot,
+            ResidentShape::SCALAR,
+        );
+        let contract = |output, selector| {
+            test_contract(
+                &[source, selector],
+                output,
+                OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                AccessMode::Write,
+                AliasPolicy::NoAlias,
+                ChangeDetectionPolicy::KernelReported,
+            )
+        };
+        let output_layout = |output, fixed| {
+            let schema = schemas.get(output).unwrap();
+            mech_core::ResidentPortLayout {
+                schema_id: output,
+                schema_key: schema.key(),
+                kind: ResidentValueKind::Snapshot,
+                shape: ResidentShape::SCALAR,
+                shape_instance: schema
+                    .instantiate_shape(vec![0; schema.dimension_parameters().len()].into())
+                    .unwrap(),
+                activation_fixed_shape: fixed,
+                resolved_selector: None,
+            }
+        };
+        for (output_schema, expected) in [(row_output, [1, 2]), (column_output, [2, 1])] {
+            let binding = contract(output_schema, selector);
+            let kernel = bind_snapshot_access_mode(
+                &ResidentKernelBindRequest {
+                    contract: &binding,
+                    schemas: &schemas,
+                    inputs: &[source_layout.clone(), selector_layout.clone()],
+                    output: output_layout(output_schema, false),
+                },
+                Some(ResolvedSelectionMode::LinearGather),
+            )
+            .unwrap();
+            let mut output = None;
+            kernel
+                .execute(
+                    &Inputs(&[
+                        ResidentValueRef::Snapshot(core::slice::from_ref(&source_value)),
+                        ResidentValueRef::Snapshot(core::slice::from_ref(&selector_value)),
+                    ]),
+                    ResidentValueMut::Snapshot(core::slice::from_mut(&mut output)),
+                )
+                .unwrap();
+            let output = output.unwrap();
+            let SchemaBody::Matrix { dimensions, .. } = schemas.get(output_schema).unwrap().body()
+            else {
+                panic!()
+            };
+            assert_eq!(
+                dimensions
+                    .iter()
+                    .map(|axis| output.shape().resolve_dimension(axis).unwrap())
+                    .collect::<Vec<_>>(),
+                expected
+            );
+            let ValueData::Matrix(matrix) = output.data() else {
+                panic!()
+            };
+            let SequenceView::String(values) = matrix.elements() else {
+                panic!()
+            };
+            assert_eq!(
+                values.iter().map(|text| text.as_ref()).collect::<Vec<_>>(),
+                ["b", "d"]
+            );
+        }
+        for output_schema in [row_output, column_output, fixed_output] {
+            let binding = contract(output_schema, selector);
+            assert!(matches!(
+                bind_snapshot_access_mode(
+                    &ResidentKernelBindRequest {
+                        contract: &binding,
+                        schemas: &schemas,
+                        inputs: &[source_layout.clone(), selector_layout.clone()],
+                        output: output_layout(output_schema, true),
+                    },
+                    Some(ResolvedSelectionMode::LinearGather)
+                ),
+                Err(ResidentKernelBindError::UnsupportedLayout)
+            ));
+        }
+        let binding = contract(row_output, wrong_mask);
+        assert!(matches!(
+            bind_snapshot_access_mode(
+                &ResidentKernelBindRequest {
+                    contract: &binding,
+                    schemas: &schemas,
+                    inputs: &[
+                        source_layout,
+                        test_layout(
+                            &schemas,
+                            wrong_mask,
+                            ResidentValueKind::Snapshot,
+                            ResidentShape::SCALAR,
+                        )
+                    ],
+                    output: output_layout(row_output, false),
+                },
+                Some(ResolvedSelectionMode::LinearGather)
+            ),
+            Err(ResidentKernelBindError::UnsupportedLayout)
         ));
     }
 
@@ -29482,13 +30195,40 @@ mod tests {
             unreachable!()
         };
         let late = ["key-04999".to_owned()];
+        let comparison_work =
+            (late[0].len() as u64 + 8) * (u64::from(map.entries().len().ilog2()) + 2);
+        let mut plan =
+            super::super::budget::detached_turn_plan(mech_core::ResourceDemand::default()).unwrap();
+        plan.budget_limits.max_comparison_work = Some(comparison_work - 1);
         assert_eq!(
-            map_access_entry_for_selector(map, &string_body, ResidentValueRef::String(&late)),
+            super::super::budget::with_resident_turn_plan(plan.clone(), || {
+                map_access_entry_for_selector(map, &string_body, ResidentValueRef::String(&late))
+            }),
             Err(ResidentKernelError::ResourceLimit {
                 phase: mech_core::ResidentResourcePhase::Admission,
                 dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
-                required: 65552,
-                limit: 65536
+                required: comparison_work,
+                limit: comparison_work - 1,
+            }),
+        );
+        plan.budget_limits.max_comparison_work = Some(comparison_work);
+        assert_eq!(
+            super::super::budget::with_resident_turn_plan(plan.clone(), || {
+                map_access_entry_for_selector(map, &string_body, ResidentValueRef::String(&late))
+            }),
+            Ok((4_999, comparison_work)),
+        );
+        let missing = ["key-05000".to_owned()];
+        plan.budget_limits.max_comparison_work = Some(comparison_work - 1);
+        assert_eq!(
+            super::super::budget::with_resident_turn_plan(plan, || {
+                map_access_entry_for_selector(map, &string_body, ResidentValueRef::String(&missing))
+            }),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: comparison_work,
+                limit: comparison_work - 1,
             }),
         );
     }
@@ -31332,6 +32072,15 @@ mod tests {
         );
         let left = [Some(u64_value.clone())];
         let right = [Some(u64_value)];
+        // Two complete input copies coexist with their 400,000 draft cells
+        // and the scalar output draft. Do not assume a platform's wrapper size.
+        let required_temporary_bytes = 2 * left[0]
+            .as_ref()
+            .unwrap()
+            .retained_footprint(&schemas)
+            .unwrap()
+            .retained_bytes
+            + 400_001 * core::mem::size_of::<ValueDataDraft>() as u64;
         let inputs = [
             ResidentValueRef::Snapshot(&left),
             ResidentValueRef::Snapshot(&right),
@@ -31343,7 +32092,7 @@ mod tests {
             Err(ResidentKernelError::ResourceLimit {
                 phase: mech_core::ResidentResourcePhase::Admission,
                 dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
-                required: 28800304,
+                required: required_temporary_bytes,
                 limit: 16777216
             }),
         );

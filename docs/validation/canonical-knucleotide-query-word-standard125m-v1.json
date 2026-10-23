@@ -1,0 +1,86 @@
+{
+  "schema": "mech.canonical-knucleotide-query-word-standard125m.v1",
+  "status": "MEASURED_PROGRESS_PERFORMANCE_STILL_BLOCKING",
+  "measured_source_commit": "e482f632b594f74ca74fc210b839f55d656fa19d",
+  "platform": "Same Apple M1 as the previous secured and old direct125M measurements",
+  "program_source_sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f",
+  "input": {
+    "three_bases": 125000000,
+    "bytes": 254166745,
+    "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+    "oracle_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+  },
+  "unchanged_launch_sha256": "00e995bbfb6baaa590ddd8f1016673629d228aa9bb45d1f8a22e7f3fdd751257",
+  "measurement": {
+    "scope": "Serial warm-cache fresh-process spawn through observed child exit including secured CLI acquisition/output/report; standard Rust1ms polling. Build, hashing and parent validation excluded; not kernel or cold-cache timing.",
+    "rust_optimization": "3",
+    "object_optimization": "speed",
+    "abi": 8,
+    "typed_ir": 18,
+    "work_policy": 28,
+    "original_samples_ns": [
+      4119075458,
+      4116449833,
+      4135111583
+    ],
+    "decoded_samples_ns": [
+      4123041333,
+      4133548333,
+      4112746000
+    ],
+    "original_median_seconds": 4.119075458,
+    "decoded_median_seconds": 4.123041333,
+    "correctness_processes": 2,
+    "timed_samples": 6,
+    "all_eight_exact_output": true,
+    "both_binary_sha256": "183fb72cb90070d96dc5bb2284edadd4fb6f894b1dad011401d411be7bd07b78",
+    "both_object_sha256": "8d5236ffd8965996d9a7f08c6bc0269153bcf45c46b286507b9f433766318042",
+    "both_identity_sha256": "4d54ad3c2519bf726a984d67d724342fd5868f0e3349ccd2d98f4dea4e165197",
+    "program_revision": "56ebb2293e3ba5b86d6a05c47ece291104c407ae8c8e00f8164283eb9e6933b8",
+    "native_visits": 474,
+    "native_work": 672132962183,
+    "native_comparison_work": 6041696358,
+    "native_transport_bytes": 33552,
+    "host_result_carrier_bytes": 216,
+    "input_acquisition_byte_cap": 254166745,
+    "route": "canonical-artifact-program-object-secured-cli",
+    "policy": "secured",
+    "observations": 1,
+    "effects": 1,
+    "native_aot": true,
+    "jit": false,
+    "source_parser": false,
+    "resident_body_evaluation": false,
+    "shutdown": "completed"
+  },
+  "comparison": {
+    "previous_same_input_original_median_seconds": 5.1364325,
+    "speedup_from_previous": 1.2469867455387604,
+    "wall_time_reduction_fraction": 0.19806685710364136,
+    "old_same_input_direct_median_seconds": 0.974684291,
+    "slowdown_against_old_direct": 4.226061193388004,
+    "old_same_input_secured_median_seconds": 1.334092625,
+    "slowdown_against_old_secured": 3.0875483312112606,
+    "scope": "Whole implementation difference, not isolated capability overhead. Old code used packed lowering, compact counters and four partitions. All comparisons here use the same full125M input on this M1."
+  },
+  "implementation": [
+    "Generic instruction selection for the already-proved canonical String window-query region. No alphabet, source, name or hash specialization and no full benchmark helper.",
+    "Widths1..7 pack only the actual query bytes, then compare masked little-endian source words only while offset<=length-8. The original bounded byte loop handles at most7 tail starts and all sources shorter than8 bytes.",
+    "Widths>=8 compare a cached8-byte query prefix before the ordinary byte remainder. Width/query-length/owner bounds precede every load; there are no aligned, notrap or can_move assertions. Invalid widths return0 before loads.",
+    "All overlapping starts and exact String semantics remain. Real admitted owners, ASCII/noCRLF proof with canonical fallback, finite complete-region bounds, cumulative accounts, original errors and atomic publication within one host round are unchanged.",
+    "No new allocation, unsafe code, ABI/control-IR/work-policy contract, authority or renewed allowance. Actual generated code/stack size and immutable Object pins are still derived/checked.",
+    "The following lint-only emitter refactor groups the four byte-loop CFG blocks in a private ByteLoop struct and removes the exception. It does not change emitted instruction order, bounds or runtime protocol; this timing remains attributed to e482, not that later revision."
+  ],
+  "verification": {
+    "tests": "Measured e482 v797:119 generated and37 hosted tests pass,2 explicit ignored diagnostics per suite. Routing/layout/native-build-layout/unsafe/format/diff guards pass; owned cleanup complete.",
+    "new_assertions": "v798 explicitly counts4 selected machine-code tests:3 correctness tests pass,1 manual timing diagnostic ignored. Covers lengths0..4097,8 alignments,widths1..65,dense overlaps,NUL/DEL,long-prefix near misses,random ASCII,invalid/mismatched widths and Unicode keys. Original/decoded canonical parity adds widths7/8/9/18. The earlier wrong unit filter selected0 and is not counted.",
+    "release": "v799:both full125M correctness gates before samples;3 timings each; all8 outputs exact and all native counters equal/unchanged. Frozen pins unchanged; supervisor exit0,owned cleanup complete431.677404s including build/qualification (not sample time).",
+    "audit": "v800 independently rehashes raw streams/reports, all source/input/oracle/launch and manifest pins, binary/Object/identity pairs, validates actual root release profiles and counters, recomputes medians and parses back the emitted audit JSON.",
+    "full_result_sha256": "0ccfe7738a1c9b5c595e3da5df3dd506f3b13be0ffcd7a9b3f0968b6afe587e2",
+    "linked_result_sha256": "05c4f25b80cb089fb505854b6a1b8c5a17fae9eb871330a865226c73ff67c0e7",
+    "audit_sha256": "6bc8864d803395f88b3ed731cc5507aacb1e827e9458d278041504f00f794269",
+    "measured_revision_review": "Clean review6285064940 covers e482f632. CI39381703707 failed static warning policy on the new lint exception. Its following private-struct refactor needs current tests/review/CI; never relabel earlier measurements. Keep PR909 draft/unmerged.",
+    "current_followup": "v802 current-source tests pass:3 counted machine-code,119 generated,37 hosted and174 CI-harness tests. The full static CI architecture set passes, including warning policy, routing, planning quarantine, unsafe/factory/value/type/memory/bytecode/layout/format/diff guards and21 deterministic bytecode fixtures. Existing pinned PyYAML6.0.3 environment; supervisor exit0,owned cleanup complete361.933517s. Prior local v801 passed Rust suites but lacked yaml for static inventory tests; it is not counted as a clean static gate."
+  },
+  "outstanding": "Performance goal remains active. Next inspect an exact-measured-binary full125M profile, then target generic canonical value/token/selection planning costs and safely partition proved computation. Reprofile/remeasure changes; never ready or merge without the user."
+}

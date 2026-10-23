@@ -2648,7 +2648,7 @@ raw-text := alpha-token
           | symbol ;
 
 identifier := (alpha-token | emoji),
-              *(alpha-token | digit-token | identifier-symbol | emoji) ;
+              *(alpha-token | digit-token | underscore | identifier-symbol | emoji) ;
 identifier-path-segment-emoji :=
   ¬(slash | asterisk | comma | colon | equal | left-brace | right-brace
     | underscore | space | tab | new-line),

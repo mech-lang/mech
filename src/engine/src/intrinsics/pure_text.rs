@@ -30,7 +30,7 @@ pub(crate) fn parse_u64(text: &str) -> MResult<u64> {
 }
 
 pub(crate) fn grapheme_length(text: &str) -> MResult<u64> {
-    u64::try_from(grapheme::Graphemes::from_usvs(text).iter().count())
+    u64::try_from(super::text_graphemes::count(text))
         .map_err(|_| invalid("sequence/length exceeds u64::MAX"))
 }
 

@@ -635,9 +635,9 @@ fn managed(operation: &str, output: &ValueCell, input: &ValueCell) -> Specialize
 
 #[test]
 fn admitted_map_failures_preserve_published_output_and_recover() {
-    // Two live Strings fit the input/retention bounds, but the histogram's
-    // conservative merge-sort comparison demand exceeds the maintained call
-    // limit. This must fail before the first index-buffer allocation.
+    // Radix grouping no longer performs merge-sort comparisons. Exercise the
+    // remaining real canonical-finalization comparison limit, preserving the
+    // old published output on denial and allowing a subsequent valid turn.
     let (artifact, output) = compile("+> map\nmap/histogram(words<[string]:1,2>)\n");
     let mut instance = activate(
         ReactiveInstanceId::new(0x4d65, 0),
@@ -659,17 +659,26 @@ fn admitted_map_failures_preserve_published_output_and_recover() {
         }])
         .unwrap();
     let before = instance.copied_output(output).unwrap();
-    let width = usize::try_from(mech_core::RESIDENT_MAX_COMPARISON_WORK / 14 + 1).unwrap();
+    let width = usize::try_from(mech_core::RESIDENT_MAX_COMPARISON_WORK / 3 + 1).unwrap();
     let denied = ["x".repeat(width), "x".repeat(width)];
     assert!(width * 2 < mech_core::RESIDENT_MAX_BYTES as usize);
-    assert!((width * 2 + 2) * 7 > mech_core::RESIDENT_MAX_COMPARISON_WORK as usize);
+    assert!(width * 3 > mech_core::RESIDENT_MAX_COMPARISON_WORK as usize);
+    let error = instance
+        .turn(&[CapturedSignalInput {
+            slot,
+            value: ResidentValueRef::String(&denied),
+        }])
+        .unwrap_err();
     assert!(
-        instance
-            .turn(&[CapturedSignalInput {
-                slot,
-                value: ResidentValueRef::String(&denied)
-            }])
-            .is_err()
+        matches!(error,
+            mech_engine::resident::ResidentExecutionError::Kernel {
+                error: mech_core::ResidentKernelError::ResourceLimit {
+                    dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                    required, limit, ..
+                }, ..
+            } if required > limit && limit == mech_core::RESIDENT_MAX_COMPARISON_WORK
+        ),
+        "{error:?}"
     );
     let after = instance.copied_output(output).unwrap();
     assert!(

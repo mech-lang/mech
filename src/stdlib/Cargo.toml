@@ -383,3 +383,16 @@ required-features = ["full_compiler", "native-artifact"]
 [[test]]
 name = "native_artifact_i64_lowering"
 required-features = ["full_compiler", "native-artifact"]
+
+[[test]]
+name = "native_artifact_f64_lowering"
+required-features = ["full_compiler", "native-artifact"]
+
+[[test]]
+name = "native_artifact_cast_lowering"
+path = "tests/native_artifact_cast_lowering.rs"
+required-features = ["full_compiler", "native-artifact"]
+
+[[test]]
+name = "native_artifact_iteration_lowering"
+required-features = ["full_compiler", "native-artifact"]

@@ -11,6 +11,13 @@ use mech_core::{
 };
 use std::{cell::RefCell, rc::Rc};
 
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+#[path = "text_index_snapshot.rs"]
+pub(in crate::resident) mod snapshot;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct Owner {
     domain: MemoryDomainId,
@@ -94,6 +101,11 @@ impl Backing {
 }
 impl Drop for Backing {
     fn drop(&mut self) {
+        // Native snapshot backing is independently reserved, not dense lexical
+        // memo demand. Its zero bookkeeping must never re-enter ACTIVE.
+        if self.bytes == 0 && self.nodes == 0 {
+            return;
+        }
         ACTIVE.with(|active| {
             let mut active = active.borrow_mut();
             active.bytes = active
@@ -148,6 +160,7 @@ pub(super) fn reserved_bytes_for(budget: &ManagedMemoryBudget) -> u64 {
     })
 }
 
+#[derive(Debug)]
 struct CachedIndex {
     index: PreparedGraphemeIndex,
     _backing: Backing,
@@ -474,6 +487,32 @@ impl std::ops::Deref for IndexUse {
 /// A miss creates only byte offsets. It never clones or normalizes the source.
 pub(super) fn prepared(source: &String) -> Result<IndexUse, ResidentKernelError> {
     let (selected, lookup_work) = selected_scope(source)?;
+    prepare(source, selected, lookup_work)
+}
+
+/// Immutable snapshots keep their actual storage identity, distinct from a
+/// dense String lexical read. An admitted native binding may retain only the
+/// weak-identity index metadata; every other caller uses the same uncached
+/// admitted segmentation. Neither route copies or normalizes source bytes.
+pub(super) fn prepared_snapshot(value: &mech_core::Value) -> Result<IndexUse, ResidentKernelError> {
+    let mech_core::ValueData::String(source) = value.data() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    #[cfg(all(
+        feature = "native-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    ))]
+    if let Some(result) = budget::native_turn_plan_cache::prepared_snapshot_index(value) {
+        return result;
+    }
+    prepare(source, None, 0)
+}
+
+fn prepare(
+    source: &str,
+    selected: Option<(Rc<RefCell<Scope>>, usize)>,
+    lookup_work: usize,
+) -> Result<IndexUse, ResidentKernelError> {
     if let Some((scope, slot)) = &selected {
         if let Some(index) = &scope.borrow().entries[*slot].index {
             return Ok(IndexUse {

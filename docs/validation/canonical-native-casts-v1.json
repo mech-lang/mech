@@ -1,0 +1,442 @@
+{
+  "schema": "mech.validation.canonical-native-casts.v1",
+  "status": "DARWIN_ARM64_LOCAL_CONTRACTS_AND_LINKED_EXECUTION_PASSED_REVIEW_AND_FULL_CI_REQUIRED",
+  "source_commit": "781bd92573717864bddebd0805636fb460ff6b12",
+  "source_tree": "8f27c0b1573b34d4203566adde8a92bae9a84bb0",
+  "parent_pr902_head": "998e16fcc9d6b4baf2b6ec9223f6f45e1b61279b",
+  "branch": "codex/canonical-artifact-casts",
+  "qualification_date_utc": "2026-10-18",
+  "source_identity": "Every command checked this exact clean source before and after execution. Linked workers also pin source, generated inputs, original/decoded bytecode/Object pairing, runtime dependency closure and the actual executable. Later documentation-only commits must prove unchanged Rust/templates/manifests/lock; they do not receive fabricated rerun credit.",
+  "target": {
+    "os": "Darwin 24.6.0",
+    "machine": "arm64",
+    "pointer_width": 64,
+    "endianness": "little",
+    "toolchain": "nightly-2026-03-03"
+  },
+  "composition": {
+    "archive_commit": "69bbfb71e8f3e4b422aec2bed844bbb9bf9558b7",
+    "candidate": "native-scalar/casts/composed-i64-v1/candidate.patch",
+    "candidate_sha256": "7b658432a55a4a75bc0451f1c08c2ced0caa27a4b4e4acf8bfa96e91a0a970fe",
+    "method": "Additive composition preserves newer F64 memory/private-witness corrections, all five retained scalar applications, signed division/remainder contracts and existing typed resource-limit assertions. Old whole-file candidates did not replace current fixes."
+  },
+  "architecture": {
+    "input": "Validated canonical ProgramArtifact plus the actual trusted catalog, not a separate source parser or workload-specific bridge.",
+    "scope": "Stateless Turn-only Bool/U64/I64/F64 graphs, now including all six directed numeric casts. This does not implement native Match/Iteration/state/matrices/collections/resources or complete production native migration.",
+    "authority": "The actual maintained conversion plan is certified only after its exact direction, scalar schemas, NativeHost storage, unary SameAsInput/KernelReported contract, parameters and final BoundCall seal match. Public names, cost tags, same-width transport or public attachments cannot authorize a replacement.",
+    "cast_directions": [
+      "U64 -> I64",
+      "I64 -> U64",
+      "U64 -> F64",
+      "I64 -> F64",
+      "F64 -> U64",
+      "F64 -> I64"
+    ],
+    "semantics": "Checked native guards preserve actual core/resident conversion semantics: finite checks, truncation before integer range checks, and no saturation. Integer-to-F64 rounding and boundary behavior are compared with actual core execution. Raw F64 transport, source-order errors, unchanged outputs on failure and later recovery are retained.",
+    "identity": "Typed IR version4; cast operation tags42..47; C ABI1 and work policy1 unchanged. Older typed identities and swapped cast directions are rejected.",
+    "admission": "Each complete checked cast template is admitted before operand access, conversion and result stores. The conservative bounded cast work template remains256. Existing setup/node/completion, transport/stack and shared-memory denials remain enforced.",
+    "runtime_only": "Private cast witness variants and their match arms are gated with the same convert feature as their actual producer. Minimal runtime-only builds do not enable additional features or suppress warnings. Generated applications include the explicit conversion catalog and contain neither the source parser nor Cranelift code generation."
+  },
+  "execution_profile": "One serial local pipeline, locked/offline dependencies, jobs1, unoptimized tests, debug0, debug assertions and overflow checks enabled, test-threads1, incremental0. Generated builds use bounded contained workers and each phase's fresh external runtime-only cache. No benchmark timing.",
+  "checks": {
+    "rust_contract_methods": 55,
+    "lowering": {
+      "native_artifact_cast_lowering": 3,
+      "native_artifact_f64_lowering": 3,
+      "native_artifact_i64_lowering": 3,
+      "native_artifact_lowering": 8,
+      "native_artifact_output_initializers": 4,
+      "total": 21,
+      "failed": 0,
+      "ignored": 0,
+      "filtered": 0
+    },
+    "backend": {
+      "canonical_artifact_cast": 4,
+      "canonical_artifact_f64": 5,
+      "canonical_artifact_i64": 4,
+      "canonical_artifact_native": 8,
+      "total": 21,
+      "failed": 0,
+      "ignored": 0,
+      "filtered": 0
+    },
+    "private_abi_identity": {
+      "passed": 5,
+      "failed": 0,
+      "ignored": 0,
+      "unrelated_filtered": 35
+    },
+    "private_selected_semantics": {
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0,
+      "unrelated_filtered": 719
+    },
+    "runtime_only": "PASS --no-default-features --features canonical-native-runtime --lib",
+    "ci_contract_methods": 144,
+    "python_sharder_methods": 6,
+    "formatting": "PASS",
+    "architecture_guards": 7,
+    "linked_harnesses": "Two intended ignored methods were each listed nonempty and then explicitly executed:1 passed,0 failed,0 ignored,2 other harness methods filtered for each invocation."
+  },
+  "linked": {
+    "route": "canonical-artifact-cranelift-object",
+    "standalone_executables": 11,
+    "fresh_process_cases": 322,
+    "cast_executables": 6,
+    "cast_process_cases": 220,
+    "retained_scalar_executables": 5,
+    "retained_scalar_process_cases": 102,
+    "retained_f64_process_cases": 57,
+    "scope": "All eleven executables qualify ONE canonical numeric native route, not all five distinct linked workflow routes, full native workloads or secured/trusted whole-lifecycle equivalence.",
+    "verification": "Independent audit rechecks all generated/input/executable pins, complete stdout/stderr oracles and exit statuses for every recorded case. Original/decoded generation matches; each application is built once from two equal Object emissions. Each successful build's actual114 compiled units were rederived from Cargo compiler-artifact messages and exclude mech-syntax, Cranelift and forbidden source/compiler/native-sequence feature paths. Weak metadata edges are not credited as compiled units.",
+    "retained_scalar": {
+      "evidence": "tmp/pr-stack-evidence/review-v169-scalar-linked-evidence",
+      "source": "781bd92573717864bddebd0805636fb460ff6b12",
+      "qualification_sha256": "4d3d97335fba95bbb091d832311ed0f4f3eec13c4ba4110b68af6bea75d32d11",
+      "route": "canonical-artifact-cranelift-object",
+      "applications": [
+        {
+          "name": "canonical-linked-mixed",
+          "binary_sha256": "82dc17c1343a00ef8d824c549c80b170201748f3599f5611bbbd227853366af4",
+          "process_cases": 18,
+          "compiled_units": 114,
+          "build_count": 1,
+          "object_emissions": 2,
+          "program_revision": "2f0885eec61672fa7af4d41afd71676d7e0a6709c4255ac657cc5d721f5cf797",
+          "typed_ir_sha256": "c05907c9bd10529e6baefed8e25cb5d78e83ed6d80f064a1157fc428717de6fa",
+          "pins_verified": 27
+        },
+        {
+          "name": "canonical-linked-ordered",
+          "binary_sha256": "1f5b5190350dad35082d8c7c97fb1eddda21c5732bb5ed06f359a09cdc25ba95",
+          "process_cases": 5,
+          "compiled_units": 114,
+          "build_count": 1,
+          "object_emissions": 2,
+          "program_revision": "f0fb661cf5ee261ab162ce22f1e2df3dfb16a5180d72b46b91f88774305d1d69",
+          "typed_ir_sha256": "de100bad7654cf6aa9f31a596ff277740edd1d10d2ee9c0f052068e55d5fcc18",
+          "pins_verified": 27
+        },
+        {
+          "name": "canonical-linked-signed",
+          "binary_sha256": "b1fa4e741a3062b29f1347529b7db31a98867c9cf20b4ffbe109922cc4d36f57",
+          "process_cases": 12,
+          "compiled_units": 114,
+          "build_count": 1,
+          "object_emissions": 2,
+          "program_revision": "e5e17c1c2e658c22c345ae9066f0bd1511d494f792c7774e6167335dd00281ab",
+          "typed_ir_sha256": "7d44679a5805d146aa0b97eb959480db31a02bac092b6600d5ed87f42b836575",
+          "pins_verified": 27
+        },
+        {
+          "name": "canonical-linked-signed-divrem",
+          "binary_sha256": "6bf3de14032b685fa458bbb2a16dab883294c19cf01111e7de2b89fdebdb14b3",
+          "process_cases": 10,
+          "compiled_units": 114,
+          "build_count": 1,
+          "object_emissions": 2,
+          "program_revision": "464b4e2af48d39640c015299823048eddaf76a95b58096b0592a82434b1c2506",
+          "typed_ir_sha256": "c9a317db8df5ea3bb99877a56a2d2794d5cd32ec80a8aa0c5a8735d462c9f472",
+          "pins_verified": 27
+        },
+        {
+          "name": "canonical-linked-floats",
+          "binary_sha256": "43cb31be3b72e6292bfa13e55291ce76b72f43b15613c605f7ed277beefad710",
+          "process_cases": 57,
+          "compiled_units": 114,
+          "build_count": 1,
+          "object_emissions": 2,
+          "program_revision": "91f5d8fa2d1d9e831b213b06824a2998bc6958b48161bc91ec891fa9eddc8c44",
+          "typed_ir_sha256": "4e5c394f421195fa1980b009a4bf9e5a90ebe0ada18f019ecc87b0771f9921a9",
+          "pins_verified": 27
+        }
+      ],
+      "actual_process_cases": 102,
+      "benchmark_measurements": 0
+    },
+    "casts": {
+      "evidence": "tmp/pr-stack-evidence/review-v170-cast-linked-evidence",
+      "source": "781bd92573717864bddebd0805636fb460ff6b12",
+      "qualification_sha256": "8cfcd0eb7908948fc274149024ea6413fa6dc8fab05c6cd380b9f987e951b82b",
+      "route": "canonical-artifact-cranelift-object",
+      "applications": [
+        {
+          "name": "canonical-linked-cast-u64-i64",
+          "binary_sha256": "2c5e78e6e087e1be0668a33d2080bad8fdd1b1f3e8932bec20ef697a2b5f33c2",
+          "process_cases": 30,
+          "compiled_units": 114,
+          "build_count": 1,
+          "object_emissions": 2,
+          "program_revision": "2ded7d7651c7ab74be652bab0dafca59ab51178e51168011037f1c3655a0d410",
+          "typed_ir_sha256": "7f674f9f0bf6960b463b72dc7b0f1af648455ba977e744eff8f6ec2277683209",
+          "pins_verified": 27
+        },
+        {
+          "name": "canonical-linked-cast-i64-u64",
+          "binary_sha256": "63fb5521f1077e694048fe1bf6e47668a420f1018e5a95d3b694e97359e27113",
+          "process_cases": 31,
+          "compiled_units": 114,
+          "build_count": 1,
+          "object_emissions": 2,
+          "program_revision": "eb14c9ae8e0e447b817fdbfc06ba8b03a349ae2fe16c61c94aeb6ea75e6fb632",
+          "typed_ir_sha256": "d5772e1daac774c9526b41a1159beecf16440181aa0870fd2ddf4ae0517be409",
+          "pins_verified": 27
+        },
+        {
+          "name": "canonical-linked-cast-u64-f64",
+          "binary_sha256": "f4b946c83f24a97b7347bbd7db1a11c3c76bd5bbd50e958262aba5616cb4e5a0",
+          "process_cases": 30,
+          "compiled_units": 114,
+          "build_count": 1,
+          "object_emissions": 2,
+          "program_revision": "668f5bf27cd8f285b423a8802899e8a6adcd3dc7c77c97dfc57f26fae6d0ac68",
+          "typed_ir_sha256": "c215c593a085310bb8143b7ca4704bd8c5c03d9fd7cef2d114f300f7e1eefdda",
+          "pins_verified": 27
+        },
+        {
+          "name": "canonical-linked-cast-i64-f64",
+          "binary_sha256": "aa211085773d28cdaee3ea73928e79cb953e652ceac47a67fc7eb186e2b7e150",
+          "process_cases": 31,
+          "compiled_units": 114,
+          "build_count": 1,
+          "object_emissions": 2,
+          "program_revision": "679b6658e9bfdc5e86ae7b334f6b5a9fc305284a2ec65726b7e202ae040e000b",
+          "typed_ir_sha256": "86a75e203c08cac3251282a02c6a38bf1fb19ac504e8321203e606c2bed5e7ef",
+          "pins_verified": 27
+        },
+        {
+          "name": "canonical-linked-cast-f64-u64",
+          "binary_sha256": "f58729f19242c4bb1e0283f3643ab72202b53ea71d44dcb682e212a47415abbe",
+          "process_cases": 49,
+          "compiled_units": 114,
+          "build_count": 1,
+          "object_emissions": 2,
+          "program_revision": "b474916b73d94011df7e63ac56c784501a94a3f6c8a01e33af6193a400fadc13",
+          "typed_ir_sha256": "2a51799f91821937e1b0e02d17d9bd41abf59935c9354004351c9a8642aadf94",
+          "pins_verified": 27
+        },
+        {
+          "name": "canonical-linked-cast-f64-i64",
+          "binary_sha256": "59c20169fe3a8aea691f6a99f7f4d81932df8bb403695897d1555e7581d384e3",
+          "process_cases": 49,
+          "compiled_units": 114,
+          "build_count": 1,
+          "object_emissions": 2,
+          "program_revision": "88a26cc1b3673bec4f5490cfe65a2e4047f13814d8e7af308b581c54c6b2dc81",
+          "typed_ir_sha256": "2bf85dafea16cace5a0aa490c204f1bf3e54646bc555bc7064ad591d4a7a97f5",
+          "pins_verified": 27
+        }
+      ],
+      "actual_process_cases": 220,
+      "benchmark_measurements": 0
+    }
+  },
+  "logs": [
+    {
+      "file": "review-v171-formatting.log",
+      "sha256": "2015d229614d614ab5a259db470c5a9f38e2a826aa036de7593b37ee42828c0b",
+      "command": "cargo +nightly-2026-03-03 fmt --all -- --check",
+      "started_utc": "2026-10-18T02:25:12Z",
+      "ended_utc": "2026-10-18T02:25:17Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v171-ci-contracts.log",
+      "sha256": "28e75add5fdc2d1a1e17fd5f673c2cedc6e400b49f87189b479947cb1527bec6",
+      "command": "python3 -B -m unittest discover -s tests/ci",
+      "started_utc": "2026-10-18T02:25:17Z",
+      "ended_utc": "2026-10-18T02:25:27Z",
+      "summaries": [
+        "Ran 144 tests in 9.343s"
+      ]
+    },
+    {
+      "file": "review-v171-runtime-only.log",
+      "sha256": "0bd0eb1650210d849c68291f63ee23b62fc91adda3ede9210fe0bfda90c438e1",
+      "command": "cargo +nightly-2026-03-03 check --locked --offline -j 1 -p mech-gpu --no-default-features --features canonical-native-runtime --lib",
+      "started_utc": "2026-10-18T02:25:27Z",
+      "ended_utc": "2026-10-18T02:25:33Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v171-lowering.log",
+      "sha256": "33cab797bd8dd2f28e9a1017826b7883dcc189186b2c9d6f4782e0874fc48527",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-stdlib --no-default-features --features full_compiler,native-artifact --test native_artifact_cast_lowering --test native_artifact_f64_lowering --test native_artifact_i64_lowering --test native_artifact_lowering --test native_artifact_output_initializers -- --test-threads=1 --nocapture",
+      "started_utc": "2026-10-18T02:25:34Z",
+      "ended_utc": "2026-10-18T02:32:36Z",
+      "summaries": [
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.58s",
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.63s",
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.64s",
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.55s",
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.46s"
+      ]
+    },
+    {
+      "file": "review-v171-backend.log",
+      "sha256": "73c711bef11d727135d56e6c4d5ddedd07c504a0e577fe1067f2bb6837d56c7c",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-gpu --no-default-features --features canonical-native --test canonical_artifact_cast --test canonical_artifact_f64 --test canonical_artifact_i64 --test canonical_artifact_native -- --test-threads=1 --nocapture",
+      "started_utc": "2026-10-18T02:32:36Z",
+      "ended_utc": "2026-10-18T02:39:54Z",
+      "summaries": [
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.78s",
+        "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.89s",
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.18s",
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.02s"
+      ]
+    },
+    {
+      "file": "review-v171-private-abi.log",
+      "sha256": "45c4293b0f9e051668724e6c1e9172b2260dea92753f2820871a739f2b21194d",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-gpu --no-default-features --features canonical-native --lib native_artifact:: -- --test-threads=1",
+      "started_utc": "2026-10-18T02:39:54Z",
+      "ended_utc": "2026-10-18T02:40:20Z",
+      "summaries": [
+        "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 35 filtered out; finished in 5.41s"
+      ]
+    },
+    {
+      "file": "review-v171-private-semantics.log",
+      "sha256": "10c4d73a1f5049931c5433bb636de0ba5191d0b91518aa4db293a3972561c33b",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-engine --no-default-features --features full_compiler,native-artifact --lib resident::native_semantics::tests -- --test-threads=1",
+      "started_utc": "2026-10-18T02:40:20Z",
+      "ended_utc": "2026-10-18T02:41:14Z",
+      "summaries": [
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 719 filtered out; finished in 0.03s"
+      ]
+    },
+    {
+      "file": "review-v171-sharder.log",
+      "sha256": "d75159912ad94bd6ec782bcc84592841fd4731872810941539fb2a56e37caf50",
+      "command": "python3 -B -m unittest discover -s scripts/tests -p test_run_python_unittest_shards.py",
+      "started_utc": "2026-10-18T02:41:14Z",
+      "ended_utc": "2026-10-18T02:41:14Z",
+      "summaries": [
+        "Ran 6 tests in 0.002s"
+      ]
+    },
+    {
+      "file": "review-v171-value-boundary.log",
+      "sha256": "86fdf2ed49d2ad67d39cefa8807da6ca063674fe8dc95d5b18e5d392522dc416",
+      "command": "python3 -B scripts/check-value-execution-boundary.py",
+      "started_utc": "2026-10-18T02:41:14Z",
+      "ended_utc": "2026-10-18T02:41:34Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v171-warnings.log",
+      "sha256": "d06530c4c0659059528337888d2a7e0fea09a34740df6256af22424054a5db42",
+      "command": "python3 -B scripts/check-warning-policy.py",
+      "started_utc": "2026-10-18T02:41:34Z",
+      "ended_utc": "2026-10-18T02:41:45Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v171-type-authority.log",
+      "sha256": "c0ff9ca73841cdd8de8b099b59951f27e5ef32b3325245a3913aa8ad9ff3d3e2",
+      "command": "python3 -B scripts/check-type-system.py",
+      "started_utc": "2026-10-18T02:41:45Z",
+      "ended_utc": "2026-10-18T02:41:54Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v171-semantic-authority.log",
+      "sha256": "f5f6d1113661146e5225202245ad79841dea8e7b4a4d75fd2b412cce4e90bf36",
+      "command": "python3 -B scripts/check-semantic-type-authority.py",
+      "started_utc": "2026-10-18T02:41:54Z",
+      "ended_utc": "2026-10-18T02:41:54Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v171-memory-runtime.log",
+      "sha256": "a935bdd26b1d8491e10517b6c00f295f528eb042430346ce9be225d25e521467",
+      "command": "python3 -B scripts/check-memory-runtime.py",
+      "started_utc": "2026-10-18T02:41:54Z",
+      "ended_utc": "2026-10-18T02:42:12Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v171-memory-planner.log",
+      "sha256": "5619d5c575c2643f4446dc83dbec13b7e24d04b96505b308f810f9ab96e3f356",
+      "command": "python3 -B scripts/check-memory-planner.py",
+      "started_utc": "2026-10-18T02:42:12Z",
+      "ended_utc": "2026-10-18T02:42:24Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v171-module-layout.log",
+      "sha256": "bfb67974a17940def647933eb36f0ce2dc7c67818a44b26afabb688bc36b4041",
+      "command": "python3 -B scripts/check-rust-module-layout.py",
+      "started_utc": "2026-10-18T02:42:24Z",
+      "ended_utc": "2026-10-18T02:42:24Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v169-scalar-linked-selection.log",
+      "sha256": "697e57ae99f9ade5e4772b2784e0604f0689363d4cc1dae7f8f22ba960bbbaf0",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-gpu --no-default-features --features canonical-native --test canonical_artifact_application -- --list --ignored --exact linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic",
+      "started_utc": "2026-10-18T02:43:33Z",
+      "ended_utc": "2026-10-18T02:43:50Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v169-scalar-linked-execution.log",
+      "sha256": "89105aec8c75407f8ec92b1a525045b0bcdfcd0a25db71d87e10be0794b68044",
+      "command": "env MECH_CANONICAL_NATIVE_SOURCE_COMMIT=781bd92573717864bddebd0805636fb460ff6b12 MECH_CANONICAL_NATIVE_EVIDENCE_DIR=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/review-v169-scalar-linked-evidence cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-gpu --no-default-features --features canonical-native --test canonical_artifact_application -- --ignored --exact linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic --test-threads=1",
+      "started_utc": "2026-10-18T02:43:50Z",
+      "ended_utc": "2026-10-18T02:45:53Z",
+      "summaries": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 122.47s"
+      ]
+    },
+    {
+      "file": "review-v170-cast-linked-selection.log",
+      "sha256": "29768dd12547aa9d5fdbd02bf63890513ed2ac2ab2c72bfce8aae1b39fbcd220",
+      "command": "cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-gpu --no-default-features --features canonical-native --test canonical_artifact_application -- --list --ignored --exact linked_canonical_artifact_cast_applications_preserve_checked_boundaries",
+      "started_utc": "2026-10-18T02:45:53Z",
+      "ended_utc": "2026-10-18T02:45:53Z",
+      "summaries": []
+    },
+    {
+      "file": "review-v170-cast-linked-execution.log",
+      "sha256": "626f19b05a3bc67797420b35e8b781127963c7a1e09f70c84132c22fb14128c4",
+      "command": "env MECH_CANONICAL_NATIVE_SOURCE_COMMIT=781bd92573717864bddebd0805636fb460ff6b12 MECH_CANONICAL_NATIVE_EVIDENCE_DIR=/Users/coreymontella/mech-lang/mech/tmp/pr-stack-evidence/review-v170-cast-linked-evidence cargo +nightly-2026-03-03 test --locked --offline -j 1 -p mech-gpu --no-default-features --features canonical-native --test canonical_artifact_application -- --ignored --exact linked_canonical_artifact_cast_applications_preserve_checked_boundaries --test-threads=1",
+      "started_utc": "2026-10-18T02:45:53Z",
+      "ended_utc": "2026-10-18T02:48:55Z",
+      "summaries": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 181.31s"
+      ]
+    }
+  ],
+  "retained_failed_evidence": [
+    {
+      "source_commit": "981d5c9a6e167e6c9c7dba40cc5582121104bee3",
+      "file": "review-v159-lowering.log",
+      "sha256": "f985c7c7756dfb475a794d483e09812efed73b4b059c35fb54c5037bd569d41c",
+      "result": "First lowering method aborted before any passing Rust summary. Reproduction below exposed a malformed archived source fixture, not a stack/work/memory limit failure. No passing Rust credit."
+    },
+    {
+      "source_commit": "981d5c9a6e167e6c9c7dba40cc5582121104bee3",
+      "file": "review-v161-cast-lowering-reproduction.log",
+      "sha256": "f56cee5c0b1df7f7eaed4042d5542f4206aa3423f1be04f5203c8323122134f0",
+      "result": "Same binary with uncaptured diagnostics identified unsupported numeric suffix u64/0u64 in unused := 1u64/0u64. ff68faec9 adds lexical spacing only (1u64 / 0u64), retaining the unused checked-operation rejection and all limits; no stack increase."
+    },
+    {
+      "source_commit": "ff68faec96b0115d8414b193f6acb4a190db4620",
+      "file": "review-v167-runtime-only.log",
+      "sha256": "9813c7b3d48dad49cbcb987d54d3f22107541d5e99f5a0b5fb31e90b59589bde",
+      "result": "55 selected Rust methods pass, but minimal runtime-only cargo check fails warnings-as-errors because six private cast variants have no constructor when convert is disabled. 781bd9257 gates those private variants/arms with the actual producer feature. No lint allowance, manifest feature expansion or public IR change. The full corrected-source run and both linked phases above actually execute afresh; this failure is not relabeled as a pass."
+    }
+  ],
+  "evidence_availability": "Commands, counts, source/tree identities and all19 command-log hashes are committed here. Full raw logs, both qualification records, generated projects, actual compiler-artifact messages and linked binaries remain local operational evidence. No measurements were generated.",
+  "remaining": [
+    "Fresh exact-head review, entirely green full CI and other-platform qualification remain required. Local selected tests do not replace owner/runtime/source/distribution qualification on the final head.",
+    "Complete canonical native control/state/Match/Iteration/matrices/collections and typed resource execution; qualify all ten workloads and required-work/I/O/publication-LOC contracts.",
+    "Migrate production native building to the canonical artifact and retire the older source-native sequence/control/grid compiler. The README clarification does not itself unify execution authority.",
+    "Qualify the same AOT binary in trusted and secured modes across complete startup, inputs, work, output/flush, shutdown and errors before serial Mech-only timing. Preserve all other language cohorts.",
+    "Keep every PR draft and unmerged. Clean review and green CI are necessary but do not authorize readiness or merge without explicit user approval."
+  ],
+  "benchmark_measurements": 0
+}

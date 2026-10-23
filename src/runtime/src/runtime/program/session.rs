@@ -1,6 +1,4 @@
-use mech_core::{
-    LayoutGeneration, MResult, MechError, MechErrorKind, PlanGeneration, ProgramRevision,
-};
+use mech_core::{MResult, MechError, MechErrorKind};
 
 use crate::{ResidentDurabilityPolicy, RuntimeValueSnapshot};
 use crate::{ResidentExternalHealth, runtime::MechRuntime};
@@ -9,48 +7,10 @@ use std::time::Instant;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 use web_time::Instant;
 
-use super::ActiveProgramExecution;
-
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub enum RuntimeProgramRoute {
-    #[default]
-    None,
-    ResidentPure,
-    ResidentExternal,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct RuntimeProgramExecutionInfo {
-    pub route: RuntimeProgramRoute,
-    pub program_revision: Option<ProgramRevision>,
-    pub plan_generation: Option<PlanGeneration>,
-    pub layout_generation: Option<LayoutGeneration>,
-    pub requirement_count: usize,
-    pub observation_count: usize,
-    pub effect_count: usize,
-    pub resident_accepted_turns: u64,
-    pub resident_rejected_turns: u64,
-    pub coalesced_host_packets: u64,
-    pub ignored_host_packets: u64,
-}
-
-impl Default for RuntimeProgramExecutionInfo {
-    fn default() -> Self {
-        Self {
-            route: RuntimeProgramRoute::None,
-            program_revision: None,
-            plan_generation: None,
-            layout_generation: None,
-            requirement_count: 0,
-            observation_count: 0,
-            effect_count: 0,
-            resident_accepted_turns: 0,
-            resident_rejected_turns: 0,
-            coalesced_host_packets: 0,
-            ignored_host_packets: 0,
-        }
-    }
-}
+use super::{
+    ActiveProgramExecution, ResidentRouteFailureClass, RuntimeProgramExecutionInfo,
+    RuntimeProgramRoute, route_failure,
+};
 
 #[derive(Debug)]
 pub struct RuntimeProgramLoadOutcome {
@@ -66,48 +26,6 @@ pub struct RuntimeProgramLoadOutcome {
 pub struct RuntimeResidentEvidence {
     pub input_batches: Vec<(crate::LedgerSequence, crate::CapturedInputBatch)>,
     pub receipts: Vec<(crate::LedgerSequence, crate::ResidentTurnRecord)>,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ResidentRouteFailureClass {
-    SemanticUnsupported,
-    MultipleRootsUnsupported,
-    ProviderUnavailable,
-    ProviderContractMismatch,
-    AuthorizationDenied,
-    InvalidArtifact,
-    InvalidBytecode,
-    ActivationFailure,
-    InternalFailure,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ResidentRouteFailure {
-    pub class: ResidentRouteFailureClass,
-    pub reason: String,
-}
-
-impl MechErrorKind for ResidentRouteFailure {
-    fn name(&self) -> &str {
-        "ResidentRouteFailure"
-    }
-
-    fn message(&self) -> String {
-        format!("{:?}: {}", self.class, self.reason)
-    }
-}
-
-pub(crate) fn route_failure(
-    class: ResidentRouteFailureClass,
-    reason: impl Into<String>,
-) -> mech_core::MechError {
-    MechError::new(
-        ResidentRouteFailure {
-            class,
-            reason: reason.into(),
-        },
-        None,
-    )
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -164,14 +82,6 @@ pub(crate) fn ensure_supported_durability(policy: ResidentDurabilityPolicy) -> M
 }
 
 impl MechRuntime {
-    pub fn program_route(&self) -> RuntimeProgramRoute {
-        self.program_execution_info.route
-    }
-
-    pub fn program_execution_info(&self) -> RuntimeProgramExecutionInfo {
-        self.program_execution_info.clone()
-    }
-
     pub(crate) fn program_route_for_debug(&self) -> RuntimeProgramRoute {
         self.program_route()
     }

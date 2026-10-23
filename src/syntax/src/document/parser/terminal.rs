@@ -29,7 +29,7 @@ pub fn is_identifier_continue(character: char) -> bool {
         || is_emoji_like(character)
         || matches!(
             character,
-            '&' | '$' | '%' | '/' | '#' | '\\' | '~' | '+' | '-' | '*' | '^'
+            '&' | '$' | '%' | '/' | '#' | '\\' | '~' | '+' | '-' | '*' | '^' | '_'
         )
 }
 

@@ -64,6 +64,17 @@ impl MechRuntime {
         &mut self,
         requirements: &[ExecutionResourceRequest],
     ) -> MResult<NativeResourceBindings> {
+        self.bind_native_resources_with_driverless_live_reads(requirements, false)
+    }
+
+    // Canonical observations retain their original Live requirement identity.
+    // The shared provider preflight still requires CaptureAsInputFact and
+    // rejects driver-backed reads. Only the canonical artifact bridge opts in.
+    fn bind_native_resources_with_driverless_live_reads(
+        &mut self,
+        requirements: &[ExecutionResourceRequest],
+        allow_driverless_live_reads: bool,
+    ) -> MResult<NativeResourceBindings> {
         self.ensure_runtime_mutation_allowed("bind_native_resources")?;
         let context = self.runtime_context()?;
         for request in requirements {
@@ -72,7 +83,11 @@ impl MechRuntime {
                 ResourceIntent::Send => "write",
                 ResourceIntent::Assign => return invalid("native ports do not support assignment"),
             };
-            if request.delivery != ResourceDelivery::Snapshot {
+            if request.delivery != ResourceDelivery::Snapshot
+                && !(allow_driverless_live_reads
+                    && request.intent == ResourceIntent::Read
+                    && request.delivery == ResourceDelivery::Live)
+            {
                 return invalid("native ports do not support live delivery");
             }
             if request.operation != expected_operation || request.context_name.is_empty() {
@@ -206,5 +221,9 @@ impl MechRuntime {
     }
 }
 
+#[cfg(feature = "canonical-native-resources")]
+mod artifact;
+#[cfg(feature = "canonical-native-resources")]
+pub use artifact::*;
 #[cfg(test)]
 mod tests;

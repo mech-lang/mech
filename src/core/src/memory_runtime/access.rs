@@ -3257,7 +3257,9 @@ impl KernelMemoryFrame<'_> {
                     .with_compiler_loc());
                 }
             },
-            ConversionStep::OptionPayload(_) | ConversionStep::OptionPresent(_) => {
+            ConversionStep::MatrixToSet(_)
+            | ConversionStep::OptionPayload(_)
+            | ConversionStep::OptionPresent(_) => {
                 return Err(crate::MechError::new(
                     crate::ConversionExecutionError::ConversionExecutionUnsupported,
                     None,

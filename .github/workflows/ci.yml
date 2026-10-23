@@ -156,6 +156,7 @@ jobs:
             tests.ci.test_ci_impact \
             tests.ci.test_ci_full_contract \
             tests.ci.test_ci_test_inventory \
+            scripts.tests.test_native_macos_ci \
             tests.browser.harness.test_chrome_session \
             tests.browser.harness.test_completion_server
           python3 scripts/check-production-resident-routing.py
@@ -216,6 +217,7 @@ jobs:
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_compiler_planning_quarantine.py \
             scripts/tests/test_check_native_host_catalog.py \
+            scripts/tests/test_check_production_resident_routing.py \
             scripts/tests/test_check_no_retired_value_system.py \
             scripts/tests/test_rust_source.py \
             scripts/tests/test_check_type_memory_boundary.py \
@@ -393,7 +395,9 @@ jobs:
     needs: impact
     if: needs.impact.outputs.owner_shards != '[]'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    # Runtime's cold build (6m11s) plus its tests (5m21s) exhausted 12m
+    # including setup/cleanup. Keep a finite budget with cold-run headroom.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:

@@ -1,23 +1,39 @@
 //! Explicit semantic conversion and numeric-promotion planning.
 
 use super::{BuiltinScalarKind, ResolvedType, TypeConstraintFailure, TypeResolutionError};
-use crate::snapshot::{Complex32Bits, Complex64Bits, F32Bits, F64Bits, OptionDraft};
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "f32",
+    feature = "complex"
+))]
+use crate::snapshot::F32Bits;
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "f64",
+    feature = "complex"
+))]
+use crate::snapshot::F64Bits;
+use crate::snapshot::OptionDraft;
+#[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
+use crate::snapshot::{Complex32Bits, Complex64Bits};
 use crate::{KindExpr, MechErrorKind, ValueDataDraft};
+#[cfg(any(not(feature = "selective-convert"), feature = "string"))]
+use alloc_string::String;
 use core::fmt::{self, Display, Formatter};
 
+#[cfg(all(
+    feature = "no_std",
+    any(
+        not(feature = "selective-convert"),
+        feature = "complex",
+        feature = "r64"
+    )
+))]
+use alloc::format;
 #[cfg(feature = "no_std")]
-use alloc::{
-    boxed::Box,
-    format,
-    string::{String, ToString},
-    vec::Vec,
-};
+use alloc::{boxed::Box, string::ToString, vec::Vec};
 #[cfg(not(feature = "no_std"))]
-use std::{
-    boxed::Box,
-    string::{String, ToString},
-    vec::Vec,
-};
+use std::{boxed::Box, string::ToString, vec::Vec};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TypeRelation {
@@ -46,8 +62,22 @@ pub enum ConversionStep {
     Identity,
     Scalar(ScalarConversion),
     MatrixElements(Box<ConversionPlan>),
+    MatrixToSet(Box<ConversionPlan>),
     OptionPayload(Box<ConversionPlan>),
     OptionPresent(Box<ConversionPlan>),
+}
+
+impl ConversionStep {
+    /// Shared structural classification; never a factory or execution permit.
+    pub fn contains_matrix_to_set(&self) -> bool {
+        match self {
+            Self::MatrixToSet(_) => true,
+            Self::MatrixElements(inner)
+            | Self::OptionPayload(inner)
+            | Self::OptionPresent(inner) => inner.step.contains_matrix_to_set(),
+            Self::Identity | Self::Scalar(_) => false,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -212,6 +242,30 @@ fn plan_conversion(
                 mode,
             )?))
         }
+        (
+            KindExpr::Matrix {
+                element: source_element,
+                ..
+            },
+            KindExpr::Set {
+                element: target_element,
+                ..
+            },
+        ) if mode == ConversionMode::Explicit => {
+            let source_element = ResolvedType::new(
+                *source_element.clone(),
+                source.dimension_parameters().to_vec().into_boxed_slice(),
+            )?;
+            let target_element = ResolvedType::new(
+                *target_element.clone(),
+                target.dimension_parameters().to_vec().into_boxed_slice(),
+            )?;
+            ConversionStep::MatrixToSet(Box::new(plan_conversion(
+                &source_element,
+                &target_element,
+                mode,
+            )?))
+        }
         (KindExpr::Option(source_payload), KindExpr::Option(target_payload)) => {
             let source_payload = ResolvedType::new(
                 *source_payload.clone(),
@@ -256,6 +310,7 @@ fn conversion_step_cost(step: &ConversionStep) -> Result<u32, TypeResolutionErro
             })
         }
         ConversionStep::MatrixElements(inner)
+        | ConversionStep::MatrixToSet(inner)
         | ConversionStep::OptionPayload(inner)
         | ConversionStep::OptionPresent(inner) => inner.cost.checked_add(1).ok_or_else(|| {
             TypeResolutionError::incompatible(
@@ -489,6 +544,27 @@ fn promotion_candidates(
     candidates
 }
 
+#[path = "conversion_declared.rs"]
+mod declared;
+#[path = "conversion_population.rs"]
+mod population;
+#[path = "conversion_sort_work.rs"]
+mod sort_work;
+#[path = "conversion_staging.rs"]
+mod staging;
+pub use declared::{
+    conversion_output_shape, conversion_output_shape_for_data, conversion_target_schema_body,
+    execute_conversion_draft_with_schema,
+};
+pub use population::{ConversionPopulationError, conversion_draft_population};
+pub use sort_work::{
+    conversion_comparison_work, conversion_dense_comparison_work, conversion_sort_comparison_units,
+};
+pub use staging::{
+    ConversionSchemaStagingBound, conversion_materialization_phases,
+    conversion_option_present_depth, conversion_schema_staging_bound, conversion_staging_demand,
+};
+
 /// Executes a closed semantic conversion plan against canonical value data.
 ///
 /// Source evaluation and resident artifact execution share this storage-blind
@@ -497,6 +573,14 @@ fn promotion_candidates(
 pub fn execute_conversion_draft(
     draft: ValueDataDraft,
     step: &ConversionStep,
+) -> Result<ValueDataDraft, ConversionExecutionError> {
+    execute_conversion_draft_impl(draft, step, None)
+}
+
+fn execute_conversion_draft_impl(
+    draft: ValueDataDraft,
+    step: &ConversionStep,
+    target: Option<declared::DeclaredTarget<'_, '_>>,
 ) -> Result<ValueDataDraft, ConversionExecutionError> {
     match step {
         ConversionStep::Identity => Ok(draft),
@@ -507,27 +591,126 @@ pub fn execute_conversion_draft(
             let ValueDataDraft::Matrix(elements) = draft else {
                 return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
             };
+            let child = target
+                .map(|target| {
+                    let crate::SchemaBody::Matrix { element, .. } = target.body else {
+                        return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+                    };
+                    Ok(target.child(element))
+                })
+                .transpose()?;
             let converted = elements
                 .into_vec()
                 .into_iter()
-                .map(|element| execute_conversion_draft(element, &element_plan.step))
+                .map(|element| execute_conversion_draft_impl(element, &element_plan.step, child))
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(ValueDataDraft::Matrix(converted.into_boxed_slice()))
         }
-        ConversionStep::OptionPresent(payload_plan) => Ok(ValueDataDraft::Option(OptionDraft {
-            present: true,
-            value: Some(Box::new(execute_conversion_draft(
-                draft,
-                &payload_plan.step,
-            )?)),
-        })),
+        ConversionStep::MatrixToSet(element_plan) => {
+            let ValueDataDraft::Matrix(elements) = draft else {
+                return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+            };
+            let child = target
+                .map(|target| {
+                    let crate::SchemaBody::Set { element, .. } = target.body else {
+                        return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+                    };
+                    Ok(target.child(element))
+                })
+                .transpose()?;
+            let converted = elements
+                .into_vec()
+                .into_iter()
+                .map(|element| execute_conversion_draft_impl(element, &element_plan.step, child))
+                .collect::<Result<Vec<_>, _>>()?;
+            if let Some(target) = child {
+                // Inner conversions may have changed a Set-valued key's
+                // cardinality. Resolve that real data before outer key
+                // finalization, retaining the SAME declared Matrix axes.
+                let shape = crate::shape_for_value_components(
+                    target.root,
+                    converted.iter().map(|data| (target.body, data)),
+                    target.shape,
+                )
+                .map_err(|_| ConversionExecutionError::ConversionShapeMismatch)?;
+                let values = crate::snapshot::normalize_set_conversion_drafts_with_context(
+                    target.body,
+                    converted.into_boxed_slice(),
+                    &shape,
+                    target.context,
+                )
+                .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+                return Ok(ValueDataDraft::Set(values));
+            }
+            let body = super::resolved_value::schema_body_from_resolved(
+                element_plan.target.kind(),
+                element_plan.target.dimension_parameters(),
+            )
+            .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+            let schema = crate::SchemaDraft {
+                body,
+                dimension_parameters: element_plan
+                    .target
+                    .dimension_parameters()
+                    .to_vec()
+                    .into_boxed_slice(),
+            }
+            .finalize()
+            .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+            let mut builder = crate::SchemaTableBuilder::new();
+            let handle = builder
+                .insert(schema)
+                .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+            let build = builder
+                .finish()
+                .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+            let id = build
+                .resolve(handle)
+                .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+            let schemas = build.into_parts().0;
+            let values = crate::snapshot::normalize_set_conversion_drafts(
+                schemas.get(id).expect("constructed element schema"),
+                converted.into_boxed_slice(),
+                &schemas,
+            )
+            .map_err(|_| ConversionExecutionError::ConversionExecutionUnsupported)?;
+            Ok(ValueDataDraft::Set(values))
+        }
+        ConversionStep::OptionPresent(payload_plan) => {
+            let child = target
+                .map(|target| {
+                    let crate::SchemaBody::Option(element) = target.body else {
+                        return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+                    };
+                    Ok(target.child(element))
+                })
+                .transpose()?;
+            Ok(ValueDataDraft::Option(OptionDraft {
+                present: true,
+                value: Some(Box::new(execute_conversion_draft_impl(
+                    draft,
+                    &payload_plan.step,
+                    child,
+                )?)),
+            }))
+        }
         ConversionStep::OptionPayload(payload_plan) => {
             let ValueDataDraft::Option(option) = draft else {
                 return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
             };
+            let child = target
+                .map(|target| {
+                    let crate::SchemaBody::Option(element) = target.body else {
+                        return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
+                    };
+                    Ok(target.child(element))
+                })
+                .transpose()?;
             let value = option
                 .value
-                .map(|value| execute_conversion_draft(*value, &payload_plan.step).map(Box::new))
+                .map(|value| {
+                    execute_conversion_draft_impl(*value, &payload_plan.step, child).map(Box::new)
+                })
                 .transpose()?;
             Ok(ValueDataDraft::Option(OptionDraft {
                 present: option.present,
@@ -538,14 +721,49 @@ pub fn execute_conversion_draft(
 }
 
 #[derive(Clone, Copy)]
+#[allow(
+    dead_code,
+    reason = "numeric scratch variants are shared across feature-selected source and target conversions"
+)]
 enum RuntimeNumber {
     Unsigned(u128),
     Signed(i128),
     F32(f32),
     F64(f64),
+    #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
     C32(f32, f32),
+    #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
     C64(f64, f64),
+    #[cfg(any(not(feature = "selective-convert"), feature = "r64"))]
     Rational(i64, u64),
+}
+
+fn scalar_conversion_kind_compiled(kind: BuiltinScalarKind) -> bool {
+    match kind {
+        BuiltinScalarKind::U8 => cfg!(any(not(feature = "selective-convert"), feature = "u8")),
+        BuiltinScalarKind::U16 => cfg!(any(not(feature = "selective-convert"), feature = "u16")),
+        BuiltinScalarKind::U32 => cfg!(any(not(feature = "selective-convert"), feature = "u32")),
+        BuiltinScalarKind::U64 => cfg!(any(not(feature = "selective-convert"), feature = "u64")),
+        BuiltinScalarKind::U128 => cfg!(any(not(feature = "selective-convert"), feature = "u128")),
+        BuiltinScalarKind::I8 => cfg!(any(not(feature = "selective-convert"), feature = "i8")),
+        BuiltinScalarKind::I16 => cfg!(any(not(feature = "selective-convert"), feature = "i16")),
+        BuiltinScalarKind::I32 => cfg!(any(not(feature = "selective-convert"), feature = "i32")),
+        BuiltinScalarKind::I64 => cfg!(any(not(feature = "selective-convert"), feature = "i64")),
+        BuiltinScalarKind::I128 => cfg!(any(not(feature = "selective-convert"), feature = "i128")),
+        BuiltinScalarKind::F32 => cfg!(any(not(feature = "selective-convert"), feature = "f32")),
+        BuiltinScalarKind::F64 => cfg!(any(not(feature = "selective-convert"), feature = "f64")),
+        BuiltinScalarKind::C32 => {
+            cfg!(any(not(feature = "selective-convert"), feature = "complex"))
+        }
+        BuiltinScalarKind::C64 => {
+            cfg!(any(not(feature = "selective-convert"), feature = "complex"))
+        }
+        BuiltinScalarKind::R64 => cfg!(any(not(feature = "selective-convert"), feature = "r64")),
+        BuiltinScalarKind::Bool => cfg!(any(not(feature = "selective-convert"), feature = "bool")),
+        BuiltinScalarKind::String => {
+            cfg!(any(not(feature = "selective-convert"), feature = "string"))
+        }
+    }
 }
 
 fn runtime_number(
@@ -553,35 +771,50 @@ fn runtime_number(
     expected: BuiltinScalarKind,
 ) -> Result<RuntimeNumber, ConversionExecutionError> {
     let (number, actual) = match draft {
+        #[cfg(any(not(feature = "selective-convert"), feature = "u8"))]
         ValueDataDraft::U8(value) => (RuntimeNumber::Unsigned(value.into()), BuiltinScalarKind::U8),
+        #[cfg(any(not(feature = "selective-convert"), feature = "u16"))]
         ValueDataDraft::U16(value) => (
             RuntimeNumber::Unsigned(value.into()),
             BuiltinScalarKind::U16,
         ),
+        #[cfg(any(not(feature = "selective-convert"), feature = "u32"))]
         ValueDataDraft::U32(value) => (
             RuntimeNumber::Unsigned(value.into()),
             BuiltinScalarKind::U32,
         ),
+        #[cfg(any(not(feature = "selective-convert"), feature = "u64"))]
         ValueDataDraft::U64(value) => (
             RuntimeNumber::Unsigned(value.into()),
             BuiltinScalarKind::U64,
         ),
+        #[cfg(any(not(feature = "selective-convert"), feature = "u128"))]
         ValueDataDraft::U128(value) => (RuntimeNumber::Unsigned(value), BuiltinScalarKind::U128),
+        #[cfg(any(not(feature = "selective-convert"), feature = "i8"))]
         ValueDataDraft::I8(value) => (RuntimeNumber::Signed(value.into()), BuiltinScalarKind::I8),
+        #[cfg(any(not(feature = "selective-convert"), feature = "i16"))]
         ValueDataDraft::I16(value) => (RuntimeNumber::Signed(value.into()), BuiltinScalarKind::I16),
+        #[cfg(any(not(feature = "selective-convert"), feature = "i32"))]
         ValueDataDraft::I32(value) => (RuntimeNumber::Signed(value.into()), BuiltinScalarKind::I32),
+        #[cfg(any(not(feature = "selective-convert"), feature = "i64"))]
         ValueDataDraft::I64(value) => (RuntimeNumber::Signed(value.into()), BuiltinScalarKind::I64),
+        #[cfg(any(not(feature = "selective-convert"), feature = "i128"))]
         ValueDataDraft::I128(value) => (RuntimeNumber::Signed(value), BuiltinScalarKind::I128),
+        #[cfg(any(not(feature = "selective-convert"), feature = "f32"))]
         ValueDataDraft::F32(value) => (RuntimeNumber::F32(value.to_f32()), BuiltinScalarKind::F32),
+        #[cfg(any(not(feature = "selective-convert"), feature = "f64"))]
         ValueDataDraft::F64(value) => (RuntimeNumber::F64(value.to_f64()), BuiltinScalarKind::F64),
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         ValueDataDraft::Complex32(value) => (
             RuntimeNumber::C32(value.real().to_f32(), value.imaginary().to_f32()),
             BuiltinScalarKind::C32,
         ),
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         ValueDataDraft::Complex64(value) => (
             RuntimeNumber::C64(value.real().to_f64(), value.imaginary().to_f64()),
             BuiltinScalarKind::C64,
         ),
+        #[cfg(any(not(feature = "selective-convert"), feature = "r64"))]
         ValueDataDraft::Rational64 {
             numerator,
             denominator,
@@ -589,7 +822,13 @@ fn runtime_number(
             RuntimeNumber::Rational(numerator, denominator),
             BuiltinScalarKind::R64,
         ),
-        _ => return Err(ConversionExecutionError::ConversionPlanSourceMismatch),
+        _ => {
+            return Err(if scalar_conversion_kind_compiled(expected) {
+                ConversionExecutionError::ConversionPlanSourceMismatch
+            } else {
+                ConversionExecutionError::ConversionExecutionUnsupported
+            });
+        }
     };
     if actual != expected {
         return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
@@ -602,11 +841,13 @@ pub fn execute_scalar_conversion(
     source: BuiltinScalarKind,
     target: BuiltinScalarKind,
 ) -> Result<ValueDataDraft, ConversionExecutionError> {
+    #[cfg(any(not(feature = "selective-convert"), feature = "bool"))]
     if source == BuiltinScalarKind::Bool {
         let ValueDataDraft::Bool(value) = draft else {
             return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
         };
         return match target {
+            #[cfg(any(not(feature = "selective-convert"), feature = "string"))]
             BuiltinScalarKind::String => Ok(ValueDataDraft::String(value.to_string())),
             _ => Err(ConversionExecutionError::ConversionExecutionUnsupported),
         };
@@ -614,47 +855,89 @@ pub fn execute_scalar_conversion(
     let number = runtime_number(draft, source)?;
     use BuiltinScalarKind as K;
     match target {
+        #[cfg(any(not(feature = "selective-convert"), feature = "u8"))]
         K::U8 => integer_target(number, false, 8).map(|value| ValueDataDraft::U8(value as u8)),
+        #[cfg(any(not(feature = "selective-convert"), feature = "u16"))]
         K::U16 => integer_target(number, false, 16).map(|value| ValueDataDraft::U16(value as u16)),
+        #[cfg(any(not(feature = "selective-convert"), feature = "u32"))]
         K::U32 => integer_target(number, false, 32).map(|value| ValueDataDraft::U32(value as u32)),
+        #[cfg(any(not(feature = "selective-convert"), feature = "u64"))]
         K::U64 => integer_target(number, false, 64).map(|value| ValueDataDraft::U64(value as u64)),
+        #[cfg(any(not(feature = "selective-convert"), feature = "u128"))]
         K::U128 => {
             integer_target(number, false, 128).map(|value| ValueDataDraft::U128(value as u128))
         }
+        #[cfg(any(not(feature = "selective-convert"), feature = "i8"))]
         K::I8 => integer_target(number, true, 8).map(|value| ValueDataDraft::I8(value as i8)),
+        #[cfg(any(not(feature = "selective-convert"), feature = "i16"))]
         K::I16 => integer_target(number, true, 16).map(|value| ValueDataDraft::I16(value as i16)),
+        #[cfg(any(not(feature = "selective-convert"), feature = "i32"))]
         K::I32 => integer_target(number, true, 32).map(|value| ValueDataDraft::I32(value as i32)),
+        #[cfg(any(not(feature = "selective-convert"), feature = "i64"))]
         K::I64 => integer_target(number, true, 64).map(|value| ValueDataDraft::I64(value as i64)),
+        #[cfg(any(not(feature = "selective-convert"), feature = "i128"))]
         K::I128 => integer_target(number, true, 128).map(ValueDataDraft::I128),
+        #[cfg(any(not(feature = "selective-convert"), feature = "f32"))]
         K::F32 => number_to_f32(number).map(|value| ValueDataDraft::F32(F32Bits::from_f32(value))),
+        #[cfg(any(not(feature = "selective-convert"), feature = "f64"))]
         K::F64 => number_to_f64(number).map(|value| ValueDataDraft::F64(F64Bits::from_f64(value))),
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         K::C32 => number_to_complex32(number).map(|(real, imaginary)| {
             ValueDataDraft::Complex32(Complex32Bits::new(
                 F32Bits::from_f32(real),
                 F32Bits::from_f32(imaginary),
             ))
         }),
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         K::C64 => number_to_complex64(number).map(|(real, imaginary)| {
             ValueDataDraft::Complex64(Complex64Bits::new(
                 F64Bits::from_f64(real),
                 F64Bits::from_f64(imaginary),
             ))
         }),
+        #[cfg(any(not(feature = "selective-convert"), feature = "r64"))]
         K::R64 => {
             number_to_rational(number).map(|(numerator, denominator)| ValueDataDraft::Rational64 {
                 numerator,
                 denominator,
             })
         }
+        #[cfg(any(not(feature = "selective-convert"), feature = "string"))]
         K::String => Ok(ValueDataDraft::String(number_display(number))),
+        #[cfg(any(not(feature = "selective-convert"), feature = "bool"))]
         K::Bool => Err(ConversionExecutionError::ConversionExecutionUnsupported),
+        #[cfg(all(
+            feature = "selective-convert",
+            not(all(
+                feature = "u8",
+                feature = "u16",
+                feature = "u32",
+                feature = "u64",
+                feature = "u128",
+                feature = "i8",
+                feature = "i16",
+                feature = "i32",
+                feature = "i64",
+                feature = "i128",
+                feature = "f32",
+                feature = "f64",
+                feature = "complex",
+                feature = "r64",
+                feature = "bool",
+                feature = "string"
+            ))
+        ))]
+        _ => Err(ConversionExecutionError::ConversionExecutionUnsupported),
     }
 }
 
 fn real_number(number: RuntimeNumber) -> Result<RuntimeNumber, ConversionExecutionError> {
     match number {
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         RuntimeNumber::C32(real, imaginary) if imaginary == 0.0 => Ok(RuntimeNumber::F32(real)),
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         RuntimeNumber::C64(real, imaginary) if imaginary == 0.0 => Ok(RuntimeNumber::F64(real)),
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         RuntimeNumber::C32(_, _) | RuntimeNumber::C64(_, _) => {
             Err(ConversionExecutionError::ConversionImaginaryPartNonZero)
         }
@@ -662,6 +945,19 @@ fn real_number(number: RuntimeNumber) -> Result<RuntimeNumber, ConversionExecuti
     }
 }
 
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "u8",
+    feature = "u16",
+    feature = "u32",
+    feature = "u64",
+    feature = "u128",
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128"
+))]
 fn integer_target(
     number: RuntimeNumber,
     signed: bool,
@@ -720,14 +1016,29 @@ fn integer_target(
         }
         RuntimeNumber::F32(value) => float_to_integer(value as f64, signed, bits),
         RuntimeNumber::F64(value) => float_to_integer(value, signed, bits),
+        #[cfg(any(not(feature = "selective-convert"), feature = "r64"))]
         RuntimeNumber::Rational(numerator, denominator) => {
             let truncated = i128::from(numerator) / i128::from(denominator);
             integer_target(RuntimeNumber::Signed(truncated), signed, bits)
         }
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         RuntimeNumber::C32(_, _) | RuntimeNumber::C64(_, _) => unreachable!(),
     }
 }
 
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "u8",
+    feature = "u16",
+    feature = "u32",
+    feature = "u64",
+    feature = "u128",
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128"
+))]
 fn float_to_integer(value: f64, signed: bool, bits: u16) -> Result<i128, ConversionExecutionError> {
     if !value.is_finite() {
         return Err(ConversionExecutionError::ConversionNonFinite);
@@ -751,6 +1062,11 @@ fn float_to_integer(value: f64, signed: bool, bits: u16) -> Result<i128, Convers
     })
 }
 
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "f32",
+    feature = "complex"
+))]
 fn number_to_f32(number: RuntimeNumber) -> Result<f32, ConversionExecutionError> {
     match real_number(number)? {
         RuntimeNumber::Unsigned(value) => finite_f32_from_finite(value as f32),
@@ -764,26 +1080,40 @@ fn number_to_f32(number: RuntimeNumber) -> Result<f32, ConversionExecutionError>
                 Ok(narrowed)
             }
         }
+        #[cfg(any(not(feature = "selective-convert"), feature = "r64"))]
         RuntimeNumber::Rational(numerator, denominator) => {
             finite_f32_from_finite(numerator as f32 / denominator as f32)
         }
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         RuntimeNumber::C32(_, _) | RuntimeNumber::C64(_, _) => unreachable!(),
     }
 }
 
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "f64",
+    feature = "complex"
+))]
 fn number_to_f64(number: RuntimeNumber) -> Result<f64, ConversionExecutionError> {
     match real_number(number)? {
         RuntimeNumber::Unsigned(value) => finite_f64_from_finite(value as f64),
         RuntimeNumber::Signed(value) => finite_f64_from_finite(value as f64),
         RuntimeNumber::F32(value) => Ok(f64::from(value)),
         RuntimeNumber::F64(value) => Ok(value),
+        #[cfg(any(not(feature = "selective-convert"), feature = "r64"))]
         RuntimeNumber::Rational(numerator, denominator) => {
             finite_f64_from_finite(numerator as f64 / denominator as f64)
         }
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         RuntimeNumber::C32(_, _) | RuntimeNumber::C64(_, _) => unreachable!(),
     }
 }
 
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "f32",
+    feature = "complex"
+))]
 fn finite_f32_from_finite(value: f32) -> Result<f32, ConversionExecutionError> {
     if value.is_infinite() {
         Err(ConversionExecutionError::ConversionOutOfRange)
@@ -792,6 +1122,11 @@ fn finite_f32_from_finite(value: f32) -> Result<f32, ConversionExecutionError> {
     }
 }
 
+#[cfg(any(
+    not(feature = "selective-convert"),
+    feature = "f64",
+    feature = "complex"
+))]
 fn finite_f64_from_finite(value: f64) -> Result<f64, ConversionExecutionError> {
     if value.is_infinite() {
         Err(ConversionExecutionError::ConversionOutOfRange)
@@ -800,9 +1135,12 @@ fn finite_f64_from_finite(value: f64) -> Result<f64, ConversionExecutionError> {
     }
 }
 
+#[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
 fn number_to_complex32(number: RuntimeNumber) -> Result<(f32, f32), ConversionExecutionError> {
     match number {
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         RuntimeNumber::C32(real, imaginary) => Ok((real, imaginary)),
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         RuntimeNumber::C64(real, imaginary) => {
             let narrowed_real = real as f32;
             let narrowed_imaginary = imaginary as f32;
@@ -818,14 +1156,18 @@ fn number_to_complex32(number: RuntimeNumber) -> Result<(f32, f32), ConversionEx
     }
 }
 
+#[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
 fn number_to_complex64(number: RuntimeNumber) -> Result<(f64, f64), ConversionExecutionError> {
     match number {
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         RuntimeNumber::C32(real, imaginary) => Ok((f64::from(real), f64::from(imaginary))),
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         RuntimeNumber::C64(real, imaginary) => Ok((real, imaginary)),
         number => number_to_f64(number).map(|real| (real, 0.0)),
     }
 }
 
+#[cfg(any(not(feature = "selective-convert"), feature = "r64"))]
 fn number_to_rational(number: RuntimeNumber) -> Result<(i64, u64), ConversionExecutionError> {
     match real_number(number)? {
         RuntimeNumber::Unsigned(value) => i64::try_from(value)
@@ -834,26 +1176,36 @@ fn number_to_rational(number: RuntimeNumber) -> Result<(i64, u64), ConversionExe
         RuntimeNumber::Signed(value) => i64::try_from(value)
             .map(|value| (value, 1))
             .map_err(|_| ConversionExecutionError::ConversionOutOfRange),
+        #[cfg(any(not(feature = "selective-convert"), feature = "r64"))]
         RuntimeNumber::Rational(numerator, denominator) => Ok((numerator, denominator)),
         RuntimeNumber::F32(_) | RuntimeNumber::F64(_) => {
             Err(ConversionExecutionError::ConversionExecutionUnsupported)
         }
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         RuntimeNumber::C32(_, _) | RuntimeNumber::C64(_, _) => unreachable!(),
     }
 }
 
+#[cfg(any(not(feature = "selective-convert"), feature = "string"))]
 fn number_display(number: RuntimeNumber) -> String {
     match number {
         RuntimeNumber::Unsigned(value) => value.to_string(),
         RuntimeNumber::Signed(value) => value.to_string(),
         RuntimeNumber::F32(value) => value.to_string(),
         RuntimeNumber::F64(value) => value.to_string(),
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         RuntimeNumber::C32(real, imaginary) => complex_display(real, imaginary),
+        #[cfg(any(not(feature = "selective-convert"), feature = "complex"))]
         RuntimeNumber::C64(real, imaginary) => complex_display(real, imaginary),
+        #[cfg(any(not(feature = "selective-convert"), feature = "r64"))]
         RuntimeNumber::Rational(numerator, denominator) => format!("{numerator}/{denominator}"),
     }
 }
 
+#[cfg(any(
+    not(feature = "selective-convert"),
+    all(feature = "complex", feature = "string")
+))]
 fn complex_display<T>(real: T, imaginary: T) -> String
 where
     T: ComplexDisplayPart,
@@ -869,11 +1221,19 @@ where
     }
 }
 
+#[cfg(any(
+    not(feature = "selective-convert"),
+    all(feature = "complex", feature = "string")
+))]
 trait ComplexDisplayPart: Copy + core::fmt::Display + Default + PartialEq {
     fn is_sign_negative(self) -> bool;
     fn is_nan(self) -> bool;
 }
 
+#[cfg(any(
+    not(feature = "selective-convert"),
+    all(feature = "complex", feature = "string")
+))]
 impl ComplexDisplayPart for f32 {
     fn is_sign_negative(self) -> bool {
         self.is_sign_negative()
@@ -884,6 +1244,10 @@ impl ComplexDisplayPart for f32 {
     }
 }
 
+#[cfg(any(
+    not(feature = "selective-convert"),
+    all(feature = "complex", feature = "string")
+))]
 impl ComplexDisplayPart for f64 {
     fn is_sign_negative(self) -> bool {
         self.is_sign_negative()
@@ -891,5 +1255,104 @@ impl ComplexDisplayPart for f64 {
 
     fn is_nan(self) -> bool {
         self.is_nan()
+    }
+}
+
+#[cfg(all(test, feature = "selective-convert", feature = "u64", feature = "f64"))]
+mod selective_tests {
+    use super::*;
+
+    #[test]
+    fn enabled_conversion_uses_the_shared_semantics() {
+        assert_eq!(
+            execute_scalar_conversion(
+                ValueDataDraft::U64(42),
+                BuiltinScalarKind::U64,
+                BuiltinScalarKind::F64
+            ),
+            Ok(ValueDataDraft::F64(F64Bits::from_f64(42.0)))
+        );
+        assert_eq!(
+            execute_scalar_conversion(
+                ValueDataDraft::F64(F64Bits::from_f64(f64::NAN)),
+                BuiltinScalarKind::F64,
+                BuiltinScalarKind::U64
+            ),
+            Err(ConversionExecutionError::ConversionNonFinite)
+        );
+        assert_eq!(
+            execute_scalar_conversion(
+                ValueDataDraft::String("wrong source".into()),
+                BuiltinScalarKind::U64,
+                BuiltinScalarKind::F64,
+            ),
+            Err(ConversionExecutionError::ConversionPlanSourceMismatch)
+        );
+    }
+
+    #[cfg(not(feature = "complex"))]
+    #[test]
+    fn excluded_complex_source_and_target_are_rejected() {
+        let source = ValueDataDraft::Complex64(crate::snapshot::Complex64Bits::new(
+            F64Bits::from_f64(1.0),
+            F64Bits::from_f64(0.0),
+        ));
+        assert_eq!(
+            execute_scalar_conversion(source, BuiltinScalarKind::C64, BuiltinScalarKind::F64),
+            Err(ConversionExecutionError::ConversionExecutionUnsupported)
+        );
+        assert_eq!(
+            execute_scalar_conversion(
+                ValueDataDraft::U64(1),
+                BuiltinScalarKind::U64,
+                BuiltinScalarKind::C64
+            ),
+            Err(ConversionExecutionError::ConversionExecutionUnsupported)
+        );
+    }
+
+    #[cfg(not(feature = "r64"))]
+    #[test]
+    fn excluded_rational_source_and_target_are_rejected() {
+        assert_eq!(
+            execute_scalar_conversion(
+                ValueDataDraft::Rational64 {
+                    numerator: 3,
+                    denominator: 2
+                },
+                BuiltinScalarKind::R64,
+                BuiltinScalarKind::F64
+            ),
+            Err(ConversionExecutionError::ConversionExecutionUnsupported)
+        );
+        assert_eq!(
+            execute_scalar_conversion(
+                ValueDataDraft::U64(1),
+                BuiltinScalarKind::U64,
+                BuiltinScalarKind::R64
+            ),
+            Err(ConversionExecutionError::ConversionExecutionUnsupported)
+        );
+    }
+
+    #[cfg(not(feature = "u128"))]
+    #[test]
+    fn excluded_integer_width_is_rejected() {
+        assert_eq!(
+            execute_scalar_conversion(
+                ValueDataDraft::U64(1),
+                BuiltinScalarKind::U64,
+                BuiltinScalarKind::U128
+            ),
+            Err(ConversionExecutionError::ConversionExecutionUnsupported)
+        );
+        assert_eq!(
+            execute_scalar_conversion(
+                ValueDataDraft::U128(1),
+                BuiltinScalarKind::U128,
+                BuiltinScalarKind::F64,
+            ),
+            Err(ConversionExecutionError::ConversionExecutionUnsupported)
+        );
     }
 }

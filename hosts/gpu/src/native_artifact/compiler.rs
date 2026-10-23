@@ -4,7 +4,11 @@ use super::abi::{
 };
 use super::runtime::{NativeExecutionError, NativeExecutionLimits, NativeExecutionReport};
 use cranelift_codegen::{
-    ir::{AbiParam, Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types},
+    ir::{
+        AbiParam, Block, InstBuilder, MemFlags, Value,
+        condcodes::{FloatCC, IntCC},
+        types,
+    },
     isa::unwind::UnwindInst,
     settings::{self, Configurable},
 };
@@ -60,10 +64,14 @@ impl std::fmt::Display for NativeCompileError {
     }
 }
 impl std::error::Error for NativeCompileError {}
-fn backend(error: impl std::fmt::Display) -> NativeCompileError {
+pub(super) fn backend(error: impl std::fmt::Display) -> NativeCompileError {
     NativeCompileError::Backend(error.to_string())
 }
-fn limit(dimension: &'static str, required: u64, maximum: u64) -> Result<(), NativeCompileError> {
+pub(super) fn limit(
+    dimension: &'static str,
+    required: u64,
+    maximum: u64,
+) -> Result<(), NativeCompileError> {
     if required > maximum {
         Err(NativeCompileError::Limit {
             dimension,
@@ -74,7 +82,7 @@ fn limit(dimension: &'static str, required: u64, maximum: u64) -> Result<(), Nat
         Ok(())
     }
 }
-fn host_supported() -> Result<(), NativeCompileError> {
+pub(super) fn host_supported() -> Result<(), NativeCompileError> {
     if !cfg!(all(
         target_pointer_width = "64",
         any(target_arch = "x86_64", target_arch = "aarch64")
@@ -103,6 +111,7 @@ impl JitArtifact {
         let builder = cranelift_jit::JITBuilder::with_flags(
             &[
                 ("opt_level", "none"),
+                ("enable_nan_canonicalization", "false"),
                 ("is_pic", "true"),
                 ("preserve_frame_pointers", "true"),
                 ("unwind_info", "true"),
@@ -203,6 +212,7 @@ pub fn emit_object_with_limits(
     let mut flags = settings::builder();
     for (name, value) in [
         ("opt_level", "none"),
+        ("enable_nan_canonicalization", "false"),
         ("is_pic", "true"),
         ("preserve_frame_pointers", "true"),
         ("unwind_info", "true"),
@@ -249,6 +259,7 @@ impl Sources {
                 NativeScalarValue::Bool(_) => NativeScalarKind::Bool,
                 NativeScalarValue::U64(_) => NativeScalarKind::U64,
                 NativeScalarValue::I64(_) => NativeScalarKind::I64,
+                NativeScalarValue::F64(_) => NativeScalarKind::F64,
             }),
         }
     }
@@ -291,6 +302,7 @@ impl Sources {
                     NativeScalarValue::Bool(value) => u64::from(*value),
                     NativeScalarValue::U64(value) => *value,
                     NativeScalarValue::I64(value) => *value as u64,
+                    NativeScalarValue::F64(value) => value.bits(),
                 };
                 return Ok(b.ins().iconst(types::I64, word as i64));
             }
@@ -299,7 +311,7 @@ impl Sources {
             .load(types::I64, MemFlags::new(), base, offset(index)?))
     }
 }
-fn offset(index: usize) -> Result<i32, NativeCompileError> {
+pub(super) fn offset(index: usize) -> Result<i32, NativeCompileError> {
     index
         .checked_mul(8)
         .and_then(|v| i32::try_from(v).ok())
@@ -308,17 +320,17 @@ fn offset(index: usize) -> Result<i32, NativeCompileError> {
             reason: "transport offset exceeds ABI",
         })
 }
-fn guard(b: &mut FunctionBuilder<'_>, valid: Value, error: Block, status: u64) {
+pub(super) fn guard(b: &mut FunctionBuilder<'_>, valid: Value, error: Block, status: u64) {
     let good = b.create_block();
     let status = b.ins().iconst(types::I64, status as i64);
     b.ins().brif(valid, good, &[], error, &[status.into()]);
     b.switch_to_block(good);
 }
-fn frame_load(b: &mut FunctionBuilder<'_>, frame: Value, offset: usize) -> Value {
+pub(super) fn frame_load(b: &mut FunctionBuilder<'_>, frame: Value, offset: usize) -> Value {
     b.ins()
         .load(types::I64, MemFlags::new(), frame, offset as i32)
 }
-fn set_origin(b: &mut FunctionBuilder<'_>, frame: Value, node: u64) {
+pub(super) fn set_origin(b: &mut FunctionBuilder<'_>, frame: Value, node: u64) {
     let word = b.ins().iconst(types::I64, node as i64);
     b.ins().store(
         MemFlags::new(),
@@ -327,7 +339,7 @@ fn set_origin(b: &mut FunctionBuilder<'_>, frame: Value, node: u64) {
         core::mem::offset_of!(NativeEntryFrame, error_node) as i32,
     );
 }
-fn admit(
+pub(super) fn admit(
     b: &mut FunctionBuilder<'_>,
     sig: cranelift_codegen::ir::SigRef,
     callback: Value,
@@ -341,8 +353,8 @@ fn admit(
     let valid = b.ins().icmp_imm(IntCC::Equal, status, STATUS_OK as i64);
     guard(b, valid, error, STATUS_ADMISSION);
 }
-fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKind) {
-    use NativeScalarKind::{Bool, I64, U64};
+pub(super) fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKind) {
+    use NativeScalarKind::{Bool, F64, I64, U64};
     use NativeScalarOp::*;
     match op {
         U64Add | U64Sub | U64Mul | U64Div | U64Rem => (&[U64, U64], U64),
@@ -350,18 +362,139 @@ fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKi
         I64Add | I64Sub | I64Mul | I64Div | I64Rem => (&[I64, I64], I64),
         I64Eq | I64Ne | I64Lt | I64Le | I64Gt | I64Ge => (&[I64, I64], Bool),
         I64Neg => (&[I64], I64),
+        F64Add | F64Sub | F64Mul | F64Div => (&[F64, F64], F64),
+        U64ToI64 => (&[U64], I64),
+        I64ToU64 => (&[I64], U64),
+        U64ToF64 => (&[U64], F64),
+        I64ToF64 => (&[I64], F64),
+        F64ToU64 => (&[F64], U64),
+        F64ToI64 => (&[F64], I64),
+        F64Neg | F64Sqrt => (&[F64], F64),
+        F64Eq | F64Ne | F64Lt | F64Le | F64Gt | F64Ge => (&[F64, F64], Bool),
         BoolNot => (&[Bool], Bool),
         BoolAnd | BoolOr | BoolXor | BoolEq | BoolNe => (&[Bool, Bool], Bool),
     }
 }
-fn primitive(
+pub(super) fn primitive(
     b: &mut FunctionBuilder<'_>,
     op: NativeScalarOp,
     args: &[Value],
     error: Block,
 ) -> Value {
     use NativeScalarOp::*;
+    // Only genuine selected conversion witnesses reach these typed arms.
+    // Guards precede machine conversions and result stores, and the caller
+    // admits this complete checked template before loading its operand.
+    match op {
+        U64ToI64 => {
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], i64::MAX);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        I64ToU64 => {
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::SignedGreaterThanOrEqual, args[0], 0);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        U64ToF64 | I64ToF64 => {
+            let value = if op == U64ToF64 {
+                b.ins().fcvt_from_uint(types::F64, args[0])
+            } else {
+                b.ins().fcvt_from_sint(types::F64, args[0])
+            };
+            return b.ins().bitcast(types::I64, MemFlags::new(), value);
+        }
+        F64ToU64 | F64ToI64 => {
+            // The actual core executor rejects nonfinite before truncation.
+            // Inspect raw exponent bits first, so even signaling NaN reaches
+            // the checked error without executing a floating instruction.
+            let exponent = b.ins().band_imm(args[0], 0x7ff0_0000_0000_0000_i64);
+            let finite = b
+                .ins()
+                .icmp_imm(IntCC::NotEqual, exponent, 0x7ff0_0000_0000_0000_i64);
+            guard(b, finite, error, STATUS_ARITHMETIC);
+            let value = b.ins().bitcast(types::F64, MemFlags::new(), args[0]);
+            let truncated = b.ins().trunc(value);
+            let signed = op == F64ToI64;
+            let lower = b
+                .ins()
+                .f64const(cranelift_codegen::ir::immediates::Ieee64::with_bits(
+                    if signed { 0xc3e0_0000_0000_0000 } else { 0 },
+                ));
+            let upper = b
+                .ins()
+                .f64const(cranelift_codegen::ir::immediates::Ieee64::with_bits(
+                    if signed {
+                        0x43e0_0000_0000_0000
+                    } else {
+                        0x43f0_0000_0000_0000
+                    },
+                ));
+            // Range checks follow truncation: (-1,0) is valid unsigned zero.
+            let above = b.ins().fcmp(FloatCC::GreaterThanOrEqual, truncated, lower);
+            let below = b.ins().fcmp(FloatCC::LessThan, truncated, upper);
+            let valid = b.ins().band(above, below);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return if signed {
+                b.ins().fcvt_to_sint(types::I64, truncated)
+            } else {
+                b.ins().fcvt_to_uint(types::I64, truncated)
+            };
+        }
+        _ => {}
+    }
     let a = args[0];
+    if matches!(
+        op,
+        F64Add
+            | F64Sub
+            | F64Mul
+            | F64Div
+            | F64Neg
+            | F64Sqrt
+            | F64Eq
+            | F64Ne
+            | F64Lt
+            | F64Le
+            | F64Gt
+            | F64Ge
+    ) {
+        // ABI transport remains raw words. Only the exact typed primitive
+        // interprets them as F64; no arithmetic cast or NaN canonicalization.
+        let left = b.ins().bitcast(types::F64, MemFlags::new(), a);
+        let value = match op {
+            F64Neg => b.ins().fneg(left),
+            F64Sqrt => b.ins().sqrt(left),
+            _ => {
+                let right = b.ins().bitcast(types::F64, MemFlags::new(), args[1]);
+                match op {
+                    F64Add => b.ins().fadd(left, right),
+                    F64Sub => b.ins().fsub(left, right),
+                    F64Mul => b.ins().fmul(left, right),
+                    F64Div => b.ins().fdiv(left, right),
+                    _ => {
+                        let cc = match op {
+                            F64Eq => FloatCC::Equal,
+                            // NotEqual includes unordered, matching Rust !=.
+                            F64Ne => FloatCC::NotEqual,
+                            F64Lt => FloatCC::LessThan,
+                            F64Le => FloatCC::LessThanOrEqual,
+                            F64Gt => FloatCC::GreaterThan,
+                            F64Ge => FloatCC::GreaterThanOrEqual,
+                            _ => unreachable!("typed floating primitive"),
+                        };
+                        let value = b.ins().fcmp(cc, left, right);
+                        return b.ins().uextend(types::I64, value);
+                    }
+                }
+            }
+        };
+        return b.ins().bitcast(types::I64, MemFlags::new(), value);
+    }
     if op == BoolNot {
         return b.ins().bxor_imm(a, 1);
     }
@@ -444,7 +577,9 @@ fn primitive(
             let value = b.ins().icmp(cc, a, c);
             b.ins().uextend(types::I64, value)
         }
-        BoolNot | I64Neg => unreachable!(),
+        U64ToI64 | I64ToU64 | U64ToF64 | I64ToF64 | F64ToU64 | F64ToI64 | BoolNot | I64Neg
+        | F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt | F64Eq | F64Ne | F64Lt | F64Le
+        | F64Gt | F64Ge => unreachable!(),
     }
 }
 
@@ -681,7 +816,7 @@ fn define<M: Module>(
     Ok((entry_id, descriptor))
 }
 
-fn compiled_stack_bytes(
+pub(super) fn compiled_stack_bytes(
     buffer: &cranelift_codegen::MachBufferFinalized<cranelift_codegen::Final>,
 ) -> Result<u64, NativeCompileError> {
     let layout = buffer
