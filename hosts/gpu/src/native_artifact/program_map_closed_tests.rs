@@ -7,12 +7,17 @@ use std::cell::{Cell, RefCell};
 #[derive(Clone, Copy, PartialEq)]
 enum Mode { Native, Decline, OneShort, Renew }
 #[derive(Default, Debug)]
-struct Observation { entries: u64, guarded: u64, rejected: u64, errors: Vec<&'static str> }
+struct Observation {
+    entries: u64, guarded: u64, rejected: u64, errors: Vec<&'static str>, bound: [u64; 7],
+}
 thread_local! {
     static MODE: Cell<Mode> = const { Cell::new(Mode::Native) };
     static OBS: RefCell<Observation> = RefCell::new(Observation::default());
 }
 fn note(f: impl FnOnce(&mut Observation)) { OBS.with(|v| f(&mut v.borrow_mut())); }
+pub(super) fn record_bound_call(op: u64) {
+    note(|r| if let Some(count) = r.bound.get_mut(op as usize) { *count += 1; });
+}
 unsafe extern "C" fn observe(raw: *mut c_void, site: u64, op: u64,
     first: u64, second: u64, third: u64, result: *mut u64) -> u64
 {
@@ -93,7 +98,12 @@ fn closed_map_binds_source_once_rejects_reentry_and_keeps_finite_fuel() {
                         _ => panic!("String/U64 map"),
                     }).collect::<Vec<_>>();
                     assert_eq!(pairs, vec![(":a".into(), 14), ("ab".into(), 21), ("b:".into(), 14)]);
-                    if mode == Mode::Native { assert_eq!((observed.entries, observed.guarded, observed.rejected), (1, 0, 2)); }
+                    if mode == Mode::Native {
+                        assert_eq!((observed.entries, observed.guarded, observed.rejected), (1, 0, 2));
+                        // Every source window runs the fused range/projection,
+                        // with no separate range or projection callback.
+                        assert_eq!((observed.bound[1], observed.bound[2], observed.bound[6]), (0, 0, 7));
+                    }
                     else { assert_eq!(observed.entries, 0); assert!(observed.guarded > 7); }
                     visits.push(report.visits);
                 }
@@ -186,11 +196,15 @@ fn closed_map_rechecks_changed_widths_and_current_string_bounds() {
                 let observed = OBS.with(|v| core::mem::take(&mut *v.borrow_mut()));
                 assert!(observed.errors.is_empty(), "{observed:?}");
                 assert_eq!((observed.entries, observed.guarded), (1, 0));
+                assert_eq!((observed.bound[1], observed.bound[2], observed.bound[6]), (0, 0, 3));
                 if invalid {
-                    assert!(matches!(outcome, Err(NativeProgramExecutionError::Library {
+                    let selection = descriptor.map_owner_words.as_ref().unwrap().spans()[0].selection_site();
+                    let expected_origin = descriptor.plan.blocks()[selection as usize].origin();
+                    assert!(matches!(&outcome, Err(NativeProgramExecutionError::Library {
+                        origin,
                         error: mech_engine::native_artifact::NativeCollectionInvocationError::Kernel(
-                            mech_core::ResidentKernelError::InvalidInput), ..
-                    })), "{outcome:?}");
+                            mech_core::ResidentKernelError::InvalidInput),
+                    }) if *origin == expected_origin), "{outcome:?}");
                     assert!(output.iter().all(Option::is_none));
                 } else {
                     let report = outcome.unwrap();

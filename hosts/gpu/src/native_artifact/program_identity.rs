@@ -189,7 +189,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 36;
 // account, observer and cap addresses, preserving all debits and restoration.
 // Policy56 retains a same-version lookup for one pinned immutable key in a
 // closed loop. Full lookup debits remain; every write invalidates the proof.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 56;
+// Policy57 fuses a selected adjacent range/String projection in a closed map
+// body. Both original visits, range charges and diagnostic origins remain.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 57;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

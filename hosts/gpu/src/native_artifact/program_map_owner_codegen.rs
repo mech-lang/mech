@@ -103,9 +103,12 @@ pub(in crate::native_artifact) fn emit(
         let context = load(b, locals, proof.words + 4)?;
         let (op, args, output) = if let Some(span) = span {
             if span.range_site() as usize == site {
-                (1, [load(b, locals, span.operands()[0].get() as usize)?,
+                // The selected-pair proof permits only empty scalar blocks
+                // and jumps between this range and its sole String selection.
+                // Keep those generated visits, but bind the key in one call.
+                (Some(6), [load(b, locals, span.operands()[0].get() as usize)?,
                      load(b, locals, span.operands()[1].get() as usize)?, zero], None)
-            } else { (2, [zero; 3], None) }
+            } else { (None, [zero; 3], None) }
         } else {
             use mech_engine::native_artifact::NativeCollectionPrimitive as P;
             let NativeIterationAction::LibraryCall { template, operands, output } = code.blocks()[site].action()
@@ -115,9 +118,11 @@ pub(in crate::native_artifact) fn emit(
                 _ => return Err(backend("closed map call kind")),
             };
             let value = if op == 5 { load(b, locals, operands[2].get() as usize)? } else { zero };
-            (op, [zero, zero, value], Some(*output))
+            (Some(op), [zero, zero, value], Some(*output))
         };
-        hooks.bound_call(b, function, context, site, op, args, error);
+        if let Some(op) = op {
+            hooks.bound_call(b, function, context, site, op, args, error);
+        }
         if let Some(output) = output {
             let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
             store(b, locals, output.get() as usize, word)?;
