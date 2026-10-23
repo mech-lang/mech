@@ -211,6 +211,7 @@ pub(super) struct CallCacheLane {
     metadata_valid: bool,
     library: Option<NativeLibraryWorkBudget>,
     _reservation: mech_core::ManagedMemoryReservation,
+    _nodes: mech_core::ManagedNodeReservation,
 }
 impl CallCacheLane {
     /// Reconcile only the cache that can change at this boundary. A failed
@@ -313,6 +314,7 @@ impl CallCacheLane {
                 .ok_or_else(|| invalid("call cache setup work overflow"))?,
         )?;
         let reservation = memory.reserve_capacity(bytes)?;
+        let nodes = memory.reserve_nodes(bytes)?;
         // NativeProgramDescriptor::prepare already ran BOTH canonical phase
         // and current-visit proofs. check_scope contracts each child loop to
         // initializer -> exit and rejects every remaining scope cycle. Thus
@@ -334,6 +336,7 @@ impl CallCacheLane {
             metadata_valid: true,
             library: None,
             _reservation: reservation,
+            _nodes: nodes,
         })
     }
 }
@@ -379,6 +382,9 @@ pub(super) struct Prepared<'a> {
     retention: Option<prefix::Retention>,
     window_work_seen: u64,
     worker: Option<parallel::Worker>,
+    // Invocation/frame roots outlive every synchronous Context and worker.
+    // Payload Values and private owners hold their separate shared claims.
+    _fixed_nodes: mech_core::ManagedNodeReservation,
 }
 
 impl<'a> Prepared<'a> {
@@ -498,6 +504,7 @@ impl<'a> Prepared<'a> {
             work.shared_library_budget(NativeExecutionPhase::Setup,
                 caps.max_comparison_work.unwrap(), memory)?
         };
+        let fixed_nodes = memory.reserve_nodes(super::caller_geometry::fixed_nodes()?)?;
         let mut storage =
             NativeWordStorage::new(words, limits.execution.max_transport_bytes, Some(memory))?;
         // The exact table occupies the disjoint final lane of this SAME
@@ -564,6 +571,7 @@ impl<'a> Prepared<'a> {
             retention: None,
             window_work_seen: 0,
             worker: None,
+            _fixed_nodes: fixed_nodes,
             state: Some(OwnedState {
                 map_owners: map_owners::Session::new(descriptor),
                 collections,
@@ -602,6 +610,9 @@ impl<'a> Prepared<'a> {
     ) -> Result<parallel::Receipt, NativeProgramExecutionError> {
         let region = descriptor.parallel.regions.get(worker.region)
             .ok_or_else(|| invalid("worker constructor has no same-plan proof"))?;
+        if !super::parallel_admission::supported(descriptor, worker.region) {
+            return Err(invalid("worker constructor lacks shared private-node admission"));
+        }
         if worker.index >= worker.count || worker.count < 2 || worker.result.is_some()
             || captures.len() != region.captures.len() {
             return Err(invalid("worker constructor capture/count mismatch"));

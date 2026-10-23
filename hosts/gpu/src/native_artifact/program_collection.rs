@@ -6,7 +6,7 @@ use crate::native_artifact::{
 };
 use core::mem::size_of;
 use mech_core::{
-    ManagedMemoryBudget, ManagedMemoryReservation, MemoryBudgetDimension as Dimension,
+    ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation, MemoryBudgetDimension as Dimension,
     MemoryBudgetLimits, ResidentKernelError, ResidentResourcePhase, Value, ValueData,
     snapshot::{SnapshotValidationContext, ValueDataDraft, ValueDraft},
 };
@@ -87,6 +87,7 @@ struct Builder {
     compute: u64,
     projection_comparison: u64,
     reservation: ManagedMemoryReservation,
+    nodes: ManagedNodeReservation,
 }
 pub(super) struct State {
     sources: Vec<Option<Source>>,
@@ -110,6 +111,7 @@ pub(super) struct State {
     // complete fixed metadata reservation below. No canonical root is kept.
     ascii_facts: ascii_facts::Cache,
     _metadata: ManagedMemoryReservation,
+    _metadata_nodes: ManagedNodeReservation,
 }
 fn add(left: u64, right: u64) -> Result<u64, Error> {
     left.checked_add(right)
@@ -143,6 +145,31 @@ fn charge(work: &mut NativeWorkMeter, amount: u64) -> Result<(), Error> {
     work.charge(Phase::Setup, amount).map_err(Into::into)
 }
 impl State {
+    /// Only otherwise-unclaimed private owners in the parked parent. The
+    /// common lane, drafts, TextJoin and canonical roots have their own claims.
+    pub(super) fn parked_private_nodes(&self, work: &mut NativeWorkMeter)
+        -> Result<Option<u64>, Error>
+    {
+        if self.active_string_spans != 0 || self.active_string_maps != 0 {
+            return Ok(None);
+        }
+        charge(work, super::amount(self.builders.len(), 256, 512)?)?;
+        let mut nodes = 0;
+        for builder in self.builders.iter().flatten() {
+            if builder.join.as_ref().is_some_and(|join| join.has_compiled_map()) {
+                return Ok(None);
+            }
+            if let Some(histogram) = &builder.histogram {
+                nodes = add(nodes, histogram.caller_retained_nodes()?)?;
+            }
+            if builder.query.is_some() {
+                // Query scalars already have canonical snapshot claims.
+                nodes = add(nodes, 2)?;
+            }
+        }
+        Ok(Some(nodes))
+    }
+
     pub(super) fn caller_retained_nodes(&self, work: &mut NativeWorkMeter) -> Result<u64, Error> {
         charge(work, super::amount(self.builders.len(), 256, 512)?)?;
         // This reservation contains fixed per-site carriers and weak ASCII
@@ -221,6 +248,7 @@ impl State {
         )?;
         charge(work, add(mul(bytes, 8)?, 256)?)?;
         let metadata = memory.reserve_capacity(bytes)?;
+        let metadata_nodes = memory.reserve_nodes(bytes)?;
         let sources = allocation::metadata(
             plan.iterations().len(),
             "collection source metadata allocation",
@@ -253,6 +281,7 @@ impl State {
             active_string_maps: 0,
             ascii_facts: ascii_facts::Cache::default(),
             _metadata: metadata,
+            _metadata_nodes: metadata_nodes,
         }))
     }
     pub(super) fn is_complete(&self) -> bool {
@@ -426,6 +455,7 @@ impl State {
                     return Err(invalid("collection begin outside exact enclosing builder"));
                 }
                 charge(&mut ctx.control.work, 64)?;
+                let nodes = ctx.library.memory_budget().reserve_nodes(2)?;
                 self.builders[*collection as usize] = Some(Builder {
                     values: Vec::new(),
                     join: None,
@@ -436,6 +466,7 @@ impl State {
                     compute: 0,
                     projection_comparison: 0,
                     reservation: ctx.library.memory_budget().reserve_capacity(0)?,
+                    nodes,
                 });
                 self.current = Some(*collection);
                 self.begin_text_join(ctx, *collection)?;
@@ -779,6 +810,11 @@ impl State {
                     &mut ctx.control.work,
                     add(add(mul(extra, 16)?, mul(moved, 4)?)?, 128)?,
                 )?;
+                // The pending draft and replacement carrier coexist with the
+                // original builder until every fallible allocation succeeds.
+                let memory = ctx.library.memory_budget();
+                let pending_node = memory.reserve_nodes(1)?;
+                let _replacement_node = memory.reserve_nodes(u64::from(capacity > builder.values.capacity()))?;
                 builder.reservation.resize_capacity(backing)?;
                 if capacity > builder.values.capacity() {
                     builder
@@ -806,6 +842,7 @@ impl State {
                     _ => return Err(invalid("invalid collected scalar word")),
                 };
                 builder.values.push(data);
+                builder.nodes.merge(pending_node)?;
                 builder.payload_bytes = payload_bytes;
                 self.live_bytes = add(old_live, extra)?;
                 Ok(None)
@@ -894,6 +931,8 @@ impl State {
             )?,
             ctx.limits.max_retained_nodes,
         )?;
+        let _publication_nodes = ctx.library.memory_budget().reserve_nodes(
+            data::output_nodes(output.definition().body(), count)?)?;
         let mut reservation = ctx.library.memory_budget().reserve_capacity(envelope)?;
         // Normal scalar comprehensions are always 1xN, including 1x0.
         let extents = if definition.kind() == ComprehensionKind::MatrixPreserveShape {
