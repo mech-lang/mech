@@ -208,7 +208,14 @@ impl NativeProgramDescriptor {
         let window_regions = plan.window_regions().into_boxed_slice();
         let string_map_regions = plan.string_map_regions().into_boxed_slice();
         let scalar_aggregates = plan.scalar_aggregates();
-        let map_owner_words = plan.map_owner_words().map_err(str::to_owned)?;
+        let occupied_frame = plan.values().len()
+            .checked_add(plan.iterations().len())
+            .and_then(|n| n.checked_add(scalar_aggregates.words()))
+            .and_then(|n| n.checked_add(borrowed_strings.words))
+            .and_then(|n| n.checked_add(closed_tails.words))
+            .ok_or("map owner frame prefix overflow")?;
+        let map_owner_words = plan.map_owner_words().map_err(str::to_owned)?
+            .after_frame_words(occupied_frame).map_err(str::to_owned)?;
         // Programs without owner candidates keep no second copy of their
         // existing scalar slot/action/constant inventories in the descriptor.
         let map_owner_words = (!map_owner_words.regions().is_empty()).then_some(map_owner_words);

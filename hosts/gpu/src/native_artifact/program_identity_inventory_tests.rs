@@ -12,7 +12,11 @@ fn map_owner_descriptor_images_preserve_complete_same_build_layout() {
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let descriptor = jit.descriptor();
         assert_eq!(descriptor.map_owner_words.as_ref().unwrap().regions().len(), 1);
-        let expected = serde_json::to_value(descriptor.plan.map_owner_words().unwrap()).unwrap();
+        let occupied = descriptor.plan.values().len() + descriptor.plan.iterations().len()
+            + descriptor.scalar_aggregates.words() + descriptor.borrowed_strings.words
+            + descriptor.closed_tails.words;
+        let expected = serde_json::to_value(descriptor.plan.map_owner_words().unwrap()
+            .after_frame_words(occupied).unwrap()).unwrap();
         assert_eq!(serde_json::to_value(&descriptor.map_owner_words).unwrap(), expected);
         let encoded = descriptor.encode_build_owned_image().unwrap();
         let image: serde_json::Value = serde_json::from_slice(&encoded).unwrap();
@@ -62,7 +66,7 @@ fn map_owner_identity_covers_unused_candidates_words_and_site_inventories() {
         let original = serde_json::to_value(&descriptor.map_owner_words).unwrap();
         let mut changes = Vec::new();
         for path in [
-            "/frame_words", "/aggregates/words", "/regions/0/iteration",
+            "/frame_words", "/owner_base", "/aggregates/words", "/regions/0/iteration",
             "/regions/0/tail/seed", "/regions/0/tail/exit",
         ] {
             let mut changed = original.clone();
@@ -97,6 +101,46 @@ fn map_owner_identity_covers_unused_candidates_words_and_site_inventories() {
                 "a changed candidate/layout must change Object association",
             );
         }
+    }
+}
+
+#[test]
+fn retained_map_descriptor_appends_state_after_existing_closed_loop_metadata() {
+    use crate::native_artifact::NativeProgramDescriptor;
+    let prelude = "#Sum(n<u64>) => <u64>\n  | :Next(index<u64>, total<u64>)\n  | :Done(total<u64>).\n#Sum(n) -> :Next(0u64, 0u64)\n  :Next(index, total)\n    | index >= n -> :Done(total)\n    | * -> :Next(index + 1u64, total + index)\n  :Done(total) => total.\npre := #Sum(7u64)\n";
+    let source = format!("{prelude}{}", include_str!("../../tests/fixtures/native/map-owner-word-state.mec")
+        .replace("#Build(empty, 3u64)", "#Build(empty, pre)"));
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in artifacts(&source) {
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let descriptor = jit.descriptor();
+        assert!(descriptor.closed_tails.words > 0, "fixture must retain closed-loop metadata");
+        let original = descriptor.plan.map_owner_words().unwrap();
+        let selected = descriptor.map_owner_words.as_ref().unwrap();
+        let gap = descriptor.borrowed_strings.words + descriptor.closed_tails.words;
+        assert!(gap > 0);
+        assert_eq!(selected.owner_base(), original.owner_base() + gap);
+        assert_eq!(selected.frame_words(), original.frame_words() + gap);
+        for index in 0..descriptor.plan.values().len() {
+            let expected = original.aggregates().slot_at(index).map(|(at, count)| {
+                (if at >= original.owner_base() { at + gap } else { at }, count)
+            });
+            assert_eq!(selected.aggregates().slot_at(index), expected);
+        }
+        let encoded = descriptor.encode_build_owned_image().unwrap();
+        // SAFETY: unchanged metadata from this exact checked build, confined
+        // to the matching JIT owner. No source proofs are inferred by decoding.
+        let loaded = unsafe { NativeProgramDescriptor::decode_build_owned_image(&encoded, &catalog) }.unwrap();
+        assert_eq!(serde_json::to_value(&loaded.map_owner_words).unwrap(),
+            serde_json::to_value(&descriptor.map_owner_words).unwrap());
+        let memory = mech_core::ManagedMemoryBudget::new(128 * 1024 * 1024);
+        let mut outputs = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&[], &mut outputs, super::super::tests::limits(), &memory).unwrap();
+        let mech_core::ValueData::Map(map) = outputs[0].as_ref().unwrap().data() else { panic!("map"); };
+        assert_eq!(map.entries().len(), 1);
+        assert!(matches!(map.entries()[0].value(), mech_core::ValueData::U64(41)));
+        drop(outputs);
+        assert_eq!(memory.used_bytes(), 0);
     }
 }
 
