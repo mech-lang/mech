@@ -40,6 +40,9 @@ fn benchmark_generator_preserves_the_original_object_and_isolates_policy_control
             "program.mecb",
             "program.o",
             "object-identity.bin",
+            "native-descriptor.bin",
+            "native-descriptor.json",
+            "native-resources.json",
         ] {
             assert_eq!(
                 fs::read(secured.root().join(relative)).unwrap(),
@@ -55,7 +58,8 @@ fn benchmark_generator_preserves_the_original_object_and_isolates_policy_control
             let main = fs::read_to_string(project.root().join("src/main.rs")).unwrap();
             assert!(!main.contains("@BENCHMARK_") && !main.contains("@HOSTED_"));
             for same_boundary in [
-                "with_canonical_native_resources_phased",
+                "with_prepared_canonical_native_resources_phased_text",
+                "CanonicalNativeResourceMetadata::decode_build_owned_image",
                 "linked.prepare_hosted",
                 "session.resume_hosted_into",
                 "runtime.shutdown()",
