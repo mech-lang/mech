@@ -185,7 +185,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 36;
 // Policy54 retains one successful range shape in the invocation-owned map
 // lane. Fresh endpoints and changed shapes are checked; full selector work
 // and scratch remain prepaid, and private owner metadata remains accounted.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 54;
+// Policy55 shares one setup/teardown of the native call's thread-local
+// account, observer and cap addresses, preserving all debits and restoration.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 55;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

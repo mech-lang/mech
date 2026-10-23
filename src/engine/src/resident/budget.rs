@@ -490,25 +490,51 @@ impl NativeLibraryWorkBudget {
         comparison: u64,
         execute: impl FnOnce() -> T,
     ) -> Result<T, ResidentKernelError> {
-        self.with_scope(|| {
-            struct Guard(Option<(u64, u64)>);
-            impl Drop for Guard {
-                fn drop(&mut self) {
-                    CONTROL_ROOT_LIMITS.with(|active| active.set(self.0));
+        use std::cell::{Cell, RefCell};
+        use std::rc::Rc;
+        // Retain each thread-local address across this synchronous call. This
+        // is the same account, fresh observer and relative cap as with_scope
+        // followed by a call cap; teardown need not look up those addresses
+        // again. Guards still restore all three in reverse order on unwind.
+        struct AccountGuard<'a>(&'a RefCell<Option<Rc<RefCell<ControlWorkAccount>>>>,
+            Option<Rc<RefCell<ControlWorkAccount>>>);
+        impl Drop for AccountGuard<'_> {
+            fn drop(&mut self) { *self.0.borrow_mut() = self.1.take(); }
+        }
+        struct ScopeGuard<'a>(&'a RefCell<Option<ControlWorkScope>>, Option<ControlWorkScope>);
+        impl Drop for ScopeGuard<'_> {
+            fn drop(&mut self) { *self.0.borrow_mut() = self.1.take(); }
+        }
+        struct LimitGuard<'a>(&'a Cell<Option<(u64, u64)>>, Option<(u64, u64)>);
+        impl Drop for LimitGuard<'_> {
+            fn drop(&mut self) { self.0.set(self.1); }
+        }
+        CONTROL_WORK.with(|active| {
+            let previous = {
+                let mut current = active.borrow_mut();
+                if current.as_ref().is_some_and(|account| !Rc::ptr_eq(account, &self.account)) {
+                    return Err(ResidentKernelError::InvalidInput);
                 }
-            }
-            let used = self.used();
-            let previous = CONTROL_ROOT_LIMITS.with(|active| {
-                let previous = active.get();
-                let enclosing = previous.unwrap_or((u64::MAX, u64::MAX));
-                active.set(Some((
-                    used.0.saturating_add(compute).min(enclosing.0),
-                    used.1.saturating_add(comparison).min(enclosing.1),
-                )));
-                previous
-            });
-            let _guard = Guard(previous);
-            execute()
+                current.replace(self.account.clone())
+            };
+            let _account = AccountGuard(active, previous);
+            CONTROL_WORK_SCOPE.with(|scope| {
+                let previous = scope.replace(Some(ControlWorkScope {
+                    total: self.account.clone(), observed: ControlWork::default(),
+                }));
+                let _scope = ScopeGuard(scope, previous);
+                let used = self.used();
+                CONTROL_ROOT_LIMITS.with(|limits| {
+                    let previous = limits.get();
+                    let enclosing = previous.unwrap_or((u64::MAX, u64::MAX));
+                    limits.set(Some((
+                        used.0.saturating_add(compute).min(enclosing.0),
+                        used.1.saturating_add(comparison).min(enclosing.1),
+                    )));
+                    let _limits = LimitGuard(limits, previous);
+                    Ok(execute())
+                })
+            })
         })
     }
 }
@@ -828,6 +854,45 @@ mod native_library_work_tests {
             .unwrap();
         assert_eq!(budget.used(), (10, 3));
         assert!(budget.charge(1, 0).is_err());
+    }
+
+    #[test]
+    #[cfg(panic = "unwind")]
+    fn native_call_unwind_restores_parent_observations_caps_and_account() {
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let budget = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
+        let foreign = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
+        budget.with_call_limits(30, 10, || {
+            observe_control_work(demand(3, 1)).unwrap();
+            let failed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                budget.with_call_limits(5, 2, || {
+                    observe_control_work(demand(4, 1)).unwrap();
+                    panic!("owned test call unwind");
+                }).unwrap();
+            }));
+            assert!(failed.is_err());
+            assert_eq!(budget.used(), (7, 2));
+            // The parent's existing high-water mark survives the inner call.
+            observe_control_work(demand(3, 1)).unwrap();
+            assert_eq!(budget.used(), (7, 2));
+            observe_control_work(demand(4, 2)).unwrap();
+            assert_eq!(budget.used(), (8, 3));
+            assert_eq!(foreign.with_call_limits::<()>(100, 100, || unreachable!()),
+                Err(ResidentKernelError::InvalidInput));
+            budget.charge(22, 7).unwrap();
+            assert!(matches!(budget.charge(1, 0), Err(ResidentKernelError::ResourceLimit {
+                dimension: MemoryBudgetDimension::ComputeWork, required: 31, limit: 30, ..
+            })));
+        }).unwrap();
+        assert!(!NativeLibraryWorkBudget::has_active_scope());
+        // Parent caps are gone, but all successful inner work stays spent.
+        budget.charge(1, 0).unwrap();
+        foreign.charge(1, 0).unwrap();
+        assert_eq!(budget.used(), (31, 10));
+        assert_eq!(foreign.used(), (1, 0));
+        drop(foreign);
+        drop(budget);
+        assert_eq!(memory.used_bytes(), 0);
     }
 
     #[test]
