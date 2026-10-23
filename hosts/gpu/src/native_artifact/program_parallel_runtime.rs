@@ -5,6 +5,23 @@ use crate::native_artifact::{NativeExecutionPhase as Phase, NativeProgramExecuti
     program_abi::{self as abi, Frame}};
 use mech_core::{ManagedMemoryReservation, Value};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeWorkerBudgetError};
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+#[derive(Default)]
+struct Activity { current: AtomicUsize, peak: AtomicUsize }
+struct Active<'a>(&'a Activity);
+impl Activity {
+    fn enter(&self) -> Active<'_> {
+        // At most the admitted bounded task count can own a guard. The scoped
+        // parent reads the peak only after joining every child.
+        let current = self.current.fetch_add(1, Ordering::Relaxed) + 1;
+        self.peak.fetch_max(current, Ordering::Relaxed);
+        Active(self)
+    }
+}
+impl Drop for Active<'_> {
+    fn drop(&mut self) { self.0.current.fetch_sub(1, Ordering::Relaxed); }
+}
 
 #[cfg(test)]
 thread_local! { pub(super) static TEST_WORKERS: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) }; }
@@ -137,6 +154,7 @@ impl Context<'_, '_> {
         // the caller's checked JIT/linked code owner. No user callback or source
         // value supplies it, and scoped joins prevent code-owner escape.
         let entry: abi::Entry = unsafe { std::mem::transmute(args[0] as usize) };
+        let activity = Activity::default();
         let outcomes = std::thread::scope(|scope| -> Result<Vec<Result<Receipt, Error>>, Error> {
             let mut handles = Vec::new();
             handles.try_reserve_exact(count_usize).map_err(|_| invalid("parallel handle allocation"))?;
@@ -154,7 +172,9 @@ impl Context<'_, '_> {
             let mut spawn_failed = false;
             for (index, loan, worker_captures) in jobs {
                 let memory = memory.clone();
+                let activity = &activity;
                 let handle = std::thread::Builder::new().stack_size(STACK).spawn_scoped(scope, move || {
+                    let _active = activity.enter();
                     let library = NativeLibraryWorkBudget::from_worker_loan(loan)
                         .map_err(|error| Error::Collection { origin, error })?;
                     super::session::Prepared::run_worker(descriptor, entry, limits, &memory,
@@ -177,6 +197,11 @@ impl Context<'_, '_> {
         group.finish().map_err(|error| Error::Collection { origin, error })?;
         drop(stacks);
         let results = outcomes?;
+        if results.iter().all(Result::is_ok) {
+            self.parallel_regions = self.parallel_regions.checked_add(1).ok_or_else(|| invalid("parallel batch count overflow"))?;
+            self.parallel_tasks = self.parallel_tasks.checked_add(count).ok_or_else(|| invalid("parallel task count overflow"))?;
+            self.parallel_peak_workers = self.parallel_peak_workers.max(activity.peak.load(Ordering::Relaxed) as u64);
+        }
         for result in results.iter().filter_map(|result| result.as_ref().ok()) {
             self.control.visits = self.control.visits.checked_add(result.visits).ok_or_else(|| invalid("parallel visit overflow"))?;
             self.hash_table_regions = self.hash_table_regions.checked_add(result.hash_regions).ok_or_else(|| invalid("parallel region overflow"))?;

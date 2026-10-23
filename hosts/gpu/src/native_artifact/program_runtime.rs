@@ -129,6 +129,12 @@ pub struct NativeProgramExecutionReport {
     pub packed_map_updates: u64,
     /// Completed packed regions that entered the versioned SSA CFG.
     pub packed_ssa_regions: u64,
+    /// Source comprehensions whose original child bodies completed in workers.
+    pub parallel_regions: u64,
+    /// Original source elements completed by those worker batches.
+    pub parallel_tasks: u64,
+    /// Observed peak simultaneously executing workers, not admitted capacity.
+    pub parallel_peak_workers: u64,
 }
 fn invalid(reason: &'static str) -> NativeProgramExecutionError {
     NativeExecutionError::Descriptor { reason }.into()
@@ -217,6 +223,9 @@ struct Context<'plan, 'visit> {
     packed_map_regions: u64,
     packed_map_updates: u64,
     packed_ssa_regions: u64,
+    parallel_regions: u64,
+    parallel_tasks: u64,
+    parallel_peak_workers: u64,
     window_region: Option<(u32, u64)>,
     window_hashes: Option<Box<window_round::hashes::WindowHashes>>,
     prefix: Option<prefix::State>,

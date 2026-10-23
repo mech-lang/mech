@@ -99,8 +99,12 @@ first + ";" + second
             let mut parallel = vec![None; artifact.outputs().len()];
             let serial_report = observed(descriptor, jit.test_checked_entry(), &args, &mut serial, &memory, 1, false).unwrap();
             assert_eq!(BATCHES.with(Cell::get), 0);
+            assert_eq!((serial_report.parallel_regions, serial_report.parallel_tasks,
+                serial_report.parallel_peak_workers), (0, 0, 0));
             let report = observed(descriptor, jit.test_checked_entry(), &args, &mut parallel, &memory, 8, false).unwrap();
             assert_eq!(BATCHES.with(Cell::get), 2);
+            assert_eq!((report.parallel_regions, report.parallel_tasks), (2, 7));
+            assert!((1..=5).contains(&report.parallel_peak_workers));
             assert_eq!((report.hash_table_regions, report.hash_table_updates), (7, 27));
             assert_eq!((report.hash_table_regions, report.hash_table_updates),
                 (serial_report.hash_table_regions, serial_report.hash_table_updates));

@@ -357,6 +357,9 @@ struct OwnedState<'a> {
     packed_map_regions: u64,
     packed_map_updates: u64,
     packed_ssa_regions: u64,
+    parallel_regions: u64,
+    parallel_tasks: u64,
+    parallel_peak_workers: u64,
     consumed: bool,
     output_cursor: usize,
 }
@@ -579,6 +582,9 @@ impl<'a> Prepared<'a> {
                 packed_map_regions: 0,
                 packed_map_updates: 0,
                 packed_ssa_regions: 0,
+                parallel_regions: 0,
+                parallel_tasks: 0,
+                parallel_peak_workers: 0,
                 consumed: false,
                 output_cursor: 0,
             }),
@@ -775,6 +781,9 @@ impl<'a> Prepared<'a> {
             packed_map_regions: state.packed_map_regions,
             packed_map_updates: state.packed_map_updates,
             packed_ssa_regions: state.packed_ssa_regions,
+            parallel_regions: state.parallel_regions,
+            parallel_tasks: state.parallel_tasks,
+            parallel_peak_workers: state.parallel_peak_workers,
         })
     }
 
@@ -1023,6 +1032,9 @@ impl<'a> Prepared<'a> {
             packed_map_regions: state.packed_map_regions,
             packed_map_updates: state.packed_map_updates,
             packed_ssa_regions: state.packed_ssa_regions,
+            parallel_regions: state.parallel_regions,
+            parallel_tasks: state.parallel_tasks,
+            parallel_peak_workers: state.parallel_peak_workers,
             window_region: None,
             window_hashes: None,
             borrowed_strings: None,
@@ -1214,6 +1226,9 @@ impl<'a> Prepared<'a> {
             packed_map_regions: context.packed_map_regions,
             packed_map_updates: context.packed_map_updates,
             packed_ssa_regions: context.packed_ssa_regions,
+            parallel_regions: context.parallel_regions,
+            parallel_tasks: context.parallel_tasks,
+            parallel_peak_workers: context.parallel_peak_workers,
             consumed: context.consumed,
             output_cursor: context.output_cursor,
         });
