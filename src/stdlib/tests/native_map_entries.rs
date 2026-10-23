@@ -532,3 +532,80 @@ fn native_map_write_use_analysis_does_not_confuse_a_local_map_with_the_carrier()
         assert!(facts[0].late_reads().is_empty());
     }
 }
+
+fn owner_map_source(body: &str) -> String {
+    format!(
+        r#"+> map
++> number
++> sequence
+update(h<{{string:u64}}>) => (out<{{string:u64}}>) :=
+{body}
+#Update(initial<{{string:u64}}>) => <{{string:u64}}>
+  | :Run(h<{{string:u64}}>)
+  | :Done(h<{{string:u64}}>).
+#Update(initial) -> :Run(initial)
+  :Run(h)
+    | * -> :Done(update(h))
+  :Done(h) => h.
+empty<{{string:u64}}> := map/new()
+#Update(empty)
+"#
+    )
+}
+
+#[test]
+fn native_map_owner_regions_close_source_states_and_chained_updates() {
+    let mut sources = [1, 2, 3, 4, 6, 12, 18]
+        .map(|width| {
+            format!("{COUNT}\n#Count(\"ACGTACGTNACGTTACGTACGTACGT\", {width}u64, 26u64, empty)\n")
+        })
+        .to_vec();
+    sources.push(owner_map_source(
+        "  one := map/insert(h, \"one\", 11u64)\n  out := map/insert(one, \"two\", 22u64).",
+    ));
+    for (index, source) in sources.iter().enumerate() {
+        for artifact in artifacts(source) {
+            let plan = lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog())
+                .unwrap_or_else(|error| panic!("candidate {index}: {error:?}"));
+            let regions = plan.map_owner_regions().unwrap();
+            assert_eq!(regions.len(), 1, "candidate {index}");
+            let region = &regions[0];
+            assert_eq!(region.writes().len(), if index == 7 { 2 } else { 1 });
+            assert!(region.values().contains(&region.tail().carrier()));
+            assert!(region.values().contains(&region.tail().returned()));
+            assert!(!region.values().contains(&region.tail().seed()));
+            assert!(!region.values().contains(&region.tail().result()));
+        }
+    }
+}
+
+#[test]
+fn native_map_owner_regions_reject_old_aliases_unknown_consumers_and_foreign_phi_maps() {
+    let cases = [
+        "  next := map/insert(h, \"1\", 1u64)\n  key := number/format(next{\"1\"}, 0u64)\n  chosen := (key ∈ h)? | true => next | false => h.\n  out := chosen.",
+        "  keys := map/keys(h)\n  n := sequence/length(keys)\n  out := map/insert(h, \"n\", n).",
+        "  chosen := (\"pick\" ∈ h)? | true => h | false => spare.\n  out := map/insert(chosen, \"n\", 1u64).",
+    ];
+    for (index, body) in cases.iter().enumerate() {
+        let mut source = owner_map_source(body);
+        if index == 2 {
+            source = source.replacen("update(h", "spare<{string:u64}> := map/new()\nupdate(h", 1);
+        }
+        for artifact in artifacts(&source) {
+            let plan =
+                lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let facts = plan.map_write_uses().unwrap();
+            assert_eq!(facts.len(), 1);
+            if index == 0 {
+                assert!(!facts[0].late_reads().is_empty());
+            }
+            if index == 1 {
+                assert!(facts[0].late_reads().is_empty());
+            }
+            assert!(
+                plan.map_owner_regions().unwrap().is_empty(),
+                "hazard {index}"
+            );
+        }
+    }
+}
