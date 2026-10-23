@@ -81,6 +81,8 @@ mod program_map_owner_layout;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_map_packed_layout;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod program_key_domain;
+#[cfg(feature = "canonical-native-program-runtime")]
 mod program_packed_map;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_map_admission;
