@@ -10,7 +10,7 @@ use super::{
 };
 use mech_core::{IntegerWidth, SchemaBody as Schema, ValueData};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeMapOwnerWords {
     regions: Box<[NativeMapOwnerRegion]>,
     aggregates: NativeScalarAggregates,
@@ -18,6 +18,13 @@ pub struct NativeMapOwnerWords {
     exits: Box<[Option<usize>]>,
     frame_words: usize,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeMapOwnerWords {
+    regions: Box<[NativeMapOwnerRegion]>,
+    aggregates: NativeScalarAggregates,
+    initializers: Box<[Option<usize>]>,
+    exits: Box<[Option<usize>]>,
+    frame_words: usize,
+});
 impl NativeMapOwnerWords {
     pub fn regions(&self) -> &[NativeMapOwnerRegion] {
         &self.regions

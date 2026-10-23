@@ -9,7 +9,7 @@ use super::{
 };
 use mech_core::{IntegerWidth, SchemaBody as Schema};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeMapOwnerRegion {
     revision: mech_core::ProgramRevision,
     iteration: u32,
@@ -18,6 +18,14 @@ pub struct NativeMapOwnerRegion {
     writes: Box<[u32]>,
     reads: Box<[u32]>,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeMapOwnerRegion {
+    revision: mech_core::ProgramRevision,
+    iteration: u32,
+    tail: NativeTailLoop,
+    values: Box<[Value]>,
+    writes: Box<[u32]>,
+    reads: Box<[u32]>,
+});
 impl NativeMapOwnerRegion {
     pub const fn program_revision(&self) -> mech_core::ProgramRevision {
         self.revision

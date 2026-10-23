@@ -38,6 +38,9 @@ pub struct NativeProgramDescriptor {
     pub(super) window_regions: Box<[mech_engine::native_artifact::NativeWindowRegion]>,
     pub(super) string_map_regions: Box<[mech_engine::native_artifact::NativeStringMapRegion]>,
     pub(super) scalar_aggregates: mech_engine::native_artifact::NativeScalarAggregates,
+    // Complete same-plan candidate layout, preserved through standalone images.
+    // Merely carrying this metadata does not select retained runtime storage.
+    pub(super) map_owner_words: Option<mech_engine::native_artifact::NativeMapOwnerWords>,
     pub(super) borrowed_strings: super::program_borrowed_layout::Layout,
     pub(super) closed_tails: super::program_tail_layout::Layout,
     pub(super) selected_joins: super::program_selected_join_layout::Layout,
@@ -205,6 +208,10 @@ impl NativeProgramDescriptor {
         let window_regions = plan.window_regions().into_boxed_slice();
         let string_map_regions = plan.string_map_regions().into_boxed_slice();
         let scalar_aggregates = plan.scalar_aggregates();
+        let map_owner_words = plan.map_owner_words().map_err(str::to_owned)?;
+        // Programs without owner candidates keep no second copy of their
+        // existing scalar slot/action/constant inventories in the descriptor.
+        let map_owner_words = (!map_owner_words.regions().is_empty()).then_some(map_owner_words);
         let max_library_inputs = plan
             .blocks()
             .iter()
@@ -278,6 +285,7 @@ impl NativeProgramDescriptor {
             &line_retention_frontiers,
             &selected_joins.regions,
             &line_matrices.regions,
+            map_owner_words.as_ref(),
         );
         Ok(Self {
             plan,
@@ -293,6 +301,7 @@ impl NativeProgramDescriptor {
             window_regions,
             string_map_regions,
             scalar_aggregates,
+            map_owner_words,
             borrowed_strings,
             closed_tails,
             selected_joins,
