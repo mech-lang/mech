@@ -110,7 +110,7 @@ fn guarded_loop_versions_preserve_actual_bounds_arbitrary_seeds_headers_and_work
                 obs.bound[14] = 0;
                 let frontiers = PUBLICATION_FRONTIERS.with(|r| core::mem::take(&mut *r.borrow_mut()));
                 if width == 0 { assert_eq!(pairs, Some(std::collections::BTreeMap::new()), "a nonexecuted call must not fail early"); }
-                if mode == Mode::Native && n <= text.len() as u64 {
+                if mode == Mode::Native && n <= text.len() as u64 && outcome.is_ok() {
                     let mut expected = std::collections::BTreeMap::new();
                     if width > 0 && width <= n && start <= n - width {
                         for i in start..=n-width {
@@ -138,6 +138,11 @@ fn guarded_loop_versions_preserve_actual_bounds_arbitrary_seeds_headers_and_work
             }
             if a.0.is_err() || a.1.as_ref().is_some_and(|m| m.len() <= 1) {
                 assert_eq!(a.0,b.0); assert_eq!(a.2,b.2, "deterministic total work");
+            }
+            // Check both variants before requiring success so an unexpectedly
+            // tight fixture budget reports their actual matching error/work.
+            if mode == Mode::Native && n <= text.len() as u64 {
+                assert!(a.0.is_ok(), "valid oracle case failed: width={width}, n={n}, start={start}; optimized={:?}; checked={:?}; frontier={:?}", a.0, b.0, a.2);
             }
         }
     }
