@@ -18,6 +18,9 @@ pub struct NativeMapOwnerWords {
     exits: Box<[Option<usize>]>,
     action_regions: Box<[Option<usize>]>,
     call_regions: Box<[Option<usize>]>,
+    spans: Box<[NativeMapKeySpan]>,
+    span_sites: Box<[Option<usize>]>,
+    call_spans: Box<[Option<usize>]>,
     owner_base: usize,
     frame_words: usize,
 }
@@ -28,10 +31,86 @@ crate::native_artifact::program_image_proofs::image_struct!(NativeMapOwnerWords 
     exits: Box<[Option<usize>]>,
     action_regions: Box<[Option<usize>]>,
     call_regions: Box<[Option<usize>]>,
+    spans: Box<[NativeMapKeySpan]>,
+    span_sites: Box<[Option<usize>]>,
+    call_spans: Box<[Option<usize>]>,
     owner_base: usize,
     frame_words: usize,
 });
+
+/// Non-escaping selected String key. Templates remain at their original plan
+/// sites; this proof only selects intermediate storage, never a map operation.
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct NativeMapKeySpan {
+    region: usize,
+    range_site: u32,
+    selection_site: u32,
+    source: Value,
+    output: Value,
+    operands: (Value, Value),
+}
+crate::native_artifact::program_image_proofs::image_struct!(NativeMapKeySpan {
+    region: usize, range_site: u32, selection_site: u32,
+    source: Value, output: Value, operands: (Value, Value),
+});
+impl NativeMapKeySpan {
+    pub const fn region(&self) -> usize { self.region }
+    pub const fn range_site(&self) -> u32 { self.range_site }
+    pub const fn selection_site(&self) -> u32 { self.selection_site }
+    pub const fn source(&self) -> Value { self.source }
+    pub const fn output(&self) -> Value { self.output }
+    pub const fn operands(&self) -> [Value; 2] { [self.operands.0, self.operands.1] }
+}
+
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+fn key_spans(plan: &Plan, regions: &[NativeMapOwnerRegion])
+    -> Result<Vec<NativeMapKeySpan>, &'static str>
+{
+    use super::fusion_semantics::{self, Read};
+    let actions = fusion_semantics::semantic_actions(plan)?;
+    let counts = fusion_semantics::semantic_use_counts(plan)?;
+    let uses = fusion_semantics::reads(plan, &actions)?;
+    let mut result: Vec<NativeMapKeySpan> = Vec::new();
+    for (index, region) in regions.iter().enumerate() {
+        for &site in region.reads().iter().chain(region.writes()) {
+            let Action::LibraryCall { operands, .. } = &actions[site as usize] else { continue; };
+            let key = operands[1];
+            if result.iter().any(|span| span.output == key) { continue; }
+            let Some(projection) = super::string_span_projection::selected_pair(plan, &key, &counts, &actions)
+                else { continue; };
+            if plan.blocks()[projection.selection_site() as usize].iteration() != Some(region.iteration()) {
+                continue;
+            }
+            // No transport, carrier, branch, constructor or unrelated consumer
+            // may observe the absent canonical String. Ordinary dominance and
+            // current-visit validation still governs every selected use.
+            if uses[key.get() as usize].iter().any(|usage| match usage {
+                Read::Action(at) if region.reads().contains(at) || region.writes().contains(at) =>
+                    !matches!(&actions[*at as usize], Action::LibraryCall { operands, .. }
+                        if operands[1] == key && operands.iter().filter(|&&v| v == key).count() == 1),
+                _ => true,
+            }) { continue; }
+            result.push(NativeMapKeySpan {
+                region: index, range_site: projection.range_site(),
+                selection_site: projection.selection_site(), source: projection.source(),
+                output: key, operands: (projection.operands()[0], projection.operands()[1]),
+            });
+        }
+    }
+    Ok(result)
+}
+#[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+fn key_spans(_: &Plan, _: &[NativeMapOwnerRegion]) -> Result<Vec<NativeMapKeySpan>, &'static str> {
+    Ok(Vec::new())
+}
 impl NativeMapOwnerWords {
+    pub fn spans(&self) -> &[NativeMapKeySpan] { &self.spans }
+    pub fn span_site(&self, site: usize) -> Option<usize> {
+        self.span_sites.get(site).copied().flatten()
+    }
+    pub fn call_span(&self, site: usize) -> Option<usize> {
+        self.call_spans.get(site).copied().flatten()
+    }
     pub fn regions(&self) -> &[NativeMapOwnerRegion] {
         &self.regions
     }
@@ -229,6 +308,23 @@ impl Plan {
     /// of a full program can adopt these opaque owner words.
     pub fn map_owner_words(&self) -> Result<NativeMapOwnerWords, &'static str> {
         let regions = self.map_owner_regions()?;
+        let spans = key_spans(self, &regions)?;
+        let mut span_sites = vec![None; self.blocks().len()];
+        let mut call_spans = vec![None; self.blocks().len()];
+        for (index, span) in spans.iter().enumerate() {
+            for site in [span.range_site, span.selection_site] {
+                if span_sites[site as usize].replace(index).is_some() {
+                    return Err("overlapping map key projections");
+                }
+            }
+            let region = &regions[span.region];
+            for &site in region.reads().iter().chain(region.writes()) {
+                if matches!(self.blocks()[site as usize].action(),
+                    Action::LibraryCall { operands, .. } if operands[1] == span.output) {
+                    call_spans[site as usize] = Some(index);
+                }
+            }
+        }
         let ordinary = self.scalar_aggregates();
         let mut end = self
             .values()
@@ -314,6 +410,7 @@ impl Plan {
         }
         Ok(NativeMapOwnerWords {
             regions,
+            spans: spans.into(), span_sites: span_sites.into(), call_spans: call_spans.into(),
             initializers: initializers.into(),
             exits: exits.into(),
             action_regions: action_regions.into(),

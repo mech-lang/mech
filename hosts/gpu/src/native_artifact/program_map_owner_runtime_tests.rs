@@ -2,7 +2,7 @@
 //! table or Rust implementation of the source counting body participates.
 use super::State;
 use super::super::*;
-use crate::native_artifact::program_abi::{MAP_OWNER_BEGIN, MAP_OWNER_CALL, MAP_OWNER_END};
+use crate::native_artifact::program_abi::{MAP_OWNER_BEGIN, MAP_OWNER_CALL, MAP_OWNER_END, MAP_OWNER_SPAN};
 use std::cell::{Cell, RefCell};
 
 #[derive(Clone, Copy, PartialEq)]
@@ -11,6 +11,7 @@ enum Mode { Normal, ForeignDescriptor, ForeignLedger, RefuseEntry, Abort, Corrup
 struct Report {
     entries: u64, reads: u64, writes: u64, exits: u64, rejected: u64,
     declined: u64, canonical_map_calls: u64, errors: Vec<String>,
+    projections: u64, canonical_key_calls: u64,
 }
 thread_local! {
     static MODE: Cell<Mode> = const { Cell::new(Mode::Normal) };
@@ -46,6 +47,13 @@ unsafe extern "C" fn observe(
         .and_then(|layout| crate::native_artifact::program_map_owner_layout::call_region(layout, index));
     if operation == LIBRARY && selected_call.is_some() {
         record(|r| r.canonical_map_calls += 1);
+    }
+    if operation == LIBRARY && descriptor.map_owner_words.as_ref().is_some_and(|layout| layout.span_site(index).is_some()) {
+        record(|r| r.canonical_key_calls += 1);
+    }
+    if operation == MAP_OWNER_SPAN {
+        rejected(ctx.retained_map_helper(index, operation, [first, second, 1]));
+        rejected(ctx.helper(site, LIBRARY, args));
     }
     if operation == MAP_OWNER_BEGIN {
         rejected(ctx.retained_map_helper(index, operation, [1, 0, 0]));
@@ -104,7 +112,8 @@ unsafe extern "C" fn observe(
             if region.writes().contains(&(site as u32)) { record(|r| r.writes += 1); }
             else { record(|r| r.reads += 1); }
         } else if operation == MAP_OWNER_END { record(|r| r.exits += 1); }
-        if matches!(operation, MAP_OWNER_BEGIN | MAP_OWNER_CALL | MAP_OWNER_END) {
+        else if operation == MAP_OWNER_SPAN { record(|r| r.projections += 1); }
+        if matches!(operation, MAP_OWNER_BEGIN | MAP_OWNER_CALL | MAP_OWNER_END | MAP_OWNER_SPAN) {
             rejected(ctx.retained_map_helper(index, operation, args));
         }
         if mode == Mode::Abort && REPORT.with(|r| r.borrow().writes == 1) {
@@ -225,6 +234,30 @@ fn generated_corrupted_owner_words_fail_and_release_the_invocation() {
     }
 }
 
+#[test]
+fn projected_map_keys_preserve_refused_owner_entry_and_failure_cleanup() {
+    let source = format!("{}\n#Count(\"aba\", 1u64, 3u64, empty)\n",
+        super::super::structural_projection_tests::COUNT);
+    let original = tests::artifact_source(&source);
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+    for artifact in [original, decoded] {
+        let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        assert_eq!(jit.descriptor().map_owner_words.as_ref().unwrap().spans().len(), 1);
+        for mode in [Mode::Normal, Mode::RefuseEntry, Mode::Abort, Mode::Corrupt] {
+            let report = run_expected(&jit, jit.descriptor(), mode, &[("a", 2), ("b", 1)]);
+            assert!(report.errors.is_empty(), "{report:?}");
+            if mode == Mode::RefuseEntry {
+                assert_eq!((report.entries, report.projections, report.declined), (0, 0, 1));
+                assert_eq!(report.canonical_key_calls, 6);
+            } else {
+                assert!(report.projections >= 2, "{report:?}");
+                assert_eq!(report.canonical_key_calls, 0);
+            }
+        }
+    }
+}
+
 /// Observe the actual source-written counting procedure, not only the small
 /// ownership fixture. The caller checks every canonical key/value separately.
 pub(in crate::native_artifact::program_runtime) fn evaluate_count_case(
@@ -248,5 +281,7 @@ pub(in crate::native_artifact::program_runtime) fn evaluate_count_case(
     assert!(report.errors.is_empty(), "{report:?}");
     assert_eq!((report.entries, report.exits, report.writes), (1, 1, updates), "{report:?}");
     assert_eq!(report.canonical_map_calls, 0, "{report:?}");
+    assert_eq!(report.canonical_key_calls, 0, "{report:?}");
+    assert_eq!(report.projections, updates * 2, "{report:?}");
     Ok(result)
 }

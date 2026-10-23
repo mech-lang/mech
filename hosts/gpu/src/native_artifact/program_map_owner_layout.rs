@@ -18,7 +18,8 @@ pub(super) fn extra_work(layout: &Layout, site: usize) -> Result<u64, &'static s
     if let Some(index) = layout.initializer(site) {
         words = layout.aggregates().slot(layout.regions()[index].tail().carrier())
             .ok_or("map owner initial slot missing")?.1;
-    } else if layout.call_region(site).is_some() || layout.exit(site).is_some() {
+    } else if layout.call_region(site).is_some() || layout.exit(site).is_some()
+        || layout.span_site(site).is_some() {
         words = 4;
     } else if layout.action_region(site).is_some() {
         let action = layout.aggregates().action(site).ok_or("map owner action missing")?;

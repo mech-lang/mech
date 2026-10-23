@@ -3,7 +3,7 @@ use super::*;
 use crate::native_artifact::JitProgramArtifact;
 use std::collections::BTreeMap;
 
-const COUNT: &str = r#"
+pub(super) const COUNT: &str = r#"
 +> map
 increment(h<{string:u64}>, key<string>) => (out<{string:u64}>) :=
   previous := (key ∈ h)? | true => h{key} | false => 0u64.
@@ -71,6 +71,7 @@ fn native_structural_map_states_execute_all_seven_counting_widths() {
     for artifact in [original, decoded] {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let image = jit.descriptor().encode_build_owned_image().unwrap();
+        assert_eq!(jit.descriptor().map_owner_words.as_ref().unwrap().spans().len(), 1);
         // SAFETY: these metadata bytes come from this exact unchanged checked
         // compilation, and remain confined to this test's matching JIT owner.
         let restored = unsafe {
@@ -88,11 +89,17 @@ fn native_structural_map_states_execute_all_seven_counting_widths() {
             crate::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
                 .unwrap();
         let identity = object.identity().bytes();
-        assert_eq!(u64::from_le_bytes(identity[16..24].try_into().unwrap()), 31);
-        assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 16);
-        assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 48);
+        assert_eq!(u64::from_le_bytes(identity[16..24].try_into().unwrap()), 32);
+        assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 17);
+        assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 49);
         assert!(jit.descriptor().plan().blocks().iter().any(|block| matches!(block.action(), NativeIterationAction::Structural { observation: mech_engine::native_artifact::NativeStructuralObservation::CanonicalValue, .. })));
-        for text in ["ACGTACGTNACGTTACGTACGTACGT", "", "GGTAGGT"] {
+        for units in [
+            "ACGTACGTNACGTTACGTACGTACGT".split("").filter(|s| !s.is_empty()).collect::<Vec<_>>(),
+            vec![], vec!["G", "G", "T", "A", "G", "G", "T"],
+            vec!["A", "é", "A", "é", "x"], vec!["A", "\r\n", "B", "A"],
+            vec!["e\u{301}", "X", "e\u{301}", "X"],
+        ] {
+            let text = units.concat();
             for width in widths {
                 let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
                 let inputs = artifact
@@ -101,8 +108,8 @@ fn native_structural_map_states_execute_all_seven_counting_widths() {
                     .map(|input| {
                         let name = mech_engine::decode_source_input_name(&input.name).unwrap();
                         let data = match name.as_str() {
-                            "text" => ValueDataDraft::String(text.into()),
-                            "n" => ValueDataDraft::U64(text.len() as u64),
+                            "text" => ValueDataDraft::String(text.clone().into()),
+                            "n" => ValueDataDraft::U64(units.len() as u64),
                             "width" => ValueDataDraft::U64(width as u64),
                             _ => panic!("unexpected {name}"),
                         };
@@ -122,17 +129,15 @@ fn native_structural_map_states_execute_all_seven_counting_widths() {
                 let mut output = vec![None; artifact.outputs().len()];
                 let mut limits = tests::limits();
                 limits.library.max_comparison_work = Some(10_000_000);
-                let updates = if width <= text.len() { text.len() - width + 1 } else { 0 };
+                let updates = if width <= units.len() { units.len() - width + 1 } else { 0 };
                 map_owners::tests::evaluate_count_case(&jit, &inputs, &mut output, limits, &memory, updates as u64)
                     .unwrap();
                 assert_eq!(output.len(), 1);
                 for actual in &output {
                     let mut expected = BTreeMap::<String, u64>::new();
-                    if width <= text.len() {
-                        for window in text.as_bytes().windows(width) {
-                            *expected
-                                .entry(std::str::from_utf8(window).unwrap().into())
-                                .or_default() += 1;
+                    if width <= units.len() {
+                        for window in units.windows(width) {
+                            *expected.entry(window.concat()).or_default() += 1;
                         }
                     }
                     let ValueData::Map(map) = actual.as_ref().unwrap().data() else {
@@ -194,6 +199,42 @@ fn native_structural_metadata_names_only_a_selected_window_accumulator() {
             } else {
                 assert!(metadata["compiled_window_accumulator"].is_null());
             }
+        }
+    }
+}
+
+#[test]
+fn map_key_projection_declines_other_key_observers_and_preserves_bounds_failure() {
+    let base = format!("{COUNT}\n#Count(\"abba\", 2u64, 4u64, empty)\n");
+    let observed = base.replace("+> map", "+> map\n+> sequence")
+        .replace("previous + 1u64", "previous + sequence/length(key)");
+    for (source, projections, succeeds) in [
+        (observed, 0, true),
+        (base.replace("4u64, empty", "5u64, empty"), 1, false),
+        (base.replace("index + 1u64)..=", "index)..="), 1, false),
+    ] {
+        let original = tests::artifact_source(&source);
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+        for artifact in [original, decoded] {
+            let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            assert_eq!(jit.descriptor().map_owner_words.as_ref().unwrap().spans().len(), projections);
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let mut outputs = vec![None; artifact.outputs().len()];
+            let result = jit.evaluate_into(&[], &mut outputs, tests::limits(), &memory);
+            if succeeds {
+                result.unwrap();
+                let ValueData::Map(map) = outputs[0].as_ref().unwrap().data() else { panic!("map") };
+                assert_eq!(map.entries().len(), 3);
+                assert!(map.entries().iter().all(|entry| matches!(entry.value(), ValueData::U64(2))));
+            } else {
+                let error = result.unwrap_err();
+                assert!(matches!(error, NativeProgramExecutionError::Library { .. }), "{error:?}");
+                assert!(outputs.iter().all(Option::is_none));
+            }
+            drop(outputs);
+            assert_eq!(memory.used_bytes(), 0);
+            assert_eq!(memory.retained_snapshot_nodes(), 0);
         }
     }
 }

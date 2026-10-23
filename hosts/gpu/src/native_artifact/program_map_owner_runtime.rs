@@ -3,11 +3,14 @@
 use super::{Context, NativeProgramExecutionError as Error, amount, invalid};
 use crate::native_artifact::{
     NativeExecutionError, NativeExecutionPhase as Phase, NativeProgramDescriptor,
-    NativeWorkMeter, owned_map_binding::{Binding, InitialWords},
+    NativeWorkMeter, owned_map_binding::{Binding, InitialWords, Key},
     owned_string_map::{Error as StorageError, PublicationGeometry},
 };
 use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, Value};
 use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMapOwnerRegion};
+
+#[path = "program_map_key_span.rs"]
+mod spans;
 
 /// Lazy owning-session lane. No table metadata is allocated merely because a
 /// descriptor has a candidate; entry must request and admit it explicitly.
@@ -32,6 +35,7 @@ struct Slot<'plan> {
 pub(super) struct State<'plan> {
     // Tables/keys retire before the enclosing admitted fixed lane.
     slots: Box<[Slot<'plan>]>,
+    spans: Box<[Option<spans::Lane>]>,
     descriptor: &'plan NativeProgramDescriptor,
     work_identity: u64,
     active_tables: u64,
@@ -74,20 +78,28 @@ impl<'plan> State<'plan> {
         work.check_memory_budget(memory)?;
         let count = descriptor.map_owner_words.as_ref()
             .map_or(0, |layout| layout.regions().len());
-        let bytes = amount(count, (2 * core::mem::size_of::<Slot<'plan>>()) as u64,
-            (core::mem::size_of::<Self>() + 128) as u64)?;
+        let span_count = descriptor.map_owner_words.as_ref().map_or(0, |layout| layout.spans().len());
+        let bytes = add(amount(count, (2 * core::mem::size_of::<Slot<'plan>>()) as u64,
+            (core::mem::size_of::<Self>() + 128) as u64)?,
+            amount(span_count, (2 * core::mem::size_of::<Option<spans::Lane>>()) as u64, 0)?)?;
         if bytes > limit {
             return Ok(None);
         }
-        work.charge(Phase::Setup, amount(count, 512, 512)?)?;
+        work.charge(Phase::Setup, amount(count.checked_add(span_count)
+            .ok_or_else(|| invalid("map lane count overflow"))?, 512, 512)?)?;
         let Ok(reservation) = memory.reserve_capacity(bytes) else { return Ok(None); };
         let mut slots = Vec::new();
         if slots.try_reserve_exact(count).is_err() || slots.capacity() != count {
             return Ok(None);
         }
         slots.resize_with(count, || Slot { binding: None });
+        let mut spans = Vec::new();
+        if spans.try_reserve_exact(span_count).is_err() || spans.capacity() != span_count {
+            return Ok(None);
+        }
+        spans.resize_with(span_count, || None);
         Ok(Some(Self {
-            slots: slots.into_boxed_slice(), descriptor,
+            slots: slots.into_boxed_slice(), spans: spans.into_boxed_slice(), descriptor,
             work_identity: work.identity(), active_tables: 0, last_owned_visit: None, reservation,
         }))
     }
@@ -124,6 +136,12 @@ impl<'plan> State<'plan> {
                 geometry.live_nodes = add(geometry.live_nodes, binding.retained_nodes().map_err(storage_error)?)?;
             }
         }
+        ctx.control.work.charge(Phase::Setup, amount(self.spans.len(), 64, 64)?)?;
+        for span in &self.spans {
+            if matches!(span, Some(spans::Lane::Span { .. })) {
+                geometry.live_nodes = add(geometry.live_nodes, 2)?;
+            }
+        }
         // Every table/key/lane reservation shares this exact account. Snapshot
         // nodes come from the base view; private table nodes are added above.
         geometry.live_bytes = ctx.library.memory_budget().used_bytes();
@@ -151,6 +169,8 @@ impl<'plan> State<'plan> {
             Ok((binding, words)) => {
                 self.active_tables = self.active_tables.checked_add(1)
                     .ok_or_else(|| invalid("retained map owner count overflow"))?;
+                ctx.hash_table_regions = ctx.hash_table_regions.checked_add(1)
+                    .ok_or_else(|| invalid("retained map table counter overflow"))?;
                 self.slots[index].binding = Some(binding);
                 self.last_owned_visit = Some(ctx.control.visits);
                 Ok(Some(words))
@@ -188,16 +208,33 @@ impl<'plan> State<'plan> {
             amount(region.writes().len().checked_add(region.reads().len())
                 .ok_or_else(|| invalid("retained map site inventory overflow"))?, 128, 128)?)?;
         let write = region.writes().contains(&(site as u32));
-        let key = ctx.arena.copy_current(operands[1].get(), &mut ctx.control.work)?;
         let geometry = self.geometry(ctx, site)?.ok_or_else(|| invalid("retained map call lost caller geometry"))?;
+        let canonical;
+        let key = if let Some(span) = layout.call_span(site) {
+            let proof = &layout.spans()[span];
+            let Some(spans::Lane::Span { handle, owner, bytes }) = self.spans[span].as_ref()
+                else { return Err(invalid("retained map key was not projected")); };
+            if proof.region() != index || proof.output() != operands[1] {
+                return Err(invalid("retained map key belongs to another iteration"));
+            }
+            ctx.arena.get(*handle, &mut ctx.control.work)?;
+            Key::Span { value: proof.output(), owner, bytes }
+        } else {
+            canonical = ctx.arena.copy_current(operands[1].get(), &mut ctx.control.work)?;
+            Key::Canonical(&canonical)
+        };
         let binding = self.slots[index].binding.as_mut()
             .ok_or_else(|| invalid("retained map call has no active owner"))?;
         let result = if write {
             if words.len() != 3 { return Err(invalid("retained map write arity")); }
-            binding.insert(site, words[0], &key, words[2], geometry, ctx.limits)
+            binding.insert(site, words[0], key, words[2], geometry, ctx.limits)
         } else {
-            binding.read(site, words[0], &key, geometry, ctx.limits)
+            binding.read(site, words[0], key, geometry, ctx.limits)
         }.map_err(storage_error)?;
+        if write {
+            ctx.hash_table_updates = ctx.hash_table_updates.checked_add(1)
+                .ok_or_else(|| invalid("retained map update counter overflow"))?;
+        }
         self.last_owned_visit = Some(ctx.control.visits);
         Ok(result)
     }
@@ -218,6 +255,11 @@ impl<'plan> State<'plan> {
         self.active_tables = self.active_tables.checked_sub(1)
             .ok_or_else(|| invalid("retained map owner count underflow"))?;
         drop(self.slots[index].binding.take());
+        let layout = self.descriptor.map_owner_words.as_ref().unwrap();
+        ctx.control.work.charge(Phase::Setup, amount(layout.spans().len(), 128, 128)?)?;
+        for (id, span) in layout.spans().iter().enumerate() {
+            if span.region() == index { drop(self.spans[id].take()); }
+        }
         self.last_owned_visit = Some(ctx.control.visits);
         Ok(value)
     }
@@ -228,6 +270,23 @@ impl<'plan> State<'plan> {
 pub(in crate::native_artifact::program_runtime) mod tests;
 
 impl Context<'_, '_> {
+    /// Retire private views at the SAME Tail latch/exit boundary as ordinary
+    /// immutable locals. A later iteration can never read an earlier key.
+    pub(super) fn retire_map_keys(&mut self, iteration: u32) -> Result<(), Error> {
+        let Some(state) = self.map_owners.state.as_mut() else { return Ok(()); };
+        let layout = state.descriptor.map_owner_words.as_ref().unwrap();
+        self.control.work.charge(Phase::Setup, amount(layout.spans().len(), 64, 64)?)?;
+        for (id, proof) in layout.spans().iter().enumerate() {
+            if layout.regions()[proof.region()].iteration() == iteration {
+                drop(state.spans[id].take());
+            }
+        }
+        Ok(())
+    }
+    pub(super) fn retained_native_span(&self, site: usize) -> bool {
+        self.control.descriptor.map_owner_words.as_ref().is_some_and(|layout|
+            layout.span_site(site).is_some_and(|id| self.map_owners.active(layout.spans()[id].region())))
+    }
     pub(super) fn begin_retained_map(&mut self, site: usize) -> Result<Option<InitialWords>, Error> {
         // Check authority before lazy allocation, including refused-entry replay.
         if !core::ptr::eq(self.map_owners.descriptor, self.control.descriptor)
@@ -295,7 +354,7 @@ impl Context<'_, '_> {
     pub(super) fn retained_map_helper(&mut self, site: usize, operation: u64, args: [u64; 3])
         -> Result<Option<u64>, Error>
     {
-        use crate::native_artifact::program_abi::{MAP_OWNER_BEGIN, MAP_OWNER_CALL, MAP_OWNER_END, MOVE};
+        use crate::native_artifact::program_abi::{MAP_OWNER_BEGIN, MAP_OWNER_CALL, MAP_OWNER_END, MAP_OWNER_SPAN, MOVE};
         if self.consumed { return Err(invalid("duplicate retained map helper")); }
         if operation == MAP_OWNER_BEGIN {
             if args != [0; 3] { return Err(invalid("malformed retained map entry")); }
@@ -316,6 +375,14 @@ impl Context<'_, '_> {
                 self.helper(site as u64, MOVE, [0; 3])?;
                 Ok(Some(0))
             }
+        } else if operation == MAP_OWNER_SPAN {
+            if !self.retained_native_span(site) { return Err(invalid("map key projection lacks active owner")); }
+            let mut state = self.map_owners.state.take().unwrap();
+            let result = state.project_key(self, site, args);
+            self.map_owners.state = Some(state);
+            result?;
+            self.consumed = true;
+            Ok(None)
         } else if operation == MAP_OWNER_CALL {
             let Action::LibraryCall { operands, .. } = self.control.descriptor.plan.blocks()[site].action()
                 else { return Err(invalid("retained map helper outside library call")); };

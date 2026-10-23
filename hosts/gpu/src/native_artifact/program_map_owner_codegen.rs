@@ -3,7 +3,7 @@
 use super::super::{
     NativeCompileError, compiler::{backend, offset}, iteration_code_plan::CodePlan,
     program_hooks::Hooks, program_map_owner_layout as layout,
-    program_abi::{MAP_OWNER_BEGIN, MAP_OWNER_CALL, MAP_OWNER_END},
+    program_abi::{MAP_OWNER_BEGIN, MAP_OWNER_CALL, MAP_OWNER_END, MAP_OWNER_SPAN},
 };
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
@@ -28,7 +28,9 @@ pub(in crate::native_artifact) fn emit(
     let exit = owner.exit(site);
     let call = layout::call_region(owner, site);
     let action = layout::action_region(owner, site);
-    let Some(index) = entry.or(exit).or(call).or(action) else { return Ok((None, false)); };
+    let span = owner.span_site(site).map(|index| &owner.spans()[index]);
+    let Some(index) = entry.or(exit).or(call).or(action).or(span.map(|span| span.region()))
+        else { return Ok((None, false)); };
     let hooks = hooks.ok_or_else(|| backend("map owner transport lacks checked hooks"))?;
     let region = &owner.regions()[index];
     let flag = owner.frame_words().checked_add(index).ok_or_else(|| backend("map owner flag overflow"))?;
@@ -62,7 +64,13 @@ pub(in crate::native_artifact) fn emit(
     let active = b.ins().icmp_imm(IntCC::NotEqual, active, 0);
     b.ins().brif(active, native, &[], ordinary, &[]);
     b.switch_to_block(native);
-    if exit.is_some() {
+    if let Some(span) = span {
+        let args = if span.range_site() as usize == site {
+            [load(b, locals, span.operands()[0].get() as usize)?,
+             load(b, locals, span.operands()[1].get() as usize)?, zero]
+        } else { [zero; 3] };
+        hooks.call(b, site, MAP_OWNER_SPAN, args, error);
+    } else if exit.is_some() {
         let token = load(b, locals, region.tail().returned().get() as usize)?;
         hooks.call(b, site, MAP_OWNER_END, [token, zero, zero], error);
         store(b, locals, flag, zero)?;

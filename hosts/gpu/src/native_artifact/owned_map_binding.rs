@@ -18,6 +18,17 @@ use std::{
 };
 
 static TOKENS: AtomicU64 = AtomicU64::new(0);
+
+/// A span is constructed only by the selected current-visit projection. Its
+/// complete admitted owner stays pinned; the projected key is never a Value.
+pub(super) enum Key<'a> {
+    Canonical(&'a Value),
+    Span { value: mech_engine::native_artifact::NativeMatchValue,
+        owner: &'a Value, bytes: &'a core::ops::Range<usize> },
+}
+impl<'a> From<&'a Value> for Key<'a> {
+    fn from(value: &'a Value) -> Self { Self::Canonical(value) }
+}
 fn add(a: u64, b: u64) -> Result<u64, Error> {
     a.checked_add(b).ok_or(Error::Overflow)
 }
@@ -361,22 +372,29 @@ impl<'plan> Binding<'plan> {
     fn key<'a>(
         &self,
         operand: mech_engine::native_artifact::NativeMatchValue,
-        key: &'a Value,
+        key: Key<'a>,
         geometry: Geometry,
     ) -> Result<&'a str, Error> {
         let ty = &self.plan.values()[operand.get() as usize];
-        if key.schema() != ty.schema()
-            || key.schema_key() != ty.schema_key()
-            || key
-                .memory_budget_retained_bytes(&self.work.memory_budget())
-                .is_none()
-        {
-            return Err(Error::Binding("unadmitted or wrong typed key"));
-        }
-        let ValueData::String(text) = key.data() else {
+        let (owner, bytes) = match key {
+            Key::Canonical(key) => {
+                if key.schema() != ty.schema() || key.schema_key() != ty.schema_key() {
+                    return Err(Error::Binding("unadmitted or wrong typed key"));
+                }
+                (key, None)
+            }
+            Key::Span { value, owner, bytes } => {
+                if value != operand || ty.definition().body() != &SchemaBody::String
+                    || !ty.definition().dimension_parameters().is_empty() {
+                    return Err(Error::Binding("wrong selected key projection"));
+                }
+                (owner, Some(bytes))
+            }
+        };
+        let ValueData::String(text) = owner.data() else {
             return Err(Error::Binding("key kind"));
         };
-        let retained = key
+        let retained = owner
             .memory_budget_retained_bytes(&self.work.memory_budget())
             .ok_or(Error::Binding("unadmitted key"))?;
         let map = self.map.as_ref().ok_or(Error::Binding("closed owner"))?;
@@ -385,7 +403,10 @@ impl<'plan> Binding<'plan> {
         {
             return Err(Error::Binding("incomplete key geometry"));
         }
-        Ok(text)
+        match bytes {
+            Some(bytes) => text.get(bytes.clone()).ok_or(Error::Binding("key span bounds")),
+            None => Ok(text),
+        }
     }
     fn geometry(
         &self,
@@ -440,17 +461,17 @@ impl<'plan> Binding<'plan> {
             temporary_bytes: remaining,
         })
     }
-    pub(super) fn read(
+    pub(super) fn read<'a>(
         &self,
         site: usize,
         token: u64,
-        key: &Value,
+        key: impl Into<Key<'a>>,
         geometry: Geometry,
         limits: MemoryBudgetLimits,
     ) -> Result<u64, Error> {
         self.current(token)?;
         let (operands, primitive) = self.site(site, false)?;
-        let key = self.key(operands[1], key, geometry)?;
+        let key = self.key(operands[1], key.into(), geometry)?;
         self.work.with_call_limits(
             cap(limits.max_compute_work)?,
             cap(limits.max_comparison_work)?,
@@ -468,18 +489,18 @@ impl<'plan> Binding<'plan> {
             },
         )?
     }
-    pub(super) fn insert(
+    pub(super) fn insert<'a>(
         &mut self,
         site: usize,
         token: u64,
-        key: &Value,
+        key: impl Into<Key<'a>>,
         value: u64,
         geometry: Geometry,
         limits: MemoryBudgetLimits,
     ) -> Result<u64, Error> {
         self.current(token)?;
         let (operands, _) = self.site(site, true)?;
-        let key = self.key(operands[1], key, geometry)?;
+        let key = self.key(operands[1], key.into(), geometry)?;
         let work = self.work.clone();
         work.with_call_limits(
             cap(limits.max_compute_work)?,
