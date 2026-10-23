@@ -1183,6 +1183,26 @@ fn text_join() -> Result<KindScheme, SemanticModelError> {
     )
 }
 
+fn contains_map_key() -> Result<KindScheme, SemanticModelError> {
+    make(
+        2,
+        1,
+        vec![
+            KindExpr::Map {
+                key: Box::new(kind(0)),
+                value: Box::new(kind(1)),
+                cardinality: dim(0),
+            },
+            kind(0),
+        ],
+        vec![BuiltinScalarKind::Bool.kind_expr()],
+        vec![KindConstraint::Satisfies {
+            kind: kind(0),
+            predicate: BuiltinKindPredicate::Keyable,
+        }],
+    )
+}
+
 fn insert_map() -> Result<KindScheme, SemanticModelError> {
     let map = |cardinality| KindExpr::Map {
         key: Box::new(kind(0)),
@@ -1752,6 +1772,7 @@ pub fn maintained_source_schemes(
         "text/join" => vec![text_join()?],
         "map/new" => vec![new_map()?],
         "map/insert" => vec![insert_map()?],
+        "map/contains-key" => vec![contains_map_key()?],
         "map/histogram" => vec![string_histogram()?],
         "map/keys" => vec![string_count_projection(true)?],
         "map/values" => vec![string_count_projection(false)?],
