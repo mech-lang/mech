@@ -85,7 +85,9 @@ fn selected_template(
 // and original collection result frontiers; linked children share ABI21.
 // IR41 adds source-derived finite character domains to those same generated
 // SSA bodies, retaining every canonical String map key and worker boundary.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 41;
+// IR42 probes eight admitted control bytes with SIMD equality, retaining full
+// packed-key verification, bounded wraparound and original source updates.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 42;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -206,7 +208,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 41;
 // shared memory concurrently, and reconciles all spending before publication.
 // Policy62 includes compact-key validation and decoding inside the existing
 // finite loop, growth and publication bounds, with shared worker claims intact.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 62;
+// Policy63 admits both control/slot containers and their simultaneous growth;
+// ABI22 pins the new control pointer and three-word payload slot layout.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 63;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
