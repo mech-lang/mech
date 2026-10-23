@@ -106,9 +106,17 @@ pub(super) fn descriptor(image: &Json) -> Result<ResolvedValueDescriptor, String
         .map_err(|e| format!("image type: {e:?}"))
 }
 
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(test)]
 pub(super) fn constant(image: &Json, schemas: &SchemaTable) -> Result<Value, String> {
     let draft: ValueDraft = super::canonical_json::decode(image)?;
+    draft
+        .finalize(&SnapshotValidationContext::new(schemas))
+        .map_err(|e| format!("image constant: {e:?}"))
+}
+
+#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+pub(super) fn constant_bytes(bytes: &[u8], schemas: &SchemaTable) -> Result<Value, String> {
+    let draft: ValueDraft = super::raw_json::decode(bytes)?;
     draft
         .finalize(&SnapshotValidationContext::new(schemas))
         .map_err(|e| format!("image constant: {e:?}"))
@@ -135,7 +143,7 @@ mod tests {
             shape_values: Box::new([]),
             data: ValueDataDraft::U64(42),
         };
-        let value = constant(&serde_json::to_value(&draft).unwrap(), &table).unwrap();
+        let value = constant_bytes(&serde_json::to_vec(&draft).unwrap(), &table).unwrap();
         assert_eq!(value.canonical_data_draft().unwrap(), draft.data);
         assert_eq!(
             serde_json::to_value(table.get(SchemaId::new(0)).unwrap()).unwrap(),
@@ -205,6 +213,9 @@ mod tests {
             let original: ValueDataDraft = serde_json::from_value(image.clone()).unwrap();
             let restored: ValueDataDraft = super::super::canonical_json::decode(&image).unwrap();
             assert_eq!(restored, original);
+            let raw = serde_json::to_vec(&original).unwrap();
+            let restored_raw: ValueDataDraft = super::super::raw_json::decode(&raw).unwrap();
+            assert_eq!(restored_raw, original);
             assert_eq!(serde_json::to_value(restored).unwrap(), image);
         }
     }

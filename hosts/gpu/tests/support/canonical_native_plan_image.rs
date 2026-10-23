@@ -192,7 +192,15 @@ fn generated_hosted_application_pins_the_same_object_descriptor() {
 
 #[test]
 fn native_descriptor_images_preserve_layouts_without_process_pointers() {
-    for source in [FULL, ECHO, CLOSED_FAIL, CLOSED_LIVE, FAIL] {
+    for source in [
+        FULL,
+        ECHO,
+        CLOSED_FAIL,
+        CLOSED_LIVE,
+        FAIL,
+        "18446744073709551617u128\n",
+        "340282366920938463463374607431768211455u128\n",
+    ] {
         let (variants, catalog) = artifacts(source);
         let images = variants
             .iter()

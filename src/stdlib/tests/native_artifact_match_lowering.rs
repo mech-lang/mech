@@ -73,17 +73,16 @@ fn lexical_captures_alias_exact_scalar_values_and_keep_all_certified_operations(
                 .count(),
             2
         );
-        // Binding validates the native target and selected semantic witness;
-        // the scalar IR retains operands and types rather than CallMemoryPlan.
+        // The CFG retains selected scalar witnesses and exact value layouts,
+        // not process-local binding plans from compiler-time validation.
         for (_, _, operands, output) in ops {
             assert_eq!(operands.len(), 2);
-            assert_eq!(
-                plan.values()[output.get() as usize].kind(),
-                NativeScalarKind::U64
-            );
-            assert!(operands.iter().all(
-                |operand| plan.values()[operand.get() as usize].kind() == NativeScalarKind::U64
-            ));
+            for value in operands.iter().chain(std::iter::once(&output)) {
+                assert_eq!(
+                    plan.values()[value.get() as usize].kind(),
+                    NativeScalarKind::U64
+                );
+            }
         }
         for (actual, expected) in plan.outputs().iter().zip(artifact.outputs()) {
             assert_eq!(actual.output(), expected.output);
@@ -196,8 +195,9 @@ fn wider_scalar_matches_share_the_selected_cast_witness_and_exact_types() {
             let plan =
                 lower_scalar_match_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
             assert!(plan.blocks().iter().any(|block| matches!(block.action(),
-                NativeMatchAction::Primitive { op: actual, output, .. }
-                    if *actual == op && plan.values()[output.get() as usize].kind() == kind)));
+                NativeMatchAction::Primitive { op: actual, operands, output }
+                    if *actual == op && operands.len() == 1
+                        && plan.values()[output.get() as usize].kind() == kind)));
             assert!(
                 plan.outputs()
                     .iter()

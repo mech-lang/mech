@@ -1,7 +1,7 @@
 #![cfg(all(feature = "full_compiler", feature = "native-artifact"))]
 //! Canonical loop metadata and selected-factory authority, not native execution.
 use mech_core::{
-    BoundResidentKernel, ExecutionTarget, FunctionCatalogBuilder, ImplementationMemoryClass,
+    BoundResidentKernel, FunctionCatalogBuilder, ImplementationMemoryClass,
     ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
     ResidentKernelWorkAccounting, ResidentValueMut,
 };
@@ -95,16 +95,27 @@ fn nested_loops_share_cast_and_arithmetic_witnesses_without_evaluating_them() {
         for block in plan.blocks() {
             if let NativeIterationAction::Scalar(NativeMatchAction::Primitive {
                 op,
-                memory_plan,
-                ..
+                operands,
+                output,
             }) = block.action()
             {
                 operations.push(*op);
-                assert_eq!(memory_plan.bound_call.target(), ExecutionTarget::Native);
-                assert_eq!(
-                    memory_plan.target.kind,
-                    mech_core::MemoryTargetKind::NativeHost
+                // Compiler-time binding plans are not retained in this CFG.
+                // Check the selected opcode's exact typed data flow instead.
+                let (arity, input, result) = match op {
+                    NativeScalarOp::U64ToI64 => (1, NativeScalarKind::U64, NativeScalarKind::I64),
+                    NativeScalarOp::I64ToF64 => (1, NativeScalarKind::I64, NativeScalarKind::F64),
+                    NativeScalarOp::F64ToU64 => (1, NativeScalarKind::F64, NativeScalarKind::U64),
+                    NativeScalarOp::U64Add => (2, NativeScalarKind::U64, NativeScalarKind::U64),
+                    other => panic!("unexpected selected operation: {other:?}"),
+                };
+                assert_eq!(operands.len(), arity);
+                assert!(
+                    operands
+                        .iter()
+                        .all(|arg| plan.values()[arg.get() as usize].kind() == input)
                 );
+                assert_eq!(plan.values()[output.get() as usize].kind(), result);
                 assert!(block.origin().block().is_some());
             }
         }

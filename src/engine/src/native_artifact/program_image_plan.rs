@@ -71,6 +71,8 @@ pub unsafe fn decode_build_owned_native_plan_image(
 /// Restore the same plan from a caller's already-parsed value. Linked launchers
 /// use the borrowed-body entry point instead, so no complete JSON tree is held
 /// alive while the executable descriptor is being constructed.
+/// This compatibility entry cannot recover numeric precision already lost by
+/// a `Value` parser; full-width constant images must use the byte entry points.
 ///
 /// # Safety
 /// The unchanged-build provenance, Object association, confinement and runtime
@@ -125,7 +127,13 @@ fn restore(
     let inputs = records(w.inputs, |v| nodes::input(v, schemas))?;
     let observations = records(w.observations, |v| nodes::observation(v, schemas))?;
     let effects = records(w.effects, |v| nodes::effect(v, schemas))?;
-    let constants = records(w.constants, |v| nodes::constant(v, schemas))?;
+    // Constants may contain U128/I128 at any nesting level. Never route their
+    // numeric tokens through serde_json::Value's 64-bit/floating representation.
+    let constants = w
+        .constants
+        .into_iter()
+        .map(|v| nodes::constant(v, schemas))
+        .collect::<Result<_, _>>()?;
     let values = records(w.values, |v| nodes::program_type(v, schemas))?;
     let value_scopes = records(w.value_scopes, loops::scope)?;
     let outputs = records(w.outputs, |v| nodes::output(v, schemas))?;
@@ -193,5 +201,78 @@ mod tests {
         changed["unexpected"] = true.into();
         let bytes = serde_json::to_vec(&changed).unwrap();
         assert!(serde_json::from_slice::<Plan<'_>>(&bytes).is_err());
+    }
+
+    #[test]
+    fn constant_records_preserve_full_width_scalars_and_nested_payloads() {
+        use mech_core::{
+            IntegerWidth, SchemaBody, SchemaDraft, SchemaId, SchemaTableBuilder, ValueDataDraft,
+            ValueDraft,
+        };
+        let unsigned = SchemaBody::UnsignedInteger(IntegerWidth::W128);
+        let signed = SchemaBody::SignedInteger(IntegerWidth::W128);
+        for (body, payload) in [
+            (unsigned.clone(), ValueDataDraft::U128(u64::MAX as u128 + 1)),
+            (unsigned.clone(), ValueDataDraft::U128(u64::MAX as u128 + 2)),
+            (unsigned.clone(), ValueDataDraft::U128(u128::MAX)),
+            (signed.clone(), ValueDataDraft::I128(i64::MIN as i128 - 1)),
+            (signed.clone(), ValueDataDraft::I128(i128::MIN)),
+            (signed.clone(), ValueDataDraft::I128(i128::MAX)),
+            (
+                SchemaBody::Tuple(Box::new([unsigned, signed])),
+                ValueDataDraft::Tuple(Box::new([
+                    ValueDataDraft::U128(u128::MAX),
+                    ValueDataDraft::I128(i128::MIN),
+                ])),
+            ),
+        ] {
+            let definition = SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body,
+            }
+            .finalize()
+            .unwrap();
+            let mut builder = SchemaTableBuilder::new();
+            builder.insert(definition).unwrap();
+            let schemas = builder.finish().unwrap().table;
+            #[derive(serde::Serialize)]
+            struct Record<'a> {
+                value: u32,
+                constant: &'a ValueDraft,
+            }
+            let draft = ValueDraft {
+                schema: SchemaId::new(0),
+                shape_values: Box::new([]),
+                data: payload.clone(),
+            };
+            let bytes = serde_json::to_vec(&Record {
+                value: 0,
+                constant: &draft,
+            })
+            .unwrap();
+            // Inert wire fixture: it may be decoded/inspected, never admitted
+            // or executed as a synthetic source/native proof.
+            let envelope = format!(
+                r#"{{"revision":{},"resource_requirements":[],"observations":[],"effects":[],"inputs":[],"constants":[{}],"values":[],"value_scopes":[],"blocks":[],"iterations":[],"collections":[],"outputs":[],"entry":0,"activation_nodes":[],"activation_boundary":null}}"#,
+                serde_json::to_string(&[0u8; 32]).unwrap(),
+                std::str::from_utf8(&bytes).unwrap()
+            );
+            let wire: Plan<'_> = serde_json::from_str(&envelope).unwrap();
+            let restored = restore(
+                wire,
+                &schemas,
+                &mech_core::FunctionCatalogBuilder::new().build().unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                restored.constants()[0]
+                    .constant()
+                    .canonical_data_draft()
+                    .unwrap(),
+                payload
+            );
+            let raw = serde_json::to_string(&restored.constants()[0]).unwrap();
+            assert_eq!(raw, std::str::from_utf8(&bytes).unwrap());
+        }
     }
 }

@@ -40,8 +40,8 @@ fn benchmark_generator_preserves_the_original_object_and_isolates_policy_control
             "program.mecb",
             "program.o",
             "object-identity.bin",
-            "native-descriptor.bin",
             "native-descriptor.json",
+            "native-descriptor.bin",
             "native-resources.json",
         ] {
             assert_eq!(
