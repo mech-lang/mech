@@ -166,7 +166,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 31;
 // Policy46 retains lazy map-owner session metadata through entry boundaries.
 // Fixed caller geometry includes that state; table allocations remain lazy.
 // Policy47 funds owner transport and retained session entry/call/exit operations.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 47;
+// Policy48 maintains call-cache metadata totals at mutation boundaries rather
+// than scanning every unrelated cache during each retained-map operation.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 48;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

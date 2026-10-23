@@ -591,7 +591,8 @@ impl Context<'_, '_> {
                 .as_ref()
                 .ok_or_else(|| invalid("missing exact prepared selection"))?;
             let mut result = None;
-            let outcome = self.call_caches.entries[site].invoke(
+            let outcome = self.call_caches.invoke(
+                site,
                 call,
                 &self.call_inputs.values()[..operands.len()],
                 &mut result,

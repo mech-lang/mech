@@ -29,6 +29,20 @@ unsafe extern "C" fn observe(
         let before = ctx.library.used().0;
         let wrong_site_denied = ctx.retained_caller_geometry(site as usize + 1).is_err();
         let outcome = ctx.retained_caller_geometry(site as usize);
+        if matches!(outcome, Ok(Some(_))) {
+            // Independent scan checks the maintained total against all live
+            // cache owners, including selected String-span index mutations.
+            let mut scanned = 0u64;
+            for entry in &ctx.call_caches.entries {
+                if let session::CallCacheEntry::Repeated(cache, tracked) = entry {
+                    let actual = cache.retained_metadata_demand(&ctx.library).unwrap().retained_nodes;
+                    assert_eq!(*tracked, actual);
+                    scanned += actual;
+                }
+            }
+            assert_eq!(ctx.call_caches.caller_retained_nodes(&ctx.library).unwrap(),
+                session::CallCacheLane::metadata_bytes(ctx.call_caches.entries.len()).unwrap() + scanned);
+        }
         if let Some(row) = match outcome {
             Ok(Some(geometry)) => Some(Ok(Row {
                 snapshot_nodes: snapshots, nodes: geometry.live_nodes,
