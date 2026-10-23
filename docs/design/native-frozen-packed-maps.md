@@ -1,16 +1,18 @@
 # Retaining packed maps through private read-only uses
 
-Status: implementation candidate; execution validation and performance measurements
-are pending. The design below records its proof and accounting obligations.
+Status: implemented and measured at `78007ae6f` (IR49/ABI26/work65).
+Fourteen focused tests, 319 GPU native tests and one catalog test pass; three
+existing manual tests remain excluded. The design below records the proof and
+accounting obligations as well as the measured scope.
 
-The current native compiler keeps a source-written String/U64 map in packed
-storage while a proved closed Tail executes. At successful completion,
+The preceding implementation kept a source-written String/U64 map in packed
+storage only while a proved closed Tail executed. On its canonical path,
 `program_map_closed_runtime::end_closed_map` calls `PackedMap::finish`, which
 decodes every key into `OwnedStringMap`. At the original Tail result copy,
 `Binding::finish` publishes a sorted canonical `Value`. Even a subsequent
 membership test and scalar lookup require this complete conversion.
 
-The proposed representation retains the **entire immutable packed map** through
+The new representation retains the **entire immutable packed map** through
 proved private reads. It changes no source traversal, branches, key set, counts
 or updates. It recognizes semantic operations and dataflow, never workload
 names, particular queries or nucleotide alphabets.
@@ -148,15 +150,15 @@ later source errors, unselected branches, output retirement, original/decoded/
 restored execution and concurrent-worker cleanup. Execution receipts must still
 verify all tables and all source updates, plus actual frozen-path selection.
 
-This targets conversion and publication after counting. In the SIMD stage's
+This targets conversion and publication after counting. In the earlier SIMD stage's
 exact-code full-input capture, 84.42% of observed worker samples have generated
 program code as their innermost frame; publication appears in 4.94% inclusively.
 The prefix tail captures two remaining workers and includes publication in
 56.29%, work debits in 54.59% and waiting in 41.30%. Categories overlap and are
 not wall-time shares. They support this as a possible prefix-tail improvement,
-not a prediction of recovered time. A 16-byte narrow-slot representation is a
-smaller, independent change affecting every table probe/store; it may better
-address the full-input counting loop. Both require measurements.
+not a prediction of recovered time. The later 16-byte narrow-slot representation
+is an independent change affecting every table probe/store; its historical
+measurements are retained with the subsequent stages.
 
 Evidence: [SIMD benchmark and profile records](https://github.com/mech-lang/benchmarks/tree/c1532d3bf/experiments/mech/native-owner-aot-v1).
 
@@ -194,3 +196,35 @@ so their former physical work charges are absent as well. Mutation-body charges,
 source updates, source control flow, and finite logical result limits remain.
 Actual execution reports expose `native_frozen_map_regions` and
 `native_frozen_map_reads`; candidate metadata by itself does not claim selection.
+
+## Measured scope
+
+Six rotated full-input cohorts retain all observations. The 125-million-base
+median is 1.536 seconds (2.76 times Rust), versus 1.927 seconds for the guarded
+parent (3.46 times Rust) and 0.556 seconds for Rust. This is 20.3% less elapsed
+time. A slow Rust observation in the first three cohorts prompted three further
+balanced cohorts; it remains in the six-cohort aggregate.
+
+Three alternating one-million-base prefix observations give 0.0968 seconds
+(4.64 times Rust), versus 0.492 seconds for the parent (23.58 times Rust) and
+0.0209 seconds for Rust: 80.3% less elapsed time. One warmup per executable is
+excluded only in this prefix protocol. Inputs, source, bytecode and finite
+launch limits match the parent; work policy65 explicitly prices the changed
+physical representation. Complete secured processes execute sequentially.
+
+Every candidate execution verifies five actual frozen maps, ten actual reads,
+seven selected guarded SSA loops, a peak of seven workers, complete output and
+all 6,999,961 prefix or 874,999,961 full-input updates. The two frequency maps
+still publish canonically. The frontend elides the measured source's alias,
+so no private-copy-hook execution is claimed.
+
+The full-input profile has identical complete machine code to the timed binary.
+Of 6,117 worker observations, 90.76% end in generated counting code. Library
+debits occur in 3.63% and waits in 4.69% inclusively. Publication is not observed
+in this capture. These overlapping categories are not elapsed-time shares.
+Both completed prefix attempts have empty call graphs and provide no hotspot
+observations. Remaining targets are counting-loop state, repeated checks and
+stack traffic; no gain is assigned to unmeasured proposals.
+
+Evidence: [timings, exact-code profiles, disassembly and retained validation attempts](https://github.com/mech-lang/benchmarks/tree/5ddd042f3ef15a07f76529ed9100fe56b77d14d6/experiments/mech/native-owner-aot-v1),
+[focused and complete native validation](https://github.com/mech-lang/benchmarks/tree/5ddd042f3ef15a07f76529ed9100fe56b77d14d6/experiments/mech/native-owner-dispatch-v1).
