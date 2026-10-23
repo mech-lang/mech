@@ -206,6 +206,7 @@ impl NativeProgramObject {
             "compiled_tag_threading": &self.codegen.tag_threading,
             "compiled_frame_effects": &self.codegen.frame_effects,
             "compiled_guarded_loops": &self.codegen.guarded_loops,
+            "compiled_lookup_facts": &self.codegen.lookup_facts,
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }

@@ -21,6 +21,8 @@ mod edge_facts;
 mod tag_threading;
 #[path = "program_loop_bounds.rs"]
 mod loop_bounds;
+#[path = "program_lookup_facts.rs"]
+mod lookup_facts;
 
 #[cfg(test)]
 thread_local! {
@@ -30,6 +32,18 @@ thread_local! {
     static TAG_THREAD_EMISSIONS: std::cell::Cell<(usize, usize, usize)> = const { std::cell::Cell::new((0, 0, 0)) };
     static LOOP_BOUNDS_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static LOOP_BOUNDS_EMISSIONS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };
+    static LOOKUP_FACTS_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static LOOKUP_FACT_EMISSIONS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn without_lookup_facts<T>(f: impl FnOnce() -> T) -> T {
+    struct Restore(bool);
+    impl Drop for Restore { fn drop(&mut self) { LOOKUP_FACTS_DISABLED.with(|v| v.set(self.0)); } }
+    let _restore = Restore(LOOKUP_FACTS_DISABLED.with(|v| v.replace(true))); f()
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn take_lookup_fact_emissions() -> (usize, usize) {
+    LOOKUP_FACT_EMISSIONS.with(|v| v.replace((0, 0)))
 }
 #[cfg(test)]
 pub(in crate::native_artifact) fn without_loop_bounds<T>(f: impl FnOnce() -> T) -> T {
@@ -294,6 +308,9 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
     let threaded = tag_threading::derive(code, closed, id, owner, aggregates);
     #[cfg(test)]
     let threaded = if TAG_THREADING_DISABLED.with(std::cell::Cell::get) { None } else { threaded };
+    let lookups = threaded.as_ref().and_then(|graph| lookup_facts::derive(code, closed, id, owner, aggregates, graph));
+    #[cfg(test)]
+    let lookups = if LOOKUP_FACTS_DISABLED.with(std::cell::Cell::get) { None } else { lookups };
     let bounds = threaded.as_ref().and_then(|graph| loop_bounds::derive(code, closed, id, owner, aggregates, graph, &slots));
     #[cfg(test)]
     let bounds = if LOOP_BOUNDS_DISABLED.with(std::cell::Cell::get) { None } else { bounds };
@@ -372,6 +389,7 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
     let mut known_latches = Vec::new();
     let mut header_versions = 0;
     let mut certified_ranges = Vec::new();
+    let mut lookup_substitutions = Vec::new();
     for (version, &index) in emitted_sites.iter().enumerate() {
         let block = &code.blocks()[index];
         let current = blocks[version];
@@ -423,8 +441,10 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
             let operation = match template.primitive() { P::MapContainsKey => 3, P::MapKeyAccess => 4, P::MapInsert => 5, _ => unreachable!() };
             let replacement = if operation == 5 { words.read(b, operands[2].get() as usize) } else { zero };
             let token = words.read(b, operands[0].get() as usize);
-            let value = packed_maps::operation_state(b, &packed, operation, replacement,
-                token, hooks, function, context, index, fail_at);
+            let lookup = lookups.as_ref().map_or(packed_maps::LookupFact::Unknown, |facts| facts[graph_node]);
+            let value = packed_maps::operation_state_with_lookup(b, &packed, operation, replacement,
+                token, hooks, function, context, index, fail_at, lookup);
+            if lookup != packed_maps::LookupFact::Unknown { lookup_substitutions.push((version, index, operation, lookup.name())); }
             words.write(b, output.get() as usize, value);
         } else {
             match block.action() {
@@ -542,6 +562,12 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
         return Err(backend("packed SSA templates exceed fixed per-traversal envelope"));
     }
     report.frame_effects(site, packed.effect_emissions());
+    #[cfg(test)]
+    LOOKUP_FACT_EMISSIONS.with(|counts| {
+        let old = counts.get();
+        counts.set((old.0 + usize::from(lookups.is_some()), old.1 + lookup_substitutions.len()));
+    });
+    report.lookup_facts(site, version_nodes, emitted_sites.len(), lookup_substitutions);
     if let Some(proof) = &bounds {
         #[cfg(test)]
         LOOP_BOUNDS_EMISSIONS.with(|counts| { let old = counts.get(); counts.set((old.0 + 1, old.1 + certified_ranges.len())); });

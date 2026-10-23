@@ -3,6 +3,7 @@
 use super::*;
 use crate::native_artifact::program_compiler::packed_loop_codegen::{
     take_loop_bounds_emissions, without_loop_bounds,
+    take_lookup_fact_emissions, without_lookup_facts,
 };
 
 unsafe extern "C" fn observed(raw: *mut c_void, site: u64, op: u64,
@@ -29,18 +30,35 @@ fn parameterized() -> String {
 
 #[test]
 fn guarded_loop_versions_preserve_actual_bounds_arbitrary_seeds_headers_and_work() {
+    parameterized_equivalence(false);
+}
+
+#[test]
+fn lookup_facts_preserve_limits_actual_bounds_seeds_refill_headers_and_work() {
+    parameterized_equivalence(true);
+}
+
+fn parameterized_equivalence(compare_lookup_facts: bool) {
     let original = tests::artifact_source(&parameterized());
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(
         &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
     for artifact in [original, decoded] {
         let catalog = mech_stdlib::source_catalog();
         take_loop_bounds_emissions();
+        take_lookup_fact_emissions();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let emitted = take_loop_bounds_emissions();
         assert_eq!(emitted.0, 1, "must emit the guarded graph, not only its fallback");
         assert!(emitted.1 > 0);
-        let baseline = without_loop_bounds(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
-        assert_eq!(take_loop_bounds_emissions(), (0, 0));
+        let lookup_emissions = take_lookup_fact_emissions();
+        assert!(lookup_emissions.0 > 0 && lookup_emissions.1 >= 4);
+        let baseline = if compare_lookup_facts {
+            without_lookup_facts(|| JitProgramArtifact::compile(&artifact, &catalog))
+        } else { without_loop_bounds(|| JitProgramArtifact::compile(&artifact, &catalog)) }.unwrap();
+        if compare_lookup_facts {
+            assert_eq!(take_lookup_fact_emissions(), (0, 0));
+            assert_eq!(take_loop_bounds_emissions(), emitted);
+        } else { assert_eq!(take_loop_bounds_emissions(), (0, 0)); }
         let long = "a".repeat(1024);
         let cases = [
             ("abcabc", 1u64, 6u64, 0u64, Mode::Native),
@@ -116,7 +134,7 @@ fn guarded_loop_versions_preserve_actual_bounds_arbitrary_seeds_headers_and_work
                 });
                 let mut obs = OBS.with(|r| core::mem::take(&mut *r.borrow_mut()));
                 assert!(obs.errors.is_empty(), "{obs:?}");
-                let selected = u64::from(version == 0 && obs.packed == 1 && width > 0 && width <= n && n <= text.len() as u64);
+                let selected = u64::from((version == 0 || compare_lookup_facts) && obs.packed == 1 && width > 0 && width <= n && n <= text.len() as u64);
                 assert_eq!(obs.bound[14], selected, "actual selector, version={version}, width={width}, n={n}");
                 if let Ok(report) = &mut outcome {
                     assert_eq!(report.guarded_loop_regions, selected);
