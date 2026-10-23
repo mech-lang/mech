@@ -41,6 +41,7 @@ pub struct NativeProgramDescriptor {
     // Complete same-plan candidate layout, preserved through standalone images.
     // Merely carrying this metadata does not select retained runtime storage.
     pub(super) map_owner_words: Option<mech_engine::native_artifact::NativeMapOwnerWords>,
+    pub(super) map_admission: super::program_map_admission::Layout,
     pub(super) borrowed_strings: super::program_borrowed_layout::Layout,
     pub(super) closed_tails: super::program_tail_layout::Layout,
     pub(super) selected_joins: super::program_selected_join_layout::Layout,
@@ -115,6 +116,7 @@ impl NativeProgramDescriptor {
                 .checked_add(closed_tails.extra_work(site))
                 .ok_or("closed Tail work overflow")?;
         }
+        let map_admission = super::program_map_admission::Layout::derive(&plan, &map_owner_words, &visits)?;
         let visits = visits.into();
         let calls = plan
             .blocks()
@@ -315,6 +317,7 @@ impl NativeProgramDescriptor {
             string_map_regions,
             scalar_aggregates,
             map_owner_words,
+            map_admission,
             borrowed_strings,
             closed_tails,
             selected_joins,

@@ -1096,14 +1096,8 @@ impl<'a> Prepared<'a> {
                     self.paused = Some(site);
                 }
                 STATUS_ARITHMETIC | STATUS_REJECT => {
-                    let id = context
-                        .control
-                        .previous
-                        .ok_or_else(|| invalid("program failure before visit"))?;
+                    let id = context.failure_site(f.error_node)?;
                     let site = &descriptor.visits[id as usize];
-                    if f.error_node != u64::from(id) {
-                        return Err(invalid("program failure origin mismatch"));
-                    }
                     return Err(if status == STATUS_ARITHMETIC && site.arithmetic {
                         NativeIterationExecutionError::Arithmetic {
                             origin: site.origin,

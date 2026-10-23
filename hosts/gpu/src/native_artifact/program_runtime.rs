@@ -43,6 +43,9 @@ mod window_round;
 mod caller_geometry;
 #[path = "program_map_owner_runtime.rs"]
 mod map_owners;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_map_admission_tests.rs"]
+mod map_admission_tests;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub(super) use session::CheckedEntry;
 #[cfg(feature = "canonical-native-program-host-runtime")]
@@ -759,7 +762,12 @@ impl Context<'_, '_> {
         if let Some(state) = &self.collections {
             state.validate_span_boundary(block.action())?;
         }
-        self.control.visit(site)?;
+        let group = self.control.descriptor.map_admission.group(index)
+            .filter(|group| self.map_owners.active(group.owner));
+        if group.is_some_and(|group| u64::from(group.start()) != site) {
+            return Err(invalid("ordinary visit inside admitted scalar group"));
+        }
+        self.control.visit_with_work(site, group.map(|group| group.work))?;
         let descriptor = self.control.descriptor;
         if let Some(mech_engine::native_artifact::NativeBorrowedStringAction::Equal { .. }) =
             self.borrowed_action(index)
@@ -818,7 +826,27 @@ impl Context<'_, '_> {
             return Err(invalid("completion with an active retained map owner"));
         }
         self.consumed = false;
+        if let Some(group) = group {
+            // A single-entry, straight-line sequence of native instructions
+            // has no intervening helper or ownership/progress boundary. Its
+            // end supplies the next callback's actual CFG predecessor. This
+            // is one admission, not fabricated per-instruction visits.
+            self.control.previous = Some(group.end());
+        }
         Ok(())
+    }
+
+    fn failure_site(&self, raw: u64) -> Result<u32, NativeProgramExecutionError> {
+        let previous = self.control.previous.ok_or_else(|| invalid("program failure before visit"))?;
+        let site = u32::try_from(raw).map_err(|_| invalid("program failure origin mismatch"))?;
+        if site == previous { return Ok(site); }
+        let layout = &self.control.descriptor.map_admission;
+        if let Some(group) = layout.group(previous as usize)
+            && self.map_owners.active(group.owner) && group.end() == previous
+            && group.sites.contains(&site) {
+            return Ok(site);
+        }
+        Err(invalid("program failure origin mismatch"))
     }
 
     fn retire_tail_locals(
@@ -4310,8 +4338,8 @@ mod tests {
         }
     }
     #[test]
-    fn abi17_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 17);
+    fn abi18_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
+        assert_eq!(VERSION, 18);
         assert_eq!(super::super::program_abi::PHASE_CAPTURE_TAIL, 3);
         assert_eq!(super::super::program_abi::STATUS_INPUT_SCANNED, 7);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);

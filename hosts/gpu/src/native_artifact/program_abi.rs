@@ -1,8 +1,8 @@
-//! Mixed-value ABI17 adds checked selected map-key range/String helpers.
+//! Mixed-value ABI18 admits proved straight-line native owner groups once.
 //! The scalar-frame prefix and disjoint transport lanes remain unchanged.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 17;
+pub(super) const VERSION: u64 = 18;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
 pub(super) const PHASE_PREFIX: u64 = 2;

@@ -116,6 +116,14 @@ pub(super) struct Context<'a, D: VisitPlan> {
 }
 impl<D: VisitPlan> Context<'_, D> {
     pub(super) fn visit(&mut self, raw: u64) -> Result<(), NativeIterationExecutionError> {
+        self.visit_with_work(raw, None)
+    }
+
+    // A build-proved straight-line native group can fund its whole body at
+    // the original entry. The ordinary scalar/iteration ABI uses None.
+    pub(super) fn visit_with_work(&mut self, raw: u64, group_work: Option<u64>)
+        -> Result<(), NativeIterationExecutionError>
+    {
         let id = u32::try_from(raw).ok();
         let allowed = !self.completed
             && match self.previous {
@@ -151,7 +159,9 @@ impl<D: VisitPlan> Context<'_, D> {
             .ok_or_else(|| invalid("iteration visit outside descriptor"))?;
         // Charge before reading/changing per-loop metadata or inspecting any
         // completion progress words. The generated block is not entered yet.
-        charge(&mut self.work, site.work, Some(site.origin))?;
+        let work = group_work.unwrap_or(site.work);
+        if work < site.work { return Err(invalid("group admission underfunds its entry")); }
+        charge(&mut self.work, work, Some(site.origin))?;
         match site.progress {
             Progress::Initialize(iteration) => {
                 let data = self.descriptor.iteration(iteration as usize);

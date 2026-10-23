@@ -17,6 +17,26 @@ fn store(b: &mut FunctionBuilder<'_>, base: Value, word: usize, value: Value) ->
     Ok(())
 }
 
+/// Only a live owner selects grouped native admission. Refused entry keeps
+/// the original per-block canonical callbacks and their original work prices.
+pub(in crate::native_artifact) fn admission(
+    b: &mut FunctionBuilder<'_>, locals: Value, owner: Option<&NativeMapOwnerWords>,
+    layout: &super::super::program_map_admission::Layout, site: usize,
+) -> Result<Option<Block>, NativeCompileError> {
+    let Some(group) = layout.group(site).filter(|group| group.start() as usize != site)
+        else { return Ok(None); };
+    let owner = owner.ok_or_else(|| backend("map admission lacks owner layout"))?;
+    let flag = owner.frame_words().checked_add(group.owner)
+        .ok_or_else(|| backend("map admission flag overflow"))?;
+    let active = load(b, locals, flag)?;
+    let active = b.ins().icmp_imm(IntCC::NotEqual, active, 0);
+    let ordinary = b.create_block();
+    let joined = b.create_block();
+    b.ins().brif(active, joined, &[], ordinary, &[]);
+    b.switch_to_block(ordinary);
+    Ok(Some(joined))
+}
+
 /// Return the common continuation when a native branch skips the ordinary
 /// action, and whether entry was completely emitted (including fallback MOVE).
 pub(in crate::native_artifact) fn emit(
