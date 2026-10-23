@@ -6,7 +6,7 @@ use crate::native_artifact::{
     NativeWorkMeter, owned_map_binding::{Binding, InitialWords, Key},
     owned_string_map::{Error as StorageError, PublicationGeometry},
 };
-use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, Value};
+use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation, Value};
 use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMapOwnerRegion};
 
 #[path = "program_map_key_span.rs"]
@@ -48,6 +48,7 @@ pub(super) struct State<'plan> {
     last_owned_visit: Option<u64>,
     caller: Option<caller_geometry::Caller>,
     reservation: ManagedMemoryReservation,
+    _nodes: ManagedNodeReservation,
 }
 
 fn storage_error(error: StorageError) -> Error {
@@ -95,6 +96,7 @@ impl<'plan> State<'plan> {
         work.charge(Phase::Setup, amount(count.checked_add(span_count)
             .ok_or_else(|| invalid("map lane count overflow"))?, 512, 512)?)?;
         let Ok(reservation) = memory.reserve_capacity(bytes) else { return Ok(None); };
+        let Ok(nodes) = memory.reserve_nodes(bytes) else { return Ok(None); };
         let mut slots = Vec::new();
         if slots.try_reserve_exact(count).is_err() || slots.capacity() != count {
             return Ok(None);
@@ -108,7 +110,7 @@ impl<'plan> State<'plan> {
         Ok(Some(Self {
             slots: slots.into_boxed_slice(), spans: spans.into_boxed_slice(), descriptor,
             work_identity: work.identity(), active_tables: 0, last_owned_visit: None,
-            caller: None, reservation,
+            caller: None, reservation, _nodes: nodes,
         }))
     }
 
@@ -222,7 +224,7 @@ impl<'plan> State<'plan> {
         let canonical;
         let key = if let Some(span) = layout.call_span(site) {
             let proof = &layout.spans()[span];
-            let Some(spans::Lane::Span { handle, owner, bytes }) = self.spans[span].as_ref()
+            let Some(spans::Lane::Span { handle, owner, bytes, .. }) = self.spans[span].as_ref()
                 else { return Err(invalid("retained map key was not projected")); };
             if proof.region() != index || proof.output() != operands[1] {
                 return Err(invalid("retained map key belongs to another iteration"));
@@ -312,9 +314,10 @@ impl Context<'_, '_> {
             return Err(invalid("retained map session entry outside fresh initializer"));
         }
         if self.map_owners.state.is_none() {
-            let memory = self.library.memory_budget().clone();
             let limit = self.limits.max_temporary_bytes
                 .ok_or_else(|| invalid("retained map session requires finite metadata cap"))?;
+            let memory = self.library.memory_budget().with_limits(limit,
+                self.limits.max_retained_nodes.unwrap_or(0));
             let Some(state) = State::try_new(self.map_owners.descriptor,
                 &memory, &mut self.control.work, limit)? else {
                 self.map_owners.refused_visit = Some(self.control.visits);

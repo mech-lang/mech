@@ -218,6 +218,24 @@ impl ManagedNodeReservation {
         self.nodes = nodes;
         Ok(())
     }
+    /// Transfer an already admitted same-account claim without another atomic
+    /// debit. This permits a fallible builder to keep pending growth separate
+    /// until all construction succeeds, then commit the claim with its owner.
+    pub fn merge(&mut self, mut other: Self) -> MemoryRuntimeResult<()> {
+        if self.budget != other.budget {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: None, reason: "cannot merge nodes from different memory budgets".into(),
+            });
+        }
+        let nodes = self.nodes.checked_add(other.nodes).ok_or(
+            MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "retained node reservation merge", current: self.nodes, change: other.nodes,
+            })?;
+        self.nodes = nodes;
+        self.budget = self.budget.with_limits(other.budget.limit_bytes(), other.budget.limit_nodes());
+        other.nodes = 0;
+        Ok(())
+    }
 }
 impl Drop for ManagedNodeReservation {
     fn drop(&mut self) { release_nodes(&self.budget, self.nodes); }
@@ -421,6 +439,23 @@ mod tests {
         assert!(matches!(budget.reserve_nodes(1),
             Err(MemoryRuntimeError::AccountingInvariantViolation { .. })));
         full.resize(0).unwrap();
+        assert_eq!(budget.retained_nodes(), 0);
+    }
+
+    #[test]
+    fn pending_private_claims_merge_without_renewal_or_rehoming() {
+        let budget = ManagedMemoryBudget::new(100);
+        let view = budget.with_limits(80, 3);
+        let mut owner = budget.reserve_nodes(1).unwrap();
+        owner.merge(view.reserve_nodes(2).unwrap()).unwrap();
+        assert_eq!(owner.nodes(), 3);
+        assert_eq!(budget.retained_nodes(), 3);
+        assert!(owner.resize(4).is_err());
+        let other = ManagedMemoryBudget::new(100);
+        assert!(owner.merge(other.reserve_nodes(1).unwrap()).is_err());
+        assert_eq!(owner.nodes(), 3);
+        assert_eq!(other.retained_nodes(), 0);
+        drop(owner);
         assert_eq!(budget.retained_nodes(), 0);
     }
 

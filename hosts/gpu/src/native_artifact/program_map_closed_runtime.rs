@@ -2,7 +2,7 @@
 //! never traverses the input, chooses a source branch, or computes an update.
 use super::{Binding, Context, Error, State, add, invalid, storage_error};
 use crate::native_artifact::{NativeExecutionPhase as Phase, owned_string_map::PublicationGeometry};
-use mech_core::{ManagedMemoryReservation, MemoryBudgetLimits, Value, ValueData};
+use mech_core::{ManagedMemoryReservation, ManagedNodeReservation, MemoryBudgetLimits, Value, ValueData};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativePreparedLibraryCall,
     NativeSelectedStringSpanSelector};
 use core::ffi::c_void;
@@ -33,6 +33,7 @@ pub(super) struct Owner<'plan> {
     result: *mut u64,
     error: Option<Error>,
     _reservation: ManagedMemoryReservation,
+    _nodes: ManagedNodeReservation,
 }
 
 impl Owner<'_> {
@@ -211,7 +212,10 @@ impl<'plan> State<'plan> {
         if add(geometry.live_bytes, bytes)? > ctx.limits.max_temporary_bytes.unwrap_or(0)
             || add(geometry.live_nodes, bytes)? > ctx.limits.max_retained_nodes.unwrap_or(0)
         { return Ok(None); }
-        let reservation = ctx.library.memory_budget().reserve_capacity(bytes)?;
+        let memory = ctx.library.memory_budget().with_limits(ctx.limits.max_temporary_bytes.unwrap(),
+            ctx.limits.max_retained_nodes.unwrap());
+        let private_nodes = memory.reserve_nodes(bytes)?;
+        let reservation = memory.reserve_capacity(bytes)?;
         let outside_nodes = geometry.live_nodes.checked_sub(nodes)
             .and_then(|n| n.checked_add(bytes)).ok_or_else(|| invalid("closed map census overflow"))?;
         let mut packed = None;
@@ -265,7 +269,7 @@ impl<'plan> State<'plan> {
             selector: None, selector_current: false, key: None, probe: None,
             work: ctx.library.clone(), limits: ctx.limits, outside_nodes,
             body_work: proof.compute, funded: 0, updates: 0, result: ctx.result,
-            error: None, _reservation: reservation });
+            error: None, _reservation: reservation, _nodes: private_nodes });
         if let Some(packed) = owner.packed.as_mut() {
             let frame = packed.frame();
             let ValueData::String(text) = owner.source.data() else { unreachable!() };

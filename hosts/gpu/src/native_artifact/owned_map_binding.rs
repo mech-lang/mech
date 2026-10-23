@@ -3,7 +3,7 @@
 //! its exact descriptor, frame and current site, and supply complete geometry.
 use super::owned_string_map::{Error, Limits, OwnedStringMap, PublicationGeometry as Geometry};
 use mech_core::{
-    ManagedMemoryReservation, MemoryBudgetLimits, SchemaBody, SchemaTable, Value, ValueData,
+    ManagedMemoryReservation, ManagedNodeReservation, MemoryBudgetLimits, SchemaBody, SchemaTable, Value, ValueData,
 };
 use mech_engine::native_artifact::{
     NativeCollectionPrimitive as Primitive, NativeControlLoop, NativeIterationAction as Action,
@@ -184,6 +184,7 @@ pub(super) struct Binding<'plan> {
     native_version: u64,
     work: NativeLibraryWorkBudget,
     metadata: ManagedMemoryReservation,
+    _nodes: ManagedNodeReservation,
 }
 impl<'plan> Binding<'plan> {
     pub(super) fn import(
@@ -238,7 +239,8 @@ impl<'plan> Binding<'plan> {
             .values()
             .get(tail.seed().get() as usize)
             .ok_or(Error::Binding("seed type"))?;
-        let memory = work.memory_budget();
+        let memory = work.memory_budget().with_limits(cap(limits.max_temporary_bytes)?,
+            cap(limits.max_retained_nodes)?);
         let retained = source
             .memory_budget_retained_bytes(&memory)
             .ok_or(Error::Binding("unadmitted seed"))?;
@@ -281,6 +283,7 @@ impl<'plan> Binding<'plan> {
                 let outside = add(geometry.live_bytes, fixed)?;
                 check(outside, cap(limits.max_temporary_bytes)?, "temporary bytes")?;
                 let metadata = memory.reserve_capacity(size_of::<Self>() as u64)?;
+                let private_nodes = memory.reserve_nodes(2)?;
                 let mut initial = InitialWords {
                     words: [0; 33],
                     len: words_len,
@@ -306,13 +309,14 @@ impl<'plan> Binding<'plan> {
                 let remaining = cap(limits.max_temporary_bytes)?
                     .checked_sub(outside)
                     .ok_or(Error::Overflow)?;
-                let mut map = OwnedStringMap::new(
+                let mut map = OwnedStringMap::new_with_memory(
                     work.clone(),
                     Limits {
                         entries: source_map.entries().len() as u64,
                         retained_bytes: remaining,
                         temporary_bytes: remaining,
                     },
+                    memory.clone(),
                 )?;
                 for entry in source_map.entries() {
                     let (ValueData::String(key), ValueData::U64(value)) =
@@ -333,6 +337,7 @@ impl<'plan> Binding<'plan> {
                         native_version: 0,
                         work: work.clone(),
                         metadata,
+                        _nodes: private_nodes,
                     },
                     initial,
                 ))

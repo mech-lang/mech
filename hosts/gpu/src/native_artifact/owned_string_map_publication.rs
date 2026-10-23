@@ -23,6 +23,7 @@ struct Plan {
     workspace: u64,
     finalization: u64,
     compute: u64,
+    staging_nodes: u64,
 }
 fn exact_vec<T>(count: usize) -> Result<Vec<T>, Error> {
     let mut values = Vec::new();
@@ -160,6 +161,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
             workspace,
             finalization,
             compute,
+            staging_nodes: mul(nodes, 2)?,
         })
     }
 
@@ -178,7 +180,13 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         self.work.with_call_limits(compute, comparison, || {
             let plan = self.publication_plan(schemas, schema, geometry, limits)?;
             self.work.charge(plan.compute, plan.finalization)?;
-            let mut reservation = self.work.memory_budget().reserve_capacity(plan.workspace)?;
+            let memory = self.metadata.budget().with_limits(required(limits.max_temporary_bytes)?,
+                required(limits.max_retained_nodes)?);
+            // The retained map, construction scratch and admitted canonical
+            // output are distinct live owners. Scratch covers the unadmitted
+            // draft/finalizer; import atomically adds the canonical witness.
+            let _staging = memory.reserve_nodes(plan.staging_nodes)?;
+            let mut reservation = memory.reserve_capacity(plan.workspace)?;
             let mut order = exact_vec(self.len())?;
             order.extend(self.entries()?);
             sort(&mut order, &self.work)?;
