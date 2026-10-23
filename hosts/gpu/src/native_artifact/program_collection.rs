@@ -31,6 +31,7 @@ pub(super) fn admitted_capacity<T>(
 }
 #[path = "program_collection_data.rs"]
 mod data;
+pub(super) fn source_count(value: &Value) -> Result<u64, Error> { data::count(value) }
 #[path = "program_histogram.rs"]
 mod histogram;
 #[path = "program_histogram_layout.rs"]

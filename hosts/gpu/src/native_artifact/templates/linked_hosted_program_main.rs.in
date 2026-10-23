@@ -360,6 +360,7 @@ fn run() -> Result<(), String> {
             "native_packed_map_updates": native.packed_map_updates,
             "native_packed_ssa_regions": native.packed_ssa_regions,
             "native_parallel_regions": native.parallel_regions,
+            "native_parallel_batches": native.parallel_batches,
             "native_parallel_tasks": native.parallel_tasks,
             "native_parallel_peak_workers": native.parallel_peak_workers,
             "host_result_carrier_bytes": carrier_bytes,
