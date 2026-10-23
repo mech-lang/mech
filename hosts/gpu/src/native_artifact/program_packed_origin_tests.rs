@@ -68,7 +68,7 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
             Failure::Add => body = body.replace("previous + 1u64", "previous + 18446744073709551615u64"),
             Failure::Subtract => body = body.replace("previous + 1u64", "previous - 1u64"),
             Failure::Divide => body = body.replace("previous + 1u64", "1u64 / previous"),
-            Failure::MissingKey | Failure::MalformedHelper => body = body.replace("(key ∈ h)? | true => h{key} | false => 0u64", "h{key}"),
+            Failure::MissingKey | Failure::MalformedHelper => body = body.replace("(key ∈ h)? | true => h{key} | false => 0u64.", "h{key}"),
             _ => {}
         }
         let call = if matches!(failure, Failure::Selection) {
