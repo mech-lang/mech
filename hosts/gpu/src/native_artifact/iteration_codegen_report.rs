@@ -8,7 +8,9 @@ const MAX_SUBSTITUTIONS: usize = 4096;
 #[derive(Default)]
 pub(in crate::native_artifact) struct CodegenReport {
     pub source_edge_facts: EdgeFacts,
+    pub tag_threading: TagThreading,
     substitutions: usize,
+    tag_records: usize,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct EdgeFacts {
@@ -31,7 +33,44 @@ struct Arithmetic { site: usize, op: NativeScalarOp, operands: [NativeMatchValue
 #[derive(Clone, Copy)]
 pub(in crate::native_artifact) struct RegionToken(usize);
 
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct TagThreading {
+    complete: bool,
+    regions: Vec<TagRegion>,
+}
+impl Default for TagThreading {
+    fn default() -> Self { Self { complete: true, regions: Vec::new() } }
+}
+#[derive(serde::Serialize)]
+struct TagRegion {
+    header: usize,
+    carrier_word: usize,
+    variants: Vec<u32>,
+    source_sites: usize,
+    product_nodes: usize,
+    header_versions: usize,
+    folded_branches: Vec<usize>,
+    known_latches: Vec<usize>,
+}
+
 impl CodegenReport {
+    /// Called after emitting the complete selected product graph. Source
+    /// sites may repeat because distinct tag versions retain the same origin.
+    pub fn tag_threading(&mut self, header: usize, carrier_word: usize, variants: Vec<u32>,
+        source_sites: usize, product_nodes: usize, header_versions: usize,
+        folded_branches: Vec<usize>, known_latches: Vec<usize>)
+    {
+        let count = variants.len().saturating_add(folded_branches.len()).saturating_add(known_latches.len());
+        if self.tag_threading.regions.len() == MAX_REGIONS
+            || self.tag_records.saturating_add(count) > MAX_SUBSTITUTIONS
+        {
+            self.tag_threading.complete = false;
+            return;
+        }
+        self.tag_records += count;
+        self.tag_threading.regions.push(TagRegion { header, carrier_word, variants,
+            source_sites, product_nodes, header_versions, folded_branches, known_latches });
+    }
     pub fn packed_ssa_region(&mut self, header: usize) -> Option<RegionToken> {
         if self.source_edge_facts.regions.len() == MAX_REGIONS {
             self.source_edge_facts.complete = false;
@@ -82,5 +121,12 @@ mod tests {
         assert!(report.admit(region).is_none());
         assert!(!report.source_edge_facts.complete);
         assert_eq!(report.substitutions, MAX_SUBSTITUTIONS);
+        let mut report = CodegenReport::default();
+        report.tag_threading(1, 2, vec![0, 1], 32, 64, 3, vec![9; MAX_SUBSTITUTIONS - 4], vec![10; 2]);
+        assert!(report.tag_threading.complete);
+        assert_eq!(report.tag_threading.regions.len(), 1);
+        report.tag_threading(1, 2, vec![0, 1], 32, 64, 3, vec![9], vec![10]);
+        assert!(!report.tag_threading.complete);
+        assert_eq!(report.tag_threading.regions.len(), 1, "bounded receipt must flag incomplete coverage");
     }
 }

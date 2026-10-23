@@ -7,6 +7,9 @@ use mech_engine::native_artifact::{
 };
 
 pub(super) const OVERHEAD: u64 = 512;
+// Charged on every traversal, including the terminal one. The packed emitter
+// checks setup, tag dispatch and shared boundary templates against this lane.
+pub(super) const FIXED_OVERHEAD: u64 = 1024;
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Region {
@@ -146,7 +149,7 @@ impl Layout {
             if count != sites.len() {
                 continue;
             }
-            let mut compute = 1024u64;
+            let mut compute = FIXED_OVERHEAD;
             let mut comparison = 0u64;
             for &site in &sites {
                 compute = compute

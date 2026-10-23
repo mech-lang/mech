@@ -3,6 +3,7 @@
 use super::*;
 use crate::native_artifact::program_compiler::packed_loop_codegen::{
     take_edge_fact_emissions, without_edge_facts,
+    take_tag_thread_emissions, without_tag_threading,
 };
 use crate::native_artifact::JitProgramArtifact;
 
@@ -29,6 +30,98 @@ fn structural_report(report: &NativeProgramExecutionReport) -> [u64; 11] {
     [report.visits, report.transport_bytes, report.hash_table_regions, report.hash_table_updates,
         report.packed_map_regions, report.packed_map_updates, report.packed_ssa_regions,
         report.parallel_regions, report.parallel_batches, report.parallel_tasks, report.parallel_peak_workers]
+}
+
+#[test]
+fn object_metadata_attests_tag_threading_and_original_source_frontiers() {
+    let body = structural_projection_tests::COUNT.replace("Next", "Advance").replace("Done", "Finish");
+    let artifact = tests::artifact_source(&format!("{body}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n"));
+    let catalog = mech_stdlib::source_catalog();
+    take_tag_thread_emissions();
+    let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+    let emitted = take_tag_thread_emissions();
+    let metadata = object.metadata();
+    let receipt = &metadata["compiled_tag_threading"];
+    assert_eq!(receipt["complete"], true);
+    let regions = receipt["regions"].as_array().unwrap();
+    assert_eq!(regions.len(), 1);
+    let record = &regions[0];
+    let descriptor = object.descriptor();
+    let tail = descriptor.closed_tails.regions.iter().find(|r| r.packed.is_some()).unwrap();
+    let owner = descriptor.map_owner_words.as_ref().unwrap();
+    assert_eq!(record["header"], tail.tail.header());
+    assert_eq!(record["carrier_word"], owner.aggregates().slot(tail.tail.carrier()).unwrap().0);
+    assert_eq!(record["variants"].as_array().unwrap().len(), 2);
+    assert_eq!(record["product_nodes"], emitted.0);
+    assert!(emitted.0 <= 1024 && emitted.1 >= 4 && emitted.2 >= 2, "{emitted:?}");
+    assert_eq!(record["folded_branches"].as_array().unwrap().len(), emitted.1);
+    assert_eq!(record["known_latches"].as_array().unwrap().len(), emitted.2);
+    assert!(record["header_versions"].as_u64().unwrap() >= 3,
+        "initial, recurring and terminal headers retain their own fuel traversal");
+    for site in record["folded_branches"].as_array().unwrap() {
+        let site = site.as_u64().unwrap() as usize;
+        assert!(matches!(descriptor.plan.blocks()[site].terminator(), NativeIterationTerminator::Scalar(
+            NativeMatchTerminator::Branch { .. } | NativeMatchTerminator::LiteralBranch { .. })));
+        assert_eq!(descriptor.closed_tails.sites[site], descriptor.closed_tails.sites[tail.tail.header() as usize]);
+    }
+    for site in record["known_latches"].as_array().unwrap() { assert_eq!(*site, tail.tail.latch()); }
+    let plain = without_tag_threading(|| crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
+    assert_eq!(take_tag_thread_emissions(), (0, 0, 0));
+    let plain = plain.metadata();
+    assert_eq!(plain["compiled_tag_threading"]["complete"], true);
+    assert!(plain["compiled_tag_threading"]["regions"].as_array().unwrap().is_empty());
+    assert!(!plain["compiled_source_edge_facts"]["regions"].as_array().unwrap().is_empty(),
+        "disabling tag threading must retain the preceding SSA/edge-fact optimization");
+}
+
+#[test]
+fn tag_threading_accepts_reordered_variants_and_an_initial_terminal_state() {
+    let body = structural_projection_tests::COUNT.replace(
+        "  | :Next(index<u64>, counts<{string:u64}>)\n  | :Done(counts<{string:u64}>).",
+        "  | :Done(counts<{string:u64}>)\n  | :Next(index<u64>, counts<{string:u64}>).");
+    assert_ne!(body, structural_projection_tests::COUNT);
+    for terminal in [false, true] {
+        let body = if terminal { body.replace("-> :Next(0u64, initial)", "-> :Done(initial)") } else { body.clone() };
+        let original = tests::artifact_source(&format!("{body}\n#Count(\"aaaa\", 2u64, 4u64, empty)\n"));
+        let artifact = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+        let catalog = mech_stdlib::source_catalog();
+        take_tag_thread_emissions();
+        let threaded = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let actual = take_tag_thread_emissions();
+        assert!(actual.0 > 0 && actual.1 >= 4 && actual.2 >= 2, "{actual:?}");
+        let plain = without_tag_threading(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+        assert_eq!(take_tag_thread_emissions(), (0, 0, 0));
+        let mut executions = Vec::new();
+        for jit in [&threaded, &plain] {
+            PUBLICATION_FRONTIERS.with(|records| records.borrow_mut().clear());
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let mut outputs = vec![None];
+            let entry = jit.test_checked_entry();
+            let report = execute(jit.descriptor(), |frame| {
+                // SAFETY: same synchronous owning entry/observer as above.
+                let old = unsafe { (*frame).helper };
+                unsafe { (*frame).helper = observe_publication_frontier; }
+                let status = unsafe { entry(frame) };
+                unsafe { (*frame).helper = old; }
+                status
+            }, &[], &mut outputs, tests::limits(), &memory).unwrap();
+            assert_eq!((report.packed_map_regions, report.packed_ssa_regions, report.packed_map_updates),
+                (1, 1, if terminal { 0 } else { 3 }));
+            let ValueData::Map(map) = outputs[0].as_ref().unwrap().data() else { panic!("map"); };
+            let pairs = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
+                (ValueData::String(key), ValueData::U64(value)) => (key.to_string(), *value),
+                _ => panic!("String/U64 map"),
+            }).collect::<Vec<_>>();
+            assert_eq!(pairs, if terminal { Vec::new() } else { vec![("aa".to_owned(), 3)] });
+            let frontiers = PUBLICATION_FRONTIERS.with(|records| core::mem::take(&mut *records.borrow_mut()));
+            assert_eq!(frontiers.len(), 1);
+            executions.push((report, pairs, frontiers));
+            drop(outputs);
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+        }
+        assert_eq!(executions[0], executions[1], "terminal traversal, full accounting, and output are unchanged");
+    }
 }
 
 #[test]
@@ -86,6 +179,13 @@ fn object_metadata_records_actual_source_edge_substitutions_and_disabled_absence
 
 #[test]
 fn current_edge_facts_preserve_changed_inputs_source_names_and_exact_work() {
+    changed_input_equivalence(false);
+}
+#[test]
+fn tag_threading_preserves_changed_inputs_source_names_and_exact_terminal_work() {
+    changed_input_equivalence(true);
+}
+fn changed_input_equivalence(threading: bool) {
     // These are ordinary typed parameters, not constants captured from the
     // fixture or assertions that n equals this particular String's length.
     let body = structural_projection_tests::COUNT
@@ -98,11 +198,19 @@ fn current_edge_facts_preserve_changed_inputs_source_names_and_exact_work() {
     for artifact in [original, decoded] {
         let catalog = mech_stdlib::source_catalog();
         take_edge_fact_emissions();
+        take_tag_thread_emissions();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let emitted = take_edge_fact_emissions();
         assert!(emitted.0 >= 8 && emitted.1 >= 4, "actual emitted guard/arithmetic substitutions: {emitted:?}");
-        let unchanged = without_edge_facts(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
-        assert_eq!(take_edge_fact_emissions(), (0, 0));
+        let selected = take_tag_thread_emissions();
+        if threading { assert!(selected.0 > 0 && selected.1 >= 4 && selected.2 >= 2, "actual tag product CFG: {selected:?}"); }
+        let unchanged = if threading {
+            without_tag_threading(|| JitProgramArtifact::compile(&artifact, &catalog))
+        } else { without_edge_facts(|| JitProgramArtifact::compile(&artifact, &catalog)) }.unwrap();
+        let unchanged_facts = take_edge_fact_emissions();
+        let unchanged_tags = take_tag_thread_emissions();
+        if threading { assert_eq!(unchanged_tags, (0, 0, 0)); }
+        else { assert_eq!(unchanged_facts, (0, 0)); }
         for (text, extent, n) in [
             ("abcabc", 1u64, 6u64), ("abcabc", 2, 6), ("abcabc", 3, 5),
             ("zzzz", 2, 4), ("abcdefgh", 7, 8), ("a", 1, 1),
@@ -195,6 +303,13 @@ fn current_edge_facts_preserve_changed_inputs_source_names_and_exact_work() {
 
 #[test]
 fn current_edge_facts_keep_unproved_arithmetic_failures_at_original_sites() {
+    arithmetic_failure_equivalence(false);
+}
+#[test]
+fn tag_threading_keeps_later_iteration_arithmetic_failures_at_original_sites() {
+    arithmetic_failure_equivalence(true);
+}
+fn arithmetic_failure_equivalence(threading: bool) {
     // The valid first iteration must not establish facts for a later visit.
     // Source mutations intentionally remove or weaken individual premises.
     let source = structural_projection_tests::COUNT;
@@ -214,10 +329,18 @@ fn current_edge_facts_keep_unproved_arithmetic_failures_at_original_sites() {
         let artifact = tests::artifact_source(&format!("{body}\n#Count({text}, {width}u64, {n}u64, empty)\n"));
         let catalog = mech_stdlib::source_catalog();
         take_edge_fact_emissions();
+        take_tag_thread_emissions();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         assert!(take_edge_fact_emissions().0 >= 6, "must actually remove dominated field guards");
-        let unchanged = without_edge_facts(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
-        assert_eq!(take_edge_fact_emissions(), (0, 0));
+        let selected = take_tag_thread_emissions();
+        if threading { assert!(selected.0 > 0 && selected.1 >= 4 && selected.2 >= 2, "actual tag product CFG: {selected:?}"); }
+        let unchanged = if threading {
+            without_tag_threading(|| JitProgramArtifact::compile(&artifact, &catalog))
+        } else { without_edge_facts(|| JitProgramArtifact::compile(&artifact, &catalog)) }.unwrap();
+        let unchanged_facts = take_edge_fact_emissions();
+        let unchanged_tags = take_tag_thread_emissions();
+        if threading { assert_eq!(unchanged_tags, (0, 0, 0)); }
+        else { assert_eq!(unchanged_facts, (0, 0)); }
         let mut executions = Vec::new();
         for jit in [&optimized, &unchanged] {
             MODE.with(|mode| mode.set(Mode::Native));

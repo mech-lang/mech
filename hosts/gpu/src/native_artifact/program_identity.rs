@@ -91,7 +91,9 @@ fn selected_template(
 // current-traversal edge facts; source CFG, work charges and ABI are unchanged.
 // IR44 selects a one-word key only when every admitted width fits the proved
 // source domain; both representations retain the complete U64 source count.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 44;
+// IR45 threads exact enum tags through a bounded product CFG. Initial/unknown
+// tags still dispatch, and all original header debits and terminal visits run.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 45;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
