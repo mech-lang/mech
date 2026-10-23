@@ -130,6 +130,8 @@ pub struct NativeProgramExecutionReport {
     pub packed_map_regions: u64,
     /// Updates completed by those selected packed regions.
     pub packed_map_updates: u64,
+    /// Completed packed regions that entered the versioned SSA CFG.
+    pub packed_ssa_regions: u64,
 }
 fn invalid(reason: &'static str) -> NativeProgramExecutionError {
     NativeExecutionError::Descriptor { reason }.into()
@@ -214,6 +216,7 @@ struct Context<'plan, 'visit> {
     hash_table_updates: u64,
     packed_map_regions: u64,
     packed_map_updates: u64,
+    packed_ssa_regions: u64,
     window_region: Option<(u32, u64)>,
     window_hashes: Option<Box<window_round::hashes::WindowHashes>>,
     prefix: Option<prefix::State>,

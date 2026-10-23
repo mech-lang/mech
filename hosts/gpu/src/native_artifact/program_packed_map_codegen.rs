@@ -5,6 +5,10 @@ use super::super::{NativeCompileError, compiler::offset, program_hooks::Hooks,
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 
+#[path = "program_packed_frame_codegen.rs"]
+mod frame_state;
+pub(in crate::native_artifact) use frame_state::FrameState;
+
 fn get(b: &mut FunctionBuilder<'_>, frame: Value, at: usize) -> Value {
     b.ins().load(types::I64, MemFlags::new(), frame, at as i32)
 }
@@ -12,17 +16,17 @@ fn put(b: &mut FunctionBuilder<'_>, frame: Value, at: usize, value: Value) {
     b.ins().store(MemFlags::new(), value, frame, at as i32);
 }
 macro_rules! read {
-    ($b:expr, $f:expr, $field:ident) => { get($b, $f, core::mem::offset_of!(Frame, $field)) };
+    ($b:expr, $f:expr, $field:ident) => { $f.read($b, core::mem::offset_of!(Frame, $field)) };
 }
 macro_rules! write {
-    ($b:expr, $f:expr, $field:ident, $v:expr) => { put($b, $f, core::mem::offset_of!(Frame, $field), $v) };
+    ($b:expr, $f:expr, $field:ident, $v:expr) => { $f.write($b, core::mem::offset_of!(Frame, $field), $v) };
 }
 
-fn fail(b: &mut FunctionBuilder<'_>, hooks: &Hooks, function: Value, context: Value,
+fn fail(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks, function: Value, context: Value,
     site: usize, op: u64, error: Block)
 {
     let zero = b.ins().iconst(types::I64, 0);
-    hooks.bound_call(b, function, context, site, op, [zero; 3], error);
+    frame.call(b, hooks, function, context, site, op, [zero; 3], error);
     // The private failure operation always returns an error. Keep malformed
     // host behavior from resuming an unchecked native memory operation.
     super::super::compiler::guard(b, zero, error, super::super::abi::STATUS_ABI);
@@ -31,14 +35,14 @@ fn fail(b: &mut FunctionBuilder<'_>, hooks: &Hooks, function: Value, context: Va
 // A batch prepays root work, but an individual call limit applies only when
 // the source reaches that call. The owner refreshes these flags on growth;
 // ordinary calls need only this branch, with diagnostics on the failure path.
-fn check_call(b: &mut FunctionBuilder<'_>, allowed: Value, hooks: &Hooks,
+fn check_call(b: &mut FunctionBuilder<'_>, frame: &FrameState, allowed: Value, hooks: &Hooks,
     function: Value, context: Value, site: usize, op: u64, error: Block)
 {
     let accepted = b.create_block();
     let denied = b.create_block();
     b.ins().brif(allowed, accepted, &[], denied, &[]);
     b.switch_to_block(denied);
-    fail(b, hooks, function, context, site, op, error);
+    fail(b, frame, hooks, function, context, site, op, error);
     b.ins().jump(accepted, &[]);
     b.switch_to_block(accepted);
 }
@@ -46,8 +50,14 @@ fn check_call(b: &mut FunctionBuilder<'_>, allowed: Value, hooks: &Hooks,
 pub(super) fn select(b: &mut FunctionBuilder<'_>, frame: Value, start: Value, end: Value,
     hooks: &Hooks, function: Value, context: Value, site: usize, error: Block)
 {
+    select_state(b, &FrameState::memory(frame), start, end, hooks, function, context, site, error)
+}
+
+pub(super) fn select_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, start: Value, end: Value,
+    hooks: &Hooks, function: Value, context: Value, site: usize, error: Block)
+{
     let allowed = read!(b, frame, range_call_allowed);
-    check_call(b, allowed, hooks, function, context, site, 10, error);
+    check_call(b, frame, allowed, hooks, function, context, site, 10, error);
     let zero = b.ins().iconst(types::I64, 0);
     let width = read!(b, frame, width);
     let source = read!(b, frame, source_ptr);
@@ -65,8 +75,8 @@ pub(super) fn select(b: &mut FunctionBuilder<'_>, frame: Value, start: Value, en
     b.switch_to_block(bad);
     // Delegate only failure formatting to the maintained range/selection,
     // retaining its original origin and precise semantic error.
-    hooks.bound_call(b, function, context, site, 6, [start, end, zero], error);
-    fail(b, hooks, function, context, site, 9, error);
+    frame.call(b, hooks, function, context, site, 6, [start, end, zero], error);
+    fail(b, frame, hooks, function, context, site, 9, error);
     b.ins().jump(checked, &[]);
     b.switch_to_block(checked);
     let previous = read!(b, frame, previous_start);
@@ -127,7 +137,7 @@ pub(super) fn select(b: &mut FunctionBuilder<'_>, frame: Value, start: Value, en
     write!(b, frame, entry_pointer, zero);
 }
 
-fn probe(b: &mut FunctionBuilder<'_>, frame: Value, hooks: &Hooks,
+fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     function: Value, context: Value, site: usize, error: Block) -> Value
 {
     let zero = b.ins().iconst(types::I64, 0);
@@ -194,7 +204,7 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: Value, hooks: &Hooks,
     let index = b.ins().band(index, mask);
     b.ins().brif(bounded, head, &[index.into(), inspected.into()], bad, &[]);
     b.switch_to_block(bad);
-    fail(b, hooks, function, context, site, 9, error);
+    fail(b, frame, hooks, function, context, site, 9, error);
     b.ins().jump(absent, &[]);
     b.switch_to_block(absent);
     write!(b, frame, entry_pointer, zero);
@@ -213,9 +223,18 @@ pub(super) fn operation(b: &mut FunctionBuilder<'_>, frame: Value, op: u64, repl
     locals: Value, output: usize, token: Value, hooks: &Hooks, function: Value,
     context: Value, site: usize, error: Block) -> Result<(), NativeCompileError>
 {
+    let value = operation_state(b, &FrameState::memory(frame), op, replacement,
+        token, hooks, function, context, site, error);
+    b.ins().store(MemFlags::new(), value, locals, offset(output)?);
+    Ok(())
+}
+
+pub(super) fn operation_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, op: u64, replacement: Value,
+    token: Value, hooks: &Hooks, function: Value, context: Value, site: usize, error: Block) -> Value
+{
     let allowed = if op == 5 { read!(b, frame, write_call_allowed) }
         else { read!(b, frame, read_call_allowed) };
-    check_call(b, allowed, hooks, function, context, site, if op == 5 { 12 } else { 11 }, error);
+    check_call(b, frame, allowed, hooks, function, context, site, if op == 5 { 12 } else { 11 }, error);
     let entry = probe(b, frame, hooks, function, context, site, error);
     let present = b.ins().icmp_imm(IntCC::NotEqual, entry, 0);
     let value = if op == 3 {
@@ -228,10 +247,10 @@ pub(super) fn operation(b: &mut FunctionBuilder<'_>, frame: Value, op: u64, repl
         b.ins().brif(present, hit, &[], miss, &[]);
         b.switch_to_block(miss);
         if op == 4 {
-            fail(b, hooks, function, context, site, 8, error);
+            fail(b, frame, hooks, function, context, site, 8, error);
         } else {
             let zero = b.ins().iconst(types::I64, 0);
-            hooks.bound_call(b, function, context, site, 7, [zero, zero, replacement], error);
+            frame.call(b, hooks, function, context, site, 7, [zero, zero, replacement], error);
         }
         b.ins().jump(done, &[token.into()]);
         b.switch_to_block(hit);
@@ -244,7 +263,7 @@ pub(super) fn operation(b: &mut FunctionBuilder<'_>, frame: Value, op: u64, repl
             let bad = b.create_block();
             b.ins().brif(fits, accepted, &[], bad, &[]);
             b.switch_to_block(bad);
-            fail(b, hooks, function, context, site, 9, error);
+            fail(b, frame, hooks, function, context, site, 9, error);
             b.ins().jump(accepted, &[]);
             b.switch_to_block(accepted);
             put(b, entry, core::mem::offset_of!(Slot, value), replacement);
@@ -256,6 +275,5 @@ pub(super) fn operation(b: &mut FunctionBuilder<'_>, frame: Value, op: u64, repl
         b.switch_to_block(done);
         b.block_params(done)[0]
     };
-    b.ins().store(MemFlags::new(), value, locals, offset(output)?);
-    Ok(())
+    value
 }

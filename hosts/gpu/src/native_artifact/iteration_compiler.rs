@@ -640,6 +640,13 @@ pub(super) fn define_cfg<M: Module>(
                 continue;
             }
             b.switch_to_block(blocks[index].expect("reachable block"));
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(hooks) = &hooks {
+                super::program_compiler::packed_loop_codegen::emit_entry(
+                    &mut b, frame, locals, plan, &closed, owner.as_ref(), &aggregates,
+                    index, hooks, &blocks, error,
+                )?;
+            }
             let before = b.func.dfg.num_insts();
             set_origin(&mut b, frame, index as u64);
             if plan.activation_boundary() == Some(index as u32) {

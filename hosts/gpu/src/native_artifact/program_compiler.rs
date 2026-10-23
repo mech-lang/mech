@@ -40,6 +40,8 @@ pub(super) mod scalar_aggregates;
 pub(super) mod map_owner_codegen;
 #[path = "program_packed_map_codegen.rs"]
 pub(super) mod packed_maps;
+#[path = "program_packed_loop_codegen.rs"]
+pub(super) mod packed_loop_codegen;
 #[path = "program_string_map_codegen.rs"]
 pub(super) mod string_map_codegen;
 #[path = "program_tail_codegen.rs"]
