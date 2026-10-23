@@ -12,6 +12,7 @@ struct Report {
     entries: u64, reads: u64, writes: u64, exits: u64, rejected: u64,
     declined: u64, canonical_map_calls: u64, errors: Vec<String>,
     projections: u64, canonical_key_calls: u64,
+    cached_geometry: u64, full_geometry: u64,
 }
 thread_local! {
     static MODE: Cell<Mode> = const { Cell::new(Mode::Normal) };
@@ -19,6 +20,9 @@ thread_local! {
     static REPORT: RefCell<Report> = RefCell::new(Report::default());
 }
 fn record(update: impl FnOnce(&mut Report)) { REPORT.with(|report| update(&mut report.borrow_mut())); }
+pub(super) fn observe_geometry(cached: bool) {
+    record(|report| if cached { report.cached_geometry += 1; } else { report.full_geometry += 1; });
+}
 fn rejected(result: Result<impl Sized, NativeProgramExecutionError>) {
     if result.is_err() { record(|r| r.rejected += 1); }
     else { record(|r| r.errors.push("malformed/replayed operation accepted".into())); }
@@ -175,6 +179,48 @@ fn actual_generated_visits_bind_tables_validate_calls_and_publish_equal_results(
         assert_eq!((report.entries, report.exits, report.writes), (1, 1, 3));
         assert!(report.reads >= 3 && report.rejected >= 8, "{report:?}");
         assert_eq!(report.canonical_map_calls, 0);
+        assert!(report.cached_geometry > 0, "{report:?}");
+    }
+}
+
+#[test]
+fn caller_census_declines_maps_with_managed_values_created_in_the_loop() {
+    let source = include_str!("../../tests/fixtures/native/map-owner-binding-state.mec")
+        .replace("+> map", "+> map\n+> number")
+        .replace("\"opaque\"", "number/format(n, 0u64)");
+    let original = tests::artifact_source(&source);
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+    for artifact in [original, decoded] {
+        let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let report = run_expected(&jit, jit.descriptor(), Mode::Normal, &[("0", 0), ("1", 1), ("2", 2)]);
+        assert!(report.errors.is_empty(), "{report:?}");
+        assert_eq!((report.entries, report.exits, report.writes), (1, 1, 3));
+        assert_eq!(report.cached_geometry, 0, "{report:?}");
+        assert!(report.full_geometry > 0, "{report:?}");
+    }
+}
+
+#[test]
+fn caller_census_declines_nested_control_even_when_its_result_is_scalar() {
+    let source = include_str!("../../tests/fixtures/native/map-owner-binding-state.mec")
+        .replace("retain(h<", "#Advance(limit<u64>) => <u64>\n  | :Next(value<u64>)\n  | :Done(value<u64>).\n#Advance(limit) -> :Next(0u64)\n  :Next(value)\n    | value >= limit -> :Done(value)\n    | * -> :Next(value + 1u64)\n  :Done(value) => value.\nretain(h<")
+        .replace("  previous := ", "  advanced := #Advance(n)\n  previous := ")
+        .replace("previous + n", "previous + advanced");
+    let original = tests::artifact_source(&source);
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+    for artifact in [original, decoded] {
+        let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let layout = jit.descriptor().map_owner_words.as_ref().unwrap();
+        assert_eq!(layout.regions().len(), 1);
+        let owner = layout.regions()[0].iteration();
+        assert!(jit.descriptor().plan.iterations().iter().any(|child| child.as_ref().parent() == Some(owner)));
+        let report = run(&jit, jit.descriptor(), Mode::Normal);
+        assert!(report.errors.is_empty(), "{report:?}");
+        assert_eq!((report.entries, report.exits, report.writes), (1, 1, 3));
+        assert_eq!(report.cached_geometry, 0, "{report:?}");
+        assert!(report.full_geometry > 0, "{report:?}");
     }
 }
 #[test]
@@ -283,5 +329,6 @@ pub(in crate::native_artifact::program_runtime) fn evaluate_count_case(
     assert_eq!(report.canonical_map_calls, 0, "{report:?}");
     assert_eq!(report.canonical_key_calls, 0, "{report:?}");
     assert_eq!(report.projections, updates * 2, "{report:?}");
+    if updates > 0 { assert!(report.cached_geometry > 0, "{report:?}"); }
     Ok(result)
 }
