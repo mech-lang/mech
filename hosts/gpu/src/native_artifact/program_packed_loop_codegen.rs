@@ -5,6 +5,8 @@ use super::super::{NativeCompileError, compiler::{backend, guard, offset, primit
     iteration_code_plan::CodePlan, program_hooks::Hooks, program_packed_map::Frame,
     program_tail_layout::{Layout, Region}};
 use super::packed_maps::{self, FrameState};
+#[cfg(test)]
+pub(in crate::native_artifact) use super::packed_maps::{take_frame_effect_emissions, without_frame_effects};
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types, condcodes::{FloatCC, IntCC}};
 use cranelift_frontend::{FunctionBuilder, Variable};
 use mech_engine::native_artifact::{NativeAggregateWord as Word, NativeIterationAction as Action,
@@ -482,6 +484,7 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
     {
         return Err(backend("packed SSA templates exceed fixed per-traversal envelope"));
     }
+    report.frame_effects(site, packed.effect_emissions());
     b.switch_to_block(ordinary);
     Ok(())
 }

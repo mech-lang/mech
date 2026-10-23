@@ -8,7 +8,7 @@ use std::cell::{Cell, RefCell};
 mod narrow_codegen;
 
 #[derive(Clone, Copy, PartialEq)]
-enum Mode { Native, Decline, OneShort, Renew, TightCall, TightWrite }
+enum Mode { Native, Decline, OneShort, Renew, TightCall, TightWrite, LimitedInsert }
 #[derive(Default, Debug)]
 struct Observation {
     entries: u64, packed: u64, guarded: u64, rejected: u64, errors: Vec<&'static str>, bound: [u64; 14],
@@ -34,6 +34,9 @@ unsafe extern "C" fn observe(raw: *mut c_void, site: u64, op: u64,
     // One byte plus the initial eight-slot census admits a read (65), but
     // refuses the first write (195). The root account retains its own limit.
     if op == CLOSED_TAIL_BEGIN && mode == Mode::TightWrite { ctx.limits.max_comparison_work = Some(65); }
+    // Allows eight distinct keys and the first capacity growth, then refuses
+    // the later 16-to-32 growth at the actual source insertion (op7).
+    if op == CLOSED_TAIL_BEGIN && mode == Mode::LimitedInsert { ctx.limits.max_comparison_work = Some(600); }
     if matches!(op, MAP_OWNER_CALL | MAP_OWNER_SPAN) { note(|r| r.guarded += 1); }
     let first = if op == CLOSED_TAIL_END && mode == Mode::Renew { u64::MAX } else { first };
     // SAFETY: unchanged maintained helper and its exact result lane.
