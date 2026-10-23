@@ -372,7 +372,7 @@ impl<'a> Prepared<'a> {
                 "native program requires seven finite library dimensions",
             ));
         }
-        let locals = plan
+        let canonical_locals = plan
             .values()
             .len()
             .checked_add(plan.iterations().len())
@@ -380,6 +380,8 @@ impl<'a> Prepared<'a> {
             .and_then(|n| n.checked_add(descriptor.borrowed_strings.words))
             .and_then(|n| n.checked_add(descriptor.closed_tails.words))
             .ok_or_else(|| invalid("local count overflow"))?;
+        let locals = descriptor.map_owner_words.as_ref().map_or(Ok(canonical_locals),
+            super::super::program_map_owner_layout::local_words).map_err(invalid)?;
         let progress = plan
             .iterations()
             .len()

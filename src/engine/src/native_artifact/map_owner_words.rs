@@ -16,6 +16,8 @@ pub struct NativeMapOwnerWords {
     aggregates: NativeScalarAggregates,
     initializers: Box<[Option<usize>]>,
     exits: Box<[Option<usize>]>,
+    action_regions: Box<[Option<usize>]>,
+    call_regions: Box<[Option<usize>]>,
     owner_base: usize,
     frame_words: usize,
 }
@@ -24,6 +26,8 @@ crate::native_artifact::program_image_proofs::image_struct!(NativeMapOwnerWords 
     aggregates: NativeScalarAggregates,
     initializers: Box<[Option<usize>]>,
     exits: Box<[Option<usize>]>,
+    action_regions: Box<[Option<usize>]>,
+    call_regions: Box<[Option<usize>]>,
     owner_base: usize,
     frame_words: usize,
 });
@@ -39,6 +43,12 @@ impl NativeMapOwnerWords {
     }
     pub fn exit(&self, site: usize) -> Option<usize> {
         self.exits.get(site).copied().flatten()
+    }
+    pub fn action_region(&self, site: usize) -> Option<usize> {
+        self.action_regions.get(site).copied().flatten()
+    }
+    pub fn call_region(&self, site: usize) -> Option<usize> {
+        self.call_regions.get(site).copied().flatten()
     }
     pub const fn frame_words(&self) -> usize {
         self.frame_words
@@ -238,9 +248,16 @@ impl Plan {
         let mut actions = ordinary.actions.to_vec();
         let mut initializers = vec![None; self.blocks().len()];
         let mut exits = vec![None; self.blocks().len()];
+        let mut action_regions = vec![None; self.blocks().len()];
+        let mut call_regions = vec![None; self.blocks().len()];
         for (index, region) in regions.iter().enumerate() {
             initializers[region.tail().initialize() as usize] = Some(index);
             exits[region.tail().exit() as usize] = Some(index);
+            for &site in region.reads().iter().chain(region.writes()) {
+                if call_regions[site as usize].replace(index).is_some() {
+                    return Err("overlapping map owner call regions");
+                }
+            }
             let selected = |value: Value| region.values().contains(&value);
             for &value in region.values() {
                 let definition = self.values()[value.get() as usize].definition();
@@ -287,8 +304,11 @@ impl Plan {
                     }
                     _ => None,
                 };
-                if action.is_some() && actions[site].replace(action.unwrap()).is_some() {
-                    return Err("overlapping map state transport actions");
+                if let Some(action) = action {
+                    if actions[site].replace(action).is_some()
+                        || action_regions[site].replace(index).is_some() {
+                        return Err("overlapping map state transport actions");
+                    }
                 }
             }
         }
@@ -296,6 +316,8 @@ impl Plan {
             regions,
             initializers: initializers.into(),
             exits: exits.into(),
+            action_regions: action_regions.into(),
+            call_regions: call_regions.into(),
             owner_base,
             frame_words: end,
             aggregates: NativeScalarAggregates {

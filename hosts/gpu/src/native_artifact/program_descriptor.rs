@@ -1,4 +1,4 @@
-//! Same-artifact metadata for generated ABI15, not an evaluator.
+//! Same-artifact metadata for generated ABI16, not an evaluator.
 use super::{NativeValueSlot, iteration_abi::NativeIterationVisit};
 use mech_core::{FunctionCatalog, SchemaTable, Value};
 use mech_engine::{
@@ -101,6 +101,11 @@ impl NativeProgramDescriptor {
                     ))
                 })
                 .ok_or("borrowed String visit work overflow")?;
+        }
+        let map_owner_words = plan.map_owner_words().map_err(str::to_owned)?;
+        for (site, visit) in visits.iter_mut().enumerate() {
+            visit.work = visit.work.checked_add(super::program_map_owner_layout::extra_work(&map_owner_words, site)?)
+                .ok_or("map owner visit work overflow")?;
         }
         let closed_tails =
             super::program_tail_layout::Layout::derive(&plan, &borrowed_strings, &visits)?;
@@ -214,7 +219,7 @@ impl NativeProgramDescriptor {
             .and_then(|n| n.checked_add(borrowed_strings.words))
             .and_then(|n| n.checked_add(closed_tails.words))
             .ok_or("map owner frame prefix overflow")?;
-        let map_owner_words = plan.map_owner_words().map_err(str::to_owned)?
+        let map_owner_words = map_owner_words
             .after_frame_words(occupied_frame).map_err(str::to_owned)?;
         // Programs without owner candidates keep no second copy of their
         // existing scalar slot/action/constant inventories in the descriptor.
@@ -243,6 +248,7 @@ impl NativeProgramDescriptor {
                     .max()
                     .unwrap_or(0),
             )
+            .max(map_owner_words.as_ref().map_or(0, super::program_map_owner_layout::initial_words))
             .max(if closed_tails.regions.is_empty() {
                 0
             } else {

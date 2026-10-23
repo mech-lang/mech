@@ -1,24 +1,27 @@
-//! Validate invocation-bound storage alongside the actual canonical generated
-//! program. Native opaque-word selection remains a separate integration gate.
+//! Exercise selected owner helpers from the actual generated CFG. No shadow
+//! table or Rust implementation of the source counting body participates.
 use super::State;
 use super::super::*;
+use crate::native_artifact::program_abi::{MAP_OWNER_BEGIN, MAP_OWNER_CALL, MAP_OWNER_END};
 use std::cell::{Cell, RefCell};
 
 #[derive(Clone, Copy, PartialEq)]
-enum Mode { SessionMirror, SessionRefuseEntry, SessionAbort, Mirror, ForeignDescriptor, ForeignLedger, RefuseEntry }
+enum Mode { Normal, ForeignDescriptor, ForeignLedger, RefuseEntry, Abort, Corrupt }
 #[derive(Default, Debug)]
 struct Report {
-    entries: u64, reads: u64, writes: u64, exits: u64,
-    rejected: u64, declined: u64, mismatches: u64, errors: Vec<String>,
+    entries: u64, reads: u64, writes: u64, exits: u64, rejected: u64,
+    declined: u64, canonical_map_calls: u64, errors: Vec<String>,
 }
 thread_local! {
-    static OWNER: Cell<*mut c_void> = const { Cell::new(core::ptr::null_mut()) };
-    static TOKENS: RefCell<Vec<u64>> = const { RefCell::new(Vec::new()) };
-    static MODE: Cell<Mode> = const { Cell::new(Mode::Mirror) };
+    static MODE: Cell<Mode> = const { Cell::new(Mode::Normal) };
+    static FOREIGN: Cell<*const NativeProgramDescriptor> = const { Cell::new(core::ptr::null()) };
     static REPORT: RefCell<Report> = RefCell::new(Report::default());
 }
 fn record(update: impl FnOnce(&mut Report)) { REPORT.with(|report| update(&mut report.borrow_mut())); }
-
+fn rejected(result: Result<impl Sized, NativeProgramExecutionError>) {
+    if result.is_err() { record(|r| r.rejected += 1); }
+    else { record(|r| r.errors.push("malformed/replayed operation accepted".into())); }
+}
 fn map_pairs(value: &Value) -> Option<Vec<(String, u64)>> {
     let ValueData::Map(map) = value.data() else { return None; };
     map.entries().iter().map(|entry| {
@@ -28,275 +31,222 @@ fn map_pairs(value: &Value) -> Option<Vec<(String, u64)>> {
     }).collect()
 }
 
-enum Lane<'a, 'plan> { External(&'a mut State<'plan>), Session }
-impl Lane<'_, '_> {
-    fn begin(&mut self, ctx: &mut Context<'_, '_>, site: usize)
-        -> Result<Option<crate::native_artifact::owned_map_binding::InitialWords>, NativeProgramExecutionError>
-    {
-        match self { Self::External(state) => state.begin(ctx, site), Self::Session => ctx.begin_retained_map(site) }
-    }
-    fn call(&mut self, ctx: &mut Context<'_, '_>, site: usize, words: &[u64])
-        -> Result<u64, NativeProgramExecutionError>
-    {
-        match self { Self::External(state) => state.call(ctx, site, words), Self::Session => ctx.call_retained_map(site, words) }
-    }
-    fn finish(&mut self, ctx: &mut Context<'_, '_>, site: usize, token: u64)
-        -> Result<Value, NativeProgramExecutionError>
-    {
-        match self { Self::External(state) => state.finish(ctx, site, token), Self::Session => ctx.finish_retained_map(site, token) }
-    }
-}
-
-fn shadow(
-    state: &mut Lane<'_, '_>, ctx: &mut Context<'_, '_>, site: usize, operation: u64,
-) -> Result<Option<u64>, NativeProgramExecutionError> {
-    let descriptor = ctx.control.descriptor;
-    let Some(layout) = descriptor.map_owner_words.as_ref() else { return Ok(None); };
-    if let Some(index) = layout.initializer(site) {
-        if matches!(MODE.with(Cell::get), Mode::ForeignDescriptor | Mode::ForeignLedger) {
-            if state.begin(ctx, site).is_err() { record(|r| r.rejected += 1); }
-            else { record(|r| r.mismatches += 1); }
-            return Ok(None);
-        }
-        let memory = ctx.library.memory_budget();
-        let blocker = if matches!(MODE.with(Cell::get), Mode::RefuseEntry | Mode::SessionRefuseEntry) {
-            Some(memory.reserve_capacity(memory.limit_bytes() - memory.used_bytes())?)
-        } else { None };
-        let initial = state.begin(ctx, site)?;
-        drop(blocker);
-        if let Some(initial) = initial {
-            // This fixture's state is :Next(index, map): tag/index/map. The
-            // independent word-emission suite qualifies general layouts.
-            let words = initial.words();
-            if words.len() != 3 { return Err(invalid("unexpected shadow fixture layout")); }
-            TOKENS.with(|tokens| tokens.borrow_mut()[index] = words[2]);
-            record(|r| r.entries += 1);
-        } else { record(|r| r.declined += 1); }
-        if state.begin(ctx, site).is_err() { record(|r| r.rejected += 1); }
-        else { record(|r| r.mismatches += 1); }
-        return Ok(None);
-    }
-    if let Some(index) = layout.exit(site) {
-        let token = TOKENS.with(|tokens| tokens.borrow()[index]);
-        if token == 0 { return Ok(None); }
-        let returned = layout.regions()[index].tail().returned();
-        let expected = ctx.arena.copy_current(returned.get(), &mut ctx.control.work)?;
-        let actual = state.finish(ctx, site, token)?;
-        // Both algorithms consume the same source-produced values; canonical
-        // immutable maps and retained standard-library tables are independent.
-        if map_pairs(&actual) != map_pairs(&expected) { record(|r| r.mismatches += 1); }
-        if state.finish(ctx, site, token).is_err() { record(|r| r.rejected += 1); }
-        else { record(|r| r.mismatches += 1); }
-        TOKENS.with(|tokens| tokens.borrow_mut()[index] = 0);
-        record(|r| r.exits += 1);
-        return Ok(None);
-    }
-    if operation != LIBRARY { return Ok(None); }
-    let Some((index, region)) = layout.regions().iter().enumerate().find(|(_, region)| {
-        region.reads().contains(&(site as u32)) || region.writes().contains(&(site as u32))
-    }) else { return Ok(None); };
-    let token = TOKENS.with(|tokens| tokens.borrow()[index]);
-    if token == 0 { return Ok(None); }
-    let NativeIterationAction::LibraryCall { operands, .. } = descriptor.plan.blocks()[site].action()
-        else { return Err(invalid("shadow call kind")); };
-    if operands.len() > 3 || operands.len() > ctx.argument_capacity {
-        return Err(invalid("shadow operand capacity"));
-    }
-    let mut words = [0u64; 3];
-    // SAFETY: this is the actual admitted argument lane; generated code is
-    // suspended in the same helper and no reference survives delegation.
-    words[..operands.len()].copy_from_slice(unsafe {
-        core::slice::from_raw_parts(ctx.arguments, operands.len())
-    });
-    words[0] = token.wrapping_add(1);
-    if state.call(ctx, site, &words[..operands.len()]).is_err() { record(|r| r.rejected += 1); }
-    else { record(|r| r.mismatches += 1); }
-    words[0] = token;
-    let result = state.call(ctx, site, &words[..operands.len()])?;
-    if region.writes().contains(&(site as u32)) {
-        TOKENS.with(|tokens| tokens.borrow_mut()[index] = result);
-        words[0] = result;
-        record(|r| r.writes += 1);
-    } else { record(|r| r.reads += 1); }
-    if state.call(ctx, site, &words[..operands.len()]).is_err() { record(|r| r.rejected += 1); }
-    else { record(|r| r.mismatches += 1); }
-    Ok(region.reads().contains(&(site as u32)).then_some(result))
-}
-
 unsafe extern "C" fn observe(
     context: *mut c_void, site: u64, operation: u64,
     first: u64, second: u64, third: u64, result: *mut u64,
 ) -> u64 {
-    let mut expected = None;
-    let owner = OWNER.with(Cell::get);
-    if matches!(MODE.with(Cell::get), Mode::SessionMirror | Mode::SessionRefuseEntry | Mode::SessionAbort) {
-        // SAFETY: the owning session pins this exact context for the callback.
-        let ctx = unsafe { &mut *context.cast::<Context<'_, '_>>() };
-        match shadow(&mut Lane::Session, ctx, site as usize, operation) {
-            Ok(value) => expected = value,
-            Err(error) => record(|r| r.errors.push(format!("site {site}: {error:?}"))),
-        }
-    } else if !owner.is_null() {
-        // SAFETY: run retains the descriptor, lane and real Context through
-        // each synchronous entry. Both exclusive borrows end before helper.
-        let state = unsafe { &mut *owner.cast::<State<'_>>() };
-        let ctx = unsafe { &mut *context.cast::<Context<'_, '_>>() };
-        match shadow(&mut Lane::External(state), ctx, site as usize, operation) {
-            Ok(value) => expected = value,
-            Err(error) => record(|r| r.errors.push(format!("site {site}: {error:?}"))),
+    // SAFETY: execute owns this exact context through the synchronous entry;
+    // every reference ends before delegation or return to generated code.
+    let ctx = unsafe { &mut *context.cast::<Context<'_, '_>>() };
+    let mode = MODE.with(Cell::get);
+    let index = site as usize;
+    let args = [first, second, third];
+    let descriptor = ctx.control.descriptor;
+    let selected_call = descriptor.map_owner_words.as_ref()
+        .and_then(|layout| crate::native_artifact::program_map_owner_layout::call_region(layout, index));
+    if operation == LIBRARY && selected_call.is_some() {
+        record(|r| r.canonical_map_calls += 1);
+    }
+    if operation == MAP_OWNER_BEGIN {
+        rejected(ctx.retained_map_helper(index, operation, [1, 0, 0]));
+        if matches!(mode, Mode::ForeignDescriptor | Mode::ForeignLedger) {
+            let memory = ctx.library.memory_budget();
+            let foreign = FOREIGN.with(Cell::get);
+            // SAFETY: run pins both JIT descriptors until execute returns.
+            let lane_descriptor = if mode == Mode::ForeignDescriptor { unsafe { &*foreign } } else { descriptor };
+            let lane = if mode == Mode::ForeignLedger {
+                let mut work = NativeWorkMeter::new(1_000_000_000).unwrap();
+                work.bind_memory_budget(&memory).unwrap();
+                State::new(lane_descriptor, &memory, &mut work, ctx.limits.max_temporary_bytes.unwrap())
+            } else {
+                State::new(lane_descriptor, &memory, &mut ctx.control.work, ctx.limits.max_temporary_bytes.unwrap())
+            };
+            match lane {
+                Ok(mut lane) => rejected(lane.begin(ctx, index)),
+                Err(error) => record(|r| r.errors.push(format!("foreign setup: {error:?}"))),
+            }
         }
     }
-    if MODE.with(Cell::get) == Mode::SessionAbort
-        && REPORT.with(|report| report.borrow().writes > 0)
-    {
-        // SAFETY: this live context is owned by the synchronous session. Stop
-        // after retained insertion, before publication, to exercise unwinding.
-        let ctx = unsafe { &mut *context.cast::<Context<'_, '_>>() };
-        ctx.error = Some(invalid("injected retained map abort"));
-        return STATUS_ADMISSION;
+    if operation == MAP_OWNER_CALL {
+        rejected(ctx.retained_map_helper(index, operation, [first.wrapping_add(8), second, third]));
+        rejected(ctx.helper(site, LIBRARY, args));
+        let count = second as usize;
+        if count <= 3 && first == ctx.arguments as u64 {
+            let mut words = [0; 3];
+            // SAFETY: the exact admitted lane is initialized by this actual
+            // call; the generic helper validates its pointer and arity again.
+            words[..count].copy_from_slice(unsafe { core::slice::from_raw_parts(ctx.arguments, count) });
+            words[0] = words[0].wrapping_add(1);
+            if mode == Mode::Corrupt {
+                // SAFETY: intentionally corrupt our own admitted token word.
+                unsafe { *ctx.arguments = words[0] };
+            } else {
+                rejected(ctx.call_retained_map(index, &words[..count]));
+            }
+        }
     }
-    // SAFETY: call the real canonical helper with every original operand.
+    let old_limits = ctx.limits;
+    if operation == MAP_OWNER_BEGIN && mode == Mode::RefuseEntry {
+        // Refuse fixed lane metadata without starving the canonical MOVE.
+        ctx.limits.max_temporary_bytes = Some(0);
+    }
+    // SAFETY: the original helper receives exactly this live admitted frame.
     let status = unsafe { helper(context, site, operation, first, second, third, result) };
-    if status == STATUS_OK && let Some(expected) = expected {
-        // SAFETY: the actual caller owns this same live result word.
-        if unsafe { *result } != expected { record(|r| r.mismatches += 1); }
+    let ctx = unsafe { &mut *context.cast::<Context<'_, '_>>() };
+    ctx.limits = old_limits;
+    if status == STATUS_OK {
+        if operation == MAP_OWNER_BEGIN {
+            if unsafe { *result } == 0 { record(|r| r.declined += 1); }
+            else { record(|r| r.entries += 1); }
+        } else if operation == MAP_OWNER_CALL {
+            let layout = descriptor.map_owner_words.as_ref().unwrap();
+            let region = &layout.regions()[selected_call.unwrap()];
+            if region.writes().contains(&(site as u32)) { record(|r| r.writes += 1); }
+            else { record(|r| r.reads += 1); }
+        } else if operation == MAP_OWNER_END { record(|r| r.exits += 1); }
+        if matches!(operation, MAP_OWNER_BEGIN | MAP_OWNER_CALL | MAP_OWNER_END) {
+            rejected(ctx.retained_map_helper(index, operation, args));
+        }
+        if mode == Mode::Abort && REPORT.with(|r| r.borrow().writes == 1) {
+            ctx.error = Some(invalid("injected retained map abort"));
+            return STATUS_ADMISSION;
+        }
     }
     status
 }
 
-fn run(
+fn run_expected(
     jit: &crate::native_artifact::JitProgramArtifact,
-    lane_descriptor: &NativeProgramDescriptor,
-    mode: Mode,
+    foreign: &NativeProgramDescriptor, mode: Mode, expected: &[(&str, u64)],
 ) -> Report {
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
     let mut outputs = vec![None; jit.descriptor().plan.transport_output_count()];
-    let mut state = None;
-    let mut setup_error = None;
     MODE.with(|slot| slot.set(mode));
+    FOREIGN.with(|slot| slot.set(foreign));
     REPORT.with(|report| *report.borrow_mut() = Report::default());
-    TOKENS.with(|tokens| *tokens.borrow_mut() = vec![0;
-        lane_descriptor.map_owner_words.as_ref().unwrap().regions().len()]);
     let entry = jit.test_checked_entry();
     let result = execute(jit.descriptor(), |raw| {
-        if state.is_none() && setup_error.is_none()
-            && !matches!(mode, Mode::SessionMirror | Mode::SessionRefuseEntry | Mode::SessionAbort) {
-            // SAFETY: the owning session supplies this exact Context and pins
-            // it through the actual generated entry, as in production.
-            let ctx = unsafe { &mut *(*raw).base.context.cast::<Context<'_, '_>>() };
-            let prepared = if mode == Mode::ForeignLedger {
-                let mut foreign = NativeWorkMeter::new(1_000_000_000).unwrap();
-                foreign.bind_memory_budget(&memory).unwrap();
-                State::new(lane_descriptor, &memory, &mut foreign,
-                    ctx.limits.max_temporary_bytes.unwrap())
-            } else {
-                State::new(lane_descriptor, &memory, &mut ctx.control.work,
-                    ctx.limits.max_temporary_bytes.unwrap())
-            };
-            match prepared {
-                Ok(lane) => state = Some(lane),
-                Err(error) => setup_error = Some(error),
-            }
-        }
-        if let Some(state) = &mut state {
-            OWNER.with(|slot| slot.set((state as *mut State<'_>).cast()));
-        }
-        // SAFETY: install the observation hook around the actual immutable
-        // checked code, then restore the original frame before return checks.
+        // SAFETY: install observation only around the immutable checked entry,
+        // restoring the real helper before the session's frame checks.
         let previous = unsafe { (*raw).helper };
         unsafe { (*raw).helper = observe };
         let status = unsafe { entry(raw) };
         unsafe { (*raw).helper = previous };
-        OWNER.with(|slot| slot.set(core::ptr::null_mut()));
         status
     }, &[], &mut outputs, tests::limits(), &memory);
-    assert!(setup_error.is_none(), "{setup_error:?}");
-    if mode == Mode::SessionAbort {
+    if mode == Mode::Abort {
         assert!(format!("{:?}", result.unwrap_err()).contains("injected retained map abort"));
+    } else if mode == Mode::Corrupt {
+        assert!(result.is_err(), "corrupted native map token was accepted");
     } else {
         result.unwrap();
+        assert_eq!(map_pairs(outputs[0].as_ref().unwrap()), Some(expected.iter().map(|&(key, value)| (key.to_owned(), value)).collect()));
     }
-    drop((outputs, state));
+    drop(outputs);
+    FOREIGN.with(|slot| slot.set(core::ptr::null()));
     assert_eq!(memory.retained_snapshot_nodes(), 0);
     assert_eq!(memory.used_bytes(), 0);
     REPORT.with(|report| core::mem::take(&mut *report.borrow_mut()))
 }
-
+fn run(jit: &crate::native_artifact::JitProgramArtifact, foreign: &NativeProgramDescriptor, mode: Mode) -> Report {
+    run_expected(jit, foreign, mode, &[("opaque", 3)])
+}
 fn variants() -> [mech_engine::ProgramArtifact; 2] {
     let original = tests::artifact_source(include_str!("../../tests/fixtures/native/map-owner-binding-state.mec"));
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(
         &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
     [original, decoded]
 }
-
 #[test]
 fn actual_generated_visits_bind_tables_validate_calls_and_publish_equal_results() {
     for artifact in variants() {
-        let jit = crate::native_artifact::JitProgramArtifact::compile(
-            &artifact, &mech_stdlib::source_catalog()).unwrap();
-        let report = run(&jit, jit.descriptor(), Mode::Mirror);
+        let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let report = run(&jit, jit.descriptor(), Mode::Normal);
         assert!(report.errors.is_empty(), "{report:?}");
-        assert_eq!(report.mismatches, 0, "{report:?}");
-        assert_eq!(report.entries, 1);
-        assert_eq!(report.exits, 1);
-        assert_eq!(report.writes, 3);
+        assert_eq!((report.entries, report.exits, report.writes), (1, 1, 3));
         assert!(report.reads >= 3 && report.rejected >= 8, "{report:?}");
+        assert_eq!(report.canonical_map_calls, 0);
     }
 }
-
 #[test]
 fn actual_generated_visits_reject_foreign_descriptors_and_preserve_refused_entry() {
     for artifact in variants() {
-        let jit = crate::native_artifact::JitProgramArtifact::compile(
-            &artifact, &mech_stdlib::source_catalog()).unwrap();
-        let other = crate::native_artifact::JitProgramArtifact::compile(
-            &artifact, &mech_stdlib::source_catalog()).unwrap();
-        let foreign = run(&jit, other.descriptor(), Mode::ForeignDescriptor);
-        assert!(foreign.errors.is_empty(), "{foreign:?}");
-        assert_eq!(foreign.mismatches, 0);
-        assert!(foreign.rejected > 0);
-        assert_eq!(foreign.entries + foreign.writes + foreign.exits, 0);
-        let foreign_work = run(&jit, jit.descriptor(), Mode::ForeignLedger);
-        assert!(foreign_work.errors.is_empty(), "{foreign_work:?}");
-        assert_eq!(foreign_work.mismatches, 0);
-        assert!(foreign_work.rejected > 0);
-        assert_eq!(foreign_work.entries + foreign_work.writes + foreign_work.exits, 0);
-        let refused = run(&jit, jit.descriptor(), Mode::RefuseEntry);
-        assert!(refused.errors.is_empty(), "{refused:?}");
-        assert_eq!(refused.mismatches, 0);
-        assert_eq!(refused.declined, 1);
-        assert_eq!(refused.entries + refused.writes + refused.exits, 0);
-        assert!(refused.rejected > 0);
+        let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let other = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        for mode in [Mode::ForeignDescriptor, Mode::ForeignLedger, Mode::RefuseEntry] {
+            let report = run(&jit, other.descriptor(), mode);
+            assert!(report.errors.is_empty(), "{report:?}");
+            assert!(report.rejected > 0, "{report:?}");
+            if mode == Mode::RefuseEntry {
+                assert_eq!((report.declined, report.entries, report.writes, report.exits), (1, 0, 0, 0));
+                assert!(report.canonical_map_calls >= 3);
+            } else { assert_eq!((report.entries, report.exits, report.writes), (1, 1, 3)); }
+        }
     }
 }
-
 #[test]
 fn owning_session_lazily_admits_maps_and_retires_tables_without_external_owner() {
-    for artifact in variants() {
-        let jit = crate::native_artifact::JitProgramArtifact::compile(
-            &artifact, &mech_stdlib::source_catalog()).unwrap();
-        let report = run(&jit, jit.descriptor(), Mode::SessionMirror);
-        assert!(report.errors.is_empty(), "{report:?}");
-        assert_eq!(report.mismatches, 0, "{report:?}");
-        assert_eq!((report.entries, report.exits, report.writes), (1, 1, 3));
-        assert!(report.reads >= 3 && report.rejected >= 8, "{report:?}");
-        let refused = run(&jit, jit.descriptor(), Mode::SessionRefuseEntry);
-        assert!(refused.errors.is_empty(), "{refused:?}");
-        assert_eq!(refused.mismatches, 0, "{refused:?}");
-        assert_eq!(refused.declined, 1);
-        assert_eq!(refused.entries + refused.writes + refused.exits, 0);
-        assert!(refused.rejected > 0);
+    let base = include_str!("../../tests/fixtures/native/map-owner-binding-state.mec");
+    for count in [0u64, 3] {
+        let source = base.replace("index<u64>, counts<", "index<u64>, stamp<u64>, counts<")
+            .replace(":Next(0u64, initial)", ":Next(0u64, 7u64, initial)")
+            .replace(":Next(index, counts)", ":Next(index, stamp, counts)")
+            .replace(":Next(index + 1u64, retain(counts, index))", ":Next(index + 1u64, stamp + 2u64, retain(counts, index + stamp))")
+            .replace("#Build(empty, 3u64)", &format!("seeded := map/insert(map/insert(empty, \"opaque\", 5u64), \"seed\", 99u64)\n#Build(seeded, {count}u64)"));
+        let original = tests::artifact_source(&source);
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+        for artifact in [original, decoded] {
+            let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let report = run_expected(&jit, jit.descriptor(), Mode::Normal,
+                &[("opaque", if count == 0 { 5 } else { 35 }), ("seed", 99)]);
+            assert!(report.errors.is_empty(), "{report:?}");
+            assert_eq!((report.entries, report.exits, report.writes), (1, 1, count));
+            assert_eq!(report.canonical_map_calls, 0);
+        }
     }
 }
-
 #[test]
 fn owning_session_failure_retires_an_unpublished_live_table() {
     for artifact in variants() {
-        let jit = crate::native_artifact::JitProgramArtifact::compile(
-            &artifact, &mech_stdlib::source_catalog()).unwrap();
-        let report = run(&jit, jit.descriptor(), Mode::SessionAbort);
+        let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let report = run(&jit, jit.descriptor(), Mode::Abort);
         assert!(report.errors.is_empty(), "{report:?}");
-        assert_eq!(report.mismatches, 0, "{report:?}");
         assert_eq!((report.entries, report.writes, report.exits), (1, 1, 0));
     }
+}
+#[test]
+fn generated_corrupted_owner_words_fail_and_release_the_invocation() {
+    for artifact in variants() {
+        let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let report = run(&jit, jit.descriptor(), Mode::Corrupt);
+        assert!(report.errors.is_empty(), "{report:?}");
+        assert_eq!((report.entries, report.writes, report.exits), (1, 0, 0));
+    }
+}
+
+/// Observe the actual source-written counting procedure, not only the small
+/// ownership fixture. The caller checks every canonical key/value separately.
+pub(in crate::native_artifact::program_runtime) fn evaluate_count_case(
+    jit: &crate::native_artifact::JitProgramArtifact, inputs: &[Value],
+    outputs: &mut [Option<Value>], limits: NativeProgramExecutionLimits,
+    memory: &ManagedMemoryBudget, updates: u64,
+) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError> {
+    MODE.with(|slot| slot.set(Mode::Normal));
+    REPORT.with(|report| *report.borrow_mut() = Report::default());
+    let entry = jit.test_checked_entry();
+    let result = execute(jit.descriptor(), |raw| {
+        // SAFETY: this synchronous observation wrapper preserves the checked
+        // entry and restores its exact helper before immutable frame checks.
+        let previous = unsafe { (*raw).helper };
+        unsafe { (*raw).helper = observe };
+        let status = unsafe { entry(raw) };
+        unsafe { (*raw).helper = previous };
+        status
+    }, inputs, outputs, limits, memory)?;
+    let report = REPORT.with(|report| core::mem::take(&mut *report.borrow_mut()));
+    assert!(report.errors.is_empty(), "{report:?}");
+    assert_eq!((report.entries, report.exits, report.writes), (1, 1, updates), "{report:?}");
+    assert_eq!(report.canonical_map_calls, 0, "{report:?}");
+    Ok(result)
 }
