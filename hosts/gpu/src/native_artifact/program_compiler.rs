@@ -92,7 +92,7 @@ impl JitProgramArtifact {
             cranelift_jit::JITBuilder::with_flags(PROGRAM_CODEGEN_FLAGS, default_libcall_names())
                 .map_err(backend)?;
         let mut module = cranelift_jit::JITModule::new(builder);
-        let (function, stack, code) = super::iteration_compiler::define_cfg(
+        let (function, stack, code, _) = super::iteration_compiler::define_cfg(
             CodePlan::Program(&plan),
             ENTRY,
             VERSION,
@@ -158,6 +158,7 @@ pub struct NativeProgramObject {
     bytes: Vec<u8>,
     descriptor: NativeProgramDescriptor,
     identity: NativeProgramObjectIdentity,
+    codegen: super::iteration_compiler::CodegenReport,
 }
 impl NativeProgramObject {
     pub fn bytes(&self) -> &[u8] {
@@ -200,6 +201,7 @@ impl NativeProgramObject {
             "selected_matrix_join_regions": self.descriptor.selected_joins.regions.len(),
             "private_line_matrix_regions": self.descriptor.line_matrices.regions.len(),
             "compiled_header_continuation_regions": usize::from(self.descriptor.prefix.is_some()),
+            "compiled_source_edge_facts": &self.codegen.source_edge_facts,
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }
@@ -229,7 +231,7 @@ pub fn emit_program_object_with_limits(
         ObjectBuilder::new(isa, "mech_canonical_program", default_libcall_names())
             .map_err(backend)?,
     );
-    let (_, stack, code) = super::iteration_compiler::define_cfg(
+    let (_, stack, code, codegen) = super::iteration_compiler::define_cfg(
         CodePlan::Program(&plan),
         ENTRY,
         VERSION,
@@ -250,5 +252,6 @@ pub fn emit_program_object_with_limits(
         bytes: module.finish().emit().map_err(backend)?,
         descriptor,
         identity,
+        codegen,
     })
 }
