@@ -18,6 +18,10 @@ mod measurement;
 #[path = "native_live_measurement_tests.rs"]
 mod measurement_tests;
 
+#[cfg(all(test, any(feature = "full_source", feature = "full_compiler")))]
+#[path = "native_incremental_allowance_tests.rs"]
+mod incremental_allowance_tests;
+
 /// An optional optimization of this already-bound maintained leaf. A capacity
 /// refusal is sticky until the binding geometry itself is replaced.
 #[derive(Debug, Default)]
