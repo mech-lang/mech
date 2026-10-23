@@ -355,6 +355,7 @@ struct OwnedState<'a> {
     hash_table_updates: u64,
     packed_map_regions: u64,
     packed_map_updates: u64,
+    packed_ssa_regions: u64,
     consumed: bool,
     output_cursor: usize,
 }
@@ -564,6 +565,7 @@ impl<'a> Prepared<'a> {
                 hash_table_updates: 0,
                 packed_map_regions: 0,
                 packed_map_updates: 0,
+                packed_ssa_regions: 0,
                 consumed: false,
                 output_cursor: 0,
             }),
@@ -698,6 +700,7 @@ impl<'a> Prepared<'a> {
             hash_table_updates: state.hash_table_updates,
             packed_map_regions: state.packed_map_regions,
             packed_map_updates: state.packed_map_updates,
+            packed_ssa_regions: state.packed_ssa_regions,
         })
     }
 
@@ -939,6 +942,7 @@ impl<'a> Prepared<'a> {
             hash_table_updates: state.hash_table_updates,
             packed_map_regions: state.packed_map_regions,
             packed_map_updates: state.packed_map_updates,
+            packed_ssa_regions: state.packed_ssa_regions,
             window_region: None,
             window_hashes: None,
             borrowed_strings: None,
@@ -1114,6 +1118,7 @@ impl<'a> Prepared<'a> {
             hash_table_updates: context.hash_table_updates,
             packed_map_regions: context.packed_map_regions,
             packed_map_updates: context.packed_map_updates,
+            packed_ssa_regions: context.packed_ssa_regions,
             consumed: context.consumed,
             output_cursor: context.output_cursor,
         });

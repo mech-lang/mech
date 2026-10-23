@@ -79,7 +79,9 @@ fn selected_template(
 // IR35 binds a private storage pair and pinned String to closed map Tail bodies.
 // IR36 admits a closed map Tail within an ordinary suspended parent loop.
 // IR37 carries an invariant-width proof for generated private map storage.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 37;
+// IR38 versions closed packed bodies into native SSA while preserving the
+// original source CFG. Private op13 attests actual first-header selection.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 38;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -194,7 +196,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 37;
 // body. Both original visits, range charges and diagnostic origins remain.
 // Policy58 prepays bounded packed-map bodies and growth deltas on the same
 // finite account. Generated probes/stores retain every source operation.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 58;
+// Policy59 fences the SSA emission/protocol; existing finite body prices and
+// source-operation caps remain in force, including slow-path synchronization.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 59;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

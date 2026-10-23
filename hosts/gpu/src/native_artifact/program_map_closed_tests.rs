@@ -8,7 +8,7 @@ use std::cell::{Cell, RefCell};
 enum Mode { Native, Decline, OneShort, Renew, TightCall }
 #[derive(Default, Debug)]
 struct Observation {
-    entries: u64, packed: u64, guarded: u64, rejected: u64, errors: Vec<&'static str>, bound: [u64; 10],
+    entries: u64, packed: u64, guarded: u64, rejected: u64, errors: Vec<&'static str>, bound: [u64; 14],
 }
 thread_local! {
     static MODE: Cell<Mode> = const { Cell::new(Mode::Native) };
@@ -102,6 +102,8 @@ fn closed_map_binds_source_once_rejects_reentry_and_keeps_finite_fuel() {
                     assert_eq!(pairs, vec![(":a".into(), 14), ("ab".into(), 21), ("b:".into(), 14)]);
                     if mode == Mode::Native {
                         assert_eq!((report.packed_map_regions, report.packed_map_updates), (1, 7));
+                        assert_eq!(report.packed_ssa_regions, 1);
+                        assert_eq!(observed.bound[13], 1);
                         assert_eq!((observed.entries, observed.guarded, observed.rejected), (1, 0, 2));
                         // Existing keys run entirely in generated code; only
                         // the three distinct keys require storage insertion.
@@ -111,6 +113,7 @@ fn closed_map_binds_source_once_rejects_reentry_and_keeps_finite_fuel() {
                     }
                     else {
                         assert_eq!((report.packed_map_regions, report.packed_map_updates), (0, 0));
+                        assert_eq!(report.packed_ssa_regions, 0);
                         assert_eq!(observed.entries, 0); assert!(observed.guarded > 7);
                     }
                     visits.push(report.visits);
@@ -401,5 +404,60 @@ fn packed_map_checks_call_caps_only_for_executed_operations() {
                 assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
             }
         }
+    }
+}
+
+#[test]
+fn packed_ssa_preserves_carriers_across_refill_growth_and_branch_merges() {
+    let text = (0..4099).map(|index| char::from(b'a' + ((index * 7 + index / 26) % 26) as u8))
+        .collect::<String>();
+    let source = format!("{}\n#Count(\"{text}\", 3u64, {}u64, empty)\n",
+        structural_projection_tests::COUNT.replace("previous + 1u64", "previous + 7u64"), text.len());
+    let original = tests::artifact_source(&source);
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+    let mut expected = std::collections::BTreeMap::new();
+    for key in text.as_bytes().windows(3) {
+        *expected.entry(std::str::from_utf8(key).unwrap().to_owned()).or_insert(0u64) += 7;
+    }
+    assert!(expected.len() > 56, "fixture must cross several table growth boundaries");
+    for artifact in [original, decoded] {
+        let catalog = mech_stdlib::source_catalog();
+        let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        MODE.with(|v| v.set(Mode::Native));
+        OBS.with(|v| *v.borrow_mut() = Observation::default());
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let mut output = vec![None];
+        let entry = jit.test_checked_entry();
+        let mut limits = tests::limits();
+        // This larger fixture retains full-chain prices for thousands of
+        // updates. Keep finite bounds without changing the small cap tests.
+        limits.execution.max_work = 1 << 40;
+        limits.library.max_compute_work = Some(1 << 36);
+        limits.library.max_comparison_work = Some(1 << 34);
+        let report = execute(jit.descriptor(), |frame| {
+            // SAFETY: observe only this synchronous owned generated entry.
+            let old = unsafe { (*frame).helper };
+            unsafe { (*frame).helper = observe; }
+            let status = unsafe { entry(frame) };
+            unsafe { (*frame).helper = old; }
+            status
+        }, &[], &mut output, limits, &memory).unwrap();
+        let observed = OBS.with(|v| core::mem::take(&mut *v.borrow_mut()));
+        assert!(observed.errors.is_empty(), "{observed:?}");
+        assert_eq!((report.packed_map_regions, report.packed_ssa_regions,
+            report.packed_map_updates), (1, 1, (text.len() - 2) as u64));
+        assert_eq!(observed.bound[13], 1, "SSA must enter once, not once per traversal");
+        assert!(observed.bound[0] >= 5, "fixture must refill finite fuel repeatedly");
+        assert_eq!(observed.bound[7], expected.len() as u64);
+        assert_eq!(&observed.bound[1..7], &[0; 6]);
+        let ValueData::Map(map) = output[0].as_ref().unwrap().data() else { panic!("map"); };
+        let actual = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
+            (ValueData::String(key), ValueData::U64(value)) => (key.to_string(), *value),
+            _ => panic!("String/U64 map"),
+        }).collect::<std::collections::BTreeMap<_, _>>();
+        assert_eq!(actual, expected);
+        drop(output);
+        assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
     }
 }

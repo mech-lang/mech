@@ -13,6 +13,8 @@ pub(super) struct Owner<'plan> {
     // Private generated-code prefix. No source Value can carry this address.
     packed_frame: u64,
     packed: Option<PackedMap>,
+    packed_ssa_entered: bool,
+    header_site: usize,
     binding: Binding<'plan>,
     source: Value,
     range: &'plan NativePreparedLibraryCall,
@@ -37,6 +39,15 @@ impl Owner<'_> {
     fn call(&mut self, site: usize, op: u64, args: [u64; 3]) -> Result<u64, Error> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         super::super::map_closed_tests::record_bound_call(op);
+        if op == 13 {
+            let packed = self.packed.as_ref().ok_or_else(|| invalid("packed SSA entry without owner"))?;
+            if self.packed_ssa_entered || site != self.header_site || args != [0; 3]
+                || self.funded != 0 || self.updates != 0
+                || packed.funded() != 0 || packed.remaining() != 0 || packed.updates() != 0
+            { return Err(invalid("packed SSA entry is not the first header")); }
+            self.packed_ssa_entered = true;
+            return Ok(0);
+        }
         if op == 0 {
             if let Some(packed) = self.packed.as_mut() {
                 let count = packed.refill().map_err(storage_error)?;
@@ -247,7 +258,9 @@ impl<'plan> State<'plan> {
             }
         }
         let binding = self.slots[index].binding.take().unwrap();
-        let mut owner = Box::new(Owner { packed_frame: 0, packed, binding, source, range,
+        let mut owner = Box::new(Owner { packed_frame: 0, packed,
+            packed_ssa_entered: false, header_site: proof.tail.header() as usize,
+            binding, source, range,
             selection_site: span.selection_site() as usize, descriptor: self.descriptor,
             selector: None, selector_current: false, key: None, probe: None,
             work: ctx.library.clone(), limits: ctx.limits, outside_nodes,
@@ -282,7 +295,7 @@ impl<'plan, 'a> Context<'plan, 'a> {
         let index = self.control.descriptor.closed_tails.regions[region].map.unwrap();
         let state = self.map_owners.state.as_mut().ok_or_else(|| invalid("closed map session lost"))?;
         let owner = state.slots[index].closed.take().ok_or_else(|| invalid("closed map owner lost"))?;
-        let Owner { mut binding, packed, funded, mut updates, error, .. } = *owner;
+        let Owner { mut binding, packed, packed_ssa_entered, funded, mut updates, error, .. } = *owner;
         if let Some(error) = error { state.slots[index].binding = Some(binding); return Err(error); }
         let traversals = funded.checked_sub(remaining)
             .ok_or_else(|| invalid("closed map body fuel was renewed"))?;
@@ -301,6 +314,7 @@ impl<'plan, 'a> Context<'plan, 'a> {
         state.slots[index].binding = Some(binding);
         self.hash_table_updates = add(self.hash_table_updates, updates)?;
         if is_packed { self.packed_map_updates = add(self.packed_map_updates, updates)?; }
+        if packed_ssa_entered { self.packed_ssa_regions = add(self.packed_ssa_regions, 1)?; }
         Ok(traversals)
     }
 }
