@@ -22,6 +22,42 @@ empty<{string:u64}> := map/new()
 "#;
 
 #[test]
+fn native_unconditional_map_states_execute_without_source_boolean_expressions() {
+    let source = include_str!("../../tests/fixtures/native/map-state-two-updates.mec");
+    let original = tests::artifact_source(source);
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    assert_eq!(
+        bytes,
+        mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap()
+    );
+    for artifact in [original, decoded] {
+        assert!(
+            artifact
+                .schemas()
+                .entries()
+                .any(|entry| entry.schema().body() == &mech_core::SchemaBody::Bool)
+        );
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+        let mut outputs = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&[], &mut outputs, tests::limits(), &memory)
+            .unwrap();
+        assert_eq!(outputs.len(), 1);
+        let ValueData::Map(map) = outputs[0].as_ref().unwrap().data() else {
+            panic!("map");
+        };
+        assert_eq!(map.entries().len(), 2);
+        for (entry, (key, value)) in map.entries().iter().zip([("one", 11), ("two", 22)]) {
+            assert!(matches!((entry.key().data(), entry.value()),
+                (ValueData::String(actual), ValueData::U64(count)) if actual.as_ref() == key && *count == value));
+        }
+        drop((outputs, jit));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
 fn native_structural_map_states_execute_all_seven_counting_widths() {
     let widths = [1usize, 2, 3, 4, 6, 12, 18];
     let source = format!("{COUNT}\n#Count(text<string>, width<u64>, n<u64>, empty)\n");

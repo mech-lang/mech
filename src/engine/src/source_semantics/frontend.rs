@@ -1599,6 +1599,24 @@ impl SourceSchemas {
     ) -> Result<Self, SourceSemanticError> {
         let mut builder = SchemaTableBuilder::new();
         let mut insert = |draft: &SchemaDraft| retain_schema_tree(anchor, &mut builder, draft);
+        // Structural control introduces predicate values even when the source
+        // has no Boolean literal, comparison or explicit guard. Keep their
+        // canonical type in the schema closure instead of depending on an
+        // unrelated Boolean expression to happen to intern it.
+        if nodes.iter().any(|node| {
+            matches!(
+                &node.body,
+                PendingNodeBody::Match(_)
+                    | PendingNodeBody::Activation(_)
+                    | PendingNodeBody::Iteration(_)
+                    | PendingNodeBody::Comprehension(_)
+            )
+        }) {
+            insert(&SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Bool,
+            })?;
+        }
         let input_handles = inputs
             .iter()
             .map(|value| insert(&value.schema))

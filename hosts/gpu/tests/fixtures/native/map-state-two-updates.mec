@@ -1,0 +1,13 @@
++> map
+update(h<{string:u64}>) => (out<{string:u64}>) :=
+  one := map/insert(h, "one", 11u64)
+  out := map/insert(one, "two", 22u64).
+#Update(initial<{string:u64}>) => <{string:u64}>
+  | :Run(h<{string:u64}>)
+  | :Done(h<{string:u64}>).
+#Update(initial) -> :Run(initial)
+  :Run(h)
+    | * -> :Done(update(h))
+  :Done(h) => h.
+empty<{string:u64}> := map/new()
+#Update(empty)
