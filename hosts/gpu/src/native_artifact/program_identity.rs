@@ -156,7 +156,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 30;
 // on the same invocation ledger before publishing the bound value.
 // Policy42 retains admitted node witnesses and funds per-slot node metadata;
 // old Objects must not reuse the earlier snapshot/transport allocation prices.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 42;
+// Policy43 funds each snapshot owner's account-wide node witness claim. The
+// complete owner size, including that claim, remains part of byte admission.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 43;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

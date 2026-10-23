@@ -66,7 +66,7 @@ fn emitted_scanner_uses_no_matrix_and_preserves_owner_over_activation_and_errors
             let identity = *object.identity().bytes();
             assert_eq!(u64::from_le_bytes(identity[16..24].try_into().unwrap()), 30);
             assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 15);
-            assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 42);
+            assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 43);
             for (offset, preceding) in [
                 (16, 20u64),
                 (16, 21),
@@ -97,6 +97,7 @@ fn emitted_scanner_uses_no_matrix_and_preserves_owner_over_activation_and_errors
                 (32, 39),
                 (32, 40),
                 (32, 41),
+                (32, 42),
             ] {
                 let mut stale = identity;
                 stale[offset..offset + 8].copy_from_slice(&preceding.to_le_bytes());

@@ -182,10 +182,10 @@ impl Value {
             registration,
             schemas: admitted_schemas,
             required_bytes: _,
-            retained_nodes: _,
+            node_charge,
             reservation,
         } = ownership;
-        drop(registration);
+        drop((registration, node_charge));
         drop(schemas);
         Ok(StringOwnershipTransfer::Owned(OwnedSnapshotString {
             text: text.into_string(),
