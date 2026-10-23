@@ -118,7 +118,7 @@ fn mul(left: u64, right: u64) -> Result<u64, Error> {
     left.checked_mul(right)
         .ok_or_else(|| invalid("native collection size/work overflow"))
 }
-fn check(
+pub(super) fn check(
     origin: Origin,
     dimension: Dimension,
     required: u64,

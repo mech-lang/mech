@@ -137,7 +137,11 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 27;
 // complete weak identity shell before use. It never retains source payloads
 // or permissions; every call still pays the original full scan bound and
 // validates its fresh owners, shapes and finite limits on the same ledger.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 37;
+// Policy38 retains actual library hash-table updates for compiled ASCII
+// windows instead of dense or query-only counters. Growth, collisions and
+// ownership remain finite on the original invocation account. ABI13 binds the
+// new private accumulator/callback loans and rejects preceding Object images.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 38;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

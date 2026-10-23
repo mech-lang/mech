@@ -861,6 +861,7 @@ impl<'a> Prepared<'a> {
             error: None,
             activation_phase: phase == PHASE_ACTIVATION,
             window_region: None,
+            window_hashes: None,
             borrowed_strings: None,
             closed_tail: None,
             selected_join: None,
@@ -894,7 +895,8 @@ impl<'a> Prepared<'a> {
         if let Some(error) = context.error.take() {
             return Err(error);
         }
-        if context.window_region.is_some()
+        if context.window_hashes.is_some()
+            || context.window_region.is_some()
             || context.borrowed_strings.is_some()
             || context.closed_tail.is_some()
             || context.selected_join.is_some()
