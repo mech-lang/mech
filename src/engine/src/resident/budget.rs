@@ -1626,14 +1626,40 @@ impl KernelCostEstimate {
         } else {
             self.checked()?;
         }
-        Ok(MAX_RESIDENT_COMPARISON_WORK
+        // A native invocation may carry a different finite policy from the
+        // resident default. Its already-admitted plan remains the authority;
+        // subtracting a large successful prefix from the default profile can
+        // otherwise reject an unrelated scalar finalization as InvalidShape.
+        let (compute, comparison) = with_active_turn_plan(|active| {
+            active.as_ref().map_or((MAX_RESIDENT_COMPUTE_WORK, MAX_RESIDENT_COMPARISON_WORK),
+                |plan| (plan.budget_limits.max_compute_work.unwrap_or(MAX_RESIDENT_COMPUTE_WORK),
+                    plan.budget_limits.max_comparison_work.unwrap_or(MAX_RESIDENT_COMPARISON_WORK)))
+        });
+        let remaining = comparison
             .checked_sub(self.comparison_work())
             .ok_or(ResidentKernelError::InvalidShape)?
             .min(
-                MAX_RESIDENT_COMPUTE_WORK
+                compute
                     .checked_sub(self.compute_work())
                     .ok_or(ResidentKernelError::InvalidShape)?,
-            ))
+            );
+        // The call policy cannot replenish its enclosing cumulative account or
+        // a tighter nested call. The planning check above charged this prefix;
+        // only the currently remaining finite allowance may reach a finalizer.
+        CONTROL_WORK_SCOPE.with(|scope| {
+            let scope = scope.borrow();
+            let Some(scope) = scope.as_ref() else { return Ok(remaining); };
+            let account = scope.total.borrow();
+            let (root_compute, root_comparison) = CONTROL_ROOT_LIMITS.with(|limits| limits.get())
+                .unwrap_or((account.compute_limit, account.comparison_limit));
+            let compute = account.compute_limit.min(root_compute)
+                .checked_sub(account.used.compute).and_then(|n| n.checked_sub(account.reserved.compute))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let comparison = account.comparison_limit.min(root_comparison)
+                .checked_sub(account.used.comparison).and_then(|n| n.checked_sub(account.reserved.comparison))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            Ok(remaining.min(compute).min(comparison))
+        })
     }
 }
 
@@ -3802,6 +3828,43 @@ mod tests {
             .unwrap(),
             3,
         );
+    }
+
+    #[test]
+    fn incremental_finalization_uses_large_finite_plan_and_rejects_actual_cap() {
+        let mut plan = detached_turn_plan(ResourceDemand::default()).unwrap();
+        plan.budget_limits.max_compute_work = Some(MAX_RESIDENT_COMPUTE_WORK + 4096);
+        plan.budget_limits.max_comparison_work = Some(4096);
+        let prefix = MAX_RESIDENT_COMPUTE_WORK + 1;
+        let schema = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
+        let value = ValueData::U64(37);
+        with_resident_turn_plan(plan.clone(), || {
+            let mut meter = ResidentBudgetMeter::default();
+            meter.charge_compute_work(prefix).unwrap();
+            preflight_canonical_data_finalization(&mut meter, &schema, &value).unwrap();
+            assert!(meter.estimate().compute_work() > prefix);
+        });
+        plan.budget_limits.max_compute_work = Some(prefix);
+        with_resident_turn_plan(plan, || {
+            let mut meter = ResidentBudgetMeter::default();
+            meter.charge_compute_work(prefix).unwrap();
+            assert!(matches!(preflight_canonical_data_finalization(&mut meter, &schema, &value),
+                Err(ResidentKernelError::ResourceLimit {
+                    dimension: mech_core::MemoryBudgetDimension::ComputeWork, ..
+                })));
+            assert_eq!(meter.estimate().compute_work(), prefix);
+        });
+    }
+
+    #[test]
+    fn incremental_allowance_keeps_finite_defaults_for_unspecified_plan_bounds() {
+        let mut plan = detached_turn_plan(ResourceDemand::default()).unwrap();
+        plan.budget_limits.max_compute_work = None;
+        plan.budget_limits.max_comparison_work = None;
+        with_resident_turn_plan(plan, || {
+            assert_eq!(KernelCostEstimate::default().remaining_incremental_work().unwrap(),
+                MAX_RESIDENT_COMPUTE_WORK.min(MAX_RESIDENT_COMPARISON_WORK));
+        });
     }
 
     #[test]
