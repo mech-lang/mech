@@ -158,7 +158,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 30;
 // old Objects must not reuse the earlier snapshot/transport allocation prices.
 // Policy43 funds each snapshot owner's account-wide node witness claim. The
 // complete owner size, including that claim, remains part of byte admission.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 43;
+// Policy44 removes the superseded per-slot node census. The account-wide
+// snapshot claim still covers admitted owners, including caller-held roots.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 44;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
