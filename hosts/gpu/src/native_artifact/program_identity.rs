@@ -67,7 +67,8 @@ fn selected_template(
 // authenticate Objects emitted before the corrected retention instructions.
 // IR27 pins the optional sole-use Range producer/endpoints/inclusivity in the
 // selected matrix-join proof. The three original LibraryCall visits remain.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 27;
+// IR28 pins funded canonical child bindings in structural patterns.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 28;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -147,7 +148,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 27;
 // Policy40 batches at most 128 initialized rolling keys in descriptor-admitted
 // stack storage. ABI15 binds the private batch callback contract; every key
 // retains its original table update and finite accounting.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 40;
+// Policy41 admits canonical structural child measurement, copying and finalization
+// on the same invocation ledger before publishing the bound value.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 41;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -440,6 +443,9 @@ pub(super) fn typed_ir_sha256(
                     }
                 }
                 match observation {
+                    mech_engine::native_artifact::NativeStructuralObservation::CanonicalValue => {
+                        hash.update([3]);
+                    }
                     mech_engine::native_artifact::NativeStructuralObservation::U64 => {
                         hash.update([0])
                     }

@@ -19,6 +19,8 @@ mod live;
     any(feature = "pure_text", feature = "map_ops")
 ))]
 pub(crate) mod native_collection_calls;
+#[cfg(all(feature = "native-artifact", any(feature = "pure_text", feature = "map_ops")))]
+pub(crate) mod native_structural_projection;
 #[cfg(all(
     feature = "native-artifact",
     any(feature = "pure_text", feature = "map_ops")

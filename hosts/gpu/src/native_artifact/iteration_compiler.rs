@@ -811,13 +811,15 @@ pub(super) fn define_cfg<M: Module>(
                         .ok_or_else(|| backend("structural observation without managed hooks"))?;
                     let zero = b.ins().iconst(types::I64, 0);
                     hooks.call(&mut b, index, 0xffff_ffff_ffff_fff0, [zero; 3], error);
-                    let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
-                    b.ins().store(
-                        MemFlags::new(),
-                        word,
-                        locals,
-                        offset(output.get() as usize)?,
-                    );
+                    if plan.kind(*output).is_some() {
+                        let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+                        b.ins().store(
+                            MemFlags::new(),
+                            word,
+                            locals,
+                            offset(output.get() as usize)?,
+                        );
+                    }
                 }
                 NativeIterationAction::LibraryCall {
                     operands, output, ..

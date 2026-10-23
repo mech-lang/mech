@@ -254,9 +254,16 @@ impl Builder<'_> {
                 let ty = self.type_for_schema(*schema)?;
                 if ty.definition().body() != body
                     || !ty.definition().dimension_parameters().is_empty()
-                    || *body != SchemaBody::UnsignedInteger(IntegerWidth::W64)
                 {
-                    return Err(unsupported(owner, "non-U64 structural native binding"));
+                    return Err(unsupported(owner, "incompatible structural native binding"));
+                }
+                if *body != SchemaBody::UnsignedInteger(IntegerWidth::W64)
+                    && !crate::native_artifact::structural_values::supported(body)
+                {
+                    return Err(unsupported(
+                        owner,
+                        "structural child requires a native draft expansion witness",
+                    ));
                 }
                 let output = self.value(ty)?;
                 if bindings.insert(*local, output).is_some() {
@@ -266,7 +273,11 @@ impl Builder<'_> {
                 self.blocks[block as usize].action = NativeIterationAction::Structural {
                     source,
                     path: path.clone().into(),
-                    observation: NativeStructuralObservation::U64,
+                    observation: if *body == SchemaBody::UnsignedInteger(IntegerWidth::W64) {
+                        NativeStructuralObservation::U64
+                    } else {
+                        NativeStructuralObservation::CanonicalValue
+                    },
                     output,
                 };
                 self.link(tail, block);
