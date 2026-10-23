@@ -1,4 +1,4 @@
-//! Explicit program IR/ABI12 identity. No Debug or pointer serialization.
+//! Explicit program IR/ABI13 identity. No Debug or pointer serialization.
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
     NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind, NativeSelectedTextJoin,

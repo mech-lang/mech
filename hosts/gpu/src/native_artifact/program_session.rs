@@ -292,6 +292,8 @@ struct OwnedState<'a> {
     previous: Option<u32>,
     completed: bool,
     visits: u64,
+    hash_table_regions: u64,
+    hash_table_updates: u64,
     consumed: bool,
     output_cursor: usize,
 }
@@ -494,6 +496,8 @@ impl<'a> Prepared<'a> {
                 previous: None,
                 completed: false,
                 visits: 0,
+                hash_table_regions: 0,
+                hash_table_updates: 0,
                 consumed: false,
                 output_cursor: 0,
             }),
@@ -638,6 +642,8 @@ impl<'a> Prepared<'a> {
             comparison_work: state.library.used().1,
             visits: state.visits,
             transport_bytes: self.bytes,
+            hash_table_regions: state.hash_table_regions,
+            hash_table_updates: state.hash_table_updates,
         })
     }
 
@@ -880,6 +886,8 @@ impl<'a> Prepared<'a> {
             output_cursor: state.output_cursor,
             error: None,
             activation_phase: phase == PHASE_ACTIVATION,
+            hash_table_regions: state.hash_table_regions,
+            hash_table_updates: state.hash_table_updates,
             window_region: None,
             window_hashes: None,
             borrowed_strings: None,
@@ -1062,6 +1070,8 @@ impl<'a> Prepared<'a> {
             previous: context.control.previous,
             completed: context.control.completed,
             visits: context.control.visits,
+            hash_table_regions: context.hash_table_regions,
+            hash_table_updates: context.hash_table_updates,
             consumed: context.consumed,
             output_cursor: context.output_cursor,
         });

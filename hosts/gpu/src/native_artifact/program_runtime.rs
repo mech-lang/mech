@@ -1,4 +1,4 @@
-//! Managed ABI12 invocation. This boundary never evaluates a graph: generated
+//! Managed ABI13 invocation. This boundary never evaluates a graph: generated
 //! blocks choose every successor and run every scalar/counter instruction.
 use super::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
@@ -114,6 +114,8 @@ pub struct NativeProgramExecutionReport {
     pub comparison_work: u64,
     pub visits: u64,
     pub transport_bytes: u64,
+    pub hash_table_regions: u64,
+    pub hash_table_updates: u64,
 }
 fn invalid(reason: &'static str) -> NativeProgramExecutionError {
     NativeExecutionError::Descriptor { reason }.into()
@@ -193,6 +195,8 @@ struct Context<'plan, 'visit> {
     output_cursor: usize,
     error: Option<NativeProgramExecutionError>,
     activation_phase: bool,
+    hash_table_regions: u64,
+    hash_table_updates: u64,
     window_region: Option<(u32, u64)>,
     window_hashes: Option<Box<window_round::hashes::WindowHashes>>,
     prefix: Option<prefix::State>,
@@ -3425,7 +3429,7 @@ mod tests {
                             *frame.arguments = 1;
                         }
                     }
-                    // SAFETY: arguments remain within the retained ABI12 boundary;
+                    // SAFETY: arguments remain within the retained ABI13 boundary;
                     // wrong metadata/pointer is rejected before dereference.
                     let status = unsafe {
                         (frame.helper)(
@@ -4248,8 +4252,8 @@ mod tests {
         }
     }
     #[test]
-    fn abi12_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 12);
+    fn abi13_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
+        assert_eq!(VERSION, 13);
         assert_eq!(super::super::program_abi::PHASE_CAPTURE_TAIL, 3);
         assert_eq!(super::super::program_abi::STATUS_INPUT_SCANNED, 7);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);

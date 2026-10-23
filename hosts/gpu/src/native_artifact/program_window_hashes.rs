@@ -6,7 +6,7 @@ use hashbrown::HashMap;
 use mech_core::{ManagedMemoryReservation, MemoryBudgetDimension as Dimension};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchOrigin};
 
-pub(super) const MAX_WIDTH: u64 = 18;
+pub(super) const MAX_WIDTH: u64 = (u128::BITS / 7) as u64;
 
 pub(in crate::native_artifact::program_runtime) struct WindowHashes {
     // Drop actual owners before releasing the corresponding reservations.
@@ -190,6 +190,10 @@ impl WindowHashes {
             ));
         }
         Ok(())
+    }
+
+    pub(super) fn completed_updates(&self) -> u64 {
+        self.updated
     }
 
     pub(super) fn count(&self, query: &[u8]) -> Result<u64, Error> {
