@@ -9,6 +9,7 @@ const MAX_SUBSTITUTIONS: usize = 4096;
 pub(in crate::native_artifact) struct CodegenReport {
     pub source_edge_facts: EdgeFacts,
     pub tag_threading: TagThreading,
+    pub frame_effects: FrameEffects,
     substitutions: usize,
     tag_records: usize,
 }
@@ -53,7 +54,37 @@ struct TagRegion {
     known_latches: Vec<usize>,
 }
 
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct FrameEffects { complete: bool, regions: Vec<FrameRegion> }
+impl Default for FrameEffects {
+    fn default() -> Self { Self { complete: true, regions: Vec::new() } }
+}
+#[derive(serde::Serialize)]
+struct FrameRegion { header: usize, operations: Vec<FrameOperation> }
+#[derive(serde::Serialize)]
+struct FrameOperation {
+    operation: u64,
+    // Number of emitted calls, including separate versions of a source site.
+    // These are compile receipts, not runtime execution counts.
+    emitted_calls: u64,
+    stored_words: Vec<usize>,
+    reloaded_words: Vec<usize>,
+}
+
 impl CodegenReport {
+    /// Constant-size per-region counts accumulated only at actual narrow
+    /// synchronization emissions. Each private op contributes at most once.
+    pub fn frame_effects(&mut self, header: usize, operations: Vec<(u64, u64, u64, u64)>) {
+        if self.frame_effects.regions.len() == MAX_REGIONS || operations.len() > 14 {
+            self.frame_effects.complete = false;
+            return;
+        }
+        let words = |mask: u64| (0..64).filter(|&word| mask & (1u64 << word) != 0).collect();
+        self.frame_effects.regions.push(FrameRegion { header, operations: operations.into_iter()
+            .map(|(operation, emitted_calls, before, after)| FrameOperation {
+                operation, emitted_calls, stored_words: words(before), reloaded_words: words(after),
+            }).collect() });
+    }
     /// Called after emitting the complete selected product graph. Source
     /// sites may repeat because distinct tag versions retain the same origin.
     pub fn tag_threading(&mut self, header: usize, carrier_word: usize, variants: Vec<u32>,
@@ -128,5 +159,15 @@ mod tests {
         report.tag_threading(1, 2, vec![0, 1], 32, 64, 3, vec![9], vec![10]);
         assert!(!report.tag_threading.complete);
         assert_eq!(report.tag_threading.regions.len(), 1, "bounded receipt must flag incomplete coverage");
+        let mut report = CodegenReport::default();
+        for header in 0..MAX_REGIONS { report.frame_effects(header, vec![(0, 3, 8, 16)]); }
+        assert!(report.frame_effects.complete);
+        report.frame_effects(MAX_REGIONS, vec![]);
+        assert!(!report.frame_effects.complete);
+        assert_eq!(report.frame_effects.regions.len(), MAX_REGIONS);
+        let mut report = CodegenReport::default();
+        report.frame_effects(0, vec![(0, 1, 0, 0); 15]);
+        assert!(!report.frame_effects.complete);
+        assert!(report.frame_effects.regions.is_empty());
     }
 }

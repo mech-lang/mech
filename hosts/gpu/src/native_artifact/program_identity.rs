@@ -94,7 +94,9 @@ fn selected_template(
 // IR45 threads exact enum tags through a bounded product CFG. Initial/unknown
 // tags still dispatch, and all original header debits and terminal visits run.
 // IR46 emits the ABI24 folded-product hash in generated packed probes.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 46;
+// IR47 synchronizes proved private helper read/write sets in packed SSA;
+// the ABI, source work, finite charges and full exit/error spills are unchanged.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 47;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

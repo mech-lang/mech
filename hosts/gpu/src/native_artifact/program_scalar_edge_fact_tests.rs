@@ -4,8 +4,32 @@ use super::*;
 use crate::native_artifact::program_compiler::packed_loop_codegen::{
     take_edge_fact_emissions, without_edge_facts,
     take_tag_thread_emissions, without_tag_threading,
+    take_frame_effect_emissions, without_frame_effects,
 };
 use crate::native_artifact::JitProgramArtifact;
+
+#[derive(Clone, Copy)]
+enum Pass { EdgeFacts, TagThreading, FrameEffects }
+impl Pass {
+    fn disabled<T>(self, f: impl FnOnce() -> T) -> T {
+        match self {
+            Self::EdgeFacts => without_edge_facts(f),
+            Self::TagThreading => without_tag_threading(f),
+            Self::FrameEffects => without_frame_effects(f),
+        }
+    }
+    fn check(self, edges: (usize, usize), tags: (usize, usize, usize), effects: (usize, usize, usize), selected: bool) {
+        match self {
+            Self::EdgeFacts if !selected => assert_eq!(edges, (0, 0)),
+            Self::TagThreading if selected => assert!(tags.0 > 0 && tags.1 >= 4 && tags.2 >= 2, "{tags:?}"),
+            Self::TagThreading => assert_eq!(tags, (0, 0, 0)),
+            Self::FrameEffects if selected => assert!(effects.0 > 0
+                && effects.1 < 14 * effects.0 && effects.2 < 14 * effects.0, "{effects:?}"),
+            Self::FrameEffects => assert_eq!(effects, (0, 0, 0)),
+            _ => {}
+        }
+    }
+}
 
 type PublicationFrontier = (u64, u64, u64, (u64, u64));
 thread_local! {
@@ -30,6 +54,56 @@ fn structural_report(report: &NativeProgramExecutionReport) -> [u64; 11] {
     [report.visits, report.transport_bytes, report.hash_table_regions, report.hash_table_updates,
         report.packed_map_regions, report.packed_map_updates, report.packed_ssa_regions,
         report.parallel_regions, report.parallel_batches, report.parallel_tasks, report.parallel_peak_workers]
+}
+
+#[test]
+fn object_metadata_records_actual_frame_sync_masks_and_disabled_absence() {
+    let artifact = tests::artifact_source(&format!("{}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n",
+        structural_projection_tests::COUNT));
+    let catalog = mech_stdlib::source_catalog();
+    take_frame_effect_emissions();
+    let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+    let actual = take_frame_effect_emissions();
+    let metadata = object.metadata();
+    let receipt = &metadata["compiled_frame_effects"];
+    assert_eq!(receipt["complete"], true);
+    let regions = receipt["regions"].as_array().unwrap();
+    assert_eq!(regions.len(), 1);
+    let tail = object.descriptor().closed_tails.regions.iter().find(|r| r.packed.is_some()).unwrap();
+    assert_eq!(regions[0]["header"], tail.tail.header());
+    let operations = regions[0]["operations"].as_array().unwrap();
+    assert!(operations.len() <= 14);
+    let mut totals = (0, 0, 0);
+    let mut seen = std::collections::BTreeSet::new();
+    for operation in operations {
+        let op = operation["operation"].as_u64().unwrap();
+        assert!(seen.insert(op));
+        let count = operation["emitted_calls"].as_u64().unwrap() as usize;
+        assert!(count > 0);
+        let (stores, loads): (&[u64], &[u64]) = match op {
+            0 => (&[3, 8], &[3, 7, 8]),
+            7 => (&[3, 4, 5, 6, 7, 8], &[0, 1, 2, 4, 7, 15, 16, 17, 18]),
+            6 | 8 | 9 => (&[], &[]),
+            10..=12 => (&[3, 8], &[]),
+            _ => panic!("unproved operation cannot claim narrow synchronization"),
+        };
+        assert_eq!(operation["stored_words"], serde_json::json!(stores));
+        assert_eq!(operation["reloaded_words"], serde_json::json!(loads));
+        totals.0 += count;
+        totals.1 += count * stores.len();
+        totals.2 += count * loads.len();
+    }
+    assert!(seen.contains(&0) && seen.contains(&7), "actual refill and insertion templates");
+    assert_eq!(totals, actual);
+    assert!(actual.1 < actual.0 * 14 && actual.2 < actual.0 * 14);
+    let plain = without_frame_effects(|| crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
+    assert_eq!(take_frame_effect_emissions(), (0, 0, 0));
+    let metadata = plain.metadata();
+    let regions = metadata["compiled_frame_effects"]["regions"].as_array().unwrap();
+    assert_eq!(metadata["compiled_frame_effects"]["complete"], true);
+    assert_eq!(regions.len(), 1);
+    assert!(regions[0]["operations"].as_array().unwrap().is_empty());
+    assert!(!metadata["compiled_tag_threading"]["regions"].as_array().unwrap().is_empty());
 }
 
 #[test]
@@ -179,13 +253,17 @@ fn object_metadata_records_actual_source_edge_substitutions_and_disabled_absence
 
 #[test]
 fn current_edge_facts_preserve_changed_inputs_source_names_and_exact_work() {
-    changed_input_equivalence(false);
+    changed_input_equivalence(Pass::EdgeFacts);
 }
 #[test]
 fn tag_threading_preserves_changed_inputs_source_names_and_exact_terminal_work() {
-    changed_input_equivalence(true);
+    changed_input_equivalence(Pass::TagThreading);
 }
-fn changed_input_equivalence(threading: bool) {
+#[test]
+fn frame_effects_preserve_changed_inputs_growth_refills_and_exact_work() {
+    changed_input_equivalence(Pass::FrameEffects);
+}
+fn changed_input_equivalence(pass: Pass) {
     // These are ordinary typed parameters, not constants captured from the
     // fixture or assertions that n equals this particular String's length.
     let body = structural_projection_tests::COUNT
@@ -199,28 +277,36 @@ fn changed_input_equivalence(threading: bool) {
         let catalog = mech_stdlib::source_catalog();
         take_edge_fact_emissions();
         take_tag_thread_emissions();
+        take_frame_effect_emissions();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let emitted = take_edge_fact_emissions();
         assert!(emitted.0 >= 8 && emitted.1 >= 4, "actual emitted guard/arithmetic substitutions: {emitted:?}");
         let selected = take_tag_thread_emissions();
-        if threading { assert!(selected.0 > 0 && selected.1 >= 4 && selected.2 >= 2, "actual tag product CFG: {selected:?}"); }
-        let unchanged = if threading {
-            without_tag_threading(|| JitProgramArtifact::compile(&artifact, &catalog))
-        } else { without_edge_facts(|| JitProgramArtifact::compile(&artifact, &catalog)) }.unwrap();
+        pass.check(emitted, selected, take_frame_effect_emissions(), true);
+        let unchanged = pass.disabled(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
         let unchanged_facts = take_edge_fact_emissions();
         let unchanged_tags = take_tag_thread_emissions();
-        if threading { assert_eq!(unchanged_tags, (0, 0, 0)); }
-        else { assert_eq!(unchanged_facts, (0, 0)); }
-        for (text, extent, n) in [
+        pass.check(unchanged_facts, unchanged_tags, take_frame_effect_emissions(), false);
+        let long_text = (0..4099).map(|index| char::from(b'a' + ((index * 7 + index / 26) % 26) as u8))
+            .collect::<String>();
+        let mut cases = vec![
             ("abcabc", 1u64, 6u64), ("abcabc", 2, 6), ("abcabc", 3, 5),
             ("zzzz", 2, 4), ("abcdefgh", 7, 8), ("a", 1, 1),
             ("abc", 2, 0), ("abc", 4, 3), ("", 1, 0),
             // Bounds must still use the actual selected source, not n.
             ("abc", 2, 4),
-        ] {
+        ];
+        if matches!(pass, Pass::FrameEffects) {
+            cases.push((long_text.as_str(), 3, long_text.len() as u64));
+            // Unknown ASCII domain at width18 requires both key words. They
+            // must survive refills although refill never reads either word.
+            cases.push((long_text.as_str(), 18, long_text.len() as u64));
+        }
+        for (text, extent, n) in cases {
             let mut executions = Vec::new();
             for jit in [&optimized, &unchanged] {
                 PUBLICATION_FRONTIERS.with(|records| records.borrow_mut().clear());
+                OBS.with(|records| *records.borrow_mut() = Observation::default());
                 let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
                 let inputs = artifact.inputs().iter().map(|input| {
                     let name = mech_engine::decode_source_input_name(&input.name).unwrap();
@@ -238,6 +324,12 @@ fn changed_input_equivalence(threading: bool) {
                 let mut outputs = vec![None];
                 let terminal = Cell::new(None);
                 let entry = jit.test_checked_entry();
+                let mut limits = tests::limits();
+                if text.len() > 4096 {
+                    limits.execution.max_work = 1 << 40;
+                    limits.library.max_compute_work = Some(1 << 36);
+                    limits.library.max_comparison_work = Some(1 << 34);
+                }
                 let outcome = execute(jit.descriptor(), |frame| {
                     // SAFETY: this is the owning, synchronous checked entry;
                     // the session's frame and context are live until return.
@@ -249,7 +341,17 @@ fn changed_input_equivalence(threading: bool) {
                     terminal.set(Some((status, (status != STATUS_OK).then(|| unsafe { (*frame).base.error_node }),
                         ctx.control.work.used(), ctx.library.used())));
                     status
-                }, &inputs, &mut outputs, tests::limits(), &memory);
+                }, &inputs, &mut outputs, limits, &memory);
+                if text.len() > 4096 {
+                    let actual = outcome.as_ref().expect("growth/refill equivalence must execute successfully");
+                    assert_eq!((actual.packed_ssa_regions, actual.packed_map_updates), (1, n - extent + 1));
+                    OBS.with(|records| {
+                        let records = records.borrow();
+                        let minimum_refills = (n - extent + 3 + 1023) / 1024;
+                        assert!(records.bound[0] >= minimum_refills && records.bound[7] > 56, "{records:?}");
+                        assert_eq!(&records.bound[1..7], &[0; 6]);
+                    });
+                }
                 let result = outcome.map_err(|error| format!("{error:?}"));
                 let pairs = outputs[0].as_ref().map(|value| {
                     let ValueData::Map(map) = value.data() else { panic!("map"); };
@@ -303,13 +405,17 @@ fn changed_input_equivalence(threading: bool) {
 
 #[test]
 fn current_edge_facts_keep_unproved_arithmetic_failures_at_original_sites() {
-    arithmetic_failure_equivalence(false);
+    arithmetic_failure_equivalence(Pass::EdgeFacts);
 }
 #[test]
 fn tag_threading_keeps_later_iteration_arithmetic_failures_at_original_sites() {
-    arithmetic_failure_equivalence(true);
+    arithmetic_failure_equivalence(Pass::TagThreading);
 }
-fn arithmetic_failure_equivalence(threading: bool) {
+#[test]
+fn frame_effects_keep_arithmetic_failures_and_full_error_spills() {
+    arithmetic_failure_equivalence(Pass::FrameEffects);
+}
+fn arithmetic_failure_equivalence(pass: Pass) {
     // The valid first iteration must not establish facts for a later visit.
     // Source mutations intentionally remove or weaken individual premises.
     let source = structural_projection_tests::COUNT;
@@ -330,17 +436,16 @@ fn arithmetic_failure_equivalence(threading: bool) {
         let catalog = mech_stdlib::source_catalog();
         take_edge_fact_emissions();
         take_tag_thread_emissions();
+        take_frame_effect_emissions();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        assert!(take_edge_fact_emissions().0 >= 6, "must actually remove dominated field guards");
+        let emitted = take_edge_fact_emissions();
+        assert!(emitted.0 >= 6, "must actually remove dominated field guards");
         let selected = take_tag_thread_emissions();
-        if threading { assert!(selected.0 > 0 && selected.1 >= 4 && selected.2 >= 2, "actual tag product CFG: {selected:?}"); }
-        let unchanged = if threading {
-            without_tag_threading(|| JitProgramArtifact::compile(&artifact, &catalog))
-        } else { without_edge_facts(|| JitProgramArtifact::compile(&artifact, &catalog)) }.unwrap();
+        pass.check(emitted, selected, take_frame_effect_emissions(), true);
+        let unchanged = pass.disabled(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
         let unchanged_facts = take_edge_fact_emissions();
         let unchanged_tags = take_tag_thread_emissions();
-        if threading { assert_eq!(unchanged_tags, (0, 0, 0)); }
-        else { assert_eq!(unchanged_facts, (0, 0)); }
+        pass.check(unchanged_facts, unchanged_tags, take_frame_effect_emissions(), false);
         let mut executions = Vec::new();
         for jit in [&optimized, &unchanged] {
             MODE.with(|mode| mode.set(Mode::Native));

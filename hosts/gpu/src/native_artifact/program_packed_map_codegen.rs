@@ -8,6 +8,8 @@ use cranelift_frontend::FunctionBuilder;
 #[path = "program_packed_frame_codegen.rs"]
 mod frame_state;
 pub(in crate::native_artifact) use frame_state::FrameState;
+#[cfg(test)]
+pub(in crate::native_artifact) use frame_state::{take_frame_effect_emissions, without_frame_effects};
 
 #[cfg(test)]
 #[path = "program_packed_hash_tests.rs"]
@@ -49,7 +51,7 @@ fn fail(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks, function
 }
 
 // A batch prepays root work, but an individual call limit applies only when
-// the source reaches that call. The owner refreshes these flags on growth;
+// the source reaches that call. The owner refreshes flags on every new key;
 // ordinary calls need only this branch, with diagnostics on the failure path.
 fn check_call(b: &mut FunctionBuilder<'_>, frame: &FrameState, allowed: Value, hooks: &Hooks,
     function: Value, context: Value, site: usize, op: u64, error: Block)
