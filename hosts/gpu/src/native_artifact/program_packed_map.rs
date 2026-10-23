@@ -70,6 +70,13 @@ pub(super) const SLOT_LOW: usize = 0;
 pub(super) const SLOT_HIGH: usize = 1;
 pub(super) const SLOT_VALUE: usize = 2;
 
+#[path = "program_packed_slots.rs"]
+mod payload;
+pub(super) use payload::{narrow, slot_bytes, value_offset};
+#[cfg(test)]
+use payload::NarrowSlot;
+use payload::Slots;
+
 /// Counts bound one complete acyclic source-body traversal, including branches
 /// not taken. These are descriptor-derived counts, never user-supplied fuel.
 #[derive(Clone, Copy, Debug)]
@@ -85,7 +92,7 @@ struct Price { compute: u64, comparison: u64 }
 pub(super) struct PackedMap {
     // Actual allocations retire before their reservations. The boxed frame
     // stays put when the containing closed-loop owner is moved into its Box.
-    slots: Vec<Slot>,
+    slots: Slots,
     controls: Vec<u8>,
     frame: Box<Frame>,
     backing: ManagedMemoryReservation,
@@ -126,8 +133,8 @@ pub(super) fn hash(low: u64, high: u64) -> u64 {
     value ^ (value >> 31)
 }
 fn fingerprint(hash: u64) -> u8 { (hash >> 57) as u8 }
-fn table_bytes(capacity: u64) -> Result<u64, Error> {
-    add(mul(capacity, size_of::<Slot>() as u64)?, add(capacity, (GROUP - 1) as u64)?)
+fn table_bytes(domain: Domain, capacity: u64) -> Result<u64, Error> {
+    add(mul(capacity, slot_bytes(domain) as u64)?, add(capacity, (GROUP - 1) as u64)?)
 }
 fn empty_controls(capacity: usize) -> Result<Vec<u8>, Error> {
     let count = capacity.checked_add(GROUP - 1).ok_or(Error::Overflow)?;
@@ -175,7 +182,7 @@ impl PackedMap {
         let (_, decode) = domain.tables();
         let key_bits = width * u64::from(domain.bits());
         let mut owner = Self {
-            slots: Vec::new(), controls: Vec::new(), frame: Box::new(Frame { slots: 0, capacity: 0, len: 0,
+            slots: Slots::new(domain, 0)?, controls: Vec::new(), frame: Box::new(Frame { slots: 0, capacity: 0, len: 0,
                 fuel: 0, updates: 0, key_low: 0, key_high: 0, entry_pointer: 0, entry_known: 0,
                 source_ptr: 0, source_len: 0, width, previous_start: u64::MAX,
                 low_mask: if key_bits < 64 { (1u64 << key_bits) - 1 } else { u64::MAX },
@@ -197,7 +204,8 @@ impl PackedMap {
     pub(super) fn remaining(&self) -> u64 { self.frame.fuel }
 
     fn validate_frame(&self) -> Result<(), Error> {
-        if self.frame.slots != self.slots.as_ptr() as u64
+        if self.frame.slots != self.slots.address()
+            || self.slots.is_narrow() != narrow(self.domain)
             || self.frame.controls != self.controls.as_ptr() as u64
             || self.frame.capacity != self.slots.len() as u64
             || !self.frame.capacity.is_power_of_two() || self.frame.capacity < 8
@@ -211,20 +219,17 @@ impl PackedMap {
     }
 
     fn allocate_initial(&mut self) -> Result<(), Error> {
-        let bytes = table_bytes(GROUP as u64)?;
+        let bytes = table_bytes(self.domain, GROUP as u64)?;
         check(add(self.work.memory_budget().used_bytes(), bytes)?,
             cap(self.limits.max_temporary_bytes)?, "temporary bytes")?;
         self.work.charge(add(mul(bytes, 32)?, 128)?, 0)?;
         let pending = self.metadata.budget().reserve_capacity(bytes)?;
-        let mut slots = Vec::new();
-        slots.try_reserve_exact(8).map_err(|_| Error::Allocation)?;
-        if slots.capacity() != 8 { return Err(Error::Allocation); }
-        slots.resize(8, Slot::default());
+        let slots = Slots::new(self.domain, GROUP)?;
         let controls = empty_controls(GROUP)?;
         self.slots = slots;
         self.controls = controls;
         self.backing = pending;
-        self.frame.slots = self.slots.as_mut_ptr() as u64;
+        self.frame.slots = self.slots.address_mut();
         self.frame.capacity = 8;
         self.frame.controls = self.controls.as_mut_ptr() as u64;
         Ok(())
@@ -328,7 +333,7 @@ impl PackedMap {
         }
         true
     }
-    fn probe(slots: &[Slot], controls: &[u8], low: u64, high: u64) -> Result<usize, Error> {
+    fn probe(slots: &Slots, controls: &[u8], low: u64, high: u64) -> Result<usize, Error> {
         let mask = slots.len().checked_sub(1).ok_or(Error::Binding("empty packed table"))?;
         if slots.len() < GROUP || !slots.len().is_power_of_two()
             || controls.len() != slots.len().checked_add(GROUP - 1).ok_or(Error::Overflow)? {
@@ -346,7 +351,7 @@ impl PackedMap {
             for (lane, &control) in group.iter().enumerate() {
                 if control == tag {
                     let at = (index + lane) & mask;
-                    let entry = &slots[at];
+                    let entry = slots.get(at);
                     if entry.low == low && entry.high == high { return Ok(at); }
                 } else if control > EMPTY {
                     return Err(Error::Binding("invalid packed-map control"));
@@ -396,7 +401,7 @@ impl PackedMap {
         let old_capacity = self.frame.capacity;
         let growth = self.frame.len == old_capacity / 8 * 7;
         let capacity = if growth { mul(old_capacity, 2)? } else { old_capacity };
-        let table_bytes = if growth { table_bytes(capacity)? } else { 0 };
+        let table_bytes = if growth { table_bytes(self.domain, capacity)? } else { 0 };
         if table_bytes > isize::MAX as u64 { return Err(Error::Overflow); }
         check(add(self.work.memory_budget().used_bytes(), table_bytes)?,
             cap(self.limits.max_temporary_bytes)?, "temporary bytes")?;
@@ -436,10 +441,7 @@ impl PackedMap {
         if growth {
             let reservation = memory.reserve_capacity(table_bytes)?;
             let count = usize::try_from(capacity).map_err(|_| Error::Overflow)?;
-            let mut slots = Vec::new();
-            slots.try_reserve_exact(count).map_err(|_| Error::Allocation)?;
-            if slots.capacity() != count { return Err(Error::Allocation); }
-            slots.resize(count, Slot::default());
+            let mut slots = Slots::new(self.domain, count)?;
             let mut controls = empty_controls(count)?;
             for (old_index, slot) in self.slots.iter().enumerate() {
                 let control = self.controls[old_index];
@@ -449,7 +451,7 @@ impl PackedMap {
                 }
                 let at = Self::probe(&slots, &controls, slot.low, slot.high)?;
                 if controls[at] != EMPTY { return Err(Error::Binding("duplicate retained packed-map entry")); }
-                slots[at] = *slot;
+                slots.put(at, slot);
                 set_control(&mut controls, count, at, control);
             }
             index = Self::probe(&slots, &controls, low, high)?;
@@ -461,15 +463,15 @@ impl PackedMap {
             self.slots = slots;
             self.controls = controls;
             self.backing = reservation;
-            self.frame.slots = self.slots.as_mut_ptr() as u64;
+            self.frame.slots = self.slots.address_mut();
             self.frame.controls = self.controls.as_mut_ptr() as u64;
             self.frame.capacity = capacity;
         }
-        self.slots[index] = Slot { low, high, value };
+        self.slots.put(index, Slot { low, high, value });
         set_control(&mut self.controls, self.slots.len(), index, fingerprint(hash(low, high)));
         self.frame.len = count;
         self.frame.updates = updates;
-        self.frame.entry_pointer = (&mut self.slots[index] as *mut Slot) as u64;
+        self.frame.entry_pointer = self.slots.entry_address(index);
         self.set_call_flags(flags);
         Ok(())
     }

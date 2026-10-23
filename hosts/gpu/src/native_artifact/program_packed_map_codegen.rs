@@ -1,7 +1,7 @@
 //! Generated storage operations over an invocation-owned explicit table layout.
 //! Source control flow and replacement arithmetic remain in the original CFG.
 use super::super::{NativeCompileError, compiler::offset, program_hooks::Hooks,
-    program_packed_map::{Frame, Slot, GROUP}, program_key_domain::Domain};
+    program_packed_map::{Frame, Slot, GROUP, narrow, slot_bytes, value_offset}, program_key_domain::Domain};
 use cranelift_codegen::ir::{Block, Endianness, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 
@@ -61,7 +61,7 @@ pub(super) fn select_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, star
     hooks: &Hooks, function: Value, context: Value, site: usize, error: Block)
 {
     let bits = i64::from(frame.domain.bits());
-    let narrow = u64::from(frame.domain.bits()) * super::super::program_packed_map::MAX_WIDTH <= 64;
+    let narrow = narrow(frame.domain);
     let allowed = read!(b, frame, range_call_allowed);
     check_call(b, frame, allowed, hooks, function, context, site, 10, error);
     let zero = b.ins().iconst(types::I64, 0);
@@ -180,7 +180,7 @@ fn control_group(b: &mut FunctionBuilder<'_>, address: Value, tag: Value) -> (Va
 fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     function: Value, context: Value, site: usize, error: Block) -> Value
 {
-    let narrow = u64::from(frame.domain.bits()) * super::super::program_packed_map::MAX_WIDTH <= 64;
+    let narrow = narrow(frame.domain);
     let zero = b.ins().iconst(types::I64, 0);
     let one = b.ins().iconst(types::I64, 1);
     let known = read!(b, frame, entry_known);
@@ -243,7 +243,7 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     let lane = b.ins().ushr_imm(bit, 3);
     let bucket = b.ins().iadd(index, lane);
     let bucket = b.ins().band(bucket, mask);
-    let address = b.ins().imul_imm(bucket, core::mem::size_of::<Slot>() as i64);
+    let address = b.ins().imul_imm(bucket, slot_bytes(frame.domain) as i64);
     let address = b.ins().iadd(slots, address);
     let stored_low = get(b, address, core::mem::offset_of!(Slot, low));
     let same_low = b.ins().icmp(IntCC::Equal, low, stored_low);
@@ -317,7 +317,7 @@ pub(super) fn operation_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, o
         b.ins().jump(done, &[token.into()]);
         b.switch_to_block(hit);
         let value = if op == 4 {
-            get(b, entry, core::mem::offset_of!(Slot, value))
+            get(b, entry, value_offset(frame.domain))
         } else {
             let updates = read!(b, frame, updates);
             let fits = b.ins().icmp_imm(IntCC::NotEqual, updates, -1);
@@ -328,7 +328,7 @@ pub(super) fn operation_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, o
             fail(b, frame, hooks, function, context, site, 9, error);
             b.ins().jump(accepted, &[]);
             b.switch_to_block(accepted);
-            put(b, entry, core::mem::offset_of!(Slot, value), replacement);
+            put(b, entry, value_offset(frame.domain), replacement);
             let updates = b.ins().iadd_imm(updates, 1);
             write!(b, frame, updates, updates);
             token
