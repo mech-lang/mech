@@ -11,6 +11,7 @@ pub(super) struct Owner<'plan> {
     binding: Binding<'plan>,
     source: Value,
     range: &'plan NativePreparedLibraryCall,
+    selection_site: usize,
     descriptor: &'plan crate::native_artifact::NativeProgramDescriptor,
     selector: Option<NativeSelectedStringSpanSelector>,
     selector_current: bool,
@@ -29,6 +30,8 @@ pub(super) struct Owner<'plan> {
 
 impl Owner<'_> {
     fn call(&mut self, site: usize, op: u64, args: [u64; 3]) -> Result<u64, Error> {
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        super::super::map_closed_tests::record_bound_call(op);
         if op == 0 {
             // A finite prepayment, never a renewed allowance. Unused final
             // batch fuel stays spent. Storage debits share this SAME account.
@@ -44,7 +47,7 @@ impl Owner<'_> {
             self.probe = None;
             return Ok(count);
         }
-        if op == 1 {
+        if op == 1 || op == 6 {
             let selector = self.work.with_call_limits(self.limits.max_compute_work.unwrap(),
                 self.limits.max_comparison_work.unwrap(), || {
                     self.work.charge(self.range.selected_u64_string_span_selector_work(), 0)
@@ -57,19 +60,23 @@ impl Owner<'_> {
             self.selector_current = true;
             self.key = None;
             self.probe = None;
-            return Ok(0);
+            if op == 1 { return Ok(0); }
         }
         let ValueData::String(text) = self.source.data() else {
             return Err(invalid("closed map lost pinned String"));
         };
-        if op == 2 {
+        if op == 2 || op == 6 {
             if !core::mem::take(&mut self.selector_current) {
                 return Err(invalid("closed map selection without current range"));
             }
             let selector = self.selector.as_ref()
                 .ok_or_else(|| invalid("closed map selection without range"))?;
+            // Fusion moves no fallible source instruction across this pair:
+            // only empty blocks/jumps intervene. Preserve the selection's
+            // original diagnostic origin after the range has succeeded.
+            let selection_site = if op == 6 { self.selection_site } else { site };
             let bad = || Error::Library {
-                origin: self.descriptor.plan.blocks()[site].origin(),
+                origin: self.descriptor.plan.blocks()[selection_site].origin(),
                 error: mech_engine::native_artifact::NativeCollectionInvocationError::Kernel(
                     mech_core::ResidentKernelError::InvalidInput),
             };
@@ -171,7 +178,8 @@ impl<'plan> State<'plan> {
         let outside_nodes = geometry.live_nodes.checked_sub(nodes)
             .and_then(|n| n.checked_add(bytes)).ok_or_else(|| invalid("closed map census overflow"))?;
         let binding = self.slots[index].binding.take().unwrap();
-        let mut owner = Box::new(Owner { binding, source, range, descriptor: self.descriptor,
+        let mut owner = Box::new(Owner { binding, source, range,
+            selection_site: span.selection_site() as usize, descriptor: self.descriptor,
             selector: None, selector_current: false, key: None, probe: None,
             work: ctx.library.clone(), limits: ctx.limits, outside_nodes,
             body_work: proof.compute, funded: 0, updates: 0, result: ctx.result,
