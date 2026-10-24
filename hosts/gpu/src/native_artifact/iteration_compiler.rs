@@ -231,7 +231,7 @@ fn load(
 
 #[path = "iteration_codegen_report.rs"]
 mod codegen_report;
-pub(super) use codegen_report::{CodegenReport, RegionToken, CfgCleanup, OutlinedLoop, InvariantLoop};
+pub(super) use codegen_report::{CodegenReport, RegionToken, CfgCleanup, OutlinedLoop, InvariantLoop, BoundCallShim, PreservingCallRegion};
 
 fn define<M: Module>(
     plan: &NativeIterationArtifactPlan,
@@ -414,7 +414,7 @@ pub(super) fn define_cfg<M: Module>(
         Vec::new()
     };
     #[cfg(feature = "canonical-native-program")]
-    let packed_functions = super::program_compiler::packed_loop_codegen::define_functions(
+    let (packed_functions, bound_call_shim) = super::program_compiler::packed_loop_codegen::define_functions(
         module, entry_symbol, plan, &closed, owner.as_ref(), &aggregates, limits, &mut report,
     )?;
     let mut signature_entry = module.make_signature();
@@ -1322,7 +1322,7 @@ pub(super) fn define_cfg<M: Module>(
                     .iter()
                     .map(|(_, _, stack, _)| *stack)
                     .chain(map_functions.iter().map(|(_, _, stack, _)| *stack))
-                    .chain(packed_functions.iter().map(|(_, _, stack, _)| *stack))
+                    .chain(packed_functions.iter().map(|(_, _, stack, _)| *stack + bound_call_shim.map_or(0, |shim| shim.stack)))
                     .max()
                     .unwrap_or(0),
             )
@@ -1332,7 +1332,7 @@ pub(super) fn define_cfg<M: Module>(
             .map(|(_, _, _, code)| *code)
             .chain(map_functions.iter().map(|(_, _, _, code)| *code))
             .chain(packed_functions.iter().map(|(_, _, _, code)| *code))
-            .try_fold(code, |total, code| total.checked_add(code))
+            .try_fold(code + bound_call_shim.map_or(0, |shim| shim.code), |total, code| total.checked_add(code))
             .ok_or_else(|| backend("compiled region code overflow"))?,
     );
     limit("Iteration stack", stack, limits.max_stack_bytes)?;

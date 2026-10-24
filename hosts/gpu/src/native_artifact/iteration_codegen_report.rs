@@ -15,11 +15,22 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub cfg_cleanup: Option<CfgCleanup>,
     pub outlined_loops: Vec<OutlinedLoop>,
     pub loop_invariants: Vec<InvariantLoop>,
+    pub bound_call_shim: Option<BoundCallShim>,
+    pub preserving_call_regions: Vec<PreservingCallRegion>,
     substitutions: usize,
     tag_records: usize,
     guarded_records: usize,
     lookup_records: usize,
     invariant_records: usize,
+}
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct BoundCallShim {
+    pub symbol: String, pub stack_bytes: u64, pub code_bytes: u64, pub template_bound: usize,
+}
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct PreservingCallRegion {
+    pub header: usize, pub emitted_calls: usize, pub maximum_source_template_work: usize,
+    pub extra_entry_work: usize,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct CfgCleanup {

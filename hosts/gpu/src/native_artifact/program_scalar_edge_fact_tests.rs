@@ -13,7 +13,7 @@ use crate::native_artifact::JitProgramArtifact;
 use crate::native_artifact::program_compiler::cfg_cleanup::{take_cfg_cleanup_emissions, without_cfg_cleanup};
 
 #[derive(Clone, Copy)]
-enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants }
+enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants, PreservingCalls }
 impl Pass {
     fn disabled<T>(self, f: impl FnOnce() -> T) -> T {
         match self {
@@ -24,6 +24,7 @@ impl Pass {
             Self::CfgCleanup => without_cfg_cleanup(f),
             Self::LoopOutlining => without_loop_outlining(f),
             Self::LoopInvariants => without_loop_invariants(f),
+            Self::PreservingCalls => crate::native_artifact::program_bound_shim::without_preserving_calls(f),
         }
     }
     fn check(self, edges: (usize, usize), tags: (usize, usize, usize), effects: (usize, usize, usize), selected: bool) {
@@ -31,7 +32,10 @@ impl Pass {
         let cfg = take_cfg_cleanup_emissions();
         let outlined = take_outline_emissions();
         let invariants = take_invariant_emissions();
+        let preserving = crate::native_artifact::program_bound_shim::take_emissions();
         match self {
+            Self::PreservingCalls if selected && cfg!(target_arch = "aarch64") => assert!(preserving > 0),
+            Self::PreservingCalls if !selected => assert_eq!(preserving, 0),
             Self::LoopInvariants if !selected => assert_eq!(invariants, (0, 0, 0)),
             Self::LoopOutlining if selected => assert!(outlined > 0),
             Self::LoopOutlining => assert_eq!(outlined, 0),
@@ -166,6 +170,51 @@ fn loop_outlining_metadata_and_total_stack_code_admission_include_owned_callees(
     assert!(crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits).is_err());
     let inline = without_loop_outlining(|| crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
     assert!(inline.metadata()["compiled_outlined_loops"].as_array().unwrap().is_empty());
+}
+
+#[test]
+fn preserving_calls_metadata_and_total_stack_code_include_the_nested_bridge() {
+    let artifact = tests::artifact_source(&format!("{}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n",
+        structural_projection_tests::COUNT));
+    let catalog = mech_stdlib::source_catalog();
+    let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+    let metadata = object.metadata();
+    let shim = &metadata["compiled_bound_call_shim"];
+    if !cfg!(target_arch = "aarch64") { assert!(shim.is_null()); return; }
+    assert!(shim["symbol"].as_str().unwrap().ends_with("_preserving_bound_call"));
+    assert_eq!(shim["template_bound"], 128);
+    assert!(shim["code_bytes"].as_u64().unwrap() / 4 <= 128);
+    assert!(shim["stack_bytes"].as_u64().unwrap() >= 16);
+    let regions = metadata["compiled_preserving_call_regions"].as_array().unwrap();
+    assert_eq!(regions.len(), 1);
+    let loops = metadata["compiled_outlined_loops"].as_array().unwrap();
+    assert_eq!(regions[0]["header"], loops[0]["header"]);
+    assert!(regions[0]["emitted_calls"].as_u64().unwrap() > 0);
+    assert!(regions[0]["maximum_source_template_work"].as_u64().unwrap() <= 512);
+    assert_eq!(regions[0]["extra_entry_work"], 128);
+    let stack = metadata["stack_bytes"].as_u64().unwrap();
+    let code = metadata["code_bytes"].as_u64().unwrap();
+    assert!(stack >= loops[0]["stack_bytes"].as_u64().unwrap() + shim["stack_bytes"].as_u64().unwrap() + 16);
+    assert!(code > loops[0]["code_bytes"].as_u64().unwrap() + shim["code_bytes"].as_u64().unwrap());
+    let mut limits = crate::native_artifact::NativeCompileLimits::default();
+    limits.max_stack_bytes = stack; limits.max_code_bytes = code;
+    assert!(crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits).is_ok());
+    limits.max_stack_bytes -= 1;
+    assert!(crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits).is_err());
+    limits.max_stack_bytes = stack; limits.max_code_bytes -= 1;
+    assert!(crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits).is_err());
+    let ordinary = crate::native_artifact::program_bound_shim::without_preserving_calls(||
+        crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
+    assert!(ordinary.metadata()["compiled_bound_call_shim"].is_null());
+    assert!(ordinary.metadata()["compiled_preserving_call_regions"].as_array().unwrap().is_empty());
+}
+#[test]
+fn preserving_calls_keep_changed_inputs_growth_refills_and_exact_work() {
+    changed_input_equivalence(Pass::PreservingCalls);
+}
+#[test]
+fn preserving_calls_keep_arithmetic_failures_and_declined_proofs_at_source_sites() {
+    arithmetic_failure_equivalence(Pass::PreservingCalls);
 }
 
 #[test]

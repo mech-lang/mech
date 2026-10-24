@@ -40,14 +40,20 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
     module: &mut M, entry_symbol: &str, code: CodePlan<'_>, closed: &Layout,
     owner: Option<&NativeMapOwnerWords>, aggregates: &NativeScalarAggregates,
     limits: NativeCompileLimits, report: &mut CodegenReport,
-) -> Result<Vec<(usize, FuncId, u64, u64)>, NativeCompileError> {
+) -> Result<(Vec<(usize, FuncId, u64, u64)>, Option<crate::native_artifact::program_bound_shim::Definition>), NativeCompileError> {
     #[cfg(test)]
-    if DISABLED.with(std::cell::Cell::get) { return Ok(Vec::new()); }
-    let Some(owner) = owner else { return Ok(Vec::new()); };
+    if DISABLED.with(std::cell::Cell::get) { return Ok((Vec::new(), None)); }
+    let Some(owner) = owner else { return Ok((Vec::new(), None)); };
     let mut functions = Vec::new();
+    let mut shim = None;
+    let mut attempted_shim = false;
     for (id, region) in closed.regions.iter().enumerate() {
         if functions.len() == MAX_FUNCTIONS { break; }
         let Some(slots) = eligible_slots(code, closed, id, owner, aggregates) else { continue; };
+        if !attempted_shim {
+            attempted_shim = true;
+            shim = crate::native_artifact::program_bound_shim::define(module, entry_symbol, limits, report)?;
+        }
         let site = region.tail.header() as usize;
         let symbol = format!("{entry_symbol}_packed_loop_{site}");
         let mut signature = module.make_signature();
@@ -72,6 +78,9 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             let exit = b.create_block();
             let hooks = Hooks::load(true, &mut b, module, args[0], args[5], error)?
                 .ok_or_else(|| backend("outlined packed loop requires installed hooks"))?;
+            let hooks = if let Some(shim) = shim {
+                hooks.with_bound_shim(&mut b, module, shim.function)
+            } else { hooks };
             // Cover the loader and both final returns in addition to the
             // separately bounded caller. The body itself checks the sum.
             let prefix_work = b.func.dfg.num_insts() + CALLER_TEMPLATE_BOUND + 3;
@@ -102,5 +111,5 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
         #[cfg(test)]
         EMISSIONS.with(|value| value.set(value.get() + 1));
     }
-    Ok(functions)
+    Ok((functions, shim))
 }

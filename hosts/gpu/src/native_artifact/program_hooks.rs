@@ -14,8 +14,28 @@ pub(super) struct Hooks {
     pub(super) arguments: Value,
     #[cfg(feature = "canonical-native-program")]
     argument_capacity: Value,
+    #[cfg(feature = "canonical-native-program")]
+    bound_shim: Option<(cranelift_codegen::ir::FuncRef, Value)>,
+    #[cfg(feature = "canonical-native-program")]
+    bound_shim_calls: std::cell::Cell<usize>,
 }
 impl Hooks {
+    #[cfg(feature = "canonical-native-program")]
+    pub(super) fn with_bound_shim<M: Module>(mut self, b: &mut FunctionBuilder<'_>, module: &mut M,
+        function: cranelift_module::FuncId) -> Self
+    {
+        use cranelift_codegen::ir::{StackSlotData, StackSlotKind};
+        let slot = b.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, 8, 3));
+        let status = b.ins().stack_addr(types::I64, slot, 0);
+        self.bound_shim = Some((module.declare_func_in_func(function, b.func), status));
+        self
+    }
+    #[cfg(feature = "canonical-native-program")]
+    pub(super) fn bound_shim_calls(&self) -> usize { self.bound_shim_calls.get() }
+    #[cfg(feature = "canonical-native-program")]
+    pub(super) fn bound_shim_work(&self) -> usize {
+        self.bound_shim_calls() * super::program_bound_shim::TEMPLATE_BOUND
+    }
     #[cfg(feature = "canonical-native-program")]
     pub fn require_argument_words(&self, b: &mut FunctionBuilder<'_>, count: usize, error: Block) {
         let enough = b.ins().icmp_imm(IntCC::UnsignedGreaterThanOrEqual, self.argument_capacity, count as i64);
@@ -40,9 +60,16 @@ impl Hooks {
     {
         let site = b.ins().iconst(types::I64, site as i64);
         let operation = b.ins().iconst(types::I64, operation as i64);
-        let call = b.ins().call_indirect(self.signature, function,
-            &[context, site, operation, args[0], args[1], args[2], self.result]);
-        let status = b.inst_results(call)[0];
+        let status = if let Some((shim, status)) = self.bound_shim {
+            b.ins().call(shim, &[function, context, site, operation, args[0], args[1], args[2], self.result, status]);
+            self.bound_shim_calls.set(self.bound_shim_calls.get() + 1);
+            super::program_bound_shim::note_call();
+            b.ins().load(types::I64, MemFlags::new(), status, 0)
+        } else {
+            let call = b.ins().call_indirect(self.signature, function,
+                &[context, site, operation, args[0], args[1], args[2], self.result]);
+            b.inst_results(call)[0]
+        };
         let ok = b.ins().icmp_imm(IntCC::Equal, status, 0);
         guard(b, ok, error, super::abi::STATUS_ADMISSION);
     }
@@ -213,6 +240,8 @@ impl Hooks {
                 result,
                 arguments,
                 argument_capacity,
+                bound_shim: None,
+                bound_shim_calls: std::cell::Cell::new(0),
             }))
         }
     }
