@@ -19,6 +19,7 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub preserving_call_regions: Vec<PreservingCallRegion>,
     pub mutation_loops: Vec<MutationLoop>,
     pub count_value_loops: Vec<CountValueLoop>,
+    pub loop_constants: LoopConstants,
     substitutions: usize,
     tag_records: usize,
     guarded_records: usize,
@@ -62,6 +63,8 @@ pub(in crate::native_artifact) struct CfgCleanup {
 pub(in crate::native_artifact) struct OutlinedLoop {
     pub header: usize, pub symbol: String, pub stack_bytes: u64, pub code_bytes: u64,
     pub caller_template_bound: usize, pub cleanup: CfgCleanup,
+    pub constant_packet_bytes: u32, pub constant_endpoint_words: Option<[usize; 2]>,
+    pub emitted_hash_constant_loads: usize, pub emitted_endpoint_loads: usize,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct InvariantLoop {
@@ -71,7 +74,20 @@ pub(in crate::native_artifact) struct InvariantLoop {
     pub steady_latches: Vec<(usize, usize)>, pub refreshes: Vec<(usize, usize)>,
     pub fixed_template_work: usize,
 }
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct LoopConstants { complete: bool, callers: Vec<ConstantCaller> }
+impl Default for LoopConstants { fn default() -> Self { Self { complete: true, callers: Vec::new() } } }
+#[derive(serde::Serialize)]
+struct ConstantCaller {
+    header: usize, stack_bytes: u32, endpoint_words: Option<[usize; 2]>,
+    hash_values: [u64; 2], template_instructions: usize,
+}
 impl CodegenReport {
+    pub fn loop_constant_caller(&mut self, header: usize, stack_bytes: u32, endpoint_words: Option<[usize; 2]>, template_instructions: usize) {
+        if self.loop_constants.callers.len() == MAX_REGIONS { self.loop_constants.complete = false; return; }
+        self.loop_constants.callers.push(ConstantCaller { header, stack_bytes, endpoint_words,
+            hash_values: [super::super::program_packed_map::HASH_FIRST, super::super::program_packed_map::HASH_SECOND], template_instructions });
+    }
     pub fn reserve_count_value_region(&mut self, records: usize) -> bool {
         if self.count_value_loops.len() >= MAX_REGIONS
             || self.count_value_records.saturating_add(records) > MAX_SUBSTITUTIONS { return false; }

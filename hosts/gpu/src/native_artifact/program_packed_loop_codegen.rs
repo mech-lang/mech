@@ -31,6 +31,10 @@ mod invariants;
 mod mutation_facts;
 #[path = "program_loop_count_bounds.rs"]
 mod count_bounds;
+#[path = "program_loop_constants.rs"]
+mod loop_constants;
+#[cfg(test)]
+pub(in crate::native_artifact) use loop_constants::{take_constant_emissions, without_loop_constants};
 pub(in crate::native_artifact) use invariants::enabled as invariant_loops_enabled;
 #[cfg(test)]
 pub(in crate::native_artifact) use invariants::{take_invariant_emissions, without_loop_invariants};
@@ -362,18 +366,27 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
     // One actual-selection receipt per versioned region, never per iteration.
     hooks.bound_call(b, function, context, site, 13, [zero; 3], error);
     if let Some(function_ref) = outlined {
-        let call = b.ins().call(function_ref, &[frame, locals, pointer, function, context, user_context]);
+        let endpoint = loop_constants::enabled().then(|| loop_constants::endpoint_words(code, closed, id, owner, aggregates, &slots)).flatten();
+        let mut arguments = vec![frame, locals, pointer, function, context, user_context];
+        if loop_constants::enabled() {
+            arguments.push(loop_constants::bind(b, locals, code, endpoint)?);
+        }
+        let call = b.ins().call(function_ref, &arguments);
         let status = b.inst_results(call)[0];
         let ok = b.ins().icmp_imm(IntCC::Equal, status, 0);
         b.ins().brif(ok, ordinary_blocks[region.tail.exit() as usize].unwrap(), &[], error, &[status.into()]);
-        if b.func.dfg.num_insts() - entry_template_start > outlined::CALLER_TEMPLATE_BOUND {
+        let caller_work = b.func.dfg.num_insts() - entry_template_start;
+        if loop_constants::enabled() {
+            report.loop_constant_caller(site, loop_constants::BYTES, endpoint, caller_work);
+        }
+        if caller_work > outlined::CALLER_TEMPLATE_BOUND {
             return Err(backend("outlined packed loop caller exceeds fixed template"));
         }
     } else {
         let prefix_work = b.func.dfg.num_insts() - entry_template_start;
         emit_body(b, frame, locals, pointer, function, context, code, closed, id, owner,
             aggregates, slots, hooks, ordinary_blocks[region.tail.exit() as usize].unwrap(),
-            error, prefix_work, report)?;
+            error, prefix_work, None, report)?;
     }
     b.switch_to_block(ordinary);
     Ok(())
@@ -392,7 +405,7 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     function: Value, context: Value, code: CodePlan<'_>, closed: &Layout, id: usize,
     owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates,
     slots: BTreeSet<usize>, hooks: &Hooks, source_exit: Block, error: Block,
-    entry_prefix_work: usize, report: &mut CodegenReport) -> Result<(), NativeCompileError>
+    entry_prefix_work: usize, constant_packet: Option<Value>, report: &mut CodegenReport) -> Result<(usize, usize), NativeCompileError>
 {
     let region = &closed.regions[id];
     let site = region.tail.header() as usize;
@@ -426,7 +439,9 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     let owner_index = region.map.unwrap();
     let setup = b.func.dfg.num_insts();
     let words = Words::new(b, locals, code, slots)?;
-    let packed = FrameState::registers(b, pointer, region.packed.as_ref().unwrap().packing_domain());
+    let packed = FrameState::registers(b, pointer, region.packed.as_ref().unwrap().packing_domain())
+        .with_constant_packet(constant_packet);
+    let endpoint_loads = usize::from(constant_packet.is_some() && bounds.is_some());
     let entry_work = (b.func.dfg.num_insts() - setup) as u64;
     // The existing closed-body envelope includes 1024 fixed units per
     // traversal. Keep the original setup bound; check all fixed templates below.
@@ -474,8 +489,12 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         }
         // Wrapping arithmetic has no source effect on the declined branch.
         // In the selected branch, 1<=width<=limit proves this exact endpoint.
-        let end = b.ins().isub(limit, width);
-        let end = b.ins().iadd_imm(end, 1);
+        let end = if let Some(packet) = constant_packet {
+            b.ins().load(types::I64, MemFlags::new().with_readonly(), packet, 16)
+        } else {
+            let end = b.ins().isub(limit, width);
+            b.ins().iadd_imm(end, 1)
+        };
         let selected_bounds = b.create_block();
         b.ins().brif(valid, selected_bounds, &[], blocks[0], &[]);
         b.switch_to_block(selected_bounds);
@@ -798,7 +817,7 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
             proof.active_tag, proof.guard_sites, proof.range_site, proof.recurrence_sites.clone(),
             emitted_sites.len(), certified_ranges, fixed_template_work);
     }
-    Ok(())
+    Ok((packed.constant_hash_loads(), endpoint_loads))
 }
 
 fn emit_source_terminator(b: &mut FunctionBuilder<'_>, words: &Words, code: CodePlan<'_>,

@@ -290,7 +290,14 @@ fn probe_fresh(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     b.switch_to_block(setup);
     let low = read!(b, frame, key_low);
     let high = if narrow { zero } else { read!(b, frame, key_high) };
-    let hash = hash_words(b, low, high);
+    let hash = if let Some(first) = frame.hash_constant(b, 0) {
+        let second = frame.hash_constant(b, 1).expect("same immutable private packet");
+        let left = b.ins().bxor(low, first);
+        let right = b.ins().bxor(high, second);
+        let product_low = b.ins().imul(left, right);
+        let product_high = b.ins().umulhi(left, right);
+        b.ins().bxor(product_low, product_high)
+    } else { hash_words(b, low, high) };
     let mask = b.ins().iadd_imm(capacity, -1);
     let index = b.ins().band(hash, mask);
     let tag = b.ins().ushr_imm(hash, 57);

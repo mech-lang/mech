@@ -74,6 +74,8 @@ pub(in crate::native_artifact) struct FrameState {
     words: Option<Vec<Variable>>,
     effects_enabled: bool,
     dirty_only: bool,
+    constant_packet: Option<Value>,
+    constant_hash_loads: Cell<usize>,
     // Constant-size actual emission evidence, aggregated by private operation.
     // It does not claim that a runtime path executed or authorize any access.
     emissions: Cell<[u64; 14]>,
@@ -81,7 +83,7 @@ pub(in crate::native_artifact) struct FrameState {
 }
 impl FrameState {
     pub(super) fn memory(pointer: Value, domain: Domain) -> Self {
-        Self { pointer, words: None, effects_enabled: false, dirty_only: false, emissions: Cell::new([0; 14]), domain }
+        Self { pointer, words: None, effects_enabled: false, dirty_only: false, constant_packet: None, constant_hash_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
     }
     pub(in crate::native_artifact) fn registers(b: &mut FunctionBuilder<'_>, pointer: Value, domain: Domain) -> Self {
         assert_eq!(core::mem::size_of::<Frame>() % 8, 0);
@@ -93,8 +95,20 @@ impl FrameState {
         }).collect();
         let effects_enabled = effects_enabled();
         let dirty_only = super::super::packed_loop_codegen::invariant_loops_enabled();
-        Self { pointer, words: Some(words), effects_enabled, dirty_only, emissions: Cell::new([0; 14]), domain }
+        Self { pointer, words: Some(words), effects_enabled, dirty_only, constant_packet: None, constant_hash_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
     }
+    pub(in crate::native_artifact) fn with_constant_packet(mut self, packet: Option<Value>) -> Self {
+        self.constant_packet = packet; self
+    }
+    pub(super) fn hash_constant(&self, b: &mut FunctionBuilder<'_>, ordinal: usize) -> Option<Value> {
+        assert!(ordinal < 2);
+        let pointer = self.constant_packet?;
+        self.constant_hash_loads.set(self.constant_hash_loads.get() + 1);
+        // The root initialized this private packet before entering the callee.
+        // Its pointer never reaches a helper or aliases any writable source.
+        Some(b.ins().load(types::I64, MemFlags::new().with_readonly(), pointer, (ordinal * 8) as i32))
+    }
+    pub(in crate::native_artifact) fn constant_hash_loads(&self) -> usize { self.constant_hash_loads.get() }
     pub(in crate::native_artifact) fn read(&self, b: &mut FunctionBuilder<'_>, offset: usize) -> Value {
         if let Some(words) = &self.words { b.use_var(words[offset / 8]) }
         else { b.ins().load(types::I64, MemFlags::new(), self.pointer, offset as i32) }
