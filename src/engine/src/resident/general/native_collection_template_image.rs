@@ -94,10 +94,15 @@ mod tests;
 pub(super) fn specialize_primitive(
     primitive: NativeCollectionPrimitive,
     inputs: &[Schema],
+    _output: &Schema,
 ) -> NativeCollectionPrimitive {
     use NativeCollectionPrimitive as P;
     match primitive {
         P::CompositePack(_) => P::CompositePack(inputs.len()),
+        #[cfg(feature = "convert")]
+        P::MatrixConversion if is_unsigned_word_conversion(inputs, _output) => {
+            P::UnsignedWordConversion
+        }
         P::StringScalarAccess => match inputs.first().map(Schema::body) {
             Some(SchemaBody::Matrix { .. }) => P::MatrixScalarAccess,
             Some(SchemaBody::Map { .. }) => P::MapKeyAccess,
@@ -154,7 +159,7 @@ fn leaf(
         .map(schema)
         .collect::<Result<Box<[_]>, _>>()?;
     let output = schema(&wire.output)?;
-    let primitive = specialize_primitive(primitive, &inputs);
+    let primitive = specialize_primitive(primitive, &inputs, &output);
     let memory = entry.implementation_memory();
     if serde_json::to_value(primitive).map_err(|e| e.to_string())? != wire.primitive
         || serde_json::to_value(MemoryClassImage::from(memory)).map_err(|e| e.to_string())?

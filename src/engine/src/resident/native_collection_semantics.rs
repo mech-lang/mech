@@ -40,6 +40,8 @@ pub enum NativeCollectionPrimitive {
     #[cfg(feature = "convert")]
     MatrixConversion,
     #[cfg(feature = "convert")]
+    UnsignedWordConversion,
+    #[cfg(feature = "convert")]
     MatrixToSetConversion,
     #[cfg(feature = "pure_text")]
     TextLines,
