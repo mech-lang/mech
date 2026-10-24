@@ -8,6 +8,9 @@ use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeWorkerBudgetEr
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::collections::VecDeque;
 
+#[path = "program_parallel_schedule.rs"]
+mod schedule;
+
 #[derive(Default)]
 struct Activity { current: AtomicUsize, peak: AtomicUsize }
 struct Active<'a>(&'a Activity);
@@ -26,6 +29,8 @@ impl Drop for Active<'_> {
 
 #[cfg(test)]
 thread_local! { pub(super) static TEST_WORKERS: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) }; }
+#[cfg(test)]
+thread_local! { pub(super) static TEST_DISPATCH_ORDER: std::cell::RefCell<Vec<(usize, u64)>> = const { std::cell::RefCell::new(Vec::new()) }; }
 
 #[derive(Clone)]
 pub(super) enum Capture { Word(u32, u64), Value(u32, Value) }
@@ -245,11 +250,23 @@ impl Context<'_, '_> {
                     let loan = group.worker_loan_with_memory(&memory).map_err(|error| budget_error(error, origin))?;
                     let mut worker_captures = transport(selected.captures.len(), "worker capture allocation")?;
                     worker_captures.extend(selected.captures.iter().cloned());
-                    jobs.push((selected.region, selected.count, index, loan, worker_captures));
+                    let ordinal = jobs.len();
+                    let weight = super::collection::element_work_hint(&selected.source, index);
+                    jobs.push((weight, ordinal, selected.region, selected.count, index, loan, worker_captures));
                 }
             }
+            // Pure mapped bodies often scale with their element's size. Start
+            // larger inputs first, without inspecting their contents or changing
+            // OS priorities. Scalar/tied weights keep source order. Both sorts
+            // are allocation-free and bounded by the admitted <=32-task count;
+            // the existing metadata*8 + 4096 setup envelope funds this work.
+            // The extra scalar keys/ordinals fit the existing 1024 B/task
+            // transport slack; no owning root/backing or allowance is added.
+            schedule::order_by_key(&mut jobs, |(weight, ordinal, ..)| (std::cmp::Reverse(*weight), *ordinal));
+            #[cfg(test)]
+            TEST_DISPATCH_ORDER.with(|order| order.borrow_mut().clear());
             let mut spawn_failed = false;
-            for (region, count, index, loan, worker_captures) in jobs {
+            for (_, ordinal, region, count, index, loan, worker_captures) in jobs {
                 let memory = memory.clone();
                 let activity = &activity;
                 let handle = std::thread::Builder::new().stack_size(STACK).spawn_scoped(scope, move || {
@@ -260,13 +277,21 @@ impl Context<'_, '_> {
                         library, Worker { region, index, count, result: None }, worker_captures)
                 });
                 match handle {
-                    Ok(handle) => handles.push(handle),
+                    Ok(handle) => {
+                        #[cfg(test)]
+                        TEST_DISPATCH_ORDER.with(|order| order.borrow_mut().push((region, index)));
+                        handles.push((ordinal, handle));
+                    }
                     Err(_) => { spawn_failed = true; break; }
                 }
             }
             // Always explicitly join every launched thread, including after a
             // later spawn failure. No unjoined panic may unwind through FFI.
-            for handle in handles {
+            // Restore source order before joining/replay, even though workers
+            // were dispatched in estimated-cost order. Error/push order remains
+            // the original source order, not completion or scheduling order.
+            schedule::order_by_key(&mut handles, |(ordinal, _)| *ordinal);
+            for (_, handle) in handles {
                 results.push(handle.join().unwrap_or_else(|_| Err(invalid("native worker panicked"))));
             }
             if spawn_failed { Err(invalid("native worker creation failed")) } else { Ok(results) }
