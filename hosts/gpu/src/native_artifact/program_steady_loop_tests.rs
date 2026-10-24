@@ -34,6 +34,14 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
     assert!(pure["code_bytes"].as_u64().unwrap() > 0);
     assert!(pure["symbol"].as_str().unwrap().ends_with("_funded"));
     assert_eq!(pure["active_tag"], bound["active_tag"]);
+    let entry = pure["entry_words"].as_array().unwrap().iter()
+        .map(|word| word.as_u64().unwrap()).collect::<BTreeSet<_>>();
+    let preserved = pure["preserved_entry_words"].as_array().unwrap().iter()
+        .map(|word| word.as_u64().unwrap()).collect::<BTreeSet<_>>();
+    assert!(!preserved.is_empty());
+    assert!(preserved.is_subset(&entry));
+    assert!(!preserved.contains(&bound["index_word"].as_u64().unwrap()),
+        "the changing source index must remain in exit snapshots");
     let mut node_sites = std::collections::BTreeMap::new();
     let closed = &object.descriptor().closed_tails;
     let region = closed
