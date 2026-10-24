@@ -37,6 +37,10 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
     assert_eq!(pure["specialized_widths"], serde_json::json!(
         (1..=crate::native_artifact::program_packed_map::MAX_WIDTH).collect::<Vec<_>>()
     ));
+    let checks = pure["fuel_check_edges"].as_array().unwrap();
+    assert!(checks.iter().any(serde_json::Value::is_null), "initial entry retains the fuel check");
+    assert!(checks.iter().any(serde_json::Value::is_u64), "source backedges retain the fuel check");
+    assert!(pure["maximum_fuel_check_instructions"].as_u64().unwrap() > 0);
     let mut node_sites = std::collections::BTreeMap::new();
     let closed = &object.descriptor().closed_tails;
     let region = closed

@@ -36,6 +36,7 @@ pub(in crate::native_artifact) struct SteadyLoop {
     pub source_nodes: Vec<(usize, usize)>, pub present_nodes: Vec<usize>,
     pub continuations: Vec<(usize, Option<usize>, Vec<usize>)>,
     pub entry_words: Vec<usize>, pub specialized_widths: Vec<u64>, pub entry_instructions: usize,
+    pub fuel_check_edges: Vec<Option<usize>>, pub maximum_fuel_check_instructions: usize,
     pub maximum_source_instructions: usize, pub maximum_snapshot_instructions: usize,
     pub caller_instructions: usize, pub native_calls: usize,
     pub stack_bytes: u64, pub code_bytes: u64, pub cleanup: CfgCleanup,
