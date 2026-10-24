@@ -271,21 +271,13 @@ struct PrepaidExtent {
 }
 impl PrepaidExtent {
     fn new(b: &mut FunctionBuilder<'_>, base: StackSlot, index: Value,
-        fuel: Value, endpoint: Value) -> Self
+        stop: Value, credit: Value) -> Self
     {
         let origin = b.declare_var(types::I64);
         b.def_var(origin, index);
-        // Wrapping preparation is unobservable on an unproductive entry:
-        // the original initial guards still return before its header. For
-        // productive entries count <= endpoint-index, so stop cannot wrap.
-        let remaining = b.ins().isub(endpoint, index);
-        let smaller = b.ins().icmp(IntCC::UnsignedLessThan, fuel, remaining);
-        let count = b.ins().select(smaller, fuel, remaining);
-        let stop = b.ins().iadd(index, count);
-        // Modular (fuel+index)-origin gives the exact remaining fuel even
-        // when the preparation sum wraps. Origin advances only at a proved
-        // completed +1 recurrence and never beyond the admitted visit extent.
-        let credit = b.ins().iadd(fuel, index);
+        // Both values are immutable private call arguments. Preparing them in
+        // the caller prevents backend rematerialization of the min expression
+        // inside the loop and avoids retaining all three of its scalar inputs.
         b.ins().stack_store(credit, base, 0);
         Self { origin, base, stop }
     }
@@ -360,10 +352,10 @@ pub(super) fn define<M: Module>(
     }
     let name = format!("{symbol}_funded");
     let mut signature = module.make_signature();
-    // Invocation-owned scalar words, packed frame, two immutable hash values
-    // and the already source-certified runtime endpoint. No Rust context or
-    // helper binding is live in this native function.
-    signature.params = vec![AbiParam::new(types::I64); 5];
+    // Invocation-owned scalar words, packed frame, two immutable hash values,
+    // the prepaid stop and its cold fuel base. No Rust context or helper
+    // binding is live in this native function.
+    signature.params = vec![AbiParam::new(types::I64); 6];
     signature.returns.push(AbiParam::new(types::I64));
     let function = module
         .declare_function(&name, Linkage::Local, &signature)
@@ -424,8 +416,7 @@ pub(super) fn define<M: Module>(
             .with_constant_values([args[2], args[3]])
             .with_specialized_width(width);
             let first_index = words.read(&mut b, proof.bounds.index_word);
-            let fuel = packed.read(&mut b, core::mem::offset_of!(Frame, fuel));
-            let extent = PrepaidExtent::new(&mut b, credit_base, first_index, fuel, args[4]);
+            let extent = PrepaidExtent::new(&mut b, credit_base, first_index, args[4], args[5]);
             let blocks = proof
                 .nodes
                 .iter()
@@ -469,6 +460,11 @@ pub(super) fn define<M: Module>(
                 b.append_block_param(failed, types::I64);
                 b.set_cold_block(failed);
                 if index == proof.active {
+                    // Each incoming check established this exact equality.
+                    // Canonicalize the source carrier to the native induction
+                    // value rather than retaining equivalent loop phis.
+                    let source_index = b.use_var(extent.origin);
+                    words.write(&mut b, proof.bounds.index_word, source_index);
                     // Every incoming edge admits the original next traversal
                     // before this header. Its cold snapshot is outside the
                     // loop header, so prior cache/frame values need not be
@@ -841,6 +837,7 @@ pub(super) fn define<M: Module>(
             header_snapshot_edges,
             prepaid_stop_edges,
             fuel_reconstructed_at_exits: true,
+            prepaid_extent_arguments: 2,
             peeled_probe_nodes: bail_blocks.4.into_iter().collect(),
             entry_stop_index_word: Some(proof.bounds.index_word),
             entry_stop_endpoint_words: Some([proof.bounds.width_word, proof.bounds.limit_word]),
@@ -894,9 +891,23 @@ pub(super) fn emit_call(
             )
         })
         .collect::<Vec<_>>();
+    let index = words.read(b, proof.bounds.index_word);
+    let fuel = packed.read(b, core::mem::offset_of!(Frame, fuel));
+    // An unproductive source index receives a zero extent. Wrapping
+    // preparation has no externally visible effect; on productive entries
+    // count <= endpoint-index, so the actual stop cannot overflow.
+    let remaining = b.ins().isub(values[2], index);
+    let smaller = b.ins().icmp(IntCC::UnsignedLessThan, fuel, remaining);
+    let count = b.ins().select(smaller, fuel, remaining);
+    let productive = b.ins().icmp(IntCC::UnsignedLessThan, index, values[2]);
+    let zero = b.ins().iconst(types::I64, 0);
+    let count = b.ins().select(productive, count, zero);
+    let stop = b.ins().iadd(index, count);
+    // The modular identity remains exact even if this preparation sum wraps.
+    let credit = b.ins().iadd(fuel, index);
     let result = b.ins().call(
         call.function,
-        &[locals, pointer, values[0], values[1], values[2]],
+        &[locals, pointer, values[0], values[1], stop, credit],
     );
     let continuation = b.inst_results(result)[0];
     packed.reload_generated(b);

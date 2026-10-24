@@ -39,6 +39,7 @@ pub(in crate::native_artifact) struct SteadyLoop {
     pub fuel_check_edges: Vec<Option<usize>>, pub maximum_fuel_check_instructions: usize,
     pub header_snapshot_edges: Vec<Option<usize>>,
     pub prepaid_stop_edges: Vec<usize>, pub fuel_reconstructed_at_exits: bool,
+    pub prepaid_extent_arguments: usize,
     pub peeled_probe_nodes: Vec<usize>,
     pub entry_stop_index_word: Option<usize>, pub entry_stop_endpoint_words: Option<[usize; 2]>,
     pub maximum_source_instructions: usize, pub maximum_snapshot_instructions: usize,
