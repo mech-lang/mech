@@ -424,6 +424,13 @@ impl NativeTextLineChunks {
         if let Some(last) = text.rfind('\n') {
             let complete = &text[..last + 1];
             let count = crate::intrinsics::text_ops::line_count(complete);
+            // A single-byte delimiter search avoids a general two-character
+            // substring scan. CRLF cannot overlap itself; inspect the checked
+            // following byte only at actual CR positions, including CRCRLF.
+            let crlf = complete
+                .match_indices('\r')
+                .filter(|(index, _)| complete.as_bytes().get(*index + 1) == Some(&b'\n'))
+                .count();
             let first = self
                 .facts
                 .lines
@@ -434,6 +441,12 @@ impl NativeTextLineChunks {
                 .lines
                 .checked_add(count as u64)
                 .ok_or(InvokeError::InvalidInput)?;
+            let payload_bytes = complete.len() - count - crlf;
+            self.facts.payload = self
+                .facts
+                .payload
+                .checked_add(payload_bytes as u64)
+                .ok_or(InvokeError::InvalidInput)?;
             // Fund every mandatory backing in this fragment before preferring
             // a slab. Otherwise its unused capacity can crowd out offsets,
             // directory growth or the unfinished tail even though heap storage
@@ -442,14 +455,7 @@ impl NativeTextLineChunks {
                 // Release the old directory before acquiring any new fragment
                 // backing, keeping its replacement peak independent of the tail.
                 self.reserve_chunk_slot()?;
-                let offsets = Offsets::new(complete, count, &self.account)?;
-                // This total is bounded by the already checked input-byte
-                // total. The scan and allocation expose no partial producer.
-                self.facts.payload = self
-                    .facts
-                    .payload
-                    .checked_add(offsets.payload_bytes as u64)
-                    .ok_or(InvokeError::InvalidInput)?;
+                let offsets = Offsets::new(complete, count, payload_bytes, &self.account)?;
                 self.append_pending(&text[last + 1..])?;
                 #[cfg(all(unix, feature = "native-capture-pages"))]
                 let bytes = match self.pages.copy(complete, self.input_limit, &self.account)? {
@@ -465,17 +471,6 @@ impl NativeTextLineChunks {
                     offsets: Some(offsets),
                 });
             } else {
-                // Sealed ranges retain no offset backing. Keep their original
-                // allocation-free scan and exact final producer geometry.
-                let crlf = complete
-                    .match_indices('\r')
-                    .filter(|(index, _)| complete.as_bytes().get(*index + 1) == Some(&b'\n'))
-                    .count();
-                self.facts.payload = self
-                    .facts
-                    .payload
-                    .checked_add((complete.len() - count - crlf) as u64)
-                    .ok_or(InvokeError::InvalidInput)?;
                 self.append_pending(&text[last + 1..])?;
             }
             return Ok(());
