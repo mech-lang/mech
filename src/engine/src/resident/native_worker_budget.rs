@@ -2,6 +2,46 @@
 use super::*;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::{MutexGuard, TryLockError};
+
+// Retry only short ownership transfers. A bounded exponential pause avoids
+// repeatedly contending on one cache line before the original blocking lock.
+const ESCROW_SPIN_ROUNDS: u32 = 6;
+#[cfg(test)]
+thread_local! {
+    // Attempts, pause hints, blocking fallbacks, poison recoveries.
+    static ESCROW_LOCK_STATS: std::cell::Cell<(u32, u32, u32, u32)> = const { std::cell::Cell::new((0, 0, 0, 0)) };
+    static ESCROW_PARK_NOTIFY: RefCell<Option<std::sync::mpsc::Sender<()>>> = const { RefCell::new(None) };
+}
+fn lock_escrow(shared: &Mutex<Escrow>) -> MutexGuard<'_, Escrow> {
+    for round in 0..ESCROW_SPIN_ROUNDS {
+        #[cfg(test)]
+        ESCROW_LOCK_STATS.with(|v| { let (a,b,c,d) = v.get(); v.set((a+1,b,c,d)); });
+        match shared.try_lock() {
+            Ok(guard) => return guard,
+            Err(TryLockError::Poisoned(error)) => {
+                // Retain the existing recovery policy and successful debits.
+                #[cfg(test)]
+                ESCROW_LOCK_STATS.with(|v| { let (a,b,c,d) = v.get(); v.set((a,b,c,d+1)); });
+                return error.into_inner();
+            }
+            Err(TryLockError::WouldBlock) => {
+                for _ in 0..(1u32 << round) { std::hint::spin_loop(); }
+                #[cfg(test)]
+                ESCROW_LOCK_STATS.with(|v| { let (a,b,c,d) = v.get(); v.set((a,b+(1<<round),c,d)); });
+            }
+        }
+    }
+    #[cfg(test)]
+    {
+        ESCROW_LOCK_STATS.with(|v| { let (a,b,c,d) = v.get(); v.set((a,b,c+1,d)); });
+        ESCROW_PARK_NOTIFY.with(|v| {
+            if let Some(notify) = v.borrow_mut().take() { let _ = notify.send(()); }
+        });
+    }
+    shared.lock().unwrap_or_else(|error| error.into_inner())
+}
+
 
 #[derive(Debug)]
 pub enum NativeWorkerBudgetError {
@@ -68,22 +108,22 @@ pub struct NativeWorkerWorkLoan {
 }
 impl NativeWorkerWorkLoan {
     pub(super) fn remaining(&self) -> Option<(u64, u64)> {
-        let state = self.shared.lock().unwrap_or_else(|error| error.into_inner());
+        let state = lock_escrow(&self.shared);
         if state.sealed { return None; }
         Some((state.limit.compute - state.used.compute, state.limit.comparison - state.used.comparison))
     }
     pub(super) fn preview(&self, compute: u64, comparison: u64) -> Result<(), ResidentKernelError> {
-        self.shared.lock().unwrap_or_else(|error| error.into_inner()).next(compute, comparison).map(drop)
+        lock_escrow(&self.shared).next(compute, comparison).map(drop)
     }
     pub(super) fn charge(&self, compute: u64, comparison: u64) -> Result<(), ResidentKernelError> {
-        let mut state = self.shared.lock().unwrap_or_else(|error| error.into_inner());
+        let mut state = lock_escrow(&self.shared);
         state.used = state.next(compute, comparison)?;
         Ok(())
     }
 }
 impl Drop for NativeWorkerWorkLoan {
     fn drop(&mut self) {
-        let mut state = self.shared.lock().unwrap_or_else(|error| error.into_inner());
+        let mut state = lock_escrow(&self.shared);
         state.live = state.live.checked_sub(1).expect("worker loan retired once");
     }
 }
@@ -111,7 +151,7 @@ impl NativeLibraryWorkBudget {
         let account = &mut *account;
         let Some(local) = unscoped_local_remaining(account) else { return Ok(None) };
         if let Some(worker) = &account.worker {
-            let mut state = worker.shared.lock().unwrap_or_else(|error| error.into_inner());
+            let mut state = lock_escrow(&worker.shared);
             if state.sealed { return Ok(None); }
             let remaining = (local.0.min(state.limit.compute - state.used.compute),
                 local.1.min(state.limit.comparison - state.used.comparison));
@@ -174,7 +214,7 @@ impl NativeLibraryWorkBudget {
     pub fn from_worker_loan(mut loan: NativeWorkerWorkLoan) -> Result<Self, ResidentKernelError> {
         if Self::has_active_scope() { return Err(ResidentKernelError::InvalidInput); }
         let limits = {
-            let state = loan.shared.lock().unwrap_or_else(|error| error.into_inner());
+            let state = lock_escrow(&loan.shared);
             if state.sealed { return Err(ResidentKernelError::InvalidInput); }
             state.limit
         };
@@ -211,7 +251,7 @@ impl NativeWorkGroup {
         let bytes = (core::mem::size_of::<RefCell<ControlWorkAccount>>()
             + 2 * core::mem::size_of::<usize>()) as u64;
         let reservation = memory.reserve_capacity(bytes)?;
-        let mut state = self.shared.lock().unwrap_or_else(|error| error.into_inner());
+        let mut state = lock_escrow(&self.shared);
         if state.sealed { return Err(ResidentKernelError::InvalidInput.into()); }
         let live = state.live.checked_add(1).ok_or(ResidentKernelError::InvalidShape)?;
         state.live = live;
@@ -222,14 +262,14 @@ impl NativeWorkGroup {
     /// Drop seals the group and still retains every successful debit. Unused
     /// reservation is released; spent work is never refunded.
     pub fn finish(mut self) -> Result<(u64, u64), ResidentKernelError> {
-        if self.shared.lock().unwrap_or_else(|error| error.into_inner()).live != 0 {
+        if lock_escrow(&self.shared).live != 0 {
             return Err(ResidentKernelError::InvalidInput);
         }
         Ok(self.close())
     }
 
     fn close(&mut self) -> (u64, u64) {
-        let mut state = self.shared.lock().unwrap_or_else(|error| error.into_inner());
+        let mut state = lock_escrow(&self.shared);
         if !self.closed {
             state.sealed = true;
             let mut parent = self.parent.borrow_mut();
