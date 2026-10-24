@@ -248,10 +248,7 @@ impl Context<'_, '_> {
                 }
             }
             let mut spawn_failed = false;
-            // All constructor claims and captures were admitted in source
-            // order above. Try LIFO launch for this bounded independent batch;
-            // it changes neither the jobs nor their finite authorizations.
-            for (region, count, index, loan, worker_captures) in jobs.into_iter().rev() {
+            for (region, count, index, loan, worker_captures) in jobs {
                 let memory = memory.clone();
                 let activity = &activity;
                 let handle = std::thread::Builder::new().stack_size(STACK).spawn_scoped(scope, move || {
@@ -268,9 +265,7 @@ impl Context<'_, '_> {
             }
             // Always explicitly join every launched thread, including after a
             // later spawn failure. No unjoined panic may unwind through FFI.
-            // Invert launch order again so results/errors retain their exact
-            // source element order, including an earlier parent push failure.
-            for handle in handles.into_iter().rev() {
+            for handle in handles {
                 results.push(handle.join().unwrap_or_else(|_| Err(invalid("native worker panicked"))));
             }
             if spawn_failed { Err(invalid("native worker creation failed")) } else { Ok(results) }
