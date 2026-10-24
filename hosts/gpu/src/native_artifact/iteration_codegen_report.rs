@@ -329,13 +329,13 @@ mod tests {
         assert!(!report.guarded_loops.complete);
         assert_eq!(report.guarded_loops.regions.len(), MAX_REGIONS);
         let mut report = CodegenReport::default();
-        for header in 0..MAX_REGIONS { report.lookup_facts(header, 32, 64, vec![(1, 2, 3, "Fresh")]); }
+        for header in 0..MAX_REGIONS { report.lookup_facts(header, 32, 64, vec![(1, 2, 3, "Fresh")], None); }
         assert!(report.lookup_facts.complete);
-        report.lookup_facts(0, 32, 64, vec![]);
+        report.lookup_facts(0, 32, 64, vec![], None);
         assert!(!report.lookup_facts.complete);
         assert_eq!(report.lookup_facts.regions.len(), MAX_REGIONS);
         let mut report = CodegenReport::default();
-        report.lookup_facts(0, 32, 64, vec![(1, 2, 3, "Cached"); MAX_SUBSTITUTIONS + 1]);
+        report.lookup_facts(0, 32, 64, vec![(1, 2, 3, "Cached"); MAX_SUBSTITUTIONS + 1], None);
         assert!(!report.lookup_facts.complete);
         assert!(report.lookup_facts.regions.is_empty());
     }
