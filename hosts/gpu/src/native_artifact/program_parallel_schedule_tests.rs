@@ -6,8 +6,16 @@ fn size_ordered_string_jobs_keep_unicode_outputs_in_source_order() {
     let original = tests::artifact_source(
         r#"
 +> text
+#Repeat(s<string>, n<u64>) => <string>
+  | :Next(index<u64>, accumulated<string>)
+  | :Done(accumulated<string>).
+#Repeat(s, n) -> :Next(0u64, "")
+  :Next(index, accumulated)
+    | index >= n -> :Done(accumulated)
+    | * -> :Next(index + 1u64, accumulated + s)
+  :Done(accumulated) => accumulated.
 items := ["x" "elephant" "é" "longer"]
-text/join([item + item | item <- items], "|")
+text/join([#Repeat(item, 2u64) | item <- items], "|")
 "#,
     );
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(
@@ -64,8 +72,16 @@ fn size_ordered_later_failure_never_precedes_an_earlier_source_push() {
 +> text
 +> number
 +> sequence
+#Repeat(s<string>, n<u64>) => <string>
+  | :Next(index<u64>, accumulated<string>)
+  | :Done(accumulated<string>).
+#Repeat(s, n) -> :Next(0u64, "")
+  :Next(index, accumulated)
+    | index >= n -> :Done(accumulated)
+    | * -> :Next(index + 1u64, accumulated + s)
+  :Done(accumulated) => accumulated.
 render(item<string>) => (out<string>) :=
-  out := number/format(8u64 / (8u64 - sequence/length(item)), 0u64).
+  out := #Repeat(number/format(8u64 / (8u64 - sequence/length(item)), 0u64), 2u64).
 items := ["z" "enormous"]
 text/join([render(item) | item <- items], "|")
 "#,
