@@ -80,7 +80,10 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
             without_lookup_facts(|| JitProgramArtifact::compile(&artifact, &catalog))
         } else { without_loop_bounds(|| JitProgramArtifact::compile(&artifact, &catalog)) }.unwrap();
         if compare_invariants {
-            assert_eq!(take_loop_bounds_emissions(), emitted);
+            // The candidate emits three guarded copies (checked calls,
+            // allowed calls, steady rolling); the reference emits only one.
+            assert_eq!(emitted.1 % 3, 0);
+            assert_eq!(take_loop_bounds_emissions(), (emitted.0, emitted.1 / 3));
         } else if compare_outlining {
             assert_eq!(take_outline_emissions(), 0);
             assert_eq!(take_loop_bounds_emissions(), emitted);
