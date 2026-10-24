@@ -404,15 +404,11 @@ fn probe_fresh_core_to(b: &mut FunctionBuilder<'_>, frame: &FrameState,
 /// The source-certified adjacent selection, without helper/error machinery.
 /// The enclosing steady function is entered only through a completed original
 /// recurrence with the same width, pinned source and successful bounds/caps.
-pub(super) fn select_leaf(b: &mut FunctionBuilder<'_>, frame: &FrameState, start: Value) {
+/// Its source-derived affine cursor is precisely source[start+width-2].
+pub(super) fn select_leaf(b: &mut FunctionBuilder<'_>, frame: &FrameState, start: Value, address: Value) {
     let bits = i64::from(frame.domain.bits());
     let zero = b.ins().iconst(types::I64, 0);
     let begin = b.ins().iadd_imm(start, -1);
-    let width = read!(b, frame, width);
-    let finish = b.ins().iadd(begin, width);
-    let position = b.ins().iadd_imm(finish, -1);
-    let source = read!(b, frame, source_ptr);
-    let address = b.ins().iadd(source, position);
     let byte = b.ins().uload8(types::I64, MemFlags::new(), address, 0);
     let code = encode(b, byte, frame.domain);
     let old_low = read!(b, frame, key_low);

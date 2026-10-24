@@ -265,26 +265,40 @@ impl Proof {
 // A cold-only stack word reconstructs the exact remaining prepaid visits at
 // every original continuation. No credit is enlarged, renewed or omitted.
 struct PrepaidExtent {
-    origin: Variable,
+    cursor: Variable,
+    bias: Value,
     base: StackSlot,
     stop: Value,
 }
 impl PrepaidExtent {
     fn new(b: &mut FunctionBuilder<'_>, base: StackSlot, index: Value,
-        stop: Value, credit: Value) -> Self
+        stop: Value, credit: Value, bias: Value) -> Self
     {
-        let origin = b.declare_var(types::I64);
-        b.def_var(origin, index);
+        let cursor = b.declare_var(types::I64);
+        let pointer = b.ins().iadd(bias, index);
+        b.def_var(cursor, pointer);
         // Both values are immutable private call arguments. Preparing them in
         // the caller prevents backend rematerialization of the min expression
         // inside the loop and avoids retaining all three of its scalar inputs.
         b.ins().stack_store(credit, base, 0);
-        Self { origin, base, stop }
+        Self { cursor, bias, base, stop }
+    }
+    fn pointer(&self, b: &mut FunctionBuilder<'_>) -> Value {
+        b.use_var(self.cursor)
+    }
+    fn index(&self, b: &mut FunctionBuilder<'_>) -> Value {
+        let pointer = self.pointer(b);
+        b.ins().isub(pointer, self.bias)
+    }
+    fn advance(&self, b: &mut FunctionBuilder<'_>) {
+        let pointer = self.pointer(b);
+        let next = b.ins().iadd_imm(pointer, 1);
+        b.def_var(self.cursor, next);
     }
     fn retire(&self, b: &mut FunctionBuilder<'_>, packed: &FrameState, header_debit: bool) {
         let credit = b.ins().stack_load(types::I64, self.base, 0);
-        let origin = b.use_var(self.origin);
-        let fuel = b.ins().isub(credit, origin);
+        let pointer = self.pointer(b);
+        let fuel = b.ins().isub(credit, pointer);
         let fuel = if header_debit { b.ins().iadd_imm(fuel, -1) } else { fuel };
         packed.write(b, core::mem::offset_of!(Frame, fuel), fuel);
     }
@@ -346,14 +360,14 @@ pub(super) fn define<M: Module>(
     let records = 2 * proof.nodes.len()
         + proof.live.iter().map(BTreeSet::len).sum::<usize>()
         + specialized_widths.len()
-        + 3 * check_edges.len();
+        + 4 * check_edges.len() + 2;
     if !report.reserve_steady_region(records) {
         return Ok(None);
     }
     let name = format!("{symbol}_funded");
     let mut signature = module.make_signature();
     // Invocation-owned scalar words, packed frame, two immutable hash values,
-    // the prepaid stop and its cold fuel base. No Rust context or helper
+    // the prepaid cursor stop and its cold fuel base. No Rust context or helper
     // binding is live in this native function.
     signature.params = vec![AbiParam::new(types::I64); 6];
     signature.returns.push(AbiParam::new(types::I64));
@@ -416,7 +430,17 @@ pub(super) fn define<M: Module>(
             .with_constant_values([args[2], args[3]])
             .with_specialized_width(width);
             let first_index = words.read(&mut b, proof.bounds.index_word);
-            let extent = PrepaidExtent::new(&mut b, credit_base, first_index, args[4], args[5]);
+            // The bound certificate proves every selected range is precisely
+            // [index+1, index+width], over a pinned one-byte-grapheme String.
+            // A cursor names its final byte. Recover scalar indices only for
+            // source actions/precise exits, rather than forming an address on
+            // every adjacent load. Invalid/empty initial extents compare equal
+            // and never dereference the wrapping preparation value.
+            let source = packed.read(&mut b, core::mem::offset_of!(Frame, source_ptr));
+            let width = packed.read(&mut b, core::mem::offset_of!(Frame, width));
+            let bias = b.ins().iadd(source, width);
+            let bias = b.ins().iadd_imm(bias, -1);
+            let extent = PrepaidExtent::new(&mut b, credit_base, first_index, args[4], args[5], bias);
             let blocks = proof
                 .nodes
                 .iter()
@@ -463,13 +487,13 @@ pub(super) fn define<M: Module>(
                     // Each incoming check established this exact equality.
                     // Canonicalize the source carrier to the native induction
                     // value rather than retaining equivalent loop phis.
-                    let source_index = b.use_var(extent.origin);
+                    let source_index = extent.index(&mut b);
                     words.write(&mut b, proof.bounds.index_word, source_index);
                     // Every incoming edge admits the original next traversal
                     // before this header. Its cold snapshot is outside the
                     // loop header, so prior cache/frame values need not be
                     // carried through the next productive iteration.
-                    // Its prepaid debit is represented by extent.origin and
+                    // Its prepaid debit is represented by extent.cursor and
                     // is reconstructed exactly before every observable exit.
                     let tag = b
                         .ins()
@@ -498,7 +522,8 @@ pub(super) fn define<M: Module>(
                             return Err(backend("steady selection lacks original bound"));
                         }
                         let first = words.read(&mut b, span.operands()[0].get() as usize);
-                        packed_maps::select_leaf(&mut b, &packed, first);
+                        let address = extent.pointer(&mut b);
+                        packed_maps::select_leaf(&mut b, &packed, first, address);
                     }
                 } else if owner.call_region(node.site) == closed.regions[id].map {
                     let Action::LibraryCall {
@@ -666,27 +691,35 @@ pub(super) fn define<M: Module>(
                 // Retire source progress after its original predecessor. The
                 // entry keeps the original guards; completed recurrences use
                 // their precomputed intersection of endpoint and prepaid fuel.
-                // Each stopped edge remains before the next original debit.
-                // or prepaid, including the final terminal traversal.
-                let counter = words.read(&mut b, proof.bounds.index_word);
-                packed.write(&mut b, core::mem::offset_of!(Frame, updates), counter);
+                // Each stopped edge remains before the next original debit,
+                // including the final terminal traversal.
                 // Each incoming source edge owns its cold snapshot. Joining
                 // the initial and completed-iteration states in one exit
                 // creates phi arguments that force cold constants and old
                 // cache values to be materialized on every hot traversal.
                 // Both outcomes still return before the SAME original header.
                 let stopped = b.create_block();
-                let endpoint = if edge.is_some() {
-                    b.def_var(extent.origin, counter);
-                    extent.stop
-                } else {
+                if edge.is_some() {
+                    extent.advance(&mut b);
+                    let counter = extent.index(&mut b);
+                    // The original completed recurrence proved this equality.
+                    // Its sole range selected the previous zero-based index;
+                    // rematerialize that cold cache field from the NEW cursor
+                    // so an old induction value need not cross the backedge.
+                    words.write(&mut b, proof.bounds.index_word, counter);
+                    let previous = b.ins().iadd_imm(counter, -1);
+                    packed.write(&mut b, core::mem::offset_of!(Frame, previous_start), previous);
+                }
+                let counter = words.read(&mut b, proof.bounds.index_word);
+                packed.write(&mut b, core::mem::offset_of!(Frame, updates), counter);
+                if edge.is_none() {
                     let funded = b.create_block();
                     let fuel = packed.read(&mut b, core::mem::offset_of!(Frame, fuel));
                     b.ins().brif(fuel, funded, &[], stopped, &[]);
                     b.switch_to_block(funded);
-                    args[4]
-                };
-                let productive = b.ins().icmp(IntCC::UnsignedLessThan, counter, endpoint);
+                }
+                let pointer = extent.pointer(&mut b);
+                let productive = b.ins().icmp(IntCC::UnsignedLessThan, pointer, extent.stop);
                 b.ins()
                     .brif(productive, blocks[&proof.active], &[], stopped, &[]);
                 maximum_check = maximum_check.max(b.func.dfg.num_insts() - start);
@@ -751,7 +784,7 @@ pub(super) fn define<M: Module>(
         .into_iter()
         .collect::<Vec<_>>();
     let maximum_fuel_check_instructions = bail_blocks.2;
-    let prepaid_stop_edges = fuel_check_edges.iter().copied().flatten().collect();
+    let prepaid_stop_edges = fuel_check_edges.iter().copied().flatten().collect::<Vec<_>>();
     let header_snapshot_edges = bail_blocks
         .3
         .iter()
@@ -835,9 +868,12 @@ pub(super) fn define<M: Module>(
             fuel_check_edges,
             maximum_fuel_check_instructions,
             header_snapshot_edges,
-            prepaid_stop_edges,
+            prepaid_stop_edges: prepaid_stop_edges.clone(),
             fuel_reconstructed_at_exits: true,
             prepaid_extent_arguments: 2,
+            cursor_range_site: proof.bounds.range_site,
+            cursor_index_word: proof.bounds.index_word,
+            cursor_recurrence_edges: prepaid_stop_edges,
             peeled_probe_nodes: bail_blocks.4.into_iter().collect(),
             entry_stop_index_word: Some(proof.bounds.index_word),
             entry_stop_endpoint_words: Some([proof.bounds.width_word, proof.bounds.limit_word]),
@@ -905,6 +941,17 @@ pub(super) fn emit_call(
     let stop = b.ins().iadd(index, count);
     // The modular identity remains exact even if this preparation sum wraps.
     let credit = b.ins().iadd(fuel, index);
+    // This certificate selects the final byte at source[index+width-1].
+    // Productive cursors and their one-past stop remain inside the actual
+    // pinned allocation; a zero extent has equal start/stop even if unused
+    // integer preparation wraps. Relocate both opaque private arguments in
+    // the caller so the backend cannot rebuild their bias inside the loop.
+    let source = packed.read(b, core::mem::offset_of!(Frame, source_ptr));
+    let width = packed.read(b, core::mem::offset_of!(Frame, width));
+    let bias = b.ins().iadd(source, width);
+    let bias = b.ins().iadd_imm(bias, -1);
+    let stop = b.ins().iadd(stop, bias);
+    let credit = b.ins().iadd(credit, bias);
     let result = b.ins().call(
         call.function,
         &[locals, pointer, values[0], values[1], stop, credit],

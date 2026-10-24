@@ -149,7 +149,10 @@ fn selected_template(
 // IR73 binds that prepaid extent and cold fuel base as private call arguments,
 // preventing loop rematerialization of their scalar preparation. Original
 // source continuations, finite credit and external helper ABI remain unchanged.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 73;
+// IR74 represents the proved adjacent read by a source-derived byte cursor.
+// Opaque caller stop/credit pointers preserve the exact prepaid extent; cold
+// continuations recover the original scalar counter and previous selection.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 74;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
