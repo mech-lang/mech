@@ -759,11 +759,14 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         set_origin(b, frame, index as u64);
         b.ins().jump(failed, &[status.into()]);
         let work = b.func.dfg.num_insts() - source_template_start + hooks.bound_shim_work() - source_shim_work;
-        maximum_source_template_work = maximum_source_template_work.max(work);
-        if work + steady.as_ref().map_or(0,|call|call.definition.source_work)
-            > super::super::program_tail_layout::OVERHEAD as usize
-        {
-            return Err(backend("packed source and steady templates exceed per-site work envelope"));
+        let steady_source_work = if mode==3 {steady.as_ref().map_or(0,|call|call.definition.source_work)} else {0};
+        // A steady continuation resumes ONLY version three. Checked/initial
+        // modes cannot follow that native call and retain their old envelope.
+        if hooks.bound_shim_work() > source_shim_work || (steady.is_some() && mode==3) {
+            if work + steady_source_work > super::super::program_tail_layout::OVERHEAD as usize {
+                return Err(backend(format!("packed source template exceeds unchanged envelope: site={index}, mode={mode}, ordinary={work}, steady={steady_source_work}")));
+            }
+            maximum_source_template_work = maximum_source_template_work.max(work);
         }
     }
     if let Some(graph) = &threaded {
