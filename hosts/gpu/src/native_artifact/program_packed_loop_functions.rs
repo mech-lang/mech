@@ -57,6 +57,7 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
         }
         let site = region.tail.header() as usize;
         let symbol = format!("{entry_symbol}_packed_loop_{site}");
+        let steady = steady::define(module,&symbol,code,closed,id,owner,aggregates,&slots,limits,report)?;
         let mut signature = module.make_signature();
         // Root frame, source locals, private packed frame, installed private
         // helper, its context, and the original transport context. No pointer
@@ -90,9 +91,12 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             // Cover the loader and both final returns in addition to the
             // separately bounded caller. The body itself checks the sum.
             let prefix_work = b.func.dfg.num_insts() + CALLER_TEMPLATE_BOUND + 3;
+            let steady_call = steady.as_ref().map(|definition| steady::Call {
+                function: module.declare_func_in_func(definition.function,b.func), definition,
+            });
             constant_loads = emit_body(&mut b, args[0], args[1], args[2], args[3], args[4], code,
                 closed, id, owner, aggregates, slots, &hooks, exit, error,
-                prefix_work, if constants { Some(args[6]) } else { None }, report)?;
+                prefix_work, if constants { Some(args[6]) } else { None }, steady_call, report)?;
             b.switch_to_block(exit);
             let ok = b.ins().iconst(types::I64, 0);
             b.ins().return_(&[ok]);
@@ -116,9 +120,12 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             constant_endpoint_words: endpoint, emitted_hash_constant_loads: constant_loads.0,
             emitted_endpoint_loads: constant_loads.1,
         });
-        let nested_stack = stack.checked_add(if preserve_calls { shim.map_or(0, |v| v.stack) } else { 0 })
+        let nested_stack = stack.checked_add((if preserve_calls { shim.map_or(0, |v| v.stack) } else { 0 })
+                .max(steady.as_ref().map_or(0,|function|function.stack)))
             .ok_or_else(|| backend("outlined nested stack overflow"))?;
-        functions.push((site, function, nested_stack, bytes));
+        let total_bytes = bytes.checked_add(steady.as_ref().map_or(0,|function|function.code))
+            .ok_or_else(||backend("outlined nested code overflow"))?;
+        functions.push((site, function, nested_stack, total_bytes));
         #[cfg(test)]
         EMISSIONS.with(|value| value.set(value.get() + 1));
     }

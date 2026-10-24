@@ -219,6 +219,7 @@ impl NativeProgramObject {
         metadata["compiled_mutation_loops"] = serde_json::json!(&self.codegen.mutation_loops);
         metadata["compiled_count_value_loops"] = serde_json::json!(&self.codegen.count_value_loops);
         metadata["compiled_loop_constants"] = serde_json::json!(&self.codegen.loop_constants);
+        metadata["compiled_steady_loops"] = serde_json::json!(&self.codegen.steady_loops);
         metadata
     }
 }

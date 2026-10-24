@@ -164,6 +164,15 @@ fn live_in(code: CodePlan<'_>, graph: &Graph, effects: &[Effects], returned: usi
     None
 }
 
+pub(super) fn continuation_liveness(code: CodePlan<'_>, closed: &Layout, id: usize,
+    owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates, graph: &Graph)
+    -> Option<Vec<BTreeSet<usize>>>
+{
+    let effects = graph.nodes.iter().map(|node| effects(code, closed, id, owner, aggregates, node.site))
+        .collect::<Option<Vec<_>>>()?;
+    live_in(code, graph, &effects, closed.regions[id].tail.returned().get() as usize)
+}
+
 fn apply(code: CodePlan<'_>, closed: &Layout, id: usize, owner: &NativeMapOwnerWords,
     aggregates: &NativeScalarAggregates, site: usize, state: &mut State, terms: &mut Terms,
     pure: bool) -> Option<()>

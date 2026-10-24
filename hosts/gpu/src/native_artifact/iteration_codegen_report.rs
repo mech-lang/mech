@@ -20,6 +20,7 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub mutation_loops: Vec<MutationLoop>,
     pub count_value_loops: Vec<CountValueLoop>,
     pub loop_constants: LoopConstants,
+    pub steady_loops: Vec<SteadyLoop>,
     substitutions: usize,
     tag_records: usize,
     guarded_records: usize,
@@ -27,6 +28,17 @@ pub(in crate::native_artifact) struct CodegenReport {
     invariant_records: usize,
     mutation_records: usize,
     count_value_records: usize,
+    steady_records: usize,
+}
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct SteadyLoop {
+    pub header: usize, pub active_node: usize, pub active_tag: u32, pub symbol: String,
+    pub source_nodes: Vec<(usize, usize)>, pub present_nodes: Vec<usize>,
+    pub continuations: Vec<(usize, Option<usize>, Vec<usize>)>,
+    pub entry_words: Vec<usize>, pub entry_instructions: usize,
+    pub maximum_source_instructions: usize, pub maximum_snapshot_instructions: usize,
+    pub caller_instructions: usize, pub native_calls: usize,
+    pub stack_bytes: u64, pub code_bytes: u64, pub cleanup: CfgCleanup,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct CountValueLoop {
@@ -83,6 +95,12 @@ struct ConstantCaller {
     hash_values: [u64; 2], template_instructions: usize,
 }
 impl CodegenReport {
+    pub fn reserve_steady_region(&mut self, records: usize) -> bool {
+        if self.steady_loops.len() >= MAX_REGIONS
+            || self.steady_records.saturating_add(records) > MAX_SUBSTITUTIONS { return false; }
+        self.steady_records += records;
+        true
+    }
     pub fn loop_constant_caller(&mut self, header: usize, stack_bytes: u32, endpoint_words: Option<[usize; 2]>, template_instructions: usize) {
         if self.loop_constants.callers.len() == MAX_REGIONS { self.loop_constants.complete = false; return; }
         self.loop_constants.callers.push(ConstantCaller { header, stack_bytes, endpoint_words,
