@@ -207,22 +207,25 @@ pub(super) fn select_state_proved(b: &mut FunctionBuilder<'_>, frame: &FrameStat
 /// selects the same lane order as the runtime's linear group probe.
 fn control_group(b: &mut FunctionBuilder<'_>, address: Value, tag: Value) -> (Value, Value) {
     let flags = MemFlags::new().with_endianness(Endianness::Little);
-    let raw = b.ins().load(types::I64, flags, address, 0);
     let byte = b.ins().ireduce(types::I8, tag);
-    let matches = if cfg!(target_arch = "aarch64") {
-        let group = b.ins().bitcast(types::I8X8, flags, raw);
+    let (raw, matches) = if cfg!(target_arch = "aarch64") {
+        // Read exactly the admitted eight-byte group into its vector class.
+        // The old integer load required a GPR-to-SIMD transfer before cmeq.
+        let group = b.ins().load(types::I8X8, flags, address, 0);
+        let raw = b.ins().bitcast(types::I64, flags, group);
         let tags = b.ins().splat(types::I8X8, byte);
         let equal = b.ins().icmp(IntCC::Equal, group, tags);
-        b.ins().bitcast(types::I64, flags, equal)
+        (raw, b.ins().bitcast(types::I64, flags, equal))
     } else {
         // x86 has 128-bit SIMD registers. Duplicate the already bounded
         // eight-byte load; no extra memory beyond the admitted group is read.
+        let raw = b.ins().load(types::I64, flags, address, 0);
         let group = b.ins().splat(types::I64X2, raw);
         let group = b.ins().bitcast(types::I8X16, flags, group);
         let tags = b.ins().splat(types::I8X16, byte);
         let equal = b.ins().icmp(IntCC::Equal, group, tags);
         let words = b.ins().bitcast(types::I64X2, flags, equal);
-        b.ins().extractlane(words, 0)
+        (raw, b.ins().extractlane(words, 0))
     };
     let matches = b.ins().band_imm(matches, 0x0101010101010101);
     // Occupied controls are seven-bit hashes; EMPTY is exactly 0x80.

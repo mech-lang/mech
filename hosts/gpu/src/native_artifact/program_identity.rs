@@ -121,7 +121,9 @@ fn selected_template(
 // certified completed recurrence nodes establish steady nonempty storage.
 // IR59 proves the stored-value bound of an empty, single-insertion source
 // recurrence before omitting its exact read+1 source overflow checks.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 59;
+// IR60 loads admitted AArch64 control groups directly into a 64-bit vector;
+// integer fingerprints/empty masks and the eight-byte read extent remain.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 60;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

@@ -697,16 +697,20 @@ fn arithmetic_failure_equivalence(pass: Pass) {
         (source.replace(":Next(index + 1u64, increment", ":Next(index + 2u64, increment")
             .replace(":Next(0u64, initial)", ":Next(18446744073709551614u64, initial)"),
             "\"abc\"", 1, u64::MAX),
-    ];
+    ].into_iter().map(|(body, text, width, n)| (body, text, width, n, true)).collect::<Vec<_>>();
     if matches!(pass, Pass::CountBounds) {
         // One insertion per step alone does not bound arbitrary replacements.
         // The first step stores MAX; the next real source read+1 must overflow.
         let max_then_increment = source.replace("  out := map/insert(h, key, previous + 1u64).",
             "  replacement := (previous == 0u64)?\n    | true => 18446744073709551615u64\n    | false => previous + 1u64.\n  out := map/insert(h, key, replacement).");
         assert_ne!(max_then_increment, source);
-        cases.push((max_then_increment, "\"aa\"", 1, 2));
+        cases.push((max_then_increment, "\"aa\"", 1, 2, true));
+        let nonempty = source.replace("empty<{string:u64}> := map/new()",
+            "fresh<{string:u64}> := map/new()\nempty<{string:u64}> := map/insert(fresh, \"a\", 18446744073709551615u64)");
+        assert_ne!(nonempty, source);
+        cases.push((nonempty, "\"a\"", 1, 1, false));
     }
-    for (body, text, width, n) in cases {
+    for (body, text, width, n, expected_packed) in cases {
         let artifact = tests::artifact_source(&format!("{body}\n#Count({text}, {width}u64, {n}u64, empty)\n"));
         let catalog = mech_stdlib::source_catalog();
         take_edge_fact_emissions();
@@ -714,7 +718,7 @@ fn arithmetic_failure_equivalence(pass: Pass) {
         take_frame_effect_emissions();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let emitted = take_edge_fact_emissions();
-        assert!(emitted.0 >= 6, "must actually remove dominated field guards");
+        if expected_packed { assert!(emitted.0 >= 6, "must actually remove dominated field guards"); }
         let selected = take_tag_thread_emissions();
         pass.check(emitted, selected, take_frame_effect_emissions(), true);
         let unchanged = pass.disabled(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
@@ -748,7 +752,9 @@ fn arithmetic_failure_equivalence(pass: Pass) {
                 NativeIterationExecutionError::Arithmetic { origin: actual }) if *actual == origin));
             let observed = OBS.with(|v| core::mem::take(&mut *v.borrow_mut()));
             assert!(observed.errors.is_empty(), "{observed:?}");
-            assert_eq!((observed.entries, observed.packed, observed.bound[13]), (1, 1, 1));
+            assert_eq!((observed.packed, observed.bound[13]),
+                (u64::from(expected_packed), u64::from(expected_packed)));
+            if expected_packed { assert_eq!(observed.entries, 1); }
             assert!(outputs.iter().all(Option::is_none));
             executions.push((site, work, library_work, format!("{error:?}")));
             drop(outputs);
