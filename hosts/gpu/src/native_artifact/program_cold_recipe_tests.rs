@@ -23,6 +23,11 @@ fn cold_recipes_bind_actual_live_words_initial_and_completed_source_edges() {
     let mut initial = false;
     let mut body = false;
     for record in records {
+        use crate::native_artifact::program_packed_map::Frame as PackedFrame;
+        assert_eq!(record["reload_words"], serde_json::json!([
+            core::mem::offset_of!(PackedFrame, source_ptr) / 8,
+            core::mem::offset_of!(PackedFrame, width) / 8,
+        ]));
         let node = record["node"].as_u64().unwrap();
         let header = record["header"].as_bool().unwrap();
         let incoming = record["incoming"].as_u64();

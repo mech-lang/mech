@@ -155,7 +155,10 @@ fn selected_template(
 // IR75 reconstructs only source-proved affine scalar/frame values inside
 // their precise cold continuations. Initial and completed cursor coordinates
 // remain distinct; unknown values retain their original SSA storage.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 75;
+// IR76 obtains the cold index bias from the owned frame at the snapshot,
+// rather than sharing the hot source SSA expression and its live registers.
+// Frame immutability, source recipes and original finite prices are unchanged.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 76;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

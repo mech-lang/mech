@@ -123,6 +123,14 @@ impl FrameState {
         Some(b.ins().load(types::I64, MemFlags::new().with_readonly(), pointer, (ordinal * 8) as i32))
     }
     pub(in crate::native_artifact) fn constant_hash_loads(&self) -> usize { self.constant_hash_loads.get() }
+    /// A cold continuation can recover immutable construction metadata from
+    /// the actual pinned frame instead of keeping an entry-time SSA recipe
+    /// live across all successful iterations. These are ordinary frame loads,
+    /// with the same conservative memory flags as other private-frame reads.
+    pub(in crate::native_artifact) fn snapshot_immutable(&self, b: &mut FunctionBuilder<'_>, offset: usize) -> Value {
+        assert!(offset % 8 == 0 && offset / 8 < WORDS && IMMUTABLE & (1 << (offset / 8)) != 0);
+        b.ins().load(types::I64, MemFlags::new(), self.pointer, offset as i32)
+    }
     pub(in crate::native_artifact) fn read(&self, b: &mut FunctionBuilder<'_>, offset: usize) -> Value {
         if let Some(width) = self.specialized_width {
             let bits = width * u64::from(self.domain.bits());
