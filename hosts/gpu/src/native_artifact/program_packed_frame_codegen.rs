@@ -62,6 +62,12 @@ pub(in crate::native_artifact) fn without_frame_effects<T>(f: impl FnOnce() -> T
 pub(in crate::native_artifact) fn take_frame_effect_emissions() -> (usize, usize, usize) {
     EMISSIONS.with(|counts| counts.replace((0, 0, 0)))
 }
+pub(in crate::native_artifact) fn effects_enabled() -> bool {
+    #[cfg(test)]
+    { !EFFECTS_DISABLED.with(Cell::get) }
+    #[cfg(not(test))]
+    { true }
+}
 
 pub(in crate::native_artifact) struct FrameState {
     pointer: Value,
@@ -85,9 +91,7 @@ impl FrameState {
             b.def_var(variable, value);
             variable
         }).collect();
-        let effects_enabled = true;
-        #[cfg(test)]
-        let effects_enabled = effects_enabled && !EFFECTS_DISABLED.with(Cell::get);
+        let effects_enabled = effects_enabled();
         let dirty_only = super::super::packed_loop_codegen::invariant_loops_enabled();
         Self { pointer, words: Some(words), effects_enabled, dirty_only, emissions: Cell::new([0; 14]), domain }
     }

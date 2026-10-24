@@ -34,6 +34,31 @@ pub(in crate::native_artifact) use outlined::define_functions;
 #[cfg(test)]
 pub(in crate::native_artifact) use outlined::{take_outline_emissions, without_loop_outlining};
 
+// The bridge's extra fixed template is admitted only for the same bounded
+// graph and narrow helper effects that fit the unchanged source-site lane.
+// Unsupported or deliberately disabled proofs retain ordinary native calls.
+fn preserving_calls_proved(code: CodePlan<'_>, closed: &Layout, id: usize,
+    owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates, slots: &BTreeSet<usize>) -> bool
+{
+    if !packed_maps::effects_enabled() || !invariants::enabled() { return false; }
+    #[cfg(test)]
+    if TAG_THREADING_DISABLED.with(std::cell::Cell::get)
+        || LOOKUP_FACTS_DISABLED.with(std::cell::Cell::get)
+        || LOOP_BOUNDS_DISABLED.with(std::cell::Cell::get) { return false; }
+    let Some(graph) = tag_threading::derive(code, closed, id, owner, aggregates) else { return false; };
+    let Some(bounds) = loop_bounds::derive(code, closed, id, owner, aggregates, &graph, slots) else { return false; };
+    if invariants::derive(code, closed, id, owner, &graph, &bounds, slots).is_none() { return false; }
+    let Some(facts) = lookup_facts::derive(code, closed, id, owner, aggregates, &graph) else { return false; };
+    graph.nodes.iter().zip(facts).all(|(node, fact)| {
+        let Action::LibraryCall { template, .. } = code.blocks()[node.site].action() else { return true; };
+        match template.primitive() {
+            P::MapKeyAccess => fact == packed_maps::LookupFact::Present,
+            P::MapInsert => matches!(fact, packed_maps::LookupFact::Cached | packed_maps::LookupFact::Present | packed_maps::LookupFact::Absent),
+            _ => true,
+        }
+    })
+}
+
 #[cfg(test)]
 thread_local! {
     static EDGE_FACT_EMISSIONS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };

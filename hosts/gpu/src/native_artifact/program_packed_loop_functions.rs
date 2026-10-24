@@ -50,7 +50,8 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
     for (id, region) in closed.regions.iter().enumerate() {
         if functions.len() == MAX_FUNCTIONS { break; }
         let Some(slots) = eligible_slots(code, closed, id, owner, aggregates) else { continue; };
-        if !attempted_shim {
+        let preserve_calls = preserving_calls_proved(code, closed, id, owner, aggregates, &slots);
+        if preserve_calls && !attempted_shim {
             attempted_shim = true;
             shim = crate::native_artifact::program_bound_shim::define(module, entry_symbol, limits, report)?;
         }
@@ -78,7 +79,7 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             let exit = b.create_block();
             let hooks = Hooks::load(true, &mut b, module, args[0], args[5], error)?
                 .ok_or_else(|| backend("outlined packed loop requires installed hooks"))?;
-            let hooks = if let Some(shim) = shim {
+            let hooks = if preserve_calls && let Some(shim) = shim {
                 hooks.with_bound_shim(&mut b, module, shim.function)
             } else { hooks };
             // Cover the loader and both final returns in addition to the
@@ -107,7 +108,9 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             header: site, symbol, stack_bytes: stack, code_bytes: bytes,
             caller_template_bound: CALLER_TEMPLATE_BOUND, cleanup,
         });
-        functions.push((site, function, stack, bytes));
+        let nested_stack = stack.checked_add(if preserve_calls { shim.map_or(0, |v| v.stack) } else { 0 })
+            .ok_or_else(|| backend("outlined nested stack overflow"))?;
+        functions.push((site, function, nested_stack, bytes));
         #[cfg(test)]
         EMISSIONS.with(|value| value.set(value.get() + 1));
     }
