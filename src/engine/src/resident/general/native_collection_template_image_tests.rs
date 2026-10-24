@@ -49,6 +49,18 @@ fn build_owned_template_image_roundtrips_with_the_actual_factory() {
     assert_eq!(loaded, template);
     let outer = crate::native_artifact::NativeProgramLibraryTemplate::from_root(template.clone());
     let outer_image = serde_json::to_value(&outer).unwrap();
+    // Keep the preexisting wire contract independently of its compact private
+    // representation, including every redundant consistency-check field.
+    let expected_outer = serde_json::json!({
+        "origin": {"node": template.node(), "block": null, "local": null},
+        "revision": template.program_revision(),
+        "inputs": template.inputs(),
+        "output": template.output(),
+        "contract": template.contract(),
+        "selected_key": template.selected_key(),
+        "selected": {"Root": &template},
+    });
+    assert_eq!(outer_image, expected_outer);
     // SAFETY: same checked fixture; metadata is inspected only, never executed.
     let loaded = unsafe {
         crate::native_artifact::program_image_read::library::template(
@@ -59,6 +71,33 @@ fn build_owned_template_image_roundtrips_with_the_actual_factory() {
     }
     .unwrap();
     assert_eq!(loaded, outer);
+    for key in ["inputs", "output", "contract", "selected_key", "revision"] {
+        let mut missing = outer_image.clone();
+        missing.as_object_mut().unwrap().remove(key);
+        let mut extra = outer_image.clone();
+        extra
+            .as_object_mut()
+            .unwrap()
+            .insert("unexpected".into(), true.into());
+        let mut extra_tag = outer_image.clone();
+        extra_tag["selected"]
+            .as_object_mut()
+            .unwrap()
+            .insert("Lexical".into(), false.into());
+        for changed in [&missing, &extra, &extra_tag] {
+            // SAFETY: rejection probes stay confined to this test.
+            assert!(
+                unsafe {
+                    crate::native_artifact::program_image_read::library::template(
+                        changed,
+                        &catalog,
+                        artifact.schemas(),
+                    )
+                }
+                .is_err()
+            );
+        }
+    }
     for (pointer, replacement) in [
         (
             "/revision/0",
