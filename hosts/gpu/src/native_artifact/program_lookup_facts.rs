@@ -6,35 +6,9 @@ use super::packed_maps::LookupFact as Fact;
 use tag_threading::{Edge, Graph, Target};
 use mech_engine::native_artifact::NativeScalarOp as Op;
 use std::collections::VecDeque;
-use crate::native_artifact::iteration_compiler::LookupThreading;
 
 const MAX_NODES: usize = 1024;
 const MAX_PREDICATES: usize = 128;
-// Four existing call/bounds/adjacency modes must still fit their unchanged
-// 1024-node admission bound. Unsupported expansion keeps the original graph.
-const MAX_THREADED_NODES: usize = 256;
-
-#[cfg(test)]
-thread_local! {
-    static THREADING_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    static THREAD_EMISSIONS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_lookup_threading<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore { fn drop(&mut self) { THREADING_DISABLED.with(|v| v.set(self.0)); } }
-    let _restore = Restore(THREADING_DISABLED.with(|v| v.replace(true))); f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_lookup_thread_emissions() -> (usize, usize) {
-    THREAD_EMISSIONS.with(|v| v.replace((0, 0)))
-}
-pub(super) fn note_threading(nodes: usize) {
-    #[cfg(test)]
-    THREAD_EMISSIONS.with(|v| { let (regions, old) = v.get(); v.set((regions + 1, old + nodes)); });
-    #[cfg(not(test))]
-    let _ = nodes;
-}
 
 #[derive(Clone, Debug)]
 enum Expr { Unknown, Copy(usize), Not(usize), Equal(usize, u32) }
@@ -56,7 +30,7 @@ enum Effect {
 }
 #[derive(Clone, Debug)]
 struct Step { effect: Effect, edge: Edge, condition: Expr }
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct State {
     lookup: Fact,
     // true: this boolean equals current-key presence; false: its inverse.
@@ -183,8 +157,8 @@ fn aggregate_effect(layout: &NativeScalarAggregates, action: &Aggregate) -> Opti
     Some(Effect::Words(values.into_iter().enumerate().map(|(i, expr)| (base + i, expr)).collect()))
 }
 
-fn steps(code: CodePlan<'_>, closed: &Layout, id: usize,
-    owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates, graph: &Graph) -> Option<Vec<Step>>
+pub(super) fn derive(code: CodePlan<'_>, closed: &Layout, id: usize,
+    owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates, graph: &Graph) -> Option<Vec<Fact>>
 {
     let region = &closed.regions[id];
     region.packed.as_ref()?;
@@ -238,100 +212,7 @@ fn steps(code: CodePlan<'_>, closed: &Layout, id: usize,
         };
         steps.push(Step { effect, condition, edge: node.edge.clone() });
     }
-    Some(steps)
-}
-
-pub(super) fn derive(code: CodePlan<'_>, closed: &Layout, id: usize,
-    owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates, graph: &Graph) -> Option<Vec<Fact>>
-{
-    solve(&steps(code, closed, id, owner, aggregates, graph)?)
-}
-
-struct ThreadBuilder {
-    keys: Vec<(usize, State)>,
-    interned: BTreeMap<(usize, State), usize>,
-}
-impl ThreadBuilder {
-    fn target(&mut self, target: Target, mut state: State, steps: &[Step]) -> Option<Target> {
-        let Target::Node(original) = target else { return Some(Target::Exit); };
-        // No current-key predicate survives a selection or a header/refill.
-        // Canonicalize BEFORE interning so old cache state cannot duplicate
-        // headers or leak across a new source range.
-        if matches!(steps.get(original)?.effect, Effect::Reset | Effect::Select) { state = State::default(); }
-        let key = (original, state);
-        if let Some(&node) = self.interned.get(&key) { return Some(Target::Node(node)); }
-        if self.keys.len() == MAX_THREADED_NODES { return None; }
-        let node = self.keys.len();
-        self.keys.push(key.clone());
-        self.interned.insert(key, node);
-        Some(Target::Node(node))
-    }
-}
-
-/// A bounded product of the actual source CFG and current-key facts. Keeping
-/// the two incoming states separate at a join does not move or fuse a source
-/// action: each version emits that exact action and its original successor.
-/// Insertion refreshes the private entry after growth; selection/header clears
-/// all old aliases. Unknown shapes keep the existing intersecting analysis.
-fn thread_steps(graph: &Graph, steps: &[Step]) -> Option<(Graph, LookupThreading)> {
-    if graph.nodes.is_empty() || graph.nodes.len() > MAX_THREADED_NODES || graph.nodes.len() != steps.len() { return None; }
-    let old_facts = solve(steps)?;
-    let mut builder = ThreadBuilder { keys: Vec::new(), interned: BTreeMap::new() };
-    builder.target(Target::Node(0), State::default(), steps)?;
-    let mut nodes = Vec::new();
-    let mut states = Vec::new();
-    let mut folded = Vec::new();
-    let mut improved = false;
-    while nodes.len() < builder.keys.len() {
-        let (original, mut state) = builder.keys[nodes.len()].clone();
-        let source = &graph.nodes[original];
-        let step = &steps[original];
-        improved |= old_facts[original] == Fact::Cached && matches!(state.lookup, Fact::Present | Fact::Absent);
-        states.push((nodes.len(), original, source.site, state.lookup.name()));
-        state.apply(&step.effect)?;
-        let edge = match &step.edge {
-            Edge::Jump(next) => Edge::Jump(builder.target(*next, state, steps)?),
-            Edge::Reject => Edge::Reject,
-            Edge::Dispatch { cases, other } => {
-                let cases = cases.iter().map(|&(tag, next)| Some((tag, builder.target(next, state.clone(), steps)?)))
-                    .collect::<Option<Vec<_>>>()?;
-                Edge::Dispatch { cases, other: builder.target(*other, state, steps)? }
-            }
-            Edge::Branch { yes, no } => {
-                let predicate = step.condition.predicate(&state.aliases);
-                let mut branch = |next, truth| {
-                    let mut selected = state.clone();
-                    let possible = predicate.is_none_or(|polarity| selected.refine(polarity == truth));
-                    if possible { Some(Some(builder.target(next, selected, steps)?)) } else { Some(None) }
-                };
-                let yes = branch(*yes, true)?;
-                let no = branch(*no, false)?;
-                match (yes, no) {
-                    (Some(yes), Some(no)) => Edge::Branch { yes, no },
-                    (Some(next), None) | (None, Some(next)) => {
-                        folded.push((nodes.len(), source.site)); Edge::Jump(next)
-                    }
-                    (None, None) => return None,
-                }
-            }
-        };
-        nodes.push(tag_threading::Node { site: source.site, edge, header_tag: source.header_tag,
-            folded_branch: source.folded_branch, known_latch: source.known_latch });
-    }
-    if !improved { return None; }
-    let receipt = LookupThreading {
-        original_tag_nodes: graph.nodes.len(), states, folded_predicate_branches: folded,
-    };
-    Some((Graph { carrier_word: graph.carrier_word, variants: graph.variants.clone(), nodes }, receipt))
-}
-
-pub(super) fn thread(code: CodePlan<'_>, closed: &Layout, id: usize,
-    owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates, graph: &Graph)
-    -> Option<(Graph, LookupThreading)>
-{
-    #[cfg(test)]
-    if THREADING_DISABLED.with(std::cell::Cell::get) { return None; }
-    thread_steps(graph, &steps(code, closed, id, owner, aggregates, graph)?)
+    solve(&steps)
 }
 
 #[cfg(test)]
@@ -339,57 +220,6 @@ mod tests {
     use super::*;
     fn step(effect: Effect, next: usize) -> Step {
         Step { effect, edge: Edge::Jump(Target::Node(next)), condition: Expr::Unknown }
-    }
-    fn graph(steps: &[Step]) -> Graph {
-        Graph { carrier_word: 0, variants: vec![0, 1], nodes: steps.iter().enumerate()
-            .map(|(site, step)| tag_threading::Node { site, edge: step.edge.clone(), header_tag: None,
-                folded_branch: false, known_latch: false }).collect() }
-    }
-    #[test]
-    fn lookup_threading_keeps_join_states_separate_but_discards_stale_predicates() {
-        let mut source = vec![step(Effect::Reset, 1), step(Effect::Select, 2), step(Effect::Contains(10), 3),
-            step(Effect::Words(Vec::new()), 4), step(Effect::Get(12), 6), step(Effect::Words(Vec::new()), 6),
-            step(Effect::Insert, 7), step(Effect::Words(Vec::new()), 8), step(Effect::Select, 9),
-            step(Effect::Words(Vec::new()), 10), step(Effect::Words(Vec::new()), 12),
-            step(Effect::Words(Vec::new()), 12), step(Effect::Reset, 0)];
-        source[3].edge = Edge::Branch { yes: Target::Node(4), no: Target::Node(5) };
-        source[3].condition = Expr::Copy(10);
-        // This branch uses the saved OLD-key predicate after insertion and a
-        // new selection. It cannot establish presence for the new key.
-        source[9].edge = Edge::Branch { yes: Target::Node(10), no: Target::Node(11) };
-        source[9].condition = Expr::Copy(10);
-        assert_eq!(solve(&source).unwrap()[6], Fact::Cached);
-        let (threaded, receipt) = thread_steps(&graph(&source), &source).unwrap();
-        let facts_at = |site| receipt.states.iter().filter(|state| state.2 == site)
-            .map(|state| state.3).collect::<BTreeSet<_>>();
-        assert_eq!(facts_at(6), BTreeSet::from(["Present", "Absent"]));
-        assert_eq!(facts_at(7), BTreeSet::from(["Present"]));
-        assert_eq!(facts_at(10), BTreeSet::from(["Fresh"]));
-        assert_eq!(facts_at(11), BTreeSet::from(["Fresh"]));
-        for &site in &[0, 12] { assert_eq!(facts_at(site), BTreeSet::from(["Unknown"])); }
-        for node in threaded.nodes.iter().filter(|node| node.site == 9) {
-            assert!(matches!(node.edge, Edge::Branch { .. }), "stale predicate was folded");
-        }
-        // Every emitted node still performs precisely its original action;
-        // solve the expanded graph again independently by intersection.
-        let expanded = receipt.states.iter().zip(&threaded.nodes).map(|(state, node)| {
-            let mut step = source[state.1].clone(); step.edge = node.edge.clone(); step
-        }).collect::<Vec<_>>();
-        let checked = solve(&expanded).unwrap();
-        for &(node, _, site, fact) in &receipt.states {
-            if site == 6 { assert_eq!(checked[node].name(), fact); }
-        }
-    }
-    #[test]
-    fn lookup_threading_declines_expansion_beyond_the_existing_four_mode_bound() {
-        let mut source = (0..MAX_THREADED_NODES).map(|n| step(Effect::Words(Vec::new()), n + 1)).collect::<Vec<_>>();
-        source[0].effect = Effect::Select;
-        source[1].effect = Effect::Contains(10);
-        source[2].condition = Expr::Copy(10);
-        source[2].edge = Edge::Branch { yes: Target::Node(3), no: Target::Node(4) };
-        source[3].edge = Edge::Jump(Target::Node(4));
-        source.last_mut().unwrap().edge = Edge::Jump(Target::Exit);
-        assert!(thread_steps(&graph(&source), &source).is_none());
     }
     #[test]
     fn lookup_facts_follow_membership_aliases_and_invalidate_on_insert_selection_and_headers() {

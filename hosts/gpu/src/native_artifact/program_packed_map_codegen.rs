@@ -17,7 +17,7 @@ mod hash_tests;
 
 /// Compile-time facts rederived from the source CFG for this selected key.
 /// Memory-mode callers and unsupported graphs always use Unknown.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
 pub(in crate::native_artifact) enum LookupFact { Unknown, Fresh, Cached, Present, Absent }
 impl LookupFact {
     pub(super) fn name(self) -> &'static str { match self {
