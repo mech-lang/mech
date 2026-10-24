@@ -173,7 +173,7 @@ impl NativeProgramObject {
         &self.identity
     }
     pub fn metadata(&self) -> serde_json::Value {
-        serde_json::json!({
+        let mut metadata = serde_json::json!({
             "schema": "mech.canonical-managed-program-object.v1",
             "abi_version": VERSION,
             "entry_symbol": ENTRY,
@@ -212,10 +212,11 @@ impl NativeProgramObject {
             "compiled_cfg_cleanup": &self.codegen.cfg_cleanup,
             "compiled_outlined_loops": &self.codegen.outlined_loops,
             "compiled_loop_invariants": &self.codegen.loop_invariants,
-            "compiled_bound_call_shim": &self.codegen.bound_call_shim,
-            "compiled_preserving_call_regions": &self.codegen.preserving_call_regions,
             "linked": false, "executed": false, "timing_samples": 0,
-        })
+        });
+        metadata["compiled_bound_call_shim"] = serde_json::json!(&self.codegen.bound_call_shim);
+        metadata["compiled_preserving_call_regions"] = serde_json::json!(&self.codegen.preserving_call_regions);
+        metadata
     }
 }
 pub fn emit_program_object(
