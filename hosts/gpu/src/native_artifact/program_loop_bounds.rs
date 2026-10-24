@@ -173,6 +173,20 @@ pub(super) fn continuation_liveness(code: CodePlan<'_>, closed: &Layout, id: usi
     live_in(code, graph, &effects, closed.regions[id].tail.returned().get() as usize)
 }
 
+/// Every source word that any node in the actual tag graph can change. This
+/// includes cold/unsupported nodes, so omitting a write is never justified by
+/// an assumed hot path. Unknown actions decline the snapshot optimization.
+pub(super) fn source_writes(code: CodePlan<'_>, closed: &Layout, id: usize,
+    owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates, graph: &Graph)
+    -> Option<BTreeSet<usize>>
+{
+    let mut writes = BTreeSet::from([graph.carrier_word]);
+    for node in &graph.nodes {
+        writes.extend(effects(code, closed, id, owner, aggregates, node.site)?.writes);
+    }
+    Some(writes)
+}
+
 fn apply(code: CodePlan<'_>, closed: &Layout, id: usize, owner: &NativeMapOwnerWords,
     aggregates: &NativeScalarAggregates, site: usize, state: &mut State, terms: &mut Terms,
     pure: bool) -> Option<()>
