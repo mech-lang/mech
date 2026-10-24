@@ -259,8 +259,16 @@ fn guarded_loop_metadata_records_emission_and_declines_changed_source_obligation
             assert!((1..=1024).contains(&region["fixed_template_instructions"].as_u64().unwrap()));
             assert_eq!(region["certified_range_versions"].as_array().unwrap().len(), emitted.1);
             let nodes = region["emitted_nodes"].as_u64().unwrap();
+            let header = region["header"].as_u64().unwrap();
+            let invariant = metadata["compiled_loop_invariants"].as_array().unwrap().iter()
+                .find(|r| r["header"] == header);
+            let first_guarded = invariant.map_or(nodes / 2, |r| {
+                let stride = r["version_stride"].as_u64().unwrap();
+                assert_eq!(nodes, 4 * stride);
+                stride
+            });
             for version in region["certified_range_versions"].as_array().unwrap() {
-                assert!((nodes / 2..nodes).contains(&version.as_u64().unwrap()), "only the guarded graph may omit range bounds");
+                assert!((first_guarded..nodes).contains(&version.as_u64().unwrap()), "only guarded versions may omit range bounds");
             }
             let descriptor = object.descriptor();
             let header = region["header"].as_u64().unwrap() as usize;
