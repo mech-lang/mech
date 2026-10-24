@@ -68,8 +68,8 @@ fn emitted_scanner_uses_no_matrix_and_preserves_owner_over_activation_and_errors
                 u64::from_le_bytes(identity[16..24].try_into().unwrap()),
                 crate::native_artifact::program_identity::NATIVE_PROGRAM_TYPED_IR_VERSION
             );
-            assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 27);
-            assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 65);
+            assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 28);
+            assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 66);
             for (offset, preceding) in [
                 (16, 45),
                 (24, 23),

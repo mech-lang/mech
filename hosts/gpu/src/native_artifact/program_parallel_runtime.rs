@@ -37,6 +37,7 @@ pub(super) struct Receipt {
     pub hash_regions: u64,
     pub hash_updates: u64,
     pub packed_regions: u64,
+    pub direct_lookup_regions: u64,
     pub packed_updates: u64,
     pub packed_ssa_regions: u64,
     pub guarded_loop_regions: u64,
@@ -286,6 +287,7 @@ impl Context<'_, '_> {
             self.hash_table_regions = self.hash_table_regions.checked_add(result.hash_regions).ok_or_else(|| invalid("parallel region overflow"))?;
             self.hash_table_updates = self.hash_table_updates.checked_add(result.hash_updates).ok_or_else(|| invalid("parallel update overflow"))?;
             self.packed_map_regions = self.packed_map_regions.checked_add(result.packed_regions).ok_or_else(|| invalid("parallel packed region overflow"))?;
+            self.direct_lookup_regions = self.direct_lookup_regions.checked_add(result.direct_lookup_regions).ok_or_else(|| invalid("parallel direct lookup region overflow"))?;
             self.packed_map_updates = self.packed_map_updates.checked_add(result.packed_updates).ok_or_else(|| invalid("parallel packed update overflow"))?;
             self.packed_ssa_regions = self.packed_ssa_regions.checked_add(result.packed_ssa_regions).ok_or_else(|| invalid("parallel SSA region overflow"))?;
             self.guarded_loop_regions = self.guarded_loop_regions.checked_add(result.guarded_loop_regions).ok_or_else(|| invalid("parallel guarded loop count overflow"))?;
@@ -363,6 +365,7 @@ impl Context<'_, '_> {
         self.worker.as_mut().unwrap().result = Some(Receipt { value, previous,
             visits: self.control.visits, hash_regions: self.hash_table_regions, hash_updates: self.hash_table_updates,
             packed_regions: self.packed_map_regions, packed_updates: self.packed_map_updates,
+            direct_lookup_regions: self.direct_lookup_regions,
             packed_ssa_regions: self.packed_ssa_regions, guarded_loop_regions: self.guarded_loop_regions,
             guarded_call_regions: self.guarded_call_regions,
             frozen_map_regions: self.frozen_map_regions,

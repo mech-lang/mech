@@ -158,7 +158,10 @@ fn selected_template(
 // IR76 obtains the cold index bias from the owned frame at the snapshot,
 // rather than sharing the hot source SSA expression and its live registers.
 // Frame immutability, source recipes and original finite prices are unchanged.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 76;
+// IR77 / ABI28 add an optional bounded complete-key lookup cache over the
+// original hash table. Every key and source update remains; allocation, cache
+// maintenance and growth refreshes are admitted under work policy66.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 77;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -286,7 +289,7 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 76;
 // ABI23 binds both payload layouts; the packed Frame remains nineteen words.
 // Policy65 prices complete frozen-map validation and private read probes;
 // physical canonical-map import, sorting and allocation are genuinely absent.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 65;
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 66;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

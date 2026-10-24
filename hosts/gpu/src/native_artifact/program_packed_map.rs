@@ -36,8 +36,9 @@ pub(super) struct Frame {
     pub read_call_allowed: u64,
     pub write_call_allowed: u64,
     pub controls: u64,
+    pub lookup_cache: u64,
 }
-pub(super) const FRAME_WORDS: usize = 19;
+pub(super) const FRAME_WORDS: usize = 20;
 pub(super) const SLOTS: usize = 0;
 pub(super) const CAPACITY: usize = 1;
 pub(super) const LENGTH: usize = 2;
@@ -57,6 +58,7 @@ pub(super) const RANGE_CALL_ALLOWED: usize = 15;
 pub(super) const READ_CALL_ALLOWED: usize = 16;
 pub(super) const WRITE_CALL_ALLOWED: usize = 17;
 pub(super) const CONTROLS: usize = 18;
+pub(super) const LOOKUP_CACHE: usize = 19;
 
 #[repr(C)]
 #[derive(Clone, Copy, Default, Debug)]
@@ -81,6 +83,11 @@ use payload::Slots;
 mod frozen;
 pub(super) use frozen::FrozenPackedMap;
 
+#[path = "program_packed_lookup_cache.rs"]
+mod lookup;
+use lookup::LookupCache;
+pub(super) use lookup::lookup_cache_entries;
+
 /// Counts bound one complete acyclic source-body traversal, including branches
 /// not taken. These are descriptor-derived counts, never user-supplied fuel.
 #[derive(Clone, Copy, Debug)]
@@ -98,6 +105,7 @@ pub(super) struct PackedMap {
     // stays put when the containing closed-loop owner is moved into its Box.
     slots: Slots,
     controls: Vec<u8>,
+    lookup_cache: Option<LookupCache>,
     frame: Box<Frame>,
     backing: ManagedMemoryReservation,
     metadata: ManagedMemoryReservation,
@@ -186,16 +194,17 @@ impl PackedMap {
         let (_, decode) = domain.tables();
         let key_bits = width * u64::from(domain.bits());
         let mut owner = Self {
-            slots: Slots::new(domain, 0)?, controls: Vec::new(), frame: Box::new(Frame { slots: 0, capacity: 0, len: 0,
+            slots: Slots::new(domain, 0)?, controls: Vec::new(), lookup_cache: None, frame: Box::new(Frame { slots: 0, capacity: 0, len: 0,
                 fuel: 0, updates: 0, key_low: 0, key_high: 0, entry_pointer: 0, entry_known: 0,
                 source_ptr: 0, source_len: 0, width, previous_start: u64::MAX,
                 low_mask: if key_bits < 64 { (1u64 << key_bits) - 1 } else { u64::MAX },
                 high_mask: if key_bits > 64 { (1u64 << (key_bits - 64)) - 1 } else { 0 },
-                range_call_allowed: 0, read_call_allowed: 0, write_call_allowed: 0, controls: 0 }),
+                range_call_allowed: 0, read_call_allowed: 0, write_call_allowed: 0, controls: 0, lookup_cache: 0 }),
             backing, metadata, nodes, work, limits, outside_nodes, width, domain, decode, body, issued: 0, funded: 0,
         };
         // Even an empty table has a finite, generated-probe-compatible shape.
         owner.allocate_initial()?;
+        owner.try_lookup_cache()?;
         let flags = owner.call_flags(owner.frame.capacity, 0)?;
         owner.set_call_flags(flags);
         Ok(owner)
@@ -210,6 +219,7 @@ impl PackedMap {
     pub(super) fn updates(&self) -> u64 { self.frame.updates }
     pub(super) fn funded(&self) -> u64 { self.funded }
     pub(super) fn remaining(&self) -> u64 { self.frame.fuel }
+    pub(super) fn uses_lookup_cache(&self) -> bool { self.lookup_cache.is_some() }
 
     fn validate_frame(&self) -> Result<(), Error> {
         if self.frame.slots != self.slots.address()
@@ -222,6 +232,7 @@ impl PackedMap {
             || self.frame.len > self.frame.capacity / 8 * 7
             || self.frame.fuel > self.issued || self.frame.entry_known > 1
             || self.frame.width != self.width
+            || self.frame.lookup_cache != self.lookup_cache.as_ref().map_or(0, LookupCache::address)
         { return Err(Error::Binding("invalid private packed-map frame")); }
         Ok(())
     }
@@ -432,8 +443,11 @@ impl PackedMap {
         let probes = add(add(old_capacity, capacity)?,
             if growth { mul(old_capacity, capacity)? } else { 0 })?;
         let recheck = if growth { mul(mul(old_capacity, self.width)?, 32)? } else { 0 };
-        let extra = Price { compute: add(add(add(mul(probes, 128)?, recheck)?, mul(table_bytes, 32)?)?,
-            add(mul(self.width, 32)?, 256)?)?, comparison: mul(probes, 2)? };
+        let cache_work = self.lookup_cache.as_ref().map_or(Ok(0), |cache| {
+            if growth { add(mul(cache.len() as u64, 32)?, mul(capacity, 64)?) } else { Ok(32) }
+        })?;
+        let extra = Price { compute: add(add(add(add(mul(probes, 128)?, recheck)?, mul(table_bytes, 32)?)?,
+            add(mul(self.width, 32)?, 256)?)?, cache_work)?, comparison: mul(probes, 2)? };
         let write = self.write_price(old_capacity, self.frame.len)?;
         self.check_call_price(Price { compute: add(write.compute, extra.compute)?,
             comparison: add(write.comparison, extra.comparison)? })?;
@@ -493,6 +507,16 @@ impl PackedMap {
         self.frame.len = count;
         self.frame.updates = updates;
         self.frame.entry_pointer = self.slots.entry_address(index);
+        if let Some(cache) = &mut self.lookup_cache {
+            if growth {
+                cache.clear();
+                for (at, slot) in self.slots.iter().enumerate() {
+                    if self.controls[at] != EMPTY {
+                        cache.insert(slot.low, self.slots.entry_address(at));
+                    }
+                }
+            } else { cache.insert(low, self.frame.entry_pointer); }
+        }
         self.set_call_flags(flags);
         Ok(())
     }
