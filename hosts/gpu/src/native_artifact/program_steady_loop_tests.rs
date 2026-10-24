@@ -46,6 +46,9 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
         "every emitted incoming header edge needs its own exact cold snapshot");
     assert!(checks.iter().any(serde_json::Value::is_null), "initial entry retains the fuel check");
     assert!(checks.iter().any(serde_json::Value::is_u64), "source backedges retain the fuel check");
+    assert_eq!(pure["prepaid_stop_edges"], serde_json::json!(checks.iter()
+        .filter_map(serde_json::Value::as_u64).collect::<Vec<_>>()));
+    assert_eq!(pure["fuel_reconstructed_at_exits"], true);
     assert!(pure["maximum_fuel_check_instructions"].as_u64().unwrap() > 0);
     assert_eq!(pure["entry_stop_index_word"], bound["index_word"]);
     assert_eq!(pure["entry_stop_endpoint_words"], serde_json::json!([
