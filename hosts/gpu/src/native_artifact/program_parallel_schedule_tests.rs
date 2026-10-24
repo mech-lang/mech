@@ -3,21 +3,13 @@ use super::*;
 
 #[test]
 fn size_ordered_string_jobs_keep_unicode_outputs_in_source_order() {
-    let original = tests::artifact_source(
+    let original = tests::artifact_source(&source(
+        "number/format(h{\"a\"}, 0u64)",
         r#"
-+> text
-#Repeat(s<string>, n<u64>) => <string>
-  | :Next(index<u64>, accumulated<string>)
-  | :Done(accumulated<string>).
-#Repeat(s, n) -> :Next(0u64, "")
-  :Next(index, accumulated)
-    | index >= n -> :Done(accumulated)
-    | * -> :Next(index + 1u64, accumulated + s)
-  :Done(accumulated) => accumulated.
 items := ["x" "elephant" "é" "longer"]
-text/join([#Repeat(item, 2u64) | item <- items], "|")
+text/join([count-text(text, width, sequence/length(item)) | item <- items], "|")
 "#,
-    );
+    ));
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(
         &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
     )
@@ -32,13 +24,15 @@ text/join([#Repeat(item, 2u64) | item <- items], "|")
             unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
         for descriptor in [jit.descriptor(), &restored] {
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = [input(&artifact, &memory)];
+            let baseline = (memory.used_bytes(), memory.retained_nodes());
             let mut snapshots = Vec::new();
             for workers in [1, 8] {
                 let mut outputs = vec![None; artifact.outputs().len()];
                 let report = observed_with_nodes(
                     descriptor,
                     jit.test_checked_entry(),
-                    &[],
+                    &args,
                     &mut outputs,
                     &memory,
                     workers,
@@ -55,37 +49,27 @@ text/join([#Repeat(item, 2u64) | item <- items], "|")
                 }
                 let output = outputs.last().unwrap().as_ref().unwrap();
                 assert!(matches!(output.data(), ValueData::String(text)
-                    if text.as_ref() == "xx|elephantelephant|éé|longerlonger"));
+                    if text.as_ref() == "1|3|1|2"));
                 snapshots.push(output.canonical_snapshot_bytes(artifact.schemas()).unwrap());
                 drop(outputs);
-                assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+                assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
             }
             assert_eq!(snapshots[0], snapshots[1]);
+            drop(args);
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
         }
     }
 }
 
 #[test]
 fn size_ordered_later_failure_never_precedes_an_earlier_source_push() {
-    let original = tests::artifact_source(
+    let original = tests::artifact_source(&source(
+        "number/format(h{\"a\"} + 8u64 / (8u64 - n), 0u64)",
         r#"
-+> text
-+> number
-+> sequence
-#Repeat(s<string>, n<u64>) => <string>
-  | :Next(index<u64>, accumulated<string>)
-  | :Done(accumulated<string>).
-#Repeat(s, n) -> :Next(0u64, "")
-  :Next(index, accumulated)
-    | index >= n -> :Done(accumulated)
-    | * -> :Next(index + 1u64, accumulated + s)
-  :Done(accumulated) => accumulated.
-render(item<string>) => (out<string>) :=
-  out := #Repeat(number/format(8u64 / (8u64 - sequence/length(item)), 0u64), 2u64).
 items := ["z" "enormous"]
-text/join([render(item) | item <- items], "|")
+text/join([count-text(text, width, sequence/length(item)) | item <- items], "|")
 "#,
-    );
+    ));
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(
         &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
     )
@@ -98,13 +82,15 @@ text/join([render(item) | item <- items], "|")
         .unwrap();
         for fail_push in [false, true] {
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = [input(&artifact, &memory)];
+            let baseline = (memory.used_bytes(), memory.retained_nodes());
             let mut errors = Vec::new();
             for workers in [1, 8] {
                 let mut outputs = vec![None; artifact.outputs().len()];
                 let error = observed_with_nodes(
                     jit.descriptor(),
                     jit.test_checked_entry(),
-                    &[],
+                    &args,
                     &mut outputs,
                     &memory,
                     workers,
@@ -122,7 +108,7 @@ text/join([render(item) | item <- items], "|")
                 assert!(outputs.iter().all(Option::is_none));
                 errors.push(format!("{error:?}"));
                 drop(outputs);
-                assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+                assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
             }
             assert_eq!(errors[0], errors[1]);
             assert!(errors[0].contains(if fail_push {
@@ -130,6 +116,8 @@ text/join([render(item) | item <- items], "|")
             } else {
                 "Arithmetic"
             }));
+            drop(args);
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
         }
     }
 }
