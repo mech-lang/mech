@@ -225,3 +225,169 @@ fn multiple_reservations_and_maximum_fuel_do_not_wrap_or_double_reconcile() {
     drop(first);
     assert_eq!(root.unscoped_remaining(), Some((u64::MAX - 2, u64::MAX - 2)));
 }
+
+#[test]
+fn unscoped_debit_matches_separate_queries_with_reservations_and_tight_limits() {
+    for (compute, comparison) in [(100, 60), (7, 0), (0, 7), (u64::MAX, u64::MAX)] {
+        let (candidate, _) = root(compute, comparison);
+        let (reference, _) = root(compute, comparison);
+        for work in [&candidate, &reference] {
+            work.charge(compute / 16, comparison / 16).unwrap();
+        }
+        let candidate_group = candidate.reserve_worker_group(compute / 4, comparison / 4).unwrap();
+        let reference_group = reference.reserve_worker_group(compute / 4, comparison / 4).unwrap();
+        for _ in 0..5 {
+            let prepare = |remaining: (u64, u64)| {
+                let count = (remaining.0 / 5 / 4).min(remaining.1 / 2 / 4).min(1024).max(1);
+                Ok::<_, ResidentKernelError>((count * 5, count * 2, count))
+            };
+            let remaining = reference.unscoped_remaining().unwrap();
+            let expected = prepare(remaining).and_then(|(compute, comparison, count)| {
+                reference.charge(compute, comparison).map(|()| Some(count))
+            });
+            assert_eq!(candidate.with_unscoped_debit(prepare), expected);
+            assert_eq!(candidate.used(), reference.used());
+            assert_eq!(candidate.unscoped_remaining(), reference.unscoped_remaining());
+        }
+        assert_eq!(candidate_group.finish().unwrap(), (0, 0));
+        assert_eq!(reference_group.finish().unwrap(), (0, 0));
+    }
+}
+
+#[test]
+fn unscoped_debit_rejects_active_scopes_and_respects_root_restrictions() {
+    let (work, _) = root(100, 30);
+    let (foreign, _) = root(100, 30);
+    let forbidden = |_| -> Result<(u64, u64, ()), ResidentKernelError> {
+        panic!("a scoped transaction must not invoke its preparer")
+    };
+    assert_eq!(work.with_scope(|| work.with_unscoped_debit(forbidden)).unwrap(), Ok(None));
+    assert_eq!(foreign.with_scope(|| work.with_unscoped_debit(forbidden)).unwrap(), Ok(None));
+    work.with_call_limits(5, 2, || {
+        assert_eq!(work.with_unscoped_debit(forbidden), Ok(None));
+    }).unwrap();
+    struct RootGuard(Option<(u64, u64)>);
+    impl Drop for RootGuard {
+        fn drop(&mut self) { CONTROL_ROOT_LIMITS.with(|root| root.set(self.0)); }
+    }
+    let _guard = RootGuard(CONTROL_ROOT_LIMITS.with(|root| root.replace(Some((8, 3)))));
+    let before = work.used();
+    assert!(work.with_unscoped_debit(|remaining| {
+        assert_eq!(remaining, (8, 3));
+        Ok::<_, ResidentKernelError>((8, 4, ()))
+    }).is_err());
+    assert_eq!(work.used(), before);
+    assert_eq!(work.with_unscoped_debit(|remaining| {
+        assert_eq!(remaining, (8, 3));
+        Ok::<_, ResidentKernelError>((8, 3, 17))
+    }).unwrap(), Some(17));
+    assert_eq!(work.used(), (8, 3));
+    assert!(work.with_unscoped_debit(|remaining| {
+        assert_eq!(remaining, (0, 0));
+        Ok::<_, ResidentKernelError>((1, 0, ()))
+    }).is_err());
+    assert_eq!(work.used(), (8, 3));
+}
+
+#[test]
+fn unscoped_debit_concurrent_workers_commit_both_dimensions_once() {
+    let (root, memory) = root(28, 8);
+    let baseline = memory.used_bytes();
+    let group = root.reserve_worker_group(28, 8).unwrap();
+    let barrier = Arc::new(std::sync::Barrier::new(8));
+    let handles = (0..8).map(|_| {
+        let loan = group.worker_loan().unwrap();
+        let barrier = barrier.clone();
+        std::thread::spawn(move || {
+            let worker = NativeLibraryWorkBudget::from_worker_loan(loan).unwrap();
+            barrier.wait();
+            let accepted = worker.with_unscoped_debit(|remaining| {
+                assert_eq!(remaining.0, remaining.1 / 2 * 7);
+                Ok::<_, ResidentKernelError>((7, 2, ()))
+            }).is_ok();
+            assert_eq!(worker.used(), if accepted { (7, 2) } else { (0, 0) });
+            accepted
+        })
+    }).collect::<Vec<_>>();
+    assert_eq!(handles.into_iter().map(|handle| usize::from(handle.join().unwrap())).sum::<usize>(), 4);
+    assert_eq!(group.finish().unwrap(), (28, 8));
+    assert_eq!(root.used(), (28, 8));
+    assert_eq!(memory.used_bytes(), baseline);
+    assert!(root.charge(1, 0).is_err());
+}
+
+#[test]
+fn unscoped_debit_errors_and_sealing_never_partially_commit_or_refund() {
+    let (root, memory) = root(50, 3);
+    let baseline = memory.used_bytes();
+    let group = root.reserve_worker_group(50, 3).unwrap();
+    let left = NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap();
+    let right = NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap();
+    left.charge(5, 3).unwrap();
+    let error = ResidentKernelError::InvalidShape;
+    assert_eq!(right.with_unscoped_debit(|remaining| -> Result<(u64, u64, ()), _> {
+        assert_eq!(remaining, (45, 0));
+        Err(error.clone())
+    }), Err(error));
+    assert_eq!(right.used(), (0, 0));
+    assert!(right.with_unscoped_debit(|_| Ok::<_, ResidentKernelError>((40, 1, ()))).is_err());
+    assert_eq!(right.used(), (0, 0));
+    assert_eq!(right.with_unscoped_debit(|remaining| {
+        assert_eq!(remaining, (45, 0));
+        Ok::<_, ResidentKernelError>((45, 0, ()))
+    }).unwrap(), Some(()));
+    assert_eq!(right.used(), (45, 0));
+    assert_eq!(group.finish(), Err(ResidentKernelError::InvalidInput));
+    assert_eq!(root.used(), (50, 3));
+    assert_eq!(right.with_unscoped_debit(|_| -> Result<(u64, u64, ()), ResidentKernelError> {
+        panic!("a sealed group must not invoke its preparer")
+    }), Ok(None));
+    drop((left, right));
+    assert_eq!(memory.used_bytes(), baseline);
+}
+
+#[test]
+fn unscoped_debit_keeps_worker_local_limits_below_shared_fuel() {
+    let (root, _) = root(30, 10);
+    let group = root.reserve_worker_group(30, 10).unwrap();
+    let worker = NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap();
+    let peer = NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap();
+    worker.restrict(9, 3).unwrap();
+    peer.charge(5, 1).unwrap();
+    assert!(worker.with_unscoped_debit(|remaining| {
+        assert_eq!(remaining, (9, 3));
+        Ok::<_, ResidentKernelError>((10, 2, ()))
+    }).is_err());
+    assert_eq!(worker.used(), (0, 0));
+    worker.with_unscoped_debit(|remaining| {
+        assert_eq!(remaining, (9, 3));
+        Ok::<_, ResidentKernelError>((9, 3, ()))
+    }).unwrap().unwrap();
+    peer.charge(16, 6).unwrap();
+    drop((worker, peer));
+    assert_eq!(group.finish().unwrap(), (30, 10));
+    assert_eq!(root.used(), (30, 10));
+}
+
+#[test]
+#[cfg(panic = "unwind")]
+fn unscoped_debit_unwind_releases_the_mutex_and_keeps_original_work() {
+    let (root, _) = root(30, 8);
+    let group = root.reserve_worker_group(30, 8).unwrap();
+    let left = NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap();
+    let right = NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap();
+    left.charge(3, 1).unwrap();
+    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _: Result<Option<()>, ResidentKernelError> = left.with_unscoped_debit(|_| {
+            panic!("owned unscoped debit preparation unwind")
+        });
+    })).is_err());
+    assert_eq!(left.used(), (3, 1));
+    right.with_unscoped_debit(|remaining| {
+        assert_eq!(remaining, (27, 7));
+        Ok::<_, ResidentKernelError>((27, 7, ()))
+    }).unwrap().unwrap();
+    drop((left, right));
+    assert_eq!(group.finish().unwrap(), (30, 8));
+    assert_eq!(root.used(), (30, 8));
+}

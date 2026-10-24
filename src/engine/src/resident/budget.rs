@@ -309,20 +309,8 @@ impl NativeLibraryWorkBudget {
         {
             return None;
         }
-        let root = CONTROL_ROOT_LIMITS
-            .with(|v| v.get())
-            .unwrap_or((u64::MAX, u64::MAX));
         let state = self.account.borrow();
-        let local = (
-            state
-                .compute_limit
-                .min(root.0)
-                .checked_sub(state.used.compute)?.checked_sub(state.reserved.compute)?,
-            state
-                .comparison_limit
-                .min(root.1)
-                .checked_sub(state.used.comparison)?.checked_sub(state.reserved.comparison)?,
-        );
+        let local = unscoped_local_remaining(&state)?;
         if let Some(worker) = &state.worker {
             let shared = worker.remaining()?;
             Some((local.0.min(shared.0), local.1.min(shared.1)))
@@ -673,6 +661,17 @@ impl Drop for ControlWorkScopeGuard {
     fn drop(&mut self) {
         CONTROL_WORK_SCOPE.with(|active| *active.borrow_mut() = self.0.take());
     }
+}
+
+#[cfg(feature = "native-artifact")]
+fn unscoped_local_remaining(account: &ControlWorkAccount) -> Option<(u64, u64)> {
+    let root = CONTROL_ROOT_LIMITS.with(|v| v.get()).unwrap_or((u64::MAX, u64::MAX));
+    Some((
+        account.compute_limit.min(root.0)
+            .checked_sub(account.used.compute)?.checked_sub(account.reserved.compute)?,
+        account.comparison_limit.min(root.1)
+            .checked_sub(account.used.comparison)?.checked_sub(account.reserved.comparison)?,
+    ))
 }
 
 fn checked_local_control_account_work(
