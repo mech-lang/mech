@@ -1,4 +1,5 @@
 //! Direct pointer/length operations over proved, invocation-owned String views.
+use super::super::compiler::memory_regions;
 use super::super::{
     NativeCompileError,
     compiler::{backend, offset},
@@ -18,10 +19,18 @@ fn pair(
 ) -> Result<[Value; 2], NativeCompileError> {
     let slot = layout.slot(v);
     Ok([
-        b.ins()
-            .load(types::I64, MemFlags::new(), locals, offset(slot)?),
-        b.ins()
-            .load(types::I64, MemFlags::new(), locals, offset(slot + 1)?),
+        b.ins().load(
+            types::I64,
+            memory_regions::borrowed(),
+            locals,
+            offset(slot)?,
+        ),
+        b.ins().load(
+            types::I64,
+            memory_regions::borrowed(),
+            locals,
+            offset(slot + 1)?,
+        ),
     ])
 }
 fn put(
@@ -31,6 +40,16 @@ fn put(
     value: Value,
 ) -> Result<(), NativeCompileError> {
     b.ins().store(MemFlags::new(), value, locals, offset(slot)?);
+    Ok(())
+}
+fn put_view(
+    b: &mut FunctionBuilder,
+    locals: Value,
+    slot: usize,
+    value: Value,
+) -> Result<(), NativeCompileError> {
+    b.ins()
+        .store(memory_regions::borrowed(), value, locals, offset(slot)?);
     Ok(())
 }
 pub(in crate::native_artifact) fn prepare(
@@ -84,14 +103,14 @@ fn prepare_region(
     let zero = b.ins().iconst(types::I64, 0);
     hooks.call(b, site, operation, [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
-    put(b, locals, layout.ready, ready)?;
+    put_view(b, locals, layout.ready, ready)?;
     // The checked callback verifies capacity and writes every capture, even
     // for a declined representation. All targets are admitted native words.
     for index in 0..layout.capture_words() {
         let word = b
             .ins()
             .load(types::I64, MemFlags::new(), hooks.arguments, offset(index)?);
-        put(b, locals, layout.captures + index, word)?;
+        put_view(b, locals, layout.captures + index, word)?;
     }
     Ok(())
 }
@@ -141,9 +160,12 @@ pub(in crate::native_artifact) fn emit(
     };
     let hooks = hooks.ok_or_else(|| backend("borrowed String operation lacks owner hooks"))?;
     let layout = &layout.regions[region];
-    let ready = b
-        .ins()
-        .load(types::I64, MemFlags::new(), locals, offset(layout.ready)?);
+    let ready = b.ins().load(
+        types::I64,
+        memory_regions::borrowed(),
+        locals,
+        offset(layout.ready)?,
+    );
     let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
     let native = b.create_block();
     let ordinary = b.create_block();
@@ -161,7 +183,7 @@ pub(in crate::native_artifact) fn emit(
             let [table, count] = pair(b, locals, layout, source)?;
             let first = b.ins().load(
                 types::I64,
-                MemFlags::new(),
+                memory_regions::borrowed(),
                 locals,
                 offset(layout.slot(source) + 2)?,
             );
@@ -280,8 +302,8 @@ pub(in crate::native_artifact) fn emit(
         }
     }
     if let Some(words) = view {
-        put(b, locals, layout.slot(output), words[0])?;
-        put(b, locals, layout.slot(output) + 1, words[1])?;
+        put_view(b, locals, layout.slot(output), words[0])?;
+        put_view(b, locals, layout.slot(output) + 1, words[1])?;
     }
     b.ins().jump(joined, &[]);
     b.switch_to_block(ordinary);

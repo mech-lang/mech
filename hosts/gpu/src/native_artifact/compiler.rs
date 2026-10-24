@@ -22,6 +22,9 @@ use mech_engine::native_artifact::{
 use sha2::Digest;
 use std::collections::BTreeMap;
 
+#[path = "compiler_memory_regions.rs"]
+pub(super) mod memory_regions;
+
 #[derive(Clone, Copy, Debug)]
 pub struct NativeCompileLimits {
     pub max_nodes: u64,
@@ -331,9 +334,17 @@ pub(super) fn frame_load(b: &mut FunctionBuilder<'_>, frame: Value, offset: usiz
         .load(types::I64, MemFlags::new(), frame, offset as i32)
 }
 pub(super) fn set_origin(b: &mut FunctionBuilder<'_>, frame: Value, node: u64) {
+    set_origin_with_flags(b, frame, node, MemFlags::new());
+}
+pub(super) fn set_origin_with_flags(
+    b: &mut FunctionBuilder<'_>,
+    frame: Value,
+    node: u64,
+    flags: MemFlags,
+) {
     let word = b.ins().iconst(types::I64, node as i64);
     b.ins().store(
-        MemFlags::new(),
+        flags,
         word,
         frame,
         core::mem::offset_of!(NativeEntryFrame, error_node) as i32,
