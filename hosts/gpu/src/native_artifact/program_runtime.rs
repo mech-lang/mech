@@ -136,6 +136,8 @@ pub struct NativeProgramExecutionReport {
     pub packed_ssa_regions: u64,
     /// Completed regions whose actual guarded-loop selector chose the fast CFG.
     pub guarded_loop_regions: u64,
+    /// Completed regions whose initial selector chose proved call-limit checks.
+    pub guarded_call_regions: u64,
     /// Complete packed maps actually retained at their original output boundary.
     pub frozen_map_regions: u64,
     /// Successful original source queries against those complete private maps.
@@ -237,6 +239,7 @@ struct Context<'plan, 'visit> {
     packed_map_updates: u64,
     packed_ssa_regions: u64,
     guarded_loop_regions: u64,
+    guarded_call_regions: u64,
     frozen_map_regions: u64,
     frozen_map_reads: u64,
     parallel_regions: u64,
@@ -4357,7 +4360,7 @@ mod tests {
     }
     #[test]
     fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 26);
+        assert_eq!(VERSION, 27);
         assert_eq!(super::super::program_abi::PHASE_CAPTURE_TAIL, 3);
         assert_eq!(super::super::program_abi::STATUS_INPUT_SCANNED, 7);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);

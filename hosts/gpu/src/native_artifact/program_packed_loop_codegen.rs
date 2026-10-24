@@ -25,6 +25,11 @@ mod loop_bounds;
 mod lookup_facts;
 #[path = "program_packed_loop_functions.rs"]
 mod outlined;
+#[path = "program_loop_invariants.rs"]
+mod invariants;
+pub(in crate::native_artifact) use invariants::enabled as invariant_loops_enabled;
+#[cfg(test)]
+pub(in crate::native_artifact) use invariants::{take_invariant_emissions, without_loop_invariants};
 pub(in crate::native_artifact) use outlined::define_functions;
 #[cfg(test)]
 pub(in crate::native_artifact) use outlined::{take_outline_emissions, without_loop_outlining};
@@ -373,6 +378,12 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     #[cfg(test)]
     let facts = if EDGE_FACTS_DISABLED.with(std::cell::Cell::get) { edge_facts::Proof::default() } else { facts };
     let report_region = report.packed_ssa_region(site);
+    let invariant = bounds.as_ref().zip(threaded.as_ref()).and_then(|(bounds, graph)|
+        invariants::derive(code, closed, id, owner, graph, bounds, &slots));
+    let invariant = if invariant.is_some() && report_region.is_some()
+        && report.reserve_invariant_region(threaded.as_ref().unwrap().nodes.len() * 4)
+        { invariant } else { None };
+
     let owner_index = region.map.unwrap();
     let setup = b.func.dfg.num_insts();
     let words = Words::new(b, locals, code, slots)?;
@@ -390,14 +401,16 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     let mut emitted_sites = threaded.as_ref().map_or_else(|| source_sites.clone(),
         |graph| graph.nodes.iter().map(|node| node.site).collect());
     let version_nodes = emitted_sites.len();
-    if bounds.is_some() { emitted_sites.extend_from_within(..); }
+    let modes = if invariant.is_some() { 4 } else if bounds.is_some() { 2 } else { 1 };
+    for _ in 1..modes { emitted_sites.extend_from_within(..version_nodes); }
     let blocks = emitted_sites.iter().map(|_| b.create_block()).collect::<Vec<_>>();
     let original_target = |next: u32| if next == region.tail.exit() { exit } else {
         blocks[source_sites.binary_search(&(next as usize)).unwrap()]
     };
-    let graph_target = |target: tag_threading::Target, guarded: bool| match target {
-        tag_threading::Target::Node(index) => blocks[index + if guarded { version_nodes } else { 0 }], tag_threading::Target::Exit => exit,
+    let graph_target = |target: tag_threading::Target, mode: usize| match target {
+        tag_threading::Target::Node(index) => blocks[index + mode * version_nodes], tag_threading::Target::Exit => exit,
     };
+    let calls_allowed = invariant.as_ref().map(|_| invariants::calls_allowed(b, &packed));
     let trip_end = if let Some(proof) = &bounds {
         let width = words.read(b, proof.width_word);
         let limit = words.read(b, proof.limit_word);
@@ -416,8 +429,11 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         b.switch_to_block(selected_bounds);
         // This receipt runs exactly once, only after the actual selector has
         // succeeded and before any original header debit or source action.
-        hooks.bound_call(b, function, context, site, 14, [width, limit, zero], error);
-        b.ins().jump(blocks[version_nodes], &[]);
+        let call_guard = calls_allowed.map(|v| b.ins().uextend(types::I64, v)).unwrap_or(zero);
+        hooks.bound_call(b, function, context, site, 14, [width, limit, call_guard], error);
+        if let Some(allowed) = calls_allowed {
+            b.ins().brif(allowed, blocks[2 * version_nodes], &[], blocks[version_nodes], &[]);
+        } else { b.ins().jump(blocks[version_nodes], &[]); }
         Some(end)
     } else {
         b.ins().jump(if threaded.is_some() { blocks[0] } else { original_target(site as u32) }, &[]);
@@ -430,10 +446,19 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     let mut header_versions = 0;
     let mut certified_ranges = Vec::new();
     let mut lookup_substitutions = Vec::new();
+    let mut call_substitutions = Vec::new();
+    let mut rolling_substitutions = Vec::new();
+    let mut steady_latches = Vec::new();
+    let mut refreshes = Vec::new();
+    let mut refresh_template_work = 0;
+
     for (version, &index) in emitted_sites.iter().enumerate() {
         let block = &code.blocks()[index];
         let current = blocks[version];
-        let guarded = version >= version_nodes;
+        let mode = version / version_nodes;
+        let guarded = mode != 0;
+        let calls_proved = mode >= 2;
+        let mut refresh = None;
         let graph_node = version % version_nodes;
         let threaded_node = threaded.as_ref().map(|graph| &graph.nodes[graph_node]);
         // The entry frame observes a source origin only when control leaves
@@ -474,7 +499,11 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
                 let last = words.read(b, span.operands()[1].get() as usize);
                 let certified = guarded && bounds.as_ref().is_some_and(|proof| proof.ranges.contains(&graph_node));
                 if certified { certified_ranges.push(version); }
-                packed_maps::select_state_with_bounds(b, &packed, first, last, hooks, function, context, index, fail_at, certified);
+                let adjacent = mode == 3 && certified;
+                if calls_proved { call_substitutions.push((version, index, 10)); }
+                if adjacent { rolling_substitutions.push((version, index)); }
+                packed_maps::select_state_proved(b, &packed, first, last, hooks, function, context, index, fail_at,
+                    packed_maps::SelectionProof { bounds: certified, calls: calls_proved, adjacent });
             }
         } else if owner.call_region(index) == Some(owner_index) {
             let Action::LibraryCall { template, operands, output } = block.action() else { unreachable!() };
@@ -482,8 +511,14 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
             let replacement = if operation == 5 { words.read(b, operands[2].get() as usize) } else { zero };
             let token = words.read(b, operands[0].get() as usize);
             let lookup = lookups.as_ref().map_or(packed_maps::LookupFact::Unknown, |facts| facts[graph_node]);
-            let value = packed_maps::operation_state_with_lookup(b, &packed, operation, replacement,
-                token, hooks, function, context, index, fail_at, lookup);
+            let refreshed = if invariant.is_some() && guarded && operation == 5 {
+                let block = b.create_block(); b.append_block_param(block, types::I64);
+                b.set_cold_block(block);
+                refresh = Some((block, *output)); Some(block)
+            } else { None };
+            let value = packed_maps::operation_state_proved(b, &packed, operation, replacement,
+                token, hooks, function, context, index, fail_at, lookup, calls_proved, refreshed);
+            if calls_proved { call_substitutions.push((version, index, operation)); }
             if lookup != packed_maps::LookupFact::Unknown { lookup_substitutions.push((version, index, operation, lookup.name())); }
             words.write(b, output.get() as usize, value);
         } else {
@@ -519,12 +554,17 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
                 let index = words.read(b, proof.index_word);
                 let stop = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, index, trip_end.unwrap());
                 let tag_threading::Edge::Branch { yes, no } = node.edge else { unreachable!() };
-                b.ins().brif(stop, graph_target(yes, true), &[], graph_target(no, true), &[]);
+                b.ins().brif(stop, graph_target(yes, mode), &[], graph_target(no, mode), &[]);
             } else if guarded && bounds.as_ref().is_some_and(|proof| proof.later.contains(&graph_node)) {
                 let tag_threading::Edge::Branch { no, .. } = node.edge else { unreachable!() };
-                b.ins().jump(graph_target(no, true), &[]);
+                b.ins().jump(graph_target(no, mode), &[]);
             } else { match &node.edge {
-                tag_threading::Edge::Jump(target) => { b.ins().jump(graph_target(*target, guarded), &[]); }
+                tag_threading::Edge::Jump(target) => {
+                    let next_mode = if calls_proved && invariant.as_ref().is_some_and(|p| p.steady_latches.contains(&graph_node)) {
+                        steady_latches.push((version, index)); 3
+                    } else { mode };
+                    b.ins().jump(graph_target(*target, next_mode), &[]);
+                }
                 tag_threading::Edge::Dispatch { cases, other } => {
                     // Dispatch follows the original header debit. Each arm
                     // enters a body version, so no traversal is charged twice.
@@ -533,10 +573,10 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
                     for &(ordinal, target) in cases {
                         let next = b.create_block();
                         let equal = b.ins().icmp_imm(IntCC::Equal, value, i64::from(ordinal));
-                        b.ins().brif(equal, graph_target(target, guarded), &[], next, &[]);
+                        b.ins().brif(equal, graph_target(target, mode), &[], next, &[]);
                         b.switch_to_block(next);
                     }
-                    b.ins().jump(graph_target(*other, guarded), &[]);
+                    b.ins().jump(graph_target(*other, mode), &[]);
                     // At most eight comparisons/branches plus a jump. Count
                     // this on EVERY traversal, including unknown backedges.
                     let work = b.func.dfg.num_insts() - before;
@@ -552,12 +592,26 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
                             Term::Scalar(Branch::Branch { yes, .. } | Branch::LiteralBranch { yes, .. }) => yes,
                             _ => unreachable!(),
                         };
-                        graph_target(if next == source_yes { *yes } else { *no }, guarded)
+                        graph_target(if next == source_yes { *yes } else { *no }, mode)
                     });
                 }
             }}
         } else {
             emit_source_terminator(b, &words, code, block.terminator(), fail_at, original_target);
+        }
+        if let Some((refreshed, output)) = refresh {
+            b.switch_to_block(refreshed);
+            let before = b.func.dfg.num_insts();
+            let value = b.block_params(refreshed)[0];
+            words.write(b, output.get() as usize, value);
+            let allowed = invariants::calls_allowed(b, &packed);
+            let tag_threading::Edge::Jump(target) = threaded_node.unwrap().edge else { unreachable!("proved insertion successor"); };
+            // Refresh to this operation's SUCCESSOR, never to the header:
+            // no source action or funded traversal can be repeated or skipped.
+            b.ins().brif(allowed, graph_target(target, if mode == 3 { 3 } else { 2 }), &[],
+                graph_target(target, 1), &[]);
+            refresh_template_work += b.func.dfg.num_insts() - before;
+            refreshes.push((version, index));
         }
         b.switch_to_block(fail_at);
         let status = b.block_params(fail_at)[0];
@@ -596,10 +650,18 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     // a repeated unknown-tag dispatcher, AND both mutually exclusive exits.
     // Known-tag header rematerialization is one instruction in that original
     // header's unchanged OVERHEAD. No charge is removed or renewed here.
-    if entry_template_work + dispatch_template_work + boundary_work
+    let fixed_template_work = entry_template_work + dispatch_template_work + boundary_work + refresh_template_work;
+    if fixed_template_work
         > super::super::program_tail_layout::FIXED_OVERHEAD as usize
     {
         return Err(backend("packed SSA templates exceed fixed per-traversal envelope"));
+    }
+    if invariant.is_some() {
+        invariants::note(call_substitutions.len(), rolling_substitutions.len());
+        report.loop_invariants.push(super::super::iteration_compiler::InvariantLoop {
+            header: site, version_stride: version_nodes, emitted_nodes: emitted_sites.len(),
+            call_substitutions, rolling_substitutions, steady_latches, refreshes, fixed_template_work,
+        });
     }
     report.frame_effects(site, packed.effect_emissions());
     #[cfg(test)]
@@ -613,7 +675,7 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         LOOP_BOUNDS_EMISSIONS.with(|counts| { let old = counts.get(); counts.set((old.0 + 1, old.1 + certified_ranges.len())); });
         report.guarded_loop(site, proof.index_word, proof.width_word, proof.limit_word,
             proof.active_tag, proof.guard_sites, proof.range_site, proof.recurrence_sites.clone(),
-            emitted_sites.len(), certified_ranges, entry_template_work + dispatch_template_work + boundary_work);
+            emitted_sites.len(), certified_ranges, fixed_template_work);
     }
     Ok(())
 }

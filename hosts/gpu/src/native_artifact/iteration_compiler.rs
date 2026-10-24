@@ -231,7 +231,7 @@ fn load(
 
 #[path = "iteration_codegen_report.rs"]
 mod codegen_report;
-pub(super) use codegen_report::{CodegenReport, RegionToken, CfgCleanup, OutlinedLoop};
+pub(super) use codegen_report::{CodegenReport, RegionToken, CfgCleanup, OutlinedLoop, InvariantLoop};
 
 fn define<M: Module>(
     plan: &NativeIterationArtifactPlan,

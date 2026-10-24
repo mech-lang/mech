@@ -202,6 +202,10 @@ impl PackedMap {
     }
 
     pub(super) fn frame(&mut self) -> *mut Frame { &mut *self.frame }
+    pub(super) fn calls_allowed(&self) -> bool {
+        self.frame.range_call_allowed != 0 && self.frame.read_call_allowed != 0
+            && self.frame.write_call_allowed != 0
+    }
     pub(super) fn width(&self) -> u64 { self.width }
     pub(super) fn updates(&self) -> u64 { self.frame.updates }
     pub(super) fn funded(&self) -> u64 { self.funded }

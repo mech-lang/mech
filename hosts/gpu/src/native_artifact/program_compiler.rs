@@ -211,6 +211,7 @@ impl NativeProgramObject {
             "compiled_lookup_facts": &self.codegen.lookup_facts,
             "compiled_cfg_cleanup": &self.codegen.cfg_cleanup,
             "compiled_outlined_loops": &self.codegen.outlined_loops,
+            "compiled_loop_invariants": &self.codegen.loop_invariants,
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }

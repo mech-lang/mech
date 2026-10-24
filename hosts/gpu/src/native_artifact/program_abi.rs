@@ -1,9 +1,9 @@
-//! Mixed-value ABI26 retains folded-product hashes and guarded-loop receipts,
-//! and adds invocation-local frozen-map copy/read helpers.
+//! Mixed-value ABI27 adds the actual call-guard bit to op14's existing
+//! guarded-loop receipt. Folded hashes and frozen-map helpers remain.
 //! Entry phases, control pointer and scalar transport stay unchanged.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 26;
+pub(super) const VERSION: u64 = 27;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
 pub(super) const PHASE_PREFIX: u64 = 2;

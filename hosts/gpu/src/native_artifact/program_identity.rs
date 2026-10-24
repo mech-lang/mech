@@ -106,7 +106,9 @@ fn selected_template(
 // after native data optimization, before register allocation. Work is unchanged.
 // IR52 isolates proved closed packed loops into local native functions; the
 // identical inline body remains the fallback and finite work is unchanged.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 52;
+// IR53 versions guarded calls and peels rolling-key adjacency into a
+// source-proved steady loop. ABI27 binds the actual call-guard selection.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 53;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

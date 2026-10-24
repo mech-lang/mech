@@ -69,6 +69,7 @@ fn check_call(b: &mut FunctionBuilder<'_>, frame: &FrameState, allowed: Value, h
 {
     let accepted = b.create_block();
     let denied = b.create_block();
+    b.set_cold_block(denied);
     b.ins().brif(allowed, accepted, &[], denied, &[]);
     b.switch_to_block(denied);
     fail(b, frame, hooks, function, context, site, op, error);
@@ -93,16 +94,28 @@ pub(super) fn select_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, star
 pub(super) fn select_state_with_bounds(b: &mut FunctionBuilder<'_>, frame: &FrameState, start: Value, end: Value,
     hooks: &Hooks, function: Value, context: Value, site: usize, error: Block, proved: bool)
 {
+    select_state_proved(b, frame, start, end, hooks, function, context, site, error,
+        SelectionProof { bounds: proved, ..Default::default() })
+}
+
+#[derive(Clone, Copy, Default)]
+pub(super) struct SelectionProof { pub bounds: bool, pub calls: bool, pub adjacent: bool }
+
+pub(super) fn select_state_proved(b: &mut FunctionBuilder<'_>, frame: &FrameState, start: Value, end: Value,
+    hooks: &Hooks, function: Value, context: Value, site: usize, error: Block, proof: SelectionProof)
+{
     let bits = i64::from(frame.domain.bits());
     let narrow = narrow(frame.domain);
-    let allowed = read!(b, frame, range_call_allowed);
-    check_call(b, frame, allowed, hooks, function, context, site, 10, error);
+    if !proof.calls {
+        let allowed = read!(b, frame, range_call_allowed);
+        check_call(b, frame, allowed, hooks, function, context, site, 10, error);
+    }
     let zero = b.ins().iconst(types::I64, 0);
     let width = read!(b, frame, width);
     let source = read!(b, frame, source_ptr);
     let length = read!(b, frame, source_len);
     let begin = b.ins().iadd_imm(start, -1);
-    let finish = if proved { b.ins().iadd(begin, width) } else {
+    let finish = if proof.bounds { b.ins().iadd(begin, width) } else {
         let (finish, overflow) = b.ins().uadd_overflow(begin, width);
         let positive = b.ins().icmp_imm(IntCC::UnsignedGreaterThan, start, 0);
         let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, finish, length);
@@ -121,11 +134,15 @@ pub(super) fn select_state_with_bounds(b: &mut FunctionBuilder<'_>, frame: &Fram
         b.switch_to_block(checked);
         finish
     };
-    let previous = read!(b, frame, previous_start);
-    let next = b.ins().iadd_imm(previous, 1);
-    let adjacent = b.ins().icmp(IntCC::Equal, begin, next);
-    let initialized = b.ins().icmp_imm(IntCC::NotEqual, previous, -1);
-    let rolling = b.ins().band(adjacent, initialized);
+    let rolling = if proof.adjacent {
+        b.ins().iconst(types::I8, 1)
+    } else {
+        let previous = read!(b, frame, previous_start);
+        let next = b.ins().iadd_imm(previous, 1);
+        let adjacent = b.ins().icmp(IntCC::Equal, begin, next);
+        let initialized = b.ins().icmp_imm(IntCC::NotEqual, previous, -1);
+        b.ins().band(adjacent, initialized)
+    };
     let reuse = b.create_block();
     let fresh = b.create_block();
     let loop_head = b.create_block();
@@ -340,9 +357,18 @@ pub(super) fn operation_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, o
 pub(super) fn operation_state_with_lookup(b: &mut FunctionBuilder<'_>, frame: &FrameState, op: u64, replacement: Value,
     token: Value, hooks: &Hooks, function: Value, context: Value, site: usize, error: Block, fact: LookupFact) -> Value
 {
-    let allowed = if op == 5 { read!(b, frame, write_call_allowed) }
-        else { read!(b, frame, read_call_allowed) };
-    check_call(b, frame, allowed, hooks, function, context, site, if op == 5 { 12 } else { 11 }, error);
+    operation_state_proved(b, frame, op, replacement, token, hooks, function, context, site, error, fact, false, None)
+}
+
+pub(super) fn operation_state_proved(b: &mut FunctionBuilder<'_>, frame: &FrameState, op: u64, replacement: Value,
+    token: Value, hooks: &Hooks, function: Value, context: Value, site: usize, error: Block, fact: LookupFact,
+    calls_proved: bool, refresh: Option<Block>) -> Value
+{
+    if !calls_proved {
+        let allowed = if op == 5 { read!(b, frame, write_call_allowed) }
+            else { read!(b, frame, read_call_allowed) };
+        check_call(b, frame, allowed, hooks, function, context, site, if op == 5 { 12 } else { 11 }, error);
+    }
     let entry = probe(b, frame, hooks, function, context, site, error, fact);
     let present = match fact {
         LookupFact::Present => b.ins().iconst(types::I8, 1),
@@ -360,11 +386,15 @@ pub(super) fn operation_state_with_lookup(b: &mut FunctionBuilder<'_>, frame: &F
         b.switch_to_block(miss);
         if op == 4 {
             fail(b, frame, hooks, function, context, site, 8, error);
+            b.ins().jump(done, &[token.into()]);
         } else {
             let zero = b.ins().iconst(types::I64, 0);
             frame.call(b, hooks, function, context, site, 7, [zero, zero, replacement], error);
+            // Re-enter the exact source successor after EVERY insertion that
+            // changes storage, including a non-growing insertion. Its refreshed
+            // call flags may have changed even when its backing pointers did not.
+            b.ins().jump(refresh.unwrap_or(done), &[token.into()]);
         }
-        b.ins().jump(done, &[token.into()]);
         b.switch_to_block(hit);
         let value = if op == 4 {
             get(b, entry, value_offset(frame.domain))

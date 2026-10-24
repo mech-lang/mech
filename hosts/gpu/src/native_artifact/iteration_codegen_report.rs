@@ -14,10 +14,12 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub lookup_facts: LookupFacts,
     pub cfg_cleanup: Option<CfgCleanup>,
     pub outlined_loops: Vec<OutlinedLoop>,
+    pub loop_invariants: Vec<InvariantLoop>,
     substitutions: usize,
     tag_records: usize,
     guarded_records: usize,
     lookup_records: usize,
+    invariant_records: usize,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct CfgCleanup {
@@ -29,6 +31,22 @@ pub(in crate::native_artifact) struct CfgCleanup {
 pub(in crate::native_artifact) struct OutlinedLoop {
     pub header: usize, pub symbol: String, pub stack_bytes: u64, pub code_bytes: u64,
     pub caller_template_bound: usize, pub cleanup: CfgCleanup,
+}
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct InvariantLoop {
+    pub header: usize, pub version_stride: usize, pub emitted_nodes: usize,
+    pub call_substitutions: Vec<(usize, usize, u64)>,
+    pub rolling_substitutions: Vec<(usize, usize)>,
+    pub steady_latches: Vec<(usize, usize)>, pub refreshes: Vec<(usize, usize)>,
+    pub fixed_template_work: usize,
+}
+impl CodegenReport {
+    pub fn reserve_invariant_region(&mut self, records: usize) -> bool {
+        if self.loop_invariants.len() >= MAX_REGIONS
+            || self.invariant_records.saturating_add(records) > MAX_SUBSTITUTIONS { return false; }
+        self.invariant_records += records;
+        true
+    }
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct EdgeFacts {
