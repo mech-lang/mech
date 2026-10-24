@@ -146,7 +146,10 @@ fn selected_template(
 // IR72 strip-mines the proved +1 source recurrence by its existing prepaid
 // fuel and endpoint. A cold stack word reconstructs exact fuel on every exit;
 // the hot source loop needs one stopping bound and no fuel counter mutation.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 72;
+// IR73 binds that prepaid extent and cold fuel base as private call arguments,
+// preventing loop rematerialization of their scalar preparation. Original
+// source continuations, finite credit and external helper ABI remain unchanged.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 73;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
