@@ -72,11 +72,16 @@ fn narrow_growth_admits_simultaneous_old_and_new_byte_and_node_claims() {
         let work = new_work(&view);
         let work_bytes = memory.used_bytes();
         let mut caps = limits();
+        // This owner now also retains the optional complete-key pointer
+        // cache. Include its actual geometry in both exact peak boundaries;
+        // the one-byte-short case must still refuse before table mutation.
+        let cache_bytes = lookup_cache_entries(domain, 1).unwrap() as u64 * 8;
         if dimension == "bytes" {
             caps.max_temporary_bytes = Some(work_bytes + metadata
-                + table_bytes(domain, 8).unwrap() + table_bytes(domain, 16).unwrap() - short);
+                + cache_bytes + table_bytes(domain, 8).unwrap() + table_bytes(domain, 16).unwrap() - short);
         }
         let mut map = PackedMap::new_encoded(work.clone(), caps, 1, body(), 0, domain).unwrap();
+        assert_eq!(map.lookup_cache.as_ref().unwrap().len() as u64 * 8, cache_bytes);
         for (index, &key) in b"abcdefg".iter().enumerate() {
             put(&mut map, &[key], if index == 0 { u64::MAX } else { index as u64 });
         }
@@ -99,7 +104,7 @@ fn narrow_growth_admits_simultaneous_old_and_new_byte_and_node_claims() {
             assert_ne!(map.frame.slots, old.1);
             assert_eq!((map.frame.entry_pointer - map.frame.slots) % 16, 0);
             assert!(map.frame.entry_pointer < map.frame.slots + 16 * 16);
-            assert_eq!(memory.used_bytes(), work_bytes + metadata + table_bytes(domain, 16).unwrap());
+            assert_eq!(memory.used_bytes(), work_bytes + metadata + cache_bytes + table_bytes(domain, 16).unwrap());
             assert_eq!(memory.retained_nodes(), base_nodes + 8);
             assert_eq!(begin_key(&mut map, b"a"), Some(u64::MAX));
             assert_eq!(begin_key(&mut map, b"h"), Some(0));
