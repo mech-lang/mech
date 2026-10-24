@@ -12,6 +12,28 @@ pub enum NativeScalarKind {
 /// These are semantic identities, not source names or catalog hashes.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeScalarOp {
+    #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
+    U64BitAnd,
+    #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
+    U64BitOr,
+    #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
+    U64BitXor,
+    #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
+    U64BitNot,
+    #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
+    U64ShlWrap,
+    #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
+    U64ShrWrap,
+    #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
+    U64Clz,
+    #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
+    U64Ctz,
+    #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
+    U64WrappingAdd,
+    #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
+    U64WrappingSub,
+    #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
+    U64WrappingMul,
     U64Add,
     U64Sub,
     U64Mul,
@@ -72,6 +94,11 @@ impl NativeScalarOp {
         use NativeScalarKind::{Bool, F64, I64, U64};
         use NativeScalarOp::*;
         match self {
+            #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
+            U64BitNot | U64Clz | U64Ctz => (&[U64], U64),
+            #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
+            U64BitAnd | U64BitOr | U64BitXor | U64ShlWrap | U64ShrWrap | U64WrappingAdd
+            | U64WrappingSub | U64WrappingMul => (&[U64, U64], U64),
             U64Add | U64Sub | U64Mul | U64Div | U64Rem => (&[U64, U64], U64),
             U64Eq | U64Ne | U64Lt | U64Le | U64Gt | U64Ge => (&[U64, U64], Bool),
             I64Add | I64Sub | I64Mul | I64Div | I64Rem => (&[I64, I64], I64),

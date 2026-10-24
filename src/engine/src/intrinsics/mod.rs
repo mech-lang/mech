@@ -74,6 +74,9 @@ impl MechErrorKind for IndexOutOfBoundsError {
 #[cfg(feature = "functions")]
 pub mod catalog;
 
+#[cfg(feature = "integer_bits")]
+pub(crate) mod bits;
+
 #[cfg(feature = "pure_text")]
 #[doc(hidden)]
 pub mod text_graphemes;

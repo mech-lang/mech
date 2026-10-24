@@ -1015,7 +1015,7 @@ fn validate_contract(
     Ok(())
 }
 
-fn validate_full_write(
+pub(super) fn validate_full_write(
     request: &ResidentKernelBindRequest<'_>,
     input_count: usize,
     shape: ShapeRule,

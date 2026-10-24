@@ -460,6 +460,12 @@ pub(in crate::native_artifact) fn primitive(
         };
         return b.ins().bitcast(types::I64, MemFlags::new(), value);
     }
+    match op {
+        U64BitNot => return b.ins().bnot(a),
+        U64Clz => return b.ins().clz(a),
+        U64Ctz => return b.ins().ctz(a),
+        _ => {}
+    }
     if op == BoolNot {
         return b.ins().bxor_imm(a, 1);
     }
@@ -470,6 +476,21 @@ pub(in crate::native_artifact) fn primitive(
     }
     let c = args[1];
     match op {
+        U64BitAnd => b.ins().band(a, c),
+        U64BitOr => b.ins().bor(a, c),
+        U64BitXor => b.ins().bxor(a, c),
+        U64WrappingAdd => b.ins().iadd(a, c),
+        U64WrappingSub => b.ins().isub(a, c),
+        U64WrappingMul => b.ins().imul(a, c),
+        U64ShlWrap | U64ShrWrap => {
+            let count = b.ins().band_imm(c, 63);
+            if op == U64ShlWrap {
+                b.ins().ishl(a, count)
+            } else {
+                b.ins().ushr(a, count)
+            }
+        }
+        U64BitNot | U64Clz | U64Ctz => unreachable!(),
         U64Add | U64Sub | U64Mul => {
             let (value, overflow) = match op {
                 U64Add => b.ins().uadd_overflow(a, c),

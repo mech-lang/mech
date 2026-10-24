@@ -34,6 +34,8 @@ pub fn install_intrinsic_resident(
     crate::resident::matrix_literal::install(builder)?;
     #[cfg(feature = "resident-artifact")]
     crate::resident::numeric::install(builder)?;
+    #[cfg(all(feature = "resident-artifact", feature = "integer_bits"))]
+    crate::resident::bits::install(builder)?;
     #[cfg(all(feature = "resident-artifact", feature = "pure_text"))]
     crate::resident::pure_text::install(builder)?;
     #[cfg(all(feature = "resident-artifact", feature = "pure_text"))]

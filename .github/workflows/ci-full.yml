@@ -621,10 +621,13 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_source,native-artifact \
             --lib source_semantics::frontend::annotation_conversion_shape_tests:: -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features integer_bits \
+            --test integer_bits -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native \
             --test canonical_artifact_native --test canonical_artifact_i64 --test canonical_artifact_f64 \
-            --test canonical_artifact_cast --test canonical_artifact_match \
+            --test canonical_artifact_cast --test canonical_artifact_bits --test canonical_artifact_match \
             --test canonical_artifact_iteration -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program \

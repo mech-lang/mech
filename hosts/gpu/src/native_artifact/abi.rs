@@ -21,6 +21,17 @@ pub(in crate::native_artifact) const STATUS_ABI: u64 = 3;
 pub(in crate::native_artifact) const fn primitive_work(op: NativeScalarOp) -> u64 {
     match op {
         NativeScalarOp::U64Add
+        | NativeScalarOp::U64BitAnd
+        | NativeScalarOp::U64BitOr
+        | NativeScalarOp::U64BitXor
+        | NativeScalarOp::U64BitNot
+        | NativeScalarOp::U64ShlWrap
+        | NativeScalarOp::U64ShrWrap
+        | NativeScalarOp::U64Clz
+        | NativeScalarOp::U64Ctz
+        | NativeScalarOp::U64WrappingAdd
+        | NativeScalarOp::U64WrappingSub
+        | NativeScalarOp::U64WrappingMul
         | NativeScalarOp::U64Sub
         | NativeScalarOp::U64Mul
         | NativeScalarOp::U64Div
