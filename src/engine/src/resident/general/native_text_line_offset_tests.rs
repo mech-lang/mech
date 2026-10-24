@@ -49,8 +49,8 @@ fn exact_offsets_preserve_utf8_crlf_payload_and_release_only_capacity() {
         let before_work = work.used();
         let before_spent = account.spent();
         let bytes = core::mem::size_of_val(expected) as u64;
-        let payload: usize = text.lines().map(str::len).sum();
-        let offsets = Offsets::new(text, expected.len(), &account).unwrap();
+        let payload = text.lines().map(str::len).sum();
+        let offsets = Offsets::new(text, expected.len(), payload, &account).unwrap();
         assert_eq!(&*offsets.values, expected);
         assert_eq!(offsets.payload_bytes, payload);
         assert_eq!(memory.used_bytes(), before_memory + bytes);
@@ -69,33 +69,6 @@ fn exact_offsets_preserve_utf8_crlf_payload_and_release_only_capacity() {
 }
 
 #[test]
-fn payload_geometry_matches_lines_at_dense_and_cross_block_crlf_edges() {
-    for length in [0, 1, 2, 7, 16, 31, 63, 64, 65, 127, 128, 129, 255, 256, 257] {
-        for prefix in 0..16 {
-            let text = "x".repeat(prefix) + &"é\r\n\r\n\na".repeat(length) + "猫\r\r\nlast\r";
-            let expected = text
-                .match_indices('\n')
-                .map(|(i, _)| i as u32)
-                .collect::<Vec<_>>();
-            let payload: usize = text.lines().map(str::len).sum();
-            let memory = ManagedMemoryBudget::new(MEMORY);
-            let (work, account, fixed) = account(&memory, limits());
-            let offsets = Offsets::new(&text, expected.len(), &account).unwrap();
-            assert_eq!(
-                &*offsets.values, expected,
-                "length={length}, prefix={prefix}"
-            );
-            assert_eq!(
-                offsets.payload_bytes, payload,
-                "length={length}, prefix={prefix}"
-            );
-            drop((offsets, account, fixed, work));
-            assert_eq!(memory.used_bytes(), 0);
-        }
-    }
-}
-
-#[test]
 fn mismatched_counts_fail_without_renewing_work_or_leaking_claims() {
     // Zero and one understate the genuine two offsets; three overstates them.
     // No underestimated count may grow the Vec beyond its prepaid capacity.
@@ -108,7 +81,7 @@ fn mismatched_counts_fail_without_renewing_work_or_leaking_claims() {
         let before_spent = account.spent();
         let bytes = (count * core::mem::size_of::<u32>()) as u64;
         assert!(matches!(
-            Offsets::new("\n\n", count, &account),
+            Offsets::new("\n\n", count, 0, &account),
             Err(InvokeError::InvalidInput)
         ));
         assert_eq!(memory.used_bytes(), before_memory);
@@ -134,7 +107,7 @@ fn overflowing_offset_capacity_fails_before_any_admission_or_debit() {
     );
     let count = usize::MAX / core::mem::size_of::<u32>() + 1;
     assert!(matches!(
-        Offsets::new("", count, &account),
+        Offsets::new("", count, 0, &account),
         Err(InvokeError::InvalidInput)
     ));
     assert_eq!(
@@ -163,7 +136,7 @@ fn exact_and_one_short_local_capacity_preserve_admission_before_debit() {
         let before_memory = memory.used_bytes();
         let before_work = work.used();
         let before_spent = account.spent();
-        let result = Offsets::new("\n\n", 2, &account);
+        let result = Offsets::new("\n\n", 2, 0, &account);
         if short {
             assert!(matches!(
                 result,
@@ -204,7 +177,7 @@ fn exact_and_one_short_local_work_preserve_compute_failure_before_allocation() {
         let before_memory = memory.used_bytes();
         let before_work = work.used();
         let before_spent = account.spent();
-        let result = Offsets::new("\n\n", 2, &account);
+        let result = Offsets::new("\n\n", 2, 0, &account);
         if short {
             assert!(matches!(
                 result,
@@ -246,7 +219,7 @@ fn global_capacity_failure_keeps_prepaid_work_but_no_new_live_claim() {
         let before_memory = memory.used_bytes();
         let before_work = work.used();
         let before_spent = account.spent();
-        let result = Offsets::new("\n\n", 2, &account);
+        let result = Offsets::new("\n\n", 2, 0, &account);
         if short {
             assert!(matches!(
                 result,

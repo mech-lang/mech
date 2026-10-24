@@ -273,7 +273,12 @@ pub(super) struct Offsets {
     _claim: Claim,
 }
 impl Offsets {
-    pub fn new(text: &str, count: usize, account: &Rc<Account>) -> Result<Self, InvokeError> {
+    pub fn new(
+        text: &str,
+        count: usize,
+        payload_bytes: usize,
+        account: &Rc<Account>,
+    ) -> Result<Self, InvokeError> {
         let bytes = count
             .checked_mul(core::mem::size_of::<u32>())
             .ok_or(InvokeError::InvalidInput)?;
@@ -285,27 +290,21 @@ impl Offsets {
         if values.capacity() != count {
             return Err(InvokeError::InvalidInput);
         }
-        // Resolve payload geometry while enumerating the already admitted
-        // delimiter positions. Each LF removes itself and at most one CR;
-        // no second full-fragment CR search is needed for retained chunks.
-        let mut crlf = 0;
+        // Enumerate the already admitted scan in byte blocks, keeping the
+        // producer's exact allocation and portable offset representation.
         crate::intrinsics::text_ops::try_for_each_lf(text, |index| {
             if values.len() == count {
                 return Err(InvokeError::InvalidInput);
             }
             values.push(u32::try_from(index).map_err(|_| InvokeError::InvalidInput)?);
-            crlf += usize::from(index != 0 && text.as_bytes()[index - 1] == b'\r');
             Ok(())
         })?;
         if values.len() != count {
             return Err(InvokeError::InvalidInput);
         }
-        // Every counted CRLF is a disjoint pair in this valid String, so the
-        // two delimiter counts cannot exceed its physical byte length.
-        let payload_bytes = text.len() - count - crlf;
         // Both exact-capacity checks above precede this conversion: the same
         // allocation becomes immutable, without a shrink/reallocation peak.
-        // Cache the resolved LF/CRLF payload cardinality
+        // Cache the producer's already resolved LF/CRLF payload cardinality
         // in place of Vec's now-redundant capacity word. Chunk checks the full
         // enclosing layout at compile time, not during source acquisition.
         Ok(Self {
