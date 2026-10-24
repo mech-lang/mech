@@ -301,7 +301,7 @@ pub(super) fn define<M: Module>(
                 .map(Some),
         )
         .collect::<Vec<_>>();
-    let records = proof.nodes.len()
+    let records = 2 * proof.nodes.len()
         + proof.live.iter().map(BTreeSet::len).sum::<usize>()
         + specialized_widths.len()
         + 2 * check_edges.len();
@@ -356,6 +356,7 @@ pub(super) fn define<M: Module>(
         let mut all_bails = Vec::new();
         let mut all_checks = Vec::new();
         let mut all_header_snapshots = Vec::new();
+        let mut peeled_probe_nodes = BTreeSet::new();
         let mut maximum_check = 0;
         for (width, variant) in std::iter::once((None, generic)).chain(variants) {
             b.switch_to_block(variant);
@@ -458,17 +459,21 @@ pub(super) fn define<M: Module>(
                     };
                     let fact = proof.lookups[index];
                     let value = if template.primitive() == P::MapContainsKey {
-                        let pointer = packed_maps::probe_leaf(
+                        let hit = b.create_block();
+                        let miss = b.create_block();
+                        b.set_cold_block(miss);
+                        packed_maps::probe_leaf_present(
                             &mut b,
                             &packed,
                             fact,
                             proof.present[index],
                             bail[&index],
+                            miss,
                         );
-                        let hit = b.create_block();
-                        let miss = b.create_block();
-                        b.set_cold_block(miss);
-                        b.ins().brif(pointer, hit, &[], miss, &[]);
+                        if fact == packed_maps::LookupFact::Fresh && !proof.present[index] {
+                            peeled_probe_nodes.insert(index);
+                        }
+                        b.ins().jump(hit, &[]);
                         b.switch_to_block(miss);
                         words.write(&mut b, output.get() as usize, zero);
                         let tag_threading::Edge::Jump(next) = node.edge else {
@@ -656,7 +661,7 @@ pub(super) fn define<M: Module>(
         entry_work = dispatch_work + maximum_entry + maximum_check;
         source_work = maximum_source + maximum_check;
         snapshot_work = maximum_snapshot;
-        bail_blocks = (all_bails, all_checks, maximum_check, all_header_snapshots);
+        bail_blocks = (all_bails, all_checks, maximum_check, all_header_snapshots, peeled_probe_nodes);
         b.seal_all_blocks();
         b.finalize();
     }
@@ -768,6 +773,7 @@ pub(super) fn define<M: Module>(
             fuel_check_edges,
             maximum_fuel_check_instructions,
             header_snapshot_edges,
+            peeled_probe_nodes: bail_blocks.4.into_iter().collect(),
             entry_stop_index_word: Some(proof.bounds.index_word),
             entry_stop_endpoint_words: Some([proof.bounds.width_word, proof.bounds.limit_word]),
             entry_instructions: entry_work,

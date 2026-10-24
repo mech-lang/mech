@@ -140,7 +140,10 @@ fn selected_template(
 // traversal returns before its original header/debit for exact outer replay.
 // IR70 gives each incoming header edge its own precise cold snapshot, avoiding
 // initial/completed-state joins while retaining the same source continuation.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 70;
+// IR71 admits a direct present-entry continuation, a peeled first control
+// group and raw first-match SIMD bits. Precise missing/error continuations,
+// bounded later probing and original work prices remain.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 71;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
