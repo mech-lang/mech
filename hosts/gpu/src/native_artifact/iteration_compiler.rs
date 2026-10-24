@@ -2,7 +2,7 @@
 use super::abi::{NO_NODE, NativeEntryFrame as Frame, STATUS_ABI};
 use super::compiler::{
     admit, backend, compiled_stack_bytes, frame_load, guard, host_supported, limit, offset,
-    set_origin_with_flags, signature,
+    set_origin, signature,
 };
 use super::control_compiler::{emit_scalar_action, emit_scalar_terminator};
 use super::iteration_abi::{ENTRY, Entry, NativeIterationDescriptor, VERSION};
@@ -259,11 +259,6 @@ pub(super) fn define_cfg<M: Module>(
     limits: NativeCompileLimits,
 ) -> Result<(FuncId, u64, u64, CodegenReport), NativeCompileError> {
     let mut report = CodegenReport::default();
-    let origin_flags = if plan.is_program() {
-        super::compiler::memory_regions::origin()
-    } else {
-        MemFlags::new()
-    };
     host_supported()?;
     if module.target_config().pointer_type() != types::I64 {
         return Err(NativeCompileError::UnsupportedHost);
@@ -445,7 +440,7 @@ pub(super) fn define_cfg<M: Module>(
         b.set_cold_block(error);
         let nonnull = b.ins().icmp_imm(IntCC::NotEqual, frame, 0);
         guard(&mut b, nonnull, error, STATUS_ABI);
-        set_origin_with_flags(&mut b, frame, NO_NODE, origin_flags);
+        set_origin(&mut b, frame, NO_NODE);
         for (field, value) in [
             (core::mem::offset_of!(Frame, version), version),
             (
@@ -690,7 +685,7 @@ pub(super) fn define_cfg<M: Module>(
                 )?;
             }
             let before = b.func.dfg.num_insts();
-            set_origin_with_flags(&mut b, frame, index as u64, origin_flags);
+            set_origin(&mut b, frame, index as u64);
             #[cfg(feature = "canonical-native-program")]
             if let super::iteration_code_plan::CodePlan::Program(program) = plan {
                 super::program_compiler::parallel_codegen::before_visit(
@@ -1208,7 +1203,7 @@ pub(super) fn define_cfg<M: Module>(
                                 };
                                 hooks.output(&mut b, index, out, first, error)?;
                             }
-                            set_origin_with_flags(&mut b, frame, NO_NODE, origin_flags);
+                            set_origin(&mut b, frame, NO_NODE);
                             let status = b.ins().iconst(types::I64, super::abi::STATUS_OK as i64);
                             b.ins().return_(&[status]);
                         } else {
@@ -1293,8 +1288,7 @@ pub(super) fn define_cfg<M: Module>(
         let status = b.block_params(body_error)[0];
         #[cfg(feature = "canonical-native-program")]
         if let Some(hooks) = &hooks {
-            let site = b.ins().load(types::I64, origin_flags, frame,
-                core::mem::offset_of!(Frame, error_node) as i32);
+            let site = frame_load(&mut b, frame, core::mem::offset_of!(Frame, error_node));
             super::program_compiler::tail_codegen::abort(
                 &mut b, locals, &closed, site, hooks, error,
             )?;
