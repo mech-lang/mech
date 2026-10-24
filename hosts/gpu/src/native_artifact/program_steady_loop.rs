@@ -41,7 +41,6 @@ pub(super) struct Proof {
     nodes: BTreeSet<usize>,
     present: Vec<bool>,
     active: usize,
-    preserved_entry_words: BTreeSet<usize>,
 }
 pub(super) struct Definition {
     pub function: FuncId,
@@ -225,17 +224,6 @@ fn derive(
     {
         return None;
     }
-    // The caller spills every active-entry live word before this call. A
-    // word not written anywhere in the complete source graph remains exact
-    // in that invocation-owned storage. Do not keep a redundant SSA value
-    // live solely to write it back at a cold continuation. Restrict this to
-    // entry-live words: other constant slots need not have been initialized
-    // in the caller's memory, even when their values are known to codegen.
-    let preserved_entry_words = loop_bounds::source_writes(
-        code, closed, id, owner, aggregates, &graph,
-    ).map_or_else(BTreeSet::new, |written| {
-        live[active].difference(&written).copied().collect()
-    });
     Some(Proof {
         graph,
         bounds,
@@ -245,7 +233,6 @@ fn derive(
         nodes,
         present,
         active,
-        preserved_entry_words,
     })
 }
 
@@ -280,8 +267,7 @@ pub(super) fn define<M: Module>(
         return Ok(None);
     };
     let returned = closed.regions[id].tail.returned().get() as usize;
-    let records = proof.nodes.len() + proof.live.iter().map(BTreeSet::len).sum::<usize>()
-        + proof.preserved_entry_words.len();
+    let records = proof.nodes.len() + proof.live.iter().map(BTreeSet::len).sum::<usize>();
     if !report.reserve_steady_region(records) {
         return Ok(None);
     }
@@ -545,9 +531,7 @@ pub(super) fn define<M: Module>(
             b.switch_to_block(block);
             b.set_cold_block(block);
             let start = b.func.dfg.num_insts();
-            let snapshot = proof.live_at(index, returned)
-                .difference(&proof.preserved_entry_words).copied().collect();
-            words.spill_live(&mut b, args[0], &snapshot)?;
+            words.spill_live(&mut b, args[0], &proof.live_at(index, returned))?;
             packed.spill(&mut b);
             let continuation = b.ins().iconst(types::I64, (index + 1) as i64);
             b.ins().return_(&[continuation]);
@@ -644,7 +628,6 @@ pub(super) fn define<M: Module>(
                 })
                 .collect(),
             entry_words: proof.live[proof.active].iter().copied().collect(),
-            preserved_entry_words: proof.preserved_entry_words.iter().copied().collect(),
             entry_instructions: entry_work,
             maximum_source_instructions: source_work,
             maximum_snapshot_instructions: snapshot_work,
