@@ -46,7 +46,7 @@ pub(super) fn derive(code: CodePlan<'_>, closed: &Layout, id: usize,
             if !matches!(node.edge, tag_threading::Edge::Jump(_)) { return None; }
             insertions += 1;
         }
-        if bounds.recurrence_sites.contains(&node.site)
+        if bounds.recurrence_nodes.contains(&index)
             && let tag_threading::Edge::Jump(tag_threading::Target::Node(next)) = node.edge
             && graph.nodes[next].site == region.tail.header() as usize
             && graph.nodes[next].header_tag == Some(bounds.active_tag)

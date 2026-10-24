@@ -27,9 +27,13 @@ mod lookup_facts;
 mod outlined;
 #[path = "program_loop_invariants.rs"]
 mod invariants;
+#[path = "program_loop_mutation_facts.rs"]
+mod mutation_facts;
 pub(in crate::native_artifact) use invariants::enabled as invariant_loops_enabled;
 #[cfg(test)]
 pub(in crate::native_artifact) use invariants::{take_invariant_emissions, without_loop_invariants};
+#[cfg(test)]
+pub(in crate::native_artifact) use mutation_facts::{take_mutation_emissions, without_mutation_facts};
 pub(in crate::native_artifact) use outlined::define_functions;
 #[cfg(test)]
 pub(in crate::native_artifact) use outlined::{take_outline_emissions, without_loop_outlining};
@@ -409,6 +413,9 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     let invariant = if invariant.is_some() && report_region.is_some()
         && report.reserve_invariant_region(threaded.as_ref().unwrap().nodes.len() * 4)
         { invariant } else { None };
+    let mutation = bounds.as_ref().filter(|proof| proof.single_insert_nodes.is_some()
+        && mutation_facts::enabled())
+        .filter(|_| report.reserve_mutation_region(threaded.as_ref().unwrap().nodes.len() * 8));
 
     let owner_index = region.map.unwrap();
     let setup = b.func.dfg.num_insts();
@@ -445,7 +452,20 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, width, limit);
         let actual = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, limit, length);
         let valid = b.ins().band(nonzero, fits);
-        let valid = b.ins().band(valid, actual);
+        let mut valid = b.ins().band(valid, actual);
+        if mutation.is_some() {
+            // Source index and private update tally must describe the same
+            // completed prefix before this relation can cross any header.
+            let index = words.read(b, proof.index_word);
+            let updates = packed.read(b, core::mem::offset_of!(Frame, updates));
+            let aligned = b.ins().icmp(IntCC::Equal, index, updates);
+            // Other variants cannot enter this active recurrence according to
+            // the certificate. Their unrelated tuple fields need no equality.
+            let tag = words.read(b, threaded.as_ref().unwrap().carrier_word);
+            let inactive = b.ins().icmp_imm(IntCC::NotEqual, tag, i64::from(proof.active_tag));
+            let aligned = b.ins().bor(aligned, inactive);
+            valid = b.ins().band(valid, aligned);
+        }
         // Wrapping arithmetic has no source effect on the declined branch.
         // In the selected branch, 1<=width<=limit proves this exact endpoint.
         let end = b.ins().isub(limit, width);
@@ -479,6 +499,9 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     let mut steady_latches = Vec::new();
     let mut refreshes = Vec::new();
     let mut refresh_template_work = 0;
+    let mut counter_headers = Vec::new();
+    let mut counter_checks_removed = Vec::new();
+    let mut nonempty_probes = Vec::new();
 
     for (version, &index) in emitted_sites.iter().enumerate() {
         let source_template_start = b.func.dfg.num_insts();
@@ -501,6 +524,16 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         b.switch_to_block(current);
         if index == site {
             header_versions += 1;
+            if guarded && let Some(proof) = mutation
+                && threaded_node.and_then(|node| node.header_tag) == Some(proof.active_tag)
+            {
+                // Entry equality and exactly one successful insertion per
+                // index+1 recurrence prove this exact value, even before a
+                // refill/error spill. Every physical map update remains.
+                let index_value = words.read(b, proof.index_word);
+                packed.write(b, core::mem::offset_of!(Frame, updates), index_value);
+                counter_headers.push((version, index));
+            }
             let fuel = packed.read(b, core::mem::offset_of!(Frame, fuel));
             let replenish = b.create_block();
             let funded = b.create_block();
@@ -547,7 +580,15 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
                 refresh = Some((block, *output)); Some(block)
             } else { None };
             let value = packed_maps::operation_state_proved(b, &packed, operation, replacement,
-                token, hooks, function, context, index, fail_at, lookup, calls_proved, refreshed);
+                token, hooks, function, context, index, fail_at, lookup, calls_proved,
+                guarded && mutation.is_some_and(|proof| proof.single_insert_nodes.as_ref().unwrap().contains(&graph_node)),
+                mode == 3 && mutation.is_some(), refreshed);
+            if operation == 5 && guarded
+                && mutation.is_some_and(|proof| proof.single_insert_nodes.as_ref().unwrap().contains(&graph_node))
+            { counter_checks_removed.push((version, index)); }
+            if mode == 3 && mutation.is_some()
+                && matches!(lookup, packed_maps::LookupFact::Fresh | packed_maps::LookupFact::Unknown)
+            { nonempty_probes.push((version, index)); }
             if calls_proved { call_substitutions.push((version, index, operation)); }
             if lookup != packed_maps::LookupFact::Unknown { lookup_substitutions.push((version, index, operation, lookup.name())); }
             words.write(b, output.get() as usize, value);
@@ -698,6 +739,16 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         report.loop_invariants.push(super::super::iteration_compiler::InvariantLoop {
             header: site, version_stride: version_nodes, emitted_nodes: emitted_sites.len(),
             call_substitutions, rolling_substitutions, steady_latches, refreshes, fixed_template_work,
+        });
+    }
+    if let Some(proof) = mutation {
+        mutation_facts::note(counter_headers.len(), counter_checks_removed.len(), nonempty_probes.len());
+        report.mutation_loops.push(super::super::iteration_compiler::MutationLoop {
+            header: site, index_word: proof.index_word, active_tag: proof.active_tag,
+            version_stride: version_nodes, emitted_nodes: emitted_sites.len(), alignment_guard: true,
+            source_insert_nodes: proof.single_insert_nodes.as_ref().unwrap().iter()
+                .map(|&node| (node, threaded.as_ref().unwrap().nodes[node].site)).collect(),
+            counter_headers, counter_checks_removed, nonempty_probes,
         });
     }
     report.frame_effects(site, packed.effect_emissions());

@@ -116,7 +116,10 @@ fn selected_template(
 // nine register/stack arguments. Original helper arguments and status remain.
 // IR57 stores exact invocation-constant helper bindings once, outside the
 // loop. Distinct function/context operands retain the ordinary native call.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 57;
+// IR58 proves a single insertion per index+1 recurrence, checks the active
+// entry's tally/index equality, and reuses that exact source progress. Only
+// certified completed recurrence nodes establish steady nonempty storage.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 58;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

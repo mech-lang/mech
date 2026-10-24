@@ -8,12 +8,13 @@ use crate::native_artifact::program_compiler::packed_loop_codegen::{
     take_lookup_fact_emissions, without_lookup_facts,
     take_outline_emissions, without_loop_outlining,
     take_invariant_emissions, without_loop_invariants,
+    take_mutation_emissions, without_mutation_facts,
 };
 use crate::native_artifact::JitProgramArtifact;
 use crate::native_artifact::program_compiler::cfg_cleanup::{take_cfg_cleanup_emissions, without_cfg_cleanup};
 
 #[derive(Clone, Copy)]
-enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants, PreservingCalls }
+enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants, PreservingCalls, MutationFacts }
 impl Pass {
     fn disabled<T>(self, f: impl FnOnce() -> T) -> T {
         match self {
@@ -25,6 +26,7 @@ impl Pass {
             Self::LoopOutlining => without_loop_outlining(f),
             Self::LoopInvariants => without_loop_invariants(f),
             Self::PreservingCalls => crate::native_artifact::program_bound_shim::without_preserving_calls(f),
+            Self::MutationFacts => without_mutation_facts(f),
         }
     }
     fn check(self, edges: (usize, usize), tags: (usize, usize, usize), effects: (usize, usize, usize), selected: bool) {
@@ -33,7 +35,9 @@ impl Pass {
         let outlined = take_outline_emissions();
         let invariants = take_invariant_emissions();
         let preserving = crate::native_artifact::program_bound_shim::take_emissions();
+        let mutation = take_mutation_emissions();
         match self {
+            Self::MutationFacts if !selected => assert_eq!(mutation, (0, 0, 0)),
             Self::PreservingCalls if !selected => assert_eq!(preserving, 0),
             Self::LoopInvariants if !selected => assert_eq!(invariants, (0, 0, 0)),
             Self::LoopOutlining if selected => assert!(outlined > 0),
@@ -55,6 +59,8 @@ impl Pass {
 
 #[path = "program_loop_bounds_tests.rs"]
 mod loop_bounds_tests;
+#[path = "program_loop_mutation_tests.rs"]
+mod mutation_tests;
 
 type PublicationFrontier = (u64, u64, u64, (u64, u64));
 thread_local! {
@@ -528,7 +534,7 @@ fn changed_input_equivalence(pass: Pass) {
             // Bounds must still use the actual selected source, not n.
             ("abc", 2, 4),
         ];
-        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining | Pass::LoopInvariants) {
+        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining | Pass::LoopInvariants | Pass::MutationFacts) {
             cases.push((long_text.as_str(), 3, long_text.len() as u64));
             // Unknown ASCII domain at width18 requires both key words. They
             // must survive refills although refill never reads either word.

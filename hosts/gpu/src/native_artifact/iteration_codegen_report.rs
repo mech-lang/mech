@@ -17,11 +17,21 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub loop_invariants: Vec<InvariantLoop>,
     pub bound_call_shim: Option<BoundCallShim>,
     pub preserving_call_regions: Vec<PreservingCallRegion>,
+    pub mutation_loops: Vec<MutationLoop>,
     substitutions: usize,
     tag_records: usize,
     guarded_records: usize,
     lookup_records: usize,
     invariant_records: usize,
+    mutation_records: usize,
+}
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct MutationLoop {
+    pub header: usize, pub index_word: usize, pub active_tag: u32,
+    pub version_stride: usize, pub emitted_nodes: usize, pub alignment_guard: bool,
+    pub source_insert_nodes: Vec<(usize, usize)>,
+    pub counter_headers: Vec<(usize, usize)>, pub counter_checks_removed: Vec<(usize, usize)>,
+    pub nonempty_probes: Vec<(usize, usize)>,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct BoundCallShim {
@@ -53,6 +63,12 @@ pub(in crate::native_artifact) struct InvariantLoop {
     pub fixed_template_work: usize,
 }
 impl CodegenReport {
+    pub fn reserve_mutation_region(&mut self, records: usize) -> bool {
+        if self.mutation_loops.len() >= MAX_REGIONS
+            || self.mutation_records.saturating_add(records) > MAX_SUBSTITUTIONS { return false; }
+        self.mutation_records += records;
+        true
+    }
     pub fn reserve_invariant_region(&mut self, records: usize) -> bool {
         if self.loop_invariants.len() >= MAX_REGIONS
             || self.invariant_records.saturating_add(records) > MAX_SUBSTITUTIONS { return false; }

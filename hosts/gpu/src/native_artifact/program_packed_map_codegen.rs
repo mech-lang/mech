@@ -231,12 +231,12 @@ fn control_group(b: &mut FunctionBuilder<'_>, address: Value, tag: Value) -> (Va
 }
 
 fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
-    function: Value, context: Value, site: usize, error: Block, fact: LookupFact) -> Value
+    function: Value, context: Value, site: usize, error: Block, fact: LookupFact, nonempty_proved: bool) -> Value
 {
     match fact {
         LookupFact::Cached | LookupFact::Present => read!(b, frame, entry_pointer),
         LookupFact::Absent => b.ins().iconst(types::I64, 0),
-        LookupFact::Fresh => probe_fresh(b, frame, hooks, function, context, site, error),
+        LookupFact::Fresh => probe_fresh(b, frame, hooks, function, context, site, error, nonempty_proved),
         LookupFact::Unknown => {
             let cached = b.create_block(); let initial = b.create_block(); let done = b.create_block();
             b.append_block_param(done, types::I64);
@@ -246,7 +246,7 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
             let entry = read!(b, frame, entry_pointer);
             b.ins().jump(done, &[entry.into()]);
             b.switch_to_block(initial);
-            let entry = probe_fresh(b, frame, hooks, function, context, site, error);
+            let entry = probe_fresh(b, frame, hooks, function, context, site, error, nonempty_proved);
             b.ins().jump(done, &[entry.into()]);
             b.switch_to_block(done);
             b.block_params(done)[0]
@@ -255,7 +255,7 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
 }
 
 fn probe_fresh(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
-    function: Value, context: Value, site: usize, error: Block) -> Value
+    function: Value, context: Value, site: usize, error: Block, nonempty_proved: bool) -> Value
 {
     let narrow = narrow(frame.domain);
     let zero = b.ins().iconst(types::I64, 0);
@@ -276,8 +276,14 @@ fn probe_fresh(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     b.append_block_param(found, types::I64);
     b.append_block_param(done, types::I64);
     let capacity = read!(b, frame, capacity);
-    let nonempty = b.ins().icmp_imm(IntCC::NotEqual, capacity, 0);
-    b.ins().brif(nonempty, setup, &[], absent, &[]);
+    if nonempty_proved {
+        // Only a source-certified completed insertion recurrence establishes
+        // this fact. Initial, checked and unknown callers keep the branch.
+        b.ins().jump(setup, &[]);
+    } else {
+        let nonempty = b.ins().icmp_imm(IntCC::NotEqual, capacity, 0);
+        b.ins().brif(nonempty, setup, &[], absent, &[]);
+    }
     b.switch_to_block(setup);
     let low = read!(b, frame, key_low);
     let high = if narrow { zero } else { read!(b, frame, key_high) };
@@ -357,19 +363,19 @@ pub(super) fn operation_state(b: &mut FunctionBuilder<'_>, frame: &FrameState, o
 pub(super) fn operation_state_with_lookup(b: &mut FunctionBuilder<'_>, frame: &FrameState, op: u64, replacement: Value,
     token: Value, hooks: &Hooks, function: Value, context: Value, site: usize, error: Block, fact: LookupFact) -> Value
 {
-    operation_state_proved(b, frame, op, replacement, token, hooks, function, context, site, error, fact, false, None)
+    operation_state_proved(b, frame, op, replacement, token, hooks, function, context, site, error, fact, false, false, false, None)
 }
 
 pub(super) fn operation_state_proved(b: &mut FunctionBuilder<'_>, frame: &FrameState, op: u64, replacement: Value,
     token: Value, hooks: &Hooks, function: Value, context: Value, site: usize, error: Block, fact: LookupFact,
-    calls_proved: bool, refresh: Option<Block>) -> Value
+    calls_proved: bool, progress_proved: bool, nonempty_proved: bool, refresh: Option<Block>) -> Value
 {
     if !calls_proved {
         let allowed = if op == 5 { read!(b, frame, write_call_allowed) }
             else { read!(b, frame, read_call_allowed) };
         check_call(b, frame, allowed, hooks, function, context, site, if op == 5 { 12 } else { 11 }, error);
     }
-    let entry = probe(b, frame, hooks, function, context, site, error, fact);
+    let entry = probe(b, frame, hooks, function, context, site, error, fact, nonempty_proved);
     let present = match fact {
         LookupFact::Present => b.ins().iconst(types::I8, 1),
         LookupFact::Absent => b.ins().iconst(types::I8, 0),
@@ -400,14 +406,16 @@ pub(super) fn operation_state_proved(b: &mut FunctionBuilder<'_>, frame: &FrameS
             get(b, entry, value_offset(frame.domain))
         } else {
             let updates = read!(b, frame, updates);
-            let fits = b.ins().icmp_imm(IntCC::NotEqual, updates, -1);
-            let accepted = b.create_block();
-            let bad = b.create_block();
-            b.ins().brif(fits, accepted, &[], bad, &[]);
-            b.switch_to_block(bad);
-            fail(b, frame, hooks, function, context, site, 9, error);
-            b.ins().jump(accepted, &[]);
-            b.switch_to_block(accepted);
+            if !progress_proved {
+                let fits = b.ins().icmp_imm(IntCC::NotEqual, updates, -1);
+                let accepted = b.create_block();
+                let bad = b.create_block();
+                b.ins().brif(fits, accepted, &[], bad, &[]);
+                b.switch_to_block(bad);
+                fail(b, frame, hooks, function, context, site, 9, error);
+                b.ins().jump(accepted, &[]);
+                b.switch_to_block(accepted);
+            }
             put(b, entry, value_offset(frame.domain), replacement);
             let updates = b.ins().iadd_imm(updates, 1);
             write!(b, frame, updates, updates);
