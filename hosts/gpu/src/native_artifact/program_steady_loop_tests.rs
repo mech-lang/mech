@@ -54,7 +54,7 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
                 .len()
         );
     }
-    assert!(bound["fixed_template_work"].as_u64().unwrap() <= 1024);
+    assert!(bound["fixed_template_instructions"].as_u64().unwrap() <= 1024);
     assert!(pure["maximum_source_instructions"].as_u64().unwrap() <= 512);
     let baseline =
         without_steady_loops(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
