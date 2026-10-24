@@ -49,7 +49,7 @@ fn exact_offsets_preserve_utf8_crlf_payload_and_release_only_capacity() {
         let before_work = work.used();
         let before_spent = account.spent();
         let bytes = core::mem::size_of_val(expected) as u64;
-        let payload = text.lines().map(str::len).sum();
+        let payload: usize = text.lines().map(str::len).sum();
         let offsets = Offsets::new(text, expected.len(), &account).unwrap();
         assert_eq!(&*offsets.values, expected);
         assert_eq!(offsets.payload_bytes, payload);
