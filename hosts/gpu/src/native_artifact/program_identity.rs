@@ -152,7 +152,10 @@ fn selected_template(
 // IR74 represents the proved adjacent read by a source-derived byte cursor.
 // Opaque caller stop/credit pointers preserve the exact prepaid extent; cold
 // continuations recover the original scalar counter and previous selection.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 74;
+// IR75 reconstructs only source-proved affine scalar/frame values inside
+// their precise cold continuations. Initial and completed cursor coordinates
+// remain distinct; unknown values retain their original SSA storage.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 75;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
