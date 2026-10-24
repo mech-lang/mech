@@ -236,7 +236,7 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
                 let mut obs = OBS.with(|r| core::mem::take(&mut *r.borrow_mut()));
                 assert!(obs.errors.is_empty(), "{obs:?}");
                 let mutation_selected = [mutation_optimized, mutation_baseline][version];
-                let selected = u64::from((version == 0 || compare_lookup_facts || compare_cfg_cleanup || compare_outlining || compare_invariants || compare_preserving || compare_mutation || compare_counts || compare_constants)
+                let selected = u64::from((version == 0 || compare_lookup_facts || compare_cfg_cleanup || compare_outlining || compare_invariants || compare_preserving || compare_mutation || compare_counts || compare_constants || compare_steady)
                     && (!mutation_selected || start == 0) && obs.packed == 1 && width > 0 && width <= n && n <= text.len() as u64);
                 assert_eq!(obs.bound[14], selected, "actual selector, version={version}, width={width}, n={n}");
                 if let Ok(report) = &mut outcome {
