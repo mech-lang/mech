@@ -38,6 +38,8 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
         (1..=crate::native_artifact::program_packed_map::MAX_WIDTH).collect::<Vec<_>>()
     ));
     let checks = pure["fuel_check_edges"].as_array().unwrap();
+    assert_eq!(pure["header_snapshot_edges"], pure["fuel_check_edges"],
+        "every emitted incoming header edge needs its own exact cold snapshot");
     assert!(checks.iter().any(serde_json::Value::is_null), "initial entry retains the fuel check");
     assert!(checks.iter().any(serde_json::Value::is_u64), "source backedges retain the fuel check");
     assert!(pure["maximum_fuel_check_instructions"].as_u64().unwrap() > 0);

@@ -251,6 +251,25 @@ impl Proof {
     }
 }
 
+fn emit_snapshot(
+    b: &mut FunctionBuilder<'_>,
+    words: &Words,
+    packed: &FrameState,
+    locals: Value,
+    proof: &Proof,
+    node: usize,
+    returned: usize,
+) -> Result<usize, NativeCompileError> {
+    let block = b.current_block().expect("snapshot block");
+    b.set_cold_block(block);
+    let start = b.func.dfg.num_insts();
+    words.spill_live(b, locals, &proof.live_at(node, returned))?;
+    packed.spill(b);
+    let continuation = b.ins().iconst(types::I64, (node + 1) as i64);
+    b.ins().return_(&[continuation]);
+    Ok(b.func.dfg.num_insts() - start)
+}
+
 pub(super) fn define<M: Module>(
     module: &mut M,
     symbol: &str,
@@ -267,7 +286,25 @@ pub(super) fn define<M: Module>(
         return Ok(None);
     };
     let returned = closed.regions[id].tail.returned().get() as usize;
-    let records = proof.nodes.len() + proof.live.iter().map(BTreeSet::len).sum::<usize>();
+    let specialized_widths =
+        (1..=crate::native_artifact::program_packed_map::MAX_WIDTH).collect::<Vec<_>>();
+    let check_edges = std::iter::once(None)
+        .chain(
+            proof
+                .nodes
+                .iter()
+                .copied()
+                .filter(|&index| {
+                    targets(&proof.graph, &proof.bounds, index)
+                        .contains(&tag_threading::Target::Node(proof.active))
+                })
+                .map(Some),
+        )
+        .collect::<Vec<_>>();
+    let records = proof.nodes.len()
+        + proof.live.iter().map(BTreeSet::len).sum::<usize>()
+        + specialized_widths.len()
+        + 2 * check_edges.len();
     if !report.reserve_steady_region(records) {
         return Ok(None);
     }
@@ -285,8 +322,6 @@ pub(super) fn define<M: Module>(
     context.func.signature = signature;
     let mut fb = FunctionBuilderContext::new();
     let (entry_work, source_work, snapshot_work, bail_blocks);
-    let specialized_widths =
-        (1..=crate::native_artifact::program_packed_map::MAX_WIDTH).collect::<Vec<_>>();
     {
         let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
         let entry = b.create_block();
@@ -319,20 +354,8 @@ pub(super) fn define<M: Module>(
         let mut maximum_source = 0;
         let mut maximum_snapshot = 0;
         let mut all_bails = Vec::new();
-        let check_edges = std::iter::once(None)
-            .chain(
-                proof
-                    .nodes
-                    .iter()
-                    .copied()
-                    .filter(|&index| {
-                        targets(&proof.graph, &proof.bounds, index)
-                            .contains(&tag_threading::Target::Node(proof.active))
-                    })
-                    .map(Some),
-            )
-            .collect::<Vec<_>>();
         let mut all_checks = Vec::new();
+        let mut all_header_snapshots = Vec::new();
         let mut maximum_check = 0;
         for (width, variant) in std::iter::once((None, generic)).chain(variants) {
             b.switch_to_block(variant);
@@ -579,6 +602,7 @@ pub(super) fn define<M: Module>(
                 maximum = maximum.max(b.func.dfg.num_insts() - start);
             }
             maximum_source = maximum_source.max(maximum);
+            let mut header_snapshots = Vec::new();
             for (&edge, &check) in &checks {
                 b.switch_to_block(check);
                 let start = b.func.dfg.num_insts();
@@ -590,29 +614,41 @@ pub(super) fn define<M: Module>(
                 packed.write(&mut b, core::mem::offset_of!(Frame, updates), counter);
                 let fuel = packed.read(&mut b, core::mem::offset_of!(Frame, fuel));
                 let funded = b.create_block();
-                b.ins().brif(fuel, funded, &[], bail[&proof.active], &[]);
+                // Each incoming source edge owns its cold snapshot. Joining
+                // the initial and completed-iteration states in one exit
+                // creates phi arguments that force cold constants and old
+                // cache values to be materialized on every hot traversal.
+                // Both outcomes still return before the SAME original header.
+                let stopped = b.create_block();
+                b.ins().brif(fuel, funded, &[], stopped, &[]);
                 b.switch_to_block(funded);
                 let productive = b.ins().icmp(IntCC::UnsignedLessThan, counter, args[4]);
-                b.ins().brif(
-                    productive,
-                    blocks[&proof.active],
-                    &[],
-                    bail[&proof.active],
-                    &[],
-                );
+                b.ins()
+                    .brif(productive, blocks[&proof.active], &[], stopped, &[]);
                 maximum_check = maximum_check.max(b.func.dfg.num_insts() - start);
                 all_checks.push((edge, check));
+                header_snapshots.push((edge, stopped));
             }
             let mut maximum = 0;
             for (&index, &block) in &bail {
                 b.switch_to_block(block);
-                b.set_cold_block(block);
-                let start = b.func.dfg.num_insts();
-                words.spill_live(&mut b, args[0], &proof.live_at(index, returned))?;
-                packed.spill(&mut b);
-                let continuation = b.ins().iconst(types::I64, (index + 1) as i64);
-                b.ins().return_(&[continuation]);
-                maximum = maximum.max(b.func.dfg.num_insts() - start);
+                maximum = maximum.max(emit_snapshot(
+                    &mut b, &words, &packed, args[0], &proof, index, returned,
+                )?);
+            }
+            for &(edge, block) in &header_snapshots {
+                b.switch_to_block(block);
+                maximum = maximum.max(emit_snapshot(
+                    &mut b,
+                    &words,
+                    &packed,
+                    args[0],
+                    &proof,
+                    proof.active,
+                    returned,
+                )?);
+                all_bails.push((proof.active, block));
+                all_header_snapshots.push((edge, block));
             }
             maximum_snapshot = maximum_snapshot.max(maximum);
             all_bails.extend(bail);
@@ -620,7 +656,7 @@ pub(super) fn define<M: Module>(
         entry_work = dispatch_work + maximum_entry + maximum_check;
         source_work = maximum_source + maximum_check;
         snapshot_work = maximum_snapshot;
-        bail_blocks = (all_bails, all_checks, maximum_check);
+        bail_blocks = (all_bails, all_checks, maximum_check, all_header_snapshots);
         b.seal_all_blocks();
         b.finalize();
     }
@@ -649,6 +685,13 @@ pub(super) fn define<M: Module>(
         .into_iter()
         .collect::<Vec<_>>();
     let maximum_fuel_check_instructions = bail_blocks.2;
+    let header_snapshot_edges = bail_blocks
+        .3
+        .iter()
+        .filter_map(|&(edge, block)| context.func.layout.is_block_inserted(block).then_some(edge))
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
     let continuations = bail_blocks
         .0
         .iter()
@@ -724,6 +767,7 @@ pub(super) fn define<M: Module>(
             specialized_widths,
             fuel_check_edges,
             maximum_fuel_check_instructions,
+            header_snapshot_edges,
             entry_stop_index_word: Some(proof.bounds.index_word),
             entry_stop_endpoint_words: Some([proof.bounds.width_word, proof.bounds.limit_word]),
             entry_instructions: entry_work,
