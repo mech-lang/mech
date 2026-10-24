@@ -30,40 +30,45 @@ fn parameterized() -> String {
 
 #[test]
 fn guarded_loop_versions_preserve_actual_bounds_arbitrary_seeds_headers_and_work() {
-    parameterized_equivalence(false, false, false, false, false, false);
+    parameterized_equivalence(false, false, false, false, false, false, false);
 }
 
 #[test]
 fn lookup_facts_preserve_limits_actual_bounds_seeds_refill_headers_and_work() {
-    parameterized_equivalence(true, false, false, false, false, false);
+    parameterized_equivalence(true, false, false, false, false, false, false);
 }
 
 #[test]
 fn cfg_cleanup_preserves_limits_actual_bounds_seeds_refill_headers_and_work() {
-    parameterized_equivalence(false, true, false, false, false, false);
+    parameterized_equivalence(false, true, false, false, false, false, false);
 }
 
 #[test]
 fn loop_outlining_preserves_limits_actual_bounds_seeds_refill_headers_and_work() {
-    parameterized_equivalence(false, false, true, false, false, false);
+    parameterized_equivalence(false, false, true, false, false, false, false);
 }
 
 #[test]
 fn loop_invariants_preserve_first_selection_steady_ranges_cap_transitions_and_refill_frontiers() {
-    parameterized_equivalence(false, false, false, true, false, false);
+    parameterized_equivalence(false, false, false, true, false, false, false);
 }
 
 #[test]
 fn preserving_calls_keep_bounds_arbitrary_seeds_cap_transitions_and_refill_frontiers() {
-    parameterized_equivalence(false, false, false, false, true, false);
+    parameterized_equivalence(false, false, false, false, true, false, false);
 }
 
 #[test]
 fn mutation_facts_keep_unaligned_initial_states_caps_seeds_and_refill_frontiers() {
-    parameterized_equivalence(false, false, false, false, false, true);
+    parameterized_equivalence(false, false, false, false, false, true, false);
 }
 
-fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bool, compare_outlining: bool, compare_invariants: bool, compare_preserving: bool, compare_mutation: bool) {
+#[test]
+fn count_bounds_keep_unaligned_initial_states_caps_seeds_and_refill_frontiers() {
+    parameterized_equivalence(false, false, false, false, false, false, true);
+}
+
+fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bool, compare_outlining: bool, compare_invariants: bool, compare_preserving: bool, compare_mutation: bool, compare_counts: bool) {
     let original = tests::artifact_source(&parameterized());
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(
         &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
@@ -73,9 +78,12 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
         take_lookup_fact_emissions();
         take_outline_emissions();
         take_mutation_emissions();
+        take_count_bound_emissions();
         if compare_preserving { crate::native_artifact::program_bound_shim::take_emissions(); }
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let mutation_optimized = take_mutation_emissions().0 > 0;
+        let count_emitted = take_count_bound_emissions();
+        if compare_counts { assert!(count_emitted > 0, "fixture must actually remove source count checks"); }
         if compare_mutation { assert!(mutation_optimized, "fixture must select the actual mutation proof"); }
         if compare_preserving && cfg!(target_arch = "aarch64") {
             assert!(crate::native_artifact::program_bound_shim::take_emissions() > 0);
@@ -87,7 +95,9 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
         let lookup_emissions = take_lookup_fact_emissions();
         assert!(lookup_emissions.0 > 0 && lookup_emissions.1 >= 4);
         take_outline_emissions();
-        let baseline = if compare_mutation {
+        let baseline = if compare_counts {
+            without_count_bounds(|| JitProgramArtifact::compile(&artifact, &catalog))
+        } else if compare_mutation {
             without_mutation_facts(|| JitProgramArtifact::compile(&artifact, &catalog))
         } else if compare_preserving {
             crate::native_artifact::program_bound_shim::without_preserving_calls(|| JitProgramArtifact::compile(&artifact, &catalog))
@@ -101,7 +111,10 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
             without_lookup_facts(|| JitProgramArtifact::compile(&artifact, &catalog))
         } else { without_loop_bounds(|| JitProgramArtifact::compile(&artifact, &catalog)) }.unwrap();
         let mutation_baseline = take_mutation_emissions().0 > 0;
-        if compare_mutation {
+        if compare_counts {
+            assert_eq!(take_count_bound_emissions(), 0);
+            assert_eq!(take_loop_bounds_emissions(), emitted);
+        } else if compare_mutation {
             assert!(!mutation_baseline);
             assert_eq!(take_loop_bounds_emissions(), emitted);
         } else if compare_preserving {

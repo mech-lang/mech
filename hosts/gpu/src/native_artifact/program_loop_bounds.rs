@@ -11,7 +11,8 @@ const MAX_PATHS: usize = 64;
 type Id = usize;
 type State = BTreeMap<usize, Id>;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-enum Expr { Input(usize), Constant(u64), Add(Id, Id), Sub(Id, Id), Eq(Id, Id), Ge(Id, Id), Gt(Id, Id), Opaque(usize) }
+enum Expr { Input(usize), Constant(u64), Add(Id, Id), Sub(Id, Id), Eq(Id, Id), Ge(Id, Id), Gt(Id, Id), Opaque(usize),
+    CountRead(usize), CountNext(usize) }
 #[derive(Default)]
 struct Terms { values: Vec<Expr>, ids: BTreeMap<Expr, Id> }
 impl Terms {
@@ -41,6 +42,27 @@ pub(super) struct Proof {
     // inserts twice, and other state variants cannot enter the active cycle.
     // Only these actual product-graph nodes may use the mutation relation.
     pub single_insert_nodes: Option<BTreeSet<usize>>,
+    pub count_values: Option<CountValues>,
+}
+
+pub(super) struct CountValues {
+    pub reads: BTreeSet<usize>,
+    pub additions: BTreeSet<usize>,
+}
+
+// Under the inductive map-value bound, a pre-insertion read is at most the
+// current index. Adding exactly one fits at a productive index, and produces
+// at most next_index. These markers are private abstract ranges, not source
+// value equalities or authority to replace the original operations.
+fn count_increment(terms: &Terms, value: Id) -> bool {
+    let Expr::Add(a, b) = terms.values[value] else { return false; };
+    let bounded = |id| matches!(terms.values[id], Expr::CountRead(_)) || terms.value(id) == Some(0);
+    (bounded(a) && terms.value(b) == Some(1)) || (bounded(b) && terms.value(a) == Some(1))
+}
+
+fn count_replacement(terms: &Terms, value: Id) -> bool {
+    matches!(terms.values[value], Expr::CountRead(_) | Expr::CountNext(_))
+        || terms.value(value).is_some_and(|value| value <= 1)
 }
 
 #[derive(Default)]
@@ -403,6 +425,10 @@ pub(super) fn derive(code: CodePlan<'_>, closed: &Layout, id: usize, owner: &Nat
         let mut steps = 0usize; let mut ranges = BTreeSet::new(); let mut recurrence_sites = BTreeSet::new();
         let mut recurrence_nodes = BTreeSet::new(); let mut insert_nodes = BTreeSet::new();
         let mut single_insert = true;
+        let mut count_values = true;
+        let mut count_reads = BTreeSet::new();
+        let mut count_additions = BTreeMap::<usize, bool>::new();
+        let mut used_count_additions = BTreeSet::new();
         while let Some((mut node, mut state, mut selected, mut insertions)) = pending.pop() {
             loop {
                 steps = steps.checked_add(1)?; if steps > MAX_PATHS * MAX_NODES { return None; }
@@ -416,14 +442,38 @@ pub(super) fn derive(code: CodePlan<'_>, closed: &Layout, id: usize, owner: &Nat
                     selected = true; ranges.insert(node);
                 }
                 if owner.call_region(site) == region.map
-                    && let Action::LibraryCall { template, .. } = code.blocks()[site].action()
+                    && let Action::LibraryCall { template, operands, .. } = code.blocks()[site].action()
                     && template.primitive() == P::MapInsert
                 {
+                    let replacement = *state.get(&(operands.get(2)?.get() as usize))?;
+                    count_values &= selected && insertions == 0 && count_replacement(&terms, replacement);
+                    if let Expr::CountNext(addition) = terms.values[replacement] {
+                        used_count_additions.insert(addition);
+                    }
                     insertions = insertions.checked_add(1)?;
                     insert_nodes.insert(node);
                     if !selected || insertions > 1 { single_insert = false; }
                 }
                 walk.step(node, &mut state, &mut terms, false)?;
+                match code.blocks()[site].action() {
+                    Action::LibraryCall { template, output, .. }
+                        if owner.call_region(site) == region.map
+                            && template.primitive() == P::MapKeyAccess
+                            && selected && insertions == 0 =>
+                    {
+                        // No earlier insertion in this traversal can have
+                        // raised the current table's inductive value bound.
+                        state.insert(output.get() as usize, terms.intern(Expr::CountRead(node))?);
+                        count_reads.insert(node);
+                    }
+                    Action::Scalar(Scalar::Primitive { op: Op::U64Add, output, .. }) => {
+                        let value = *state.get(&(output.get() as usize))?;
+                        let valid = selected && insertions == 0 && count_increment(&terms, value);
+                        count_additions.entry(node).and_modify(|all| *all &= valid).or_insert(valid);
+                        if valid { state.insert(output.get() as usize, terms.intern(Expr::CountNext(node))?); }
+                    }
+                    _ => {}
+                }
                 if site == region.tail.latch() as usize {
                     if !selected || state.get(&index_word) != Some(&next_index)
                         || terms.value(*state.get(&graph.carrier_word)?) != Some(u64::from(active_tag)) { return None; }
@@ -451,11 +501,18 @@ pub(super) fn derive(code: CodePlan<'_>, closed: &Layout, id: usize, owner: &Nat
             && closed_active_recurrence(graph, region.tail.header() as usize, active_tag, &recurrence_nodes)
             && guarded_entry_dominates(graph, region.tail.header() as usize, active_tag, body, first, &mutation_sites))
             .then_some(insert_nodes);
+        let mut count_sites = count_reads.clone(); count_sites.extend(used_count_additions.iter().copied());
+        let count_values = (count_values && single_insert_nodes.is_some()
+            && !used_count_additions.is_empty()
+            && used_count_additions.iter().all(|node| count_additions.get(node) == Some(&true))
+            && guarded_entry_dominates(graph, region.tail.header() as usize,
+                active_tag, body, first, &count_sites))
+            .then_some(CountValues { reads: count_reads, additions: used_count_additions });
         return Some(Proof { index_word, width_word, limit_word: limit_value.get() as usize,
             active_tag, first, later: [second, third], ranges,
             guard_sites: [first, second, third].map(|node| graph.nodes[node].site),
             range_site: packed.range_site() as usize, recurrence_sites: recurrence_sites.into_iter().collect(),
-            recurrence_nodes, single_insert_nodes });
+            recurrence_nodes, single_insert_nodes, count_values });
     }
     None
 }
