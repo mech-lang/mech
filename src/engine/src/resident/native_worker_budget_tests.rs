@@ -383,11 +383,79 @@ fn unscoped_debit_unwind_releases_the_mutex_and_keeps_original_work() {
         });
     })).is_err());
     assert_eq!(left.used(), (3, 1));
+    ESCROW_LOCK_STATS.with(|v| v.set((0, 0, 0, 0)));
     right.with_unscoped_debit(|remaining| {
         assert_eq!(remaining, (27, 7));
         Ok::<_, ResidentKernelError>((27, 7, ()))
     }).unwrap().unwrap();
+    assert_eq!(ESCROW_LOCK_STATS.with(std::cell::Cell::get), (1, 0, 0, 1), "poison recovery must not spin or discard previous debits");
     drop((left, right));
     assert_eq!(group.finish().unwrap(), (30, 8));
     assert_eq!(root.used(), (30, 8));
+}
+
+
+#[test]
+fn escrow_spin_uncontended_debit_commits_once_without_pause_or_park() {
+    let (root, memory) = root(20, 8);
+    let baseline = memory.used_bytes();
+    let group = root.reserve_worker_group(20, 8).unwrap();
+    let worker = NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap();
+    ESCROW_LOCK_STATS.with(|v| v.set((0, 0, 0, 0)));
+    assert_eq!(worker.with_unscoped_debit(|remaining| {
+        assert_eq!(remaining, (20, 8));
+        Ok::<_, ResidentKernelError>((7, 3, 41))
+    }).unwrap(), Some(41));
+    assert_eq!(ESCROW_LOCK_STATS.with(std::cell::Cell::get), (1, 0, 0, 0));
+    assert_eq!(worker.used(), (7, 3));
+    drop(worker);
+    assert_eq!(group.finish().unwrap(), (7, 3));
+    assert_eq!(root.used(), (7, 3));
+    assert_eq!(memory.used_bytes(), baseline);
+}
+
+#[test]
+fn escrow_spin_is_bounded_then_uses_original_mutex_without_partial_debits() {
+    use std::sync::mpsc::channel;
+    use std::time::Duration;
+    let (root, memory) = root(20, 8);
+    let baseline = memory.used_bytes();
+    let group = root.reserve_worker_group(20, 8).unwrap();
+    let shared = group.shared.clone();
+    let loan = group.worker_loan().unwrap();
+    let (ready_tx, ready_rx) = channel();
+    let (start_tx, start_rx) = channel();
+    let (park_tx, park_rx) = channel();
+    let handle = std::thread::spawn(move || {
+        let worker = NativeLibraryWorkBudget::from_worker_loan(loan).unwrap();
+        ready_tx.send(()).unwrap();
+        start_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+        ESCROW_LOCK_STATS.with(|v| v.set((0, 0, 0, 0)));
+        ESCROW_PARK_NOTIFY.with(|v| *v.borrow_mut() = Some(park_tx));
+        let result = worker.with_unscoped_debit(|remaining| {
+            assert_eq!(remaining, (20, 8));
+            Ok::<_, ResidentKernelError>((7, 3, 41))
+        });
+        let stats = ESCROW_LOCK_STATS.with(std::cell::Cell::get);
+        (result, worker.used(), stats)
+    });
+    ready_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    // Keep the real escrow unavailable through every bounded retry. The hook
+    // observes entry into the fallback, rather than depending on sleep timing.
+    let held = shared.lock().unwrap();
+    start_tx.send(()).unwrap();
+    let parked = park_rx.recv_timeout(Duration::from_secs(2));
+    assert_eq!((held.used.compute, held.used.comparison), (0, 0));
+    drop(held);
+    assert!(parked.is_ok(), "bounded retries must reach the blocking fallback");
+    let (result, used, (attempts, hints, parks, poison)) = handle.join().unwrap();
+    assert_eq!(result, Ok(Some(41)));
+    assert_eq!(used, (7, 3));
+    assert_eq!(attempts, ESCROW_SPIN_ROUNDS);
+    assert_eq!(hints, (1 << ESCROW_SPIN_ROUNDS) - 1);
+    assert_eq!((parks, poison), (1, 0));
+    assert_eq!(group.finish().unwrap(), (7, 3));
+    assert_eq!(root.used(), (7, 3));
+    drop(shared);
+    assert_eq!(memory.used_bytes(), baseline);
 }

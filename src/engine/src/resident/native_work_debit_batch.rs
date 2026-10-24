@@ -37,7 +37,7 @@ impl Worker<'_> {
             let next = checked_local_control_account_work(&self.account, compute, comparison)?;
             let shared = self.shared;
             let state = self.guard.get_or_insert_with(||
-                shared.lock().unwrap_or_else(|error| error.into_inner()));
+                lock_escrow(shared));
             let shared_next = state.next(compute, comparison)?;
             state.used = shared_next;
             self.account.used = next;
