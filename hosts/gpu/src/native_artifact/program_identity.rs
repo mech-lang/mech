@@ -123,7 +123,9 @@ fn selected_template(
 // recurrence before omitting its exact read+1 source overflow checks.
 // IR60 loads admitted AArch64 control groups directly into a 64-bit vector;
 // integer fingerprints/empty masks and the eight-byte read extent remain.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 60;
+// IR61 canonicalizes the private selected-entry cache at proved headers;
+// lookup facts already invalidate it there and original work remains prepaid.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 61;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
