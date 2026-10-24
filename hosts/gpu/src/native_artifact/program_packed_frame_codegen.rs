@@ -77,6 +77,7 @@ pub(in crate::native_artifact) struct FrameState {
     constant_packet: Option<Value>,
     constant_values: Option<[Value; 2]>,
     constant_hash_loads: Cell<usize>,
+    specialized_width: Option<u64>,
     // Constant-size actual emission evidence, aggregated by private operation.
     // It does not claim that a runtime path executed or authorize any access.
     emissions: Cell<[u64; 14]>,
@@ -84,7 +85,7 @@ pub(in crate::native_artifact) struct FrameState {
 }
 impl FrameState {
     pub(super) fn memory(pointer: Value, domain: Domain) -> Self {
-        Self { pointer, words: None, effects_enabled: false, dirty_only: false, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
+        Self { pointer, words: None, effects_enabled: false, dirty_only: false, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, emissions: Cell::new([0; 14]), domain }
     }
     pub(in crate::native_artifact) fn registers(b: &mut FunctionBuilder<'_>, pointer: Value, domain: Domain) -> Self {
         assert_eq!(core::mem::size_of::<Frame>() % 8, 0);
@@ -96,13 +97,21 @@ impl FrameState {
         }).collect();
         let effects_enabled = effects_enabled();
         let dirty_only = super::super::packed_loop_codegen::invariant_loops_enabled();
-        Self { pointer, words: Some(words), effects_enabled, dirty_only, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
+        Self { pointer, words: Some(words), effects_enabled, dirty_only, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, emissions: Cell::new([0; 14]), domain }
     }
     pub(in crate::native_artifact) fn with_constant_packet(mut self, packet: Option<Value>) -> Self {
         self.constant_packet = packet; self
     }
     pub(in crate::native_artifact) fn with_constant_values(mut self, values: [Value; 2]) -> Self {
         self.constant_values = Some(values); self
+    }
+    /// Only the helper-free source function may use this binding, after its
+    /// entry switch compares the actual constructor-owned immutable width.
+    /// Frame masks are constructor-derived and never writable by generated
+    /// code or source helpers. A generic arm retains the ordinary values.
+    pub(in crate::native_artifact) fn with_specialized_width(mut self, width: Option<u64>) -> Self {
+        assert!(width.is_none_or(|width| (1..=super::super::super::program_packed_map::MAX_WIDTH).contains(&width)));
+        self.specialized_width = width; self
     }
     pub(super) fn hash_constant(&self, b: &mut FunctionBuilder<'_>, ordinal: usize) -> Option<Value> {
         assert!(ordinal < 2);
@@ -115,6 +124,17 @@ impl FrameState {
     }
     pub(in crate::native_artifact) fn constant_hash_loads(&self) -> usize { self.constant_hash_loads.get() }
     pub(in crate::native_artifact) fn read(&self, b: &mut FunctionBuilder<'_>, offset: usize) -> Value {
+        if let Some(width) = self.specialized_width {
+            let bits = width * u64::from(self.domain.bits());
+            let mask = (1u128 << bits) - 1;
+            let constant = match offset {
+                v if v == core::mem::offset_of!(Frame, width) => Some(width),
+                v if v == core::mem::offset_of!(Frame, low_mask) => Some(mask as u64),
+                v if v == core::mem::offset_of!(Frame, high_mask) => Some((mask >> 64) as u64),
+                _ => None,
+            };
+            if let Some(value) = constant { return b.ins().iconst(types::I64, value as i64); }
+        }
         if let Some(words) = &self.words { b.use_var(words[offset / 8]) }
         else { b.ins().load(types::I64, MemFlags::new(), self.pointer, offset as i32) }
     }
