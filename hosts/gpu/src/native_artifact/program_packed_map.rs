@@ -510,9 +510,11 @@ impl PackedMap {
         if let Some(cache) = &mut self.lookup_cache {
             if growth {
                 cache.clear();
-                for (at, slot) in self.slots.iter().enumerate() {
+                for at in 0..self.slots.len() {
                     if self.controls[at] != EMPTY {
-                        cache.insert(slot.low, self.slots.entry_address(at));
+                        let low = self.slots.get(at).low;
+                        let address = self.slots.entry_address(at);
+                        cache.insert(low, address);
                     }
                 }
             } else { cache.insert(low, self.frame.entry_pointer); }
