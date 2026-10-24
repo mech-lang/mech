@@ -22,6 +22,14 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
     assert_eq!(pure["header"], parent["header"]);
     assert_eq!(pure["header"], bound["header"]);
     assert_eq!(pure["native_calls"], 0);
+    assert_eq!(pure["cleanup"]["pre_codegen_data_passes"], 1);
+    assert!(
+        pure["cleanup"]["constant_branches_removed"]
+            .as_u64()
+            .unwrap()
+            > 0,
+        "the data/control phase must remove actual scalar-constant branches"
+    );
     assert!(pure["caller_instructions"].as_u64().unwrap() > 0);
     assert!(pure["code_bytes"].as_u64().unwrap() > 0);
     assert!(pure["symbol"].as_str().unwrap().ends_with("_funded"));

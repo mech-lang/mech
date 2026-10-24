@@ -129,7 +129,9 @@ fn selected_template(
 // IR63 was an unpromoted lookup-state experiment. IR64 separates a proved
 // funded, present-entry source trace from its precise cold continuations.
 // The original helper ABI, source operations and finite work prices remain.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 64;
+// IR65 folds scalar expressions before constant control-edge cleanup inside
+// helper-free funded functions; ordinary/checked functions keep IR64's policy.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 65;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

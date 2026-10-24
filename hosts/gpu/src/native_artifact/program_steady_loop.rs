@@ -542,7 +542,23 @@ pub(super) fn define<M: Module>(
         b.seal_all_blocks();
         b.finalize();
     }
-    let cleanup = super::super::cfg_cleanup::optimize(&mut context, module.isa())?;
+    let initial_cleanup = super::super::cfg_cleanup::optimize(&mut context, module.isa())?;
+    // The helper-free graph has no externally callable continuation. Fold its
+    // scalar expressions before retiring constant control edges and their
+    // phi inputs; otherwise the backend keeps source branches on literal
+    // booleans. The large ordinary/checked function retains its single-pass
+    // policy. The final backend still performs its ordinary speed pass.
+    context
+        .optimize(
+            module.isa(),
+            &mut cranelift_codegen::control::ControlPlane::default(),
+        )
+        .map_err(backend)?;
+    let mut cleanup = super::super::cfg_cleanup::optimize(&mut context, module.isa())?;
+    cleanup.pre_codegen_data_passes = 1;
+    cleanup.constant_branches_removed += initial_cleanup.constant_branches_removed;
+    cleanup.before_blocks = initial_cleanup.before_blocks;
+    cleanup.before_instructions = initial_cleanup.before_instructions;
     let continuations = bail_blocks
         .iter()
         .filter_map(|(&index, &block)| {
