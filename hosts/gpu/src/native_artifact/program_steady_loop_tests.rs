@@ -50,6 +50,9 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
         .filter_map(serde_json::Value::as_u64).collect::<Vec<_>>()));
     assert_eq!(pure["fuel_reconstructed_at_exits"], true);
     assert_eq!(pure["prepaid_extent_arguments"], 2);
+    assert_eq!(pure["cursor_range_site"], bound["range_site"]);
+    assert_eq!(pure["cursor_index_word"], bound["index_word"]);
+    assert_eq!(pure["cursor_recurrence_edges"], pure["prepaid_stop_edges"]);
     assert!(pure["maximum_fuel_check_instructions"].as_u64().unwrap() > 0);
     assert_eq!(pure["entry_stop_index_word"], bound["index_word"]);
     assert_eq!(pure["entry_stop_endpoint_words"], serde_json::json!([
