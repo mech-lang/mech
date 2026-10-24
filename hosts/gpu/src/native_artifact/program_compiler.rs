@@ -210,6 +210,7 @@ impl NativeProgramObject {
             "compiled_guarded_loops": &self.codegen.guarded_loops,
             "compiled_lookup_facts": &self.codegen.lookup_facts,
             "compiled_cfg_cleanup": &self.codegen.cfg_cleanup,
+            "compiled_outlined_loops": &self.codegen.outlined_loops,
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }

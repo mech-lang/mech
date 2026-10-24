@@ -6,12 +6,13 @@ use crate::native_artifact::program_compiler::packed_loop_codegen::{
     take_tag_thread_emissions, without_tag_threading,
     take_frame_effect_emissions, without_frame_effects,
     take_lookup_fact_emissions, without_lookup_facts,
+    take_outline_emissions, without_loop_outlining,
 };
 use crate::native_artifact::JitProgramArtifact;
 use crate::native_artifact::program_compiler::cfg_cleanup::{take_cfg_cleanup_emissions, without_cfg_cleanup};
 
 #[derive(Clone, Copy)]
-enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup }
+enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining }
 impl Pass {
     fn disabled<T>(self, f: impl FnOnce() -> T) -> T {
         match self {
@@ -20,12 +21,16 @@ impl Pass {
             Self::FrameEffects => without_frame_effects(f),
             Self::LookupFacts => without_lookup_facts(f),
             Self::CfgCleanup => without_cfg_cleanup(f),
+            Self::LoopOutlining => without_loop_outlining(f),
         }
     }
     fn check(self, edges: (usize, usize), tags: (usize, usize, usize), effects: (usize, usize, usize), selected: bool) {
         let lookups = take_lookup_fact_emissions();
         let cfg = take_cfg_cleanup_emissions();
+        let outlined = take_outline_emissions();
         match self {
+            Self::LoopOutlining if selected => assert!(outlined > 0),
+            Self::LoopOutlining => assert_eq!(outlined, 0),
             Self::CfgCleanup if selected => assert!(cfg.0 > 0 && cfg.1 > 0, "{cfg:?}"),
             Self::CfgCleanup => assert_eq!(cfg, (0, 0)),
             Self::LookupFacts if selected => assert!(lookups.0 > 0 && lookups.1 >= 3, "{lookups:?}"),
@@ -67,6 +72,41 @@ fn structural_report(report: &NativeProgramExecutionReport) -> [u64; 11] {
     [report.visits, report.transport_bytes, report.hash_table_regions, report.hash_table_updates,
         report.packed_map_regions, report.packed_map_updates, report.packed_ssa_regions,
         report.parallel_regions, report.parallel_batches, report.parallel_tasks, report.parallel_peak_workers]
+}
+
+#[test]
+fn loop_outlining_metadata_and_total_stack_code_admission_include_owned_callees() {
+    let artifact = tests::artifact_source(&format!("{}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n",
+        structural_projection_tests::COUNT));
+    let catalog = mech_stdlib::source_catalog();
+    take_outline_emissions();
+    let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+    assert_eq!(take_outline_emissions(), 1);
+    let metadata = object.metadata();
+    let regions = metadata["compiled_outlined_loops"].as_array().unwrap();
+    assert_eq!(regions.len(), 1);
+    let region = &regions[0];
+    let header = region["header"].as_u64().unwrap() as usize;
+    assert!(object.descriptor().closed_tails.regions.iter().any(|r|
+        r.packed.is_some() && r.tail.header() as usize == header));
+    assert!(region["symbol"].as_str().unwrap().ends_with(&format!("_packed_loop_{header}")));
+    assert_eq!(region["caller_template_bound"], 64);
+    assert_eq!(region["cleanup"]["enabled"], true);
+    let stack = metadata["stack_bytes"].as_u64().unwrap();
+    let bytes = metadata["code_bytes"].as_u64().unwrap();
+    assert!(stack >= region["stack_bytes"].as_u64().unwrap());
+    assert!(bytes > region["code_bytes"].as_u64().unwrap());
+    let mut limits = crate::native_artifact::NativeCompileLimits::default();
+    limits.max_stack_bytes = stack;
+    limits.max_code_bytes = bytes;
+    assert!(crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits).is_ok());
+    limits.max_stack_bytes = stack - 1;
+    assert!(crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits).is_err());
+    limits.max_stack_bytes = stack;
+    limits.max_code_bytes = bytes - 1;
+    assert!(crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits).is_err());
+    let inline = without_loop_outlining(|| crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
+    assert!(inline.metadata()["compiled_outlined_loops"].as_array().unwrap().is_empty());
 }
 
 #[test]
@@ -327,6 +367,10 @@ fn lookup_facts_preserve_changed_inputs_growth_refills_and_exact_work() {
 fn cfg_cleanup_preserves_changed_inputs_growth_refills_and_exact_work() {
     changed_input_equivalence(Pass::CfgCleanup);
 }
+#[test]
+fn loop_outlining_preserves_changed_inputs_growth_refills_and_exact_work() {
+    changed_input_equivalence(Pass::LoopOutlining);
+}
 fn changed_input_equivalence(pass: Pass) {
     // These are ordinary typed parameters, not constants captured from the
     // fixture or assertions that n equals this particular String's length.
@@ -360,7 +404,7 @@ fn changed_input_equivalence(pass: Pass) {
             // Bounds must still use the actual selected source, not n.
             ("abc", 2, 4),
         ];
-        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup) {
+        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining) {
             cases.push((long_text.as_str(), 3, long_text.len() as u64));
             // Unknown ASCII domain at width18 requires both key words. They
             // must survive refills although refill never reads either word.
@@ -492,6 +536,10 @@ fn lookup_facts_keep_arithmetic_failures_at_original_source_sites() {
 #[test]
 fn cfg_cleanup_keeps_arithmetic_failures_at_original_source_sites() {
     arithmetic_failure_equivalence(Pass::CfgCleanup);
+}
+#[test]
+fn loop_outlining_keeps_arithmetic_failures_at_original_source_sites() {
+    arithmetic_failure_equivalence(Pass::LoopOutlining);
 }
 fn arithmetic_failure_equivalence(pass: Pass) {
     // The valid first iteration must not establish facts for a later visit.
