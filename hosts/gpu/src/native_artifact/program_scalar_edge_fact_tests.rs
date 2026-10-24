@@ -618,7 +618,12 @@ fn changed_input_equivalence(pass: Pass) {
                     OBS.with(|records| {
                         let records = records.borrow();
                         let minimum_refills = (n - extent + 3 + 1023) / 1024;
-                        assert!(records.bound[0] >= minimum_refills && records.bound[7] > 56, "{records:?}");
+                        assert!(records.bound[0] >= minimum_refills, "{records:?}");
+                        if text == one_key_text.as_str() {
+                            assert_eq!(records.bound[7], 1, "one actual distinct-key insertion");
+                        } else {
+                            assert!(records.bound[7] > 56, "diverse growth fixture: {records:?}");
+                        }
                         assert_eq!(&records.bound[1..7], &[0; 6]);
                     });
                 }
