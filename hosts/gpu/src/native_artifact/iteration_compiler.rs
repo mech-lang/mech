@@ -231,7 +231,7 @@ fn load(
 
 #[path = "iteration_codegen_report.rs"]
 mod codegen_report;
-pub(super) use codegen_report::{CodegenReport, RegionToken};
+pub(super) use codegen_report::{CodegenReport, RegionToken, CfgCleanup};
 
 fn define<M: Module>(
     plan: &NativeIterationArtifactPlan,
@@ -1293,6 +1293,10 @@ pub(super) fn define_cfg<M: Module>(
         b.ins().return_(&[status]);
         b.seal_all_blocks();
         b.finalize();
+    }
+    #[cfg(feature = "canonical-native-program")]
+    if plan.is_program() {
+        report.cfg_cleanup = Some(super::program_compiler::cfg_cleanup::optimize(&mut context, module.isa())?);
     }
     module
         .define_function(function, &mut context)

@@ -102,7 +102,9 @@ fn selected_template(
 // IR49 binds complete-use frozen owners and private same-scope read helpers.
 // IR50 carries source-proved current-key cache/presence facts within one
 // closed traversal. New selections, headers and mutations invalidate aliases.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 50;
+// IR51 removes only literal constant branches and unreachable continuations
+// after native data optimization, before register allocation. Work is unchanged.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 51;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
