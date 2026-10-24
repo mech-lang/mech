@@ -148,7 +148,7 @@ impl NativeCollectionPrimitive {
                 "access/range"
             }
             #[cfg(feature = "convert")]
-            Self::MatrixConversion => "convert/kind",
+            Self::MatrixConversion | Self::UnsignedWordConversion => "convert/kind",
             #[cfg(feature = "convert")]
             Self::MatrixToSetConversion => "convert/set",
             #[cfg(feature = "pure_text")]
@@ -238,6 +238,29 @@ fn is_string_matrix(body: &SchemaBody, row: bool) -> bool {
 }
 fn is_u64(body: &SchemaBody) -> bool {
     body == &SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
+}
+
+#[cfg(feature = "convert")]
+fn is_unsigned_word_conversion(inputs: &[Schema], output: &Schema) -> bool {
+    fn word(body: &SchemaBody) -> bool {
+        matches!(
+            body,
+            SchemaBody::UnsignedInteger(
+                mech_core::IntegerWidth::W8
+                    | mech_core::IntegerWidth::W16
+                    | mech_core::IntegerWidth::W32
+                    | mech_core::IntegerWidth::W64
+            )
+        )
+    }
+    let [input] = inputs else {
+        return false;
+    };
+    input.dimension_parameters().is_empty()
+        && output.dimension_parameters().is_empty()
+        && input.body() != output.body()
+        && word(input.body())
+        && word(output.body())
 }
 fn is_shallow_atomic(body: &SchemaBody) -> bool {
     matches!(
@@ -367,6 +390,10 @@ fn validate_schemas(
         #[cfg(feature = "convert")]
         NativeCollectionPrimitive::MatrixConversion => {
             is_shallow_matrix(first) && is_shallow_matrix(output)
+        }
+        #[cfg(feature = "convert")]
+        NativeCollectionPrimitive::UnsignedWordConversion => {
+            is_unsigned_word_conversion(inputs, declared_output)
         }
         #[cfg(feature = "convert")]
         NativeCollectionPrimitive::MatrixToSetConversion => {
@@ -593,7 +620,7 @@ fn select_leaf(
     // These are branches of the SAME maintained access factories, not new
     // kernels. Specialize only after private factory provenance is established;
     // the exact selected schemas/arity/contract still have to validate below.
-    let primitive = image::specialize_primitive(primitive, &inputs);
+    let primitive = image::specialize_primitive(primitive, &inputs, &output);
     if !validate_schemas(primitive, &inputs, &output) {
         return Err(Error::WitnessTypeMismatch { node });
     }

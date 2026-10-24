@@ -201,7 +201,9 @@ fn selected_template(
 // IR94 reads the two initialized narrow-slot words together; wide slots retain
 // separate full-width accesses. Runtime storage and original prices are unchanged.
 // 79 was published by a subsequently reverted metadata experiment.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 95;
+// IR95 adds the maintained U64 word primitives. IR96 additionally selects
+// checked unsigned scalar conversions through the original conversion leaf.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 96;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
