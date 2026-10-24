@@ -34,7 +34,6 @@ impl Pass {
         let invariants = take_invariant_emissions();
         let preserving = crate::native_artifact::program_bound_shim::take_emissions();
         match self {
-            Self::PreservingCalls if selected && cfg!(target_arch = "aarch64") => assert!(preserving > 0),
             Self::PreservingCalls if !selected => assert_eq!(preserving, 0),
             Self::LoopInvariants if !selected => assert_eq!(invariants, (0, 0, 0)),
             Self::LoopOutlining if selected => assert!(outlined > 0),
@@ -207,6 +206,18 @@ fn preserving_calls_metadata_and_total_stack_code_include_the_nested_bridge() {
         crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
     assert!(ordinary.metadata()["compiled_bound_call_shim"].is_null());
     assert!(ordinary.metadata()["compiled_preserving_call_regions"].as_array().unwrap().is_empty());
+    // A different recurrence and an uncached direct insertion are both valid
+    // source programs. They must compile through the ordinary call path.
+    let direct = structural_projection_tests::COUNT.replace(
+        "  previous := (key ∈ h)? | true => h{key} | false => 0u64.\n  out := map/insert(h, key, previous + 1u64).",
+        "  out := map/insert(h, key, 1u64).");
+    assert_ne!(direct, structural_projection_tests::COUNT);
+    for source in [structural_projection_tests::COUNT.replace("index + 1u64, increment", "index + 2u64, increment"), direct] {
+        let artifact = tests::artifact_source(&format!("{source}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n"));
+        let fallback = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+        assert!(fallback.metadata()["compiled_bound_call_shim"].is_null());
+        assert!(fallback.metadata()["compiled_preserving_call_regions"].as_array().unwrap().is_empty());
+    }
 }
 #[test]
 fn preserving_calls_keep_changed_inputs_growth_refills_and_exact_work() {

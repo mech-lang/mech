@@ -67,7 +67,11 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
         take_loop_bounds_emissions();
         take_lookup_fact_emissions();
         take_outline_emissions();
+        if compare_preserving { crate::native_artifact::program_bound_shim::take_emissions(); }
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        if compare_preserving && cfg!(target_arch = "aarch64") {
+            assert!(crate::native_artifact::program_bound_shim::take_emissions() > 0);
+        }
         assert_eq!(take_outline_emissions(), 1);
         let emitted = take_loop_bounds_emissions();
         assert_eq!(emitted.0, 1, "must emit the guarded graph, not only its fallback");
