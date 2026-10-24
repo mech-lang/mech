@@ -231,7 +231,7 @@ fn load(
 
 #[path = "iteration_codegen_report.rs"]
 mod codegen_report;
-pub(super) use codegen_report::{CodegenReport, RegionToken, CfgCleanup};
+pub(super) use codegen_report::{CodegenReport, RegionToken, CfgCleanup, OutlinedLoop};
 
 fn define<M: Module>(
     plan: &NativeIterationArtifactPlan,
@@ -413,6 +413,10 @@ pub(super) fn define_cfg<M: Module>(
     } else {
         Vec::new()
     };
+    #[cfg(feature = "canonical-native-program")]
+    let packed_functions = super::program_compiler::packed_loop_codegen::define_functions(
+        module, entry_symbol, plan, &closed, owner.as_ref(), &aggregates, limits, &mut report,
+    )?;
     let mut signature_entry = module.make_signature();
     signature_entry.params.push(AbiParam::new(types::I64));
     signature_entry.returns.push(AbiParam::new(types::I64));
@@ -673,9 +677,11 @@ pub(super) fn define_cfg<M: Module>(
             b.switch_to_block(blocks[index].expect("reachable block"));
             #[cfg(feature = "canonical-native-program")]
             if let Some(hooks) = &hooks {
+                let outlined = packed_functions.iter().find(|(site, _, _, _)| *site == index)
+                    .map(|(_, function, _, _)| module.declare_func_in_func(*function, b.func));
                 super::program_compiler::packed_loop_codegen::emit_entry(
-                    &mut b, frame, locals, plan, &closed, owner.as_ref(), &aggregates,
-                    index, hooks, &blocks, error, &mut report,
+                    &mut b, frame, locals, user_context, plan, &closed, owner.as_ref(), &aggregates,
+                    index, hooks, &blocks, error, outlined, &mut report,
                 )?;
             }
             let before = b.func.dfg.num_insts();
@@ -1316,6 +1322,7 @@ pub(super) fn define_cfg<M: Module>(
                     .iter()
                     .map(|(_, _, stack, _)| *stack)
                     .chain(map_functions.iter().map(|(_, _, stack, _)| *stack))
+                    .chain(packed_functions.iter().map(|(_, _, stack, _)| *stack))
                     .max()
                     .unwrap_or(0),
             )
@@ -1324,6 +1331,7 @@ pub(super) fn define_cfg<M: Module>(
             .iter()
             .map(|(_, _, _, code)| *code)
             .chain(map_functions.iter().map(|(_, _, _, code)| *code))
+            .chain(packed_functions.iter().map(|(_, _, _, code)| *code))
             .try_fold(code, |total, code| total.checked_add(code))
             .ok_or_else(|| backend("compiled region code overflow"))?,
     );

@@ -23,6 +23,11 @@ mod tag_threading;
 mod loop_bounds;
 #[path = "program_lookup_facts.rs"]
 mod lookup_facts;
+#[path = "program_packed_loop_functions.rs"]
+mod outlined;
+pub(in crate::native_artifact) use outlined::define_functions;
+#[cfg(test)]
+pub(in crate::native_artifact) use outlined::{take_outline_emissions, without_loop_outlining};
 
 #[cfg(test)]
 thread_local! {
@@ -291,33 +296,17 @@ fn spill(b: &mut FunctionBuilder<'_>, packed: &FrameState,
 /// Called at the ordinary header before its per-visit dispatch. The fast
 /// version returns only at the original exit/error boundary; declined runtime
 /// entry continues emitting and executing the untouched ordinary header.
-pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value,
+pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, user_context: Value,
     code: CodePlan<'_>, closed: &Layout, owner: Option<&NativeMapOwnerWords>,
     aggregates: &NativeScalarAggregates, site: usize, hooks: &Hooks,
-    ordinary_blocks: &[Option<Block>], error: Block, report: &mut CodegenReport) -> Result<(), NativeCompileError>
+    ordinary_blocks: &[Option<Block>], error: Block, outlined: Option<cranelift_codegen::ir::FuncRef>,
+    report: &mut CodegenReport) -> Result<(), NativeCompileError>
 {
     let Some(id) = closed.sites.get(site).copied().flatten() else { return Ok(()); };
     let region = &closed.regions[id];
     if region.tail.header() as usize != site { return Ok(()); }
     let Some(owner) = owner else { return Ok(()); };
-    let Some(slots) = words_for(code, closed, id, owner, aggregates) else { return Ok(()); };
-    if slots.len().saturating_add(core::mem::size_of::<Frame>() / 8) > 512 {
-        return Ok(());
-    }
-    let facts = edge_facts::derive(code, closed, id, owner, aggregates, &slots).unwrap_or_default();
-    let threaded = tag_threading::derive(code, closed, id, owner, aggregates);
-    #[cfg(test)]
-    let threaded = if TAG_THREADING_DISABLED.with(std::cell::Cell::get) { None } else { threaded };
-    let lookups = threaded.as_ref().and_then(|graph| lookup_facts::derive(code, closed, id, owner, aggregates, graph));
-    #[cfg(test)]
-    let lookups = if LOOKUP_FACTS_DISABLED.with(std::cell::Cell::get) { None } else { lookups };
-    let bounds = threaded.as_ref().and_then(|graph| loop_bounds::derive(code, closed, id, owner, aggregates, graph, &slots));
-    #[cfg(test)]
-    let bounds = if LOOP_BOUNDS_DISABLED.with(std::cell::Cell::get) { None } else { bounds };
-    #[cfg(test)]
-    let facts = if EDGE_FACTS_DISABLED.with(std::cell::Cell::get) { edge_facts::Proof::default() } else { facts };
-    let report_region = report.packed_ssa_region(site);
-    let owner_index = region.map.unwrap();
+    let Some(slots) = eligible_slots(code, closed, id, owner, aggregates) else { return Ok(()); };
     let entry_template_start = b.func.dfg.num_insts();
     let ordinary = b.create_block();
     let inspect = b.create_block();
@@ -334,6 +323,57 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
     let zero = b.ins().iconst(types::I64, 0);
     // One actual-selection receipt per versioned region, never per iteration.
     hooks.bound_call(b, function, context, site, 13, [zero; 3], error);
+    if let Some(function_ref) = outlined {
+        let call = b.ins().call(function_ref, &[frame, locals, pointer, function, context, user_context]);
+        let status = b.inst_results(call)[0];
+        let ok = b.ins().icmp_imm(IntCC::Equal, status, 0);
+        b.ins().brif(ok, ordinary_blocks[region.tail.exit() as usize].unwrap(), &[], error, &[status.into()]);
+        if b.func.dfg.num_insts() - entry_template_start > outlined::CALLER_TEMPLATE_BOUND {
+            return Err(backend("outlined packed loop caller exceeds fixed template"));
+        }
+    } else {
+        let prefix_work = b.func.dfg.num_insts() - entry_template_start;
+        emit_body(b, frame, locals, pointer, function, context, code, closed, id, owner,
+            aggregates, slots, hooks, ordinary_blocks[region.tail.exit() as usize].unwrap(),
+            error, prefix_work, report)?;
+    }
+    b.switch_to_block(ordinary);
+    Ok(())
+}
+
+fn eligible_slots(code: CodePlan<'_>, closed: &Layout, id: usize,
+    owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates) -> Option<BTreeSet<usize>>
+{
+    let slots = words_for(code, closed, id, owner, aggregates)?;
+    (slots.len().saturating_add(core::mem::size_of::<Frame>() / 8) <= 512).then_some(slots)
+}
+
+// The same proved body is emitted inline or into an owned native function.
+// Only its two exit edges differ; source actions and finite loans are shared.
+fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: Value,
+    function: Value, context: Value, code: CodePlan<'_>, closed: &Layout, id: usize,
+    owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates,
+    slots: BTreeSet<usize>, hooks: &Hooks, source_exit: Block, error: Block,
+    entry_prefix_work: usize, report: &mut CodegenReport) -> Result<(), NativeCompileError>
+{
+    let region = &closed.regions[id];
+    let site = region.tail.header() as usize;
+    let zero = b.ins().iconst(types::I64, 0);
+    let entry_template_start = b.func.dfg.num_insts() - 1;
+    let facts = edge_facts::derive(code, closed, id, owner, aggregates, &slots).unwrap_or_default();
+    let threaded = tag_threading::derive(code, closed, id, owner, aggregates);
+    #[cfg(test)]
+    let threaded = if TAG_THREADING_DISABLED.with(std::cell::Cell::get) { None } else { threaded };
+    let lookups = threaded.as_ref().and_then(|graph| lookup_facts::derive(code, closed, id, owner, aggregates, graph));
+    #[cfg(test)]
+    let lookups = if LOOKUP_FACTS_DISABLED.with(std::cell::Cell::get) { None } else { lookups };
+    let bounds = threaded.as_ref().and_then(|graph| loop_bounds::derive(code, closed, id, owner, aggregates, graph, &slots));
+    #[cfg(test)]
+    let bounds = if LOOP_BOUNDS_DISABLED.with(std::cell::Cell::get) { None } else { bounds };
+    #[cfg(test)]
+    let facts = if EDGE_FACTS_DISABLED.with(std::cell::Cell::get) { edge_facts::Proof::default() } else { facts };
+    let report_region = report.packed_ssa_region(site);
+    let owner_index = region.map.unwrap();
     let setup = b.func.dfg.num_insts();
     let words = Words::new(b, locals, code, slots)?;
     let packed = FrameState::registers(b, pointer, region.packed.as_ref().unwrap().packing_domain());
@@ -383,7 +423,7 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
         b.ins().jump(if threaded.is_some() { blocks[0] } else { original_target(site as u32) }, &[]);
         None
     };
-    let entry_template_work = b.func.dfg.num_insts() - entry_template_start;
+    let entry_template_work = entry_prefix_work + b.func.dfg.num_insts() - entry_template_start;
     let mut dispatch_template_work = 0;
     let mut folded_branches = Vec::new();
     let mut known_latches = Vec::new();
@@ -542,7 +582,7 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
     let token = words.read(b, returned);
     b.ins().store(MemFlags::new(), token, locals, offset(returned)?);
     spill(b, &packed, locals, region)?;
-    b.ins().jump(ordinary_blocks[region.tail.exit() as usize].unwrap(), &[]);
+    b.ins().jump(source_exit, &[]);
     b.switch_to_block(failed);
     let status = b.block_params(failed)[0];
     // Abort consumes the packed frame/fuel and original error site, never
@@ -575,7 +615,6 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
             proof.active_tag, proof.guard_sites, proof.range_site, proof.recurrence_sites.clone(),
             emitted_sites.len(), certified_ranges, entry_template_work + dispatch_template_work + boundary_work);
     }
-    b.switch_to_block(ordinary);
     Ok(())
 }
 
