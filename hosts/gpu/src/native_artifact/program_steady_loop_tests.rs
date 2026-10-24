@@ -1,6 +1,7 @@
 //! Actual helper-free native functions, precise source continuations, finite
 //! budgets and complete maps, compared with the original compiled source CFG.
 use super::*;
+use std::collections::BTreeSet;
 
 #[test]
 fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
