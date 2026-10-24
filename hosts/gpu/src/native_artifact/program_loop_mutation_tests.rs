@@ -75,13 +75,18 @@ fn mutation_facts_decline_skipped_double_insertions_and_other_state_entries() {
         let reference = without_mutation_facts(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
         let mut executions = Vec::new();
         for jit in [&optimized, &reference] {
+            PUBLICATION_FRONTIERS.with(|records| records.borrow_mut().clear());
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
             let mut outputs = vec![None];
             let entry = jit.test_checked_entry();
             let report = execute(jit.descriptor(), |frame| {
                 // SAFETY: the checked entry and all inputs belong to this
                 // synchronous invocation; no pointer escapes it.
-                unsafe { entry(frame) }
+                let old = unsafe { (*frame).helper };
+                unsafe { (*frame).helper = observe_publication_frontier; }
+                let status = unsafe { entry(frame) };
+                unsafe { (*frame).helper = old; }
+                status
             }, &[], &mut outputs, tests::limits(), &memory).unwrap();
             let ValueData::Map(map) = outputs[0].as_ref().unwrap().data() else { panic!("map"); };
             let pairs = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
@@ -91,7 +96,12 @@ fn mutation_facts_decline_skipped_double_insertions_and_other_state_entries() {
             assert_eq!(pairs, expected.map(|(key, value)| (key.to_owned(), value)).into_iter().collect());
             assert_eq!(report.packed_map_regions, 1, "negative fixtures must still exercise packed storage");
             assert_eq!(report.packed_map_updates, updates, "actual source insertion count differs from window count");
-            executions.push((report, pairs));
+            // Publication sorts an independently hash-seeded canonical map.
+            // Compare exact source work/fuel at its entrance, then retain all
+            // structural report fields and every published key/count.
+            let frontier = PUBLICATION_FRONTIERS.with(|records| core::mem::take(&mut *records.borrow_mut()));
+            assert_eq!(frontier.len(), 1);
+            executions.push((structural_report(&report), pairs, frontier));
             drop(outputs); assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
         }
         assert_eq!(executions[0], executions[1]);
