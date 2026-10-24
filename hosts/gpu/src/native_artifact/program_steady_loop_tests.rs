@@ -34,6 +34,9 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
     assert!(pure["code_bytes"].as_u64().unwrap() > 0);
     assert!(pure["symbol"].as_str().unwrap().ends_with("_funded"));
     assert_eq!(pure["active_tag"], bound["active_tag"]);
+    assert_eq!(pure["specialized_widths"], serde_json::json!(
+        (1..=crate::native_artifact::program_packed_map::MAX_WIDTH).collect::<Vec<_>>()
+    ));
     let mut node_sites = std::collections::BTreeMap::new();
     let closed = &object.descriptor().closed_tails;
     let region = closed

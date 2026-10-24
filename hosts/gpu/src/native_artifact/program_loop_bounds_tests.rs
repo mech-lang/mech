@@ -185,10 +185,15 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
             (long.as_str(), 1, 1023, 0, Mode::Native), // With full loans, refill on final Done header.
             (long.as_str(), 1, 1024, 0, Mode::Native),
         ];
+        let all_width_text = "abcdefghijklmnopqr".repeat(4);
+        let all_width_cases = (1..=crate::native_artifact::program_packed_map::MAX_WIDTH)
+            .filter(|_| compare_steady)
+            .map(|width| (all_width_text.as_str(), width, all_width_text.len() as u64, 0, Mode::Native));
         for ((text, width, n, start, mode), full_refill_budget, expected_default_denial) in cases.into_iter()
             .map(|case| (case, false, false))
             .chain(refill_cases.iter().copied().map(|case| (case, false, true)))
             .chain(refill_cases.iter().copied().map(|case| (case, true, false)))
+            .chain(all_width_cases.map(|case| (case, true, false)))
         {
             let mut executions = Vec::new();
             for (version, jit) in [&optimized, &baseline].into_iter().enumerate() {

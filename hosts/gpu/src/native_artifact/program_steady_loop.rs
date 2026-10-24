@@ -285,260 +285,297 @@ pub(super) fn define<M: Module>(
     context.func.signature = signature;
     let mut fb = FunctionBuilderContext::new();
     let (entry_work, source_work, snapshot_work, bail_blocks);
+    let specialized_widths =
+        (1..=crate::native_artifact::program_packed_map::MAX_WIDTH).collect::<Vec<_>>();
     {
         let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
         let entry = b.create_block();
         b.append_block_params_for_function_params(entry);
         b.switch_to_block(entry);
         let args = b.block_params(entry).to_vec();
-        let words = Words::new(&mut b, args[0], code, slots.clone())?;
-        let packed = FrameState::registers(
-            &mut b,
+        // The private storage constructor admits only a bounded width domain.
+        // Select on the ACTUAL immutable Frame width, never an input sample
+        // or workload name. Every arm emits the identical source graph; only
+        // width and its constructor-derived masks become native constants.
+        let width = b.ins().load(
+            types::I64,
+            MemFlags::new(),
             args[1],
-            closed.regions[id].packed.as_ref().unwrap().packing_domain(),
-        )
-        .with_constant_values([args[2], args[3]]);
-        let blocks = proof
-            .nodes
+            core::mem::offset_of!(Frame, width) as i32,
+        );
+        let generic = b.create_block();
+        let mut selector = Switch::new();
+        let variants = specialized_widths
             .iter()
-            .map(|&node| (node, b.create_block()))
-            .collect::<BTreeMap<_, _>>();
-        let mut bail = proof
-            .nodes
-            .iter()
-            .map(|&node| (node, b.create_block()))
-            .collect::<BTreeMap<_, _>>();
-        bail.insert(proof.graph.nodes.len(), b.create_block());
-        let zero = b.ins().iconst(types::I64, 0);
-        b.ins().jump(blocks[&proof.active], &[]);
-        entry_work = b.func.dfg.num_insts();
-        let target = |target| match target {
-            tag_threading::Target::Node(node) => blocks[&node],
-            tag_threading::Target::Exit => bail[&proof.graph.nodes.len()],
-        };
-        let mut maximum = 0;
-        for &index in &proof.nodes {
-            let node = &proof.graph.nodes[index];
-            b.switch_to_block(blocks[&index]);
-            let start = b.func.dfg.num_insts();
-            if (node.site == closed.regions[id].tail.header() as usize && index != proof.active)
-                || matches!(
-                    node.edge,
-                    tag_threading::Edge::Reject | tag_threading::Edge::Dispatch { .. }
-                )
-            {
-                b.ins().jump(bail[&index], &[]);
-                continue;
-            }
-            let failed = b.create_block();
-            b.append_block_param(failed, types::I64);
-            b.set_cold_block(failed);
-            if index == proof.active {
-                let counter = words.read(&mut b, proof.bounds.index_word);
-                packed.write(&mut b, core::mem::offset_of!(Frame, updates), counter);
-                let fuel = packed.read(&mut b, core::mem::offset_of!(Frame, fuel));
-                let funded = b.create_block();
-                b.ins().brif(fuel, funded, &[], bail[&index], &[]);
-                b.switch_to_block(funded);
-                let fuel = b.ins().iadd_imm(fuel, -1);
-                packed.write(&mut b, core::mem::offset_of!(Frame, fuel), fuel);
-                let tag = b
-                    .ins()
-                    .iconst(types::I64, i64::from(proof.bounds.active_tag));
-                words.write(&mut b, proof.graph.carrier_word, tag);
-            }
-            if let Some((layout, action)) = aggregate_at(
-                owner,
-                aggregates,
-                closed.regions[id].map.unwrap(),
-                node.site,
-            ) {
-                emit_aggregate_body(
-                    &mut b,
-                    &words,
-                    layout,
-                    action,
-                    node.site,
-                    &proof.facts,
-                    failed,
-                    None,
-                )?;
-            } else if let Some(span) = owner.span_site(node.site).map(|i| &owner.spans()[i]) {
-                if span.range_site() as usize == node.site {
-                    if !proof.bounds.ranges.contains(&index) {
-                        return Err(backend("steady selection lacks original bound"));
-                    }
-                    let first = words.read(&mut b, span.operands()[0].get() as usize);
-                    packed_maps::select_leaf(&mut b, &packed, first);
-                }
-            } else if owner.call_region(node.site) == closed.regions[id].map {
-                let Action::LibraryCall {
-                    template,
-                    operands,
-                    output,
-                } = code.blocks()[node.site].action()
-                else {
-                    unreachable!()
-                };
-                let fact = proof.lookups[index];
-                let value = if template.primitive() == P::MapContainsKey {
-                    let pointer = packed_maps::probe_leaf(
-                        &mut b,
-                        &packed,
-                        fact,
-                        proof.present[index],
-                        bail[&index],
-                    );
-                    let hit = b.create_block();
-                    let miss = b.create_block();
-                    b.set_cold_block(miss);
-                    b.ins().brif(pointer, hit, &[], miss, &[]);
-                    b.switch_to_block(miss);
-                    words.write(&mut b, output.get() as usize, zero);
-                    let tag_threading::Edge::Jump(next) = node.edge else {
-                        unreachable!()
-                    };
-                    b.ins().jump(bail[&proof.target_index(next)], &[]);
-                    b.switch_to_block(hit);
-                    b.ins().iconst(types::I64, 1)
-                } else {
-                    let operation = if template.primitive() == P::MapKeyAccess {
-                        4
-                    } else {
-                        5
-                    };
-                    let replacement = if operation == 5 {
-                        words.read(&mut b, operands[2].get() as usize)
-                    } else {
-                        zero
-                    };
-                    let token = words.read(&mut b, operands[0].get() as usize);
-                    // Unknown reads leave before probing; successful source
-                    // membership dominates the normal read/update path.
-                    if !proof.present[index] && fact != packed_maps::LookupFact::Present {
-                        b.ins().jump(bail[&index], &[]);
-                        b.switch_to_block(failed);
-                        b.ins().jump(bail[&index], &[]);
-                        continue;
-                    }
-                    packed_maps::operation_leaf(
-                        &mut b,
-                        &packed,
-                        operation,
-                        replacement,
-                        token,
-                        fact,
-                        true,
-                        proof
-                            .bounds
-                            .single_insert_nodes
-                            .as_ref()
-                            .unwrap()
-                            .contains(&index),
-                        bail[&index],
+            .map(|&width| {
+                let block = b.create_block();
+                selector.set_entry(u128::from(width), block);
+                (Some(width), block)
+            })
+            .collect::<Vec<_>>();
+        selector.emit(&mut b, width, generic);
+        let dispatch_work = b.func.dfg.num_insts();
+        let mut maximum_entry = 0;
+        let mut maximum_source = 0;
+        let mut maximum_snapshot = 0;
+        let mut all_bails = Vec::new();
+        for (width, variant) in std::iter::once((None, generic)).chain(variants) {
+            b.switch_to_block(variant);
+            let entry_start = b.func.dfg.num_insts();
+            let words = Words::new(&mut b, args[0], code, slots.clone())?;
+            let packed = FrameState::registers(
+                &mut b,
+                args[1],
+                closed.regions[id].packed.as_ref().unwrap().packing_domain(),
+            )
+            .with_constant_values([args[2], args[3]])
+            .with_specialized_width(width);
+            let blocks = proof
+                .nodes
+                .iter()
+                .map(|&node| (node, b.create_block()))
+                .collect::<BTreeMap<_, _>>();
+            let mut bail = proof
+                .nodes
+                .iter()
+                .map(|&node| (node, b.create_block()))
+                .collect::<BTreeMap<_, _>>();
+            bail.insert(proof.graph.nodes.len(), b.create_block());
+            let zero = b.ins().iconst(types::I64, 0);
+            b.ins().jump(blocks[&proof.active], &[]);
+            maximum_entry = maximum_entry.max(b.func.dfg.num_insts() - entry_start);
+            let target = |target| match target {
+                tag_threading::Target::Node(node) => blocks[&node],
+                tag_threading::Target::Exit => bail[&proof.graph.nodes.len()],
+            };
+            let mut maximum = 0;
+            for &index in &proof.nodes {
+                let node = &proof.graph.nodes[index];
+                b.switch_to_block(blocks[&index]);
+                let start = b.func.dfg.num_insts();
+                if (node.site == closed.regions[id].tail.header() as usize && index != proof.active)
+                    || matches!(
+                        node.edge,
+                        tag_threading::Edge::Reject | tag_threading::Edge::Dispatch { .. }
                     )
-                };
-                words.write(&mut b, output.get() as usize, value);
-            } else {
-                match code.blocks()[node.site].action() {
-                    Action::Scalar(Scalar::None) => {}
-                    Action::Scalar(Scalar::Copy { source, output }) => {
-                        let value = words.read(&mut b, source.get() as usize);
-                        words.write(&mut b, output.get() as usize, value);
+                {
+                    b.ins().jump(bail[&index], &[]);
+                    continue;
+                }
+                let failed = b.create_block();
+                b.append_block_param(failed, types::I64);
+                b.set_cold_block(failed);
+                if index == proof.active {
+                    let counter = words.read(&mut b, proof.bounds.index_word);
+                    packed.write(&mut b, core::mem::offset_of!(Frame, updates), counter);
+                    let fuel = packed.read(&mut b, core::mem::offset_of!(Frame, fuel));
+                    let funded = b.create_block();
+                    b.ins().brif(fuel, funded, &[], bail[&index], &[]);
+                    b.switch_to_block(funded);
+                    let fuel = b.ins().iadd_imm(fuel, -1);
+                    packed.write(&mut b, core::mem::offset_of!(Frame, fuel), fuel);
+                    let tag = b
+                        .ins()
+                        .iconst(types::I64, i64::from(proof.bounds.active_tag));
+                    words.write(&mut b, proof.graph.carrier_word, tag);
+                }
+                if let Some((layout, action)) = aggregate_at(
+                    owner,
+                    aggregates,
+                    closed.regions[id].map.unwrap(),
+                    node.site,
+                ) {
+                    emit_aggregate_body(
+                        &mut b,
+                        &words,
+                        layout,
+                        action,
+                        node.site,
+                        &proof.facts,
+                        failed,
+                        None,
+                    )?;
+                } else if let Some(span) = owner.span_site(node.site).map(|i| &owner.spans()[i]) {
+                    if span.range_site() as usize == node.site {
+                        if !proof.bounds.ranges.contains(&index) {
+                            return Err(backend("steady selection lacks original bound"));
+                        }
+                        let first = words.read(&mut b, span.operands()[0].get() as usize);
+                        packed_maps::select_leaf(&mut b, &packed, first);
                     }
-                    Action::Scalar(Scalar::Primitive {
-                        op,
+                } else if owner.call_region(node.site) == closed.regions[id].map {
+                    let Action::LibraryCall {
+                        template,
                         operands,
                         output,
-                        ..
-                    }) => {
-                        let args = operands
-                            .iter()
-                            .map(|v| words.read(&mut b, v.get() as usize))
-                            .collect::<Vec<_>>();
-                        let value = if *op == Op::U64Add
-                            && proof
+                    } = code.blocks()[node.site].action()
+                    else {
+                        unreachable!()
+                    };
+                    let fact = proof.lookups[index];
+                    let value = if template.primitive() == P::MapContainsKey {
+                        let pointer = packed_maps::probe_leaf(
+                            &mut b,
+                            &packed,
+                            fact,
+                            proof.present[index],
+                            bail[&index],
+                        );
+                        let hit = b.create_block();
+                        let miss = b.create_block();
+                        b.set_cold_block(miss);
+                        b.ins().brif(pointer, hit, &[], miss, &[]);
+                        b.switch_to_block(miss);
+                        words.write(&mut b, output.get() as usize, zero);
+                        let tag_threading::Edge::Jump(next) = node.edge else {
+                            unreachable!()
+                        };
+                        b.ins().jump(bail[&proof.target_index(next)], &[]);
+                        b.switch_to_block(hit);
+                        b.ins().iconst(types::I64, 1)
+                    } else {
+                        let operation = if template.primitive() == P::MapKeyAccess {
+                            4
+                        } else {
+                            5
+                        };
+                        let replacement = if operation == 5 {
+                            words.read(&mut b, operands[2].get() as usize)
+                        } else {
+                            zero
+                        };
+                        let token = words.read(&mut b, operands[0].get() as usize);
+                        // Unknown reads leave before probing; successful source
+                        // membership dominates the normal read/update path.
+                        if !proof.present[index] && fact != packed_maps::LookupFact::Present {
+                            b.ins().jump(bail[&index], &[]);
+                            b.switch_to_block(failed);
+                            b.ins().jump(bail[&index], &[]);
+                            continue;
+                        }
+                        packed_maps::operation_leaf(
+                            &mut b,
+                            &packed,
+                            operation,
+                            replacement,
+                            token,
+                            fact,
+                            true,
+                            proof
                                 .bounds
-                                .count_values
+                                .single_insert_nodes
                                 .as_ref()
                                 .unwrap()
-                                .additions
-                                .contains(&index)
-                        {
-                            b.ins().iadd(args[0], args[1])
-                        } else if proof.facts.arithmetic(node.site, *op, operands) {
-                            match op {
-                                Op::U64Add => b.ins().iadd(args[0], args[1]),
-                                Op::U64Sub => b.ins().isub(args[0], args[1]),
-                                _ => unreachable!(),
-                            }
-                        } else {
-                            primitive(&mut b, *op, &args, failed)
-                        };
-                        words.write(&mut b, output.get() as usize, value);
-                    }
-                    _ => unreachable!("steady source action proof"),
-                }
-            }
-            if index == proof.bounds.first {
-                let cursor = words.read(&mut b, proof.bounds.index_word);
-                let stop = b
-                    .ins()
-                    .icmp(IntCC::UnsignedGreaterThanOrEqual, cursor, args[4]);
-                let tag_threading::Edge::Branch { yes, no } = node.edge else {
-                    unreachable!()
-                };
-                b.ins().brif(stop, target(yes), &[], target(no), &[]);
-            } else if proof.bounds.later.contains(&index) {
-                let tag_threading::Edge::Branch { no, .. } = node.edge else {
-                    unreachable!()
-                };
-                b.ins().jump(target(no), &[]);
-            } else {
-                match &node.edge {
-                    tag_threading::Edge::Jump(next) => {
-                        b.ins().jump(target(*next), &[]);
-                    }
-                    tag_threading::Edge::Branch { yes, no } => {
-                        emit_source_terminator(
-                            &mut b,
-                            &words,
-                            code,
-                            code.blocks()[node.site].terminator(),
-                            failed,
-                            |source| {
-                                let source_yes = match code.blocks()[node.site].terminator() {
-                                    Term::Scalar(
-                                        Branch::Branch { yes, .. }
-                                        | Branch::LiteralBranch { yes, .. },
-                                    ) => yes,
+                                .contains(&index),
+                            bail[&index],
+                        )
+                    };
+                    words.write(&mut b, output.get() as usize, value);
+                } else {
+                    match code.blocks()[node.site].action() {
+                        Action::Scalar(Scalar::None) => {}
+                        Action::Scalar(Scalar::Copy { source, output }) => {
+                            let value = words.read(&mut b, source.get() as usize);
+                            words.write(&mut b, output.get() as usize, value);
+                        }
+                        Action::Scalar(Scalar::Primitive {
+                            op,
+                            operands,
+                            output,
+                            ..
+                        }) => {
+                            let args = operands
+                                .iter()
+                                .map(|v| words.read(&mut b, v.get() as usize))
+                                .collect::<Vec<_>>();
+                            let value = if *op == Op::U64Add
+                                && proof
+                                    .bounds
+                                    .count_values
+                                    .as_ref()
+                                    .unwrap()
+                                    .additions
+                                    .contains(&index)
+                            {
+                                b.ins().iadd(args[0], args[1])
+                            } else if proof.facts.arithmetic(node.site, *op, operands) {
+                                match op {
+                                    Op::U64Add => b.ins().iadd(args[0], args[1]),
+                                    Op::U64Sub => b.ins().isub(args[0], args[1]),
                                     _ => unreachable!(),
-                                };
-                                target(if source == source_yes { *yes } else { *no })
-                            },
-                        );
+                                }
+                            } else {
+                                primitive(&mut b, *op, &args, failed)
+                            };
+                            words.write(&mut b, output.get() as usize, value);
+                        }
+                        _ => unreachable!("steady source action proof"),
                     }
-                    _ => unreachable!(),
                 }
+                if index == proof.bounds.first {
+                    let cursor = words.read(&mut b, proof.bounds.index_word);
+                    let stop = b
+                        .ins()
+                        .icmp(IntCC::UnsignedGreaterThanOrEqual, cursor, args[4]);
+                    let tag_threading::Edge::Branch { yes, no } = node.edge else {
+                        unreachable!()
+                    };
+                    b.ins().brif(stop, target(yes), &[], target(no), &[]);
+                } else if proof.bounds.later.contains(&index) {
+                    let tag_threading::Edge::Branch { no, .. } = node.edge else {
+                        unreachable!()
+                    };
+                    b.ins().jump(target(no), &[]);
+                } else {
+                    match &node.edge {
+                        tag_threading::Edge::Jump(next) => {
+                            b.ins().jump(target(*next), &[]);
+                        }
+                        tag_threading::Edge::Branch { yes, no } => {
+                            emit_source_terminator(
+                                &mut b,
+                                &words,
+                                code,
+                                code.blocks()[node.site].terminator(),
+                                failed,
+                                |source| {
+                                    let source_yes = match code.blocks()[node.site].terminator() {
+                                        Term::Scalar(
+                                            Branch::Branch { yes, .. }
+                                            | Branch::LiteralBranch { yes, .. },
+                                        ) => yes,
+                                        _ => unreachable!(),
+                                    };
+                                    target(if source == source_yes { *yes } else { *no })
+                                },
+                            );
+                        }
+                        _ => unreachable!(),
+                    }
+                }
+                b.switch_to_block(failed);
+                b.ins().jump(bail[&index], &[]);
+                maximum = maximum.max(b.func.dfg.num_insts() - start);
             }
-            b.switch_to_block(failed);
-            b.ins().jump(bail[&index], &[]);
-            maximum = maximum.max(b.func.dfg.num_insts() - start);
+            maximum_source = maximum_source.max(maximum);
+            let mut maximum = 0;
+            for (&index, &block) in &bail {
+                b.switch_to_block(block);
+                b.set_cold_block(block);
+                let start = b.func.dfg.num_insts();
+                words.spill_live(&mut b, args[0], &proof.live_at(index, returned))?;
+                packed.spill(&mut b);
+                let continuation = b.ins().iconst(types::I64, (index + 1) as i64);
+                b.ins().return_(&[continuation]);
+                maximum = maximum.max(b.func.dfg.num_insts() - start);
+            }
+            maximum_snapshot = maximum_snapshot.max(maximum);
+            all_bails.extend(bail);
         }
-        source_work = maximum;
-        let mut maximum = 0;
-        for (&index, &block) in &bail {
-            b.switch_to_block(block);
-            b.set_cold_block(block);
-            let start = b.func.dfg.num_insts();
-            words.spill_live(&mut b, args[0], &proof.live_at(index, returned))?;
-            packed.spill(&mut b);
-            let continuation = b.ins().iconst(types::I64, (index + 1) as i64);
-            b.ins().return_(&[continuation]);
-            maximum = maximum.max(b.func.dfg.num_insts() - start);
-        }
-        snapshot_work = maximum;
-        bail_blocks = bail;
+        entry_work = dispatch_work + maximum_entry;
+        source_work = maximum_source;
+        snapshot_work = maximum_snapshot;
+        bail_blocks = all_bails;
         b.seal_all_blocks();
         b.finalize();
     }
@@ -561,13 +598,15 @@ pub(super) fn define<M: Module>(
     cleanup.before_instructions = initial_cleanup.before_instructions;
     let continuations = bail_blocks
         .iter()
-        .filter_map(|(&index, &block)| {
+        .filter_map(|&(index, block)| {
             context
                 .func
                 .layout
                 .is_block_inserted(block)
                 .then_some(index)
         })
+        .collect::<BTreeSet<_>>()
+        .into_iter()
         .collect::<Vec<_>>();
     let native_calls = context
         .func
@@ -628,6 +667,7 @@ pub(super) fn define<M: Module>(
                 })
                 .collect(),
             entry_words: proof.live[proof.active].iter().copied().collect(),
+            specialized_widths,
             entry_instructions: entry_work,
             maximum_source_instructions: source_work,
             maximum_snapshot_instructions: snapshot_work,
