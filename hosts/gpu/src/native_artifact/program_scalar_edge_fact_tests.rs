@@ -547,7 +547,9 @@ fn changed_input_equivalence(pass: Pass) {
         pass.check(unchanged_facts, unchanged_tags, take_frame_effect_emissions(), false);
         let long_text = (0..4099).map(|index| char::from(b'a' + ((index * 7 + index / 26) % 26) as u8))
             .collect::<String>();
-        let one_key_text = "a".repeat(2050);
+        // Reuse this fixture's existing large-input work allowance. Selected
+        // prefix lengths below still straddle each actual prepaid boundary.
+        let one_key_text = "a".repeat(4099);
         let mut cases = vec![
             ("abcabc", 1u64, 6u64), ("abcabc", 2, 6), ("abcabc", 3, 5),
             ("zzzz", 2, 4), ("abcdefgh", 7, 8), ("a", 1, 1),
@@ -642,7 +644,8 @@ fn changed_input_equivalence(pass: Pass) {
                             *expected.entry(String::from_utf8(window.to_vec()).unwrap()).or_insert(0u64) += 1;
                         }
                     }
-                    assert_eq!(pairs.as_ref(), Some(&expected));
+                    assert_eq!(pairs.as_ref(), Some(&expected),
+                        "version={version}, extent={extent}, n={n}, result={result:?}");
                     let report = result.as_ref().unwrap();
                     if !text.is_empty() { assert_eq!((report.packed_map_regions, report.packed_ssa_regions), (1, 1)); }
                     let updates = if extent <= n { n - extent + 1 } else { 0 };
