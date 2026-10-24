@@ -34,6 +34,10 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
     assert!(pure["code_bytes"].as_u64().unwrap() > 0);
     assert!(pure["symbol"].as_str().unwrap().ends_with("_funded"));
     assert_eq!(pure["active_tag"], bound["active_tag"]);
+    let peeled = pure["peeled_probe_nodes"].as_array().unwrap();
+    assert!(!peeled.is_empty(), "fresh source memberships must emit the direct entry path");
+    assert_eq!(peeled.len(), peeled.iter().map(|n| n.as_u64().unwrap())
+        .collect::<std::collections::BTreeSet<_>>().len());
     assert_eq!(pure["specialized_widths"], serde_json::json!(
         (1..=crate::native_artifact::program_packed_map::MAX_WIDTH).collect::<Vec<_>>()
     ));
