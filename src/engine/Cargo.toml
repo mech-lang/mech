@@ -56,6 +56,7 @@ compiler = [
 
 runtime_default = [
   "runtime",
+  "integer_bits",
   "pure_text",
   "map_ops",
   "sequence_sort",
@@ -221,6 +222,9 @@ access = ["functions"]
 assign = ["functions"]
 convert = ["functions"]
 pure_text = ["functions", "string"]
+# Word cells need the core U64 memory codec, independently of the wider
+# engine and machine U64 operation/factory profiles.
+integer_bits = ["functions", "mech-core/u64"]
 map_ops = ["functions", "map", "string", "bool"]
 sequence_sort = ["functions", "string"]
 

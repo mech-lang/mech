@@ -50,19 +50,105 @@ const EXPECTED_RUNTIME_SURFACE_FILE_SHA256: &str =
 const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
     "34db793ac637b3b1bc532978c6e8a6e0be1b8be63c33ec5f3043045f765616f5";
 
-// Current complete identities are derived from the qualified catalog capture.
-// Historical retained projections remain independently asserted below.
+// These qualified identities precede the explicitly checked bits extension.
+// Both the unchanged predecessor and every added factory are asserted below.
 #[cfg(feature = "full_runtime")]
-const EXPECTED_CURRENT_RUNTIME_SURFACE_DIGEST: &str =
+const EXPECTED_PRE_BITS_RUNTIME_SURFACE_DIGEST: &str =
     "015ad75c464af71d85c889dcc57cb46069f38e8fead589a5df800857b14f373a";
 #[cfg(feature = "full_source")]
-const EXPECTED_CURRENT_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST: &str =
+const EXPECTED_PRE_BITS_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST: &str =
     "b96cc0c38277d1b8cd5b407f67ad25c01db68698d891986f0d132f3bd32100cb";
 #[cfg(feature = "full_compiler")]
-const EXPECTED_CURRENT_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
+const EXPECTED_PRE_BITS_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
     "212841acea6678f2aa5699b4da758e581955e4045bf3470cd766d1ec43561374";
 
 static CATALOG_TEST_LOCK: Mutex<()> = Mutex::new(());
+
+#[cfg(any(feature = "full_runtime", feature = "standard_compiler"))]
+const BITS_FACTORIES: [(&str, usize); 11] = [
+    ("bits/and", 2),
+    ("bits/or", 2),
+    ("bits/xor", 2),
+    ("bits/not", 1),
+    ("bits/shift-left-wrap", 2),
+    ("bits/shift-right-wrap", 2),
+    ("bits/leading-zeros", 1),
+    ("bits/trailing-zeros", 1),
+    ("bits/wrapping-add", 2),
+    ("bits/wrapping-sub", 2),
+    ("bits/wrapping-mul", 2),
+];
+
+#[cfg(any(feature = "full_runtime", feature = "standard_compiler"))]
+fn is_bits_factory(name: &str) -> bool {
+    BITS_FACTORIES.iter().any(|(expected, _)| *expected == name)
+}
+
+#[cfg(any(feature = "full_runtime", feature = "standard_compiler"))]
+fn assert_bits_factories(catalog: &FunctionCatalog) {
+    use mech_core::{
+        ChangeDetectionPolicy, FunctionValueRepresentation::AnyValue, ImplementationMemoryClass,
+        OperationId, RuntimeFunctionId, RuntimeFunctionSignature, RuntimeOperationBinding,
+    };
+    for (name, arity) in BITS_FACTORIES {
+        let entry = catalog
+            .runtime_entry(RuntimeFunctionId::from_name(name))
+            .unwrap();
+        assert_eq!(entry.name, name);
+        let expected = if arity == 1 {
+            RuntimeFunctionSignature::unary(AnyValue, AnyValue)
+        } else {
+            RuntimeFunctionSignature::binary(AnyValue, AnyValue, AnyValue)
+        };
+        assert_eq!(entry.signature(), expected);
+        let operation = OperationId::from_name(name);
+        assert!(
+            matches!(entry.operation_binding(), RuntimeOperationBinding::Fixed(ids)
+            if ids.as_ref() == [operation])
+        );
+        assert_eq!(
+            entry.implementation_memory_class(),
+            ImplementationMemoryClass::CanonicalFinalize
+        );
+        assert_eq!(
+            entry.operation_contract(operation),
+            Some(&mech_core::elementwise_operation_contract(
+                arity,
+                ChangeDetectionPolicy::ExactScalar
+            ))
+        );
+    }
+}
+
+#[cfg(feature = "full_runtime")]
+fn pre_bits_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
+    assert_bits_factories(catalog);
+    let mut entries = catalog
+        .runtime_entries()
+        .filter(|entry| !is_bits_factory(&entry.name))
+        .map(|entry| format!("{}\t{}\n", id_hex(entry.id.raw()), entry.name))
+        .collect::<Vec<_>>();
+    entries.sort();
+    Sha256::digest(entries.concat().as_bytes())
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+#[cfg(any(feature = "full_source", feature = "standard_compiler"))]
+fn assert_bits_exports(catalog: &FunctionCatalog) {
+    assert_eq!(catalog.module_exports("bits").len(), BITS_FACTORIES.len());
+    for (name, _) in BITS_FACTORIES {
+        let operation = mech_core::OperationId::from_name(name);
+        assert!(catalog.specializer(operation).is_some());
+        let item = name.strip_prefix("bits/").unwrap();
+        let export = catalog.module_export("bits", item).unwrap();
+        assert_eq!(export.operation, operation);
+        assert_eq!(export.canonical_name, name);
+        assert_eq!(export.exposure, FunctionExposure::ModuleOnly);
+        assert_eq!(catalog.exports_for_operation(operation).len(), 1);
+    }
+}
 
 #[cfg(feature = "full_runtime")]
 const RUNTIME_SURFACE: &[u8] = include_bytes!(concat!(
@@ -240,19 +326,25 @@ fn retained_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
             Some(&expected)
         );
     }
+    assert_bits_factories(catalog);
     let map_additions = assert_map_runtime_additions(catalog);
     let collection_text_additions = assert_collection_text_runtime_additions(catalog);
     let mut retained = catalog
         .runtime_entries()
         .filter(|entry| {
-            !additions.iter().any(|(name, ..)| entry.name == *name)
+            !is_bits_factory(&entry.name)
+                && !additions.iter().any(|(name, ..)| entry.name == *name)
                 && !map_additions.contains(&entry.name.as_str())
                 && !collection_text_additions.contains(&entry.name.as_str())
         })
         .map(|entry| format!("{}\t{}\n", id_hex(entry.id.raw()), entry.name))
         .collect::<Vec<_>>();
     assert_eq!(
-        retained.len() + additions.len() + map_additions.len() + collection_text_additions.len(),
+        retained.len()
+            + additions.len()
+            + map_additions.len()
+            + collection_text_additions.len()
+            + BITS_FACTORIES.len(),
         catalog.runtime_factory_count()
     );
     retained.sort_unstable();
@@ -702,12 +794,13 @@ fn assert_pure_text_source_exports(catalog: &FunctionCatalog) {
 
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 fn assert_standard_compiler_surface(catalog: &FunctionCatalog) {
+    assert_bits_exports(catalog);
     assert_pure_text_source_exports(catalog);
     assert_map_source_exports(catalog);
     assert_collection_text_source_exports(catalog);
     assert_eq!(
         catalog.runtime_factory_count(),
-        EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES
+        EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES + BITS_FACTORIES.len()
     );
     assert_eq!(
         retained_runtime_surface_digest(catalog),
@@ -715,7 +808,7 @@ fn assert_standard_compiler_surface(catalog: &FunctionCatalog) {
     );
     assert_eq!(
         catalog.specializer_count(),
-        EXPECTED_STANDARD_SOURCE_SPECIALIZERS
+        EXPECTED_STANDARD_SOURCE_SPECIALIZERS + BITS_FACTORIES.len()
     );
 }
 
@@ -832,12 +925,13 @@ fn frozen_runtime_surface() -> BTreeMap<String, String> {
 fn assert_runtime_surface(catalog: &FunctionCatalog) {
     assert_map_runtime_additions(catalog);
     assert_collection_text_runtime_additions(catalog);
-    let count = catalog.runtime_factory_count();
+    assert_bits_factories(catalog);
+    let count = catalog.runtime_factory_count() - BITS_FACTORIES.len();
     #[cfg(feature = "full_source")]
     if count == EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES {
         assert_eq!(
-            canonical_runtime_surface_digest(catalog),
-            EXPECTED_CURRENT_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST
+            pre_bits_runtime_surface_digest(catalog),
+            EXPECTED_PRE_BITS_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST
         );
         assert_eq!(
             retained_runtime_surface_digest(catalog),
@@ -861,17 +955,18 @@ fn assert_runtime_surface(catalog: &FunctionCatalog) {
     );
 
     assert_eq!(
-        canonical_runtime_surface_digest(catalog),
-        EXPECTED_CURRENT_RUNTIME_SURFACE_DIGEST
+        pre_bits_runtime_surface_digest(catalog),
+        EXPECTED_PRE_BITS_RUNTIME_SURFACE_DIGEST
     );
     let expected = frozen_runtime_surface();
     let actual = catalog
         .runtime_entries()
         .filter(|entry| {
-            !matches!(
-                entry.name.as_str(),
-                "map/new" | "map/insert" | "map/contains-key"
-            )
+            !is_bits_factory(&entry.name)
+                && !matches!(
+                    entry.name.as_str(),
+                    "map/new" | "map/insert" | "map/contains-key"
+                )
         })
         .map(|entry| (id_hex(entry.id.raw()), entry.name.clone()))
         .collect::<BTreeMap<_, _>>();
@@ -893,11 +988,14 @@ fn assert_source_runtime_surface(
     expected_count: usize,
     expected_digest: &str,
 ) {
-    assert_eq!(catalog.runtime_factory_count(), expected_count);
+    assert_eq!(
+        catalog.runtime_factory_count(),
+        expected_count + BITS_FACTORIES.len()
+    );
     #[cfg(feature = "full_compiler")]
     assert_eq!(
-        canonical_runtime_surface_digest(catalog),
-        EXPECTED_CURRENT_FULL_COMPILER_RUNTIME_SURFACE_DIGEST
+        pre_bits_runtime_surface_digest(catalog),
+        EXPECTED_PRE_BITS_FULL_COMPILER_RUNTIME_SURFACE_DIGEST
     );
     assert_eq!(retained_runtime_surface_digest(catalog), expected_digest);
 
@@ -916,15 +1014,22 @@ fn assert_source_runtime_surface(
 
 #[cfg(feature = "full_source")]
 fn assert_source_surface(catalog: &FunctionCatalog) {
+    assert_bits_exports(catalog);
     assert_pure_text_source_exports(catalog);
     assert_map_source_exports(catalog);
     assert_collection_text_source_exports(catalog);
-    assert_eq!(catalog.specializer_count(), EXPECTED_NAMED_SPECIALIZERS);
+    assert_eq!(
+        catalog.specializer_count(),
+        EXPECTED_NAMED_SPECIALIZERS + BITS_FACTORIES.len()
+    );
     assert_eq!(
         catalog.intrinsic_specializer_count(),
         EXPECTED_INTRINSIC_SPECIALIZERS
     );
-    assert_eq!(catalog.all_exports().len(), EXPECTED_ALL_EXPORTS);
+    assert_eq!(
+        catalog.all_exports().len(),
+        EXPECTED_ALL_EXPORTS + BITS_FACTORIES.len()
+    );
     assert_eq!(
         catalog
             .all_exports()
@@ -939,10 +1044,11 @@ fn assert_source_surface(catalog: &FunctionCatalog) {
     let mut actual_specializers = catalog
         .all_specializers()
         .filter(|entry| {
-            !matches!(
-                entry.operation.canonical_name.as_ref(),
-                "map/new" | "map/insert" | "map/contains-key"
-            )
+            !is_bits_factory(entry.operation.canonical_name.as_ref())
+                && !matches!(
+                    entry.operation.canonical_name.as_ref(),
+                    "map/new" | "map/insert" | "map/contains-key"
+                )
         })
         .map(|entry| FrozenSpecializer {
             name: entry.operation.canonical_name.to_string(),
@@ -974,10 +1080,11 @@ fn assert_source_surface(catalog: &FunctionCatalog) {
     let mut actual_modules = catalog
         .all_exports()
         .filter(|export| {
-            !matches!(
-                export.canonical_name.as_str(),
-                "map/new" | "map/insert" | "map/contains-key"
-            )
+            !is_bits_factory(&export.canonical_name)
+                && !matches!(
+                    export.canonical_name.as_str(),
+                    "map/new" | "map/insert" | "map/contains-key"
+                )
         })
         .filter_map(|export| match (&export.module, &export.item) {
             (Some(module), Some(item)) => Some(FrozenModuleExport {
@@ -1052,5 +1159,65 @@ fn standard_compiler_closes_the_emitted_factory_surface() {
         let catalog = mech_stdlib::source_catalog();
         assert_runtime_catalog_is_a_compiler_subset(&runtime, &catalog);
         assert_standard_compiler_surface(&catalog);
+    });
+}
+
+#[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
+#[test]
+fn standard_profile_executes_words_without_wider_integer_factories() {
+    use mech_core::{
+        ExecutionTarget, FunctionInvocation, IntegerWidth, OperationId,
+        ResolvedOperationDescriptor, RuntimeFunctionId, SchemaBody, SpecializedFunction, ValueCell,
+        ValueDataDraft,
+    };
+    with_catalog_test_stack(|| {
+        let catalog = mech_stdlib::source_catalog();
+        for (name, words, expected) in [
+            ("bits/not", vec![0], u64::MAX),
+            ("bits/trailing-zeros", vec![0], 64),
+            ("bits/shift-right-wrap", vec![1 << 63, 63], 1),
+            ("bits/wrapping-add", vec![u64::MAX, 1], 0),
+        ] {
+            let cell = |word| {
+                ValueCell::from_schema_data(
+                    SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                    ValueDataDraft::U64(word),
+                )
+                .unwrap()
+            };
+            let inputs = words.into_iter().map(cell).collect::<Vec<_>>();
+            let output = cell(0);
+            let invocation = match inputs.as_slice() {
+                [first] => FunctionInvocation::unary(output.clone(), first.clone()),
+                [first, second] => {
+                    FunctionInvocation::binary(output.clone(), first.clone(), second.clone())
+                }
+                _ => unreachable!(),
+            };
+            let operation = OperationId::from_name(name);
+            let entry = catalog
+                .runtime_entry(RuntimeFunctionId::from_name(name))
+                .unwrap();
+            let parts = entry
+                .bind_resolved_invocation(operation, ExecutionTarget::DirectRuntime, invocation)
+                .unwrap();
+            let function = SpecializedFunction::syntax_directed(
+                parts,
+                ResolvedOperationDescriptor::from_name(
+                    name,
+                    entry.operation_contract(operation).unwrap().clone(),
+                )
+                .unwrap(),
+                entry.id,
+                ExecutionTarget::DirectRuntime,
+                entry.implementation_memory_class(),
+            )
+            .unwrap();
+            function.instance().solve_result().unwrap();
+            assert_eq!(
+                output.snapshot().unwrap().canonical_data_draft().unwrap(),
+                ValueDataDraft::U64(expected)
+            );
+        }
     });
 }

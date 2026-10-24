@@ -425,6 +425,6 @@ fn cast_object_metadata_has_new_typed_identity_but_is_not_execution() {
         assert_eq!(object.metadata()["linked"], false);
         assert_eq!(object.metadata()["executed"], false);
         assert_eq!(object.metadata()["timing_samples"], 0);
-        assert_eq!(mech_gpu::native_artifact::NATIVE_TYPED_IR_VERSION, 4);
+        assert_eq!(mech_gpu::native_artifact::NATIVE_TYPED_IR_VERSION, 5);
     }
 }

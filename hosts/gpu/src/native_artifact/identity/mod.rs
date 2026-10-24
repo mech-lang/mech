@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 
 /// Fixed exported data size for the build-owned entry pairing record.
 pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
-pub const NATIVE_TYPED_IR_VERSION: u64 = 4;
+pub const NATIVE_TYPED_IR_VERSION: u64 = 5;
 pub const NATIVE_WORK_POLICY_VERSION: u64 = 1;
 const MAGIC: &[u8; 16] = b"MECHNATIVEOBJv1\0";
 
@@ -227,6 +227,17 @@ pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeArtifactPlan) -> 
 }
 pub(in crate::native_artifact) fn op_tag(op: NativeScalarOp) -> u8 {
     match op {
+        NativeScalarOp::U64BitAnd => 48,
+        NativeScalarOp::U64BitOr => 49,
+        NativeScalarOp::U64BitXor => 50,
+        NativeScalarOp::U64BitNot => 51,
+        NativeScalarOp::U64ShlWrap => 52,
+        NativeScalarOp::U64ShrWrap => 53,
+        NativeScalarOp::U64Clz => 54,
+        NativeScalarOp::U64Ctz => 55,
+        NativeScalarOp::U64WrappingAdd => 56,
+        NativeScalarOp::U64WrappingSub => 57,
+        NativeScalarOp::U64WrappingMul => 58,
         NativeScalarOp::U64Add => 1,
         NativeScalarOp::U64Sub => 2,
         NativeScalarOp::U64Mul => 3,

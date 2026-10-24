@@ -2,6 +2,8 @@ mod activation;
 mod arena;
 mod artifact;
 pub(crate) mod bench;
+#[cfg(all(feature = "resident-artifact", feature = "integer_bits"))]
+pub(crate) mod bits;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod budget;
 mod candidate;

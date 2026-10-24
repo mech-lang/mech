@@ -55,6 +55,7 @@ macro_rules! scalar_operations {
 }
 #[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
 scalar_operations! {
+    U64BitAnd, U64BitOr, U64BitXor, U64BitNot, U64ShlWrap, U64ShrWrap, U64Clz, U64Ctz, U64WrappingAdd, U64WrappingSub, U64WrappingMul,
     U64Add, U64Sub, U64Mul, U64Div, U64Rem, U64Eq, U64Ne, U64Lt, U64Le, U64Gt, U64Ge,
     BoolAnd, BoolOr, BoolXor, BoolNot, BoolEq, BoolNe,
     I64Add, I64Sub, I64Mul, I64Div, I64Rem, I64Neg, I64Eq, I64Ne, I64Lt, I64Le, I64Gt, I64Ge,

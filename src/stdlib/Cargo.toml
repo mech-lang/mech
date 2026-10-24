@@ -123,6 +123,7 @@ full_values = [
 ]
 
 standard_operations = [
+  "integer_bits",
   "pure_text",
   "map_ops",
   "sequence_sort",
@@ -146,6 +147,7 @@ standard_operations = [
 ]
 
 full_operations = [
+  "integer_bits",
   "pure_text",
   "map_ops",
   "sequence_sort",
@@ -176,6 +178,7 @@ access = ["mech-engine/access"]
 assign = ["mech-engine/assign"]
 convert = ["mech-engine/convert"]
 pure_text = ["mech-engine/pure_text"]
+integer_bits = ["mech-engine/integer_bits"]
 map_ops = ["mech-engine/map_ops"]
 sequence_sort = ["mech-engine/sequence_sort"]
 variable_define = ["mech-engine/variable_define"]

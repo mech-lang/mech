@@ -195,6 +195,8 @@ fn validate_integrity_constraint_marker_canonical(
 
 #[cfg(feature = "semantic-compiler")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "integer_bits")]
+    super::bits::install_source(builder)?;
     #[cfg(feature = "pure_text")]
     super::pure_text::install_source(builder)?;
     #[cfg(feature = "pure_text")]
@@ -434,6 +436,7 @@ pub fn install_runtime(
         feature = "matrix_horzcat",
         feature = "matrix_vertcat",
         feature = "pure_text",
+        feature = "integer_bits",
         feature = "map_ops",
         feature = "sequence_sort",
         feature = "table"
@@ -451,12 +454,15 @@ pub fn install_runtime(
         feature = "matrix_horzcat",
         feature = "matrix_vertcat",
         feature = "pure_text",
+        feature = "integer_bits",
         feature = "map_ops",
         feature = "sequence_sort",
         feature = "table"
     )))]
     _: &mut FunctionCatalogBuilder,
 ) -> MResult<()> {
+    #[cfg(feature = "integer_bits")]
+    super::bits::install_runtime(builder)?;
     #[cfg(feature = "pure_text")]
     super::pure_text::install_runtime(builder)?;
     #[cfg(feature = "pure_text")]

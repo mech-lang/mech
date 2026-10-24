@@ -1721,6 +1721,22 @@ pub fn maintained_source_schemes(
             numeric_binary_for_predicate(BuiltinKindPredicate::Ordered)?
         }
         "logic/not" => bool_unary()?,
+        "bits/not" | "bits/leading-zeros" | "bits/trailing-zeros" => vec![exact_unary(
+            BuiltinScalarKind::U64.kind_expr(),
+            BuiltinScalarKind::U64.kind_expr(),
+        )?],
+        "bits/and"
+        | "bits/or"
+        | "bits/xor"
+        | "bits/shift-left-wrap"
+        | "bits/shift-right-wrap"
+        | "bits/wrapping-add"
+        | "bits/wrapping-sub"
+        | "bits/wrapping-mul" => vec![exact_binary(
+            BuiltinScalarKind::U64.kind_expr(),
+            BuiltinScalarKind::U64.kind_expr(),
+            BuiltinScalarKind::U64.kind_expr(),
+        )?],
         "logic/and" | "logic/or" | "logic/xor" => bool_binary()?,
         "range/exclusive" | "range/inclusive" => vec![range_binary()?],
         "range/exclusive-increment" | "range/inclusive-increment" => vec![range_ternary()?],

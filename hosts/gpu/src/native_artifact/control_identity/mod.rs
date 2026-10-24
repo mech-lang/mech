@@ -12,7 +12,7 @@ fn bytes(hash: &mut Sha256, value: &[u8]) {
     hash.update(value);
 }
 pub const NATIVE_MATCH_LINK_IDENTITY_BYTES: usize = 168;
-pub const NATIVE_MATCH_TYPED_IR_VERSION: u64 = 2;
+pub const NATIVE_MATCH_TYPED_IR_VERSION: u64 = 3;
 pub const NATIVE_MATCH_WORK_POLICY_VERSION: u64 = 1;
 const MAGIC: &[u8; 16] = b"MECHNATIVEMATCH\0";
 

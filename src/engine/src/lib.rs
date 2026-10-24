@@ -117,6 +117,12 @@ pub mod __mech_native {
     };
     #[cfg(feature = "assign")]
     pub use crate::intrinsics::assign::catalog::__mech_native::*;
+    #[cfg(feature = "integer_bits")]
+    pub use crate::intrinsics::bits::{
+        install_bits_add, install_bits_and, install_bits_clz, install_bits_ctz, install_bits_mul,
+        install_bits_not, install_bits_or, install_bits_shl, install_bits_shr, install_bits_sub,
+        install_bits_xor,
+    };
     #[cfg(feature = "invariant_define")]
     pub use crate::intrinsics::catalog::install_integrity_constraint_marker;
     #[cfg(feature = "matrix_comprehensions")]
