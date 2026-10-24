@@ -213,7 +213,16 @@ impl<'plan> State<'plan> {
         let scan = (text.len() as u64).checked_mul(64).and_then(|n| n.checked_add(512))
             .ok_or_else(|| invalid("closed map String scan overflow"))?;
         ctx.control.work.charge(Phase::Setup, scan)?;
-        if !mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(text) {
+        // The build-owned producer proof describes every successful output,
+        // including separators, rather than a sample of the current input.
+        // Keep the original charge and denial frontier even when no physical
+        // scan is needed. Unknown, Unicode and possibly-CRLF domains retain
+        // the actual guard; packing_domain() would discard this distinction.
+        let byte_graphemes = proof.packed.as_ref().and_then(|proof| proof.domain())
+            .is_some_and(|domain| domain.byte_graphemes());
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        let byte_graphemes = super::super::map_closed_tests::source_scan_proof(byte_graphemes);
+        if !byte_graphemes && !mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(text) {
             return Ok(None);
         }
         if source.memory_budget_retained_bytes(&ctx.library.memory_budget()).is_none() {
