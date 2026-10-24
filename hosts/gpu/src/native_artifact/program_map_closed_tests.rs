@@ -35,10 +35,11 @@ unsafe extern "C" fn observe(raw: *mut c_void, site: u64, op: u64,
     // One byte plus the initial eight-slot census admits a read (65), but
     // refuses the first write (195). The root account retains its own limit.
     if op == CLOSED_TAIL_BEGIN && mode == Mode::TightWrite { ctx.limits.max_comparison_work = Some(65); }
-    // The first write costs exactly 195; its non-growing insertion increases
-    // the next write price to 198. An existing-key update must then fail at
-    // its original write, after the original range, membership and get.
-    if op == CLOSED_TAIL_BEGIN && mode == Mode::WriteTransition { ctx.limits.max_comparison_work = Some(195); }
+    // At width18 the first write plus missing-key maintenance costs 278.
+    // Its non-growing insertion raises the next write price to 300. The next
+    // existing-key update must fail at its original write, after the original
+    // range, membership and get. Maintenance remains fully charged.
+    if op == CLOSED_TAIL_BEGIN && mode == Mode::WriteTransition { ctx.limits.max_comparison_work = Some(278); }
     // Allows eight distinct keys and the first capacity growth, then refuses
     // the later 16-to-32 growth at the actual source insertion (op7).
     if op == CLOSED_TAIL_BEGIN && mode == Mode::LimitedInsert { ctx.limits.max_comparison_work = Some(600); }

@@ -111,7 +111,7 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
             ("abc", 2, 4, 4, Mode::Native), // Decline but original stop succeeds.
             ("aa", 1, 2, 0, Mode::TightCall),
             ("aa", 1, 2, 0, Mode::TightWrite),
-            ("aa", 1, 2, 0, Mode::WriteTransition),
+            ("aaaaaaaaaaaaaaaaaaa", 18, 19, 0, Mode::WriteTransition),
             ("abcdefghijklmnopabcdefghijklmnop", 1, 32, 0, Mode::LimitedInsert),
             ("aa", 1, 2, 0, Mode::OneShort),
         ];
