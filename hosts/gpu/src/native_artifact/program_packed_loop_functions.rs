@@ -80,7 +80,7 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             let hooks = Hooks::load(true, &mut b, module, args[0], args[5], error)?
                 .ok_or_else(|| backend("outlined packed loop requires installed hooks"))?;
             let hooks = if preserve_calls && let Some(shim) = shim {
-                hooks.with_bound_shim(&mut b, module, shim.function)
+                hooks.with_bound_shim(&mut b, module, shim.function, args[3], args[4])
             } else { hooks };
             // Cover the loader and both final returns in addition to the
             // separately bounded caller. The body itself checks the sum.
