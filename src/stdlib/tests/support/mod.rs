@@ -25,6 +25,7 @@ pub enum CanonicalEvaluationError {
     Activation(ResidentActivationError),
     Execution(ResidentExecutionError),
     MissingProgramOutput,
+    Codec(String),
 }
 
 #[derive(Debug)]
@@ -57,6 +58,26 @@ impl CanonicalEvaluationError {
 }
 
 pub fn evaluate(source: &str) -> Result<EvaluatedValue, CanonicalEvaluationError> {
+    evaluate_in_catalog(source, false, false)
+}
+
+pub fn evaluate_with_source_catalog(
+    source: &str,
+) -> Result<EvaluatedValue, CanonicalEvaluationError> {
+    evaluate_in_catalog(source, true, false)
+}
+
+pub fn evaluate_with_source_catalog_decoded(
+    source: &str,
+) -> Result<EvaluatedValue, CanonicalEvaluationError> {
+    evaluate_in_catalog(source, true, true)
+}
+
+fn evaluate_in_catalog(
+    source: &str,
+    with_catalog: bool,
+    decoded: bool,
+) -> Result<EvaluatedValue, CanonicalEvaluationError> {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x523), Revision(1), source)
             .map_err(|error| CanonicalEvaluationError::Parse(format!("{error:?}")))?,
@@ -71,9 +92,13 @@ pub fn evaluate(source: &str) -> Result<EvaluatedValue, CanonicalEvaluationError
     let document = DocumentSyntax::cast(parsed.syntax()).ok_or_else(|| {
         CanonicalEvaluationError::Parse("canonical parser did not publish a document root".into())
     })?;
-    let compiled = CanonicalSourceFrontend
-        .compile_document(&document)
-        .map_err(CanonicalEvaluationError::Source)?;
+    let compiled = if with_catalog {
+        CanonicalSourceFrontend
+            .compile_document_with_catalog(&document, mech_stdlib::source_catalog())
+    } else {
+        CanonicalSourceFrontend.compile_document(&document)
+    }
+    .map_err(CanonicalEvaluationError::Source)?;
     let output = compiled
         .document_outputs()
         .iter()
@@ -89,6 +114,22 @@ pub fn evaluate(source: &str) -> Result<EvaluatedValue, CanonicalEvaluationError
     let artifact = compiled
         .compile_artifact()
         .map_err(CanonicalEvaluationError::Artifact)?;
+    let artifact = if decoded {
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact)
+            .map_err(|error| CanonicalEvaluationError::Codec(format!("{error:?}")))?;
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes)
+            .map_err(|error| CanonicalEvaluationError::Codec(format!("{error:?}")))?;
+        let repeated = mech_engine::encode_program_artifact_bytecode_v1(&decoded)
+            .map_err(|error| CanonicalEvaluationError::Codec(format!("{error:?}")))?;
+        if bytes != repeated {
+            return Err(CanonicalEvaluationError::Codec(
+                "artifact round trip changed encoded bytes".into(),
+            ));
+        }
+        decoded
+    } else {
+        artifact
+    };
     let mut instance = activate(
         ReactiveInstanceId::new(0x523, 0),
         &artifact,

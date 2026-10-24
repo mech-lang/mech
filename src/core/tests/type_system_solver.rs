@@ -1089,3 +1089,32 @@ fn prefix_matching_checks_known_shape_and_defers_missing_shape_relations() {
     assert!(resolve_type_overloads(origin(), &candidates, &[input(8), input(4)], None,).is_err());
     assert!(resolve_type_overloads(origin(), &candidates, &[input(8), input(16)], None,).is_ok());
 }
+
+#[test]
+fn nullary_map_constructor_uses_expected_key_value_and_cardinality_types() {
+    let declaration = maintained_source_type_declaration("map/new").unwrap();
+    let scheme = &declaration.overloads[0].scheme;
+    for (key, value) in [
+        (BuiltinScalarKind::String, BuiltinScalarKind::U64),
+        (BuiltinScalarKind::U64, BuiltinScalarKind::String),
+    ] {
+        let expected = ResolvedType::new(
+            KindExpr::Map {
+                key: Box::new(key.kind_expr()),
+                value: Box::new(value.kind_expr()),
+                cardinality: DimensionExpr::Parameter(DimensionParameterId::new(0)),
+            },
+            vec![dimension(0, DimensionLifetime::Turn, None)].into_boxed_slice(),
+        )
+        .unwrap();
+        let resolved = TypeConstraintEnvironment::new(TypeConstraintOrigin::new("map/new", None))
+            .solve_scheme(scheme, &[], Some(&[expected.clone()]))
+            .unwrap();
+        assert_eq!(resolved.outputs.as_ref(), &[expected]);
+    }
+    assert!(
+        TypeConstraintEnvironment::new(TypeConstraintOrigin::new("map/new", None))
+            .solve_scheme(scheme, &[], None)
+            .is_err()
+    );
+}

@@ -3,7 +3,9 @@
 //! A plan records selected implementation semantics and explicit native host
 //! memory metadata. It is not executable code and makes no AOT claim.
 mod ir;
-pub use crate::resident::budget::NativeLibraryWorkBudget;
+pub use crate::resident::budget::{
+    NativeLibraryWorkBudget, NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerWorkLoan,
+};
 pub use crate::resident::general::native_lowering::{
     NativeArtifactLoweringError, NativeArtifactPlan, lower_pure_native_artifact,
 };
@@ -108,3 +110,23 @@ pub use crate::resident::general::native_collection_calls::{
     bind_native_collection_lexical, bind_native_collection_operation,
     bind_native_program_library_call, prepare_native_program_library_call,
 };
+
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+pub use crate::resident::general::native_structural_projection::native_project_structural_value;
+
+pub(crate) mod structural_values;
+
+#[cfg(feature = "map_ops")]
+mod map_write_uses;
+#[cfg(feature = "map_ops")]
+pub use map_write_uses::NativeMapWriteUses;
+
+#[cfg(feature = "map_ops")]
+mod map_owner_region;
+#[cfg(feature = "map_ops")]
+pub use map_owner_region::NativeMapOwnerRegion;
+
+#[cfg(feature = "map_ops")]
+mod map_owner_words;
+#[cfg(feature = "map_ops")]
+pub use map_owner_words::NativeMapOwnerWords;

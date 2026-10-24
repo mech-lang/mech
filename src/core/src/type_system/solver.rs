@@ -379,7 +379,7 @@ impl TypeConstraintEnvironment {
                     .collect::<Result<Vec<_>, _>>()
             })
             .transpose()?;
-        let scheme = self.import_scheme(scheme)?;
+        let scheme = self.import_scheme(scheme, expected_outputs.is_some())?;
         for constraint in scheme.constraints.iter() {
             match constraint {
                 KindConstraint::Satisfies { kind, .. } => {
@@ -631,6 +631,7 @@ impl TypeConstraintEnvironment {
     fn import_scheme(
         &mut self,
         scheme: &KindScheme,
+        has_expected_outputs: bool,
     ) -> Result<ImportedScheme, TypeResolutionError> {
         let offset = self.dimensions.len();
         let mapping = dimension_offset_mapping(scheme.dimension_parameters().len(), offset)?;
@@ -648,6 +649,14 @@ impl TypeConstraintEnvironment {
                     collect_kind_dimension_references(input, &mut bindable);
                 }
                 collect_kind_dimension_references(repeated, &mut bindable);
+            }
+        }
+        // A caller-provided result type can constrain output-only dimensions
+        // of a generic constructor. Without that context they remain fresh
+        // result dimensions, preserving input-driven inference.
+        if has_expected_outputs {
+            for output in scheme.outputs() {
+                collect_kind_dimension_references(output, &mut bindable);
             }
         }
         for constraint in scheme.constraints() {

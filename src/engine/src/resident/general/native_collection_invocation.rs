@@ -18,6 +18,10 @@ mod measurement;
 #[path = "native_live_measurement_tests.rs"]
 mod measurement_tests;
 
+#[cfg(all(test, any(feature = "full_source", feature = "full_compiler")))]
+#[path = "native_incremental_allowance_tests.rs"]
+mod incremental_allowance_tests;
+
 /// An optional optimization of this already-bound maintained leaf. A capacity
 /// refusal is sticky until the binding geometry itself is replaced.
 #[derive(Debug, Default)]
@@ -63,8 +67,8 @@ impl std::error::Error for NativeCollectionInvocationError {}
 #[path = "native_data_footprint_tests.rs"]
 mod data_footprint_tests;
 
-/// Only the constructor-private shallow maintained families reach this
-/// envelope. It conservatively covers planner coexistence, deep copies of
+/// Only constructor-private maintained families reach this envelope, including
+/// nested scalar/map state carriers. It conservatively covers planner coexistence, deep copies of
 /// the actual port descriptors, shared schema-arena wrappers, borrowed
 /// argument tapes and BTree facts; it is not a canonical payload bound.
 /// Runtime admission reserves it before any of those objects are constructed.
@@ -265,6 +269,7 @@ impl NativeCollectionCall {
                         + core::mem::size_of::<ResourceDemand>()
                         + core::mem::size_of::<mech_core::MemoryBudgetLimits>()
                         + core::mem::size_of::<mech_core::ManagedMemoryReservation>()
+                        + core::mem::size_of::<mech_core::ManagedNodeReservation>()
                         + 3 * core::mem::size_of::<u64>())
                         as u64;
                     work.charge(
@@ -331,7 +336,20 @@ impl NativeCollectionCall {
                     } else {
                         None
                     };
-                    if let Some(headroom) = probe.as_mut() {
+                    // This is an optional metadata cache. Its fixed owner and
+                    // weak-data witnesses must fit the same shared node account
+                    // before allocation; a denied cache may use the ordinary path.
+                    let nodes = if probe.is_some() {
+                        let count = 1u64.checked_add(NativeTurnPlanCache::retained_data_nodes(
+                            &self.memory).ok_or(ResidentKernelError::InvalidShape)?)
+                            .ok_or(ResidentKernelError::InvalidShape)?;
+                        match work.memory_budget().reserve_nodes(count) {
+                            Ok(nodes) => Some(nodes),
+                            Err(MemoryRuntimeError::BudgetExceeded { .. }) => None,
+                            Err(error) => return Err(error.into()),
+                        }
+                    } else { None };
+                    if let (Some(headroom), Some(nodes)) = (probe.as_mut(), nodes) {
                         let reservation = headroom.split_capacity(retained)?;
                         let owner = NativeTurnPlanCache::construction_owner_bytes(&self.memory)
                             .ok_or(ResidentKernelError::InvalidShape)?;
@@ -362,6 +380,7 @@ impl NativeCollectionCall {
                             self.invocation_metadata_bytes,
                             descriptor_work,
                             reservation,
+                            nodes,
                             work,
                         )?);
                     } else {

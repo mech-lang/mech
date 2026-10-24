@@ -717,6 +717,46 @@ impl CanonicalAssignmentSelectionKind {
 impl AssignCanonicalSelection {
     fn prospective_output_footprint(&self) -> MResult<CurrentMemoryFootprint> {
         let sink = self.sink.current_memory_footprint()?;
+        if let SchemaBody::Map { cardinality, .. } = self.sink.closed_schema_body()? {
+            let [CanonicalAccessSelector::Cell(key)] = self.selectors.as_slice() else {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: "map assignment requires one key selector".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            };
+            // A new entry retains BOTH the key and replacement value. Fund the
+            // complete candidate before constructing it; footprint planning
+            // must not perform an unmetered key search to predict insertion.
+            let mut footprint = self.sink.prospective_aggregate_memory_footprint([
+                (&self.sink, 1),
+                (key, 1),
+                (&self.source, 1),
+            ])?;
+            let growing_count = self
+                .sink
+                .current_map_entry_count()?
+                .checked_add(1)
+                .ok_or_else(|| {
+                    MechError::new(
+                        MemoryPlanError::ArithmeticOverflow {
+                            field: "canonical map assignment entries",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            footprint.logical_elements = match cardinality {
+                CardinalitySpec::Exact(DimensionExpr::Constant(limit))
+                | CardinalitySpec::Dynamic {
+                    upper_bound: Some(DimensionExpr::Constant(limit)),
+                } => growing_count.min(limit),
+                _ => growing_count,
+            };
+            return Ok(footprint);
+        }
         let source = self.source.current_memory_footprint()?;
         let selected = self
             .fixed_matrix_positions()?
@@ -1055,7 +1095,11 @@ impl AssignCanonicalSelection {
                 return ValueCell::from_schema_data(sink_schema, ValueDataDraft::Table(values))?
                     .snapshot();
             }
-            SchemaBody::Map { key, value, .. } => {
+            SchemaBody::Map {
+                key,
+                value,
+                cardinality,
+            } => {
                 let [CanonicalAccessSelector::Cell(selector)] = self.selectors.as_slice() else {
                     return Err(MechError::new(
                         GenericError {
@@ -1076,9 +1120,10 @@ impl AssignCanonicalSelection {
                     .with_compiler_loc());
                 }
                 let replacement = canonical_draft(&self.source)?;
-                let ValueDataDraft::Map(mut entries) = canonical_draft(&self.sink)? else {
+                let ValueDataDraft::Map(entries) = canonical_draft(&self.sink)? else {
                     unreachable!()
                 };
+                let mut entries = entries.into_vec();
                 let mut found = false;
                 for entry in &mut entries {
                     let candidate =
@@ -1090,16 +1135,41 @@ impl AssignCanonicalSelection {
                     }
                 }
                 if !found {
-                    return Err(MechError::new(
-                        GenericError {
-                            msg: "canonical map key is not present".to_owned(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc());
+                    let limit = match cardinality {
+                        CardinalitySpec::Exact(DimensionExpr::Constant(limit))
+                        | CardinalitySpec::Dynamic {
+                            upper_bound: Some(DimensionExpr::Constant(limit)),
+                        } => Some(*limit),
+                        _ => None,
+                    };
+                    if limit.is_some_and(|limit| entries.len() as u64 >= limit) {
+                        return Err(MechError::new(
+                            GenericError {
+                                msg: "canonical map assignment exceeds declared cardinality"
+                                    .to_owned(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                    entries.try_reserve_exact(1).map_err(|_| {
+                        MechError::new(
+                            GenericError {
+                                msg: "canonical map assignment allocation failed".to_owned(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                    })?;
+                    entries.push(mech_core::snapshot::MapEntryDraft {
+                        items: vec![canonical_draft(selector)?, replacement].into_boxed_slice(),
+                    });
                 }
-                return ValueCell::from_schema_data(sink_schema, ValueDataDraft::Map(entries))?
-                    .snapshot();
+                return ValueCell::from_schema_data(
+                    sink_schema,
+                    ValueDataDraft::Map(entries.into_boxed_slice()),
+                )?
+                .snapshot();
             }
             _ => {}
         }
@@ -1828,6 +1898,142 @@ mod canonical_aggregate_assignment_tests {
             entries[0].items[1],
             ValueDataDraft::String(ref value) if value == "new"
         ));
+    }
+
+    #[test]
+    fn map_assignment_inserts_new_keys_and_replaces_existing_keys_through_managed_stage() {
+        let sink = ValueCell::from_schema_data(
+            SchemaBody::Map {
+                key: Box::new(SchemaBody::String),
+                value: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            },
+            ValueDataDraft::Map(Box::new([])),
+        )
+        .unwrap();
+        let source = ValueCell::from_exact(1u64).unwrap();
+        let long_key = "é".repeat(4096);
+        let selector = ValueCell::from_exact(long_key.clone()).unwrap();
+        let implementation = AssignCanonicalSelection {
+            sink: sink.clone(),
+            source: source.clone(),
+            selectors: vec![CanonicalAccessSelector::Cell(selector.clone())],
+            selection_kind: CanonicalAssignmentSelectionKind::CollectionEntry,
+        };
+        let footprint = implementation.prospective_output_footprint().unwrap();
+        assert_eq!(footprint.logical_elements, 1);
+        assert!(footprint.payload_bytes >= long_key.len() as u64);
+        let invocation = FunctionInvocation::variadic(
+            sink.clone(),
+            vec![sink.clone(), source.clone(), selector.clone()].into_boxed_slice(),
+        );
+        let specialized = SpecializedFunction::syntax_directed(
+            (Box::new(implementation), invocation),
+            ResolvedOperationDescriptor::from_name(
+                "core/assign/collection-entry",
+                PURE_COLLECTION_ENTRY_STATE_REGISTER_CONTRACT.clone(),
+            )
+            .unwrap(),
+            RuntimeFunctionId::from_name("AssignCanonicalSelection"),
+            ExecutionTarget::DirectRuntime,
+            ImplementationMemoryClass::CanonicalFinalize,
+        )
+        .unwrap();
+        specialized.instance().solve_result().unwrap();
+        selector
+            .replace(
+                &ValueCell::from_exact("a".to_owned())
+                    .unwrap()
+                    .snapshot()
+                    .unwrap(),
+            )
+            .unwrap();
+        source
+            .replace(&ValueCell::from_exact(2u64).unwrap().snapshot().unwrap())
+            .unwrap();
+        specialized.instance().solve_result().unwrap();
+        source
+            .replace(&ValueCell::from_exact(3u64).unwrap().snapshot().unwrap())
+            .unwrap();
+        specialized.instance().solve_result().unwrap();
+        let ValueDataDraft::Map(entries) = sink.snapshot().unwrap().canonical_data_draft().unwrap()
+        else {
+            panic!("expected map")
+        };
+        assert_eq!(entries.len(), 2);
+        assert!(
+            matches!(&entries[0].items[..], [ValueDataDraft::String(key), ValueDataDraft::U64(3)] if key == "a")
+        );
+        assert!(
+            matches!(&entries[1].items[..], [ValueDataDraft::String(key), ValueDataDraft::U64(1)] if key == &long_key)
+        );
+    }
+
+    #[test]
+    fn map_assignment_cannot_grow_past_its_declared_cardinality() {
+        for (cardinality, entries) in [
+            (
+                CardinalitySpec::Exact(DimensionExpr::Constant(0)),
+                Box::new([]) as Box<[_]>,
+            ),
+            (
+                CardinalitySpec::Dynamic {
+                    upper_bound: Some(DimensionExpr::Constant(1)),
+                },
+                vec![mech_core::snapshot::MapEntryDraft {
+                    items: vec![
+                        ValueDataDraft::String("existing".to_owned()),
+                        ValueDataDraft::U64(0),
+                    ]
+                    .into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ] {
+            let sink = ValueCell::from_schema_data(
+                SchemaBody::Map {
+                    key: Box::new(SchemaBody::String),
+                    value: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+                    cardinality,
+                },
+                ValueDataDraft::Map(entries),
+            )
+            .unwrap();
+            let previous = sink.snapshot().unwrap();
+            if sink.current_map_entry_count().unwrap() == 1 {
+                let update = AssignCanonicalSelection {
+                    sink: sink.clone(),
+                    source: ValueCell::from_exact(2u64).unwrap(),
+                    selectors: vec![CanonicalAccessSelector::Cell(
+                        ValueCell::from_exact("existing".to_owned()).unwrap(),
+                    )],
+                    selection_kind: CanonicalAssignmentSelectionKind::CollectionEntry,
+                };
+                assert_eq!(
+                    update
+                        .prospective_output_footprint()
+                        .unwrap()
+                        .logical_elements,
+                    1
+                );
+                let ValueDataDraft::Map(updated) =
+                    update.next_value().unwrap().canonical_data_draft().unwrap()
+                else {
+                    panic!("expected map")
+                };
+                assert!(matches!(updated[0].items[1], ValueDataDraft::U64(2)));
+            }
+            let assignment = AssignCanonicalSelection {
+                sink: sink.clone(),
+                source: ValueCell::from_exact(1u64).unwrap(),
+                selectors: vec![CanonicalAccessSelector::Cell(
+                    ValueCell::from_exact("a".to_owned()).unwrap(),
+                )],
+                selection_kind: CanonicalAssignmentSelectionKind::CollectionEntry,
+            };
+            assert!(assignment.next_value().is_err());
+            assert!(sink.snapshot().unwrap().shares_frozen_storage(&previous));
+        }
     }
 
     #[test]

@@ -6,6 +6,18 @@ fn map_installers_preserve_exact_identity_without_source_compiler_features() {
     type Installer = fn(&mut FunctionCatalogBuilder) -> mech_core::MResult<()>;
     for (name, install) in [
         (
+            "map/contains-key",
+            mech_engine::__mech_native::install_map_contains_key as Installer,
+        ),
+        (
+            "map/insert",
+            mech_engine::__mech_native::install_map_insert as Installer,
+        ),
+        (
+            "map/new",
+            mech_engine::__mech_native::install_map_new as Installer,
+        ),
+        (
             "map/histogram",
             mech_engine::__mech_native::install_map_histogram as Installer,
         ),

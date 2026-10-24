@@ -35,6 +35,7 @@ impl State {
         ctx: &mut Context<'_, '_>,
         iteration: u32,
     ) -> Result<(), Error> {
+        ctx.retire_frozen_maps(iteration)?;
         let plan = &ctx.control.descriptor.plan;
         let NativeControlLoop::Collection(definition) = &plan.iterations()[iteration as usize]
         else {

@@ -123,7 +123,7 @@ fn shared_retention_inventory_preserves_identity_and_capture_eligibility() {
             let joins = descriptor.plan.selected_text_joins();
             let lines = descriptor.plan.text_line_matrix_regions();
             let identity = |frontiers: &[_]| {
-                program_identity::typed_ir_sha256(&descriptor.plan, frontiers, &joins, &lines)
+                program_identity::typed_ir_sha256(&descriptor.plan, frontiers, &joins, &lines, descriptor.map_owner_words.as_ref(), &descriptor.frozen_maps)
             };
             let independently_derived = program_prefix_layout::derive(
                 &descriptor.plan,

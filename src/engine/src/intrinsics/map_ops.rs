@@ -4,6 +4,12 @@ use crate::*;
 use mech_core::snapshot::ValueFootprint;
 use mech_core::snapshot::{MapEntryDraft, SequenceView};
 use std::sync::LazyLock;
+#[path = "map_contains.rs"]
+pub(crate) mod contains;
+#[path = "map_insert.rs"]
+pub(crate) mod insert;
+#[path = "map_new.rs"]
+pub(crate) mod new;
 
 pub(crate) fn invalid(message: &'static str) -> MechError {
     MechError::new(
@@ -817,6 +823,9 @@ registration!(
     validate_values
 );
 pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    new::register_new(builder)?;
+    contains::register_contains(builder)?;
+    insert::register_insert(builder)?;
     register_histogram(builder)?;
     register_keys(builder)?;
     register_values(builder)
@@ -848,6 +857,9 @@ impl CanonicalFunctionSpecializer for SourceOperation {
 }
 #[cfg(feature = "semantic-compiler")]
 pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    new::install_source(builder)?;
+    contains::install_source(builder)?;
+    insert::install_source(builder)?;
     for operation in [Operation::Histogram, Operation::Keys, Operation::Values] {
         let name = operation.name();
         let id = builder.insert_canonical_specializer_with_contracts(

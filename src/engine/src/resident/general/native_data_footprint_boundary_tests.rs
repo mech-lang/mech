@@ -98,6 +98,7 @@ fn prepared_memo_keeps_current_geometry_policy_account_and_owner_authority() {
         let prepared =
             prepare_native_program_library_call(&artifact, call.template(), &catalog()).unwrap();
         let limits = call.memory_plan().target.limits;
+        let baseline_nodes = memory.retained_nodes();
         let mut state = NativePreparedLibraryCallCache::default();
         let mut output = None;
         for _ in 0..3 {
@@ -108,6 +109,9 @@ fn prepared_memo_keeps_current_geometry_policy_account_and_owner_authority() {
                 matches!(output.as_ref().unwrap().data(), ValueData::String(s) if s.as_ref() == "a\0b")
             );
             drop(output.take());
+            assert_eq!(memory.retained_nodes() - baseline_nodes,
+                state.retained_metadata_demand(&work).unwrap().retained_nodes,
+                "all lazy binding, plan and index owners share the node account");
         }
         let independent = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
         let mut changed = limits;
@@ -210,5 +214,57 @@ fn prepared_memo_keeps_current_geometry_policy_account_and_owner_authority() {
         ));
         assert_eq!(memory.used_bytes(), 0);
         assert_eq!(foreign.used_bytes(), 0);
+        assert_eq!(memory.retained_nodes(), 0);
+    }
+}
+
+#[test]
+fn prepared_cache_node_denial_precedes_binding_allocation_and_publication() {
+    use crate::resident::general::native_collection_calls::{
+        NativePreparedLibraryCallCache, prepare_native_program_library_call,
+    };
+    for artifact in variants() {
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let (call, inputs) = fixture(&artifact, &memory);
+        let prepared = prepare_native_program_library_call(&artifact, call.template(), &catalog()).unwrap();
+        let baseline_nodes = memory.retained_nodes();
+        let capped = memory.with_limits(memory.limit_bytes(), baseline_nodes);
+        let work = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &capped).unwrap();
+        let bytes = memory.used_bytes();
+        let mut state = NativePreparedLibraryCallCache::default();
+        let mut output = None;
+        assert!(matches!(prepared.invoke_current_cached(&mut state, &inputs, &mut output,
+            call.memory_plan().target.limits, &work),
+            Err(NativeCollectionInvocationError::Memory(mech_core::MemoryRuntimeError::BudgetExceeded { .. }))));
+        assert!(output.is_none());
+        assert_eq!(state.retained_metadata_demand(&work).unwrap().retained_nodes, 0);
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), (bytes, baseline_nodes));
+        drop((state, output, prepared, call, inputs, work));
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+    }
+}
+
+#[test]
+fn optional_plan_cache_declines_shared_node_capacity_without_rejecting_the_call() {
+    for artifact in variants() {
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let (call, inputs) = fixture(&artifact, &memory);
+        let baseline = memory.retained_nodes();
+        let work = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &memory).unwrap();
+        let mut output = None;
+        call.invoke(&inputs, &mut output, &work).unwrap();
+        let output_nodes = memory.retained_nodes() - baseline;
+        let cache_nodes = 1 + NativeTurnPlanCache::retained_data_nodes(call.memory_plan()).unwrap();
+        assert!(output_nodes < cache_nodes);
+        drop(output.take());
+        let capped = memory.with_limits(memory.limit_bytes(), baseline + output_nodes);
+        let limited = NativeLibraryWorkBudget::new(1_000_000_000, 1_000_000, &capped).unwrap();
+        let mut state = NativePlanCacheState::Cold;
+        call.invoke_cached(&mut state, &inputs, &mut output, &limited).unwrap();
+        assert!(matches!(state, NativePlanCacheState::Uncached));
+        assert!(matches!(output.as_ref().unwrap().data(), ValueData::String(s) if s.as_ref() == "a\0b"));
+        assert_eq!(memory.retained_nodes(), baseline + output_nodes);
+        drop((output, state, call, inputs, work, limited));
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
     }
 }

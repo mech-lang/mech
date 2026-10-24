@@ -74,6 +74,22 @@ fn reserve_layout(
 }
 
 impl State {
+    pub(in crate::native_artifact::program_runtime) fn publish_hash_window_bins(
+        &mut self,
+        id: u32,
+        hashes: &super::super::super::window_round::hashes::WindowHashes,
+    ) -> Result<(), Error> {
+        let bins = self.builder(id)?.histogram.as_mut()
+            .and_then(|h| h.compiled_bins.as_mut())
+            .ok_or_else(|| invalid("hash Histogram has no result storage"))?;
+        for (key, count) in hashes.entries() {
+            let index = usize::try_from(key)
+                .map_err(|_| invalid("hash Histogram result index"))?;
+            *bins.values.get_mut(index)
+                .ok_or_else(|| invalid("hash Histogram result outside bins"))? = count;
+        }
+        Ok(())
+    }
     pub(in crate::native_artifact::program_runtime) fn prepare_compiled_histogram(
         &mut self,
         ctx: &mut Context<'_, '_>,

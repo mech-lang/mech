@@ -229,12 +229,16 @@ fn load(
     super::control_compiler::load(b, locals, value)
 }
 
+#[path = "iteration_codegen_report.rs"]
+mod codegen_report;
+pub(super) use codegen_report::{CodegenReport, RegionToken, CfgCleanup, OutlinedLoop, InvariantLoop, BoundCallShim, PreservingCallRegion, MutationLoop, CountValueLoop, SteadyLoop};
+
 fn define<M: Module>(
     plan: &NativeIterationArtifactPlan,
     module: &mut M,
     limits: NativeCompileLimits,
 ) -> Result<(FuncId, NativeIterationDescriptor), NativeCompileError> {
-    let (function, stack, code) = define_cfg(
+    let (function, stack, code, _) = define_cfg(
         super::iteration_code_plan::CodePlan::Scalar(plan),
         ENTRY,
         VERSION,
@@ -253,7 +257,8 @@ pub(super) fn define_cfg<M: Module>(
     version: u64,
     module: &mut M,
     limits: NativeCompileLimits,
-) -> Result<(FuncId, u64, u64), NativeCompileError> {
+) -> Result<(FuncId, u64, u64, CodegenReport), NativeCompileError> {
+    let mut report = CodegenReport::default();
     host_supported()?;
     if module.target_config().pointer_type() != types::I64 {
         return Err(NativeCompileError::UnsupportedHost);
@@ -285,6 +290,12 @@ pub(super) fn define_cfg<M: Module>(
     };
     #[cfg(feature = "canonical-native-program")]
     let aggregate_words = aggregates.words();
+    #[cfg(feature = "canonical-native-program")]
+    let parallel = match plan {
+        super::iteration_code_plan::CodePlan::Program(program) =>
+            super::program_parallel_layout::Layout::derive(program).map_err(backend)?,
+        _ => Default::default(),
+    };
     #[cfg(not(feature = "canonical-native-program"))]
     let aggregate_words = 0;
     #[cfg(feature = "canonical-native-program")]
@@ -299,7 +310,7 @@ pub(super) fn define_cfg<M: Module>(
     #[cfg(not(feature = "canonical-native-program"))]
     let borrowed_words = 0;
     #[cfg(feature = "canonical-native-program")]
-    let (closed, prefix) = match plan {
+    let (closed, prefix, map_admission) = match plan {
         super::iteration_code_plan::CodePlan::Program(program) => {
             // No completion block belongs to a closed Tail. Its completion
             // envelope is irrelevant to the body bound, not a second work policy.
@@ -327,25 +338,49 @@ pub(super) fn define_cfg<M: Module>(
                     })
                     .ok_or_else(|| backend("Tail visit cost overflow"))?;
             }
-            (
-                super::program_tail_layout::Layout::derive(program, &borrowed, &visits)
-                    .map_err(backend)?,
-                prefix,
-            )
+            let owner_prices = program.map_owner_words().map_err(backend)?;
+            for (site, visit) in visits.iter_mut().enumerate() {
+                visit.work = visit.work.checked_add(super::program_map_owner_layout::extra_work(&owner_prices, site).map_err(backend)?)
+                    .ok_or_else(|| backend("map owner visit work overflow"))?;
+            }
+            let closed = super::program_tail_layout::Layout::derive(program, &borrowed, &visits)
+                .map_err(backend)?;
+            for (site, visit) in visits.iter_mut().enumerate() {
+                visit.work = visit.work.checked_add(closed.extra_work(site))
+                    .ok_or_else(|| backend("closed Tail work overflow"))?;
+            }
+            let map_admission = super::program_map_admission::Layout::derive(program, &owner_prices, &visits)
+                .map_err(backend)?;
+            (closed, prefix, map_admission)
         }
-        _ => (Default::default(), None),
+        _ => (Default::default(), None, Default::default()),
     };
     #[cfg(feature = "canonical-native-program")]
     let closed_words = closed.words;
     #[cfg(not(feature = "canonical-native-program"))]
     let closed_words = 0;
-    let local_count = plan
+    let canonical_local_count = plan
         .value_count()
         .checked_add(plan.iteration_count())
         .and_then(|n| n.checked_add(aggregate_words))
         .and_then(|n| n.checked_add(borrowed_words))
         .and_then(|n| n.checked_add(closed_words))
         .ok_or_else(|| backend("iteration local count overflow"))?;
+    #[cfg(feature = "canonical-native-program")]
+    let owner = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+        let layout = program.map_owner_words().map_err(backend)?
+            .after_frame_words(canonical_local_count).map_err(backend)?;
+        (!layout.regions().is_empty()).then_some(layout)
+    } else { None };
+    #[cfg(feature = "canonical-native-program")]
+    let frozen = if let (super::iteration_code_plan::CodePlan::Program(program), Some(owner)) = (plan, owner.as_ref()) {
+        super::program_frozen_map_layout::Layout::derive(program, owner, &closed).map_err(backend)?
+    } else { Default::default() };
+    #[cfg(feature = "canonical-native-program")]
+    let local_count = owner.as_ref().map_or(Ok(canonical_local_count),
+        super::program_map_owner_layout::local_words).map_err(backend)?;
+    #[cfg(not(feature = "canonical-native-program"))]
+    let local_count = canonical_local_count;
     offset(local_count)?;
     offset(plan.input_count())?;
     offset(plan.output_count())?;
@@ -378,6 +413,10 @@ pub(super) fn define_cfg<M: Module>(
     } else {
         Vec::new()
     };
+    #[cfg(feature = "canonical-native-program")]
+    let (packed_functions, bound_call_shim) = super::program_compiler::packed_loop_codegen::define_functions(
+        module, entry_symbol, plan, &closed, owner.as_ref(), &aggregates, limits, &mut report,
+    )?;
     let mut signature_entry = module.make_signature();
     signature_entry.params.push(AbiParam::new(types::I64));
     signature_entry.returns.push(AbiParam::new(types::I64));
@@ -447,13 +486,18 @@ pub(super) fn define_cfg<M: Module>(
             error,
         )?;
         #[cfg(feature = "canonical-native-program")]
+        let parallel_entry = if plan.is_program() {
+            let reference = module.declare_func_in_func(function, b.func);
+            Some(b.ins().func_addr(types::I64, reference))
+        } else { None };
+        #[cfg(feature = "canonical-native-program")]
         let program_phase = if plan.is_program() {
             let phase = frame_load(
                 &mut b,
                 frame,
                 core::mem::offset_of!(super::program_abi::Frame, phase),
             );
-            let valid = b.ins().icmp_imm(
+            let ordinary = b.ins().icmp_imm(
                 IntCC::UnsignedLessThanOrEqual,
                 phase,
                 if prefix.is_some() {
@@ -462,6 +506,10 @@ pub(super) fn define_cfg<M: Module>(
                     super::program_abi::PHASE_TURN
                 } as i64,
             );
+            let valid = if parallel.regions.is_empty() { ordinary } else {
+                let worker = b.ins().icmp_imm(IntCC::Equal, phase, super::program_abi::PHASE_WORKER as i64);
+                b.ins().bor(ordinary, worker)
+            };
             guard(&mut b, valid, error, STATUS_ABI);
             Some(phase)
         } else {
@@ -541,6 +589,13 @@ pub(super) fn define_cfg<M: Module>(
             .jump(blocks[plan.entry() as usize].expect("reachable entry"), &[]);
         if let Some(resume) = resume_block {
             b.switch_to_block(resume);
+            #[cfg(feature = "canonical-native-program")]
+            if !parallel.regions.is_empty() {
+                super::program_compiler::parallel_codegen::dispatch(
+                    &mut b, program_phase.expect("managed worker phase"), frame,
+                    &parallel, &blocks, hooks.as_ref().expect("managed worker hooks"), error,
+                );
+            }
             let boundary = plan
                 .activation_boundary()
                 .ok_or_else(|| backend("managed plan has no activation checkpoint"))?;
@@ -620,8 +675,24 @@ pub(super) fn define_cfg<M: Module>(
                 continue;
             }
             b.switch_to_block(blocks[index].expect("reachable block"));
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(hooks) = &hooks {
+                let outlined = packed_functions.iter().find(|(site, _, _, _)| *site == index)
+                    .map(|(_, function, _, _)| module.declare_func_in_func(*function, b.func));
+                super::program_compiler::packed_loop_codegen::emit_entry(
+                    &mut b, frame, locals, user_context, plan, &closed, owner.as_ref(), &aggregates,
+                    index, hooks, &blocks, error, outlined, &mut report,
+                )?;
+            }
             let before = b.func.dfg.num_insts();
             set_origin(&mut b, frame, index as u64);
+            #[cfg(feature = "canonical-native-program")]
+            if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+                super::program_compiler::parallel_codegen::before_visit(
+                    &mut b, program, &parallel, index, program_phase.expect("managed worker phase"),
+                    frame, locals, hooks.as_ref().expect("managed worker hooks"), error,
+                )?;
+            }
             if plan.activation_boundary() == Some(index as u32) {
                 let phase =
                     program_phase.ok_or_else(|| backend("checkpoint without managed phase"))?;
@@ -658,6 +729,10 @@ pub(super) fn define_cfg<M: Module>(
                 None
             };
             #[cfg(feature = "canonical-native-program")]
+            let map_admission_join = super::program_compiler::map_owner_codegen::admission(
+                &mut b, locals, owner.as_ref(), &map_admission, index,
+            )?;
+            #[cfg(feature = "canonical-native-program")]
             if let Some(region) = &prefix
                 && region.tail.exit() as usize == index
             {
@@ -680,6 +755,11 @@ pub(super) fn define_cfg<M: Module>(
                 index,
                 error,
             );
+            #[cfg(feature = "canonical-native-program")]
+            if let Some(joined) = map_admission_join {
+                b.ins().jump(joined, &[]);
+                b.switch_to_block(joined);
+            }
             #[cfg(feature = "canonical-native-program")]
             if let Some(joined) = admission_join {
                 b.ins().jump(joined, &[]);
@@ -748,6 +828,12 @@ pub(super) fn define_cfg<M: Module>(
                 error,
             )?;
             #[cfg(feature = "canonical-native-program")]
+            let (owner_join, owner_handled) = super::program_compiler::map_owner_codegen::emit(
+                &mut b, locals, owner.as_ref(), &closed, &frozen, index, hooks.as_ref(), plan, error,
+            )?;
+            #[cfg(not(feature = "canonical-native-program"))]
+            let owner_handled = false;
+            #[cfg(feature = "canonical-native-program")]
             let aggregate = super::program_compiler::scalar_aggregates::emit(
                 &mut b,
                 locals,
@@ -758,6 +844,7 @@ pub(super) fn define_cfg<M: Module>(
             #[cfg(not(feature = "canonical-native-program"))]
             let aggregate = false;
             match block.action() {
+                _ if owner_handled => {}
                 _ if aggregate
                     && !matches!(
                         block.action(),
@@ -811,13 +898,15 @@ pub(super) fn define_cfg<M: Module>(
                         .ok_or_else(|| backend("structural observation without managed hooks"))?;
                     let zero = b.ins().iconst(types::I64, 0);
                     hooks.call(&mut b, index, 0xffff_ffff_ffff_fff0, [zero; 3], error);
-                    let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
-                    b.ins().store(
-                        MemFlags::new(),
-                        word,
-                        locals,
-                        offset(output.get() as usize)?,
-                    );
+                    if plan.kind(*output).is_some() {
+                        let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+                        b.ins().store(
+                            MemFlags::new(),
+                            word,
+                            locals,
+                            offset(output.get() as usize)?,
+                        );
+                    }
                 }
                 NativeIterationAction::LibraryCall {
                     operands, output, ..
@@ -1060,6 +1149,11 @@ pub(super) fn define_cfg<M: Module>(
                 }
             }
             #[cfg(feature = "canonical-native-program")]
+            if let Some(joined) = owner_join {
+                b.ins().jump(joined, &[]);
+                b.switch_to_block(joined);
+            }
+            #[cfg(feature = "canonical-native-program")]
             if let Some(joined) = borrowed_join {
                 b.ins().jump(joined, &[]);
                 b.switch_to_block(joined);
@@ -1068,6 +1162,14 @@ pub(super) fn define_cfg<M: Module>(
             if let Some(hooks) = &hooks {
                 super::program_compiler::tail_codegen::prepare(
                     &mut b, locals, &closed, index, hooks, error,
+                )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
+            if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+                super::program_compiler::parallel_codegen::after_action(
+                    &mut b, program, &parallel, index, program_phase.expect("managed worker phase"),
+                    frame, parallel_entry.expect("managed checked entry"), locals, &blocks,
+                    hooks.as_ref().expect("managed worker hooks"), error,
                 )?;
             }
             match block.terminator() {
@@ -1198,6 +1300,10 @@ pub(super) fn define_cfg<M: Module>(
         b.seal_all_blocks();
         b.finalize();
     }
+    #[cfg(feature = "canonical-native-program")]
+    if plan.is_program() {
+        report.cfg_cleanup = Some(super::program_compiler::cfg_cleanup::optimize(&mut context, module.isa())?);
+    }
     module
         .define_function(function, &mut context)
         .map_err(backend)?;
@@ -1216,6 +1322,7 @@ pub(super) fn define_cfg<M: Module>(
                     .iter()
                     .map(|(_, _, stack, _)| *stack)
                     .chain(map_functions.iter().map(|(_, _, stack, _)| *stack))
+                    .chain(packed_functions.iter().map(|(_, _, stack, _)| *stack))
                     .max()
                     .unwrap_or(0),
             )
@@ -1224,10 +1331,11 @@ pub(super) fn define_cfg<M: Module>(
             .iter()
             .map(|(_, _, _, code)| *code)
             .chain(map_functions.iter().map(|(_, _, _, code)| *code))
-            .try_fold(code, |total, code| total.checked_add(code))
+            .chain(packed_functions.iter().map(|(_, _, _, code)| *code))
+            .try_fold(code + bound_call_shim.map_or(0, |shim| shim.code), |total, code| total.checked_add(code))
             .ok_or_else(|| backend("compiled region code overflow"))?,
     );
     limit("Iteration stack", stack, limits.max_stack_bytes)?;
     limit("Iteration code", code, limits.max_code_bytes)?;
-    Ok((function, stack, code))
+    Ok((function, stack, code, report))
 }

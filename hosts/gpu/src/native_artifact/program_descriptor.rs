@@ -1,4 +1,4 @@
-//! Same-artifact metadata for generated ABI12, not an evaluator.
+//! Same-artifact metadata for generated ABI16, not an evaluator.
 use super::{NativeValueSlot, iteration_abi::NativeIterationVisit};
 use mech_core::{FunctionCatalog, SchemaTable, Value};
 use mech_engine::{
@@ -38,6 +38,12 @@ pub struct NativeProgramDescriptor {
     pub(super) window_regions: Box<[mech_engine::native_artifact::NativeWindowRegion]>,
     pub(super) string_map_regions: Box<[mech_engine::native_artifact::NativeStringMapRegion]>,
     pub(super) scalar_aggregates: mech_engine::native_artifact::NativeScalarAggregates,
+    // Complete same-plan candidate layout, preserved through standalone images.
+    // Merely carrying this metadata does not select retained runtime storage.
+    pub(super) map_owner_words: Option<mech_engine::native_artifact::NativeMapOwnerWords>,
+    pub(super) frozen_maps: super::program_frozen_map_layout::Layout,
+    pub(super) map_admission: super::program_map_admission::Layout,
+    pub(super) parallel: super::program_parallel_layout::Layout,
     pub(super) borrowed_strings: super::program_borrowed_layout::Layout,
     pub(super) closed_tails: super::program_tail_layout::Layout,
     pub(super) selected_joins: super::program_selected_join_layout::Layout,
@@ -59,6 +65,7 @@ impl NativeProgramDescriptor {
             return Err("mixed canonical revision mismatch".into());
         }
         plan.validate_current_visits().map_err(str::to_owned)?;
+        let parallel = super::program_parallel_layout::Layout::derive(&plan).map_err(str::to_owned)?;
         let retirements = RetirementTables::derive(&plan).map_err(str::to_owned)?;
         let completion = (plan.transport_output_count() as u64)
             .checked_mul(64)
@@ -99,6 +106,11 @@ impl NativeProgramDescriptor {
                 })
                 .ok_or("borrowed String visit work overflow")?;
         }
+        let map_owner_words = plan.map_owner_words().map_err(str::to_owned)?;
+        for (site, visit) in visits.iter_mut().enumerate() {
+            visit.work = visit.work.checked_add(super::program_map_owner_layout::extra_work(&map_owner_words, site)?)
+                .ok_or("map owner visit work overflow")?;
+        }
         let closed_tails =
             super::program_tail_layout::Layout::derive(&plan, &borrowed_strings, &visits)?;
         for (site, visit) in visits.iter_mut().enumerate() {
@@ -107,6 +119,7 @@ impl NativeProgramDescriptor {
                 .checked_add(closed_tails.extra_work(site))
                 .ok_or("closed Tail work overflow")?;
         }
+        let map_admission = super::program_map_admission::Layout::derive(&plan, &map_owner_words, &visits)?;
         let visits = visits.into();
         let calls = plan
             .blocks()
@@ -205,6 +218,17 @@ impl NativeProgramDescriptor {
         let window_regions = plan.window_regions().into_boxed_slice();
         let string_map_regions = plan.string_map_regions().into_boxed_slice();
         let scalar_aggregates = plan.scalar_aggregates();
+        let occupied_frame = plan.values().len()
+            .checked_add(plan.iterations().len())
+            .and_then(|n| n.checked_add(scalar_aggregates.words()))
+            .and_then(|n| n.checked_add(borrowed_strings.words))
+            .and_then(|n| n.checked_add(closed_tails.words))
+            .ok_or("map owner frame prefix overflow")?;
+        let map_owner_words = map_owner_words
+            .after_frame_words(occupied_frame).map_err(str::to_owned)?;
+        // Programs without owner candidates keep no second copy of their
+        // existing scalar slot/action/constant inventories in the descriptor.
+        let map_owner_words = (!map_owner_words.regions().is_empty()).then_some(map_owner_words);
         let max_library_inputs = plan
             .blocks()
             .iter()
@@ -229,10 +253,12 @@ impl NativeProgramDescriptor {
                     .max()
                     .unwrap_or(0),
             )
+            .max(map_owner_words.as_ref().map_or(0, super::program_map_owner_layout::initial_words))
+            .max(usize::from(!parallel.regions.is_empty()))
             .max(if closed_tails.regions.is_empty() {
                 0
             } else {
-                2
+                4
             });
         let types = plan
             .values()
@@ -273,11 +299,16 @@ impl NativeProgramDescriptor {
         // These complete inventories were derived above from this SAME
         // immutable plan. Hash every proof in its original order, including
         // proofs not selected by the capture prefix, without deriving again.
+        let frozen_maps = map_owner_words.as_ref().map(|owner|
+            super::program_frozen_map_layout::Layout::derive(&plan, owner, &closed_tails))
+            .transpose().map_err(str::to_owned)?.unwrap_or_default();
         let identity = super::program_identity::typed_ir_sha256(
             &plan,
             &line_retention_frontiers,
             &selected_joins.regions,
             &line_matrices.regions,
+            map_owner_words.as_ref(),
+            &frozen_maps,
         );
         Ok(Self {
             plan,
@@ -293,6 +324,10 @@ impl NativeProgramDescriptor {
             window_regions,
             string_map_regions,
             scalar_aggregates,
+            map_owner_words,
+            frozen_maps,
+            map_admission,
+            parallel,
             borrowed_strings,
             closed_tails,
             selected_joins,

@@ -33,8 +33,9 @@ impl NativeProgramDescriptor {
         })
     }
 
-    /// Restore build-prepared metadata without artifact lowering, use analysis,
-    /// region selection, or resource acquisition. This is not code authority.
+    /// Restore build-prepared metadata without artifact lowering or resource
+    /// acquisition. Private frozen-map use inventories are rederived from the
+    /// same plan before acceptance. This is not code authority.
     ///
     /// # Safety
     /// Confine the result until the caller establishes that these exact image

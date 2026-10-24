@@ -1,4 +1,4 @@
-//! Managed ABI12 invocation. This boundary never evaluates a graph: generated
+//! Managed ABI16 invocation. This boundary never evaluates a graph: generated
 //! blocks choose every successor and run every scalar/counter instruction.
 use super::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
@@ -37,8 +37,28 @@ mod prefix;
 mod selected_join;
 #[path = "program_session.rs"]
 mod session;
+#[path = "program_parallel_runtime.rs"]
+mod parallel;
+#[path = "program_parallel_admission.rs"]
+mod parallel_admission;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_parallel_tests.rs"]
+mod parallel_tests;
 #[path = "program_window_round.rs"]
 mod window_round;
+#[path = "program_caller_geometry.rs"]
+mod caller_geometry;
+#[path = "program_map_owner_runtime.rs"]
+mod map_owners;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_map_admission_tests.rs"]
+mod map_admission_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_map_closed_tests.rs"]
+mod map_closed_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_frozen_map_tests.rs"]
+mod frozen_map_tests;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub(super) use session::CheckedEntry;
 #[cfg(feature = "canonical-native-program-host-runtime")]
@@ -114,6 +134,30 @@ pub struct NativeProgramExecutionReport {
     pub comparison_work: u64,
     pub visits: u64,
     pub transport_bytes: u64,
+    pub hash_table_regions: u64,
+    pub hash_table_updates: u64,
+    /// Regions that actually selected packed storage at runtime.
+    pub packed_map_regions: u64,
+    /// Updates completed by those selected packed regions.
+    pub packed_map_updates: u64,
+    /// Completed packed regions that entered the versioned SSA CFG.
+    pub packed_ssa_regions: u64,
+    /// Completed regions whose actual guarded-loop selector chose the fast CFG.
+    pub guarded_loop_regions: u64,
+    /// Completed regions whose initial selector chose proved call-limit checks.
+    pub guarded_call_regions: u64,
+    /// Complete packed maps actually retained at their original output boundary.
+    pub frozen_map_regions: u64,
+    /// Successful original source queries against those complete private maps.
+    pub frozen_map_reads: u64,
+    /// Source comprehensions whose original child bodies completed in workers.
+    pub parallel_regions: u64,
+    /// Completed dispatches; one dispatch may cover several source regions.
+    pub parallel_batches: u64,
+    /// Original source elements completed by those worker batches.
+    pub parallel_tasks: u64,
+    /// Observed peak simultaneously executing workers, not admitted capacity.
+    pub parallel_peak_workers: u64,
 }
 fn invalid(reason: &'static str) -> NativeProgramExecutionError {
     NativeExecutionError::Descriptor { reason }.into()
@@ -176,6 +220,7 @@ struct Context<'plan, 'visit> {
     control: Control<'visit, NativeProgramDescriptor>,
     // Sources are cheap shared roots from the arena; drop collection state
     // first, while that arena still owns their prepaid retirement obligation.
+    map_owners: map_owners::Session<'plan>,
     collections: Option<collection::State>,
     borrowed_strings: Option<borrowed::State>,
     closed_tail: Option<closed_tail::State>,
@@ -193,7 +238,24 @@ struct Context<'plan, 'visit> {
     output_cursor: usize,
     error: Option<NativeProgramExecutionError>,
     activation_phase: bool,
+    execution_limits: NativeExecutionLimits,
+    worker: Option<parallel::Worker>,
+    parallel_batch: Option<parallel::Batch>,
+    hash_table_regions: u64,
+    hash_table_updates: u64,
+    packed_map_regions: u64,
+    packed_map_updates: u64,
+    packed_ssa_regions: u64,
+    guarded_loop_regions: u64,
+    guarded_call_regions: u64,
+    frozen_map_regions: u64,
+    frozen_map_reads: u64,
+    parallel_regions: u64,
+    parallel_batches: u64,
+    parallel_tasks: u64,
+    parallel_peak_workers: u64,
     window_region: Option<(u32, u64)>,
+    window_hashes: Option<Box<window_round::hashes::WindowHashes>>,
     prefix: Option<prefix::State>,
     // The borrow pins real UTF-8 backing for this synchronous entry only.
     line_window: Option<&'visit mech_engine::native_artifact::NativeTextLineWindow<'visit>>,
@@ -229,7 +291,7 @@ impl Context<'_, '_> {
         Ok(())
     }
     fn needs_move(&self, site: usize) -> Option<(NativeMatchValue, NativeMatchValue)> {
-        if self.borrowed_action(site).is_some() {
+        if self.borrowed_action(site).is_some() || self.retained_native_action(site) {
             return None;
         }
         if self
@@ -276,7 +338,7 @@ impl Context<'_, '_> {
             .then_some(pair)
     }
     fn action_required(&self, site: usize) -> bool {
-        if self.borrowed_action(site).is_some() {
+        if self.borrowed_action(site).is_some() || self.retained_native_action(site) {
             return false;
         }
         if self
@@ -368,6 +430,12 @@ impl Context<'_, '_> {
                 "ordinary helper while closed Tail fuel is outstanding",
             ));
         }
+        if matches!(operation, super::program_abi::PARALLEL_RUN
+            | super::program_abi::PARALLEL_TAKE | super::program_abi::PARALLEL_YIELD
+            | super::program_abi::PARALLEL_ENTER) {
+            return self.parallel_helper(usize::try_from(site)
+                .map_err(|_| invalid("parallel helper site overflow"))?, operation, args);
+        }
         if matches!(
             operation,
             super::program_abi::PREFIX_PAUSE
@@ -376,6 +444,16 @@ impl Context<'_, '_> {
                 | super::program_abi::PREFIX_SCANNED
         ) {
             return self.prefix_helper(site, operation, args);
+        }
+        // Native path interiors have no callback. A selected map operation
+        // admits its own observable boundary before reading any operands or
+        // mutating storage. Canonical/refused execution keeps ordinary visits.
+        if (operation == super::program_abi::MAP_OWNER_CALL
+                && self.retained_native_call(site as usize))
+            || (operation == super::program_abi::MAP_OWNER_SPAN
+                && self.retained_native_span(site as usize))
+        {
+            self.visit(site)?;
         }
         if self.control.previous.map(u64::from) != Some(site) {
             return Err(invalid("helper outside exact admitted visit"));
@@ -386,6 +464,18 @@ impl Context<'_, '_> {
         let descriptor = self.control.descriptor;
         if operation == super::program_abi::CLOSED_TAIL_BEGIN {
             return self.begin_closed_tail(site, args);
+        }
+        if matches!(operation, super::program_abi::MAP_OWNER_BEGIN
+            | super::program_abi::MAP_OWNER_CALL | super::program_abi::MAP_OWNER_END
+            | super::program_abi::MAP_OWNER_SPAN) {
+            return self.retained_map_helper(site, operation, args);
+        }
+        if matches!(operation, super::program_abi::FROZEN_MAP_COPY | super::program_abi::FROZEN_MAP_READ) {
+            return self.frozen_map_helper(site, operation, args);
+        }
+        if self.frozen_native_action(site) || self.retained_native_action(site) || self.retained_native_call(site) || self.retained_native_exit(site)
+            || self.retained_native_span(site) {
+            return Err(invalid("ordinary helper at retained native map site"));
         }
         if operation == super::program_abi::BORROWED_STRINGS_PREPARE {
             return self.prepare_borrowed_strings(site, args);
@@ -438,6 +528,45 @@ impl Context<'_, '_> {
             let root = self
                 .arena
                 .copy_current(source.get(), &mut self.control.work)?;
+            if *observation == Observation::CanonicalValue {
+                let NativeIterationAction::Structural { output, .. } =
+                    descriptor.plan.blocks()[site].action()
+                else {
+                    unreachable!()
+                };
+                let prior = if self
+                    .arena
+                    .current_retained_bytes(output.get(), &mut self.control.work)?
+                    .is_some()
+                {
+                    Some(
+                        self.arena
+                            .copy_current(output.get(), &mut self.control.work)?,
+                    )
+                } else {
+                    None
+                };
+                let result = mech_engine::native_artifact::native_project_structural_value(
+                    &descriptor.plan,
+                    site,
+                    &descriptor.schemas,
+                    &root,
+                    prior.as_ref(),
+                    self.limits,
+                    &self.library,
+                )
+                .map_err(|error| NativeProgramExecutionError::Library {
+                    origin: descriptor.plan.blocks()[site].origin(),
+                    error,
+                })?;
+                self.arena
+                    .put(output.get(), &result, &mut self.control.work)?;
+                self.consumed = true;
+                return descriptor.plan.values()[output.get() as usize]
+                    .scalar_kind()
+                    .map(|kind| bits(&result, kind))
+                    .transpose();
+            }
             let mut data = root.data();
             for step in path {
                 data = match (step, data) {
@@ -543,7 +672,8 @@ impl Context<'_, '_> {
                 .as_ref()
                 .ok_or_else(|| invalid("missing exact prepared selection"))?;
             let mut result = None;
-            let outcome = self.call_caches.entries[site].invoke(
+            let outcome = self.call_caches.invoke(
+                site,
                 call,
                 &self.call_inputs.values()[..operands.len()],
                 &mut result,
@@ -667,17 +797,31 @@ impl Context<'_, '_> {
         {
             return Err(invalid("entry omitted current required helper"));
         }
+        let previous = if let Some((from, to)) = self.map_owners.closed_exit {
+            if self.control.previous != Some(from) || site != u64::from(to) {
+                return Err(invalid("visit outside closed map exit frontier"));
+            }
+            Some(from)
+        } else if let Some(previous) = self.control.previous
+            && let Some(group) = self.control.descriptor.map_admission.group(previous as usize)
+            && self.map_owners.active(group.owner)
+        {
+            if previous != group.start() { return Err(invalid("native path lost its entry")); }
+            Some(group.predecessor(u32::try_from(site)
+                .map_err(|_| invalid("map path frontier overflow"))?)
+                .ok_or_else(|| invalid("visit outside prepaid native path frontier"))?)
+        } else { self.control.previous };
         // A native aggregate latch has no managed move callback. Retire the
         // OTHER managed loop locals after that generated copy, before the next
         // visit, exactly as the managed latch used to do. Aggregate words own
         // no heap payload and are absent from the retirement inventory.
-        if let Some(previous) = self.control.previous
-            && self
+        if let Some(previous) = previous
+            && (self
                 .control
                 .descriptor
                 .scalar_aggregates
                 .action(previous as usize)
-                .is_some()
+                .is_some() || self.retained_native_action(previous as usize))
             && let NativeIterationAction::Latch { iteration } =
                 self.control.descriptor.plan.blocks()[previous as usize].action()
             && matches!(
@@ -689,6 +833,11 @@ impl Context<'_, '_> {
         }
         let index =
             usize::try_from(site).map_err(|_| invalid("program visit site outside descriptor"))?;
+        if let Some(worker) = &self.worker
+            && !self.control.descriptor.parallel.regions.get(worker.region)
+                .is_some_and(|region| region.contains(index as u32)) {
+            return Err(invalid("worker visited outside its outlined source body"));
+        }
         let block = self
             .control
             .descriptor
@@ -700,7 +849,23 @@ impl Context<'_, '_> {
         if let Some(state) = &self.collections {
             state.validate_span_boundary(block.action())?;
         }
-        self.control.visit(site)?;
+        let group = self.control.descriptor.map_admission.group(index)
+            .filter(|group| self.map_owners.active(group.owner));
+        if group.is_some_and(|group| u64::from(group.start()) != site) {
+            return Err(invalid("ordinary visit inside admitted scalar group"));
+        }
+        if previous.is_none() && self.worker.is_some() {
+            let worker = self.worker.as_ref().unwrap();
+            let region = self.control.descriptor.parallel.regions.get(worker.region)
+                .ok_or_else(|| invalid("worker entry proof missing"))?;
+            if site != u64::from(region.begin) || group.is_some() {
+                return Err(invalid("worker entry outside constructor proof"));
+            }
+            self.control.visit_outlined_entry(site, region.begin)?;
+        } else {
+            self.control.visit_from(site, group.map(|group| group.work), previous)?;
+        }
+        self.map_owners.closed_exit = None;
         let descriptor = self.control.descriptor;
         if let Some(mech_engine::native_artifact::NativeBorrowedStringAction::Equal { .. }) =
             self.borrowed_action(index)
@@ -755,8 +920,27 @@ impl Context<'_, '_> {
         {
             return Err(invalid("completion with an active collection builder"));
         }
+        if self.control.completed && self.has_retained_maps() {
+            return Err(invalid("completion with an active retained map owner"));
+        }
         self.consumed = false;
+        // Keep the actual admitted anchor. The next callback must belong to
+        // this prepaid path's exact frontier; interior failures retain their
+        // original source sites. No synthetic per-instruction visits occur.
         Ok(())
+    }
+
+    fn failure_site(&self, raw: u64) -> Result<u32, NativeProgramExecutionError> {
+        let previous = self.control.previous.ok_or_else(|| invalid("program failure before visit"))?;
+        let site = u32::try_from(raw).map_err(|_| invalid("program failure origin mismatch"))?;
+        if site == previous { return Ok(site); }
+        let layout = &self.control.descriptor.map_admission;
+        if let Some(group) = layout.group(previous as usize)
+            && self.map_owners.active(group.owner) && group.start() == previous
+            && group.sites.contains(&site) {
+            return Ok(site);
+        }
+        Err(invalid("program failure origin mismatch"))
     }
 
     fn retire_tail_locals(
@@ -764,6 +948,8 @@ impl Context<'_, '_> {
         iteration: u32,
         kind: RetirementKind,
     ) -> Result<(), NativeProgramExecutionError> {
+        self.retire_map_keys(iteration)?;
+        self.retire_frozen_maps(iteration)?;
         let slots = self
             .control
             .descriptor
@@ -3424,7 +3610,7 @@ mod tests {
                             *frame.arguments = 1;
                         }
                     }
-                    // SAFETY: arguments remain within the retained ABI12 boundary;
+                    // SAFETY: arguments remain within the retained ABI16 boundary;
                     // wrong metadata/pointer is rejected before dereference.
                     let status = unsafe {
                         (frame.helper)(
@@ -4247,8 +4433,8 @@ mod tests {
         }
     }
     #[test]
-    fn abi12_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 12);
+    fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
+        assert_eq!(VERSION, 27);
         assert_eq!(super::super::program_abi::PHASE_CAPTURE_TAIL, 3);
         assert_eq!(super::super::program_abi::STATUS_INPUT_SCANNED, 7);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);
@@ -4290,3 +4476,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_structural_projection_tests.rs"]
+mod structural_projection_tests;

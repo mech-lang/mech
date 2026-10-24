@@ -400,6 +400,7 @@ struct SnapshotBudgetOwnership {
     schemas: Arc<SchemaTable>,
     required_bytes: u64,
     reservation: crate::ManagedMemoryReservation,
+    node_charge: crate::memory_runtime::SnapshotNodeCharge,
 }
 
 #[derive(Debug)]
@@ -642,8 +643,9 @@ impl Value {
             self.root = owner;
             return Ok(self);
         }
-        let retained_bytes = self.memory_budget_required_bytes()?;
-        let admitted_bytes = self.unshared_memory_budget_admission_bytes(&budget)?;
+        let (retained_bytes, retained_nodes) = self.memory_budget_ownership_witness()?;
+        let admitted_bytes =
+            self.unshared_memory_budget_admission_for_required(&budget, retained_bytes)?;
         if admitted_bytes > reservation.capacity_bytes() {
             return Err(crate::MemoryRuntimeError::BudgetExceeded {
                 operation: None,
@@ -692,6 +694,7 @@ impl Value {
             }
             // All physical construction has succeeded under the reservation.
             // No user code runs under this short metadata gate.
+            let node_charge = budget.retain_snapshot_nodes(retained_nodes)?;
             let charge = reservation.split_capacity(admitted_bytes)?;
             Arc::get_mut(&mut prepared)
                 .expect("unpublished import has no shared or weak wrapper owner")
@@ -699,6 +702,7 @@ impl Value {
                 schemas,
                 required_bytes: retained_bytes,
                 reservation: charge,
+                node_charge,
                 registration: registration.clone(),
             });
             let _ = registration.owner.set(Arc::downgrade(&prepared));
@@ -789,6 +793,14 @@ impl Value {
         budget: &crate::ManagedMemoryBudget,
     ) -> crate::MemoryRuntimeResult<u64> {
         let required = self.memory_budget_required_bytes()?;
+        self.unshared_memory_budget_admission_for_required(budget, required)
+    }
+
+    fn unshared_memory_budget_admission_for_required(
+        &self,
+        budget: &crate::ManagedMemoryBudget,
+        required: u64,
+    ) -> crate::MemoryRuntimeResult<u64> {
         let physical = self
             .root
             .data
@@ -810,6 +822,13 @@ impl Value {
     /// headers; primitive sequence elements do not each count as a root.
     /// This is admitted capacity, not a report of observed physical bytes.
     pub fn memory_budget_required_bytes(&self) -> crate::MemoryRuntimeResult<u64> {
+        self.memory_budget_ownership_witness()
+            .map(|(bytes, _)| bytes)
+    }
+
+    // One traversal establishes both complete byte admission and the node
+    // witness. Import reuses it rather than walking the same payload again.
+    fn memory_budget_ownership_witness(&self) -> crate::MemoryRuntimeResult<(u64, u64)> {
         let schemas = self.schemas.as_deref().ok_or_else(|| {
             crate::MemoryRuntimeError::CandidateValidationFailed {
                 object: None,
@@ -832,6 +851,7 @@ impl Value {
         footprint
             .retained_bytes
             .checked_add(owner_bytes)
+            .map(|bytes| (bytes, footprint.node_count))
             .ok_or_else(arithmetic_error)
     }
 
@@ -920,6 +940,14 @@ impl Value {
         let schemas = self.schemas.as_ref()?;
         (ownership.reservation.budget() == *budget && Arc::ptr_eq(schemas, &ownership.schemas))
             .then_some(ownership.required_bytes)
+    }
+
+    /// Constant-time node witness for this exact admitted account and schema
+    /// owner. Unadmitted/foreign roots return None. This is resource metadata,
+    /// not execution, ownership-transfer or capability authority.
+    pub fn memory_budget_retained_nodes(&self, budget: &crate::ManagedMemoryBudget) -> Option<u64> {
+        self.memory_budget_retained_bytes(budget)?;
+        Some(self.root.memory_budget.as_ref()?.node_charge.nodes())
     }
 
     pub const fn schema(&self) -> SchemaId {
@@ -4341,6 +4369,127 @@ mod tests {
         DimensionParameterOrigin, NominalKey, SchemaDraft, SchemaField, SchemaTableBuilder,
     };
     use core::cell::{Cell, RefCell};
+
+    #[test]
+    fn admitted_node_witness_tracks_exact_account_and_schema_owner() {
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Tuple(
+                        vec![
+                            SchemaBody::String,
+                            SchemaBody::Map {
+                                key: Box::new(SchemaBody::String),
+                                value: Box::new(SchemaBody::UnsignedInteger(
+                                    crate::IntegerWidth::W64,
+                                )),
+                                cardinality: crate::CardinalitySpec::Dynamic { upper_bound: None },
+                            },
+                        ]
+                        .into_boxed_slice(),
+                    ),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let schemas = Arc::new(build.table);
+        let raw = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::String("λ".repeat(8192)),
+                    ValueDataDraft::Map(
+                        [("z", 17), ("é\0", u64::MAX)]
+                            .into_iter()
+                            .map(|(key, value)| super::super::MapEntryDraft {
+                                items: vec![
+                                    ValueDataDraft::String(key.into()),
+                                    ValueDataDraft::U64(value),
+                                ]
+                                .into_boxed_slice(),
+                            })
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    ),
+                ]
+                .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+        .unwrap();
+        let expected = raw.retained_footprint(&schemas).unwrap().node_count;
+        assert_eq!(expected, 8);
+        let a = crate::ManagedMemoryBudget::new(4 * 1024 * 1024);
+        let b = crate::ManagedMemoryBudget::new(4 * 1024 * 1024);
+        assert_eq!(a.retained_snapshot_nodes(), 0);
+        assert_eq!(raw.memory_budget_retained_nodes(&a), None);
+        let mut claim_a = a
+            .reserve_capacity(raw.memory_budget_admission_bytes(&a).unwrap())
+            .unwrap();
+        let owned = raw.clone().into_memory_budget(&mut claim_a).unwrap();
+        assert_eq!(owned.memory_budget_retained_nodes(&a), Some(expected));
+        assert_eq!(owned.memory_budget_retained_nodes(&b), None);
+        assert_eq!(a.retained_snapshot_nodes(), expected);
+        let mut zero = a.reserve_capacity(0).unwrap();
+        let reused = owned.clone().into_memory_budget(&mut zero).unwrap();
+        assert_eq!(reused.memory_budget_retained_nodes(&a), Some(expected));
+        assert_eq!(a.retained_snapshot_nodes(), expected, "same owner aliases do not add claims");
+        let weak = owned.frozen_storage_identity();
+        let mut independent_claim = a.reserve_capacity(raw.unshared_memory_budget_admission_bytes(&a).unwrap()).unwrap();
+        let independent = raw.clone().into_independent_memory_budget(&mut independent_claim).unwrap();
+        assert_eq!(a.retained_snapshot_nodes(), expected * 2);
+        let mut claim_b = b
+            .reserve_capacity(raw.memory_budget_admission_bytes(&b).unwrap())
+            .unwrap();
+        let foreign = raw
+            .clone()
+            .into_independent_memory_budget(&mut claim_b)
+            .unwrap();
+        assert_eq!(foreign.memory_budget_retained_nodes(&b), Some(expected));
+        assert_eq!(foreign.memory_budget_retained_nodes(&a), None);
+        assert_eq!(b.retained_snapshot_nodes(), expected);
+        for step in [0, 1] {
+            let failed = crate::ManagedMemoryBudget::new(4 * 1024 * 1024);
+            let mut claim = failed.reserve_capacity(raw.memory_budget_admission_bytes(&failed).unwrap()).unwrap();
+            let before = claim.capacity_bytes();
+            failed.inject_snapshot_import_failure_after(step);
+            assert!(matches!(raw.clone().into_independent_memory_budget(&mut claim),
+                Err(crate::MemoryRuntimeError::AllocationFailed { .. })));
+            assert_eq!(claim.capacity_bytes(), before);
+            assert_eq!(failed.retained_snapshot_nodes(), 0);
+            drop(claim);
+            assert_eq!(failed.used_bytes(), 0);
+        }
+        let overflow = crate::ManagedMemoryBudget::new(4 * 1024 * 1024);
+        let full = overflow.retain_snapshot_nodes(u64::MAX).unwrap();
+        let mut claim = overflow.reserve_capacity(raw.memory_budget_admission_bytes(&overflow).unwrap()).unwrap();
+        let before = claim.capacity_bytes();
+        assert!(matches!(raw.clone().into_independent_memory_budget(&mut claim),
+            Err(crate::MemoryRuntimeError::AccountingInvariantViolation { .. })));
+        assert_eq!(claim.capacity_bytes(), before, "census failure cannot consume byte admission");
+        assert_eq!(overflow.retained_snapshot_nodes(), u64::MAX);
+        drop((full, claim));
+        assert_eq!(overflow.retained_snapshot_nodes(), 0);
+        assert_eq!(overflow.used_bytes(), 0);
+        drop(independent);
+        assert_eq!(a.retained_snapshot_nodes(), expected);
+        drop(owned);
+        assert_eq!(a.retained_snapshot_nodes(), expected, "the reused owner still lives");
+        drop(reused);
+        assert_eq!(a.retained_snapshot_nodes(), 0, "raw and weak roots cannot retain admitted claims");
+        assert_eq!(b.retained_snapshot_nodes(), expected);
+        drop(foreign);
+        assert_eq!(b.retained_snapshot_nodes(), 0);
+        drop((raw, weak, independent_claim, claim_a, claim_b, zero));
+        assert_eq!(a.used_bytes(), 0);
+        assert_eq!(b.used_bytes(), 0);
+    }
 
     #[cfg(any(not(feature = "no_std"), feature = "std"))]
     #[test]

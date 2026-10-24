@@ -370,6 +370,93 @@ mod tests {
     };
     const TRANSPORT_LIMIT: u64 = 1024 * 1024;
 
+    #[cfg(feature = "canonical-native-program-runtime")]
+    #[test]
+    fn arena_transport_preserves_shared_account_census_and_external_roots() {
+        let budget = ManagedMemoryBudget::new(16 * 1024 * 1024);
+        let (text_ty, raw_a) = text(&"λ".repeat(8192));
+        let (_, raw_b) = text("replacement");
+        let (map_ty, raw_map) = value(
+            SchemaBody::Map {
+                key: Box::new(SchemaBody::String),
+                value: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+                cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+            ValueDataDraft::Map(
+                [("a", 1), ("b", u64::MAX)]
+                    .into_iter()
+                    .map(|(key, value)| MapEntryDraft {
+                        items: vec![
+                            ValueDataDraft::String(key.into()),
+                            ValueDataDraft::U64(value),
+                        ]
+                        .into_boxed_slice(),
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        );
+        let a = admit(&raw_a, &budget);
+        let b = admit(&raw_b, &budget);
+        let map = admit(&raw_map, &budget);
+        assert_eq!(a.memory_budget_retained_nodes(&budget), Some(2));
+        assert_eq!(map.memory_budget_retained_nodes(&budget), Some(6));
+        let types = [text_ty, text_ty, map_ty];
+        let mut work = NativeWorkMeter::new(100_000_000).unwrap();
+        let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &budget, &mut work).unwrap();
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        let before = budget.used_bytes();
+        arena.put(0, &a, &mut work).unwrap();
+        arena.put(1, &a, &mut work).unwrap();
+        let handle = arena.put(2, &map, &mut work).unwrap();
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        assert_eq!(
+            budget.used_bytes(),
+            before,
+            "no census allocation on put/read"
+        );
+        assert!(matches!(
+            arena.put(2, &a, &mut work),
+            Err(NativeValueError::TypeMismatch)
+        ));
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        arena.put(0, &b, &mut work).unwrap();
+        arena.retire_current_matching(1, &a, &mut work).unwrap();
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        arena.retire_current(1, &mut work).unwrap();
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        let taken = arena.take(handle, &mut work).unwrap();
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        assert!(matches!(
+            arena.get(handle, &mut work),
+            Err(NativeValueError::StaleHandle)
+        ));
+        let mut foreign_work = NativeWorkMeter::new(1_000_000).unwrap();
+        assert!(matches!(
+            arena.put(0, &a, &mut foreign_work),
+            Err(NativeValueError::WrongWorkLedger)
+        ));
+        arena.retire_current(0, &mut work).unwrap();
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        drop(a);
+        assert_eq!(budget.retained_snapshot_nodes(), 8);
+        drop(b);
+        assert_eq!(budget.retained_snapshot_nodes(), 6);
+        drop(map);
+        assert_eq!(budget.retained_snapshot_nodes(), 6, "taken map remains a live caller root");
+        drop(taken);
+        assert_eq!(budget.retained_snapshot_nodes(), 0);
+        drop((
+            arena,
+            raw_a,
+            raw_b,
+            raw_map,
+            work,
+            foreign_work,
+        ));
+        assert_eq!(budget.used_bytes(), 0);
+    }
+
     fn value(body: SchemaBody, data: ValueDataDraft) -> (NativeValueSlot, Value) {
         let schema = SchemaDraft {
             dimension_parameters: Box::new([]),

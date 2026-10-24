@@ -24,6 +24,11 @@ mod borrowed_metadata_scan_tests;
 pub(crate) mod native_turn_plan_cache;
 #[path = "payload_budget.rs"]
 pub(crate) mod payload;
+#[cfg(feature = "native-artifact")]
+#[path = "native_worker_budget.rs"]
+mod workers;
+#[cfg(feature = "native-artifact")]
+pub use workers::{NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerWorkLoan};
 
 #[derive(Default)]
 struct DisplayByteCounter(usize);
@@ -207,7 +212,7 @@ thread_local! {
 // Repeated control execution accumulates the costs admitted by the existing
 // kernel budget authority. Each invocation contributes its maximum observed
 // demand once; incremental estimates within that invocation are not summed.
-#[derive(Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 struct ControlWork {
     compute: u64,
     comparison: u64,
@@ -215,18 +220,36 @@ struct ControlWork {
 
 #[derive(Debug)]
 struct ControlWorkAccount {
+    identity: u64,
     used: ControlWork,
+    reserved: ControlWork,
     compute_limit: u64,
     comparison_limit: u64,
     _reservation: Option<mech_core::ManagedMemoryReservation>,
+    #[cfg(feature = "native-artifact")]
+    worker: Option<NativeWorkerWorkLoan>,
+}
+static NEXT_CONTROL_WORK_ID: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+fn next_control_work_identity() -> u64 {
+    NEXT_CONTROL_WORK_ID
+        .fetch_update(
+            std::sync::atomic::Ordering::Relaxed,
+            std::sync::atomic::Ordering::Relaxed,
+            |current| current.checked_add(1),
+        )
+        .expect("control work identity exhausted")
 }
 impl Default for ControlWorkAccount {
     fn default() -> Self {
         Self {
+            identity: next_control_work_identity(),
             used: ControlWork::default(),
+            reserved: ControlWork::default(),
             compute_limit: mech_core::RESIDENT_MAX_COMPUTE_WORK,
             comparison_limit: mech_core::RESIDENT_MAX_COMPARISON_WORK,
             _reservation: None,
+            #[cfg(feature = "native-artifact")]
+            worker: None,
         }
     }
 }
@@ -251,18 +274,21 @@ impl NativeLibraryWorkBudget {
         let reservation = memory.reserve_capacity(bytes)?;
         Ok(Self {
             account: std::rc::Rc::new(std::cell::RefCell::new(ControlWorkAccount {
+                identity: next_control_work_identity(),
                 used: ControlWork::default(),
+                reserved: ControlWork::default(),
                 compute_limit,
                 comparison_limit,
                 _reservation: Some(reservation),
+                worker: None,
             })),
         })
     }
 
-    /// Private identity check for invocation-owned prepared metadata. Equal
+    /// Identity check for invocation-owned prepared metadata. Equal
     /// limits or an equal memory account cannot renew a different work ledger.
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
-    pub(crate) fn shares_account(&self, other: &Self) -> bool {
+    pub fn shares_account(&self, other: &Self) -> bool {
         std::rc::Rc::ptr_eq(&self.account, &other.account)
     }
 
@@ -283,20 +309,14 @@ impl NativeLibraryWorkBudget {
         {
             return None;
         }
-        let root = CONTROL_ROOT_LIMITS
-            .with(|v| v.get())
-            .unwrap_or((u64::MAX, u64::MAX));
         let state = self.account.borrow();
-        Some((
-            state
-                .compute_limit
-                .min(root.0)
-                .checked_sub(state.used.compute)?,
-            state
-                .comparison_limit
-                .min(root.1)
-                .checked_sub(state.used.comparison)?,
-        ))
+        let local = unscoped_local_remaining(&state)?;
+        if let Some(worker) = &state.worker {
+            let shared = worker.remaining()?;
+            Some((local.0.min(shared.0), local.1.min(shared.1)))
+        } else {
+            Some(local)
+        }
     }
 
     /// Identity of the account that admitted this ledger's actual backing.
@@ -413,6 +433,7 @@ impl NativeLibraryWorkBudget {
                     .used
                     .compute
                     .checked_add(compute)
+                    .and_then(|used| used.checked_add(state.reserved.compute))
                     .ok_or(ResidentKernelError::InvalidShape)?,
                 compute_limit,
                 MemoryBudgetDimension::ComputeWork,
@@ -422,6 +443,7 @@ impl NativeLibraryWorkBudget {
                     .used
                     .comparison
                     .checked_add(comparison)
+                    .and_then(|used| used.checked_add(state.reserved.comparison))
                     .ok_or(ResidentKernelError::InvalidShape)?,
                 comparison_limit,
                 MemoryBudgetDimension::ComparisonWork,
@@ -477,25 +499,51 @@ impl NativeLibraryWorkBudget {
         comparison: u64,
         execute: impl FnOnce() -> T,
     ) -> Result<T, ResidentKernelError> {
-        self.with_scope(|| {
-            struct Guard(Option<(u64, u64)>);
-            impl Drop for Guard {
-                fn drop(&mut self) {
-                    CONTROL_ROOT_LIMITS.with(|active| active.set(self.0));
+        use std::cell::{Cell, RefCell};
+        use std::rc::Rc;
+        // Retain each thread-local address across this synchronous call. This
+        // is the same account, fresh observer and relative cap as with_scope
+        // followed by a call cap; teardown need not look up those addresses
+        // again. Guards still restore all three in reverse order on unwind.
+        struct AccountGuard<'a>(&'a RefCell<Option<Rc<RefCell<ControlWorkAccount>>>>,
+            Option<Rc<RefCell<ControlWorkAccount>>>);
+        impl Drop for AccountGuard<'_> {
+            fn drop(&mut self) { *self.0.borrow_mut() = self.1.take(); }
+        }
+        struct ScopeGuard<'a>(&'a RefCell<Option<ControlWorkScope>>, Option<ControlWorkScope>);
+        impl Drop for ScopeGuard<'_> {
+            fn drop(&mut self) { *self.0.borrow_mut() = self.1.take(); }
+        }
+        struct LimitGuard<'a>(&'a Cell<Option<(u64, u64)>>, Option<(u64, u64)>);
+        impl Drop for LimitGuard<'_> {
+            fn drop(&mut self) { self.0.set(self.1); }
+        }
+        CONTROL_WORK.with(|active| {
+            let previous = {
+                let mut current = active.borrow_mut();
+                if current.as_ref().is_some_and(|account| !Rc::ptr_eq(account, &self.account)) {
+                    return Err(ResidentKernelError::InvalidInput);
                 }
-            }
-            let used = self.used();
-            let previous = CONTROL_ROOT_LIMITS.with(|active| {
-                let previous = active.get();
-                let enclosing = previous.unwrap_or((u64::MAX, u64::MAX));
-                active.set(Some((
-                    used.0.saturating_add(compute).min(enclosing.0),
-                    used.1.saturating_add(comparison).min(enclosing.1),
-                )));
-                previous
-            });
-            let _guard = Guard(previous);
-            execute()
+                current.replace(self.account.clone())
+            };
+            let _account = AccountGuard(active, previous);
+            CONTROL_WORK_SCOPE.with(|scope| {
+                let previous = scope.replace(Some(ControlWorkScope {
+                    total: self.account.clone(), observed: ControlWork::default(),
+                }));
+                let _scope = ScopeGuard(scope, previous);
+                let used = self.used();
+                CONTROL_ROOT_LIMITS.with(|limits| {
+                    let previous = limits.get();
+                    let enclosing = previous.unwrap_or((u64::MAX, u64::MAX));
+                    limits.set(Some((
+                        used.0.saturating_add(compute).min(enclosing.0),
+                        used.1.saturating_add(comparison).min(enclosing.1),
+                    )));
+                    let _limits = LimitGuard(limits, previous);
+                    Ok(execute())
+                })
+            })
         })
     }
 }
@@ -615,7 +663,18 @@ impl Drop for ControlWorkScopeGuard {
     }
 }
 
-fn checked_control_account_work(
+#[cfg(feature = "native-artifact")]
+fn unscoped_local_remaining(account: &ControlWorkAccount) -> Option<(u64, u64)> {
+    let root = CONTROL_ROOT_LIMITS.with(|v| v.get()).unwrap_or((u64::MAX, u64::MAX));
+    Some((
+        account.compute_limit.min(root.0)
+            .checked_sub(account.used.compute)?.checked_sub(account.reserved.compute)?,
+        account.comparison_limit.min(root.1)
+            .checked_sub(account.used.comparison)?.checked_sub(account.reserved.comparison)?,
+    ))
+}
+
+fn checked_local_control_account_work(
     account: &ControlWorkAccount,
     compute: u64,
     comparison: u64,
@@ -636,9 +695,10 @@ fn checked_control_account_work(
         .checked_add(comparison)
         .ok_or(ResidentKernelError::InvalidShape)?;
     for (required, limit, dimension) in [
-        (compute, compute_limit, MemoryBudgetDimension::ComputeWork),
+        (compute.checked_add(account.reserved.compute).ok_or(ResidentKernelError::InvalidShape)?,
+            compute_limit, MemoryBudgetDimension::ComputeWork),
         (
-            comparison,
+            comparison.checked_add(account.reserved.comparison).ok_or(ResidentKernelError::InvalidShape)?,
             comparison_limit,
             MemoryBudgetDimension::ComparisonWork,
         ),
@@ -658,12 +718,34 @@ fn checked_control_account_work(
     })
 }
 
+fn checked_control_account_work(
+    account: &ControlWorkAccount,
+    compute: u64,
+    comparison: u64,
+) -> Result<ControlWork, ResidentKernelError> {
+    let next = checked_local_control_account_work(account, compute, comparison)?;
+    #[cfg(feature = "native-artifact")]
+    if let Some(worker) = &account.worker {
+        worker.preview(compute, comparison)?;
+    }
+    Ok(next)
+}
+
 fn charge_control_account(
     account: &mut ControlWorkAccount,
     compute: u64,
     comparison: u64,
 ) -> Result<(), ResidentKernelError> {
-    account.used = checked_control_account_work(account, compute, comparison)?;
+    // A real debit checks and commits both shared dimensions under one lock.
+    // Eligibility-only callers retain the separate, non-spending preview.
+    let next = checked_local_control_account_work(account, compute, comparison)?;
+    #[cfg(feature = "native-artifact")]
+    if let Some(worker) = &account.worker {
+        // Local call caps were checked first. Both shared dimensions commit
+        // together before the infallible local-counter assignment.
+        worker.charge(compute, comparison)?;
+    }
+    account.used = next;
     Ok(())
 }
 
@@ -815,6 +897,45 @@ mod native_library_work_tests {
             .unwrap();
         assert_eq!(budget.used(), (10, 3));
         assert!(budget.charge(1, 0).is_err());
+    }
+
+    #[test]
+    #[cfg(panic = "unwind")]
+    fn native_call_unwind_restores_parent_observations_caps_and_account() {
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let budget = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
+        let foreign = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
+        budget.with_call_limits(30, 10, || {
+            observe_control_work(demand(3, 1)).unwrap();
+            let failed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                budget.with_call_limits(5, 2, || {
+                    observe_control_work(demand(4, 1)).unwrap();
+                    panic!("owned test call unwind");
+                }).unwrap();
+            }));
+            assert!(failed.is_err());
+            assert_eq!(budget.used(), (7, 2));
+            // The parent's existing high-water mark survives the inner call.
+            observe_control_work(demand(3, 1)).unwrap();
+            assert_eq!(budget.used(), (7, 2));
+            observe_control_work(demand(4, 2)).unwrap();
+            assert_eq!(budget.used(), (8, 3));
+            assert_eq!(foreign.with_call_limits::<()>(100, 100, || unreachable!()),
+                Err(ResidentKernelError::InvalidInput));
+            budget.charge(22, 7).unwrap();
+            assert!(matches!(budget.charge(1, 0), Err(ResidentKernelError::ResourceLimit {
+                dimension: MemoryBudgetDimension::ComputeWork, required: 31, limit: 30, ..
+            })));
+        }).unwrap();
+        assert!(!NativeLibraryWorkBudget::has_active_scope());
+        // Parent caps are gone, but all successful inner work stays spent.
+        budget.charge(1, 0).unwrap();
+        foreign.charge(1, 0).unwrap();
+        assert_eq!(budget.used(), (31, 10));
+        assert_eq!(foreign.used(), (1, 0));
+        drop(foreign);
+        drop(budget);
+        assert_eq!(memory.used_bytes(), 0);
     }
 
     #[test]
@@ -1272,6 +1393,10 @@ pub(crate) struct AdmittedMutationPlan<P> {
 pub(crate) struct ResidentBudgetMeter {
     accumulated: KernelCostEstimate,
     analysis_allowance: Option<(u64, u64)>,
+    // A borrowed native projection has real invocation work authority but no
+    // resident TurnMemoryPlan. This admits measurement only, never a kernel
+    // execution or allocation/publication permit.
+    native_projection_limits: Option<(mech_core::MemoryBudgetLimits, u64)>,
 }
 
 /// Authority proving one complete checked estimate passed central resident
@@ -1511,14 +1636,40 @@ impl KernelCostEstimate {
         } else {
             self.checked()?;
         }
-        Ok(MAX_RESIDENT_COMPARISON_WORK
+        // A native invocation may carry a different finite policy from the
+        // resident default. Its already-admitted plan remains the authority;
+        // subtracting a large successful prefix from the default profile can
+        // otherwise reject an unrelated scalar finalization as InvalidShape.
+        let (compute, comparison) = with_active_turn_plan(|active| {
+            active.as_ref().map_or((MAX_RESIDENT_COMPUTE_WORK, MAX_RESIDENT_COMPARISON_WORK),
+                |plan| (plan.budget_limits.max_compute_work.unwrap_or(MAX_RESIDENT_COMPUTE_WORK),
+                    plan.budget_limits.max_comparison_work.unwrap_or(MAX_RESIDENT_COMPARISON_WORK)))
+        });
+        let remaining = comparison
             .checked_sub(self.comparison_work())
             .ok_or(ResidentKernelError::InvalidShape)?
             .min(
-                MAX_RESIDENT_COMPUTE_WORK
+                compute
                     .checked_sub(self.compute_work())
                     .ok_or(ResidentKernelError::InvalidShape)?,
-            ))
+            );
+        // The call policy cannot replenish its enclosing cumulative account or
+        // a tighter nested call. The planning check above charged this prefix;
+        // only the currently remaining finite allowance may reach a finalizer.
+        CONTROL_WORK_SCOPE.with(|scope| {
+            let scope = scope.borrow();
+            let Some(scope) = scope.as_ref() else { return Ok(remaining); };
+            let account = scope.total.borrow();
+            let (root_compute, root_comparison) = CONTROL_ROOT_LIMITS.with(|limits| limits.get())
+                .unwrap_or((account.compute_limit, account.comparison_limit));
+            let compute = account.compute_limit.min(root_compute)
+                .checked_sub(account.used.compute).and_then(|n| n.checked_sub(account.reserved.compute))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let comparison = account.comparison_limit.min(root_comparison)
+                .checked_sub(account.used.comparison).and_then(|n| n.checked_sub(account.reserved.comparison))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            Ok(remaining.min(compute).min(comparison))
+        })
     }
 }
 
@@ -1922,10 +2073,15 @@ pub(crate) fn preflight_canonical_data_finalization(
     }
     let remaining = meter.remaining_incremental_work()?;
     let budget = SnapshotCanonicalizationBudget::new(remaining);
-    let work = mech_core::snapshot::canonical_data_draft_finalization_work_with_budget(
+    let result = mech_core::snapshot::canonical_data_draft_finalization_work_with_budget(
         schema, data, &budget,
-    )
-    .map_err(map_snapshot_work_error)?;
+    );
+    if result.is_err() && meter.native_projection_limits.is_some() {
+        // A failed preflight already performed its admitted prefix of key
+        // comparisons. Keep that spent work on the invocation across retries.
+        meter.charge_comparison_work(budget.consumed())?;
+    }
+    let work = result.map_err(map_snapshot_work_error)?;
     meter.charge_comparison_work(work)?;
     Ok(work)
 }
@@ -2434,7 +2590,53 @@ impl ResidentBudgetMeter {
         Self {
             accumulated: KernelCostEstimate::default(),
             analysis_allowance: Some((compute, comparison)),
+            native_projection_limits: None,
         }
+    }
+
+    #[cfg(feature = "native-artifact")]
+    pub(crate) fn for_native_projection(
+        work: &NativeLibraryWorkBudget,
+        limits: mech_core::MemoryBudgetLimits,
+    ) -> Result<Self, ResidentKernelError> {
+        let same_account = CONTROL_WORK.with(|active| {
+            active
+                .borrow()
+                .as_ref()
+                .is_some_and(|account| std::rc::Rc::ptr_eq(account, &work.account))
+        });
+        let same_scope = CONTROL_WORK_SCOPE.with(|scope| {
+            scope
+                .borrow()
+                .as_ref()
+                .is_some_and(|scope| std::rc::Rc::ptr_eq(&scope.total, &work.account))
+        });
+        if !same_account
+            || !same_scope
+            || limits.max_compute_work.is_none()
+            || limits.max_comparison_work.is_none()
+            || limits.max_temporary_bytes.is_none()
+            || limits.max_retained_nodes.is_none()
+        {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        Ok(Self {
+            native_projection_limits: Some((limits, work.account.borrow().identity)),
+            ..Self::default()
+        })
+    }
+
+    fn check_native_projection_scope(&self, identity: u64) -> Result<(), ResidentKernelError> {
+        let live = CONTROL_WORK_SCOPE.with(|scope| {
+            scope
+                .borrow()
+                .as_ref()
+                .is_some_and(|scope| scope.total.borrow().identity == identity)
+        });
+        if !live {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        Ok(())
     }
 
     pub(crate) fn preflight_meter(&self) -> Result<Self, ResidentKernelError> {
@@ -2447,11 +2649,54 @@ impl ResidentBudgetMeter {
                     .checked_sub(self.accumulated.comparison_work())
                     .ok_or(ResidentKernelError::InvalidShape)?,
             ),
-            None => Self::default(),
+            None => Self {
+                native_projection_limits: self.native_projection_limits,
+                ..Self::default()
+            },
         })
     }
 
     pub(crate) fn remaining_incremental_work(&self) -> Result<u64, ResidentKernelError> {
+        if let Some((limits, identity)) = self.native_projection_limits {
+            self.check_native_projection_scope(identity)?;
+            return CONTROL_WORK_SCOPE.with(|scope| {
+                let scope = scope.borrow();
+                let account = scope
+                    .as_ref()
+                    .ok_or(ResidentKernelError::InvalidInput)?
+                    .total
+                    .borrow();
+                let (root_compute, root_comparison) = CONTROL_ROOT_LIMITS
+                    .with(|root| root.get())
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                let compute = account
+                    .compute_limit
+                    .min(root_compute)
+                    .checked_sub(account.used.compute)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                let comparison = account
+                    .comparison_limit
+                    .min(root_comparison)
+                    .checked_sub(account.used.comparison)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                Ok(compute
+                    .min(comparison)
+                    .min(
+                        limits
+                            .max_compute_work
+                            .ok_or(ResidentKernelError::InvalidInput)?
+                            .checked_sub(self.accumulated.compute_work())
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                    )
+                    .min(
+                        limits
+                            .max_comparison_work
+                            .ok_or(ResidentKernelError::InvalidInput)?
+                            .checked_sub(self.accumulated.comparison_work())
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                    ))
+            });
+        }
         if let Some((compute, comparison)) = self.analysis_allowance {
             self.accumulated.check_analysis_limits()?;
             Ok(compute
@@ -2477,6 +2722,26 @@ impl ResidentBudgetMeter {
             next.check_analysis_limits()?;
             if next.compute_work() > compute || next.comparison_work() > comparison {
                 return Err(ResidentKernelError::InvalidShape);
+            }
+        } else if let Some((limits, identity)) = self.native_projection_limits {
+            self.check_native_projection_scope(identity)?;
+            // Charge the same live invocation before continuing the borrowed
+            // traversal. A tighter call cannot replenish its enclosing ledger.
+            observe_control_work(next.demand)?;
+            if let Some(violation) = mech_core::evaluate_call_memory_budget(
+                mech_core::MemoryObjectOwner::DirectCallPort {
+                    call: 0,
+                    direction: mech_core::PortDirection::Input,
+                    port: 0,
+                },
+                next.demand,
+                0,
+                0,
+                limits,
+            )
+            .first()
+            {
+                return Err(resource_budget_error(violation));
             }
         } else {
             next.check_planning_progress()?;
@@ -3576,6 +3841,43 @@ mod tests {
     }
 
     #[test]
+    fn incremental_finalization_uses_large_finite_plan_and_rejects_actual_cap() {
+        let mut plan = detached_turn_plan(ResourceDemand::default()).unwrap();
+        plan.budget_limits.max_compute_work = Some(MAX_RESIDENT_COMPUTE_WORK + 4096);
+        plan.budget_limits.max_comparison_work = Some(4096);
+        let prefix = MAX_RESIDENT_COMPUTE_WORK + 1;
+        let schema = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
+        let value = ValueData::U64(37);
+        with_resident_turn_plan(plan.clone(), || {
+            let mut meter = ResidentBudgetMeter::default();
+            meter.charge_compute_work(prefix).unwrap();
+            preflight_canonical_data_finalization(&mut meter, &schema, &value).unwrap();
+            assert!(meter.estimate().compute_work() > prefix);
+        });
+        plan.budget_limits.max_compute_work = Some(prefix);
+        with_resident_turn_plan(plan, || {
+            let mut meter = ResidentBudgetMeter::default();
+            meter.charge_compute_work(prefix).unwrap();
+            assert!(matches!(preflight_canonical_data_finalization(&mut meter, &schema, &value),
+                Err(ResidentKernelError::ResourceLimit {
+                    dimension: mech_core::MemoryBudgetDimension::ComputeWork, ..
+                })));
+            assert_eq!(meter.estimate().compute_work(), prefix);
+        });
+    }
+
+    #[test]
+    fn incremental_allowance_keeps_finite_defaults_for_unspecified_plan_bounds() {
+        let mut plan = detached_turn_plan(ResourceDemand::default()).unwrap();
+        plan.budget_limits.max_compute_work = None;
+        plan.budget_limits.max_comparison_work = None;
+        with_resident_turn_plan(plan, || {
+            assert_eq!(KernelCostEstimate::default().remaining_incremental_work().unwrap(),
+                MAX_RESIDENT_COMPUTE_WORK.min(MAX_RESIDENT_COMPARISON_WORK));
+        });
+    }
+
+    #[test]
     fn mutation_node_admission_sums_simultaneously_live_phases() {
         let phases = MutationRetainedNodeFootprint {
             current_persistent: 20_000,
@@ -3654,3 +3956,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(all(test, feature = "native-artifact"))]
+#[path = "native_projection_meter_tests.rs"]
+mod native_projection_meter_tests;

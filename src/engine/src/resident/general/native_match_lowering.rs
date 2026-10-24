@@ -1497,6 +1497,26 @@ mod iteration_proof_tests {
                 ordinal: u32::MAX,
             };
             assert!(bad_tag.validate_current_visits().is_err());
+            // A descriptive canonical-child opcode cannot reinterpret an
+            // enum tag predicate's Bool result as the enum payload.
+            let mut forged_child = valid.clone();
+            let observation = forged_child
+                .blocks
+                .iter_mut()
+                .find_map(|block| match &mut block.action {
+                    NativeIterationAction::Structural { observation, .. }
+                        if matches!(
+                            observation,
+                            crate::native_artifact::NativeStructuralObservation::EnumOrdinal { .. }
+                        ) =>
+                    {
+                        Some(observation)
+                    }
+                    _ => None,
+                })
+                .unwrap();
+            *observation = crate::native_artifact::NativeStructuralObservation::CanonicalValue;
+            assert!(forged_child.validate_current_visits().is_err());
             let mut bad_path = valid.clone();
             let path = bad_path
                 .blocks

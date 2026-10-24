@@ -13,6 +13,7 @@ use crate::{
 };
 use mech_core::{
     CurrentMemoryFootprint, FunctionCatalog, ManagedMemoryBudget, ManagedMemoryReservation,
+    ManagedNodeReservation,
     MemoryBudgetLimits, MemoryPlanError, ResidentKernelFactory, ResourceDemand, SchemaTable, Value,
 };
 use std::sync::Arc;
@@ -90,8 +91,52 @@ struct CachedBinding {
     limits: MemoryBudgetLimits,
     work: NativeLibraryWorkBudget,
     projection_count: Option<u64>,
+    binding_nodes: u64,
     projection_index: crate::resident::text_index::snapshot::Slot,
     _reservation: ManagedMemoryReservation,
+    _nodes: ManagedNodeReservation,
+}
+
+impl NativePreparedLibraryCallCache {
+    /// Read this cache's admitted metadata demand without inspecting Values,
+    /// rebuilding plans or renewing a call allowance. This grants no selected
+    /// site/visit permission. Canonical payloads belong to the caller's separate
+    /// snapshot census; this cache retains no input or output Values.
+    pub fn retained_metadata_demand(
+        &self,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<ResourceDemand, InvokeError> {
+        let Some(binding) = self.binding.as_ref() else {
+            work.charge(256, 0)?;
+            return Ok(ResourceDemand::default());
+        };
+        if !binding.work.shares_account(work)
+            || binding._reservation.budget() != work.memory_budget()
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        work.charge(256, 0)?;
+        // Fixed binding metadata is one retained owner, rather than one node
+        // per reserved byte. Recursive conversion plans retain their prepared
+        // staging-node witness; dynamic indexes have their own witness below.
+        let metadata = binding._reservation.capacity_bytes();
+        let mut demand = ResourceDemand {
+            turn_peak_bytes: metadata.checked_add(binding.projection_index.bytes())
+                .ok_or(InvokeError::InvalidInput)?,
+            retained_nodes: 1u64.checked_add(if binding.call.is_some() { binding.binding_nodes } else { 0 })
+                .and_then(|n| n.checked_add(binding.projection_index.nodes()))
+                .ok_or(InvokeError::InvalidInput)?,
+            ..ResourceDemand::default()
+        };
+        if let NativePlanCacheState::Cached(plans) = &binding.plans {
+            let plans = plans.retained_metadata_demand(work)?;
+            demand.turn_peak_bytes = demand.turn_peak_bytes.checked_add(plans.turn_peak_bytes)
+                .ok_or(InvokeError::InvalidInput)?;
+            demand.retained_nodes = demand.retained_nodes.checked_add(plans.retained_nodes)
+                .ok_or(InvokeError::InvalidInput)?;
+        }
+        Ok(demand)
+    }
 }
 
 /// Prepare only the actual current private-witness-selected site. This is
@@ -263,6 +308,15 @@ impl NativePreparedLibraryCall {
     /// invocation account before this schema/shape traversal or allocation.
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     pub fn selected_u64_range_cardinality(&self, start: u64, end: u64) -> Result<u64, InvokeError> {
+        let count = self.selected_u64_range_count(start, end)?;
+        self.validate_selected_u64_range_shape(count)?;
+        Ok(count)
+    }
+
+    // Endpoint arithmetic remains fresh even when a constructor-private
+    // selector carries an already checked shape for the same cardinality.
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    fn selected_u64_range_count(&self, start: u64, end: u64) -> Result<u64, InvokeError> {
         use crate::native_artifact::NativeCollectionPrimitive as Primitive;
         use mech_core::{IntegerWidth, SchemaBody, snapshot::ValueDataDraft};
         let inclusive = match self.template.primitive() {
@@ -289,8 +343,12 @@ impl NativePreparedLibraryCall {
         .ok_or(InvokeError::Kernel(
             mech_core::ResidentKernelError::InvalidInput,
         ))?;
-        let count = u64::try_from(count)
-            .map_err(|_| InvokeError::Kernel(mech_core::ResidentKernelError::InvalidShape))?;
+        u64::try_from(count)
+            .map_err(|_| InvokeError::Kernel(mech_core::ResidentKernelError::InvalidShape))
+    }
+
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    fn validate_selected_u64_range_shape(&self, count: u64) -> Result<(), InvokeError> {
         // Exactly the ordinary range's shape resolver, including parameter
         // bounds and fixed cardinality constraints. Never silently retag it.
         mech_core::shape_for_resolved_extents(self.template.output(), &[1, count])
@@ -298,7 +356,7 @@ impl NativePreparedLibraryCall {
         // Preserve the ordinary materializing range's physical Layout bound
         // even when the certified source strategy never constructs its Matrix.
         crate::resident::numeric::canonical_u64_range_selector_representation(count)?;
-        Ok(count)
+        Ok(())
     }
 
     /// Maintained TextJoin mechanics after a constructor-private composed
@@ -561,16 +619,23 @@ impl NativePreparedLibraryCall {
                         // Keep a funded guard if replacement admission fails.
                         binding.plans = NativePlanCacheState::default();
                         drop(binding.call.take());
+                        binding._nodes.resize(1)?;
                         binding._reservation.resize_capacity(owner_bytes)?;
+                        let nodes = memory.reserve_nodes(self.binding_nodes)?;
                         binding._reservation.resize_capacity(bytes)?;
                         match self.bind_values(inputs, output, nested) {
-                            Ok(call) => binding.call = Some(call),
+                            Ok(call) => {
+                                binding._nodes.merge(nodes)?;
+                                binding.call = Some(call);
+                            }
                             Err(error) => {
                                 binding._reservation.resize_capacity(owner_bytes)?;
                                 return Err(error);
                             }
                         }
                     } else {
+                        let nodes = memory.reserve_nodes(1u64.checked_add(self.binding_nodes)
+                            .ok_or(InvokeError::InvalidInput)?)?;
                         let reservation = memory.reserve_capacity(bytes)?;
                         let call = self.bind_values(inputs, output, nested)?;
                         cache.binding = Some(Box::new(CachedBinding {
@@ -580,8 +645,10 @@ impl NativePreparedLibraryCall {
                             limits,
                             work: work.clone(),
                             projection_count: None,
+                            binding_nodes: self.binding_nodes,
                             projection_index: Default::default(),
                             _reservation: reservation,
+                            _nodes: nodes,
                         }));
                     }
                 }
