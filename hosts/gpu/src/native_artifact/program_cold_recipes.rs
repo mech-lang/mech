@@ -88,7 +88,7 @@ impl Snapshot {
         }
     }
     pub fn records(&self) -> usize {
-        self.words.len() + 5
+        self.words.len() + 7
     }
 }
 

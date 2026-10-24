@@ -53,6 +53,7 @@ pub(in crate::native_artifact) struct SteadyLoop {
 pub(in crate::native_artifact) struct ColdSnapshot {
     pub node: usize, pub header: bool, pub incoming: Option<usize>,
     pub words: Vec<(usize, u64)>, pub updates: Option<u64>, pub previous: Option<u64>,
+    pub reload_words: [usize; 2],
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct CountValueLoop {

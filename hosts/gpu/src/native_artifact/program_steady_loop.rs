@@ -303,6 +303,14 @@ impl PrepaidExtent {
         let pointer = self.pointer(b);
         b.ins().isub(pointer, self.bias)
     }
+    fn snapshot_index(&self, b: &mut FunctionBuilder<'_>, packed: &FrameState) -> Value {
+        let source = packed.snapshot_immutable(b, core::mem::offset_of!(Frame, source_ptr));
+        let width = packed.snapshot_immutable(b, core::mem::offset_of!(Frame, width));
+        let bias = b.ins().iadd(source, width);
+        let bias = b.ins().iadd_imm(bias, -1);
+        let pointer = self.pointer(b);
+        b.ins().isub(pointer, bias)
+    }
     fn advance(&self, b: &mut FunctionBuilder<'_>) {
         let pointer = self.pointer(b);
         let next = b.ins().iadd_imm(pointer, 1);
@@ -342,7 +350,7 @@ fn emit_snapshot(
     });
     if let Some(snapshot) = snapshot {
         let index = (!snapshot.words.is_empty() || snapshot.updates.is_some() || snapshot.previous.is_some())
-            .then(|| extent.index(b));
+            .then(|| extent.snapshot_index(b, packed));
         let shifted = |b: &mut FunctionBuilder<'_>, offset: u64| {
             let index = index.expect("actual affine recipe");
             if offset == 0 { index } else { b.ins().iadd_imm(index, offset as i64) }
@@ -367,6 +375,8 @@ fn emit_snapshot(
                 node, header: !header_debit, incoming,
                 words: snapshot.words.iter().map(|(&word, &offset)| (word, offset)).collect(),
                 updates: snapshot.updates, previous: snapshot.previous,
+                reload_words: [core::mem::offset_of!(Frame, source_ptr) / 8,
+                    core::mem::offset_of!(Frame, width) / 8],
             }));
         }
     } else {
