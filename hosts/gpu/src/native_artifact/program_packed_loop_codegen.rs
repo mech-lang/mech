@@ -33,6 +33,10 @@ mod mutation_facts;
 mod count_bounds;
 #[path = "program_loop_constants.rs"]
 mod loop_constants;
+#[path = "program_steady_loop.rs"]
+mod steady;
+#[cfg(test)]
+pub(in crate::native_artifact) use steady::{without_steady_loops, take_steady_emissions};
 #[cfg(test)]
 pub(in crate::native_artifact) use loop_constants::{take_constant_emissions, without_loop_constants};
 pub(in crate::native_artifact) use invariants::enabled as invariant_loops_enabled;
@@ -263,11 +267,31 @@ impl Words {
     }
     fn read(&self, b: &mut FunctionBuilder<'_>, slot: usize) -> Value { b.use_var(self.variables[&slot]) }
     fn write(&self, b: &mut FunctionBuilder<'_>, slot: usize, value: Value) { b.def_var(self.variables[&slot], value); }
+    fn spill_live(&self, b: &mut FunctionBuilder<'_>, locals: Value, live: &BTreeSet<usize>) -> Result<(), NativeCompileError> {
+        for &slot in live {
+            let value = self.read(b, slot);
+            b.ins().store(MemFlags::new(), value, locals, offset(slot)?);
+        }
+        Ok(())
+    }
+    fn reload_live(&self, b: &mut FunctionBuilder<'_>, locals: Value, live: &BTreeSet<usize>) -> Result<(), NativeCompileError> {
+        for &slot in live {
+            let value = b.ins().load(types::I64, MemFlags::new(), locals, offset(slot)?);
+            self.write(b, slot, value);
+        }
+        Ok(())
+    }
 }
 
 fn emit_aggregate(b: &mut FunctionBuilder<'_>, state: &Words, layout: &NativeScalarAggregates,
     action: &Aggregate, site: usize, facts: &edge_facts::Proof, error: Block,
     report: &mut CodegenReport, report_region: Option<RegionToken>) -> Result<(), NativeCompileError>
+{
+    emit_aggregate_body(b, state, layout, action, site, facts, error, Some((report, report_region)))
+}
+fn emit_aggregate_body(b: &mut FunctionBuilder<'_>, state: &Words, layout: &NativeScalarAggregates,
+    action: &Aggregate, site: usize, facts: &edge_facts::Proof, error: Block,
+    mut evidence: Option<(&mut CodegenReport, Option<RegionToken>)>) -> Result<(), NativeCompileError>
 {
     let at = |value, index| field(layout, value, index).ok_or_else(|| backend("packed SSA aggregate field"));
     let (output, values) = match action {
@@ -289,8 +313,10 @@ fn emit_aggregate(b: &mut FunctionBuilder<'_>, state: &Words, layout: &NativeSca
         Aggregate::Project { source, offset, guards, output } => {
             for &(index, ordinal) in guards {
                 if facts.guard(site, *source, index, ordinal) {
-                    note_edge_fact(false);
-                    report.guard(report_region, site, *source, index, ordinal);
+                    if let Some((report, region)) = evidence.as_mut() {
+                        note_edge_fact(false);
+                        report.guard(*region, site, *source, index, ordinal);
+                    }
                     continue;
                 }
                 let tag = state.read(b, at(*source, index)?);
@@ -305,8 +331,10 @@ fn emit_aggregate(b: &mut FunctionBuilder<'_>, state: &Words, layout: &NativeSca
         Aggregate::Observe { source, offset, ordinal, guards, output } => {
             for &(index, ordinal) in guards {
                 if facts.guard(site, *source, index, ordinal) {
-                    note_edge_fact(false);
-                    report.guard(report_region, site, *source, index, ordinal);
+                    if let Some((report, region)) = evidence.as_mut() {
+                        note_edge_fact(false);
+                        report.guard(*region, site, *source, index, ordinal);
+                    }
                     continue;
                 }
                 let tag = state.read(b, at(*source, index)?);
@@ -386,7 +414,7 @@ pub(in crate::native_artifact) fn emit_entry(b: &mut FunctionBuilder<'_>, frame:
         let prefix_work = b.func.dfg.num_insts() - entry_template_start;
         emit_body(b, frame, locals, pointer, function, context, code, closed, id, owner,
             aggregates, slots, hooks, ordinary_blocks[region.tail.exit() as usize].unwrap(),
-            error, prefix_work, None, report)?;
+            error, prefix_work, None, None, report)?;
     }
     b.switch_to_block(ordinary);
     Ok(())
@@ -405,7 +433,8 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     function: Value, context: Value, code: CodePlan<'_>, closed: &Layout, id: usize,
     owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates,
     slots: BTreeSet<usize>, hooks: &Hooks, source_exit: Block, error: Block,
-    entry_prefix_work: usize, constant_packet: Option<Value>, report: &mut CodegenReport) -> Result<(usize, usize), NativeCompileError>
+    entry_prefix_work: usize, constant_packet: Option<Value>, steady: Option<steady::Call<'_>>,
+    report: &mut CodegenReport) -> Result<(usize, usize), NativeCompileError>
 {
     let region = &closed.regions[id];
     let site = region.tail.header() as usize;
@@ -435,6 +464,9 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         .filter(|_| report.reserve_mutation_region(threaded.as_ref().unwrap().nodes.len() * 8));
     let count_values = mutation.filter(|proof| proof.count_values.is_some() && count_bounds::enabled())
         .filter(|_| report.reserve_count_value_region(threaded.as_ref().unwrap().nodes.len() * 5));
+    let steady = steady.filter(|_| invariant.is_some() && mutation.is_some()
+        && count_values.is_some() && constant_packet.is_some());
+    let steady_block = steady.as_ref().map(|_|b.create_block());
 
     let owner_index = region.map.unwrap();
     let setup = b.func.dfg.num_insts();
@@ -669,7 +701,10 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
                     let next_mode = if calls_proved && invariant.as_ref().is_some_and(|p| p.steady_latches.contains(&graph_node)) {
                         steady_latches.push((version, index)); 3
                     } else { mode };
-                    b.ins().jump(graph_target(*target, next_mode), &[]);
+                    let steady_target = steady.as_ref().filter(|call| next_mode == 3
+                        && matches!(*target,tag_threading::Target::Node(node) if node==call.definition.active_node()));
+                    b.ins().jump(if steady_target.is_some() {steady_block.unwrap()}
+                        else {graph_target(*target,next_mode)}, &[]);
                 }
                 tag_threading::Edge::Dispatch { cases, other } => {
                     // Dispatch follows the original header debit. Each arm
@@ -723,12 +758,12 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         let status = b.block_params(fail_at)[0];
         set_origin(b, frame, index as u64);
         b.ins().jump(failed, &[status.into()]);
-        if hooks.bound_shim_work() > source_shim_work {
-            let work = b.func.dfg.num_insts() - source_template_start + hooks.bound_shim_work() - source_shim_work;
-            if work > super::super::program_tail_layout::OVERHEAD as usize {
-                return Err(backend(format!("preserving source template exceeds unchanged envelope: {work}")));
-            }
-            maximum_source_template_work = maximum_source_template_work.max(work);
+        let work = b.func.dfg.num_insts() - source_template_start + hooks.bound_shim_work() - source_shim_work;
+        maximum_source_template_work = maximum_source_template_work.max(work);
+        if work + steady.as_ref().map_or(0,|call|call.definition.source_work)
+            > super::super::program_tail_layout::OVERHEAD as usize
+        {
+            return Err(backend("packed source and steady templates exceed per-site work envelope"));
         }
     }
     if let Some(graph) = &threaded {
@@ -740,6 +775,15 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         report.tag_threading(site, graph.carrier_word, graph.variants.clone(), source_sites.len(),
             emitted_sites.len(), header_versions, folded_branches, known_latches);
     }
+    let extra_steady_work = if let Some(call) = &steady {
+        b.switch_to_block(steady_block.unwrap());
+        let caller_work = steady::emit_call(b,call,&words,&packed,locals,pointer,
+            constant_packet.unwrap(),&blocks,version_nodes,exit,failed,region.tail.returned().get() as usize)?;
+        if let Some(record) = report.steady_loops.iter_mut().find(|record|record.header==site) {
+            record.caller_instructions = caller_work;
+        }
+        caller_work + call.definition.extra_fixed_work
+    } else {0};
     let boundary_start = b.func.dfg.num_insts();
     b.switch_to_block(exit);
     // Tail validation confines source locals/carriers to this invocation and
@@ -763,7 +807,7 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     // a repeated unknown-tag dispatcher, AND both mutually exclusive exits.
     // Known-tag header rematerialization is one instruction in that original
     // header's unchanged OVERHEAD. No charge is removed or renewed here.
-    let fixed_template_work = entry_template_work + dispatch_template_work + boundary_work + refresh_template_work;
+    let fixed_template_work = entry_template_work + dispatch_template_work + boundary_work + refresh_template_work + extra_steady_work;
     if fixed_template_work
         > super::super::program_tail_layout::FIXED_OVERHEAD as usize
     {

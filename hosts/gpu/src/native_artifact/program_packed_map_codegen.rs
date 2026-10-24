@@ -260,6 +260,21 @@ fn probe(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
 fn probe_fresh(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     function: Value, context: Value, site: usize, error: Block, nonempty_proved: bool) -> Value
 {
+    let bad = b.create_block();
+    b.set_cold_block(bad);
+    let value = probe_fresh_core(b, frame, nonempty_proved, bad);
+    let done = b.current_block().unwrap();
+    b.switch_to_block(bad);
+    fail(b, frame, hooks, function, context, site, 9, error);
+    let zero = b.ins().iconst(types::I64, 0);
+    b.ins().jump(done, &[zero.into()]);
+    b.switch_to_block(done);
+    value
+}
+
+fn probe_fresh_core(b: &mut FunctionBuilder<'_>, frame: &FrameState,
+    nonempty_proved: bool, bad: Block) -> Value
+{
     let narrow = narrow(frame.domain);
     let zero = b.ins().iconst(types::I64, 0);
     let one = b.ins().iconst(types::I64, 1);
@@ -271,7 +286,6 @@ fn probe_fresh(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     let advance = b.create_block();
     let found = b.create_block();
     let absent = b.create_block();
-    let bad = b.create_block();
     let done = b.create_block();
     b.append_block_param(head, types::I64);
     b.append_block_param(head, types::I64);
@@ -338,9 +352,6 @@ fn probe_fresh(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     let index = b.ins().iadd_imm(index, GROUP as i64);
     let index = b.ins().band(index, mask);
     b.ins().brif(bounded, head, &[index.into(), inspected.into()], bad, &[]);
-    b.switch_to_block(bad);
-    fail(b, frame, hooks, function, context, site, 9, error);
-    b.ins().jump(absent, &[]);
     b.switch_to_block(absent);
     write!(b, frame, entry_pointer, zero);
     write!(b, frame, entry_known, one);
@@ -352,6 +363,97 @@ fn probe_fresh(b: &mut FunctionBuilder<'_>, frame: &FrameState, hooks: &Hooks,
     b.ins().jump(done, &[entry.into()]);
     b.switch_to_block(done);
     b.block_params(done)[0]
+}
+
+/// The source-certified adjacent selection, without helper/error machinery.
+/// The enclosing steady function is entered only through a completed original
+/// recurrence with the same width, pinned source and successful bounds/caps.
+pub(super) fn select_leaf(b: &mut FunctionBuilder<'_>, frame: &FrameState, start: Value) {
+    let bits = i64::from(frame.domain.bits());
+    let zero = b.ins().iconst(types::I64, 0);
+    let begin = b.ins().iadd_imm(start, -1);
+    let width = read!(b, frame, width);
+    let finish = b.ins().iadd(begin, width);
+    let position = b.ins().iadd_imm(finish, -1);
+    let source = read!(b, frame, source_ptr);
+    let address = b.ins().iadd(source, position);
+    let byte = b.ins().load(types::I8, MemFlags::new(), address, 0);
+    let byte = b.ins().uextend(types::I64, byte);
+    let code = encode(b, byte, frame.domain);
+    let old_low = read!(b, frame, key_low);
+    let shifted = b.ins().ishl_imm(old_low, bits);
+    let low = b.ins().bor(shifted, code);
+    let mask = read!(b, frame, low_mask);
+    let low = b.ins().band(low, mask);
+    let high = if narrow(frame.domain) { zero } else {
+        let old_high = read!(b, frame, key_high);
+        let carry = b.ins().ushr_imm(old_low, 64 - bits);
+        let shifted = b.ins().ishl_imm(old_high, bits);
+        let high = b.ins().bor(shifted, carry);
+        let mask = read!(b, frame, high_mask);
+        b.ins().band(high, mask)
+    };
+    write!(b, frame, key_low, low);
+    write!(b, frame, key_high, high);
+    write!(b, frame, previous_start, begin);
+    write!(b, frame, entry_known, zero);
+    write!(b, frame, entry_pointer, zero);
+}
+
+/// No helper is called here. A missing entry or defensive probe failure
+/// returns BEFORE this original source action, with its live continuation.
+/// Every successful membership establishes presence at runtime; the source
+/// graph may propagate that fact until the next selection/header.
+pub(super) fn probe_leaf(b: &mut FunctionBuilder<'_>, frame: &FrameState,
+    fact: LookupFact, present_proved: bool, slow: Block) -> Value
+{
+    let zero = b.ins().iconst(types::I64, 0);
+    if present_proved || matches!(fact, LookupFact::Cached | LookupFact::Present) {
+        read!(b, frame, entry_pointer)
+    } else if fact == LookupFact::Absent { zero }
+    else if fact == LookupFact::Fresh {
+        probe_fresh_core(b, frame, true, slow)
+    } else {
+        let cached = b.create_block(); let initial = b.create_block(); let done = b.create_block();
+        b.append_block_param(done, types::I64);
+        let known = read!(b, frame, entry_known);
+        b.ins().brif(known, cached, &[], initial, &[]);
+        b.switch_to_block(cached);
+        let entry = read!(b, frame, entry_pointer);
+        b.ins().jump(done, &[entry.into()]);
+        b.switch_to_block(initial);
+        let entry = probe_fresh_core(b, frame, true, slow);
+        b.ins().jump(done, &[entry.into()]);
+        b.switch_to_block(done);
+        b.block_params(done)[0]
+    }
+}
+
+pub(super) fn operation_leaf(b: &mut FunctionBuilder<'_>, frame: &FrameState, operation: u64,
+    replacement: Value, token: Value, fact: LookupFact, present_proved: bool,
+    progress_proved: bool, slow: Block) -> Value
+{
+    let entry = probe_leaf(b, frame, fact, present_proved, slow);
+    if !present_proved && fact != LookupFact::Present {
+        let hit = b.create_block();
+        b.ins().brif(entry, hit, &[], slow, &[]);
+        b.switch_to_block(hit);
+    }
+    if operation == 3 { b.ins().iconst(types::I64, 1) }
+    else if operation == 4 { get(b, entry, value_offset(frame.domain)) }
+    else {
+        let updates = read!(b, frame, updates);
+        if !progress_proved {
+            let fits = b.ins().icmp_imm(IntCC::NotEqual, updates, -1);
+            let accepted = b.create_block();
+            b.ins().brif(fits, accepted, &[], slow, &[]);
+            b.switch_to_block(accepted);
+        }
+        put(b, entry, value_offset(frame.domain), replacement);
+        let updates = b.ins().iadd_imm(updates, 1);
+        write!(b, frame, updates, updates);
+        token
+    }
 }
 
 pub(super) fn operation(b: &mut FunctionBuilder<'_>, frame: Value, domain: Domain, op: u64, replacement: Value,

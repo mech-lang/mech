@@ -75,6 +75,7 @@ pub(in crate::native_artifact) struct FrameState {
     effects_enabled: bool,
     dirty_only: bool,
     constant_packet: Option<Value>,
+    constant_values: Option<[Value; 2]>,
     constant_hash_loads: Cell<usize>,
     // Constant-size actual emission evidence, aggregated by private operation.
     // It does not claim that a runtime path executed or authorize any access.
@@ -83,7 +84,7 @@ pub(in crate::native_artifact) struct FrameState {
 }
 impl FrameState {
     pub(super) fn memory(pointer: Value, domain: Domain) -> Self {
-        Self { pointer, words: None, effects_enabled: false, dirty_only: false, constant_packet: None, constant_hash_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
+        Self { pointer, words: None, effects_enabled: false, dirty_only: false, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
     }
     pub(in crate::native_artifact) fn registers(b: &mut FunctionBuilder<'_>, pointer: Value, domain: Domain) -> Self {
         assert_eq!(core::mem::size_of::<Frame>() % 8, 0);
@@ -95,13 +96,17 @@ impl FrameState {
         }).collect();
         let effects_enabled = effects_enabled();
         let dirty_only = super::super::packed_loop_codegen::invariant_loops_enabled();
-        Self { pointer, words: Some(words), effects_enabled, dirty_only, constant_packet: None, constant_hash_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
+        Self { pointer, words: Some(words), effects_enabled, dirty_only, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
     }
     pub(in crate::native_artifact) fn with_constant_packet(mut self, packet: Option<Value>) -> Self {
         self.constant_packet = packet; self
     }
+    pub(in crate::native_artifact) fn with_constant_values(mut self, values: [Value; 2]) -> Self {
+        self.constant_values = Some(values); self
+    }
     pub(super) fn hash_constant(&self, b: &mut FunctionBuilder<'_>, ordinal: usize) -> Option<Value> {
         assert!(ordinal < 2);
+        if let Some(values) = self.constant_values { return Some(values[ordinal]); }
         let pointer = self.constant_packet?;
         self.constant_hash_loads.set(self.constant_hash_loads.get() + 1);
         // The root initialized this private packet before entering the callee.
@@ -143,6 +148,9 @@ impl FrameState {
                 b.def_var(variable, value);
             }
         }
+    }
+    pub(in crate::native_artifact) fn reload_generated(&self, b: &mut FunctionBuilder<'_>) {
+        self.reload_mask(b, GENERATED);
     }
     pub(in crate::native_artifact) fn call(&self, b: &mut FunctionBuilder<'_>, hooks: &Hooks,
         function: Value, context: Value, site: usize, operation: u64, args: [Value; 3], error: Block)
