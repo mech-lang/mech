@@ -12,10 +12,17 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub frame_effects: FrameEffects,
     pub guarded_loops: GuardedLoops,
     pub lookup_facts: LookupFacts,
+    pub cfg_cleanup: Option<CfgCleanup>,
     substitutions: usize,
     tag_records: usize,
     guarded_records: usize,
     lookup_records: usize,
+}
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct CfgCleanup {
+    pub enabled: bool, pub rounds: usize, pub constant_branches_removed: usize,
+    pub before_blocks: usize, pub before_instructions: usize,
+    pub after_blocks: usize, pub after_instructions: usize, pub fixed_point: bool,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct EdgeFacts {

@@ -42,6 +42,8 @@ pub(super) mod map_owner_codegen;
 pub(super) mod packed_maps;
 #[path = "program_packed_loop_codegen.rs"]
 pub(super) mod packed_loop_codegen;
+#[path = "program_cfg_cleanup.rs"]
+pub(super) mod cfg_cleanup;
 #[path = "program_parallel_codegen.rs"]
 pub(super) mod parallel_codegen;
 #[path = "program_string_map_codegen.rs"]
@@ -207,6 +209,7 @@ impl NativeProgramObject {
             "compiled_frame_effects": &self.codegen.frame_effects,
             "compiled_guarded_loops": &self.codegen.guarded_loops,
             "compiled_lookup_facts": &self.codegen.lookup_facts,
+            "compiled_cfg_cleanup": &self.codegen.cfg_cleanup,
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }

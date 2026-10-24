@@ -30,15 +30,20 @@ fn parameterized() -> String {
 
 #[test]
 fn guarded_loop_versions_preserve_actual_bounds_arbitrary_seeds_headers_and_work() {
-    parameterized_equivalence(false);
+    parameterized_equivalence(false, false);
 }
 
 #[test]
 fn lookup_facts_preserve_limits_actual_bounds_seeds_refill_headers_and_work() {
-    parameterized_equivalence(true);
+    parameterized_equivalence(true, false);
 }
 
-fn parameterized_equivalence(compare_lookup_facts: bool) {
+#[test]
+fn cfg_cleanup_preserves_limits_actual_bounds_seeds_refill_headers_and_work() {
+    parameterized_equivalence(false, true);
+}
+
+fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bool) {
     let original = tests::artifact_source(&parameterized());
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(
         &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
@@ -52,11 +57,15 @@ fn parameterized_equivalence(compare_lookup_facts: bool) {
         assert!(emitted.1 > 0);
         let lookup_emissions = take_lookup_fact_emissions();
         assert!(lookup_emissions.0 > 0 && lookup_emissions.1 >= 4);
-        let baseline = if compare_lookup_facts {
+        let baseline = if compare_cfg_cleanup {
+            without_cfg_cleanup(|| JitProgramArtifact::compile(&artifact, &catalog))
+        } else if compare_lookup_facts {
             without_lookup_facts(|| JitProgramArtifact::compile(&artifact, &catalog))
         } else { without_loop_bounds(|| JitProgramArtifact::compile(&artifact, &catalog)) }.unwrap();
         if compare_lookup_facts {
             assert_eq!(take_lookup_fact_emissions(), (0, 0));
+            assert_eq!(take_loop_bounds_emissions(), emitted);
+        } else if compare_cfg_cleanup {
             assert_eq!(take_loop_bounds_emissions(), emitted);
         } else { assert_eq!(take_loop_bounds_emissions(), (0, 0)); }
         let long = "a".repeat(1024);
@@ -134,7 +143,7 @@ fn parameterized_equivalence(compare_lookup_facts: bool) {
                 });
                 let mut obs = OBS.with(|r| core::mem::take(&mut *r.borrow_mut()));
                 assert!(obs.errors.is_empty(), "{obs:?}");
-                let selected = u64::from((version == 0 || compare_lookup_facts) && obs.packed == 1 && width > 0 && width <= n && n <= text.len() as u64);
+                let selected = u64::from((version == 0 || compare_lookup_facts || compare_cfg_cleanup) && obs.packed == 1 && width > 0 && width <= n && n <= text.len() as u64);
                 assert_eq!(obs.bound[14], selected, "actual selector, version={version}, width={width}, n={n}");
                 if let Ok(report) = &mut outcome {
                     assert_eq!(report.guarded_loop_regions, selected);
