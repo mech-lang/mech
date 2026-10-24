@@ -7,12 +7,13 @@ use crate::native_artifact::program_compiler::packed_loop_codegen::{
     take_frame_effect_emissions, without_frame_effects,
     take_lookup_fact_emissions, without_lookup_facts,
     take_outline_emissions, without_loop_outlining,
+    take_invariant_emissions, without_loop_invariants,
 };
 use crate::native_artifact::JitProgramArtifact;
 use crate::native_artifact::program_compiler::cfg_cleanup::{take_cfg_cleanup_emissions, without_cfg_cleanup};
 
 #[derive(Clone, Copy)]
-enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining }
+enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants }
 impl Pass {
     fn disabled<T>(self, f: impl FnOnce() -> T) -> T {
         match self {
@@ -22,13 +23,16 @@ impl Pass {
             Self::LookupFacts => without_lookup_facts(f),
             Self::CfgCleanup => without_cfg_cleanup(f),
             Self::LoopOutlining => without_loop_outlining(f),
+            Self::LoopInvariants => without_loop_invariants(f),
         }
     }
     fn check(self, edges: (usize, usize), tags: (usize, usize, usize), effects: (usize, usize, usize), selected: bool) {
         let lookups = take_lookup_fact_emissions();
         let cfg = take_cfg_cleanup_emissions();
         let outlined = take_outline_emissions();
+        let invariants = take_invariant_emissions();
         match self {
+            Self::LoopInvariants if !selected => assert_eq!(invariants, (0, 0, 0)),
             Self::LoopOutlining if selected => assert!(outlined > 0),
             Self::LoopOutlining => assert_eq!(outlined, 0),
             Self::CfgCleanup if selected => assert!(cfg.0 > 0 && cfg.1 > 0, "{cfg:?}"),
@@ -72,6 +76,61 @@ fn structural_report(report: &NativeProgramExecutionReport) -> [u64; 11] {
     [report.visits, report.transport_bytes, report.hash_table_regions, report.hash_table_updates,
         report.packed_map_regions, report.packed_map_updates, report.packed_ssa_regions,
         report.parallel_regions, report.parallel_batches, report.parallel_tasks, report.parallel_peak_workers]
+}
+
+#[test]
+fn loop_invariants_metadata_binds_actual_calls_ranges_latches_and_refreshes() {
+    let source = format!("{}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n", structural_projection_tests::COUNT);
+    let artifact = tests::artifact_source(&source);
+    let catalog = mech_stdlib::source_catalog();
+    take_invariant_emissions();
+    let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+    let emitted = take_invariant_emissions();
+    assert!(emitted.0 == 1 && emitted.1 >= 8 && emitted.2 > 0, "{emitted:?}");
+    let metadata = object.metadata();
+    let regions = metadata["compiled_loop_invariants"].as_array().unwrap();
+    assert_eq!(regions.len(), 1);
+    let r = &regions[0];
+    let stride = r["version_stride"].as_u64().unwrap();
+    assert!(stride > 0 && stride <= 256);
+    assert_eq!(r["emitted_nodes"], 4 * stride);
+    assert!(r["fixed_template_work"].as_u64().unwrap() <= 1024);
+    let bounds = &metadata["compiled_guarded_loops"]["regions"][0];
+    for record in r["call_substitutions"].as_array().unwrap() {
+        let node = record[0].as_u64().unwrap();
+        let site = record[1].as_u64().unwrap() as usize;
+        assert!((2 * stride..4 * stride).contains(&node));
+        if record[2] == 10 { assert_eq!(record[1], bounds["range_site"]); }
+        else {
+            let NativeIterationAction::LibraryCall { template, .. } = object.descriptor().plan.blocks()[site].action() else { panic!("original source map call"); };
+            let op = match template.primitive() {
+                mech_engine::native_artifact::NativeCollectionPrimitive::MapContainsKey => 3,
+                mech_engine::native_artifact::NativeCollectionPrimitive::MapKeyAccess => 4,
+                mech_engine::native_artifact::NativeCollectionPrimitive::MapInsert => 5,
+                _ => panic!("unrelated source operation"),
+            };
+            assert_eq!(record[2], op);
+        }
+    }
+    for record in r["rolling_substitutions"].as_array().unwrap() {
+        assert!((3 * stride..4 * stride).contains(&record[0].as_u64().unwrap()));
+        assert_eq!(record[1], bounds["range_site"]);
+    }
+    assert!(!r["steady_latches"].as_array().unwrap().is_empty());
+    for record in r["steady_latches"].as_array().unwrap() {
+        assert!(bounds["recurrence_latches"].as_array().unwrap().contains(&record[1]));
+    }
+    assert_eq!(r["refreshes"].as_array().unwrap().len(), 3);
+    let old = without_loop_invariants(|| crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
+    assert!(old.metadata()["compiled_loop_invariants"].as_array().unwrap().is_empty());
+    assert_eq!(take_invariant_emissions(), (0, 0, 0));
+    for changed in [source.replace("index >= n", "index == n"),
+        source.replace(":Next(index + 1u64, increment", ":Next(index + 2u64, increment")]
+    {
+        let artifact = tests::artifact_source(&changed);
+        let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+        assert!(object.metadata()["compiled_loop_invariants"].as_array().unwrap().is_empty());
+    }
 }
 
 #[test]
@@ -278,6 +337,7 @@ fn tag_threading_accepts_reordered_variants_and_an_initial_terminal_state() {
                 (1, 1, if terminal { 0 } else { 3 }));
             assert_eq!(report.guarded_loop_regions, u64::from(version == 0));
             report.guarded_loop_regions = 0;
+                    report.guarded_call_regions = 0;
             let ValueData::Map(map) = outputs[0].as_ref().unwrap().data() else { panic!("map"); };
             let pairs = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
                 (ValueData::String(key), ValueData::U64(value)) => (key.to_string(), *value),
@@ -371,6 +431,10 @@ fn cfg_cleanup_preserves_changed_inputs_growth_refills_and_exact_work() {
 fn loop_outlining_preserves_changed_inputs_growth_refills_and_exact_work() {
     changed_input_equivalence(Pass::LoopOutlining);
 }
+#[test]
+fn loop_invariants_preserve_changed_inputs_growth_refills_and_exact_work() {
+    changed_input_equivalence(Pass::LoopInvariants);
+}
 fn changed_input_equivalence(pass: Pass) {
     // These are ordinary typed parameters, not constants captured from the
     // fixture or assertions that n equals this particular String's length.
@@ -404,7 +468,7 @@ fn changed_input_equivalence(pass: Pass) {
             // Bounds must still use the actual selected source, not n.
             ("abc", 2, 4),
         ];
-        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining) {
+        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining | Pass::LoopInvariants) {
             cases.push((long_text.as_str(), 3, long_text.len() as u64));
             // Unknown ASCII domain at width18 requires both key words. They
             // must survive refills although refill never reads either word.
@@ -466,6 +530,7 @@ fn changed_input_equivalence(pass: Pass) {
                         && extent > 0 && extent <= n && n <= text.len() as u64);
                     assert_eq!(report.guarded_loop_regions, selected);
                     report.guarded_loop_regions = 0;
+                    report.guarded_call_regions = 0;
                 }
                 let pairs = outputs[0].as_ref().map(|value| {
                     let ValueData::Map(map) = value.data() else { panic!("map"); };
@@ -540,6 +605,10 @@ fn cfg_cleanup_keeps_arithmetic_failures_at_original_source_sites() {
 #[test]
 fn loop_outlining_keeps_arithmetic_failures_at_original_source_sites() {
     arithmetic_failure_equivalence(Pass::LoopOutlining);
+}
+#[test]
+fn loop_invariants_keep_arithmetic_failures_and_declined_proofs_at_source_sites() {
+    arithmetic_failure_equivalence(Pass::LoopInvariants);
 }
 fn arithmetic_failure_equivalence(pass: Pass) {
     // The valid first iteration must not establish facts for a later visit.

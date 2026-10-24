@@ -67,6 +67,7 @@ pub(in crate::native_artifact) struct FrameState {
     pointer: Value,
     words: Option<Vec<Variable>>,
     effects_enabled: bool,
+    dirty_only: bool,
     // Constant-size actual emission evidence, aggregated by private operation.
     // It does not claim that a runtime path executed or authorize any access.
     emissions: Cell<[u64; 14]>,
@@ -74,7 +75,7 @@ pub(in crate::native_artifact) struct FrameState {
 }
 impl FrameState {
     pub(super) fn memory(pointer: Value, domain: Domain) -> Self {
-        Self { pointer, words: None, effects_enabled: false, emissions: Cell::new([0; 14]), domain }
+        Self { pointer, words: None, effects_enabled: false, dirty_only: false, emissions: Cell::new([0; 14]), domain }
     }
     pub(in crate::native_artifact) fn registers(b: &mut FunctionBuilder<'_>, pointer: Value, domain: Domain) -> Self {
         assert_eq!(core::mem::size_of::<Frame>() % 8, 0);
@@ -87,7 +88,8 @@ impl FrameState {
         let effects_enabled = true;
         #[cfg(test)]
         let effects_enabled = effects_enabled && !EFFECTS_DISABLED.with(Cell::get);
-        Self { pointer, words: Some(words), effects_enabled, emissions: Cell::new([0; 14]), domain }
+        let dirty_only = super::super::packed_loop_codegen::invariant_loops_enabled();
+        Self { pointer, words: Some(words), effects_enabled, dirty_only, emissions: Cell::new([0; 14]), domain }
     }
     pub(in crate::native_artifact) fn read(&self, b: &mut FunctionBuilder<'_>, offset: usize) -> Value {
         if let Some(words) = &self.words { b.use_var(words[offset / 8]) }
@@ -100,7 +102,11 @@ impl FrameState {
         else { b.ins().store(MemFlags::new(), value, self.pointer, offset as i32); }
     }
     pub(in crate::native_artifact) fn spill(&self, b: &mut FunctionBuilder<'_>) {
-        self.spill_mask(b, MUTABLE);
+        // write() enforces that only GENERATED words can become dirty here.
+        // Runtime-owned words are already current in memory; callbacks reload
+        // every written SSA word before success and no generated write aliases
+        // that storage. Retire only the actual generated state at exit/error.
+        self.spill_mask(b, if self.dirty_only { GENERATED } else { MUTABLE });
     }
     fn spill_mask(&self, b: &mut FunctionBuilder<'_>, mask: u64) {
         if let Some(words) = &self.words {
@@ -212,7 +218,7 @@ mod tests {
                 state.spill(&mut b);
                 let final_spill = memory_instructions(b.func);
                 assert_eq!((final_spill.0 - after.0, final_spill.1 - after.1),
-                    (if mode == 2 { 0 } else { 14 }, 0), "full exit/error synchronization");
+                    (if mode == 2 { 0 } else { 7 }, 0), "all generated exit/error state synchronized");
                 b.ins().return_(&[zero]);
                 b.switch_to_block(error);
                 let status = b.block_params(error)[0];
