@@ -365,6 +365,7 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     let site = region.tail.header() as usize;
     let zero = b.ins().iconst(types::I64, 0);
     let entry_template_start = b.func.dfg.num_insts() - 1;
+    let entry_shim_work = hooks.bound_shim_work();
     let facts = edge_facts::derive(code, closed, id, owner, aggregates, &slots).unwrap_or_default();
     let threaded = tag_threading::derive(code, closed, id, owner, aggregates);
     #[cfg(test)]
@@ -439,7 +440,9 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         b.ins().jump(if threaded.is_some() { blocks[0] } else { original_target(site as u32) }, &[]);
         None
     };
-    let entry_template_work = entry_prefix_work + b.func.dfg.num_insts() - entry_template_start;
+    let extra_entry_work = hooks.bound_shim_work() - entry_shim_work;
+    let entry_template_work = entry_prefix_work + b.func.dfg.num_insts() - entry_template_start + extra_entry_work;
+    let mut maximum_source_template_work = 0;
     let mut dispatch_template_work = 0;
     let mut folded_branches = Vec::new();
     let mut known_latches = Vec::new();
@@ -453,6 +456,8 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     let mut refresh_template_work = 0;
 
     for (version, &index) in emitted_sites.iter().enumerate() {
+        let source_template_start = b.func.dfg.num_insts();
+        let source_shim_work = hooks.bound_shim_work();
         let block = &code.blocks()[index];
         let current = blocks[version];
         let mode = version / version_nodes;
@@ -617,6 +622,13 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         let status = b.block_params(fail_at)[0];
         set_origin(b, frame, index as u64);
         b.ins().jump(failed, &[status.into()]);
+        if hooks.bound_shim_work() > source_shim_work {
+            let work = b.func.dfg.num_insts() - source_template_start + hooks.bound_shim_work() - source_shim_work;
+            if work > super::super::program_tail_layout::OVERHEAD as usize {
+                return Err(backend(format!("preserving source template exceeds unchanged envelope: {work}")));
+            }
+            maximum_source_template_work = maximum_source_template_work.max(work);
+        }
     }
     if let Some(graph) = &threaded {
         #[cfg(test)]
@@ -664,6 +676,11 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         });
     }
     report.frame_effects(site, packed.effect_emissions());
+    if hooks.bound_shim_calls() != 0 {
+        report.preserving_call_regions.push(super::super::iteration_compiler::PreservingCallRegion {
+            header: site, emitted_calls: hooks.bound_shim_calls(), maximum_source_template_work, extra_entry_work,
+        });
+    }
     #[cfg(test)]
     LOOKUP_FACT_EMISSIONS.with(|counts| {
         let old = counts.get();

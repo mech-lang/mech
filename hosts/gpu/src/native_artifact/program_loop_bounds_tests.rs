@@ -30,30 +30,35 @@ fn parameterized() -> String {
 
 #[test]
 fn guarded_loop_versions_preserve_actual_bounds_arbitrary_seeds_headers_and_work() {
-    parameterized_equivalence(false, false, false, false);
+    parameterized_equivalence(false, false, false, false, false);
 }
 
 #[test]
 fn lookup_facts_preserve_limits_actual_bounds_seeds_refill_headers_and_work() {
-    parameterized_equivalence(true, false, false, false);
+    parameterized_equivalence(true, false, false, false, false);
 }
 
 #[test]
 fn cfg_cleanup_preserves_limits_actual_bounds_seeds_refill_headers_and_work() {
-    parameterized_equivalence(false, true, false, false);
+    parameterized_equivalence(false, true, false, false, false);
 }
 
 #[test]
 fn loop_outlining_preserves_limits_actual_bounds_seeds_refill_headers_and_work() {
-    parameterized_equivalence(false, false, true, false);
+    parameterized_equivalence(false, false, true, false, false);
 }
 
 #[test]
 fn loop_invariants_preserve_first_selection_steady_ranges_cap_transitions_and_refill_frontiers() {
-    parameterized_equivalence(false, false, false, true);
+    parameterized_equivalence(false, false, false, true, false);
 }
 
-fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bool, compare_outlining: bool, compare_invariants: bool) {
+#[test]
+fn preserving_calls_keep_bounds_arbitrary_seeds_cap_transitions_and_refill_frontiers() {
+    parameterized_equivalence(false, false, false, false, true);
+}
+
+fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bool, compare_outlining: bool, compare_invariants: bool, compare_preserving: bool) {
     let original = tests::artifact_source(&parameterized());
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(
         &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
@@ -70,7 +75,9 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
         let lookup_emissions = take_lookup_fact_emissions();
         assert!(lookup_emissions.0 > 0 && lookup_emissions.1 >= 4);
         take_outline_emissions();
-        let baseline = if compare_invariants {
+        let baseline = if compare_preserving {
+            crate::native_artifact::program_bound_shim::without_preserving_calls(|| JitProgramArtifact::compile(&artifact, &catalog))
+        } else if compare_invariants {
             without_loop_invariants(|| JitProgramArtifact::compile(&artifact, &catalog))
         } else if compare_outlining {
             without_loop_outlining(|| JitProgramArtifact::compile(&artifact, &catalog))
@@ -79,7 +86,9 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
         } else if compare_lookup_facts {
             without_lookup_facts(|| JitProgramArtifact::compile(&artifact, &catalog))
         } else { without_loop_bounds(|| JitProgramArtifact::compile(&artifact, &catalog)) }.unwrap();
-        if compare_invariants {
+        if compare_preserving {
+            assert_eq!(take_loop_bounds_emissions(), emitted);
+        } else if compare_invariants {
             // The candidate emits three guarded copies (checked calls,
             // allowed calls, steady rolling); the reference emits only one.
             assert_eq!(emitted.1 % 3, 0);
@@ -170,7 +179,7 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
                 });
                 let mut obs = OBS.with(|r| core::mem::take(&mut *r.borrow_mut()));
                 assert!(obs.errors.is_empty(), "{obs:?}");
-                let selected = u64::from((version == 0 || compare_lookup_facts || compare_cfg_cleanup || compare_outlining || compare_invariants) && obs.packed == 1 && width > 0 && width <= n && n <= text.len() as u64);
+                let selected = u64::from((version == 0 || compare_lookup_facts || compare_cfg_cleanup || compare_outlining || compare_invariants || compare_preserving) && obs.packed == 1 && width > 0 && width <= n && n <= text.len() as u64);
                 assert_eq!(obs.bound[14], selected, "actual selector, version={version}, width={width}, n={n}");
                 if let Ok(report) = &mut outcome {
                     assert_eq!(report.guarded_loop_regions, selected);

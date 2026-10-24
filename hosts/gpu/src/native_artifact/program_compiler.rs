@@ -212,6 +212,8 @@ impl NativeProgramObject {
             "compiled_cfg_cleanup": &self.codegen.cfg_cleanup,
             "compiled_outlined_loops": &self.codegen.outlined_loops,
             "compiled_loop_invariants": &self.codegen.loop_invariants,
+            "compiled_bound_call_shim": &self.codegen.bound_call_shim,
+            "compiled_preserving_call_regions": &self.codegen.preserving_call_regions,
             "linked": false, "executed": false, "timing_samples": 0,
         })
     }

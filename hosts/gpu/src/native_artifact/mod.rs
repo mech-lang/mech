@@ -94,6 +94,8 @@ mod program_borrowed_layout;
 mod program_descriptor;
 #[cfg(feature = "canonical-native")]
 mod program_hooks;
+#[cfg(feature = "canonical-native-program")]
+mod program_bound_shim;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_identity;
 #[cfg(feature = "canonical-native-program-runtime")]

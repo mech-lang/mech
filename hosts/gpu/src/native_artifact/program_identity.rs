@@ -110,7 +110,9 @@ fn selected_template(
 // source-proved steady loop. ABI27 binds the actual call-guard selection.
 // IR54 cleans literal control flow before the single ordinary backend data
 // optimization pass, avoiding repeated expression placement/rematerialization.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 54;
+// IR55 moves native helper register preservation into an owned PreserveAll
+// bridge. The original C ABI, source work envelope and finite limits remain.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 55;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
