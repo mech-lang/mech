@@ -218,6 +218,7 @@ impl NativeProgramObject {
         metadata["compiled_preserving_call_regions"] = serde_json::json!(&self.codegen.preserving_call_regions);
         metadata["compiled_mutation_loops"] = serde_json::json!(&self.codegen.mutation_loops);
         metadata["compiled_count_value_loops"] = serde_json::json!(&self.codegen.count_value_loops);
+        metadata["compiled_header_cache_loops"] = serde_json::json!(&self.codegen.header_cache_loops);
         metadata
     }
 }

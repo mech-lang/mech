@@ -10,12 +10,13 @@ use crate::native_artifact::program_compiler::packed_loop_codegen::{
     take_invariant_emissions, without_loop_invariants,
     take_mutation_emissions, without_mutation_facts,
     take_count_bound_emissions, without_count_bounds,
+    take_header_cache_emissions, without_header_cache_resets,
 };
 use crate::native_artifact::JitProgramArtifact;
 use crate::native_artifact::program_compiler::cfg_cleanup::{take_cfg_cleanup_emissions, without_cfg_cleanup};
 
 #[derive(Clone, Copy)]
-enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants, PreservingCalls, MutationFacts, CountBounds }
+enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants, PreservingCalls, MutationFacts, CountBounds, HeaderCache }
 impl Pass {
     fn disabled<T>(self, f: impl FnOnce() -> T) -> T {
         match self {
@@ -29,6 +30,7 @@ impl Pass {
             Self::PreservingCalls => crate::native_artifact::program_bound_shim::without_preserving_calls(f),
             Self::MutationFacts => without_mutation_facts(f),
             Self::CountBounds => without_count_bounds(f),
+            Self::HeaderCache => without_header_cache_resets(f),
         }
     }
     fn check(self, edges: (usize, usize), tags: (usize, usize, usize), effects: (usize, usize, usize), selected: bool) {
@@ -39,7 +41,10 @@ impl Pass {
         let preserving = crate::native_artifact::program_bound_shim::take_emissions();
         let mutation = take_mutation_emissions();
         let counts = take_count_bound_emissions();
+        let header_cache = take_header_cache_emissions();
         match self {
+            Self::HeaderCache if selected => assert!(header_cache > 0),
+            Self::HeaderCache => assert_eq!(header_cache, 0),
             Self::MutationFacts if !selected => assert_eq!(mutation, (0, 0, 0)),
             Self::CountBounds if !selected => assert_eq!(counts, 0),
             Self::PreservingCalls if !selected => assert_eq!(preserving, 0),
@@ -67,6 +72,8 @@ mod loop_bounds_tests;
 mod mutation_tests;
 #[path = "program_loop_count_bound_tests.rs"]
 mod count_bound_tests;
+#[path = "program_header_cache_tests.rs"]
+mod header_cache_tests;
 
 type PublicationFrontier = (u64, u64, u64, (u64, u64));
 thread_local! {
@@ -540,7 +547,7 @@ fn changed_input_equivalence(pass: Pass) {
             // Bounds must still use the actual selected source, not n.
             ("abc", 2, 4),
         ];
-        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining | Pass::LoopInvariants | Pass::MutationFacts | Pass::CountBounds) {
+        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining | Pass::LoopInvariants | Pass::MutationFacts | Pass::CountBounds | Pass::HeaderCache) {
             cases.push((long_text.as_str(), 3, long_text.len() as u64));
             // Unknown ASCII domain at width18 requires both key words. They
             // must survive refills although refill never reads either word.
@@ -698,7 +705,7 @@ fn arithmetic_failure_equivalence(pass: Pass) {
             .replace(":Next(0u64, initial)", ":Next(18446744073709551614u64, initial)"),
             "\"abc\"", 1, u64::MAX),
     ].into_iter().map(|(body, text, width, n)| (body, text, width, n, true)).collect::<Vec<_>>();
-    if matches!(pass, Pass::CountBounds) {
+    if matches!(pass, Pass::CountBounds | Pass::HeaderCache) {
         // One insertion per step alone does not bound arbitrary replacements.
         // The first step stores MAX; the next real source read+1 must overflow.
         let max_then_increment = source.replace("  out := map/insert(h, key, previous + 1u64).",
