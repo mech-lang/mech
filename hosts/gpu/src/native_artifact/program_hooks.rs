@@ -25,9 +25,10 @@ impl Hooks {
         function: cranelift_module::FuncId) -> Self
     {
         use cranelift_codegen::ir::{StackSlotData, StackSlotKind};
-        let slot = b.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, 8, 3));
-        let status = b.ins().stack_addr(types::I64, slot, 0);
-        self.bound_shim = Some((module.declare_func_in_func(function, b.func), status));
+        let slot = b.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot,
+            super::program_bound_shim::CALL_BYTES, 3));
+        let scratch = b.ins().stack_addr(types::I64, slot, 0);
+        self.bound_shim = Some((module.declare_func_in_func(function, b.func), scratch));
         self
     }
     #[cfg(feature = "canonical-native-program")]
@@ -60,11 +61,16 @@ impl Hooks {
     {
         let site = b.ins().iconst(types::I64, site as i64);
         let operation = b.ins().iconst(types::I64, operation as i64);
-        let status = if let Some((shim, status)) = self.bound_shim {
-            b.ins().call(shim, &[function, context, site, operation, args[0], args[1], args[2], self.result, status]);
+        let status = if let Some((shim, scratch)) = self.bound_shim {
+            for (index, value) in [function, context, site, operation, args[0], args[1], args[2], self.result]
+                .into_iter().enumerate()
+            {
+                b.ins().store(MemFlags::new(), value, scratch, (index * 8) as i32);
+            }
+            b.ins().call(shim, &[scratch]);
             self.bound_shim_calls.set(self.bound_shim_calls.get() + 1);
             super::program_bound_shim::note_call();
-            b.ins().load(types::I64, MemFlags::new(), status, 0)
+            b.ins().load(types::I64, MemFlags::new(), scratch, super::program_bound_shim::STATUS_OFFSET)
         } else {
             let call = b.ins().call_indirect(self.signature, function,
                 &[context, site, operation, args[0], args[1], args[2], self.result]);

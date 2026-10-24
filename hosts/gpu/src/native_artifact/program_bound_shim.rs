@@ -10,6 +10,12 @@ use cranelift_module::{FuncId, Linkage, Module};
 // This fits inside the existing 512-unit source-site work envelope; callers
 // separately check their emitted instructions plus every bridge template.
 pub(super) const TEMPLATE_BOUND: usize = 128;
+// Eight input words and one distinct status word belong to the caller's
+// invocation. Passing their address leaves only one argument register live at
+// the cold bridge boundary. The original seven-argument native ABI is intact.
+pub(super) const ARGUMENT_WORDS: usize = 8;
+pub(super) const STATUS_OFFSET: i32 = ARGUMENT_WORDS as i32 * 8;
+pub(super) const CALL_BYTES: u32 = (ARGUMENT_WORDS as u32 + 1) * 8;
 
 #[derive(Clone, Copy)]
 pub(super) struct Definition { pub function: FuncId, pub stack: u64, pub code: u64 }
@@ -42,10 +48,10 @@ pub(super) fn define<M: Module>(module: &mut M, entry: &str, limits: NativeCompi
     let symbol = format!("{entry}_preserving_bound_call");
     let mut signature = module.make_signature();
     signature.call_conv = CallConv::PreserveAll;
-    // fn pointer, context, source site, operation, three arguments, helper
-    // result pointer, and a distinct caller-owned status pointer. No return
-    // registers are permitted by PreserveAll. Neither pointer escapes.
-    signature.params = vec![AbiParam::new(types::I64); 9];
+    // Caller-owned words: fn pointer, context, source site, operation, three
+    // arguments, helper result pointer, status. No return registers are
+    // permitted by PreserveAll. The local scratch pointer never escapes.
+    signature.params.push(AbiParam::new(types::I64));
     let function = module.declare_function(&symbol, Linkage::Local, &signature).map_err(backend)?;
     let mut context = module.make_context();
     context.func.signature = signature;
@@ -55,14 +61,17 @@ pub(super) fn define<M: Module>(module: &mut M, entry: &str, limits: NativeCompi
         let entry = b.create_block();
         b.append_block_params_for_function_params(entry);
         b.switch_to_block(entry);
-        let args = b.block_params(entry).to_vec();
+        let scratch = b.block_params(entry)[0];
+        let args = (0..ARGUMENT_WORDS).map(|index|
+            b.ins().load(types::I64, MemFlags::new(), scratch, (index * 8) as i32)
+        ).collect::<Vec<_>>();
         let mut native = module.make_signature();
         native.params = vec![AbiParam::new(types::I64); 7];
         native.returns.push(AbiParam::new(types::I64));
         let native = b.import_signature(native);
         let call = b.ins().call_indirect(native, args[0], &args[1..8]);
         let status = b.inst_results(call)[0];
-        b.ins().store(MemFlags::new(), status, args[8], 0);
+        b.ins().store(MemFlags::new(), status, scratch, STATUS_OFFSET);
         b.ins().return_(&[]);
         b.seal_all_blocks();
         b.finalize();
@@ -94,7 +103,9 @@ mod tests {
         let words = unsafe { &mut *(raw as *mut [u64; 64]) };
         let status = words[62];
         words[..34].fill(0);
-        unsafe { *result = site ^ operation ^ first ^ second ^ third; }
+        unsafe { *result = site.wrapping_mul(3).wrapping_add(operation.wrapping_mul(5))
+            .wrapping_add(first.wrapping_mul(7)).wrapping_add(second.wrapping_mul(11))
+            .wrapping_add(third.wrapping_mul(13)); }
         status
     }
 
@@ -126,8 +137,18 @@ mod tests {
             let constants = [0x55, 0x77, 0x123, 0x456, 0x789].map(|v| b.ins().iconst(types::I64, v));
             let result = b.ins().iadd_imm(pointer, 60 * 8);
             let status = b.ins().iadd_imm(pointer, 61 * 8);
+            let slot = b.create_sized_stack_slot(cranelift_codegen::ir::StackSlotData::new(
+                cranelift_codegen::ir::StackSlotKind::ExplicitSlot, CALL_BYTES, 3));
+            let scratch = b.ins().stack_addr(types::I64, slot, 0);
+            for (index, value) in [function, pointer, constants[0], constants[1],
+                constants[2], constants[3], constants[4], result].into_iter().enumerate()
+            {
+                b.ins().store(MemFlags::new(), value, scratch, (index * 8) as i32);
+            }
             let reference = module.declare_func_in_func(shim.function, b.func);
-            b.ins().call(reference, &[function, pointer, constants[0], constants[1], constants[2], constants[3], constants[4], result, status]);
+            b.ins().call(reference, &[scratch]);
+            let returned_status = b.ins().load(types::I64, MemFlags::new(), scratch, STATUS_OFFSET);
+            b.ins().store(MemFlags::new(), returned_status, status, 0);
             let mut total = b.ins().iconst(types::I64, 0);
             for value in values { total = b.ins().iadd(total, value); }
             for lane in 0..2 {
@@ -147,7 +168,7 @@ mod tests {
         // SAFETY: the checked signature is u64 pointer -> u64 and this owner
         // retains both generated definitions throughout every invocation.
         let call: unsafe extern "C" fn(*mut u64) -> u64 = unsafe { std::mem::transmute(module.get_finalized_function(caller)) };
-        let helper_result = 0x55u64 ^ 0x77 ^ 0x123 ^ 0x456 ^ 0x789;
+        let helper_result = 0x55u64 * 3 + 0x77 * 5 + 0x123 * 7 + 0x456 * 11 + 0x789 * 13;
         for status in [0, 7, 0xffff_ffff_aabb_ccdd] {
             let mut words = core::array::from_fn::<_, 64, _>(|i| (i as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15));
             let expected = words[..34].iter().fold(0u64, |sum, v| sum.wrapping_add(*v)).wrapping_add(helper_result).wrapping_add(status);
