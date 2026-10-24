@@ -53,18 +53,19 @@ fn mutation_facts_preserve_arithmetic_failures_and_declined_recurrences() {
 fn mutation_facts_decline_skipped_double_insertions_and_other_state_entries() {
     let body = structural_projection_tests::COUNT;
     let skipped = body.replace("  out := map/insert(h, key, previous + 1u64).",
-        "  out := (previous == 0u64)? | true => map/insert(h, key, previous + 1u64) | false => h.");
+        "  out := ((previous == 0u64)?\n    | true => map/insert(h, key, previous + 1u64)\n    | false => h\n  ).");
     let doubled = body.replace("  out := map/insert(h, key, previous + 1u64).",
         "  once := map/insert(h, key, previous + 1u64)\n  out := map/insert(once, key, previous + 2u64).");
     let entered = body.replace("  | :Next(index<u64>, counts<{string:u64}>)",
         "  | :Start(counts<{string:u64}>)\n  | :Next(index<u64>, counts<{string:u64}>)")
         .replace("#Count(s, width, n, initial) -> :Next(0u64, initial)",
             "#Count(s, width, n, initial) -> :Start(initial)\n  :Start(counts)\n    | * -> :Next(1u64, counts)");
-    for (source, expected, updates) in [
-        (skipped, [("ab", 1), ("bc", 1), ("ca", 1)], 3u64),
-        (doubled, [("ab", 4), ("bc", 4), ("ca", 2)], 10),
-        (entered, [("ab", 1), ("bc", 2), ("ca", 1)], 4),
+    for (name, source, expected, updates) in [
+        ("skipped", skipped, [("ab", 1), ("bc", 1), ("ca", 1)], 3u64),
+        ("doubled", doubled, [("ab", 4), ("bc", 4), ("ca", 2)], 10),
+        ("other-state", entered, [("ab", 1), ("bc", 2), ("ca", 1)], 4),
     ] {
+        eprintln!("mutation negative fixture: {name}");
         assert_ne!(source, body);
         let artifact = tests::artifact_source(&format!("{source}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n"));
         let catalog = mech_stdlib::source_catalog();
