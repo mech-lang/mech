@@ -131,9 +131,7 @@ fn selected_template(
 // The original helper ABI, source operations and finite work prices remain.
 // IR65 folds scalar expressions before constant control-edge cleanup inside
 // helper-free funded functions; ordinary/checked functions keep IR64's policy.
-// IR66 leaves proved unchanged active-entry source words in their already
-// initialized caller storage instead of carrying duplicate exit snapshots.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 66;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 65;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
