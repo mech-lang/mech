@@ -9,12 +9,13 @@ use crate::native_artifact::program_compiler::packed_loop_codegen::{
     take_outline_emissions, without_loop_outlining,
     take_invariant_emissions, without_loop_invariants,
     take_mutation_emissions, without_mutation_facts,
+    take_count_bound_emissions, without_count_bounds,
 };
 use crate::native_artifact::JitProgramArtifact;
 use crate::native_artifact::program_compiler::cfg_cleanup::{take_cfg_cleanup_emissions, without_cfg_cleanup};
 
 #[derive(Clone, Copy)]
-enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants, PreservingCalls, MutationFacts }
+enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants, PreservingCalls, MutationFacts, CountBounds }
 impl Pass {
     fn disabled<T>(self, f: impl FnOnce() -> T) -> T {
         match self {
@@ -27,6 +28,7 @@ impl Pass {
             Self::LoopInvariants => without_loop_invariants(f),
             Self::PreservingCalls => crate::native_artifact::program_bound_shim::without_preserving_calls(f),
             Self::MutationFacts => without_mutation_facts(f),
+            Self::CountBounds => without_count_bounds(f),
         }
     }
     fn check(self, edges: (usize, usize), tags: (usize, usize, usize), effects: (usize, usize, usize), selected: bool) {
@@ -36,8 +38,10 @@ impl Pass {
         let invariants = take_invariant_emissions();
         let preserving = crate::native_artifact::program_bound_shim::take_emissions();
         let mutation = take_mutation_emissions();
+        let counts = take_count_bound_emissions();
         match self {
             Self::MutationFacts if !selected => assert_eq!(mutation, (0, 0, 0)),
+            Self::CountBounds if !selected => assert_eq!(counts, 0),
             Self::PreservingCalls if !selected => assert_eq!(preserving, 0),
             Self::LoopInvariants if !selected => assert_eq!(invariants, (0, 0, 0)),
             Self::LoopOutlining if selected => assert!(outlined > 0),
@@ -61,6 +65,8 @@ impl Pass {
 mod loop_bounds_tests;
 #[path = "program_loop_mutation_tests.rs"]
 mod mutation_tests;
+#[path = "program_loop_count_bound_tests.rs"]
+mod count_bound_tests;
 
 type PublicationFrontier = (u64, u64, u64, (u64, u64));
 thread_local! {
@@ -534,7 +540,7 @@ fn changed_input_equivalence(pass: Pass) {
             // Bounds must still use the actual selected source, not n.
             ("abc", 2, 4),
         ];
-        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining | Pass::LoopInvariants | Pass::MutationFacts) {
+        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining | Pass::LoopInvariants | Pass::MutationFacts | Pass::CountBounds) {
             cases.push((long_text.as_str(), 3, long_text.len() as u64));
             // Unknown ASCII domain at width18 requires both key words. They
             // must survive refills although refill never reads either word.
@@ -680,7 +686,7 @@ fn arithmetic_failure_equivalence(pass: Pass) {
     // The valid first iteration must not establish facts for a later visit.
     // Source mutations intentionally remove or weaken individual premises.
     let source = structural_projection_tests::COUNT;
-    let cases = [
+    let mut cases = vec![
         (source.replace("previous + 1u64", "previous + 18446744073709551615u64"), "\"aa\"", 1u64, 2u64),
         (source.replace("index >= n", "index == n")
             .replace(":Next(0u64, initial)", ":Next(3u64, initial)"), "\"abc\"", 1, 2),
@@ -692,6 +698,14 @@ fn arithmetic_failure_equivalence(pass: Pass) {
             .replace(":Next(0u64, initial)", ":Next(18446744073709551614u64, initial)"),
             "\"abc\"", 1, u64::MAX),
     ];
+    if matches!(pass, Pass::CountBounds) {
+        // One insertion per step alone does not bound arbitrary replacements.
+        // The first step stores MAX; the next real source read+1 must overflow.
+        let max_then_increment = source.replace("  out := map/insert(h, key, previous + 1u64).",
+            "  replacement := (previous == 0u64)?\n    | true => 18446744073709551615u64\n    | false => previous + 1u64.\n  out := map/insert(h, key, replacement).");
+        assert_ne!(max_then_increment, source);
+        cases.push((max_then_increment, "\"aa\"", 1, 2));
+    }
     for (body, text, width, n) in cases {
         let artifact = tests::artifact_source(&format!("{body}\n#Count({text}, {width}u64, {n}u64, empty)\n"));
         let catalog = mech_stdlib::source_catalog();

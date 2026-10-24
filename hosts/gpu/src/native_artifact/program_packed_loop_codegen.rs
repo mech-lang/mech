@@ -29,11 +29,15 @@ mod outlined;
 mod invariants;
 #[path = "program_loop_mutation_facts.rs"]
 mod mutation_facts;
+#[path = "program_loop_count_bounds.rs"]
+mod count_bounds;
 pub(in crate::native_artifact) use invariants::enabled as invariant_loops_enabled;
 #[cfg(test)]
 pub(in crate::native_artifact) use invariants::{take_invariant_emissions, without_loop_invariants};
 #[cfg(test)]
 pub(in crate::native_artifact) use mutation_facts::{take_mutation_emissions, without_mutation_facts};
+#[cfg(test)]
+pub(in crate::native_artifact) use count_bounds::{take_count_bound_emissions, without_count_bounds};
 pub(in crate::native_artifact) use outlined::define_functions;
 #[cfg(test)]
 pub(in crate::native_artifact) use outlined::{take_outline_emissions, without_loop_outlining};
@@ -416,6 +420,8 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     let mutation = bounds.as_ref().filter(|proof| proof.single_insert_nodes.is_some()
         && mutation_facts::enabled())
         .filter(|_| report.reserve_mutation_region(threaded.as_ref().unwrap().nodes.len() * 8));
+    let count_values = mutation.filter(|proof| proof.count_values.is_some() && count_bounds::enabled())
+        .filter(|_| report.reserve_count_value_region(threaded.as_ref().unwrap().nodes.len() * 5));
 
     let owner_index = region.map.unwrap();
     let setup = b.func.dfg.num_insts();
@@ -502,6 +508,7 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     let mut counter_headers = Vec::new();
     let mut counter_checks_removed = Vec::new();
     let mut nonempty_probes = Vec::new();
+    let mut count_overflows_removed = Vec::new();
 
     for (version, &index) in emitted_sites.iter().enumerate() {
         let source_template_start = b.func.dfg.num_insts();
@@ -597,7 +604,16 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
                 Action::Scalar(Scalar::None) => {}
                 Action::Scalar(Scalar::Primitive { op, operands, output, .. }) => {
                     let args = operands.iter().map(|v| words.read(b, v.get() as usize)).collect::<Vec<_>>();
-                    let value = if facts.arithmetic(index, *op, operands) {
+                    let value = if guarded && *op == mech_engine::native_artifact::NativeScalarOp::U64Add
+                        && count_values.is_some_and(|proof| proof.count_values.as_ref().unwrap().additions.contains(&graph_node))
+                    {
+                        // Empty native seed + one bounded insertion per
+                        // index+1 recurrence imply every stored value <= index.
+                        // This source read+1 is <= next_index at a productive
+                        // index. Unknown replacement rules keep checked adds.
+                        count_overflows_removed.push((version, index));
+                        b.ins().iadd(args[0], args[1])
+                    } else if facts.arithmetic(index, *op, operands) {
                         use mech_engine::native_artifact::NativeScalarOp as Op;
                         note_edge_fact(true);
                         let value = match op {
@@ -749,6 +765,18 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
             source_insert_nodes: proof.single_insert_nodes.as_ref().unwrap().iter()
                 .map(|&node| (node, threaded.as_ref().unwrap().nodes[node].site)).collect(),
             counter_headers, counter_checks_removed, nonempty_probes,
+        });
+    }
+    if let Some(proof) = count_values {
+        let values = proof.count_values.as_ref().unwrap();
+        let graph = threaded.as_ref().unwrap();
+        count_bounds::note(count_overflows_removed.len());
+        report.count_value_loops.push(super::super::iteration_compiler::CountValueLoop {
+            header: site, index_word: proof.index_word, active_tag: proof.active_tag,
+            version_stride: version_nodes, emitted_nodes: emitted_sites.len(), empty_seed_checked: true,
+            source_read_nodes: values.reads.iter().map(|&node| (node, graph.nodes[node].site)).collect(),
+            source_add_nodes: values.additions.iter().map(|&node| (node, graph.nodes[node].site)).collect(),
+            overflow_checks_removed: count_overflows_removed,
         });
     }
     report.frame_effects(site, packed.effect_emissions());

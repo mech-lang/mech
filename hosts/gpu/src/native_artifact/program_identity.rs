@@ -119,7 +119,9 @@ fn selected_template(
 // IR58 proves a single insertion per index+1 recurrence, checks the active
 // entry's tally/index equality, and reuses that exact source progress. Only
 // certified completed recurrence nodes establish steady nonempty storage.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 58;
+// IR59 proves the stored-value bound of an empty, single-insertion source
+// recurrence before omitting its exact read+1 source overflow checks.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 59;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
