@@ -186,13 +186,22 @@ impl NativeProgramOutput {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NativeProgramLibraryTemplate {
+    // A selected leaf already owns this immutable metadata. Keep only that
+    // owner in native-enabled builds instead of deep-cloning a second copy.
+    // The featureless compiler representation has no selected leaf variant.
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     origin: super::NativeMatchOrigin,
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     revision: ProgramRevision,
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     inputs: Box<[Schema]>,
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     output: Schema,
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     contract: mech_core::ResolvedOperationContract,
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     selected_key: mech_core::ResidentOperationKey,
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     selected: SelectedLibrary,
@@ -203,24 +212,114 @@ enum SelectedLibrary {
     Root(super::NativeCollectionOperationTemplate),
     Lexical(super::NativeCollectionLexicalTemplate),
 }
+impl serde::Serialize for NativeProgramLibraryTemplate {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeStruct;
+        let fields = if cfg!(any(feature = "pure_text", feature = "map_ops")) {
+            7
+        } else {
+            6
+        };
+        // Preserve the existing canonical wire fields AND their order. Removing
+        // duplicate in-memory owners must not change a plan/Object identity.
+        let mut record = serializer.serialize_struct("NativeProgramLibraryTemplate", fields)?;
+        record.serialize_field("origin", &self.origin())?;
+        record.serialize_field("revision", &self.program_revision())?;
+        record.serialize_field("inputs", self.inputs())?;
+        record.serialize_field("output", self.output())?;
+        record.serialize_field("contract", self.contract())?;
+        record.serialize_field("selected_key", self.selected_key())?;
+        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        record.serialize_field("selected", &self.selected)?;
+        record.end()
+    }
+}
 impl NativeProgramLibraryTemplate {
     pub fn inputs(&self) -> &[Schema] {
-        &self.inputs
+        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        {
+            match &self.selected {
+                SelectedLibrary::Root(t) => t.inputs(),
+                SelectedLibrary::Lexical(t) => t.inputs(),
+            }
+        }
+        #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+        {
+            &self.inputs
+        }
     }
     pub fn output(&self) -> &Schema {
-        &self.output
+        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        {
+            match &self.selected {
+                SelectedLibrary::Root(t) => t.output(),
+                SelectedLibrary::Lexical(t) => t.output(),
+            }
+        }
+        #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+        {
+            &self.output
+        }
     }
     pub fn contract(&self) -> &mech_core::ResolvedOperationContract {
-        &self.contract
+        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        {
+            match &self.selected {
+                SelectedLibrary::Root(t) => t.contract(),
+                SelectedLibrary::Lexical(t) => t.contract(),
+            }
+        }
+        #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+        {
+            &self.contract
+        }
     }
     pub fn selected_key(&self) -> &mech_core::ResidentOperationKey {
-        &self.selected_key
+        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        {
+            match &self.selected {
+                SelectedLibrary::Root(t) => t.selected_key(),
+                SelectedLibrary::Lexical(t) => t.selected_key(),
+            }
+        }
+        #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+        {
+            &self.selected_key
+        }
     }
     pub const fn program_revision(&self) -> ProgramRevision {
-        self.revision
+        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        {
+            match &self.selected {
+                SelectedLibrary::Root(t) => t.program_revision(),
+                SelectedLibrary::Lexical(t) => t.program_revision(),
+            }
+        }
+        #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+        {
+            self.revision
+        }
     }
     pub const fn origin(&self) -> super::NativeMatchOrigin {
-        self.origin
+        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        {
+            match &self.selected {
+                SelectedLibrary::Root(t) => super::NativeMatchOrigin {
+                    node: t.node(),
+                    block: None,
+                    local: None,
+                },
+                SelectedLibrary::Lexical(t) => super::NativeMatchOrigin {
+                    node: t.owner(),
+                    block: Some(t.block().0),
+                    local: Some(t.local()),
+                },
+            }
+        }
+        #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+        {
+            self.origin
+        }
     }
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     pub fn primitive(&self) -> super::NativeCollectionPrimitive {
@@ -253,32 +352,12 @@ impl NativeProgramLibraryTemplate {
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     pub(crate) fn from_root(t: super::NativeCollectionOperationTemplate) -> Self {
         Self {
-            origin: super::NativeMatchOrigin {
-                node: t.node(),
-                block: None,
-                local: None,
-            },
-            revision: t.program_revision(),
-            inputs: t.inputs().into(),
-            output: t.output().clone(),
-            contract: t.contract().clone(),
-            selected_key: t.selected_key().clone(),
             selected: SelectedLibrary::Root(t),
         }
     }
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     pub(crate) fn from_lexical(t: super::NativeCollectionLexicalTemplate) -> Self {
         Self {
-            origin: super::NativeMatchOrigin {
-                node: t.owner(),
-                block: Some(t.block().0),
-                local: Some(t.local()),
-            },
-            revision: t.program_revision(),
-            inputs: t.inputs().into(),
-            output: t.output().clone(),
-            contract: t.contract().clone(),
-            selected_key: t.selected_key().clone(),
             selected: SelectedLibrary::Lexical(t),
         }
     }
