@@ -66,7 +66,7 @@ fn targets(
     bounds: &loop_bounds::Proof,
     node: usize,
 ) -> Vec<tag_threading::Target> {
-    use tag_threading::{Edge, Target};
+    use tag_threading::Edge;
     let edge = &graph.nodes[node].edge;
     if bounds.later.contains(&node) {
         let Edge::Branch { no, .. } = edge else {
@@ -585,7 +585,7 @@ pub(super) fn define<M: Module>(
     limit("Steady function code", bytes, limits.max_code_bytes)?;
     report
         .steady_loops
-        .push(super::super::iteration_compiler::SteadyLoop {
+        .push(crate::native_artifact::iteration_compiler::SteadyLoop {
             header: closed.regions[id].tail.header() as usize,
             active_node: proof.active,
             active_tag: proof.bounds.active_tag,
@@ -701,7 +701,7 @@ pub(super) fn emit_call(
     b.switch_to_block(bad);
     let status = b
         .ins()
-        .iconst(types::I64, super::super::abi::STATUS_ABI as i64);
+        .iconst(types::I64, crate::native_artifact::abi::STATUS_ABI as i64);
     b.ins().jump(error, &[status.into()]);
     Ok(common_work + resume_work + 2)
 }
