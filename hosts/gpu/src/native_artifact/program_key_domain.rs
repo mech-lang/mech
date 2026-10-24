@@ -25,12 +25,6 @@ impl Domain {
     pub fn contains(&self, byte: u8) -> bool {
         byte < 128 && self.alphabet[usize::from(byte / 64)] & (1 << (byte % 64)) != 0
     }
-    /// Every successful producer output consists of one-byte graphemes.
-    /// CRLF is the only multi-byte grapheme in ASCII. If either character is
-    /// excluded from the complete source alphabet, that pair cannot occur.
-    pub fn byte_graphemes(&self) -> bool {
-        !self.contains(b'\r') || !self.contains(b'\n')
-    }
     pub fn count(&self) -> usize {
         (self.alphabet[0].count_ones() + self.alphabet[1].count_ones()) as usize
     }
@@ -155,25 +149,6 @@ pub(super) fn derive(plan: &Plan, source: Value) -> Option<Domain> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn byte_grapheme_proof_covers_ascii_pairs_and_retains_crlf_guard() {
-        assert!(!Domain::ascii().byte_graphemes());
-        for first in 0..128u8 {
-            for second in 0..128u8 {
-                let mut alphabet = [0; 2];
-                let text = String::from_utf8(vec![first, second]).unwrap();
-                add_text(&mut alphabet, &text).unwrap();
-                let domain = Domain::from_alphabet(alphabet).unwrap();
-                if domain.byte_graphemes() {
-                    assert!(mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(&text));
-                } else {
-                    assert!(domain.contains(b'\r') && domain.contains(b'\n'));
-                    assert!(!mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf("\r\n"));
-                }
-            }
-        }
-    }
 
     #[test]
     fn singleton_nonzero_code_and_unused_codes_remain_distinct() {
