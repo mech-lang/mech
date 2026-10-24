@@ -100,53 +100,6 @@ pub(super) struct BodyPrice {
 #[derive(Clone, Copy, Debug)]
 struct Price { compute: u64, comparison: u64 }
 
-// A full batch is selected exactly when both original quotients are >= BATCH.
-// Prepare its thresholds and debit before acquiring the shared work mutex.
-// Overflow only declines this shortcut: a smaller original batch may still fit.
-struct FullRefill {
-    threshold: Price,
-    debit: Price,
-    funded: u64,
-}
-impl FullRefill {
-    fn new(price: Price, funded: u64) -> Option<Self> {
-        Some(Self {
-            threshold: Price {
-                compute: price.compute.max(1).checked_mul(4 * BATCH)?,
-                comparison: price.comparison.max(1).checked_mul(4 * BATCH)?,
-            },
-            debit: Price {
-                compute: price.compute.checked_mul(BATCH)?,
-                comparison: price.comparison.checked_mul(BATCH)?,
-            },
-            funded: funded.checked_add(BATCH)?,
-        })
-    }
-}
-struct RefillPlan {
-    price: Price,
-    funded: u64,
-    full: Option<FullRefill>,
-}
-impl RefillPlan {
-    fn new(price: Price, funded: u64) -> Self {
-        Self { price, funded, full: FullRefill::new(price, funded) }
-    }
-    fn debit(self, remaining: (u64, u64)) -> Result<(u64, u64, (u64, u64)), Error> {
-        if let Some(full) = self.full {
-            if remaining.0 >= full.threshold.compute && remaining.1 >= full.threshold.comparison {
-                return Ok((full.debit.compute, full.debit.comparison, (BATCH, full.funded)));
-            }
-        }
-        // Keep the exact original order and errors at tight limits. Both
-        // dimensions leave headroom for insertion and subsequent price growth.
-        let count = (remaining.0 / self.price.compute.max(1) / 4)
-            .min(remaining.1 / self.price.comparison.max(1) / 4).min(BATCH).max(1);
-        let funded = add(self.funded, count)?;
-        Ok((mul(self.price.compute, count)?, mul(self.price.comparison, count)?, (count, funded)))
-    }
-}
-
 pub(super) struct PackedMap {
     // Actual allocations retire before their reservations. The boxed frame
     // stays put when the containing closed-loop owner is moved into its Box.
@@ -374,10 +327,16 @@ impl PackedMap {
         // Pricing is pure scalar arithmetic. Retain any error until the
         // original remaining-allowance check succeeds, without holding the
         // shared worker mutex while calculating the invariant price.
-        let plan = self.price(self.frame.capacity, self.frame.len)
-            .map(|price| RefillPlan::new(price, self.funded));
+        let price = self.price(self.frame.capacity, self.frame.len);
         let (count, funded) = self.work.with_unscoped_debit(|remaining| {
-            plan?.debit(remaining)
+            let price = price?;
+            // Leave the original headroom for distinct-key insertion, table
+            // growth and corresponding remaining-body price increases.
+            let count = (remaining.0 / price.compute.max(1) / 4)
+                .min(remaining.1 / price.comparison.max(1) / 4).min(BATCH).max(1);
+            let funded = add(self.funded, count)?;
+            Ok::<_, Error>((mul(price.compute, count)?, mul(price.comparison, count)?,
+                (count, funded)))
         })?.ok_or(Error::Binding("packed-map entered a foreign work scope"))?;
         self.frame.fuel = count;
         self.issued = count;
