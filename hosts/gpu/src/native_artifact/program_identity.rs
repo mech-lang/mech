@@ -161,7 +161,10 @@ fn selected_template(
 // IR77 / ABI28 add an optional bounded complete-key lookup cache over the
 // original hash table. Every key and source update remains; allocation, cache
 // maintenance and growth refreshes are admitted under work policy66.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 77;
+// IR78 separates admitted cached and ordinary hash funded functions. Both
+// emit the original source graph; the caller binds actual cache/width guards,
+// and code/stack admission includes both versions under unchanged prices.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 78;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

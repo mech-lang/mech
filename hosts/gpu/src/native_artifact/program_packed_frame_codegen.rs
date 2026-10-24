@@ -69,6 +69,9 @@ pub(in crate::native_artifact) fn effects_enabled() -> bool {
     { true }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(in crate::native_artifact) enum LookupMode { Dynamic, Hash, Direct }
+
 pub(in crate::native_artifact) struct FrameState {
     pointer: Value,
     words: Option<Vec<Variable>>,
@@ -78,6 +81,7 @@ pub(in crate::native_artifact) struct FrameState {
     constant_values: Option<[Value; 2]>,
     constant_hash_loads: Cell<usize>,
     specialized_width: Option<u64>,
+    lookup_mode: LookupMode,
     // Constant-size actual emission evidence, aggregated by private operation.
     // It does not claim that a runtime path executed or authorize any access.
     emissions: Cell<[u64; 14]>,
@@ -85,7 +89,7 @@ pub(in crate::native_artifact) struct FrameState {
 }
 impl FrameState {
     pub(super) fn memory(pointer: Value, domain: Domain) -> Self {
-        Self { pointer, words: None, effects_enabled: false, dirty_only: false, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, emissions: Cell::new([0; 14]), domain }
+        Self { pointer, words: None, effects_enabled: false, dirty_only: false, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, lookup_mode: LookupMode::Dynamic, emissions: Cell::new([0; 14]), domain }
     }
     pub(in crate::native_artifact) fn registers(b: &mut FunctionBuilder<'_>, pointer: Value, domain: Domain) -> Self {
         assert_eq!(core::mem::size_of::<Frame>() % 8, 0);
@@ -97,7 +101,7 @@ impl FrameState {
         }).collect();
         let effects_enabled = effects_enabled();
         let dirty_only = super::super::packed_loop_codegen::invariant_loops_enabled();
-        Self { pointer, words: Some(words), effects_enabled, dirty_only, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, emissions: Cell::new([0; 14]), domain }
+        Self { pointer, words: Some(words), effects_enabled, dirty_only, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, lookup_mode: LookupMode::Dynamic, emissions: Cell::new([0; 14]), domain }
     }
     pub(in crate::native_artifact) fn with_constant_packet(mut self, packet: Option<Value>) -> Self {
         self.constant_packet = packet; self
@@ -113,6 +117,14 @@ impl FrameState {
         assert!(width.is_none_or(|width| (1..=super::super::super::program_packed_map::MAX_WIDTH).contains(&width)));
         self.specialized_width = width; self
     }
+    /// Direct is confined to a separate private function: its caller tests the
+    /// actual owned cache pointer and width, and its entry selects that width.
+    pub(in crate::native_artifact) fn with_lookup_mode(mut self, mode: LookupMode) -> Self {
+        assert!(mode != LookupMode::Direct || self.specialized_width.is_some_and(|width|
+            super::super::super::program_packed_map::lookup_cache_entries(self.domain, width).is_some()));
+        self.lookup_mode = mode; self
+    }
+    pub(super) fn direct_lookup(&self) -> bool { self.lookup_mode == LookupMode::Direct }
     pub(super) fn hash_constant(&self, b: &mut FunctionBuilder<'_>, ordinal: usize) -> Option<Value> {
         assert!(ordinal < 2);
         if let Some(values) = self.constant_values { return Some(values[ordinal]); }
@@ -124,7 +136,7 @@ impl FrameState {
     }
     pub(in crate::native_artifact) fn constant_hash_loads(&self) -> usize { self.constant_hash_loads.get() }
     pub(super) fn may_use_lookup_cache(&self) -> bool {
-        self.specialized_width.is_none_or(|width|
+        self.lookup_mode != LookupMode::Hash && self.specialized_width.is_none_or(|width|
             super::super::super::program_packed_map::lookup_cache_entries(self.domain, width).is_some())
     }
     /// A cold continuation can recover immutable construction metadata from

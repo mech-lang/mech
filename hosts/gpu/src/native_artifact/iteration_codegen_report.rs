@@ -33,6 +33,9 @@ pub(in crate::native_artifact) struct CodegenReport {
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct SteadyLoop {
     pub header: usize, pub active_node: usize, pub active_tag: u32, pub symbol: String,
+    pub lookup_mode: &'static str,
+    pub lookup_cache_function: Option<Box<SteadyLoop>>,
+    pub lookup_cache_selection_word: Option<usize>,
     pub source_nodes: Vec<(usize, usize)>, pub present_nodes: Vec<usize>,
     pub continuations: Vec<(usize, Option<usize>, Vec<usize>)>,
     pub entry_words: Vec<usize>, pub specialized_widths: Vec<u64>, pub entry_instructions: usize,
