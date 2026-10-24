@@ -32,6 +32,16 @@ pub(super) fn admitted_capacity<T>(
 #[path = "program_collection_data.rs"]
 mod data;
 pub(super) fn source_count(value: &Value) -> Result<u64, Error> { data::count(value) }
+/// Optional constant-time scheduling hint for an already admitted Matrix/Set.
+/// Atomic elements count as one unit; text uses its retained UTF-8 byte length.
+/// This borrows no new owner and grants no source visit or execution authority.
+pub(super) fn element_work_hint(value: &Value, ordinal: u64) -> u64 {
+    if !matches!(value.data(), ValueData::Matrix(_) | ValueData::Set(_)) { return 1; }
+    match data::element(value, ordinal, 0) {
+        Ok((data::Element::Text(text), _)) => (text.len() as u64).max(1),
+        _ => 1,
+    }
+}
 #[path = "program_histogram.rs"]
 mod histogram;
 #[path = "program_histogram_layout.rs"]

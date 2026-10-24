@@ -3,6 +3,9 @@ use super::*;
 use crate::native_artifact::program_abi::{PARALLEL_RUN, PHASE_WORKER, PHASE_TURN};
 use std::cell::Cell;
 
+#[path = "program_parallel_schedule_tests.rs"]
+mod schedule_tests;
+
 thread_local! {
     static BATCHES: Cell<usize> = const { Cell::new(0) };
     static FAIL_PUSH: Cell<bool> = const { Cell::new(false) };
