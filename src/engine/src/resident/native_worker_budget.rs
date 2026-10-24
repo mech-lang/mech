@@ -89,6 +89,46 @@ impl Drop for NativeWorkerWorkLoan {
 }
 
 impl NativeLibraryWorkBudget {
+    /// Decide a synchronous debit from this account's remaining allowance and
+    /// commit both dimensions before returning the result. A worker holds its
+    /// existing escrow mutex once across the decision and commit. No fuel is
+    /// reserved, renewed or refunded, and all local/root limits still apply.
+    ///
+    /// Like `unscoped_remaining`, active call scopes and sealed groups return
+    /// None without invoking `prepare`. The callback must be bounded, pure
+    /// scalar work: no allocation, blocking, host calls or account access. Its
+    /// error, a denied debit or an unwind leaves both ledgers unchanged. A
+    /// successful callback returns (compute debit, comparison debit, result).
+    pub fn with_unscoped_debit<T, E>(
+        &self, prepare: impl FnOnce((u64, u64)) -> Result<(u64, u64, T), E>,
+    ) -> Result<Option<T>, E>
+    where E: From<ResidentKernelError> {
+        if CONTROL_WORK.with(|v| v.borrow().is_some())
+            || CONTROL_WORK_SCOPE.with(|v| v.borrow().is_some())
+        { return Ok(None); }
+        let mut account = self.account.try_borrow_mut()
+            .map_err(|_| E::from(ResidentKernelError::InvalidInput))?;
+        let account = &mut *account;
+        let Some(local) = unscoped_local_remaining(account) else { return Ok(None) };
+        if let Some(worker) = &account.worker {
+            let mut state = worker.shared.lock().unwrap_or_else(|error| error.into_inner());
+            if state.sealed { return Ok(None); }
+            let remaining = (local.0.min(state.limit.compute - state.used.compute),
+                local.1.min(state.limit.comparison - state.used.comparison));
+            let (compute, comparison, result) = prepare(remaining)?;
+            let next = checked_local_control_account_work(account, compute, comparison)?;
+            let shared_next = state.next(compute, comparison)?;
+            state.used = shared_next;
+            account.used = next;
+            Ok(Some(result))
+        } else {
+            let (compute, comparison, result) = prepare(local)?;
+            let next = checked_local_control_account_work(account, compute, comparison)?;
+            account.used = next;
+            Ok(Some(result))
+        }
+    }
+
     /// Reserve existing invocation fuel, also bounded by an enclosing call's
     /// remaining allowance. The parent must join workers before publication.
     /// Outstanding reservations count against parent charges/restrictions.

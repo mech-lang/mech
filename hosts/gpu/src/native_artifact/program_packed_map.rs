@@ -313,15 +313,20 @@ impl PackedMap {
     pub(super) fn refill(&mut self) -> Result<u64, Error> {
         self.validate_frame()?;
         if self.frame.fuel != 0 { return Err(Error::Binding("packed-map fuel was renewed")); }
-        let remaining = self.work.unscoped_remaining()
-            .ok_or(Error::Binding("packed-map entered a foreign work scope"))?;
-        let price = self.price(self.frame.capacity, self.frame.len)?;
-        // Leave room on both dimensions for distinct-key insertion, table
-        // growth and the corresponding remaining-body price increases.
-        let count = (remaining.0 / price.compute.max(1) / 4)
-            .min(remaining.1 / price.comparison.max(1) / 4).min(BATCH).max(1);
-        let funded = add(self.funded, count)?;
-        self.work.charge(mul(price.compute, count)?, mul(price.comparison, count)?)?;
+        // Pricing is pure scalar arithmetic. Retain any error until the
+        // original remaining-allowance check succeeds, without holding the
+        // shared worker mutex while calculating the invariant price.
+        let price = self.price(self.frame.capacity, self.frame.len);
+        let (count, funded) = self.work.with_unscoped_debit(|remaining| {
+            let price = price?;
+            // Leave the original headroom for distinct-key insertion, table
+            // growth and corresponding remaining-body price increases.
+            let count = (remaining.0 / price.compute.max(1) / 4)
+                .min(remaining.1 / price.comparison.max(1) / 4).min(BATCH).max(1);
+            let funded = add(self.funded, count)?;
+            Ok::<_, Error>((mul(price.compute, count)?, mul(price.comparison, count)?,
+                (count, funded)))
+        })?.ok_or(Error::Binding("packed-map entered a foreign work scope"))?;
         self.frame.fuel = count;
         self.issued = count;
         self.funded = funded;
