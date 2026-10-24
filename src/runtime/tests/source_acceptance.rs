@@ -5,6 +5,8 @@
 mod activation_facts;
 #[path = "source_acceptance_cases/index_range.rs"]
 mod index_range;
+#[path = "source_acceptance_cases/live_control.rs"]
+mod live_control;
 #[path = "source_acceptance_cases/numeric.rs"]
 mod numeric;
 
