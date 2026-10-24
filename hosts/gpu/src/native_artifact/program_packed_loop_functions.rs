@@ -92,7 +92,9 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             // separately bounded caller. The body itself checks the sum.
             let prefix_work = b.func.dfg.num_insts() + CALLER_TEMPLATE_BOUND + 3;
             let steady_call = steady.as_ref().map(|definition| steady::Call {
-                function: module.declare_func_in_func(definition.function,b.func), definition,
+                function: module.declare_func_in_func(definition.function,b.func),
+                cached_function: definition.cached_function.map(|function| module.declare_func_in_func(function,b.func)),
+                definition,
             });
             constant_loads = emit_body(&mut b, args[0], args[1], args[2], args[3], args[4], code,
                 closed, id, owner, aggregates, slots, &hooks, exit, error,

@@ -15,9 +15,11 @@ fn cold_recipes_bind_actual_live_words_initial_and_completed_source_edges() {
     let metadata = object.metadata();
     let loops = metadata["compiled_steady_loops"].as_array().unwrap();
     assert_eq!(loops.len(), 1);
-    let records = loops[0]["cold_snapshot_recipes"].as_array().unwrap();
+    let functions = [&loops[0], &loops[0]["lookup_cache_function"]];
+    assert_eq!(emissions, functions.iter().map(|r| r["cold_snapshot_recipes"].as_array().unwrap().len()).sum::<usize>());
+    for function in functions {
+    let records = function["cold_snapshot_recipes"].as_array().unwrap();
     assert!(!records.is_empty());
-    assert_eq!(emissions, records.len());
     let mut boundaries = BTreeSet::new();
     let mut completed = false;
     let mut initial = false;
@@ -32,7 +34,7 @@ fn cold_recipes_bind_actual_live_words_initial_and_completed_source_edges() {
         let header = record["header"].as_bool().unwrap();
         let incoming = record["incoming"].as_u64();
         assert!(boundaries.insert((node, header, incoming)));
-        let continuation = loops[0]["continuations"]
+        let continuation = function["continuations"]
             .as_array()
             .unwrap()
             .iter()
@@ -48,7 +50,7 @@ fn cold_recipes_bind_actual_live_words_initial_and_completed_source_edges() {
             if let Some(edge) = incoming {
                 completed = true;
                 assert!(
-                    loops[0]["cursor_recurrence_edges"]
+                    function["cursor_recurrence_edges"]
                         .as_array()
                         .unwrap()
                         .iter()
@@ -65,6 +67,7 @@ fn cold_recipes_bind_actual_live_words_initial_and_completed_source_edges() {
         }
     }
     assert!(initial && completed && body);
+    }
     let original =
         without_cold_recipes(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
             .unwrap();

@@ -7,7 +7,7 @@ use cranelift_frontend::FunctionBuilder;
 
 #[path = "program_packed_frame_codegen.rs"]
 mod frame_state;
-pub(in crate::native_artifact) use frame_state::{FrameState, effects_enabled};
+pub(in crate::native_artifact) use frame_state::{FrameState, LookupMode, effects_enabled};
 #[cfg(test)]
 pub(in crate::native_artifact) use frame_state::{take_frame_effect_emissions, without_frame_effects};
 
@@ -281,6 +281,7 @@ fn probe_fresh_core(b: &mut FunctionBuilder<'_>, frame: &FrameState,
 fn probe_fresh_core_to(b: &mut FunctionBuilder<'_>, frame: &FrameState,
     nonempty_proved: bool, bad: Block, missing: Option<Block>) -> Value
 {
+    if frame.direct_lookup() { return probe_direct_cache(b, frame, missing); }
     let narrow = narrow(frame.domain);
     let zero = b.ins().iconst(types::I64, 0);
     let one = b.ins().iconst(types::I64, 1);
@@ -407,6 +408,37 @@ fn probe_fresh_core_to(b: &mut FunctionBuilder<'_>, frame: &FrameState,
     else { b.ins().jump(done, &[zero.into()]); }
     b.switch_to_block(found);
     let entry = b.block_params(found)[0];
+    write!(b, frame, entry_pointer, entry);
+    write!(b, frame, entry_known, one);
+    if missing.is_some() { entry } else {
+        b.ins().jump(done, &[entry.into()]);
+        b.switch_to_block(done);
+        b.block_params(done)[0]
+    }
+}
+
+fn probe_direct_cache(b: &mut FunctionBuilder<'_>, frame: &FrameState, missing: Option<Block>) -> Value {
+    // The caller selected the actual immutable, admitted cache and the callee
+    // selected a supported width. Every encoded key indexes its full domain.
+    // A zero pointer is absence; zero/MAX stored counts remain present.
+    let zero = b.ins().iconst(types::I64, 0);
+    let one = b.ins().iconst(types::I64, 1);
+    let low = read!(b, frame, key_low);
+    let cache = read!(b, frame, lookup_cache);
+    let displacement = b.ins().ishl_imm(low, 3);
+    let address = b.ins().iadd(cache, displacement);
+    let entry = b.ins().load(types::I64, MemFlags::new(), address, 0);
+    let found = b.create_block();
+    let absent = b.create_block();
+    let done = b.create_block();
+    b.append_block_param(done, types::I64);
+    b.ins().brif(entry, found, &[], absent, &[]);
+    b.switch_to_block(absent);
+    write!(b, frame, entry_pointer, zero);
+    write!(b, frame, entry_known, one);
+    if let Some(missing) = missing { b.ins().jump(missing, &[]); }
+    else { b.ins().jump(done, &[zero.into()]); }
+    b.switch_to_block(found);
     write!(b, frame, entry_pointer, entry);
     write!(b, frame, entry_known, one);
     if missing.is_some() { entry } else {

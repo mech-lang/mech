@@ -23,7 +23,17 @@ pub(in crate::native_artifact) fn take_cold_recipe_emissions() -> usize { cold_r
 #[cfg(test)]
 thread_local! {
     static DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static LOOKUP_SPLIT_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static EMISSIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn without_lookup_loop_split<T>(f: impl FnOnce() -> T) -> T {
+    struct Restore(bool);
+    impl Drop for Restore {
+        fn drop(&mut self) { LOOKUP_SPLIT_DISABLED.with(|v| v.set(self.0)); }
+    }
+    let _restore = Restore(LOOKUP_SPLIT_DISABLED.with(|v| v.replace(true)));
+    f()
 }
 #[cfg(test)]
 pub(in crate::native_artifact) fn without_steady_loops<T>(f: impl FnOnce() -> T) -> T {
@@ -54,6 +64,8 @@ pub(super) struct Proof {
 }
 pub(super) struct Definition {
     pub function: FuncId,
+    pub cached_function: Option<FuncId>,
+    cache_max_width: u64,
     pub stack: u64,
     pub code: u64,
     proof: Proof,
@@ -63,6 +75,7 @@ pub(super) struct Definition {
 }
 pub(super) struct Call<'a> {
     pub function: FuncRef,
+    pub cached_function: Option<FuncRef>,
     pub definition: &'a Definition,
 }
 impl Definition {
@@ -400,12 +413,54 @@ pub(super) fn define<M: Module>(
     limits: NativeCompileLimits,
     report: &mut CodegenReport,
 ) -> Result<Option<Definition>, NativeCompileError> {
+    #[cfg(test)]
+    if LOOKUP_SPLIT_DISABLED.with(std::cell::Cell::get) {
+        return define_version(module, symbol, code, closed, id, owner, aggregates, slots, limits,
+            report, packed_maps::LookupMode::Dynamic);
+    }
+    let Some(mut ordinary) = define_version(module, symbol, code, closed, id, owner, aggregates,
+        slots, limits, report, packed_maps::LookupMode::Hash)? else { return Ok(None); };
+    let index = report.steady_loops.len() - 1;
+    if let Some(cached) = define_version(module, symbol, code, closed, id, owner, aggregates,
+        slots, limits, report, packed_maps::LookupMode::Direct)?
+    {
+        let cached_report = report.steady_loops.pop().expect("just emitted cache function");
+        // Hash probing has every source continuation the direct lookup needs.
+        // Keep one caller dispatch, with the same live state at every exit.
+        if !cached.continuations.iter().all(|node| ordinary.continuations.contains(node)) {
+            return Err(backend("cache function requires an unshared source continuation"));
+        }
+        ordinary.cached_function = Some(cached.function);
+        ordinary.cache_max_width = *cached_report.specialized_widths.last().unwrap();
+        ordinary.stack = ordinary.stack.max(cached.stack);
+        ordinary.code = ordinary.code.checked_add(cached.code)
+            .ok_or_else(|| backend("lookup function code overflow"))?;
+        ordinary.extra_fixed_work = ordinary.extra_fixed_work.max(cached.extra_fixed_work);
+        ordinary.source_work = ordinary.source_work.max(cached.source_work);
+        let record = &mut report.steady_loops[index];
+        record.lookup_cache_selection_word = Some(core::mem::offset_of!(Frame, lookup_cache) / 8);
+        record.lookup_cache_function = Some(Box::new(cached_report));
+    }
+    Ok(Some(ordinary))
+}
+
+fn define_version<M: Module>(
+    module: &mut M, symbol: &str, code: CodePlan<'_>, closed: &Layout, id: usize,
+    owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates, slots: &BTreeSet<usize>,
+    limits: NativeCompileLimits, report: &mut CodegenReport, mode: packed_maps::LookupMode,
+) -> Result<Option<Definition>, NativeCompileError> {
     let Some(mut proof) = derive(code, closed, id, owner, aggregates, slots) else {
         return Ok(None);
     };
+    let direct = mode == packed_maps::LookupMode::Direct;
+    let domain = closed.regions[id].packed.as_ref().unwrap().packing_domain();
     let returned = closed.regions[id].tail.returned().get() as usize;
     let specialized_widths =
-        (1..=crate::native_artifact::program_packed_map::MAX_WIDTH).collect::<Vec<_>>();
+        (1..=crate::native_artifact::program_packed_map::MAX_WIDTH)
+        .filter(|&width| !direct || crate::native_artifact::program_packed_map::lookup_cache_entries(domain, width).is_some())
+        .collect::<Vec<_>>();
+    if specialized_widths.is_empty() { return Ok(None); }
+    assert!(!direct || specialized_widths.iter().copied().eq(1..=*specialized_widths.last().unwrap()));
     let check_edges = std::iter::once(None)
         .chain(
             proof
@@ -430,7 +485,7 @@ pub(super) fn define<M: Module>(
         proof.snapshots = None;
         if !report.reserve_steady_region(records) { return Ok(None); }
     }
-    let name = format!("{symbol}_funded");
+    let name = if direct { format!("{symbol}_lookup_cache_funded") } else { format!("{symbol}_funded") };
     let mut signature = module.make_signature();
     // Invocation-owned scalar words, packed frame, two immutable hash values,
     // the prepaid cursor stop and its cold fuel base. No Rust context or helper
@@ -467,7 +522,7 @@ pub(super) fn define<M: Module>(
         );
         let generic = b.create_block();
         let mut selector = Switch::new();
-        let variants = specialized_widths
+        let mut variants = specialized_widths
             .iter()
             .map(|&width| {
                 let block = b.create_block();
@@ -476,6 +531,14 @@ pub(super) fn define<M: Module>(
             })
             .collect::<Vec<_>>();
         selector.emit(&mut b, width, generic);
+        if direct {
+            // The caller also checks this exact immutable width domain. A
+            // malformed internal call returns an invalid continuation before
+            // accessing source/cache storage; the caller reports ABI failure.
+            b.switch_to_block(generic);
+            let invalid = b.ins().iconst(types::I64, 0);
+            b.ins().return_(&[invalid]);
+        } else { variants.insert(0, (None, generic)); }
         let dispatch_work = b.func.dfg.num_insts();
         let mut maximum_entry = 0;
         let mut maximum_source = 0;
@@ -485,7 +548,7 @@ pub(super) fn define<M: Module>(
         let mut all_header_snapshots = Vec::new();
         let mut peeled_probe_nodes = BTreeSet::new();
         let mut maximum_check = 0;
-        for (width, variant) in std::iter::once((None, generic)).chain(variants) {
+        for (width, variant) in variants {
             b.switch_to_block(variant);
             let entry_start = b.func.dfg.num_insts();
             let words = Words::new(&mut b, args[0], code, slots.clone())?;
@@ -495,7 +558,8 @@ pub(super) fn define<M: Module>(
                 closed.regions[id].packed.as_ref().unwrap().packing_domain(),
             )
             .with_constant_values([args[2], args[3]])
-            .with_specialized_width(width);
+            .with_specialized_width(width)
+            .with_lookup_mode(mode);
             let first_index = words.read(&mut b, proof.bounds.index_word);
             // The bound certificate proves every selected range is precisely
             // [index+1, index+width], over a pinned one-byte-grapheme String.
@@ -918,6 +982,13 @@ pub(super) fn define<M: Module>(
             active_node: proof.active,
             active_tag: proof.bounds.active_tag,
             symbol: name,
+            lookup_mode: match mode {
+                packed_maps::LookupMode::Dynamic => "dynamic",
+                packed_maps::LookupMode::Hash => "hash",
+                packed_maps::LookupMode::Direct => "direct",
+            },
+            lookup_cache_function: None,
+            lookup_cache_selection_word: None,
             source_nodes: proof
                 .nodes
                 .iter()
@@ -964,9 +1035,11 @@ pub(super) fn define<M: Module>(
             cleanup,
         });
     #[cfg(test)]
-    EMISSIONS.with(|v| v.set(v.get() + 1));
+    if !direct { EMISSIONS.with(|v| v.set(v.get() + 1)); }
     Ok(Some(Definition {
         function,
+        cached_function: None,
+        cache_max_width: 0,
         stack,
         code: bytes,
         proof,
@@ -1029,11 +1102,31 @@ pub(super) fn emit_call(
     let bias = b.ins().iadd_imm(bias, -1);
     let stop = b.ins().iadd(stop, bias);
     let credit = b.ins().iadd(credit, bias);
-    let result = b.ins().call(
-        call.function,
-        &[locals, pointer, values[0], values[1], stop, credit],
-    );
-    let continuation = b.inst_results(result)[0];
+    let arguments = [locals, pointer, values[0], values[1], stop, credit];
+    let continuation = if let Some(cached) = call.cached_function {
+        let cache = packed.read(b, core::mem::offset_of!(Frame, lookup_cache));
+        let installed = b.ins().icmp_imm(IntCC::NotEqual, cache, 0);
+        let width_index = b.ins().iadd_imm(width, -1);
+        let supported = b.ins().icmp_imm(IntCC::UnsignedLessThan, width_index,
+            call.definition.cache_max_width as i64);
+        let selected = b.ins().band(installed, supported);
+        let direct = b.create_block();
+        let hashed = b.create_block();
+        let joined = b.create_block();
+        b.append_block_param(joined, types::I64);
+        b.ins().brif(selected, direct, &[], hashed, &[]);
+        for (block, function) in [(direct, cached), (hashed, call.function)] {
+            b.switch_to_block(block);
+            let result = b.ins().call(function, &arguments);
+            let value = b.inst_results(result)[0];
+            b.ins().jump(joined, &[value.into()]);
+        }
+        b.switch_to_block(joined);
+        b.block_params(joined)[0]
+    } else {
+        let result = b.ins().call(call.function, &arguments);
+        b.inst_results(result)[0]
+    };
     packed.reload_generated(b);
     let bad = b.create_block();
     b.set_cold_block(bad);
