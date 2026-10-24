@@ -47,8 +47,9 @@ fn fold(function: &mut Function) -> usize {
     changes.len()
 }
 
-pub(super) fn optimize(context: &mut Context, isa: &dyn TargetIsa) -> Result<CfgCleanup, NativeCompileError> {
+pub(in crate::native_artifact) fn optimize(context: &mut Context, isa: &dyn TargetIsa) -> Result<CfgCleanup, NativeCompileError> {
     let (before_blocks, before_instructions) = counts(&context.func);
+    #[cfg(not(test))]
     let enabled = true;
     #[cfg(test)]
     let enabled = !DISABLED.with(std::cell::Cell::get);
