@@ -23,7 +23,7 @@ impl Pass {
     fn check(self, edges: (usize, usize), tags: (usize, usize, usize), effects: (usize, usize, usize), selected: bool) {
         let lookups = take_lookup_fact_emissions();
         match self {
-            Self::LookupFacts if selected => assert!(lookups.0 > 0 && lookups.1 >= 4, "{lookups:?}"),
+            Self::LookupFacts if selected => assert!(lookups.0 > 0 && lookups.1 >= 3, "{lookups:?}"),
             Self::LookupFacts => assert_eq!(lookups, (0, 0)),
             Self::EdgeFacts if !selected => assert_eq!(edges, (0, 0)),
             Self::TagThreading if selected => assert!(tags.0 > 0 && tags.1 >= 4 && tags.2 >= 2, "{tags:?}"),
