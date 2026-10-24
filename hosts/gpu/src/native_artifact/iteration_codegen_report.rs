@@ -19,7 +19,6 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub preserving_call_regions: Vec<PreservingCallRegion>,
     pub mutation_loops: Vec<MutationLoop>,
     pub count_value_loops: Vec<CountValueLoop>,
-    pub header_cache_loops: Vec<HeaderCacheLoop>,
     substitutions: usize,
     tag_records: usize,
     guarded_records: usize,
@@ -27,12 +26,6 @@ pub(in crate::native_artifact) struct CodegenReport {
     invariant_records: usize,
     mutation_records: usize,
     count_value_records: usize,
-    header_cache_records: usize,
-}
-#[derive(serde::Serialize)]
-pub(in crate::native_artifact) struct HeaderCacheLoop {
-    pub header: usize, pub version_stride: usize, pub emitted_nodes: usize,
-    pub cleared_words: [usize; 2], pub resets: Vec<(usize, usize)>,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct CountValueLoop {
@@ -79,12 +72,6 @@ pub(in crate::native_artifact) struct InvariantLoop {
     pub fixed_template_work: usize,
 }
 impl CodegenReport {
-    pub fn reserve_header_cache_region(&mut self, records: usize) -> bool {
-        if self.header_cache_loops.len() >= MAX_REGIONS
-            || self.header_cache_records.saturating_add(records) > MAX_SUBSTITUTIONS { return false; }
-        self.header_cache_records += records;
-        true
-    }
     pub fn reserve_count_value_region(&mut self, records: usize) -> bool {
         if self.count_value_loops.len() >= MAX_REGIONS
             || self.count_value_records.saturating_add(records) > MAX_SUBSTITUTIONS { return false; }

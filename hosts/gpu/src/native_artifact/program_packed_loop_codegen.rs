@@ -77,22 +77,6 @@ thread_local! {
     static LOOP_BOUNDS_EMISSIONS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };
     static LOOKUP_FACTS_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static LOOKUP_FACT_EMISSIONS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };
-    static HEADER_CACHE_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    static HEADER_CACHE_EMISSIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
-}
-fn header_cache_enabled() -> bool {
-    #[cfg(test)] { !HEADER_CACHE_DISABLED.with(std::cell::Cell::get) }
-    #[cfg(not(test))] { true }
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_header_cache_resets<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore { fn drop(&mut self) { HEADER_CACHE_DISABLED.with(|v| v.set(self.0)); } }
-    let _restore = Restore(HEADER_CACHE_DISABLED.with(|v| v.replace(true))); f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_header_cache_emissions() -> usize {
-    HEADER_CACHE_EMISSIONS.with(|v| v.replace(0))
 }
 #[cfg(test)]
 pub(in crate::native_artifact) fn without_lookup_facts<T>(f: impl FnOnce() -> T) -> T {
@@ -458,12 +442,6 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     let version_nodes = emitted_sites.len();
     let modes = if invariant.is_some() { 4 } else if bounds.is_some() { 2 } else { 1 };
     for _ in 1..modes { emitted_sites.extend_from_within(..version_nodes); }
-    // The lookup proof resets all predicates at every original header. The
-    // cache is private and every later unknown read can probe the retained key;
-    // no source Value, update, call cap or prepaid debit depends on retaining it.
-    let reset_header_cache = lookups.is_some() && header_cache_enabled()
-        && report.reserve_header_cache_region(emitted_sites.iter().filter(|&&index| index == site).count());
-    let mut header_cache_resets = Vec::new();
     let blocks = emitted_sites.iter().map(|_| b.create_block()).collect::<Vec<_>>();
     let original_target = |next: u32| if next == region.tail.exit() { exit } else {
         blocks[source_sites.binary_search(&(next as usize)).unwrap()]
@@ -553,14 +531,6 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         b.switch_to_block(current);
         if index == site {
             header_versions += 1;
-            if reset_header_cache {
-                // Refill already invalidates both fields. Doing so on every
-                // header also kills their incoming SSA carriers before any
-                // fuel/cap/error spill, including the terminal traversal.
-                packed.write(b, core::mem::offset_of!(Frame, entry_pointer), zero);
-                packed.write(b, core::mem::offset_of!(Frame, entry_known), zero);
-                header_cache_resets.push((version, index));
-            }
             if guarded && let Some(proof) = mutation
                 && threaded_node.and_then(|node| node.header_tag) == Some(proof.active_tag)
             {
@@ -807,16 +777,6 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
             source_read_nodes: values.reads.iter().map(|&node| (node, graph.nodes[node].site)).collect(),
             source_add_nodes: values.additions.iter().map(|&node| (node, graph.nodes[node].site)).collect(),
             overflow_checks_removed: count_overflows_removed,
-        });
-    }
-    if reset_header_cache {
-        #[cfg(test)]
-        HEADER_CACHE_EMISSIONS.with(|v| v.set(v.get() + header_cache_resets.len()));
-        report.header_cache_loops.push(super::super::iteration_compiler::HeaderCacheLoop {
-            header: site, version_stride: version_nodes, emitted_nodes: emitted_sites.len(),
-            cleared_words: [core::mem::offset_of!(Frame, entry_pointer) / 8,
-                core::mem::offset_of!(Frame, entry_known) / 8],
-            resets: header_cache_resets,
         });
     }
     report.frame_effects(site, packed.effect_emissions());
