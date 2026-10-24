@@ -10,6 +10,15 @@ use cranelift_codegen::ir::{AbiParam, FuncRef, Opcode, StackSlot, StackSlotData,
 use cranelift_frontend::{FunctionBuilderContext, Switch, Variable};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::NativeScalarOp as Op;
+#[path = "program_cold_recipes.rs"]
+mod cold_recipes;
+
+#[cfg(test)]
+pub(in crate::native_artifact) fn without_cold_recipes<T>(f: impl FnOnce() -> T) -> T {
+    cold_recipes::without(f)
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn take_cold_recipe_emissions() -> usize { cold_recipes::take_emissions() }
 
 #[cfg(test)]
 thread_local! {
@@ -41,6 +50,7 @@ pub(super) struct Proof {
     nodes: BTreeSet<usize>,
     present: Vec<bool>,
     active: usize,
+    snapshots: Option<cold_recipes::Proof>,
 }
 pub(super) struct Definition {
     pub function: FuncId,
@@ -233,7 +243,7 @@ fn derive(
     }) {
         return None;
     }
-    Some(Proof {
+    let mut proof = Proof {
         graph,
         bounds,
         facts,
@@ -242,7 +252,10 @@ fn derive(
         nodes,
         present,
         active,
-    })
+        snapshots: None,
+    };
+    proof.snapshots = cold_recipes::derive(code, closed, id, owner, aggregates, &proof, slots);
+    Some(proof)
 }
 
 impl Proof {
@@ -312,14 +325,53 @@ fn emit_snapshot(
     proof: &Proof,
     extent: &PrepaidExtent,
     header_debit: bool,
+    incoming: Option<usize>,
     node: usize,
     returned: usize,
+    emissions: &mut Vec<(Block, crate::native_artifact::iteration_compiler::ColdSnapshot)>,
 ) -> Result<usize, NativeCompileError> {
     let block = b.current_block().expect("snapshot block");
     b.set_cold_block(block);
     let start = b.func.dfg.num_insts();
     extent.retire(b, packed, header_debit);
-    words.spill_live(b, locals, &proof.live_at(node, returned))?;
+    let live = proof.live_at(node, returned);
+    let snapshot = proof.snapshots.as_ref().and_then(|facts| {
+        if header_debit { facts.before.get(&node) }
+        else if let Some(edge) = incoming { facts.completed.get(&edge) }
+        else { facts.before.get(&proof.active) }
+    });
+    if let Some(snapshot) = snapshot {
+        let index = (!snapshot.words.is_empty() || snapshot.updates.is_some() || snapshot.previous.is_some())
+            .then(|| extent.index(b));
+        let shifted = |b: &mut FunctionBuilder<'_>, offset: u64| {
+            let index = index.expect("actual affine recipe");
+            if offset == 0 { index } else { b.ins().iadd_imm(index, offset as i64) }
+        };
+        for &word in &live {
+            let value = match snapshot.words.get(&word) {
+                Some(&offset) => shifted(b, offset),
+                None => words.read(b, word),
+            };
+            b.ins().store(MemFlags::new(), value, locals, offset(word)?);
+        }
+        if let Some(offset) = snapshot.updates {
+            let value = shifted(b, offset);
+            packed.write(b, core::mem::offset_of!(Frame, updates), value);
+        }
+        if let Some(offset) = snapshot.previous {
+            let value = shifted(b, offset);
+            packed.write(b, core::mem::offset_of!(Frame, previous_start), value);
+        }
+        if index.is_some() {
+            emissions.push((block, crate::native_artifact::iteration_compiler::ColdSnapshot {
+                node, header: !header_debit, incoming,
+                words: snapshot.words.iter().map(|(&word, &offset)| (word, offset)).collect(),
+                updates: snapshot.updates, previous: snapshot.previous,
+            }));
+        }
+    } else {
+        words.spill_live(b, locals, &live)?;
+    }
     packed.spill(b);
     let continuation = b.ins().iconst(types::I64, (node + 1) as i64);
     b.ins().return_(&[continuation]);
@@ -338,7 +390,7 @@ pub(super) fn define<M: Module>(
     limits: NativeCompileLimits,
     report: &mut CodegenReport,
 ) -> Result<Option<Definition>, NativeCompileError> {
-    let Some(proof) = derive(code, closed, id, owner, aggregates, slots) else {
+    let Some(mut proof) = derive(code, closed, id, owner, aggregates, slots) else {
         return Ok(None);
     };
     let returned = closed.regions[id].tail.returned().get() as usize;
@@ -361,8 +413,12 @@ pub(super) fn define<M: Module>(
         + proof.live.iter().map(BTreeSet::len).sum::<usize>()
         + specialized_widths.len()
         + 4 * check_edges.len() + 2;
-    if !report.reserve_steady_region(records) {
-        return Ok(None);
+    let extra_records = proof.snapshots.as_ref().map_or(0, cold_recipes::Proof::records);
+    if !report.reserve_steady_region(records + extra_records) {
+        // Metadata admission is unchanged. If the optional recipes cannot
+        // fit, retain the already admitted checked snapshot implementation.
+        proof.snapshots = None;
+        if !report.reserve_steady_region(records) { return Ok(None); }
     }
     let name = format!("{symbol}_funded");
     let mut signature = module.make_signature();
@@ -378,6 +434,7 @@ pub(super) fn define<M: Module>(
     context.func.signature = signature;
     let mut fb = FunctionBuilderContext::new();
     let (entry_work, source_work, snapshot_work, bail_blocks);
+    let mut snapshot_emissions = Vec::new();
     {
         let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
         let entry = b.create_block();
@@ -730,7 +787,8 @@ pub(super) fn define<M: Module>(
             for (&index, &block) in &bail {
                 b.switch_to_block(block);
                 maximum = maximum.max(emit_snapshot(
-                    &mut b, &words, &packed, args[0], &proof, &extent, true, index, returned,
+                    &mut b, &words, &packed, args[0], &proof, &extent, true, None, index, returned,
+                    &mut snapshot_emissions,
                 )?);
             }
             for &(edge, block) in &header_snapshots {
@@ -743,8 +801,10 @@ pub(super) fn define<M: Module>(
                     &proof,
                     &extent,
                     false,
+                    edge,
                     proof.active,
                     returned,
+                    &mut snapshot_emissions,
                 )?);
                 all_bails.push((proof.active, block));
                 all_header_snapshots.push((edge, block));
@@ -805,6 +865,12 @@ pub(super) fn define<M: Module>(
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect::<Vec<_>>();
+    let cold_snapshot_recipes = snapshot_emissions.into_iter()
+        .filter_map(|(block, recipe)| context.func.layout.is_block_inserted(block)
+            .then_some(((recipe.node, recipe.header, recipe.incoming), recipe)))
+        .collect::<BTreeMap<_, _>>().into_values().collect::<Vec<_>>();
+    #[cfg(test)]
+    cold_recipes::note_emissions(cold_snapshot_recipes.len());
     let native_calls = context
         .func
         .layout
@@ -874,6 +940,7 @@ pub(super) fn define<M: Module>(
             cursor_range_site: proof.bounds.range_site,
             cursor_index_word: proof.bounds.index_word,
             cursor_recurrence_edges: prepaid_stop_edges,
+            cold_snapshot_recipes,
             peeled_probe_nodes: bail_blocks.4.into_iter().collect(),
             entry_stop_index_word: Some(proof.bounds.index_word),
             entry_stop_endpoint_words: Some([proof.bounds.width_word, proof.bounds.limit_word]),

@@ -38,6 +38,8 @@ mod steady;
 #[cfg(test)]
 pub(in crate::native_artifact) use steady::{without_steady_loops, take_steady_emissions};
 #[cfg(test)]
+pub(in crate::native_artifact) use steady::{without_cold_recipes, take_cold_recipe_emissions};
+#[cfg(test)]
 pub(in crate::native_artifact) use loop_constants::{take_constant_emissions, without_loop_constants};
 pub(in crate::native_artifact) use invariants::enabled as invariant_loops_enabled;
 #[cfg(test)]
