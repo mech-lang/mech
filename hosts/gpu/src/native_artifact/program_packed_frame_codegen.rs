@@ -8,18 +8,18 @@ use std::cell::Cell;
 
 // A changed private layout must revisit this effect proof. In particular, a
 // new validation read or runtime write must not silently inherit a zero mask.
-const WORDS: usize = 19;
+const WORDS: usize = 20;
 const _: () = assert!(core::mem::size_of::<Frame>() == WORDS * 8);
 macro_rules! fields {
     ($($field:ident),* $(,)?) => { 0u64 $(| (1u64 << (core::mem::offset_of!(Frame, $field) / 8)))* };
 }
-const IMMUTABLE: u64 = fields!(source_ptr, source_len, width, low_mask, high_mask);
+const IMMUTABLE: u64 = fields!(source_ptr, source_len, width, low_mask, high_mask, lookup_cache);
 const MUTABLE: u64 = ((1u64 << WORDS) - 1) & !IMMUTABLE;
 // Enforced by write(), not inferred from today's callers. Runtime-owned words
 // remain current in memory between callbacks because generated code cannot
 // change them; therefore a helper needs stores only for reads in this set.
 const GENERATED: u64 = fields!(fuel, updates, key_low, key_high, entry_pointer, entry_known, previous_start);
-const VALIDATION_READS: u64 = fields!(slots, controls, capacity, len, fuel, entry_known, width);
+const VALIDATION_READS: u64 = fields!(slots, controls, capacity, len, fuel, entry_known, width, lookup_cache);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Effects { reads: u64, writes: u64 }
@@ -123,6 +123,10 @@ impl FrameState {
         Some(b.ins().load(types::I64, MemFlags::new().with_readonly(), pointer, (ordinal * 8) as i32))
     }
     pub(in crate::native_artifact) fn constant_hash_loads(&self) -> usize { self.constant_hash_loads.get() }
+    pub(super) fn may_use_lookup_cache(&self) -> bool {
+        self.specialized_width.is_none_or(|width|
+            super::super::super::program_packed_map::lookup_cache_entries(self.domain, width).is_some())
+    }
     /// A cold continuation can recover immutable construction metadata from
     /// the actual pinned frame instead of keeping an entry-time SSA recipe
     /// live across all successful iterations. These are ordinary frame loads,

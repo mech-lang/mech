@@ -5,6 +5,79 @@ use cranelift_frontend::FunctionBuilderContext;
 use cranelift_module::{Linkage, Module, default_libcall_names};
 
 #[test]
+fn direct_lookup_cache_generated_keeps_absence_zero_values_and_hash_fallback() {
+    let builder = cranelift_jit::JITBuilder::with_flags(
+        &[("opt_level", "speed")], default_libcall_names()).unwrap();
+    let mut module = cranelift_jit::JITModule::new(builder);
+    let mut functions = Vec::new();
+    for direct in [false, true] {
+        let mut context = module.make_context();
+        context.func.signature.params.push(AbiParam::new(types::I64));
+        context.func.signature.returns.push(AbiParam::new(types::I64));
+        let id = module.declare_function(&format!("direct_lookup_cache_{direct}"),
+            Linkage::Local, &context.func.signature).unwrap();
+        let mut fb = FunctionBuilderContext::new();
+        {
+            let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
+            let entry = b.create_block();
+            let absent = b.create_block();
+            let bad = b.create_block();
+            b.append_block_params_for_function_params(entry);
+            b.switch_to_block(entry);
+            let pointer = b.block_params(entry)[0];
+            let frame = FrameState::memory(pointer, Domain::ascii()).with_specialized_width(Some(1));
+            let result = probe_fresh_core_to(&mut b, &frame, true, bad, direct.then_some(absent));
+            b.ins().return_(&[result]);
+            if direct {
+                b.switch_to_block(absent);
+                let zero = b.ins().iconst(types::I64, 0);
+                b.ins().return_(&[zero]);
+            }
+            b.switch_to_block(bad);
+            let rejected = b.ins().iconst(types::I64, -1);
+            b.ins().return_(&[rejected]);
+            b.seal_all_blocks(); b.finalize();
+        }
+        module.define_function(id, &mut context).unwrap();
+        functions.push(id);
+    }
+    module.finalize_definitions().unwrap();
+    let mut slots = vec![Slot::default(); 128];
+    let mut controls = vec![0x80; 128 + GROUP - 1];
+    let mut cache = vec![0u64; 128];
+    for (key, value) in [(0, 0), (17, u64::MAX), (63, 0), (127, 91)] {
+        let hash = crate::native_artifact::program_packed_map::hash(key, 0);
+        let mut at = hash as usize & 127;
+        while controls[at] != 0x80 { at = (at + 1) & 127; }
+        slots[at] = Slot { low: key, high: 0, value };
+        controls[at] = (hash >> 57) as u8;
+        cache[key as usize] = &slots[at] as *const Slot as u64;
+    }
+    for lane in 0..GROUP - 1 { controls[128 + lane] = controls[lane]; }
+    type Entry = unsafe extern "C" fn(*mut Frame) -> u64;
+    for id in functions {
+        // SAFETY: module owns this exact synchronous signature; the frame,
+        // table, controls and complete-range cache remain live across calls.
+        let entry = unsafe { core::mem::transmute::<*const u8, Entry>(module.get_finalized_function(id)) };
+        for cached in [false, true] {
+            for key in 0..128u64 {
+                let mut frame = Frame {
+                    slots: slots.as_mut_ptr() as u64, capacity: 128, len: 4,
+                    fuel: 0, updates: 0, key_low: key, key_high: 0,
+                    entry_pointer: 0, entry_known: 0, source_ptr: 0, source_len: 0,
+                    width: 1, previous_start: 0, low_mask: 127, high_mask: 0,
+                    range_call_allowed: 0, read_call_allowed: 0, write_call_allowed: 0,
+                    controls: controls.as_ptr() as u64,
+                    lookup_cache: if cached { cache.as_ptr() as u64 } else { 0 },
+                };
+                assert_eq!(unsafe { entry(&mut frame) }, cache[key as usize]);
+                assert_eq!((frame.entry_pointer, frame.entry_known), (cache[key as usize], 1));
+            }
+        }
+    }
+}
+
+#[test]
 fn folded_hash_generated_matches_runtime_for_both_unsigned_words() {
     let builder = cranelift_jit::JITBuilder::with_flags(
         &[("opt_level", "speed")], default_libcall_names()).unwrap();
@@ -178,7 +251,7 @@ fn direct_present_probe_keeps_collisions_wrapping_misses_and_bounded_failure() {
                         width: 18, previous_start: 0, low_mask: u64::MAX,
                         high_mask: (1 << 62) - 1, range_call_allowed: 0,
                         read_call_allowed: 0, write_call_allowed: 0,
-                        controls: controls.as_ptr() as u64,
+                        controls: controls.as_ptr() as u64, lookup_cache: 0,
                     };
                     // SAFETY: this exact signature was emitted above. The
                     // module, frame, slots and mirrored control group all

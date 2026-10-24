@@ -357,6 +357,7 @@ fn run() -> Result<(), String> {
             "native_hash_table_regions": native.hash_table_regions,
             "native_hash_table_updates": native.hash_table_updates,
             "native_packed_map_regions": native.packed_map_regions,
+            "native_direct_lookup_regions": native.direct_lookup_regions,
             "native_packed_map_updates": native.packed_map_updates,
             "native_packed_ssa_regions": native.packed_ssa_regions,
             "native_guarded_loop_regions": native.guarded_loop_regions,

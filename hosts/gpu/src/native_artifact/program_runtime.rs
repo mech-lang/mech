@@ -138,6 +138,8 @@ pub struct NativeProgramExecutionReport {
     pub hash_table_updates: u64,
     /// Regions that actually selected packed storage at runtime.
     pub packed_map_regions: u64,
+    /// Packed owners that admitted the bounded complete-key lookup cache.
+    pub direct_lookup_regions: u64,
     /// Updates completed by those selected packed regions.
     pub packed_map_updates: u64,
     /// Completed packed regions that entered the versioned SSA CFG.
@@ -244,6 +246,7 @@ struct Context<'plan, 'visit> {
     hash_table_regions: u64,
     hash_table_updates: u64,
     packed_map_regions: u64,
+    direct_lookup_regions: u64,
     packed_map_updates: u64,
     packed_ssa_regions: u64,
     guarded_loop_regions: u64,
@@ -4434,7 +4437,7 @@ mod tests {
     }
     #[test]
     fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-        assert_eq!(VERSION, 27);
+        assert_eq!(VERSION, 28);
         assert_eq!(super::super::program_abi::PHASE_CAPTURE_TAIL, 3);
         assert_eq!(super::super::program_abi::STATUS_INPUT_SCANNED, 7);
         assert_eq!(core::mem::offset_of!(Frame, base), 0);

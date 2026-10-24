@@ -297,6 +297,7 @@ impl<'plan> State<'plan> {
             unsafe { (*frame).source_ptr = text.as_ptr() as u64; (*frame).source_len = text.len() as u64; }
             owner.packed_frame = frame as u64;
             ctx.packed_map_regions = add(ctx.packed_map_regions, 1)?;
+            if packed.uses_lookup_cache() { ctx.direct_lookup_regions = add(ctx.direct_lookup_regions, 1)?; }
             #[cfg(all(test, feature = "canonical-native-program"))]
             super::super::map_closed_tests::record_packed_entry();
         }

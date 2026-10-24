@@ -6,6 +6,8 @@ use std::collections::BTreeMap;
 mod narrow_tests;
 #[path = "program_frozen_packed_map_tests.rs"]
 mod frozen_tests;
+#[path = "program_packed_lookup_cache_tests.rs"]
+mod lookup_cache_tests;
 
 fn limits() -> MemoryBudgetLimits {
     MemoryBudgetLimits {
@@ -374,6 +376,7 @@ fn packed_layout_matches_generated_word_offsets() {
     assert_eq!(std::mem::offset_of!(Frame, read_call_allowed), READ_CALL_ALLOWED * 8);
     assert_eq!(std::mem::offset_of!(Frame, write_call_allowed), WRITE_CALL_ALLOWED * 8);
     assert_eq!(std::mem::offset_of!(Frame, controls), CONTROLS * 8);
+    assert_eq!(std::mem::offset_of!(Frame, lookup_cache), LOOKUP_CACHE * 8);
     assert_eq!(std::mem::offset_of!(Slot, low), SLOT_LOW * 8);
     assert_eq!(std::mem::offset_of!(Slot, high), SLOT_HIGH * 8);
     assert_eq!(std::mem::offset_of!(Slot, value), SLOT_VALUE * 8);

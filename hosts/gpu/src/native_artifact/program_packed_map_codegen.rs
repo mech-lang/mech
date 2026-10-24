@@ -305,6 +305,21 @@ fn probe_fresh_core_to(b: &mut FunctionBuilder<'_>, frame: &FrameState,
     b.switch_to_block(setup);
     let low = read!(b, frame, key_low);
     let high = if narrow { zero } else { read!(b, frame, key_high) };
+    if frame.may_use_lookup_cache() {
+        let cache = read!(b, frame, lookup_cache);
+        let direct = b.create_block();
+        let hashed = b.create_block();
+        b.ins().brif(cache, direct, &[], hashed, &[]);
+        b.switch_to_block(direct);
+        // The private constructor allocates the entire encoding range. The
+        // selected key is bounded by its original domain/width, so this reads
+        // one owned word. Zero means absent even when a stored value is zero.
+        let displacement = b.ins().ishl_imm(low, 3);
+        let address = b.ins().iadd(cache, displacement);
+        let entry = b.ins().load(types::I64, MemFlags::new(), address, 0);
+        b.ins().brif(entry, found, &[entry.into()], absent, &[]);
+        b.switch_to_block(hashed);
+    }
     let hash = if let Some(first) = frame.hash_constant(b, 0) {
         let second = frame.hash_constant(b, 1).expect("same immutable private packet");
         let left = b.ins().bxor(low, first);
