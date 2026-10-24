@@ -11,12 +11,13 @@ use crate::native_artifact::program_compiler::packed_loop_codegen::{
     take_mutation_emissions, without_mutation_facts,
     take_count_bound_emissions, without_count_bounds,
     take_constant_emissions, without_loop_constants,
+    take_lookup_thread_emissions, without_lookup_threading,
 };
 use crate::native_artifact::JitProgramArtifact;
 use crate::native_artifact::program_compiler::cfg_cleanup::{take_cfg_cleanup_emissions, without_cfg_cleanup};
 
 #[derive(Clone, Copy)]
-enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants, PreservingCalls, MutationFacts, CountBounds, LoopConstants }
+enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants, PreservingCalls, MutationFacts, CountBounds, LoopConstants, LookupThreading }
 impl Pass {
     fn disabled<T>(self, f: impl FnOnce() -> T) -> T {
         match self {
@@ -31,6 +32,7 @@ impl Pass {
             Self::MutationFacts => without_mutation_facts(f),
             Self::CountBounds => without_count_bounds(f),
             Self::LoopConstants => without_loop_constants(f),
+            Self::LookupThreading => without_lookup_threading(f),
         }
     }
     fn check(self, edges: (usize, usize), tags: (usize, usize, usize), effects: (usize, usize, usize), selected: bool) {
@@ -42,7 +44,9 @@ impl Pass {
         let mutation = take_mutation_emissions();
         let counts = take_count_bound_emissions();
         let constants = take_constant_emissions();
+        let lookup_threads = take_lookup_thread_emissions();
         match self {
+            Self::LookupThreading if !selected => assert_eq!(lookup_threads, (0, 0)),
             Self::LoopConstants if selected => assert!(constants > 0),
             Self::LoopConstants => assert_eq!(constants, 0),
             Self::MutationFacts if !selected => assert_eq!(mutation, (0, 0, 0)),
@@ -74,6 +78,8 @@ mod mutation_tests;
 mod count_bound_tests;
 #[path = "program_loop_constant_tests.rs"]
 mod constant_tests;
+#[path = "program_lookup_thread_tests.rs"]
+mod lookup_thread_tests;
 
 type PublicationFrontier = (u64, u64, u64, (u64, u64));
 thread_local! {
@@ -280,7 +286,7 @@ fn lookup_facts_metadata_records_only_actual_current_key_substitutions() {
         assert_eq!(record["operation"], operation);
         facts.insert(record["fact"].as_str().unwrap());
     }
-    assert!(facts.contains("Fresh") && facts.contains("Present") && facts.contains("Cached"), "{facts:?}");
+    assert!(facts.contains("Fresh") && facts.contains("Present") && facts.contains("Absent"), "{facts:?}");
     let baseline = without_lookup_facts(|| crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
     assert_eq!(take_lookup_fact_emissions(), (0, 0));
     let receipt = baseline.metadata();
@@ -547,7 +553,7 @@ fn changed_input_equivalence(pass: Pass) {
             // Bounds must still use the actual selected source, not n.
             ("abc", 2, 4),
         ];
-        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining | Pass::LoopInvariants | Pass::MutationFacts | Pass::CountBounds | Pass::LoopConstants) {
+        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining | Pass::LoopInvariants | Pass::MutationFacts | Pass::CountBounds | Pass::LoopConstants | Pass::LookupThreading) {
             cases.push((long_text.as_str(), 3, long_text.len() as u64));
             // Unknown ASCII domain at width18 requires both key words. They
             // must survive refills although refill never reads either word.
@@ -705,7 +711,7 @@ fn arithmetic_failure_equivalence(pass: Pass) {
             .replace(":Next(0u64, initial)", ":Next(18446744073709551614u64, initial)"),
             "\"abc\"", 1, u64::MAX),
     ].into_iter().map(|(body, text, width, n)| (body, text, width, n, true)).collect::<Vec<_>>();
-    if matches!(pass, Pass::CountBounds | Pass::LoopConstants) {
+    if matches!(pass, Pass::CountBounds | Pass::LoopConstants | Pass::LookupThreading) {
         // One insertion per step alone does not bound arbitrary replacements.
         // The first step stores MAX; the next real source read+1 must overflow.
         let max_then_increment = source.replace("  out := map/insert(h, key, previous + 1u64).",

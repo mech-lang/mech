@@ -166,6 +166,14 @@ impl Default for LookupFacts { fn default() -> Self { Self { complete: true, reg
 struct LookupRegion {
     header: usize, source_nodes: usize, emitted_nodes: usize,
     substitutions: Vec<LookupSubstitution>,
+    state_threading: Option<LookupThreading>,
+}
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct LookupThreading {
+    pub original_tag_nodes: usize,
+    // Product node, original tag node, exact source site, incoming key fact.
+    pub states: Vec<(usize, usize, usize, &'static str)>,
+    pub folded_predicate_branches: Vec<(usize, usize)>,
 }
 #[derive(serde::Serialize)]
 struct LookupSubstitution { node: usize, site: usize, operation: u64, fact: &'static str }
@@ -189,13 +197,15 @@ struct FrameOperation {
 
 impl CodegenReport {
     pub fn lookup_facts(&mut self, header: usize, source_nodes: usize, emitted_nodes: usize,
-        substitutions: Vec<(usize, usize, u64, &'static str)>)
+        substitutions: Vec<(usize, usize, u64, &'static str)>, state_threading: Option<LookupThreading>)
     {
+        let state_records = state_threading.as_ref().map_or(0, |r| r.states.len() + r.folded_predicate_branches.len());
         if self.lookup_facts.regions.len() == MAX_REGIONS
-            || self.lookup_records.saturating_add(substitutions.len()) > MAX_SUBSTITUTIONS
+            || self.lookup_records.saturating_add(substitutions.len()).saturating_add(state_records) > MAX_SUBSTITUTIONS
         { self.lookup_facts.complete = false; return; }
-        self.lookup_records += substitutions.len();
+        self.lookup_records += substitutions.len() + state_records;
         self.lookup_facts.regions.push(LookupRegion { header, source_nodes, emitted_nodes,
+            state_threading,
             substitutions: substitutions.into_iter().map(|(node, site, operation, fact)| LookupSubstitution {
                 node, site, operation, fact,
             }).collect() });
