@@ -183,23 +183,12 @@ pub(in crate::native_artifact) fn scanned(
     let zero = b.ins().iconst(types::I64, 0);
     let layout = &borrowed.regions[region.borrowed];
     for word in layout.ready..layout.end {
-        b.ins().store(
-            super::super::compiler::memory_regions::borrowed(),
-            zero,
-            locals,
-            offset(word)?,
-        );
+        b.ins().store(MemFlags::new(), zero, locals, offset(word)?);
     }
     if let Some(ordinal) = closed.sites[region.tail.header() as usize] {
-        let loan = &closed.regions[ordinal];
-        let words = loan.words;
+        let words = closed.regions[ordinal].words;
         for word in words..words + 3 {
-            b.ins().store(
-                super::tail_codegen::flags(loan),
-                zero,
-                locals,
-                offset(word)?,
-            );
+            b.ins().store(MemFlags::new(), zero, locals, offset(word)?);
         }
     }
     hooks.call(
@@ -341,12 +330,7 @@ pub(in crate::native_artifact) fn gate(
     // Clear all raw pair lanes, including derived Strings from the last
     // traversal, BEFORE the helper drops their actual immutable owner loans.
     for word in layout.ready..layout.end {
-        b.ins().store(
-            super::super::compiler::memory_regions::borrowed(),
-            zero,
-            locals,
-            offset(word)?,
-        );
+        b.ins().store(MemFlags::new(), zero, locals, offset(word)?);
     }
     hooks.call(
         b,
