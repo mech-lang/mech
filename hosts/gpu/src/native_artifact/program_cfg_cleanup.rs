@@ -55,23 +55,25 @@ pub(in crate::native_artifact) fn optimize(context: &mut Context, isa: &dyn Targ
     let enabled = !DISABLED.with(std::cell::Cell::get);
     let mut report = CfgCleanup { enabled, rounds: 0, constant_branches_removed: 0,
         before_blocks, before_instructions, after_blocks: before_blocks,
-        after_instructions: before_instructions, fixed_point: !enabled };
+        after_instructions: before_instructions, fixed_point: !enabled,
+        pre_codegen_data_passes: 0 };
     if !enabled { return Ok(report); }
-    // Cranelift's ordinary speed pipeline runs data optimization after its
-    // initial unreachable-block cleanup. Repeat only this bounded constant-CFG
-    // cleanup; the ordinary final backend pipeline remains enabled as well.
+    // Retire literal source specializations BEFORE data optimization. Running
+    // the egraph repeatedly here and once again in define_function can change
+    // placement/rematerialization and increase register pressure. Leave exactly
+    // one ordinary data/speed pass to the final backend compilation.
     for _ in 0..MAX_ROUNDS {
-        context.optimize(isa, &mut Default::default()).map_err(backend)?;
+        context.compute_cfg(); context.compute_domtree();
+        context.eliminate_unreachable_code(isa).map_err(backend)?;
+        context.remove_constant_phis(isa).map_err(backend)?;
         report.rounds += 1;
         let removed = fold(&mut context.func);
         report.constant_branches_removed += removed;
         if removed == 0 { report.fixed_point = true; break; }
-        // Recompute after edge replacement before using the backend's own
-        // unreachable-block and constant-phi cleanup on the next round.
-        context.compute_cfg(); context.compute_domtree();
-        context.eliminate_unreachable_code(isa).map_err(backend)?;
-        context.remove_constant_phis(isa).map_err(backend)?;
     }
+    context.compute_cfg(); context.compute_domtree();
+    context.eliminate_unreachable_code(isa).map_err(backend)?;
+    context.remove_constant_phis(isa).map_err(backend)?;
     let (blocks, instructions) = counts(&context.func);
     report.after_blocks = blocks; report.after_instructions = instructions;
     #[cfg(test)]

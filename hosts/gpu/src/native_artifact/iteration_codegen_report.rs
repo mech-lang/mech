@@ -26,6 +26,7 @@ pub(in crate::native_artifact) struct CfgCleanup {
     pub enabled: bool, pub rounds: usize, pub constant_branches_removed: usize,
     pub before_blocks: usize, pub before_instructions: usize,
     pub after_blocks: usize, pub after_instructions: usize, pub fixed_point: bool,
+    pub pre_codegen_data_passes: usize,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct OutlinedLoop {
