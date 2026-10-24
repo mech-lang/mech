@@ -9,7 +9,7 @@ fn run_windowed(jit: &JitProgramArtifact, text: &str) {
     run_windowed_delivery(jit, text, true);
 }
 
-fn run_windowed_delivery(jit: &JitProgramArtifact, text: &str, incremental: bool) -> Vec<Vec<u8>> {
+fn run_windowed_delivery(jit: &JitProgramArtifact, text: &str, incremental: bool) -> Vec<Box<[u8]>> {
     let descriptor = jit.descriptor();
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
     assert_eq!(descriptor.plan.transport_input_count(), 1);
