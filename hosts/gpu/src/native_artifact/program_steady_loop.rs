@@ -534,14 +534,14 @@ pub(super) fn define<M: Module>(
                     }
                 }
                 if index == proof.bounds.first {
-                    let cursor = words.read(&mut b, proof.bounds.index_word);
-                    let stop = b
-                        .ins()
-                        .icmp(IntCC::UnsignedGreaterThanOrEqual, cursor, args[4]);
-                    let tag_threading::Edge::Branch { yes, no } = node.edge else {
+                    // The incoming-edge guard admitted a productive original
+                    // traversal. A terminal traversal returns BEFORE its
+                    // header, so the ordinary source CFG performs its exact
+                    // debit, guards, state transition and terminal visit.
+                    let tag_threading::Edge::Branch { no, .. } = node.edge else {
                         unreachable!()
                     };
-                    b.ins().brif(stop, target(yes), &[], target(no), &[]);
+                    b.ins().jump(target(no), &[]);
                 } else if proof.bounds.later.contains(&index) {
                     let tag_threading::Edge::Branch { no, .. } = node.edge else {
                         unreachable!()
@@ -589,8 +589,17 @@ pub(super) fn define<M: Module>(
                 let counter = words.read(&mut b, proof.bounds.index_word);
                 packed.write(&mut b, core::mem::offset_of!(Frame, updates), counter);
                 let fuel = packed.read(&mut b, core::mem::offset_of!(Frame, fuel));
-                b.ins()
-                    .brif(fuel, blocks[&proof.active], &[], bail[&proof.active], &[]);
+                let funded = b.create_block();
+                b.ins().brif(fuel, funded, &[], bail[&proof.active], &[]);
+                b.switch_to_block(funded);
+                let productive = b.ins().icmp(IntCC::UnsignedLessThan, counter, args[4]);
+                b.ins().brif(
+                    productive,
+                    blocks[&proof.active],
+                    &[],
+                    bail[&proof.active],
+                    &[],
+                );
                 maximum_check = maximum_check.max(b.func.dfg.num_insts() - start);
                 all_checks.push((edge, check));
             }
@@ -715,6 +724,8 @@ pub(super) fn define<M: Module>(
             specialized_widths,
             fuel_check_edges,
             maximum_fuel_check_instructions,
+            entry_stop_index_word: Some(proof.bounds.index_word),
+            entry_stop_endpoint_words: Some([proof.bounds.width_word, proof.bounds.limit_word]),
             entry_instructions: entry_work,
             maximum_source_instructions: source_work,
             maximum_snapshot_instructions: snapshot_work,
