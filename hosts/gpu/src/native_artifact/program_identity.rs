@@ -143,7 +143,10 @@ fn selected_template(
 // IR71 admits a direct present-entry continuation, a peeled first control
 // group and raw first-match SIMD bits. Precise missing/error continuations,
 // bounded later probing and original work prices remain.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 71;
+// IR72 strip-mines the proved +1 source recurrence by its existing prepaid
+// fuel and endpoint. A cold stack word reconstructs exact fuel on every exit;
+// the hot source loop needs one stopping bound and no fuel counter mutation.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 72;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

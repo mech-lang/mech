@@ -6,8 +6,8 @@ use crate::native_artifact::{
     NativeCompileLimits,
     compiler::{compiled_stack_bytes, limit},
 };
-use cranelift_codegen::ir::{AbiParam, FuncRef, Opcode};
-use cranelift_frontend::{FunctionBuilderContext, Switch};
+use cranelift_codegen::ir::{AbiParam, FuncRef, Opcode, StackSlot, StackSlotData, StackSlotKind};
+use cranelift_frontend::{FunctionBuilderContext, Switch, Variable};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::NativeScalarOp as Op;
 
@@ -224,6 +224,15 @@ fn derive(
     {
         return None;
     }
+    // Each next active header must be the certified completed +1 source
+    // recurrence. This permits one native induction variable to represent
+    // consumed prepaid visits without mutating fuel on every source header.
+    if nodes.iter().any(|&node| {
+        targets(&graph, &bounds, node).contains(&tag_threading::Target::Node(active))
+            && !bounds.recurrence_nodes.contains(&node)
+    }) {
+        return None;
+    }
     Some(Proof {
         graph,
         bounds,
@@ -251,18 +260,59 @@ impl Proof {
     }
 }
 
+// The function has no helper or external observation between its precise
+// exits. Strip-mine the original source endpoint by its already admitted fuel.
+// A cold-only stack word reconstructs the exact remaining prepaid visits at
+// every original continuation. No credit is enlarged, renewed or omitted.
+struct PrepaidExtent {
+    origin: Variable,
+    base: StackSlot,
+    stop: Value,
+}
+impl PrepaidExtent {
+    fn new(b: &mut FunctionBuilder<'_>, base: StackSlot, index: Value,
+        fuel: Value, endpoint: Value) -> Self
+    {
+        let origin = b.declare_var(types::I64);
+        b.def_var(origin, index);
+        // Wrapping preparation is unobservable on an unproductive entry:
+        // the original initial guards still return before its header. For
+        // productive entries count <= endpoint-index, so stop cannot wrap.
+        let remaining = b.ins().isub(endpoint, index);
+        let smaller = b.ins().icmp(IntCC::UnsignedLessThan, fuel, remaining);
+        let count = b.ins().select(smaller, fuel, remaining);
+        let stop = b.ins().iadd(index, count);
+        // Modular (fuel+index)-origin gives the exact remaining fuel even
+        // when the preparation sum wraps. Origin advances only at a proved
+        // completed +1 recurrence and never beyond the admitted visit extent.
+        let credit = b.ins().iadd(fuel, index);
+        b.ins().stack_store(credit, base, 0);
+        Self { origin, base, stop }
+    }
+    fn retire(&self, b: &mut FunctionBuilder<'_>, packed: &FrameState, header_debit: bool) {
+        let credit = b.ins().stack_load(types::I64, self.base, 0);
+        let origin = b.use_var(self.origin);
+        let fuel = b.ins().isub(credit, origin);
+        let fuel = if header_debit { b.ins().iadd_imm(fuel, -1) } else { fuel };
+        packed.write(b, core::mem::offset_of!(Frame, fuel), fuel);
+    }
+}
+
 fn emit_snapshot(
     b: &mut FunctionBuilder<'_>,
     words: &Words,
     packed: &FrameState,
     locals: Value,
     proof: &Proof,
+    extent: &PrepaidExtent,
+    header_debit: bool,
     node: usize,
     returned: usize,
 ) -> Result<usize, NativeCompileError> {
     let block = b.current_block().expect("snapshot block");
     b.set_cold_block(block);
     let start = b.func.dfg.num_insts();
+    extent.retire(b, packed, header_debit);
     words.spill_live(b, locals, &proof.live_at(node, returned))?;
     packed.spill(b);
     let continuation = b.ins().iconst(types::I64, (node + 1) as i64);
@@ -304,7 +354,7 @@ pub(super) fn define<M: Module>(
     let records = 2 * proof.nodes.len()
         + proof.live.iter().map(BTreeSet::len).sum::<usize>()
         + specialized_widths.len()
-        + 2 * check_edges.len();
+        + 3 * check_edges.len();
     if !report.reserve_steady_region(records) {
         return Ok(None);
     }
@@ -328,6 +378,10 @@ pub(super) fn define<M: Module>(
         b.append_block_params_for_function_params(entry);
         b.switch_to_block(entry);
         let args = b.block_params(entry).to_vec();
+        // Exclusive width arms reuse the same actual eight-byte callee slot.
+        // Its final aligned native stack extent is admitted below as usual.
+        let credit_base = b.create_sized_stack_slot(StackSlotData::new(
+            StackSlotKind::ExplicitSlot, 8, 3));
         // The private storage constructor admits only a bounded width domain.
         // Select on the ACTUAL immutable Frame width, never an input sample
         // or workload name. Every arm emits the identical source graph; only
@@ -369,6 +423,9 @@ pub(super) fn define<M: Module>(
             )
             .with_constant_values([args[2], args[3]])
             .with_specialized_width(width);
+            let first_index = words.read(&mut b, proof.bounds.index_word);
+            let fuel = packed.read(&mut b, core::mem::offset_of!(Frame, fuel));
+            let extent = PrepaidExtent::new(&mut b, credit_base, first_index, fuel, args[4]);
             let blocks = proof
                 .nodes
                 .iter()
@@ -412,13 +469,12 @@ pub(super) fn define<M: Module>(
                 b.append_block_param(failed, types::I64);
                 b.set_cold_block(failed);
                 if index == proof.active {
-                    // Every incoming edge performs the original test before
-                    // reaching this debit. Its cold snapshot is outside the
+                    // Every incoming edge admits the original next traversal
+                    // before this header. Its cold snapshot is outside the
                     // loop header, so prior cache/frame values need not be
                     // carried through the next productive iteration.
-                    let fuel = packed.read(&mut b, core::mem::offset_of!(Frame, fuel));
-                    let fuel = b.ins().iadd_imm(fuel, -1);
-                    packed.write(&mut b, core::mem::offset_of!(Frame, fuel), fuel);
+                    // Its prepaid debit is represented by extent.origin and
+                    // is reconstructed exactly before every observable exit.
                     let tag = b
                         .ins()
                         .iconst(types::I64, i64::from(proof.bounds.active_tag));
@@ -611,23 +667,30 @@ pub(super) fn define<M: Module>(
             for (&edge, &check) in &checks {
                 b.switch_to_block(check);
                 let start = b.func.dfg.num_insts();
-                // These are exactly the old header-prefix operations. They
-                // stay after the selected source predecessor and before any
-                // original header action or debit. No source visit is skipped
+                // Retire source progress after its original predecessor. The
+                // entry keeps the original guards; completed recurrences use
+                // their precomputed intersection of endpoint and prepaid fuel.
+                // Each stopped edge remains before the next original debit.
                 // or prepaid, including the final terminal traversal.
                 let counter = words.read(&mut b, proof.bounds.index_word);
                 packed.write(&mut b, core::mem::offset_of!(Frame, updates), counter);
-                let fuel = packed.read(&mut b, core::mem::offset_of!(Frame, fuel));
-                let funded = b.create_block();
                 // Each incoming source edge owns its cold snapshot. Joining
                 // the initial and completed-iteration states in one exit
                 // creates phi arguments that force cold constants and old
                 // cache values to be materialized on every hot traversal.
                 // Both outcomes still return before the SAME original header.
                 let stopped = b.create_block();
-                b.ins().brif(fuel, funded, &[], stopped, &[]);
-                b.switch_to_block(funded);
-                let productive = b.ins().icmp(IntCC::UnsignedLessThan, counter, args[4]);
+                let endpoint = if edge.is_some() {
+                    b.def_var(extent.origin, counter);
+                    extent.stop
+                } else {
+                    let funded = b.create_block();
+                    let fuel = packed.read(&mut b, core::mem::offset_of!(Frame, fuel));
+                    b.ins().brif(fuel, funded, &[], stopped, &[]);
+                    b.switch_to_block(funded);
+                    args[4]
+                };
+                let productive = b.ins().icmp(IntCC::UnsignedLessThan, counter, endpoint);
                 b.ins()
                     .brif(productive, blocks[&proof.active], &[], stopped, &[]);
                 maximum_check = maximum_check.max(b.func.dfg.num_insts() - start);
@@ -638,7 +701,7 @@ pub(super) fn define<M: Module>(
             for (&index, &block) in &bail {
                 b.switch_to_block(block);
                 maximum = maximum.max(emit_snapshot(
-                    &mut b, &words, &packed, args[0], &proof, index, returned,
+                    &mut b, &words, &packed, args[0], &proof, &extent, true, index, returned,
                 )?);
             }
             for &(edge, block) in &header_snapshots {
@@ -649,6 +712,8 @@ pub(super) fn define<M: Module>(
                     &packed,
                     args[0],
                     &proof,
+                    &extent,
+                    false,
                     proof.active,
                     returned,
                 )?);
@@ -690,6 +755,7 @@ pub(super) fn define<M: Module>(
         .into_iter()
         .collect::<Vec<_>>();
     let maximum_fuel_check_instructions = bail_blocks.2;
+    let prepaid_stop_edges = fuel_check_edges.iter().copied().flatten().collect();
     let header_snapshot_edges = bail_blocks
         .3
         .iter()
@@ -773,6 +839,8 @@ pub(super) fn define<M: Module>(
             fuel_check_edges,
             maximum_fuel_check_instructions,
             header_snapshot_edges,
+            prepaid_stop_edges,
+            fuel_reconstructed_at_exits: true,
             peeled_probe_nodes: bail_blocks.4.into_iter().collect(),
             entry_stop_index_word: Some(proof.bounds.index_word),
             entry_stop_endpoint_words: Some([proof.bounds.width_word, proof.bounds.limit_word]),

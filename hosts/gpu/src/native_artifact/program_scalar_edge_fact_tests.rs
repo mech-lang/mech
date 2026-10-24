@@ -547,6 +547,7 @@ fn changed_input_equivalence(pass: Pass) {
         pass.check(unchanged_facts, unchanged_tags, take_frame_effect_emissions(), false);
         let long_text = (0..4099).map(|index| char::from(b'a' + ((index * 7 + index / 26) % 26) as u8))
             .collect::<String>();
+        let one_key_text = "a".repeat(2050);
         let mut cases = vec![
             ("abcabc", 1u64, 6u64), ("abcabc", 2, 6), ("abcabc", 3, 5),
             ("zzzz", 2, 4), ("abcdefgh", 7, 8), ("a", 1, 1),
@@ -559,6 +560,15 @@ fn changed_input_equivalence(pass: Pass) {
             // Unknown ASCII domain at width18 requires both key words. They
             // must survive refills although refill never reads either word.
             cases.push((long_text.as_str(), 18, long_text.len() as u64));
+        }
+        if matches!(pass, Pass::SteadyLoops) {
+            // A deterministic single-key map exercises both sides of prepaid
+            // batch boundaries and source endpoints, including a partial last
+            // batch. Compare all output, precise pre-publication fuel/work and
+            // the complete terminal report with the unmodified source CFG.
+            for n in [1023u64, 1024, 1025, 2048, 2049, 2050] {
+                for extent in [1, 2] { cases.push((one_key_text.as_str(), extent, n)); }
+            }
         }
         for (text, extent, n) in cases {
             let mut executions = Vec::new();
