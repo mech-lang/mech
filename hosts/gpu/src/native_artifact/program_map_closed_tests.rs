@@ -12,12 +12,27 @@ enum Mode { Native, Decline, OneShort, Renew, TightCall, TightWrite, WriteTransi
 #[derive(Default, Debug)]
 struct Observation {
     entries: u64, packed: u64, guarded: u64, guarded_calls: u64, rejected: u64, errors: Vec<&'static str>, bound: [u64; 15],
+    source_scans: u64, source_proofs: u64, end_work: Vec<(u64, (u64, u64))>,
 }
 thread_local! {
     static MODE: Cell<Mode> = const { Cell::new(Mode::Native) };
     static OBS: RefCell<Observation> = RefCell::new(Observation::default());
+    static SOURCE_PROOF: Cell<bool> = const { Cell::new(true) };
 }
 fn note(f: impl FnOnce(&mut Observation)) { OBS.with(|v| f(&mut v.borrow_mut())); }
+pub(super) fn source_scan_proof(proved: bool) -> bool {
+    let selected = proved && SOURCE_PROOF.with(Cell::get);
+    note(|r| if selected { r.source_proofs += 1; } else { r.source_scans += 1; });
+    selected
+}
+fn with_source_proof<T>(enabled: bool, f: impl FnOnce() -> T) -> T {
+    struct Restore(bool);
+    impl Drop for Restore {
+        fn drop(&mut self) { SOURCE_PROOF.with(|flag| flag.set(self.0)); }
+    }
+    let _restore = Restore(SOURCE_PROOF.with(|flag| flag.replace(enabled)));
+    f()
+}
 pub(super) fn record_bound_call(op: u64) {
     note(|r| if let Some(count) = r.bound.get_mut(op as usize) { *count += 1; });
 }
@@ -30,6 +45,9 @@ unsafe extern "C" fn observe(raw: *mut c_void, site: u64, op: u64,
     let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
     let old = ctx.limits;
     let mode = MODE.with(Cell::get);
+    if op == CLOSED_TAIL_END {
+        note(|r| r.end_work.push((ctx.control.work.used(), ctx.library.used())));
+    }
     if op == CLOSED_TAIL_BEGIN && mode == Mode::Decline { ctx.limits.max_temporary_bytes = Some(0); }
     if op == CLOSED_TAIL_BEGIN && mode == Mode::TightCall { ctx.limits.max_comparison_work = Some(0); }
     // One byte plus the initial eight-slot census admits a read (65), but
@@ -90,20 +108,41 @@ sequence := text/join([letters{{char}} | char <- "acgtacgtacgtacgt"], "")
         // SAFETY: these descriptor bytes and native code have the same owner.
         let restored = unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
         for descriptor in [jit.descriptor(), &restored] {
-            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
-            let mut output = vec![None];
-            let entry = jit.test_checked_entry();
-            let report = execute(descriptor, |frame| unsafe { entry(frame) },
-                &[], &mut output, tests::limits(), &memory).unwrap();
-            assert_eq!((report.packed_map_regions, report.packed_ssa_regions, report.packed_map_updates), (1, 1, 14));
-            let ValueData::Map(map) = output[0].as_ref().unwrap().data() else { panic!("map"); };
-            let pairs = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
-                (ValueData::String(key), ValueData::U64(value)) => (key.to_string(), *value),
-                _ => panic!("String/U64 map"),
-            }).collect::<Vec<_>>();
-            assert_eq!(pairs, [("ACG".into(), 4), ("CGT".into(), 4), ("GTA".into(), 3), ("TAC".into(), 3)]);
-            drop(output);
-            assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+            let mut outcomes = Vec::new();
+            for enabled in [false, true] {
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let mut output = vec![None];
+                let entry = jit.test_checked_entry();
+                OBS.with(|v| *v.borrow_mut() = Observation::default());
+                let mut report = with_source_proof(enabled, || execute(descriptor, |frame| {
+                    // SAFETY: the observer delegates to the same owned helper.
+                    let old = unsafe { (*frame).helper };
+                    unsafe { (*frame).helper = observe; }
+                    let status = unsafe { entry(frame) };
+                    unsafe { (*frame).helper = old; }
+                    status
+                }, &[], &mut output, tests::limits(), &memory)).unwrap();
+                let observed = OBS.with(|v| core::mem::take(&mut *v.borrow_mut()));
+                assert!(observed.errors.is_empty(), "{observed:?}");
+                assert_eq!((observed.source_proofs, observed.source_scans),
+                    if enabled { (1, 0) } else { (0, 1) });
+                assert_eq!(observed.end_work.len(), 1);
+                assert_eq!((report.packed_map_regions, report.packed_ssa_regions, report.packed_map_updates), (1, 1, 14));
+                let ValueData::Map(map) = output[0].as_ref().unwrap().data() else { panic!("map"); };
+                let pairs = map.entries().iter().map(|entry| match (entry.key().data(), entry.value()) {
+                    (ValueData::String(key), ValueData::U64(value)) => (key.to_string(), *value),
+                    _ => panic!("String/U64 map"),
+                }).collect::<Vec<_>>();
+                assert_eq!(pairs, [("ACG".into(), 4), ("CGT".into(), 4), ("GTA".into(), 3), ("TAC".into(), 3)]);
+                // Compare exact work before canonical map publication, whose
+                // independently seeded ordering can change final sorting work.
+                report.work = 0;
+                report.comparison_work = 0;
+                outcomes.push((report, observed.end_work, pairs));
+                drop(output);
+                assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+            }
+            assert_eq!(outcomes[0], outcomes[1], "producer proof must retain exact work and complete output");
         }
     }
 }
@@ -164,8 +203,12 @@ fn packed_domain_boundaries_execute_rolling_keys_and_restore_descriptors_lossles
                 limits.library.max_compute_work = Some(1 << 36);
                 limits.library.max_comparison_work = Some(1 << 34);
                 let entry = jit.test_checked_entry();
+                OBS.with(|v| *v.borrow_mut() = Observation::default());
                 let report = execute(descriptor, |frame| unsafe { entry(frame) },
                     &inputs, &mut output, limits, &memory).unwrap();
+                let observed = OBS.with(|v| core::mem::take(&mut *v.borrow_mut()));
+                assert_eq!((observed.source_proofs, observed.source_scans),
+                    if runtime_input { (0, 1) } else { (1, 0) });
                 assert_eq!((report.packed_map_regions, report.packed_ssa_regions, report.packed_map_updates),
                     (1, 1, (text.len() - width + 1) as u64));
                 let ValueData::Map(map) = output[0].as_ref().unwrap().data() else { panic!("map"); };
