@@ -7,7 +7,7 @@ use cranelift_frontend::FunctionBuilder;
 
 #[path = "program_packed_frame_codegen.rs"]
 mod frame_state;
-pub(in crate::native_artifact) use frame_state::FrameState;
+pub(in crate::native_artifact) use frame_state::{FrameState, effects_enabled};
 #[cfg(test)]
 pub(in crate::native_artifact) use frame_state::{take_frame_effect_emissions, without_frame_effects};
 

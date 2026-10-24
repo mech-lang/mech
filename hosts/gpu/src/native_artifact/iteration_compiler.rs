@@ -1322,7 +1322,7 @@ pub(super) fn define_cfg<M: Module>(
                     .iter()
                     .map(|(_, _, stack, _)| *stack)
                     .chain(map_functions.iter().map(|(_, _, stack, _)| *stack))
-                    .chain(packed_functions.iter().map(|(_, _, stack, _)| *stack + bound_call_shim.map_or(0, |shim| shim.stack)))
+                    .chain(packed_functions.iter().map(|(_, _, stack, _)| *stack))
                     .max()
                     .unwrap_or(0),
             )
