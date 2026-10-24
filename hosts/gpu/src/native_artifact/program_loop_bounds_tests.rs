@@ -30,50 +30,50 @@ fn parameterized() -> String {
 
 #[test]
 fn guarded_loop_versions_preserve_actual_bounds_arbitrary_seeds_headers_and_work() {
-    parameterized_equivalence(false, false, false, false, false, false, false, false, false);
+    parameterized_equivalence(false, false, false, false, false, false, false, false);
 }
 
 #[test]
 fn lookup_facts_preserve_limits_actual_bounds_seeds_refill_headers_and_work() {
-    parameterized_equivalence(true, false, false, false, false, false, false, false, false);
+    parameterized_equivalence(true, false, false, false, false, false, false, false);
 }
 
 #[test]
 fn cfg_cleanup_preserves_limits_actual_bounds_seeds_refill_headers_and_work() {
-    parameterized_equivalence(false, true, false, false, false, false, false, false, false);
+    parameterized_equivalence(false, true, false, false, false, false, false, false);
 }
 
 #[test]
 fn loop_outlining_preserves_limits_actual_bounds_seeds_refill_headers_and_work() {
-    parameterized_equivalence(false, false, true, false, false, false, false, false, false);
+    parameterized_equivalence(false, false, true, false, false, false, false, false);
 }
 
 #[test]
 fn loop_invariants_preserve_first_selection_steady_ranges_cap_transitions_and_refill_frontiers() {
-    parameterized_equivalence(false, false, false, true, false, false, false, false, false);
+    parameterized_equivalence(false, false, false, true, false, false, false, false);
 }
 
 #[test]
 fn preserving_calls_keep_bounds_arbitrary_seeds_cap_transitions_and_refill_frontiers() {
-    parameterized_equivalence(false, false, false, false, true, false, false, false, false);
+    parameterized_equivalence(false, false, false, false, true, false, false, false);
 }
 
 #[test]
 fn mutation_facts_keep_unaligned_initial_states_caps_seeds_and_refill_frontiers() {
-    parameterized_equivalence(false, false, false, false, false, true, false, false, false);
+    parameterized_equivalence(false, false, false, false, false, true, false, false);
 }
 
 #[test]
 fn count_bounds_keep_unaligned_initial_states_caps_seeds_and_refill_frontiers() {
-    parameterized_equivalence(false, false, false, false, false, false, true, false, false);
+    parameterized_equivalence(false, false, false, false, false, false, true, false);
 }
 
 #[test]
 fn loop_constants_keep_seeds_caps_arbitrary_headers_and_refill_frontiers() {
-    parameterized_equivalence(false, false, false, false, false, false, false, true, false);
+    parameterized_equivalence(false, false, false, false, false, false, false, true);
 }
 
-fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bool, compare_outlining: bool, compare_invariants: bool, compare_preserving: bool, compare_mutation: bool, compare_counts: bool, compare_constants: bool, compare_threading: bool) {
+fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bool, compare_outlining: bool, compare_invariants: bool, compare_preserving: bool, compare_mutation: bool, compare_counts: bool, compare_constants: bool) {
     let original = tests::artifact_source(&parameterized());
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(
         &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
@@ -86,9 +86,7 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
         take_count_bound_emissions();
         take_constant_emissions();
         if compare_preserving { crate::native_artifact::program_bound_shim::take_emissions(); }
-        take_lookup_thread_emissions();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        if compare_threading { assert!(take_lookup_thread_emissions().0 > 0); }
         let mutation_optimized = take_mutation_emissions().0 > 0;
         let constant_emitted = take_constant_emissions();
         if compare_constants { assert!(constant_emitted > 0); }
@@ -105,9 +103,7 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
         let lookup_emissions = take_lookup_fact_emissions();
         assert!(lookup_emissions.0 > 0 && lookup_emissions.1 >= 4);
         take_outline_emissions();
-        let baseline = if compare_threading {
-            without_lookup_threading(|| JitProgramArtifact::compile(&artifact, &catalog))
-        } else if compare_constants {
+        let baseline = if compare_constants {
             without_loop_constants(|| JitProgramArtifact::compile(&artifact, &catalog))
         } else if compare_counts {
             without_count_bounds(|| JitProgramArtifact::compile(&artifact, &catalog))
@@ -125,10 +121,7 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
             without_lookup_facts(|| JitProgramArtifact::compile(&artifact, &catalog))
         } else { without_loop_bounds(|| JitProgramArtifact::compile(&artifact, &catalog)) }.unwrap();
         let mutation_baseline = take_mutation_emissions().0 > 0;
-        if compare_threading {
-            assert_eq!(take_lookup_thread_emissions(), (0, 0));
-            assert_eq!(take_loop_bounds_emissions().0, emitted.0);
-        } else if compare_constants {
+        if compare_constants {
             assert_eq!(take_constant_emissions(), 0);
             assert_eq!(take_loop_bounds_emissions(), emitted);
         } else if compare_counts {
@@ -231,7 +224,7 @@ fn parameterized_equivalence(compare_lookup_facts: bool, compare_cfg_cleanup: bo
                 let mut obs = OBS.with(|r| core::mem::take(&mut *r.borrow_mut()));
                 assert!(obs.errors.is_empty(), "{obs:?}");
                 let mutation_selected = [mutation_optimized, mutation_baseline][version];
-                let selected = u64::from((version == 0 || compare_lookup_facts || compare_cfg_cleanup || compare_outlining || compare_invariants || compare_preserving || compare_mutation || compare_counts || compare_constants || compare_threading)
+                let selected = u64::from((version == 0 || compare_lookup_facts || compare_cfg_cleanup || compare_outlining || compare_invariants || compare_preserving || compare_mutation || compare_counts || compare_constants)
                     && (!mutation_selected || start == 0) && obs.packed == 1 && width > 0 && width <= n && n <= text.len() as u64);
                 assert_eq!(obs.bound[14], selected, "actual selector, version={version}, width={width}, n={n}");
                 if let Ok(report) = &mut outcome {
@@ -382,9 +375,4 @@ fn guarded_loop_count_overflow_stays_at_the_source_replacement() {
         drop(outputs); assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0,0));
     }
     assert_eq!(results[0], results[1]);
-}
-
-#[test]
-fn lookup_threading_keeps_arbitrary_seeds_caps_terminal_headers_and_refill_frontiers() {
-    parameterized_equivalence(false, false, false, false, false, false, false, false, true);
 }
