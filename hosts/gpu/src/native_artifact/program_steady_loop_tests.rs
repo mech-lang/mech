@@ -41,6 +41,10 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
     assert!(checks.iter().any(serde_json::Value::is_null), "initial entry retains the fuel check");
     assert!(checks.iter().any(serde_json::Value::is_u64), "source backedges retain the fuel check");
     assert!(pure["maximum_fuel_check_instructions"].as_u64().unwrap() > 0);
+    assert_eq!(pure["entry_stop_index_word"], bound["index_word"]);
+    assert_eq!(pure["entry_stop_endpoint_words"], serde_json::json!([
+        bound["width_word"].as_u64().unwrap(), bound["limit_word"].as_u64().unwrap()
+    ]));
     let mut node_sites = std::collections::BTreeMap::new();
     let closed = &object.descriptor().closed_tails;
     let region = closed
