@@ -338,5 +338,12 @@ mod tests {
         report.lookup_facts(0, 32, 64, vec![(1, 2, 3, "Cached"); MAX_SUBSTITUTIONS + 1], None);
         assert!(!report.lookup_facts.complete);
         assert!(report.lookup_facts.regions.is_empty());
+        let mut report = CodegenReport::default();
+        report.lookup_facts(0, 32, 64, vec![], Some(LookupThreading {
+            original_tag_nodes: 32, states: vec![(0, 0, 0, "Present"); MAX_SUBSTITUTIONS + 1],
+            folded_predicate_branches: vec![],
+        }));
+        assert!(!report.lookup_facts.complete);
+        assert!(report.lookup_facts.regions.is_empty());
     }
 }
