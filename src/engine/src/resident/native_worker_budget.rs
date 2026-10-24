@@ -6,7 +6,7 @@ use std::sync::{MutexGuard, TryLockError};
 
 // Retry only short ownership transfers. A bounded exponential pause avoids
 // repeatedly contending on one cache line before the original blocking lock.
-const ESCROW_SPIN_ROUNDS: u32 = 8;
+const ESCROW_SPIN_ROUNDS: u32 = 10;
 #[cfg(test)]
 thread_local! {
     // Attempts, pause hints, blocking fallbacks, poison recoveries.
