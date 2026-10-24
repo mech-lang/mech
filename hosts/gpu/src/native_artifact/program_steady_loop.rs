@@ -319,6 +319,21 @@ pub(super) fn define<M: Module>(
         let mut maximum_source = 0;
         let mut maximum_snapshot = 0;
         let mut all_bails = Vec::new();
+        let check_edges = std::iter::once(None)
+            .chain(
+                proof
+                    .nodes
+                    .iter()
+                    .copied()
+                    .filter(|&index| {
+                        targets(&proof.graph, &proof.bounds, index)
+                            .contains(&tag_threading::Target::Node(proof.active))
+                    })
+                    .map(Some),
+            )
+            .collect::<Vec<_>>();
+        let mut all_checks = Vec::new();
+        let mut maximum_check = 0;
         for (width, variant) in std::iter::once((None, generic)).chain(variants) {
             b.switch_to_block(variant);
             let entry_start = b.func.dfg.num_insts();
@@ -341,15 +356,22 @@ pub(super) fn define<M: Module>(
                 .map(|&node| (node, b.create_block()))
                 .collect::<BTreeMap<_, _>>();
             bail.insert(proof.graph.nodes.len(), b.create_block());
+            let checks = check_edges
+                .iter()
+                .map(|&edge| (edge, b.create_block()))
+                .collect::<BTreeMap<_, _>>();
             let zero = b.ins().iconst(types::I64, 0);
-            b.ins().jump(blocks[&proof.active], &[]);
+            b.ins().jump(checks[&None], &[]);
             maximum_entry = maximum_entry.max(b.func.dfg.num_insts() - entry_start);
-            let target = |target| match target {
-                tag_threading::Target::Node(node) => blocks[&node],
-                tag_threading::Target::Exit => bail[&proof.graph.nodes.len()],
-            };
             let mut maximum = 0;
             for &index in &proof.nodes {
+                let target = |target| match target {
+                    tag_threading::Target::Node(node) if node == proof.active => {
+                        checks[&Some(index)]
+                    }
+                    tag_threading::Target::Node(node) => blocks[&node],
+                    tag_threading::Target::Exit => bail[&proof.graph.nodes.len()],
+                };
                 let node = &proof.graph.nodes[index];
                 b.switch_to_block(blocks[&index]);
                 let start = b.func.dfg.num_insts();
@@ -366,12 +388,11 @@ pub(super) fn define<M: Module>(
                 b.append_block_param(failed, types::I64);
                 b.set_cold_block(failed);
                 if index == proof.active {
-                    let counter = words.read(&mut b, proof.bounds.index_word);
-                    packed.write(&mut b, core::mem::offset_of!(Frame, updates), counter);
+                    // Every incoming edge performs the original test before
+                    // reaching this debit. Its cold snapshot is outside the
+                    // loop header, so prior cache/frame values need not be
+                    // carried through the next productive iteration.
                     let fuel = packed.read(&mut b, core::mem::offset_of!(Frame, fuel));
-                    let funded = b.create_block();
-                    b.ins().brif(fuel, funded, &[], bail[&index], &[]);
-                    b.switch_to_block(funded);
                     let fuel = b.ins().iadd_imm(fuel, -1);
                     packed.write(&mut b, core::mem::offset_of!(Frame, fuel), fuel);
                     let tag = b
@@ -558,6 +579,21 @@ pub(super) fn define<M: Module>(
                 maximum = maximum.max(b.func.dfg.num_insts() - start);
             }
             maximum_source = maximum_source.max(maximum);
+            for (&edge, &check) in &checks {
+                b.switch_to_block(check);
+                let start = b.func.dfg.num_insts();
+                // These are exactly the old header-prefix operations. They
+                // stay after the selected source predecessor and before any
+                // original header action or debit. No source visit is skipped
+                // or prepaid, including the final terminal traversal.
+                let counter = words.read(&mut b, proof.bounds.index_word);
+                packed.write(&mut b, core::mem::offset_of!(Frame, updates), counter);
+                let fuel = packed.read(&mut b, core::mem::offset_of!(Frame, fuel));
+                b.ins()
+                    .brif(fuel, blocks[&proof.active], &[], bail[&proof.active], &[]);
+                maximum_check = maximum_check.max(b.func.dfg.num_insts() - start);
+                all_checks.push((edge, check));
+            }
             let mut maximum = 0;
             for (&index, &block) in &bail {
                 b.switch_to_block(block);
@@ -572,10 +608,10 @@ pub(super) fn define<M: Module>(
             maximum_snapshot = maximum_snapshot.max(maximum);
             all_bails.extend(bail);
         }
-        entry_work = dispatch_work + maximum_entry;
-        source_work = maximum_source;
+        entry_work = dispatch_work + maximum_entry + maximum_check;
+        source_work = maximum_source + maximum_check;
         snapshot_work = maximum_snapshot;
-        bail_blocks = all_bails;
+        bail_blocks = (all_bails, all_checks, maximum_check);
         b.seal_all_blocks();
         b.finalize();
     }
@@ -596,7 +632,16 @@ pub(super) fn define<M: Module>(
     cleanup.constant_branches_removed += initial_cleanup.constant_branches_removed;
     cleanup.before_blocks = initial_cleanup.before_blocks;
     cleanup.before_instructions = initial_cleanup.before_instructions;
+    let fuel_check_edges = bail_blocks
+        .1
+        .iter()
+        .filter_map(|&(edge, block)| context.func.layout.is_block_inserted(block).then_some(edge))
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let maximum_fuel_check_instructions = bail_blocks.2;
     let continuations = bail_blocks
+        .0
         .iter()
         .filter_map(|&(index, block)| {
             context
@@ -668,6 +713,8 @@ pub(super) fn define<M: Module>(
                 .collect(),
             entry_words: proof.live[proof.active].iter().copied().collect(),
             specialized_widths,
+            fuel_check_edges,
+            maximum_fuel_check_instructions,
             entry_instructions: entry_work,
             maximum_source_instructions: source_work,
             maximum_snapshot_instructions: snapshot_work,

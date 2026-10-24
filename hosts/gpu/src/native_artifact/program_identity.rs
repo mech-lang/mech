@@ -134,7 +134,9 @@ fn selected_template(
 // IR66 was an unpromoted immutable-snapshot experiment. IR67 versions the
 // helper-free source graph by the actual private width, with bounded complete
 // constant-width arms and the original generic fallback.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 67;
+// IR68 moves the identical fuel test to each incoming header edge, keeping
+// exact header continuations while retiring prior-iteration snapshot liveness.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 68;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
