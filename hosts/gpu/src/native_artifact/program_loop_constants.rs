@@ -32,7 +32,7 @@ pub(super) fn endpoint_words(code: CodePlan<'_>, closed: &Layout, id: usize,
     #[cfg(test)]
     if TAG_THREADING_DISABLED.with(std::cell::Cell::get)
         || LOOP_BOUNDS_DISABLED.with(std::cell::Cell::get) { return None; }
-    let graph = tag_threading::derive(code, closed, id, owner, aggregates)?;
+    let (graph, _) = derive_graph(code, closed, id, owner, aggregates)?;
     let proof = loop_bounds::derive(code, closed, id, owner, aggregates, &graph, slots)?;
     Some([proof.width_word, proof.limit_word])
 }

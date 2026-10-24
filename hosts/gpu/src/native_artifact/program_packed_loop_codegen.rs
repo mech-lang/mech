@@ -23,6 +23,8 @@ mod tag_threading;
 mod loop_bounds;
 #[path = "program_lookup_facts.rs"]
 mod lookup_facts;
+#[cfg(test)]
+pub(in crate::native_artifact) use lookup_facts::{take_lookup_thread_emissions, without_lookup_threading};
 #[path = "program_packed_loop_functions.rs"]
 mod outlined;
 #[path = "program_loop_invariants.rs"]
@@ -57,7 +59,7 @@ fn preserving_calls_proved(code: CodePlan<'_>, closed: &Layout, id: usize,
     if TAG_THREADING_DISABLED.with(std::cell::Cell::get)
         || LOOKUP_FACTS_DISABLED.with(std::cell::Cell::get)
         || LOOP_BOUNDS_DISABLED.with(std::cell::Cell::get) { return false; }
-    let Some(graph) = tag_threading::derive(code, closed, id, owner, aggregates) else { return false; };
+    let Some((graph, _)) = derive_graph(code, closed, id, owner, aggregates) else { return false; };
     let Some(bounds) = loop_bounds::derive(code, closed, id, owner, aggregates, &graph, slots) else { return false; };
     if invariants::derive(code, closed, id, owner, &graph, &bounds, slots).is_none() { return false; }
     let Some(facts) = lookup_facts::derive(code, closed, id, owner, aggregates, &graph) else { return false; };
@@ -69,6 +71,22 @@ fn preserving_calls_proved(code: CodePlan<'_>, closed: &Layout, id: usize,
             _ => true,
         }
     })
+}
+
+fn derive_graph(code: CodePlan<'_>, closed: &Layout, id: usize,
+    owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates)
+    -> Option<(tag_threading::Graph, Option<super::super::iteration_compiler::LookupThreading>)>
+{
+    #[cfg(test)]
+    if TAG_THREADING_DISABLED.with(std::cell::Cell::get) { return None; }
+    let graph = tag_threading::derive(code, closed, id, owner, aggregates)?;
+    #[cfg(test)]
+    let thread = !LOOKUP_FACTS_DISABLED.with(std::cell::Cell::get);
+    #[cfg(not(test))]
+    let thread = true;
+    if thread && let Some((expanded, receipt)) = lookup_facts::thread(code, closed, id, owner, aggregates, &graph) {
+        Some((expanded, Some(receipt)))
+    } else { Some((graph, None)) }
 }
 
 #[cfg(test)]
@@ -413,9 +431,8 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     let entry_template_start = b.func.dfg.num_insts() - 1;
     let entry_shim_work = hooks.bound_shim_work();
     let facts = edge_facts::derive(code, closed, id, owner, aggregates, &slots).unwrap_or_default();
-    let threaded = tag_threading::derive(code, closed, id, owner, aggregates);
-    #[cfg(test)]
-    let threaded = if TAG_THREADING_DISABLED.with(std::cell::Cell::get) { None } else { threaded };
+    let (threaded, lookup_threading) = derive_graph(code, closed, id, owner, aggregates)
+        .map_or((None, None), |(graph, receipt)| (Some(graph), receipt));
     let lookups = threaded.as_ref().and_then(|graph| lookup_facts::derive(code, closed, id, owner, aggregates, graph));
     #[cfg(test)]
     let lookups = if LOOKUP_FACTS_DISABLED.with(std::cell::Cell::get) { None } else { lookups };
@@ -809,7 +826,8 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
         let old = counts.get();
         counts.set((old.0 + usize::from(lookups.is_some()), old.1 + lookup_substitutions.len()));
     });
-    report.lookup_facts(site, version_nodes, emitted_sites.len(), lookup_substitutions);
+    if let Some(receipt) = &lookup_threading { lookup_facts::note_threading(receipt.states.len()); }
+    report.lookup_facts(site, version_nodes, emitted_sites.len(), lookup_substitutions, lookup_threading);
     if let Some(proof) = &bounds {
         #[cfg(test)]
         LOOP_BOUNDS_EMISSIONS.with(|counts| { let old = counts.get(); counts.set((old.0 + 1, old.1 + certified_ranges.len())); });
