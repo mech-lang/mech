@@ -36,6 +36,11 @@ pub(super) struct Proof {
     pub guard_sites: [usize; 3],
     pub range_site: usize,
     pub recurrence_sites: Vec<usize>,
+    pub recurrence_nodes: BTreeSet<usize>,
+    // Every productive recurrence inserts exactly once, no productive prefix
+    // inserts twice, and other state variants cannot enter the active cycle.
+    // Only these actual product-graph nodes may use the mutation relation.
+    pub single_insert_nodes: Option<BTreeSet<usize>>,
 }
 
 #[derive(Default)]
@@ -267,6 +272,17 @@ fn targets(edge: &Edge) -> Vec<Target> {
     }
 }
 
+fn closed_active_recurrence(graph: &Graph, header: usize, active_tag: u32,
+    recurrences: &BTreeSet<usize>) -> bool
+{
+    graph.nodes.iter().enumerate().all(|(node, source)| targets(&source.edge).into_iter().all(|target| {
+        let Target::Node(next) = target else { return true; };
+        let Some(next) = graph.nodes.get(next) else { return false; };
+        next.site != header || matches!(next.header_tag, Some(tag) if tag != active_tag)
+            || recurrences.contains(&node)
+    }))
+}
+
 // Start a fresh reachability search at EVERY header version, including the
 // actual-tag dispatcher and Other partition. A previous traversal's guard is
 // therefore never evidence for the current traversal. Removing `cut` must
@@ -383,9 +399,11 @@ pub(super) fn derive(code: CodePlan<'_>, closed: &Layout, id: usize, owner: &Nat
         if !same_live(&state0, &state1, &live[end0]) || !same_live(&state0, &state2, &live[end0]) { return None; }
         let next_index = terms.add(index, one)?;
         let range_end = terms.add(index, width)?;
-        let mut pending = vec![(productive, state, false)]; let mut paths = 0usize;
+        let mut pending = vec![(productive, state, false, 0usize)]; let mut paths = 0usize;
         let mut steps = 0usize; let mut ranges = BTreeSet::new(); let mut recurrence_sites = BTreeSet::new();
-        while let Some((mut node, mut state, mut selected)) = pending.pop() {
+        let mut recurrence_nodes = BTreeSet::new(); let mut insert_nodes = BTreeSet::new();
+        let mut single_insert = true;
+        while let Some((mut node, mut state, mut selected, mut insertions)) = pending.pop() {
             loop {
                 steps = steps.checked_add(1)?; if steps > MAX_PATHS * MAX_NODES { return None; }
                 let site = graph.nodes[node].site;
@@ -397,17 +415,26 @@ pub(super) fn derive(code: CodePlan<'_>, closed: &Layout, id: usize, owner: &Nat
                         || state.get(&(span.operands()[1].get() as usize)) != Some(&range_end) { return None; }
                     selected = true; ranges.insert(node);
                 }
+                if owner.call_region(site) == region.map
+                    && let Action::LibraryCall { template, .. } = code.blocks()[site].action()
+                    && template.primitive() == P::MapInsert
+                {
+                    insertions = insertions.checked_add(1)?;
+                    insert_nodes.insert(node);
+                    if !selected || insertions > 1 { single_insert = false; }
+                }
                 walk.step(node, &mut state, &mut terms, false)?;
                 if site == region.tail.latch() as usize {
                     if !selected || state.get(&index_word) != Some(&next_index)
                         || terms.value(*state.get(&graph.carrier_word)?) != Some(u64::from(active_tag)) { return None; }
-                    recurrence_sites.insert(site); paths += 1; break;
+                    if insertions != 1 { single_insert = false; }
+                    recurrence_sites.insert(site); recurrence_nodes.insert(node); paths += 1; break;
                 }
                 match graph.nodes[node].edge {
                     Edge::Jump(Target::Node(next)) => node = next,
                     Edge::Branch { yes: Target::Node(yes), no: Target::Node(no) } => {
                         if pending.len().checked_add(paths)? >= MAX_PATHS { return None; }
-                        pending.push((no, state.clone(), selected)); node = yes;
+                        pending.push((no, state.clone(), selected, insertions)); node = yes;
                     }
                     Edge::Reject => { paths += 1; break; } // Original source rejection remains emitted.
                     _ => return None,
@@ -419,10 +446,16 @@ pub(super) fn derive(code: CodePlan<'_>, closed: &Layout, id: usize, owner: &Nat
         let mut certified = ranges.clone(); certified.extend([second, third]);
         if !guarded_entry_dominates(graph, region.tail.header() as usize, active_tag,
             body, first, &certified) { return None; }
+        let mut mutation_sites = certified.clone(); mutation_sites.extend(insert_nodes.iter().copied());
+        let single_insert_nodes = (single_insert && !insert_nodes.is_empty()
+            && closed_active_recurrence(graph, region.tail.header() as usize, active_tag, &recurrence_nodes)
+            && guarded_entry_dominates(graph, region.tail.header() as usize, active_tag, body, first, &mutation_sites))
+            .then_some(insert_nodes);
         return Some(Proof { index_word, width_word, limit_word: limit_value.get() as usize,
             active_tag, first, later: [second, third], ranges,
             guard_sites: [first, second, third].map(|node| graph.nodes[node].site),
-            range_site: packed.range_site() as usize, recurrence_sites: recurrence_sites.into_iter().collect() });
+            range_site: packed.range_site() as usize, recurrence_sites: recurrence_sites.into_iter().collect(),
+            recurrence_nodes, single_insert_nodes });
     }
     None
 }
