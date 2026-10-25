@@ -776,7 +776,13 @@ fn decode_program_artifact_sections_owned(
         });
     }
     preflight_control_graph(&sections.nodes, &limits)?;
-    let graph: WireGraph = serde_json::from_slice(&sections.nodes)?;
+    // Only this already-preflighted control section uses its own finite wire
+    // bound instead of serde_json's shallower generic container limit. The
+    // first pass has admitted every count and the maximum lexical/wire depth.
+    let mut decoder = serde_json::Deserializer::from_slice(&sections.nodes);
+    decoder.disable_recursion_limit();
+    let graph = WireGraph::deserialize(&mut decoder)?;
+    decoder.end()?;
     if graph.revision != WIRE_GRAPH_REVISION {
         return Err(ArtifactBytecodeError::InvalidWireTag {
             section: "graph revision",
@@ -2500,17 +2506,19 @@ fn wire_match_operation_ids(control: &WireMatchDeclaration) -> Vec<u32> {
         .collect()
 }
 
+// A control layer adds up to eight JSON containers (declaration, arms or
+// steps, block and nested operation). A leaf may also contain a structured
+// FSM value, with an enum object, struct object and items array per layer.
+// This remains a finite independent wire bound, including unknown fields.
+const MAX_CONTROL_GRAPH_WIRE_DEPTH: usize =
+    super::MAX_CONTROL_DEPTH * 8 + super::fsm::MAX_FSM_VALUE_DEPTH * 3 + 16;
+
 /// First pass visits tokens without constructing graph arrays. The typed decode
 /// can allocate only after aggregate control counts and nesting are admitted.
 fn preflight_control_graph(
     bytes: &[u8],
     limits: &ArtifactDecodeLimits,
 ) -> Result<(), ArtifactBytecodeError> {
-    // A structured FSM value adds an enum object, a struct object, and an
-    // items array at each admitted semantic layer. The remaining allowance
-    // covers the graph, node, FSM body, stage, and leaf containers.
-    const MAX_CONTROL_GRAPH_WIRE_DEPTH: usize = super::fsm::MAX_FSM_VALUE_DEPTH * 3 + 16;
-
     #[derive(Clone, Copy)]
     enum Field {
         Other,
@@ -2585,8 +2593,8 @@ fn preflight_control_graph(
             mut self,
             deserializer: D,
         ) -> Result<(), D::Error> {
-            // Keep the complete declared control depth below serde_json's own
-            // recursion bound while admitting every valid FSM value depth.
+            // Admit complete declared control/FSM depth before constructing
+            // typed graph arrays; excessive arbitrary JSON also fails here.
             if self.depth > MAX_CONTROL_GRAPH_WIRE_DEPTH
                 || self.control_depth > super::MAX_CONTROL_DEPTH
             {
@@ -2701,6 +2709,7 @@ fn preflight_control_graph(
         operands: 0,
     };
     let mut decoder = serde_json::Deserializer::from_slice(bytes);
+    decoder.disable_recursion_limit();
     Scan {
         counts: &mut counts,
         limits,
@@ -3093,6 +3102,18 @@ mod source_nominal_declaration_tests {
 #[cfg(test)]
 mod control_preflight_tests {
     use super::{ArtifactDecodeLimits, WireComprehensionStep, preflight_control_graph};
+
+    #[test]
+    fn wire_depth_remains_finite_when_generic_json_recursion_limit_is_replaced() {
+        let nested = |depth| format!("{}0{}", "{\"unknown\":".repeat(depth), "}".repeat(depth));
+        let limits = ArtifactDecodeLimits::default();
+        assert!(preflight_control_graph(
+            nested(super::MAX_CONTROL_GRAPH_WIRE_DEPTH).as_bytes(), &limits,
+        ).is_ok());
+        assert!(preflight_control_graph(
+            nested(super::MAX_CONTROL_GRAPH_WIRE_DEPTH + 1).as_bytes(), &limits,
+        ).is_err());
+    }
 
     #[test]
     fn unknown_fields_cannot_hide_generator_patterns_from_admission() {

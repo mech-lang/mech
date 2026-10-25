@@ -9,6 +9,9 @@ use mech_syntax::document::{
     MatchArmSyntax, MatrixComprehensionSyntax, SetComprehensionSyntax,
 };
 
+#[path = "recursive_statement_functions.rs"]
+mod recursive_statements;
+
 enum DocumentFunctionBody {
     Expression(SyntaxNode),
     Statements(SyntaxNode),
@@ -411,10 +414,10 @@ impl SemanticBuilder {
                     format!("function {name} forms an unsupported mutual recursion cycle"),
                 ));
             }
-            if !matches!(body, DocumentFunctionBody::Patterns(_)) {
+            if matches!(body, DocumentFunctionBody::Expression(_)) {
                 return Err(error(
-                    "source-semantics/recursive-statement-function",
-                    format!("function {name} requires a pattern body for canonical recursion"),
+                    "source-semantics/recursive-expression-function",
+                    format!("function {name} requires a pattern or statement body for canonical recursion"),
                 ));
             }
             let (expected, root_depth) = self
@@ -633,7 +636,13 @@ impl SemanticBuilder {
                 self.inline_expression_function_body(name, &body)
             }
             DocumentFunctionBody::Statements(body) => {
-                self.inline_statement_function_body(name, &body, call, &error)
+                if calls_function(&body, name)? {
+                    self.inline_recursive_statement_function_body(
+                        name, &body, &parameters, &arguments, call, &error,
+                    )
+                } else {
+                    self.inline_statement_function_body(name, &body, call, &error)
+                }
             }
             DocumentFunctionBody::Patterns(body) => {
                 self.inline_pattern_function_body(name, &body, &arguments, call)

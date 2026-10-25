@@ -2139,7 +2139,12 @@ fn nested_control_depth_is_bounded_before_artifact_mapping_and_wire_allocation()
         "source-semantics/control-depth-limit"
     );
     let mut sections = sections;
-    let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+    // This valid maximum-depth control tree exceeds serde_json's generic
+    // container depth. Production decoding has already preflighted its finite
+    // lexical and wire bounds above; this test now mutates that admitted tree.
+    let mut decoder = serde_json::Deserializer::from_slice(&sections.nodes);
+    decoder.disable_recursion_limit();
+    let mut graph = <serde_json::Value as serde::Deserialize>::deserialize(&mut decoder).unwrap();
     let repeated = graph["nodes"][0]["body"].clone();
     let mut deepest = &mut graph["nodes"][0]["body"];
     for _ in 1..MAX_CONTROL_DEPTH {

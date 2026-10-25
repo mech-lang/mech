@@ -1129,7 +1129,11 @@ pub const MAX_CONTROL_OPERANDS: usize = 262_144;
 /// share that one namespace during resident activation.
 pub const MAX_CONTROL_LOCALS: usize = u16::MAX as usize + 1;
 /// Keeps validation, encoding and execution recursion within a bounded stack.
-pub const MAX_CONTROL_DEPTH: usize = 8;
+// Ordinary function frames and their selected match expressions share this
+// lexical nesting bound. Keep a finite stack limit without excluding a small
+// chain of recursive helpers; total declarations/operations remain separately
+// bounded by MAX_CONTROL_BLOCKS and the artifact admission limits.
+pub const MAX_CONTROL_DEPTH: usize = 32;
 
 enum ControlRef<'a, C> {
     Match(&'a MatchDeclaration<C>),
