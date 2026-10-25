@@ -33,6 +33,10 @@ pub use workers::{
     NativeWorkerWorkLoan,
 };
 
+#[path = "word_draft_expansion.rs"]
+mod word_drafts;
+pub(crate) use word_drafts::unsigned_word_draft_expansion;
+
 #[derive(Default)]
 struct DisplayByteCounter(usize);
 

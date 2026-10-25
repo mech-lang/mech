@@ -254,7 +254,7 @@ pub fn prepare_native_program_library_call(
             if matches!(&contract.outputs[0].construction,
                 mech_core::OutputConstruction::FullWrite {
                     shape: mech_core::ShapeRule::SameAsInput { .. }
-                })
+                } | mech_core::OutputConstruction::ReadModifyWrite { .. })
     );
     let (span_selector_metadata_bytes, span_selector_work) =
         string_span::selector_geometry_bounds(&template).ok_or_else(|| super::invalid(node))?;
@@ -458,11 +458,15 @@ impl NativePreparedLibraryCall {
             .collect::<Vec<_>>();
         let current_shape;
         let empty_shape;
-        let output_parameters = if let mech_core::OutputConstruction::FullWrite {
-            shape: mech_core::ShapeRule::SameAsInput { input },
-        } = &contract.outputs[0].construction
-        {
-            let index = usize::from(*input);
+        let shape_input = match &contract.outputs[0].construction {
+            mech_core::OutputConstruction::FullWrite {
+                shape: mech_core::ShapeRule::SameAsInput { input },
+            } => Some(*input),
+            mech_core::OutputConstruction::ReadModifyWrite { base_input, .. } => Some(*base_input),
+            _ => None,
+        };
+        let output_parameters = if let Some(input) = shape_input {
+            let index = usize::from(input);
             let source = inputs
                 .get(index)
                 .and_then(Option::as_ref)

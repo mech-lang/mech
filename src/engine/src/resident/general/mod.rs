@@ -24922,14 +24922,22 @@ fn bind_control_block(
             },
             memory_plan,
         ));
-        let read_start = reads.len() as u32;
-        reads.extend(input_reads);
         let mech_core::ResolvedOperationContract::Declared(contract) =
             artifact.contracts().get(*contract_id).unwrap()
         else {
             unreachable!()
         };
         let policy = &contract.outputs[0];
+        let base = match policy.construction {
+            OutputConstruction::ReadModifyWrite { base_input, .. } => Some(usize::from(base_input)),
+            _ => None,
+        };
+        let rmw_base = base.and_then(|index| input_reads.get(index).copied());
+        let read_start = reads.len() as u32;
+        reads.extend(
+            input_reads.into_iter().enumerate()
+                .filter_map(|(index, read)| (Some(index) != base).then_some(read)),
+        );
         if policy.change_detection == ChangeDetectionPolicy::SemanticHash {
             return Err(ResidentActivationError::UnsupportedChangeDetection { node: owner });
         }
@@ -24943,7 +24951,7 @@ fn bind_control_block(
                 region: output.region,
             },
             construction: policy.construction.clone(),
-            rmw_base: None,
+            rmw_base,
             rmw_previous: None,
             change_detection: policy.change_detection,
             reads_state: reads[read_start as usize..]

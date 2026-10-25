@@ -290,6 +290,16 @@ legacy sequence/control/grid frontends or resident execution on rejection.
 Raw `.mecb` inputs are canonically decoded against the current standard catalog
 and explicitly marked **source-unpaired**; they acquire no claimed source owner.
 
+Within synchronous FSM transition blocks, an explicit mutable binding such as
+`~scratch := xs` followed by `scratch[index] = value` lowers to successive local
+values. Indexed updates use the maintained assignment kernel, with a fresh
+candidate seeded from the explicit base. Closed rank-two unsigned matrices can
+travel through structural state payloads; reconstruction admits the expanded
+draft and temporary canonical cells before allocation. These are value copies,
+so this support does not establish an in-place buffer throughput result.
+Document-level mutable bindings continue to allocate retained state, which the
+canonical native subset rejects.
+
 This opt-in requires `cranelift_build`, a local workspace dependency tree, native
 emit and the current supported host. Linked binary names must be 1–64 ASCII
 letters, digits or hyphens, starting with a letter; they are never sanitized.

@@ -177,12 +177,13 @@ mod metadata_tests {
     }
 }
 
-struct Inputs<'a>(&'a [Option<Value>]);
+struct Inputs<'a>(&'a [Option<Value>], Option<usize>);
 impl ResidentKernelInputs for Inputs<'_> {
     fn len(&self) -> usize {
-        self.0.len()
+        self.0.len() - usize::from(self.1.is_some())
     }
     fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+        let index = index.checked_add(usize::from(self.1.is_some_and(|base| index >= base)))?;
         self.0
             .get(index)
             .map(|value| ResidentValueRef::Snapshot(core::slice::from_ref(value)))
@@ -452,7 +453,7 @@ impl NativeCollectionCall {
                     if matches!(&contract.outputs[0].construction,
                         mech_core::OutputConstruction::FullWrite {
                             shape: mech_core::ShapeRule::SameAsInput { .. }
-                        })
+                        } | mech_core::OutputConstruction::ReadModifyWrite { .. })
             );
             if value.schema() != self.output.schema_id
                 || value.schema_key() != self.output.schema_key
@@ -582,10 +583,23 @@ impl NativeCollectionCall {
             .into_iter()
             .for_each(|transaction| transaction.commit());
         drop(arguments);
-        let mut candidate = output.clone();
+        let base = match self.template.contract() {
+            mech_core::ResolvedOperationContract::Declared(contract) => match contract.outputs[0].construction {
+                mech_core::OutputConstruction::ReadModifyWrite { base_input, .. } => Some(usize::from(base_input)),
+                _ => None,
+            },
+            _ => return Err(NativeCollectionInvocationError::InvalidInput),
+        };
+        // RMW kernels receive their explicit base as fresh private candidate,
+        // never the previous visit's output. Other operands retain order.
+        let mut candidate = if let Some(base) = base {
+            inputs.get(base).ok_or(NativeCollectionInvocationError::InvalidInput)?.clone()
+        } else {
+            output.clone()
+        };
         let run = || {
             self.kernel.execute(
-                &Inputs(inputs),
+                &Inputs(inputs, base),
                 ResidentValueMut::Snapshot(core::slice::from_mut(&mut candidate)),
             )
         };

@@ -1059,19 +1059,28 @@ pub(super) fn validate_match_inner(
                     }
                 }
                 let port = &contract.outputs[0];
+                // A branch owns every local result. RMW is still a pure value
+                // operation: execution seeds a fresh result from its explicit
+                // base, then passes only the remaining operands to the kernel.
+                let construction_supported = match port.construction {
+                    OutputConstruction::FullWrite { .. }
+                    | OutputConstruction::Build { .. }
+                    | OutputConstruction::Replace { .. } => {
+                        port.access == AccessMode::Write && port.alias == AliasPolicy::NoAlias
+                    }
+                    OutputConstruction::ReadModifyWrite { base_input, .. } => {
+                        port.access == AccessMode::ReadWrite
+                            && port.alias == (AliasPolicy::MayAlias { input: base_input })
+                            && contract.inputs.get(usize::from(base_input))
+                                .is_some_and(|base| base.schema == operation.schema)
+                    }
+                };
                 if port.schema != operation.schema
-                    || port.access != AccessMode::Write
                     || port.delivery != DeliveryMode::Signal
-                    || port.alias != AliasPolicy::NoAlias
-                    || !matches!(
-                        port.construction,
-                        OutputConstruction::FullWrite { .. }
-                            | OutputConstruction::Build { .. }
-                            | OutputConstruction::Replace { .. }
-                    )
+                    || !construction_supported
                 {
                     return Err(invalid(
-                        "block operation must fully write its exact owned result",
+                        "block operation must construct its exact owned result",
                     ));
                 }
             }
