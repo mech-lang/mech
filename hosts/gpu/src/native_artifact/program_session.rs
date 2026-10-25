@@ -431,10 +431,10 @@ impl<'a> Prepared<'a> {
             bytes = bytes.checked_sub(raw).and_then(|bytes| bytes.checked_add(admitted))
                 .ok_or_else(|| invalid("worker fixed backing admission overflow"))?;
         }
-        for &bound in &descriptor.constant_bytes {
-            bytes = bytes.checked_add(bound).ok_or_else(|| invalid("worker constant admission overflow"))?;
-        }
-        Ok(bytes)
+        // This immutable sum is established at prepare/decode time, so a
+        // repeated dispatch never performs an unfunded constants-table scan.
+        bytes.checked_add(descriptor.constant_admission_bytes)
+            .ok_or_else(|| invalid("worker constant admission overflow"))
     }
 
     fn setup_geometry(

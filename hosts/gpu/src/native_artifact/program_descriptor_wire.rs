@@ -209,6 +209,7 @@ pub(super) fn decode(
         types,
         visits: w.visits.into_vec().into_iter().map(Into::into).collect(),
         retirements: w.retirements,
+        constant_admission_bytes: super::super::constant_admission_total(&w.constant_bytes)?,
         constant_bytes: w.constant_bytes,
         scalar_bytes: w.scalar_bytes,
         observation_schema_bytes: w.observation_schema_bytes,
