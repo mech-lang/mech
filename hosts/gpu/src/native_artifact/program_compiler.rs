@@ -214,7 +214,6 @@ impl NativeProgramObject {
             "compiled_header_continuation_regions": usize::from(self.descriptor.prefix.is_some()),
             "compiled_source_edge_facts": &self.codegen.source_edge_facts,
             "compiled_tag_threading": &self.codegen.tag_threading,
-            "compiled_scalar_loops": &self.codegen.scalar_loops,
             "compiled_frame_effects": &self.codegen.frame_effects,
             "compiled_guarded_loops": &self.codegen.guarded_loops,
             "compiled_lookup_facts": &self.codegen.lookup_facts,
@@ -230,6 +229,7 @@ impl NativeProgramObject {
         metadata["compiled_loop_constants"] = serde_json::json!(&self.codegen.loop_constants);
         metadata["compiled_steady_loops"] = serde_json::json!(&self.codegen.steady_loops);
         metadata["compiled_join_map_copies"] = serde_json::json!(&self.codegen.join_map_copies);
+        metadata["compiled_scalar_loops"] = serde_json::json!(&self.codegen.scalar_loops);
         metadata
     }
 }
