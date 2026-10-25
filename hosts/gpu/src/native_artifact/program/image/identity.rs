@@ -203,7 +203,6 @@ fn selected_template(
 // no runtime frame, resource price or library/storage ABI changes.
 // IR94 reads the two initialized narrow-slot words together; wide slots retain
 // separate full-width accesses. Runtime storage and original prices are unchanged.
-// 79 was published by a subsequently reverted metadata experiment.
 // IR95 adds the maintained U64 word primitives. IR96 additionally selects
 // checked unsigned scalar conversions through the original conversion leaf.
 // IR97 includes pure indexed matrix replacements in local transition code.
