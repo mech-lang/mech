@@ -7,6 +7,8 @@ use super::super::{NativeCompileError, compiler::{backend, guard, offset, primit
 use super::packed_maps::{self, FrameState};
 #[cfg(test)]
 pub(in crate::native_artifact) use super::packed_maps::{take_frame_effect_emissions, without_frame_effects};
+#[cfg(test)]
+pub(in crate::native_artifact) use super::packed_maps::{without_candidate_value_loads, take_candidate_value_emissions};
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types, condcodes::{FloatCC, IntCC}};
 use cranelift_frontend::FunctionBuilder;
 use super::ssa_words::Words;

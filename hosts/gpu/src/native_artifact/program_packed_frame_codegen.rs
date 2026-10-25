@@ -47,7 +47,22 @@ fn effects(operation: u64) -> Option<Effects> {
 #[cfg(test)]
 thread_local! {
     static EFFECTS_DISABLED: Cell<bool> = const { Cell::new(false) };
+    static CANDIDATE_VALUES_DISABLED: Cell<bool> = const { Cell::new(false) };
+    static CANDIDATE_VALUE_EMISSIONS: Cell<usize> = const { Cell::new(0) };
     static EMISSIONS: Cell<(usize, usize, usize)> = const { Cell::new((0, 0, 0)) };
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn without_candidate_value_loads<T>(f: impl FnOnce() -> T) -> T {
+    struct Restore(bool);
+    impl Drop for Restore {
+        fn drop(&mut self) { CANDIDATE_VALUES_DISABLED.with(|v| v.set(self.0)); }
+    }
+    let _restore = Restore(CANDIDATE_VALUES_DISABLED.with(|v| v.replace(true)));
+    f()
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn take_candidate_value_emissions() -> usize {
+    CANDIDATE_VALUE_EMISSIONS.with(|v| v.replace(0))
 }
 #[cfg(test)]
 pub(in crate::native_artifact) fn without_frame_effects<T>(f: impl FnOnce() -> T) -> T {
@@ -82,6 +97,10 @@ pub(in crate::native_artifact) struct FrameState {
     constant_hash_loads: Cell<usize>,
     specialized_width: Option<u64>,
     lookup_mode: LookupMode,
+    // Callee-local SSA only, never part of the private runtime frame ABI.
+    // The valid bit is cleared at pointer changes, helper calls and reloads.
+    candidate_value: Option<(Variable, Variable)>,
+    candidate_value_loads: Cell<usize>,
     // Constant-size actual emission evidence, aggregated by private operation.
     // It does not claim that a runtime path executed or authorize any access.
     emissions: Cell<[u64; 14]>,
@@ -89,7 +108,7 @@ pub(in crate::native_artifact) struct FrameState {
 }
 impl FrameState {
     pub(super) fn memory(pointer: Value, domain: Domain) -> Self {
-        Self { pointer, words: None, effects_enabled: false, dirty_only: false, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, lookup_mode: LookupMode::Dynamic, emissions: Cell::new([0; 14]), domain }
+        Self { pointer, words: None, effects_enabled: false, dirty_only: false, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, lookup_mode: LookupMode::Dynamic, candidate_value: None, candidate_value_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
     }
     pub(in crate::native_artifact) fn registers(b: &mut FunctionBuilder<'_>, pointer: Value, domain: Domain) -> Self {
         assert_eq!(core::mem::size_of::<Frame>() % 8, 0);
@@ -101,7 +120,7 @@ impl FrameState {
         }).collect();
         let effects_enabled = effects_enabled();
         let dirty_only = super::super::packed_loop_codegen::invariant_loops_enabled();
-        Self { pointer, words: Some(words), effects_enabled, dirty_only, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, lookup_mode: LookupMode::Dynamic, emissions: Cell::new([0; 14]), domain }
+        Self { pointer, words: Some(words), effects_enabled, dirty_only, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, lookup_mode: LookupMode::Dynamic, candidate_value: None, candidate_value_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
     }
     pub(in crate::native_artifact) fn with_constant_packet(mut self, packet: Option<Value>) -> Self {
         self.constant_packet = packet; self
@@ -123,6 +142,44 @@ impl FrameState {
         assert!(mode != LookupMode::Direct || self.specialized_width.is_some_and(|width|
             super::super::super::program_packed_map::lookup_cache_entries(self.domain, width).is_some()));
         self.lookup_mode = mode; self
+    }
+    /// Only a separately emitted helper-free hashed loop selects this cache.
+    /// An occupied candidate's initialized payload is loaded with its key;
+    /// full equality must succeed before that value becomes a source result.
+    pub(in crate::native_artifact) fn with_candidate_value_loads(mut self, b: &mut FunctionBuilder<'_>) -> Self {
+        #[cfg(test)]
+        if CANDIDATE_VALUES_DISABLED.with(Cell::get) { return self; }
+        if self.lookup_mode == LookupMode::Hash && self.words.is_some() {
+            let value = b.declare_var(types::I64);
+            let valid = b.declare_var(types::I8);
+            let zero = b.ins().iconst(types::I64, 0);
+            let no = b.ins().iconst(types::I8, 0);
+            b.def_var(value, zero); b.def_var(valid, no);
+            self.candidate_value = Some((value, valid));
+        }
+        self
+    }
+    pub(super) fn has_candidate_values(&self) -> bool { self.candidate_value.is_some() }
+    pub(super) fn note_candidate_value_load(&self) {
+        assert!(self.has_candidate_values());
+        self.candidate_value_loads.set(self.candidate_value_loads.get()+1);
+        #[cfg(test)]
+        CANDIDATE_VALUE_EMISSIONS.with(|v| v.set(v.get()+1));
+    }
+    pub(in crate::native_artifact) fn candidate_value_loads(&self) -> usize { self.candidate_value_loads.get() }
+    pub(super) fn remember_candidate_value(&self, b: &mut FunctionBuilder<'_>, loaded: Value) {
+        if let Some((value, valid)) = self.candidate_value {
+            let yes = b.ins().iconst(types::I8, 1);
+            b.def_var(value, loaded); b.def_var(valid, yes);
+        }
+    }
+    pub(super) fn cached_candidate_value(&self, b: &mut FunctionBuilder<'_>) -> Option<(Value, Value)> {
+        self.candidate_value.map(|(value, valid)| (b.use_var(value), b.use_var(valid)))
+    }
+    pub(super) fn invalidate_candidate_value(&self, b: &mut FunctionBuilder<'_>) {
+        if let Some((_, valid)) = self.candidate_value {
+            let no = b.ins().iconst(types::I8, 0); b.def_var(valid, no);
+        }
     }
     pub(super) fn direct_lookup(&self) -> bool { self.lookup_mode == LookupMode::Direct }
     pub(super) fn hash_constant(&self, b: &mut FunctionBuilder<'_>, ordinal: usize) -> Option<Value> {
@@ -165,6 +222,7 @@ impl FrameState {
     pub(in crate::native_artifact) fn write(&self, b: &mut FunctionBuilder<'_>, offset: usize, value: Value) {
         assert!(offset % 8 == 0 && offset / 8 < WORDS && GENERATED & (1 << (offset / 8)) != 0,
             "generated packed-frame write requires an explicit effect proof");
+        if offset == core::mem::offset_of!(Frame, entry_pointer) { self.invalidate_candidate_value(b); }
         if let Some(words) = &self.words { b.def_var(words[offset / 8], value); }
         else { b.ins().store(MemFlags::new(), value, self.pointer, offset as i32); }
     }
@@ -194,6 +252,7 @@ impl FrameState {
         }
     }
     pub(in crate::native_artifact) fn reload_generated(&self, b: &mut FunctionBuilder<'_>) {
+        self.invalidate_candidate_value(b);
         self.reload_mask(b, GENERATED);
     }
     pub(in crate::native_artifact) fn call(&self, b: &mut FunctionBuilder<'_>, hooks: &Hooks,
@@ -202,6 +261,7 @@ impl FrameState {
         let selected = self.effects_enabled.then(|| effects(operation)).flatten();
         let (stores, loads) = selected.map_or((MUTABLE, MUTABLE), |effects| (effects.stores(), effects.writes));
         self.spill_mask(b, stores);
+        self.invalidate_candidate_value(b);
         hooks.bound_call(b, function, context, site, operation, args, error);
         // The helper status branch remains before every reload. Insertion is
         // failure-atomic; an error retains the same SSA values as before this

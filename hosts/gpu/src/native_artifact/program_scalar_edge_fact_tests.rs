@@ -14,12 +14,13 @@ use crate::native_artifact::program_compiler::packed_loop_codegen::{
     take_steady_emissions, without_steady_loops,
     take_cold_recipe_emissions, without_cold_recipes,
     without_lookup_loop_split,
+    without_candidate_value_loads, take_candidate_value_emissions,
 };
 use crate::native_artifact::JitProgramArtifact;
 use crate::native_artifact::program_compiler::cfg_cleanup::{take_cfg_cleanup_emissions, without_cfg_cleanup};
 
 #[derive(Clone, Copy)]
-enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants, PreservingCalls, MutationFacts, CountBounds, LoopConstants, SteadyLoops, ColdRecipes, LookupSplit }
+enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants, PreservingCalls, MutationFacts, CountBounds, LoopConstants, SteadyLoops, ColdRecipes, LookupSplit, CandidateValues }
 impl Pass {
     fn disabled<T>(self, f: impl FnOnce() -> T) -> T {
         match self {
@@ -37,6 +38,7 @@ impl Pass {
             Self::SteadyLoops => without_steady_loops(f),
             Self::ColdRecipes => without_cold_recipes(f),
             Self::LookupSplit => without_lookup_loop_split(f),
+            Self::CandidateValues => without_candidate_value_loads(f),
         }
     }
     fn check(self, edges: (usize, usize), tags: (usize, usize, usize), effects: (usize, usize, usize), selected: bool) {
@@ -50,7 +52,10 @@ impl Pass {
         let constants = take_constant_emissions();
         let steady = take_steady_emissions();
         let recipes = take_cold_recipe_emissions();
+        let candidate_values = take_candidate_value_emissions();
         match self {
+            Self::CandidateValues if selected => assert!(candidate_values > 0),
+            Self::CandidateValues => assert_eq!(candidate_values, 0),
             Self::ColdRecipes if !selected => assert_eq!(recipes, 0),
             Self::SteadyLoops if !selected => assert_eq!(steady,0),
             Self::LoopConstants if selected => assert!(constants > 0),
@@ -543,9 +548,10 @@ fn changed_input_equivalence(pass: Pass) {
         take_edge_fact_emissions();
         take_tag_thread_emissions();
         take_frame_effect_emissions();
+        take_candidate_value_emissions();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         if matches!(pass,Pass::SteadyLoops) { assert!(take_steady_emissions()>0,"changed source must select the actual steady function"); }
-        if matches!(pass,Pass::ColdRecipes | Pass::LookupSplit) { assert!(take_cold_recipe_emissions()>0,"renamed parameterized source must emit actual cold recipes"); }
+        if matches!(pass,Pass::ColdRecipes | Pass::LookupSplit | Pass::CandidateValues) { assert!(take_cold_recipe_emissions()>0,"renamed parameterized source must emit actual cold recipes"); }
         let emitted = take_edge_fact_emissions();
         assert!(emitted.0 >= 8 && emitted.1 >= 4, "actual emitted guard/arithmetic substitutions: {emitted:?}");
         let selected = take_tag_thread_emissions();
@@ -566,13 +572,13 @@ fn changed_input_equivalence(pass: Pass) {
             // Bounds must still use the actual selected source, not n.
             ("abc", 2, 4),
         ];
-        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining | Pass::LoopInvariants | Pass::MutationFacts | Pass::CountBounds | Pass::LoopConstants | Pass::SteadyLoops | Pass::ColdRecipes | Pass::LookupSplit) {
+        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining | Pass::LoopInvariants | Pass::MutationFacts | Pass::CountBounds | Pass::LoopConstants | Pass::SteadyLoops | Pass::ColdRecipes | Pass::LookupSplit | Pass::CandidateValues) {
             cases.push((long_text.as_str(), 3, long_text.len() as u64));
             // Unknown ASCII domain at width18 requires both key words. They
             // must survive refills although refill never reads either word.
             cases.push((long_text.as_str(), 18, long_text.len() as u64));
         }
-        if matches!(pass, Pass::SteadyLoops | Pass::ColdRecipes | Pass::LookupSplit) {
+        if matches!(pass, Pass::SteadyLoops | Pass::ColdRecipes | Pass::LookupSplit | Pass::CandidateValues) {
             // A deterministic single-key map exercises both sides of prepaid
             // batch boundaries and source endpoints, including a partial last
             // batch. Compare all output, precise pre-publication fuel/work and
@@ -739,7 +745,7 @@ fn arithmetic_failure_equivalence(pass: Pass) {
             .replace(":Next(0u64, initial)", ":Next(18446744073709551614u64, initial)"),
             "\"abc\"", 1, u64::MAX),
     ].into_iter().map(|(body, text, width, n)| (body, text, width, n, true)).collect::<Vec<_>>();
-    if matches!(pass, Pass::CountBounds | Pass::LoopConstants | Pass::SteadyLoops | Pass::ColdRecipes | Pass::LookupSplit) {
+    if matches!(pass, Pass::CountBounds | Pass::LoopConstants | Pass::SteadyLoops | Pass::ColdRecipes | Pass::LookupSplit | Pass::CandidateValues) {
         // One insertion per step alone does not bound arbitrary replacements.
         // The first step stores MAX; the next real source read+1 must overflow.
         let max_then_increment = source.replace("  out := map/insert(h, key, previous + 1u64).",
