@@ -30,6 +30,10 @@ pub struct NativeProgramDescriptor {
     pub(super) visits: Box<[NativeIterationVisit]>,
     pub(super) retirements: RetirementTables,
     pub(super) constant_bytes: Box<[u64]>,
+    // Derived cache, recomputed from the exact bounds when an image is loaded.
+    // It grants no independent authority and adds no serialized field.
+    #[serde(skip)]
+    pub(super) constant_admission_bytes: u64,
     pub(super) scalar_bytes: u64,
     pub(super) observation_schema_bytes: u64,
     pub(super) max_library_inputs: usize,
@@ -52,6 +56,10 @@ pub struct NativeProgramDescriptor {
     pub(super) stack: u64,
     pub(super) code: u64,
     pub(super) identity: [u8; 32],
+}
+fn constant_admission_total(bounds: &[u64]) -> Result<u64, String> {
+    bounds.iter().try_fold(0u64, |sum, &bound| sum.checked_add(bound))
+        .ok_or_else(|| "constant admission total overflows".to_owned())
 }
 impl NativeProgramDescriptor {
     pub(super) fn prepare(
@@ -214,6 +222,7 @@ impl NativeProgramDescriptor {
                 _ => Ok(None),
             })
             .collect::<Result<Box<[_]>, _>>()?;
+        let constant_admission_bytes = constant_admission_total(&constant_bytes)?;
         validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
         let window_regions = plan.window_regions().into_boxed_slice();
         let string_map_regions = plan.string_map_regions().into_boxed_slice();
@@ -318,6 +327,7 @@ impl NativeProgramDescriptor {
             visits,
             retirements,
             constant_bytes,
+            constant_admission_bytes,
             scalar_bytes,
             observation_schema_bytes,
             max_library_inputs,

@@ -50,6 +50,19 @@ fn simultaneous_worker_constructor_preflight_checks_bytes_and_nodes_without_leak
     let jit = crate::native_artifact::JitProgramArtifact::compile(
         &artifact, &mech_stdlib::source_catalog()).unwrap();
     let descriptor = jit.descriptor();
+    assert_eq!(descriptor.constant_admission_bytes, descriptor.constant_bytes.iter().sum::<u64>());
+    let image = descriptor.encode_build_owned_image().unwrap();
+    // SAFETY: this is the same still-owned generated build and exact image.
+    let restored = unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &mech_stdlib::source_catalog()) }.unwrap();
+    assert_eq!(restored.constant_admission_bytes, descriptor.constant_admission_bytes);
+    assert_eq!(restored.encode_build_owned_image().unwrap(), image,
+        "derived constructor sums must not add an injectable serialized field");
+    let mut malformed: serde_json::Value = serde_json::from_slice(&image).unwrap();
+    assert!(descriptor.constant_bytes.len() > 1);
+    malformed["descriptor"]["constant_bytes"][0] = u64::MAX.into();
+    let malformed = serde_json::to_vec(&malformed).unwrap();
+    // SAFETY: decoder-only negative test; no result can execute generated code.
+    assert!(unsafe { NativeProgramDescriptor::decode_build_owned_image(&malformed, &mech_stdlib::source_catalog()) }.is_err());
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
     let parent = session::Prepared::new(descriptor, tests::limits(), &memory).unwrap();
     let baseline = (memory.used_bytes(), memory.retained_nodes());
