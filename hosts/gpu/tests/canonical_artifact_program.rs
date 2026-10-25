@@ -93,6 +93,9 @@ mod binary_tree_qualification;
 #[path = "support/canonical_program_recursive_statements.rs"]
 mod recursive_statement_qualification;
 
+#[path = "support/canonical_program_lexical_invariants.rs"]
+mod lexical_invariant_qualification;
+
 #[path = "support/canonical_program_unsigned_conversion.rs"]
 mod unsigned_conversion_qualification;
 

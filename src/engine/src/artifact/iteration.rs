@@ -4,7 +4,7 @@ use mech_core::{
     DimensionExpr, DimensionLifetime, OperationContractId, Schema, SchemaBody, SchemaId,
 };
 
-use super::{ControlBlock, ControlCapture};
+use super::{ControlBlock, ControlCapture, ControlOperationBody};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum IterationCount {
@@ -115,6 +115,7 @@ impl<C> IterationDeclaration<C> {
             .operations
             .iter()
             .any(|operation| match &operation.body {
+                ControlOperationBody::Assert => false,
                 super::ControlOperationBody::Suspend => true,
                 super::ControlOperationBody::Match(control) => control.contains_suspend(),
                 super::ControlOperationBody::Comprehension(control) => control.contains_suspend(),
@@ -162,6 +163,7 @@ impl<C> IterationDeclaration<C> {
                             inputs: operation.inputs.clone(),
                             schema: operation.schema,
                             body: match &operation.body {
+                                ControlOperationBody::Assert => ControlOperationBody::Assert,
                                 super::ControlOperationBody::Operation {
                                     operation: reference,
                                     contract,
@@ -341,6 +343,7 @@ pub(super) fn validate_iteration_inner(
     // operation, including unused/dead branches and nested controls.
     fn pure<C>(body: &ControlOperationBody<C>) -> bool {
         match body {
+            ControlOperationBody::Assert => true,
             ControlOperationBody::Operation { .. } => true,
             ControlOperationBody::Iteration(control) => control
                 .body
@@ -407,6 +410,11 @@ pub(super) fn validate_iteration_inner(
             .map(|value| value_schema(*value, index))
             .collect::<Result<Vec<_>, _>>()?;
         match &operation.body {
+            ControlOperationBody::Assert => {
+                if !super::control::is_assertion_signature(&draft.schemas, &operation_inputs, operation.schema) {
+                    return Err(invalid("lexical assertion requires one Bool input and Bool result"));
+                }
+            }
             ControlOperationBody::Operation {
                 operation: reference,
                 contract: id,

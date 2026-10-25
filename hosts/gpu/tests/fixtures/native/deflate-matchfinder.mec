@@ -3,6 +3,7 @@
 // 671077457ff7ef3a3d44caf715a3fc595addf379. See deflate-huffman-LICENSES.md.
 // Input positions below are zero-based; Mech's matrix selectors are one-based.
 +> bits
++> sequence
 
 byte(input<[u8]>, at<u64>) => (out<u64>) :=
   out<u64> := input[at + 1u64].
@@ -23,9 +24,9 @@ lz-hash(sequence<u32>, num-bits<u64>) => (out<u64>) :=
   product := bits/and(bits/wrapping-mul(wide, 506832829u64), 4294967295u64)
   out := bits/shift-right-wrap(product, 32u64 - num-bits).
 
-// As in the C routine, the caller guarantees start <= maximum, match-at <
-// str-at, and maximum readable bytes at both positions. Already matched prefix
-// bytes are deliberately not rechecked. The compressor limits maximum to 258.
+// The caller supplies start <= maximum and an already matched prefix. Roc's
+// entry predicate checks the readable window and candidate ordering before
+// any loop work. The compressor limits maximum to 258.
 // The same three loops as pinned Roc: the first four words, remaining words,
 // then trailing bytes. Source recursion keeps each loop's actual arguments.
 word-difference(input<[u8]>, str-at<u64>, match-at<u64>, length<u64>) => (out<u64>) :=
@@ -51,6 +52,7 @@ extend-four(input<[u8]>, str-at<u64>, match-at<u64>, length<u64>, four-end<u64>,
           | 0u64 => extend-four(input, str-at, match-at, bits/wrapping-add(length, 8u64), four-end, maximum)
           | difference => bits/wrapping-add(length, bits/shift-right-wrap(bits/trailing-zeros(difference), 3u64)))).
 extend-length(input<[u8]>, str-at<u64>, match-at<u64>, start<u64>, maximum<u64>) => (out<u64>) :=
+  window! := (str-at + maximum <= sequence/length(input)) && (match-at < str-at)
   four-end := start + 32u64
   out := ((four-end <= maximum)?
     | true => extend-four(input, str-at, match-at, start, four-end, maximum)

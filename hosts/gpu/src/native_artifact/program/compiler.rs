@@ -112,7 +112,7 @@ impl JitProgramArtifact {
             },
         );
         module.finalize_definitions().map_err(backend)?;
-        // SAFETY: define_cfg emits exactly the private ABI16 signature, and
+        // SAFETY: define_cfg emits this module's current private entry signature, and
         // this owner retains the module for every synchronous invocation.
         let entry = unsafe {
             std::mem::transmute::<*const u8, Entry>(module.get_finalized_function(function))

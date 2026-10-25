@@ -17,7 +17,8 @@ signed C and biased unsigned representations.
 one-byte search and skip routines, using ordinary statement functions and tail
 recursion in place of its local while loops. The C reference generator executes
 the pinned libdeflate routines and converts the complete tables to Roc's layout.
-This translation was made in 2026. Entry assertions, prefetch hints, unaligned
+This translation was made in 2026. Roc's entry assertions are retained.
+Prefetch hints, unaligned
 loads, wrapping narrow casts, and efficient buffer transport remain unfinished
 and are documented in the benchmark README.
 

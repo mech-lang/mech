@@ -78,6 +78,7 @@ fn append_block_contract_handles(
             }
             super::ControlOperationBody::Recur(_)
             | super::ControlOperationBody::Suspend
+            | super::ControlOperationBody::Assert
             | super::ControlOperationBody::Publish => {}
         }
     }
@@ -165,6 +166,7 @@ fn append_comprehension_contract_handles(
                     }
                     super::ControlOperationBody::Recur(_)
                     | super::ControlOperationBody::Suspend
+                    | super::ControlOperationBody::Assert
                     | super::ControlOperationBody::Publish => {}
                 }
                 locals.push(operation.schema);
@@ -479,6 +481,7 @@ fn control_body_operation_references(
         }
         super::ControlOperationBody::Recur(_)
         | super::ControlOperationBody::Suspend
+        | super::ControlOperationBody::Assert
         | super::ControlOperationBody::Publish => {}
     }
 }

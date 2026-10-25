@@ -1,4 +1,4 @@
-//! Managed ABI16 invocation. This boundary never evaluates a graph: generated
+//! Managed mixed-value invocation. This boundary never evaluates a graph: generated
 //! blocks choose every successor and run every scalar/counter instruction.
 use crate::native_artifact::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,

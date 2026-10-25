@@ -10,6 +10,7 @@ pub(in crate::native_artifact) const STATUS_OK: u64 = 0;
 pub(in crate::native_artifact) const STATUS_ARITHMETIC: u64 = 1;
 pub(in crate::native_artifact) const STATUS_ADMISSION: u64 = 2;
 pub(in crate::native_artifact) const STATUS_ABI: u64 = 3;
+pub(in crate::native_artifact) const STATUS_INTEGRITY: u64 = 9;
 
 /// Checked primitive work in conservative logical units. One unit bounds one
 /// explicit scalar/guard/load/store bookkeeping action, not machine cycles.

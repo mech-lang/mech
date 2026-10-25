@@ -109,6 +109,7 @@ pub(super) fn all_local_definitions(
                         crate::ControlOperationBody::Operation { .. }
                         | crate::ControlOperationBody::Recur(_)
                         | crate::ControlOperationBody::Suspend
+                        | crate::ControlOperationBody::Assert
                         | crate::ControlOperationBody::Publish => {}
                         crate::ControlOperationBody::Match(nested) => append_match(nested, output),
                         crate::ControlOperationBody::Iteration(nested) => {
@@ -161,6 +162,7 @@ pub(super) fn all_local_definitions(
                         crate::ControlOperationBody::Operation { .. }
                         | crate::ControlOperationBody::Recur(_)
                         | crate::ControlOperationBody::Suspend
+                        | crate::ControlOperationBody::Assert
                         | crate::ControlOperationBody::Publish => {}
                     }
                 }
@@ -194,6 +196,7 @@ pub(super) fn all_match_local_definitions(
                         crate::ControlOperationBody::Operation { .. }
                         | crate::ControlOperationBody::Recur(_)
                         | crate::ControlOperationBody::Suspend
+                        | crate::ControlOperationBody::Assert
                         | crate::ControlOperationBody::Publish => {}
                         crate::ControlOperationBody::Match(nested) => append(nested, output),
                         crate::ControlOperationBody::Iteration(nested) => {
@@ -800,6 +803,20 @@ pub(super) fn bind_inner(
                 let (retained_local_count, excluded_locals) =
                     operation_retained_local_scope(operation).ok_or_else(unsupported)?;
                 let (reference, contract_id) = match &operation.body {
+                    crate::ControlOperationBody::Assert => {
+                        let index = ActivatedNodeIndex(steps.len() as u32);
+                        steps.push(ActivatedTurnStep::Assert(super::ActivatedAssertion {
+                            artifact_node: owner,
+                            block: crate::ControlBlockId(control.id.0),
+                            local: operation.local,
+                            condition: input_reads[0],
+                            write: ResidentWriteLocation { slot: output_slot, storage: output.storage, region: output.region },
+                        }));
+                        instructions.push(ActivatedCollectionStep::Operation {
+                            node: index, work: 0, retained_local_count, excluded_locals,
+                        });
+                        continue;
+                    }
                     crate::ControlOperationBody::Operation {
                         operation,
                         contract,

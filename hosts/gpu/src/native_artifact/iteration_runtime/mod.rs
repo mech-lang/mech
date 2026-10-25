@@ -29,6 +29,9 @@ pub enum NativeIterationExecutionError {
     Arithmetic {
         origin: NativeMatchOrigin,
     },
+    Integrity {
+        origin: NativeMatchOrigin,
+    },
     Unmatched {
         origin: NativeMatchOrigin,
     },
@@ -491,7 +494,7 @@ pub(in crate::native_artifact) fn execute<F: FnOnce(*mut Frame) -> u64>(
                 return Err(invalid("iteration omitted atomic completion"));
             }
         }
-        STATUS_ARITHMETIC | STATUS_REJECT => {
+        STATUS_ARITHMETIC | STATUS_REJECT | super::abi::STATUS_INTEGRITY => {
             let id = context
                 .state
                 .previous
@@ -505,6 +508,14 @@ pub(in crate::native_artifact) fn execute<F: FnOnce(*mut Frame) -> u64>(
                     return Err(invalid("iteration arithmetic outside primitive"));
                 }
                 return Err(NativeIterationExecutionError::Arithmetic {
+                    origin: site.origin,
+                });
+            }
+            if status == super::abi::STATUS_INTEGRITY {
+                if !site.integrity {
+                    return Err(invalid("iteration integrity outside assertion"));
+                }
+                return Err(NativeIterationExecutionError::Integrity {
                     origin: site.origin,
                 });
             }

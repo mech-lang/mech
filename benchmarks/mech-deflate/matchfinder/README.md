@@ -32,8 +32,9 @@ one-based and checked. `lz-hash` requires 1–32 hash bits. As in the C function
 both positions. The first `start` bytes are already matched. DEFLATE uses a
 maximum match length of 258. The loaders currently assemble words from checked
 byte reads; they do not yet emit one unaligned machine load.
-Roc's explicit entry-window check still needs to be ported before timing; these
-component tests supply the valid caller preconditions used by the C oracle.
+Roc's explicit entry-window check runs before extension work. Search and skip
+also retain its table-size and readable-window checks. These are lexical checks
+on each invocation, including recursive visits, rather than document constraints.
 
 The node representation follows Roc: unsigned U16 entries are biased by 32768,
 so zero represents C's signed -32768 sentinel. Rebasing is saturated subtraction
@@ -112,6 +113,15 @@ work or change host defaults. Managed memory remains 256 MiB and temporary
 memory remains 128 MiB. Efficient ownership must remove physical copies and
 their associated costs before attempting the full performance comparison.
 
+The lexical-entry tests also expose the current argument-frame copying:
+resident execution of a full-table invalid-window call exceeds its unchanged
+16777216-byte temporary limit before the check. The native test admits the
+existing full-tree work allowances and 128 MiB temporary allowance and must
+fail at the window check before later reads or updates. The test separately
+requires the native generic work allowance to report the copying cost as a
+compute-work denial. Small-table and scalar checks execute in both
+engines. These resource denials remain ownership work, not waived costs.
+
 Recursive statement-body functions now have fresh canonical argument bindings
 and can end in a selected tail call. This lets the walks retain named local
 calculations and mutable temporaries. The compiler also avoids redundant
@@ -123,8 +133,9 @@ explicit finite lexical, wire-depth, and count checks before typed allocation.
 
 The current source assumes Roc's valid caller contract: tables have at least
 262144 entries; `maximum >= 5`, `5 <= nice <= maximum`, and depth is positive;
-the complete search/skip window is readable. Roc's entry assertions and bucket
-prefetch hints are still missing. Word loads still assemble checked bytes, and
+the complete search/skip window is readable. Roc's explicit table/window entry
+assertions are present; bucket prefetch hints are still missing.
+Word loads still assemble checked bytes, and
 wrapping narrowing currently uses masks followed by checked conversions. These
 are explicit remaining parity/optimization gaps, not a completed timing setup.
 
@@ -138,7 +149,7 @@ Compiler work should support the equivalent Mech program, including ordinary
 collection operations and buffer updates, rather than change the algorithm to
 suit the backend.
 
-Before timing, finish the known word-load, entry-window-check, prefetch,
+Before timing, finish the known word-load, prefetch,
 wrapping-conversion, and buffer-ownership differences, and inspect the
 first-four-word generated code.
 Match the Roc harness's output-buffer reuse and

@@ -157,7 +157,7 @@ fn successors(terminator: Terminator) -> [Option<u32>; 2] {
         Terminator::Scalar(Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. }) => {
             [Some(yes), Some(no)]
         }
-        Terminator::Scalar(Term::Complete | Term::Reject) => [None, None],
+        Terminator::Scalar(Term::Complete | Term::Reject | Term::IntegrityFailure) => [None, None],
         Terminator::Header { body, exit, .. } => [Some(body), Some(exit)],
         Terminator::TailHeader { body, .. } => [Some(body), None],
     }

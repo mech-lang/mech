@@ -70,7 +70,7 @@ fn emitted_scanner_uses_no_matrix_and_preserves_owner_over_activation_and_errors
                 u64::from_le_bytes(identity[16..24].try_into().unwrap()),
                 crate::native_artifact::program::image::identity::NATIVE_PROGRAM_TYPED_IR_VERSION
             );
-            assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 33);
+            assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 34);
             assert_eq!(
                 u64::from_le_bytes(identity[32..40].try_into().unwrap()),
                 crate::native_artifact::program_identity::NATIVE_PROGRAM_WORK_POLICY_VERSION
@@ -88,6 +88,9 @@ fn emitted_scanner_uses_no_matrix_and_preserves_owner_over_activation_and_errors
                 (16, 81),
                 (24, 29),
                 (32, 68),
+                (16, 88),
+                (24, 28),
+                (32, 71),
                 (16, 45),
                 (24, 23),
                 (16, 46),

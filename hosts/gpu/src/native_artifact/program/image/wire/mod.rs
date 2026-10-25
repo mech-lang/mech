@@ -83,6 +83,7 @@ struct Visit {
     complete: bool,
     arithmetic: bool,
     reject: bool,
+    integrity: bool,
     work: u64,
 }
 impl From<Visit> for native::iteration_abi::NativeIterationVisit {
@@ -95,6 +96,7 @@ impl From<Visit> for native::iteration_abi::NativeIterationVisit {
             complete: w.complete,
             arithmetic: w.arithmetic,
             reject: w.reject,
+            integrity: w.integrity,
             work: w.work,
         }
     }

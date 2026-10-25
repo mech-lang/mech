@@ -29,7 +29,7 @@ use super::{
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
 const DEFAULT_MAX_ARTIFACT_BYTES: usize = 67_108_864;
 const DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK: u64 = 65_536;
-const WIRE_GRAPH_REVISION: u32 = 13;
+const WIRE_GRAPH_REVISION: u32 = 14;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ArtifactDecodeLimits {
@@ -394,6 +394,7 @@ enum WireControlOperationBody {
     Match(WireMatchDeclaration),
     Comprehension(WireComprehensionDeclaration),
     Recur(u8),
+    Assert,
 
     Suspend,
     Publish,
@@ -1786,6 +1787,7 @@ fn wire_control_operation_body(
             WireControlOperationBody::Comprehension(wire_comprehension(control, operations))
         }
         super::ControlOperationBody::Recur(ancestor) => WireControlOperationBody::Recur(*ancestor),
+        super::ControlOperationBody::Assert => WireControlOperationBody::Assert,
 
         super::ControlOperationBody::Suspend => WireControlOperationBody::Suspend,
         super::ControlOperationBody::Publish => WireControlOperationBody::Publish,
@@ -2246,6 +2248,7 @@ fn control_operation_body_from_wire(
             super::ControlOperationBody::Comprehension(comprehension_from_wire(control, operation)?)
         }
         WireControlOperationBody::Recur(ancestor) => super::ControlOperationBody::Recur(ancestor),
+        WireControlOperationBody::Assert => super::ControlOperationBody::Assert,
 
         WireControlOperationBody::Suspend => super::ControlOperationBody::Suspend,
         WireControlOperationBody::Publish => super::ControlOperationBody::Publish,
@@ -2468,6 +2471,7 @@ fn wire_control_body_operation_ids(body: &WireControlOperationBody) -> Vec<u32> 
         WireControlOperationBody::Iteration(control) => wire_iteration_operation_ids(control),
         WireControlOperationBody::Recur(_)
         | WireControlOperationBody::Suspend
+        | WireControlOperationBody::Assert
         | WireControlOperationBody::Publish => Vec::new(),
     }
 }
@@ -2928,7 +2932,7 @@ mod source_nominal_declaration_tests {
         let sections = encode_program_artifact_sections(&artifact).unwrap();
         assert_eq!(
             sections.nodes,
-            br#"{"revision":13,"requirements":[],"nodes":[]}"#
+            br#"{"revision":14,"requirements":[],"nodes":[]}"#
         );
         let artifact = artifact
             .with_source_nominal_declarations(Box::new([]))

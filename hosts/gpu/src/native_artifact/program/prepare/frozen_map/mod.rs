@@ -253,7 +253,7 @@ fn successors(term: Terminator) -> [Option<u32>; 2] {
         }
         Terminator::Header { body, exit, .. } => [Some(body), Some(exit)],
         Terminator::TailHeader { body, .. } => [Some(body), None],
-        Terminator::Scalar(Term::Complete | Term::Reject) => [None, None],
+        Terminator::Scalar(Term::Complete | Term::Reject | Term::IntegrityFailure) => [None, None],
     }
 }
 

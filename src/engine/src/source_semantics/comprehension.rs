@@ -48,6 +48,7 @@ impl PendingComprehension {
                         PendingControlOperationBody::Operation { .. }
                         | PendingControlOperationBody::Recur(_)
                         | PendingControlOperationBody::Suspend
+                        | PendingControlOperationBody::Assert
                         | PendingControlOperationBody::Publish => {}
                         PendingControlOperationBody::Match(nested) => {
                             nested.visit_schemas(visit);
@@ -745,6 +746,19 @@ impl SemanticBuilder {
             })?;
             match node.body {
                 PendingNodeBody::CollectionBinding => {}
+                PendingNodeBody::LocalAssert if node.state.is_none() => {
+                    let inputs = require_preceding_collection_inputs(
+                        node.inputs.into_iter().map(&mut capture)
+                            .collect::<Result<Box<[_]>, _>>()?,
+                        scheduled_local, syntax,
+                    )?;
+                    steps.push(PendingComprehensionStep::Operation(PendingComprehensionOperation {
+                        local: scheduled_local,
+                        body: PendingControlOperationBody::Assert,
+                        schema: node.schema,
+                        inputs,
+                    }));
+                }
                 PendingNodeBody::Operation {
                     operation,
                     contract: Some(contract),
@@ -1374,6 +1388,7 @@ pub(super) fn resolve_comprehension(
                     ComprehensionStep::Operation(ComprehensionOperation {
                         local: operation.local,
                         body: match &operation.body {
+                            PendingControlOperationBody::Assert => crate::ControlOperationBody::Assert,
                             PendingControlOperationBody::Operation {
                                 operation,
                                 contract,

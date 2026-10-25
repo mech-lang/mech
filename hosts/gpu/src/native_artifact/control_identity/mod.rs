@@ -12,8 +12,8 @@ fn bytes(hash: &mut Sha256, value: &[u8]) {
     hash.update(value);
 }
 pub const NATIVE_MATCH_LINK_IDENTITY_BYTES: usize = 168;
-pub const NATIVE_MATCH_TYPED_IR_VERSION: u64 = 4;
-pub const NATIVE_MATCH_WORK_POLICY_VERSION: u64 = 1;
+pub const NATIVE_MATCH_TYPED_IR_VERSION: u64 = 5;
+pub const NATIVE_MATCH_WORK_POLICY_VERSION: u64 = 2;
 const MAGIC: &[u8; 16] = b"MECHNATIVEMATCH\0";
 
 /// Read-only same-Object metadata; only the checked emitter constructs it.
@@ -233,6 +233,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeMatchArtifactPlan
             }
             NativeMatchTerminator::Complete => hash.update([4]),
             NativeMatchTerminator::Reject => hash.update([5]),
+            NativeMatchTerminator::IntegrityFailure => hash.update([6]),
         }
     }
     word(&mut hash, plan.outputs().len() as u64);

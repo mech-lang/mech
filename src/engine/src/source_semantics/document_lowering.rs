@@ -1361,8 +1361,15 @@ fn compile_document_units_inner(
                     });
                 }
                 let name = format!("{}!", node_text(&name)?);
-                builder.publish(&name, None, value, invariant.syntax());
-                builder.constraints.push(PendingConstraint { name, value });
+                if builder.control_depth != 0
+                    || !builder.active_functions.is_empty()
+                    || builder.local_mutation_depth != 0
+                {
+                    builder.lexical_assertion(value, name, invariant.syntax())?;
+                } else {
+                    builder.publish(&name, None, value, invariant.syntax());
+                    builder.constraints.push(PendingConstraint { name, value });
+                }
                 refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
             }
             DocumentUnit::Comment(inline) => {

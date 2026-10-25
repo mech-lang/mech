@@ -1,6 +1,7 @@
 //! Owning two-phase state for ONE generated CFG invocation. Raw frame pointers
 //! are reconstructed from admitted owned backing for each synchronous entry;
 //! neither caller pointers nor self-referential borrowed state are retained.
+use crate::native_artifact::abi::STATUS_INTEGRITY;
 use crate::native_artifact::program::protocol::abi::{
     PHASE_ACTIVATION, PHASE_CAPTURE_TAIL, PHASE_PREFIX, PHASE_TURN, PHASE_WORKER, STATUS_ACTIVATED,
     STATUS_INPUT_PENDING, STATUS_INPUT_SCANNED, STATUS_WORKER_RESULT,
@@ -1366,11 +1367,16 @@ impl<'a> Prepared<'a> {
                     )?;
                     self.paused = Some(site);
                 }
-                STATUS_ARITHMETIC | STATUS_REJECT => {
+                STATUS_ARITHMETIC | STATUS_REJECT | STATUS_INTEGRITY => {
                     let id = context.failure_site(f.error_node)?;
                     let site = &descriptor.metadata().visits[id as usize];
                     return Err(if status == STATUS_ARITHMETIC && site.arithmetic {
                         NativeIterationExecutionError::Arithmetic {
+                            origin: site.origin,
+                        }
+                        .into()
+                    } else if status == STATUS_INTEGRITY && site.integrity {
+                        NativeIterationExecutionError::Integrity {
                             origin: site.origin,
                         }
                         .into()

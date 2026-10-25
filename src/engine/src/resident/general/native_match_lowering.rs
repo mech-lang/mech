@@ -563,6 +563,43 @@ impl Builder<'_> {
             returned.ok_or_else(|| unsupported(owner, "non-returning native block"))?;
         Ok((entry, exit, value))
     }
+
+    pub(super) fn assertion(
+        &mut self,
+        at: NativeMatchOrigin,
+        arguments: &[NativeMatchValue],
+        output: NativeMatchValue,
+    ) -> Result<(u32, u32), Error> {
+        let [condition] = arguments else {
+            return Err(Error::InvalidBinding {
+                node: Some(at.node()),
+            });
+        };
+        if self.ty(*condition).scalar_kind() != Some(NativeScalarKind::Bool)
+            || self.ty(output).scalar_kind() != Some(NativeScalarKind::Bool)
+        {
+            return Err(Error::InvalidBinding {
+                node: Some(at.node()),
+            });
+        }
+        let entry = self.block(at, NativeMatchAction::None)?;
+        let returned = self.block(
+            at,
+            NativeMatchAction::Copy {
+                source: *condition,
+                output,
+            },
+        )?;
+        let failed = self.block(at, NativeMatchAction::None)?;
+        self.blocks[entry as usize].terminator = NativeMatchTerminator::Branch {
+            condition: *condition,
+            yes: returned,
+            no: failed,
+        }
+        .into();
+        self.blocks[failed as usize].terminator = NativeMatchTerminator::IntegrityFailure.into();
+        Ok((entry, returned))
+    }
     fn control_block_tail(
         &mut self,
         owner: NodeId,
@@ -634,6 +671,7 @@ impl Builder<'_> {
                 .collect::<Result<Vec<_>, _>>()?;
             let result = self.value(self.type_for_schema(operation.schema)?)?;
             let (start, end) = match &operation.body {
+                ControlOperationBody::Assert => self.assertion(at, &args, result)?,
                 ControlOperationBody::Operation {
                     operation,
                     contract,

@@ -1,4 +1,4 @@
-//! A recursive statement function has one irrefutable canonical argument arm.
+//! A recursive or checked statement function has one irrefutable argument arm.
 //! Its locals remain ordinary operations; recursive calls target that arm's
 //! lexical frame, just as they do in a source pattern-body function.
 use super::*;
@@ -95,7 +95,6 @@ impl SemanticBuilder {
             self.next_control_block = 0;
         }
         let binding_start = self.nodes.len();
-        let constraint_start = self.constraints.len();
         let mut bindings = BTreeMap::new();
         let mut fields = Vec::new();
         for (local, ((parameter, _), argument)) in parameters.iter().zip(arguments).enumerate() {
@@ -159,15 +158,6 @@ impl SemanticBuilder {
         self.scope_definitions = saved_definitions;
         if self.control_depth == 0 {
             self.next_control_block = saved_next;
-        }
-        // A root integrity declaration cannot refer to a visit-local result.
-        // Keep this unsupported until constraints have a lexical operation form.
-        if self.constraints.len() != constraint_start {
-            self.constraints.truncate(constraint_start);
-            return Err(error(
-                "source-semantics/recursive-function-invariant",
-                "recursive statement invariants require lexical constraint lowering".to_owned(),
-            ));
         }
         let (block, schema) = result?;
         let index = self.nodes.len() as u32;

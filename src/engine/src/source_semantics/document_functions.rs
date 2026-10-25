@@ -46,6 +46,11 @@ fn calls_function(node: &SyntaxNode, name: &str) -> Result<bool, SourceSemanticE
     Ok(false)
 }
 
+fn contains_invariant(node: &SyntaxNode) -> bool {
+    node.kind() == SyntaxKind::InvariantDefine
+        || node.children().any(|child| contains_invariant(&child))
+}
+
 fn references_variable(node: &SyntaxNode, name: &str) -> Result<bool, SourceSemanticError> {
     references_free_variable(node, name, false)
 }
@@ -636,7 +641,10 @@ impl SemanticBuilder {
                 self.inline_expression_function_body(name, &body)
             }
             DocumentFunctionBody::Statements(body) => {
-                if calls_function(&body, name)? {
+                // Keep the complete invocation in one lexical frame. In
+                // particular, later closed expressions must not activate at
+                // document scope ahead of an input-dependent entry check.
+                if calls_function(&body, name)? || contains_invariant(&body) {
                     self.inline_recursive_statement_function_body(
                         name, &body, &parameters, &arguments, call, &error,
                     )
@@ -850,6 +858,9 @@ impl SemanticBuilder {
                 }
                 PendingNodeBody::Iteration(control) if node.state.is_none() => {
                     PendingControlOperationBody::Iteration(control)
+                }
+                PendingNodeBody::LocalAssert if node.state.is_none() => {
+                    PendingControlOperationBody::Assert
                 }
                 _ => {
                     return Err(SourceSemanticError {

@@ -757,6 +757,7 @@ fn push_children<'a>(
         crate::ControlOperationBody::Operation { .. }
         | crate::ControlOperationBody::Recur(_)
         | crate::ControlOperationBody::Suspend
+        | crate::ControlOperationBody::Assert
         | crate::ControlOperationBody::Publish => {}
     }
 }

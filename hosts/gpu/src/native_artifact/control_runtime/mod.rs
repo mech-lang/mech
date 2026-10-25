@@ -27,6 +27,9 @@ pub enum NativeMatchExecutionError {
     Arithmetic {
         origin: NativeMatchOrigin,
     },
+    Integrity {
+        origin: NativeMatchOrigin,
+    },
     Unmatched {
         origin: NativeMatchOrigin,
     },
@@ -279,7 +282,7 @@ pub(in crate::native_artifact) fn execute<F: FnOnce(*mut Frame) -> u64>(
                 return Err(invalid("Match entry omitted atomic completion"));
             }
         }
-        STATUS_ARITHMETIC | STATUS_REJECT => {
+        STATUS_ARITHMETIC | STATUS_REJECT | super::abi::STATUS_INTEGRITY => {
             let id = context
                 .previous
                 .ok_or_else(|| invalid("Match failure before admitted visit"))?;
@@ -294,6 +297,17 @@ pub(in crate::native_artifact) fn execute<F: FnOnce(*mut Frame) -> u64>(
                 return Err(NativeMatchExecutionError::Arithmetic {
                     origin: site.origin,
                 });
+            }
+            if status == super::abi::STATUS_INTEGRITY {
+                if !site.integrity {
+                    return Err(invalid("Match integrity outside assertion"));
+                }
+                return Err(NativeMatchExecutionError::Integrity {
+                    origin: site.origin,
+                });
+            }
+            if !site.reject {
+                return Err(invalid("Match unmatched outside rejection"));
             }
             return Err(NativeMatchExecutionError::Unmatched {
                 origin: site.origin,

@@ -31,6 +31,50 @@ fn compile(source: &str) -> CanonicalSourceProgram {
     CanonicalSourceFrontend.compile_expression(&syntax).unwrap()
 }
 
+#[test]
+fn lexical_assertion_signatures_are_validated_even_when_the_result_is_unused() {
+    let product = compile("signal<bool> ? | * => 1u64");
+    let mut graph = product.program().clone();
+    let boolean = graph.inputs[0].schema;
+    let scalar = graph.outputs[0].schema;
+    let SourceNodeBody::Match(root) = &mut graph.nodes[0].body else { panic!() };
+    let body = &mut root.arms[0].body;
+    let scalar_constant = body.yield_value;
+    root.arms[0].pattern = MatchPattern::Bind;
+    let body = &mut root.arms[0].body;
+    body.parameters = vec![ControlParameter { source: ControlParameterSource::Scrutinee, schema: boolean }].into();
+    let predicate = ControlValue::Parameter { block: body.id, ordinal: 0 };
+    body.operations = vec![ControlOperation {
+        node: 0, body: ControlOperationBody::Assert, inputs: vec![predicate].into(), schema: boolean,
+    }].into();
+    let rebuild = |graph: &SourceProgram| compile_source_program_with_control_contracts(
+        graph, &mut ArtifactBuildContext::new(product.schemas(), product.constants()), &[None],
+    );
+    let valid = rebuild(&graph).unwrap();
+    let sections = encode_program_artifact_sections(&valid).unwrap();
+    assert_eq!(decode_program_artifact_sections(&sections).unwrap().revision(), valid.revision());
+    for (inputs, output) in [
+        (vec![], boolean),
+        (vec![predicate, predicate], boolean),
+        (vec![scalar_constant], boolean),
+        (vec![predicate], scalar),
+    ] {
+        let mut bad = graph.clone();
+        let SourceNodeBody::Match(root) = &mut bad.nodes[0].body else { panic!() };
+        root.arms[0].body.operations[0].inputs = inputs.into();
+        root.arms[0].body.operations[0].schema = output;
+        assert!(matches!(rebuild(&bad), Err(ArtifactBuildError::InvalidControl { reason, .. })
+            if reason == "lexical assertion requires one Bool input and Bool result"));
+    }
+    let mut nodes: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+    nodes["nodes"][0]["body"]["Match"]["arms"][0]["body"]["operations"][0]["schema"] =
+        serde_json::json!(scalar.get());
+    let mut bad = sections;
+    bad.nodes = serde_json::to_vec(&nodes).unwrap();
+    let error = decode_program_artifact_sections(&bad).unwrap_err();
+    assert!(format!("{error:?}").contains("lexical assertion requires one Bool input and Bool result"), "{error:?}");
+}
+
 fn fixture() -> ProgramArtifactDraft {
     let base = compile("(flag<bool>, math/neg(11),22,true,false)")
         .compile_artifact()
