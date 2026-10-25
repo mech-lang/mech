@@ -1,4 +1,4 @@
-//! A recursive or checked statement function has one irrefutable argument arm.
+//! A recursive or checked function has one irrefutable argument arm.
 //! Its locals remain ordinary operations; recursive calls target that arm's
 //! lexical frame, just as they do in a source pattern-body function.
 use super::*;
@@ -51,6 +51,23 @@ impl SemanticBuilder {
                 body: SchemaBody::Tuple(fields.into_boxed_slice()),
             }
         };
+        self.inline_function_body_frame(
+            name, body, parameters, arguments, call, expected, error,
+            |builder| builder.inline_statement_function_body(name, body, call, error),
+        )
+    }
+
+    pub(super) fn inline_function_body_frame(
+        &mut self,
+        name: &str,
+        body: &SyntaxNode,
+        parameters: &[(String, SchemaDraft)],
+        arguments: &[PendingValue],
+        call: &SyntaxNode,
+        expected: SchemaDraft,
+        error: &impl Fn(&'static str, String) -> SourceSemanticError,
+        compile: impl FnOnce(&mut Self) -> Result<PendingValue, SourceSemanticError>,
+    ) -> Result<PendingValue, SourceSemanticError> {
         let scrutinee = if let [argument] = arguments {
             *argument
         } else {
@@ -149,7 +166,7 @@ impl SemanticBuilder {
             scrutinee,
             &mut inputs,
             &mut captures,
-            |builder| builder.inline_statement_function_body(name, body, call, error),
+            compile,
         );
         self.active_recursive_outputs.pop();
         self.match_depth -= 1;

@@ -75,6 +75,23 @@ fn lexical_assertion_signatures_are_validated_even_when_the_result_is_unused() {
     assert!(format!("{error:?}").contains("lexical assertion requires one Bool input and Bool result"), "{error:?}");
 }
 
+#[test]
+fn function_local_assertions_reject_non_boolean_predicates_at_the_source() {
+    use mech_syntax::document::DocumentSyntax;
+    for predicate in ["n", "[true false]"] {
+        let source = format!("checked(n<u64>) => (out<u64>) :=\n  valid! := {predicate}\n  out := n.\nchecked(input<u64>)\n");
+        let parsed = mech_syntax::document::parse_canonical_document(
+            TextSnapshot::new(DocumentId(0xA55E28), Revision(1), source.as_str()).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+        let error = CanonicalSourceFrontend.compile_document(
+            &DocumentSyntax::cast(parsed.syntax()).unwrap()).err()
+            .expect("non-Boolean local predicate must be rejected");
+        assert_eq!(error.code, "source-semantics/non-boolean-invariant");
+    }
+}
+
 fn fixture() -> ProgramArtifactDraft {
     let base = compile("(flag<bool>, math/neg(11),22,true,false)")
         .compile_artifact()

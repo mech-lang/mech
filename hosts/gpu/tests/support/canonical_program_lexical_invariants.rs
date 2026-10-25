@@ -9,6 +9,9 @@ use mech_gpu::native_artifact::{
 #[path = "canonical_program_lexical_invariant_visits.rs"]
 mod visits;
 
+#[path = "canonical_program_lexical_invariant_order.rs"]
+mod order;
+
 pub(super) fn check_cases(source: &str, cases: &[(Vec<(&str, Data)>, Option<Data>)]) {
     check_cases_with_policy(source, cases, None, limits());
 }

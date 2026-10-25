@@ -5,7 +5,7 @@ use super::comprehension::{
 };
 use super::*;
 use mech_syntax::document::{
-    ComprehensionQualifierSyntax, ComprehensionQualifierValueSyntax, FunctionCallSyntax,
+    ApplicationExpressionSyntax, ComprehensionQualifierSyntax, ComprehensionQualifierValueSyntax, FunctionCallSyntax,
     MatchArmSyntax, MatrixComprehensionSyntax, SetComprehensionSyntax,
 };
 
@@ -46,9 +46,50 @@ fn calls_function(node: &SyntaxNode, name: &str) -> Result<bool, SourceSemanticE
     Ok(false)
 }
 
-fn contains_invariant(node: &SyntaxNode) -> bool {
-    node.kind() == SyntaxKind::InvariantDefine
-        || node.children().any(|child| contains_invariant(&child))
+fn contains_invariant(
+    node: &SyntaxNode,
+    functions: &BTreeMap<String, SyntaxNode>,
+    visited: &mut BTreeSet<String>,
+    depth: usize,
+) -> Result<bool, SourceSemanticError> {
+    if node.kind() == SyntaxKind::InvariantDefine {
+        return Ok(true);
+    }
+    let mut callees = Vec::new();
+    if let Some(call) = FunctionCallSyntax::cast(node.clone())
+        && let Some(function) = call.function()
+    {
+        callees.push(node_text(function.syntax())?);
+    }
+    if let Some(application) = ApplicationExpressionSyntax::cast(node.clone()) {
+        for stage in application.stages() {
+            if let Some(function) = stage.function() {
+                callees.push(node_text(function.syntax())?);
+            }
+        }
+    }
+    for name in callees {
+        if let Some(body) = functions.get(&name)
+            && visited.insert(name)
+        {
+            if depth >= crate::MAX_CONTROL_DEPTH as usize {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/function-expansion-depth",
+                    message: "function check analysis exceeds the lexical depth limit".to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(node),
+                });
+            }
+            if contains_invariant(body, functions, visited, depth + 1)? {
+                return Ok(true);
+            }
+        }
+    }
+    for child in node.children() {
+        if contains_invariant(&child, functions, visited, depth)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 fn references_variable(node: &SyntaxNode, name: &str) -> Result<bool, SourceSemanticError> {
@@ -638,13 +679,32 @@ impl SemanticBuilder {
         self.local_mutation_depth += 1;
         let result = (|| match body {
             DocumentFunctionBody::Expression(body) => {
-                self.inline_expression_function_body(name, &body)
+                if self.control_depth == 0
+                    && contains_invariant(
+                        &body, &self.local_functions, &mut BTreeSet::new(), 0,
+                    )?
+                {
+                    let expected = self.expression_function_schema(name, &body)?;
+                    self.inline_function_body_frame(
+                        name, &body, &parameters, &arguments, call, expected, &error,
+                        |builder| builder.inline_expression_function_body(name, &body),
+                    )
+                } else {
+                    self.inline_expression_function_body(name, &body)
+                }
             }
             DocumentFunctionBody::Statements(body) => {
                 // Keep the complete invocation in one lexical frame. In
                 // particular, later closed expressions must not activate at
                 // document scope ahead of an input-dependent entry check.
-                if calls_function(&body, name)? || contains_invariant(&body) {
+                // An existing selected body already orders all inlined work.
+                // Recursion still needs its own argument frame and loop target.
+                if calls_function(&body, name)?
+                    || (self.control_depth == 0
+                        && contains_invariant(
+                            &body, &self.local_functions, &mut BTreeSet::new(), 0,
+                        )?)
+                {
                     self.inline_recursive_statement_function_body(
                         name, &body, &parameters, &arguments, call, &error,
                     )
@@ -671,11 +731,11 @@ impl SemanticBuilder {
         result
     }
 
-    fn inline_expression_function_body(
+    fn expression_function_schema(
         &mut self,
         name: &str,
         body: &SyntaxNode,
-    ) -> Result<PendingValue, SourceSemanticError> {
+    ) -> Result<SchemaDraft, SourceSemanticError> {
         let annotation = body
             .children()
             .find_map(KindAnnotationSyntax::cast)
@@ -684,7 +744,15 @@ impl SemanticBuilder {
                 message: format!("function {name} has no output kind"),
                 anchor: SourceSemanticAnchor::for_node(body),
             })?;
-        let expected = self.annotation_schema_draft(&annotation)?;
+        self.annotation_schema_draft(&annotation)
+    }
+
+    fn inline_expression_function_body(
+        &mut self,
+        name: &str,
+        body: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let expected = self.expression_function_schema(name, body)?;
         let expression = body
             .children()
             .find_map(ExpressionSyntax::cast)
