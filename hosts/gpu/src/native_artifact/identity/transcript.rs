@@ -141,5 +141,6 @@ pub(in crate::native_artifact) fn scalar_terminator(
         }
         NativeMatchTerminator::Complete => hash.update([4]),
         NativeMatchTerminator::Reject => hash.update([5]),
+        NativeMatchTerminator::IntegrityFailure => hash.update([6]),
     }
 }

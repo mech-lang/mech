@@ -187,7 +187,7 @@ fn owned_source_slots(
             End::Scalar(Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. }) => {
                 [Some(yes), Some(no)]
             }
-            End::Scalar(Term::Complete | Term::Reject) => [None, None],
+            End::Scalar(Term::Complete | Term::Reject | Term::IntegrityFailure) => [None, None],
             End::Header { body, exit, .. } => [Some(body), Some(exit)],
             End::TailHeader { body, .. } => [Some(body), None],
         };

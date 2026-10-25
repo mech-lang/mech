@@ -46,6 +46,9 @@ pub use crate::native_artifact::values::{
 };
 pub use crate::native_artifact::work::NativeWorkMeter;
 
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod lexical_integrity_status_tests;
+
 mod control_abi;
 #[cfg(feature = "canonical-native")]
 mod control_application;

@@ -54,6 +54,8 @@ impl JitMatchArtifact {
     pub fn descriptor(&self) -> &NativeMatchDescriptor {
         &self.descriptor
     }
+    #[cfg(test)]
+    pub(super) fn test_checked_entry(&self) -> Entry { self.entry }
     pub fn evaluate_into(
         &self,
         inputs: &[NativeScalarValue],
@@ -670,6 +672,10 @@ pub(in crate::native_artifact) fn emit_branch_terminator(
         }
         NativeMatchTerminator::Reject => {
             let status = b.ins().iconst(types::I64, STATUS_REJECT as i64);
+            b.ins().return_(&[status]);
+        }
+        NativeMatchTerminator::IntegrityFailure => {
+            let status = b.ins().iconst(types::I64, super::abi::STATUS_INTEGRITY as i64);
             b.ins().return_(&[status]);
         }
         NativeMatchTerminator::Complete => {

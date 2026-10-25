@@ -183,23 +183,15 @@ fn recursive_statement_named_outputs_share_the_canonical_result_tuple() {
 }
 
 #[test]
-fn recursive_statement_invariants_cannot_escape_as_document_constraints() {
-    use mech_engine::CanonicalSourceFrontend;
-    use mech_syntax::document::{
-        AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
-        parse_canonical_document,
-    };
-    let source = "count(n<u64>) => (out<u64>) :=\n  valid! := n > 0u64\n  out := ((n > 0u64)? | true => count(n - 1u64) | false => 7u64).\ncount(input<u64>)\n";
-    let parsed = parse_canonical_document(
-        TextSnapshot::new(DocumentId(0xB7), Revision(1), source).unwrap(),
-        ParseConfig::default(),
+fn recursive_statement_invariants_execute_on_the_current_visit() {
+    let source = "count(n<u64>) => (out<u64>) :=\n  valid! := n != 3u64\n  out := ((n > 0u64)? | true => count(n - 1u64) | false => 7u64).\ncount(input<u64>)\n";
+    super::lexical_invariant_qualification::check_cases(
+        source,
+        &[
+            (vec![("input", Data::U64(0))], Some(Data::U64(7))),
+            (vec![("input", Data::U64(2))], Some(Data::U64(7))),
+            (vec![("input", Data::U64(5))], None),
+            (vec![("input", Data::U64(1))], Some(Data::U64(7))),
+        ],
     );
-    assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
-    let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
-    let Err(error) = CanonicalSourceFrontend
-        .compile_document_with_catalog(&syntax, mech_stdlib::source_catalog())
-    else {
-        panic!("a visit-local constraint must not become a root declaration")
-    };
-    assert_eq!(error.code, "source-semantics/recursive-function-invariant");
 }

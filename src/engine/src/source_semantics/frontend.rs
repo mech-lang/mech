@@ -18,6 +18,9 @@ use application::{PendingIteration, resolve_iteration};
 #[path = "constant_binding.rs"]
 mod constant_binding;
 
+#[path = "lexical_invariants.rs"]
+mod lexical_invariants;
+
 #[path = "comprehension.rs"]
 mod comprehension;
 use comprehension::{PendingComprehension, resolve_comprehension};
@@ -2861,6 +2864,7 @@ enum PendingNodeBody {
     Fsm(crate::FsmDeclaration),
     CollectionBinding,
     RecursiveCall(u8),
+    LocalAssert,
 
     Suspend,
     Publish,
@@ -2895,6 +2899,7 @@ impl PendingMatch {
                         PendingControlOperationBody::Operation { .. }
                         | PendingControlOperationBody::Recur(_)
                         | PendingControlOperationBody::Suspend
+                        | PendingControlOperationBody::Assert
                         | PendingControlOperationBody::Publish => {}
                     }
                 }
@@ -3303,6 +3308,7 @@ enum PendingControlOperationBody {
     Comprehension(PendingComprehension),
     Iteration(PendingIteration),
     Recur(u8),
+    Assert,
 
     Suspend,
     Publish,
@@ -8292,6 +8298,7 @@ impl SemanticBuilder {
                     }
                     PendingNodeBody::CollectionBinding
                     | PendingNodeBody::RecursiveCall(_)
+                    | PendingNodeBody::LocalAssert
                     | PendingNodeBody::Suspend
                     | PendingNodeBody::Publish => {
                         unreachable!("lexical bindings cannot escape collection lowering")
@@ -10802,6 +10809,7 @@ impl SemanticBuilder {
                 PendingNodeBody::RecursiveCall(ancestor) => {
                     PendingControlOperationBody::Recur(ancestor)
                 }
+                PendingNodeBody::LocalAssert => PendingControlOperationBody::Assert,
 
                 PendingNodeBody::Suspend => PendingControlOperationBody::Suspend,
                 PendingNodeBody::Publish => PendingControlOperationBody::Publish,
@@ -10900,6 +10908,7 @@ fn resolve_pending_control_block(
                     PendingControlOperationBody::Recur(ancestor) => {
                         crate::ControlOperationBody::Recur(*ancestor)
                     }
+                    PendingControlOperationBody::Assert => crate::ControlOperationBody::Assert,
                     PendingControlOperationBody::Suspend => crate::ControlOperationBody::Suspend,
                     PendingControlOperationBody::Publish => crate::ControlOperationBody::Publish,
                 },

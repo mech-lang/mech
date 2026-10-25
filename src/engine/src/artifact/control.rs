@@ -88,6 +88,11 @@ pub enum ControlOperationBody<C = OperationContractId> {
     /// resident executor admits a bounded call frame before following it.
     Recur(u8),
 
+    /// Check the single Bool operand at this exact lexical visit. False fails
+    /// the candidate; true produces the same Bool. This is engine-owned
+    /// control, not a document constraint or a selected library implementation.
+    Assert,
+
     /// Suspend the enclosing declared FSM with the operation's single state
     /// input. Suspension publishes no result in the current turn; resident
     /// execution resumes the same lexical match on a later turn.
@@ -96,6 +101,19 @@ pub enum ControlOperationBody<C = OperationContractId> {
     /// the same arm. Publication commits atomically with any suspension.
     Publish,
     Iteration(super::IterationDeclaration<C>),
+}
+
+pub(super) fn is_assertion_signature(
+    schemas: &mech_core::SchemaTable,
+    inputs: &[SchemaId],
+    output: SchemaId,
+) -> bool {
+    inputs.len() == 1
+        && inputs.iter().chain(core::iter::once(&output)).all(|id| {
+            schemas
+                .get(*id)
+                .is_some_and(|schema| schema.body() == &mech_core::SchemaBody::Bool)
+        })
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -923,6 +941,11 @@ pub(super) fn validate_match_inner(
                                 guarded,
                             )?;
                         }
+                        ControlOperationBody::Assert => {
+                            if !is_assertion_signature(&draft.schemas, &inputs, operation.schema) {
+                                return Err(invalid("lexical assertion requires one Bool input and Bool result"));
+                            }
+                        }
                         ControlOperationBody::Recur(ancestor) => {
                             let target = match_schemas
                                 .len()
@@ -1189,6 +1212,7 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                 ControlOperationBody::Operation { .. }
                                 | ControlOperationBody::Recur(_)
                                 | ControlOperationBody::Suspend
+                                | ControlOperationBody::Assert
                                 | ControlOperationBody::Publish => {}
                             }
                         }
@@ -1222,6 +1246,7 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                 ControlOperationBody::Operation { .. }
                                 | ControlOperationBody::Recur(_)
                                 | ControlOperationBody::Suspend
+                                | ControlOperationBody::Assert
                                 | ControlOperationBody::Publish => {}
                             }
                         }
@@ -1251,6 +1276,7 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                         ControlOperationBody::Operation { .. }
                         | ControlOperationBody::Recur(_)
                         | ControlOperationBody::Suspend
+                        | ControlOperationBody::Assert
                         | ControlOperationBody::Publish => {}
                     }
                 }
@@ -1299,6 +1325,7 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Operation { .. }
                         | ControlOperationBody::Recur(_)
                         | ControlOperationBody::Suspend
+                        | ControlOperationBody::Assert
                         | ControlOperationBody::Publish => {}
                     }
                 }
@@ -1322,6 +1349,7 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Operation { .. }
                         | ControlOperationBody::Recur(_)
                         | ControlOperationBody::Suspend
+                        | ControlOperationBody::Assert
                         | ControlOperationBody::Publish => {}
                     }
                 }
@@ -1341,6 +1369,7 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Operation { .. }
                         | ControlOperationBody::Recur(_)
                         | ControlOperationBody::Suspend
+                        | ControlOperationBody::Assert
                         | ControlOperationBody::Publish => {}
                     }
                 }
@@ -1437,6 +1466,7 @@ impl<C> MatchDeclaration<C> {
                     ControlOperationBody::Iteration(nested) => nested.contains_suspend(),
                     ControlOperationBody::Operation { .. }
                     | ControlOperationBody::Recur(_)
+                    | ControlOperationBody::Assert
                     | ControlOperationBody::Publish => false,
                 })
         })
@@ -1506,6 +1536,7 @@ impl<C> MatchDeclaration<C> {
                                 ControlOperationBody::Recur(ancestor) => {
                                     ControlOperationBody::Recur(*ancestor)
                                 }
+                                ControlOperationBody::Assert => ControlOperationBody::Assert,
 
                                 ControlOperationBody::Suspend => ControlOperationBody::Suspend,
                                 ControlOperationBody::Publish => ControlOperationBody::Publish,
@@ -1550,6 +1581,7 @@ impl<C> super::ComprehensionDeclaration<C> {
                 ControlOperationBody::Iteration(nested) => nested.contains_suspend(),
                 ControlOperationBody::Operation { .. }
                 | ControlOperationBody::Recur(_)
+                | ControlOperationBody::Assert
                 | ControlOperationBody::Publish => false,
             }
         })

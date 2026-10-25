@@ -259,6 +259,7 @@ impl Builder<'_> {
                     let result = self.value(self.type_for_schema(operation.schema)?)?;
                     let operation_site = at(owner, declaration.id.0, Some(operation.local));
                     let (first, last) = match &operation.body {
+                        ControlOperationBody::Assert => self.assertion(operation_site, &args, result)?,
                         ControlOperationBody::Operation {
                             operation,
                             contract,

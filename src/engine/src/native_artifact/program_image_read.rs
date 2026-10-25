@@ -107,6 +107,7 @@ enum WireTerminator {
     },
     Complete,
     Reject,
+    IntegrityFailure,
 }
 
 #[derive(Deserialize)]
@@ -187,6 +188,7 @@ fn terminator(wire: WireTerminator) -> NativeMatchTerminator {
         },
         WireTerminator::Complete => NativeMatchTerminator::Complete,
         WireTerminator::Reject => NativeMatchTerminator::Reject,
+        WireTerminator::IntegrityFailure => NativeMatchTerminator::IntegrityFailure,
     }
 }
 

@@ -127,6 +127,9 @@ impl<C> ComprehensionDeclaration<C> {
                             ComprehensionStep::Operation(ComprehensionOperation {
                                 local: operation.local,
                                 body: match &operation.body {
+                                    super::ControlOperationBody::Assert => {
+                                        super::ControlOperationBody::Assert
+                                    }
                                     super::ControlOperationBody::Operation {
                                         operation: reference,
                                         contract,
@@ -452,6 +455,11 @@ pub(super) fn validate_comprehension_inner(
                     })
                     .collect::<Result<Vec<_>, _>>()?;
                 match &operation.body {
+                    super::ControlOperationBody::Assert => {
+                        if !super::control::is_assertion_signature(&draft.schemas, &operation_inputs, operation.schema) {
+                            return Err(invalid("lexical assertion requires one Bool input and Bool result"));
+                        }
+                    }
                     super::ControlOperationBody::Operation {
                         operation: reference,
                         contract: contract_id,

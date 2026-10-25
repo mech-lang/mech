@@ -304,7 +304,7 @@ fn scalar_successors(term: Term) -> [Option<u32>; 2] {
     match term {
         Term::Jump(next) => [Some(next), None],
         Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. } => [Some(yes), Some(no)],
-        Term::Complete | Term::Reject => [None, None],
+        Term::Complete | Term::Reject | Term::IntegrityFailure => [None, None],
     }
 }
 /// Two disjoint analysis cells encode Empty -> SelectorReady -> SpanReady ->

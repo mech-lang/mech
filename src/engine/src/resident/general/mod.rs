@@ -312,8 +312,18 @@ pub struct ActivatedPublication {
     pub value: ResidentReadLocation,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct ActivatedAssertion {
+    pub artifact_node: NodeId,
+    pub block: crate::ControlBlockId,
+    pub local: u32,
+    pub condition: ResidentReadLocation,
+    pub write: ResidentWriteLocation,
+}
+
 #[derive(Clone, Debug)]
 pub enum ActivatedTurnStep {
+    Assert(ActivatedAssertion),
     Iteration(std::sync::Arc<ActivatedIterationNode>),
     Match(ActivatedMatchNode),
     Recur(ActivatedRecursiveCall),
@@ -358,6 +368,7 @@ impl ActivatedTurnStep {
 
     pub fn artifact_node(&self) -> NodeId {
         match self {
+            Self::Assert(node) => node.artifact_node,
             Self::Kernel(node) => node.artifact_node,
             Self::Match(node) => node.artifact_node,
             Self::Iteration(node) => node.artifact_node,
@@ -471,6 +482,7 @@ fn read_location_depends_on_match(
     }
     let producer = plan.steps.iter().position(|step| {
         let write = match step {
+            ActivatedTurnStep::Assert(node) => Some(node.write),
             ActivatedTurnStep::Kernel(node) => Some(node.write),
             ActivatedTurnStep::Match(node) => Some(node.write),
             ActivatedTurnStep::Recur(node) => Some(node.write),
@@ -2385,7 +2397,8 @@ fn append_comprehension_execution_cases(
                     cases,
                 )?;
             }
-            crate::ControlOperationBody::Recur(_)
+            crate::ControlOperationBody::Assert
+            | crate::ControlOperationBody::Recur(_)
             | crate::ControlOperationBody::Suspend
             | crate::ControlOperationBody::Publish => {}
         }
@@ -2474,6 +2487,7 @@ fn append_iteration_execution_cases(
                     targets: ExecutionTargetSet::RESIDENT_CPU,
                 });
             }
+            crate::ControlOperationBody::Assert => {}
             crate::ControlOperationBody::Recur(_)
             | crate::ControlOperationBody::Suspend
             | crate::ControlOperationBody::Publish => {
@@ -2563,7 +2577,8 @@ fn append_match_execution_cases(
                         cases,
                     )?;
                 }
-                crate::ControlOperationBody::Recur(_)
+                crate::ControlOperationBody::Assert
+                | crate::ControlOperationBody::Recur(_)
                 | crate::ControlOperationBody::Suspend
                 | crate::ControlOperationBody::Publish => {}
                 crate::ControlOperationBody::Operation {
@@ -14068,6 +14083,7 @@ fn build_plan(
             steps
                 .iter()
                 .map(|step| match step {
+                    ActivatedTurnStep::Assert(_) => unreachable!("assertion is not a library kernel"),
                     ActivatedTurnStep::Kernel(node) => node.clone(),
                     ActivatedTurnStep::External(_)
                     | ActivatedTurnStep::Match(_)
@@ -14126,6 +14142,7 @@ fn build_plan(
         .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
     ensure_resident_plan_admitted(&layout.memory_plan)?;
     let structural_match = steps.iter().find_map(|step| match step {
+        ActivatedTurnStep::Assert(_) => None,
         ActivatedTurnStep::Match(control) => control
             .arms
             .iter()
@@ -24719,6 +24736,13 @@ fn bind_control_block(
         } = &operation.body
         else {
             match &operation.body {
+                crate::ControlOperationBody::Assert => steps.push(ActivatedTurnStep::Assert(ActivatedAssertion {
+                    artifact_node: owner,
+                    block: block.id,
+                    local: operation.node,
+                    condition: input_reads[0],
+                    write: ResidentWriteLocation { slot: output_slot, storage: output.storage, region: output.region },
+                })),
                 crate::ControlOperationBody::Match(nested) => {
                     let prepared = prepare_match_node(
                         artifact,

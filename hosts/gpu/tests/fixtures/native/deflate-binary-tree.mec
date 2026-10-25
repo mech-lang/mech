@@ -2,7 +2,7 @@
 // 671077457ff7ef3a3d44caf715a3fc595addf379, BtMatchfinder.roc.
 // Concatenate after deflate-matchfinder.mec. See deflate-huffman-LICENSES.md.
 // Positions are zero-based; checked Mech matrix selectors are one-based.
-// Known parity work before timing: entry assertions, unaligned LE loads,
+// Known parity work before timing: unaligned LE loads,
 // prefetch hints, wrapping narrow casts, and physical buffer ownership.
 
 <bt-advanced> := <{tables<[u16]> next-hash3<u64> next-hash4<u64> cache<[u32]> cache-ptr<u64>}>
@@ -113,7 +113,9 @@ bt-short-record(cache<[u32]>, cache-ptr<u64>, input<[u8]>, in-next<u64>, in-base
   out := (next, ptr).
 
 bt-get-matches(tables<[u16]>, hash3<u64>, hash4<u64>, input<[u8]>, in-base<u64>, cur-pos<u64>, maximum<u64>, nice<u64>, search-depth<u64>, cache<[u32]>, cache-ptr<u64>) => (out<bt-advanced>) :=
+  table-size! := sequence/length(tables) >= 262144u64
   in-next := bits/wrapping-add(in-base, cur-pos)
+  window! := in-next + maximum <= sequence/length(input)
   next-sequence := load-prefix(input, bits/wrapping-add(in-next, 1u64))
   seq3 := bt-narrow32(bits/and(bt-word32(next-sequence), 16777215u64))
   next-hash3 := lz-hash(seq3, 16u64)
@@ -153,7 +155,9 @@ bt-skip-loop(tables<[u16]>, input<[u8]>, in-next<u64>, cur-pos<u64>, nice<u64>, 
     | true => bt-skip-loop(mf, input, in-next, cur-pos, nice, out-hash3, out-hash4, lt, gt, next-node, next-depth, next-best-lt, next-best-gt, next-length)
     | false => {tables: mf, next-hash3: out-hash3, next-hash4: out-hash4}).
 bt-skip-byte(tables<[u16]>, hash3<u64>, hash4<u64>, input<[u8]>, in-base<u64>, cur-pos<u64>, nice<u64>, search-depth<u64>) => (out<bt-state>) :=
+  table-size! := sequence/length(tables) >= 262144u64
   in-next := bits/wrapping-add(in-base, cur-pos)
+  window! := in-next + nice <= sequence/length(input)
   next-sequence := load-prefix(input, bits/wrapping-add(in-next, 1u64))
   seq3 := bt-narrow32(bits/and(bt-word32(next-sequence), 16777215u64))
   next-hash3 := lz-hash(seq3, 16u64)

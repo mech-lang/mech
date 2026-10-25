@@ -214,7 +214,7 @@ fn successors(plan: &Plan, site: usize) -> Vec<usize> {
         }
         Terminator::TailHeader { body, .. } => vec![body as usize],
         Terminator::Header { body, exit, .. } => vec![body as usize, exit as usize],
-        Terminator::Scalar(Term::Complete | Term::Reject) => vec![],
+        Terminator::Scalar(Term::Complete | Term::Reject | Term::IntegrityFailure) => vec![],
     }
 }
 fn find(parent: &mut [usize], value: usize) -> usize {

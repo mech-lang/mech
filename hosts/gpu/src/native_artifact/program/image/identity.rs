@@ -217,7 +217,9 @@ fn selected_template(
 // not manufacture result copies for branches that only recur.
 // IR103 admits ordinary recursive statement frames and up to 32 lexical control
 // levels, with canonical identity conformance for compound function outputs.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 103;
+// IR104 preserves lexical Assert operations as checked branches with distinct
+// integrity-failure terminals; no document constraint is hoisted out of a visit.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 104;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -361,7 +363,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 103;
 // runtime-shaped child, alongside its packed-to-draft expansion and publication.
 // Policy74 transports scalar Tail carriers in native words and retires their
 // other managed locals after the generated latch, as for native aggregates.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 74;
+// Policy75 charges each assertion's actual generated branch/copy/failure visit
+// and seals integrity status to the precise admitted failure terminal.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 75;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

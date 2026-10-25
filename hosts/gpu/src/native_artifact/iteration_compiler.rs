@@ -44,6 +44,8 @@ impl JitIterationArtifact {
     pub fn descriptor(&self) -> &NativeIterationDescriptor {
         &self.descriptor
     }
+    #[cfg(test)]
+    pub(super) fn test_checked_entry(&self) -> Entry { self.entry }
     pub fn evaluate_into(
         &self,
         inputs: &[NativeScalarValue],
