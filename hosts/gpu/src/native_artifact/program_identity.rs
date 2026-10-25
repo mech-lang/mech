@@ -170,7 +170,9 @@ fn selected_template(
 // IR80 binds aligned private control-group placement to generated probes.
 // Candidate payload addresses use control-bit byte offsets and an early group
 // base. Frame layout, finite body prices and per-group charges are unchanged.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 80;
+// IR81 / ABI29 read selected rows directly from existing LF offsets in a
+// pinned one/two-chunk ASCII window. Other representations keep checked cells.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 81;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -300,7 +302,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 80;
 // physical canonical-map import, sorting and allocation are genuinely absent.
 // Policy67 admits the actual immutable-owner layout containing its inline
 // shared String representation fact. Original scan charges remain in force.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 67;
+// Policy68 includes the inline borrowed-offset descriptors in the actual loan
+// layout. Original row/payload work and row-capacity claims stay in force.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 68;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

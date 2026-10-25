@@ -1,9 +1,10 @@
-//! Mixed-value ABI28 binds the optional owned complete-key lookup cache
+//! Mixed-value ABI29 additionally discriminates borrowed compact line offsets.
+//! ABI28 binds the optional owned complete-key lookup cache
 //! pointer in the packed map frame. The ordinary table and helper lanes remain.
 //! Entry phases, control pointer and scalar transport stay unchanged.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 28;
+pub(super) const VERSION: u64 = 29;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
 pub(super) const PHASE_PREFIX: u64 = 2;

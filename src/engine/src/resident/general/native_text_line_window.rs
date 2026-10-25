@@ -1,6 +1,6 @@
-//! Bounded synchronous row loans from the actual owning packed line store.
-//! The source borrow statically prevents mutation/discard while pointers live.
-//! No biased pointer, canonical partial Matrix, or language count is invented.
+//! Bounded synchronous row/offset loans from the owning packed line store.
+//! The source borrow statically prevents mutation/discard while addresses live.
+//! Global ordinals never bias a dereferenced pointer outside its allocation.
 use super::{
     Account, Claim, InvokeError, NativeLibraryWorkBudget, NativeTextLineCaptureFacts,
     NativeTextLineChunks,
@@ -13,6 +13,13 @@ mod native_text_line_window_tests;
 
 pub struct NativeTextLineWindow<'owner> {
     rows: Vec<[u64; 2]>,
+    // At most two physical chunks cover an ordinary capture delivery. Larger
+    // or mixed-Unicode windows keep the checked materialized representation.
+    // Words: bytes pointer, bytes length, LF-offset pointer (zero for a lone
+    // completed line), first offset index, number of intersecting rows.
+    segments: [[u64; 5]; 2],
+    segment_count: usize,
+    direct: bool,
     owner: &'owner NativeTextLineChunks,
     first: u64,
     end: u64,
@@ -59,34 +66,46 @@ impl NativeTextLineChunks {
             .and_then(|bytes| bytes.checked_add(128))
             .ok_or(InvokeError::InvalidInput)?;
         let claim = Account::reserve(&self.account, bytes)?;
+        let start = self.chunks.partition_point(|chunk| chunk.end() <= first);
+        let finish = self.chunks.partition_point(|chunk| chunk.first < end);
+        let direct = self.facts.ascii && finish - start <= 2;
+        let mut segments = [[0; 5]; 2];
+        let mut segment_count = 0;
         let mut rows = Vec::new();
-        rows.try_reserve_exact(count)
-            .map_err(|_| InvokeError::InvalidInput)?;
-        if rows.capacity() != count {
-            return Err(InvokeError::InvalidInput);
-        }
         let mut ascii = true;
-        // The immutable producer already inspected every delivered byte. An
-        // all-ASCII source therefore proves all borrowed cells ASCII without
-        // rescanning each short line. Genuine str::lines cells contain no LF,
-        // so they cannot contain the sole multi-byte ASCII grapheme, CRLF.
-        // For a mixed source, inspect only these cells to preserve the exact
-        // window qualification (ASCII cells may follow discarded Unicode).
-        // Keep the same payload precharge above on BOTH representation paths.
-        if self.facts.ascii {
-            self.visit_window_cells(first, end, |text| {
-                rows.push([text.as_ptr() as u64, text.len() as u64]);
-                Ok(())
-            })?;
+        if direct {
+            let mut seen = 0;
+            for chunk in self.chunks.range(start..finish) {
+                let lo = first.max(chunk.first);
+                let hi = end.min(chunk.end());
+                if lo >= hi { continue; }
+                segments[segment_count] = [
+                    chunk.bytes.as_str().as_ptr() as u64,
+                    chunk.bytes.as_str().len() as u64,
+                    chunk.offsets.as_ref().map_or(0, |offsets| offsets.values.as_ptr() as u64),
+                    lo - chunk.first,
+                    hi - lo,
+                ];
+                segment_count += 1;
+                seen += hi - lo;
+            }
+            if seen != count as u64 { return Err(InvokeError::InvalidInput); }
         } else {
+            rows.try_reserve_exact(count).map_err(|_| InvokeError::InvalidInput)?;
+            if rows.capacity() != count { return Err(InvokeError::InvalidInput); }
+            // Retain the exact per-window qualification when a Unicode prefix
+            // exists, even if that prefix was already discarded by the source.
             self.visit_window_cells(first, end, |text| {
-                ascii &= text.is_ascii();
+                if !self.facts.ascii { ascii &= text.is_ascii(); }
                 rows.push([text.as_ptr() as u64, text.len() as u64]);
                 Ok(())
             })?;
         }
         Ok(NativeTextLineWindow {
             rows,
+            segments,
+            segment_count,
+            direct,
             owner: self,
             first,
             end,
@@ -165,8 +184,23 @@ impl NativeTextLineWindow<'_> {
     pub const fn end(&self) -> u64 {
         self.end
     }
-    pub fn rows(&self) -> &[[u64; 2]] {
-        &self.rows
+    pub fn row_count(&self) -> usize {
+        (self.end - self.first) as usize
+    }
+    pub fn rows(&self) -> Option<&[[u64; 2]]> {
+        (!self.direct).then_some(self.rows.as_slice())
+    }
+    /// ABI29 machine-view words. Bit zero distinguishes two inline compact
+    /// chunk descriptors from a u64-aligned materialized [pointer,length] table.
+    /// This grants no execution authority: the host must first bind the SAME
+    /// producer/work identity and pin this exact borrowed window through entry.
+    pub fn native_rows(&self) -> (u64, u64) {
+        let pointer = if self.direct {
+            self.segments.as_ptr() as u64 | 1
+        } else {
+            self.rows.as_ptr() as u64
+        };
+        (pointer, self.row_count() as u64)
     }
     pub const fn is_ascii(&self) -> bool {
         self.ascii
