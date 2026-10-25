@@ -203,7 +203,7 @@ impl Context<'_, '_> {
         for (i, owner) in owners.values().iter().enumerate() {
             let (pointer, length) = if i < region.proof.matrices().len() {
                 if let Some(window) = self.prefix_line_window(region.proof.matrices()[i]) {
-                    (window.rows().as_ptr() as u64, window.rows().len() as u64)
+                    window.native_rows()
                 } else if let Some(lines) = self.line_matrix(region.proof.matrices()[i]) {
                     // The Context/session pins this exact immutable table across
                     // the native scanner; its real String owner is also pinned
@@ -367,7 +367,7 @@ impl Context<'_, '_> {
             for &matrix in region.proof.matrices() {
                 if let Some(window) = self.prefix_line_window(matrix) {
                     window_inspected = window_inspected
-                        .checked_add(window.rows().len())
+                        .checked_add(window.row_count())
                         .ok_or_else(|| invalid("String failure window scan overflow"))?;
                 }
             }

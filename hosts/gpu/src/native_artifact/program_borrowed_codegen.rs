@@ -11,6 +11,9 @@ use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntC
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{NativeBorrowedStringAction as Action, NativeMatchValue};
 
+#[path = "program_borrowed_line_codegen.rs"]
+mod line;
+
 fn pair(
     b: &mut FunctionBuilder,
     locals: Value,
@@ -202,12 +205,7 @@ pub(in crate::native_artifact) fn emit(
                 [zero, zero, index],
                 error,
             )?;
-            let offset = b.ins().ishl_imm(offset, 4);
-            let row = b.ins().iadd(table, offset);
-            view = Some([
-                b.ins().load(types::I64, MemFlags::new(), row, 0),
-                b.ins().load(types::I64, MemFlags::new(), row, 8),
-            ]);
+            view = Some(line::load(b, table, offset));
         }
         Action::Copy { source, .. } => {
             view = Some(pair(b, locals, layout, source)?);

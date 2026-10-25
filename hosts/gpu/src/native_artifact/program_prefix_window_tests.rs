@@ -66,7 +66,7 @@ fn run_windowed_delivery(jit: &JitProgramArtifact, text: &str, incremental: bool
             prior_available + 1
         };
         let window = owner.borrow_window(first, available + 1).unwrap();
-        assert!(window.rows().len() <= 1, "no full-input pointer table");
+        assert!(window.row_count() <= 1, "no full-input pointer table");
         super::super::borrowed::take_window_capture();
         prepared
             .run_prefix_window(&mut entry, available, false, Some(&window))
@@ -75,8 +75,8 @@ fn run_windowed_delivery(jit: &JitProgramArtifact, text: &str, incremental: bool
         assert_eq!(
             super::super::borrowed::take_window_capture(),
             Some((
-                window.rows().as_ptr() as u64,
-                window.rows().len() as u64,
+                window.native_rows().0,
+                window.row_count() as u64,
                 window.first(),
             ))
         );
