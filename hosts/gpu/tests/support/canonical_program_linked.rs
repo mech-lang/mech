@@ -84,6 +84,133 @@ fn import_inputs(
         .collect()
 }
 
+#[test]
+fn linked_assertion_rejection_preserves_publication_and_recovers() {
+    let temporary = tempfile::tempdir().unwrap();
+    let directory = temporary.path();
+    let source = "checked(n<u64>) => (out<u64>) :=\n  positive! := n > 0u64\n  out := 12u64 / n.\nchecked(input<u64>)\n";
+    let artifact = super::artifacts(source).0.into_iter().next().unwrap();
+    let generated = generate_linked_program_application(
+        &workspace(),
+        &directory.join("project"),
+        "checked-assertion",
+        &artifact,
+        &mech_stdlib::source_catalog(),
+        source.as_bytes(),
+    )
+    .unwrap();
+    // Keep every build-pinned generated input unchanged. This additional binary
+    // reuses the maintained shell and the SAME pinned Object/descriptor, with
+    // only the test driver's invocation sequence replaced. It contains no JIT.
+    let shell = fs::read_to_string(generated.root().join("src/main.rs")).unwrap();
+    let invocation = "    linked.evaluate_into(&inputs, &mut outputs, limits, &memory).map_err(|error| error.to_string())?;";
+    assert_eq!(shell.matches(invocation).count(), 1);
+    let driver = shell.replace(invocation, r#"
+    for (number, expected) in [(3, Some(4)), (0, None), (2, Some(6))] {
+        let value = ValueDraft {
+            schema: inputs[0].schema(), shape_values: Box::new([]),
+            data: mech_core::ValueDataDraft::U64(number),
+        }.finalize(&SnapshotValidationContext::with_shared_schemas(&schemas)).unwrap();
+        let mut reservation = memory.reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap()).unwrap();
+        let arguments = [value.into_memory_budget(&mut reservation).unwrap()];
+        let prior = outputs.clone(); // Retain published aliases across rejection.
+        let before = memory.used_bytes();
+        let result = linked.evaluate_into(&arguments, &mut outputs, limits, &memory);
+        if let Some(expected) = expected {
+            assert!(result.unwrap().visits > 0);
+            assert_eq!(outputs[0].as_ref().unwrap().canonical_data_draft().unwrap(), mech_core::ValueDataDraft::U64(expected));
+        } else {
+            let mech_gpu::native_artifact::NativeProgramExecutionError::Control(
+                mech_gpu::native_artifact::NativeIterationExecutionError::Integrity { origin }
+            ) = result.unwrap_err() else { panic!("expected lexical integrity before division") };
+            assert!(origin.block().is_some() && origin.local().is_some());
+            for (actual, old) in outputs.iter().zip(&prior) {
+                assert!(actual.as_ref().unwrap().snapshot_eq(&schemas, old.as_ref().unwrap(), &schemas).unwrap());
+            }
+            assert_eq!(memory.used_bytes(), before);
+        }
+    }
+"#);
+    fs::create_dir(generated.root().join("src/bin")).unwrap();
+    fs::write(generated.root().join("src/bin/lexical-retry.rs"), driver).unwrap();
+    fs::copy(
+        workspace().join("Cargo.lock"),
+        generated.root().join("Cargo.lock"),
+    )
+    .unwrap();
+    let isolated = generated.root().ancestors().last().unwrap();
+    let resolved = bounded(
+        &mut CargoInvocation::resolve_lockfile(generated.manifest_path(), true)
+            .with_current_dir(isolated)
+            .command(),
+        directory,
+        "metadata",
+        120,
+    );
+    assert!(
+        resolved.status.success(),
+        "{}",
+        String::from_utf8_lossy(&resolved.stderr)
+    );
+    let mut command = CargoInvocation::build(
+        generated.manifest_path(),
+        "lexical-retry",
+        None,
+        directory.join("cargo-target"),
+        false,
+        true,
+    )
+    .unwrap()
+    .with_current_dir(isolated)
+    .command();
+    command
+        .env("CARGO_INCREMENTAL", "0")
+        .env("CARGO_PROFILE_DEV_DEBUG", "0")
+        .env("CARGO_BUILD_JOBS", "1");
+    let built = bounded(&mut command, directory, "build", 15 * 60);
+    assert!(
+        built.status.success(),
+        "{}",
+        String::from_utf8_lossy(&built.stderr)
+    );
+    let metadata: Value = serde_json::from_slice(&resolved.stdout).unwrap();
+    let units = closure(&metadata, &built.stdout);
+    assert!(units.iter().any(|unit| unit["root"] == true));
+    let messages = parse_cargo_build_messages(Cursor::new(&built.stdout)).unwrap();
+    assert_eq!(messages.build_finished, Some(true));
+    let binary = messages.select_binary("lexical-retry").unwrap().executable;
+    let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+    let args = inputs(&artifact, &[("input", ValueDataDraft::U64(3))], &memory);
+    let input = input_file(directory, "checked", &args);
+    let result = bounded(
+        Command::new(binary)
+            .args(policy(
+                1_000_000_000,
+                256 * 1024 * 1024,
+                134_217_728,
+                128 * 1024 * 1024,
+            ))
+            .arg(input),
+        directory,
+        "retry",
+        30,
+    );
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(result.stderr.is_empty());
+    let recovery = inputs(&artifact, &[("input", ValueDataDraft::U64(2))], &memory);
+    assert_eq!(
+        result.stdout,
+        exported(&artifact, &reference_result(&artifact, &recovery).unwrap())
+    );
+    for (relative, expected) in generated.pins() {
+        assert_eq!(&pin(&generated.root().join(relative)), expected);
+    }
+}
+
 fn collection_source() -> String {
     format!(
         "{ROOT}projection := text/join([number/format(sequence/length(word) / (sequence/length(word) - divisor<u64>), 0u64) | word <- words], \",\")\n"
