@@ -412,7 +412,11 @@ fn rejected_artifact_record(
     before_epoch: u64,
     failure: ArtifactResidentExecutionError,
 ) -> MResult<ResidentTurnRecord> {
-    let resource_message = match &failure {
+    let failure_message = match &failure {
+        ArtifactResidentExecutionError::LexicalIntegrity { node, block, local } => Some(format!(
+            "resident lexical invariant failed at {node:?}, block {}, local {local}",
+            block.0
+        )),
         ArtifactResidentExecutionError::ResourceAdmission { violation, .. } => Some(format!(
             "resident admission denied: {:?}; required {}, limit {}",
             violation.dimension, violation.required, violation.limit
@@ -514,6 +518,11 @@ fn rejected_artifact_record(
             "ResidentExternalPublicationUnauthorized",
             "resident external publication requires the bound coordinator authority",
         ),
+        ArtifactResidentExecutionError::LexicalIntegrity { .. } => (
+            TurnFailurePhase::Integrity,
+            "ResidentLexicalIntegrity",
+            "resident lexical invariant failed",
+        ),
         ArtifactResidentExecutionError::Integrity { .. } => (
             TurnFailurePhase::Integrity,
             "ResidentIntegrity",
@@ -532,7 +541,7 @@ fn rejected_artifact_record(
             Some(TurnFailureRecord {
                 phase,
                 kind: kind.to_string(),
-                message: resource_message.unwrap_or_else(|| message.to_string()),
+                message: failure_message.unwrap_or_else(|| message.to_string()),
             }),
         )?,
         body: ResidentEkfReceipt::rejected(before_epoch),
@@ -578,6 +587,36 @@ mod tests {
     use mech_engine::__resident_ekf::ResidentEkfBatch;
 
     const INPUT: [f64; 4] = [1.0, 0.1, 24.0, -0.6];
+
+    #[test]
+    fn artifact_lexical_assertion_failure_records_preserve_phase_and_origin() {
+        let error = ArtifactResidentExecutionError::LexicalIntegrity {
+            node: mech_core::NodeId::new(7),
+            block: mech_engine::ControlBlockId(11),
+            local: 13,
+        };
+        let record = rejected_artifact_record(1, 3, error.clone()).unwrap();
+        assert_eq!(record.header.status, TurnRecordStatus::Rejected);
+        assert_eq!(record.body, ResidentEkfReceipt::rejected(3));
+        let failure = record.header.failure.unwrap();
+        assert_eq!(failure.phase, TurnFailurePhase::Integrity);
+        assert_eq!(failure.kind, "ResidentLexicalIntegrity");
+        assert_eq!(
+            failure.message,
+            "resident lexical invariant failed at NodeId(7), block 11, local 13"
+        );
+        let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
+        let permit = recorder.take_admission_permit(0).unwrap();
+        recorder
+            .prepare_artifact_rejected(permit, 3, error)
+            .unwrap()
+            .append();
+        let recorded = recorder.inspect_last().unwrap();
+        assert!(!recorded.accepted);
+        assert_eq!(recorded.failure_phase, Some(TurnFailurePhase::Integrity));
+        assert_eq!(recorded.failure_kind, Some("ResidentLexicalIntegrity"));
+        assert_eq!(recorded.body, ResidentEkfReceipt::rejected(3));
+    }
 
     #[test]
     fn artifact_resource_failure_records_preserve_limit_details() {
