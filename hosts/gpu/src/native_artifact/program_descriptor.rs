@@ -222,7 +222,6 @@ impl NativeProgramDescriptor {
                 _ => Ok(None),
             })
             .collect::<Result<Box<[_]>, _>>()?;
-        let constant_admission_bytes = constant_admission_total(&constant_bytes)?;
         validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
         let window_regions = plan.window_regions().into_boxed_slice();
         let string_map_regions = plan.string_map_regions().into_boxed_slice();
@@ -292,6 +291,7 @@ impl NativeProgramDescriptor {
                     .ok_or_else(|| "constant admission overflows".to_owned())
             })
             .collect::<Result<Box<[_]>, _>>()?;
+        let constant_admission_bytes = constant_admission_total(&constant_bytes)?;
         // Shared schema finalization avoids a schema clone, but ownership
         // admission still includes the complete schema context. Reserve a
         // conservative fixed scalar construction/import envelope BEFORE use.
