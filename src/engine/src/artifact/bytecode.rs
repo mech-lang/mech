@@ -2843,6 +2843,24 @@ mod execution_authority_tests {
     }
 
     #[test]
+    fn full_decoder_rejects_previous_graph_revision() {
+        let mut sections = encode_program_artifact_sections(&empty_artifact()).unwrap();
+        let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+        graph["revision"] = serde_json::json!(13);
+        sections.nodes = serde_json::to_vec(&graph).unwrap();
+        let bytes = write_bytecode_with_artifact(&empty_envelope(), &sections).unwrap();
+        // The outer format remains valid; admission rejects the stale graph.
+        assert!(mech_core::CanonicalArtifactBytecode::from_bytes(&bytes).is_ok());
+        assert!(matches!(
+            decode_program_artifact_bytecode_v1(&bytes),
+            Err(ArtifactBytecodeError::InvalidWireTag {
+                section: "graph revision",
+                tag: 13
+            })
+        ));
+    }
+
+    #[test]
     fn full_decoder_keeps_semantic_section_validation_after_strict_envelope() {
         let mut sections = encode_program_artifact_sections(&empty_artifact()).unwrap();
         sections.schemas = b"null".to_vec();
