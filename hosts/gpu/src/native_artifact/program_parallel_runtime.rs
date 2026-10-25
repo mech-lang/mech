@@ -95,6 +95,22 @@ fn budget_error(error: NativeWorkerBudgetError, origin: mech_engine::native_arti
     }
 }
 
+pub(super) fn worker_setup_fits(
+    descriptor: &crate::native_artifact::NativeProgramDescriptor,
+    memory: &mech_core::ManagedMemoryBudget,
+    task_count: u64,
+) -> Result<bool, Error> {
+    let nodes = super::session::Prepared::worker_setup_nodes(descriptor)?
+        .checked_mul(task_count).ok_or_else(|| invalid("parallel worker setup node count overflow"))?;
+    let bytes = super::session::Prepared::worker_setup_bytes(descriptor)?
+        .checked_mul(task_count).ok_or_else(|| invalid("parallel worker setup byte count overflow"))?;
+    // Keep both pending claims until the joint feasibility check succeeds.
+    // A denied byte claim must also release the preceding node claim.
+    let Ok(_nodes) = memory.reserve_nodes(nodes) else { return Ok(false); };
+    let Ok(_bytes) = memory.reserve_capacity(bytes) else { return Ok(false); };
+    Ok(true)
+}
+
 impl Context<'_, '_> {
     pub(super) fn parallel_helper(&mut self, site: usize, op: u64, args: [u64; 3]) -> Result<Option<u64>, Error> {
         match op {
@@ -225,12 +241,7 @@ impl Context<'_, '_> {
         // Decline before spawning when even the exact fixed constructor claims
         // cannot coexist. Release this feasibility reservation immediately;
         // each child still admits its own setup and later dynamic allocations.
-        let setup_nodes = super::session::Prepared::worker_setup_nodes(descriptor)?
-            .checked_mul(task_count).ok_or_else(|| invalid("parallel worker setup node count overflow"))?;
-        match memory.reserve_nodes(setup_nodes) {
-            Ok(setup) => drop(setup),
-            Err(_) => return Ok(Some(0)),
-        }
+        if !worker_setup_fits(descriptor, &memory, task_count)? { return Ok(Some(0)); }
         let origin = descriptor.plan.collections()[region.collection as usize].origin();
         let (compute, comparisons) = self.library.unscoped_remaining().ok_or_else(|| invalid("parallel scope changed during admission"))?;
         let group = self.library.reserve_worker_group_with_memory(compute, comparisons, &memory)

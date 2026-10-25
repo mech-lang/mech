@@ -332,6 +332,50 @@ first + ";" + second
 }
 
 #[test]
+fn insufficient_combined_worker_bytes_uses_serial_source_body() {
+    let source = source("number/format(h{\"a\"}, 0u64)", r#"
+first-items := [4u64 8u64]
+second-items := [1u64 2u64 3u64 4u64 5u64]
+first := text/join([count-text(text, width, n) | n <- first-items], "|")
+second := text/join([count-text(text, width, n) | n <- second-items], ",")
+first + ";" + second
+"#);
+    let original = tests::artifact_source(&source);
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
+    for artifact in [original, decoded] {
+        let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let floor = session::Prepared::worker_setup_bytes(jit.descriptor()).unwrap();
+        // Seven stacks and scheduler transport fit, together with the parent
+        // and ample serial workspace. Seven complete child inventories do not.
+        assert!(floor * 4 > 65536);
+        let bytes = 7 * (2 * 1024 * 1024 + 65536) + floor * 3 + 65536;
+        let memory = ManagedMemoryBudget::new(bytes);
+        let args = vec![input(&artifact, &memory)];
+        let baseline = (memory.used_bytes(), memory.retained_nodes());
+        let mut serial = vec![None; artifact.outputs().len()];
+        let mut fallback = vec![None; artifact.outputs().len()];
+        let serial_report = observed_with_nodes(jit.descriptor(), jit.test_checked_entry(), &args,
+            &mut serial, &memory, 1, false, 1_048_576).unwrap();
+        let report = observed_with_nodes(jit.descriptor(), jit.test_checked_entry(), &args,
+            &mut fallback, &memory, 8, false, 1_048_576).unwrap();
+        assert_eq!(BATCHES.with(Cell::get), 0);
+        assert_eq!((report.parallel_batches, report.parallel_tasks), (0, 0));
+        assert_eq!((report.hash_table_regions, report.hash_table_updates), (7, 27));
+        assert_eq!((report.hash_table_regions, report.hash_table_updates),
+            (serial_report.hash_table_regions, serial_report.hash_table_updates));
+        for (left, right) in serial.iter().zip(&fallback) {
+            assert_eq!(left.as_ref().unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap(),
+                right.as_ref().unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap());
+        }
+        drop((serial, fallback));
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
+        drop(args);
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+    }
+}
+
+#[test]
 fn independent_singleton_regions_share_one_parallel_batch() {
     let source = source("number/format(h{\"a\"}, 0u64)", r#"
 first-items := [4u64]
