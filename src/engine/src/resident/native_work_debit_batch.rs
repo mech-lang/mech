@@ -38,7 +38,7 @@ impl Worker<'_> {
             let shared = self.shared;
             let state = self.guard.get_or_insert_with(||
                 lock_escrow(shared));
-            let shared_next = state.next(compute, comparison)?;
+            let shared_next = state.direct_next(compute, comparison)?;
             state.used = shared_next;
             self.account.used = next;
             self.charges += 1;

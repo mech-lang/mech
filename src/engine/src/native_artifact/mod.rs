@@ -4,7 +4,7 @@
 //! memory metadata. It is not executable code and makes no AOT claim.
 mod ir;
 pub use crate::resident::budget::{
-    NativeLibraryWorkBudget, NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerWorkLoan,
+    NativeLibraryWorkBudget, NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerCreditStatistics, NativeWorkerWorkLoan,
 };
 pub use crate::resident::general::native_lowering::{
     NativeArtifactLoweringError, NativeArtifactPlan, lower_pure_native_artifact,
