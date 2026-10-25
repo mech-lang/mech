@@ -23,6 +23,8 @@ fn matrix(width: u32, values: &[u64]) -> Data {
 
 #[test]
 fn narrow_comparisons_preserve_unsigned_boundaries_and_buffer_reads() {
+    // The pinned component source compares U32 hash sequences/frequencies and
+    // U8 bytes before widening. Exercise the complete unsigned word family.
     for width in [8, 16, 32] {
         let maximum = (1u64 << width) - 1;
         let high_bit = 1u64 << (width - 1);
@@ -113,7 +115,11 @@ fn narrow_comparison_assertions_keep_error_order_publication_and_retry() {
                     &memory,
                 );
                 if left > right {
-                    assert!(reference_result(&artifact, &args).unwrap_err().contains("LexicalIntegrity"));
+                    assert!(
+                        reference_result(&artifact, &args)
+                            .unwrap_err()
+                            .contains("LexicalIntegrity")
+                    );
                     let previous = output
                         .iter()
                         .map(|value| value.clone().unwrap())

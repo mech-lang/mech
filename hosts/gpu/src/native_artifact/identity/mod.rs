@@ -8,7 +8,8 @@ use transcript::{bytes, scalar_type as ty, scalar_value, word};
 
 /// Fixed exported data size for the build-owned entry pairing record.
 pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
-pub const NATIVE_TYPED_IR_VERSION: u64 = 6;
+// Exact-width unsigned comparison primitives retain their semantic kinds.
+pub const NATIVE_TYPED_IR_VERSION: u64 = 7;
 pub const NATIVE_WORK_POLICY_VERSION: u64 = 1;
 const MAGIC: &[u8; 16] = b"MECHNATIVEOBJv1\0";
 
@@ -263,6 +264,24 @@ pub(in crate::native_artifact) fn op_tag(op: NativeScalarOp) -> u8 {
         NativeScalarOp::U64ToU8 => 68,
         NativeScalarOp::U64ToU16 => 69,
         NativeScalarOp::U64ToU32 => 70,
+        NativeScalarOp::U8Eq => 71,
+        NativeScalarOp::U8Ne => 72,
+        NativeScalarOp::U8Lt => 73,
+        NativeScalarOp::U8Le => 74,
+        NativeScalarOp::U8Gt => 75,
+        NativeScalarOp::U8Ge => 76,
+        NativeScalarOp::U16Eq => 77,
+        NativeScalarOp::U16Ne => 78,
+        NativeScalarOp::U16Lt => 79,
+        NativeScalarOp::U16Le => 80,
+        NativeScalarOp::U16Gt => 81,
+        NativeScalarOp::U16Ge => 82,
+        NativeScalarOp::U32Eq => 83,
+        NativeScalarOp::U32Ne => 84,
+        NativeScalarOp::U32Lt => 85,
+        NativeScalarOp::U32Le => 86,
+        NativeScalarOp::U32Gt => 87,
+        NativeScalarOp::U32Ge => 88,
     }
 }
 
