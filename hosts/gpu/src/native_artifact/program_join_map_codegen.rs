@@ -4,7 +4,7 @@
 //! only the original later map boundary reports that source-level failure.
 use super::ascii_map_codegen::{self, ScalarTable, Tables};
 use super::{NativeCompileError, backend};
-use crate::native_artifact::program_ascii_map::Kind;
+use crate::native_artifact::program_ascii_map::MappingKind;
 use cranelift_codegen::ir::{AbiParam, Endianness, InstBuilder, MemFlags, condcodes::IntCC, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
@@ -28,8 +28,8 @@ fn define_impl<M: Module>(
     region: &NativeStringMapRegion,
     vectorized: bool,
 ) -> Result<(FuncId, u64, u64), NativeCompileError> {
-    let full = define_leaf(module, region, vectorized, Kind::Full)?;
-    let projected = define_leaf(module, region, vectorized, Kind::Projected)?;
+    let full = define_leaf(module, region, vectorized, MappingKind::Full)?;
+    let projected = define_leaf(module, region, vectorized, MappingKind::Projected)?;
     ascii_map_codegen::dispatch(module, &symbol(region.collection()), full, projected)
 }
 
@@ -37,7 +37,7 @@ fn define_leaf<M: Module>(
     module: &mut M,
     region: &NativeStringMapRegion,
     vectorized: bool,
-    kind: Kind,
+    kind: MappingKind,
 ) -> Result<(FuncId, u64, u64), NativeCompileError> {
     let mut signature = module.make_signature();
     // Owned geometry, exact output extent, immutable map table, output spare

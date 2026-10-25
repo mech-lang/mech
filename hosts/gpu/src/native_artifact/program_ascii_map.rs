@@ -10,11 +10,11 @@ pub(super) const DOMAIN_MASK: usize = 1;
 pub(super) const DOMAIN_VALUE: usize = 2;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum Kind {
+pub(super) enum MappingKind {
     Full,
     Projected,
 }
-impl Kind {
+impl MappingKind {
     #[cfg(feature = "canonical-native-program")]
     pub const fn cells(self) -> usize {
         match self {
@@ -34,7 +34,7 @@ impl Kind {
 /// Input cells begin at HEADER and use the existing high-bit missing contract.
 /// No allocation or source traversal is performed here. Preparation is bounded
 /// by three traversals of 128 cells inside the original fixed work envelope.
-pub(super) fn prepare(table: &mut [u8]) -> Kind {
+pub(super) fn prepare(table: &mut [u8]) -> MappingKind {
     assert_eq!(table.len(), BYTES);
     table[..HEADER].fill(0);
     let cells = &mut table[HEADER..];
@@ -62,7 +62,7 @@ pub(super) fn prepare(table: &mut [u8]) -> Kind {
         let index = key & 31;
         let bit = 1u32 << index;
         if seen & bit != 0 && projected[index] != value {
-            return Kind::Full;
+            return MappingKind::Full;
         }
         seen |= bit;
         projected[index] = value;
@@ -76,14 +76,14 @@ pub(super) fn prepare(table: &mut [u8]) -> Kind {
             MISSING
         };
         if candidate != value {
-            return Kind::Full;
+            return MappingKind::Full;
         }
     }
     cells[..32].copy_from_slice(&projected);
     table[KIND] = 1;
     table[DOMAIN_MASK] = mask;
     table[DOMAIN_VALUE] = expected;
-    Kind::Projected
+    MappingKind::Projected
 }
 
 #[cfg(test)]
@@ -100,19 +100,19 @@ pub(super) fn test_table(cells: &[u16; 128]) -> [u8; BYTES] {
 mod tests {
     use super::*;
 
-    fn encoded(cells: &[u8; 128]) -> (Kind, [u8; BYTES]) {
+    fn encoded(cells: &[u8; 128]) -> (MappingKind, [u8; BYTES]) {
         let mut table = [MISSING; BYTES];
         table[HEADER..].copy_from_slice(cells);
         (prepare(&mut table), table)
     }
-    fn assert_equivalent(cells: &[u8; 128], kind: Kind, table: &[u8; BYTES]) {
+    fn assert_equivalent(cells: &[u8; 128], kind: MappingKind, table: &[u8; BYTES]) {
         for key in 0..128 {
             let actual = match kind {
-                Kind::Full => table[HEADER + key],
-                Kind::Projected if key as u8 & table[DOMAIN_MASK] == table[DOMAIN_VALUE] => {
+                MappingKind::Full => table[HEADER + key],
+                MappingKind::Projected if key as u8 & table[DOMAIN_MASK] == table[DOMAIN_VALUE] => {
                     table[HEADER + (key & 31)]
                 }
-                Kind::Projected => MISSING,
+                MappingKind::Projected => MISSING,
             };
             assert_eq!(actual, cells[key].min(MISSING), "key={key}");
         }
@@ -131,7 +131,7 @@ mod tests {
                         }
                     });
                     let (kind, table) = encoded(&cells);
-                    assert_eq!(kind, Kind::Projected);
+                    assert_eq!(kind, MappingKind::Projected);
                     assert_equivalent(&cells, kind, &table);
                 }
             }
@@ -147,13 +147,13 @@ mod tests {
     fn conflicting_projections_keep_the_complete_table_without_changing_values() {
         let cells = core::array::from_fn(|key| ((key * 37 + 11) % 128) as u8);
         let (kind, table) = encoded(&cells);
-        assert_eq!(kind, Kind::Full);
+        assert_eq!(kind, MappingKind::Full);
         assert_equivalent(&cells, kind, &table);
         let mut cells = [MISSING; 128];
         cells[1] = 0;
         cells[33] = 1;
         let (kind, table) = encoded(&cells);
-        assert_eq!(kind, Kind::Full);
+        assert_eq!(kind, MappingKind::Full);
         assert_equivalent(&cells, kind, &table);
     }
 }

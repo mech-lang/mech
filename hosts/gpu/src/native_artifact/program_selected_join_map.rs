@@ -386,6 +386,9 @@ impl Context<'_, '_> {
                 let active = fusing.missing.is_none();
                 let mut words = [0; 7];
                 words[..6].copy_from_slice(source.geometry());
+                // SAFETY: start is the initialized length of this Vec and end
+                // was checked against its admitted capacity. This synchronous
+                // loan retains the allocation without growth until completion.
                 let output = unsafe { fusing.bytes.as_mut_ptr().add(start) } as u64;
                 fusing.loan = Some(CopyLoan {
                     source,
