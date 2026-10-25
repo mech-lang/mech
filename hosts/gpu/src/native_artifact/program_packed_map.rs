@@ -369,7 +369,7 @@ impl PackedMap {
     fn probe_debits(slots: &Slots, controls: &[u8], low: u64, high: u64,
         charge: &mut impl FnMut(u64, u64) -> Result<(), mech_core::ResidentKernelError>,
     ) -> Result<usize, Error> {
-        let _ = slots.len().checked_sub(1).ok_or(Error::Binding("empty packed table"))?;
+        if slots.len() == 0 { return Err(Error::Binding("empty packed table")); }
         if slots.len() < GROUP || !slots.len().is_power_of_two()
             || controls.len() != slots.len().checked_add(GROUP - 1).ok_or(Error::Overflow)? {
             return Err(Error::Binding("invalid packed control shape"));
