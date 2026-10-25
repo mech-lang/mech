@@ -42,7 +42,7 @@ pub enum NativeCollectionPrimitive {
     StringAllAccess,
     #[cfg(feature = "convert")]
     MatrixConversion,
-    #[cfg(feature = "convert")]
+    #[cfg(all(feature = "convert", feature = "native-artifact"))]
     UnsignedWordConversion,
     #[cfg(feature = "convert")]
     MatrixToSetConversion,
