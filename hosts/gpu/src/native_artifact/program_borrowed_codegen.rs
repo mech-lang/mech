@@ -211,7 +211,16 @@ pub(in crate::native_artifact) fn emit(
             view = Some(pair(b, locals, layout, source)?);
         }
         Action::Length { source, .. } => {
-            let [_, length] = pair(b, locals, layout, source)?;
+            // Length observes only the second home. Loading an unused pointer
+            // here leaves a potentially trapping instruction in the machine
+            // code even after its value is discarded. Keep all memory flags,
+            // source checks and original prices; do not emit that access.
+            let length = b.ins().load(
+                types::I64,
+                memory_regions::borrowed(),
+                locals,
+                offset(layout.slot(source) + 1)?,
+            );
             put(b, locals, output.get() as usize, length)?;
         }
         Action::ScalarSelect { source, index, .. } => {
