@@ -99,6 +99,9 @@ mod nested_tail_qualification;
 #[path = "support/canonical_program_binary_tree.rs"]
 mod binary_tree_qualification;
 
+#[path = "support/canonical_program_collector.rs"]
+mod collector_qualification;
+
 #[path = "support/canonical_program_recursive_statements.rs"]
 mod recursive_statement_qualification;
 
