@@ -206,7 +206,9 @@ fn selected_template(
 // IR97 includes pure indexed matrix replacements in local transition code.
 // IR98 selects witnessed constant tuple reads as checked structural projections.
 // IR99 represents U8/U16/U32 scalars and exact checked unsigned casts.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 99;
+// IR100 admits witnessed tuple/record construction with runtime-shaped unsigned
+// buffers. Component parameters are resolved in their own schema arenas.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 100;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -344,7 +346,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 99;
 // Policy70 returns selected linear U64 matrix reads into the already admitted
 // scalar frame, with current source/active-call admission and no temporary Values.
 // Policy71 also returns selected U8/U16/U32 reads into native scalar words.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 71;
+// Policy72 resolves eligible aggregate output shapes from current children
+// inside the existing prepaid binding envelope, including cache rebindings.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 72;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

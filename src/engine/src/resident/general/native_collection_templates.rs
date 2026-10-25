@@ -286,12 +286,13 @@ fn is_count_map(body: &SchemaBody) -> bool {
     crate::intrinsics::map_ops::is_count_map(body)
 }
 
-// Canonical state carriers may combine scalar fields with ordinary maps.
+// Canonical carriers may combine scalar fields with ordinary maps and word
+// buffers. Tuple/record constructors resolve dynamic child dimensions at bind.
 // This only selects the existing composite/enum constructors: their binders
 // still validate exact child schemas and admit recursive payload copies.
 fn is_native_state_carrier(body: &SchemaBody) -> bool {
     is_shallow_atomic(body)
-        || crate::native_artifact::structural_values::closed_word_matrix(body)
+        || crate::native_artifact::structural_values::word_matrix(body)
         || match body {
             SchemaBody::Map { key, value, .. } => {
                 is_shallow_atomic(key) && is_shallow_atomic(value)
@@ -339,13 +340,19 @@ fn validate_schemas(
             SchemaBody::Tuple(elements) => {
                 elements.len() == inputs.len()
                     && elements.iter().zip(inputs).all(|(element, input)| {
-                        is_native_state_carrier(element) && element == input.body()
+                        is_native_state_carrier(element)
+                            && crate::native_artifact::structural_values::carrier_component_matches(
+                                element, input.body(),
+                            )
                     })
             }
             SchemaBody::Record(fields) => {
                 fields.len() == inputs.len()
                     && fields.iter().zip(inputs).all(|(field, input)| {
-                        is_native_state_carrier(&field.schema) && &field.schema == input.body()
+                        is_native_state_carrier(&field.schema)
+                            && crate::native_artifact::structural_values::carrier_component_matches(
+                                &field.schema, input.body(),
+                            )
                     })
             }
             _ => false,
