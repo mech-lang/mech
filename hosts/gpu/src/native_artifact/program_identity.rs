@@ -183,7 +183,10 @@ fn selected_template(
 // IR88 / ABI32 prepare joined-map byte tables once at the owning host
 // boundary, avoiding per-row u16-to-byte conversion. Original source proofs,
 // geometry/extent receipts, work policy69 and finite prices are unchanged.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 88;
+// IR89 reads only the length home for a borrowed Length action. The unused
+// pointer load is absent; source checks, finite prices, ABI32 and policy69
+// remain. No new memory-access promise is made.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 89;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
