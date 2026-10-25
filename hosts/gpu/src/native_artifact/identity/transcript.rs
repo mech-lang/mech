@@ -23,6 +23,9 @@ pub(in crate::native_artifact) fn scalar_kind(kind: NativeScalarKind) -> u8 {
         NativeScalarKind::U64 => 2,
         NativeScalarKind::I64 => 3,
         NativeScalarKind::F64 => 4,
+        NativeScalarKind::U8 => 5,
+        NativeScalarKind::U16 => 6,
+        NativeScalarKind::U32 => 7,
     }
 }
 
@@ -38,6 +41,9 @@ pub(in crate::native_artifact) fn scalar_value(hash: &mut Sha256, value: NativeS
         NativeScalarValue::U64(value) => (2, value),
         NativeScalarValue::I64(value) => (3, value as u64),
         NativeScalarValue::F64(value) => (4, value.bits()),
+        NativeScalarValue::U8(value) => (5, u64::from(value)),
+        NativeScalarValue::U16(value) => (6, u64::from(value)),
+        NativeScalarValue::U32(value) => (7, u64::from(value)),
     };
     hash.update([tag]);
     word(hash, bits);

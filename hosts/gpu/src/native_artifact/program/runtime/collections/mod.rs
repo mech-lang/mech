@@ -776,7 +776,9 @@ impl State {
                     None
                 };
                 let payload = match (ty.scalar_kind(), owned.as_ref().map(Value::data)) {
-                    (Some(NativeScalarKind::Bool), _) => 1,
+                    (Some(NativeScalarKind::Bool | NativeScalarKind::U8), _) => 1,
+                    (Some(NativeScalarKind::U16), _) => 2,
+                    (Some(NativeScalarKind::U32), _) => 4,
                     (Some(_), _) => 8,
                     (None, Some(ValueData::Index(_))) => 8,
                     (None, Some(ValueData::String(text))) => text.len() as u64,
@@ -887,6 +889,9 @@ impl State {
                 }
                 let data = match ty.scalar_kind() {
                     Some(NativeScalarKind::Bool) if word <= 1 => ValueDataDraft::Bool(word != 0),
+                    Some(NativeScalarKind::U8) => ValueDataDraft::U8(u8::try_from(word).map_err(|_| invalid("narrow collected word exceeds its type"))?),
+                    Some(NativeScalarKind::U16) => ValueDataDraft::U16(u16::try_from(word).map_err(|_| invalid("narrow collected word exceeds its type"))?),
+                    Some(NativeScalarKind::U32) => ValueDataDraft::U32(u32::try_from(word).map_err(|_| invalid("narrow collected word exceeds its type"))?),
                     Some(NativeScalarKind::U64) => ValueDataDraft::U64(word),
                     Some(NativeScalarKind::I64) => ValueDataDraft::I64(word as i64),
                     Some(NativeScalarKind::F64) => {

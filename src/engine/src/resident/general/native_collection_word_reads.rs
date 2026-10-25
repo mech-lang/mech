@@ -1,4 +1,4 @@
-//! A selected linear U64 read from a genuine immutable canonical matrix.
+//! A selected linear unsigned word read from a genuine immutable canonical matrix.
 //! No selector/result Value, temporary vector, or runtime call plan is built.
 use super::{InvokeError, NativePreparedLibraryCall, finite_limits};
 use crate::{
@@ -13,26 +13,64 @@ use mech_core::{
 };
 
 impl NativePreparedLibraryCall {
-    /// The private maintained access witness was checked during preparation.
-    /// A descriptive operation name or a same-name replacement cannot create it.
-    pub fn supports_u64_matrix_element(&self) -> bool {
+    fn unsigned_matrix_element_width(&self) -> Option<IntegerWidth> {
         let [matrix, selector] = self.template.inputs() else {
-            return false;
+            return None;
         };
-        self.template.primitive() == Primitive::MatrixScalarAccess
-            && matches!(matrix.body(), SchemaBody::Matrix { element, dimensions }
-                if dimensions.len() == 2
-                    && element.as_ref() == &SchemaBody::UnsignedInteger(IntegerWidth::W64))
-            && selector.body() == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
-            && selector.dimension_parameters().is_empty()
-            && self.template.output().body() == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
-            && self.template.output().dimension_parameters().is_empty()
+        let SchemaBody::Matrix {
+            element,
+            dimensions,
+        } = matrix.body()
+        else {
+            return None;
+        };
+        let SchemaBody::UnsignedInteger(width) = element.as_ref() else {
+            return None;
+        };
+        if !matches!(
+            width,
+            IntegerWidth::W8 | IntegerWidth::W16 | IntegerWidth::W32 | IntegerWidth::W64
+        ) || dimensions.len() != 2
+            || self.template.primitive() != Primitive::MatrixScalarAccess
+            || selector.body() != &SchemaBody::UnsignedInteger(IntegerWidth::W64)
+            || !selector.dimension_parameters().is_empty()
+            || self.template.output().body() != element.as_ref()
+            || !self.template.output().dimension_parameters().is_empty()
+        {
+            return None;
+        }
+        Some(*width)
+    }
+
+    /// Only the privately witnessed maintained linear scalar access qualifies.
+    pub fn supports_unsigned_matrix_element(&self) -> bool {
+        self.unsigned_matrix_element_width().is_some()
+    }
+
+    /// Compatibility with the original exact U64 projection contract.
+    pub fn supports_u64_matrix_element(&self) -> bool {
+        self.unsigned_matrix_element_width() == Some(IntegerWidth::W64)
+    }
+
+    pub fn u64_matrix_element(
+        &self,
+        source: &Value,
+        index: u64,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<u64, InvokeError> {
+        finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
+        if !self.supports_u64_matrix_element() {
+            return Err(InvokeError::InvalidInput);
+        }
+        self.unsigned_matrix_element(source, index, limits, work, coexistence)
     }
 
     /// Return the scalar word into already admitted native storage. The caller
     /// supplies its complete current owner/caller census and original visit.
     /// This pure read grants no visit, loop, output-publication, or owner permit.
-    pub fn u64_matrix_element(
+    pub fn unsigned_matrix_element(
         &self,
         source: &Value,
         index: u64,
@@ -41,9 +79,16 @@ impl NativePreparedLibraryCall {
         mut coexistence: ResourceDemand,
     ) -> Result<u64, InvokeError> {
         finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
-        if !self.supports_u64_matrix_element() {
-            return Err(InvokeError::InvalidInput);
-        }
+        let width = self
+            .unsigned_matrix_element_width()
+            .ok_or(InvokeError::InvalidInput)?;
+        let output_bytes = match width {
+            IntegerWidth::W8 => 1,
+            IntegerWidth::W16 => 2,
+            IntegerWidth::W32 => 4,
+            IntegerWidth::W64 => 8,
+            _ => return Err(InvokeError::InvalidInput),
+        };
         work.with_call_limits(
             limits.max_compute_work.unwrap(),
             limits.max_comparison_work.unwrap(),
@@ -54,7 +99,7 @@ impl NativePreparedLibraryCall {
                     .output_elements
                     .checked_add(1)
                     .ok_or(InvokeError::InvalidInput)?;
-                // Logical output limits still describe one eight-byte word;
+                // Logical output limits still describe the exact unsigned width;
                 // absence of a new allocation does not waive those limits.
                 if let Some(violation) = mech_core::evaluate_call_memory_budget(
                     mech_core::MemoryObjectOwner::NodeOutput {
@@ -65,7 +110,7 @@ impl NativePreparedLibraryCall {
                         output_elements: 1,
                         ..ResourceDemand::default()
                     },
-                    8,
+                    output_bytes,
                     0,
                     limits,
                 )
@@ -122,13 +167,31 @@ impl NativePreparedLibraryCall {
                         index,
                         cells.len(),
                     )?;
-                match cells {
-                    SequenceView::U64(values) => values
+                match (width, cells) {
+                    (IntegerWidth::W8, SequenceView::U8(values)) => values
+                        .get(ordinal)
+                        .copied()
+                        .map(u64::from)
+                        .ok_or(InvokeError::InvalidInput),
+                    (IntegerWidth::W16, SequenceView::U16(values)) => values
+                        .get(ordinal)
+                        .copied()
+                        .map(u64::from)
+                        .ok_or(InvokeError::InvalidInput),
+                    (IntegerWidth::W32, SequenceView::U32(values)) => values
+                        .get(ordinal)
+                        .copied()
+                        .map(u64::from)
+                        .ok_or(InvokeError::InvalidInput),
+                    (IntegerWidth::W64, SequenceView::U64(values)) => values
                         .get(ordinal)
                         .copied()
                         .ok_or(InvokeError::InvalidInput),
-                    SequenceView::Values(values) => match values.get(ordinal) {
-                        Some(ValueData::U64(value)) => Ok(*value),
+                    (width, SequenceView::Values(values)) => match (width, values.get(ordinal)) {
+                        (IntegerWidth::W8, Some(ValueData::U8(value))) => Ok(u64::from(*value)),
+                        (IntegerWidth::W16, Some(ValueData::U16(value))) => Ok(u64::from(*value)),
+                        (IntegerWidth::W32, Some(ValueData::U32(value))) => Ok(u64::from(*value)),
+                        (IntegerWidth::W64, Some(ValueData::U64(value))) => Ok(*value),
                         _ => Err(InvokeError::InvalidInput),
                     },
                     _ => Err(InvokeError::InvalidInput),

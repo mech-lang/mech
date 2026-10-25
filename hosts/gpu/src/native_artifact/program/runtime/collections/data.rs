@@ -24,7 +24,9 @@ pub(in crate::native_artifact::program::runtime::collections) enum Element<'a> {
 impl Element<'_> {
     pub(in crate::native_artifact::program::runtime::collections) fn bytes(&self) -> u64 {
         match self {
-            Self::Scalar(NativeScalarKind::Bool, _) => 1,
+            Self::Scalar(NativeScalarKind::Bool | NativeScalarKind::U8, _) => 1,
+            Self::Scalar(NativeScalarKind::U16, _) => 2,
+            Self::Scalar(NativeScalarKind::U32, _) => 4,
             Self::Scalar(_, _) => 8,
             Self::Index(_) => 8,
             Self::Text(text) => text.len() as u64,
@@ -46,6 +48,9 @@ fn scalar(value: &ValueData) -> Result<Element<'_>, Error> {
     Ok(match value {
         ValueData::Bool(value) => Element::Scalar(NativeScalarKind::Bool, u64::from(*value)),
         ValueData::Index(value) => Element::Index(*value),
+        ValueData::U8(value) => Element::Scalar(NativeScalarKind::U8, u64::from(*value)),
+        ValueData::U16(value) => Element::Scalar(NativeScalarKind::U16, u64::from(*value)),
+        ValueData::U32(value) => Element::Scalar(NativeScalarKind::U32, u64::from(*value)),
         ValueData::U64(value) => Element::Scalar(NativeScalarKind::U64, *value),
         ValueData::I64(value) => Element::Scalar(NativeScalarKind::I64, *value as u64),
         ValueData::F64(value) => Element::Scalar(NativeScalarKind::F64, value.bits()),
@@ -74,6 +79,18 @@ pub(in crate::native_artifact::program::runtime::collections) fn element(
                         .get(index)
                         .ok_or_else(|| invalid("generator index"))?,
                 ),
+            ),
+            SequenceView::U8(values) => Element::Scalar(
+                NativeScalarKind::U8,
+                u64::from(*values.get(index).ok_or_else(|| invalid("generator index"))?),
+            ),
+            SequenceView::U16(values) => Element::Scalar(
+                NativeScalarKind::U16,
+                u64::from(*values.get(index).ok_or_else(|| invalid("generator index"))?),
+            ),
+            SequenceView::U32(values) => Element::Scalar(
+                NativeScalarKind::U32,
+                u64::from(*values.get(index).ok_or_else(|| invalid("generator index"))?),
             ),
             SequenceView::U64(values) => Element::Scalar(
                 NativeScalarKind::U64,

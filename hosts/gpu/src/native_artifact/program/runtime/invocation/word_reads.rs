@@ -1,9 +1,9 @@
-//! Original selected read visits, returning a U64 into native scalar storage.
+//! Original selected unsigned reads returning words into native scalar storage.
 use super::{Error, Invocation, invalid};
 use mech_engine::native_artifact::{NativeIterationAction as Action, NativeScalarKind};
 
 impl Invocation<'_, '_, '_> {
-    pub(super) fn u64_matrix_element_call(
+    pub(super) fn unsigned_matrix_element_call(
         &mut self,
         site: usize,
         words: &[u64],
@@ -12,7 +12,7 @@ impl Invocation<'_, '_, '_> {
         let Some(call) = descriptor.metadata().calls[site].as_ref() else {
             return Ok(None);
         };
-        if !call.supports_u64_matrix_element() {
+        if !call.supports_unsigned_matrix_element() {
             return Ok(None);
         }
         let Action::LibraryCall {
@@ -29,8 +29,8 @@ impl Invocation<'_, '_, '_> {
                 .is_some()
             || descriptor.metadata().plan.values()[operands[1].get() as usize].scalar_kind()
                 != Some(NativeScalarKind::U64)
-            || descriptor.metadata().plan.values()[output.get() as usize].scalar_kind()
-                != Some(NativeScalarKind::U64)
+            || !descriptor.metadata().plan.values()[output.get() as usize]
+                .scalar_kind().is_some_and(|kind| kind.unsigned_maximum().is_some())
         {
             return Err(invalid("word read native transport differs"));
         }
@@ -50,7 +50,7 @@ impl Invocation<'_, '_, '_> {
             .arena
             .copy_current(operands[0].get(), &mut self.state.control.work)?;
         let word = call
-            .u64_matrix_element(&source, words[1], self.limits, &self.state.library, coexistence)
+            .unsigned_matrix_element(&source, words[1], self.limits, &self.state.library, coexistence)
             .map_err(|error| Error::Library {
                 origin: descriptor.metadata().plan.blocks()[site].origin(),
                 error,

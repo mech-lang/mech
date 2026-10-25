@@ -2,8 +2,8 @@
 use super::{artifacts, equal, inputs, limits, reference, reference_result};
 use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
 use mech_engine::native_artifact::{
-    NativeArtifactLoweringError, NativeCollectionInvocationError, NativeCollectionPrimitive,
-    NativeIterationAction, NativeMatchAction, NativeScalarOp, lower_native_program_artifact,
+    NativeArtifactLoweringError, NativeIterationAction, NativeMatchAction, NativeScalarOp,
+    lower_native_program_artifact,
 };
 use mech_gpu::native_artifact::{
     JitProgramArtifact, NativeProgramDescriptor, NativeProgramExecutionError,
@@ -26,6 +26,24 @@ fn word(width: u32, value: u64) -> Option<Data> {
     })
 }
 
+fn expected_cast(from: u32, to: u32) -> NativeScalarOp {
+    match (from, to) {
+        (8, 16) => NativeScalarOp::U8ToU16,
+        (8, 32) => NativeScalarOp::U8ToU32,
+        (8, 64) => NativeScalarOp::U8ToU64,
+        (16, 8) => NativeScalarOp::U16ToU8,
+        (16, 32) => NativeScalarOp::U16ToU32,
+        (16, 64) => NativeScalarOp::U16ToU64,
+        (32, 8) => NativeScalarOp::U32ToU8,
+        (32, 16) => NativeScalarOp::U32ToU16,
+        (32, 64) => NativeScalarOp::U32ToU64,
+        (64, 8) => NativeScalarOp::U64ToU8,
+        (64, 16) => NativeScalarOp::U64ToU16,
+        (64, 32) => NativeScalarOp::U64ToU32,
+        _ => unreachable!(),
+    }
+}
+
 #[test]
 fn unsigned_word_conversions_preserve_boundaries_failures_and_image_metadata() {
     for from in [8, 16, 32, 64] {
@@ -43,8 +61,8 @@ fn unsigned_word_conversions_preserve_boundaries_failures_and_image_metadata() {
                     let catalog = mech_stdlib::source_catalog();
                     let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
                     assert!(jit.descriptor().plan().blocks().iter().any(|block| matches!(
-                        block.action(), NativeIterationAction::LibraryCall { template, .. }
-                        if template.primitive() == NativeCollectionPrimitive::UnsignedWordConversion
+                        block.action(), NativeIterationAction::Scalar(NativeMatchAction::Primitive { op, .. })
+                        if *op == expected_cast(from, to)
                     )));
                     let encoded = jit.descriptor().encode_build_owned_image().unwrap();
                     // SAFETY: this checked fixture's unchanged image is inspected
@@ -85,12 +103,9 @@ fn unsigned_word_conversions_preserve_boundaries_failures_and_image_metadata() {
                             let before = memory.used_bytes();
                             assert!(matches!(
                                 jit.evaluate_into(&args, &mut output, limits(), &memory),
-                                Err(NativeProgramExecutionError::Library {
-                                    error: NativeCollectionInvocationError::Kernel(
-                                        mech_core::ResidentKernelError::Arithmetic
-                                    ),
-                                    ..
-                                })
+                                Err(NativeProgramExecutionError::Control(
+                                    mech_gpu::native_artifact::NativeIterationExecutionError::Arithmetic { .. }
+                                ))
                             ));
                             for (next, prior) in output.iter().zip(&prior) {
                                 assert!(

@@ -8,7 +8,7 @@ use transcript::{bytes, scalar_type as ty, scalar_value, word};
 
 /// Fixed exported data size for the build-owned entry pairing record.
 pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
-pub const NATIVE_TYPED_IR_VERSION: u64 = 5;
+pub const NATIVE_TYPED_IR_VERSION: u64 = 6;
 pub const NATIVE_WORK_POLICY_VERSION: u64 = 1;
 const MAGIC: &[u8; 16] = b"MECHNATIVEOBJv1\0";
 
@@ -251,6 +251,19 @@ pub(in crate::native_artifact) fn op_tag(op: NativeScalarOp) -> u8 {
         NativeScalarOp::I64ToF64 => 45,
         NativeScalarOp::F64ToU64 => 46,
         NativeScalarOp::F64ToI64 => 47,
+        NativeScalarOp::U8ToU16 => 59,
+        NativeScalarOp::U8ToU32 => 60,
+        NativeScalarOp::U8ToU64 => 61,
+        NativeScalarOp::U16ToU8 => 62,
+        NativeScalarOp::U16ToU32 => 63,
+        NativeScalarOp::U16ToU64 => 64,
+        NativeScalarOp::U32ToU8 => 65,
+        NativeScalarOp::U32ToU16 => 66,
+        NativeScalarOp::U32ToU64 => 67,
+        NativeScalarOp::U64ToU8 => 68,
+        NativeScalarOp::U64ToU16 => 69,
+        NativeScalarOp::U64ToU32 => 70,
+
     }
 }
 

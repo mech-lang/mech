@@ -148,6 +148,9 @@ fn amount(count: usize, scale: u64, base: u64) -> Result<u64, NativeProgramExecu
 fn bits(value: &Value, kind: NativeScalarKind) -> Result<u64, NativeProgramExecutionError> {
     match (kind, value.data()) {
         (NativeScalarKind::Bool, ValueData::Bool(v)) => Ok(u64::from(*v)),
+        (NativeScalarKind::U8, ValueData::U8(v)) => Ok(u64::from(*v)),
+        (NativeScalarKind::U16, ValueData::U16(v)) => Ok(u64::from(*v)),
+        (NativeScalarKind::U32, ValueData::U32(v)) => Ok(u64::from(*v)),
         (NativeScalarKind::U64, ValueData::U64(v)) => Ok(*v),
         (NativeScalarKind::I64, ValueData::I64(v)) => Ok(*v as u64),
         (NativeScalarKind::F64, ValueData::F64(v)) => Ok(v.bits()),

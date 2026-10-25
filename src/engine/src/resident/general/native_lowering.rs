@@ -77,7 +77,7 @@ impl From<ResidentActivationError> for NativeArtifactLoweringError {
 /// metadata; it never activates a program, observes an input, runs a kernel,
 /// folds a computation, or reconstructs a program from source names.
 ///
-/// The scalar slice is stateless Turn-only Bool/U64/I64/F64. Computed Activation
+/// The scalar slice is stateless Turn-only Bool/U8/U16/U32/U64/I64/F64. Computed Activation
 /// nodes are rejected even when their result could have been constant-folded.
 pub fn lower_pure_native_artifact(
     artifact: &ProgramArtifact,
@@ -185,6 +185,15 @@ pub fn lower_pure_native_artifact(
         let scalar = match (ty.kind, value.data()) {
             (NativeScalarKind::Bool, mech_core::ValueData::Bool(value)) => {
                 NativeScalarValue::Bool(*value)
+            }
+            (NativeScalarKind::U8, mech_core::ValueData::U8(value)) => {
+                NativeScalarValue::U8(*value)
+            }
+            (NativeScalarKind::U16, mech_core::ValueData::U16(value)) => {
+                NativeScalarValue::U16(*value)
+            }
+            (NativeScalarKind::U32, mech_core::ValueData::U32(value)) => {
+                NativeScalarValue::U32(*value)
             }
             (NativeScalarKind::U64, mech_core::ValueData::U64(value)) => {
                 NativeScalarValue::U64(*value)
@@ -389,6 +398,10 @@ pub(super) fn scalar_type(
     }
     let kind = match schema.body() {
         SchemaBody::Bool => NativeScalarKind::Bool,
+        SchemaBody::UnsignedInteger(IntegerWidth::W8) => NativeScalarKind::U8,
+        SchemaBody::UnsignedInteger(IntegerWidth::W16) => NativeScalarKind::U16,
+        SchemaBody::UnsignedInteger(IntegerWidth::W32) => NativeScalarKind::U32,
+
         SchemaBody::UnsignedInteger(IntegerWidth::W64) => NativeScalarKind::U64,
         SchemaBody::SignedInteger(IntegerWidth::W64) => NativeScalarKind::I64,
         SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => NativeScalarKind::F64,
@@ -414,7 +427,7 @@ pub(super) fn port_layout(ty: &NativeScalarType) -> ResidentPortLayout {
         kind: match ty.kind {
             NativeScalarKind::Bool => ResidentValueKind::Bool,
             NativeScalarKind::F64 => ResidentValueKind::F64,
-            NativeScalarKind::U64 | NativeScalarKind::I64 => ResidentValueKind::Snapshot,
+            NativeScalarKind::U8 | NativeScalarKind::U16 | NativeScalarKind::U32 | NativeScalarKind::U64 | NativeScalarKind::I64 => ResidentValueKind::Snapshot,
         },
         shape: ResidentShape::SCALAR,
         shape_instance: ty.descriptor.shape().clone(),

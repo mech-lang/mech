@@ -18,6 +18,10 @@ use mech_engine::native_artifact::{
 use sha2::Digest;
 use std::collections::BTreeMap;
 
+#[cfg(test)]
+#[path = "narrow_scalar_tests.rs"]
+mod narrow_scalar_tests;
+
 #[derive(Clone, Copy, Debug)]
 pub struct NativeCompileLimits {
     pub max_nodes: u64,
@@ -227,6 +231,10 @@ impl Sources {
             NativeValueRef::Local(id) => self.locals.get(&id).map(|v| v.1),
             NativeValueRef::Constant(id) => self.constants.get(&id).map(|v| match v {
                 NativeScalarValue::Bool(_) => NativeScalarKind::Bool,
+                NativeScalarValue::U8(_) => NativeScalarKind::U8,
+                NativeScalarValue::U16(_) => NativeScalarKind::U16,
+                NativeScalarValue::U32(_) => NativeScalarKind::U32,
+
                 NativeScalarValue::U64(_) => NativeScalarKind::U64,
                 NativeScalarValue::I64(_) => NativeScalarKind::I64,
                 NativeScalarValue::F64(_) => NativeScalarKind::F64,
@@ -270,6 +278,10 @@ impl Sources {
                         reason: "unknown constant",
                     })? {
                     NativeScalarValue::Bool(value) => u64::from(*value),
+                    NativeScalarValue::U8(value) => u64::from(*value),
+                    NativeScalarValue::U16(value) => u64::from(*value),
+                    NativeScalarValue::U32(value) => u64::from(*value),
+
                     NativeScalarValue::U64(value) => *value,
                     NativeScalarValue::I64(value) => *value as u64,
                     NativeScalarValue::F64(value) => value.bits(),
@@ -340,6 +352,10 @@ pub(in crate::native_artifact) fn admit(
     let valid = b.ins().icmp_imm(IntCC::Equal, status, STATUS_OK as i64);
     guard(b, valid, error, STATUS_ADMISSION);
 }
+pub(in crate::native_artifact) fn word_upper_bound(kind: NativeScalarKind) -> Option<u64> {
+    if kind == NativeScalarKind::Bool { Some(1) }
+    else { kind.unsigned_maximum().filter(|maximum| *maximum != u64::MAX) }
+}
 pub(in crate::native_artifact) fn primitive(
     b: &mut FunctionBuilder<'_>,
     op: NativeScalarOp,
@@ -351,6 +367,54 @@ pub(in crate::native_artifact) fn primitive(
     // Guards precede machine conversions and result stores, and the caller
     // admits this complete checked template before loading its operand.
     match op {
+        U8ToU16 => {
+            return args[0];
+        }
+        U8ToU32 => {
+            return args[0];
+        }
+        U8ToU64 => {
+            return args[0];
+        }
+        U16ToU8 => {
+            let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 255i64);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        U16ToU32 => {
+            return args[0];
+        }
+        U16ToU64 => {
+            return args[0];
+        }
+        U32ToU8 => {
+            let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 255i64);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        U32ToU16 => {
+            let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 65535i64);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        U32ToU64 => {
+            return args[0];
+        }
+        U64ToU8 => {
+            let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 255i64);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        U64ToU16 => {
+            let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 65535i64);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        U64ToU32 => {
+            let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 4294967295i64);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
         U64ToI64 => {
             let valid = b
                 .ins()
@@ -563,7 +627,7 @@ pub(in crate::native_artifact) fn primitive(
             let value = b.ins().icmp(cc, a, c);
             b.ins().uextend(types::I64, value)
         }
-        U64ToI64 | I64ToU64 | U64ToF64 | I64ToF64 | F64ToU64 | F64ToI64 | BoolNot | I64Neg
+        U8ToU16 | U8ToU32 | U8ToU64 | U16ToU8 | U16ToU32 | U16ToU64 | U32ToU8 | U32ToU16 | U32ToU64 | U64ToU8 | U64ToU16 | U64ToU32 | U64ToI64 | I64ToU64 | U64ToF64 | I64ToF64 | F64ToU64 | F64ToI64 | BoolNot | I64Neg
         | F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt | F64Eq | F64Ne | F64Lt | F64Le
         | F64Gt | F64Ge => unreachable!(),
     }
@@ -683,11 +747,11 @@ fn define<M: Module>(
             }
         }
         for (index, input) in plan.inputs().iter().enumerate() {
-            if input.ty().kind() == NativeScalarKind::Bool {
+            if let Some(maximum) = word_upper_bound(input.ty().kind()) {
                 let word = b
                     .ins()
                     .load(types::I64, MemFlags::new(), inputs, offset(index)?);
-                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, 1);
+                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, maximum as i64);
                 guard(&mut b, valid, error, STATUS_ABI);
             }
         }

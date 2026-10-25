@@ -174,6 +174,10 @@ fn scalar_constant(
 ) -> Result<NativeScalarValue, Error> {
     match (ty.kind(), constant.data()) {
         (NativeScalarKind::Bool, mech_core::ValueData::Bool(v)) => Ok(NativeScalarValue::Bool(*v)),
+        (NativeScalarKind::U8, mech_core::ValueData::U8(v)) => Ok(NativeScalarValue::U8(*v)),
+        (NativeScalarKind::U16, mech_core::ValueData::U16(v)) => Ok(NativeScalarValue::U16(*v)),
+        (NativeScalarKind::U32, mech_core::ValueData::U32(v)) => Ok(NativeScalarValue::U32(*v)),
+
         (NativeScalarKind::U64, mech_core::ValueData::U64(v)) => Ok(NativeScalarValue::U64(*v)),
         (NativeScalarKind::I64, mech_core::ValueData::I64(v)) => Ok(NativeScalarValue::I64(*v)),
         (NativeScalarKind::F64, mech_core::ValueData::F64(v)) => Ok(NativeScalarValue::F64(*v)),
@@ -437,7 +441,17 @@ impl Builder<'_> {
                     });
                 }
             };
+            let unsigned_cast = arguments.len() == 1
+                && self.ty(output).scalar_kind().is_some_and(|kind| kind.unsigned_maximum().is_some())
+                && self.ty(arguments[0]).scalar_kind().is_some_and(|kind| kind.unsigned_maximum().is_some())
+                && self.ty(output).scalar_kind() != self.ty(arguments[0]).scalar_kind();
             match template {
+                // The actual conversion factory supplied this private proof.
+                // All word widths now fit scalar native storage, so the same
+                // binder must additionally seal its precise checked scalar op.
+                #[cfg(feature = "convert")]
+                Ok(template) if template.primitive() == crate::native_artifact::NativeCollectionPrimitive::UnsignedWordConversion => {}
+                Err(error) if unsigned_cast => return Err(error),
                 Ok(template) => {
                     validate_library_types(&template, arguments, output, &self.values).map_err(
                         |_| Error::InvalidBinding {

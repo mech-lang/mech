@@ -416,6 +416,9 @@ pub(in crate::native_artifact) fn execute<F: FnOnce(*mut Frame) -> u64>(
         if !matches!(
             (value, ty.kind()),
             (NativeScalarValue::Bool(_), NativeScalarKind::Bool)
+                | (NativeScalarValue::U8(_), NativeScalarKind::U8)
+                | (NativeScalarValue::U16(_), NativeScalarKind::U16)
+                | (NativeScalarValue::U32(_), NativeScalarKind::U32)
                 | (NativeScalarValue::U64(_), NativeScalarKind::U64)
                 | (NativeScalarValue::I64(_), NativeScalarKind::I64)
                 | (NativeScalarValue::F64(_), NativeScalarKind::F64)
@@ -433,6 +436,10 @@ pub(in crate::native_artifact) fn execute<F: FnOnce(*mut Frame) -> u64>(
     for (word, value) in input_words.iter_mut().zip(inputs) {
         *word = match value {
             NativeScalarValue::Bool(v) => u64::from(*v),
+            NativeScalarValue::U8(v) => u64::from(*v),
+            NativeScalarValue::U16(v) => u64::from(*v),
+            NativeScalarValue::U32(v) => u64::from(*v),
+
             NativeScalarValue::U64(v) => *v,
             NativeScalarValue::I64(v) => *v as u64,
             NativeScalarValue::F64(v) => v.bits(),
@@ -511,13 +518,7 @@ pub(in crate::native_artifact) fn execute<F: FnOnce(*mut Frame) -> u64>(
         _ => return Err(NativeExecutionError::InvalidStatus { status }.into()),
     }
     for (index, (&word, ty)) in output_words.iter().zip(&descriptor.outputs).enumerate() {
-        if ty.kind() == NativeScalarKind::Bool && word > 1 {
-            return Err(NativeExecutionError::InvalidOutputBool {
-                output: index,
-                value: word,
-            }
-            .into());
-        }
+        super::runtime::validate_output_word(index, ty.kind(), word)?;
     }
     // All fallible checks precede this allocation-free final publication pass.
     for ((target, &word), ty) in outputs
@@ -527,6 +528,9 @@ pub(in crate::native_artifact) fn execute<F: FnOnce(*mut Frame) -> u64>(
     {
         *target = match ty.kind() {
             NativeScalarKind::Bool => NativeScalarValue::Bool(word != 0),
+            NativeScalarKind::U8 => NativeScalarValue::U8(word as u8),
+            NativeScalarKind::U16 => NativeScalarValue::U16(word as u16),
+            NativeScalarKind::U32 => NativeScalarValue::U32(word as u32),
             NativeScalarKind::U64 => NativeScalarValue::U64(word),
             NativeScalarKind::I64 => NativeScalarValue::I64(word as i64),
             NativeScalarKind::F64 => {

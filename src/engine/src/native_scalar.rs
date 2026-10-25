@@ -6,6 +6,32 @@ pub enum NativeScalarKind {
     U64,
     I64,
     F64,
+    U8,
+    U16,
+    U32,
+}
+
+impl NativeScalarKind {
+    /// Maximum canonical unsigned payload; other kinds preserve their own bits.
+    pub const fn unsigned_maximum(self) -> Option<u64> {
+        match self {
+            Self::U8 => Some(u8::MAX as u64),
+            Self::U16 => Some(u16::MAX as u64),
+            Self::U32 => Some(u32::MAX as u64),
+            Self::U64 => Some(u64::MAX),
+            _ => None,
+        }
+    }
+    /// A raw word must fit the exact semantic type, even in an eight-byte lane.
+    pub const fn accepts_bits(self, bits: u64) -> bool {
+        match self {
+            Self::Bool => bits <= 1,
+            Self::U8 => bits <= u8::MAX as u64,
+            Self::U16 => bits <= u16::MAX as u64,
+            Self::U32 => bits <= u32::MAX as u64,
+            Self::U64 | Self::I64 | Self::F64 => true,
+        }
+    }
 }
 
 /// Checked operations certified by the actual selected maintained binder.
@@ -87,13 +113,61 @@ pub enum NativeScalarOp {
     F64ToU64,
     #[cfg(any(feature = "convert", feature = "native-artifact"))]
     F64ToI64,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U8ToU16,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U8ToU32,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U8ToU64,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U16ToU8,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U16ToU32,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U16ToU64,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U32ToU8,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U32ToU16,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U32ToU64,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U64ToU8,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U64ToU16,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U64ToU32,
 }
 
 impl NativeScalarOp {
     pub const fn signature(self) -> (&'static [NativeScalarKind], NativeScalarKind) {
-        use NativeScalarKind::{Bool, F64, I64, U64};
+        use NativeScalarKind::*;
         use NativeScalarOp::*;
         match self {
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U8ToU16 => (&[U8], U16),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U8ToU32 => (&[U8], U32),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U8ToU64 => (&[U8], U64),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U16ToU8 => (&[U16], U8),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U16ToU32 => (&[U16], U32),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U16ToU64 => (&[U16], U64),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U32ToU8 => (&[U32], U8),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U32ToU16 => (&[U32], U16),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U32ToU64 => (&[U32], U64),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U64ToU8 => (&[U64], U8),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U64ToU16 => (&[U64], U16),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U64ToU32 => (&[U64], U32),
             #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]
             U64BitNot | U64Clz | U64Ctz => (&[U64], U64),
             #[cfg(any(feature = "integer_bits", feature = "native-artifact"))]

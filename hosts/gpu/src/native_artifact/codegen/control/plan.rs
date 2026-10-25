@@ -125,6 +125,15 @@ impl<'a> CodePlan<'a> {
                     (Some(NativeScalarKind::Bool), mech_core::ValueData::Bool(v)) => {
                         Some(NativeScalarValue::Bool(*v))
                     }
+                    (Some(NativeScalarKind::U8), mech_core::ValueData::U8(v)) => {
+                        Some(NativeScalarValue::U8(*v))
+                    }
+                    (Some(NativeScalarKind::U16), mech_core::ValueData::U16(v)) => {
+                        Some(NativeScalarValue::U16(*v))
+                    }
+                    (Some(NativeScalarKind::U32), mech_core::ValueData::U32(v)) => {
+                        Some(NativeScalarValue::U32(*v))
+                    }
                     (Some(NativeScalarKind::U64), mech_core::ValueData::U64(v)) => {
                         Some(NativeScalarValue::U64(*v))
                     }
@@ -146,12 +155,7 @@ impl<'a> CodePlan<'a> {
         };
         Ok((
             value,
-            scalar.map(|s| match s {
-                NativeScalarValue::Bool(v) => u64::from(v),
-                NativeScalarValue::U64(v) => v,
-                NativeScalarValue::I64(v) => v as u64,
-                NativeScalarValue::F64(v) => v.bits(),
-            }),
+            scalar.map(NativeScalarValue::to_bits),
         ))
     }
     pub fn validate(self) -> Result<(), NativeCompileError> {

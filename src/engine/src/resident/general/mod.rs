@@ -14340,6 +14340,15 @@ fn operation_storage_descriptor(
     }
     let representation = match descriptor.schema().body() {
         SchemaBody::Bool => mech_core::FunctionValueRepresentation::Bool,
+        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8) => {
+            mech_core::FunctionValueRepresentation::U8
+        }
+        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W16) => {
+            mech_core::FunctionValueRepresentation::U16
+        }
+        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W32) => {
+            mech_core::FunctionValueRepresentation::U32
+        }
         SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64) => {
             mech_core::FunctionValueRepresentation::U64
         }

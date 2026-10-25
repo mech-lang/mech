@@ -6,8 +6,10 @@ use super::{
     NativeControlLoopRef as Loop, NativeIterationAction as Action, NativeIterationArtifactPlan,
     NativeIterationTerminator as Terminator, NativeIterationValueScope as Scope,
     NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeMatchValue as Value,
-    NativeScalarKind, NativeScalarValue,
+    NativeScalarKind,
 };
+#[cfg(all(feature = "map_ops", feature = "convert"))]
+use super::NativeScalarValue;
 use std::collections::VecDeque;
 
 pub(crate) trait ControlType: Eq {
@@ -127,12 +129,7 @@ impl ControlPlan for NativeIterationArtifactPlan {
                 .values()
                 .get(constant.value().get() as usize)
                 .ok_or(BAD)?;
-            let kind = match constant.scalar() {
-                NativeScalarValue::Bool(_) => NativeScalarKind::Bool,
-                NativeScalarValue::U64(_) => NativeScalarKind::U64,
-                NativeScalarValue::I64(_) => NativeScalarKind::I64,
-                NativeScalarValue::F64(_) => NativeScalarKind::F64,
-            };
+            let kind = constant.scalar().kind();
             if ty.kind() != kind {
                 return Err(BAD);
             }
