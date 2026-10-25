@@ -18,7 +18,6 @@ pub struct NativeTextLineWindow<'owner> {
     // Words: bytes pointer, bytes length, LF-offset pointer (zero for a lone
     // completed line), first offset index, number of intersecting rows.
     segments: [[u64; 5]; 2],
-    segment_count: usize,
     direct: bool,
     owner: &'owner NativeTextLineChunks,
     first: u64,
@@ -116,7 +115,6 @@ impl NativeTextLineChunks {
         Ok(NativeTextLineWindow {
             rows,
             segments,
-            segment_count,
             direct,
             owner: self,
             first,
