@@ -343,7 +343,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 98;
 // Policy69 admits the actual composition-state layout and requires a bounded
 // chunk/table computation to fit the original prepaid join envelope. Source
 // operation prices, finite allowances and later map charges are unchanged.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 69;
+// Policy70 returns selected linear U64 matrix reads into the already admitted
+// scalar frame, with current source/active-call admission and no temporary Values.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 70;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
