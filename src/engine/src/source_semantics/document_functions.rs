@@ -38,6 +38,15 @@ fn calls_function(node: &SyntaxNode, name: &str) -> Result<bool, SourceSemanticE
     {
         return Ok(true);
     }
+    if let Some(application) = ApplicationExpressionSyntax::cast(node.clone()) {
+        for stage in application.stages() {
+            if let Some(function) = stage.function()
+                && node_text(function.syntax())? == name
+            {
+                return Ok(true);
+            }
+        }
+    }
     for child in node.children() {
         if calls_function(&child, name)? {
             return Ok(true);
