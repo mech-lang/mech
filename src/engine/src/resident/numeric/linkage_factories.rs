@@ -656,6 +656,7 @@ factory!(
     CanonicalFinalize,
     super::bind_whole_matrix_assign
 );
+#[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
 factory!(
     NUMERIC_CORE_ASSIGN_INDEXED_AXIS,
     &["core", "assign"],
