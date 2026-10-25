@@ -1,0 +1,49 @@
+// Level-12 collection-position transition from CompressOptimal.roc,
+// 671077457ff7ef3a3d44caf715a3fc595addf379, lines 783-916.
+// Concatenate after the shared matchfinder and binary-tree functions.
+// This prefix witness stops before the block decision/statistics code. It is
+// not a complete block collector or compressor.
+
+<optimal-position> := <{tables<[u16]> cache<[u32]> next-hash3<u64> next-hash4<u64> next-position<u64> cache-ptr<u64> base<u64> next-slide<u64> maximum<u64> nice<u64> skip<u64>}>
+
+optimal-skip-position(tables<[u16]>, hash3<u64>, hash4<u64>, input<[u8]>, base<u64>, position<u64>, nice<u64>, cache<[u32]>, pointer<u64>) => (out<bt-advanced>) :=
+  advanced := bt-skip-byte(tables, hash3, hash4, input, base, position, nice, 300u64)
+  out := {tables: advanced.tables, next-hash3: advanced.next-hash3, next-hash4: advanced.next-hash4, cache: cache, cache-ptr: pointer}.
+
+optimal-collect-position(tables<[u16]>, cache<[u32]>, hash3<u64>, hash4<u64>, input<[u8]>, position<u64>, base<u64>, next-slide<u64>, maximum<u64>, nice<u64>, skip<u64>, pointer<u64>) => (out<optimal-position>) :=
+  remaining := bits/wrapping-sub(sequence/length(input), position)
+  slide := position == next-slide
+  mf := (slide? | true => rebase-nodes(tables) | false => tables)
+  current-base := (slide? | true => position | false => base)
+  slide-at := (slide? | true => bits/wrapping-add(position, bt-minimum(remaining, 32768u64)) | false => next-slide)
+  max-length := ((remaining < 258u64)? | true => remaining | false => maximum)
+  nice-length := ((remaining < 258u64)? | true => bt-minimum(nice, max-length) | false => nice)
+  skipping := skip != 0u64
+  advanced := ((max-length >= 5u64)?
+    | true => (skipping?
+        | true => optimal-skip-position(mf, hash3, hash4, input, current-base, bits/wrapping-sub(position, current-base), nice-length, cache, pointer)
+        | false => bt-get-matches(mf, hash3, hash4, input, current-base, bits/wrapping-sub(position, current-base), max-length, nice-length, 300u64, cache, pointer))
+    | false => {tables: mf, next-hash3: hash3, next-hash4: hash4, cache: cache, cache-ptr: pointer})
+  found := advanced.cache-ptr > pointer
+  best := (found? | true => bits/and(bt-word32(advanced.cache[advanced.cache-ptr]), 65535u64) | false => 0u64)
+  with-header := bt-put-entry(advanced.cache, advanced.cache-ptr, bits/wrapping-sub(advanced.cache-ptr, pointer), byte(input, position))
+  next-skip := (skipping?
+    | true => bits/wrapping-sub(skip, 1u64)
+    | false => (((best >= 3u64) && (best >= nice-length))? | true => bits/wrapping-sub(best, 1u64) | false => 0u64))
+  out := {tables: advanced.tables, cache: with-header, next-hash3: advanced.next-hash3, next-hash4: advanced.next-hash4, next-position: bits/wrapping-add(position, 1u64), cache-ptr: bits/wrapping-add(advanced.cache-ptr, 1u64), base: current-base, next-slide: slide-at, maximum: max-length, nice: nice-length, skip: next-skip}.
+
+// The bounded witness uses the same consecutive transition and keeps the
+// table/cache separate at call sites, as the full compression loop does.
+optimal-collect-prefix-loop(tables<[u16]>, cache<[u32]>, hash3<u64>, hash4<u64>, input<[u8]>, position<u64>, base<u64>, next-slide<u64>, maximum<u64>, nice<u64>, skip<u64>, pointer<u64>, end<u64>) => (out<optimal-position>) :=
+  collecting := position < end
+  next := (collecting?
+    | false => {tables: tables, cache: cache, next-hash3: hash3, next-hash4: hash4, next-position: position, cache-ptr: pointer, base: base, next-slide: next-slide, maximum: maximum, nice: nice, skip: skip}
+    | true => optimal-collect-position(tables, cache, hash3, hash4, input, position, base, next-slide, maximum, nice, skip, pointer))
+  out := (collecting?
+    | false => next
+    | true => optimal-collect-prefix-loop(next.tables, next.cache, next.next-hash3, next.next-hash4, input, next.next-position, next.base, next.next-slide, next.maximum, next.nice, next.skip, next.cache-ptr, end)).
+
+optimal-collect-prefix(input<[u8]>, end<u64>) => (out<optimal-position>) :=
+  tables := initial-nodes(262144u64)
+  cache := [0u32 | i <- 0u64..=1500513u64, i < 1500513u64]
+  out := optimal-collect-prefix-loop(tables, cache, 0u64, 0u64, input, 0u64, 0u64, bt-minimum(sequence/length(input), 32768u64), 258u64, 258u64, 0u64, 0u64, bt-minimum(end, sequence/length(input))).
