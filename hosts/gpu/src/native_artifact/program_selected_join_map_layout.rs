@@ -47,7 +47,7 @@ fn derive_one(
     {
         return None;
     }
-    let next = |site: u32| match plan.blocks().get(site as usize)?.terminator() {
+    let next = |site: u32| match &plan.blocks().get(site as usize)?.terminator() {
         End::Scalar(Term::Jump(next)) => Some(*next),
         _ => None,
     };
@@ -59,6 +59,9 @@ fn derive_one(
     let mut sites = Vec::new();
     loop {
         let block = plan.blocks().get(site as usize)?;
+        if plan.activation_boundary() == Some(site) {
+            return None;
+        }
         if core::mem::replace(visited.get_mut(site as usize)?, true) {
             return None;
         }
@@ -79,7 +82,7 @@ fn derive_one(
         if block.iteration().is_some() {
             return None;
         }
-        match block.action() {
+        match &block.action() {
             Action::Scalar(Scalar::None) => {}
             Action::Scalar(Scalar::Copy { source, output })
                 if !begun
