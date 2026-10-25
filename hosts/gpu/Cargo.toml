@@ -96,6 +96,10 @@ name = "particle_benchmark"
 path = "examples/particle_benchmark.rs"
 required-features = ["native"]
 
+[[example]]
+name = "argument_frame_transport"
+required-features = ["canonical-native-program"]
+
 [[bin]]
 name = "mech-native-source"
 path = "src/bin/mech-native-source.rs"

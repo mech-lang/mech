@@ -16,6 +16,15 @@ use mech_syntax::document::{
     parse_canonical_document,
 };
 
+#[path = "../../../src/core/tests/support/allocation_probe.rs"]
+pub mod allocation_probe;
+
+#[global_allocator]
+static ALLOCATOR: allocation_probe::ProbeAllocator = allocation_probe::ProbeAllocator;
+
+#[path = "support/canonical_program_argument_transport.rs"]
+mod argument_transport_qualification;
+
 #[path = "support/canonical_program_linked.rs"]
 mod linked_qualification;
 
