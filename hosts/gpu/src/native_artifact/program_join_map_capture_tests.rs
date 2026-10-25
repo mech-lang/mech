@@ -336,6 +336,10 @@ fn fused_join_map_replay_foreign_generation_and_missing_owner_denials_remain_ato
             Fault::PrivateWrongAccount,
             Fault::PrivateShortCapacity,
             Fault::PrivateWrongFactory,
+            Fault::UnpublishedExtent,
+            Fault::ExcessInitializedExtent,
+            Fault::CorruptSourceGeometry,
+            Fault::MovedInitializedBacking,
         ] {
             let memory = ManagedMemoryBudget::new(TEST_MEMORY_LIMIT);
             let (mut runtime, trace) = runtime(input, true, None);

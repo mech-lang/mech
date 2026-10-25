@@ -26,7 +26,7 @@ pub use prepared::{
 };
 #[cfg(feature = "pure_text")]
 pub use prepared::{
-    NativePrivateStringBuffer, NativeSelectedStringMatrix, NativeTextLineCaptureFacts, NativeTextLineChunks,
+    NativePrivateStringBuffer, NativeSelectedStringMatrix, NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineJoinChunk,
     NativeTextLineMatrix, NativeTextLineMatrixChoice, NativeTextLineWindow,
 };
 

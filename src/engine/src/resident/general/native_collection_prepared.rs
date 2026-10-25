@@ -44,7 +44,7 @@ pub use selected_join::NativeSelectedStringMatrix;
 mod text_lines;
 #[cfg(feature = "pure_text")]
 pub use text_lines::{
-    NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineMatrix,
+    NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineMatrix,
     NativeTextLineMatrixChoice, NativeTextLineWindow,
 };
 

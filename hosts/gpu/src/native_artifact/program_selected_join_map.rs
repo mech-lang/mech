@@ -3,7 +3,9 @@
 use super::*;
 use crate::native_artifact::NativeValueHandle;
 use mech_core::ManagedNodeReservation;
-use mech_engine::native_artifact::{NativePrivateStringBuffer, NativeStringMapRegion};
+use mech_engine::native_artifact::{
+    NativePrivateStringBuffer, NativeStringMapRegion, NativeTextLineJoinChunk,
+};
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_selected_join_map_faults.rs"]
 pub(super) mod faults;
@@ -14,6 +16,19 @@ pub(super) struct Prepared {
     table: Vec<u16>,
     nodes: ManagedNodeReservation,
 }
+struct CopyLoan {
+    source: NativeTextLineJoinChunk,
+    // Six immutable geometry words followed by the generated kernel's exact
+    // initialized-extent receipt. Fusing lives in one stable Box throughout
+    // this loan; neither metadata nor target can move/grow until completion.
+    words: [u64; 7],
+    start: usize,
+    count: usize,
+    capacity: usize,
+    target: u64,
+    active: bool,
+}
+
 pub(super) struct Fusing {
     pub view: NativeSelectedStringMatrix,
     map: Value,
@@ -23,10 +38,14 @@ pub(super) struct Fusing {
     next: u64,
     payload: u64,
     missing: Option<u64>,
-    loan: Option<(usize, usize, bool)>,
+    loan: Option<CopyLoan>,
     envelope: ManagedMemoryReservation,
     nodes: ManagedNodeReservation,
 }
+// The original fixed join envelope already covers this metadata and table.
+// A representation change cannot silently grow beyond that admitted bound.
+const _: () = assert!(core::mem::size_of::<Fusing>() + 256 <= 4096);
+
 pub(in crate::native_artifact::program_runtime) struct Mapped {
     pub map: Value,
     pub handle: NativeValueHandle,
@@ -337,28 +356,49 @@ impl Context<'_, '_> {
             if fusing.loan.is_some() {
                 return Err(invalid("joined-map copy replayed with a live span"));
             }
-            let start = fusing.bytes.len();
-            let following = fusing
+            let source = fusing
                 .view
-                .append_consuming_ascii_join_chunk(fusing.next, &mut fusing.bytes)
+                .take_consuming_ascii_join_chunk(fusing.next)
                 .map_err(|e| library_at(descriptor, site, e))?;
-            if let Some(next) = following {
-                if next <= fusing.next {
-                    return Err(invalid("joined-map copy made no progress"));
+            if let Some(source) = source {
+                if source.following() <= fusing.next {
+                    return Err(invalid("joined-map source loan made no progress"));
                 }
-                fusing.next = next;
-                let count = fusing.bytes.len() - start;
+                let start = fusing.bytes.len();
+                let count = usize::try_from(source.payload_bytes())
+                    .map_err(|_| invalid("joined-map source payload exceeds address space"))?;
+                let end = start
+                    .checked_add(count)
+                    .ok_or_else(|| invalid("joined-map output extent overflow"))?;
+                if end > fusing.bytes.capacity() {
+                    return Err(invalid("joined-map output loan exceeds admitted capacity"));
+                }
                 let active = fusing.missing.is_none();
-                fusing.loan = Some((start, count, active));
-                // All bytes are initialized before native execution. The exact
-                // fixed-capacity output cannot grow while this span is loaned.
-                let pointer = unsafe { fusing.bytes.as_mut_ptr().add(start) } as u64;
+                let mut words = [0; 7];
+                words[..6].copy_from_slice(source.geometry());
+                let output = unsafe { fusing.bytes.as_mut_ptr().add(start) } as u64;
+                fusing.loan = Some(CopyLoan {
+                    source,
+                    words,
+                    start,
+                    count,
+                    capacity: fusing.bytes.capacity(),
+                    target: output,
+                    active,
+                });
+                let loan = fusing.loan.as_mut().unwrap();
+                // The target remains at its old initialized length. Generated
+                // code owns only this checked spare-capacity extent; it must
+                // initialize ALL of it, even after the first missing mapping.
+                // The owning chunk keeps immutable bytes/offsets alive. The
+                // Box, loan metadata and Vec allocation stay fixed until the
+                // matching completion callback ends this synchronous loan.
                 Some([
-                    pointer,
-                    if active { count as u64 } else { 0 },
+                    loan.words.as_mut_ptr() as u64,
+                    count as u64,
                     fusing.table.as_ptr() as u64,
-                    pointer,
-                    0,
+                    output,
+                    u64::from(active),
                 ])
             } else {
                 None
@@ -397,15 +437,44 @@ impl Context<'_, '_> {
         let Phase::Fusing(fusing) = &mut state.phase else {
             return Err(invalid("joined-map completion after finalization"));
         };
-        let (start, count, active) = fusing
+        let loan = fusing
             .loan
             .take()
             .ok_or_else(|| invalid("joined-map completion without a loan"))?;
-        if args[0] > if active { count as u64 } else { 0 } {
-            return Err(invalid("joined-map result exceeds its initialized span"));
+        if loan.words[..6] != loan.source.geometry()[..]
+            || loan.words[super::super::super::program_abi::JOIN_MAP_INITIALIZED_WORD]
+                != loan.count as u64
+            || args[0] > if loan.active { loan.count as u64 } else { 0 }
+            || fusing.bytes.len() != loan.start
+        {
+            return Err(invalid(
+                "joined-map result differs from its exact initialized loan",
+            ));
         }
-        if active && args[0] < count as u64 {
-            fusing.missing = Some(add(start as u64, args[0])?);
+        let end = loan
+            .start
+            .checked_add(loan.count)
+            .ok_or_else(|| invalid("joined-map initialized extent overflow"))?;
+        if end > fusing.bytes.capacity() {
+            return Err(invalid("joined-map initialized extent exceeds its backing"));
+        }
+        if fusing.bytes.capacity() != loan.capacity
+            || unsafe { fusing.bytes.as_mut_ptr().add(loan.start) } as u64 != loan.target
+        {
+            return Err(invalid(
+                "joined-map initialized backing changed during its loan",
+            ));
+        }
+        // SAFETY: this exact owned source/geometry and non-overlapping output
+        // extent were checked before the only emitted call. The private kernel
+        // publishes its extent only after every selected row has been copied,
+        // including the raw suffix after a missing key. No source/metadata/
+        // target owner moved or resized while that synchronous loan was live.
+        // Invalid/short/replayed completions leave the old length untouched.
+        unsafe { fusing.bytes.set_len(end) };
+        fusing.next = loan.source.following();
+        if loan.active && args[0] < loan.count as u64 {
+            fusing.missing = Some(add(loan.start as u64, args[0])?);
         }
         Ok(None)
     }

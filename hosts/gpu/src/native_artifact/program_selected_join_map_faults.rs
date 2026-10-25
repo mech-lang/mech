@@ -14,6 +14,10 @@ pub(in crate::native_artifact::program_runtime) enum Fault {
     PrivateWrongAccount,
     PrivateShortCapacity,
     PrivateWrongFactory,
+    UnpublishedExtent,
+    ExcessInitializedExtent,
+    CorruptSourceGeometry,
+    MovedInitializedBacking,
 }
 #[derive(Clone, Copy, Debug)]
 pub(in crate::native_artifact::program_runtime) enum Limit {
@@ -176,8 +180,58 @@ pub(super) fn before_finish(ctx: &mut Context<'_, '_>, site: usize) -> Result<bo
             else {
                 return Err(invalid("test missing chunk owner"));
             };
-            let (_, count, _) = f.loan.ok_or_else(|| invalid("test missing chunk loan"))?;
+            let count = f
+                .loan
+                .as_ref()
+                .ok_or_else(|| invalid("test missing chunk loan"))?
+                .count;
             ctx.finish_join_map_chunk(site, [count as u64 + 1, 0, 0])?;
+        }
+        Some(
+            test @ (Fault::UnpublishedExtent
+            | Fault::ExcessInitializedExtent
+            | Fault::CorruptSourceGeometry),
+        ) => {
+            fire();
+            let Some(State {
+                phase: Phase::Fusing(f),
+                ..
+            }) = ctx.selected_join.as_mut()
+            else {
+                return Err(invalid("test missing initialized source loan"));
+            };
+            let loan = f
+                .loan
+                .as_mut()
+                .ok_or_else(|| invalid("test missing initialized extent"))?;
+            match test {
+                Fault::UnpublishedExtent => {
+                    loan.words[6] = if loan.count == 0 {
+                        1
+                    } else {
+                        loan.count as u64 - 1
+                    }
+                }
+                Fault::ExcessInitializedExtent => loan.words[6] = loan.count as u64 + 1,
+                Fault::CorruptSourceGeometry => loan.words[0] ^= 8,
+                _ => unreachable!(),
+            }
+        }
+        Some(Fault::MovedInitializedBacking) => {
+            fire();
+            let Some(State {
+                phase: Phase::Fusing(f),
+                ..
+            }) = ctx.selected_join.as_mut()
+            else {
+                return Err(invalid("test missing completed backing"));
+            };
+            let mut replacement = Vec::new();
+            replacement.try_reserve_exact(f.bytes.capacity()).unwrap();
+            replacement.extend_from_slice(&f.bytes);
+            // Allocate before dropping the old buffer: a nonempty loan cannot
+            // accidentally receive the same allocator address in this probe.
+            f.bytes = replacement;
         }
         Some(Fault::SkipCompletion) => {
             fire();

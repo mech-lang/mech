@@ -123,6 +123,36 @@ impl NativeSelectedStringMatrix {
             .ok_or(InvokeError::InvalidInput)?
             .append_capture_join_chunk(next, upper, target)
     }
+    /// Transfer one immutable physical chunk to a generated transform/copy.
+    /// The original selected join has prepaid all traversal and retirement;
+    /// this owner grants no source visit and contains no copied row directory.
+    pub fn take_consuming_ascii_join_chunk(
+        &mut self,
+        next: u64,
+    ) -> Result<Option<super::NativeTextLineJoinChunk>, InvokeError> {
+        if !self.can_consume_ascii_join_chunks() {
+            return Err(InvokeError::InvalidInput);
+        }
+        let (first, end) = self
+            .geometry
+            .contiguous_range()
+            .ok_or(InvokeError::InvalidInput)?;
+        let lower = (first as u64)
+            .checked_add(1)
+            .ok_or(InvokeError::InvalidInput)?;
+        let upper = (end as u64)
+            .checked_add(1)
+            .ok_or(InvokeError::InvalidInput)?;
+        if next < lower || next > upper {
+            return Err(InvokeError::InvalidInput);
+        }
+        let Source::Lines(lines) = &mut self.source else {
+            return Err(InvokeError::InvalidInput);
+        };
+        Rc::get_mut(lines)
+            .ok_or(InvokeError::InvalidInput)?
+            .take_capture_join_chunk(next, upper)
+    }
     pub const fn count(&self) -> usize {
         self.geometry.count
     }
