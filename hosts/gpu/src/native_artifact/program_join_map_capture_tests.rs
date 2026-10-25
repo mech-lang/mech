@@ -333,6 +333,9 @@ fn fused_join_map_replay_foreign_generation_and_missing_owner_denials_remain_ato
             Fault::WrongMapGeneration,
             Fault::WrongCopySource,
             Fault::MissingOwner,
+            Fault::PrivateWrongAccount,
+            Fault::PrivateShortCapacity,
+            Fault::PrivateWrongFactory,
         ] {
             let memory = ManagedMemoryBudget::new(TEST_MEMORY_LIMIT);
             let (mut runtime, trace) = runtime(input, true, None);
@@ -370,6 +373,21 @@ fn fused_join_map_replay_foreign_generation_and_missing_owner_denials_remain_ato
                 error.kind_as::<NativeProgramExecutionError>().is_some(),
                 "{fault:?}: {error:?}"
             );
+            if matches!(
+                fault,
+                Fault::PrivateWrongAccount
+                    | Fault::PrivateShortCapacity
+                    | Fault::PrivateWrongFactory
+            ) {
+                let actual = error.kind_as::<NativeProgramExecutionError>().unwrap();
+                let NativeProgramExecutionError::Library { error, .. } = actual else {
+                    panic!("{fault:?} must be rejected by the actual buffer factory: {actual:?}");
+                };
+                assert!(match fault {
+                    Fault::PrivateWrongFactory => matches!(error, mech_engine::native_artifact::NativeCollectionInvocationError::InvalidInput),
+                    _ => matches!(error, mech_engine::native_artifact::NativeCollectionInvocationError::UnadmittedValue),
+                }, "{fault:?}: {error:?}");
+            }
             cleanup(&mut runtime, &trace, &memory, input.len());
         }
         let memory = ManagedMemoryBudget::new(TEST_MEMORY_LIMIT);

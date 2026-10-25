@@ -2,8 +2,8 @@
 //! Original source/copy slots remain absent; a missing key is reported later.
 use super::*;
 use crate::native_artifact::NativeValueHandle;
-use mech_core::{ManagedNodeReservation, snapshot::OwnedSnapshotBytes};
-use mech_engine::native_artifact::NativeStringMapRegion;
+use mech_core::ManagedNodeReservation;
+use mech_engine::native_artifact::{NativePrivateStringBuffer, NativeStringMapRegion};
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_selected_join_map_faults.rs"]
 pub(super) mod faults;
@@ -25,13 +25,12 @@ pub(super) struct Fusing {
     missing: Option<u64>,
     loan: Option<(usize, usize, bool)>,
     envelope: ManagedMemoryReservation,
-    finalization: u64,
     nodes: ManagedNodeReservation,
 }
 pub(in crate::native_artifact::program_runtime) struct Mapped {
     pub map: Value,
     pub handle: NativeValueHandle,
-    pub owner: OwnedSnapshotBytes,
+    pub owner: NativePrivateStringBuffer,
     pub count: u64,
     pub processed: u64,
     slot: u32,
@@ -43,7 +42,7 @@ impl Fusing {
         view: NativeSelectedStringMatrix,
         target: String,
         envelope: ManagedMemoryReservation,
-        finalization: u64,
+        _finalization: u64,
     ) -> Result<Box<Self>, Error> {
         let next = view
             .consuming_join_first()
@@ -60,7 +59,6 @@ impl Fusing {
             missing: None,
             loan: None,
             envelope,
-            finalization,
             nodes: prepared.nodes,
         }))
     }
@@ -434,7 +432,6 @@ impl Context<'_, '_> {
             missing,
             loan,
             mut envelope,
-            finalization,
             nodes,
             ..
         } = *fusing;
@@ -445,27 +442,21 @@ impl Context<'_, '_> {
         let text =
             String::from_utf8(bytes).map_err(|_| invalid("joined map wrote invalid UTF8"))?;
         let descriptor = self.control.descriptor;
-        let output = &descriptor.plan.values()
-            [descriptor.selected_joins.regions[region].output().get() as usize];
-        let canonical = SnapshotCanonicalizationBudget::new(finalization);
-        let value = ValueDraft {
-            schema: output.schema(),
-            shape_values: Box::new([]),
-            data: ValueDataDraft::String(text),
-        }
-        .finalize(
-            &SnapshotValidationContext::with_shared_schemas(&descriptor.schemas)
-                .with_canonicalization_budget(&canonical),
-        )
-        .map_err(Error::Snapshot)?
-        .into_memory_budget(&mut envelope)
-        .map_err(|e| library(self, site, e.into()))?;
+        let call = descriptor.calls[site]
+            .as_ref()
+            .ok_or_else(|| invalid("joined map lost its prepared join factory"))?;
+        // The original full join envelope was admitted before allocation. Move
+        // only the actual unique backing's capacity claim to the private owner;
+        // its unused canonical-construction capacity now retires. No frozen
+        // intermediate, shape, canonical nodes, import or ownership conversion
+        // is constructed merely to consume it at the next proved operation.
+        let capacity = text.capacity() as u64;
+        let backing = envelope.split_capacity(capacity)?;
+        let owner = call
+            .finish_private_string_buffer(text, backing, &self.library)
+            .map_err(|e| library(self, site, e))?;
+        drop(envelope);
         let memory = self.library.memory_budget();
-        let mech_core::snapshot::StringOwnershipTransfer::Owned(owner) =
-            value.try_into_owned_string(&memory)?
-        else {
-            return Err(invalid("private joined-map output unexpectedly shared"));
-        };
         self.arena.retire_current(
             descriptor.selected_joins.regions[region].output().get(),
             &mut self.control.work,
@@ -481,7 +472,7 @@ impl Context<'_, '_> {
             phase: Phase::Mapped(Mapped {
                 map,
                 handle,
-                owner: owner.into_bytes(),
+                owner,
                 count: payload,
                 processed: missing.unwrap_or(payload),
                 slot: descriptor.selected_joins.regions[region].output().get(),

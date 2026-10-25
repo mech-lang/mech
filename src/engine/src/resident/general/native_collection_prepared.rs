@@ -30,6 +30,11 @@ mod string_map_entry;
 mod string_span;
 pub use string_span::NativeSelectedStringSpanSelector;
 #[cfg(feature = "pure_text")]
+#[path = "native_collection_private_string.rs"]
+mod private_string;
+#[cfg(feature = "pure_text")]
+pub use private_string::NativePrivateStringBuffer;
+#[cfg(feature = "pure_text")]
 #[path = "native_collection_selected_join.rs"]
 mod selected_join;
 #[cfg(feature = "pure_text")]
