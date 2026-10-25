@@ -186,7 +186,10 @@ fn selected_template(
 // IR89 reads only the length home for a borrowed Length action. The unused
 // pointer load is absent; source checks, finite prices, ABI32 and policy69
 // remain. No new memory-access promise is made.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 89;
+// IR90 marks only owner-proved private origin/view/scalar-loan homes nontrapping.
+// Mutable values, callback barriers, source bounds, ABI32 and policy69 remain;
+// no readonly, alignment or arbitrary code-motion permission is introduced.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 90;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
