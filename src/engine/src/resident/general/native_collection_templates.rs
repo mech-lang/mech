@@ -132,9 +132,10 @@ impl NativeCollectionPrimitive {
             Self::RangeInclusive => "range/inclusive",
             Self::RangeIncrementExclusive => "range/exclusive-increment",
             Self::RangeIncrementInclusive => "range/inclusive-increment",
-            Self::StringScalarAccess | Self::MatrixScalarAccess | Self::MapKeyAccess => {
-                "access/scalar"
-            }
+            Self::StringScalarAccess
+            | Self::MatrixScalarAccess
+            | Self::TupleScalarProjection
+            | Self::MapKeyAccess => "access/scalar",
             Self::MatrixIndexedReplace => "core/assign/indexed-axis",
             Self::SetContains => "set/element-of",
             Self::SetNotContains => "set/not-element-of",
@@ -192,6 +193,7 @@ impl NativeCollectionPrimitive {
             | Self::RangeInclusive
             | Self::StringScalarAccess
             | Self::MatrixScalarAccess
+            | Self::TupleScalarProjection
             | Self::MapKeyAccess
             | Self::SetContains
             | Self::SetNotContains
@@ -400,6 +402,15 @@ fn validate_schemas(
         #[cfg(feature = "convert")]
         NativeCollectionPrimitive::MatrixToSetConversion => {
             crate::resident::set_conversion::conversion_plan(&inputs[0], declared_output).is_ok()
+        }
+        NativeCollectionPrimitive::TupleScalarProjection => {
+            inputs
+                .iter()
+                .all(|input| input.dimension_parameters().is_empty())
+                && declared_output.dimension_parameters().is_empty()
+                && mech_core::is_positional_selector_schema(inputs[1].body())
+                && crate::native_artifact::structural_values::supported(output)
+                && matches!(first, SchemaBody::Tuple(fields) if fields.iter().any(|field| field == output))
         }
         NativeCollectionPrimitive::MatrixScalarAccess => {
             let selector = inputs[1].body();

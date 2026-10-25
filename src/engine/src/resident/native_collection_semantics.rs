@@ -22,6 +22,8 @@ pub enum NativeCollectionPrimitive {
     #[cfg(feature = "native-artifact")]
     MatrixScalarAccess,
     #[cfg(feature = "native-artifact")]
+    TupleScalarProjection,
+    #[cfg(feature = "native-artifact")]
     MatrixRangeAccess,
     MatrixIndexedReplace,
     #[cfg(feature = "native-artifact")]

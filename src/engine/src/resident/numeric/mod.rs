@@ -9302,7 +9302,10 @@ fn indexed_assign_snapshot(
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
     let current_footprint =
         super::budget::measure_canonical_value_footprint(&mut footprint_meter, current, schemas)
-            .map_err(|_| ResidentKernelError::InvalidOutput)?;
+            .map_err(|error| match error {
+                ResidentKernelError::ResourceLimit { .. } => error,
+                _ => ResidentKernelError::InvalidOutput,
+            })?;
     let source_footprint =
         super::budget::measure_canonical_value_footprint(&mut footprint_meter, source, schemas)?;
     let current_bytes = current_footprint.retained_bytes;

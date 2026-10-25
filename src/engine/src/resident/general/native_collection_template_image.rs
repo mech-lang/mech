@@ -105,6 +105,7 @@ pub(super) fn specialize_primitive(
         }
         P::StringScalarAccess => match inputs.first().map(Schema::body) {
             Some(SchemaBody::Matrix { .. }) => P::MatrixScalarAccess,
+            Some(SchemaBody::Tuple(_)) => P::TupleScalarProjection,
             Some(SchemaBody::Map { .. }) => P::MapKeyAccess,
             _ => primitive,
         },
