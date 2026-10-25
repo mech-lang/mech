@@ -393,6 +393,8 @@ pub(super) struct Prepared<'a> {
     _fixed_nodes: mech_core::ManagedNodeReservation,
 }
 
+struct SetupGeometry { locals: usize, progress: usize, words: usize, bytes: u64 }
+
 impl<'a> Prepared<'a> {
     /// Exact fixed private node claims made by `new_with_budget`. This is a
     /// necessary simultaneous setup floor, not a promise that later canonical
@@ -412,50 +414,18 @@ impl<'a> Prepared<'a> {
         Ok(total)
     }
 
-    pub(super) fn new(
-        descriptor: &'a NativeProgramDescriptor,
-        limits: NativeProgramExecutionLimits,
-        memory: &ManagedMemoryBudget,
-    ) -> Result<Self, NativeProgramExecutionError> {
-        Self::new_with_budget(descriptor, limits, memory, None)
+    /// Exact fixed constructor backing. Canonical constant payloads, later
+    /// builders and cache entries keep their independent checked admission.
+    pub(super) fn worker_setup_bytes(
+        descriptor: &NativeProgramDescriptor,
+    ) -> Result<u64, NativeProgramExecutionError> {
+        Ok(Self::setup_geometry(descriptor)?.bytes)
     }
 
-    fn new_with_budget(
-        descriptor: &'a NativeProgramDescriptor,
-        limits: NativeProgramExecutionLimits,
-        memory: &ManagedMemoryBudget,
-        worker_budget: Option<NativeLibraryWorkBudget>,
-    ) -> Result<Self, NativeProgramExecutionError> {
+    fn setup_geometry(
+        descriptor: &NativeProgramDescriptor,
+    ) -> Result<SetupGeometry, NativeProgramExecutionError> {
         let plan = &descriptor.plan;
-        if plan.activation_boundary().is_none() {
-            return Err(invalid(
-                "managed execution has no certified activation boundary",
-            ));
-        }
-        if descriptor.stack > limits.execution.max_native_stack_bytes {
-            return Err(NativeExecutionError::StackLimit {
-                required: descriptor.stack,
-                limit: limits.execution.max_native_stack_bytes,
-            }
-            .into());
-        }
-        let caps = limits.library;
-        if [
-            caps.max_output_elements,
-            caps.max_output_bytes,
-            caps.max_temporary_bytes,
-            caps.max_cloned_bytes,
-            caps.max_retained_nodes,
-            caps.max_compute_work,
-            caps.max_comparison_work,
-        ]
-        .iter()
-        .any(Option::is_none)
-        {
-            return Err(invalid(
-                "native program requires seven finite library dimensions",
-            ));
-        }
         let canonical_locals = plan
             .values()
             .len()
@@ -505,6 +475,54 @@ impl<'a> Prepared<'a> {
                 )
             })
             .ok_or_else(|| invalid("combined transport overflow"))?;
+        Ok(SetupGeometry { locals, progress, words, bytes })
+    }
+
+    pub(super) fn new(
+        descriptor: &'a NativeProgramDescriptor,
+        limits: NativeProgramExecutionLimits,
+        memory: &ManagedMemoryBudget,
+    ) -> Result<Self, NativeProgramExecutionError> {
+        Self::new_with_budget(descriptor, limits, memory, None)
+    }
+
+    fn new_with_budget(
+        descriptor: &'a NativeProgramDescriptor,
+        limits: NativeProgramExecutionLimits,
+        memory: &ManagedMemoryBudget,
+        worker_budget: Option<NativeLibraryWorkBudget>,
+    ) -> Result<Self, NativeProgramExecutionError> {
+        let plan = &descriptor.plan;
+        if plan.activation_boundary().is_none() {
+            return Err(invalid(
+                "managed execution has no certified activation boundary",
+            ));
+        }
+        if descriptor.stack > limits.execution.max_native_stack_bytes {
+            return Err(NativeExecutionError::StackLimit {
+                required: descriptor.stack,
+                limit: limits.execution.max_native_stack_bytes,
+            }
+            .into());
+        }
+        let caps = limits.library;
+        if [
+            caps.max_output_elements,
+            caps.max_output_bytes,
+            caps.max_temporary_bytes,
+            caps.max_cloned_bytes,
+            caps.max_retained_nodes,
+            caps.max_compute_work,
+            caps.max_comparison_work,
+        ]
+        .iter()
+        .any(Option::is_none)
+        {
+            return Err(invalid(
+                "native program requires seven finite library dimensions",
+            ));
+        }
+        let SetupGeometry { locals, progress, words, bytes } = Self::setup_geometry(descriptor)?;
         if bytes > limits.execution.max_transport_bytes {
             return Err(NativeExecutionError::TransportLimit {
                 required: bytes,

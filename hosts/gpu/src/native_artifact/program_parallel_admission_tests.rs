@@ -41,6 +41,31 @@ fn complete_invocation_metadata_is_shared_and_denied_without_leaking_prior_state
 }
 
 #[test]
+fn simultaneous_worker_constructor_preflight_checks_bytes_and_nodes_without_leaking() {
+    let artifact = tests::artifact_source(&source());
+    let jit = crate::native_artifact::JitProgramArtifact::compile(
+        &artifact, &mech_stdlib::source_catalog()).unwrap();
+    let descriptor = jit.descriptor();
+    let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+    let parent = session::Prepared::new(descriptor, tests::limits(), &memory).unwrap();
+    let baseline = (memory.used_bytes(), memory.retained_nodes());
+    let bytes = session::Prepared::worker_setup_bytes(descriptor).unwrap() * 2;
+    let nodes = session::Prepared::worker_setup_nodes(descriptor).unwrap() * 2;
+    assert!(bytes > 0 && nodes > 0);
+    for (byte_limit, node_limit, fits) in [
+        (baseline.0 + bytes - 1, baseline.1 + nodes, false),
+        (baseline.0 + bytes, baseline.1 + nodes - 1, false),
+        (baseline.0 + bytes, baseline.1 + nodes, true),
+    ] {
+        let capped = memory.with_limits(byte_limit, node_limit);
+        assert_eq!(parallel::worker_setup_fits(descriptor, &capped, 2).unwrap(), fits);
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
+    }
+    drop(parent);
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+}
+
+#[test]
 fn ordinary_nested_join_body_retains_parallel_node_admission() {
     let original = tests::artifact_source(&source());
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(
