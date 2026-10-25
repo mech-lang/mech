@@ -100,6 +100,9 @@ pub(super) struct BodyPrice {
 #[derive(Clone, Copy, Debug)]
 struct Price { compute: u64, comparison: u64 }
 
+#[path = "program_packed_fuel.rs"]
+mod fuel;
+
 pub(super) struct PackedMap {
     // Actual allocations retire before their reservations. The boxed frame
     // stays put when the containing closed-loop owner is moved into its Box.
@@ -333,16 +336,9 @@ impl PackedMap {
         // Pricing is pure scalar arithmetic. Retain any error until the
         // original remaining-allowance check succeeds, without holding the
         // shared worker mutex while calculating the invariant price.
-        let price = self.price(self.frame.capacity, self.frame.len);
+        let prepared = self.price(self.frame.capacity, self.frame.len).map(fuel::Prepared::new);
         let (count, funded) = self.work.with_unscoped_debit(|remaining| {
-            let price = price?;
-            // Leave the original headroom for distinct-key insertion, table
-            // growth and corresponding remaining-body price increases.
-            let count = (remaining.0 / price.compute.max(1) / 4)
-                .min(remaining.1 / price.comparison.max(1) / 4).min(BATCH).max(1);
-            let funded = add(self.funded, count)?;
-            Ok::<_, Error>((mul(price.compute, count)?, mul(price.comparison, count)?,
-                (count, funded)))
+            prepared?.select(remaining, self.funded)
         })?.ok_or(Error::Binding("packed-map entered a foreign work scope"))?;
         self.frame.fuel = count;
         self.issued = count;
