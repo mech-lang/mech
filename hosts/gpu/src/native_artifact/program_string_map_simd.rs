@@ -11,7 +11,7 @@ pub(super) fn emit(
     length: Value,
     table: Value,
     output: Value,
-    kind: Kind,
+    kind: MappingKind,
 ) -> Value {
     let init = b.create_block();
     let scan = b.create_block();
