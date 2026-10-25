@@ -180,7 +180,10 @@ fn selected_template(
 // IR87 / ABI31 loads immutable selected-source spans and maps directly into
 // checked output spare capacity. The original finite join/map prices remain;
 // only a complete initialized-extent receipt permits publishing its length.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 87;
+// IR88 / ABI32 prepare joined-map byte tables once at the owning host
+// boundary, avoiding per-row u16-to-byte conversion. Original source proofs,
+// geometry/extent receipts, work policy69 and finite prices are unchanged.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 88;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

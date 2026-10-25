@@ -13,7 +13,7 @@ pub(super) mod faults;
 pub(super) struct Prepared {
     map: Value,
     handle: NativeValueHandle,
-    table: Vec<u16>,
+    table: Vec<u8>,
     nodes: ManagedNodeReservation,
 }
 struct CopyLoan {
@@ -33,7 +33,7 @@ pub(super) struct Fusing {
     pub view: NativeSelectedStringMatrix,
     map: Value,
     handle: NativeValueHandle,
-    table: Vec<u16>,
+    table: Vec<u8>,
     bytes: Vec<u8>,
     next: u64,
     payload: u64,
@@ -189,7 +189,13 @@ impl Context<'_, '_> {
         if table.try_reserve_exact(128).is_err() || table.capacity() != 128 {
             return Ok(None);
         }
-        table.resize(128, 256u16);
+        // Materialize the byte representation once while this exact immutable
+        // map is admitted. Every high-bit cell is missing; valid zero remains
+        // distinct. The original fixed envelope still covers 256 table bytes.
+        table.resize(
+            128,
+            crate::native_artifact::program_abi::JOIN_MAP_MISSING_BYTE,
+        );
         for entry in entries.entries() {
             let (ValueData::String(key), ValueData::String(value)) =
                 (entry.key().data(), entry.value())
@@ -200,7 +206,7 @@ impl Context<'_, '_> {
                 if value.len() != 1 || !value.is_ascii() {
                     return Ok(None);
                 }
-                table[key.as_bytes()[0] as usize] = value.as_bytes()[0] as u16;
+                table[key.as_bytes()[0] as usize] = value.as_bytes()[0];
             }
         }
         // Optional temporary nodes replace the canonical output's two nodes.

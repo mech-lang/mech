@@ -94,6 +94,11 @@ impl Compiled {
             0,
         ];
         let before = geometry;
+        // Keep the prior u16 representation as an independent scalar oracle.
+        // Missing entries within a byte retain their high-bit representation;
+        // larger markers use the canonical sentinel. Every ASCII output,
+        // including zero, retains its original byte.
+        let prepared = table.map(|value| if value <= 255 { value as u8 } else { 128 });
         // SAFETY: immutable ASCII data, real LF allocation, fixed initialized
         // table and distinct output extent all outlive this synchronous call.
         // Guard bytes make row/tail overwrites visible. The kernel must fill
@@ -102,7 +107,7 @@ impl Compiled {
             (self.entry)(
                 geometry.as_mut_ptr() as u64,
                 flat.len() as u64,
-                table.as_ptr() as u64,
+                prepared.as_ptr() as u64,
                 output.as_mut_ptr().add(lead) as u64,
                 u64::from(active),
             )
@@ -171,7 +176,7 @@ fn joined_transform_keeps_first_missing_zero_outputs_and_fills_every_raw_suffix(
         for missing in 0..length {
             let mut source = vec![b'A'; length];
             source[missing] = b'B';
-            for marker in [128, 129, 255, 256, 32767, 32768, u16::MAX] {
+            for marker in (128..=255).chain([256, 32767, 32768, u16::MAX]) {
                 let mut table = [0u16; 128];
                 table[b'B' as usize] = marker;
                 for c in &implementations {
@@ -208,7 +213,7 @@ fn joined_transform_keeps_first_missing_zero_outputs_and_fills_every_raw_suffix(
 fn joined_transform_rejects_bad_extents_before_publishing_initialization() {
     let implementations = implementations();
     let source = b"aa\nbb\n";
-    let table = [0u16; 128];
+    let table = [0u8; 128];
     let offsets = [2u32, 5];
     for c in &implementations {
         for case in 0..8 {
@@ -255,6 +260,40 @@ fn joined_transform_rejects_bad_extents_before_publishing_initialization() {
             assert_eq!(words[6], 0);
             assert!(output[..8].iter().all(|v| *v == 0xca));
             assert!(output[8 + payload as usize..].iter().all(|v| *v == 0xca));
+        }
+    }
+}
+
+#[test]
+fn joined_byte_table_rejects_every_non_ascii_key_without_publishing() {
+    let implementations = implementations();
+    let table = [0u8; 128];
+    for c in &implementations {
+        for length in [1, 15, 16, 17, 31, 32, 33, 63] {
+            for invalid in 128..=255 {
+                for at in [0, length / 2, length - 1] {
+                    let mut source = vec![b'A'; length];
+                    source[at] = invalid;
+                    let original = source.clone();
+                    let mut output = vec![0xca; length + 16];
+                    let mut words = [source.as_ptr() as u64, length as u64, 0, 0, 1, 0, 0];
+                    let geometry = words;
+                    let result = unsafe {
+                        (c.entry)(
+                            words.as_mut_ptr() as u64,
+                            length as u64,
+                            table.as_ptr() as u64,
+                            output.as_mut_ptr().add(8) as u64,
+                            1,
+                        )
+                    };
+                    assert_eq!(result, u64::MAX);
+                    assert_eq!(words, geometry);
+                    assert_eq!(source, original);
+                    assert!(output[..8].iter().all(|v| *v == 0xca));
+                    assert!(output[8 + length..].iter().all(|v| *v == 0xca));
+                }
+            }
         }
     }
 }
