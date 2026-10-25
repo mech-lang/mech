@@ -20,6 +20,7 @@ pub(in crate::native_artifact) fn slot_bytes(domain: Domain) -> usize {
         size_of::<Slot>()
     }
 }
+#[cfg(any(test, feature = "canonical-native-program"))]
 pub(in crate::native_artifact) fn value_offset(domain: Domain) -> usize {
     if narrow(domain) {
         core::mem::offset_of!(NarrowSlot, value)

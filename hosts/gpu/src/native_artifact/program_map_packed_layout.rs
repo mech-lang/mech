@@ -33,6 +33,7 @@ impl Proof {
     pub fn inclusive(&self) -> bool {
         self.inclusive
     }
+    #[cfg(any(test, feature = "canonical-native-program"))]
     pub fn range_site(&self) -> u32 {
         self.range_site
     }
