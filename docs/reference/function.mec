@@ -41,6 +41,9 @@ name(arg1: value1, arg2: value2)
 - A statement body binds each output declared in its signature.
 - Functions can call themselves recursively.
 - Calls are expressions, so they can be nested in formulas and broadcast over vectors/matrices.
+- A mutable binding declared inside a function is a local value, initialized on
+  each call. Updating it does not allocate retained document state or change an
+  input value. A mutable binding declared at document scope retains its state.
 
 3. Defining Functions
 -------------------------------------------------------------------------------

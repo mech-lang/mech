@@ -1205,13 +1205,13 @@ impl SemanticBuilder {
                     &mut inputs,
                     &mut captures,
                     |builder| {
-                        builder.fsm_local_mutation_depth += 1;
+                        builder.local_mutation_depth += 1;
                         let result = builder.lower_synchronous_fsm_transitions(
                             machine,
                             &transitions,
                             &arm.syntax,
                         );
-                        builder.fsm_local_mutation_depth -= 1;
+                        builder.local_mutation_depth -= 1;
                         result
                     },
                 )?;

@@ -411,13 +411,10 @@ fn validate_schemas(
             crate::resident::set_conversion::conversion_plan(&inputs[0], declared_output).is_ok()
         }
         NativeCollectionPrimitive::TupleScalarProjection => {
-            inputs
-                .iter()
-                .all(|input| input.dimension_parameters().is_empty())
-                && declared_output.dimension_parameters().is_empty()
-                && mech_core::is_positional_selector_schema(inputs[1].body())
+            mech_core::is_positional_selector_schema(inputs[1].body())
                 && crate::native_artifact::structural_values::supported(output)
-                && matches!(first, SchemaBody::Tuple(fields) if fields.iter().any(|field| field == output))
+                && matches!(first, SchemaBody::Tuple(fields) if fields.iter().any(|field|
+                    crate::native_artifact::structural_values::carrier_component_matches(output, field)))
         }
         NativeCollectionPrimitive::MatrixScalarAccess => {
             let selector = inputs[1].body();

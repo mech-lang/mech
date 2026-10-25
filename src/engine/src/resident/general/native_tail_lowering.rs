@@ -1,4 +1,4 @@
-//! Metadata-only native lowering of exact synchronous tail transitions and
+//! Metadata-only native lowering of synchronous transitions, ordinary tail calls and
 //! schema-directed structural observations. No source or resident evaluator.
 use super::native_match_lowering::{Builder, Error, unsupported};
 use crate::{
@@ -122,14 +122,9 @@ impl Builder<'_> {
         let seed = *arguments
             .get(declaration.scrutinee as usize)
             .ok_or(Error::InvalidBinding { node: Some(owner) })?;
-        // This first closed synchronous lowering carries nominal enum state.
-        // General non-tail recursion, suspension and publication remain closed.
-        let SchemaBody::Enum { variants, .. } = self.ty(seed).definition().body() else {
-            return Err(unsupported(owner, "non-enum native tail state"));
-        };
         // A sticky/partial Match is not silently turned into a stateless
-        // failure. The closed subset proves every exact enum state has an
-        // unguarded irrefutable payload arm, independently of source notes.
+        // failure. Prove each enum state or an ordinary argument value has an
+        // unguarded irrefutable arm, independently of descriptive source notes.
         fn irrefutable(pattern: &ControlPattern) -> bool {
             match pattern {
                 CollectionPattern::Wildcard | CollectionPattern::Bind { .. } => true,
@@ -137,13 +132,25 @@ impl Builder<'_> {
                 _ => false,
             }
         }
-        if (0..variants.len()).any(|ordinal| !declaration.arms.iter().any(|arm| {
-            arm.guard.is_none() && matches!(&arm.pattern,
-                crate::MatchPattern::Structural(CollectionPattern::Enum { ordinal: actual, payload })
-                    if *actual as usize == ordinal
-                        && payload.as_deref().is_none_or(irrefutable))
-        })) {
-            return Err(unsupported(owner, "native tail Match is not structurally total"));
+        let total = match self.ty(seed).definition().body() {
+            SchemaBody::Enum { variants, .. } => (0..variants.len()).all(|ordinal|
+                declaration.arms.iter().any(|arm| arm.guard.is_none() && matches!(&arm.pattern,
+                    crate::MatchPattern::Structural(CollectionPattern::Enum { ordinal: actual, payload })
+                        if *actual as usize == ordinal && payload.as_deref().is_none_or(irrefutable)))),
+            // Ordinary tail-recursive functions carry their actual argument
+            // tuple/scalar. An unguarded irrefutable arm proves the same total
+            // match contract without manufacturing a nominal enum in source.
+            _ => declaration.arms.iter().any(|arm| arm.guard.is_none() && match &arm.pattern {
+                crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => true,
+                crate::MatchPattern::Structural(pattern) => irrefutable(pattern),
+                _ => false,
+            }),
+        };
+        if !total {
+            return Err(unsupported(
+                owner,
+                "native tail Match is not structurally total",
+            ));
         }
         for arm in &declaration.arms {
             let _ = tail_prefix(&arm.body)?;
@@ -252,9 +259,10 @@ impl Builder<'_> {
             CollectionPattern::Wildcard => {}
             CollectionPattern::Bind { local, schema } => {
                 let ty = self.type_for_schema(*schema)?;
-                if ty.definition().body() != body
-                    || !ty.definition().dimension_parameters().is_empty()
-                {
+                if !crate::native_artifact::structural_values::carrier_component_matches(
+                    ty.definition().body(),
+                    body,
+                ) {
                     return Err(unsupported(owner, "incompatible structural native binding"));
                 }
                 if *body != SchemaBody::UnsignedInteger(IntegerWidth::W64)
@@ -308,6 +316,40 @@ impl Builder<'_> {
                     )?;
                     path.pop();
                 }
+            }
+            CollectionPattern::Equal(value) => {
+                let peer = match value {
+                    crate::MatchPatternValue::Literal(id) => self.constants.get(id),
+                    crate::MatchPatternValue::Binding(local) => bindings.get(local),
+                    crate::MatchPatternValue::Input(_) => None,
+                }
+                .copied()
+                .ok_or_else(|| unsupported(owner, "native structural equality source"))?;
+                if self.ty(peer).scalar().is_none() || self.ty(peer).definition().body() != body {
+                    return Err(unsupported(owner, "native non-scalar structural equality"));
+                }
+                let projected = self.value(self.ty(peer).clone())?;
+                let select = self.block(at, NativeMatchAction::None)?;
+                self.blocks[select as usize].action = NativeIterationAction::Structural {
+                    source,
+                    path: path.clone().into(),
+                    observation: if *body == SchemaBody::UnsignedInteger(IntegerWidth::W64) {
+                        NativeStructuralObservation::U64
+                    } else {
+                        NativeStructuralObservation::CanonicalValue
+                    },
+                    output: projected,
+                };
+                self.link(tail, select);
+                let success = self.block(at, NativeMatchAction::None)?;
+                self.blocks[select as usize].terminator = NativeMatchTerminator::LiteralBranch {
+                    left: projected,
+                    right: peer,
+                    yes: success,
+                    no: failed,
+                }
+                .into();
+                tail = success;
             }
             CollectionPattern::Enum { ordinal, payload } => {
                 let SchemaBody::Enum { variants, .. } = body else {

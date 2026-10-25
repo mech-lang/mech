@@ -625,6 +625,9 @@ impl SemanticBuilder {
         if lifted_collection.is_some() {
             self.comprehension_depth += 1;
         }
+        // Function-local mutation versions local values. It must not allocate
+        // retained document state or make a pure call depend on its last visit.
+        self.local_mutation_depth += 1;
         let result = (|| match body {
             DocumentFunctionBody::Expression(body) => {
                 self.inline_expression_function_body(name, &body)
@@ -636,6 +639,7 @@ impl SemanticBuilder {
                 self.inline_pattern_function_body(name, &body, &arguments, call)
             }
         })();
+        self.local_mutation_depth -= 1;
         let result = if let Some(lift) = lifted_collection {
             self.comprehension_depth -= 1;
             self.control_depth -= 1;

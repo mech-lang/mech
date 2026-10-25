@@ -729,7 +729,7 @@ pub(super) fn validate_match_inner(
             "match requires a supported result and scalar literal-pattern scrutinee",
         ));
     }
-    if !closed_value(scrutinee)
+    if !draft.schemas.get(scrutinee).is_some_and(is_control_pattern_schema)
         && declaration.arms.iter().any(|arm| {
             matches!(
                 &arm.pattern,
@@ -737,7 +737,7 @@ pub(super) fn validate_match_inner(
             )
         })
     {
-        return Err(invalid("match bindings require a closed value schema"));
+        return Err(invalid("match bindings require a supported value schema"));
     }
     let mut used_inputs = std::collections::BTreeSet::from([declaration.scrutinee]);
     let mut captured_inputs = std::collections::BTreeSet::new();
@@ -1608,6 +1608,27 @@ fn is_optional_control_scalar_body(body: &mech_core::SchemaBody) -> bool {
 pub(crate) fn is_control_value_schema(schema: &mech_core::Schema) -> bool {
     schema.dimension_parameters().is_empty()
         && !matches!(schema.body(), mech_core::SchemaBody::Dynamic)
+}
+
+/// A turn-shaped unsigned buffer or argument tuple carries its live dimensions
+/// in a canonical snapshot. This is structural-pattern authority; closed-value,
+/// literal and capture eligibility remain separate predicates.
+pub(crate) fn is_control_pattern_schema(schema: &mech_core::Schema) -> bool {
+    fn carrier(body: &mech_core::SchemaBody) -> Option<bool> {
+        use mech_core::SchemaBody as B;
+        match body {
+            B::Matrix { element, dimensions } if dimensions.len() == 2
+                && matches!(element.as_ref(), B::UnsignedInteger(_)) => Some(true),
+            B::Tuple(fields) => fields.iter().try_fold(false, |matrix, body|
+                carrier(body).map(|child| matrix || child)),
+            B::Bool | B::Index | B::Id | B::Atom(_) | B::String
+            | B::UnsignedInteger(_) | B::SignedInteger(_) | B::FloatingPoint(_) => Some(false),
+            _ => None,
+        }
+    }
+    is_control_value_schema(schema) || (schema.dimension_parameters().iter()
+        .all(|parameter| parameter.lifetime() == mech_core::DimensionLifetime::Turn)
+        && carrier(schema.body()) == Some(true))
 }
 
 /// Selected control results may retain per-turn Matrix geometry in an

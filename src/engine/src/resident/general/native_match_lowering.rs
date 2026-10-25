@@ -389,7 +389,10 @@ impl Builder<'_> {
                 node: Some(at.node()),
             });
         };
-        if fields.get(ordinal as usize) != Some(self.ty(output).definition().body()) {
+        if !fields.get(ordinal as usize).is_some_and(|body|
+            crate::native_artifact::structural_values::carrier_component_matches(
+                self.ty(output).definition().body(), body,
+            )) {
             return Err(Error::WitnessTypeMismatch { node: at.node() });
         }
         let id = self.block(at, NativeMatchAction::None)?;
