@@ -15,12 +15,13 @@ use crate::native_artifact::program_compiler::packed_loop_codegen::{
     take_cold_recipe_emissions, without_cold_recipes,
     without_lookup_loop_split,
     without_candidate_value_loads, take_candidate_value_emissions,
+    without_paired_candidate_loads, take_paired_candidate_emissions,
 };
 use crate::native_artifact::JitProgramArtifact;
 use crate::native_artifact::program_compiler::cfg_cleanup::{take_cfg_cleanup_emissions, without_cfg_cleanup};
 
 #[derive(Clone, Copy)]
-enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants, PreservingCalls, MutationFacts, CountBounds, LoopConstants, SteadyLoops, ColdRecipes, LookupSplit, CandidateValues }
+enum Pass { EdgeFacts, TagThreading, FrameEffects, LookupFacts, CfgCleanup, LoopOutlining, LoopInvariants, PreservingCalls, MutationFacts, CountBounds, LoopConstants, SteadyLoops, ColdRecipes, LookupSplit, CandidateValues, PairedCandidates }
 impl Pass {
     fn disabled<T>(self, f: impl FnOnce() -> T) -> T {
         match self {
@@ -39,6 +40,7 @@ impl Pass {
             Self::ColdRecipes => without_cold_recipes(f),
             Self::LookupSplit => without_lookup_loop_split(f),
             Self::CandidateValues => without_candidate_value_loads(f),
+            Self::PairedCandidates => without_paired_candidate_loads(f),
         }
     }
     fn check(self, edges: (usize, usize), tags: (usize, usize, usize), effects: (usize, usize, usize), selected: bool) {
@@ -53,7 +55,9 @@ impl Pass {
         let steady = take_steady_emissions();
         let recipes = take_cold_recipe_emissions();
         let candidate_values = take_candidate_value_emissions();
+        let paired_candidates = take_paired_candidate_emissions();
         match self {
+            Self::PairedCandidates if !selected => assert_eq!(paired_candidates, 0),
             Self::CandidateValues if !selected => assert_eq!(candidate_values, 0),
             Self::ColdRecipes if !selected => assert_eq!(recipes, 0),
             Self::SteadyLoops if !selected => assert_eq!(steady,0),
@@ -538,7 +542,13 @@ fn changed_input_equivalence(pass: Pass) {
     let body = structural_projection_tests::COUNT
         .replace("Count", "Accumulate").replace("index", "cursor")
         .replace("width", "extent").replace("counts", "buckets");
-    let source = format!("{body}\n#Accumulate(text<string>, extent<u64>, n<u64>, empty)\n");
+    let compact = matches!(pass, Pass::PairedCandidates);
+    let source = if compact { format!(r#"{body}
++> text
+letters := {{"a":"a", "b":"b", "c":"c", "d":"d", "e":"e", "f":"f", "g":"g", "h":"h"}}
+sequence := text/join([letters{{char}} | char <- text<string>], "")
+#Accumulate(sequence, extent<u64>, n<u64>, empty)
+"#) } else { format!("{body}\n#Accumulate(text<string>, extent<u64>, n<u64>, empty)\n") };
     let original = tests::artifact_source(&source);
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(
         &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap()).unwrap();
@@ -548,10 +558,15 @@ fn changed_input_equivalence(pass: Pass) {
         take_tag_thread_emissions();
         take_frame_effect_emissions();
         take_candidate_value_emissions();
+        take_paired_candidate_emissions();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         if matches!(pass, Pass::CandidateValues) {
             assert!(take_candidate_value_emissions() > 0,
                 "renamed parameterized source must select actual candidate loads");
+        }
+        if compact {
+            assert!(take_paired_candidate_emissions() > 0,
+                "compact immutable producer must select paired slot loads");
         }
         if matches!(pass,Pass::SteadyLoops) { assert!(take_steady_emissions()>0,"changed source must select the actual steady function"); }
         if matches!(pass,Pass::ColdRecipes | Pass::LookupSplit | Pass::CandidateValues) { assert!(take_cold_recipe_emissions()>0,"renamed parameterized source must emit actual cold recipes"); }
@@ -563,8 +578,15 @@ fn changed_input_equivalence(pass: Pass) {
         let unchanged_facts = take_edge_fact_emissions();
         let unchanged_tags = take_tag_thread_emissions();
         pass.check(unchanged_facts, unchanged_tags, take_frame_effect_emissions(), false);
-        let long_text = (0..4099).map(|index| char::from(b'a' + ((index * 7 + index / 26) % 26) as u8))
-            .collect::<String>();
+        let long_text = if compact {
+            let mut state = 0x7ab1_892d_6103_7fc5u64;
+            (0..4099).map(|_| {
+                state ^= state << 13; state ^= state >> 7; state ^= state << 17;
+                char::from(b'a' + (state & 7) as u8)
+            }).collect::<String>()
+        } else {
+            (0..4099).map(|index| char::from(b'a' + ((index * 7 + index / 26) % 26) as u8)).collect::<String>()
+        };
         // Reuse this fixture's existing large-input work allowance. Selected
         // prefix lengths below still straddle each actual prepaid boundary.
         let one_key_text = "a".repeat(4099);
@@ -575,13 +597,13 @@ fn changed_input_equivalence(pass: Pass) {
             // Bounds must still use the actual selected source, not n.
             ("abc", 2, 4),
         ];
-        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining | Pass::LoopInvariants | Pass::MutationFacts | Pass::CountBounds | Pass::LoopConstants | Pass::SteadyLoops | Pass::ColdRecipes | Pass::LookupSplit | Pass::CandidateValues) {
+        if matches!(pass, Pass::FrameEffects | Pass::LookupFacts | Pass::CfgCleanup | Pass::LoopOutlining | Pass::LoopInvariants | Pass::MutationFacts | Pass::CountBounds | Pass::LoopConstants | Pass::SteadyLoops | Pass::ColdRecipes | Pass::LookupSplit | Pass::CandidateValues | Pass::PairedCandidates) {
             cases.push((long_text.as_str(), 3, long_text.len() as u64));
             // Unknown ASCII domain at width18 requires both key words. They
             // must survive refills although refill never reads either word.
             cases.push((long_text.as_str(), 18, long_text.len() as u64));
         }
-        if matches!(pass, Pass::SteadyLoops | Pass::ColdRecipes | Pass::LookupSplit | Pass::CandidateValues) {
+        if matches!(pass, Pass::SteadyLoops | Pass::ColdRecipes | Pass::LookupSplit | Pass::CandidateValues | Pass::PairedCandidates) {
             // A deterministic single-key map exercises both sides of prepaid
             // batch boundaries and source endpoints, including a partial last
             // batch. Compare all output, precise pre-publication fuel/work and
@@ -590,6 +612,10 @@ fn changed_input_equivalence(pass: Pass) {
                 for extent in [1, 2] { cases.push((one_key_text.as_str(), extent, n)); }
             }
         }
+        // This producer declares eight output characters. The paired corpus
+        // uses that producer's domain; all original unrestricted cases remain
+        // in the existing wide-key and fallback pass comparisons above.
+        if compact { cases.retain(|(text, _, _)| text.bytes().all(|byte| b"abcdefgh".contains(&byte))); }
         for (text, extent, n) in cases {
             let mut executions = Vec::new();
             for (version, jit) in [&optimized, &unchanged].into_iter().enumerate() {

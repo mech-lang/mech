@@ -9,6 +9,8 @@ use super::packed_maps::{self, FrameState};
 pub(in crate::native_artifact) use super::packed_maps::{take_frame_effect_emissions, without_frame_effects};
 #[cfg(test)]
 pub(in crate::native_artifact) use super::packed_maps::{without_candidate_value_loads, take_candidate_value_emissions};
+#[cfg(test)]
+pub(in crate::native_artifact) use super::packed_maps::{without_paired_candidate_loads, take_paired_candidate_emissions};
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types, condcodes::{FloatCC, IntCC}};
 use cranelift_frontend::FunctionBuilder;
 use super::ssa_words::Words;

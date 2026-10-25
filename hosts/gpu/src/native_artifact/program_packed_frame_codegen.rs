@@ -48,7 +48,9 @@ fn effects(operation: u64) -> Option<Effects> {
 thread_local! {
     static EFFECTS_DISABLED: Cell<bool> = const { Cell::new(false) };
     static CANDIDATE_VALUES_DISABLED: Cell<bool> = const { Cell::new(false) };
+    static PAIRED_CANDIDATES_DISABLED: Cell<bool> = const { Cell::new(false) };
     static CANDIDATE_VALUE_EMISSIONS: Cell<usize> = const { Cell::new(0) };
+    static PAIRED_CANDIDATE_EMISSIONS: Cell<usize> = const { Cell::new(0) };
     static EMISSIONS: Cell<(usize, usize, usize)> = const { Cell::new((0, 0, 0)) };
 }
 #[cfg(test)]
@@ -63,6 +65,19 @@ pub(in crate::native_artifact) fn without_candidate_value_loads<T>(f: impl FnOnc
 #[cfg(test)]
 pub(in crate::native_artifact) fn take_candidate_value_emissions() -> usize {
     CANDIDATE_VALUE_EMISSIONS.with(|v| v.replace(0))
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn without_paired_candidate_loads<T>(f: impl FnOnce() -> T) -> T {
+    struct Restore(bool);
+    impl Drop for Restore {
+        fn drop(&mut self) { PAIRED_CANDIDATES_DISABLED.with(|v| v.set(self.0)); }
+    }
+    let _restore = Restore(PAIRED_CANDIDATES_DISABLED.with(|v| v.replace(true)));
+    f()
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn take_paired_candidate_emissions() -> usize {
+    PAIRED_CANDIDATE_EMISSIONS.with(|v| v.replace(0))
 }
 #[cfg(test)]
 pub(in crate::native_artifact) fn without_frame_effects<T>(f: impl FnOnce() -> T) -> T {
@@ -101,6 +116,7 @@ pub(in crate::native_artifact) struct FrameState {
     // The valid bit is cleared at pointer changes, helper calls and reloads.
     candidate_value: Option<(Variable, Variable)>,
     candidate_value_loads: Cell<usize>,
+    paired_candidate_loads: Cell<usize>,
     // Constant-size actual emission evidence, aggregated by private operation.
     // It does not claim that a runtime path executed or authorize any access.
     emissions: Cell<[u64; 14]>,
@@ -108,7 +124,7 @@ pub(in crate::native_artifact) struct FrameState {
 }
 impl FrameState {
     pub(super) fn memory(pointer: Value, domain: Domain) -> Self {
-        Self { pointer, words: None, effects_enabled: false, dirty_only: false, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, lookup_mode: LookupMode::Dynamic, candidate_value: None, candidate_value_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
+        Self { pointer, words: None, effects_enabled: false, dirty_only: false, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, lookup_mode: LookupMode::Dynamic, candidate_value: None, candidate_value_loads: Cell::new(0), paired_candidate_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
     }
     pub(in crate::native_artifact) fn registers(b: &mut FunctionBuilder<'_>, pointer: Value, domain: Domain) -> Self {
         assert_eq!(core::mem::size_of::<Frame>() % 8, 0);
@@ -120,7 +136,7 @@ impl FrameState {
         }).collect();
         let effects_enabled = effects_enabled();
         let dirty_only = super::super::packed_loop_codegen::invariant_loops_enabled();
-        Self { pointer, words: Some(words), effects_enabled, dirty_only, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, lookup_mode: LookupMode::Dynamic, candidate_value: None, candidate_value_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
+        Self { pointer, words: Some(words), effects_enabled, dirty_only, constant_packet: None, constant_values: None, constant_hash_loads: Cell::new(0), specialized_width: None, lookup_mode: LookupMode::Dynamic, candidate_value: None, candidate_value_loads: Cell::new(0), paired_candidate_loads: Cell::new(0), emissions: Cell::new([0; 14]), domain }
     }
     pub(in crate::native_artifact) fn with_constant_packet(mut self, packet: Option<Value>) -> Self {
         self.constant_packet = packet; self
@@ -160,6 +176,18 @@ impl FrameState {
         self
     }
     pub(super) fn has_candidate_values(&self) -> bool { self.candidate_value.is_some() }
+    pub(super) fn paired_candidates_enabled(&self) -> bool {
+        #[cfg(test)]
+        if PAIRED_CANDIDATES_DISABLED.with(Cell::get) { return false; }
+        self.has_candidate_values()
+    }
+    pub(super) fn note_paired_candidate_load(&self) {
+        assert!(self.has_candidate_values());
+        self.paired_candidate_loads.set(self.paired_candidate_loads.get()+1);
+        #[cfg(test)]
+        PAIRED_CANDIDATE_EMISSIONS.with(|v| v.set(v.get()+1));
+    }
+    pub(in crate::native_artifact) fn paired_candidate_loads(&self) -> usize { self.paired_candidate_loads.get() }
     pub(super) fn note_candidate_value_load(&self) {
         assert!(self.has_candidate_values());
         self.candidate_value_loads.set(self.candidate_value_loads.get()+1);

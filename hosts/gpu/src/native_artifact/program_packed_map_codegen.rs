@@ -12,6 +12,8 @@ pub(in crate::native_artifact) use frame_state::{FrameState, LookupMode, effects
 pub(in crate::native_artifact) use frame_state::{take_frame_effect_emissions, without_frame_effects};
 #[cfg(test)]
 pub(in crate::native_artifact) use frame_state::{without_candidate_value_loads, take_candidate_value_emissions};
+#[cfg(test)]
+pub(in crate::native_artifact) use frame_state::{without_paired_candidate_loads, take_paired_candidate_emissions};
 
 #[cfg(test)]
 #[path = "program_packed_hash_tests.rs"]
@@ -388,15 +390,28 @@ fn probe_fresh_core_to(b: &mut FunctionBuilder<'_>, frame: &FrameState,
         // dependencies after the control comparison, with a ready group base.
         let displacement = b.ins().imul_imm(bit, (slot_bytes(frame.domain) / GROUP) as i64);
         let address = b.ins().iadd(group_slots, displacement);
-        let stored_low = get(b, address, core::mem::offset_of!(Slot, low));
         // This is an actual fingerprint candidate in the admitted initialized
         // slot vector, not an arbitrary speculative pointer. Loading its count
         // beside the key removes the equality branch from the load's dependency
         // chain. A mismatching key never publishes or consumes the value.
-        let candidate_value = frame.has_candidate_values().then(|| {
-            frame.note_candidate_value_load();
-            get(b, address, value_offset(frame.domain))
-        });
+        let (stored_low, candidate_value) = if narrow && frame.paired_candidates_enabled() {
+            // NarrowSlot is precisely { low: u64, value: u64 }. Both words are
+            // initialized, owned and inside this candidate's admitted slot.
+            // A scalar 128-bit read exposes their shared address to the backend;
+            // splitting preserves both complete u64 words, without count narrowing.
+            debug_assert_eq!(slot_bytes(frame.domain), 16);
+            let pair = b.ins().load(types::I128, MemFlags::new().with_endianness(Endianness::Little), address, 0);
+            let (key, value) = b.ins().isplit(pair);
+            frame.note_candidate_value_load(); frame.note_paired_candidate_load();
+            (key, Some(value))
+        } else {
+            let key = get(b, address, core::mem::offset_of!(Slot, low));
+            let value = frame.has_candidate_values().then(|| {
+                frame.note_candidate_value_load();
+                get(b, address, value_offset(frame.domain))
+            });
+            (key, value)
+        };
         let same_low = b.ins().icmp(IntCC::Equal, low, stored_low);
         let same = if narrow { same_low } else {
             let stored_high = get(b, address, core::mem::offset_of!(Slot, high));
