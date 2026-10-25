@@ -48,6 +48,8 @@ pub(super) mod cfg_cleanup;
 pub(super) mod parallel_codegen;
 #[path = "program_string_map_codegen.rs"]
 pub(super) mod string_map_codegen;
+#[path = "program_ascii_map_codegen.rs"]
+pub(super) mod ascii_map_codegen;
 #[path = "program_join_map_codegen.rs"]
 pub(super) mod join_map_codegen;
 #[path = "program_tail_codegen.rs"]

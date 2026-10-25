@@ -56,6 +56,7 @@ impl Compiled {
             vec![0xcb; input.len()]
         };
         let original_output = output.clone();
+        let prepared = crate::native_artifact::program_ascii_map::test_table(table);
         let first_missing = source
             .iter()
             .position(|byte| table[*byte as usize] >= 128)
@@ -73,7 +74,7 @@ impl Compiled {
             (self.entry)(
                 source_pointer as u64,
                 source.len() as u64,
-                table.as_ptr() as u64,
+                prepared.as_ptr() as u64,
                 output.as_mut_ptr().add(offset) as u64,
                 0,
             )
@@ -123,6 +124,38 @@ fn byte_map_batches_keep_the_exact_first_failure_for_all_unsigned_markers() {
                 for in_place in [false, true] {
                     scalar.check(&source, &table, missing % 8, in_place);
                     vector.check(&source, &table, missing % 8, in_place);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn compact_maps_preserve_all_ascii_domains_zero_missing_keys_tails_and_aliasing() {
+    let scalar = Compiled::new(false);
+    let vector = Compiled::new(cfg!(all(target_arch = "aarch64", target_endian = "little")));
+    for mask in [0, 32, 64, 96] {
+        for domain in [0, 32, 64, 96] {
+            let table = core::array::from_fn(|key| {
+                if key as u8 & mask == domain & mask && key & 31 != 11 {
+                    ((key & 31) * 7 % 128) as u16
+                } else {
+                    256
+                }
+            });
+            let prepared = crate::native_artifact::program_ascii_map::test_table(&table);
+            assert_eq!(prepared[crate::native_artifact::program_ascii_map::KIND], 1);
+            let filler = (0..128)
+                .find(|&key| table[key] < 128 && !matches!(key, 10 | 13))
+                .unwrap() as u8;
+            for length in [1, 7, 8, 15, 16, 17, 31, 32, 33, 60, 65] {
+                for key in 0..128 {
+                    let mut source = vec![filler; length];
+                    source[length / 2] = key;
+                    for in_place in [false, true] {
+                        scalar.check(&source, &table, length % 8, in_place);
+                        vector.check(&source, &table, length % 8, in_place);
+                    }
                 }
             }
         }

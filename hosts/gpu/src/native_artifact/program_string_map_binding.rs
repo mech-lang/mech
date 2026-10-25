@@ -1,5 +1,6 @@
 //! Bind a finite byte map and genuine output scratch for an emitted map loop.
 use super::*;
+use crate::native_artifact::program_ascii_map as ascii_map;
 use mech_engine::native_artifact::NativeStringMapRegion;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
@@ -45,7 +46,7 @@ impl Owned {
 }
 
 pub(super) struct Buffer {
-    table: Vec<u16>,
+    table: Vec<u8>,
     bytes: Vec<u8>,
     owned: Option<Owned>,
     reservation: ManagedMemoryReservation,
@@ -343,12 +344,12 @@ impl State {
         let reservation = memory.reserve_capacity(if owned.is_some() { 256 } else { scratch })?;
         let mut table = Vec::new();
         table
-            .try_reserve_exact(128)
+            .try_reserve_exact(ascii_map::BYTES)
             .map_err(|_| invalid("compiled String map table allocation"))?;
-        if table.capacity() > 128 {
+        if table.capacity() > ascii_map::BYTES {
             return Err(invalid("compiled String map table capacity"));
         }
-        table.resize(128, 256u16);
+        table.resize(ascii_map::BYTES, ascii_map::MISSING);
         for entry in map.entries() {
             let (ValueData::String(key), ValueData::String(value)) =
                 (entry.key().data(), entry.value())
@@ -356,9 +357,10 @@ impl State {
                 unreachable!()
             };
             if key.len() == 1 && key.is_ascii() {
-                table[key.as_bytes()[0] as usize] = u16::from(value.as_bytes()[0]);
+                table[ascii_map::HEADER + key.as_bytes()[0] as usize] = value.as_bytes()[0];
             }
         }
+        ascii_map::prepare(&mut table);
         let mut bytes = Vec::new();
         if owned.is_none() {
             bytes

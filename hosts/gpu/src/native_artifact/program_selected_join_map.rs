@@ -2,6 +2,7 @@
 //! Original source/copy slots remain absent; a missing key is reported later.
 use super::*;
 use crate::native_artifact::NativeValueHandle;
+use crate::native_artifact::program_ascii_map as ascii_map;
 use mech_core::ManagedNodeReservation;
 use mech_engine::native_artifact::{
     NativePrivateStringBuffer, NativeStringMapRegion, NativeTextLineJoinChunk,
@@ -186,14 +187,16 @@ impl Context<'_, '_> {
             return Ok(None);
         }
         let mut table = Vec::new();
-        if table.try_reserve_exact(128).is_err() || table.capacity() != 128 {
+        if table.try_reserve_exact(ascii_map::BYTES).is_err()
+            || table.capacity() != ascii_map::BYTES
+        {
             return Ok(None);
         }
         // Materialize the byte representation once while this exact immutable
         // map is admitted. Every high-bit cell is missing; valid zero remains
         // distinct. The original fixed envelope still covers 256 table bytes.
         table.resize(
-            128,
+            ascii_map::BYTES,
             crate::native_artifact::program_abi::JOIN_MAP_MISSING_BYTE,
         );
         for entry in entries.entries() {
@@ -206,9 +209,10 @@ impl Context<'_, '_> {
                 if value.len() != 1 || !value.is_ascii() {
                     return Ok(None);
                 }
-                table[key.as_bytes()[0] as usize] = value.as_bytes()[0];
+                table[ascii_map::HEADER + key.as_bytes()[0] as usize] = value.as_bytes()[0];
             }
         }
+        ascii_map::prepare(&mut table);
         // Optional temporary nodes replace the canonical output's two nodes.
         // A failed optional claim leaves the original join fully available.
         let Ok(nodes) = memory.reserve_nodes(2) else {

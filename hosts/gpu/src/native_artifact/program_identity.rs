@@ -189,7 +189,10 @@ fn selected_template(
 // IR90 marks only owner-proved private origin/view/scalar-loan homes nontrapping.
 // Mutable values, callback barriers, source bounds, ABI32 and policy69 remain;
 // no readonly, alignment or arbitrary code-motion permission is introduced.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 90;
+// IR91 / ABI33 share a prepared byte-table format between ordinary and joined
+// mapping. A verified low-five-bit projection selects a two-vector leaf;
+// incompatible maps retain all 128 cells. All source prices and owners remain.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 91;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
