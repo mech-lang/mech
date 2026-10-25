@@ -40,47 +40,47 @@ pub(super) struct Frame {
     pub controls: u64,
     pub lookup_cache: u64,
 }
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const FRAME_WORDS: usize = 20;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const SLOTS: usize = 0;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const CAPACITY: usize = 1;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const LENGTH: usize = 2;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const FUEL: usize = 3;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const UPDATES: usize = 4;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const KEY_LOW: usize = 5;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const KEY_HIGH: usize = 6;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const ENTRY_POINTER: usize = 7;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const ENTRY_KNOWN: usize = 8;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const SOURCE_PTR: usize = 9;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const SOURCE_LEN: usize = 10;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const WIDTH: usize = 11;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const PREVIOUS_START: usize = 12;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const LOW_MASK: usize = 13;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const HIGH_MASK: usize = 14;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const RANGE_CALL_ALLOWED: usize = 15;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const READ_CALL_ALLOWED: usize = 16;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const WRITE_CALL_ALLOWED: usize = 17;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const CONTROLS: usize = 18;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const LOOKUP_CACHE: usize = 19;
 
 #[repr(C)]
@@ -90,13 +90,13 @@ pub(super) struct Slot {
     pub high: u64,
     pub value: u64,
 }
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const SLOT_WORDS: usize = 3;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const SLOT_LOW: usize = 0;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const SLOT_HIGH: usize = 1;
-#[cfg(any(test, feature = "canonical-native-program"))]
+#[cfg(test)]
 pub(super) const SLOT_VALUE: usize = 2;
 
 #[path = "program_packed_slots.rs"]
