@@ -144,9 +144,11 @@ pub mod snapshot;
 pub mod source_diagnostic;
 pub mod state_journal;
 pub mod stdlib;
+mod text_fragment;
 pub mod structures;
 pub mod types;
 
+pub use self::text_fragment::Utf8Fragment;
 pub use self::browser_document::root_document_program_output_id;
 pub use self::cell_binding::*;
 pub use self::element::*;
