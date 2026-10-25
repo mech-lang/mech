@@ -9,6 +9,17 @@ impl Chunk {
         end: u64,
         target: &mut String,
     ) -> Result<(), InvokeError> {
+        // The byte routine appends only complete, validated UTF8 line spans.
+        // It leaves the old length intact on error and never changes that prefix.
+        self.append_payload_bytes(first, end, unsafe { target.as_mut_vec() })
+    }
+
+    pub(super) fn append_payload_bytes(
+        &self,
+        first: u64,
+        end: u64,
+        output: &mut Vec<u8>,
+    ) -> Result<(), InvokeError> {
         let offsets = self.offsets.as_ref().ok_or(InvokeError::InvalidInput)?;
         let lower = usize::try_from(
             first
@@ -30,11 +41,11 @@ impl Chunk {
                 .ok_or(InvokeError::InvalidInput)?,
         )
         .map_err(|_| InvokeError::InvalidInput)?;
-        let old_len = target.len();
+        let old_len = output.len();
         let new_len = old_len
             .checked_add(payload)
             .ok_or(InvokeError::InvalidInput)?;
-        if new_len > target.capacity() {
+        if new_len > output.capacity() {
             return Err(InvokeError::InvalidInput);
         }
         let source = self.bytes.as_str().as_bytes();
@@ -54,7 +65,6 @@ impl Chunk {
         // No mutable borrow, growth, helper callback or source retirement occurs
         // inside this loop. Publish the new length only after all bytes exist;
         // an early error leaves the original String length and UTF8 intact.
-        let output = unsafe { target.as_mut_vec() };
         let destination = output.as_mut_ptr();
         let mut written = old_len;
         for &lf in selected {

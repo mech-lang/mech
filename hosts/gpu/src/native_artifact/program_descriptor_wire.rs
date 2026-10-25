@@ -196,11 +196,21 @@ pub(super) fn decode(
     {
         return Err("descriptor image inventory differs from its plan".into());
     }
-    let frozen_maps = w.map_owner_words.as_ref().map(|owner|
-        native::program_frozen_map_layout::Layout::derive(&plan, owner, &w.closed_tails))
-        .transpose().map_err(str::to_owned)?.unwrap_or_default();
+    let frozen_maps = w
+        .map_owner_words
+        .as_ref()
+        .map(|owner| {
+            native::program_frozen_map_layout::Layout::derive(&plan, owner, &w.closed_tails)
+        })
+        .transpose()
+        .map_err(str::to_owned)?
+        .unwrap_or_default();
     if frozen_maps != w.frozen_maps {
         return Err("frozen-map descriptor proof differs from its complete source uses".into());
+    }
+    let selected_joins = native::program_selected_join_layout::Layout::derive(&plan)?;
+    if selected_joins.maps != w.selected_joins.maps {
+        return Err("selected-join map proof differs from its complete source uses".into());
     }
     let descriptor = NativeProgramDescriptor {
         plan,

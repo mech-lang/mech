@@ -86,6 +86,17 @@ impl NativeTextLineMatrix {
         )?;
         Ok(true)
     }
+    pub(super) fn append_capture_join_chunk(
+        &mut self,
+        first: u64,
+        end: u64,
+        target: &mut Vec<u8>,
+    ) -> Result<Option<u64>, InvokeError> {
+        let Backing::Captured(owner) = &mut self.backing else {
+            return Err(InvokeError::InvalidInput);
+        };
+        owner.append_joined_chunk(first, end, target)
+    }
     pub fn shape(&self) -> &ShapeInstance {
         &self.shape
     }
