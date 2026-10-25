@@ -57,7 +57,7 @@ fn define_leaf<M: Module>(
     {
         let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
         let entry = b.create_block();
-        let kind = b.create_block();
+        let geometry_kind = b.create_block();
         let lone_check = b.create_block();
         let offsets_check = b.create_block();
         let setup = b.create_block();
@@ -123,8 +123,8 @@ fn define_leaf<M: Module>(
         let wraps = b.ins().icmp(IntCC::UnsignedLessThan, end, first);
         let bad_enabled = b.ins().icmp_imm(IntCC::UnsignedGreaterThan, enabled, 1);
         let invalid = b.ins().bor(wraps, bad_enabled);
-        b.ins().brif(invalid, error, &[], kind, &[]);
-        b.switch_to_block(kind);
+        b.ins().brif(invalid, error, &[], geometry_kind, &[]);
+        b.switch_to_block(geometry_kind);
         let lone = b.ins().icmp_imm(IntCC::Equal, offsets, 0);
         b.ins().brif(lone, lone_check, &[], offsets_check, &[]);
         b.switch_to_block(lone_check);
