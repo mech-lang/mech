@@ -54,8 +54,7 @@ impl Pass {
         let recipes = take_cold_recipe_emissions();
         let candidate_values = take_candidate_value_emissions();
         match self {
-            Self::CandidateValues if selected => assert!(candidate_values > 0),
-            Self::CandidateValues => assert_eq!(candidate_values, 0),
+            Self::CandidateValues if !selected => assert_eq!(candidate_values, 0),
             Self::ColdRecipes if !selected => assert_eq!(recipes, 0),
             Self::SteadyLoops if !selected => assert_eq!(steady,0),
             Self::LoopConstants if selected => assert!(constants > 0),
@@ -550,6 +549,10 @@ fn changed_input_equivalence(pass: Pass) {
         take_frame_effect_emissions();
         take_candidate_value_emissions();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        if matches!(pass, Pass::CandidateValues) {
+            assert!(take_candidate_value_emissions() > 0,
+                "renamed parameterized source must select actual candidate loads");
+        }
         if matches!(pass,Pass::SteadyLoops) { assert!(take_steady_emissions()>0,"changed source must select the actual steady function"); }
         if matches!(pass,Pass::ColdRecipes | Pass::LookupSplit | Pass::CandidateValues) { assert!(take_cold_recipe_emissions()>0,"renamed parameterized source must emit actual cold recipes"); }
         let emitted = take_edge_fact_emissions();
