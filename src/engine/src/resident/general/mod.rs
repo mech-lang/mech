@@ -5479,6 +5479,15 @@ fn closed_producer_disposition(
     {
         return Some(ClosedProducerDisposition::DeferredPureValue);
     }
+    #[cfg(feature = "integer_bits")]
+    if operation.module_path.as_ref() == ["bits"]
+        && crate::intrinsics::bits::OPERATIONS.iter()
+            .any(|operation_kind| operation_kind.item() == operation.operation_name)
+    {
+        // These exact pure factories execute through their maintained kernels;
+        // this classification does not claim a closed-value folding owner.
+        return Some(ClosedProducerDisposition::DeferredPureValue);
+    }
     if operation.module_path.as_ref() == ["set"] {
         return match operation.operation_name.as_str() {
             "insert" | "remove" => Some(ClosedProducerDisposition::DeferredStatefulMutation),
