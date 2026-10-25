@@ -240,6 +240,76 @@ fn private_home_contract_preserves_first_failure_and_finite_work_accounting() {
 }
 
 #[test]
+fn pure_scalar_graph_preserves_window_resumes_against_memory_backed_reference() {
+    use crate::native_artifact::program_compiler::scalar_loop_codegen::without_scalar_loops;
+    let renamed = source().replace("#Locate", "#FindRows")
+        .replace(":Skip", ":Search").replace(":Take", ":Collect").replace(":Ready", ":Finished");
+    for source in [source(), renamed.as_str()] {
+        for artifact in call_cache_tests::artifacts(source) {
+            let catalog = mech_stdlib::source_catalog();
+            let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+            let metadata = object.metadata();
+            let loops = metadata["compiled_scalar_loops"].as_array().unwrap();
+            assert_eq!(loops.len(), 1, "{metadata}");
+            let proof = &loops[0];
+            assert!(proof["register_words"].as_u64().unwrap() > 3);
+            assert!(!proof["folded_branches"].as_array().unwrap().is_empty());
+            assert!(!proof["known_latches"].as_array().unwrap().is_empty());
+            assert!(proof["fixed_template_instructions"].as_u64().unwrap() <= 1024);
+            assert!(proof["maximum_source_instructions"].as_u64().unwrap() <= 512);
+            let reference = without_scalar_loops(|| {
+                crate::native_artifact::emit_program_object(&artifact, &catalog)
+            }).unwrap();
+            assert!(reference.metadata()["compiled_scalar_loops"].as_array().unwrap().is_empty());
+            let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let ordinary = without_scalar_loops(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+            for text in [
+                "skip\nopen\nA\nB\nclose\nafter\n",
+                "skip\r\nopen\r\ne\u{301}\r\n猫\r\nclose\r\nafter\r",
+                "", "missing\n", "open\nA", "open\nclose\n",
+            ] {
+                for incremental in [false, true] {
+                    assert_eq!(run_windowed_delivery(&optimized, text, incremental),
+                        run_windowed_delivery(&ordinary, text, incremental));
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn pure_scalar_graph_preserves_first_errors_and_original_finite_work() {
+    use crate::native_artifact::program_compiler::scalar_loop_codegen::without_scalar_loops;
+    let overflow = source().replace(":Skip(i + 1u64)", ":Skip(i + 18446744073709551615u64)");
+    for source in [source(), overflow.as_str()] {
+        for artifact in call_cache_tests::artifacts(source) {
+            let catalog = mech_stdlib::source_catalog();
+            let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let ordinary = without_scalar_loops(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+            for max_work in [0, 256, 4096, 65536, 1_000_000_000] {
+                let mut outcomes = Vec::new();
+                for jit in [&ordinary, &optimized] {
+                    let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                    let descriptor = jit.descriptor();
+                    let inputs = [string_value(descriptor,
+                        descriptor.plan.transport_input_type(0).schema(),
+                        "skip\nopen\nA\nB\nclose\nafter\n", &memory)];
+                    let mut outputs = vec![None; descriptor.plan.transport_output_count()];
+                    let mut limit = limits();
+                    limit.execution.max_work = max_work;
+                    let result = jit.evaluate_into(&inputs, &mut outputs, limit, &memory);
+                    outcomes.push(format!("{result:?}"));
+                    if result.is_err() { assert!(outputs.iter().all(Option::is_none)); }
+                    drop((inputs, outputs));
+                    assert_eq!(memory.used_bytes(), 0);
+                }
+                assert_eq!(outcomes[0], outcomes[1], "max_work={max_work}");
+            }
+        }
+    }
+}
+
+#[test]
 fn first_eof_window_runs_source_before_installing_final_count() {
     for artifact in call_cache_tests::artifacts(source()) {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();

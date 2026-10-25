@@ -233,7 +233,7 @@ fn load(
 mod codegen_report;
 pub(super) use codegen_report::{
     BoundCallShim, CfgCleanup, CodegenReport, ColdSnapshot, CountValueLoop, InvariantLoop,
-    MutationLoop, OutlinedLoop, PreservingCallRegion, RegionToken, SteadyLoop,
+    MutationLoop, OutlinedLoop, PreservingCallRegion, RegionToken, ScalarLoop, SteadyLoop,
 };
 
 fn define<M: Module>(
@@ -767,6 +767,10 @@ pub(super) fn define_cfg<M: Module>(
             b.switch_to_block(blocks[index].expect("reachable block"));
             #[cfg(feature = "canonical-native-program")]
             if let Some(hooks) = &hooks {
+                super::program_compiler::scalar_loop_codegen::emit_entry(
+                    &mut b, frame, locals, plan, &closed, &aggregates, &borrowed,
+                    prefix.as_ref(), prefix_facts, index, hooks, &blocks, error, &mut report,
+                )?;
                 let outlined = packed_functions
                     .iter()
                     .find(|(site, _, _, _)| *site == index)

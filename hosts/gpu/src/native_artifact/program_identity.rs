@@ -192,7 +192,10 @@ fn selected_template(
 // IR91 / ABI33 share a prepared byte-table format between ordinary and joined
 // mapping. A verified low-five-bit projection selects a two-vector leaf;
 // incompatible maps retain all 128 cells. All source prices and owners remain.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 91;
+// IR92 runs admitted callback-free scalar Tails with the maintained bounded
+// tag graph and SSA aggregate/view homes. Original checkpoint, error, work
+// prices, fallback and owner-retirement boundaries remain; ABI33 is unchanged.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 92;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

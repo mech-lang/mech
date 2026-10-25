@@ -36,6 +36,10 @@ pub(super) mod borrowed_codegen;
 pub(super) mod prefix_codegen;
 #[path = "program_scalar_aggregates.rs"]
 pub(super) mod scalar_aggregates;
+#[path = "program_ssa_words.rs"]
+pub(super) mod ssa_words;
+#[path = "program_scalar_loop_codegen.rs"]
+pub(super) mod scalar_loop_codegen;
 #[path = "program_map_owner_codegen.rs"]
 pub(super) mod map_owner_codegen;
 #[path = "program_packed_map_codegen.rs"]
@@ -210,6 +214,7 @@ impl NativeProgramObject {
             "compiled_header_continuation_regions": usize::from(self.descriptor.prefix.is_some()),
             "compiled_source_edge_facts": &self.codegen.source_edge_facts,
             "compiled_tag_threading": &self.codegen.tag_threading,
+            "compiled_scalar_loops": &self.codegen.scalar_loops,
             "compiled_frame_effects": &self.codegen.frame_effects,
             "compiled_guarded_loops": &self.codegen.guarded_loops,
             "compiled_lookup_facts": &self.codegen.lookup_facts,

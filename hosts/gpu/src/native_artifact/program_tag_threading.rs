@@ -108,6 +108,14 @@ fn transfer(code: CodePlan<'_>, closed: &Layout, id: usize, owner: &NativeMapOwn
     if let Some(span) = owner.span_site(site).map(|i| &owner.spans()[i]) {
         return (span.region() == owner_index).then(Transfer::default);
     }
+    if let Action::LibraryCall { template, output, .. } = code.blocks()[site].action() {
+        return (owner.call_region(site) == Some(owner_index)
+            && matches!(template.primitive(), P::MapContainsKey | P::MapKeyAccess | P::MapInsert))
+            .then(|| Transfer { writes: vec![(output.get() as usize, Expr::Copy(Input::Unknown))] });
+    }
+    scalar_transfer(code, site)
+}
+fn scalar_transfer(code: CodePlan<'_>, site: usize) -> Option<Transfer> {
     Some(match code.blocks()[site].action() {
         Action::Scalar(Scalar::None) => Transfer::default(),
         Action::Scalar(Scalar::Copy { source, output }) if code.kind(*output).is_some() =>
@@ -118,9 +126,6 @@ fn transfer(code: CodePlan<'_>, closed: &Layout, id: usize, owner: &NativeMapOwn
             } else { Expr::Copy(Input::Unknown) };
             Transfer { writes: vec![(output.get() as usize, expr)] }
         }
-        Action::LibraryCall { template, output, .. } if owner.call_region(site) == Some(owner_index)
-            && matches!(template.primitive(), P::MapContainsKey | P::MapKeyAccess | P::MapInsert) =>
-            Transfer { writes: vec![(output.get() as usize, Expr::Copy(Input::Unknown))] },
         _ => return None,
     })
 }
@@ -170,16 +175,48 @@ pub(super) fn derive(code: CodePlan<'_>, closed: &Layout, id: usize,
 {
     let region = &closed.regions[id];
     region.packed.as_ref()?;
+    let carrier_word = field(owner.aggregates(), region.tail.carrier(), 0)?;
+    let transfers = closed.sites.iter().enumerate()
+        .filter(|(_, here)| **here == Some(id))
+        .map(|(site, _)| Some((site, transfer(code, closed, id, owner, aggregates, site)?)))
+        .collect::<Option<BTreeMap<_, _>>>()?;
+    derive_from(code, closed, id, carrier_word, transfers)
+}
+
+/// The same bounded product graph over a proved callback-free scalar Tail.
+/// Borrowed actions can change their declared output, never a carrier home.
+/// Unknown host actions decline the graph rather than inventing a write set.
+pub(super) fn derive_scalar(code: CodePlan<'_>, closed: &Layout, id: usize,
+    aggregates: &NativeScalarAggregates,
+    borrowed: &super::super::super::program_borrowed_layout::Layout) -> Option<Graph>
+{
+    let region = &closed.regions[id];
+    if region.map.is_some() { return None; }
+    let carrier_word = field(aggregates, region.tail.carrier(), 0)?;
+    let transfers = closed.sites.iter().enumerate().filter(|(_, here)| **here == Some(id))
+        .map(|(site, _)| {
+            let transfer = if let Some(action) = aggregates.action(site) {
+                aggregate_transfer(aggregates, action)?
+            } else if let Some((borrow, action)) = borrowed.action(site) {
+                if Some(borrow) != region.borrowed { return None; }
+                Transfer { writes: vec![(action.output().get() as usize, Expr::Copy(Input::Unknown))] }
+            } else { scalar_transfer(code, site)? };
+            Some((site, transfer))
+        }).collect::<Option<BTreeMap<_, _>>>()?;
+    derive_from(code, closed, id, carrier_word, transfers)
+}
+
+fn derive_from(code: CodePlan<'_>, closed: &Layout, id: usize,
+    carrier_word: usize, transfers: BTreeMap<usize, Transfer>) -> Option<Graph>
+{
+    let region = &closed.regions[id];
     let header = region.tail.header() as usize;
     let latch = region.tail.latch() as usize;
-    let carrier_word = field(owner.aggregates(), region.tail.carrier(), 0)?;
-    let sites = closed.sites.iter().enumerate().filter_map(|(site, id_here)| (*id_here == Some(id)).then_some(site)).collect::<BTreeSet<_>>();
+    let sites = transfers.keys().copied().collect::<BTreeSet<_>>();
     if sites.len() > MAX_SITES { return None; }
     if !matches!(code.blocks()[header].action(), Action::Scalar(Scalar::None)) { return None; }
     let Term::TailHeader { body, .. } = code.blocks()[header].terminator() else { return None; };
     if !matches!(code.blocks()[latch].terminator(), Term::Scalar(Branch::Jump(next)) if next as usize == header) { return None; }
-    let transfers = sites.iter().map(|&site| Some((site, transfer(code, closed, id, owner, aggregates, site)?)))
-        .collect::<Option<BTreeMap<_, _>>>()?;
     if !transfers.get(&header)?.writes.is_empty() { return None; }
     // Keep exactly the connected tag/copy/predicate words. Arithmetic is
     // opaque and introduces no dependency on indices, widths or map counts.
