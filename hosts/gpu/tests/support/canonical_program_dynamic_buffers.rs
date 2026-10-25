@@ -220,6 +220,44 @@ fn nested_dynamic_buffer_tuple_and_record_components_keep_separate_shapes() {
 }
 
 #[test]
+fn dynamic_buffer_pack_rebinds_current_shapes_between_visits_in_one_invocation() {
+    let source = "make(n<u64>) => (out<u64>) :=\n  xs := [0u16 | i <- 0u64..=n, i < n]\n  packed := (xs, 7u64)\n  out := n.\n[make(n) | n <- counts<[u64]>]\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        assert!(jit.descriptor().plan().blocks().iter().any(|block|
+            block.iteration().is_some() && matches!(block.action(),
+                mech_engine::native_artifact::NativeIterationAction::LibraryCall { template, .. }
+                    if matches!(template.primitive(), mech_engine::native_artifact::NativeCollectionPrimitive::CompositePack(_)))));
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        let counts = Data::Matrix(
+            [0, 4, 4, 1, 0, 7, 7, 0]
+                .into_iter()
+                .map(Data::U64)
+                .collect(),
+        );
+        let args = inputs(&artifact, &[("counts", counts.clone())], &memory);
+        let ordinary = reference(&artifact, &args);
+        jit.evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+        equal(&artifact, &output, &ordinary);
+        assert_eq!(
+            output
+                .last()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            counts
+        );
+        drop(output);
+        drop(args);
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
 fn dynamic_buffer_tuple_images_require_the_exact_maintained_pack_factory() {
     use mech_engine::native_artifact::{
         NativeArtifactLoweringError, lower_native_program_artifact,
