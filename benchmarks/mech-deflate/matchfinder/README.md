@@ -62,3 +62,29 @@ The full binary-tree match finder, optimal parser, block writer, efficient buffe
 ownership, and `reymont` compression timing remain outstanding. These component
 checks record no compression performance result. Source licenses are retained
 in [the shared notices](../../../hosts/gpu/tests/fixtures/native/deflate-huffman-LICENSES.md).
+
+## Comparison requirements
+
+The target is the pinned Roc implementation above, at level 12 on the same
+6,627,202-byte `reymont` input. Keep its binary-tree tables, search limits,
+optimal parsing, block decisions, and Huffman construction. Mech must execute
+the compressor itself; the C reference generator is never a timed compressor.
+Compiler work should support the equivalent Mech program, including ordinary
+collection operations and buffer updates, rather than change the algorithm to
+suit the backend.
+
+Before timing, finish the known word-load, first-four-word comparison, and
+buffer-ownership differences. Match the Roc harness's output-buffer reuse and
+timed boundaries: input reading, output clearing, validation, and file writing
+are outside compression timing; compression's own allocation and work remain
+inside. Verify decompression against the complete input and compare the emitted
+stream and size with the pinned Roc implementation. Report any remaining
+implementation differences alongside results. Component qualification work
+units are not evidence of equivalent compression performance.
+
+Runtime-shaped unsigned arrays can now be packed into ordinary tuple/record
+outputs by the native compiler. The current child schemas determine their
+separate dimensions on every binding; a prior output's dimensions do not stand
+in for the new result. This removes the combined node-helper return failure.
+Dynamic structural projections/state transport and efficient array ownership
+still need their own compiler support; construction does not imply either.

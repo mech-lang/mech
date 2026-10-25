@@ -18,6 +18,14 @@ use mech_core::{
 };
 use std::sync::Arc;
 
+fn composite_shape_from_children(template: &NativeProgramLibraryTemplate) -> bool {
+    matches!(template.primitive(),
+        crate::resident::native_collection_semantics::NativeCollectionPrimitive::CompositePack(_))
+        && !template.output().dimension_parameters().is_empty()
+        && matches!(template.output().body(),
+            mech_core::SchemaBody::Tuple(_) | mech_core::SchemaBody::Record(_))
+}
+
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 #[path = "native_collection_prepared_image.rs"]
 mod image;
@@ -178,8 +186,10 @@ pub fn prepare_native_program_library_call(
     // with the shared schema-depth/evidence bound below, before bind_values.
     // Numeric ranges, positional matrix selection and scalar-key map lookup
     // contain at most rank-two scalar matrices or two atomic map children;
-    // selector state has fixed metadata size. Shallow map/tuple/record packs
-    // add one atomic input port per child, already included in `ports`.
+    // selector state has fixed metadata size. Tuple/record packs add one input
+    // port per component. Their current-shape resolver closes component schema
+    // trees and stages dimension witnesses; these are bounded by the port-schema
+    // clone envelope below, independently of the buffers' element counts.
     // Build/NoAdditionalScratch ranges add no implementation scratch entries;
     // CanonicalFinalize String selection/matrix conversion uses the same output entry family.
     // Tests assert the actual NativeHost plan stays within this entry bound.
@@ -250,7 +260,7 @@ pub fn prepare_native_program_library_call(
         .and_then(|n| n.checked_add(parameters.checked_mul(16)?))
         .and_then(|n| n.checked_add(256))
         .ok_or_else(|| super::invalid(node))?;
-    let output_follows_input = matches!(
+    let output_follows_input = composite_shape_from_children(&template) || matches!(
         template.contract(),
         mech_core::ResolvedOperationContract::Declared(contract)
             if matches!(&contract.outputs[0].construction,
@@ -467,7 +477,26 @@ impl NativePreparedLibraryCall {
             mech_core::OutputConstruction::ReadModifyWrite { base_input, .. } => Some(*base_input),
             _ => None,
         };
-        let output_parameters = if let Some(input) = shape_input {
+        let output_parameters = if composite_shape_from_children(&self.template) {
+            // Each child's parameter tape belongs to its own schema. Infer
+            // the aggregate's CURRENT shape before binding, including after a
+            // prior result with different extents. This runs inside the same
+            // prepaid schema/binding envelope as bind_current below.
+            let children = inputs
+                .iter()
+                .map(|value| {
+                    let value = value.as_ref().unwrap();
+                    (value.schema(), value.shape().clone())
+                })
+                .collect::<Vec<_>>();
+            current_shape = mech_core::snapshot::CompositeSnapshotConstructor::shape_for_children(
+                contract.outputs[0].schema,
+                &children,
+                &self.schemas,
+            )
+            .map_err(|_| InvokeError::InvalidInput)?;
+            current_shape.parameter_values()
+        } else if let Some(input) = shape_input {
             let index = usize::from(input);
             let source = inputs
                 .get(index)
