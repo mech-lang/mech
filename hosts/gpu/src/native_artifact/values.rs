@@ -204,6 +204,35 @@ impl<'a> NativeValueArena<'a> {
             .ok_or(NativeValueError::StaleHandle)
     }
 
+    /// Private read inside an already prepaid generated operation. The caller
+    /// must include this fixed-size slot/generation/refcount work in that
+    /// operation's complete bound before entering this leaf. It cannot publish
+    /// a value, create fuel, or replace the arena's original invocation ledger.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(super) fn copy_current_prepaid(
+        &self,
+        slot: u32,
+        work: &NativeWorkMeter,
+    ) -> Result<Option<(Value, NativeValueHandle)>, NativeValueError> {
+        self.check_work(work)?;
+        let index = slot as usize;
+        let value = self
+            .values
+            .values()
+            .get(index)
+            .ok_or(NativeValueError::InvalidSlot)?;
+        Ok(value.as_ref().map(|value| {
+            (
+                value.clone(),
+                NativeValueHandle {
+                    domain: self.values.domain_id(),
+                    slot,
+                    generation: self.generations.values()[index],
+                },
+            )
+        }))
+    }
+
     /// Capture an existing current generation without publishing/replacing a
     /// slot. Only the certified generated caller can obtain this handle.
     #[cfg(feature = "canonical-native-program-runtime")]
@@ -443,17 +472,14 @@ mod tests {
         drop(b);
         assert_eq!(budget.retained_snapshot_nodes(), 6);
         drop(map);
-        assert_eq!(budget.retained_snapshot_nodes(), 6, "taken map remains a live caller root");
+        assert_eq!(
+            budget.retained_snapshot_nodes(),
+            6,
+            "taken map remains a live caller root"
+        );
         drop(taken);
         assert_eq!(budget.retained_snapshot_nodes(), 0);
-        drop((
-            arena,
-            raw_a,
-            raw_b,
-            raw_map,
-            work,
-            foreign_work,
-        ));
+        drop((arena, raw_a, raw_b, raw_map, work, foreign_work));
         assert_eq!(budget.used_bytes(), 0);
     }
 
@@ -508,11 +534,21 @@ mod tests {
         let before = budget.used_bytes();
         let mut foreign = NativeWorkMeter::new(1_000_000).unwrap();
         assert_eq!(
+            arena.copy_current_prepaid(0, &foreign).unwrap_err(),
+            NativeValueError::WrongWorkLedger
+        );
+        work.charge(NativeExecutionPhase::Setup, 128).unwrap();
+        let (read, handle) = arena.copy_current_prepaid(0, &work).unwrap().unwrap();
+        assert_eq!(handle, local);
+        assert!(read.shares_frozen_storage(&owned));
+        drop(read);
+        assert_eq!(
             arena.retire_current(0, &mut foreign).unwrap_err(),
             NativeValueError::WrongWorkLedger
         );
         assert!(arena.get(local, &mut work).is_ok());
         arena.retire_current(0, &mut work).unwrap();
+        assert!(arena.copy_current_prepaid(0, &work).unwrap().is_none());
         assert_eq!(
             arena.get(local, &mut work).unwrap_err(),
             NativeValueError::StaleHandle

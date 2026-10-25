@@ -93,32 +93,29 @@ impl Context<'_, '_> {
         if view.payload_bytes() == 0
             || !view.can_consume_ascii_join_chunks()
             || !matches!(separator.data(), ValueData::String(s) if s.is_empty())
-            || self
-                .arena
-                .current_retained_bytes(proof.map, &mut self.control.work)?
-                .is_none()
         {
             return Ok(None);
         }
-        let handle = self
+        // The original join's complete work debit precedes this leaf. Its
+        // scalar/metadata envelope below covers both current-slot reads; do not
+        // debit that same work again inside an exactly exhausted call scope.
+        let Some((map, handle)) = self
             .arena
-            .current_handle(proof.map, &mut self.control.work)?;
-        let map = self.arena.copy_current(proof.map, &mut self.control.work)?;
+            .copy_current_prepaid(proof.map, &self.control.work)?
+        else {
+            return Ok(None);
+        };
         let mech_engine::native_artifact::NativeCollectionResult::TextJoin(sink) =
             descriptor.plan.collections()[proof.collection as usize].result()
         else {
             return Ok(None);
         };
-        if self
+        let Some((final_separator, _)) = self
             .arena
-            .current_retained_bytes(sink.separator().get(), &mut self.control.work)?
-            .is_none()
-        {
+            .copy_current_prepaid(sink.separator().get(), &self.control.work)?
+        else {
             return Ok(None);
-        }
-        let final_separator = self
-            .arena
-            .copy_current(sink.separator().get(), &mut self.control.work)?;
+        };
         if !matches!(final_separator.data(), ValueData::String(s) if s.is_empty()) {
             return Ok(None);
         }
