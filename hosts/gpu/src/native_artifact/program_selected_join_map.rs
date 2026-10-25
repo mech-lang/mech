@@ -4,6 +4,9 @@ use super::*;
 use crate::native_artifact::NativeValueHandle;
 use mech_core::{ManagedNodeReservation, snapshot::OwnedSnapshotBytes};
 use mech_engine::native_artifact::NativeStringMapRegion;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_selected_join_map_faults.rs"]
+pub(super) mod faults;
 
 pub(super) struct Prepared {
     map: Value,
@@ -72,6 +75,10 @@ impl Context<'_, '_> {
         target: &String,
         compute: u64,
     ) -> Result<Option<Prepared>, Error> {
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        if faults::disabled() {
+            return Ok(None);
+        }
         let descriptor = self.control.descriptor;
         let Some(proof) = descriptor
             .selected_joins
@@ -300,6 +307,8 @@ impl Context<'_, '_> {
         if args != [0; 3] || !self.consumed {
             return Err(invalid("joined-map copy precedes its admitted join"));
         }
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        faults::before_prepare(self, site)?;
         let descriptor = self.control.descriptor;
         let words = {
             let state = self
@@ -346,6 +355,8 @@ impl Context<'_, '_> {
         };
         if let Some(words) = words {
             self.write_window_arguments(words)?;
+            #[cfg(all(test, feature = "canonical-native-program"))]
+            faults::after_prepare(self, site)?;
             return Ok(Some(1));
         }
         self.finish_join_map_copy(site)?;
@@ -358,6 +369,10 @@ impl Context<'_, '_> {
     ) -> Result<Option<u64>, Error> {
         if args[1..] != [0; 2] || !self.consumed {
             return Err(invalid("joined-map completion arguments"));
+        }
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        if faults::before_finish(self, site)? {
+            return Ok(None);
         }
         let state = self
             .selected_join
@@ -460,6 +475,8 @@ impl Context<'_, '_> {
                 initialized: false,
             }),
         });
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        faults::after_mapped(self)?;
         Ok(())
     }
 }

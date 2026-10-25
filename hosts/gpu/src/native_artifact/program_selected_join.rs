@@ -18,6 +18,12 @@ use std::rc::Rc;
 
 #[path = "program_selected_join_map.rs"]
 mod mapped;
+#[cfg(all(test, feature = "canonical-native-program"))]
+pub(in crate::native_artifact::program_runtime) use mapped::faults::{
+    Control as JoinMapControl, Fault as JoinMapFault, Limit as JoinMapLimit,
+    demand as join_map_demand, fired as join_map_fault_fired, started as join_map_started,
+    with_control as with_join_map_control,
+};
 #[path = "program_selected_join_range.rs"]
 mod range;
 
@@ -167,6 +173,8 @@ impl Context<'_, '_> {
         if tests::before_call(self, site, role)? {
             return Ok(true);
         }
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        mapped::faults::before_join(self, role);
         if !matches!(role, Site::Range(_)) && words != [0, 0] {
             return Err(invalid(
                 "selected join requires its two managed operand words",
@@ -481,6 +489,8 @@ impl Context<'_, '_> {
                             .is_none(),
                     },
                 )?;
+                #[cfg(all(test, feature = "canonical-native-program"))]
+                let _composition_pressure = mapped::faults::pressure(self)?;
                 for (dimension, required, limit) in [
                     (
                         Dimension::OutputElements,

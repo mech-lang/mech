@@ -109,7 +109,7 @@ pub(super) fn observe(
         }
     }
 }
-fn take() -> Demand {
+pub(super) fn take() -> Demand {
     LAST.with(Cell::take)
         .expect("actual selected join consumer was reached")
 }

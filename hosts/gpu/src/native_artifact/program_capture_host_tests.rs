@@ -11,6 +11,8 @@ use std::{
 
 #[path = "../../tests/support/canonical_hosted_fixture.rs"]
 mod fixture;
+#[path = "program_join_map_capture_tests.rs"]
+mod joined_map_tests;
 
 const FULL: &str = include_str!("../../tests/fixtures/native/knucleotide-idiomatic.mec");
 const INPUT: &[u8] = b">ONE\nAAAA\n>THREE\nGGTA\n>FOUR\nTTTT\n";
