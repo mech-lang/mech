@@ -27,7 +27,8 @@ fn check_cases_with_policy(
         let catalog = mech_stdlib::source_catalog();
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let image = jit.descriptor().encode_build_owned_image().unwrap();
-        // Exact checked build/object metadata, never an untrusted image.
+        // SAFETY: unchanged checked build metadata from this retained JIT owner;
+        // the restored descriptor is inspected without binding foreign code.
         let restored =
             unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
         assert_eq!(restored.encode_build_owned_image().unwrap(), image);
