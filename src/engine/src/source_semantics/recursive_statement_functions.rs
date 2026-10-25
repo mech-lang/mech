@@ -68,8 +68,8 @@ impl SemanticBuilder {
         error: &impl Fn(&'static str, String) -> SourceSemanticError,
         compile: impl FnOnce(&mut Self) -> Result<PendingValue, SourceSemanticError>,
     ) -> Result<PendingValue, SourceSemanticError> {
-        let scrutinee = if let [argument] = arguments {
-            *argument
+        let argument_schema = if let [argument] = arguments {
+            self.schema_draft_of(*argument)?
         } else {
             let mut dimensions = Vec::new();
             let fields = arguments
@@ -82,28 +82,37 @@ impl SemanticBuilder {
                     )
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            self.emit_with_schema_draft(
-                "core/composite-pack",
-                arguments.to_vec(),
-                SchemaDraft {
-                    dimension_parameters: dimensions.into_boxed_slice(),
-                    body: SchemaBody::Tuple(fields.into_boxed_slice()),
-                },
-                call,
-                "function-arguments",
-                Some(name.to_owned()),
-            )
+            SchemaDraft {
+                dimension_parameters: dimensions.into_boxed_slice(),
+                body: SchemaBody::Tuple(fields.into_boxed_slice()),
+            }
         };
-        if !self
-            .schema_draft_of(scrutinee)?
-            .finalize()
-            .is_ok_and(|schema| crate::is_control_pattern_schema(&schema))
-        {
+        let capture_arguments = !argument_schema.clone().finalize()
+            .is_ok_and(|schema| crate::is_control_pattern_schema(&schema));
+        if capture_arguments && calls_function(body, name)? {
             return Err(error(
                 "source-semantics/unsupported-recursive-argument",
                 format!("function {name} requires supported canonical argument bindings"),
             ));
         }
+        // A nonrecursive checked call needs lexical ordering, not recursive
+        // pattern bindings. Reuse existing capture authority when its ordinary
+        // argument kinds cannot be recursive carriers. Keep the supported
+        // carrier path unchanged, including its argument transport costs.
+        let scrutinee = if capture_arguments {
+            self.constant(BuiltinSchema::Bool, ValueDataDraft::Bool(true))
+        } else if let [argument] = arguments {
+            *argument
+        } else {
+            self.emit_with_schema_draft(
+                "core/composite-pack",
+                arguments.to_vec(),
+                argument_schema,
+                call,
+                "function-arguments",
+                Some(name.to_owned()),
+            )
+        };
 
         let saved_bindings = self.bindings.clone();
         let saved_definitions = self.scope_definitions.clone();
@@ -114,6 +123,7 @@ impl SemanticBuilder {
         let binding_start = self.nodes.len();
         let mut bindings = BTreeMap::new();
         let mut fields = Vec::new();
+        if !capture_arguments {
         for (local, ((parameter, _), argument)) in parameters.iter().zip(arguments).enumerate() {
             let schema = self.schema_draft_of(*argument)?;
             let index = u32::try_from(self.nodes.len()).map_err(|_| {
@@ -149,13 +159,37 @@ impl SemanticBuilder {
             bindings.insert(index, local);
             fields.push(crate::CollectionPattern::Bind { local, schema });
         }
-        let pattern = crate::MatchPattern::Structural(if fields.len() == 1 {
-            fields.pop().unwrap()
+        }
+        let pattern = if capture_arguments {
+            crate::MatchPattern::Wildcard
         } else {
-            crate::CollectionPattern::Tuple(fields.into_boxed_slice())
-        });
+            crate::MatchPattern::Structural(if fields.len() == 1 {
+                fields.pop().unwrap()
+            } else {
+                crate::CollectionPattern::Tuple(fields.into_boxed_slice())
+            })
+        };
         let mut inputs = vec![scrutinee];
         let mut captures = Vec::new();
+        if capture_arguments {
+            // Retain every argument dependency, even an unused parameter. Its
+            // evaluation must precede this invocation's checks and later work.
+            for argument in arguments {
+                let input = match inputs.iter().position(|value| value == argument) {
+                    Some(input) => input,
+                    None => { inputs.push(*argument); inputs.len() - 1 }
+                };
+                let input = u16::try_from(input).map_err(|_| error(
+                    "source-semantics/unsupported-function-body",
+                    "too many function captures".to_owned(),
+                ))?;
+                if !captures.iter().any(|(existing, _, _)| *existing == input) {
+                    captures.push((input, self.schema_draft_of(*argument)?,
+                        !matches!(argument, PendingValue::Input(_))));
+                }
+            }
+        }
+
         self.match_depth += 1;
         self.active_recursive_outputs
             .push((name.to_owned(), expected, self.match_depth));

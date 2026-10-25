@@ -12,6 +12,9 @@ mod visits;
 #[path = "canonical_program_lexical_invariant_order.rs"]
 mod order;
 
+#[path = "canonical_program_lexical_argument_kinds.rs"]
+mod argument_kinds;
+
 pub(super) fn check_cases(source: &str, cases: &[(Vec<(&str, Data)>, Option<Data>)]) {
     check_cases_with_policy(source, cases, None, limits());
 }
