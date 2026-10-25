@@ -28,7 +28,7 @@ pub(crate) mod payload;
 #[path = "native_worker_budget.rs"]
 mod workers;
 #[cfg(feature = "native-artifact")]
-pub use workers::{NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerWorkLoan};
+pub use workers::{NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerCreditStatistics, NativeWorkerWorkLoan};
 
 #[derive(Default)]
 struct DisplayByteCounter(usize);

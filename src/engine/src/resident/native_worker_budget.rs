@@ -4,6 +4,10 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{MutexGuard, TryLockError};
 
+#[path = "native_worker_credits.rs"]
+mod credits;
+pub use credits::NativeWorkerCreditStatistics;
+
 // Retry only short ownership transfers. A bounded exponential pause avoids
 // repeatedly contending on one cache line before the original blocking lock.
 const ESCROW_SPIN_ROUNDS: u32 = 12;
@@ -61,6 +65,7 @@ struct Escrow {
     used: ControlWork,
     live: u64,
     sealed: bool,
+    credits: credits::Book,
     // The shared allocation remains admitted until the final worker retires,
     // including when its parent closes early after an error.
     _reservation: mech_core::ManagedMemoryReservation,
@@ -76,6 +81,12 @@ impl Escrow {
             (next.compute, self.limit.compute, MemoryBudgetDimension::ComputeWork),
             (next.comparison, self.limit.comparison, MemoryBudgetDimension::ComparisonWork),
         ] {
+            let reserved = match dimension {
+                MemoryBudgetDimension::ComputeWork => self.credits.reserved.compute,
+                MemoryBudgetDimension::ComparisonWork => self.credits.reserved.comparison,
+                _ => unreachable!(),
+            };
+            let required = required.checked_add(reserved).ok_or(ResidentKernelError::InvalidShape)?;
             if required > limit {
                 return Err(ResidentKernelError::ResourceLimit {
                     phase: mech_core::ResidentResourcePhase::Admission, dimension, required, limit,
@@ -103,27 +114,31 @@ pub struct NativeWorkGroup {
 /// Clones of the resulting local budget share its Rc, not another allowance.
 #[derive(Debug)]
 pub struct NativeWorkerWorkLoan {
+    // Drop the pool reference before the final shared reservation can retire.
+    credit: Option<credits::Loan>,
     shared: Arc<Mutex<Escrow>>,
     reservation: Option<mech_core::ManagedMemoryReservation>,
 }
 impl NativeWorkerWorkLoan {
     pub(super) fn remaining(&self) -> Option<(u64, u64)> {
-        let state = lock_escrow(&self.shared);
+        let mut state = lock_escrow(&self.shared);
         if state.sealed { return None; }
+        state.settle_credits();
         Some((state.limit.compute - state.used.compute, state.limit.comparison - state.used.comparison))
     }
     pub(super) fn preview(&self, compute: u64, comparison: u64) -> Result<(), ResidentKernelError> {
-        lock_escrow(&self.shared).next(compute, comparison).map(drop)
+        lock_escrow(&self.shared).direct_next(compute, comparison).map(drop)
     }
     pub(super) fn charge(&self, compute: u64, comparison: u64) -> Result<(), ResidentKernelError> {
         let mut state = lock_escrow(&self.shared);
-        state.used = state.next(compute, comparison)?;
+        state.used = state.direct_next(compute, comparison)?;
         Ok(())
     }
 }
 impl Drop for NativeWorkerWorkLoan {
     fn drop(&mut self) {
         let mut state = lock_escrow(&self.shared);
+        if let Some(credit) = &self.credit { state.retire_credit(credit); }
         state.live = state.live.checked_sub(1).expect("worker loan retired once");
     }
 }
@@ -153,6 +168,7 @@ impl NativeLibraryWorkBudget {
         if let Some(worker) = &account.worker {
             let mut state = lock_escrow(&worker.shared);
             if state.sealed { return Ok(None); }
+            state.settle_credits();
             let remaining = (local.0.min(state.limit.compute - state.used.compute),
                 local.1.min(state.limit.comparison - state.used.comparison));
             let (compute, comparison, result) = prepare(remaining)?;
@@ -197,11 +213,12 @@ impl NativeLibraryWorkBudget {
         let admitted = account._reservation.as_ref().ok_or(ResidentKernelError::InvalidInput)?.budget();
         if admitted != *memory { return Err(ResidentKernelError::InvalidInput.into()); }
         let memory = admitted.with_limits(memory.limit_bytes(), memory.limit_nodes());
-        let bytes = (core::mem::size_of::<Mutex<Escrow>>() + 2 * core::mem::size_of::<usize>()) as u64;
+        let bytes = Self::worker_group_metadata_bytes();
         let reservation = memory.reserve_capacity(bytes)?;
         let allowance = ControlWork { compute, comparison };
         let shared = Arc::new(Mutex::new(Escrow {
             limit: allowance, used: ControlWork::default(), live: 0, sealed: false,
+            credits: credits::Book::new(),
             _reservation: reservation,
         }));
         account.reserved = reserved;
@@ -232,6 +249,13 @@ impl NativeLibraryWorkBudget {
         let account = self.account.borrow();
         (account.compute_limit, account.comparison_limit)
     }
+    pub fn worker_group_metadata_bytes() -> u64 {
+        (core::mem::size_of::<Mutex<Escrow>>() + 2 * core::mem::size_of::<usize>()) as u64
+            + credits::Book::backing_bytes()
+    }
+    pub fn worker_account_metadata_bytes() -> u64 {
+        (core::mem::size_of::<RefCell<ControlWorkAccount>>() + 2 * core::mem::size_of::<usize>()) as u64
+    }
 }
 
 impl NativeWorkGroup {
@@ -248,30 +272,38 @@ impl NativeWorkGroup {
     ) -> Result<NativeWorkerWorkLoan, NativeWorkerBudgetError> {
         if *memory != self.memory { return Err(ResidentKernelError::InvalidInput.into()); }
         let memory = self.memory.with_limits(memory.limit_bytes(), memory.limit_nodes());
-        let bytes = (core::mem::size_of::<RefCell<ControlWorkAccount>>()
-            + 2 * core::mem::size_of::<usize>()) as u64;
+        let bytes = NativeLibraryWorkBudget::worker_account_metadata_bytes();
         let reservation = memory.reserve_capacity(bytes)?;
         let mut state = lock_escrow(&self.shared);
         if state.sealed { return Err(ResidentKernelError::InvalidInput.into()); }
         let live = state.live.checked_add(1).ok_or(ResidentKernelError::InvalidShape)?;
         state.live = live;
-        Ok(NativeWorkerWorkLoan { shared: self.shared.clone(), reservation: Some(reservation) })
+        let credit = state.register_credit();
+        Ok(NativeWorkerWorkLoan { credit, shared: self.shared.clone(), reservation: Some(reservation) })
     }
 
     /// Reconcile after all worker budgets/clones/tokens have retired. On error,
     /// Drop seals the group and still retains every successful debit. Unused
     /// reservation is released; spent work is never refunded.
-    pub fn finish(mut self) -> Result<(u64, u64), ResidentKernelError> {
+    pub fn finish(self) -> Result<(u64, u64), ResidentKernelError> {
+        self.finish_with_credit_statistics().map(|(used, _)| used)
+    }
+    pub fn finish_with_credit_statistics(mut self)
+        -> Result<((u64, u64), NativeWorkerCreditStatistics), ResidentKernelError>
+    {
         if lock_escrow(&self.shared).live != 0 {
             return Err(ResidentKernelError::InvalidInput);
         }
-        Ok(self.close())
+        let used = self.close();
+        let statistics = lock_escrow(&self.shared).credits.statistics;
+        Ok((used, statistics))
     }
 
     fn close(&mut self) -> (u64, u64) {
         let mut state = lock_escrow(&self.shared);
         if !self.closed {
             state.sealed = true;
+            state.settle_credits();
             let mut parent = self.parent.borrow_mut();
             parent.reserved.compute = parent.reserved.compute.checked_sub(self.allowance.compute)
                 .expect("group owns its parent reservation");
