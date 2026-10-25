@@ -253,6 +253,56 @@ pub(super) fn capture_work_bound(
 }
 
 impl NativeTextLineChunks {
+    /// One physical copy step of an already admitted empty-separator join.
+    /// No borrowed source pointer survives: the completed bytes are initialized
+    /// in target before the physical chunk is retired and control returns.
+    pub(super) fn append_joined_chunk(
+        &mut self,
+        first: u64,
+        end: u64,
+        target: &mut Vec<u8>,
+    ) -> Result<Option<u64>, InvokeError> {
+        if self.final_facts().is_none()
+            || first == 0
+            || first > end
+            || end > self.facts.lines + 1
+            || (first < end && (first < self.lower || self.upper.is_some_and(|upper| end > upper)))
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        while self
+            .chunks
+            .front()
+            .is_some_and(|chunk| chunk.end() <= first)
+        {
+            self.chunks.pop_front();
+        }
+        if first == end {
+            self.chunks.clear();
+            #[cfg(all(unix, feature = "native-capture-pages"))]
+            self.pages.clear();
+            self.pending.backing = None;
+            return Ok(None);
+        }
+        let chunk = self.chunks.front().ok_or(InvokeError::InvalidInput)?;
+        let stop = end.min(chunk.end());
+        if chunk.offsets.is_some() {
+            chunk.append_payload_bytes(first, stop, target)?;
+        } else {
+            let text = chunk.line(first).ok_or(InvokeError::InvalidInput)?;
+            let needed = target
+                .len()
+                .checked_add(text.len())
+                .ok_or(InvokeError::InvalidInput)?;
+            if needed > target.capacity() {
+                return Err(InvokeError::InvalidInput);
+            }
+            target.extend_from_slice(text.as_bytes());
+        }
+        self.chunks.pop_front();
+        Ok(Some(stop))
+    }
+
     /// Consume the only owner's proven contiguous selection. The selected join
     /// has already prepaid its entire selector/copy/retirement traversal and
     /// allocated the exact output; no source-call allowance is renewed here.

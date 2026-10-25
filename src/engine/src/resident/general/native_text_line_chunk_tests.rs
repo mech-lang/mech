@@ -347,6 +347,56 @@ fn empty_separator_copy_rejects_short_capacity_without_publishing_bytes() {
 }
 
 #[test]
+fn consuming_join_chunks_initialize_and_retire_before_a_following_native_transform() {
+    for source in [
+        "",
+        "\n",
+        "a\nb\r\n\nc",
+        "ab\ncd\r\nef\nlast\r",
+        "é\n猫\r\nλ\n",
+    ] {
+        for split in source.char_indices().map(|(i, _)| i).chain([source.len()]) {
+            let memory = ManagedMemoryBudget::new(1024 * 1024);
+            let work = work(&memory);
+            let mut store = prepare(4096, 4096, limits(), &work).unwrap();
+            store.push(&source[..split]).unwrap();
+            store.push(&source[split..]).unwrap();
+            let facts = store.finish().unwrap();
+            let expected = source.lines().collect::<String>().to_ascii_uppercase();
+            let mut output = Vec::new();
+            output.try_reserve_exact(expected.len()).unwrap();
+            let reservation = memory.reserve_capacity(output.capacity() as u64).unwrap();
+            let capacity = output.capacity();
+            let prepaid = work.used();
+            let mut next = 1;
+            loop {
+                let start = output.len();
+                let following = store
+                    .append_joined_chunk(next, facts.lines() + 1, &mut output)
+                    .unwrap();
+                let Some(following) = following else {
+                    break;
+                };
+                assert!(following > next);
+                assert!(
+                    store.line(next).is_none(),
+                    "copied backing retires before its output is transformed"
+                );
+                // Tests transform only the newly initialized private byte span.
+                output[start..].make_ascii_uppercase();
+                next = following;
+            }
+            assert_eq!(output, expected.as_bytes());
+            assert_eq!(output.capacity(), capacity);
+            assert_eq!(work.used(), prepaid);
+            assert!(store.chunks.is_empty());
+            drop((store, work, reservation));
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}
+
+#[test]
 fn sealed_range_keeps_real_unicode_lines_and_counts_unretained_suffix_without_backing() {
     let memory = ManagedMemoryBudget::new(1024 * 1024);
     let work = work(&memory);

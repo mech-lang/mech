@@ -30,6 +30,60 @@ fn artifacts(source: &str) -> [ProgramArtifact; 2] {
 }
 
 #[test]
+fn joined_map_proof_requires_a_complete_unobserved_copy_chain_to_the_exact_generator() {
+    let body = "+> text\n+> map\n+> sequence\nentries := {\"a\": \"A\", \"b\": \"B\"}\nparts := text/lines(seed<string>)\nsize := sequence/length(parts)\nrecord := text/join(parts[1u64..=size], \"\")\nnormalized := text/join([entries{ch} | ch <- record], \"\")\n";
+    for (tail, expected) in [("normalized\n", 1), ("(record, normalized)\n", 0)] {
+        let mut original = None;
+        for artifact in artifacts(&(body.to_owned() + tail)) {
+            let object = emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let descriptor = object.descriptor();
+            let maps = &descriptor.selected_joins.maps;
+            assert_eq!(maps.iter().flatten().count(), expected);
+            if let Some(proof) = maps.iter().flatten().next() {
+                let region = descriptor
+                    .string_map_regions
+                    .iter()
+                    .find(|r| r.collection() == proof.collection)
+                    .unwrap();
+                assert_eq!(proof.iteration, region.iteration());
+                assert_eq!(proof.source, region.source().get());
+                assert_eq!(proof.map, region.map().get());
+                assert!(proof.sites.windows(2).all(|pair| pair[0] < pair[1]));
+                assert!(proof.sites.iter().any(|&site| matches!(descriptor.plan.blocks()[site as usize].action(), mech_engine::native_artifact::NativeIterationAction::Initialize { iteration } if *iteration == proof.iteration)));
+            }
+            if let Some(previous) = original.as_ref() {
+                assert_eq!(previous, maps);
+            } else {
+                original = Some(maps.clone());
+            }
+            let encoded = descriptor.encode_build_owned_image().unwrap();
+            let restored = unsafe {
+                crate::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                    &encoded,
+                    &mech_stdlib::source_catalog(),
+                )
+            }
+            .unwrap();
+            assert_eq!(maps, &restored.selected_joins.maps);
+            if expected != 0 {
+                let mut changed: serde_json::Value = serde_json::from_slice(&encoded).unwrap();
+                changed["descriptor"]["selected_joins"]["maps"][0]["source"] =
+                    serde_json::json!(u32::MAX);
+                assert!(
+                    unsafe {
+                        crate::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                            &serde_json::to_vec(&changed).unwrap(),
+                            &mech_stdlib::source_catalog(),
+                        )
+                    }
+                    .is_err()
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn compact_range_layout_and_identity_preserve_original_decoded_library_visits() {
     for (source, compact) in [
         (
