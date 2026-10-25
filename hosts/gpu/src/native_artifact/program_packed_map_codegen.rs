@@ -10,6 +10,8 @@ mod frame_state;
 pub(in crate::native_artifact) use frame_state::{FrameState, LookupMode, effects_enabled};
 #[cfg(test)]
 pub(in crate::native_artifact) use frame_state::{take_frame_effect_emissions, without_frame_effects};
+#[cfg(test)]
+pub(in crate::native_artifact) use frame_state::{without_candidate_value_loads, take_candidate_value_emissions};
 
 #[cfg(test)]
 #[path = "program_packed_hash_tests.rs"]
@@ -293,6 +295,7 @@ fn probe_fresh_core_to(b: &mut FunctionBuilder<'_>, frame: &FrameState,
     b.append_block_param(head, types::I64);
     b.append_block_param(head, types::I64);
     b.append_block_param(found, types::I64);
+    if frame.has_candidate_values() { b.append_block_param(found, types::I64); }
     b.append_block_param(done, types::I64);
     let capacity = read!(b, frame, capacity);
     if nonempty_proved {
@@ -318,7 +321,14 @@ fn probe_fresh_core_to(b: &mut FunctionBuilder<'_>, frame: &FrameState,
         let displacement = b.ins().ishl_imm(low, 3);
         let address = b.ins().iadd(cache, displacement);
         let entry = b.ins().load(types::I64, MemFlags::new(), address, 0);
-        b.ins().brif(entry, found, &[entry.into()], absent, &[]);
+        if frame.has_candidate_values() {
+            let hit = b.create_block();
+            b.ins().brif(entry, hit, &[], absent, &[]);
+            b.switch_to_block(hit);
+            let value = get(b, entry, value_offset(frame.domain));
+            frame.note_candidate_value_load();
+            b.ins().jump(found, &[entry.into(), value.into()]);
+        } else { b.ins().brif(entry, found, &[entry.into()], absent, &[]); }
         b.switch_to_block(hashed);
     }
     let hash = if let Some(first) = frame.hash_constant(b, 0) {
@@ -379,13 +389,23 @@ fn probe_fresh_core_to(b: &mut FunctionBuilder<'_>, frame: &FrameState,
         let displacement = b.ins().imul_imm(bit, (slot_bytes(frame.domain) / GROUP) as i64);
         let address = b.ins().iadd(group_slots, displacement);
         let stored_low = get(b, address, core::mem::offset_of!(Slot, low));
+        // This is an actual fingerprint candidate in the admitted initialized
+        // slot vector, not an arbitrary speculative pointer. Loading its count
+        // beside the key removes the equality branch from the load's dependency
+        // chain. A mismatching key never publishes or consumes the value.
+        let candidate_value = frame.has_candidate_values().then(|| {
+            frame.note_candidate_value_load();
+            get(b, address, value_offset(frame.domain))
+        });
         let same_low = b.ins().icmp(IntCC::Equal, low, stored_low);
         let same = if narrow { same_low } else {
             let stored_high = get(b, address, core::mem::offset_of!(Slot, high));
             let same_high = b.ins().icmp(IntCC::Equal, high, stored_high);
             b.ins().band(same_low, same_high)
         };
-        b.ins().brif(same, found, &[address.into()], mismatch, &[]);
+        if let Some(value) = candidate_value {
+            b.ins().brif(same, found, &[address.into(), value.into()], mismatch, &[]);
+        } else { b.ins().brif(same, found, &[address.into()], mismatch, &[]); }
         b.switch_to_block(mismatch);
         // Normalize only after a fingerprint's full key mismatches. Clearing
         // one canonical bit then retires that whole byte, never eight copies
@@ -416,6 +436,10 @@ fn probe_fresh_core_to(b: &mut FunctionBuilder<'_>, frame: &FrameState,
     let entry = b.block_params(found)[0];
     write!(b, frame, entry_pointer, entry);
     write!(b, frame, entry_known, one);
+    if frame.has_candidate_values() {
+        let value = b.block_params(found)[1];
+        frame.remember_candidate_value(b, value);
+    }
     if missing.is_some() { entry } else {
         b.ins().jump(done, &[entry.into()]);
         b.switch_to_block(done);
@@ -542,7 +566,19 @@ pub(super) fn operation_leaf(b: &mut FunctionBuilder<'_>, frame: &FrameState, op
         b.switch_to_block(hit);
     }
     if operation == 3 { b.ins().iconst(types::I64, 1) }
-    else if operation == 4 { get(b, entry, value_offset(frame.domain)) }
+    else if operation == 4 {
+        if let Some((value, valid)) = frame.cached_candidate_value(b) {
+            let cached = b.create_block(); let load = b.create_block(); let done = b.create_block();
+            b.append_block_param(done, types::I64);
+            b.ins().brif(valid, cached, &[], load, &[]);
+            b.switch_to_block(cached); b.ins().jump(done, &[value.into()]);
+            b.switch_to_block(load);
+            let loaded = get(b, entry, value_offset(frame.domain));
+            frame.remember_candidate_value(b, loaded);
+            b.ins().jump(done, &[loaded.into()]);
+            b.switch_to_block(done); b.block_params(done)[0]
+        } else { get(b, entry, value_offset(frame.domain)) }
+    }
     else {
         let updates = read!(b, frame, updates);
         if !progress_proved {
@@ -552,6 +588,7 @@ pub(super) fn operation_leaf(b: &mut FunctionBuilder<'_>, frame: &FrameState, op
             b.switch_to_block(accepted);
         }
         put(b, entry, value_offset(frame.domain), replacement);
+        frame.invalidate_candidate_value(b);
         let updates = b.ins().iadd_imm(updates, 1);
         write!(b, frame, updates, updates);
         token

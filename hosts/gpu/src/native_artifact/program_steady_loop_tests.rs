@@ -13,6 +13,11 @@ fn lookup_split_metadata_binds_owned_cache_widths_and_both_function_limits() {
     let cached = &ordinary["lookup_cache_function"];
     assert_eq!(ordinary["lookup_mode"], "hash");
     assert_eq!(cached["lookup_mode"], "direct");
+    assert!(ordinary["candidate_value_loads"].as_u64().unwrap() > 0);
+    assert_eq!(cached["candidate_value_loads"], 0);
+    let reference = without_candidate_value_loads(||
+        crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
+    assert_eq!(reference.metadata()["compiled_steady_loops"][0]["candidate_value_loads"], 0);
     assert_eq!(ordinary["lookup_cache_selection_word"],
         core::mem::offset_of!(crate::native_artifact::program_packed_map::Frame, lookup_cache) / 8);
     let domain = object.descriptor().closed_tails.regions.iter()
@@ -56,6 +61,16 @@ fn lookup_split_preserves_changed_inputs_complete_maps_and_exact_work() {
 #[test]
 fn lookup_split_preserves_overflows_nonempty_seeds_and_original_failure_sites() {
     arithmetic_failure_equivalence(Pass::LookupSplit);
+}
+
+#[test]
+fn candidate_values_preserve_full_maps_growth_refills_and_exact_source_work() {
+    changed_input_equivalence(Pass::CandidateValues);
+}
+
+#[test]
+fn candidate_values_preserve_overflow_nonempty_seed_and_failure_origins() {
+    arithmetic_failure_equivalence(Pass::CandidateValues);
 }
 
 #[test]

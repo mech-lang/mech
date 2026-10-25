@@ -195,7 +195,10 @@ fn selected_template(
 // IR92 runs admitted callback-free scalar Tails with the maintained bounded
 // tag graph and SSA aggregate/view homes. Original checkpoint, error, work
 // prices, fallback and owner-retirement boundaries remain; ABI33 is unchanged.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 92;
+// IR93 loads initialized candidate payloads beside hash keys in helper-free
+// source loops. A callee-local valid bit preserves ordinary reload fallback;
+// no runtime frame, resource price or library/storage ABI changes.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 93;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

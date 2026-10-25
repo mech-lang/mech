@@ -499,6 +499,7 @@ fn define_version<M: Module>(
     context.func.signature = signature;
     let mut fb = FunctionBuilderContext::new();
     let (entry_work, source_work, snapshot_work, bail_blocks);
+    let mut candidate_value_loads = 0;
     let mut snapshot_emissions = Vec::new();
     {
         let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
@@ -559,7 +560,8 @@ fn define_version<M: Module>(
             )
             .with_constant_values([args[2], args[3]])
             .with_specialized_width(width)
-            .with_lookup_mode(mode);
+            .with_lookup_mode(mode)
+            .with_candidate_value_loads(&mut b);
             let first_index = words.read(&mut b, proof.bounds.index_word);
             // The bound certificate proves every selected range is precisely
             // [index+1, index+width], over a pinned one-byte-grapheme String.
@@ -885,6 +887,7 @@ fn define_version<M: Module>(
             }
             maximum_snapshot = maximum_snapshot.max(maximum);
             all_bails.extend(bail);
+            candidate_value_loads += packed.candidate_value_loads();
         }
         entry_work = dispatch_work + maximum_entry + maximum_check;
         source_work = maximum_source + maximum_check;
@@ -989,6 +992,7 @@ fn define_version<M: Module>(
             },
             lookup_cache_function: None,
             lookup_cache_selection_word: None,
+            candidate_value_loads,
             source_nodes: proof
                 .nodes
                 .iter()
