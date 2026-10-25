@@ -116,6 +116,7 @@ pub(super) struct PackedMap {
     width: u64,
     domain: Domain,
     decode: [u8; 128],
+    all_codes_valid: bool,
     body: BodyPrice,
     issued: u64,
     funded: u64,
@@ -192,6 +193,11 @@ impl PackedMap {
         let backing = memory.reserve_capacity(0)?;
         let domain = domain.packing();
         let (_, decode) = domain.tables();
+        // Derive this from the actual decoder, not alphabet cardinality: even
+        // a noninjective bit window must not certify an unused symbol code.
+        // The immutable proof fits this owner's size-funded metadata claim.
+        let all_codes_valid = decode[..1usize << domain.bits()]
+            .iter().all(|&byte| byte != u8::MAX);
         let key_bits = width * u64::from(domain.bits());
         let mut owner = Self {
             slots: Slots::new(domain, 0)?, controls: Vec::new(), lookup_cache: None, frame: Box::new(Frame { slots: 0, capacity: 0, len: 0,
@@ -200,7 +206,7 @@ impl PackedMap {
                 low_mask: if key_bits < 64 { (1u64 << key_bits) - 1 } else { u64::MAX },
                 high_mask: if key_bits > 64 { (1u64 << (key_bits - 64)) - 1 } else { 0 },
                 range_call_allowed: 0, read_call_allowed: 0, write_call_allowed: 0, controls: 0, lookup_cache: 0 }),
-            backing, metadata, nodes, work, limits, outside_nodes, width, domain, decode, body, issued: 0, funded: 0,
+            backing, metadata, nodes, work, limits, outside_nodes, width, domain, decode, all_codes_valid, body, issued: 0, funded: 0,
         };
         // Even an empty table has a finite, generated-probe-compatible shape.
         owner.allocate_initial()?;
@@ -350,6 +356,10 @@ impl PackedMap {
         let mut key = (u128::from(high) << 64) | u128::from(low);
         let bits = self.domain.bits();
         if key >> (self.width * u64::from(bits)) != 0 { return false; }
+        // Width remains checked for every key. With a complete decoder there
+        // are no forbidden per-symbol codes left to inspect; sparse decoders
+        // retain the original walk, including singleton/nonzero alphabets.
+        if self.all_codes_valid { return true; }
         let mask = (1u128 << bits) - 1;
         for _ in 0..self.width {
             if self.decode[(key & mask) as usize] == u8::MAX { return false; }

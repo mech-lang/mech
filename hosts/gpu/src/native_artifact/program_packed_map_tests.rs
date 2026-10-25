@@ -8,6 +8,8 @@ mod narrow_tests;
 mod frozen_tests;
 #[path = "program_packed_lookup_cache_tests.rs"]
 mod lookup_cache_tests;
+#[path = "program_packed_domain_validation_tests.rs"]
+mod domain_validation_tests;
 
 fn limits() -> MemoryBudgetLimits {
     MemoryBudgetLimits {
