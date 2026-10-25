@@ -86,6 +86,12 @@ impl NativeSelectedStringMatrix {
             .contiguous_range()
             .and_then(|(first, _)| (first as u64).checked_add(1))
     }
+    pub fn consuming_join_chunk_bound(&self) -> Option<u64> {
+        match &self.source {
+            Source::Lines(lines) => Some(lines.captured_chunks()?.retained_chunk_count()),
+            _ => None,
+        }
+    }
     /// Append one fully initialized physical payload, allowing a generated
     /// consumer to transform that output chunk while it is still cache-local.
     /// The caller has prepaid the complete original selection/join traversal.

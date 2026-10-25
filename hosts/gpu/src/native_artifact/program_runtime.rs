@@ -25,18 +25,25 @@ use std::ffi::c_void;
 
 #[path = "program_borrowed_strings.rs"]
 mod borrowed;
+#[path = "program_caller_geometry.rs"]
+mod caller_geometry;
 #[path = "program_tail_runtime.rs"]
 mod closed_tail;
 #[path = "program_collection.rs"]
 mod collection;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_frozen_map_tests.rs"]
+mod frozen_map_tests;
 #[path = "program_line_matrices.rs"]
 mod line_matrices;
-#[path = "program_prefix_runtime.rs"]
-mod prefix;
-#[path = "program_selected_join.rs"]
-mod selected_join;
-#[path = "program_session.rs"]
-mod session;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_map_admission_tests.rs"]
+mod map_admission_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "program_map_closed_tests.rs"]
+mod map_closed_tests;
+#[path = "program_map_owner_runtime.rs"]
+mod map_owners;
 #[path = "program_parallel_runtime.rs"]
 mod parallel;
 #[path = "program_parallel_admission.rs"]
@@ -44,21 +51,14 @@ mod parallel_admission;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_parallel_tests.rs"]
 mod parallel_tests;
+#[path = "program_prefix_runtime.rs"]
+mod prefix;
+#[path = "program_selected_join.rs"]
+mod selected_join;
+#[path = "program_session.rs"]
+mod session;
 #[path = "program_window_round.rs"]
 mod window_round;
-#[path = "program_caller_geometry.rs"]
-mod caller_geometry;
-#[path = "program_map_owner_runtime.rs"]
-mod map_owners;
-#[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "program_map_admission_tests.rs"]
-mod map_admission_tests;
-#[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "program_map_closed_tests.rs"]
-mod map_closed_tests;
-#[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "program_frozen_map_tests.rs"]
-mod frozen_map_tests;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub(super) use session::CheckedEntry;
 #[cfg(feature = "canonical-native-program-host-runtime")]
@@ -150,6 +150,7 @@ pub struct NativeProgramExecutionReport {
     pub worker_credit_batches: u64,
     /// Credit settlements that release an unused portion, never spent work.
     pub worker_credit_reclaims: u64,
+    pub fused_string_map_bytes: u64,
     /// Source comprehensions whose original child bodies completed in workers.
     pub parallel_regions: u64,
     /// Completed dispatches; one dispatch may cover several source regions.
@@ -254,6 +255,7 @@ struct Context<'plan, 'visit> {
     worker_credit_claims: u64,
     worker_credit_batches: u64,
     worker_credit_reclaims: u64,
+    fused_string_map_bytes: u64,
     parallel_regions: u64,
     parallel_batches: u64,
     parallel_tasks: u64,
@@ -434,11 +436,18 @@ impl Context<'_, '_> {
                 "ordinary helper while closed Tail fuel is outstanding",
             ));
         }
-        if matches!(operation, super::program_abi::PARALLEL_RUN
-            | super::program_abi::PARALLEL_TAKE | super::program_abi::PARALLEL_YIELD
-            | super::program_abi::PARALLEL_ENTER) {
-            return self.parallel_helper(usize::try_from(site)
-                .map_err(|_| invalid("parallel helper site overflow"))?, operation, args);
+        if matches!(
+            operation,
+            super::program_abi::PARALLEL_RUN
+                | super::program_abi::PARALLEL_TAKE
+                | super::program_abi::PARALLEL_YIELD
+                | super::program_abi::PARALLEL_ENTER
+        ) {
+            return self.parallel_helper(
+                usize::try_from(site).map_err(|_| invalid("parallel helper site overflow"))?,
+                operation,
+                args,
+            );
         }
         if matches!(
             operation,
@@ -453,7 +462,7 @@ impl Context<'_, '_> {
         // admits its own observable boundary before reading any operands or
         // mutating storage. Canonical/refused execution keeps ordinary visits.
         if (operation == super::program_abi::MAP_OWNER_CALL
-                && self.retained_native_call(site as usize))
+            && self.retained_native_call(site as usize))
             || (operation == super::program_abi::MAP_OWNER_SPAN
                 && self.retained_native_span(site as usize))
         {
@@ -469,16 +478,27 @@ impl Context<'_, '_> {
         if operation == super::program_abi::CLOSED_TAIL_BEGIN {
             return self.begin_closed_tail(site, args);
         }
-        if matches!(operation, super::program_abi::MAP_OWNER_BEGIN
-            | super::program_abi::MAP_OWNER_CALL | super::program_abi::MAP_OWNER_END
-            | super::program_abi::MAP_OWNER_SPAN) {
+        if matches!(
+            operation,
+            super::program_abi::MAP_OWNER_BEGIN
+                | super::program_abi::MAP_OWNER_CALL
+                | super::program_abi::MAP_OWNER_END
+                | super::program_abi::MAP_OWNER_SPAN
+        ) {
             return self.retained_map_helper(site, operation, args);
         }
-        if matches!(operation, super::program_abi::FROZEN_MAP_COPY | super::program_abi::FROZEN_MAP_READ) {
+        if matches!(
+            operation,
+            super::program_abi::FROZEN_MAP_COPY | super::program_abi::FROZEN_MAP_READ
+        ) {
             return self.frozen_map_helper(site, operation, args);
         }
-        if self.frozen_native_action(site) || self.retained_native_action(site) || self.retained_native_call(site) || self.retained_native_exit(site)
-            || self.retained_native_span(site) {
+        if self.frozen_native_action(site)
+            || self.retained_native_action(site)
+            || self.retained_native_call(site)
+            || self.retained_native_exit(site)
+            || self.retained_native_span(site)
+        {
             return Err(invalid("ordinary helper at retained native map site"));
         }
         if operation == super::program_abi::BORROWED_STRINGS_PREPARE {
@@ -501,6 +521,10 @@ impl Context<'_, '_> {
             self.prepare_string_map_region(site, args)
         } else if operation == super::program_abi::STRING_MAP_FINISH {
             self.finish_string_map_region(site, args)
+        } else if operation == super::program_abi::JOIN_MAP_PREPARE {
+            self.prepare_join_map_chunk(site, args)
+        } else if operation == super::program_abi::JOIN_MAP_FINISH {
+            self.finish_join_map_chunk(site, args)
         } else if self.window_region.is_some() {
             Err(invalid("helper while compiled String loans are active"))
         } else if operation == 0xffff_ffff_ffff_fff0 {
@@ -655,7 +679,7 @@ impl Context<'_, '_> {
             }
             if self.selected_join_call(site, words)? {
                 self.consumed = true;
-                return Ok(None);
+                return Ok(self.join_map_is_fusing().then_some(1));
             }
             for (index, &operand) in operands.iter().enumerate() {
                 let value = if descriptor.plan.values()[operand.get() as usize]
@@ -707,6 +731,10 @@ impl Context<'_, '_> {
             let (source, output) = self
                 .needs_move(site)
                 .ok_or_else(|| invalid("move outside managed copy/carrier"))?;
+            if self.move_joined_map(source.get(), output.get())? {
+                self.consumed = true;
+                return Ok(None);
+            }
             let value = self
                 .arena
                 .copy_current(source.get(), &mut self.control.work)?;
@@ -807,14 +835,26 @@ impl Context<'_, '_> {
             }
             Some(from)
         } else if let Some(previous) = self.control.previous
-            && let Some(group) = self.control.descriptor.map_admission.group(previous as usize)
+            && let Some(group) = self
+                .control
+                .descriptor
+                .map_admission
+                .group(previous as usize)
             && self.map_owners.active(group.owner)
         {
-            if previous != group.start() { return Err(invalid("native path lost its entry")); }
-            Some(group.predecessor(u32::try_from(site)
-                .map_err(|_| invalid("map path frontier overflow"))?)
-                .ok_or_else(|| invalid("visit outside prepaid native path frontier"))?)
-        } else { self.control.previous };
+            if previous != group.start() {
+                return Err(invalid("native path lost its entry"));
+            }
+            Some(
+                group
+                    .predecessor(
+                        u32::try_from(site).map_err(|_| invalid("map path frontier overflow"))?,
+                    )
+                    .ok_or_else(|| invalid("visit outside prepaid native path frontier"))?,
+            )
+        } else {
+            self.control.previous
+        };
         // A native aggregate latch has no managed move callback. Retire the
         // OTHER managed loop locals after that generated copy, before the next
         // visit, exactly as the managed latch used to do. Aggregate words own
@@ -825,7 +865,8 @@ impl Context<'_, '_> {
                 .descriptor
                 .scalar_aggregates
                 .action(previous as usize)
-                .is_some() || self.retained_native_action(previous as usize))
+                .is_some()
+                || self.retained_native_action(previous as usize))
             && let NativeIterationAction::Latch { iteration } =
                 self.control.descriptor.plan.blocks()[previous as usize].action()
             && matches!(
@@ -838,8 +879,14 @@ impl Context<'_, '_> {
         let index =
             usize::try_from(site).map_err(|_| invalid("program visit site outside descriptor"))?;
         if let Some(worker) = &self.worker
-            && !self.control.descriptor.parallel.regions.get(worker.region)
-                .is_some_and(|region| region.contains(index as u32)) {
+            && !self
+                .control
+                .descriptor
+                .parallel
+                .regions
+                .get(worker.region)
+                .is_some_and(|region| region.contains(index as u32))
+        {
             return Err(invalid("worker visited outside its outlined source body"));
         }
         let block = self
@@ -853,21 +900,31 @@ impl Context<'_, '_> {
         if let Some(state) = &self.collections {
             state.validate_span_boundary(block.action())?;
         }
-        let group = self.control.descriptor.map_admission.group(index)
+        let group = self
+            .control
+            .descriptor
+            .map_admission
+            .group(index)
             .filter(|group| self.map_owners.active(group.owner));
         if group.is_some_and(|group| u64::from(group.start()) != site) {
             return Err(invalid("ordinary visit inside admitted scalar group"));
         }
         if previous.is_none() && self.worker.is_some() {
             let worker = self.worker.as_ref().unwrap();
-            let region = self.control.descriptor.parallel.regions.get(worker.region)
+            let region = self
+                .control
+                .descriptor
+                .parallel
+                .regions
+                .get(worker.region)
                 .ok_or_else(|| invalid("worker entry proof missing"))?;
             if site != u64::from(region.begin) || group.is_some() {
                 return Err(invalid("worker entry outside constructor proof"));
             }
             self.control.visit_outlined_entry(site, region.begin)?;
         } else {
-            self.control.visit_from(site, group.map(|group| group.work), previous)?;
+            self.control
+                .visit_from(site, group.map(|group| group.work), previous)?;
         }
         self.map_owners.closed_exit = None;
         let descriptor = self.control.descriptor;
@@ -935,13 +992,20 @@ impl Context<'_, '_> {
     }
 
     fn failure_site(&self, raw: u64) -> Result<u32, NativeProgramExecutionError> {
-        let previous = self.control.previous.ok_or_else(|| invalid("program failure before visit"))?;
+        let previous = self
+            .control
+            .previous
+            .ok_or_else(|| invalid("program failure before visit"))?;
         let site = u32::try_from(raw).map_err(|_| invalid("program failure origin mismatch"))?;
-        if site == previous { return Ok(site); }
+        if site == previous {
+            return Ok(site);
+        }
         let layout = &self.control.descriptor.map_admission;
         if let Some(group) = layout.group(previous as usize)
-            && self.map_owners.active(group.owner) && group.start() == previous
-            && group.sites.contains(&site) {
+            && self.map_owners.active(group.owner)
+            && group.start() == previous
+            && group.sites.contains(&site)
+        {
             return Ok(site);
         }
         Err(invalid("program failure origin mismatch"))

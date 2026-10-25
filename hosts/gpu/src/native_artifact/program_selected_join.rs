@@ -16,6 +16,8 @@ use mech_engine::native_artifact::{
 };
 use std::rc::Rc;
 
+#[path = "program_selected_join_map.rs"]
+mod mapped;
 #[path = "program_selected_join_range.rs"]
 mod range;
 
@@ -25,6 +27,12 @@ enum Phase {
         selector: NativeSelectedStringSpanSelector,
     },
     Selected(NativeSelectedStringMatrix),
+    Fusing(Box<mapped::Fusing>),
+    Mapped(mapped::Mapped),
+}
+enum Completion {
+    Value(Value),
+    Private(State),
 }
 
 pub(super) struct State {
@@ -38,8 +46,17 @@ impl State {
     pub(super) fn caller_retained_nodes(&self) -> Result<u64, Error> {
         let nodes = match &self.phase {
             Phase::Range { lines, .. } => add(lines.count() as u64, 2)?,
-            Phase::Selected(view) => view.retained_nodes_bound()
+            Phase::Selected(view) => view
+                .retained_nodes_bound()
                 .map_err(|_| invalid("selected join retained nodes changed"))?,
+            Phase::Fusing(state) => add(
+                state
+                    .view
+                    .retained_nodes_bound()
+                    .map_err(|_| invalid("joined map retained nodes changed"))?,
+                2,
+            )?,
+            Phase::Mapped(_) => 2,
         };
         add(nodes, self.reservation.capacity_bytes())
     }
@@ -104,6 +121,9 @@ impl Context<'_, '_> {
         let Some(state) = &self.selected_join else {
             return Ok(());
         };
+        if matches!(state.phase, Phase::Fusing(_) | Phase::Mapped(_)) {
+            return self.join_map_boundary(site, state);
+        }
         let descriptor = self.control.descriptor;
         let region = descriptor
             .selected_joins
@@ -113,6 +133,7 @@ impl Context<'_, '_> {
         let expected = match state.phase {
             Phase::Range { .. } => region.selection(),
             Phase::Selected(_) => region.consumer(),
+            Phase::Fusing(_) | Phase::Mapped(_) => unreachable!(),
         } as usize;
         let block = &descriptor.plan.blocks()[site];
         if block.iteration() != descriptor.plan.blocks()[region.selection() as usize].iteration()
@@ -342,9 +363,15 @@ impl Context<'_, '_> {
                 let separator = self
                     .arena
                     .copy_current(region.separator().get(), &mut self.control.work)?;
-                let value = self.finish_selected_join(site, state, &separator)?;
-                self.arena
-                    .put(region.output().get(), &value, &mut self.control.work)?;
+                match self.finish_selected_join(site, state, &separator)? {
+                    Completion::Value(value) => {
+                        self.arena
+                            .put(region.output().get(), &value, &mut self.control.work)?;
+                    }
+                    Completion::Private(state) => {
+                        self.selected_join = Some(state);
+                    }
+                }
             }
         }
         Ok(true)
@@ -355,11 +382,17 @@ impl Context<'_, '_> {
         site: usize,
         state: State,
         separator: &Value,
-    ) -> Result<Value, Error> {
-        let Phase::Selected(view) = state.phase else {
+    ) -> Result<Completion, Error> {
+        let State {
+            phase,
+            region: region_index,
+            parent,
+            reservation: state_reservation,
+        } = state;
+        let Phase::Selected(view) = phase else {
             return Err(invalid("selected join consumer precedes selection"));
         };
-        let source = self.control.descriptor.selected_joins.regions[state.region].source();
+        let source = self.control.descriptor.selected_joins.regions[region_index].source();
         let prior = self.selected_join_coexistence(Some(source))?;
         let compute_limit = self
             .limits
@@ -369,14 +402,15 @@ impl Context<'_, '_> {
             .limits
             .max_comparison_work
             .ok_or_else(|| invalid("selected join comparison limit"))?;
-        self.library
+        let account = self.library.clone();
+        account
             .with_call_limits(compute_limit, comparison_limit, || {
                 self.library
                     .charge(512, 0)
                     .map_err(|e| library(self, site, e.into()))?;
                 let memory = self.library.memory_budget();
                 let descriptor = self.control.descriptor;
-                let region = &descriptor.selected_joins.regions[state.region];
+                let region = &descriptor.selected_joins.regions[region_index];
                 let call = descriptor.calls[site]
                     .as_ref()
                     .ok_or_else(|| invalid("selected join consumer call"))?;
@@ -409,7 +443,7 @@ impl Context<'_, '_> {
                 let peak = add(
                     add(
                         add(
-                            add(prior.turn_peak_bytes, state.reservation.capacity_bytes())?,
+                            add(prior.turn_peak_bytes, state_reservation.capacity_bytes())?,
                             retained,
                         )?,
                         separator_bytes,
@@ -495,6 +529,18 @@ impl Context<'_, '_> {
                 if text.capacity() != capacity {
                     return Err(invalid("selected join output exceeds admitted capacity"));
                 }
+                if let Some(prepared) =
+                    self.prepare_join_map(site, region_index, &view, separator, &text, compute)?
+                {
+                    let fusing =
+                        mapped::Fusing::new(prepared, view, text, reservation, finalization)?;
+                    return Ok(Completion::Private(State {
+                        phase: Phase::Fusing(fusing),
+                        region: region_index,
+                        parent,
+                        reservation: state_reservation,
+                    }));
+                }
                 call.selected_matrix_join_append_consuming(view, separator, &mut text, &memory)
                     .map_err(|e| library(self, site, e))?;
                 let canonical = SnapshotCanonicalizationBudget::new(finalization);
@@ -511,6 +557,7 @@ impl Context<'_, '_> {
                 .map_err(Error::Snapshot)?
                 .into_memory_budget(&mut reservation)
                 .map_err(|e| library(self, site, e.into()))
+                .map(Completion::Value)
             })
             .map_err(|e| library(self, site, e.into()))?
     }
