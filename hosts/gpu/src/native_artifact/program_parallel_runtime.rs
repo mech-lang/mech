@@ -104,9 +104,6 @@ pub(super) fn worker_setup_fits(
         .checked_mul(task_count).ok_or_else(|| invalid("parallel worker setup node count overflow"))?;
     let bytes = super::session::Prepared::worker_setup_bytes(descriptor)?
         .checked_mul(task_count).ok_or_else(|| invalid("parallel worker setup byte count overflow"))?;
-    #[cfg(test)]
-    eprintln!("WORKER_PREFLIGHT tasks={task_count} used_bytes={} required_bytes={bytes} byte_limit={}",
-        memory.used_bytes(), memory.limit_bytes());
     // Keep both pending claims until the joint feasibility check succeeds.
     // A denied byte claim must also release the preceding node claim.
     let Ok(_nodes) = memory.reserve_nodes(nodes) else { return Ok(false); };

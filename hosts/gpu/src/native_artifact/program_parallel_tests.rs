@@ -334,11 +334,8 @@ first + ";" + second
 #[test]
 fn insufficient_combined_worker_bytes_uses_serial_source_body() {
     let source = source("number/format(h{\"a\"}, 0u64)", r#"
-first-items := [4u64 8u64]
-second-items := [1u64 2u64 3u64 4u64 5u64]
-first := text/join([count-text(text, width, n) | n <- first-items], "|")
-second := text/join([count-text(text, width, n) | n <- second-items], ",")
-first + ";" + second
+items := [4u64 8u64 1u64 2u64 3u64 4u64 5u64]
+text/join([count-text(text, width, n) | n <- items], "|")
 "#);
     let original = tests::artifact_source(&source);
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(
@@ -346,6 +343,9 @@ first + ";" + second
     for artifact in [original, decoded] {
         let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let floor = session::Prepared::worker_setup_bytes(jit.descriptor()).unwrap();
+        // One seven-task comprehension isolates the fixed constructor floor:
+        // a declined sibling group must not retry a smaller parallel subgroup
+        // whose later dynamic map coexistence is a different admission case.
         // Seven stacks and scheduler transport fit, together with the parent
         // and ample serial workspace. Seven complete child inventories do not.
         assert!(floor * 4 > 65536);

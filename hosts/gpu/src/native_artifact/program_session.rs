@@ -680,11 +680,7 @@ impl<'a> Prepared<'a> {
             || captures.len() != region.captures.len() {
             return Err(invalid("worker constructor capture/count mismatch"));
         }
-        let mut prepared = Self::new_with_budget(descriptor, limits, memory, Some(library)).map_err(|error| {
-            #[cfg(test)]
-            eprintln!("WORKER_FAILURE phase=constructor region={} index={} error={error:?}", worker.region, worker.index);
-            error
-        })?;
+        let mut prepared = Self::new_with_budget(descriptor, limits, memory, Some(library))?;
         let locals_start = descriptor.plan.transport_input_count();
         let state = prepared.state.as_mut().unwrap();
         // A worker skips whole-program activation, but retains the SAME
@@ -722,11 +718,7 @@ impl<'a> Prepared<'a> {
             // SAFETY: the scoped parent retains this exact checked code owner;
             // this constructor owns all of the child's disjoint frame lanes.
             unsafe { entry(frame) }
-        }, PHASE_WORKER).map_err(|error| {
-            #[cfg(test)]
-            eprintln!("WORKER_FAILURE phase=body error={error:?}");
-            error
-        })?;
+        }, PHASE_WORKER)?;
         let receipt = prepared.worker.as_mut().and_then(|worker| worker.result.take())
             .ok_or_else(|| invalid("worker omitted its owned result"))?;
         // Retire every Rc work account before returning across the thread join.
