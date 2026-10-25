@@ -3,7 +3,7 @@
 use super::*;
 use crate::resource_text_capture::{ConsumerFailure, DeferredCaptureFailure};
 use crate::{RuntimeTextCaptureBuffer, RuntimeTextCaptureError, RuntimeTextCaptureSummary};
-use mech_core::{SchemaKey, ValueData, Utf8Fragment};
+use mech_core::{SchemaKey, Utf8Fragment, ValueData};
 use std::{convert::Infallible, io::Cursor};
 
 fn invalid(reason: &str) -> MechError {
@@ -97,7 +97,9 @@ impl RuntimeResourceRegistry {
                     "staged String schema differs from canonical observation",
                 ));
             }
-            return finish(buffer.capture_fragments_deferred(Cursor::new(text.as_bytes()), consumer));
+            return finish(
+                buffer.capture_fragments_deferred(Cursor::new(text.as_bytes()), consumer),
+            );
         }
         if !invoke_extension_value(label.clone(), "supports_single_use_text_capture", || {
             entry.provider.supports_single_use_text_capture(&request)

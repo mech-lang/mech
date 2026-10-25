@@ -40,39 +40,72 @@ fn required(limit: Option<u64>) -> Result<u64, Error> {
 }
 
 pub(in crate::native_artifact) fn string_u64_schema(
-    schemas: &SchemaTable, schema: SchemaId, count: u64,
+    schemas: &SchemaTable,
+    schema: SchemaId,
+    count: u64,
 ) -> Result<(), Error> {
-    let target = schemas.get(schema).ok_or(Error::Publication("missing schema"))?;
+    let target = schemas
+        .get(schema)
+        .ok_or(Error::Publication("missing schema"))?;
     if !target.dimension_parameters().is_empty() {
         return Err(Error::Publication("parameterized output schema"));
     }
-    let SchemaBody::Map { key, value, cardinality } = target.body() else {
+    let SchemaBody::Map {
+        key,
+        value,
+        cardinality,
+    } = target.body()
+    else {
         return Err(Error::Publication("output is not a map"));
     };
     if key.as_ref() != &SchemaBody::String
         || value.as_ref() != &SchemaBody::UnsignedInteger(IntegerWidth::W64)
-    { return Err(Error::Publication("output key/value kind")); }
+    {
+        return Err(Error::Publication("output key/value kind"));
+    }
     match cardinality {
         CardinalitySpec::Exact(DimensionExpr::Constant(n)) if *n == count => Ok(()),
         CardinalitySpec::Dynamic { upper_bound: None } => Ok(()),
-        CardinalitySpec::Dynamic { upper_bound: Some(DimensionExpr::Constant(n)) } if count <= *n => Ok(()),
+        CardinalitySpec::Dynamic {
+            upper_bound: Some(DimensionExpr::Constant(n)),
+        } if count <= *n => Ok(()),
         _ => Err(Error::Publication("output cardinality")),
     }
 }
 
 /// Logical canonical output size, independent of a private retained storage
 /// choice. Private read-only maps must keep these same declared output caps.
-pub(in crate::native_artifact) fn logical_map_bytes(count: u64, payload: u64) -> Result<u64, Error> {
-    add(add(size_of::<Value>() as u64, size_of::<ValueData>() as u64)?,
-        add(mul(count, (size_of::<mech_core::snapshot::MapEntryValue>()
-            + 2 * size_of::<ValueData>()) as u64)?, payload)?)
+pub(in crate::native_artifact) fn logical_map_bytes(
+    count: u64,
+    payload: u64,
+) -> Result<u64, Error> {
+    add(
+        add(size_of::<Value>() as u64, size_of::<ValueData>() as u64)?,
+        add(
+            mul(
+                count,
+                (size_of::<mech_core::snapshot::MapEntryValue>() + 2 * size_of::<ValueData>())
+                    as u64,
+            )?,
+            payload,
+        )?,
+    )
 }
-pub(in crate::native_artifact) fn logical_map_limits(published: u64, limits: MemoryBudgetLimits)
-    -> Result<(), Error>
-{
+pub(in crate::native_artifact) fn logical_map_limits(
+    published: u64,
+    limits: MemoryBudgetLimits,
+) -> Result<(), Error> {
     check(1, required(limits.max_output_elements)?, "output elements")?;
-    check(published, required(limits.max_output_bytes)?, "output bytes")?;
-    check(published, required(limits.max_cloned_bytes)?, "cloned bytes")
+    check(
+        published,
+        required(limits.max_output_bytes)?,
+        "output bytes",
+    )?;
+    check(
+        published,
+        required(limits.max_cloned_bytes)?,
+        "cloned bytes",
+    )
 }
 impl<S: BuildHasher> OwnedStringMap<S> {
     fn publication_plan(
@@ -170,8 +203,10 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         self.work.with_call_limits(compute, comparison, || {
             let plan = self.publication_plan(schemas, schema, geometry, limits)?;
             self.work.charge(plan.compute, plan.finalization)?;
-            let memory = self.metadata.budget().with_limits(required(limits.max_temporary_bytes)?,
-                required(limits.max_retained_nodes)?);
+            let memory = self.metadata.budget().with_limits(
+                required(limits.max_temporary_bytes)?,
+                required(limits.max_retained_nodes)?,
+            );
             // The retained map, construction scratch and admitted canonical
             // output are distinct live owners. Scratch covers the unadmitted
             // draft/finalizer; import atomically adds the canonical witness.
@@ -219,15 +254,20 @@ impl<S: BuildHasher> OwnedStringMap<S> {
 fn sort(values: &mut [(&str, u64)], work: &NativeLibraryWorkBudget) -> Result<(), Error> {
     // This leaf only compares borrowed bytes and swaps borrowed entries. No
     // allocation, host callback or budget observer runs while a batch is held.
-    work.with_debit_batch(|batch| sort_with_debits(values, &mut |compute, comparison|
-        batch.charge(compute, comparison)))?
+    work.with_debit_batch(|batch| {
+        sort_with_debits(values, &mut |compute, comparison| {
+            batch.charge(compute, comparison)
+        })
+    })?
 }
 
 fn sort_with_debits(
     values: &mut [(&str, u64)],
     charge: &mut impl FnMut(u64, u64) -> Result<(), ResidentKernelError>,
 ) -> Result<(), Error> {
-    fn less(a: &str, b: &str,
+    fn less(
+        a: &str,
+        b: &str,
         charge: &mut impl FnMut(u64, u64) -> Result<(), ResidentKernelError>,
     ) -> Result<bool, Error> {
         let bytes = add(add(a.len() as u64, b.len() as u64)?, 1)?;

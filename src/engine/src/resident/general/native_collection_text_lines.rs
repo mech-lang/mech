@@ -17,7 +17,9 @@ mod captured_line_tests;
 mod chunks;
 #[path = "native_collection_line_reads.rs"]
 mod reads;
-pub use chunks::{NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineWindow};
+pub use chunks::{
+    NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineWindow,
+};
 
 /// Immutable logical line matrix admitted by the maintained prepared factory.
 /// Snapshot rows retain their scalar String; captured backing retains only

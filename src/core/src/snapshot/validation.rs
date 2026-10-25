@@ -552,7 +552,9 @@ impl Value {
     /// callers must retain their original representation-scan work charges.
     /// Other payload kinds return None without initializing the cell.
     pub fn string_ascii_without_crlf(&self) -> Option<bool> {
-        let ValueData::String(text) = self.data() else { return None; };
+        let ValueData::String(text) = self.data() else {
+            return None;
+        };
         Some(*self.root.data.string_ascii_without_crlf.get_or_init(|| {
             // Keep raw-byte and all-bits comparison reductions independent
             // until their final interpretation, allowing vector reduction.
@@ -4466,10 +4468,19 @@ mod tests {
         let mut zero = a.reserve_capacity(0).unwrap();
         let reused = owned.clone().into_memory_budget(&mut zero).unwrap();
         assert_eq!(reused.memory_budget_retained_nodes(&a), Some(expected));
-        assert_eq!(a.retained_snapshot_nodes(), expected, "same owner aliases do not add claims");
+        assert_eq!(
+            a.retained_snapshot_nodes(),
+            expected,
+            "same owner aliases do not add claims"
+        );
         let weak = owned.frozen_storage_identity();
-        let mut independent_claim = a.reserve_capacity(raw.unshared_memory_budget_admission_bytes(&a).unwrap()).unwrap();
-        let independent = raw.clone().into_independent_memory_budget(&mut independent_claim).unwrap();
+        let mut independent_claim = a
+            .reserve_capacity(raw.unshared_memory_budget_admission_bytes(&a).unwrap())
+            .unwrap();
+        let independent = raw
+            .clone()
+            .into_independent_memory_budget(&mut independent_claim)
+            .unwrap();
         assert_eq!(a.retained_snapshot_nodes(), expected * 2);
         let mut claim_b = b
             .reserve_capacity(raw.memory_budget_admission_bytes(&b).unwrap())
@@ -4483,11 +4494,15 @@ mod tests {
         assert_eq!(b.retained_snapshot_nodes(), expected);
         for step in [0, 1] {
             let failed = crate::ManagedMemoryBudget::new(4 * 1024 * 1024);
-            let mut claim = failed.reserve_capacity(raw.memory_budget_admission_bytes(&failed).unwrap()).unwrap();
+            let mut claim = failed
+                .reserve_capacity(raw.memory_budget_admission_bytes(&failed).unwrap())
+                .unwrap();
             let before = claim.capacity_bytes();
             failed.inject_snapshot_import_failure_after(step);
-            assert!(matches!(raw.clone().into_independent_memory_budget(&mut claim),
-                Err(crate::MemoryRuntimeError::AllocationFailed { .. })));
+            assert!(matches!(
+                raw.clone().into_independent_memory_budget(&mut claim),
+                Err(crate::MemoryRuntimeError::AllocationFailed { .. })
+            ));
             assert_eq!(claim.capacity_bytes(), before);
             assert_eq!(failed.retained_snapshot_nodes(), 0);
             drop(claim);
@@ -4495,11 +4510,19 @@ mod tests {
         }
         let overflow = crate::ManagedMemoryBudget::new(4 * 1024 * 1024);
         let full = overflow.retain_snapshot_nodes(u64::MAX).unwrap();
-        let mut claim = overflow.reserve_capacity(raw.memory_budget_admission_bytes(&overflow).unwrap()).unwrap();
+        let mut claim = overflow
+            .reserve_capacity(raw.memory_budget_admission_bytes(&overflow).unwrap())
+            .unwrap();
         let before = claim.capacity_bytes();
-        assert!(matches!(raw.clone().into_independent_memory_budget(&mut claim),
-            Err(crate::MemoryRuntimeError::AccountingInvariantViolation { .. })));
-        assert_eq!(claim.capacity_bytes(), before, "census failure cannot consume byte admission");
+        assert!(matches!(
+            raw.clone().into_independent_memory_budget(&mut claim),
+            Err(crate::MemoryRuntimeError::AccountingInvariantViolation { .. })
+        ));
+        assert_eq!(
+            claim.capacity_bytes(),
+            before,
+            "census failure cannot consume byte admission"
+        );
         assert_eq!(overflow.retained_snapshot_nodes(), u64::MAX);
         drop((full, claim));
         assert_eq!(overflow.retained_snapshot_nodes(), 0);
@@ -4507,9 +4530,17 @@ mod tests {
         drop(independent);
         assert_eq!(a.retained_snapshot_nodes(), expected);
         drop(owned);
-        assert_eq!(a.retained_snapshot_nodes(), expected, "the reused owner still lives");
+        assert_eq!(
+            a.retained_snapshot_nodes(),
+            expected,
+            "the reused owner still lives"
+        );
         drop(reused);
-        assert_eq!(a.retained_snapshot_nodes(), 0, "raw and weak roots cannot retain admitted claims");
+        assert_eq!(
+            a.retained_snapshot_nodes(),
+            0,
+            "raw and weak roots cannot retain admitted claims"
+        );
         assert_eq!(b.retained_snapshot_nodes(), expected);
         drop(foreign);
         assert_eq!(b.retained_snapshot_nodes(), 0);

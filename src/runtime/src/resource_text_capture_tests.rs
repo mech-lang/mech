@@ -77,14 +77,18 @@ fn certified_fragments_retain_exact_facts_across_short_reads_and_utf8_carry() {
         for chunk in 1..=11 {
             for step in 1..=7 {
                 let memory = ManagedMemoryBudget::new(64);
-                let pump = RuntimeTextCaptureBuffer::prepare(input.len() as u64, chunk, &memory).unwrap();
+                let pump =
+                    RuntimeTextCaptureBuffer::prepare(input.len() as u64, chunk, &memory).unwrap();
                 let mut reader = ShortReads::new(input.as_bytes(), step);
                 reader.interrupt = true;
                 let mut received = String::new();
                 let result = pump.capture_fragments_deferred(&mut reader, |fragment| {
                     let text = fragment.text();
                     assert_eq!(fragment.is_ascii(), text.is_ascii());
-                    assert_eq!(fragment.line_feeds(), text.bytes().filter(|&byte| byte == b'\n').count());
+                    assert_eq!(
+                        fragment.line_feeds(),
+                        text.bytes().filter(|&byte| byte == b'\n').count()
+                    );
                     assert!(text.len() <= chunk + UTF8_CARRY);
                     received.push_str(text);
                     Ok::<_, ()>(())

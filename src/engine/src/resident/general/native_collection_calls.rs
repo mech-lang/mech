@@ -26,8 +26,9 @@ pub use prepared::{
 };
 #[cfg(feature = "pure_text")]
 pub use prepared::{
-    NativePrivateStringBuffer, NativeSelectedStringMatrix, NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineJoinChunk,
-    NativeTextLineMatrix, NativeTextLineMatrixChoice, NativeTextLineWindow,
+    NativePrivateStringBuffer, NativeSelectedStringMatrix, NativeTextLineCaptureFacts,
+    NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineMatrix,
+    NativeTextLineMatrixChoice, NativeTextLineWindow,
 };
 
 /// A constructor-private binding of one actual artifact call at its current

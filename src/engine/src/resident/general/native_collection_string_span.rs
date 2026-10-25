@@ -333,8 +333,10 @@ impl NativePreparedLibraryCall {
                     // every old index/call BEFORE taking replacement capacity.
                     drop(cache.binding.take());
                     context.check_capacity(bytes, 1)?;
-                    let nodes = memory.reserve_nodes(1u64.checked_add(self.binding_nodes)
-                        .ok_or(ResidentKernelError::InvalidShape)?)?;
+                    let nodes = memory.reserve_nodes(
+                        1u64.checked_add(self.binding_nodes)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                    )?;
                     let reservation = memory.reserve_capacity(bytes)?;
                     let shape = mech_core::shape_for_resolved_extents(
                         self.template.inputs().get(1).unwrap(),

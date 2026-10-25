@@ -29,7 +29,9 @@ pub(super) struct Builder {
     _nodes: mech_core::ManagedNodeReservation,
 }
 impl Builder {
-    pub(super) fn has_compiled_map(&self) -> bool { self.compiled_map.is_some() }
+    pub(super) fn has_compiled_map(&self) -> bool {
+        self.compiled_map.is_some()
+    }
     pub(super) fn caller_retained_nodes(&self) -> u64 {
         // String backing and fixed owner metadata, plus an optional byte-map
         // table, output backing and transferred source owner. No per-byte nodes.
@@ -276,7 +278,10 @@ impl State {
             128,
         )?;
         self.account(ctx, id, add(append, moved)?, compute)?;
-        let _replacement_node = ctx.library.memory_budget().reserve_nodes(u64::from(growing))?;
+        let _replacement_node = ctx
+            .library
+            .memory_budget()
+            .reserve_nodes(u64::from(growing))?;
         let mut replacement: Option<(String, ManagedMemoryReservation)> = if growing {
             let (mut text, reservation) =
                 super::allocation::text(capacity, &ctx.library.memory_budget())?;
@@ -435,7 +440,10 @@ impl State {
         // Keep the existing arena/session transaction-publication behavior;
         // no fabricated per-yield equality or renewed comparison ledger.
         charge(&mut ctx.control.work, compute)?;
-        let _publication_nodes = ctx.library.memory_budget().reserve_nodes(footprint.node_count)?;
+        let _publication_nodes = ctx
+            .library
+            .memory_budget()
+            .reserve_nodes(footprint.node_count)?;
         let mut reservation = ctx.library.memory_budget().reserve_capacity(envelope)?;
         let builder = self.builders[id as usize].as_mut().unwrap();
         builder.cloned_bytes = cloned;

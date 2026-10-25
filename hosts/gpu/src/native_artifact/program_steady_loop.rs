@@ -18,7 +18,9 @@ pub(in crate::native_artifact) fn without_cold_recipes<T>(f: impl FnOnce() -> T)
     cold_recipes::without(f)
 }
 #[cfg(test)]
-pub(in crate::native_artifact) fn take_cold_recipe_emissions() -> usize { cold_recipes::take_emissions() }
+pub(in crate::native_artifact) fn take_cold_recipe_emissions() -> usize {
+    cold_recipes::take_emissions()
+}
 
 #[cfg(test)]
 thread_local! {
@@ -30,7 +32,9 @@ thread_local! {
 pub(in crate::native_artifact) fn without_lookup_loop_split<T>(f: impl FnOnce() -> T) -> T {
     struct Restore(bool);
     impl Drop for Restore {
-        fn drop(&mut self) { LOOKUP_SPLIT_DISABLED.with(|v| v.set(self.0)); }
+        fn drop(&mut self) {
+            LOOKUP_SPLIT_DISABLED.with(|v| v.set(self.0));
+        }
     }
     let _restore = Restore(LOOKUP_SPLIT_DISABLED.with(|v| v.replace(true)));
     f()
@@ -297,9 +301,14 @@ struct PrepaidExtent {
     stop: Value,
 }
 impl PrepaidExtent {
-    fn new(b: &mut FunctionBuilder<'_>, base: StackSlot, index: Value,
-        stop: Value, credit: Value, bias: Value) -> Self
-    {
+    fn new(
+        b: &mut FunctionBuilder<'_>,
+        base: StackSlot,
+        index: Value,
+        stop: Value,
+        credit: Value,
+        bias: Value,
+    ) -> Self {
         let cursor = b.declare_var(types::I64);
         let pointer = b.ins().iadd(bias, index);
         b.def_var(cursor, pointer);
@@ -307,7 +316,12 @@ impl PrepaidExtent {
         // the caller prevents backend rematerialization of the min expression
         // inside the loop and avoids retaining all three of its scalar inputs.
         b.ins().stack_store(credit, base, 0);
-        Self { cursor, bias, base, stop }
+        Self {
+            cursor,
+            bias,
+            base,
+            stop,
+        }
     }
     fn pointer(&self, b: &mut FunctionBuilder<'_>) -> Value {
         b.use_var(self.cursor)
@@ -333,7 +347,11 @@ impl PrepaidExtent {
         let credit = b.ins().stack_load(types::I64, self.base, 0);
         let pointer = self.pointer(b);
         let fuel = b.ins().isub(credit, pointer);
-        let fuel = if header_debit { b.ins().iadd_imm(fuel, -1) } else { fuel };
+        let fuel = if header_debit {
+            b.ins().iadd_imm(fuel, -1)
+        } else {
+            fuel
+        };
         packed.write(b, core::mem::offset_of!(Frame, fuel), fuel);
     }
 }
@@ -349,7 +367,10 @@ fn emit_snapshot(
     incoming: Option<usize>,
     node: usize,
     returned: usize,
-    emissions: &mut Vec<(Block, crate::native_artifact::iteration_compiler::ColdSnapshot)>,
+    emissions: &mut Vec<(
+        Block,
+        crate::native_artifact::iteration_compiler::ColdSnapshot,
+    )>,
 ) -> Result<usize, NativeCompileError> {
     let block = b.current_block().expect("snapshot block");
     b.set_cold_block(block);
@@ -357,16 +378,26 @@ fn emit_snapshot(
     extent.retire(b, packed, header_debit);
     let live = proof.live_at(node, returned);
     let snapshot = proof.snapshots.as_ref().and_then(|facts| {
-        if header_debit { facts.before.get(&node) }
-        else if let Some(edge) = incoming { facts.completed.get(&edge) }
-        else { facts.before.get(&proof.active) }
+        if header_debit {
+            facts.before.get(&node)
+        } else if let Some(edge) = incoming {
+            facts.completed.get(&edge)
+        } else {
+            facts.before.get(&proof.active)
+        }
     });
     if let Some(snapshot) = snapshot {
-        let index = (!snapshot.words.is_empty() || snapshot.updates.is_some() || snapshot.previous.is_some())
-            .then(|| extent.snapshot_index(b, packed));
+        let index = (!snapshot.words.is_empty()
+            || snapshot.updates.is_some()
+            || snapshot.previous.is_some())
+        .then(|| extent.snapshot_index(b, packed));
         let shifted = |b: &mut FunctionBuilder<'_>, offset: u64| {
             let index = index.expect("actual affine recipe");
-            if offset == 0 { index } else { b.ins().iadd_imm(index, offset as i64) }
+            if offset == 0 {
+                index
+            } else {
+                b.ins().iadd_imm(index, offset as i64)
+            }
         };
         for &word in &live {
             let value = match snapshot.words.get(&word) {
@@ -384,13 +415,25 @@ fn emit_snapshot(
             packed.write(b, core::mem::offset_of!(Frame, previous_start), value);
         }
         if index.is_some() {
-            emissions.push((block, crate::native_artifact::iteration_compiler::ColdSnapshot {
-                node, header: !header_debit, incoming,
-                words: snapshot.words.iter().map(|(&word, &offset)| (word, offset)).collect(),
-                updates: snapshot.updates, previous: snapshot.previous,
-                reload_words: [core::mem::offset_of!(Frame, source_ptr) / 8,
-                    core::mem::offset_of!(Frame, width) / 8],
-            }));
+            emissions.push((
+                block,
+                crate::native_artifact::iteration_compiler::ColdSnapshot {
+                    node,
+                    header: !header_debit,
+                    incoming,
+                    words: snapshot
+                        .words
+                        .iter()
+                        .map(|(&word, &offset)| (word, offset))
+                        .collect(),
+                    updates: snapshot.updates,
+                    previous: snapshot.previous,
+                    reload_words: [
+                        core::mem::offset_of!(Frame, source_ptr) / 8,
+                        core::mem::offset_of!(Frame, width) / 8,
+                    ],
+                },
+            ));
         }
     } else {
         words.spill_live(b, locals, &live)?;
@@ -415,25 +458,71 @@ pub(super) fn define<M: Module>(
 ) -> Result<Option<Definition>, NativeCompileError> {
     #[cfg(test)]
     if LOOKUP_SPLIT_DISABLED.with(std::cell::Cell::get) {
-        return define_version(module, symbol, code, closed, id, owner, aggregates, slots, limits,
-            report, packed_maps::LookupMode::Dynamic);
+        return define_version(
+            module,
+            symbol,
+            code,
+            closed,
+            id,
+            owner,
+            aggregates,
+            slots,
+            limits,
+            report,
+            packed_maps::LookupMode::Dynamic,
+        );
     }
-    let Some(mut ordinary) = define_version(module, symbol, code, closed, id, owner, aggregates,
-        slots, limits, report, packed_maps::LookupMode::Hash)? else { return Ok(None); };
+    let Some(mut ordinary) = define_version(
+        module,
+        symbol,
+        code,
+        closed,
+        id,
+        owner,
+        aggregates,
+        slots,
+        limits,
+        report,
+        packed_maps::LookupMode::Hash,
+    )?
+    else {
+        return Ok(None);
+    };
     let index = report.steady_loops.len() - 1;
-    if let Some(cached) = define_version(module, symbol, code, closed, id, owner, aggregates,
-        slots, limits, report, packed_maps::LookupMode::Direct)?
-    {
-        let cached_report = report.steady_loops.pop().expect("just emitted cache function");
+    if let Some(cached) = define_version(
+        module,
+        symbol,
+        code,
+        closed,
+        id,
+        owner,
+        aggregates,
+        slots,
+        limits,
+        report,
+        packed_maps::LookupMode::Direct,
+    )? {
+        let cached_report = report
+            .steady_loops
+            .pop()
+            .expect("just emitted cache function");
         // Hash probing has every source continuation the direct lookup needs.
         // Keep one caller dispatch, with the same live state at every exit.
-        if !cached.continuations.iter().all(|node| ordinary.continuations.contains(node)) {
-            return Err(backend("cache function requires an unshared source continuation"));
+        if !cached
+            .continuations
+            .iter()
+            .all(|node| ordinary.continuations.contains(node))
+        {
+            return Err(backend(
+                "cache function requires an unshared source continuation",
+            ));
         }
         ordinary.cached_function = Some(cached.function);
         ordinary.cache_max_width = *cached_report.specialized_widths.last().unwrap();
         ordinary.stack = ordinary.stack.max(cached.stack);
-        ordinary.code = ordinary.code.checked_add(cached.code)
+        ordinary.code = ordinary
+            .code
+            .checked_add(cached.code)
             .ok_or_else(|| backend("lookup function code overflow"))?;
         ordinary.extra_fixed_work = ordinary.extra_fixed_work.max(cached.extra_fixed_work);
         ordinary.source_work = ordinary.source_work.max(cached.source_work);
@@ -445,9 +534,17 @@ pub(super) fn define<M: Module>(
 }
 
 fn define_version<M: Module>(
-    module: &mut M, symbol: &str, code: CodePlan<'_>, closed: &Layout, id: usize,
-    owner: &NativeMapOwnerWords, aggregates: &NativeScalarAggregates, slots: &BTreeSet<usize>,
-    limits: NativeCompileLimits, report: &mut CodegenReport, mode: packed_maps::LookupMode,
+    module: &mut M,
+    symbol: &str,
+    code: CodePlan<'_>,
+    closed: &Layout,
+    id: usize,
+    owner: &NativeMapOwnerWords,
+    aggregates: &NativeScalarAggregates,
+    slots: &BTreeSet<usize>,
+    limits: NativeCompileLimits,
+    report: &mut CodegenReport,
+    mode: packed_maps::LookupMode,
 ) -> Result<Option<Definition>, NativeCompileError> {
     let Some(mut proof) = derive(code, closed, id, owner, aggregates, slots) else {
         return Ok(None);
@@ -455,12 +552,23 @@ fn define_version<M: Module>(
     let direct = mode == packed_maps::LookupMode::Direct;
     let domain = closed.regions[id].packed.as_ref().unwrap().packing_domain();
     let returned = closed.regions[id].tail.returned().get() as usize;
-    let specialized_widths =
-        (1..=crate::native_artifact::program_packed_map::MAX_WIDTH)
-        .filter(|&width| !direct || crate::native_artifact::program_packed_map::lookup_cache_entries(domain, width).is_some())
+    let specialized_widths = (1..=crate::native_artifact::program_packed_map::MAX_WIDTH)
+        .filter(|&width| {
+            !direct
+                || crate::native_artifact::program_packed_map::lookup_cache_entries(domain, width)
+                    .is_some()
+        })
         .collect::<Vec<_>>();
-    if specialized_widths.is_empty() { return Ok(None); }
-    assert!(!direct || specialized_widths.iter().copied().eq(1..=*specialized_widths.last().unwrap()));
+    if specialized_widths.is_empty() {
+        return Ok(None);
+    }
+    assert!(
+        !direct
+            || specialized_widths
+                .iter()
+                .copied()
+                .eq(1..=*specialized_widths.last().unwrap())
+    );
     let check_edges = std::iter::once(None)
         .chain(
             proof
@@ -477,15 +585,25 @@ fn define_version<M: Module>(
     let records = 2 * proof.nodes.len()
         + proof.live.iter().map(BTreeSet::len).sum::<usize>()
         + specialized_widths.len()
-        + 4 * check_edges.len() + 2;
-    let extra_records = proof.snapshots.as_ref().map_or(0, cold_recipes::Proof::records);
+        + 4 * check_edges.len()
+        + 2;
+    let extra_records = proof
+        .snapshots
+        .as_ref()
+        .map_or(0, cold_recipes::Proof::records);
     if !report.reserve_steady_region(records + extra_records) {
         // Metadata admission is unchanged. If the optional recipes cannot
         // fit, retain the already admitted checked snapshot implementation.
         proof.snapshots = None;
-        if !report.reserve_steady_region(records) { return Ok(None); }
+        if !report.reserve_steady_region(records) {
+            return Ok(None);
+        }
     }
-    let name = if direct { format!("{symbol}_lookup_cache_funded") } else { format!("{symbol}_funded") };
+    let name = if direct {
+        format!("{symbol}_lookup_cache_funded")
+    } else {
+        format!("{symbol}_funded")
+    };
     let mut signature = module.make_signature();
     // Invocation-owned scalar words, packed frame, two immutable hash values,
     // the prepaid cursor stop and its cold fuel base. No Rust context or helper
@@ -510,8 +628,8 @@ fn define_version<M: Module>(
         let args = b.block_params(entry).to_vec();
         // Exclusive width arms reuse the same actual eight-byte callee slot.
         // Its final aligned native stack extent is admitted below as usual.
-        let credit_base = b.create_sized_stack_slot(StackSlotData::new(
-            StackSlotKind::ExplicitSlot, 8, 3));
+        let credit_base =
+            b.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, 8, 3));
         // The private storage constructor admits only a bounded width domain.
         // Select on the ACTUAL immutable Frame width, never an input sample
         // or workload name. Every arm emits the identical source graph; only
@@ -540,7 +658,9 @@ fn define_version<M: Module>(
             b.switch_to_block(generic);
             let invalid = b.ins().iconst(types::I64, 0);
             b.ins().return_(&[invalid]);
-        } else { variants.insert(0, (None, generic)); }
+        } else {
+            variants.insert(0, (None, generic));
+        }
         let dispatch_work = b.func.dfg.num_insts();
         let mut maximum_entry = 0;
         let mut maximum_source = 0;
@@ -574,7 +694,8 @@ fn define_version<M: Module>(
             let width = packed.read(&mut b, core::mem::offset_of!(Frame, width));
             let bias = b.ins().iadd(source, width);
             let bias = b.ins().iadd_imm(bias, -1);
-            let extent = PrepaidExtent::new(&mut b, credit_base, first_index, args[4], args[5], bias);
+            let extent =
+                PrepaidExtent::new(&mut b, credit_base, first_index, args[4], args[5], bias);
             let blocks = proof
                 .nodes
                 .iter()
@@ -842,7 +963,11 @@ fn define_version<M: Module>(
                     // so an old induction value need not cross the backedge.
                     words.write(&mut b, proof.bounds.index_word, counter);
                     let previous = b.ins().iadd_imm(counter, -1);
-                    packed.write(&mut b, core::mem::offset_of!(Frame, previous_start), previous);
+                    packed.write(
+                        &mut b,
+                        core::mem::offset_of!(Frame, previous_start),
+                        previous,
+                    );
                 }
                 let counter = words.read(&mut b, proof.bounds.index_word);
                 packed.write(&mut b, core::mem::offset_of!(Frame, updates), counter);
@@ -864,7 +989,16 @@ fn define_version<M: Module>(
             for (&index, &block) in &bail {
                 b.switch_to_block(block);
                 maximum = maximum.max(emit_snapshot(
-                    &mut b, &words, &packed, args[0], &proof, &extent, true, None, index, returned,
+                    &mut b,
+                    &words,
+                    &packed,
+                    args[0],
+                    &proof,
+                    &extent,
+                    true,
+                    None,
+                    index,
+                    returned,
                     &mut snapshot_emissions,
                 )?);
             }
@@ -894,7 +1028,13 @@ fn define_version<M: Module>(
         entry_work = dispatch_work + maximum_entry + maximum_check;
         source_work = maximum_source + maximum_check;
         snapshot_work = maximum_snapshot;
-        bail_blocks = (all_bails, all_checks, maximum_check, all_header_snapshots, peeled_probe_nodes);
+        bail_blocks = (
+            all_bails,
+            all_checks,
+            maximum_check,
+            all_header_snapshots,
+            peeled_probe_nodes,
+        );
         b.seal_all_blocks();
         b.finalize();
     }
@@ -923,7 +1063,11 @@ fn define_version<M: Module>(
         .into_iter()
         .collect::<Vec<_>>();
     let maximum_fuel_check_instructions = bail_blocks.2;
-    let prepaid_stop_edges = fuel_check_edges.iter().copied().flatten().collect::<Vec<_>>();
+    let prepaid_stop_edges = fuel_check_edges
+        .iter()
+        .copied()
+        .flatten()
+        .collect::<Vec<_>>();
     let header_snapshot_edges = bail_blocks
         .3
         .iter()
@@ -944,10 +1088,18 @@ fn define_version<M: Module>(
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect::<Vec<_>>();
-    let cold_snapshot_recipes = snapshot_emissions.into_iter()
-        .filter_map(|(block, recipe)| context.func.layout.is_block_inserted(block)
-            .then_some(((recipe.node, recipe.header, recipe.incoming), recipe)))
-        .collect::<BTreeMap<_, _>>().into_values().collect::<Vec<_>>();
+    let cold_snapshot_recipes = snapshot_emissions
+        .into_iter()
+        .filter_map(|(block, recipe)| {
+            context
+                .func
+                .layout
+                .is_block_inserted(block)
+                .then_some(((recipe.node, recipe.header, recipe.incoming), recipe))
+        })
+        .collect::<BTreeMap<_, _>>()
+        .into_values()
+        .collect::<Vec<_>>();
     #[cfg(test)]
     cold_recipes::note_emissions(cold_snapshot_recipes.len());
     let native_calls = context
@@ -1042,7 +1194,9 @@ fn define_version<M: Module>(
             cleanup,
         });
     #[cfg(test)]
-    if !direct { EMISSIONS.with(|v| v.set(v.get() + 1)); }
+    if !direct {
+        EMISSIONS.with(|v| v.set(v.get() + 1));
+    }
     Ok(Some(Definition {
         function,
         cached_function: None,
@@ -1114,8 +1268,11 @@ pub(super) fn emit_call(
         let cache = packed.read(b, core::mem::offset_of!(Frame, lookup_cache));
         let installed = b.ins().icmp_imm(IntCC::NotEqual, cache, 0);
         let width_index = b.ins().iadd_imm(width, -1);
-        let supported = b.ins().icmp_imm(IntCC::UnsignedLessThan, width_index,
-            call.definition.cache_max_width as i64);
+        let supported = b.ins().icmp_imm(
+            IntCC::UnsignedLessThan,
+            width_index,
+            call.definition.cache_max_width as i64,
+        );
         let selected = b.ins().band(installed, supported);
         let direct = b.create_block();
         let hashed = b.create_block();

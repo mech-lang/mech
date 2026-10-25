@@ -57,7 +57,8 @@ impl NativeTypedStorage<Option<mech_core::Value>> {
 }
 impl<T: PlannedArenaElement> NativeTypedStorage<T> {
     pub(super) fn admission_bytes(count: usize) -> Result<u64, NativeExecutionError> {
-        let bytes = count.checked_mul(core::mem::size_of::<T>())
+        let bytes = count
+            .checked_mul(core::mem::size_of::<T>())
             .and_then(|bytes| u64::try_from(bytes).ok())
             .ok_or(NativeExecutionError::Descriptor {
                 reason: "native typed transport size overflows",
@@ -176,7 +177,8 @@ mod admission_tests {
             assert_eq!(memory.used_bytes(), bytes, "word count={count}");
             drop(words);
             assert_eq!(memory.used_bytes(), 0);
-            let bytes = NativeTypedStorage::<Option<mech_core::Value>>::admission_bytes(count).unwrap();
+            let bytes =
+                NativeTypedStorage::<Option<mech_core::Value>>::admission_bytes(count).unwrap();
             let values = NativeTypedStorage::new_values(count, 64 << 20, &memory).unwrap();
             assert_eq!(memory.used_bytes(), bytes, "value count={count}");
             drop(values);

@@ -79,13 +79,17 @@ impl State {
         id: u32,
         hashes: &super::super::super::window_round::hashes::WindowHashes,
     ) -> Result<(), Error> {
-        let bins = self.builder(id)?.histogram.as_mut()
+        let bins = self
+            .builder(id)?
+            .histogram
+            .as_mut()
             .and_then(|h| h.compiled_bins.as_mut())
             .ok_or_else(|| invalid("hash Histogram has no result storage"))?;
         for (key, count) in hashes.entries() {
-            let index = usize::try_from(key)
-                .map_err(|_| invalid("hash Histogram result index"))?;
-            *bins.values.get_mut(index)
+            let index = usize::try_from(key).map_err(|_| invalid("hash Histogram result index"))?;
+            *bins
+                .values
+                .get_mut(index)
                 .ok_or_else(|| invalid("hash Histogram result outside bins"))? = count;
         }
         Ok(())

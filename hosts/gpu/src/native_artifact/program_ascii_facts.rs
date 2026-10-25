@@ -33,7 +33,8 @@ impl Cache {
             tests::hit();
             return Ok(fact.ascii_without_crlf);
         }
-        let ascii_without_crlf = value.string_ascii_without_crlf()
+        let ascii_without_crlf = value
+            .string_ascii_without_crlf()
             .ok_or_else(|| invalid("native representation fact requires a String"))?;
         #[cfg(all(test, feature = "canonical-native-program"))]
         tests::scanned();

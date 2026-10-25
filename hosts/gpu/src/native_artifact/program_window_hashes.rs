@@ -3,7 +3,9 @@
 //! up and updates one count, including keys never used by a later query.
 use super::super::{NativeProgramExecutionError as Error, invalid};
 use hashbrown::HashMap;
-use mech_core::{ManagedMemoryReservation, ManagedNodeReservation, MemoryBudgetDimension as Dimension};
+use mech_core::{
+    ManagedMemoryReservation, ManagedNodeReservation, MemoryBudgetDimension as Dimension,
+};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchOrigin};
 
 pub(super) const MAX_WIDTH: u64 = (u128::BITS / 7) as u64;
@@ -166,11 +168,18 @@ impl WindowHashes {
             // The private table persists even for query-only consumers, which
             // never publish a canonical Map. Retain one claim per entry and
             // admit duplicate entries plus the replacement table on rehash.
-            let rehash_nodes = if growth { add(self.counts.len() as u64, 1)? } else { 0 };
+            let rehash_nodes = if growth {
+                add(self.counts.len() as u64, 1)?
+            } else {
+                0
+            };
             super::super::collection::check(
                 self.origin,
                 Dimension::RetainedNodes,
-                add(add(add(self.metadata_nodes.nodes(), self.entries.nodes())?, 1)?, rehash_nodes)?,
+                add(
+                    add(add(self.metadata_nodes.nodes(), self.entries.nodes())?, 1)?,
+                    rehash_nodes,
+                )?,
                 Some(self.retained_limit),
             )?;
             let memory = self.work.memory_budget();

@@ -756,8 +756,9 @@ impl MechRuntime {
                                         fragment,
                                     },
                                 )?;
-                                offset =
-                                    offset.checked_add(fragment.text().len() as u64).ok_or_else(|| {
+                                offset = offset
+                                    .checked_add(fragment.text().len() as u64)
+                                    .ok_or_else(|| {
                                         error("native text delivery offset overflows")
                                     })?;
                                 Ok(())

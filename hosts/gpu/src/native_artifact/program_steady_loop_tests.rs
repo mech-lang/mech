@@ -4,8 +4,10 @@ use super::*;
 
 #[test]
 fn lookup_split_metadata_binds_owned_cache_widths_and_both_function_limits() {
-    let artifact = tests::artifact_source(&format!("{}\n#Count(\"abcabc\",2u64,6u64,empty)\n",
-        structural_projection_tests::COUNT));
+    let artifact = tests::artifact_source(&format!(
+        "{}\n#Count(\"abcabc\",2u64,6u64,empty)\n",
+        structural_projection_tests::COUNT
+    ));
     let catalog = mech_stdlib::source_catalog();
     let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
     let metadata = object.metadata();
@@ -15,39 +17,88 @@ fn lookup_split_metadata_binds_owned_cache_widths_and_both_function_limits() {
     assert_eq!(cached["lookup_mode"], "direct");
     assert!(ordinary["candidate_value_loads"].as_u64().unwrap() > 0);
     assert_eq!(cached["candidate_value_loads"], 0);
-    let reference = without_candidate_value_loads(||
-        crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
-    assert_eq!(reference.metadata()["compiled_steady_loops"][0]["candidate_value_loads"], 0);
-    assert_eq!(ordinary["lookup_cache_selection_word"],
-        core::mem::offset_of!(crate::native_artifact::program_packed_map::Frame, lookup_cache) / 8);
-    let domain = object.descriptor().closed_tails.regions.iter()
-        .find_map(|r| r.packed.as_ref()).unwrap().packing_domain();
+    let reference = without_candidate_value_loads(|| {
+        crate::native_artifact::emit_program_object(&artifact, &catalog)
+    })
+    .unwrap();
+    assert_eq!(
+        reference.metadata()["compiled_steady_loops"][0]["candidate_value_loads"],
+        0
+    );
+    assert_eq!(
+        ordinary["lookup_cache_selection_word"],
+        core::mem::offset_of!(
+            crate::native_artifact::program_packed_map::Frame,
+            lookup_cache
+        ) / 8
+    );
+    let domain = object
+        .descriptor()
+        .closed_tails
+        .regions
+        .iter()
+        .find_map(|r| r.packed.as_ref())
+        .unwrap()
+        .packing_domain();
     let widths = (1..=crate::native_artifact::program_packed_map::MAX_WIDTH)
-        .filter(|&w| crate::native_artifact::program_packed_map::lookup_cache_entries(domain, w).is_some())
+        .filter(|&w| {
+            crate::native_artifact::program_packed_map::lookup_cache_entries(domain, w).is_some()
+        })
         .collect::<Vec<_>>();
     assert_eq!(cached["specialized_widths"], serde_json::json!(widths));
     assert_eq!(cached["native_calls"], 0);
     assert!(cached["lookup_cache_function"].is_null());
     assert!(cached["lookup_cache_selection_word"].is_null());
-    for key in ["header", "active_node", "active_tag", "source_nodes", "entry_words", "cursor_range_site",
-        "cursor_index_word", "prepaid_extent_arguments", "fuel_reconstructed_at_exits"] {
+    for key in [
+        "header",
+        "active_node",
+        "active_tag",
+        "source_nodes",
+        "entry_words",
+        "cursor_range_site",
+        "cursor_index_word",
+        "prepaid_extent_arguments",
+        "fuel_reconstructed_at_exits",
+    ] {
         assert_eq!(ordinary[key], cached[key], "{key}");
     }
     for continuation in cached["continuations"].as_array().unwrap() {
-        assert!(ordinary["continuations"].as_array().unwrap().contains(continuation));
+        assert!(
+            ordinary["continuations"]
+                .as_array()
+                .unwrap()
+                .contains(continuation)
+        );
     }
     let parent = &metadata["compiled_outlined_loops"][0];
     let both = ordinary["code_bytes"].as_u64().unwrap() + cached["code_bytes"].as_u64().unwrap();
-    assert!(metadata["code_bytes"].as_u64().unwrap() > parent["code_bytes"].as_u64().unwrap() + both);
-    let nested = ordinary["stack_bytes"].as_u64().unwrap().max(cached["stack_bytes"].as_u64().unwrap());
-    assert!(metadata["stack_bytes"].as_u64().unwrap() >= parent["stack_bytes"].as_u64().unwrap() + nested);
+    assert!(
+        metadata["code_bytes"].as_u64().unwrap() > parent["code_bytes"].as_u64().unwrap() + both
+    );
+    let nested = ordinary["stack_bytes"]
+        .as_u64()
+        .unwrap()
+        .max(cached["stack_bytes"].as_u64().unwrap());
+    assert!(
+        metadata["stack_bytes"].as_u64().unwrap()
+            >= parent["stack_bytes"].as_u64().unwrap() + nested
+    );
     let mut limits = crate::native_artifact::NativeCompileLimits::default();
     limits.max_stack_bytes = metadata["stack_bytes"].as_u64().unwrap();
     limits.max_code_bytes = metadata["code_bytes"].as_u64().unwrap();
-    assert!(crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits).is_ok());
+    assert!(
+        crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits)
+            .is_ok()
+    );
     limits.max_code_bytes -= 1;
-    assert!(crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits).is_err());
-    let dynamic = without_lookup_loop_split(|| crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
+    assert!(
+        crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits)
+            .is_err()
+    );
+    let dynamic = without_lookup_loop_split(|| {
+        crate::native_artifact::emit_program_object(&artifact, &catalog)
+    })
+    .unwrap();
     let dynamic = &dynamic.metadata()["compiled_steady_loops"][0];
     assert_eq!(dynamic["lookup_mode"], "dynamic");
     assert!(dynamic["lookup_cache_function"].is_null());
@@ -111,19 +162,46 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
     assert!(pure["symbol"].as_str().unwrap().ends_with("_funded"));
     assert_eq!(pure["active_tag"], bound["active_tag"]);
     let peeled = pure["peeled_probe_nodes"].as_array().unwrap();
-    assert!(!peeled.is_empty(), "fresh source memberships must emit the direct entry path");
-    assert_eq!(peeled.len(), peeled.iter().map(|n| n.as_u64().unwrap())
-        .collect::<std::collections::BTreeSet<_>>().len());
-    assert_eq!(pure["specialized_widths"], serde_json::json!(
-        (1..=crate::native_artifact::program_packed_map::MAX_WIDTH).collect::<Vec<_>>()
-    ));
+    assert!(
+        !peeled.is_empty(),
+        "fresh source memberships must emit the direct entry path"
+    );
+    assert_eq!(
+        peeled.len(),
+        peeled
+            .iter()
+            .map(|n| n.as_u64().unwrap())
+            .collect::<std::collections::BTreeSet<_>>()
+            .len()
+    );
+    assert_eq!(
+        pure["specialized_widths"],
+        serde_json::json!(
+            (1..=crate::native_artifact::program_packed_map::MAX_WIDTH).collect::<Vec<_>>()
+        )
+    );
     let checks = pure["fuel_check_edges"].as_array().unwrap();
-    assert_eq!(pure["header_snapshot_edges"], pure["fuel_check_edges"],
-        "every emitted incoming header edge needs its own exact cold snapshot");
-    assert!(checks.iter().any(serde_json::Value::is_null), "initial entry retains the fuel check");
-    assert!(checks.iter().any(serde_json::Value::is_u64), "source backedges retain the fuel check");
-    assert_eq!(pure["prepaid_stop_edges"], serde_json::json!(checks.iter()
-        .filter_map(serde_json::Value::as_u64).collect::<Vec<_>>()));
+    assert_eq!(
+        pure["header_snapshot_edges"], pure["fuel_check_edges"],
+        "every emitted incoming header edge needs its own exact cold snapshot"
+    );
+    assert!(
+        checks.iter().any(serde_json::Value::is_null),
+        "initial entry retains the fuel check"
+    );
+    assert!(
+        checks.iter().any(serde_json::Value::is_u64),
+        "source backedges retain the fuel check"
+    );
+    assert_eq!(
+        pure["prepaid_stop_edges"],
+        serde_json::json!(
+            checks
+                .iter()
+                .filter_map(serde_json::Value::as_u64)
+                .collect::<Vec<_>>()
+        )
+    );
     assert_eq!(pure["fuel_reconstructed_at_exits"], true);
     assert_eq!(pure["prepaid_extent_arguments"], 2);
     assert_eq!(pure["cursor_range_site"], bound["range_site"]);
@@ -131,9 +209,13 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
     assert_eq!(pure["cursor_recurrence_edges"], pure["prepaid_stop_edges"]);
     assert!(pure["maximum_fuel_check_instructions"].as_u64().unwrap() > 0);
     assert_eq!(pure["entry_stop_index_word"], bound["index_word"]);
-    assert_eq!(pure["entry_stop_endpoint_words"], serde_json::json!([
-        bound["width_word"].as_u64().unwrap(), bound["limit_word"].as_u64().unwrap()
-    ]));
+    assert_eq!(
+        pure["entry_stop_endpoint_words"],
+        serde_json::json!([
+            bound["width_word"].as_u64().unwrap(),
+            bound["limit_word"].as_u64().unwrap()
+        ])
+    );
     let mut node_sites = std::collections::BTreeMap::new();
     let closed = &object.descriptor().closed_tails;
     let region = closed

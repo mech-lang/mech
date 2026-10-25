@@ -72,7 +72,10 @@ mod tests {
                 assert_eq!(fragment.text(), text);
                 assert_eq!(fragment.text().as_ptr(), bytes.as_ptr());
                 assert_eq!(fragment.is_ascii(), text.is_ascii());
-                assert_eq!(fragment.line_feeds(), bytes.iter().filter(|&&b| b == b'\n').count());
+                assert_eq!(
+                    fragment.line_feeds(),
+                    bytes.iter().filter(|&&b| b == b'\n').count()
+                );
             }
             (Err(expected), Err(actual)) => {
                 assert_eq!(actual.valid_up_to(), expected.valid_up_to());
@@ -89,10 +92,16 @@ mod tests {
             verify(&[b'a', b'\n', byte, b'\r', b'\n']);
         }
         for bytes in [
-            &b"\xf0\x9f\xa6"[..], &b"\xe0\x80\x80"[..], &b"\xed\xa0\x80"[..],
-            &b"\xf4\x90\x80\x80"[..], &b"x\r\n\0"[..], "é漢🦎\r\n".as_bytes(),
+            &b"\xf0\x9f\xa6"[..],
+            &b"\xe0\x80\x80"[..],
+            &b"\xed\xa0\x80"[..],
+            &b"\xf4\x90\x80\x80"[..],
+            &b"x\r\n\0"[..],
+            "é漢🦎\r\n".as_bytes(),
         ] {
-            for end in 0..=bytes.len() { verify(&bytes[..end]); }
+            for end in 0..=bytes.len() {
+                verify(&bytes[..end]);
+            }
         }
     }
 
@@ -100,10 +109,17 @@ mod tests {
     fn utf8_fragment_facts_keep_dense_counts_alignments_and_vector_tails() {
         for length in (0..=257).chain([4095, 4096, 4097, 65535, 65536]) {
             for period in [1, 2, 3, 7, 16, 63, 64, 65, 128] {
-                let bytes = (0..length + 32).map(|i| match i % period {
-                    0 => b'\n', 1 => b'\r', 2 => 0, _ => b'x',
-                }).collect::<Vec<_>>();
-                for start in 0..32 { verify(&bytes[start..start + length]); }
+                let bytes = (0..length + 32)
+                    .map(|i| match i % period {
+                        0 => b'\n',
+                        1 => b'\r',
+                        2 => 0,
+                        _ => b'x',
+                    })
+                    .collect::<Vec<_>>();
+                for start in 0..32 {
+                    verify(&bytes[start..start + length]);
+                }
             }
         }
         for count in [1, 7, 31, 64, 127, 128, 129, 1024] {

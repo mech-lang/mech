@@ -61,20 +61,30 @@ impl Layout {
             let NativeControlLoop::Tail(tail) = control else {
                 continue;
             };
-            let map = owners.initializer(tail.initialize() as usize).filter(|&owner| {
-                let spans = owners.spans().iter().enumerate()
-                    .filter(|(_, span)| span.region() == owner).collect::<Vec<_>>();
-                // One non-escaping projection over an invariant String. The
-                // source body still computes every range endpoint and value.
-                spans.len() == 1 && owners.regions()[owner].reads().iter()
-                    .chain(owners.regions()[owner].writes())
-                    .all(|&site| owners.call_span(site as usize) == Some(spans[0].0))
-            });
+            let map = owners
+                .initializer(tail.initialize() as usize)
+                .filter(|&owner| {
+                    let spans = owners
+                        .spans()
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, span)| span.region() == owner)
+                        .collect::<Vec<_>>();
+                    // One non-escaping projection over an invariant String. The
+                    // source body still computes every range endpoint and value.
+                    spans.len() == 1
+                        && owners.regions()[owner]
+                            .reads()
+                            .iter()
+                            .chain(owners.regions()[owner].writes())
+                            .all(|&site| owners.call_span(site as usize) == Some(spans[0].0))
+                });
             // A closed map body may run inside an ordinary comprehension.
             // Its own body must still contain no child loop; the parent is
             // suspended until this private owner publishes at the Tail exit.
-            if (tail.parent().is_some() && map.is_none()) || (map.is_none()
-                && aggregates.action(tail.initialize() as usize).is_none()) {
+            if (tail.parent().is_some() && map.is_none())
+                || (map.is_none() && aggregates.action(tail.initialize() as usize).is_none())
+            {
                 continue;
             }
             let mut sites = Vec::new();
@@ -89,10 +99,13 @@ impl Layout {
                 let block = &plan.blocks()[site as usize];
                 let native = aggregates.action(site as usize).is_some()
                     || borrowed.action(site as usize).is_some()
-                    || map.is_some_and(|owner| owners.action_region(site as usize) == Some(owner)
-                        || owners.call_region(site as usize) == Some(owner)
-                        || owners.span_site(site as usize)
-                            .is_some_and(|id| owners.spans()[id].region() == owner))
+                    || map.is_some_and(|owner| {
+                        owners.action_region(site as usize) == Some(owner)
+                            || owners.call_region(site as usize) == Some(owner)
+                            || owners
+                                .span_site(site as usize)
+                                .is_some_and(|id| owners.spans()[id].region() == owner)
+                    })
                     || matches!(
                         block.action(),
                         Action::Scalar(Scalar::None | Scalar::Primitive { .. })
@@ -184,13 +197,16 @@ impl Layout {
                 tail: tail.clone(),
                 borrowed: borrowed.initializers[tail.initialize() as usize],
                 map,
-                packed: map.and_then(|owner|
-                    super::program_map_packed_layout::derive(plan, &owners, owner, visits)),
+                packed: map.and_then(|owner| {
+                    super::program_map_packed_layout::derive(plan, &owners, owner, visits)
+                }),
                 words: _word_offset,
                 compute,
                 comparison,
             });
-            layout.words = layout.words.checked_add(if map.is_some() { 5 } else { 3 })
+            layout.words = layout
+                .words
+                .checked_add(if map.is_some() { 5 } else { 3 })
                 .ok_or("Tail words overflow")?;
         }
         Ok(layout)

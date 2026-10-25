@@ -62,8 +62,8 @@ impl Compiled {
         )
         .unwrap();
         let mut module = cranelift_jit::JITModule::new(builder);
-        let vectorized = module.isa().name() == "aarch64"
-            && module.isa().endianness() == Endianness::Little;
+        let vectorized =
+            module.isa().name() == "aarch64" && module.isa().endianness() == Endianness::Little;
         let (id, ir, _, _) = if histogram && reference {
             define_with(&mut module, &regions[0], histogram_reference::emit)
         } else if reference {

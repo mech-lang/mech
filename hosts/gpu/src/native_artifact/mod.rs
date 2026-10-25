@@ -79,39 +79,39 @@ mod program_abi;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_ascii_map;
 #[cfg(feature = "canonical-native-program-runtime")]
-mod program_map_owner_layout;
-#[cfg(feature = "canonical-native-program-runtime")]
-mod program_frozen_map_layout;
-#[cfg(feature = "canonical-native-program-runtime")]
-mod program_map_packed_layout;
-#[cfg(feature = "canonical-native-program-runtime")]
-mod program_key_domain;
-#[cfg(feature = "canonical-native-program-runtime")]
-mod program_packed_map;
-#[cfg(feature = "canonical-native-program-runtime")]
-mod program_map_admission;
-#[cfg(feature = "canonical-native-program-runtime")]
 mod program_borrowed_layout;
-#[cfg(feature = "canonical-native-program-runtime")]
-mod program_descriptor;
-#[cfg(feature = "canonical-native")]
-mod program_hooks;
 #[cfg(feature = "canonical-native-program")]
 mod program_bound_shim;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_descriptor;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_frozen_map_layout;
+#[cfg(feature = "canonical-native")]
+mod program_hooks;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_identity;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_image_packing;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod program_key_domain;
+#[cfg(feature = "canonical-native-program-runtime")]
 mod program_line_matrix_layout;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_linked;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod program_map_admission;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_map_owner_layout;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_map_packed_layout;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_packed_map;
+#[cfg(feature = "canonical-native-program-runtime")]
+mod program_parallel_layout;
+#[cfg(feature = "canonical-native-program-runtime")]
 mod program_prefix_layout;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_runtime;
-#[cfg(feature = "canonical-native-program-runtime")]
-mod program_parallel_layout;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_selected_join_layout;
 #[cfg(feature = "canonical-native-program-runtime")]

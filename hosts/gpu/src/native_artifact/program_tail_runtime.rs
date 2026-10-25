@@ -62,8 +62,12 @@ impl Context<'_, '_> {
             return Ok(Some(0));
         };
         if proof.map.is_some() {
-            let Some(words) = self.begin_closed_map(region)? else { return Ok(Some(0)); };
-            for (index, word) in words.into_iter().enumerate() { self.write_borrowed_word(index, word)?; }
+            let Some(words) = self.begin_closed_map(region)? else {
+                return Ok(Some(0));
+            };
+            for (index, word) in words.into_iter().enumerate() {
+                self.write_borrowed_word(index, word)?;
+            }
         } else {
             self.write_borrowed_word(0, remaining.0)?;
             self.write_borrowed_word(1, remaining.1)?;
@@ -95,15 +99,18 @@ impl Context<'_, '_> {
         if self.control.previous != Some(state.entry)
             || self.control.current != Some(proof.iteration)
             || self.control.progress[proof.iteration as usize * 2..][..2] != [0, 1]
-            || (proof.map.is_none() && (self.library.used() != state.used
-                || self.library.unscoped_remaining() != Some(state.remaining)))
+            || (proof.map.is_none()
+                && (self.library.used() != state.used
+                    || self.library.unscoped_remaining() != Some(state.remaining)))
         {
             return Err(invalid(
                 "closed Tail account or entry changed during native execution",
             ));
         }
         let (compute, comparison, traversals) = if proof.map.is_some() {
-            if args[1] != 0 { return Err(invalid("closed map comparison lane changed")); }
+            if args[1] != 0 {
+                return Err(invalid("closed map comparison lane changed"));
+            }
             (0, 0, self.end_closed_map(state.region, args[0], args[2])?)
         } else {
             let compute = state

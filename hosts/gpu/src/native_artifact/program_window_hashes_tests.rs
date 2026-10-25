@@ -22,7 +22,17 @@ fn owner(
     } else {
         0
     };
-    WindowHashes::new(source.len(), width, count, 0, origin(), work, temporary, 1 << 30).unwrap()
+    WindowHashes::new(
+        source.len(),
+        width,
+        count,
+        0,
+        origin(),
+        work,
+        temporary,
+        1 << 30,
+    )
+    .unwrap()
 }
 
 #[test]
@@ -48,7 +58,10 @@ fn hash_windows_update_every_key_for_all_seven_widths_and_release_all_backing() 
         assert_eq!(table.counts.values().sum::<u64>(), table.updated);
         assert_eq!(table.counts.len(), expected.len());
         assert_eq!(table.entries.nodes(), expected.len() as u64);
-        assert_eq!(memory.retained_nodes(), table.metadata_nodes.nodes() + table.entries.nodes());
+        assert_eq!(
+            memory.retained_nodes(),
+            table.metadata_nodes.nodes() + table.entries.nodes()
+        );
         for (key, count) in expected {
             assert_eq!(table.count(&key).unwrap(), count);
         }
@@ -73,23 +86,52 @@ fn hash_window_node_admission_covers_owner_entries_and_rehash_peak() {
     table.update(0, pack(b"a").unwrap()).unwrap();
     table.update(1, pack(b"b").unwrap()).unwrap();
     let before = (memory.used_bytes(), memory.retained_nodes());
-    assert!(matches!(table.update(2, pack(b"c").unwrap()), Err(Error::Collection { origin: at, .. }) if at == table.origin));
-    assert_eq!((table.updated, table.counts.len(), table.entries.nodes()), (2, 2, 2));
+    assert!(
+        matches!(table.update(2, pack(b"c").unwrap()), Err(Error::Collection { origin: at, .. }) if at == table.origin)
+    );
+    assert_eq!(
+        (table.updated, table.counts.len(), table.entries.nodes()),
+        (2, 2, 2)
+    );
     assert_eq!((memory.used_bytes(), memory.retained_nodes()), before);
     table.retained_limit = 1 << 30;
     for index in 2..table.counts.capacity() {
-        table.update(index as u64, pack(&source.as_bytes()[index..index+1]).unwrap()).unwrap();
+        table
+            .update(
+                index as u64,
+                pack(&source.as_bytes()[index..index + 1]).unwrap(),
+            )
+            .unwrap();
     }
     let count = table.counts.len() as u64;
     assert_eq!(count as usize, table.counts.capacity());
     let peak = fixed + count + 1 + count + 1;
     table.retained_limit = peak - 1;
     let before = (memory.used_bytes(), memory.retained_nodes());
-    assert!(table.update(count, pack(&source.as_bytes()[count as usize..count as usize+1]).unwrap()).is_err());
-    assert_eq!((table.updated, table.counts.len() as u64, table.entries.nodes()), (count, count, count));
+    assert!(
+        table
+            .update(
+                count,
+                pack(&source.as_bytes()[count as usize..count as usize + 1]).unwrap()
+            )
+            .is_err()
+    );
+    assert_eq!(
+        (
+            table.updated,
+            table.counts.len() as u64,
+            table.entries.nodes()
+        ),
+        (count, count, count)
+    );
     assert_eq!((memory.used_bytes(), memory.retained_nodes()), before);
     table.retained_limit = peak;
-    table.update(count, pack(&source.as_bytes()[count as usize..count as usize+1]).unwrap()).unwrap();
+    table
+        .update(
+            count,
+            pack(&source.as_bytes()[count as usize..count as usize + 1]).unwrap(),
+        )
+        .unwrap();
     assert_eq!(memory.retained_nodes(), fixed + count + 1);
     drop(table);
     assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
@@ -100,10 +142,18 @@ fn hash_window_node_admission_covers_owner_entries_and_rehash_peak() {
         let memory = mech_core::ManagedMemoryBudget::new(1 << 20).with_limits(1 << 20, limit);
         let mut table = owner(source, 1, &memory, 1 << 50, 1 << 20);
         for index in 0..count {
-            table.update(index, pack(&source.as_bytes()[index as usize..index as usize+1]).unwrap()).unwrap();
+            table
+                .update(
+                    index,
+                    pack(&source.as_bytes()[index as usize..index as usize + 1]).unwrap(),
+                )
+                .unwrap();
         }
         let before = (memory.used_bytes(), memory.retained_nodes());
-        let next = table.update(count, pack(&source.as_bytes()[count as usize..count as usize+1]).unwrap());
+        let next = table.update(
+            count,
+            pack(&source.as_bytes()[count as usize..count as usize + 1]).unwrap(),
+        );
         if limit < peak {
             assert!(next.is_err());
             assert_eq!((memory.used_bytes(), memory.retained_nodes()), before);

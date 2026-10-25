@@ -83,7 +83,14 @@ macro_rules! primitives {
         }
     })* };
 }
-primitives!(u32, u64, usize, bool, mech_core::NodeId, mech_core::ProgramRevision);
+primitives!(
+    u32,
+    u64,
+    usize,
+    bool,
+    mech_core::NodeId,
+    mech_core::ProgramRevision
+);
 impl ImageRead for NativeMatchValue {
     fn read<'de, D: Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
         u32::read(image).map(Self)

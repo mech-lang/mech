@@ -13,8 +13,8 @@ use crate::{
 };
 use mech_core::{
     CurrentMemoryFootprint, FunctionCatalog, ManagedMemoryBudget, ManagedMemoryReservation,
-    ManagedNodeReservation,
-    MemoryBudgetLimits, MemoryPlanError, ResidentKernelFactory, ResourceDemand, SchemaTable, Value,
+    ManagedNodeReservation, MemoryBudgetLimits, MemoryPlanError, ResidentKernelFactory,
+    ResourceDemand, SchemaTable, Value,
 };
 use std::sync::Arc;
 
@@ -44,8 +44,8 @@ pub use selected_join::NativeSelectedStringMatrix;
 mod text_lines;
 #[cfg(feature = "pure_text")]
 pub use text_lines::{
-    NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineMatrix,
-    NativeTextLineMatrixChoice, NativeTextLineWindow,
+    NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineJoinChunk,
+    NativeTextLineMatrix, NativeTextLineMatrixChoice, NativeTextLineWindow,
 };
 
 /// Compiler-owned selection/immutable schemas, not a bound runtime call or
@@ -126,18 +126,28 @@ impl NativePreparedLibraryCallCache {
         // staging-node witness; dynamic indexes have their own witness below.
         let metadata = binding._reservation.capacity_bytes();
         let mut demand = ResourceDemand {
-            turn_peak_bytes: metadata.checked_add(binding.projection_index.bytes())
+            turn_peak_bytes: metadata
+                .checked_add(binding.projection_index.bytes())
                 .ok_or(InvokeError::InvalidInput)?,
-            retained_nodes: 1u64.checked_add(if binding.call.is_some() { binding.binding_nodes } else { 0 })
+            retained_nodes: 1u64
+                .checked_add(if binding.call.is_some() {
+                    binding.binding_nodes
+                } else {
+                    0
+                })
                 .and_then(|n| n.checked_add(binding.projection_index.nodes()))
                 .ok_or(InvokeError::InvalidInput)?,
             ..ResourceDemand::default()
         };
         if let NativePlanCacheState::Cached(plans) = &binding.plans {
             let plans = plans.retained_metadata_demand(work)?;
-            demand.turn_peak_bytes = demand.turn_peak_bytes.checked_add(plans.turn_peak_bytes)
+            demand.turn_peak_bytes = demand
+                .turn_peak_bytes
+                .checked_add(plans.turn_peak_bytes)
                 .ok_or(InvokeError::InvalidInput)?;
-            demand.retained_nodes = demand.retained_nodes.checked_add(plans.retained_nodes)
+            demand.retained_nodes = demand
+                .retained_nodes
+                .checked_add(plans.retained_nodes)
                 .ok_or(InvokeError::InvalidInput)?;
         }
         Ok(demand)
@@ -639,8 +649,10 @@ impl NativePreparedLibraryCall {
                             }
                         }
                     } else {
-                        let nodes = memory.reserve_nodes(1u64.checked_add(self.binding_nodes)
-                            .ok_or(InvokeError::InvalidInput)?)?;
+                        let nodes = memory.reserve_nodes(
+                            1u64.checked_add(self.binding_nodes)
+                                .ok_or(InvokeError::InvalidInput)?,
+                        )?;
                         let reservation = memory.reserve_capacity(bytes)?;
                         let call = self.bind_values(inputs, output, nested)?;
                         cache.binding = Some(Box::new(CachedBinding {

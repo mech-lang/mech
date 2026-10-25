@@ -1698,8 +1698,11 @@ impl MemoryDomain {
         let metadata = initialization_metadata_bytes(capacity_bytes, true)?;
         capacity_bytes.checked_add(metadata).ok_or(
             MemoryRuntimeError::AccountingInvariantViolation {
-                dimension: "host arena admission bytes", current: capacity_bytes, change: metadata,
-            })
+                dimension: "host arena admission bytes",
+                current: capacity_bytes,
+                change: metadata,
+            },
+        )
     }
 
     pub fn memory_budget(&self) -> Option<super::ManagedMemoryBudget> {

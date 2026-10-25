@@ -3,7 +3,8 @@
 //! its exact descriptor, frame and current site, and supply complete geometry.
 use super::owned_string_map::{Error, Limits, OwnedStringMap, PublicationGeometry as Geometry};
 use mech_core::{
-    ManagedMemoryReservation, ManagedNodeReservation, MemoryBudgetLimits, SchemaBody, SchemaTable, Value, ValueData,
+    ManagedMemoryReservation, ManagedNodeReservation, MemoryBudgetLimits, SchemaBody, SchemaTable,
+    Value, ValueData,
 };
 use mech_engine::native_artifact::{
     NativeCollectionPrimitive as Primitive, NativeControlLoop, NativeIterationAction as Action,
@@ -23,11 +24,16 @@ static TOKENS: AtomicU64 = AtomicU64::new(0);
 /// complete admitted owner stays pinned; the projected key is never a Value.
 pub(super) enum Key<'a> {
     Canonical(&'a Value),
-    Span { value: mech_engine::native_artifact::NativeMatchValue,
-        owner: &'a Value, bytes: &'a core::ops::Range<usize> },
+    Span {
+        value: mech_engine::native_artifact::NativeMatchValue,
+        owner: &'a Value,
+        bytes: &'a core::ops::Range<usize>,
+    },
 }
 impl<'a> From<&'a Value> for Key<'a> {
-    fn from(value: &'a Value) -> Self { Self::Canonical(value) }
+    fn from(value: &'a Value) -> Self {
+        Self::Canonical(value)
+    }
 }
 fn add(a: u64, b: u64) -> Result<u64, Error> {
     a.checked_add(b).ok_or(Error::Overflow)
@@ -239,8 +245,10 @@ impl<'plan> Binding<'plan> {
             .values()
             .get(tail.seed().get() as usize)
             .ok_or(Error::Binding("seed type"))?;
-        let memory = work.memory_budget().with_limits(cap(limits.max_temporary_bytes)?,
-            cap(limits.max_retained_nodes)?);
+        let memory = work.memory_budget().with_limits(
+            cap(limits.max_temporary_bytes)?,
+            cap(limits.max_retained_nodes)?,
+        );
         let retained = source
             .memory_budget_retained_bytes(&memory)
             .ok_or(Error::Binding("unadmitted seed"))?;
@@ -359,7 +367,9 @@ impl<'plan> Binding<'plan> {
         )
     }
     pub(super) fn retained_nodes(&self) -> Result<u64, Error> {
-        self.map.as_ref().map_or(Ok(1), |map| add(map.len() as u64, 3))
+        self.map
+            .as_ref()
+            .map_or(Ok(1), |map| add(map.len() as u64, 3))
     }
     fn site(
         &self,
@@ -410,9 +420,15 @@ impl<'plan> Binding<'plan> {
                 }
                 (key, None)
             }
-            Key::Span { value, owner, bytes } => {
-                if value != operand || ty.definition().body() != &SchemaBody::String
-                    || !ty.definition().dimension_parameters().is_empty() {
+            Key::Span {
+                value,
+                owner,
+                bytes,
+            } => {
+                if value != operand
+                    || ty.definition().body() != &SchemaBody::String
+                    || !ty.definition().dimension_parameters().is_empty()
+                {
                     return Err(Error::Binding("wrong selected key projection"));
                 }
                 (owner, Some(bytes))
@@ -431,7 +447,9 @@ impl<'plan> Binding<'plan> {
             return Err(Error::Binding("incomplete key geometry"));
         }
         match bytes {
-            Some(bytes) => text.get(bytes.clone()).ok_or(Error::Binding("key span bounds")),
+            Some(bytes) => text
+                .get(bytes.clone())
+                .ok_or(Error::Binding("key span bounds")),
             None => Ok(text),
         }
     }
@@ -559,53 +577,95 @@ impl<'plan> Binding<'plan> {
         Ok(self.current(self.token)?.len() == 0)
     }
     pub(super) fn install_native_map(&mut self, map: OwnedStringMap) -> Result<(), Error> {
-        if !self.native_seed_is_empty()? { return Err(Error::Binding("packed map replaced nonempty seed")); }
+        if !self.native_seed_is_empty()? {
+            return Err(Error::Binding("packed map replaced nonempty seed"));
+        }
         self.map = Some(map);
         self.native_version = self.native_version.checked_add(1).ok_or(Error::Overflow)?;
         Ok(())
     }
-    fn native_lookup(&self, key: &str, probe: &mut Option<NativeProbe>) -> Result<Option<u64>, Error> {
+    fn native_lookup(
+        &self,
+        key: &str,
+        probe: &mut Option<NativeProbe>,
+    ) -> Result<Option<u64>, Error> {
         let map = self.current(self.token)?;
-        if let Some(cached) = probe.as_ref().filter(|cached|
-            cached.token == self.token && cached.version == self.native_version
-                && cached.address == key.as_ptr() as usize && cached.bytes == key.len())
-        {
+        if let Some(cached) = probe.as_ref().filter(|cached| {
+            cached.token == self.token
+                && cached.version == self.native_version
+                && cached.address == key.as_ptr() as usize
+                && cached.bytes == key.len()
+        }) {
             // Preserve the complete original lookup debit before observing
             // its cached scalar, including current per-call/root caps.
             map.lookup_work(key, 1)?;
             #[cfg(test)]
-            NATIVE_PROBE_COUNTS.with(|counts| { let (hits, misses) = counts.get(); counts.set((hits + 1, misses)); });
+            NATIVE_PROBE_COUNTS.with(|counts| {
+                let (hits, misses) = counts.get();
+                counts.set((hits + 1, misses));
+            });
             return Ok(cached.value);
         }
         let value = map.get(key)?;
-        *probe = Some(NativeProbe { token: self.token, version: self.native_version,
-            address: key.as_ptr() as usize, bytes: key.len(), value });
+        *probe = Some(NativeProbe {
+            token: self.token,
+            version: self.native_version,
+            address: key.as_ptr() as usize,
+            bytes: key.len(),
+            value,
+        });
         #[cfg(test)]
-        NATIVE_PROBE_COUNTS.with(|counts| { let (hits, misses) = counts.get(); counts.set((hits, misses + 1)); });
+        NATIVE_PROBE_COUNTS.with(|counts| {
+            let (hits, misses) = counts.get();
+            counts.set((hits, misses + 1));
+        });
         Ok(value)
     }
-    pub(super) fn native_read(&self, key: &str, contains: bool, probe: &mut Option<NativeProbe>,
-        limits: MemoryBudgetLimits) -> Result<u64, Error>
-    {
-        self.work.with_call_limits(cap(limits.max_compute_work)?,
-            cap(limits.max_comparison_work)?, || {
+    pub(super) fn native_read(
+        &self,
+        key: &str,
+        contains: bool,
+        probe: &mut Option<NativeProbe>,
+        limits: MemoryBudgetLimits,
+    ) -> Result<u64, Error> {
+        self.work.with_call_limits(
+            cap(limits.max_compute_work)?,
+            cap(limits.max_comparison_work)?,
+            || {
                 let found = self.native_lookup(key, probe)?;
-                if contains { Ok(u64::from(found.is_some())) }
-                else { found.ok_or(Error::Binding("missing map key")) }
-            })?
+                if contains {
+                    Ok(u64::from(found.is_some()))
+                } else {
+                    found.ok_or(Error::Binding("missing map key"))
+                }
+            },
+        )?
     }
-    pub(super) fn native_insert(&mut self, key: &str, value: u64, probe: &mut Option<NativeProbe>,
-        geometry: Geometry, limits: MemoryBudgetLimits) -> Result<u64, Error>
-    {
+    pub(super) fn native_insert(
+        &mut self,
+        key: &str,
+        value: u64,
+        probe: &mut Option<NativeProbe>,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+    ) -> Result<u64, Error> {
         let work = self.work.clone();
-        work.with_call_limits(cap(limits.max_compute_work)?,
-            cap(limits.max_comparison_work)?, || {
+        work.with_call_limits(
+            cap(limits.max_compute_work)?,
+            cap(limits.max_comparison_work)?,
+            || {
                 let fresh = self.native_lookup(key, probe)?.is_none();
                 let map = self.current(self.token)?;
                 let count = add(map.len() as u64, u64::from(fresh))?;
                 let cloned = if fresh { key.len() as u64 } else { 0 };
-                let storage = self.geometry(self.token, geometry, limits,
-                    count, add(map.key_bytes(), cloned)?, cloned)?;
+                let storage = self.geometry(
+                    self.token,
+                    geometry,
+                    limits,
+                    count,
+                    add(map.key_bytes(), cloned)?,
+                    cloned,
+                )?;
                 let next_version = self.native_version.checked_add(1).ok_or(Error::Overflow)?;
                 // Retire every old observation before storage can mutate,
                 // including replacement without growth and failed attempts.
@@ -615,14 +675,18 @@ impl<'plan> Binding<'plan> {
                 map.set_limits(storage);
                 map.insert(key, value)?;
                 Ok(self.token)
-            })?
+            },
+        )?
     }
     /// Check the same original publication boundary without materializing a
     /// canonical map. Complete frozen storage and logical caps are checked by
     /// the private caller before this binding is retired.
-    pub(super) fn frozen_exit_schema(&self, site: usize, token: u64, schemas: &Arc<SchemaTable>)
-        -> Result<mech_core::SchemaId, Error>
-    {
+    pub(super) fn frozen_exit_schema(
+        &self,
+        site: usize,
+        token: u64,
+        schemas: &Arc<SchemaTable>,
+    ) -> Result<mech_core::SchemaId, Error> {
         self.current(token)?;
         if site != self.region.tail().exit() as usize {
             return Err(Error::Binding("unselected frozen owner exit"));

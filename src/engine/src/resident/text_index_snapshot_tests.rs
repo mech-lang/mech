@@ -310,7 +310,11 @@ fn snapshot_index_nodes_share_one_ceiling_and_follow_outstanding_index_loans() {
     assert_eq!(memory.used_bytes(), bytes);
     assert_eq!(memory.retained_nodes(), baseline + 2);
     drop(first);
-    assert_eq!(memory.retained_nodes(), baseline + 2, "live index loan owns its claim");
+    assert_eq!(
+        memory.retained_nodes(),
+        baseline + 2,
+        "live index loan owns its claim"
+    );
     assert!(second.prepare(&value, &second_work, unlimited).is_err());
     drop(loan);
     assert_eq!(memory.retained_nodes(), baseline);
@@ -330,16 +334,25 @@ fn snapshot_offset_node_growth_denial_retires_pending_header_claim() {
     let bytes = memory.used_bytes();
     let slot = Slot::default();
     let mut calls = 0;
-    assert!(slot.prepare(&unicode, &work, |_, nodes| {
-        calls += 1;
-        assert!(nodes == 2 || nodes == 3);
-        Ok(())
-    }).is_err());
-    assert_eq!(calls, 2, "header succeeds, shared offset-node admission fails");
+    assert!(
+        slot.prepare(&unicode, &work, |_, nodes| {
+            calls += 1;
+            assert!(nodes == 2 || nodes == 3);
+            Ok(())
+        })
+        .is_err()
+    );
+    assert_eq!(
+        calls, 2,
+        "header succeeds, shared offset-node admission fails"
+    );
     assert_eq!((slot.bytes(), slot.nodes()), (0, 0));
     assert!(!slot.building.get());
     assert!(slot.entry.borrow().is_none());
-    assert_eq!((memory.used_bytes(), memory.retained_nodes()), (bytes, baseline));
+    assert_eq!(
+        (memory.used_bytes(), memory.retained_nodes()),
+        (bytes, baseline)
+    );
     drop((slot, unicode, work));
     assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
 }

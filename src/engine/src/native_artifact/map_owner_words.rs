@@ -50,22 +50,39 @@ pub struct NativeMapKeySpan {
     operands: (Value, Value),
 }
 crate::native_artifact::program_image_proofs::image_struct!(NativeMapKeySpan {
-    region: usize, range_site: u32, selection_site: u32,
-    source: Value, output: Value, operands: (Value, Value),
+    region: usize,
+    range_site: u32,
+    selection_site: u32,
+    source: Value,
+    output: Value,
+    operands: (Value, Value),
 });
 impl NativeMapKeySpan {
-    pub const fn region(&self) -> usize { self.region }
-    pub const fn range_site(&self) -> u32 { self.range_site }
-    pub const fn selection_site(&self) -> u32 { self.selection_site }
-    pub const fn source(&self) -> Value { self.source }
-    pub const fn output(&self) -> Value { self.output }
-    pub const fn operands(&self) -> [Value; 2] { [self.operands.0, self.operands.1] }
+    pub const fn region(&self) -> usize {
+        self.region
+    }
+    pub const fn range_site(&self) -> u32 {
+        self.range_site
+    }
+    pub const fn selection_site(&self) -> u32 {
+        self.selection_site
+    }
+    pub const fn source(&self) -> Value {
+        self.source
+    }
+    pub const fn output(&self) -> Value {
+        self.output
+    }
+    pub const fn operands(&self) -> [Value; 2] {
+        [self.operands.0, self.operands.1]
+    }
 }
 
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
-fn key_spans(plan: &Plan, regions: &[NativeMapOwnerRegion])
-    -> Result<Vec<NativeMapKeySpan>, &'static str>
-{
+fn key_spans(
+    plan: &Plan,
+    regions: &[NativeMapOwnerRegion],
+) -> Result<Vec<NativeMapKeySpan>, &'static str> {
     use super::fusion_semantics::{self, Read};
     let actions = fusion_semantics::semantic_actions(plan)?;
     let counts = fusion_semantics::semantic_use_counts(plan)?;
@@ -73,12 +90,21 @@ fn key_spans(plan: &Plan, regions: &[NativeMapOwnerRegion])
     let mut result: Vec<NativeMapKeySpan> = Vec::new();
     for (index, region) in regions.iter().enumerate() {
         for &site in region.reads().iter().chain(region.writes()) {
-            let Action::LibraryCall { operands, .. } = &actions[site as usize] else { continue; };
+            let Action::LibraryCall { operands, .. } = &actions[site as usize] else {
+                continue;
+            };
             let key = operands[1];
-            if result.iter().any(|span| span.output == key) { continue; }
-            let Some(projection) = super::string_span_projection::selected_pair(plan, &key, &counts, &actions)
-                else { continue; };
-            if plan.blocks()[projection.selection_site() as usize].iteration() != Some(region.iteration()) {
+            if result.iter().any(|span| span.output == key) {
+                continue;
+            }
+            let Some(projection) =
+                super::string_span_projection::selected_pair(plan, &key, &counts, &actions)
+            else {
+                continue;
+            };
+            if plan.blocks()[projection.selection_site() as usize].iteration()
+                != Some(region.iteration())
+            {
                 continue;
             }
             // No transport, carrier, branch, constructor or unrelated consumer
@@ -91,9 +117,12 @@ fn key_spans(plan: &Plan, regions: &[NativeMapOwnerRegion])
                 _ => true,
             }) { continue; }
             result.push(NativeMapKeySpan {
-                region: index, range_site: projection.range_site(),
-                selection_site: projection.selection_site(), source: projection.source(),
-                output: key, operands: (projection.operands()[0], projection.operands()[1]),
+                region: index,
+                range_site: projection.range_site(),
+                selection_site: projection.selection_site(),
+                source: projection.source(),
+                output: key,
+                operands: (projection.operands()[0], projection.operands()[1]),
             });
         }
     }
@@ -104,7 +133,9 @@ fn key_spans(_: &Plan, _: &[NativeMapOwnerRegion]) -> Result<Vec<NativeMapKeySpa
     Ok(Vec::new())
 }
 impl NativeMapOwnerWords {
-    pub fn spans(&self) -> &[NativeMapKeySpan] { &self.spans }
+    pub fn spans(&self) -> &[NativeMapKeySpan] {
+        &self.spans
+    }
     pub fn span_site(&self, site: usize) -> Option<usize> {
         self.span_sites.get(site).copied().flatten()
     }
@@ -145,12 +176,23 @@ impl NativeMapOwnerWords {
         let shift = prefix_words
             .checked_sub(self.owner_base)
             .ok_or("map owner prefix overlaps ordinary native storage")?;
-        let end = self.frame_words.checked_add(shift).ok_or("map owner frame overflow")?;
-        let words = self.aggregates.words.checked_add(shift).ok_or("map owner word overflow")?;
+        let end = self
+            .frame_words
+            .checked_add(shift)
+            .ok_or("map owner frame overflow")?;
+        let words = self
+            .aggregates
+            .words
+            .checked_add(shift)
+            .ok_or("map owner word overflow")?;
         for region in &self.regions {
             for &value in region.values() {
-                let slot = self.aggregates.slots.get_mut(value.get() as usize)
-                    .and_then(Option::as_mut).ok_or("map owner slot is missing")?;
+                let slot = self
+                    .aggregates
+                    .slots
+                    .get_mut(value.get() as usize)
+                    .and_then(Option::as_mut)
+                    .ok_or("map owner slot is missing")?;
                 if slot.0 >= self.owner_base {
                     slot.0 = slot.0.checked_add(shift).ok_or("map owner slot overflow")?;
                 } else if *slot != (value.get() as usize, 1) {
@@ -320,7 +362,8 @@ impl Plan {
             let region = &regions[span.region];
             for &site in region.reads().iter().chain(region.writes()) {
                 if matches!(self.blocks()[site as usize].action(),
-                    Action::LibraryCall { operands, .. } if operands[1] == span.output) {
+                    Action::LibraryCall { operands, .. } if operands[1] == span.output)
+                {
                     call_spans[site as usize] = Some(index);
                 }
             }
@@ -402,7 +445,8 @@ impl Plan {
                 };
                 if let Some(action) = action {
                     if actions[site].replace(action).is_some()
-                        || action_regions[site].replace(index).is_some() {
+                        || action_regions[site].replace(index).is_some()
+                    {
                         return Err("overlapping map state transport actions");
                     }
                 }
@@ -410,7 +454,9 @@ impl Plan {
         }
         Ok(NativeMapOwnerWords {
             regions,
-            spans: spans.into(), span_sites: span_sites.into(), call_spans: call_spans.into(),
+            spans: spans.into(),
+            span_sites: span_sites.into(),
+            call_spans: call_spans.into(),
             initializers: initializers.into(),
             exits: exits.into(),
             action_regions: action_regions.into(),

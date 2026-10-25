@@ -63,11 +63,16 @@ impl ManagedMemoryBudget {
     /// All participants in a bounded parallel group must receive this view;
     /// this does not revoke an independently retained, less restrictive view.
     pub fn with_limits(&self, bytes: u64, nodes: u64) -> Self {
-        Self { account: self.account.clone(), byte_limit: self.limit_bytes().min(bytes),
-            node_limit: self.node_limit.min(nodes) }
+        Self {
+            account: self.account.clone(),
+            byte_limit: self.limit_bytes().min(bytes),
+            node_limit: self.node_limit.min(nodes),
+        }
     }
 
-    pub fn limit_nodes(&self) -> u64 { self.node_limit }
+    pub fn limit_nodes(&self) -> u64 {
+        self.node_limit
+    }
 
     /// Combined live admitted snapshot nodes and private builder/frame claims.
     /// Private owners reserve their staging geometry before materialization;
@@ -89,22 +94,41 @@ impl ManagedMemoryBudget {
         self.account.snapshot_nodes.load(Ordering::Acquire)
     }
 
-    pub(crate) fn retain_snapshot_nodes(&self, nodes: u64) -> MemoryRuntimeResult<SnapshotNodeCharge> {
+    pub(crate) fn retain_snapshot_nodes(
+        &self,
+        nodes: u64,
+    ) -> MemoryRuntimeResult<SnapshotNodeCharge> {
         self.claim_nodes(nodes, "admitted snapshot node census")?;
         // The combined claim was acquired first, so this subset cannot wrap.
-        self.account.snapshot_nodes.fetch_add(nodes, Ordering::AcqRel);
-        Ok(SnapshotNodeCharge { budget: self.clone(), nodes })
+        self.account
+            .snapshot_nodes
+            .fetch_add(nodes, Ordering::AcqRel);
+        Ok(SnapshotNodeCharge {
+            budget: self.clone(),
+            nodes,
+        })
     }
 
     fn claim_nodes(&self, nodes: u64, dimension: &'static str) -> MemoryRuntimeResult<()> {
-        self.account.retained_nodes.fetch_update(Ordering::AcqRel, Ordering::Acquire, |current| {
-            current.checked_add(nodes).filter(|next| *next <= self.node_limit)
-        }).map_err(|current| match current.checked_add(nodes) {
-            None => MemoryRuntimeError::AccountingInvariantViolation { dimension, current, change: nodes },
-            Some(requested) => MemoryRuntimeError::BudgetExceeded {
-                operation: Some("retained node admission".into()), requested, limit: self.node_limit,
-            },
-        })?;
+        self.account
+            .retained_nodes
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |current| {
+                current
+                    .checked_add(nodes)
+                    .filter(|next| *next <= self.node_limit)
+            })
+            .map_err(|current| match current.checked_add(nodes) {
+                None => MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension,
+                    current,
+                    change: nodes,
+                },
+                Some(requested) => MemoryRuntimeError::BudgetExceeded {
+                    operation: Some("retained node admission".into()),
+                    requested,
+                    limit: self.node_limit,
+                },
+            })?;
         Ok(())
     }
 
@@ -112,7 +136,10 @@ impl ManagedMemoryBudget {
     /// admitted Value. It shares the canonical snapshot node ceiling atomically.
     pub fn reserve_nodes(&self, nodes: u64) -> MemoryRuntimeResult<ManagedNodeReservation> {
         self.claim_nodes(nodes, "admitted private node reservation")?;
-        Ok(ManagedNodeReservation { budget: self.clone(), nodes })
+        Ok(ManagedNodeReservation {
+            budget: self.clone(),
+            nodes,
+        })
     }
 
     /// One-shot account-scoped fixture for immutable import allocation tests.
@@ -188,14 +215,21 @@ impl SnapshotNodeCharge {
 }
 impl Drop for SnapshotNodeCharge {
     fn drop(&mut self) {
-        let previous = self.budget.account.snapshot_nodes.fetch_sub(self.nodes, Ordering::AcqRel);
+        let previous = self
+            .budget
+            .account
+            .snapshot_nodes
+            .fetch_sub(self.nodes, Ordering::AcqRel);
         debug_assert!(previous >= self.nodes, "snapshot node census underflow");
         release_nodes(&self.budget, self.nodes);
     }
 }
 
 fn release_nodes(budget: &ManagedMemoryBudget, nodes: u64) {
-    let previous = budget.account.retained_nodes.fetch_sub(nodes, Ordering::AcqRel);
+    let previous = budget
+        .account
+        .retained_nodes
+        .fetch_sub(nodes, Ordering::AcqRel);
     assert!(previous >= nodes, "retained node reservation underflow");
 }
 
@@ -207,11 +241,16 @@ pub struct ManagedNodeReservation {
     nodes: u64,
 }
 impl ManagedNodeReservation {
-    pub fn nodes(&self) -> u64 { self.nodes }
-    pub fn budget(&self) -> ManagedMemoryBudget { self.budget.clone() }
+    pub fn nodes(&self) -> u64 {
+        self.nodes
+    }
+    pub fn budget(&self) -> ManagedMemoryBudget {
+        self.budget.clone()
+    }
     pub fn resize(&mut self, nodes: u64) -> MemoryRuntimeResult<()> {
         if nodes > self.nodes {
-            self.budget.claim_nodes(nodes - self.nodes, "admitted private node reservation")?;
+            self.budget
+                .claim_nodes(nodes - self.nodes, "admitted private node reservation")?;
         } else {
             release_nodes(&self.budget, self.nodes - nodes);
         }
@@ -224,21 +263,29 @@ impl ManagedNodeReservation {
     pub fn merge(&mut self, mut other: Self) -> MemoryRuntimeResult<()> {
         if self.budget != other.budget {
             return Err(MemoryRuntimeError::CandidateValidationFailed {
-                object: None, reason: "cannot merge nodes from different memory budgets".into(),
+                object: None,
+                reason: "cannot merge nodes from different memory budgets".into(),
             });
         }
         let nodes = self.nodes.checked_add(other.nodes).ok_or(
             MemoryRuntimeError::AccountingInvariantViolation {
-                dimension: "retained node reservation merge", current: self.nodes, change: other.nodes,
-            })?;
+                dimension: "retained node reservation merge",
+                current: self.nodes,
+                change: other.nodes,
+            },
+        )?;
         self.nodes = nodes;
-        self.budget = self.budget.with_limits(other.budget.limit_bytes(), other.budget.limit_nodes());
+        self.budget = self
+            .budget
+            .with_limits(other.budget.limit_bytes(), other.budget.limit_nodes());
         other.nodes = 0;
         Ok(())
     }
 }
 impl Drop for ManagedNodeReservation {
-    fn drop(&mut self) { release_nodes(&self.budget, self.nodes); }
+    fn drop(&mut self) {
+        release_nodes(&self.budget, self.nodes);
+    }
 }
 
 /// Non-cloneable byte ownership. Splitting moves an already admitted charge;
@@ -306,7 +353,9 @@ impl ManagedMemoryReservation {
         self.bytes = bytes;
         // Moving capacity between same-account views must not widen the view
         // later used for growth, even when the receiver began less restricted.
-        self.budget = self.budget.with_limits(other.budget.limit_bytes(), other.budget.limit_nodes());
+        self.budget = self
+            .budget
+            .with_limits(other.budget.limit_bytes(), other.budget.limit_nodes());
         other.bytes = 0;
         Ok(())
     }
@@ -369,7 +418,8 @@ mod tests {
         let root = ManagedMemoryBudget::new(100);
         let capped = root.with_limits(10, 7);
         let mut wide = root.reserve_capacity(4).unwrap();
-        wide.merge_capacity(capped.reserve_capacity(6).unwrap()).unwrap();
+        wide.merge_capacity(capped.reserve_capacity(6).unwrap())
+            .unwrap();
         assert_eq!(wide.budget().limit_bytes(), 10);
         assert_eq!(wide.budget().limit_nodes(), 7);
         assert!(wide.resize_capacity(11).is_err());
@@ -411,23 +461,27 @@ mod tests {
         let capped = root.with_limits(12, 8);
         let ready = std::sync::Arc::new(std::sync::Barrier::new(9));
         let release = std::sync::Arc::new(std::sync::Barrier::new(9));
-        let threads = (0..8).map(|_| {
-            let capped = capped.clone();
-            let ready = ready.clone();
-            let release = release.clone();
-            std::thread::spawn(move || {
-                let bytes = capped.reserve_capacity(3).ok();
-                let nodes = capped.reserve_nodes(2).ok();
-                ready.wait();
-                release.wait();
-                drop((bytes, nodes));
+        let threads = (0..8)
+            .map(|_| {
+                let capped = capped.clone();
+                let ready = ready.clone();
+                let release = release.clone();
+                std::thread::spawn(move || {
+                    let bytes = capped.reserve_capacity(3).ok();
+                    let nodes = capped.reserve_nodes(2).ok();
+                    ready.wait();
+                    release.wait();
+                    drop((bytes, nodes));
+                })
             })
-        }).collect::<std::vec::Vec<_>>();
+            .collect::<std::vec::Vec<_>>();
         ready.wait();
         assert_eq!(root.used_bytes(), 12);
         assert_eq!(root.retained_nodes(), 8);
         release.wait();
-        for thread in threads { thread.join().unwrap(); }
+        for thread in threads {
+            thread.join().unwrap();
+        }
         assert_eq!(root.used_bytes(), 0);
         assert_eq!(root.retained_nodes(), 0);
     }
@@ -436,8 +490,10 @@ mod tests {
     fn private_node_overflow_is_denied_without_mutating_the_claim() {
         let budget = ManagedMemoryBudget::new(0);
         let mut full = budget.reserve_nodes(u64::MAX).unwrap();
-        assert!(matches!(budget.reserve_nodes(1),
-            Err(MemoryRuntimeError::AccountingInvariantViolation { .. })));
+        assert!(matches!(
+            budget.reserve_nodes(1),
+            Err(MemoryRuntimeError::AccountingInvariantViolation { .. })
+        ));
         full.resize(0).unwrap();
         assert_eq!(budget.retained_nodes(), 0);
     }
@@ -467,10 +523,16 @@ mod tests {
         assert_eq!(claim.nodes(), u64::MAX);
         assert_eq!(budget.clone().retained_snapshot_nodes(), u64::MAX);
         assert_eq!(other.retained_snapshot_nodes(), 0);
-        assert!(matches!(budget.retain_snapshot_nodes(1),
-            Err(MemoryRuntimeError::AccountingInvariantViolation { .. })));
+        assert!(matches!(
+            budget.retain_snapshot_nodes(1),
+            Err(MemoryRuntimeError::AccountingInvariantViolation { .. })
+        ));
         assert_eq!(budget.retained_snapshot_nodes(), u64::MAX);
-        assert_eq!(budget.used_bytes(), 0, "node metadata does not reserve payload bytes");
+        assert_eq!(
+            budget.used_bytes(),
+            0,
+            "node metadata does not reserve payload bytes"
+        );
         drop(claim);
         assert_eq!(budget.retained_snapshot_nodes(), 0);
     }
@@ -481,21 +543,25 @@ mod tests {
         let budget = ManagedMemoryBudget::new(0);
         let ready = std::sync::Arc::new(std::sync::Barrier::new(9));
         let retire = std::sync::Arc::new(std::sync::Barrier::new(9));
-        let threads = (0..8).map(|_| {
-            let budget = budget.clone();
-            let ready = ready.clone();
-            let retire = retire.clone();
-            std::thread::spawn(move || {
-                let claim = budget.retain_snapshot_nodes(7).unwrap();
-                ready.wait();
-                retire.wait();
-                drop(claim);
+        let threads = (0..8)
+            .map(|_| {
+                let budget = budget.clone();
+                let ready = ready.clone();
+                let retire = retire.clone();
+                std::thread::spawn(move || {
+                    let claim = budget.retain_snapshot_nodes(7).unwrap();
+                    ready.wait();
+                    retire.wait();
+                    drop(claim);
+                })
             })
-        }).collect::<std::vec::Vec<_>>();
+            .collect::<std::vec::Vec<_>>();
         ready.wait();
         let live = budget.retained_snapshot_nodes();
         retire.wait();
-        for thread in threads { thread.join().unwrap(); }
+        for thread in threads {
+            thread.join().unwrap();
+        }
         assert_eq!(live, 56);
         assert_eq!(budget.retained_snapshot_nodes(), 0);
     }

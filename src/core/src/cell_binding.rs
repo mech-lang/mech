@@ -1925,7 +1925,7 @@ impl ValueCell {
     /// Reads the current entry count of a published canonical Map without
     /// reconstructing, cloning, or traversing its key/value payloads. Managed
     /// shape planning uses this metadata before acquiring physical call views.
-    #[cfg(all(feature = "functions", feature = "map"))]
+    #[cfg(feature = "functions")]
     pub fn current_map_entry_count(&self) -> MResult<u64> {
         let storage = self.binding.storage()?;
         let canonical = storage

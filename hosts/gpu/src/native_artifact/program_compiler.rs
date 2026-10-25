@@ -30,32 +30,32 @@ const PROGRAM_CODEGEN_FLAGS: &[(&str, &str)] = &[
     ),
 ];
 
+#[path = "program_ascii_map_codegen.rs"]
+pub(super) mod ascii_map_codegen;
 #[path = "program_borrowed_codegen.rs"]
 pub(super) mod borrowed_codegen;
+#[path = "program_cfg_cleanup.rs"]
+pub(super) mod cfg_cleanup;
+#[path = "program_join_map_codegen.rs"]
+pub(super) mod join_map_codegen;
+#[path = "program_map_owner_codegen.rs"]
+pub(super) mod map_owner_codegen;
+#[path = "program_packed_loop_codegen.rs"]
+pub(super) mod packed_loop_codegen;
+#[path = "program_packed_map_codegen.rs"]
+pub(super) mod packed_maps;
+#[path = "program_parallel_codegen.rs"]
+pub(super) mod parallel_codegen;
 #[path = "program_prefix_codegen.rs"]
 pub(super) mod prefix_codegen;
 #[path = "program_scalar_aggregates.rs"]
 pub(super) mod scalar_aggregates;
-#[path = "program_ssa_words.rs"]
-pub(super) mod ssa_words;
 #[path = "program_scalar_loop_codegen.rs"]
 pub(super) mod scalar_loop_codegen;
-#[path = "program_map_owner_codegen.rs"]
-pub(super) mod map_owner_codegen;
-#[path = "program_packed_map_codegen.rs"]
-pub(super) mod packed_maps;
-#[path = "program_packed_loop_codegen.rs"]
-pub(super) mod packed_loop_codegen;
-#[path = "program_cfg_cleanup.rs"]
-pub(super) mod cfg_cleanup;
-#[path = "program_parallel_codegen.rs"]
-pub(super) mod parallel_codegen;
+#[path = "program_ssa_words.rs"]
+pub(super) mod ssa_words;
 #[path = "program_string_map_codegen.rs"]
 pub(super) mod string_map_codegen;
-#[path = "program_ascii_map_codegen.rs"]
-pub(super) mod ascii_map_codegen;
-#[path = "program_join_map_codegen.rs"]
-pub(super) mod join_map_codegen;
 #[path = "program_tail_codegen.rs"]
 pub(super) mod tail_codegen;
 #[path = "program_window_codegen.rs"]
@@ -223,7 +223,8 @@ impl NativeProgramObject {
             "linked": false, "executed": false, "timing_samples": 0,
         });
         metadata["compiled_bound_call_shim"] = serde_json::json!(&self.codegen.bound_call_shim);
-        metadata["compiled_preserving_call_regions"] = serde_json::json!(&self.codegen.preserving_call_regions);
+        metadata["compiled_preserving_call_regions"] =
+            serde_json::json!(&self.codegen.preserving_call_regions);
         metadata["compiled_mutation_loops"] = serde_json::json!(&self.codegen.mutation_loops);
         metadata["compiled_count_value_loops"] = serde_json::json!(&self.codegen.count_value_loops);
         metadata["compiled_loop_constants"] = serde_json::json!(&self.codegen.loop_constants);
