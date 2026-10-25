@@ -4,6 +4,9 @@ use cranelift_codegen::ir::AbiParam;
 use cranelift_frontend::FunctionBuilderContext;
 use cranelift_module::{Linkage, Module, default_libcall_names};
 
+#[path = "program_packed_probe_group_codegen_tests.rs"]
+mod probe_group_tests;
+
 #[test]
 fn direct_lookup_cache_generated_keeps_absence_zero_values_and_hash_fallback() {
     let builder = cranelift_jit::JITBuilder::with_flags(
@@ -47,7 +50,7 @@ fn direct_lookup_cache_generated_keeps_absence_zero_values_and_hash_fallback() {
     let mut cache = vec![0u64; 128];
     for (key, value) in [(0, 0), (17, u64::MAX), (63, 0), (127, 91)] {
         let hash = crate::native_artifact::program_packed_map::hash(key, 0);
-        let mut at = hash as usize & 127;
+        let mut at = hash as usize & 120;
         while controls[at] != 0x80 { at = (at + 1) & 127; }
         slots[at] = Slot { low: key, high: 0, value };
         controls[at] = (hash >> 57) as u8;

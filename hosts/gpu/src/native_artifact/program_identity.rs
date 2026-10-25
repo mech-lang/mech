@@ -167,7 +167,10 @@ fn selected_template(
 // IR79 declares disjoint origin, borrowed-view and scalar-Tail metadata
 // storage to native alias analysis. Calls retain full memory effects, and
 // source checks, prices and continuation clearance remain unchanged.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 79;
+// IR80 binds aligned private control-group placement to generated probes.
+// Candidate payload addresses use control-bit byte offsets and an early group
+// base. Frame layout, finite body prices and per-group charges are unchanged.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 80;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

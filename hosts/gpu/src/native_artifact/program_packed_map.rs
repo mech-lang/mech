@@ -76,7 +76,7 @@ pub(super) const SLOT_VALUE: usize = 2;
 mod payload;
 pub(super) use payload::{narrow, slot_bytes, value_offset};
 #[cfg(test)]
-use payload::NarrowSlot;
+pub(super) use payload::NarrowSlot;
 use payload::Slots;
 
 #[path = "program_frozen_packed_map.rs"]
@@ -369,18 +369,19 @@ impl PackedMap {
     fn probe_debits(slots: &Slots, controls: &[u8], low: u64, high: u64,
         charge: &mut impl FnMut(u64, u64) -> Result<(), mech_core::ResidentKernelError>,
     ) -> Result<usize, Error> {
-        let mask = slots.len().checked_sub(1).ok_or(Error::Binding("empty packed table"))?;
+        let _ = slots.len().checked_sub(1).ok_or(Error::Binding("empty packed table"))?;
         if slots.len() < GROUP || !slots.len().is_power_of_two()
             || controls.len() != slots.len().checked_add(GROUP - 1).ok_or(Error::Overflow)? {
             return Err(Error::Binding("invalid packed control shape"));
         }
         let hash = hash(low, high);
         let tag = fingerprint(hash);
-        let mut index = hash as usize & mask;
+        let group_mask = slots.len() - GROUP;
+        let mut index = hash as usize & group_mask;
         // No deletion/tombstones: insertion uses the first empty lane in this
-        // same linear sequence. A power-of-two capacity is a multiple of eight,
-        // so these bounded groups inspect each bucket exactly once, even when
-        // the first group wraps. A fingerprint never replaces full-key equality.
+        // same linear sequence. A power-of-two capacity is a multiple of eight;
+        // group-aligned starts visit each bucket exactly once without wrapping
+        // within a group. Fingerprints never replace full-key equality.
         for _ in 0..slots.len() / GROUP {
             // Frozen operations pay for each actual bounded group. Existing
             // mutation callers already prepay their whole-body envelope.
@@ -388,7 +389,7 @@ impl PackedMap {
             let group = &controls[index..index + GROUP];
             for (lane, &control) in group.iter().enumerate() {
                 if control == tag {
-                    let at = (index + lane) & mask;
+                    let at = index + lane;
                     let entry = slots.get(at);
                     if entry.low == low && entry.high == high { return Ok(at); }
                 } else if control > EMPTY {
@@ -396,9 +397,9 @@ impl PackedMap {
                 }
             }
             if let Some(lane) = group.iter().position(|&control| control == EMPTY) {
-                return Ok((index + lane) & mask);
+                return Ok(index + lane);
             }
-            index = (index + GROUP) & mask;
+            index = (index + GROUP) & group_mask;
         }
         Err(Error::Binding("packed-map probe exhausted complete table"))
     }
