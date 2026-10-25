@@ -195,3 +195,85 @@ fn recursive_statement_invariants_execute_on_the_current_visit() {
         ],
     );
 }
+
+#[test]
+fn checked_self_recursion_agrees_for_direct_and_application_calls() {
+    for call in ["count(n - 1u64)", "(n - 1u64) |> count"] {
+        let source = format!(
+            "count(n<u64>) => (out<u64>) :=\n  valid! := n != 3u64\n  out := ((n > 0u64)? | true => {call} | false => 7u64).\ncount(input<u64>)\n"
+        );
+        super::lexical_invariant_qualification::check_cases(
+            &source,
+            &[
+                (vec![("input", Data::U64(0))], Some(Data::U64(7))),
+                (vec![("input", Data::U64(2))], Some(Data::U64(7))),
+                (vec![("input", Data::U64(5))], None),
+                (vec![("input", Data::U64(1))], Some(Data::U64(7))),
+            ],
+        );
+    }
+}
+
+#[test]
+fn checked_boolean_self_recursion_uses_fresh_arguments_in_application_stages() {
+    use mech_gpu::native_artifact::{NativeIterationExecutionError, NativeProgramExecutionError};
+
+    for call in ["visit(false)", "false |> visit"] {
+        // A Boolean recursive argument has the same kind as the nonrecursive
+        // frame's sentinel. Checking only numeric recursion misses the stale
+        // captured argument that otherwise loops here instead of seeing false.
+        for predicate in ["true", "flag"] {
+            let source = format!(
+                "visit(flag<bool>) => (out<bool>) :=\n  valid! := {predicate}\n  out := (flag? | true => {call} | false => flag).\nvisit(input<bool>)\n"
+            );
+            for artifact in artifacts(&source).0 {
+                let jit =
+                    JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let mut output = vec![None; artifact.outputs().len()];
+                for flag in [false, true, false] {
+                    let args = inputs(&artifact, &[("input", Data::Bool(flag))], &memory);
+                    let mut policy = limits();
+                    // Bound the stale-capture regression before asking the
+                    // resident interpreter to execute the same program.
+                    policy.execution.max_work = 100_000;
+                    let before = memory.used_bytes();
+                    let result = jit.evaluate_into(&args, &mut output, policy, &memory);
+                    if predicate == "flag" {
+                        assert!(
+                            matches!(
+                                result,
+                                Err(NativeProgramExecutionError::Control(
+                                    NativeIterationExecutionError::Integrity { .. }
+                                ))
+                            ),
+                            "{call}, {flag}: {result:?}"
+                        );
+                        assert!(output.iter().all(Option::is_none));
+                        assert_eq!(memory.used_bytes(), before);
+                        assert!(
+                            reference_result(&artifact, &args)
+                                .unwrap_err()
+                                .contains("LexicalIntegrity")
+                        );
+                    } else {
+                        result.unwrap_or_else(|error| panic!("{call}, {flag}: {error:?}"));
+                        equal(&artifact, &output, &reference(&artifact, &args));
+                        assert_eq!(
+                            output
+                                .last()
+                                .unwrap()
+                                .as_ref()
+                                .unwrap()
+                                .canonical_data_draft()
+                                .unwrap(),
+                            Data::Bool(false)
+                        );
+                    }
+                }
+                drop(output);
+                assert_eq!(memory.used_bytes(), 0);
+            }
+        }
+    }
+}
