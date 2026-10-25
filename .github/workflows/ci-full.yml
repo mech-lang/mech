@@ -624,6 +624,14 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features integer_bits \
             --test integer_bits -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact \
+            --test program_artifact_contract committed_ -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features compiler,native-artifact \
+            --test matrix_block_legacy_fixtures \
+            retained_legacy_comprehension_bytes_and_revisions_remain_stable \
+            -- --exact --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native \
             --test canonical_artifact_native --test canonical_artifact_i64 --test canonical_artifact_f64 \
