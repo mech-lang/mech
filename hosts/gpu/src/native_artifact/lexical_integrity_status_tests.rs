@@ -1,6 +1,8 @@
 //! A compiled arithmetic failure cannot be relabeled as a lexical assertion.
 use super::*;
-use mech_core::{ManagedMemoryBudget, SchemaBody, ValueDataDraft, ValueDraft};
+use mech_core::{ManagedMemoryBudget, SchemaBody};
+#[cfg(feature = "canonical-native-program")]
+use mech_core::{ValueDataDraft, ValueDraft};
 use mech_engine::native_artifact::{
     NativeScalarValue as Word, lower_scalar_iteration_artifact, lower_scalar_match_artifact,
 };
@@ -112,6 +114,7 @@ fn iteration_integrity_status_cannot_replace_an_arithmetic_failure() {
 }
 
 #[test]
+#[cfg(feature = "canonical-native-program")]
 fn program_integrity_status_cannot_replace_an_arithmetic_failure() {
     let artifact = artifact();
     let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
