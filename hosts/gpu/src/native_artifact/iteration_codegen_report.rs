@@ -61,6 +61,7 @@ pub(in crate::native_artifact) struct SteadyLoop {
     pub lookup_cache_function: Option<Box<SteadyLoop>>,
     pub lookup_cache_selection_word: Option<usize>,
     pub candidate_value_loads: usize,
+    pub paired_candidate_loads: usize,
     pub source_nodes: Vec<(usize, usize)>, pub present_nodes: Vec<usize>,
     pub continuations: Vec<(usize, Option<usize>, Vec<usize>)>,
     pub entry_words: Vec<usize>, pub specialized_widths: Vec<u64>, pub entry_instructions: usize,

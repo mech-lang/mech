@@ -74,6 +74,11 @@ fn candidate_values_preserve_overflow_nonempty_seed_and_failure_origins() {
 }
 
 #[test]
+fn paired_candidate_values_preserve_compact_producer_maps_refills_and_work() {
+    changed_input_equivalence(Pass::PairedCandidates);
+}
+
+#[test]
 fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
     let source = format!(
         "{}\n#Count(\"abcabc\",2u64,6u64,empty)\n",

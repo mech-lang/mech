@@ -500,6 +500,7 @@ fn define_version<M: Module>(
     let mut fb = FunctionBuilderContext::new();
     let (entry_work, source_work, snapshot_work, bail_blocks);
     let mut candidate_value_loads = 0;
+    let mut paired_candidate_loads = 0;
     let mut snapshot_emissions = Vec::new();
     {
         let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
@@ -888,6 +889,7 @@ fn define_version<M: Module>(
             maximum_snapshot = maximum_snapshot.max(maximum);
             all_bails.extend(bail);
             candidate_value_loads += packed.candidate_value_loads();
+            paired_candidate_loads += packed.paired_candidate_loads();
         }
         entry_work = dispatch_work + maximum_entry + maximum_check;
         source_work = maximum_source + maximum_check;
@@ -993,6 +995,7 @@ fn define_version<M: Module>(
             lookup_cache_function: None,
             lookup_cache_selection_word: None,
             candidate_value_loads,
+            paired_candidate_loads,
             source_nodes: proof
                 .nodes
                 .iter()
