@@ -103,6 +103,13 @@ fn linked_assertion_rejection_preserves_publication_and_recovers() {
     // reuses the maintained shell and the SAME pinned Object/descriptor, with
     // only the test driver's invocation sequence replaced. It contains no JIT.
     let shell = fs::read_to_string(generated.root().join("src/main.rs")).unwrap();
+    // The auxiliary binary lives one directory deeper than the pinned shell.
+    let descriptor = "include_bytes!(\"../native-descriptor.bin\")";
+    assert_eq!(shell.matches(descriptor).count(), 1);
+    let shell = shell.replace(
+        descriptor,
+        "include_bytes!(\"../../native-descriptor.bin\")",
+    );
     let invocation = "    linked.evaluate_into(&inputs, &mut outputs, limits, &memory).map_err(|error| error.to_string())?;";
     assert_eq!(shell.matches(invocation).count(), 1);
     let driver = shell.replace(invocation, r#"
