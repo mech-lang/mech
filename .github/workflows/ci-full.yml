@@ -372,7 +372,7 @@ jobs:
             --test borrowed_string_footprint --test resident_lowering_attachment \
             --test canonical_schema_vectors --test semantic_serde_contract \
             --test snapshot_canonical_vectors --test snapshot_serde_contract \
-            --test stdlib_macro_hygiene
+            --test stdlib_macro_hygiene --test binop_factory_inventory
           cargo +nightly-2026-03-03 test --locked -p mech-core \
             --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
@@ -702,6 +702,8 @@ jobs:
           sudo apt-get install --yes ripgrep build-essential m4
       - name: Fetch locked application dependencies
         run: cargo +nightly-2026-03-03 fetch --locked
+      - name: Execute pinned maintained benchmark runner contracts
+        run: python3 scripts/check-canonical-hosted-runner.py --fetch
       - name: Execute activated native host I/O and application syntax
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu

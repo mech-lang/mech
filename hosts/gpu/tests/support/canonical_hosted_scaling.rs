@@ -2,54 +2,6 @@
 use super::*;
 
 #[test]
-#[ignore = "explicit current-source selected-site metadata diagnostic; no program execution or timings"]
-fn current_complete_source_selected_library_inventory() {
-    let (variants, catalog) = artifacts(FULL);
-    for (variant, artifact) in variants.into_iter().enumerate() {
-        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        let plan = jit.descriptor().plan();
-        eprintln!(
-            "SELECTED_SOURCE variant={variant} typed_ir={:?}",
-            jit.descriptor().typed_ir_sha256()
-        );
-        for (site, block) in plan.blocks().iter().enumerate() {
-            if let mech_engine::native_artifact::NativeIterationAction::LibraryCall {
-                template,
-                operands,
-                output,
-            } = block.action()
-            {
-                eprintln!(
-                    "SELECTED_LIBRARY variant={variant} site={site} origin={:?} primitive={:?} operands={operands:?} output={output:?} iteration={:?}",
-                    template.origin(),
-                    template.primitive(),
-                    block.iteration()
-                );
-            }
-        }
-        for (id, collection) in plan.collections().iter().enumerate() {
-            let strategy = match collection.result() {
-                mech_engine::native_artifact::NativeCollectionResult::Materialized => {
-                    "materialized"
-                }
-                mech_engine::native_artifact::NativeCollectionResult::TextJoin(_) => "text-join",
-                mech_engine::native_artifact::NativeCollectionResult::Histogram(_) => "histogram",
-                mech_engine::native_artifact::NativeCollectionResult::GuardedHistogramQuery(_) => {
-                    "guarded-histogram-query"
-                }
-            };
-            eprintln!(
-                "SELECTED_COLLECTION variant={variant} collection={id} strategy={strategy} output={:?} begin={} push={} finish={}",
-                collection.output(),
-                collection.begin(),
-                collection.push(),
-                collection.finish()
-            );
-        }
-    }
-}
-
-#[test]
 fn complete_secured_knucleotide_handles_hundred_and_four_hundred_bases_without_lifting_limits() {
     let (variants, catalog) = artifacts(FULL);
     for artifact in variants {
@@ -131,6 +83,47 @@ fn complete_secured_knucleotide_handles_hundred_and_four_hundred_bases_without_l
             );
             assert_eq!(memory.used_bytes(), 0);
             runtime.shutdown().unwrap();
+            // Preserve the useful cumulative-accounting obligation from the
+            // retired callback diagnostic through observable invocation results.
+            // Setup, capture, body and publication must share the reported cap.
+            for accepted in [false, true] {
+                let (mut runtime, trace) = self::runtime(input.as_bytes(), true);
+                let mut policy = limits();
+                policy.execution.max_work = report.work - u64::from(!accepted);
+                let outcome = execute(&mut runtime, &artifact, &jit, policy, &memory);
+                let snapshot = trace.lock().unwrap().clone();
+                if accepted {
+                    assert_eq!(outcome.unwrap().work, report.work);
+                    assert_eq!(snapshot.output, expected);
+                    assert_eq!(
+                        (snapshot.prepares, snapshot.deliveries, snapshot.flushes),
+                        (1, 1, 1)
+                    );
+                } else {
+                    let Err(mech_runtime::CanonicalNativeResourceRunError::BeforeCommit {
+                        error,
+                        cleanup,
+                        ..
+                    }) = outcome
+                    else {
+                        panic!("one-less cumulative work must fail before commit");
+                    };
+                    assert!(
+                        error
+                            .kind_as::<mech_gpu::native_artifact::NativeProgramExecutionError>()
+                            .is_some()
+                    );
+                    assert!(cleanup.is_none());
+                    assert!(snapshot.output.is_empty());
+                    assert_eq!(
+                        (snapshot.prepares, snapshot.deliveries, snapshot.flushes),
+                        (0, 0, 0)
+                    );
+                }
+                no_resident(&runtime);
+                assert_eq!(memory.used_bytes(), 0);
+                runtime.shutdown().unwrap();
+            }
         }
     }
 }

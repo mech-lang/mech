@@ -682,3 +682,104 @@ fn generated_arithmetic_denial_after_a_library_call_keeps_prior_typed_roots() {
 mod closed_tail_qualification;
 #[path = "support/canonical_program_string_matrix.rs"]
 mod string_matrix_qualification;
+struct CountingAllocator;
+static PROBE_ALLOCS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+unsafe impl std::alloc::GlobalAlloc for CountingAllocator {
+    unsafe fn alloc(&self, layout: std::alloc::Layout) -> *mut u8 {
+        PROBE_ALLOCS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        unsafe { std::alloc::System.alloc(layout) }
+    }
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: std::alloc::Layout) {
+        unsafe { std::alloc::System.dealloc(ptr, layout) }
+    }
+    unsafe fn realloc(&self, ptr: *mut u8, layout: std::alloc::Layout, size: usize) -> *mut u8 {
+        PROBE_ALLOCS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        unsafe { std::alloc::System.realloc(ptr, layout, size) }
+    }
+}
+#[global_allocator]
+static PROBE_ALLOCATOR: CountingAllocator = CountingAllocator;
+
+#[test]
+#[ignore = "explicit serial baseline scalar latency and allocation measurement"]
+fn scalar_consolidation_latency_and_allocations() {
+    use mech_engine::native_artifact::{NativeScalarValue, lower_pure_native_artifact};
+    use mech_gpu::native_artifact::JitArtifact;
+    use std::sync::atomic::Ordering::Relaxed;
+    for operations in [1, 32, 256] {
+        let source = format!("x<u64>{}\n", " + 1u64".repeat(operations));
+        let (variants, last) = artifacts(&source);
+        for (variant, artifact) in variants.into_iter().enumerate() {
+            let catalog = mech_stdlib::source_catalog();
+            let plan = lower_pure_native_artifact(&artifact, &catalog).unwrap();
+            let scalar = JitArtifact::compile(&plan).unwrap();
+            let canonical = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = inputs(&artifact, &[("x", ValueDataDraft::U64(7))], &memory);
+            let scalar_args = [NativeScalarValue::U64(7)];
+            let mut scalar_outputs = vec![NativeScalarValue::U64(0); artifact.outputs().len()];
+            let mut outputs = vec![None; artifact.outputs().len()];
+            let policy = limits();
+            // Warm both paths without retaining output storage between invocations.
+            for _ in 0..100 {
+                scalar
+                    .evaluate_into(
+                        &scalar_args,
+                        &mut scalar_outputs,
+                        policy.execution,
+                        Some(&memory),
+                    )
+                    .unwrap();
+                canonical
+                    .evaluate_into(&args, &mut outputs, policy, &memory)
+                    .unwrap();
+                outputs.fill(None);
+            }
+            for round in 0..5 {
+                for offset in 0..2 {
+                    let program = (round + offset) % 2 == 1;
+                    let iterations = 2000;
+                    let before = PROBE_ALLOCS.load(Relaxed);
+                    let start = std::time::Instant::now();
+                    for _ in 0..iterations {
+                        if program {
+                            canonical
+                                .evaluate_into(
+                                    std::hint::black_box(&args),
+                                    &mut outputs,
+                                    policy,
+                                    &memory,
+                                )
+                                .unwrap();
+                            assert!(
+                                matches!(outputs[last].as_ref().unwrap().data(), mech_core::ValueData::U64(v) if *v == 7 + operations as u64)
+                            );
+                            outputs.fill(None);
+                        } else {
+                            scalar
+                                .evaluate_into(
+                                    std::hint::black_box(&scalar_args),
+                                    &mut scalar_outputs,
+                                    policy.execution,
+                                    Some(&memory),
+                                )
+                                .unwrap();
+                            assert_eq!(
+                                scalar_outputs[last],
+                                NativeScalarValue::U64(7 + operations as u64)
+                            );
+                        }
+                    }
+                    let elapsed = start.elapsed().as_nanos();
+                    let allocs = PROBE_ALLOCS.load(Relaxed) - before;
+                    println!(
+                        "SCALAR_PROBE operations={operations} variant={variant} round={round} path={} ns_per_call={} allocations_per_call={}",
+                        if program { "program" } else { "predecessor" },
+                        elapsed / iterations,
+                        allocs / iterations as u64
+                    );
+                }
+            }
+        }
+    }
+}

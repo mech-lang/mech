@@ -1,9 +1,7 @@
 //! Canonical scalar control -> immutable native CFG; metadata binding only.
 //! Match and counted-loop views share selected witnesses, exact scalar types
 //! and lexical block lowering. Neither path parses source or executes values.
-use super::native_lowering::{
-    port_layout, public_kind, public_op, scalar_type, validate_slot_initializers,
-};
+use super::native_lowering::{port_layout, scalar_type, validate_slot_initializers};
 use super::{
     NodeClass, ResidentExternalAdmission, bind_operation_for_target, build_activation_schedule,
     classify_nodes, forwarded_output_source, node_inputs, node_output_slot,
@@ -441,15 +439,15 @@ impl Builder<'_> {
                 .inputs()
                 .iter()
                 .zip(arguments)
-                .any(|(&kind, &arg)| Some(public_kind(kind)) != self.ty(arg).scalar_kind())
-            || Some(public_kind(semantics.output())) != self.ty(output).scalar_kind()
+                .any(|(&kind, &arg)| Some(kind) != self.ty(arg).scalar_kind())
+            || Some(semantics.output()) != self.ty(output).scalar_kind()
         {
             return Err(Error::WitnessTypeMismatch { node: at.node() });
         }
         self.block(
             at,
             NativeMatchAction::Primitive {
-                op: public_op(semantics.op()),
+                op: semantics.op(),
                 operands: arguments.into(),
                 output,
             },

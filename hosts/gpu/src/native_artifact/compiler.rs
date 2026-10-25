@@ -353,28 +353,6 @@ pub(super) fn admit(
     let valid = b.ins().icmp_imm(IntCC::Equal, status, STATUS_OK as i64);
     guard(b, valid, error, STATUS_ADMISSION);
 }
-pub(super) fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKind) {
-    use NativeScalarKind::{Bool, F64, I64, U64};
-    use NativeScalarOp::*;
-    match op {
-        U64Add | U64Sub | U64Mul | U64Div | U64Rem => (&[U64, U64], U64),
-        U64Eq | U64Ne | U64Lt | U64Le | U64Gt | U64Ge => (&[U64, U64], Bool),
-        I64Add | I64Sub | I64Mul | I64Div | I64Rem => (&[I64, I64], I64),
-        I64Eq | I64Ne | I64Lt | I64Le | I64Gt | I64Ge => (&[I64, I64], Bool),
-        I64Neg => (&[I64], I64),
-        F64Add | F64Sub | F64Mul | F64Div => (&[F64, F64], F64),
-        U64ToI64 => (&[U64], I64),
-        I64ToU64 => (&[I64], U64),
-        U64ToF64 => (&[U64], F64),
-        I64ToF64 => (&[I64], F64),
-        F64ToU64 => (&[F64], U64),
-        F64ToI64 => (&[F64], I64),
-        F64Neg | F64Sqrt => (&[F64], F64),
-        F64Eq | F64Ne | F64Lt | F64Le | F64Gt | F64Ge => (&[F64, F64], Bool),
-        BoolNot => (&[Bool], Bool),
-        BoolAnd | BoolOr | BoolXor | BoolEq | BoolNe => (&[Bool, Bool], Bool),
-    }
-}
 pub(super) fn primitive(
     b: &mut FunctionBuilder<'_>,
     op: NativeScalarOp,
@@ -708,7 +686,7 @@ fn define<M: Module>(
         let callback_sig = b.import_signature(callback_sig);
         for (index, node) in plan.lets().iter().enumerate() {
             let instructions_before = b.func.dfg.num_insts();
-            let (kinds, kind) = signature(node.op());
+            let (kinds, kind) = node.op().signature();
             if node.operands().len() != kinds.len()
                 || kind != node.ty().kind()
                 || node

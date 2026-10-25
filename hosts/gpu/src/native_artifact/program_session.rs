@@ -597,14 +597,6 @@ impl<'a> Prepared<'a> {
         outputs: &mut [Option<Value>],
     ) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError> {
         let imported = self.import_turn(inputs, observations, outputs);
-        #[cfg(all(
-            test,
-            feature = "canonical-native-program",
-            feature = "canonical-native-program-host-runtime"
-        ))]
-        if let Some(state) = &self.state {
-            setup_work_diagnostic::checkpoint(state.work.used());
-        }
         imported?;
         self.run(entry, PHASE_TURN)?;
         self.publish(outputs)
@@ -626,12 +618,6 @@ impl<'a> Prepared<'a> {
             outputs,
             &mut state.work,
         );
-        #[cfg(all(
-            test,
-            feature = "canonical-native-program",
-            feature = "canonical-native-program-host-runtime"
-        ))]
-        setup_work_diagnostic::checkpoint(state.work.used());
         published?;
         Ok(NativeProgramExecutionReport {
             work: state.work.used(),
@@ -831,12 +817,6 @@ impl<'a> Prepared<'a> {
         let transitioned = state
             .work
             .charge(NativeExecutionPhase::Setup, transition_work);
-        #[cfg(all(
-            test,
-            feature = "canonical-native-program",
-            feature = "canonical-native-program-host-runtime"
-        ))]
-        setup_work_diagnostic::checkpoint(state.work.used());
         transitioned?;
         let (input_words, rest) = self
             .storage
@@ -911,12 +891,6 @@ impl<'a> Prepared<'a> {
             input_eof: prefix_input.map_or(0, |input| u64::from(input.eof)),
         };
         let status = entry(&mut frame);
-        #[cfg(all(
-            test,
-            feature = "canonical-native-program",
-            feature = "canonical-native-program-host-runtime"
-        ))]
-        setup_work_diagnostic::checkpoint(context.control.work.used());
         if let Some(error) = context.error.take() {
             return Err(error);
         }

@@ -19,8 +19,6 @@ use process::{assert_no_ambient_cargo_config, bounded, clean, closure, hash, pin
 #[cfg(feature = "canonical-native-benchmark-policy")]
 #[path = "canonical_hosted_benchmark.rs"]
 mod benchmark;
-#[path = "canonical_hosted_full.rs"]
-mod full;
 #[path = "canonical_hosted_profile.rs"]
 mod profile;
 #[path = "canonical_program_pins.rs"]
@@ -114,6 +112,15 @@ fn closed_stdout(binary: &Path, launch: &Path, input: &Path, directory: &Path) -
 #[test]
 #[ignore = "explicit clean-source hosted qualification; optional explicit full-input phase"]
 fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned() {
+    for variable in [
+        "MECH_CANONICAL_HOSTED_FULL_INPUT_CONFIG",
+        "MECH_CANONICAL_HOSTED_STAGED_INPUT_CONFIG",
+    ] {
+        assert!(
+            std::env::var_os(variable).is_none(),
+            "{variable} now belongs to the pinned benchmark runner; first qualify current binaries here, then run tools/canonical-hosted-runner in mech-lang/benchmarks"
+        );
+    }
     let profile =
         profile::Profile::parse(std::env::var_os("MECH_CANONICAL_HOSTED_PROFILE").as_deref())
             .unwrap();
@@ -431,7 +438,17 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
     for (path, expected) in &all_pins {
         assert_eq!(&pin(path), expected);
     }
-    let full_result = full::run(profile, &evidence, &results);
+    fs::write(
+        evidence.join("small-launch.json"),
+        serde_json::to_vec_pretty(&launch()).unwrap(),
+    )
+    .unwrap();
+    fs::write(
+        evidence.join("release-qualifier-results.json"),
+        serde_json::to_vec_pretty(&results).unwrap(),
+    )
+    .unwrap();
+    let full_result = Value::Null; // Full-input orchestration is maintained in benchmarks.
     for (path, expected) in all_pins {
         assert_eq!(pin(&path), expected);
     }

@@ -170,7 +170,7 @@ impl<'a> CodePlan<'a> {
                 },
             ) = block.action()
             {
-                let (args, result) = super::compiler::signature(*op);
+                let (args, result) = op.signature();
                 if self.kind(*output) != Some(result)
                     || operands.len() != args.len()
                     || !operands

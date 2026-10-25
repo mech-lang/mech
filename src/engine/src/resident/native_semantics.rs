@@ -13,70 +13,7 @@ use mech_core::{
     ResidentValueKind, ResolvedOperationContract, SchemaBody, ShapeRule,
 };
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum NativeScalarKind {
-    Bool,
-    U64,
-    I64,
-    F64,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum NativeScalarOp {
-    U64Add,
-    U64Sub,
-    U64Mul,
-    U64Div,
-    U64Rem,
-    U64Eq,
-    U64Ne,
-    U64Lt,
-    U64Le,
-    U64Gt,
-    U64Ge,
-    BoolAnd,
-    BoolOr,
-    BoolXor,
-    BoolNot,
-    BoolEq,
-    BoolNe,
-    I64Add,
-    I64Sub,
-    I64Mul,
-    I64Div,
-    I64Rem,
-    I64Neg,
-    I64Eq,
-    I64Ne,
-    I64Lt,
-    I64Le,
-    I64Gt,
-    I64Ge,
-    F64Add,
-    F64Sub,
-    F64Mul,
-    F64Div,
-    F64Neg,
-    F64Sqrt,
-    F64Eq,
-    F64Ne,
-    F64Lt,
-    F64Le,
-    F64Gt,
-    F64Ge,
-    #[cfg(feature = "convert")]
-    U64ToI64,
-    #[cfg(feature = "convert")]
-    I64ToU64,
-    #[cfg(feature = "convert")]
-    U64ToF64,
-    #[cfg(feature = "convert")]
-    I64ToF64,
-    #[cfg(feature = "convert")]
-    F64ToU64,
-    #[cfg(feature = "convert")]
-    F64ToI64,
-}
+pub(crate) use crate::native_scalar::{NativeScalarKind, NativeScalarOp};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct NativeScalarSemantics {
@@ -90,42 +27,10 @@ impl NativeScalarSemantics {
         self.op
     }
     pub(crate) fn inputs(&self) -> &'static [NativeScalarKind] {
-        use NativeScalarKind::{Bool, F64, I64, U64};
-        use NativeScalarOp::*;
-        match self.op {
-            #[cfg(feature = "convert")]
-            U64ToI64 | U64ToF64 => &[U64],
-            #[cfg(feature = "convert")]
-            I64ToU64 | I64ToF64 => &[I64],
-            #[cfg(feature = "convert")]
-            F64ToU64 | F64ToI64 => &[F64],
-            BoolNot => &[Bool],
-            BoolAnd | BoolOr | BoolXor | BoolEq | BoolNe => &[Bool, Bool],
-            U64Add | U64Sub | U64Mul | U64Div | U64Rem | U64Eq | U64Ne | U64Lt | U64Le | U64Gt
-            | U64Ge => &[U64, U64],
-            F64Neg | F64Sqrt => &[F64],
-            F64Add | F64Sub | F64Mul | F64Div | F64Eq | F64Ne | F64Lt | F64Le | F64Gt | F64Ge => {
-                &[F64, F64]
-            }
-            I64Neg => &[I64],
-            I64Add | I64Sub | I64Mul | I64Div | I64Rem | I64Eq | I64Ne | I64Lt | I64Le | I64Gt
-            | I64Ge => &[I64, I64],
-        }
+        self.op.signature().0
     }
     pub(crate) fn output(self) -> NativeScalarKind {
-        use NativeScalarOp::*;
-        match self.op {
-            #[cfg(feature = "convert")]
-            I64ToU64 | F64ToU64 => NativeScalarKind::U64,
-            #[cfg(feature = "convert")]
-            U64ToI64 | F64ToI64 => NativeScalarKind::I64,
-            #[cfg(feature = "convert")]
-            U64ToF64 | I64ToF64 => NativeScalarKind::F64,
-            U64Add | U64Sub | U64Mul | U64Div | U64Rem => NativeScalarKind::U64,
-            I64Add | I64Sub | I64Mul | I64Div | I64Rem | I64Neg => NativeScalarKind::I64,
-            F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt => NativeScalarKind::F64,
-            _ => NativeScalarKind::Bool,
-        }
+        self.op.signature().1
     }
 }
 

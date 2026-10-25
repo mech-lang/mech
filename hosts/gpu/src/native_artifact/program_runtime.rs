@@ -44,14 +44,6 @@ pub(super) use session::CheckedEntry;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub use session::NativeProgramExecutionSession;
 
-#[cfg(all(
-    test,
-    feature = "canonical-native-program",
-    feature = "canonical-native-program-host-runtime"
-))]
-#[path = "program_setup_work_diagnostic.rs"]
-mod setup_work_diagnostic;
-
 #[derive(Clone, Debug)]
 pub enum NativeProgramExecutionError {
     Base(NativeExecutionError),
@@ -791,43 +783,10 @@ unsafe extern "C" fn admit(context: *mut c_void, site: u64) -> u64 {
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
-    #[cfg(all(
-        test,
-        feature = "canonical-native-program",
-        feature = "canonical-native-program-host-runtime"
-    ))]
-    let before = setup_work_diagnostic::begin_callback(
-        context,
-        site,
-        setup_work_diagnostic::Callback::Admit,
-    );
     let outcome = context.visit(site);
-    #[cfg(all(
-        test,
-        feature = "canonical-native-program",
-        feature = "canonical-native-program-host-runtime"
-    ))]
-    setup_work_diagnostic::end_callback(
-        context,
-        site,
-        setup_work_diagnostic::Callback::Admit,
-        before,
-        outcome.as_ref().err(),
-    );
     match outcome {
         Ok(()) => STATUS_OK,
         Err(error) => {
-            #[cfg(all(
-                test,
-                feature = "canonical-native-program",
-                feature = "canonical-native-program-host-runtime"
-            ))]
-            setup_work_diagnostic::record(
-                context,
-                site,
-                setup_work_diagnostic::Callback::Admit,
-                &error,
-            );
             context.error = Some(error);
             STATUS_ADMISSION
         }
@@ -850,33 +809,11 @@ unsafe extern "C" fn helper(
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
-    #[cfg(all(
-        test,
-        feature = "canonical-native-program",
-        feature = "canonical-native-program-host-runtime"
-    ))]
-    let before = setup_work_diagnostic::begin_callback(
-        context,
-        site,
-        setup_work_diagnostic::Callback::Helper,
-    );
     let outcome = if result.is_null() || result != context.result {
         Err(invalid("helper result pointer mismatch"))
     } else {
         context.helper(site, operation, [first, second, third])
     };
-    #[cfg(all(
-        test,
-        feature = "canonical-native-program",
-        feature = "canonical-native-program-host-runtime"
-    ))]
-    setup_work_diagnostic::end_callback(
-        context,
-        site,
-        setup_work_diagnostic::Callback::Helper,
-        before,
-        outcome.as_ref().err(),
-    );
     match outcome {
         Ok(word) => {
             if let Some(word) = word {
@@ -889,17 +826,6 @@ unsafe extern "C" fn helper(
             STATUS_OK
         }
         Err(error) => {
-            #[cfg(all(
-                test,
-                feature = "canonical-native-program",
-                feature = "canonical-native-program-host-runtime"
-            ))]
-            setup_work_diagnostic::record(
-                context,
-                site,
-                setup_work_diagnostic::Callback::Helper,
-                &error,
-            );
             context.error = Some(error);
             STATUS_ADMISSION
         }

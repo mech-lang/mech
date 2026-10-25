@@ -1,0 +1,3 @@
+repository = "https://github.com/mech-lang/benchmarks"
+revision = "91efc1dec7a61bdf6707402ea24fd41d00e4037b"
+manifest = "tools/canonical-hosted-runner/Cargo.toml"

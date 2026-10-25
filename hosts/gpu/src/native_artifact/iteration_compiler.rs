@@ -2,7 +2,7 @@
 use super::abi::{NO_NODE, NativeEntryFrame as Frame, STATUS_ABI};
 use super::compiler::{
     admit, backend, compiled_stack_bytes, frame_load, guard, host_supported, limit, offset,
-    set_origin, signature,
+    set_origin,
 };
 use super::control_compiler::{emit_scalar_action, emit_scalar_terminator};
 use super::iteration_abi::{ENTRY, Entry, NativeIterationDescriptor, VERSION};
@@ -208,7 +208,7 @@ pub(super) fn validate(plan: &NativeIterationArtifactPlan) -> Result<(), NativeC
             ..
         }) = block.action()
         {
-            let (args, result) = signature(*op);
+            let (args, result) = op.signature();
             if operands.len() != args.len() || ty(*output)?.kind() != result {
                 return Err(bad());
             }

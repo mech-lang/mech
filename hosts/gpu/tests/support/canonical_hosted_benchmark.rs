@@ -117,6 +117,15 @@ fn benchmark_generator_preserves_the_original_object_and_isolates_policy_control
 #[test]
 #[ignore = "explicit clean-source policy qualification; optional full-input phase"]
 fn complete_original_and_decoded_knucleotide_same_binary_policy_controls() {
+    for variable in [
+        "MECH_CANONICAL_HOSTED_FULL_INPUT_CONFIG",
+        "MECH_CANONICAL_HOSTED_STAGED_INPUT_CONFIG",
+    ] {
+        assert!(
+            std::env::var_os(variable).is_none(),
+            "{variable} now belongs to the pinned benchmark runner; first qualify current binaries here, then run tools/canonical-hosted-runner in mech-lang/benchmarks"
+        );
+    }
     let profile =
         profile::Profile::parse(std::env::var_os("MECH_CANONICAL_HOSTED_PROFILE").as_deref())
             .unwrap();
@@ -212,7 +221,7 @@ fn complete_original_and_decoded_knucleotide_same_binary_policy_controls() {
     }
     assert_eq!(results[0]["binary_sha256"], results[1]["binary_sha256"]);
     let production = production::qualify(&evidence, &target, &variants[0], &catalog, profile);
-    let driver_control = driver::qualify(&evidence, &results, profile);
+    let driver_control = driver::qualify(&evidence, &results, profile, &commit);
     // Persist completed small controls before optional large work can fail.
     let mut receipt = json!({
         "schema":"mech.canonical-native-benchmark-policy-qualification.v1", "source_commit":commit,
@@ -223,7 +232,17 @@ fn complete_original_and_decoded_knucleotide_same_binary_policy_controls() {
     });
     let result_path = evidence.join("benchmark-policy-result.json");
     fs::write(&result_path, serde_json::to_vec_pretty(&receipt).unwrap()).unwrap();
-    let full = full::run_comparison(profile, &evidence, &results);
+    fs::write(
+        evidence.join("small-launch.json"),
+        serde_json::to_vec_pretty(&launch()).unwrap(),
+    )
+    .unwrap();
+    fs::write(
+        evidence.join("release-qualifier-results.json"),
+        serde_json::to_vec_pretty(&results).unwrap(),
+    )
+    .unwrap();
+    let full = Value::Null; // The maintained external runner consumes these pinned candidate rows.
     receipt["timing_samples"] = json!(full["timing_samples"].as_u64().unwrap_or(0));
     receipt["full_phase_status"] = json!(if full.is_null() {
         "not-configured"

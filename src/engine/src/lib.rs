@@ -341,3 +341,6 @@ pub mod artifact;
     feature = "semantic-compiler"
 ))]
 pub use crate::artifact::*;
+
+#[cfg(feature = "resident-artifact")]
+mod native_scalar;

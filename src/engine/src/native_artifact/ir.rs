@@ -3,67 +3,7 @@ use mech_core::{
     SchemaId, SchemaKey,
 };
 
-/// Exact semantic kinds supported by the canonical scalar native adapter.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
-pub enum NativeScalarKind {
-    Bool,
-    U64,
-    I64,
-    F64,
-}
-
-/// Checked operations certified by the actual selected maintained binder.
-/// These are semantic identities, not source names or catalog hashes.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
-pub enum NativeScalarOp {
-    U64Add,
-    U64Sub,
-    U64Mul,
-    U64Div,
-    U64Rem,
-    U64Eq,
-    U64Ne,
-    U64Lt,
-    U64Le,
-    U64Gt,
-    U64Ge,
-    BoolAnd,
-    BoolOr,
-    BoolXor,
-    BoolNot,
-    BoolEq,
-    BoolNe,
-    I64Add,
-    I64Sub,
-    I64Mul,
-    I64Div,
-    I64Rem,
-    I64Neg,
-    I64Eq,
-    I64Ne,
-    I64Lt,
-    I64Le,
-    I64Gt,
-    I64Ge,
-    F64Add,
-    F64Sub,
-    F64Mul,
-    F64Div,
-    F64Neg,
-    F64Sqrt,
-    F64Eq,
-    F64Ne,
-    F64Lt,
-    F64Le,
-    F64Gt,
-    F64Ge,
-    U64ToI64,
-    I64ToU64,
-    U64ToF64,
-    I64ToF64,
-    F64ToU64,
-    F64ToI64,
-}
+pub use crate::native_scalar::{NativeScalarKind, NativeScalarOp};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeScalarValue {

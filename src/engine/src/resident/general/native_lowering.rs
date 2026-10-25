@@ -5,8 +5,8 @@ use super::{
     node_output_slot,
 };
 use crate::native_artifact::{
-    NativeConstant, NativeInput, NativeLet, NativeOutput, NativeScalarKind, NativeScalarOp,
-    NativeScalarType, NativeScalarValue, NativeValueRef,
+    NativeConstant, NativeInput, NativeLet, NativeOutput, NativeScalarKind, NativeScalarType,
+    NativeScalarValue, NativeValueRef,
 };
 use crate::resident::native_semantics;
 use crate::{
@@ -257,8 +257,8 @@ pub fn lower_pure_native_artifact(
                 .iter()
                 .copied()
                 .zip(&args)
-                .any(|(kind, (_, ty))| public_kind(kind) != ty.kind)
-            || public_kind(semantics.output()) != result_type.kind
+                .any(|(kind, (_, ty))| kind != ty.kind)
+            || semantics.output() != result_type.kind
         {
             return Err(NativeArtifactLoweringError::WitnessTypeMismatch { node: node_id });
         }
@@ -274,7 +274,7 @@ pub fn lower_pure_native_artifact(
         lets.push(NativeLet {
             node: node_id,
             target,
-            op: public_op(semantics.op()),
+            op: semantics.op(),
             operands: args
                 .into_iter()
                 .map(|(value, _)| value)
@@ -434,71 +434,4 @@ fn resolved_value(
         .get(&source)
         .cloned()
         .ok_or(NativeArtifactLoweringError::InvalidBinding { node })
-}
-
-pub(super) fn public_kind(kind: native_semantics::NativeScalarKind) -> NativeScalarKind {
-    match kind {
-        native_semantics::NativeScalarKind::Bool => NativeScalarKind::Bool,
-        native_semantics::NativeScalarKind::U64 => NativeScalarKind::U64,
-        native_semantics::NativeScalarKind::I64 => NativeScalarKind::I64,
-        native_semantics::NativeScalarKind::F64 => NativeScalarKind::F64,
-    }
-}
-pub(super) fn public_op(op: native_semantics::NativeScalarOp) -> NativeScalarOp {
-    use native_semantics::NativeScalarOp as Private;
-    match op {
-        Private::U64Add => NativeScalarOp::U64Add,
-        Private::U64Sub => NativeScalarOp::U64Sub,
-        Private::U64Mul => NativeScalarOp::U64Mul,
-        Private::U64Div => NativeScalarOp::U64Div,
-        Private::U64Rem => NativeScalarOp::U64Rem,
-        Private::U64Eq => NativeScalarOp::U64Eq,
-        Private::U64Ne => NativeScalarOp::U64Ne,
-        Private::U64Lt => NativeScalarOp::U64Lt,
-        Private::U64Le => NativeScalarOp::U64Le,
-        Private::U64Gt => NativeScalarOp::U64Gt,
-        Private::U64Ge => NativeScalarOp::U64Ge,
-        Private::BoolAnd => NativeScalarOp::BoolAnd,
-        Private::BoolOr => NativeScalarOp::BoolOr,
-        Private::BoolXor => NativeScalarOp::BoolXor,
-        Private::BoolNot => NativeScalarOp::BoolNot,
-        Private::BoolEq => NativeScalarOp::BoolEq,
-        Private::BoolNe => NativeScalarOp::BoolNe,
-        Private::I64Add => NativeScalarOp::I64Add,
-        Private::I64Sub => NativeScalarOp::I64Sub,
-        Private::I64Mul => NativeScalarOp::I64Mul,
-        Private::I64Div => NativeScalarOp::I64Div,
-        Private::I64Rem => NativeScalarOp::I64Rem,
-        Private::I64Neg => NativeScalarOp::I64Neg,
-        Private::I64Eq => NativeScalarOp::I64Eq,
-        Private::I64Ne => NativeScalarOp::I64Ne,
-        Private::I64Lt => NativeScalarOp::I64Lt,
-        Private::I64Le => NativeScalarOp::I64Le,
-        Private::I64Gt => NativeScalarOp::I64Gt,
-        Private::I64Ge => NativeScalarOp::I64Ge,
-        Private::F64Add => NativeScalarOp::F64Add,
-        Private::F64Sub => NativeScalarOp::F64Sub,
-        Private::F64Mul => NativeScalarOp::F64Mul,
-        Private::F64Div => NativeScalarOp::F64Div,
-        Private::F64Neg => NativeScalarOp::F64Neg,
-        Private::F64Sqrt => NativeScalarOp::F64Sqrt,
-        Private::F64Eq => NativeScalarOp::F64Eq,
-        Private::F64Ne => NativeScalarOp::F64Ne,
-        Private::F64Lt => NativeScalarOp::F64Lt,
-        Private::F64Le => NativeScalarOp::F64Le,
-        Private::F64Gt => NativeScalarOp::F64Gt,
-        Private::F64Ge => NativeScalarOp::F64Ge,
-        #[cfg(feature = "convert")]
-        Private::U64ToI64 => NativeScalarOp::U64ToI64,
-        #[cfg(feature = "convert")]
-        Private::I64ToU64 => NativeScalarOp::I64ToU64,
-        #[cfg(feature = "convert")]
-        Private::U64ToF64 => NativeScalarOp::U64ToF64,
-        #[cfg(feature = "convert")]
-        Private::I64ToF64 => NativeScalarOp::I64ToF64,
-        #[cfg(feature = "convert")]
-        Private::F64ToU64 => NativeScalarOp::F64ToU64,
-        #[cfg(feature = "convert")]
-        Private::F64ToI64 => NativeScalarOp::F64ToI64,
-    }
 }

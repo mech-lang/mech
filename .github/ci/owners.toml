@@ -4,7 +4,7 @@ version = 1
 exclude_paths = ["*.md", "LICENSE"]
 full = true
 paths = ["src/core/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-core", "--lib", "--test", "type_memory_contract", "--test", "storage_capability", "--test", "operation_memory_requirement", "--test", "type_memory_boundary", "--test", "memory_runtime", "--test", "memory_safety", "--all-features"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-core", "--lib", "--test", "type_memory_contract", "--test", "binop_factory_inventory", "--test", "storage_capability", "--test", "operation_memory_requirement", "--test", "type_memory_boundary", "--test", "memory_runtime", "--test", "memory_safety", "--all-features"]
 standard = true
 cross_cutting = true
 

@@ -140,8 +140,25 @@ frontend or resident evaluator when lowering rejects a program. The default
 The complete canonical k-nucleotide application is qualified below; broader
 native coverage remains unfinished. The legacy tools are not a supported second
 semantic authority. See the recorded
-[`follow_up_roadmap`](../../docs/validation/checked-aot-workload-progress-v1.json)
+[`follow_up_roadmap`](https://github.com/mech-lang/benchmarks/blob/91f8a97a7f1af30b451a7864d68f767002505f0d/archive/compiler/mech-pre-911-bbd66acb9/source/docs/validation/checked-aot-workload-progress-v1.json)
 for migration context; current implemented and pending scope is detailed below.
+
+### Scalar native execution is a primary capability
+
+Efficient Bool, U64, I64 and F64 execution is part of the maintained native
+backend's contract. This includes short invocations, where transport/setup
+latency and allocations matter, as well as arithmetic throughput. Scalar kinds
+and operator signatures have one authority in engine `native_scalar`; binder
+witnesses remain private, and checked native instructions retain their error,
+floating-point and resource semantics.
+
+The existing efficient scalar entry must remain available until a scalar
+specialization of canonical Program matches its correctness, latency and
+allocation behavior. Its retirement requires optimized original/decoded
+measurements and executable regression coverage. An interface's experimental
+history is not grounds for accepting slower scalar execution. The intended
+shared implementation keeps scalar transport specialized while reusing
+canonical lowering, validation, instruction emission and resource accounting.
 
 Resource-hosted checked-native execution shares one admission/commit pipeline. After
 the runtime admits every original requirement and provider contract,
@@ -157,7 +174,7 @@ contract is not a claim that whole-benchmark qualification is complete.
 
 ### Canonical k-nucleotide performance
 
-The [current measurements and pins](../../docs/validation/canonical-knucleotide-final-host-link-v1.json)
+The [current measurements and pins](https://github.com/mech-lang/benchmarks/blob/91f8a97a7f1af30b451a7864d68f767002505f0d/archive/compiler/mech-pre-911-bbd66acb9/source/docs/validation/canonical-knucleotide-final-host-link-v1.json)
 use the full Mech source, the same M1, inputs, finite policy and output oracles.
 Twelve alternating pairs include startup, one secured round and report publication.
 
@@ -182,9 +199,9 @@ validation and retained unchanged-package results are detailed in the linked rec
 
 Startup artifact decoding and descriptor preparation still contribute to host
 size. This is a desktop executable, not an ESP32 deployment profile.
-The [previous measurements](../../docs/validation/canonical-knucleotide-capture-pages-v1.json)
+The [previous measurements](https://github.com/mech-lang/benchmarks/blob/91f8a97a7f1af30b451a7864d68f767002505f0d/archive/compiler/mech-pre-911-bbd66acb9/source/docs/validation/canonical-knucleotide-capture-pages-v1.json)
 retain the earlier Rust #7 results; Rust was not remeasured in this batch.
-The [direct-I/O comparison](../../docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
+The [direct-I/O comparison](https://github.com/mech-lang/benchmarks/blob/91f8a97a7f1af30b451a7864d68f767002505f0d/archive/compiler/mech-pre-911-bbd66acb9/source/docs/validation/canonical-knucleotide-streaming-footprint-v1.json)
 retains the distinct approximately 0.975-second Rust-backed Mech control.
 Clean review and green CI remain required; PR909 stays draft and unmerged
 pending user direction.

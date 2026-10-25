@@ -2,7 +2,7 @@
 use super::abi::{NO_NODE, NativeEntryFrame as Frame, STATUS_ABI, STATUS_OK};
 use super::compiler::{
     admit, backend, compiled_stack_bytes, frame_load, guard, host_supported, limit, offset,
-    primitive, set_origin, signature,
+    primitive, set_origin,
 };
 use super::control_abi::{ENTRY, Entry, NativeMatchDescriptor, STATUS_REJECT, VERSION};
 use super::control_runtime::{NativeMatchExecutionError, NativeMatchExecutionReport};
@@ -217,7 +217,7 @@ fn validate(plan: &NativeMatchArtifactPlan) -> Result<(), NativeCompileError> {
                 output,
                 ..
             } => {
-                let (args, result) = signature(*op);
+                let (args, result) = op.signature();
                 if operands.len() != args.len() || ty(*output)?.kind() != result {
                     return Err(bad());
                 }

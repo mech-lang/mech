@@ -25,6 +25,6 @@
     },
     "streaming_target": "Compile rejected: shared test helper equivalent is unused under deny(warnings); zero tests executed.",
     "engine_feature_closure": "typecheck passed; execution qualification pending",
-    "receipt": "docs/validation/counted-application-and-cli-bytes-checkpoint-v1.json"
+    "receipt": "https://github.com/mech-lang/benchmarks/blob/91f8a97a7f1af30b451a7864d68f767002505f0d/archive/compiler/mech-pre-911-bbd66acb9/source/docs/validation/counted-application-and-cli-bytes-checkpoint-v1.json"
   }
 }
