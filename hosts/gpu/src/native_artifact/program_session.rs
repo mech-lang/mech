@@ -414,12 +414,27 @@ impl<'a> Prepared<'a> {
         Ok(total)
     }
 
-    /// Exact fixed constructor backing. Canonical constant payloads, later
-    /// builders and cache entries keep their independent checked admission.
+    /// Fixed constructor admission envelope: transport backing and its core
+    /// initialization metadata, private lanes, and the declared constant-import
+    /// bounds. Later builders/cache entries keep independent checked admission.
     pub(super) fn worker_setup_bytes(
         descriptor: &NativeProgramDescriptor,
     ) -> Result<u64, NativeProgramExecutionError> {
-        Ok(Self::setup_geometry(descriptor)?.bytes)
+        let geometry = Self::setup_geometry(descriptor)?;
+        let mut bytes = geometry.bytes;
+        for (raw, admitted) in [
+            (transport_bytes(geometry.words)?, NativeWordStorage::admission_bytes(geometry.words)?),
+            (amount(descriptor.types.len(), size_of::<Option<Value>>() as u64, 0)?, NativeTypedStorage::<Option<Value>>::admission_bytes(descriptor.types.len())?),
+            (transport_bytes(descriptor.types.len())?, NativeWordStorage::admission_bytes(descriptor.types.len())?),
+            (amount(descriptor.max_library_inputs, size_of::<Option<Value>>() as u64, 0)?, NativeTypedStorage::<Option<Value>>::admission_bytes(descriptor.max_library_inputs)?),
+        ] {
+            bytes = bytes.checked_sub(raw).and_then(|bytes| bytes.checked_add(admitted))
+                .ok_or_else(|| invalid("worker fixed backing admission overflow"))?;
+        }
+        for &bound in &descriptor.constant_bytes {
+            bytes = bytes.checked_add(bound).ok_or_else(|| invalid("worker constant admission overflow"))?;
+        }
+        Ok(bytes)
     }
 
     fn setup_geometry(
