@@ -25,11 +25,12 @@ immutable. The current value-copy implementation and native call metadata are
 expensive; the qualification uses an explicit 2 GiB memory account and larger
 finite work allowances. Host defaults are unchanged.
 
-Native work policy 67 reads U64 counters directly into native scalar storage
+Native work policy 68 reads U8/U16/U32/U64 elements directly into native scalar storage
 through the maintained indexed-access operation. It keeps the original visits,
 checked selectors, source admission, and logical output limits, while avoiding
-transient selector/result snapshots. Narrow unsigned reads and buffer writes
-still use the existing canonical value path.
+transient selector/result snapshots. The twelve checked conversions between
+these unsigned widths also execute as native scalar instructions. Buffer writes
+and structural buffer carriers still use the existing canonical value path.
 
 The ordinary resident route retains its whole-control comparison-work cap. The
 full builder exceeds that cap even on a two-symbol input; a separate regression

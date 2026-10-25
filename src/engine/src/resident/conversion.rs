@@ -500,6 +500,18 @@ fn native_scalar_cast(
         return None;
     };
     Some(match (source, target) {
+        (K::U8, K::U16) => Op::U8ToU16,
+        (K::U8, K::U32) => Op::U8ToU32,
+        (K::U8, K::U64) => Op::U8ToU64,
+        (K::U16, K::U8) => Op::U16ToU8,
+        (K::U16, K::U32) => Op::U16ToU32,
+        (K::U16, K::U64) => Op::U16ToU64,
+        (K::U32, K::U8) => Op::U32ToU8,
+        (K::U32, K::U16) => Op::U32ToU16,
+        (K::U32, K::U64) => Op::U32ToU64,
+        (K::U64, K::U8) => Op::U64ToU8,
+        (K::U64, K::U16) => Op::U64ToU16,
+        (K::U64, K::U32) => Op::U64ToU32,
         (K::U64, K::I64) => Op::U64ToI64,
         (K::I64, K::U64) => Op::I64ToU64,
         (K::U64, K::F64) => Op::U64ToF64,

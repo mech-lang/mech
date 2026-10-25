@@ -205,7 +205,8 @@ fn selected_template(
 // checked unsigned scalar conversions through the original conversion leaf.
 // IR97 includes pure indexed matrix replacements in local transition code.
 // IR98 selects witnessed constant tuple reads as checked structural projections.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 98;
+// IR99 represents U8/U16/U32 scalars and exact checked unsigned casts.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 99;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -342,7 +343,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 98;
 // operation prices, finite allowances and later map charges are unchanged.
 // Policy70 returns selected linear U64 matrix reads into the already admitted
 // scalar frame, with current source/active-call admission and no temporary Values.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 70;
+// Policy71 also returns selected U8/U16/U32 reads into native scalar words.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 71;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -482,6 +484,10 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
             Some(NativeScalarKind::U64) => 2,
             Some(NativeScalarKind::I64) => 3,
             Some(NativeScalarKind::F64) => 4,
+            Some(NativeScalarKind::U8) => 5,
+            Some(NativeScalarKind::U16) => 6,
+            Some(NativeScalarKind::U32) => 7,
+
         }]);
         word(&mut hash, ty.schema().get() as u64);
         hash.update(ty.schema_key().as_bytes());

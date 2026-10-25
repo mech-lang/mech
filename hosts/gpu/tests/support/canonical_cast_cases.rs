@@ -9,7 +9,7 @@ pub struct Cast {
     pub input: NativeScalarKind,
     pub output: NativeScalarKind,
 }
-pub const CASTS: [Cast; 6] = [
+pub const CASTS: [Cast; 18] = [
     Cast {
         name: "canonical-linked-cast-u64-i64",
         source: "result<i64> := value<u64>\nresult\n",
@@ -52,8 +52,106 @@ pub const CASTS: [Cast; 6] = [
         input: NativeScalarKind::F64,
         output: NativeScalarKind::I64,
     },
+    Cast {
+        name: "canonical-linked-cast-u8-u16",
+        source: "result<u16> := value<u8>\nresult\n",
+        op: NativeScalarOp::U8ToU16,
+        input: NativeScalarKind::U8,
+        output: NativeScalarKind::U16,
+    },
+    Cast {
+        name: "canonical-linked-cast-u8-u32",
+        source: "result<u32> := value<u8>\nresult\n",
+        op: NativeScalarOp::U8ToU32,
+        input: NativeScalarKind::U8,
+        output: NativeScalarKind::U32,
+    },
+    Cast {
+        name: "canonical-linked-cast-u8-u64",
+        source: "result<u64> := value<u8>\nresult\n",
+        op: NativeScalarOp::U8ToU64,
+        input: NativeScalarKind::U8,
+        output: NativeScalarKind::U64,
+    },
+    Cast {
+        name: "canonical-linked-cast-u16-u8",
+        source: "result<u8> := value<u16>\nresult\n",
+        op: NativeScalarOp::U16ToU8,
+        input: NativeScalarKind::U16,
+        output: NativeScalarKind::U8,
+    },
+    Cast {
+        name: "canonical-linked-cast-u16-u32",
+        source: "result<u32> := value<u16>\nresult\n",
+        op: NativeScalarOp::U16ToU32,
+        input: NativeScalarKind::U16,
+        output: NativeScalarKind::U32,
+    },
+    Cast {
+        name: "canonical-linked-cast-u16-u64",
+        source: "result<u64> := value<u16>\nresult\n",
+        op: NativeScalarOp::U16ToU64,
+        input: NativeScalarKind::U16,
+        output: NativeScalarKind::U64,
+    },
+    Cast {
+        name: "canonical-linked-cast-u32-u8",
+        source: "result<u8> := value<u32>\nresult\n",
+        op: NativeScalarOp::U32ToU8,
+        input: NativeScalarKind::U32,
+        output: NativeScalarKind::U8,
+    },
+    Cast {
+        name: "canonical-linked-cast-u32-u16",
+        source: "result<u16> := value<u32>\nresult\n",
+        op: NativeScalarOp::U32ToU16,
+        input: NativeScalarKind::U32,
+        output: NativeScalarKind::U16,
+    },
+    Cast {
+        name: "canonical-linked-cast-u32-u64",
+        source: "result<u64> := value<u32>\nresult\n",
+        op: NativeScalarOp::U32ToU64,
+        input: NativeScalarKind::U32,
+        output: NativeScalarKind::U64,
+    },
+    Cast {
+        name: "canonical-linked-cast-u64-u8",
+        source: "result<u8> := value<u64>\nresult\n",
+        op: NativeScalarOp::U64ToU8,
+        input: NativeScalarKind::U64,
+        output: NativeScalarKind::U8,
+    },
+    Cast {
+        name: "canonical-linked-cast-u64-u16",
+        source: "result<u16> := value<u64>\nresult\n",
+        op: NativeScalarOp::U64ToU16,
+        input: NativeScalarKind::U64,
+        output: NativeScalarKind::U16,
+    },
+    Cast {
+        name: "canonical-linked-cast-u64-u32",
+        source: "result<u32> := value<u64>\nresult\n",
+        op: NativeScalarOp::U64ToU32,
+        input: NativeScalarKind::U64,
+        output: NativeScalarKind::U32,
+    },
 ];
 pub fn samples(cast: Cast) -> Vec<NativeScalarValue> {
+    if let (Some(source), Some(target)) = (
+        cast.input.unsigned_maximum(),
+        cast.output.unsigned_maximum(),
+    ) {
+        let boundary = source.min(target);
+        let mut words = vec![0, 1, source, boundary, boundary.saturating_sub(1), 0];
+        if source > target {
+            words.insert(2, target + 1);
+        }
+        return words
+            .into_iter()
+            .map(|word| NativeScalarValue::from_bits(cast.input, word).unwrap())
+            .collect();
+    }
     match cast.input {
         NativeScalarKind::U64 => [
             0,
@@ -144,6 +242,9 @@ pub fn samples(cast: Cast) -> Vec<NativeScalarValue> {
         .into_iter()
         .map(|bits| NativeScalarValue::F64(F64Bits::from_bits(bits)))
         .collect(),
-        NativeScalarKind::Bool => unreachable!("cast inputs are numeric"),
+        NativeScalarKind::Bool
+        | NativeScalarKind::U8
+        | NativeScalarKind::U16
+        | NativeScalarKind::U32 => unreachable!("handled unsigned or numeric cast inputs"),
     }
 }

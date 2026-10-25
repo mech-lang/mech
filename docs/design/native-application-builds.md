@@ -269,7 +269,11 @@ an executable.
 The `mech-gpu` scalar canonical native API consumes `ProgramArtifact` through
 `lower_pure_native_artifact`, using private semantic witnesses from the actual
 selected resident binders. Its immutable typed IR supports stateless Turn
-operations on `Bool`, `U64`, and `I64`. It rejects resources, constraints,
+transport for `Bool`, `U8`, `U16`, `U32`, `U64`, `I64`, and `F64`. Operations
+still require their selected binder's private semantic witness. All twelve
+distinct conversions among U8/U16/U32/U64 use the maintained checked integer
+conversion: widening preserves the value and narrowing rejects excess bits.
+Other narrow integer arithmetic remains outside this subset. It rejects resources, constraints,
 compute regions, retained state, computed Activation nodes, matches,
 comprehensions, counted applications, and FSMs. Direct constant output aliases
 are admitted only when their metadata identifies the same validated constant.
@@ -307,13 +311,14 @@ constant one-based tuple selector can lower to a checked structural projection
 when the maintained access factory certifies the exact schemas and contract.
 Dynamic tuple selection remains outside this native subset.
 
-Linear U64 matrix reads with a scalar U64 selector can return the selected word
+Linear U8/U16/U32/U64 matrix reads with a scalar U64 selector can return the selected word
 directly into admitted native scalar storage. Selection still requires the
 maintained access factory's private evidence, the current same-account immutable
 source, and the shared one-based portable bounds check. Each read admits its
 source owner and active private buffers under call-scoped limits; the separate
-program memory account continues to cover all live roots. Logical one-element,
-eight-byte output limits remain enforced even though no selector/result snapshot
+program memory account continues to cover all live roots. Logical one-element output
+limits and the selected width's one/two/four/eight-byte output limit remain enforced
+even though no selector/result snapshot
 is allocated. A later canonical use or publication constructs its real value.
 
 The [DEFLATE Huffman qualification](../../benchmarks/mech-deflate/huffman/README.md)

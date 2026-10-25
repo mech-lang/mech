@@ -84,6 +84,10 @@ fn reference(
                 shape_values: Box::new([]),
                 data: match value {
                     NativeScalarValue::Bool(v) => ValueDataDraft::Bool(*v),
+                    NativeScalarValue::U8(v) => ValueDataDraft::U8(*v),
+                    NativeScalarValue::U16(v) => ValueDataDraft::U16(*v),
+                    NativeScalarValue::U32(v) => ValueDataDraft::U32(*v),
+
                     NativeScalarValue::U64(v) => ValueDataDraft::U64(*v),
                     NativeScalarValue::I64(v) => ValueDataDraft::I64(*v),
                     NativeScalarValue::F64(v) => ValueDataDraft::F64(*v),
@@ -117,6 +121,10 @@ fn reference(
         .map(
             |index| match instance.copied_output(index).unwrap().data() {
                 ValueData::Bool(v) => NativeScalarValue::Bool(*v),
+                ValueData::U8(v) => NativeScalarValue::U8(*v),
+                ValueData::U16(v) => NativeScalarValue::U16(*v),
+                ValueData::U32(v) => NativeScalarValue::U32(*v),
+
                 ValueData::U64(v) => NativeScalarValue::U64(*v),
                 ValueData::I64(v) => NativeScalarValue::I64(*v),
                 ValueData::F64(v) => NativeScalarValue::F64(*v),
@@ -134,18 +142,27 @@ fn core_reference(
 ) -> Result<NativeScalarValue, mech_core::ConversionExecutionError> {
     use mech_core::{BuiltinScalarKind as K, execute_scalar_conversion};
     let data = match input {
+        NativeScalarValue::U8(v) => ValueDataDraft::U8(v),
+        NativeScalarValue::U16(v) => ValueDataDraft::U16(v),
+        NativeScalarValue::U32(v) => ValueDataDraft::U32(v),
         NativeScalarValue::U64(v) => ValueDataDraft::U64(v),
         NativeScalarValue::I64(v) => ValueDataDraft::I64(v),
         NativeScalarValue::F64(v) => ValueDataDraft::F64(v),
         _ => panic!(),
     };
     let kind = |kind| match kind {
+        NativeScalarKind::U8 => K::U8,
+        NativeScalarKind::U16 => K::U16,
+        NativeScalarKind::U32 => K::U32,
         NativeScalarKind::U64 => K::U64,
         NativeScalarKind::I64 => K::I64,
         NativeScalarKind::F64 => K::F64,
         _ => panic!(),
     };
     execute_scalar_conversion(data, kind(cast.input), kind(cast.output)).map(|value| match value {
+        ValueDataDraft::U8(v) => NativeScalarValue::U8(v),
+        ValueDataDraft::U16(v) => NativeScalarValue::U16(v),
+        ValueDataDraft::U32(v) => NativeScalarValue::U32(v),
         ValueDataDraft::U64(v) => NativeScalarValue::U64(v),
         ValueDataDraft::I64(v) => NativeScalarValue::I64(v),
         ValueDataDraft::F64(v) => NativeScalarValue::F64(v),
@@ -153,7 +170,7 @@ fn core_reference(
     })
 }
 #[test]
-fn all_six_scalar_casts_match_actual_core_resident_and_jit_original_and_decoded() {
+fn all_eighteen_scalar_casts_match_actual_core_resident_and_jit_original_and_decoded() {
     for cast in cases::CASTS {
         let (artifacts, _) = artifacts(cast.source);
         for artifact in &artifacts {
@@ -198,6 +215,9 @@ fn all_six_scalar_casts_match_actual_core_resident_and_jit_original_and_decoded(
             }
             // Same compiled instance must still succeed after all failures.
             let zero = match cast.input {
+                NativeScalarKind::U8 => NativeScalarValue::U8(0),
+                NativeScalarKind::U16 => NativeScalarValue::U16(0),
+                NativeScalarKind::U32 => NativeScalarValue::U32(0),
                 NativeScalarKind::U64 => NativeScalarValue::U64(0),
                 NativeScalarKind::I64 => NativeScalarValue::I64(0),
                 NativeScalarKind::F64 => NativeScalarValue::F64(F64Bits::from_bits(0)),
@@ -221,6 +241,7 @@ fn all_six_scalar_casts_match_actual_core_resident_and_jit_original_and_decoded(
                     NativeScalarValue::F64(F64Bits::from_bits(0)),
                 ],
                 NativeScalarKind::F64 => [NativeScalarValue::U64(0), NativeScalarValue::I64(0)],
+                NativeScalarKind::U8 | NativeScalarKind::U16 | NativeScalarKind::U32 => [NativeScalarValue::U64(0), NativeScalarValue::Bool(false)],
                 NativeScalarKind::Bool => unreachable!(),
             };
             for wrong in same_width_wrong_inputs {
@@ -425,6 +446,6 @@ fn cast_object_metadata_has_new_typed_identity_but_is_not_execution() {
         assert_eq!(object.metadata()["linked"], false);
         assert_eq!(object.metadata()["executed"], false);
         assert_eq!(object.metadata()["timing_samples"], 0);
-        assert_eq!(mech_gpu::native_artifact::NATIVE_TYPED_IR_VERSION, 5);
+        assert_eq!(mech_gpu::native_artifact::NATIVE_TYPED_IR_VERSION, 6);
     }
 }

@@ -13,7 +13,7 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeMatchAction, NativeMatchTerminator,
-    NativeMatchValue, NativeScalarKind,
+    NativeMatchValue,
 };
 fn successors(term: NativeIterationTerminator) -> [Option<u32>; 2] {
     match term {
@@ -580,8 +580,8 @@ impl<'plan> CfgDefinition<'plan> {
             let word = b
                 .ins()
                 .load(types::I64, MemFlags::new(), inputs, offset(index)?);
-            if plan.kind(value) == Some(NativeScalarKind::Bool) {
-                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, 1);
+            if let Some(maximum) = plan.kind(value).and_then(crate::native_artifact::compiler::word_upper_bound) {
+                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, maximum as i64);
                 guard(b, valid, error, STATUS_ABI);
             }
             b.ins()

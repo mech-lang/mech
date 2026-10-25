@@ -12,7 +12,7 @@ fn bytes(hash: &mut Sha256, value: &[u8]) {
     hash.update(value);
 }
 pub const NATIVE_MATCH_LINK_IDENTITY_BYTES: usize = 168;
-pub const NATIVE_MATCH_TYPED_IR_VERSION: u64 = 3;
+pub const NATIVE_MATCH_TYPED_IR_VERSION: u64 = 4;
 pub const NATIVE_MATCH_WORK_POLICY_VERSION: u64 = 1;
 const MAGIC: &[u8; 16] = b"MECHNATIVEMATCH\0";
 
@@ -126,6 +126,10 @@ pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeMatchArtifactPlan
             NativeScalarKind::U64 => 2,
             NativeScalarKind::I64 => 3,
             NativeScalarKind::F64 => 4,
+            NativeScalarKind::U8 => 5,
+            NativeScalarKind::U16 => 6,
+            NativeScalarKind::U32 => 7,
+
         }]);
         word(&mut hash, ty.schema().get() as u64);
         hash.update(ty.schema_key().as_bytes());
@@ -152,6 +156,18 @@ pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeMatchArtifactPlan
             NativeScalarValue::I64(value) => {
                 hash.update([3]);
                 word(&mut hash, value as u64);
+            }
+            NativeScalarValue::U8(value) => {
+                hash.update([5]);
+                word(&mut hash, u64::from(value));
+            }
+            NativeScalarValue::U16(value) => {
+                hash.update([6]);
+                word(&mut hash, u64::from(value));
+            }
+            NativeScalarValue::U32(value) => {
+                hash.update([7]);
+                word(&mut hash, u64::from(value));
             }
             NativeScalarValue::F64(value) => {
                 hash.update([4]);

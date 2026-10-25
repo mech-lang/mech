@@ -38,7 +38,7 @@ pub(crate) fn element_supported(body: &SchemaBody) -> bool {
         SchemaBody::Bool
             | SchemaBody::Index
             | SchemaBody::String
-            | SchemaBody::UnsignedInteger(IntegerWidth::W64)
+            | SchemaBody::UnsignedInteger(IntegerWidth::W8 | IntegerWidth::W16 | IntegerWidth::W32 | IntegerWidth::W64)
             | SchemaBody::SignedInteger(IntegerWidth::W64)
             | SchemaBody::FloatingPoint(FloatWidth::W64)
     )
