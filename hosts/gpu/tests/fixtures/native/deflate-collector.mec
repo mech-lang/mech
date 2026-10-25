@@ -24,13 +24,18 @@ optimal-collect-position(tables<[u16]>, cache<[u32]>, hash3<u64>, hash4<u64>, in
         | true => optimal-skip-position(mf, hash3, hash4, input, current-base, bits/wrapping-sub(position, current-base), nice-length, cache, pointer)
         | false => bt-get-matches(mf, hash3, hash4, input, current-base, bits/wrapping-sub(position, current-base), max-length, nice-length, 300u64, cache, pointer))
     | false => {tables: mf, next-hash3: hash3, next-hash4: hash4, cache: cache, cache-ptr: pointer})
-  found := advanced.cache-ptr > pointer
-  best := (found? | true => bits/and(bt-word32(advanced.cache[advanced.cache-ptr]), 65535u64) | false => 0u64)
-  with-header := bt-put-entry(advanced.cache, advanced.cache-ptr, bits/wrapping-sub(advanced.cache-ptr, pointer), byte(input, position))
+  next-tables := advanced.tables
+  next-hash3 := advanced.next-hash3
+  next-hash4 := advanced.next-hash4
+  next-cache := advanced.cache
+  next-pointer := advanced.cache-ptr
+  found := next-pointer > pointer
+  best := (found? | true => bits/and(bt-word32(next-cache[next-pointer]), 65535u64) | false => 0u64)
+  with-header := bt-put-entry(next-cache, next-pointer, bits/wrapping-sub(next-pointer, pointer), byte(input, position))
   next-skip := (skipping?
     | true => bits/wrapping-sub(skip, 1u64)
     | false => (((best >= 3u64) && (best >= nice-length))? | true => bits/wrapping-sub(best, 1u64) | false => 0u64))
-  out := {tables: advanced.tables, cache: with-header, next-hash3: advanced.next-hash3, next-hash4: advanced.next-hash4, next-position: bits/wrapping-add(position, 1u64), cache-ptr: bits/wrapping-add(advanced.cache-ptr, 1u64), base: current-base, next-slide: slide-at, maximum: max-length, nice: nice-length, skip: next-skip}.
+  out := {tables: next-tables, cache: with-header, next-hash3: next-hash3, next-hash4: next-hash4, next-position: bits/wrapping-add(position, 1u64), cache-ptr: bits/wrapping-add(next-pointer, 1u64), base: current-base, next-slide: slide-at, maximum: max-length, nice: nice-length, skip: next-skip}.
 
 // The bounded witness uses the same consecutive transition and keeps the
 // table/cache separate at call sites, as the full compression loop does.
@@ -39,9 +44,20 @@ optimal-collect-prefix-loop(tables<[u16]>, cache<[u32]>, hash3<u64>, hash4<u64>,
   next := (collecting?
     | false => {tables: tables, cache: cache, next-hash3: hash3, next-hash4: hash4, next-position: position, cache-ptr: pointer, base: base, next-slide: next-slide, maximum: maximum, nice: nice, skip: skip}
     | true => optimal-collect-position(tables, cache, hash3, hash4, input, position, base, next-slide, maximum, nice, skip, pointer))
+  next-tables := next.tables
+  next-cache := next.cache
+  next-hash3 := next.next-hash3
+  next-hash4 := next.next-hash4
+  next-position := next.next-position
+  next-base := next.base
+  slide-at := next.next-slide
+  max-length := next.maximum
+  nice-length := next.nice
+  next-skip := next.skip
+  next-pointer := next.cache-ptr
   out := (collecting?
-    | false => next
-    | true => optimal-collect-prefix-loop(next.tables, next.cache, next.next-hash3, next.next-hash4, input, next.next-position, next.base, next.next-slide, next.maximum, next.nice, next.skip, next.cache-ptr, end)).
+    | false => {tables: next-tables, cache: next-cache, next-hash3: next-hash3, next-hash4: next-hash4, next-position: next-position, cache-ptr: next-pointer, base: next-base, next-slide: slide-at, maximum: max-length, nice: nice-length, skip: next-skip}
+    | true => optimal-collect-prefix-loop(next-tables, next-cache, next-hash3, next-hash4, input, next-position, next-base, slide-at, max-length, nice-length, next-skip, next-pointer, end)).
 
 optimal-collect-prefix(input<[u8]>, end<u64>) => (out<optimal-position>) :=
   tables := initial-nodes(262144u64)
