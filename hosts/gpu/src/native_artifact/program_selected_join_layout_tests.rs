@@ -135,7 +135,7 @@ fn compact_range_layout_and_identity_preserve_original_decoded_library_visits() 
                 u64::from_le_bytes(current[16..24].try_into().unwrap()),
                 NATIVE_PROGRAM_TYPED_IR_VERSION
             );
-            assert_eq!(u64::from_le_bytes(current[24..32].try_into().unwrap()), 29);
+            assert_eq!(u64::from_le_bytes(current[24..32].try_into().unwrap()), 30);
             assert_eq!(
                 u64::from_le_bytes(current[32..40].try_into().unwrap()),
                 NATIVE_PROGRAM_WORK_POLICY_VERSION
