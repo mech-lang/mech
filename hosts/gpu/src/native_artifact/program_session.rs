@@ -2,9 +2,8 @@
 //! are reconstructed from admitted owned backing for each synchronous entry;
 //! neither caller pointers nor self-referential borrowed state are retained.
 use super::super::program_abi::{
-    PHASE_ACTIVATION, PHASE_CAPTURE_TAIL, PHASE_PREFIX, PHASE_TURN, STATUS_ACTIVATED,
-    STATUS_INPUT_PENDING, STATUS_INPUT_SCANNED,
-    PHASE_WORKER, STATUS_WORKER_RESULT,
+    PHASE_ACTIVATION, PHASE_CAPTURE_TAIL, PHASE_PREFIX, PHASE_TURN, PHASE_WORKER, STATUS_ACTIVATED,
+    STATUS_INPUT_PENDING, STATUS_INPUT_SCANNED, STATUS_WORKER_RESULT,
 };
 use super::*;
 
@@ -220,13 +219,17 @@ impl CallCacheLane {
         &mut self,
         site: usize,
         work: &NativeLibraryWorkBudget,
-        invoke: impl FnOnce(&mut NativePreparedLibraryCallCache)
-            -> Result<T, NativeCollectionInvocationError>,
+        invoke: impl FnOnce(
+            &mut NativePreparedLibraryCallCache,
+        ) -> Result<T, NativeCollectionInvocationError>,
     ) -> Result<T, NativeCollectionInvocationError> {
         self.check_account(work)?;
         work.charge(256, 0)?;
-        let CallCacheEntry::Repeated(cache, nodes) = self.entries.get_mut(site)
-            .ok_or(NativeCollectionInvocationError::InvalidInput)? else {
+        let CallCacheEntry::Repeated(cache, nodes) = self
+            .entries
+            .get_mut(site)
+            .ok_or(NativeCollectionInvocationError::InvalidInput)?
+        else {
             return Err(NativeCollectionInvocationError::InvalidInput);
         };
         if self.library.is_none() {
@@ -237,7 +240,9 @@ impl CallCacheLane {
         // A failed call may still have populated admitted plans or indexes.
         // Reconcile those holdings before returning either result.
         let next = cache.retained_metadata_demand(work)?.retained_nodes;
-        self.metadata_nodes = self.metadata_nodes.checked_sub(*nodes)
+        self.metadata_nodes = self
+            .metadata_nodes
+            .checked_sub(*nodes)
             .and_then(|total| total.checked_add(next))
             .ok_or(NativeCollectionInvocationError::InvalidInput)?;
         *nodes = next;
@@ -256,17 +261,23 @@ impl CallCacheLane {
     ) -> Result<bool, NativeCollectionInvocationError> {
         match self.entries.get(site) {
             Some(CallCacheEntry::Once) => call.invoke_current(inputs, output, limits, work),
-            Some(CallCacheEntry::Repeated(..)) => self.with_repeated(site, work,
-                |cache| call.invoke_current_cached(cache, inputs, output, limits, work)),
+            Some(CallCacheEntry::Repeated(..)) => self.with_repeated(site, work, |cache| {
+                call.invoke_current_cached(cache, inputs, output, limits, work)
+            }),
             None => Err(NativeCollectionInvocationError::InvalidInput),
         }
     }
 
-    fn check_account(&self, work: &NativeLibraryWorkBudget)
-        -> Result<(), NativeCollectionInvocationError>
-    {
-        if !self.metadata_valid || self._reservation.budget() != work.memory_budget()
-            || self.library.as_ref().is_some_and(|owner| !owner.shares_account(work))
+    fn check_account(
+        &self,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<(), NativeCollectionInvocationError> {
+        if !self.metadata_valid
+            || self._reservation.budget() != work.memory_budget()
+            || self
+                .library
+                .as_ref()
+                .is_some_and(|owner| !owner.shares_account(work))
         {
             return Err(NativeCollectionInvocationError::UnadmittedValue);
         }
@@ -279,7 +290,9 @@ impl CallCacheLane {
     ) -> Result<u64, NativeCollectionInvocationError> {
         self.check_account(work)?;
         work.charge(256, 0)?;
-        self._reservation.capacity_bytes().checked_add(self.metadata_nodes)
+        self._reservation
+            .capacity_bytes()
+            .checked_add(self.metadata_nodes)
             .ok_or(NativeCollectionInvocationError::InvalidInput)
     }
 
@@ -368,6 +381,7 @@ struct OwnedState<'a> {
     worker_credit_claims: u64,
     worker_credit_batches: u64,
     worker_credit_reclaims: u64,
+    fused_string_map_bytes: u64,
     parallel_regions: u64,
     parallel_batches: u64,
     parallel_tasks: u64,
@@ -396,7 +410,12 @@ pub(super) struct Prepared<'a> {
     _fixed_nodes: mech_core::ManagedNodeReservation,
 }
 
-struct SetupGeometry { locals: usize, progress: usize, words: usize, bytes: u64 }
+struct SetupGeometry {
+    locals: usize,
+    progress: usize,
+    words: usize,
+    bytes: u64,
+}
 
 impl<'a> Prepared<'a> {
     /// Exact fixed private node claims made by `new_with_budget`. This is a
@@ -410,7 +429,8 @@ impl<'a> Prepared<'a> {
         let collections = collection::State::metadata_bytes(descriptor)?;
         let call_caches = CallCacheLane::metadata_bytes(descriptor.plan.blocks().len())?;
         let line_matrices = u64::from(!descriptor.line_matrices.regions.is_empty());
-        let total = fixed.checked_add(collections)
+        let total = fixed
+            .checked_add(collections)
             .and_then(|n| n.checked_add(call_caches))
             .and_then(|n| n.checked_add(line_matrices))
             .ok_or_else(|| invalid("worker fixed setup node count overflow"))?;
@@ -426,17 +446,38 @@ impl<'a> Prepared<'a> {
         let geometry = Self::setup_geometry(descriptor)?;
         let mut bytes = geometry.bytes;
         for (raw, admitted) in [
-            (transport_bytes(geometry.words)?, NativeWordStorage::admission_bytes(geometry.words)?),
-            (amount(descriptor.types.len(), size_of::<Option<Value>>() as u64, 0)?, NativeTypedStorage::<Option<Value>>::admission_bytes(descriptor.types.len())?),
-            (transport_bytes(descriptor.types.len())?, NativeWordStorage::admission_bytes(descriptor.types.len())?),
-            (amount(descriptor.max_library_inputs, size_of::<Option<Value>>() as u64, 0)?, NativeTypedStorage::<Option<Value>>::admission_bytes(descriptor.max_library_inputs)?),
+            (
+                transport_bytes(geometry.words)?,
+                NativeWordStorage::admission_bytes(geometry.words)?,
+            ),
+            (
+                amount(descriptor.types.len(), size_of::<Option<Value>>() as u64, 0)?,
+                NativeTypedStorage::<Option<Value>>::admission_bytes(descriptor.types.len())?,
+            ),
+            (
+                transport_bytes(descriptor.types.len())?,
+                NativeWordStorage::admission_bytes(descriptor.types.len())?,
+            ),
+            (
+                amount(
+                    descriptor.max_library_inputs,
+                    size_of::<Option<Value>>() as u64,
+                    0,
+                )?,
+                NativeTypedStorage::<Option<Value>>::admission_bytes(
+                    descriptor.max_library_inputs,
+                )?,
+            ),
         ] {
-            bytes = bytes.checked_sub(raw).and_then(|bytes| bytes.checked_add(admitted))
+            bytes = bytes
+                .checked_sub(raw)
+                .and_then(|bytes| bytes.checked_add(admitted))
                 .ok_or_else(|| invalid("worker fixed backing admission overflow"))?;
         }
         // This immutable sum is established at prepare/decode time, so a
         // repeated dispatch never performs an unfunded constants-table scan.
-        bytes.checked_add(descriptor.constant_admission_bytes)
+        bytes
+            .checked_add(descriptor.constant_admission_bytes)
             .ok_or_else(|| invalid("worker constant admission overflow"))
     }
 
@@ -452,8 +493,14 @@ impl<'a> Prepared<'a> {
             .and_then(|n| n.checked_add(descriptor.borrowed_strings.words))
             .and_then(|n| n.checked_add(descriptor.closed_tails.words))
             .ok_or_else(|| invalid("local count overflow"))?;
-        let locals = descriptor.map_owner_words.as_ref().map_or(Ok(canonical_locals),
-            super::super::program_map_owner_layout::local_words).map_err(invalid)?;
+        let locals = descriptor
+            .map_owner_words
+            .as_ref()
+            .map_or(
+                Ok(canonical_locals),
+                super::super::program_map_owner_layout::local_words,
+            )
+            .map_err(invalid)?;
         let progress = plan
             .iterations()
             .len()
@@ -493,7 +540,12 @@ impl<'a> Prepared<'a> {
                 )
             })
             .ok_or_else(|| invalid("combined transport overflow"))?;
-        Ok(SetupGeometry { locals, progress, words, bytes })
+        Ok(SetupGeometry {
+            locals,
+            progress,
+            words,
+            bytes,
+        })
     }
 
     pub(super) fn new(
@@ -540,7 +592,12 @@ impl<'a> Prepared<'a> {
                 "native program requires seven finite library dimensions",
             ));
         }
-        let SetupGeometry { locals, progress, words, bytes } = Self::setup_geometry(descriptor)?;
+        let SetupGeometry {
+            locals,
+            progress,
+            words,
+            bytes,
+        } = Self::setup_geometry(descriptor)?;
         if bytes > limits.execution.max_transport_bytes {
             return Err(NativeExecutionError::TransportLimit {
                 required: bytes,
@@ -550,7 +607,9 @@ impl<'a> Prepared<'a> {
         }
         let mut work = if let Some(library) = &worker_budget {
             NativeWorkMeter::from_worker_budget(library.clone(), memory)?
-        } else { NativeWorkMeter::new(limits.execution.max_work)? };
+        } else {
+            NativeWorkMeter::new(limits.execution.max_work)?
+        };
         work.charge(NativeExecutionPhase::Setup, amount(words, 4, 256)?)?;
         work.charge(
             NativeExecutionPhase::Setup,
@@ -560,9 +619,14 @@ impl<'a> Prepared<'a> {
                 4096,
             )?,
         )?;
-        let library = if let Some(library) = worker_budget { library } else {
-            work.shared_library_budget(NativeExecutionPhase::Setup,
-                caps.max_comparison_work.unwrap(), memory)?
+        let library = if let Some(library) = worker_budget {
+            library
+        } else {
+            work.shared_library_budget(
+                NativeExecutionPhase::Setup,
+                caps.max_comparison_work.unwrap(),
+                memory,
+            )?
         };
         let fixed_nodes = memory.reserve_nodes(super::caller_geometry::fixed_nodes()?)?;
         let mut storage =
@@ -658,6 +722,7 @@ impl<'a> Prepared<'a> {
                 worker_credit_claims: 0,
                 worker_credit_batches: 0,
                 worker_credit_reclaims: 0,
+                fused_string_map_bytes: 0,
                 parallel_regions: 0,
                 parallel_batches: 0,
                 parallel_tasks: 0,
@@ -677,13 +742,21 @@ impl<'a> Prepared<'a> {
         worker: parallel::Worker,
         captures: Vec<parallel::Capture>,
     ) -> Result<parallel::Receipt, NativeProgramExecutionError> {
-        let region = descriptor.parallel.regions.get(worker.region)
+        let region = descriptor
+            .parallel
+            .regions
+            .get(worker.region)
             .ok_or_else(|| invalid("worker constructor has no same-plan proof"))?;
         if !super::parallel_admission::supported(descriptor, worker.region) {
-            return Err(invalid("worker constructor lacks shared private-node admission"));
+            return Err(invalid(
+                "worker constructor lacks shared private-node admission",
+            ));
         }
-        if worker.index >= worker.count || worker.count == 0 || worker.result.is_some()
-            || captures.len() != region.captures.len() {
+        if worker.index >= worker.count
+            || worker.count == 0
+            || worker.result.is_some()
+            || captures.len() != region.captures.len()
+        {
             return Err(invalid("worker constructor capture/count mismatch"));
         }
         let mut prepared = Self::new_with_budget(descriptor, limits, memory, Some(library))?;
@@ -693,26 +766,42 @@ impl<'a> Prepared<'a> {
         // immutable constants. Its private local lanes receive their original
         // words; no source computation or observation is rerun here.
         for constant in descriptor.plan.constants() {
-            if let Some(kind) = descriptor.plan.values()[constant.value().get() as usize].scalar_kind() {
-                prepared.storage.values_mut()[locals_start + constant.value().get() as usize] = bits(constant.constant(), kind)?;
+            if let Some(kind) =
+                descriptor.plan.values()[constant.value().get() as usize].scalar_kind()
+            {
+                prepared.storage.values_mut()[locals_start + constant.value().get() as usize] =
+                    bits(constant.constant(), kind)?;
             }
         }
         for (target, words) in descriptor.scalar_aggregates.constants() {
-            let (start, count) = descriptor.scalar_aggregates.slot(*target)
+            let (start, count) = descriptor
+                .scalar_aggregates
+                .slot(*target)
                 .ok_or_else(|| invalid("worker aggregate constant has no words"))?;
-            if count != words.len() { return Err(invalid("worker aggregate constant shape")); }
-            prepared.storage.values_mut()[locals_start + start..locals_start + start + count].copy_from_slice(words);
+            if count != words.len() {
+                return Err(invalid("worker aggregate constant shape"));
+            }
+            prepared.storage.values_mut()[locals_start + start..locals_start + start + count]
+                .copy_from_slice(words);
         }
         for (&expected, capture) in region.captures.iter().zip(captures) {
             match capture {
                 parallel::Capture::Word(slot, word) if slot == expected => {
-                    let kind = descriptor.plan.values()[slot as usize].scalar_kind()
+                    let kind = descriptor.plan.values()[slot as usize]
+                        .scalar_kind()
                         .ok_or_else(|| invalid("worker scalar capture type"))?;
-                    if kind == NativeScalarKind::Bool && word > 1 { return Err(invalid("worker Bool capture")); }
+                    if kind == NativeScalarKind::Bool && word > 1 {
+                        return Err(invalid("worker Bool capture"));
+                    }
                     prepared.storage.values_mut()[locals_start + slot as usize] = word;
                 }
                 parallel::Capture::Value(slot, value) if slot == expected => {
-                    if descriptor.plan.values()[slot as usize].scalar_kind().is_some() { return Err(invalid("worker managed capture type")); }
+                    if descriptor.plan.values()[slot as usize]
+                        .scalar_kind()
+                        .is_some()
+                    {
+                        return Err(invalid("worker managed capture type"));
+                    }
                     state.arena.put(slot, &value, &mut state.work)?;
                 }
                 _ => return Err(invalid("worker capture inventory differs")),
@@ -720,12 +809,18 @@ impl<'a> Prepared<'a> {
         }
         prepared.worker = Some(worker);
         prepared.activated = true;
-        prepared.run(&mut |frame| {
-            // SAFETY: the scoped parent retains this exact checked code owner;
-            // this constructor owns all of the child's disjoint frame lanes.
-            unsafe { entry(frame) }
-        }, PHASE_WORKER)?;
-        let receipt = prepared.worker.as_mut().and_then(|worker| worker.result.take())
+        prepared.run(
+            &mut |frame| {
+                // SAFETY: the scoped parent retains this exact checked code owner;
+                // this constructor owns all of the child's disjoint frame lanes.
+                unsafe { entry(frame) }
+            },
+            PHASE_WORKER,
+        )?;
+        let receipt = prepared
+            .worker
+            .as_mut()
+            .and_then(|worker| worker.result.take())
             .ok_or_else(|| invalid("worker omitted its owned result"))?;
         // Retire every Rc work account before returning across the thread join.
         drop(prepared);
@@ -883,6 +978,7 @@ impl<'a> Prepared<'a> {
             worker_credit_claims: state.worker_credit_claims,
             worker_credit_batches: state.worker_credit_batches,
             worker_credit_reclaims: state.worker_credit_reclaims,
+            fused_string_map_bytes: state.fused_string_map_bytes,
             parallel_regions: state.parallel_regions,
             parallel_batches: state.parallel_batches,
             parallel_tasks: state.parallel_tasks,
@@ -1149,6 +1245,7 @@ impl<'a> Prepared<'a> {
             worker_credit_claims: state.worker_credit_claims,
             worker_credit_batches: state.worker_credit_batches,
             worker_credit_reclaims: state.worker_credit_reclaims,
+            fused_string_map_bytes: state.fused_string_map_bytes,
             parallel_regions: state.parallel_regions,
             parallel_batches: state.parallel_batches,
             parallel_tasks: state.parallel_tasks,
@@ -1182,11 +1279,16 @@ impl<'a> Prepared<'a> {
             phase,
             resume_site: context.worker.as_ref().map_or_else(
                 || prefix_input.map_or(0, |input| u64::from(input.resume_site)),
-                |worker| u64::from(descriptor.parallel.regions[worker.region].begin)),
+                |worker| u64::from(descriptor.parallel.regions[worker.region].begin),
+            ),
             available_lines: context.worker.as_ref().map_or_else(
-                || prefix_input.map_or(0, |input| input.available), |worker| worker.index),
+                || prefix_input.map_or(0, |input| input.available),
+                |worker| worker.index,
+            ),
             input_eof: context.worker.as_ref().map_or_else(
-                || prefix_input.map_or(0, |input| u64::from(input.eof)), |worker| worker.count),
+                || prefix_input.map_or(0, |input| u64::from(input.eof)),
+                |worker| worker.count,
+            ),
         };
         let phase_words = (frame.resume_site, frame.available_lines, frame.input_eof);
         let status = entry(&mut frame);
@@ -1252,12 +1354,18 @@ impl<'a> Prepared<'a> {
         } else {
             match status {
                 STATUS_WORKER_RESULT if phase == PHASE_WORKER => {
-                    let worker = context.worker.as_ref().ok_or_else(|| invalid("worker state lost"))?;
+                    let worker = context
+                        .worker
+                        .as_ref()
+                        .ok_or_else(|| invalid("worker state lost"))?;
                     let region = &descriptor.parallel.regions[worker.region];
-                    if worker.result.is_none() || f.error_node != u64::from(region.push)
-                        || context.control.completed || context.output_cursor != 0
+                    if worker.result.is_none()
+                        || f.error_node != u64::from(region.push)
+                        || context.control.completed
+                        || context.output_cursor != 0
                         || context.control.current != Some(region.iteration)
-                        || context.parallel_batch.is_some() {
+                        || context.parallel_batch.is_some()
+                    {
                         return Err(invalid("worker omitted exact source result frontier"));
                     }
                 }
@@ -1330,7 +1438,9 @@ impl<'a> Prepared<'a> {
                 _ => return Err(NativeExecutionError::InvalidStatus { status }.into()),
             }
         }
-        if context.parallel_batch.is_some() { return Err(invalid("native phase left pending parallel results")); }
+        if context.parallel_batch.is_some() {
+            return Err(invalid("native phase left pending parallel results"));
+        }
         self.worker = context.worker;
         self.state = Some(OwnedState {
             map_owners: context.map_owners,
@@ -1358,6 +1468,7 @@ impl<'a> Prepared<'a> {
             worker_credit_claims: context.worker_credit_claims,
             worker_credit_batches: context.worker_credit_batches,
             worker_credit_reclaims: context.worker_credit_reclaims,
+            fused_string_map_bytes: context.fused_string_map_bytes,
             parallel_regions: context.parallel_regions,
             parallel_batches: context.parallel_batches,
             parallel_tasks: context.parallel_tasks,

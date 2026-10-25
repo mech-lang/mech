@@ -13,6 +13,124 @@ pub(super) struct Buffer {
     reservation: ManagedMemoryReservation,
 }
 impl State {
+    /// The same original map admissions/finish leaf over an already composed
+    /// private owner. No semantic joined-source Value is installed or read.
+    pub(in crate::native_artifact::program_runtime) fn prepare_joined_string_map(
+        &mut self,
+        ctx: &mut Context<'_, '_>,
+        region: &NativeStringMapRegion,
+        remaining: u64,
+    ) -> Result<Option<u64>, Error> {
+        let Some(mapped) = ctx.take_joined_map(region)? else {
+            return Ok(None);
+        };
+        let id = region.collection();
+        self.account(ctx, id, 0, 128)?;
+        let source = self.sources[region.iteration() as usize]
+            .as_ref()
+            .ok_or_else(|| invalid("joined String map has no initialized source"))?;
+        if remaining == 0
+            || remaining != mapped.count
+            || source.count != remaining
+            || source.byte_offset != 0
+            || source.handle.is_some()
+            || !matches!(source.backing, super::super::SourceBacking::ConsumedString)
+            || mapped.processed > remaining
+        {
+            return Err(invalid("joined String map source count/owner differs"));
+        }
+        let join = self
+            .builder(id)?
+            .join
+            .as_ref()
+            .ok_or_else(|| invalid("joined String map has no TextJoin"))?;
+        if join.parked
+            || join.accepted != 0
+            || !join.text.is_empty()
+            || join.compiled_map.is_some()
+            || !matches!(join.separator.data(), ValueData::String(s) if s.is_empty())
+        {
+            return Err(invalid("joined String map sink state differs"));
+        }
+        charge(
+            &mut ctx.control.work,
+            super::super::super::amount(ctx.call_inputs.values().len(), 16, 128)?,
+        )?;
+        if ctx.call_inputs.values().len() < 2
+            || ctx.call_inputs.values().iter().any(Option::is_some)
+        {
+            return Err(invalid("joined String map has stale argument owners"));
+        }
+        for slot in region.owned_source_slots() {
+            if ctx
+                .arena
+                .current_retained_bytes(slot.get(), &mut ctx.control.work)?
+                .is_some()
+            {
+                return Err(invalid(
+                    "joined String map fabricated a canonical source alias",
+                ));
+            }
+        }
+        // Keep original source qualification and table/loop prices. The source
+        // proof establishes one original byte per grapheme before replacements.
+        self.account(ctx, id, 0, add(mul(remaining, 64)?, 256)?)?;
+        let ValueData::Map(entries) = mapped.map.data() else {
+            return Err(invalid("joined String map root kind"));
+        };
+        let entries = entries.entries().len() as u64;
+        self.account(ctx, id, 0, add(mul(entries, 256)?, 1024)?)?;
+        let memory = ctx.library.memory_budget();
+        if mapped.owner.memory_budget() != memory
+            || mapped.owner.as_bytes().len() as u64 != remaining
+        {
+            return Err(invalid("joined String map lost its same-account backing"));
+        }
+        let map_bytes = mapped
+            .map
+            .memory_budget_retained_bytes(&memory)
+            .ok_or_else(|| invalid("joined String map root is unadmitted"))?;
+        let scratch = add(mapped.owner.retained_capacity_bytes(), 256)?;
+        resource(
+            ctx,
+            id,
+            Dimension::TemporaryBytes,
+            add(add(self.live_bytes, map_bytes)?, scratch)?,
+            ctx.limits.max_temporary_bytes,
+        )?;
+        resource(
+            ctx,
+            id,
+            Dimension::RetainedNodes,
+            add(add(self.retained_nodes()?, mul(entries, 2)?)?, 6)?,
+            ctx.limits.max_retained_nodes,
+        )?;
+        let footprint = prospective_string_value_footprint(0, false, 1, remaining)
+            .map_err(|_| invalid("joined String map output footprint"))?;
+        resource(
+            ctx,
+            id,
+            Dimension::OutputBytes,
+            footprint.retained_bytes,
+            ctx.limits.max_output_bytes,
+        )?;
+        self.account(ctx, id, remaining, add(mul(remaining, 64)?, 4096)?)?;
+        let reservation = memory.reserve_capacity(256)?;
+        let processed = mapped.processed;
+        self.builder(id)?.join.as_mut().unwrap().compiled_map = Some(Buffer {
+            table: Vec::new(),
+            bytes: Vec::new(),
+            owned: Some(mapped.owner),
+            reservation,
+        });
+        self.live_bytes = add(self.live_bytes, scratch)?;
+        ctx.call_inputs.values_mut()[0] = None;
+        ctx.call_inputs.values_mut()[1] = Some(mapped.map);
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        owned_tests::observe(ctx, region, true, true);
+        Ok(Some(processed))
+    }
+
     pub(in crate::native_artifact::program_runtime) fn prepare_compiled_string_map(
         &mut self,
         ctx: &mut Context<'_, '_>,

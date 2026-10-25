@@ -6,8 +6,9 @@ use crate::native_artifact::{
 };
 use core::mem::size_of;
 use mech_core::{
-    ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation, MemoryBudgetDimension as Dimension,
-    MemoryBudgetLimits, ResidentKernelError, ResidentResourcePhase, Value, ValueData,
+    ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation,
+    MemoryBudgetDimension as Dimension, MemoryBudgetLimits, ResidentKernelError,
+    ResidentResourcePhase, Value, ValueData,
     snapshot::{SnapshotValidationContext, ValueDataDraft, ValueDraft},
 };
 use mech_engine::{
@@ -31,12 +32,16 @@ pub(super) fn admitted_capacity<T>(
 }
 #[path = "program_collection_data.rs"]
 mod data;
-pub(super) fn source_count(value: &Value) -> Result<u64, Error> { data::count(value) }
+pub(super) fn source_count(value: &Value) -> Result<u64, Error> {
+    data::count(value)
+}
 /// Optional constant-time scheduling hint for an already admitted Matrix/Set.
 /// Atomic elements count as one unit; text uses its retained UTF-8 byte length.
 /// This borrows no new owner and grants no source visit or execution authority.
 pub(super) fn element_work_hint(value: &Value, ordinal: u64) -> u64 {
-    if !matches!(value.data(), ValueData::Matrix(_) | ValueData::Set(_)) { return 1; }
+    if !matches!(value.data(), ValueData::Matrix(_) | ValueData::Set(_)) {
+        return 1;
+    }
     match data::element(value, ordinal, 0) {
         Ok((data::Element::Text(text), _)) => (text.len() as u64).max(1),
         _ => 1,
@@ -158,16 +163,21 @@ fn charge(work: &mut NativeWorkMeter, amount: u64) -> Result<(), Error> {
 impl State {
     /// Only otherwise-unclaimed private owners in the parked parent. The
     /// common lane, drafts, TextJoin and canonical roots have their own claims.
-    pub(super) fn parked_private_nodes(&self, work: &mut NativeWorkMeter)
-        -> Result<Option<u64>, Error>
-    {
+    pub(super) fn parked_private_nodes(
+        &self,
+        work: &mut NativeWorkMeter,
+    ) -> Result<Option<u64>, Error> {
         if self.active_string_spans != 0 || self.active_string_maps != 0 {
             return Ok(None);
         }
         charge(work, super::amount(self.builders.len(), 256, 512)?)?;
         let mut nodes = 0;
         for builder in self.builders.iter().flatten() {
-            if builder.join.as_ref().is_some_and(|join| join.has_compiled_map()) {
+            if builder
+                .join
+                .as_ref()
+                .is_some_and(|join| join.has_compiled_map())
+            {
                 return Ok(None);
             }
             if let Some(histogram) = &builder.histogram {
@@ -310,9 +320,16 @@ impl State {
     #[cfg(test)]
     pub(super) fn test_builder_kinds(&self) -> u8 {
         self.builders.iter().flatten().fold(0, |kinds, builder| {
-            kinds | if builder.join.is_some() { 2 }
-                else if builder.histogram.is_some() { 4 }
-                else if builder.query.is_some() { 8 } else { 1 }
+            kinds
+                | if builder.join.is_some() {
+                    2
+                } else if builder.histogram.is_some() {
+                    4
+                } else if builder.query.is_some() {
+                    8
+                } else {
+                    1
+                }
         })
     }
     fn builder(&mut self, id: u32) -> Result<&mut Builder, Error> {
@@ -497,39 +514,49 @@ impl State {
                 }
                 let (backing, handle, count, cost) = match definition.source() {
                     NativeCollectionSource::Value(source) => {
-                        let handle = if plan.collections()[definition.collection() as usize]
-                            .string_element_map_projection()
-                            .is_some()
-                        {
-                            Some(
-                                ctx.arena
-                                    .current_handle(source.get(), &mut ctx.control.work)?,
-                            )
+                        if let Some(count) = ctx.initialize_joined_map(*iteration, source.get())? {
+                            self.account(
+                                ctx,
+                                definition.collection(),
+                                0,
+                                add(mul(count, 64)?, 64)?,
+                            )?;
+                            (SourceBacking::ConsumedString, None, count, 0)
                         } else {
-                            None
-                        };
-                        let value = ctx
-                            .arena
-                            .copy_current(source.get(), &mut ctx.control.work)?;
-                        let cost = match value.data() {
-                            ValueData::String(text) => add(mul(text.len() as u64, 64)?, 64)?,
-                            _ => 64,
-                        };
-                        self.account(ctx, definition.collection(), 0, cost)?;
-                        // A window-bearing descriptor has already admitted
-                        // the one weak fact slot. Keep the full fresh scan
-                        // charge above even when this exact root is a hit.
-                        let count = match value.data() {
-                            ValueData::String(text)
-                                if !descriptor.window_regions.is_empty()
-                                    && self.ascii_facts.inspect(&value)? =>
+                            let handle = if plan.collections()[definition.collection() as usize]
+                                .string_element_map_projection()
+                                .is_some()
                             {
-                                u64::try_from(text.len())
-                                    .map_err(|_| invalid("generator count exceeds u64"))?
-                            }
-                            _ => data::count(&value)?,
-                        };
-                        (SourceBacking::Value(value), handle, count, 0)
+                                Some(
+                                    ctx.arena
+                                        .current_handle(source.get(), &mut ctx.control.work)?,
+                                )
+                            } else {
+                                None
+                            };
+                            let value = ctx
+                                .arena
+                                .copy_current(source.get(), &mut ctx.control.work)?;
+                            let cost = match value.data() {
+                                ValueData::String(text) => add(mul(text.len() as u64, 64)?, 64)?,
+                                _ => 64,
+                            };
+                            self.account(ctx, definition.collection(), 0, cost)?;
+                            // A window-bearing descriptor has already admitted
+                            // the one weak fact slot. Keep the full fresh scan
+                            // charge above even when this exact root is a hit.
+                            let count = match value.data() {
+                                ValueData::String(text)
+                                    if !descriptor.window_regions.is_empty()
+                                        && self.ascii_facts.inspect(&value)? =>
+                                {
+                                    u64::try_from(text.len())
+                                        .map_err(|_| invalid("generator count exceeds u64"))?
+                                }
+                                _ => data::count(&value)?,
+                            };
+                            (SourceBacking::Value(value), handle, count, 0)
+                        }
                     }
                     NativeCollectionSource::U64Range(_) => {
                         let range = self.prepared_ranges[*iteration as usize]
@@ -549,14 +576,21 @@ impl State {
                     self.account(ctx, definition.collection(), 0, cost)?;
                 }
                 let (count, index_offset) = if let Some(worker) = &ctx.worker
-                    && descriptor.parallel.regions[worker.region].iteration == *iteration {
-                    if count != worker.count || worker.index >= count
+                    && descriptor.parallel.regions[worker.region].iteration == *iteration
+                {
+                    if count != worker.count
+                        || worker.index >= count
                         || !matches!(&backing, SourceBacking::Value(value)
-                            if matches!(value.data(), ValueData::Matrix(_) | ValueData::Set(_))) {
-                        return Err(invalid("worker source differs from admitted original sequence"));
+                            if matches!(value.data(), ValueData::Matrix(_) | ValueData::Set(_)))
+                    {
+                        return Err(invalid(
+                            "worker source differs from admitted original sequence",
+                        ));
                     }
                     (1, worker.index)
-                } else { (count, 0) };
+                } else {
+                    (count, 0)
+                };
                 ctx.control.bind_collection_count(*iteration, count)?;
                 self.sources[*iteration as usize] = Some(Source {
                     backing,
@@ -825,7 +859,8 @@ impl State {
                 // original builder until every fallible allocation succeeds.
                 let memory = ctx.library.memory_budget();
                 let pending_node = memory.reserve_nodes(1)?;
-                let _replacement_node = memory.reserve_nodes(u64::from(capacity > builder.values.capacity()))?;
+                let _replacement_node =
+                    memory.reserve_nodes(u64::from(capacity > builder.values.capacity()))?;
                 builder.reservation.resize_capacity(backing)?;
                 if capacity > builder.values.capacity() {
                     builder
@@ -942,8 +977,10 @@ impl State {
             )?,
             ctx.limits.max_retained_nodes,
         )?;
-        let _publication_nodes = ctx.library.memory_budget().reserve_nodes(
-            data::output_nodes(output.definition().body(), count)?)?;
+        let _publication_nodes = ctx
+            .library
+            .memory_budget()
+            .reserve_nodes(data::output_nodes(output.definition().body(), count)?)?;
         let mut reservation = ctx.library.memory_budget().reserve_capacity(envelope)?;
         // Normal scalar comprehensions are always 1xN, including 1x0.
         let extents = if definition.kind() == ComprehensionKind::MatrixPreserveShape {

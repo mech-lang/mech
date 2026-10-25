@@ -172,7 +172,9 @@ fn selected_template(
 // base. Frame layout, finite body prices and per-group charges are unchanged.
 // IR81 / ABI29 read selected rows directly from existing LF offsets in a
 // pinned one/two-chunk ASCII window. Other representations keep checked cells.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 81;
+// IR82 composes a sole-use selected join with its source-derived byte map in
+// initialized physical chunks. Original error/admission boundaries remain.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 82;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -304,7 +306,10 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 81;
 // shared String representation fact. Original scan charges remain in force.
 // Policy68 includes the inline borrowed-offset descriptors in the actual loan
 // layout. Original row/payload work and row-capacity claims stay in force.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 68;
+// Policy69 admits the actual composition-state layout and requires a bounded
+// chunk/table computation to fit the original prepaid join envelope. Source
+// operation prices, finite allowances and later map charges are unchanged.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 69;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

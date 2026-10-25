@@ -387,6 +387,9 @@ impl NativeTextLineChunks {
     pub fn retained_capacity_bytes(&self) -> u64 {
         self.account.used()
     }
+    pub fn retained_chunk_count(&self) -> u64 {
+        self.chunks.len() as u64
+    }
     pub fn peak_capacity_bytes(&self) -> u64 {
         self.account.peak()
     }
