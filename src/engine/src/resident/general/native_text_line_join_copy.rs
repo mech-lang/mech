@@ -9,7 +9,7 @@ impl Chunk {
         end: u64,
         target: &mut String,
     ) -> Result<(), InvokeError> {
-        // The byte routine appends only complete, validated UTF8 line spans.
+        // SAFETY: the byte routine appends only complete, validated UTF8 line spans.
         // It leaves the old length intact on error and never changes that prefix.
         self.append_payload_bytes(first, end, unsafe { target.as_mut_vec() })
     }

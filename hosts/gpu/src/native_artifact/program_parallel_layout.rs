@@ -547,10 +547,9 @@ fn pure(
 
 // These are compiler-enforced requirements, not unsafe assertions. All mutable
 // Rc-backed execution/cache state is constructed on its owning worker thread.
-#[allow(dead_code)]
-fn immutable_transport_is_thread_safe() {
+const _: fn() = || {
     fn check<T: Send + Sync>() {}
     check::<mech_core::Value>();
     check::<super::NativeProgramDescriptor>();
     check::<super::NativeProgramExecutionError>();
-}
+};

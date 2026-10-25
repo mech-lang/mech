@@ -1,20 +1,20 @@
 //! One scalar/SIMD mapping algebra for ordinary and joined mapping leaves.
 //! A small dispatch chooses the prepared representation once per invocation.
 use super::{NativeCompileError, backend};
-use crate::native_artifact::program_ascii_map::{self as plan, Kind};
+use crate::native_artifact::program_ascii_map::{self as plan, MappingKind};
 use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
 
 pub(super) struct ScalarTable {
     data: Value,
-    kind: Kind,
+    kind: MappingKind,
     domain: Option<(Value, Value)>,
 }
 impl ScalarTable {
-    pub fn new(b: &mut FunctionBuilder<'_>, table: Value, kind: Kind) -> Self {
+    pub fn new(b: &mut FunctionBuilder<'_>, table: Value, kind: MappingKind) -> Self {
         let data = b.ins().iadd_imm(table, plan::HEADER as i64);
-        let domain = (kind == Kind::Projected).then(|| {
+        let domain = (kind == MappingKind::Projected).then(|| {
             let mask = b
                 .ins()
                 .load(types::I8, MemFlags::new(), table, plan::DOMAIN_MASK as i32);
@@ -52,7 +52,7 @@ pub(super) struct Tables {
     domain: Option<(Value, Value, Value)>,
 }
 impl Tables {
-    pub fn new(b: &mut FunctionBuilder<'_>, table: Value, kind: Kind) -> Self {
+    pub fn new(b: &mut FunctionBuilder<'_>, table: Value, kind: MappingKind) -> Self {
         let mut bands = Vec::new();
         let mut offsets = Vec::new();
         for index in 0..kind.cells() / 16 {
@@ -67,7 +67,7 @@ impl Tables {
         }
         let high = b.ins().iconst(types::I8, i64::from(plan::MISSING));
         let high_bit = b.ins().splat(types::I8X16, high);
-        let domain = (kind == Kind::Projected).then(|| {
+        let domain = (kind == MappingKind::Projected).then(|| {
             let mask = b
                 .ins()
                 .load(types::I8, MemFlags::new(), table, plan::DOMAIN_MASK as i32);
