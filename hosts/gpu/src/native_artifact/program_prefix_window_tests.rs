@@ -9,7 +9,11 @@ fn run_windowed(jit: &JitProgramArtifact, text: &str) {
     run_windowed_delivery(jit, text, true);
 }
 
-fn run_windowed_delivery(jit: &JitProgramArtifact, text: &str, incremental: bool) -> Vec<Box<[u8]>> {
+fn run_windowed_delivery(
+    jit: &JitProgramArtifact,
+    text: &str,
+    incremental: bool,
+) -> Vec<Box<[u8]>> {
     let descriptor = jit.descriptor();
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
     assert_eq!(descriptor.plan.transport_input_count(), 1);
@@ -140,13 +144,17 @@ fn run_windowed_delivery(jit: &JitProgramArtifact, text: &str, incremental: bool
 }
 
 #[test]
-fn disjoint_private_state_preserves_results_across_callbacks_and_window_resumes() {
-    use crate::native_artifact::compiler::memory_regions::without_disjoint_state;
+fn private_home_contract_preserves_results_across_callbacks_and_window_resumes() {
+    use crate::native_artifact::compiler::memory_regions::{
+        without_disjoint_state, without_nontrapping_homes,
+    };
     for artifact in call_cache_tests::artifacts(source()) {
         let catalog = mech_stdlib::source_catalog();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let ordinary =
             without_disjoint_state(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+        let alias_only =
+            without_nontrapping_homes(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
         let descriptor = optimized.descriptor();
         assert!(!descriptor.closed_tails.regions.is_empty());
         for (text, expected) in [
@@ -171,32 +179,34 @@ fn disjoint_private_state_preserves_results_across_callbacks_and_window_resumes(
             .canonical_snapshot_bytes(&descriptor.schemas)
             .unwrap();
             for incremental in [false, true] {
-                assert_eq!(
-                    run_windowed_delivery(&ordinary, text, incremental),
-                    [expected.clone()]
-                );
-                assert_eq!(
-                    run_windowed_delivery(&optimized, text, incremental),
-                    [expected.clone()]
-                );
+                for jit in [&ordinary, &alias_only, &optimized] {
+                    assert_eq!(
+                        run_windowed_delivery(jit, text, incremental),
+                        [expected.clone()]
+                    );
+                }
             }
         }
     }
 }
 
 #[test]
-fn disjoint_private_state_preserves_first_failure_and_finite_work_accounting() {
-    use crate::native_artifact::compiler::memory_regions::without_disjoint_state;
+fn private_home_contract_preserves_first_failure_and_finite_work_accounting() {
+    use crate::native_artifact::compiler::memory_regions::{
+        without_disjoint_state, without_nontrapping_homes,
+    };
     for artifact in call_cache_tests::artifacts(source()) {
         let catalog = mech_stdlib::source_catalog();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let ordinary =
             without_disjoint_state(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+        let alias_only =
+            without_nontrapping_homes(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
         let mut failed = 0;
         let mut succeeded = 0;
         for max_work in [0, 256, 4096, 65536, 1_000_000_000] {
             let mut outcomes = Vec::new();
-            for jit in [&ordinary, &optimized] {
+            for jit in [&ordinary, &alias_only, &optimized] {
                 let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
                 let descriptor = jit.descriptor();
                 let inputs = [string_value(
@@ -221,7 +231,9 @@ fn disjoint_private_state_preserves_first_failure_and_finite_work_accounting() {
                 drop((inputs, outputs));
                 assert_eq!(memory.used_bytes(), 0);
             }
-            assert_eq!(outcomes[0], outcomes[1], "max_work={max_work}");
+            for outcome in &outcomes[1..] {
+                assert_eq!(&outcomes[0], outcome, "max_work={max_work}");
+            }
         }
         assert!(failed > 0 && succeeded > 0);
     }

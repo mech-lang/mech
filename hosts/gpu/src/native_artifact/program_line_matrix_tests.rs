@@ -71,6 +71,7 @@ fn emitted_scanner_uses_no_matrix_and_preserves_owner_over_activation_and_errors
             assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 32);
             assert_eq!(u64::from_le_bytes(identity[32..40].try_into().unwrap()), 69);
             for (offset, preceding) in [
+                (16, 89),
                 (16, 88),
                 (16, 87),
                 (24, 31),
