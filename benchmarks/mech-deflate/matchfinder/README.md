@@ -97,7 +97,8 @@ the cache pointer, and both next-position hashes are checked as well. The C
 driver converts its signed nodes to Roc's biased U16 representation and table
 order. It initializes unused child slots to the same sentinel as Roc.
 The 512-word cache is a transition-test buffer; the complete compressor must
-retain Roc's 1500000-word cache and its original block boundaries.
+retain the 1500513-word cache (1500000 entries plus 513 words of slack)
+and its original block boundaries.
 
 The 20 cases cover fresh tables, overlapping and periodic data, depth limits
 1/2/64, multiple increasing matches, unaligned reads, maximum length five,
@@ -131,10 +132,11 @@ wire preflight, and native ownership validation retain the same bounded limit.
 The control-section decoder replaces the generic JSON container limit with
 explicit finite lexical, wire-depth, and count checks before typed allocation.
 
-The current source assumes Roc's valid caller contract: tables have at least
-262144 entries; `maximum >= 5`, `5 <= nice <= maximum`, and depth is positive;
-the complete search/skip window is readable. Roc's explicit table/window entry
-assertions are present; bucket prefetch hints are still missing.
+The entry assertions check table capacity and the readable search/skip window.
+Separate caller preconditions are `maximum >= 5`, `5 <= nice <= maximum`, and
+positive depth. Match extension also requires its already-matched prefix.
+These caller preconditions are not additional reference entry assertions.
+Bucket prefetch hints are still missing.
 Word loads still assemble checked bytes, and
 wrapping narrowing currently uses masks followed by checked conversions. These
 are explicit remaining parity/optimization gaps, not a completed timing setup.
