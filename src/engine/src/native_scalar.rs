@@ -53,11 +53,17 @@ pub enum NativeScalarOp {
     F64Le,
     F64Gt,
     F64Ge,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
     U64ToI64,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
     I64ToU64,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
     U64ToF64,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
     I64ToF64,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
     F64ToU64,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
     F64ToI64,
 }
 
@@ -72,11 +78,17 @@ impl NativeScalarOp {
             I64Eq | I64Ne | I64Lt | I64Le | I64Gt | I64Ge => (&[I64, I64], Bool),
             I64Neg => (&[I64], I64),
             F64Add | F64Sub | F64Mul | F64Div => (&[F64, F64], F64),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
             U64ToI64 => (&[U64], I64),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
             I64ToU64 => (&[I64], U64),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
             U64ToF64 => (&[U64], F64),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
             I64ToF64 => (&[I64], F64),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
             F64ToU64 => (&[F64], U64),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
             F64ToI64 => (&[F64], I64),
             F64Neg | F64Sqrt => (&[F64], F64),
             F64Eq | F64Ne | F64Lt | F64Le | F64Gt | F64Ge => (&[F64, F64], Bool),
