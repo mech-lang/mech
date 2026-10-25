@@ -50,7 +50,11 @@ impl Pending<'_> {
         memory_error: &impl Fn(mech_core::MemoryRuntimeError) -> ResidentKernelError,
     ) -> Result<(), ResidentKernelError> {
         check(bytes, nodes)?;
-        self.nodes.as_mut().unwrap().resize(nodes).map_err(memory_error)?;
+        self.nodes
+            .as_mut()
+            .unwrap()
+            .resize(nodes)
+            .map_err(memory_error)?;
         self.reservation
             .as_mut()
             .unwrap()
@@ -162,7 +166,11 @@ impl Slot {
                 .reserve_capacity(0)
                 .map_err(&memory_error)?,
         );
-        pending.nodes = Some(work.memory_budget().reserve_nodes(0).map_err(&memory_error)?);
+        pending.nodes = Some(
+            work.memory_budget()
+                .reserve_nodes(0)
+                .map_err(&memory_error)?,
+        );
         let header = Value::frozen_storage_identity_allocation_bytes()
             .checked_add(
                 (core::mem::size_of::<CachedIndex>() + 2 * core::mem::size_of::<usize>()) as u64,

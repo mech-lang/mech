@@ -87,9 +87,12 @@ impl NativeTurnPlanCache {
             != Self::retained_bytes(call, metadata).ok_or(ResidentKernelError::InvalidShape)?
             || reservation.budget() != work.memory_budget()
             || nodes.budget() != work.memory_budget()
-            || nodes.nodes() != 1u64.checked_add(Self::retained_data_nodes(call)
-                .ok_or(ResidentKernelError::InvalidShape)?)
-                .ok_or(ResidentKernelError::InvalidShape)?
+            || nodes.nodes()
+                != 1u64
+                    .checked_add(
+                        Self::retained_data_nodes(call).ok_or(ResidentKernelError::InvalidShape)?,
+                    )
+                    .ok_or(ResidentKernelError::InvalidShape)?
         {
             return Err(ResidentKernelError::InvalidInput);
         }
@@ -179,9 +182,11 @@ impl NativeTurnPlanCache {
         // does. Reserved bytes are not live semantic/data nodes.
         let metadata = self.reservation.capacity_bytes();
         Ok(ResourceDemand {
-            turn_peak_bytes: metadata.checked_add(self.snapshot_index.bytes())
+            turn_peak_bytes: metadata
+                .checked_add(self.snapshot_index.bytes())
                 .ok_or(ResidentKernelError::InvalidShape)?,
-            retained_nodes: 1u64.checked_add(self.snapshot_index.nodes())
+            retained_nodes: 1u64
+                .checked_add(self.snapshot_index.nodes())
                 .and_then(|n| n.checked_add(self.data_nodes))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             ..ResourceDemand::default()

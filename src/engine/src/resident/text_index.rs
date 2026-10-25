@@ -6,8 +6,8 @@
 use super::{budget, general::*};
 use crate::text_index::PreparedGraphemeIndex;
 use mech_core::{
-    ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation, MemoryDomainId, ResidentKernelError,
-    ResidentKernelInputs, ResidentValueMut, ResidentValueRef,
+    ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation, MemoryDomainId,
+    ResidentKernelError, ResidentKernelInputs, ResidentValueMut, ResidentValueRef,
 };
 use std::{cell::RefCell, rc::Rc};
 

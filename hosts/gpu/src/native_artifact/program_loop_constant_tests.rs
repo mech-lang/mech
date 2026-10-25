@@ -3,7 +3,10 @@ use super::*;
 
 #[test]
 fn loop_constants_metadata_binds_stack_hash_values_source_endpoint_and_actual_loads() {
-    let source = format!("{}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n", structural_projection_tests::COUNT);
+    let source = format!(
+        "{}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n",
+        structural_projection_tests::COUNT
+    );
     let artifact = tests::artifact_source(&source);
     let catalog = mech_stdlib::source_catalog();
     take_constant_emissions();
@@ -21,17 +24,27 @@ fn loop_constants_metadata_binds_stack_hash_values_source_endpoint_and_actual_lo
     assert_eq!(caller["header"], guarded["header"]);
     assert_eq!(caller["stack_bytes"], 24);
     assert_eq!(callee["constant_packet_bytes"], 24);
-    assert_eq!(caller["hash_values"], serde_json::json!([0xbf58476d1ce4e5b9u64, 0x94d049bb133111ebu64]));
+    assert_eq!(
+        caller["hash_values"],
+        serde_json::json!([0xbf58476d1ce4e5b9u64, 0x94d049bb133111ebu64])
+    );
     let endpoint = serde_json::json!([guarded["width_word"], guarded["limit_word"]]);
     assert_eq!(caller["endpoint_words"], endpoint);
     assert_eq!(callee["constant_endpoint_words"], endpoint);
     assert!(caller["template_instructions"].as_u64().unwrap() <= 64);
     assert!(callee["emitted_hash_constant_loads"].as_u64().unwrap() > 0);
     assert_eq!(callee["emitted_endpoint_loads"], 1);
-    let reference = without_loop_constants(|| crate::native_artifact::emit_program_object(&artifact, &catalog)).unwrap();
+    let reference =
+        without_loop_constants(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
+            .unwrap();
     assert_eq!(take_constant_emissions(), 0);
     let metadata = reference.metadata();
-    assert!(metadata["compiled_loop_constants"]["callers"].as_array().unwrap().is_empty());
+    assert!(
+        metadata["compiled_loop_constants"]["callers"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
     for callee in metadata["compiled_outlined_loops"].as_array().unwrap() {
         assert_eq!(callee["constant_packet_bytes"], 0);
         assert_eq!(callee["emitted_hash_constant_loads"], 0);
@@ -41,13 +54,23 @@ fn loop_constants_metadata_binds_stack_hash_values_source_endpoint_and_actual_lo
 
 #[test]
 fn loop_constants_preserve_inline_fallback_without_an_outlined_private_abi() {
-    let source = format!("{}\n#Count(\"aaaa\", 1u64, 4u64, empty)\n", structural_projection_tests::COUNT);
+    let source = format!(
+        "{}\n#Count(\"aaaa\", 1u64, 4u64, empty)\n",
+        structural_projection_tests::COUNT
+    );
     let artifact = tests::artifact_source(&source);
     take_constant_emissions();
-    let object = without_loop_outlining(|| crate::native_artifact::emit_program_object(&artifact,
-        &mech_stdlib::source_catalog())).unwrap();
+    let object = without_loop_outlining(|| {
+        crate::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
+    })
+    .unwrap();
     assert_eq!(take_constant_emissions(), 0);
-    assert!(object.metadata()["compiled_loop_constants"]["callers"].as_array().unwrap().is_empty());
+    assert!(
+        object.metadata()["compiled_loop_constants"]["callers"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]

@@ -40,7 +40,12 @@ fn row_loans_use_real_global_ordinals_and_utf8_owners_until_the_loan_drops() {
             assert_eq!(window.row_count(), (end - first) as usize);
             assert_eq!(window.line(first - 1), None);
             assert_eq!(window.line(end), None);
-            for (offset, row) in window.rows().expect("mixed-source cells retain the row fallback").iter().enumerate() {
+            for (offset, row) in window
+                .rows()
+                .expect("mixed-source cells retain the row fallback")
+                .iter()
+                .enumerate()
+            {
                 let ordinal = first + offset as u64;
                 let actual = owner.line(ordinal).unwrap();
                 assert_eq!(*row, [actual.as_ptr() as u64, actual.len() as u64]);
@@ -340,25 +345,43 @@ fn compact_offset_loans_cover_chunk_transitions_without_materialized_rows() {
                     if window.direct {
                         assert_eq!(pointer & 1, 1);
                         assert!(window.rows().is_none());
-                        assert_eq!(window.rows.capacity(), 0, "compact loans create no row backing");
+                        assert_eq!(
+                            window.rows.capacity(),
+                            0,
+                            "compact loans create no row backing"
+                        );
                         assert!(window.segment_count <= 2);
-                        assert_eq!(window.segments[..window.segment_count].iter().map(|segment| segment[4]).sum::<u64>(), count);
+                        assert_eq!(
+                            window.segments[..window.segment_count]
+                                .iter()
+                                .map(|segment| segment[4])
+                                .sum::<u64>(),
+                            count
+                        );
                     } else {
                         assert_eq!(pointer & 1, 0);
                         assert_eq!(window.rows().unwrap().len(), count as usize);
                     }
                     for ordinal in first..end {
-                        assert_eq!(window.line(ordinal), Some(reference[(ordinal-1) as usize]));
+                        assert_eq!(
+                            window.line(ordinal),
+                            Some(reference[(ordinal - 1) as usize])
+                        );
                     }
                 }
             }
         }
     }
     let mut owner = store(&ledger, limits());
-    for text in ["a\n", "b\n", "c\n"] { owner.push(text).unwrap(); }
+    for text in ["a\n", "b\n", "c\n"] {
+        owner.push(text).unwrap();
+    }
     owner.finish().unwrap();
     let window = owner.borrow_window(1, 4).unwrap();
-    assert!(window.rows().is_some(), "larger physical windows retain checked fallback");
+    assert!(
+        window.rows().is_some(),
+        "larger physical windows retain checked fallback"
+    );
     assert_eq!(window.native_rows().0 & 1, 0);
     drop(window);
     drop((owner, ledger));

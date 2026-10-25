@@ -4,7 +4,8 @@ use super::{Context, Frame, NativeProgramExecutionError as Error, invalid};
 use crate::native_artifact::{NativeExecutionPhase, owned_string_map::PublicationGeometry};
 
 fn add(a: u64, b: u64) -> Result<u64, Error> {
-    a.checked_add(b).ok_or_else(|| invalid("native caller node geometry overflows"))
+    a.checked_add(b)
+        .ok_or_else(|| invalid("native caller node geometry overflows"))
 }
 
 pub(super) fn fixed_nodes() -> Result<u64, Error> {
@@ -16,11 +17,15 @@ pub(super) fn fixed_nodes() -> Result<u64, Error> {
 
 impl Context<'_, '_> {
     pub(super) fn retained_caller_dynamic_nodes(&self, site: usize) -> Result<u64, Error> {
-        add(self.library.memory_budget().retained_snapshot_nodes(),
-            self.call_caches.caller_retained_nodes(&self.library)
+        add(
+            self.library.memory_budget().retained_snapshot_nodes(),
+            self.call_caches
+                .caller_retained_nodes(&self.library)
                 .map_err(|error| Error::Library {
-                    origin: self.control.descriptor.plan.blocks()[site].origin(), error,
-                })?)
+                    origin: self.control.descriptor.plan.blocks()[site].origin(),
+                    error,
+                })?,
+        )
     }
 
     pub(super) fn retained_caller_geometry(
@@ -39,22 +44,27 @@ impl Context<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn retained_caller_fixed_geometry(&mut self, site: usize)
-        -> Result<Option<u64>, Error>
-    {
+    pub(super) fn retained_caller_fixed_geometry(
+        &mut self,
+        site: usize,
+    ) -> Result<Option<u64>, Error> {
         self.check_caller_geometry_visit(site)?;
         self.retained_caller_fixed_inventory()
     }
 
     /// Inventory only; no visit or storage permission. The closed map entry
     /// uses this after its initializer was consumed, under that owner's proof.
-    pub(super) fn retained_caller_inventory(&mut self, site: usize)
-        -> Result<Option<PublicationGeometry>, Error>
-    {
-        let Some(fixed) = self.retained_caller_fixed_inventory()? else { return Ok(None); };
+    pub(super) fn retained_caller_inventory(
+        &mut self,
+        site: usize,
+    ) -> Result<Option<PublicationGeometry>, Error> {
+        let Some(fixed) = self.retained_caller_fixed_inventory()? else {
+            return Ok(None);
+        };
         let nodes = add(fixed, self.retained_caller_dynamic_nodes(site)?)?;
         Ok(Some(PublicationGeometry {
-            live_bytes: self.library.memory_budget().used_bytes(), live_nodes: nodes,
+            live_bytes: self.library.memory_budget().used_bytes(),
+            live_nodes: nodes,
         }))
     }
 
@@ -65,8 +75,10 @@ impl Context<'_, '_> {
         // A source/window loan needs its own live-owner witness. Decline this
         // view instead of treating borrowed producer storage as empty. Ordinary
         // canonical execution remains available to the future selecting caller.
-        if self.line_window.is_some() || self.window_region.is_some()
-            || self.window_hashes.is_some() || self.closed_tail.is_some()
+        if self.line_window.is_some()
+            || self.window_region.is_some()
+            || self.window_hashes.is_some()
+            || self.closed_tail.is_some()
             || self.prefix.as_ref().is_some_and(|prefix| !prefix.input.eof)
         {
             return Ok(None);
@@ -78,7 +90,10 @@ impl Context<'_, '_> {
         // payload backing, so a long String is never priced as one node/byte.
         let mut nodes = fixed_nodes()?;
         if let Some(collections) = &self.collections {
-            nodes = add(nodes, collections.caller_retained_nodes(&mut self.control.work)?)?;
+            nodes = add(
+                nodes,
+                collections.caller_retained_nodes(&mut self.control.work)?,
+            )?;
         }
         nodes = add(nodes, self.line_matrix_coexistence(None)?.retained_nodes)?;
         if self.borrowed_strings.is_some() {

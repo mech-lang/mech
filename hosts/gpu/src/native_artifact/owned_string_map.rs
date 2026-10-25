@@ -3,7 +3,9 @@
 //! lives here; integrating this owner into a native region requires a separate
 //! ownership/representation proof.
 use hashbrown::{DefaultHashBuilder, HashMap};
-use mech_core::{ManagedMemoryReservation, ManagedNodeReservation, MemoryRuntimeError, ResidentKernelError};
+use mech_core::{
+    ManagedMemoryReservation, ManagedNodeReservation, MemoryRuntimeError, ResidentKernelError,
+};
 use mech_engine::native_artifact::NativeLibraryWorkBudget;
 use std::hash::BuildHasher;
 
@@ -48,7 +50,7 @@ impl std::fmt::Display for Error {
 #[path = "owned_string_map_publication.rs"]
 mod publication;
 pub(super) use publication::Geometry as PublicationGeometry;
-pub(super) use publication::{string_u64_schema, logical_map_bytes, logical_map_limits};
+pub(super) use publication::{logical_map_bytes, logical_map_limits, string_u64_schema};
 impl std::error::Error for Error {}
 impl From<MemoryRuntimeError> for Error {
     fn from(error: MemoryRuntimeError) -> Self {
@@ -108,12 +110,15 @@ pub(super) struct OwnedStringMap<S = DefaultHashBuilder> {
     limits: Limits,
 }
 impl OwnedStringMap {
+    #[cfg(test)]
     pub(super) fn new(work: NativeLibraryWorkBudget, limits: Limits) -> Result<Self, Error> {
         Self::with_hasher_fn(work, limits, DefaultHashBuilder::default)
     }
-    pub(super) fn new_with_memory(work: NativeLibraryWorkBudget, limits: Limits,
-        memory: mech_core::ManagedMemoryBudget) -> Result<Self, Error>
-    {
+    pub(super) fn new_with_memory(
+        work: NativeLibraryWorkBudget,
+        limits: Limits,
+        memory: mech_core::ManagedMemoryBudget,
+    ) -> Result<Self, Error> {
         Self::with_hasher_memory_fn(work, limits, memory, DefaultHashBuilder::default)
     }
 }
@@ -126,6 +131,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
     ) -> Result<Self, Error> {
         Self::with_hasher_fn(work, limits, || hasher)
     }
+    #[cfg(test)]
     fn with_hasher_fn(
         work: NativeLibraryWorkBudget,
         limits: Limits,
@@ -135,10 +141,14 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         Self::with_hasher_memory_fn(work, limits, memory, hasher)
     }
     fn with_hasher_memory_fn(
-        work: NativeLibraryWorkBudget, limits: Limits, memory: mech_core::ManagedMemoryBudget,
+        work: NativeLibraryWorkBudget,
+        limits: Limits,
+        memory: mech_core::ManagedMemoryBudget,
         hasher: impl FnOnce() -> S,
     ) -> Result<Self, Error> {
-        if memory != work.memory_budget() { return Err(Error::Binding("foreign map memory account")); }
+        if memory != work.memory_budget() {
+            return Err(Error::Binding("foreign map memory account"));
+        }
         let admitted = work.memory_budget();
         let memory = admitted.with_limits(memory.limit_bytes(), memory.limit_nodes());
         let bytes = size_of::<Self>() as u64;
@@ -160,6 +170,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
     pub(super) fn len(&self) -> usize {
         self.values.len()
     }
+    #[cfg(test)]
     pub(super) fn capacity(&self) -> usize {
         self.values.capacity()
     }
@@ -244,8 +255,14 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         // Key construction and replacement table storage coexist with the
         // original map. Claims retire on every failure, never after allocating
         // first and checking a global census that another worker can change.
-        let _staging = memory.reserve_nodes(add(2,
-            if growth { add(self.values.len() as u64, 1)? } else { 0 })?)?;
+        let _staging = memory.reserve_nodes(add(
+            2,
+            if growth {
+                add(self.values.len() as u64, 1)?
+            } else {
+                0
+            },
+        )?)?;
         let mut new_key = memory.reserve_capacity(mul(key_bytes, 3)?)?;
         let mut new_table = memory.reserve_capacity(table_bytes)?;
         // Key allocation happens before table growth, so allocator failure

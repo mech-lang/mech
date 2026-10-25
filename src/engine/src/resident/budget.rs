@@ -28,7 +28,10 @@ pub(crate) mod payload;
 #[path = "native_worker_budget.rs"]
 mod workers;
 #[cfg(feature = "native-artifact")]
-pub use workers::{NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerCreditStatistics, NativeWorkerWorkLoan};
+pub use workers::{
+    NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerCreditStatistics,
+    NativeWorkerWorkLoan,
+};
 
 #[derive(Default)]
 struct DisplayByteCounter(usize);
@@ -505,23 +508,37 @@ impl NativeLibraryWorkBudget {
         // is the same account, fresh observer and relative cap as with_scope
         // followed by a call cap; teardown need not look up those addresses
         // again. Guards still restore all three in reverse order on unwind.
-        struct AccountGuard<'a>(&'a RefCell<Option<Rc<RefCell<ControlWorkAccount>>>>,
-            Option<Rc<RefCell<ControlWorkAccount>>>);
+        struct AccountGuard<'a>(
+            &'a RefCell<Option<Rc<RefCell<ControlWorkAccount>>>>,
+            Option<Rc<RefCell<ControlWorkAccount>>>,
+        );
         impl Drop for AccountGuard<'_> {
-            fn drop(&mut self) { *self.0.borrow_mut() = self.1.take(); }
+            fn drop(&mut self) {
+                *self.0.borrow_mut() = self.1.take();
+            }
         }
-        struct ScopeGuard<'a>(&'a RefCell<Option<ControlWorkScope>>, Option<ControlWorkScope>);
+        struct ScopeGuard<'a>(
+            &'a RefCell<Option<ControlWorkScope>>,
+            Option<ControlWorkScope>,
+        );
         impl Drop for ScopeGuard<'_> {
-            fn drop(&mut self) { *self.0.borrow_mut() = self.1.take(); }
+            fn drop(&mut self) {
+                *self.0.borrow_mut() = self.1.take();
+            }
         }
         struct LimitGuard<'a>(&'a Cell<Option<(u64, u64)>>, Option<(u64, u64)>);
         impl Drop for LimitGuard<'_> {
-            fn drop(&mut self) { self.0.set(self.1); }
+            fn drop(&mut self) {
+                self.0.set(self.1);
+            }
         }
         CONTROL_WORK.with(|active| {
             let previous = {
                 let mut current = active.borrow_mut();
-                if current.as_ref().is_some_and(|account| !Rc::ptr_eq(account, &self.account)) {
+                if current
+                    .as_ref()
+                    .is_some_and(|account| !Rc::ptr_eq(account, &self.account))
+                {
                     return Err(ResidentKernelError::InvalidInput);
                 }
                 current.replace(self.account.clone())
@@ -529,7 +546,8 @@ impl NativeLibraryWorkBudget {
             let _account = AccountGuard(active, previous);
             CONTROL_WORK_SCOPE.with(|scope| {
                 let previous = scope.replace(Some(ControlWorkScope {
-                    total: self.account.clone(), observed: ControlWork::default(),
+                    total: self.account.clone(),
+                    observed: ControlWork::default(),
                 }));
                 let _scope = ScopeGuard(scope, previous);
                 let used = self.used();
@@ -665,12 +683,20 @@ impl Drop for ControlWorkScopeGuard {
 
 #[cfg(feature = "native-artifact")]
 fn unscoped_local_remaining(account: &ControlWorkAccount) -> Option<(u64, u64)> {
-    let root = CONTROL_ROOT_LIMITS.with(|v| v.get()).unwrap_or((u64::MAX, u64::MAX));
+    let root = CONTROL_ROOT_LIMITS
+        .with(|v| v.get())
+        .unwrap_or((u64::MAX, u64::MAX));
     Some((
-        account.compute_limit.min(root.0)
-            .checked_sub(account.used.compute)?.checked_sub(account.reserved.compute)?,
-        account.comparison_limit.min(root.1)
-            .checked_sub(account.used.comparison)?.checked_sub(account.reserved.comparison)?,
+        account
+            .compute_limit
+            .min(root.0)
+            .checked_sub(account.used.compute)?
+            .checked_sub(account.reserved.compute)?,
+        account
+            .comparison_limit
+            .min(root.1)
+            .checked_sub(account.used.comparison)?
+            .checked_sub(account.reserved.comparison)?,
     ))
 }
 
@@ -695,10 +721,17 @@ fn checked_local_control_account_work(
         .checked_add(comparison)
         .ok_or(ResidentKernelError::InvalidShape)?;
     for (required, limit, dimension) in [
-        (compute.checked_add(account.reserved.compute).ok_or(ResidentKernelError::InvalidShape)?,
-            compute_limit, MemoryBudgetDimension::ComputeWork),
         (
-            comparison.checked_add(account.reserved.comparison).ok_or(ResidentKernelError::InvalidShape)?,
+            compute
+                .checked_add(account.reserved.compute)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            compute_limit,
+            MemoryBudgetDimension::ComputeWork,
+        ),
+        (
+            comparison
+                .checked_add(account.reserved.comparison)
+                .ok_or(ResidentKernelError::InvalidShape)?,
             comparison_limit,
             MemoryBudgetDimension::ComparisonWork,
         ),
@@ -905,28 +938,40 @@ mod native_library_work_tests {
         let memory = mech_core::ManagedMemoryBudget::new(4096);
         let budget = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
         let foreign = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
-        budget.with_call_limits(30, 10, || {
-            observe_control_work(demand(3, 1)).unwrap();
-            let failed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                budget.with_call_limits(5, 2, || {
-                    observe_control_work(demand(4, 1)).unwrap();
-                    panic!("owned test call unwind");
-                }).unwrap();
-            }));
-            assert!(failed.is_err());
-            assert_eq!(budget.used(), (7, 2));
-            // The parent's existing high-water mark survives the inner call.
-            observe_control_work(demand(3, 1)).unwrap();
-            assert_eq!(budget.used(), (7, 2));
-            observe_control_work(demand(4, 2)).unwrap();
-            assert_eq!(budget.used(), (8, 3));
-            assert_eq!(foreign.with_call_limits::<()>(100, 100, || unreachable!()),
-                Err(ResidentKernelError::InvalidInput));
-            budget.charge(22, 7).unwrap();
-            assert!(matches!(budget.charge(1, 0), Err(ResidentKernelError::ResourceLimit {
-                dimension: MemoryBudgetDimension::ComputeWork, required: 31, limit: 30, ..
-            })));
-        }).unwrap();
+        budget
+            .with_call_limits(30, 10, || {
+                observe_control_work(demand(3, 1)).unwrap();
+                let failed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    budget
+                        .with_call_limits(5, 2, || {
+                            observe_control_work(demand(4, 1)).unwrap();
+                            panic!("owned test call unwind");
+                        })
+                        .unwrap();
+                }));
+                assert!(failed.is_err());
+                assert_eq!(budget.used(), (7, 2));
+                // The parent's existing high-water mark survives the inner call.
+                observe_control_work(demand(3, 1)).unwrap();
+                assert_eq!(budget.used(), (7, 2));
+                observe_control_work(demand(4, 2)).unwrap();
+                assert_eq!(budget.used(), (8, 3));
+                assert_eq!(
+                    foreign.with_call_limits::<()>(100, 100, || unreachable!()),
+                    Err(ResidentKernelError::InvalidInput)
+                );
+                budget.charge(22, 7).unwrap();
+                assert!(matches!(
+                    budget.charge(1, 0),
+                    Err(ResidentKernelError::ResourceLimit {
+                        dimension: MemoryBudgetDimension::ComputeWork,
+                        required: 31,
+                        limit: 30,
+                        ..
+                    })
+                ));
+            })
+            .unwrap();
         assert!(!NativeLibraryWorkBudget::has_active_scope());
         // Parent caps are gone, but all successful inner work stays spent.
         budget.charge(1, 0).unwrap();
@@ -1641,9 +1686,19 @@ impl KernelCostEstimate {
         // subtracting a large successful prefix from the default profile can
         // otherwise reject an unrelated scalar finalization as InvalidShape.
         let (compute, comparison) = with_active_turn_plan(|active| {
-            active.as_ref().map_or((MAX_RESIDENT_COMPUTE_WORK, MAX_RESIDENT_COMPARISON_WORK),
-                |plan| (plan.budget_limits.max_compute_work.unwrap_or(MAX_RESIDENT_COMPUTE_WORK),
-                    plan.budget_limits.max_comparison_work.unwrap_or(MAX_RESIDENT_COMPARISON_WORK)))
+            active.as_ref().map_or(
+                (MAX_RESIDENT_COMPUTE_WORK, MAX_RESIDENT_COMPARISON_WORK),
+                |plan| {
+                    (
+                        plan.budget_limits
+                            .max_compute_work
+                            .unwrap_or(MAX_RESIDENT_COMPUTE_WORK),
+                        plan.budget_limits
+                            .max_comparison_work
+                            .unwrap_or(MAX_RESIDENT_COMPARISON_WORK),
+                    )
+                },
+            )
         });
         let remaining = comparison
             .checked_sub(self.comparison_work())
@@ -1658,15 +1713,24 @@ impl KernelCostEstimate {
         // only the currently remaining finite allowance may reach a finalizer.
         CONTROL_WORK_SCOPE.with(|scope| {
             let scope = scope.borrow();
-            let Some(scope) = scope.as_ref() else { return Ok(remaining); };
+            let Some(scope) = scope.as_ref() else {
+                return Ok(remaining);
+            };
             let account = scope.total.borrow();
-            let (root_compute, root_comparison) = CONTROL_ROOT_LIMITS.with(|limits| limits.get())
+            let (root_compute, root_comparison) = CONTROL_ROOT_LIMITS
+                .with(|limits| limits.get())
                 .unwrap_or((account.compute_limit, account.comparison_limit));
-            let compute = account.compute_limit.min(root_compute)
-                .checked_sub(account.used.compute).and_then(|n| n.checked_sub(account.reserved.compute))
+            let compute = account
+                .compute_limit
+                .min(root_compute)
+                .checked_sub(account.used.compute)
+                .and_then(|n| n.checked_sub(account.reserved.compute))
                 .ok_or(ResidentKernelError::InvalidShape)?;
-            let comparison = account.comparison_limit.min(root_comparison)
-                .checked_sub(account.used.comparison).and_then(|n| n.checked_sub(account.reserved.comparison))
+            let comparison = account
+                .comparison_limit
+                .min(root_comparison)
+                .checked_sub(account.used.comparison)
+                .and_then(|n| n.checked_sub(account.reserved.comparison))
                 .ok_or(ResidentKernelError::InvalidShape)?;
             Ok(remaining.min(compute).min(comparison))
         })
@@ -3858,10 +3922,13 @@ mod tests {
         with_resident_turn_plan(plan, || {
             let mut meter = ResidentBudgetMeter::default();
             meter.charge_compute_work(prefix).unwrap();
-            assert!(matches!(preflight_canonical_data_finalization(&mut meter, &schema, &value),
+            assert!(matches!(
+                preflight_canonical_data_finalization(&mut meter, &schema, &value),
                 Err(ResidentKernelError::ResourceLimit {
-                    dimension: mech_core::MemoryBudgetDimension::ComputeWork, ..
-                })));
+                    dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                    ..
+                })
+            ));
             assert_eq!(meter.estimate().compute_work(), prefix);
         });
     }
@@ -3872,8 +3939,12 @@ mod tests {
         plan.budget_limits.max_compute_work = None;
         plan.budget_limits.max_comparison_work = None;
         with_resident_turn_plan(plan, || {
-            assert_eq!(KernelCostEstimate::default().remaining_incremental_work().unwrap(),
-                MAX_RESIDENT_COMPUTE_WORK.min(MAX_RESIDENT_COMPARISON_WORK));
+            assert_eq!(
+                KernelCostEstimate::default()
+                    .remaining_incremental_work()
+                    .unwrap(),
+                MAX_RESIDENT_COMPUTE_WORK.min(MAX_RESIDENT_COMPARISON_WORK)
+            );
         });
     }
 

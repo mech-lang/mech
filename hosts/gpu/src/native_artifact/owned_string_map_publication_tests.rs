@@ -79,41 +79,72 @@ fn contents(value: &Value) -> BTreeMap<String, u64> {
 #[test]
 fn publication_sort_batches_preserve_order_exact_work_and_first_denial() {
     fn run<'a>(
-        input: &[(&'a str, u64)], worker: bool, batched: bool,
-        root_limits: (u64, u64), call_limits: (u64, u64),
+        input: &[(&'a str, u64)],
+        worker: bool,
+        batched: bool,
+        root_limits: (u64, u64),
+        call_limits: (u64, u64),
     ) -> (Vec<(&'a str, u64)>, (u64, u64), String) {
         let memory = ManagedMemoryBudget::new(64 * 1024);
         let root = NativeLibraryWorkBudget::new(root_limits.0, root_limits.1, &memory).unwrap();
-        let group = worker.then(|| root.reserve_worker_group(root_limits.0, root_limits.1).unwrap());
+        let group = worker.then(|| {
+            root.reserve_worker_group(root_limits.0, root_limits.1)
+                .unwrap()
+        });
         let work = if let Some(group) = &group {
             NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap()
-        } else { root.clone() };
+        } else {
+            root.clone()
+        };
         // All fixture allocations precede the allocation-free sorting scope.
         let mut values = input.to_vec();
-        let result = work.with_call_limits(call_limits.0, call_limits.1, || {
-            if batched { sort(&mut values, &work) }
-            else { sort_with_debits(&mut values, &mut |a, b| work.charge(a, b)) }
-        }).unwrap();
+        let result = work
+            .with_call_limits(call_limits.0, call_limits.1, || {
+                if batched {
+                    sort(&mut values, &work)
+                } else {
+                    sort_with_debits(&mut values, &mut |a, b| work.charge(a, b))
+                }
+            })
+            .unwrap();
         let used = work.used();
         let result = format!("{result:?}");
         drop(work);
-        if let Some(group) = group { assert_eq!(group.finish().unwrap(), used); }
+        if let Some(group) = group {
+            assert_eq!(group.finish().unwrap(), used);
+        }
         assert_eq!(root.used(), used);
         drop(root);
         assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
         (values, used, result)
     }
 
-    let mut keys = (0..96).map(|n| format!("{:03}{}", (n * 37) % 97,
-        if n % 3 == 0 { "é\0🙂" } else { "xyz" })).collect::<Vec<_>>();
+    let mut keys = (0..96)
+        .map(|n| {
+            format!(
+                "{:03}{}",
+                (n * 37) % 97,
+                if n % 3 == 0 { "é\0🙂" } else { "xyz" }
+            )
+        })
+        .collect::<Vec<_>>();
     // Exercise the work threshold as well as short comparisons and zero bytes.
     keys.push("a".repeat(8 * 1024));
     keys.push(String::new());
-    let input = keys.iter().enumerate().map(|(i, key)| (key.as_str(), i as u64)).collect::<Vec<_>>();
+    let input = keys
+        .iter()
+        .enumerate()
+        .map(|(i, key)| (key.as_str(), i as u64))
+        .collect::<Vec<_>>();
     let generous = (100_000_000, 10_000_000);
     let expected = run(&input, false, false, generous, generous);
     assert_eq!(expected.2, "Ok(())");
-    assert!(expected.0.windows(2).all(|pair| pair[0].0.as_bytes() <= pair[1].0.as_bytes()));
+    assert!(
+        expected
+            .0
+            .windows(2)
+            .all(|pair| pair[0].0.as_bytes() <= pair[1].0.as_bytes())
+    );
     let (compute, comparison) = expected.1;
     // Compare ordinary, worker-unbatched and worker-batched publication. Tight
     // limits must stop at the same original charge, with the same prior swaps.
@@ -129,7 +160,10 @@ fn publication_sort_batches_preserve_order_exact_work_and_first_denial() {
     ] {
         let expected = run(&input, false, false, root_limits, call_limits);
         for (worker, batched) in [(false, true), (true, false), (true, true)] {
-            assert_eq!(run(&input, worker, batched, root_limits, call_limits), expected);
+            assert_eq!(
+                run(&input, worker, batched, root_limits, call_limits),
+                expected
+            );
         }
     }
 }
@@ -145,12 +179,17 @@ fn publication_counts_other_private_owners_and_canonical_output_atomically() {
     let (schemas, schema) = dynamic();
     let other = view.reserve_nodes(1).unwrap();
     let bytes = memory.used_bytes();
-    assert!(matches!(map.publish(&schemas, schema, geometry(&map), limits()), Err(Error::Memory(_))));
+    assert!(matches!(
+        map.publish(&schemas, schema, geometry(&map), limits()),
+        Err(Error::Memory(_))
+    ));
     assert_eq!(memory.used_bytes(), bytes);
     assert_eq!(memory.retained_nodes(), 3);
     assert_eq!(memory.retained_snapshot_nodes(), 0);
     drop(other);
-    let output = map.publish(&schemas, schema, geometry(&map), limits()).unwrap();
+    let output = map
+        .publish(&schemas, schema, geometry(&map), limits())
+        .unwrap();
     assert_eq!(memory.retained_snapshot_nodes(), 4);
     assert_eq!(memory.retained_nodes(), 6);
     assert_eq!(contents(&output), BTreeMap::from([("key".to_owned(), 9)]));

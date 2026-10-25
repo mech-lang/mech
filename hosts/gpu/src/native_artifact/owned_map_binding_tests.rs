@@ -148,47 +148,115 @@ fn seed_contents(value: &Value) -> BTreeMap<String, u64> {
 #[test]
 fn native_probe_keeps_lookup_debits_rejects_stale_versions_and_foreign_tables() {
     for artifact in artifacts() {
-        let plan = lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let plan =
+            lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let regions = plan.map_owner_regions().unwrap();
         let region = &regions[0];
         let schemas = Arc::new(artifact.schemas().clone());
         let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
         let work = NativeLibraryWorkBudget::new(10_000_000_000, 1_000_000_000, &memory).unwrap();
         let source = source(&plan, region, &schemas, &memory);
-        let (mut binding, words) = Binding::import(&plan, region, &schemas, &source,
-            work.clone(), geometry(&memory), limits()).unwrap();
-        let (foreign, foreign_words) = Binding::import(&plan, region, &schemas, &source,
-            work.clone(), geometry(&memory), limits()).unwrap();
+        let (mut binding, words) = Binding::import(
+            &plan,
+            region,
+            &schemas,
+            &source,
+            work.clone(),
+            geometry(&memory),
+            limits(),
+        )
+        .unwrap();
+        let (foreign, foreign_words) = Binding::import(
+            &plan,
+            region,
+            &schemas,
+            &source,
+            work.clone(),
+            geometry(&memory),
+            limits(),
+        )
+        .unwrap();
         // These immutable keys outlive every observation in this test, as the
         // closed caller's pinned String does in actual generated execution.
         let mut probe = None;
         let before = work.used();
-        assert_eq!(binding.native_read("start", true, &mut probe, limits()).unwrap(), 1);
+        assert_eq!(
+            binding
+                .native_read("start", true, &mut probe, limits())
+                .unwrap(),
+            1
+        );
         let cold = (work.used().0 - before.0, work.used().1 - before.1);
         let before = work.used();
-        assert_eq!(binding.native_read("start", false, &mut probe, limits()).unwrap(), u64::MAX);
+        assert_eq!(
+            binding
+                .native_read("start", false, &mut probe, limits())
+                .unwrap(),
+            u64::MAX
+        );
         assert_eq!((work.used().0 - before.0, work.used().1 - before.1), cold);
         let mut stale = probe.take();
-        binding.native_insert("start", 0, &mut probe, geometry(&memory), limits()).unwrap();
+        binding
+            .native_insert("start", 0, &mut probe, geometry(&memory), limits())
+            .unwrap();
         assert!(probe.is_none());
-        assert_eq!(binding.native_read("start", false, &mut stale, limits()).unwrap(), 0);
-        assert_eq!(foreign.native_read("start", false, &mut stale, limits()).unwrap(), u64::MAX);
-        assert_eq!(binding.native_read("start", false, &mut stale, limits()).unwrap(), 0);
+        assert_eq!(
+            binding
+                .native_read("start", false, &mut stale, limits())
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            foreign
+                .native_read("start", false, &mut stale, limits())
+                .unwrap(),
+            u64::MAX
+        );
+        assert_eq!(
+            binding
+                .native_read("start", false, &mut stale, limits())
+                .unwrap(),
+            0
+        );
         let used = work.used();
         let mut tight = limits();
         tight.max_comparison_work = Some(0);
-        assert!(matches!(binding.native_read("start", false, &mut stale, tight),
+        assert!(matches!(
+            binding.native_read("start", false, &mut stale, tight),
             Err(Error::Work(mech_core::ResidentKernelError::ResourceLimit {
-                dimension: mech_core::MemoryBudgetDimension::ComparisonWork, ..
-            }))));
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                ..
+            }))
+        ));
         assert_eq!(work.used(), used);
-        assert_eq!(binding.native_read("start", false, &mut stale, limits()).unwrap(), 0);
-        assert_eq!(binding.native_read("missing", true, &mut stale, limits()).unwrap(), 0);
+        assert_eq!(
+            binding
+                .native_read("start", false, &mut stale, limits())
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            binding
+                .native_read("missing", true, &mut stale, limits())
+                .unwrap(),
+            0
+        );
         let before = work.used();
-        assert!(matches!(binding.native_read("missing", false, &mut stale, limits()),
-            Err(Error::Binding("missing map key"))));
+        assert!(matches!(
+            binding.native_read("missing", false, &mut stale, limits()),
+            Err(Error::Binding("missing map key"))
+        ));
         assert!(work.used().0 > before.0 && work.used().1 > before.1);
-        drop((probe, stale, foreign_words, foreign, words, binding, source, work));
+        drop((
+            probe,
+            stale,
+            foreign_words,
+            foreign,
+            words,
+            binding,
+            source,
+            work,
+        ));
         assert_eq!(memory.used_bytes(), 0);
     }
 }

@@ -129,8 +129,11 @@ fn every_short_utf8_split_matches_the_ordinary_lines_iterator() {
 #[test]
 fn certified_fragments_preserve_geometry_admission_and_work_at_every_utf8_split() {
     for source in ["", "a\0b\r\n\nlast\r", "é\r\n猫\n🦎", "\n\r\r\nend\n"] {
-        let boundaries = source.char_indices().map(|(index, _)| index)
-            .chain([source.len()]).collect::<Vec<_>>();
+        let boundaries = source
+            .char_indices()
+            .map(|(index, _)| index)
+            .chain([source.len()])
+            .collect::<Vec<_>>();
         for &first in &boundaries {
             for &second in boundaries.iter().filter(|&&index| index >= first) {
                 let mut expected = None;
@@ -139,18 +142,38 @@ fn certified_fragments_preserve_geometry_admission_and_work_at_every_utf8_split(
                     let ledger = work(&memory);
                     let mut store = prepare(source.len() as u64, 64, limits(), &ledger).unwrap();
                     let mut observations = Vec::new();
-                    for fragment in ["", &source[..first], &source[first..second], &source[second..], ""] {
+                    for fragment in [
+                        "",
+                        &source[..first],
+                        &source[first..second],
+                        &source[second..],
+                        "",
+                    ] {
                         if certified {
-                            store.push_fragment(mech_core::Utf8Fragment::decode(fragment.as_bytes()).unwrap()).unwrap();
+                            store
+                                .push_fragment(
+                                    mech_core::Utf8Fragment::decode(fragment.as_bytes()).unwrap(),
+                                )
+                                .unwrap();
                         } else {
                             store.push(fragment).unwrap();
                         }
-                        observations.push((store.available_lines(), ledger.used(),
-                            store.retained_capacity_bytes(), store.peak_capacity_bytes(), memory.used_bytes()));
+                        observations.push((
+                            store.available_lines(),
+                            ledger.used(),
+                            store.retained_capacity_bytes(),
+                            store.peak_capacity_bytes(),
+                            memory.used_bytes(),
+                        ));
                     }
                     finish_matches(&mut store, source);
-                    observations.push((store.available_lines(), ledger.used(),
-                        store.retained_capacity_bytes(), store.peak_capacity_bytes(), memory.used_bytes()));
+                    observations.push((
+                        store.available_lines(),
+                        ledger.used(),
+                        store.retained_capacity_bytes(),
+                        store.peak_capacity_bytes(),
+                        memory.used_bytes(),
+                    ));
                     if let Some(expected) = &expected {
                         assert_eq!(&observations, expected, "{source:?}, {first}, {second}");
                     } else {

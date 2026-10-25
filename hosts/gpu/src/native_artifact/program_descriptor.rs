@@ -58,7 +58,9 @@ pub struct NativeProgramDescriptor {
     pub(super) identity: [u8; 32],
 }
 fn constant_admission_total(bounds: &[u64]) -> Result<u64, String> {
-    bounds.iter().try_fold(0u64, |sum, &bound| sum.checked_add(bound))
+    bounds
+        .iter()
+        .try_fold(0u64, |sum, &bound| sum.checked_add(bound))
         .ok_or_else(|| "constant admission total overflows".to_owned())
 }
 impl NativeProgramDescriptor {
@@ -73,7 +75,8 @@ impl NativeProgramDescriptor {
             return Err("mixed canonical revision mismatch".into());
         }
         plan.validate_current_visits().map_err(str::to_owned)?;
-        let parallel = super::program_parallel_layout::Layout::derive(&plan).map_err(str::to_owned)?;
+        let parallel =
+            super::program_parallel_layout::Layout::derive(&plan).map_err(str::to_owned)?;
         let retirements = RetirementTables::derive(&plan).map_err(str::to_owned)?;
         let completion = (plan.transport_output_count() as u64)
             .checked_mul(64)
@@ -116,7 +119,12 @@ impl NativeProgramDescriptor {
         }
         let map_owner_words = plan.map_owner_words().map_err(str::to_owned)?;
         for (site, visit) in visits.iter_mut().enumerate() {
-            visit.work = visit.work.checked_add(super::program_map_owner_layout::extra_work(&map_owner_words, site)?)
+            visit.work = visit
+                .work
+                .checked_add(super::program_map_owner_layout::extra_work(
+                    &map_owner_words,
+                    site,
+                )?)
                 .ok_or("map owner visit work overflow")?;
         }
         let closed_tails =
@@ -127,7 +135,8 @@ impl NativeProgramDescriptor {
                 .checked_add(closed_tails.extra_work(site))
                 .ok_or("closed Tail work overflow")?;
         }
-        let map_admission = super::program_map_admission::Layout::derive(&plan, &map_owner_words, &visits)?;
+        let map_admission =
+            super::program_map_admission::Layout::derive(&plan, &map_owner_words, &visits)?;
         let visits = visits.into();
         let calls = plan
             .blocks()
@@ -226,14 +235,17 @@ impl NativeProgramDescriptor {
         let window_regions = plan.window_regions().into_boxed_slice();
         let string_map_regions = plan.string_map_regions().into_boxed_slice();
         let scalar_aggregates = plan.scalar_aggregates();
-        let occupied_frame = plan.values().len()
+        let occupied_frame = plan
+            .values()
+            .len()
             .checked_add(plan.iterations().len())
             .and_then(|n| n.checked_add(scalar_aggregates.words()))
             .and_then(|n| n.checked_add(borrowed_strings.words))
             .and_then(|n| n.checked_add(closed_tails.words))
             .ok_or("map owner frame prefix overflow")?;
         let map_owner_words = map_owner_words
-            .after_frame_words(occupied_frame).map_err(str::to_owned)?;
+            .after_frame_words(occupied_frame)
+            .map_err(str::to_owned)?;
         // Programs without owner candidates keep no second copy of their
         // existing scalar slot/action/constant inventories in the descriptor.
         let map_owner_words = (!map_owner_words.regions().is_empty()).then_some(map_owner_words);
@@ -261,7 +273,11 @@ impl NativeProgramDescriptor {
                     .max()
                     .unwrap_or(0),
             )
-            .max(map_owner_words.as_ref().map_or(0, super::program_map_owner_layout::initial_words))
+            .max(
+                map_owner_words
+                    .as_ref()
+                    .map_or(0, super::program_map_owner_layout::initial_words),
+            )
             .max(usize::from(!parallel.regions.is_empty()))
             .max(if closed_tails.regions.is_empty() {
                 0
@@ -308,9 +324,14 @@ impl NativeProgramDescriptor {
         // These complete inventories were derived above from this SAME
         // immutable plan. Hash every proof in its original order, including
         // proofs not selected by the capture prefix, without deriving again.
-        let frozen_maps = map_owner_words.as_ref().map(|owner|
-            super::program_frozen_map_layout::Layout::derive(&plan, owner, &closed_tails))
-            .transpose().map_err(str::to_owned)?.unwrap_or_default();
+        let frozen_maps = map_owner_words
+            .as_ref()
+            .map(|owner| {
+                super::program_frozen_map_layout::Layout::derive(&plan, owner, &closed_tails)
+            })
+            .transpose()
+            .map_err(str::to_owned)?
+            .unwrap_or_default();
         let identity = super::program_identity::typed_ir_sha256(
             &plan,
             &line_retention_frontiers,

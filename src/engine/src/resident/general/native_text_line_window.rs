@@ -78,25 +78,37 @@ impl NativeTextLineChunks {
             for chunk in self.chunks.range(start..finish) {
                 let lo = first.max(chunk.first);
                 let hi = end.min(chunk.end());
-                if lo >= hi { continue; }
+                if lo >= hi {
+                    continue;
+                }
                 segments[segment_count] = [
                     chunk.bytes.as_str().as_ptr() as u64,
                     chunk.bytes.as_str().len() as u64,
-                    chunk.offsets.as_ref().map_or(0, |offsets| offsets.values.as_ptr() as u64),
+                    chunk
+                        .offsets
+                        .as_ref()
+                        .map_or(0, |offsets| offsets.values.as_ptr() as u64),
                     lo - chunk.first,
                     hi - lo,
                 ];
                 segment_count += 1;
                 seen += hi - lo;
             }
-            if seen != count as u64 { return Err(InvokeError::InvalidInput); }
+            if seen != count as u64 {
+                return Err(InvokeError::InvalidInput);
+            }
         } else {
-            rows.try_reserve_exact(count).map_err(|_| InvokeError::InvalidInput)?;
-            if rows.capacity() != count { return Err(InvokeError::InvalidInput); }
+            rows.try_reserve_exact(count)
+                .map_err(|_| InvokeError::InvalidInput)?;
+            if rows.capacity() != count {
+                return Err(InvokeError::InvalidInput);
+            }
             // Retain the exact per-window qualification when a Unicode prefix
             // exists, even if that prefix was already discarded by the source.
             self.visit_window_cells(first, end, |text| {
-                if !self.facts.ascii { ascii &= text.is_ascii(); }
+                if !self.facts.ascii {
+                    ascii &= text.is_ascii();
+                }
                 rows.push([text.as_ptr() as u64, text.len() as u64]);
                 Ok(())
             })?;

@@ -72,7 +72,9 @@ impl Context<'_, '_> {
             .max_temporary_bytes
             .ok_or_else(|| invalid("hash window requires finite temporary bytes"))?
             .saturating_sub(memory.used_bytes());
-        let retained = self.limits.max_retained_nodes
+        let retained = self
+            .limits
+            .max_retained_nodes
             .ok_or_else(|| invalid("hash window requires finite retained nodes"))?
             .saturating_sub(memory.retained_nodes());
         let hashes = hashes::WindowHashes::new(

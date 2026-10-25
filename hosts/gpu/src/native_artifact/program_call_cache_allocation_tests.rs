@@ -15,7 +15,10 @@ fn limits() -> NativeProgramExecutionLimits {
 fn shared_call_lane_node_ceiling_denies_before_backing_allocation() {
     let [artifact, _] = artifacts("+> sequence\nsequence/length(seed<string>)\n");
     let jit = super::super::super::super::JitProgramArtifact::compile(
-        &artifact, &mech_stdlib::source_catalog()).unwrap();
+        &artifact,
+        &mech_stdlib::source_catalog(),
+    )
+    .unwrap();
     let descriptor = jit.descriptor();
     let bytes = CallCacheLane::metadata_bytes(descriptor.plan.blocks().len()).unwrap();
     let memory = ManagedMemoryBudget::new(bytes * 4).with_limits(bytes * 4, bytes * 2 - 1);
@@ -26,10 +29,15 @@ fn shared_call_lane_node_ceiling_denies_before_backing_allocation() {
     let (denied, stats) = call_cache_allocation::with_extra(0, &memory, || {
         CallCacheLane::new(descriptor, bytes, &memory, &mut work)
     });
-    assert!(matches!(denied, Err(NativeProgramExecutionError::Base(NativeExecutionError::Memory {
+    assert!(
+        matches!(denied, Err(NativeProgramExecutionError::Base(NativeExecutionError::Memory {
         error: mech_core::MemoryRuntimeError::BudgetExceeded { operation: Some(operation), .. }
-    })) if operation == "retained node admission"));
-    assert_eq!(stats.0, 0, "node refusal must precede allocation and entry initialization");
+    })) if operation == "retained node admission")
+    );
+    assert_eq!(
+        stats.0, 0,
+        "node refusal must precede allocation and entry initialization"
+    );
     assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
     drop(first);
     assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));

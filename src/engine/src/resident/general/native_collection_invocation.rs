@@ -340,15 +340,20 @@ impl NativeCollectionCall {
                     // weak-data witnesses must fit the same shared node account
                     // before allocation; a denied cache may use the ordinary path.
                     let nodes = if probe.is_some() {
-                        let count = 1u64.checked_add(NativeTurnPlanCache::retained_data_nodes(
-                            &self.memory).ok_or(ResidentKernelError::InvalidShape)?)
+                        let count = 1u64
+                            .checked_add(
+                                NativeTurnPlanCache::retained_data_nodes(&self.memory)
+                                    .ok_or(ResidentKernelError::InvalidShape)?,
+                            )
                             .ok_or(ResidentKernelError::InvalidShape)?;
                         match work.memory_budget().reserve_nodes(count) {
                             Ok(nodes) => Some(nodes),
                             Err(MemoryRuntimeError::BudgetExceeded { .. }) => None,
                             Err(error) => return Err(error.into()),
                         }
-                    } else { None };
+                    } else {
+                        None
+                    };
                     if let (Some(headroom), Some(nodes)) = (probe.as_mut(), nodes) {
                         let reservation = headroom.split_capacity(retained)?;
                         let owner = NativeTurnPlanCache::construction_owner_bytes(&self.memory)

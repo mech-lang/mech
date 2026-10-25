@@ -7,13 +7,23 @@ thread_local! {
     static EMISSIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 pub(super) fn enabled() -> bool {
-    #[cfg(test)] { !DISABLED.with(std::cell::Cell::get) }
-    #[cfg(not(test))] { true }
+    #[cfg(test)]
+    {
+        !DISABLED.with(std::cell::Cell::get)
+    }
+    #[cfg(not(test))]
+    {
+        true
+    }
 }
 #[cfg(test)]
 pub(in crate::native_artifact) fn without_count_bounds<T>(f: impl FnOnce() -> T) -> T {
     struct Restore(bool);
-    impl Drop for Restore { fn drop(&mut self) { DISABLED.with(|v| v.set(self.0)); } }
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            DISABLED.with(|v| v.set(self.0));
+        }
+    }
     let _restore = Restore(DISABLED.with(|v| v.replace(true)));
     f()
 }

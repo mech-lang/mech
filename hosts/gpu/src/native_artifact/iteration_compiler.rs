@@ -447,21 +447,34 @@ pub(super) fn define_cfg<M: Module>(
     };
     #[cfg(feature = "canonical-native-program")]
     let joined_functions = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
-        let layout = super::program_selected_join_layout::Layout::derive(program).map_err(backend)?;
-        map_functions.iter()
-            .filter(|(map, ..)| layout.maps.iter().flatten().any(|proof| proof.collection == map.collection()))
+        let layout =
+            super::program_selected_join_layout::Layout::derive(program).map_err(backend)?;
+        map_functions
+            .iter()
+            .filter(|(map, ..)| {
+                layout
+                    .maps
+                    .iter()
+                    .flatten()
+                    .any(|proof| proof.collection == map.collection())
+            })
             .map(|(region, ..)| {
-                let (function, stack, code) = super::program_compiler::join_map_codegen::define(module, region)?;
+                let (function, stack, code) =
+                    super::program_compiler::join_map_codegen::define(module, region)?;
                 report.join_map_copies.push(codegen_report::JoinMapCopy {
                     collection: region.collection(),
                     symbol: super::program_compiler::join_map_codegen::symbol(region.collection()),
-                    stack_bytes: stack, code_bytes: code, geometry_words: 6,
+                    stack_bytes: stack,
+                    code_bytes: code,
+                    geometry_words: 6,
                     initialized_extent_word: super::program_abi::JOIN_MAP_INITIALIZED_WORD,
                 });
                 Ok((region.collection(), function, stack, code))
             })
             .collect::<Result<Vec<_>, NativeCompileError>>()?
-    } else { Vec::new() };
+    } else {
+        Vec::new()
+    };
     #[cfg(feature = "canonical-native-program")]
     let joined_maps = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
         let layout =
@@ -768,8 +781,20 @@ pub(super) fn define_cfg<M: Module>(
             #[cfg(feature = "canonical-native-program")]
             if let Some(hooks) = &hooks {
                 super::program_compiler::scalar_loop_codegen::emit_entry(
-                    &mut b, frame, locals, plan, &closed, &aggregates, &borrowed,
-                    prefix.as_ref(), prefix_facts, index, hooks, &blocks, error, &mut report,
+                    &mut b,
+                    frame,
+                    locals,
+                    plan,
+                    &closed,
+                    &aggregates,
+                    &borrowed,
+                    prefix.as_ref(),
+                    prefix_facts,
+                    index,
+                    hooks,
+                    &blocks,
+                    error,
+                    &mut report,
                 )?;
                 let outlined = packed_functions
                     .iter()

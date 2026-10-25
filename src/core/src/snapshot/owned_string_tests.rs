@@ -67,7 +67,11 @@ fn exclusive_strings_transfer_without_payload_copy_or_new_budget_charge() {
         assert_eq!(owned.memory_budget(), budget);
         assert_eq!(owned.retained_capacity_bytes(), charged);
         assert_eq!(budget.used_bytes(), charged);
-        assert_eq!(budget.retained_snapshot_nodes(), 0, "owned String is no longer a canonical snapshot");
+        assert_eq!(
+            budget.retained_snapshot_nodes(),
+            0,
+            "owned String is no longer a canonical snapshot"
+        );
         assert_eq!(identity.data.strong_count(), 0);
         drop(owned);
         assert_eq!(budget.used_bytes(), 0);
@@ -123,7 +127,11 @@ fn shared_wrapper_rejection_preserves_owner_identity_admission_and_import_cache(
     let identity = value.frozen_storage_identity();
     let charged = budget.used_bytes();
     let value = unavailable(value.try_into_owned_string(&budget).unwrap());
-    assert_eq!(budget.retained_snapshot_nodes(), 2, "denied transfer preserves the claim");
+    assert_eq!(
+        budget.retained_snapshot_nodes(),
+        2,
+        "denied transfer preserves the claim"
+    );
     assert!(identity.matches(&value));
     assert!(value.shares_frozen_storage(&alias));
     assert!(value.memory_budget_retained_bytes(&budget).is_some());

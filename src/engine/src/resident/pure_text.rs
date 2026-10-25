@@ -510,12 +510,17 @@ fn execute_length(
         let text = source_text(source, input)?;
         admit_work(text.len(), 0)?;
         let ascii = match input {
-            ResidentValueRef::Snapshot(_) => source.snapshot(input)?.string_ascii_without_crlf() == Some(true),
+            ResidentValueRef::Snapshot(_) => {
+                source.snapshot(input)?.string_ascii_without_crlf() == Some(true)
+            }
             _ => false,
         };
         (
-            if ascii { super::budget::checked_u64(text.len())? }
-            else { primitives::grapheme_length(text).map_err(|_| ResidentKernelError::InvalidInput)? },
+            if ascii {
+                super::budget::checked_u64(text.len())?
+            } else {
+                primitives::grapheme_length(text).map_err(|_| ResidentKernelError::InvalidInput)?
+            },
             text.len(),
         )
     } else {

@@ -4,7 +4,8 @@
 //! memory metadata. It is not executable code and makes no AOT claim.
 mod ir;
 pub use crate::resident::budget::{
-    NativeLibraryWorkBudget, NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerCreditStatistics, NativeWorkerWorkLoan,
+    NativeLibraryWorkBudget, NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError,
+    NativeWorkerCreditStatistics, NativeWorkerWorkLoan,
 };
 pub use crate::resident::general::native_lowering::{
     NativeArtifactLoweringError, NativeArtifactPlan, lower_pure_native_artifact,
@@ -77,8 +78,9 @@ pub use borrowed_strings::{NativeBorrowedStringAction, NativeBorrowedStringRegio
 mod selected_text_join;
 #[cfg(feature = "pure_text")]
 pub use crate::resident::general::native_collection_calls::{
-    NativePrivateStringBuffer, NativeSelectedStringMatrix, NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineJoinChunk,
-    NativeTextLineMatrix, NativeTextLineMatrixChoice, NativeTextLineWindow,
+    NativePrivateStringBuffer, NativeSelectedStringMatrix, NativeTextLineCaptureFacts,
+    NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineMatrix,
+    NativeTextLineMatrixChoice, NativeTextLineWindow,
 };
 #[cfg(feature = "pure_text")]
 pub use selected_text_join::{NativeSelectedTextJoin, NativeSelectedTextJoinRange};

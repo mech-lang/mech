@@ -23,12 +23,18 @@ mod tests {
     fn worker_meter_attaches_without_root_renewal_or_promotion_and_reconciles_to_parent() {
         let memory = ManagedMemoryBudget::new(8192);
         let mut parent = NativeWorkMeter::new(1000).unwrap();
-        let library = parent.shared_library_budget(NativeExecutionPhase::Setup, 100, &memory).unwrap();
+        let library = parent
+            .shared_library_budget(NativeExecutionPhase::Setup, 100, &memory)
+            .unwrap();
         let group = library.reserve_worker_group(100, 20).unwrap();
         let held = memory.used_bytes();
         let exact = held + NativeLibraryWorkBudget::worker_account_metadata_bytes();
         assert!(exact < memory.limit_bytes());
-        assert!(group.worker_loan_with_memory(&memory.with_limits(exact - 1, 100)).is_err());
+        assert!(
+            group
+                .worker_loan_with_memory(&memory.with_limits(exact - 1, 100))
+                .is_err()
+        );
         assert_eq!(memory.used_bytes(), held);
         let capped = memory.with_limits(exact, 100);
         let loan = group.worker_loan_with_memory(&capped).unwrap();
@@ -44,7 +50,9 @@ mod tests {
             assert_eq!(worker.used(), 20);
             assert!(worker.charge(NativeExecutionPhase::Completion, 81).is_err());
             worker.used()
-        }).join().unwrap();
+        })
+        .join()
+        .unwrap();
         assert_eq!(used, 20);
         assert_eq!(group.finish().unwrap(), (20, 2));
         assert_eq!(parent.used(), 84);
@@ -56,8 +64,11 @@ mod tests {
         let root = NativeLibraryWorkBudget::new(100, 20, &memory).unwrap();
         assert!(NativeWorkMeter::from_worker_budget(root.clone(), &memory).is_err());
         let group = root.reserve_worker_group(100, 20).unwrap();
-        let worker = NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap();
-        assert!(NativeWorkMeter::from_worker_budget(worker, &ManagedMemoryBudget::new(8192)).is_err());
+        let worker =
+            NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap();
+        assert!(
+            NativeWorkMeter::from_worker_budget(worker, &ManagedMemoryBudget::new(8192)).is_err()
+        );
         assert_eq!(group.finish().unwrap(), (0, 0));
     }
 
@@ -324,7 +335,10 @@ impl NativeWorkMeter {
                 reason: "native work ledger identity exhausted",
             })?;
         Ok(Self {
-            identity, used: 0, limit: library.limits().0, library: Some(library),
+            identity,
+            used: 0,
+            limit: library.limits().0,
+            library: Some(library),
             memory: Some(memory.with_limits(admitted.limit_bytes(), admitted.limit_nodes())),
         })
     }

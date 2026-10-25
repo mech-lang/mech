@@ -169,35 +169,53 @@ fn owner_word_layout_keeps_canonical_entry_exit_and_map_calls_outside_transport(
 #[test]
 fn owner_word_relocation_preserves_occupied_prefix_and_emitted_transport() {
     for artifact in artifacts() {
-        let plan = lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let plan =
+            lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let original = plan.map_owner_words().unwrap();
         let base = original.owner_base();
         let prefix = base + 37;
         let relocated = original.clone().after_frame_words(prefix).unwrap();
         assert_eq!(relocated.owner_base(), prefix);
         assert_eq!(relocated.frame_words(), original.frame_words() + 37);
-        assert_eq!(relocated.aggregates().words(), original.aggregates().words() + 37);
+        assert_eq!(
+            relocated.aggregates().words(),
+            original.aggregates().words() + 37
+        );
         assert!(original.clone().after_frame_words(base - 1).is_err());
         assert!(original.clone().after_frame_words(usize::MAX).is_err());
-        assert_eq!(serde_json::to_value(relocated.clone().after_frame_words(prefix).unwrap()).unwrap(),
-            serde_json::to_value(&relocated).unwrap(), "composition is idempotent");
+        assert_eq!(
+            serde_json::to_value(relocated.clone().after_frame_words(prefix).unwrap()).unwrap(),
+            serde_json::to_value(&relocated).unwrap(),
+            "composition is idempotent"
+        );
         for index in 0..plan.values().len() {
-            let expected = original.aggregates().slot_at(index).map(|(at, count)| {
-                (if at >= base { at + 37 } else { at }, count)
-            });
+            let expected = original
+                .aggregates()
+                .slot_at(index)
+                .map(|(at, count)| (if at >= base { at + 37 } else { at }, count));
             assert_eq!(relocated.aggregates().slot_at(index), expected);
         }
-        assert_eq!(serde_json::to_value(relocated.aggregates().constants()).unwrap(),
-            serde_json::to_value(original.aggregates().constants()).unwrap());
+        assert_eq!(
+            serde_json::to_value(relocated.aggregates().constants()).unwrap(),
+            serde_json::to_value(original.aggregates().constants()).unwrap()
+        );
         let mut functions = 0;
         for site in 0..plan.blocks().len() {
-            let Some(Transport::Project { source, offset, guards, output }) =
-                relocated.aggregates().action(site) else { continue; };
+            let Some(Transport::Project {
+                source,
+                offset,
+                guards,
+                output,
+            }) = relocated.aggregates().action(site)
+            else {
+                continue;
+            };
             let (src, _) = relocated.aggregates().slot(*source).unwrap();
             let (dst, count) = relocated.aggregates().slot(*output).unwrap();
             let memory = ManagedMemoryBudget::new(16 * 1024 * 1024);
-            let mut frame = NativeWordStorage::new(relocated.frame_words(),
-                16 * 1024 * 1024, Some(&memory)).unwrap();
+            let mut frame =
+                NativeWordStorage::new(relocated.frame_words(), 16 * 1024 * 1024, Some(&memory))
+                    .unwrap();
             frame.values_mut().fill(0);
             frame.values_mut()[base..prefix].fill(0xfeed_face_dead_beef);
             for &(at, ordinal) in guards {
@@ -211,8 +229,12 @@ fn owner_word_relocation_preserves_occupied_prefix_and_emitted_transport() {
             for index in 0..count {
                 assert_eq!(frame.values()[dst + index], u64::MAX - index as u64);
             }
-            assert!(frame.values()[base..prefix].iter()
-                .all(|word| *word == 0xfeed_face_dead_beef), "unrelated metadata changed");
+            assert!(
+                frame.values()[base..prefix]
+                    .iter()
+                    .all(|word| *word == 0xfeed_face_dead_beef),
+                "unrelated metadata changed"
+            );
             drop(frame);
             assert_eq!(memory.used_bytes(), 0);
             functions += 1;

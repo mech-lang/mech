@@ -4,13 +4,26 @@ use crate::{ManagedMemoryBudget, SchemaDraft, SchemaTableBuilder};
 
 fn scalar(body: SchemaBody, data: ValueDataDraft) -> Value {
     let mut builder = SchemaTableBuilder::new();
-    let handle = builder.insert(SchemaDraft {
-        body, dimension_parameters: Box::new([]),
-    }.finalize().unwrap()).unwrap();
+    let handle = builder
+        .insert(
+            SchemaDraft {
+                body,
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
     let built = builder.finish().unwrap();
     ValueDraft {
-        schema: built.resolve(handle).unwrap(), shape_values: Box::new([]), data,
-    }.finalize(&SnapshotValidationContext::with_shared_schemas(&Arc::new(built.table))).unwrap()
+        schema: built.resolve(handle).unwrap(),
+        shape_values: Box::new([]),
+        data,
+    }
+    .finalize(&SnapshotValidationContext::with_shared_schemas(&Arc::new(
+        built.table,
+    )))
+    .unwrap()
 }
 
 fn string(text: &str) -> Value {
@@ -18,7 +31,9 @@ fn string(text: &str) -> Value {
 }
 
 fn admit(value: Value, memory: &ManagedMemoryBudget) -> Value {
-    let mut reservation = memory.reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap()).unwrap();
+    let mut reservation = memory
+        .reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap())
+        .unwrap();
     value.into_memory_budget(&mut reservation).unwrap()
 }
 
@@ -30,7 +45,10 @@ fn string_facts_are_lazy_exact_and_shared_only_by_the_immutable_data_owner() {
         assert!(value.root.data.string_ascii_without_crlf.get().is_none());
         let cloned = value.clone();
         assert_eq!(cloned.string_ascii_without_crlf(), Some(expected));
-        assert_eq!(value.root.data.string_ascii_without_crlf.get(), Some(&expected));
+        assert_eq!(
+            value.root.data.string_ascii_without_crlf.get(),
+            Some(&expected)
+        );
         let equal = string(text);
         assert!(!value.shares_frozen_storage(&equal));
         assert!(equal.root.data.string_ascii_without_crlf.get().is_none());
@@ -38,7 +56,14 @@ fn string_facts_are_lazy_exact_and_shared_only_by_the_immutable_data_owner() {
     }
     let non_string = scalar(SchemaBody::Bool, ValueDataDraft::Bool(true));
     assert_eq!(non_string.string_ascii_without_crlf(), None);
-    assert!(non_string.root.data.string_ascii_without_crlf.get().is_none());
+    assert!(
+        non_string
+            .root
+            .data
+            .string_ascii_without_crlf
+            .get()
+            .is_none()
+    );
 }
 
 #[test]
@@ -84,13 +109,20 @@ fn string_facts_retire_before_owned_bytes_can_change_and_refreeze() {
     let schemas = original.schemas().unwrap();
     let identity = original.frozen_storage_identity();
     let StringOwnershipTransfer::Owned(owned) = original.try_into_owned_string(&memory).unwrap()
-    else { panic!("representation metadata must not pin a strong owner"); };
+    else {
+        panic!("representation metadata must not pin a strong owner");
+    };
     let (mut text, mut reservation) = owned.into_parts();
     text.replace_range(.., "é");
     let output = ValueDraft {
-        schema, shape_values: Box::new([]), data: ValueDataDraft::String(text),
-    }.finalize(&SnapshotValidationContext::with_shared_schemas(&schemas)).unwrap()
-        .into_memory_budget(&mut reservation).unwrap();
+        schema,
+        shape_values: Box::new([]),
+        data: ValueDataDraft::String(text),
+    }
+    .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+    .unwrap()
+    .into_memory_budget(&mut reservation)
+    .unwrap();
     assert!(!identity.matches(&output));
     assert!(output.root.data.string_ascii_without_crlf.get().is_none());
     assert_eq!(output.string_ascii_without_crlf(), Some(false));
@@ -101,7 +133,11 @@ fn string_facts_retire_before_owned_bytes_can_change_and_refreeze() {
 #[cfg(any(not(feature = "no_std"), feature = "std"))]
 #[test]
 fn string_facts_are_shared_safely_by_concurrent_readers() {
-    for text in ["AGCT".repeat(16_384), "AG\r\n".repeat(16_384), "é🧑‍🚀".repeat(4096)] {
+    for text in [
+        "AGCT".repeat(16_384),
+        "AG\r\n".repeat(16_384),
+        "é🧑‍🚀".repeat(4096),
+    ] {
         let value = string(&text);
         let expected = text.is_ascii() && !text.as_bytes().windows(2).any(|p| p == b"\r\n");
         assert!(value.root.data.string_ascii_without_crlf.get().is_none());
@@ -111,8 +147,13 @@ fn string_facts_are_shared_safely_by_concurrent_readers() {
                 let value = &value;
                 readers.push(scope.spawn(move || value.string_ascii_without_crlf()));
             }
-            for reader in readers { assert_eq!(reader.join().unwrap(), Some(expected)); }
+            for reader in readers {
+                assert_eq!(reader.join().unwrap(), Some(expected));
+            }
         });
-        assert_eq!(value.root.data.string_ascii_without_crlf.get(), Some(&expected));
+        assert_eq!(
+            value.root.data.string_ascii_without_crlf.get(),
+            Some(&expected)
+        );
     }
 }

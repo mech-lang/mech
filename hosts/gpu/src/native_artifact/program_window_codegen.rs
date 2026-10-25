@@ -15,11 +15,11 @@ use cranelift_codegen::ir::Endianness;
 #[path = "program_window_histogram_codegen.rs"]
 mod histogram;
 
+#[path = "program_window_hash_codegen.rs"]
+mod hashes;
 #[cfg(all(test, feature = "canonical-native-program-host"))]
 #[path = "program_window_query_codegen.rs"]
 mod query;
-#[path = "program_window_hash_codegen.rs"]
-mod hashes;
 
 // (source pointer, source bytes, accumulator owner, library update callback, width) -> completed.
 // Caller must prove that source is ASCII without CRLF grapheme pairs. Then

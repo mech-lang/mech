@@ -36,8 +36,7 @@ impl Worker<'_> {
             // ledger, even if this worker already owns the shared mutex.
             let next = checked_local_control_account_work(&self.account, compute, comparison)?;
             let shared = self.shared;
-            let state = self.guard.get_or_insert_with(||
-                lock_escrow(shared));
+            let state = self.guard.get_or_insert_with(|| lock_escrow(shared));
             let shared_next = state.direct_next(compute, comparison)?;
             state.used = shared_next;
             self.account.used = next;
@@ -55,7 +54,9 @@ impl Worker<'_> {
     }
 }
 impl Drop for Worker<'_> {
-    fn drop(&mut self) { self.release(); }
+    fn drop(&mut self) {
+        self.release();
+    }
 }
 impl NativeWorkDebitBatch<'_> {
     pub fn charge(&mut self, compute: u64, comparison: u64) -> Result<(), ResidentKernelError> {
@@ -84,17 +85,31 @@ impl NativeLibraryWorkBudget {
     ) -> Result<T, ResidentKernelError> {
         self.with_scope(|| {
             let shared = {
-                let account = self.account.try_borrow().map_err(|_| ResidentKernelError::InvalidInput)?;
+                let account = self
+                    .account
+                    .try_borrow()
+                    .map_err(|_| ResidentKernelError::InvalidInput)?;
                 account.worker.as_ref().map(|worker| worker.shared.clone())
             };
             let Some(shared) = shared else {
-                let mut batch = NativeWorkDebitBatch { mode: Mode::Ordinary(self) };
+                let mut batch = NativeWorkDebitBatch {
+                    mode: Mode::Ordinary(self),
+                };
                 return Ok(execute(&mut batch));
             };
-            let account = self.account.try_borrow_mut().map_err(|_| ResidentKernelError::InvalidInput)?;
-            let mut batch = NativeWorkDebitBatch { mode: Mode::Worker(Worker {
-                account, shared: &shared, guard: None, charges: 0, work: 0,
-            }) };
+            let account = self
+                .account
+                .try_borrow_mut()
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            let mut batch = NativeWorkDebitBatch {
+                mode: Mode::Worker(Worker {
+                    account,
+                    shared: &shared,
+                    guard: None,
+                    charges: 0,
+                    work: 0,
+                }),
+            };
             Ok(execute(&mut batch))
         })?
     }

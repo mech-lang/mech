@@ -508,13 +508,20 @@ impl Context<'_, '_> {
         });
         // All worker-local ledgers have retired before reconciliation. Work
         // already spent stays charged even when any worker failed.
-        let (_, credit) = group.finish_with_credit_statistics()
+        let (_, credit) = group
+            .finish_with_credit_statistics()
             .map_err(|error| Error::Collection { origin, error })?;
-        self.worker_credit_claims = self.worker_credit_claims.checked_add(credit.claims)
+        self.worker_credit_claims = self
+            .worker_credit_claims
+            .checked_add(credit.claims)
             .ok_or_else(|| invalid("parallel work-credit claim count overflow"))?;
-        self.worker_credit_batches = self.worker_credit_batches.checked_add(credit.batches)
+        self.worker_credit_batches = self
+            .worker_credit_batches
+            .checked_add(credit.batches)
             .ok_or_else(|| invalid("parallel work-credit batch count overflow"))?;
-        self.worker_credit_reclaims = self.worker_credit_reclaims.checked_add(credit.reclaims)
+        self.worker_credit_reclaims = self
+            .worker_credit_reclaims
+            .checked_add(credit.reclaims)
             .ok_or_else(|| invalid("parallel work-credit reclaim count overflow"))?;
         drop(stacks);
         let results = outcomes?;
@@ -536,20 +543,63 @@ impl Context<'_, '_> {
                 .max(activity.peak.load(Ordering::Relaxed) as u64);
         }
         for result in results.iter().filter_map(|result| result.as_ref().ok()) {
-            self.control.visits = self.control.visits.checked_add(result.visits).ok_or_else(|| invalid("parallel visit overflow"))?;
-            self.hash_table_regions = self.hash_table_regions.checked_add(result.hash_regions).ok_or_else(|| invalid("parallel region overflow"))?;
-            self.hash_table_updates = self.hash_table_updates.checked_add(result.hash_updates).ok_or_else(|| invalid("parallel update overflow"))?;
-            self.packed_map_regions = self.packed_map_regions.checked_add(result.packed_regions).ok_or_else(|| invalid("parallel packed region overflow"))?;
-            self.direct_lookup_regions = self.direct_lookup_regions.checked_add(result.direct_lookup_regions).ok_or_else(|| invalid("parallel direct lookup region overflow"))?;
-            self.packed_map_updates = self.packed_map_updates.checked_add(result.packed_updates).ok_or_else(|| invalid("parallel packed update overflow"))?;
-            self.packed_ssa_regions = self.packed_ssa_regions.checked_add(result.packed_ssa_regions).ok_or_else(|| invalid("parallel SSA region overflow"))?;
-            self.guarded_loop_regions = self.guarded_loop_regions.checked_add(result.guarded_loop_regions).ok_or_else(|| invalid("parallel guarded loop count overflow"))?;
-            self.guarded_call_regions = self.guarded_call_regions.checked_add(result.guarded_call_regions).ok_or_else(|| invalid("parallel guarded call count overflow"))?;
-            self.frozen_map_regions = self.frozen_map_regions.checked_add(result.frozen_map_regions).ok_or_else(|| invalid("parallel frozen region overflow"))?;
-            self.frozen_map_reads = self.frozen_map_reads.checked_add(result.frozen_map_reads).ok_or_else(|| invalid("parallel frozen read overflow"))?;
-            self.worker_credit_claims = self.worker_credit_claims.checked_add(result.worker_credit_claims).ok_or_else(|| invalid("parallel work-credit statistics overflow"))?;
-            self.worker_credit_batches = self.worker_credit_batches.checked_add(result.worker_credit_batches).ok_or_else(|| invalid("parallel work-credit statistics overflow"))?;
-            self.worker_credit_reclaims = self.worker_credit_reclaims.checked_add(result.worker_credit_reclaims).ok_or_else(|| invalid("parallel work-credit statistics overflow"))?;
+            self.control.visits = self
+                .control
+                .visits
+                .checked_add(result.visits)
+                .ok_or_else(|| invalid("parallel visit overflow"))?;
+            self.hash_table_regions = self
+                .hash_table_regions
+                .checked_add(result.hash_regions)
+                .ok_or_else(|| invalid("parallel region overflow"))?;
+            self.hash_table_updates = self
+                .hash_table_updates
+                .checked_add(result.hash_updates)
+                .ok_or_else(|| invalid("parallel update overflow"))?;
+            self.packed_map_regions = self
+                .packed_map_regions
+                .checked_add(result.packed_regions)
+                .ok_or_else(|| invalid("parallel packed region overflow"))?;
+            self.direct_lookup_regions = self
+                .direct_lookup_regions
+                .checked_add(result.direct_lookup_regions)
+                .ok_or_else(|| invalid("parallel direct lookup region overflow"))?;
+            self.packed_map_updates = self
+                .packed_map_updates
+                .checked_add(result.packed_updates)
+                .ok_or_else(|| invalid("parallel packed update overflow"))?;
+            self.packed_ssa_regions = self
+                .packed_ssa_regions
+                .checked_add(result.packed_ssa_regions)
+                .ok_or_else(|| invalid("parallel SSA region overflow"))?;
+            self.guarded_loop_regions = self
+                .guarded_loop_regions
+                .checked_add(result.guarded_loop_regions)
+                .ok_or_else(|| invalid("parallel guarded loop count overflow"))?;
+            self.guarded_call_regions = self
+                .guarded_call_regions
+                .checked_add(result.guarded_call_regions)
+                .ok_or_else(|| invalid("parallel guarded call count overflow"))?;
+            self.frozen_map_regions = self
+                .frozen_map_regions
+                .checked_add(result.frozen_map_regions)
+                .ok_or_else(|| invalid("parallel frozen region overflow"))?;
+            self.frozen_map_reads = self
+                .frozen_map_reads
+                .checked_add(result.frozen_map_reads)
+                .ok_or_else(|| invalid("parallel frozen read overflow"))?;
+            self.worker_credit_claims = self
+                .worker_credit_claims
+                .checked_add(result.worker_credit_claims)
+                .ok_or_else(|| invalid("parallel work-credit statistics overflow"))?;
+            self.worker_credit_batches = self
+                .worker_credit_batches
+                .checked_add(result.worker_credit_batches)
+                .ok_or_else(|| invalid("parallel work-credit statistics overflow"))?;
+            self.worker_credit_reclaims = self
+                .worker_credit_reclaims
+                .checked_add(result.worker_credit_reclaims)
+                .ok_or_else(|| invalid("parallel work-credit statistics overflow"))?;
             self.fused_string_map_bytes = self
                 .fused_string_map_bytes
                 .checked_add(result.fused_string_map_bytes)
@@ -719,7 +769,7 @@ impl Context<'_, '_> {
             worker_credit_claims: self.worker_credit_claims,
             worker_credit_batches: self.worker_credit_batches,
             worker_credit_reclaims: self.worker_credit_reclaims,
-             fused_string_map_bytes: self.fused_string_map_bytes,
+            fused_string_map_bytes: self.fused_string_map_bytes,
         });
         Ok(Some(1))
     }

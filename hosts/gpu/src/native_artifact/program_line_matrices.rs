@@ -107,7 +107,8 @@ impl State {
     }
 
     pub(super) fn parked_view_nodes(&self, memory: &ManagedMemoryBudget) -> Result<u64, Error> {
-        self.retained_demand(None, memory)?.retained_nodes
+        self.retained_demand(None, memory)?
+            .retained_nodes
             .checked_sub(u64::from(self.reservation.is_some()))
             .ok_or_else(|| invalid("line matrix private node inventory underflows"))
     }

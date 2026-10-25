@@ -265,16 +265,21 @@ impl State {
         // metadata/index residency, using the same finite account and Slot.
         // It does not create a selector Value or synthetic TurnMemoryPlan.
         let before_work = ctx.library.used();
-        let outcome = ctx.call_caches.with_repeated(site, &ctx.library, |cache|
-            selected.selected_u64_string_span(cache,
-            &owner,
-            &selector,
-            ctx.limits,
-            &ctx.library,
-            coexistence,
-        ));
+        let outcome = ctx.call_caches.with_repeated(site, &ctx.library, |cache| {
+            selected.selected_u64_string_span(
+                cache,
+                &owner,
+                &selector,
+                ctx.limits,
+                &ctx.library,
+                coexistence,
+            )
+        });
         let super::super::session::CallCacheEntry::Repeated(cache, _) =
-            &ctx.call_caches.entries[site] else { unreachable!("retained cache kind"); };
+            &ctx.call_caches.entries[site]
+        else {
+            unreachable!("retained cache kind");
+        };
         let new_bytes = cache.retained_projection_bytes();
         let new_nodes = cache.retained_projection_nodes();
         #[cfg(all(test, feature = "canonical-native-program"))]
