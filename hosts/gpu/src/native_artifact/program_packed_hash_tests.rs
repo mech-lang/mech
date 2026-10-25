@@ -219,14 +219,14 @@ fn direct_present_probe_keeps_collisions_wrapping_misses_and_bounded_failure() {
     for query in 0..16u64 {
         for high in [0, 1 << 31, 1 << 60] {
             let hash = crate::native_artifact::program_packed_map::hash(query, high);
-            let start = hash as usize & 15;
+            let start = hash as usize & 8;
             let tag = (hash >> 57) as u8;
             // Actual same-bucket/fingerprint collisions, rather than controls
             // inconsistent with their stored keys. These exercise more than
             // one matching byte, wraparound and a completely full first group.
             let collisions = (0..1_000_000u64).filter(|&key| key != query && {
                 let other = crate::native_artifact::program_packed_map::hash(key, high);
-                other as usize & 15 == start && (other >> 57) as u8 == tag
+                other as usize & 8 == start && (other >> 57) as u8 == tag
             }).take(16).collect::<Vec<_>>();
             assert_eq!(collisions.len(), 16, "bounded collision fixture");
             for (count, hit) in [(0, None), (1, Some(0)), (3, Some(2)),
