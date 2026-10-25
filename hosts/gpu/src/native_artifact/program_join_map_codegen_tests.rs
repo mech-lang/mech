@@ -94,11 +94,10 @@ impl Compiled {
             0,
         ];
         let before = geometry;
-        // Keep the prior u16 representation as an independent scalar oracle.
-        // Missing entries within a byte retain their high-bit representation;
-        // larger markers use the canonical sentinel. Every ASCII output,
-        // including zero, retains its original byte.
-        let prepared = table.map(|value| if value <= 255 { value as u8 } else { 128 });
+        // The old u16 table remains the independent scalar oracle. The shared
+        // owner preparation may select either representation, preserving every
+        // ASCII value, missing-key outcome and valid zero.
+        let prepared = crate::native_artifact::program_ascii_map::test_table(table);
         // SAFETY: immutable ASCII data, real LF allocation, fixed initialized
         // table and distinct output extent all outlive this synchronous call.
         // Guard bytes make row/tail overwrites visible. The kernel must fill
@@ -213,7 +212,7 @@ fn joined_transform_keeps_first_missing_zero_outputs_and_fills_every_raw_suffix(
 fn joined_transform_rejects_bad_extents_before_publishing_initialization() {
     let implementations = implementations();
     let source = b"aa\nbb\n";
-    let table = [0u8; 128];
+    let table = crate::native_artifact::program_ascii_map::test_table(&[0u16; 128]);
     let offsets = [2u32, 5];
     for c in &implementations {
         for case in 0..8 {
@@ -267,33 +266,69 @@ fn joined_transform_rejects_bad_extents_before_publishing_initialization() {
 #[test]
 fn joined_byte_table_rejects_every_non_ascii_key_without_publishing() {
     let implementations = implementations();
-    let table = [0u8; 128];
-    for c in &implementations {
-        for length in [1, 15, 16, 17, 31, 32, 33, 63] {
-            for invalid in 128..=255 {
-                for at in [0, length / 2, length - 1] {
-                    let mut source = vec![b'A'; length];
-                    source[at] = invalid;
-                    let original = source.clone();
-                    let mut output = vec![0xca; length + 16];
-                    let mut words = [source.as_ptr() as u64, length as u64, 0, 0, 1, 0, 0];
-                    let geometry = words;
-                    let result = unsafe {
-                        (c.entry)(
-                            words.as_mut_ptr() as u64,
-                            length as u64,
-                            table.as_ptr() as u64,
-                            output.as_mut_ptr().add(8) as u64,
-                            1,
-                        )
-                    };
-                    assert_eq!(result, u64::MAX);
-                    assert_eq!(words, geometry);
-                    assert_eq!(source, original);
-                    assert!(output[..8].iter().all(|v| *v == 0xca));
-                    assert!(output[8 + length..].iter().all(|v| *v == 0xca));
+    for cells in [[0u16; 128], core::array::from_fn(|key| key as u16)] {
+        let table = crate::native_artifact::program_ascii_map::test_table(&cells);
+        for c in &implementations {
+            for length in [1, 15, 16, 17, 31, 32, 33, 63] {
+                for invalid in 128..=255 {
+                    for at in [0, length / 2, length - 1] {
+                        let mut source = vec![b'A'; length];
+                        source[at] = invalid;
+                        let original = source.clone();
+                        let mut output = vec![0xca; length + 16];
+                        let mut words = [source.as_ptr() as u64, length as u64, 0, 0, 1, 0, 0];
+                        let geometry = words;
+                        let result = unsafe {
+                            (c.entry)(
+                                words.as_mut_ptr() as u64,
+                                length as u64,
+                                table.as_ptr() as u64,
+                                output.as_mut_ptr().add(8) as u64,
+                                1,
+                            )
+                        };
+                        assert_eq!(result, u64::MAX);
+                        assert_eq!(words, geometry);
+                        assert_eq!(source, original);
+                        assert!(output[..8].iter().all(|v| *v == 0xca));
+                        assert!(output[8 + length..].iter().all(|v| *v == 0xca));
+                    }
                 }
             }
         }
+    }
+}
+
+#[test]
+fn projected_joined_map_keeps_domain_failures_zero_outputs_and_every_raw_suffix() {
+    let implementations = implementations();
+    let table = core::array::from_fn(|key| {
+        if key & 64 == 64 && key & 31 != 11 {
+            ((key & 31) * 7 % 128) as u16
+        } else {
+            256
+        }
+    });
+    let prepared = crate::native_artifact::program_ascii_map::test_table(&table);
+    assert_eq!(prepared[crate::native_artifact::program_ascii_map::KIND], 1);
+    for length in [1, 7, 8, 15, 16, 17, 31, 32, 33, 60, 65] {
+        for key in 0..128 {
+            for at in [0, length / 2, length - 1] {
+                let mut source = vec![b'@'; length];
+                source[at] = key;
+                for c in &implementations {
+                    c.check(&source, None, 0, 1, &table, true, at % 8);
+                }
+            }
+        }
+    }
+    let source = b"@AP\r\n\n@AP\n@";
+    let offsets = source
+        .iter()
+        .enumerate()
+        .filter_map(|(i, &b)| (b == b'\n').then_some(i as u32))
+        .collect::<Vec<_>>();
+    for c in &implementations {
+        c.check(source, Some(&offsets), 0, offsets.len(), &table, true, 3);
     }
 }

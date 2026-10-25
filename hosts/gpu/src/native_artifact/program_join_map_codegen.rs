@@ -2,10 +2,10 @@
 //! Original join/map admissions fund the complete bounded leaf. A missing
 //! mapping records its first ordinal, then copies the remaining source raw;
 //! only the original later map boundary reports that source-level failure.
+use super::ascii_map_codegen::{self, ScalarTable, Tables};
 use super::{NativeCompileError, backend};
-use cranelift_codegen::ir::{
-    AbiParam, Endianness, InstBuilder, MemFlags, Value, condcodes::IntCC, types,
-};
+use crate::native_artifact::program_ascii_map::Kind;
+use cranelift_codegen::ir::{AbiParam, Endianness, InstBuilder, MemFlags, condcodes::IntCC, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::NativeStringMapRegion;
@@ -23,54 +23,21 @@ pub(in crate::native_artifact) fn define<M: Module>(
     define_impl(module, region, vectorized)
 }
 
-struct Tables {
-    bands: Vec<Value>,
-    offsets: Vec<Value>,
-    high_bit: Value,
-}
-impl Tables {
-    fn new(b: &mut FunctionBuilder<'_>, table: Value) -> Self {
-        let mut bands = Vec::new();
-        let mut offsets = Vec::new();
-        for index in 0..8 {
-            // The owning host already encoded valid ASCII values and the
-            // high-bit missing sentinel. Load only the eight final byte
-            // vectors; no conversion can be rematerialized in the row loop.
-            bands.push(
-                b.ins()
-                    .load(types::I8X16, MemFlags::new(), table, index * 16),
-            );
-            let offset = b.ins().iconst(types::I8, (index * 16) as i64);
-            offsets.push(b.ins().splat(types::I8X16, offset));
-        }
-        let high = b.ins().iconst(types::I8, 128);
-        let high_bit = b.ins().splat(types::I8X16, high);
-        Self {
-            bands,
-            offsets,
-            high_bit,
-        }
-    }
-    fn map(&self, b: &mut FunctionBuilder<'_>, address: Value) -> (Value, Value) {
-        let keys = b.ins().load(types::I8X16, MemFlags::new(), address, 0);
-        let mut mapped = b.ins().swizzle(self.bands[0], keys);
-        for index in 1..8 {
-            let indices = b.ins().isub(keys, self.offsets[index]);
-            let part = b.ins().swizzle(self.bands[index], indices);
-            mapped = b.ins().bor(mapped, part);
-        }
-        // The owning source is proved ASCII. Retain a bounded rejection for a
-        // violated raw entry contract rather than indexing outside the table.
-        let invalid = b.ins().bor(mapped, keys);
-        let invalid = b.ins().band(invalid, self.high_bit);
-        (mapped, b.ins().vany_true(invalid))
-    }
-}
-
 fn define_impl<M: Module>(
     module: &mut M,
     region: &NativeStringMapRegion,
     vectorized: bool,
+) -> Result<(FuncId, u64, u64), NativeCompileError> {
+    let full = define_leaf(module, region, vectorized, Kind::Full)?;
+    let projected = define_leaf(module, region, vectorized, Kind::Projected)?;
+    ascii_map_codegen::dispatch(module, &symbol(region.collection()), full, projected)
+}
+
+fn define_leaf<M: Module>(
+    module: &mut M,
+    region: &NativeStringMapRegion,
+    vectorized: bool,
+    kind: Kind,
 ) -> Result<(FuncId, u64, u64), NativeCompileError> {
     let mut signature = module.make_signature();
     // Owned geometry, exact output extent, immutable map table, output spare
@@ -78,7 +45,11 @@ fn define_impl<M: Module>(
     signature.params = vec![AbiParam::new(types::I64); 5];
     signature.returns.push(AbiParam::new(types::I64));
     let function = module
-        .declare_function(&symbol(region.collection()), Linkage::Local, &signature)
+        .declare_function(
+            &format!("{}_{}", symbol(region.collection()), kind.suffix()),
+            Linkage::Local,
+            &signature,
+        )
         .map_err(backend)?;
     let mut context = module.make_context();
     context.func.signature = signature;
@@ -167,10 +138,10 @@ fn define_impl<M: Module>(
         let invalid = b.ins().icmp(IntCC::UnsignedGreaterThan, end, offset_count);
         b.ins().brif(invalid, error, &[], setup, &[]);
         b.switch_to_block(setup);
-        // Load the eight prepared byte vectors before row traversal. There
-        // are no u16 vectors or narrowing operations for the backend to keep
-        // live or rematerialize per short row, and no per-row host callback.
-        let tables = vectorized.then(|| Tables::new(&mut b, table));
+        // The outer dispatch selected a complete prepared representation once.
+        // Both scalar and vector paths use its identical mapping algebra.
+        let scalar = ScalarTable::new(&mut b, table, kind);
+        let tables = vectorized.then(|| Tables::new(&mut b, table, kind));
         let active = b.ins().ireduce(types::I8, enabled);
         let missing = b.ins().select(active, payload, zero);
         b.ins().jump(
@@ -261,7 +232,8 @@ fn define_impl<M: Module>(
         let vector_index = b.block_params(map_vector)[0];
         if let Some(tables) = &tables {
             let address = b.ins().iadd(input, vector_index);
-            let (mapped, invalid) = tables.map(&mut b, address);
+            let keys = b.ins().load(types::I8X16, MemFlags::new(), address, 0);
+            let (mapped, invalid) = tables.map(&mut b, keys);
             b.ins().brif(
                 invalid,
                 map_scalar,
@@ -308,8 +280,7 @@ fn define_impl<M: Module>(
         let ascii = b.ins().icmp_imm(IntCC::UnsignedLessThan, key, 128);
         b.ins().brif(ascii, map_lookup, &[], error, &[]);
         b.switch_to_block(map_lookup);
-        let address = b.ins().iadd(table, key);
-        let value = b.ins().load(types::I8, MemFlags::new(), address, 0);
+        let value = scalar.lookup(&mut b, key);
         let present = b.ins().icmp_imm(IntCC::UnsignedLessThan, value, 128);
         b.ins().brif(present, map_write, &[], map_missing, &[]);
         b.switch_to_block(map_write);
