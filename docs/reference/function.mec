@@ -102,3 +102,19 @@ fib(n<u64>) => <u64>
 xs := 0u64..=10u64
 fib(xs)
 ```
+
+A pure unary function declared for one scalar can also be applied element by
+element to a matrix. This applies to expression, statement, and pattern bodies.
+The result retains both matrix axes, including empty dimensions. Each element
+uses the function's declared input and output kinds; a checked error prevents
+publication of a partial result.
+
+```
+double(x<u64>) => (out<u64>) :=
+  out := x + x.
+
+double([1u64 2u64; 3u64 4u64])
+-- Result: [2u64 4u64; 6u64 8u64]
+```
+
+A function declared to accept a matrix consumes that matrix as its argument.

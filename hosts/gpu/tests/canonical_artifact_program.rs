@@ -69,6 +69,12 @@ mod word_read_qualification;
 #[path = "support/canonical_program_narrow_words.rs"]
 mod narrow_word_qualification;
 
+#[path = "support/canonical_program_matchfinder.rs"]
+mod matchfinder_qualification;
+
+#[path = "support/canonical_program_function_broadcast.rs"]
+mod function_broadcast_qualification;
+
 #[path = "support/canonical_program_local_buffers.rs"]
 mod local_buffer_qualification;
 

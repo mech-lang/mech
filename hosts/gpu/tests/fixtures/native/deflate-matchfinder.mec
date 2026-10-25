@@ -1,0 +1,59 @@
+// Shared DEFLATE match-finder routines, translated from libdeflate
+// b122c8be1d78b19f6d0a6efc5bb79bfcbb30dd51 and roc-deflate
+// 671077457ff7ef3a3d44caf715a3fc595addf379. See deflate-huffman-LICENSES.md.
+// Input positions below are zero-based; Mech's matrix selectors are one-based.
++> bits
+
+byte(input<[u8]>, at<u64>) => (out<u64>) :=
+  out<u64> := input[at + 1u64].
+load-prefix(input<[u8]>, at<u64>) => (out<u32>) :=
+  lo := bits/or(byte(input, at), bits/shift-left-wrap(byte(input, at + 1u64), 8u64))
+  hi := bits/or(byte(input, at + 2u64), bits/shift-left-wrap(byte(input, at + 3u64), 8u64))
+  out<u32> := bits/or(lo, bits/shift-left-wrap(hi, 16u64)).
+load-word(input<[u8]>, at<u64>) => (out<u64>) :=
+  a := bits/or(byte(input, at), bits/shift-left-wrap(byte(input, at + 1u64), 8u64))
+  b := bits/or(byte(input, at + 2u64), bits/shift-left-wrap(byte(input, at + 3u64), 8u64))
+  c := bits/or(byte(input, at + 4u64), bits/shift-left-wrap(byte(input, at + 5u64), 8u64))
+  d := bits/or(byte(input, at + 6u64), bits/shift-left-wrap(byte(input, at + 7u64), 8u64))
+  lo := bits/or(a, bits/shift-left-wrap(b, 16u64))
+  hi := bits/or(c, bits/shift-left-wrap(d, 16u64))
+  out := bits/or(lo, bits/shift-left-wrap(hi, 32u64)).
+lz-hash(sequence<u32>, num-bits<u64>) => (out<u64>) :=
+  wide<u64> := sequence
+  product := bits/and(bits/wrapping-mul(wide, 506832829u64), 4294967295u64)
+  out := bits/shift-right-wrap(product, 32u64 - num-bits).
+
+// As in the C routine, the caller guarantees start <= maximum, match-at <
+// str-at, and maximum readable bytes at both positions. Already matched prefix
+// bytes are deliberately not rechecked. The compressor limits maximum to 258.
+#Extend(input<[u8]>, str-at<u64>, match-at<u64>, start<u64>, maximum<u64>) => <u64>
+  | :Words(length<u64>)
+  | :Compared(length<u64>, difference<u64>)
+  | :Tail(length<u64>)
+  | :Done(length<u64>).
+#Extend(input, str-at, match-at, start, maximum) -> :Words(start)
+  :Words(length)
+    | maximum - length < 8u64 -> :Tail(length)
+    | * -> {
+        difference := bits/xor(load-word(input, str-at + length), load-word(input, match-at + length))
+      } -> :Compared(length, difference)
+  :Compared(length, difference)
+    | difference == 0u64 -> :Words(length + 8u64)
+    | * -> :Done(length + bits/shift-right-wrap(bits/trailing-zeros(difference), 3u64))
+  :Tail(length)
+    | length >= maximum -> :Done(length)
+    | byte(input, str-at + length) == byte(input, match-at + length) -> :Tail(length + 1u64)
+    | * -> :Done(length)
+  :Done(length) => length.
+
+
+initial-nodes(count<u64>) => (out<[u16]>) :=
+  out := [0u16 | i <- 0u64..=count, i < count].
+rebase-node(node<u16>) => (out<u16>) :=
+  wide<u64> := node
+  out<u16> := ((wide < 32768u64)? | true => 0u64 | false => wide - 32768u64).
+rebase-nodes(nodes<[u16]>) => (out<[u16]>) :=
+  out := rebase-node(nodes).
+node-index(base<u64>, node<u16>) => (out<u64>) :=
+  wide<u64> := node
+  out := bits/wrapping-sub(bits/wrapping-add(base, wide), 32768u64).

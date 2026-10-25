@@ -524,8 +524,10 @@ impl SemanticBuilder {
                 ));
             }
             let actual = self.schema_draft_of(input)?;
+            // A unary scalar function maps matrix elements regardless of its
+            // body syntax. The lift retains the matrix shape and admits only
+            // pure element operations when its completed body is packaged.
             let matrix_lift = parameters.len() == 1
-                && matches!(&body, DocumentFunctionBody::Patterns(_))
                 && schema.dimension_parameters.is_empty()
                 && matches!(
                     &actual.body,
