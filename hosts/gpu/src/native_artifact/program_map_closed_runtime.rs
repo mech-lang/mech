@@ -96,7 +96,15 @@ impl Owner<'_> {
             packed.insert_missing(low, high, args[2]).map_err(storage_error)?;
             return Ok(0);
         }
-        if op == 8 { return Err(storage_error(super::StorageError::Binding("missing map key"))); }
+        if op == 8 {
+            // A source lookup miss is a library failure, even when its table
+            // access was lowered into the private packed representation.
+            return Err(Error::Library {
+                origin: self.descriptor.plan.blocks()[site].origin(),
+                error: mech_engine::native_artifact::NativeCollectionInvocationError::Kernel(
+                    mech_core::ResidentKernelError::InvalidInput),
+            });
+        }
         if op == 9 { return Err(invalid("invalid generated packed-map operation")); }
         if matches!(op, 10..=12) {
             let packed = self.packed.as_ref().ok_or_else(|| invalid("packed call cap without owner"))?;

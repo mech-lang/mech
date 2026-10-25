@@ -204,7 +204,9 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
                         Failure::MissingKey => {
                             assert_eq!(status, STATUS_ADMISSION);
                             assert_eq!((observed.bound[8], observed.bound[7]), (1, 0));
-                            assert!(format!("{error:?}").contains("missing map key"));
+                            assert!(matches!(&error, NativeProgramExecutionError::Library {
+                                origin, error: NativeCollectionInvocationError::Kernel(mech_core::ResidentKernelError::InvalidInput),
+                            } if *origin == source_origin), "{error:?}");
                         }
                         Failure::MalformedHelper => {
                             assert_eq!(status, STATUS_ABI);
