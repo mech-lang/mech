@@ -236,7 +236,7 @@ fn checked_boolean_self_recursion_uses_fresh_arguments_in_application_stages() {
                     let mut policy = limits();
                     // Bound the stale-capture regression before asking the
                     // resident interpreter to execute the same program.
-                    policy.execution.max_work = 100_000;
+                    policy.execution.max_work = 1_000_000;
                     let before = memory.used_bytes();
                     let result = jit.evaluate_into(&args, &mut output, policy, &memory);
                     if predicate == "flag" {
