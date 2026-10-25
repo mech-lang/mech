@@ -87,6 +87,9 @@ mod dynamic_projection_qualification;
 #[path = "support/canonical_program_nested_tail.rs"]
 mod nested_tail_qualification;
 
+#[path = "support/canonical_program_binary_tree.rs"]
+mod binary_tree_qualification;
+
 #[path = "support/canonical_program_recursive_statements.rs"]
 mod recursive_statement_qualification;
 

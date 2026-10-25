@@ -13,6 +13,14 @@ and a broadcast rebase function.
 The U16 node bias follows Roc; the C reference generator converts between the
 signed C and biased unsigned representations.
 
+`deflate-binary-tree.mec` translates the same pinned Roc project's complete
+one-byte search and skip routines, using ordinary statement functions and tail
+recursion in place of its local while loops. The C reference generator executes
+the pinned libdeflate routines and converts the complete tables to Roc's layout.
+This translation was made in 2026. Entry assertions, prefetch hints, unaligned
+loads, wrapping narrow casts, and efficient buffer transport remain unfinished
+and are documented in the benchmark README.
+
 The Roc source is Copyright 2024 Niclas Åhdén, licensed under Apache-2.0;
 the full license is reproduced below.
 The Mech translation was made in 2026. Indexing was changed to Mech's one-based
