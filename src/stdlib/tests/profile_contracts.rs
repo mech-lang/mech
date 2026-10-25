@@ -861,6 +861,42 @@ fn distribution_size_report_catalog_counts() {
             runtime_surface_digest,
         );
 
+        // Distribution snapshots may advance for exact retained additions,
+        // but every predecessor factory identity must remain unchanged.
+        #[cfg(any(feature = "full_runtime", feature = "standard_compiler"))]
+        if let Ok(expected) = std::env::var("MECH_EXPECT_PRE_WORD_MAP_RUNTIME_SURFACE_DIGEST") {
+            assert_bits_factories(&catalog);
+            let mut retained = catalog
+                .runtime_entries()
+                .filter(|entry| {
+                    !is_bits_factory(&entry.name)
+                        && !matches!(
+                            entry.name.as_str(),
+                            "map/new" | "map/insert" | "map/contains-key"
+                        )
+                })
+                .map(|entry| format!("{}\t{}\n", id_hex(entry.id.raw()), entry.name))
+                .collect::<Vec<_>>();
+            assert_eq!(runtime_factory_count - retained.len(), 14);
+            let expected_count = std::env::var("MECH_EXPECT_PRE_WORD_MAP_RUNTIME_FACTORY_COUNT")
+                .unwrap()
+                .parse::<usize>()
+                .unwrap();
+            assert_eq!(retained.len(), expected_count);
+            retained.sort();
+            let digest = Sha256::digest(retained.concat().as_bytes())
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>();
+            assert_eq!(digest, expected);
+            let expected_source =
+                std::env::var("MECH_EXPECT_PRE_WORD_MAP_SOURCE_SPECIALIZER_COUNT")
+                    .unwrap()
+                    .parse::<usize>()
+                    .unwrap();
+            assert_eq!(catalog.specializer_count(), expected_source + 14);
+        }
+
         if let Ok(expected) = std::env::var("MECH_EXPECT_RUNTIME_FACTORY_COUNT") {
             assert_eq!(runtime_factory_count, expected.parse::<usize>().unwrap());
         }
