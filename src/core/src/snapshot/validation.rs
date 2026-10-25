@@ -26,6 +26,10 @@ mod frozen_identity_tests;
 #[path = "resident_token_tests.rs"]
 mod resident_token_tests;
 
+#[cfg(test)]
+#[path = "string_facts_tests.rs"]
+mod string_facts_tests;
+
 #[path = "owned_string.rs"]
 mod owned_string;
 pub use owned_string::{OwnedSnapshotBytes, OwnedSnapshotString, StringOwnershipTransfer};
@@ -432,6 +436,10 @@ impl SnapshotBudgetRegistration {
 #[derive(Debug)]
 struct FrozenSnapshotData {
     data: ValueData,
+    // Representation metadata belongs to this exact immutable payload. The
+    // inline cell is included in every concrete owner/weak-shell admission.
+    // Sharing/importing a root shares the fact, not resource authority.
+    string_ascii_without_crlf: SharedOwnershipCell<bool>,
     // This receipt fingerprint is not validation, ownership or capability
     // authority. Retain its exact deterministic algorithm, but walk payloads
     // only if a receipt requests it. The admitted immutable owner contains the
@@ -538,6 +546,23 @@ impl core::fmt::Debug for Value {
 }
 
 impl Value {
+    /// Whether this scalar String is ASCII without a CRLF grapheme. Derived
+    /// lazily from the immutable bytes, once per shared data owner. The inline
+    /// cache allocates nothing and is not a capability or admission witness;
+    /// callers must retain their original representation-scan work charges.
+    /// Other payload kinds return None without initializing the cell.
+    pub fn string_ascii_without_crlf(&self) -> Option<bool> {
+        let ValueData::String(text) = self.data() else { return None; };
+        Some(*self.root.data.string_ascii_without_crlf.get_or_init(|| {
+            // Keep raw-byte and all-bits comparison reductions independent
+            // until their final interpretation, allowing vector reduction.
+            let (raw, cr) = text.as_bytes().iter().fold((0u8, 0u8), |(raw, cr), &byte| {
+                (raw | byte, cr | 0u8.wrapping_sub(u8::from(byte == b'\r')))
+            });
+            raw & 0x80 == 0 && (cr == 0 || !text.as_bytes().windows(2).any(|p| p == b"\r\n"))
+        }))
+    }
+
     /// Creates an opaque weak identity without allocating or retaining payload.
     pub fn frozen_storage_identity(&self) -> FrozenSnapshotIdentity {
         FrozenSnapshotIdentity {
@@ -2524,6 +2549,7 @@ fn finalized_value(
         root: Arc::new(FrozenSnapshotStorage {
             data: Arc::new(FrozenSnapshotData {
                 data,
+                string_ascii_without_crlf: SharedOwnershipCell::new(),
                 resident_token: SharedOwnershipCell::new(),
                 shape,
                 ownership: SharedOwnershipCell::new(),
@@ -2564,6 +2590,7 @@ fn prepared_snapshot_storage(
     let shape = context.try_arc(shape)?;
     let data = context.try_arc(FrozenSnapshotData {
         data,
+        string_ascii_without_crlf: SharedOwnershipCell::new(),
         resident_token: SharedOwnershipCell::new(),
         shape: shape.clone(),
         ownership: SharedOwnershipCell::new(),

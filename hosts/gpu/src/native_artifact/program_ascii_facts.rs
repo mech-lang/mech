@@ -23,7 +23,7 @@ impl Cache {
     /// even on a hit. Fresh source kind, owner, geometry, quotas and execution
     /// phase checks remain the caller's responsibility on EVERY invocation.
     pub(super) fn inspect(&mut self, value: &Value) -> Result<bool, Error> {
-        let ValueData::String(text) = value.data() else {
+        let ValueData::String(_) = value.data() else {
             return Err(invalid("native representation fact requires a String"));
         };
         if let Some(fact) = &self.fact
@@ -33,8 +33,8 @@ impl Cache {
             tests::hit();
             return Ok(fact.ascii_without_crlf);
         }
-        let ascii_without_crlf =
-            mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(text);
+        let ascii_without_crlf = value.string_ascii_without_crlf()
+            .ok_or_else(|| invalid("native representation fact requires a String"))?;
         #[cfg(all(test, feature = "canonical-native-program"))]
         tests::scanned();
         // Release the old weak shell before retaining a replacement. The

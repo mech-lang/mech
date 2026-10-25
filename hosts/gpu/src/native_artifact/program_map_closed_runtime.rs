@@ -213,7 +213,7 @@ impl<'plan> State<'plan> {
         let scan = (text.len() as u64).checked_mul(64).and_then(|n| n.checked_add(512))
             .ok_or_else(|| invalid("closed map String scan overflow"))?;
         ctx.control.work.charge(Phase::Setup, scan)?;
-        if !mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(text) {
+        if source.string_ascii_without_crlf() != Some(true) {
             return Ok(None);
         }
         if source.memory_budget_retained_bytes(&ctx.library.memory_budget()).is_none() {
