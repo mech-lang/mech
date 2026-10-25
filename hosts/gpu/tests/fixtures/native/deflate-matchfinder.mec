@@ -5,20 +5,32 @@
 +> bits
 +> sequence
 
-byte(input<[u8]>, at<u64>) => (out<u64>) :=
+byte-readable(input<[u8]>, at<u64>) => (out<u64>) :=
   out<u64> := input[at + 1u64].
-load-prefix(input<[u8]>, at<u64>) => (out<u32>) :=
-  lo := bits/or(byte(input, at), bits/shift-left-wrap(byte(input, at + 1u64), 8u64))
-  hi := bits/or(byte(input, at + 2u64), bits/shift-left-wrap(byte(input, at + 3u64), 8u64))
+// List.get defaults to zero; the one-based selector is only formed on the
+// readable path, so an arbitrary zero-based U64 offset cannot overflow it.
+byte(input<[u8]>, at<u64>) => (out<u64>) :=
+  out := ((at < sequence/length(input))? | true => byte-readable(input, at) | false => 0u64).
+prefix-readable(input<[u8]>, at<u64>) => (out<u32>) :=
+  lo := bits/or(byte-readable(input, at), bits/shift-left-wrap(byte-readable(input, at + 1u64), 8u64))
+  hi := bits/or(byte-readable(input, at + 2u64), bits/shift-left-wrap(byte-readable(input, at + 3u64), 8u64))
   out<u32> := bits/or(lo, bits/shift-left-wrap(hi, 16u64)).
-load-word(input<[u8]>, at<u64>) => (out<u64>) :=
-  a := bits/or(byte(input, at), bits/shift-left-wrap(byte(input, at + 1u64), 8u64))
-  b := bits/or(byte(input, at + 2u64), bits/shift-left-wrap(byte(input, at + 3u64), 8u64))
-  c := bits/or(byte(input, at + 4u64), bits/shift-left-wrap(byte(input, at + 5u64), 8u64))
-  d := bits/or(byte(input, at + 6u64), bits/shift-left-wrap(byte(input, at + 7u64), 8u64))
+// from_le_bytes defaults the entire word to zero when its window is short.
+// Guard subtraction before forming any index; this also covers U64::MAX.
+load-prefix(input<[u8]>, at<u64>) => (out<u32>) :=
+  available := sequence/length(input)
+  out := ((available >= 4u64)? | true => ((at <= available - 4u64)? | true => prefix-readable(input, at) | false => 0u32) | false => 0u32).
+word-readable(input<[u8]>, at<u64>) => (out<u64>) :=
+  a := bits/or(byte-readable(input, at), bits/shift-left-wrap(byte-readable(input, at + 1u64), 8u64))
+  b := bits/or(byte-readable(input, at + 2u64), bits/shift-left-wrap(byte-readable(input, at + 3u64), 8u64))
+  c := bits/or(byte-readable(input, at + 4u64), bits/shift-left-wrap(byte-readable(input, at + 5u64), 8u64))
+  d := bits/or(byte-readable(input, at + 6u64), bits/shift-left-wrap(byte-readable(input, at + 7u64), 8u64))
   lo := bits/or(a, bits/shift-left-wrap(b, 16u64))
   hi := bits/or(c, bits/shift-left-wrap(d, 16u64))
   out := bits/or(lo, bits/shift-left-wrap(hi, 32u64)).
+load-word(input<[u8]>, at<u64>) => (out<u64>) :=
+  available := sequence/length(input)
+  out := ((available >= 8u64)? | true => ((at <= available - 8u64)? | true => word-readable(input, at) | false => 0u64) | false => 0u64).
 lz-hash(sequence<u32>, num-bits<u64>) => (out<u64>) :=
   wide<u64> := sequence
   product := bits/and(bits/wrapping-mul(wide, 506832829u64), 4294967295u64)
