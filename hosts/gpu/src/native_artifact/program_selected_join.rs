@@ -539,9 +539,16 @@ impl Context<'_, '_> {
                 if text.capacity() != capacity {
                     return Err(invalid("selected join output exceeds admitted capacity"));
                 }
-                if let Some(prepared) =
-                    self.prepare_join_map(site, region_index, &view, separator, &text, compute)?
-                {
+                if let Some(prepared) = self.prepare_join_map(
+                    site,
+                    region_index,
+                    &view,
+                    separator,
+                    &text,
+                    compute,
+                    peak,
+                    nodes,
+                )? {
                     let fusing =
                         mapped::Fusing::new(prepared, view, text, reservation, finalization)?;
                     return Ok(Completion::Private(State {
