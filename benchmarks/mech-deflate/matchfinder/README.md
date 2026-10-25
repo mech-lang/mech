@@ -13,16 +13,20 @@ candidate, excluded by the filter, so zero entries work without an empty numeric
 range (which Mech rejects). Rebasing broadcasts a pure scalar statement-body
 function over the node matrix. The compiler previously limited this matrix lift
 to pattern-body functions; it now uses the same shape-preserving collection path
-for expression and statement bodies as well. The sequential match-extension
-loop stops at the first unequal byte.
+for expression and statement bodies as well. Match extension now uses ordinary
+recursive functions for the same three loops as Roc: the first four words,
+remaining words, then trailing bytes. A selected mismatch returns immediately.
+Nested tail calls preserve the exact lexical loop target; this does not imply
+that the native compiler unrolls the first four comparisons into machine code.
 
 Positions in these helpers are zero-based; their actual Mech matrix reads are
 one-based and checked. `lz-hash` requires 1–32 hash bits. As in the C function,
-`#Extend` requires `start <= maximum`, `match-at < str-at`, and enough input at
+`extend-length` requires `start <= maximum`, `match-at < str-at`, and enough input at
 both positions. The first `start` bytes are already matched. DEFLATE uses a
 maximum match length of 258. The loaders currently assemble words from checked
 byte reads; they do not yet emit one unaligned machine load.
-The Mech loop also lacks C's initial four unrolled word comparisons.
+Roc's explicit entry-window check still needs to be ported before timing; these
+component tests supply the valid caller preconditions used by the C oracle.
 
 The node representation follows Roc: unsigned U16 entries are biased by 32768,
 so zero represents C's signed -32768 sentinel. Rebasing is saturated subtraction
@@ -52,6 +56,13 @@ compiler. Tests also compare resident execution, exact word values, matrix
 shape changes, late bounds/overflow failures, unchanged publication, and retry.
 The C implementation is only an expected-value generator.
 
+The selected resident comparisons keep their ordinary default compute cap.
+With recursive array transport, case `extend-35` reaches that cap (16777216)
+before completion; the test checks and records the precise compute denial.
+The same original/decoded native programs complete all 70 C cases under the
+existing explicit qualification limits. This exposes copying/admission overhead;
+it is not a compression timing result and no host default was increased.
+
 The table-capacity check explicitly permits 262144 output elements and ten
 billion finite execution and collection work units for the match finder's tables.
 The ordinary host profile retains its 65536-element cap. Work units include
@@ -73,8 +84,9 @@ Compiler work should support the equivalent Mech program, including ordinary
 collection operations and buffer updates, rather than change the algorithm to
 suit the backend.
 
-Before timing, finish the known word-load, first-four-word comparison, and
-buffer-ownership differences. Match the Roc harness's output-buffer reuse and
+Before timing, finish the known word-load, entry-window-check, and
+buffer-ownership differences, and inspect the first-four-word generated code.
+Match the Roc harness's output-buffer reuse and
 timed boundaries: input reading, output clearing, validation, and file writing
 are outside compression timing; compression's own allocation and work remain
 inside. Verify decompression against the complete input and compare the emitted
@@ -92,6 +104,9 @@ tuples, including runtime-sized unsigned buffers, and use scalar literal pattern
 such as `(xs, 0u64)`. Function-local mutable bindings are fresh values on each call.
 Shape closure, packed draft expansion, and publication remain explicitly admitted.
 
-This does not provide efficient array ownership. General nested tail calls and
-dynamic declared-FSM payload kinds also remain outside the current native path;
-they must not be bypassed by changing the compression algorithm to fit it.
+Nested tail calls through final match expressions now route to their owning
+function's loop. A helper function's own loop stays separate. Calls followed by
+more work, wrong lexical targets, and unproved partial matches remain rejected.
+This does not provide efficient array ownership. Dynamic declared-FSM payload
+kinds remain unsupported; the compressor must retain Roc's algorithm while
+remaining compiler gaps are filled.

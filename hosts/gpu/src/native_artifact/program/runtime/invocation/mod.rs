@@ -826,24 +826,18 @@ impl Invocation<'_, '_, '_> {
         } else {
             self.state.control.previous
         };
-        // A native aggregate latch has no managed move callback. Retire the
+        // A native scalar/aggregate latch has no managed move callback. Retire the
         // OTHER managed loop locals after that generated copy, before the next
         // visit, exactly as the managed latch used to do. Aggregate words own
         // no heap payload and are absent from the retirement inventory.
         if let Some(previous) = previous
-            && (self
-                .descriptor
-                .metadata()
-                .scalar_aggregates
-                .action(previous as usize)
-                .is_some()
-                || self.retained_native_action(previous as usize))
             && let NativeIterationAction::Latch { iteration } =
                 self.descriptor.metadata().plan.blocks()[previous as usize].action()
-            && matches!(
-                self.descriptor.metadata().plan.iterations()[*iteration as usize],
-                mech_engine::native_artifact::NativeControlLoop::Tail(_)
-            )
+            && let mech_engine::native_artifact::NativeControlLoop::Tail(tail) =
+                &self.descriptor.metadata().plan.iterations()[*iteration as usize]
+            && (self.descriptor.metadata().scalar_aggregates.action(previous as usize).is_some()
+                || self.retained_native_action(previous as usize)
+                || self.descriptor.metadata().plan.values()[tail.carrier().get() as usize].scalar_kind().is_some())
         {
             self.retire_tail_locals(*iteration, RetirementKind::TailLatch)?;
         }

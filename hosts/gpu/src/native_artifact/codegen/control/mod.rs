@@ -1186,9 +1186,12 @@ impl<'plan> CfgDefinition<'plan> {
                             hooks.collection(b, index, [zero; 2], error)?;
                             b.ins().load(types::I64, MemFlags::new(), hooks.result, 0)
                         }
-                        mech_engine::native_artifact::NativeControlLoopRef::Tail(_) => {
+                        mech_engine::native_artifact::NativeControlLoopRef::Tail(tail) => {
                             let zero = b.ins().iconst(types::I64, 0);
-                            if !aggregate {
+                            if !aggregate && plan.kind(tail.carrier()).is_some() {
+                                let value = load(b, locals, tail.seed())?;
+                                b.ins().store(MemFlags::new(), value, locals, offset(tail.carrier().get() as usize)?);
+                            } else if !aggregate {
                                 hooks
                                     .as_ref()
                                     .ok_or_else(|| backend("missing tail initializer hook"))?
@@ -1201,11 +1204,13 @@ impl<'plan> CfgDefinition<'plan> {
                     b.ins().store(MemFlags::new(), count, locals, offset(slot)?);
                 }
                 NativeIterationAction::Latch { iteration } => {
-                    if matches!(
-                        plan.iteration(*iteration as usize),
-                        mech_engine::native_artifact::NativeControlLoopRef::Tail(_)
-                    ) {
-                        if !aggregate {
+                    if let mech_engine::native_artifact::NativeControlLoopRef::Tail(tail) =
+                        plan.iteration(*iteration as usize)
+                    {
+                        if !aggregate && plan.kind(tail.carrier()).is_some() {
+                            let value = load(b, locals, tail.next())?;
+                            b.ins().store(MemFlags::new(), value, locals, offset(tail.carrier().get() as usize)?);
+                        } else if !aggregate {
                             let hooks = hooks
                                 .as_ref()
                                 .ok_or_else(|| backend("missing tail latch hook"))?;

@@ -7,15 +7,16 @@ are retained. Source pins are recorded in the program and reference fixtures.
 
 `deflate-matchfinder.mec` translates the shared hash, match extension, node
 initialization, and node rebasing routines from the same pinned projects.
-It uses checked little-endian byte assembly, a synchronous match-extension
-loop, a node initialization comprehension, and a broadcast rebase function.
+It uses checked little-endian byte assembly, ordinary tail-recursive match
+extension with Roc's first-four-word phase, a node initialization comprehension,
+and a broadcast rebase function.
 The U16 node bias follows Roc; the C reference generator converts between the
 signed C and biased unsigned representations.
 
 The Roc source is Copyright 2024 Niclas Åhdén, licensed under Apache-2.0;
 the full license is reproduced below.
 The Mech translation was made in 2026. Indexing was changed to Mech's one-based
-syntax, loops are expressed as synchronous FSMs, and checked conversions make
+syntax, loops use ordinary recursion or synchronous FSMs, and checked conversions make
 U32 packing explicit. The reference generator executes the original C function
 only to generate expected values; the Mech implementation does not call it.
 

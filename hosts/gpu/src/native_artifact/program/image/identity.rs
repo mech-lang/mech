@@ -213,7 +213,9 @@ fn selected_template(
 // buffers. Component parameters are resolved in their own schema arenas.
 // IR101 carries live unsigned buffer dimensions through structural projections
 // and lowers structurally total ordinary tail recursion on real argument values.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 101;
+// IR102 routes selected nested tail calls to the exact lexical target and does
+// not manufacture result copies for branches that only recur.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 102;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -355,7 +357,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 101;
 // inside the existing prepaid binding envelope, including cache rebindings.
 // Policy73 prepays schema closure and dimension witnesses before projecting a
 // runtime-shaped child, alongside its packed-to-draft expansion and publication.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 73;
+// Policy74 transports scalar Tail carriers in native words and retires their
+// other managed locals after the generated latch, as for native aggregates.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 74;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
