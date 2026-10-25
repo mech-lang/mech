@@ -208,7 +208,7 @@ fn full_knucleotide_original_and_decoded_execute_without_input_or_line_snapshots
     }
 }
 
-fn mapped_scan(separator: &str, shared: bool) -> String {
+pub(super) fn mapped_scan(separator: &str, shared: bool) -> String {
     let body = source()
         .strip_suffix("result\n")
         .unwrap()
