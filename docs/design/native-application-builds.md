@@ -300,6 +300,19 @@ so this support does not establish an in-place buffer throughput result.
 Document-level mutable bindings continue to allocate retained state, which the
 canonical native subset rejects.
 
+Transition blocks also support ordinary tuple destructuring. Each visit evaluates
+the whole right-hand side, including unused tuple fields, and nested synchronous
+FSM calls keep their local definition names separate from the caller's. A
+constant one-based tuple selector can lower to a checked structural projection
+when the maintained access factory certifies the exact schemas and contract.
+Dynamic tuple selection remains outside this native subset.
+
+The [DEFLATE Huffman qualification](../../benchmarks/mech-deflate/huffman/README.md)
+exercises these operations against pinned C reference values. It uses explicit
+finite native work and memory allowances. The ordinary resident whole-control
+limits remain enforced; indexed updates preserve a resource-limit error rather
+than relabeling it as an invalid result.
+
 This opt-in requires `cranelift_build`, a local workspace dependency tree, native
 emit and the current supported host. Linked binary names must be 1–64 ASCII
 letters, digits or hyphens, starting with a letter; they are never sanitized.

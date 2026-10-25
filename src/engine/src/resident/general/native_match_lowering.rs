@@ -350,6 +350,60 @@ impl Builder<'_> {
     ) -> Result<NativeProgramType, Error> {
         program_type(self.artifact, id, self.allow_collections)
     }
+    /// A constant tuple selector becomes the same checked structural child
+    /// operation used by pattern binding. Callers select it only after the
+    /// actual maintained access factory and its exact contract were certified.
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    fn tuple_scalar_projection(
+        &mut self,
+        at: NativeMatchOrigin,
+        arguments: &[NativeMatchValue],
+        output: NativeMatchValue,
+    ) -> Result<u32, Error> {
+        use crate::native_artifact::{NativeStructuralObservation as O, NativeStructuralStep as S};
+        let [source, selector] = arguments else {
+            return Err(Error::InvalidBinding {
+                node: Some(at.node()),
+            });
+        };
+        let ordinal = self
+            .constants
+            .iter()
+            .find_map(|(id, value)| (*value == *selector).then_some(*id))
+            .and_then(|id| self.artifact.constants().get(id))
+            .and_then(|value| mech_core::canonical_positional_ordinal(value.data()).ok())
+            .and_then(|ordinal| ordinal.checked_sub(1))
+            .and_then(|ordinal| u32::try_from(ordinal).ok())
+            .ok_or_else(|| {
+                unsupported(
+                    at.node(),
+                    "native tuple projection requires a valid constant ordinal",
+                )
+            })?;
+        let mech_core::SchemaBody::Tuple(fields) = self.ty(*source).definition().body() else {
+            return Err(Error::InvalidBinding {
+                node: Some(at.node()),
+            });
+        };
+        if fields.get(ordinal as usize) != Some(self.ty(output).definition().body()) {
+            return Err(Error::WitnessTypeMismatch { node: at.node() });
+        }
+        let id = self.block(at, NativeMatchAction::None)?;
+        self.blocks[id as usize].action = NativeIterationAction::Structural {
+            source: *source,
+            path: Box::new([S::TupleItem { ordinal }]),
+            observation: if self.ty(output).definition().body()
+                == &mech_core::SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
+            {
+                O::U64
+            } else {
+                O::CanonicalValue
+            },
+            output,
+        };
+        Ok(id)
+    }
+
     pub(super) fn primitive(
         &mut self,
         at: NativeMatchOrigin,
@@ -390,6 +444,11 @@ impl Builder<'_> {
                             node: Some(at.node()),
                         },
                     )?;
+                    if template.primitive()
+                        == crate::native_artifact::NativeCollectionPrimitive::TupleScalarProjection
+                    {
+                        return self.tuple_scalar_projection(at, arguments, output);
+                    }
                     let id = self.block(at, NativeMatchAction::None)?;
                     self.blocks[id as usize].action = NativeIterationAction::LibraryCall {
                         template,

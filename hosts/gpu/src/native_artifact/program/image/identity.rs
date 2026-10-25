@@ -204,7 +204,8 @@ fn selected_template(
 // IR95 adds the maintained U64 word primitives. IR96 additionally selects
 // checked unsigned scalar conversions through the original conversion leaf.
 // IR97 includes pure indexed matrix replacements in local transition code.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 97;
+// IR98 selects witnessed constant tuple reads as checked structural projections.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 98;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

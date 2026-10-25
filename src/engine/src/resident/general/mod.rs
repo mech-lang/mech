@@ -24632,7 +24632,7 @@ fn bind_control_block(
                     schema_key: value.schema_key(),
                     shape_instance: value.shape().clone(),
                     activation_fixed_shape: true,
-                    resolved_selector: None,
+                    resolved_selector: resident_resolved_selector(value),
                 })
             }
         }

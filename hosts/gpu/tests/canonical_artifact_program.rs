@@ -60,6 +60,9 @@ mod string_span_qualification;
 #[path = "support/canonical_program_access.rs"]
 mod access_qualification;
 
+#[path = "support/canonical_program_huffman.rs"]
+mod huffman_qualification;
+
 #[path = "support/canonical_program_local_buffers.rs"]
 mod local_buffer_qualification;
 
