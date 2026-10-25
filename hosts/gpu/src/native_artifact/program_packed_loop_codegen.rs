@@ -8,7 +8,8 @@ use super::packed_maps::{self, FrameState};
 #[cfg(test)]
 pub(in crate::native_artifact) use super::packed_maps::{take_frame_effect_emissions, without_frame_effects};
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types, condcodes::{FloatCC, IntCC}};
-use cranelift_frontend::{FunctionBuilder, Variable};
+use cranelift_frontend::FunctionBuilder;
+use super::ssa_words::Words;
 use mech_engine::native_artifact::{NativeAggregateWord as Word, NativeIterationAction as Action,
     NativeIterationTerminator as Term, NativeMapOwnerWords, NativeMatchAction as Scalar,
     NativeMatchTerminator as Branch, NativeMatchValue, NativeScalarAggregateAction as Aggregate,
@@ -18,7 +19,7 @@ use super::super::iteration_compiler::{CodegenReport, RegionToken};
 #[path = "program_scalar_edge_facts.rs"]
 mod edge_facts;
 #[path = "program_tag_threading.rs"]
-mod tag_threading;
+pub(super) mod tag_threading;
 #[path = "program_loop_bounds.rs"]
 mod loop_bounds;
 #[path = "program_lookup_facts.rs"]
@@ -150,7 +151,7 @@ fn field(layout: &NativeScalarAggregates, value: NativeMatchValue, index: usize)
     let (base, count) = layout.slot(value)?;
     (index < count).then(|| base + index)
 }
-fn aggregate_words(layout: &NativeScalarAggregates, action: &Aggregate,
+pub(super) fn aggregate_words(layout: &NativeScalarAggregates, action: &Aggregate,
     words: &mut BTreeSet<usize>) -> Option<()>
 {
     let output = match action {
@@ -249,42 +250,12 @@ fn words_for(code: CodePlan<'_>, closed: &Layout, id: usize,
     words.contains(&(region.tail.returned().get() as usize)).then_some(words)
 }
 
-struct Words { variables: BTreeMap<usize, Variable> }
-impl Words {
-    fn new(b: &mut FunctionBuilder<'_>, locals: Value, code: CodePlan<'_>, slots: BTreeSet<usize>)
-        -> Result<Self, NativeCompileError>
-    {
-        let constants = (0..code.constant_count()).map(|index| code.constant(index))
-            .collect::<Result<Vec<_>, _>>()?.into_iter()
-            .filter_map(|(value, word)| word.map(|word| (value.get() as usize, word)))
-            .collect::<BTreeMap<_, _>>();
-        let mut variables = BTreeMap::new();
-        for slot in slots {
-            let variable = b.declare_var(types::I64);
-            let value = if let Some(&word) = constants.get(&slot) {
-                b.ins().iconst(types::I64, word as i64)
-            } else { b.ins().load(types::I64, MemFlags::new(), locals, offset(slot)?) };
-            b.def_var(variable, value);
-            variables.insert(slot, variable);
-        }
-        Ok(Self { variables })
-    }
-    fn read(&self, b: &mut FunctionBuilder<'_>, slot: usize) -> Value { b.use_var(self.variables[&slot]) }
-    fn write(&self, b: &mut FunctionBuilder<'_>, slot: usize, value: Value) { b.def_var(self.variables[&slot], value); }
-    fn spill_live(&self, b: &mut FunctionBuilder<'_>, locals: Value, live: &BTreeSet<usize>) -> Result<(), NativeCompileError> {
-        for &slot in live {
-            let value = self.read(b, slot);
-            b.ins().store(MemFlags::new(), value, locals, offset(slot)?);
-        }
-        Ok(())
-    }
-    fn reload_live(&self, b: &mut FunctionBuilder<'_>, locals: Value, live: &BTreeSet<usize>) -> Result<(), NativeCompileError> {
-        for &slot in live {
-            let value = b.ins().load(types::I64, MemFlags::new(), locals, offset(slot)?);
-            self.write(b, slot, value);
-        }
-        Ok(())
-    }
+
+pub(super) fn emit_scalar_aggregate(b: &mut FunctionBuilder<'_>, state: &Words,
+    layout: &NativeScalarAggregates, action: &Aggregate, site: usize, error: Block)
+    -> Result<(), NativeCompileError>
+{
+    emit_aggregate_body(b, state, layout, action, site, &edge_facts::Proof::default(), error, None)
 }
 
 fn emit_aggregate(b: &mut FunctionBuilder<'_>, state: &Words, layout: &NativeScalarAggregates,
@@ -871,7 +842,7 @@ fn emit_body(b: &mut FunctionBuilder<'_>, frame: Value, locals: Value, pointer: 
     Ok((packed.constant_hash_loads(), endpoint_loads))
 }
 
-fn emit_source_terminator(b: &mut FunctionBuilder<'_>, words: &Words, code: CodePlan<'_>,
+pub(super) fn emit_source_terminator(b: &mut FunctionBuilder<'_>, words: &Words, code: CodePlan<'_>,
     terminator: Term, fail_at: Block, target: impl Fn(u32) -> Block)
 {
     match terminator {

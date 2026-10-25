@@ -22,6 +22,7 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub loop_constants: LoopConstants,
     pub steady_loops: Vec<SteadyLoop>,
     pub join_map_copies: Vec<JoinMapCopy>,
+    pub scalar_loops: Vec<ScalarLoop>,
     substitutions: usize,
     tag_records: usize,
     guarded_records: usize,
@@ -30,6 +31,19 @@ pub(in crate::native_artifact) struct CodegenReport {
     mutation_records: usize,
     count_value_records: usize,
     steady_records: usize,
+}
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct ScalarLoop {
+    pub header: usize,
+    pub carrier_word: usize,
+    pub register_words: usize,
+    pub source_sites: usize,
+    pub product_nodes: usize,
+    pub variants: Vec<u32>,
+    pub folded_branches: Vec<usize>,
+    pub known_latches: Vec<usize>,
+    pub maximum_source_instructions: usize,
+    pub fixed_template_instructions: usize,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct JoinMapCopy {
