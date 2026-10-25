@@ -237,6 +237,78 @@ fn final_contiguous_join_retires_payload_while_the_logical_owner_is_still_alive(
 }
 
 #[test]
+fn prepaid_empty_separator_copy_matches_every_utf8_split_and_contiguous_selection() {
+    for source in [
+        "",
+        "\n",
+        "\r\n",
+        "\r\r\n",
+        "a\nb\r\nc",
+        "é\n猫\r\nλ\n",
+        "e\u{301}\n\n猫\r\r\nlast\r",
+    ] {
+        let rows = source.lines().collect::<Vec<_>>();
+        for split in source.char_indices().map(|(i, _)| i).chain([source.len()]) {
+            for first in 0..=rows.len() {
+                for end in first..=rows.len() {
+                    let memory = ManagedMemoryBudget::new(1024 * 1024);
+                    let work = work(&memory);
+                    let mut store = prepare(4096, 4096, limits(), &work).unwrap();
+                    store.push(&source[..split]).unwrap();
+                    store.push(&source[split..]).unwrap();
+                    let facts = store.finish().unwrap();
+                    assert_eq!(facts.lines(), rows.len() as u64);
+                    let expected = "prefix ✓".to_owned() + &rows[first..end].concat();
+                    let mut target = "prefix ✓".to_owned();
+                    target
+                        .try_reserve_exact(expected.len() - target.len())
+                        .unwrap();
+                    let output = memory.reserve_capacity(target.capacity() as u64).unwrap();
+                    let prepaid = work.used();
+                    let capacity = target.capacity();
+                    store
+                        .append_joined_consuming(first as u64 + 1, end as u64 + 1, "", &mut target)
+                        .unwrap();
+                    assert_eq!(
+                        target, expected,
+                        "{source:?} split {split}, range {first}..{end}"
+                    );
+                    assert_eq!(
+                        target.capacity(),
+                        capacity,
+                        "prepaid copying cannot grow the target"
+                    );
+                    assert_eq!(work.used(), prepaid, "copying cannot renew source work");
+                    assert!(store.chunks.is_empty());
+                    drop((store, work, output));
+                    assert_eq!(memory.used_bytes(), 0);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn empty_separator_copy_rejects_short_capacity_without_publishing_bytes() {
+    let memory = ManagedMemoryBudget::new(1024 * 1024);
+    let work = work(&memory);
+    let mut store = prepare(4096, 4096, limits(), &work).unwrap();
+    store.push("é\r\n猫\nlast\n").unwrap();
+    store.finish().unwrap();
+    let chunk = store.chunks.front().unwrap();
+    let mut target = String::new();
+    let prepaid = work.used();
+    assert!(matches!(
+        chunk.append_payload(chunk.first, chunk.end(), &mut target),
+        Err(InvokeError::InvalidInput)
+    ));
+    assert!(target.is_empty());
+    assert_eq!(work.used(), prepaid);
+    drop((store, work));
+    assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
 fn sealed_range_keeps_real_unicode_lines_and_counts_unretained_suffix_without_backing() {
     let memory = ManagedMemoryBudget::new(1024 * 1024);
     let work = work(&memory);

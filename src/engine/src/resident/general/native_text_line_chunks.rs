@@ -9,6 +9,8 @@ use std::{collections::VecDeque, rc::Rc, sync::Arc};
 #[path = "native_text_line_chunk_allocation.rs"]
 mod allocation;
 use allocation::{Account, Bytes, ChunkData, Claim, Offsets};
+#[path = "native_text_line_join_copy.rs"]
+mod join_copy;
 #[path = "native_text_line_window.rs"]
 mod window;
 pub use window::NativeTextLineWindow;
@@ -278,10 +280,15 @@ impl NativeTextLineChunks {
             }
             let chunk = self.chunks.front().ok_or(InvokeError::InvalidInput)?;
             let stop = end.min(chunk.end());
-            for ordinal in next..stop {
-                let text = chunk.line(ordinal).ok_or(InvokeError::InvalidInput)?;
-                crate::resident::text_ops::append_joined(target, separator, has_previous, text);
+            if separator.is_empty() && chunk.offsets.is_some() {
+                chunk.append_payload(next, stop, target)?;
                 has_previous = true;
+            } else {
+                for ordinal in next..stop {
+                    let text = chunk.line(ordinal).ok_or(InvokeError::InvalidInput)?;
+                    crate::resident::text_ops::append_joined(target, separator, has_previous, text);
+                    has_previous = true;
+                }
             }
             next = stop;
             self.chunks.pop_front();
