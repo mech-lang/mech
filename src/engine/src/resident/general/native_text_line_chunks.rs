@@ -11,6 +11,9 @@ mod allocation;
 use allocation::{Account, Bytes, ChunkData, Claim, Offsets};
 #[path = "native_text_line_join_copy.rs"]
 mod join_copy;
+#[path = "native_text_line_join_loan.rs"]
+mod join_loan;
+pub use join_loan::NativeTextLineJoinChunk;
 #[path = "native_text_line_window.rs"]
 mod window;
 pub use window::NativeTextLineWindow;

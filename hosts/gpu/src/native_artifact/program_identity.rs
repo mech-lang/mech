@@ -177,7 +177,10 @@ fn selected_template(
 // IR86 carries a private same-account initialized String buffer across a
 // complete-use-proved join/map chain, without a frozen intermediate or a
 // second UTF-8 scan. Original admissions, finite prices and ABI30 remain.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 86;
+// IR87 / ABI31 loads immutable selected-source spans and maps directly into
+// checked output spare capacity. The original finite join/map prices remain;
+// only a complete initialized-extent receipt permits publishing its length.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 87;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

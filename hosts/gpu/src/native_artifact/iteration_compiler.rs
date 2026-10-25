@@ -446,6 +446,23 @@ pub(super) fn define_cfg<M: Module>(
         Vec::new()
     };
     #[cfg(feature = "canonical-native-program")]
+    let joined_functions = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+        let layout = super::program_selected_join_layout::Layout::derive(program).map_err(backend)?;
+        map_functions.iter()
+            .filter(|(map, ..)| layout.maps.iter().flatten().any(|proof| proof.collection == map.collection()))
+            .map(|(region, ..)| {
+                let (function, stack, code) = super::program_compiler::join_map_codegen::define(module, region)?;
+                report.join_map_copies.push(super::iteration_codegen_report::JoinMapCopy {
+                    collection: region.collection(),
+                    symbol: super::program_compiler::join_map_codegen::symbol(region.collection()),
+                    stack_bytes: stack, code_bytes: code, geometry_words: 6,
+                    initialized_extent_word: super::program_abi::JOIN_MAP_INITIALIZED_WORD,
+                });
+                Ok((region.collection(), function, stack, code))
+            })
+            .collect::<Result<Vec<_>, NativeCompileError>>()?
+    } else { Vec::new() };
+    #[cfg(feature = "canonical-native-program")]
     let joined_maps = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
         let layout =
             super::program_selected_join_layout::Layout::derive(program).map_err(backend)?;
@@ -455,9 +472,9 @@ pub(super) fn define_cfg<M: Module>(
             .zip(layout.maps.iter())
             .filter_map(|(join, proof)| {
                 proof.as_ref().map(|proof| {
-                    let function = map_functions
+                    let function = joined_functions
                         .iter()
-                        .find(|(map, ..)| map.collection() == proof.collection)
+                        .find(|(collection, ..)| *collection == proof.collection)
                         .map(|(_, function, ..)| *function)
                         .ok_or_else(|| backend("joined map has no emitted String mapper"))?;
                     Ok((join.consumer(), function))
@@ -1459,6 +1476,7 @@ pub(super) fn define_cfg<M: Module>(
                     .iter()
                     .map(|(_, _, stack, _)| *stack)
                     .chain(map_functions.iter().map(|(_, _, stack, _)| *stack))
+                    .chain(joined_functions.iter().map(|(_, _, stack, _)| *stack))
                     .chain(packed_functions.iter().map(|(_, _, stack, _)| *stack))
                     .max()
                     .unwrap_or(0),
@@ -1468,6 +1486,7 @@ pub(super) fn define_cfg<M: Module>(
             .iter()
             .map(|(_, _, _, code)| *code)
             .chain(map_functions.iter().map(|(_, _, _, code)| *code))
+            .chain(joined_functions.iter().map(|(_, _, _, code)| *code))
             .chain(packed_functions.iter().map(|(_, _, _, code)| *code))
             .try_fold(
                 code + bound_call_shim.map_or(0, |shim| shim.code),

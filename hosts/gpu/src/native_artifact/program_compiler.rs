@@ -48,6 +48,8 @@ pub(super) mod cfg_cleanup;
 pub(super) mod parallel_codegen;
 #[path = "program_string_map_codegen.rs"]
 pub(super) mod string_map_codegen;
+#[path = "program_join_map_codegen.rs"]
+pub(super) mod join_map_codegen;
 #[path = "program_tail_codegen.rs"]
 pub(super) mod tail_codegen;
 #[path = "program_window_codegen.rs"]
@@ -220,6 +222,7 @@ impl NativeProgramObject {
         metadata["compiled_count_value_loops"] = serde_json::json!(&self.codegen.count_value_loops);
         metadata["compiled_loop_constants"] = serde_json::json!(&self.codegen.loop_constants);
         metadata["compiled_steady_loops"] = serde_json::json!(&self.codegen.steady_loops);
+        metadata["compiled_join_map_copies"] = serde_json::json!(&self.codegen.join_map_copies);
         metadata
     }
 }

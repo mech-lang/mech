@@ -21,6 +21,7 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub count_value_loops: Vec<CountValueLoop>,
     pub loop_constants: LoopConstants,
     pub steady_loops: Vec<SteadyLoop>,
+    pub join_map_copies: Vec<JoinMapCopy>,
     substitutions: usize,
     tag_records: usize,
     guarded_records: usize,
@@ -29,6 +30,15 @@ pub(in crate::native_artifact) struct CodegenReport {
     mutation_records: usize,
     count_value_records: usize,
     steady_records: usize,
+}
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct JoinMapCopy {
+    pub collection: u32,
+    pub symbol: String,
+    pub stack_bytes: u64,
+    pub code_bytes: u64,
+    pub geometry_words: usize,
+    pub initialized_extent_word: usize,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct SteadyLoop {
