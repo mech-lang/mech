@@ -27,7 +27,11 @@ Nested tail calls preserve the exact lexical loop target; this does not imply
 that the native compiler unrolls the first four comparisons into machine code.
 
 Positions in these helpers are zero-based; their actual Mech matrix reads are
-one-based and checked. `lz-hash` requires 1–32 hash bits. As in the C function,
+one-based and checked. A byte outside the input defaults to zero. A four- or
+eight-byte load defaults the entire word to zero when its window is unreadable,
+including a partial trailing window or a U64 maximum offset. It never zero-pads
+a partial word or forms a one-based index on that fallback path. `lz-hash` requires
+1–32 hash bits. As in the C function,
 `extend-length` requires `start <= maximum`, `match-at < str-at`, and enough input at
 both positions. The first `start` bytes are already matched. DEFLATE uses a
 maximum match length of 258. The loaders currently assemble words from checked
@@ -61,7 +65,9 @@ cargo test --locked --offline -j1 -p mech-gpu -p mech-runtime \
 
 Original and decoded Mech artifacts execute every C case through the native
 compiler. Tests also compare resident execution, exact word values, matrix
-shape changes, late bounds/overflow failures, unchanged publication, and retry.
+shape changes, whole-word zero fallback for unreadable windows, preserved prior
+output aliases, and later valid reads. Ordinary indexed-read failure/retry tests
+remain independent of these defaulting loader helpers.
 The C implementation is only an expected-value generator.
 
 The selected resident comparisons keep their ordinary default compute cap.
@@ -114,14 +120,12 @@ work or change host defaults. Managed memory remains 256 MiB and temporary
 memory remains 128 MiB. Efficient ownership must remove physical copies and
 their associated costs before attempting the full performance comparison.
 
-The lexical-entry tests also expose the current argument-frame copying:
-resident execution of a full-table invalid-window call exceeds its unchanged
-16777216-byte temporary limit before the check. The native test admits the
-existing full-tree work allowances and 128 MiB temporary allowance and must
-fail at the window check before later reads or updates. The test separately
-requires the native generic work allowance to report the copying cost as a
-compute-work denial. Small-table and scalar checks execute in both
-engines. These resource denials remain ownership work, not waived costs.
+Ordinary nonrecursive checked calls now capture their immutable arguments rather
+than copying them into an argument tuple. The lexical-entry tests require both
+resident and native full-table invalid-window calls to reach the window assertion
+under the ordinary policy. No enlarged allowance hides an entry-frame copy.
+The [allocation diagnostic](../argument-transport/README.md) measures this with the
+real table and full cache. Recursive carrier and updated-buffer costs remain.
 
 Recursive statement-body functions now have fresh canonical argument bindings
 and can end in a selected tail call. This lets the walks retain named local
@@ -178,3 +182,22 @@ more work, wrong lexical targets, and unproved partial matches remain rejected.
 This does not provide efficient array ownership. Dynamic declared-FSM payload
 kinds remain unsupported; the compressor must retain Roc's algorithm while
 remaining compiler gaps are filled.
+
+## Whole-word fallback reproduction
+
+The standalone [reference expectations](word-load-reference.roc) pin valid loads,
+partial windows, empty input, and maximum offsets using the original builtins.
+They run with compiler revision `d99c7b838fb05bb1047eb0c18d4d06d0f86f345d` in
+optimized mode. The shared reference routines at
+`671077457ff7ef3a3d44caf715a3fc595addf379` use those loads with `?? 0`.
+
+```sh
+ROC_CACHE_DIR=/tmp/mech-word-reference-cache roc test --opt=speed --verbose \
+  benchmarks/mech-deflate/matchfinder/word-load-reference.roc
+```
+
+The Mech regression executes original and decoded artifacts in both engines,
+including changing input extents and valid reads after zero fallbacks. Existing
+C oracle values, transition cases, search and skip signatures, entry assertions,
+limits, and qualification allowances are unchanged. The byte assembly remains
+explicit; this correction does not claim native bulk-load or prefetch parity.
