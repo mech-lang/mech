@@ -557,6 +557,21 @@ impl Builder<'_> {
         arguments: &[NativeMatchValue],
         bindings: &BTreeMap<u32, NativeMatchValue>,
     ) -> Result<(u32, u32, NativeMatchValue), Error> {
+        let (entry, returned) =
+            self.control_block_tail(owner, declaration, block, arguments, bindings, None)?;
+        let (exit, value) =
+            returned.ok_or_else(|| unsupported(owner, "non-returning native block"))?;
+        Ok((entry, exit, value))
+    }
+    fn control_block_tail(
+        &mut self,
+        owner: NodeId,
+        declaration: &MatchDeclaration,
+        block: &ControlBlock,
+        arguments: &[NativeMatchValue],
+        bindings: &BTreeMap<u32, NativeMatchValue>,
+        tail_target: Option<super::native_tail_lowering::TailTarget>,
+    ) -> Result<(u32, Option<(u32, NativeMatchValue)>), Error> {
         let scrutinee = *arguments
             .get(declaration.scrutinee as usize)
             .ok_or(Error::InvalidBinding { node: Some(owner) })?;
@@ -583,7 +598,7 @@ impl Builder<'_> {
                 Ok(value)
             })
             .collect::<Result<Vec<_>, Error>>()?;
-        self.lower_block(owner, block, parameters)
+        self.lower_block_tail(owner, block, parameters, tail_target)
     }
     pub(super) fn lower_block(
         &mut self,
@@ -591,6 +606,18 @@ impl Builder<'_> {
         block: &ControlBlock,
         parameters: Vec<NativeMatchValue>,
     ) -> Result<(u32, u32, NativeMatchValue), Error> {
+        let (entry, returned) = self.lower_block_tail(owner, block, parameters, None)?;
+        let (exit, value) =
+            returned.ok_or_else(|| unsupported(owner, "non-returning native block"))?;
+        Ok((entry, exit, value))
+    }
+    fn lower_block_tail(
+        &mut self,
+        owner: NodeId,
+        block: &ControlBlock,
+        parameters: Vec<NativeMatchValue>,
+        tail_target: Option<super::native_tail_lowering::TailTarget>,
+    ) -> Result<(u32, Option<(u32, NativeMatchValue)>), Error> {
         let at = origin(owner, Some(block.id.0), None);
         let entry = self.block(at, NativeMatchAction::None)?;
         let mut tail = entry;
@@ -614,7 +641,31 @@ impl Builder<'_> {
                     let id = self.primitive(at, operation, *contract, &args, result)?;
                     (id, id)
                 }
-                ControlOperationBody::Match(nested) => self.matched(at, nested, &args, result)?,
+                ControlOperationBody::Match(nested) => {
+                    let selected_tail = tail_target.filter(|_| {
+                        operation.node as usize + 1 == block.operations.len()
+                            && block.yield_value == ControlValue::Local {
+                                block: block.id,
+                                node: operation.node,
+                            }
+                            && !super::native_tail_lowering::has_own_recur(nested)
+                    });
+                    if let Some(target) = selected_tail {
+                        let (start, returned) = self.matched_body_flow(
+                            at, nested, &args, result, Some(target.nested()?),
+                        )?;
+                        let Some(end) = returned else {
+                            // Every selected child arm jumps to the owning
+                            // loop. There is no return value or continuation
+                            // here; do not fabricate an unreachable copy.
+                            self.link(tail, start);
+                            return Ok((entry, None));
+                        };
+                        (start, end)
+                    } else {
+                        self.matched(at, nested, &args, result)?
+                    }
+                }
                 ControlOperationBody::Iteration(nested) if self.allow_iteration => {
                     self.iteration(at, nested, &args, result)?
                 }
@@ -628,7 +679,7 @@ impl Builder<'_> {
             locals.push(result);
         }
         let yielded = self.read(block.yield_value, block, &parameters, &locals, owner)?;
-        Ok((entry, tail, yielded))
+        Ok((entry, Some((tail, yielded))))
     }
     pub(super) fn iteration(
         &mut self,
@@ -758,7 +809,7 @@ impl Builder<'_> {
         arguments: &[NativeMatchValue],
         output: NativeMatchValue,
     ) -> Result<(u32, u32), Error> {
-        if self.allow_collections && super::native_tail_lowering::has_direct_recur(declaration) {
+        if self.allow_collections && super::native_tail_lowering::has_own_recur(declaration) {
             return self.tail_match(at, declaration, arguments, output);
         }
         self.matched_body(at, declaration, arguments, output, None)
@@ -770,24 +821,38 @@ impl Builder<'_> {
         declaration: &MatchDeclaration,
         arguments: &[NativeMatchValue],
         output: NativeMatchValue,
-        tail: Option<(NativeMatchValue, u32)>,
+        tail: Option<super::native_tail_lowering::TailTarget>,
     ) -> Result<(u32, u32), Error> {
+        let (entry, returned) = self.matched_body_flow(at, declaration, arguments, output, tail)?;
+        let exit = returned
+            .ok_or_else(|| unsupported(at.node(), "native tail loop has no return path"))?;
+        Ok((entry, exit))
+    }
+    fn matched_body_flow(
+        &mut self,
+        at: NativeMatchOrigin,
+        declaration: &MatchDeclaration,
+        arguments: &[NativeMatchValue],
+        output: NativeMatchValue,
+        tail: Option<super::native_tail_lowering::TailTarget>,
+    ) -> Result<(u32, Option<u32>), Error> {
         let owner = at.node();
         // An unguarded binding/wildcard is exhaustive for the exact validated
         // scrutinee type. Such a partial declaration cannot read a previous
         // result, so it uses ordinary total CFG lowering. Genuinely partial
         // (sticky) Match still requires persistent-state support and rejects.
         let exhaustive = declaration.arms.iter().any(|arm| {
-            arm.guard.is_none()
-                && matches!(
-                    &arm.pattern,
-                    MatchPattern::Wildcard
-                        | MatchPattern::Bind
-                        | MatchPattern::Structural(crate::CollectionPattern::Wildcard)
-                        | MatchPattern::Structural(crate::CollectionPattern::Bind { .. })
-                )
+            arm.guard.is_none() && match &arm.pattern {
+                MatchPattern::Wildcard | MatchPattern::Bind => true,
+                MatchPattern::Structural(pattern) =>
+                    super::native_tail_lowering::irrefutable_pattern(pattern),
+                _ => false,
+            }
         });
-        if declaration.partial && !exhaustive && tail.is_none() {
+        // Only the owning loop's root carries the separate enum-coverage proof
+        // from tail_match. An outer target does not prove a child's partial
+        // match total and cannot waive its ordinary coverage check.
+        if declaration.partial && !exhaustive && !tail.is_some_and(|target| target.ancestor == 0) {
             return Err(unsupported(owner, "partial or sticky Match"));
         }
         let scrutinee = *arguments
@@ -803,6 +868,7 @@ impl Builder<'_> {
         }
         let entry = self.block(at, NativeMatchAction::None)?;
         let join = self.block(at, NativeMatchAction::None)?;
+        let mut returns = false;
         let mut test = entry;
         for arm in &declaration.arms {
             let next = self.block(at, NativeMatchAction::None)?;
@@ -839,39 +905,43 @@ impl Builder<'_> {
                 }
                 _ => return Err(unsupported(owner, "aggregate or computed scalar pattern")),
             };
-            let body = if let Some((next_state, latch)) = tail
-                && let Some(prefix) = super::native_tail_lowering::tail_prefix(&arm.body)?
+            let body = if let Some(target) = tail
+                && let Some(prefix) = super::native_tail_lowering::tail_prefix(&arm.body, target.ancestor)?
             {
                 let (body, end, state) =
                     self.control_block(owner, declaration, &prefix, arguments, &bindings)?;
-                if self.ty(state) != self.ty(next_state) {
+                if self.ty(state) != self.ty(target.next) {
                     return Err(Error::InvalidBinding { node: Some(owner) });
                 }
                 let copy = self.block(
                     origin(owner, Some(arm.body.id.0), None),
                     NativeMatchAction::Copy {
                         source: state,
-                        output: next_state,
+                        output: target.next,
                     },
                 )?;
                 self.link(end, copy);
-                self.link(copy, latch);
+                self.link(copy, target.latch);
                 body
             } else {
-                let (body, body_tail, yielded) =
-                    self.control_block(owner, declaration, &arm.body, arguments, &bindings)?;
-                if self.ty(yielded) != self.ty(output) {
-                    return Err(Error::InvalidBinding { node: Some(owner) });
-                }
-                let copy = self.block(
-                    origin(owner, Some(arm.body.id.0), None),
-                    NativeMatchAction::Copy {
-                        source: yielded,
-                        output,
-                    },
+                let (body, returned) = self.control_block_tail(
+                    owner, declaration, &arm.body, arguments, &bindings, tail,
                 )?;
-                self.link(body_tail, copy);
-                self.link(copy, join);
+                if let Some((body_tail, yielded)) = returned {
+                    if self.ty(yielded) != self.ty(output) {
+                        return Err(Error::InvalidBinding { node: Some(owner) });
+                    }
+                    let copy = self.block(
+                        origin(owner, Some(arm.body.id.0), None),
+                        NativeMatchAction::Copy {
+                            source: yielded,
+                            output,
+                        },
+                    )?;
+                    self.link(body_tail, copy);
+                    self.link(copy, join);
+                    returns = true;
+                }
                 body
             };
             let selected = if let Some(guard) = &arm.guard {
@@ -921,7 +991,10 @@ impl Builder<'_> {
         // Keep a typed fail-closed terminal even though validated exhaustive
         // patterns make this path unreachable for admitted scalar inputs.
         self.blocks[test as usize].terminator = NativeMatchTerminator::Reject.into();
-        Ok((entry, join))
+        if !returns {
+            self.blocks[join as usize].terminator = NativeMatchTerminator::Reject.into();
+        }
+        Ok((entry, returns.then_some(join)))
     }
 }
 

@@ -177,11 +177,10 @@ fn function_local_mutation_is_fresh_for_repeated_calls_and_broadcast_visits() {
 }
 
 #[test]
-fn non_tail_partial_and_nested_recursion_keep_explicit_native_rejections() {
+fn non_tail_and_partial_recursion_keep_explicit_native_rejections() {
     for source in [
         "sum(n<u64>) => <u64>\n  | 0u64 => 0u64\n  | n => n + sum(n - 1u64).\nsum(input<u64>)\n",
         "again(n<u64>, tag<u64>) => <u64>\n  | (n, 1u64) => again(n - 1u64, 1u64).\nagain(input<u64>, 1u64)\n",
-        "count(n<u64>) => <u64>\n  | n => ((n > 0u64)? | true => count(n - 1u64) | false => 7u64).\ncount(input<u64>)\n",
     ] {
         for artifact in artifacts(source).0 {
             assert!(

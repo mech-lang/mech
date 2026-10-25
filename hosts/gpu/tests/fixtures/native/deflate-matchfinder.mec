@@ -26,25 +26,35 @@ lz-hash(sequence<u32>, num-bits<u64>) => (out<u64>) :=
 // As in the C routine, the caller guarantees start <= maximum, match-at <
 // str-at, and maximum readable bytes at both positions. Already matched prefix
 // bytes are deliberately not rechecked. The compressor limits maximum to 258.
-#Extend(input<[u8]>, str-at<u64>, match-at<u64>, start<u64>, maximum<u64>) => <u64>
-  | :Words(length<u64>)
-  | :Compared(length<u64>, difference<u64>)
-  | :Tail(length<u64>)
-  | :Done(length<u64>).
-#Extend(input, str-at, match-at, start, maximum) -> :Words(start)
-  :Words(length)
-    | maximum - length < 8u64 -> :Tail(length)
-    | * -> {
-        difference := bits/xor(load-word(input, str-at + length), load-word(input, match-at + length))
-      } -> :Compared(length, difference)
-  :Compared(length, difference)
-    | difference == 0u64 -> :Words(length + 8u64)
-    | * -> :Done(length + bits/shift-right-wrap(bits/trailing-zeros(difference), 3u64))
-  :Tail(length)
-    | length >= maximum -> :Done(length)
-    | byte(input, str-at + length) == byte(input, match-at + length) -> :Tail(length + 1u64)
-    | * -> :Done(length)
-  :Done(length) => length.
+// The same three loops as pinned Roc: the first four words, remaining words,
+// then trailing bytes. Source recursion keeps each loop's actual arguments.
+word-difference(input<[u8]>, str-at<u64>, match-at<u64>, length<u64>) => (out<u64>) :=
+  str-word := load-word(input, bits/wrapping-add(str-at, length))
+  match-word := load-word(input, bits/wrapping-add(match-at, length))
+  out := bits/xor(match-word, str-word).
+extend-tail(input<[u8]>, str-at<u64>, match-at<u64>, length<u64>, maximum<u64>) => <u64>
+  | (input, str-at, match-at, length, maximum) => ((length < maximum)?
+      | false => length
+      | true => ((byte(input, bits/wrapping-add(str-at, length)) == byte(input, bits/wrapping-add(match-at, length)))?
+          | true => extend-tail(input, str-at, match-at, bits/wrapping-add(length, 1u64), maximum)
+          | false => length)).
+extend-words(input<[u8]>, str-at<u64>, match-at<u64>, length<u64>, maximum<u64>) => <u64>
+  | (input, str-at, match-at, length, maximum) => ((length + 8u64 <= maximum)?
+      | false => extend-tail(input, str-at, match-at, length, maximum)
+      | true => (word-difference(input, str-at, match-at, length)?
+          | 0u64 => extend-words(input, str-at, match-at, bits/wrapping-add(length, 8u64), maximum)
+          | difference => bits/wrapping-add(length, bits/shift-right-wrap(bits/trailing-zeros(difference), 3u64)))).
+extend-four(input<[u8]>, str-at<u64>, match-at<u64>, length<u64>, four-end<u64>, maximum<u64>) => <u64>
+  | (input, str-at, match-at, length, four-end, maximum) => ((length + 8u64 <= four-end)?
+      | false => extend-words(input, str-at, match-at, length, maximum)
+      | true => (word-difference(input, str-at, match-at, length)?
+          | 0u64 => extend-four(input, str-at, match-at, bits/wrapping-add(length, 8u64), four-end, maximum)
+          | difference => bits/wrapping-add(length, bits/shift-right-wrap(bits/trailing-zeros(difference), 3u64)))).
+extend-length(input<[u8]>, str-at<u64>, match-at<u64>, start<u64>, maximum<u64>) => (out<u64>) :=
+  four-end := start + 32u64
+  out := ((four-end <= maximum)?
+    | true => extend-four(input, str-at, match-at, start, four-end, maximum)
+    | false => extend-words(input, str-at, match-at, start, maximum)).
 
 
 initial-nodes(count<u64>) => (out<[u16]>) :=
