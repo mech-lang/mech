@@ -988,7 +988,12 @@ impl SemanticBuilder {
                                 .map(|annotation| self.annotation_schema_draft(&annotation))
                                 .transpose()?
                                 .unwrap_or_else(|| expected.clone());
-                            if !schema.dimension_parameters.is_empty()
+                            // An unannotated binding already has the exact
+                            // component schema. Re-solving that schema against
+                            // itself can change parameter declaration origins
+                            // and incorrectly reject a runtime-shaped field.
+                            if schema != *expected
+                                && !schema.dimension_parameters.is_empty()
                                 && !is_dynamic_schema_draft(expected)
                             {
                                 schema = specialize_annotation_dimensions(

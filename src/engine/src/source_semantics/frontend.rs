@@ -3391,7 +3391,7 @@ struct SemanticBuilder {
     control_depth: usize,
     match_depth: usize,
     comprehension_depth: usize,
-    fsm_local_mutation_depth: usize,
+    local_mutation_depth: usize,
     next_control_block: u32,
     anchor: SourceSemanticAnchor,
     constants: Vec<PendingConstant>,
@@ -3586,7 +3586,7 @@ impl SemanticBuilder {
             control_depth: 0,
             match_depth: 0,
             comprehension_depth: 0,
-            fsm_local_mutation_depth: 0,
+            local_mutation_depth: 0,
             next_control_block: 0,
             anchor,
             constants: Vec::new(),
@@ -5258,7 +5258,7 @@ impl SemanticBuilder {
         }
         value.resolved()?;
         let local_mutable =
-            definition.mutability_marker().is_some() && self.fsm_local_mutation_depth > 0;
+            definition.mutability_marker().is_some() && self.local_mutation_depth > 0;
         let bound = if definition.mutability_marker().is_some() && !local_mutable {
             if self.external_definitions.contains(&name) {
                 return Err(SourceSemanticError {
@@ -10404,10 +10404,10 @@ impl SemanticBuilder {
                     && !scrutinee_schema
                         .clone()
                         .finalize()
-                        .is_ok_and(|schema| crate::is_control_value_schema(&schema))
+                        .is_ok_and(|schema| crate::is_control_pattern_schema(&schema))
                 {
                     return Err(error(
-                        "match bindings require a closed value schema",
+                        "match bindings require a supported value schema",
                         syntax,
                     ));
                 }

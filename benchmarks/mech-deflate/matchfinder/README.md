@@ -86,5 +86,12 @@ Runtime-shaped unsigned arrays can now be packed into ordinary tuple/record
 outputs by the native compiler. The current child schemas determine their
 separate dimensions on every binding; a prior output's dimensions do not stand
 in for the new result. This removes the combined node-helper return failure.
-Dynamic structural projections/state transport and efficient array ownership
-still need their own compiler support; construction does not imply either.
+Tuple destructuring and constant tuple reads now retain each selected array's
+actual dimensions. Ordinary tail-recursive functions can carry their argument
+tuples, including runtime-sized unsigned buffers, and use scalar literal patterns
+such as `(xs, 0u64)`. Function-local mutable bindings are fresh values on each call.
+Shape closure, packed draft expansion, and publication remain explicitly admitted.
+
+This does not provide efficient array ownership. General nested tail calls and
+dynamic declared-FSM payload kinds also remain outside the current native path;
+they must not be bypassed by changing the compression algorithm to fit it.

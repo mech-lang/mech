@@ -404,9 +404,6 @@ fn structural_body<'a>(
         .get(source.get() as usize)
         .and_then(ControlType::definition)
         .ok_or(BAD)?;
-    if !schema.dimension_parameters().is_empty() {
-        return Err(BAD);
-    }
     let mut body = schema.body();
     for step in path {
         body = match (step, body) {
@@ -509,12 +506,6 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                     != (Scope::Immutable {
                         iteration: Some(id as u32),
                     })
-                || !matches!(
-                    ty(tail.carrier())?
-                        .definition()
-                        .map(mech_core::Schema::body),
-                    Some(mech_core::SchemaBody::Enum { .. })
-                )
             {
                 return Err(BAD);
             }
@@ -662,21 +653,24 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 use mech_core::{IntegerWidth, SchemaBody};
                 let body = structural_body(plan, *source, path)?;
                 let target = ty(*output)?.definition().ok_or(BAD)?;
-                if !target.dimension_parameters().is_empty()
-                    || !match observation {
+                if !match observation {
                         Observation::CanonicalValue => {
-                            target.body() == body && super::structural_values::supported(body)
+                            super::structural_values::carrier_component_matches(target.body(), body)
+                                && super::structural_values::supported(body)
                         }
                         Observation::U64 => {
-                            body == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
+                            target.dimension_parameters().is_empty()
+                                && body == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
                                 && target.body() == body
                         }
                         Observation::EnumOrdinal { ordinal } => {
-                            matches!(body, SchemaBody::Enum { variants, .. } if (*ordinal as usize) < variants.len())
+                            target.dimension_parameters().is_empty()
+                                && matches!(body, SchemaBody::Enum { variants, .. } if (*ordinal as usize) < variants.len())
                                 && target.body() == &SchemaBody::Bool
                         }
                         Observation::StringEqual { peer } => {
-                            path.is_empty()
+                            target.dimension_parameters().is_empty()
+                                && path.is_empty()
                                 && body == &SchemaBody::String
                                 && ty(*peer)? == ty(*source)?
                                 && target.body() == &SchemaBody::Bool

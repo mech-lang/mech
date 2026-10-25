@@ -1,4 +1,5 @@
 mod compact_range;
+mod aggregate_access;
 mod compact_string_access;
 pub mod linkage_factories;
 mod nested_assignment;
@@ -6465,7 +6466,7 @@ fn bind_snapshot_access_mode(
                 };
                 let selected_matches = ordinal
                     .and_then(|ordinal| elements.get(ordinal))
-                    .is_some_and(|element| element == output_schema.body());
+                    .is_some_and(|element| aggregate_access::component_supported(request, element, output_schema.body()));
                 (
                     None,
                     None,
@@ -6474,7 +6475,7 @@ fn bind_snapshot_access_mode(
                     if homogeneous {
                         elements
                             .first()
-                            .is_some_and(|element| element == output_schema.body())
+                            .is_some_and(|element| aggregate_access::component_supported(request, element, output_schema.body()))
                     } else {
                         selected_matches
                     },
@@ -6492,7 +6493,7 @@ fn bind_snapshot_access_mode(
                 };
                 let selected_matches = ordinal
                     .and_then(|ordinal| fields.get(ordinal))
-                    .is_some_and(|field| &field.schema == output_schema.body());
+                    .is_some_and(|field| aggregate_access::component_supported(request, &field.schema, output_schema.body()));
                 (
                     None,
                     None,
@@ -6501,7 +6502,7 @@ fn bind_snapshot_access_mode(
                     if homogeneous {
                         fields
                             .first()
-                            .is_some_and(|field| &field.schema == output_schema.body())
+                            .is_some_and(|field| aggregate_access::component_supported(request, &field.schema, output_schema.body()))
                     } else {
                         selected_matches
                     },
@@ -17666,9 +17667,11 @@ fn snapshot_access_from_source(
             )?,
         )?;
     }
+    let (closed_source, source_metadata_bytes) = aggregate_access::closed_source(kernel, source, source_schema)?;
+    let source_body = closed_source.as_ref().unwrap_or(source_schema.body());
     let output_cost = snapshot_access_output_cost(
         source,
-        source_schema.body(),
+        source_body,
         plan,
         inputs,
         &mut footprint_meter,
@@ -17681,6 +17684,16 @@ fn snapshot_access_from_source(
         .output_dimensions
         .map(|(rows, columns)| resolved_snapshot_output_shape(kernel, rows, columns))
         .transpose()?;
+    let component = aggregate_access::selected_component(source_body, source.data(), output_cost.selected_ordinal);
+    let (component_shape, component_metadata_bytes) = if snapshot_output {
+        aggregate_access::current_shape(kernel, component.map(|(body, _)| body), source_metadata_bytes != 0)?
+    } else {
+        (None, 0)
+    };
+    let resolved_output_shape = component_shape.or(resolved_output_shape);
+    let component_expansion = component.map(|(body, data)|
+        super::budget::unsigned_word_draft_expansion(&mut footprint_meter, body, data)
+    ).transpose()?.unwrap_or(0);
     let footprint_work = footprint_meter.estimate();
     let publication_equality_work = match prior_output_footprint {
         Some(prior) => prior_schema_comparison_work
@@ -17780,10 +17793,14 @@ fn snapshot_access_from_source(
                 .checked_add(super::budget::checked_u64(output_cost.count)?)
                 .and_then(|work| work.checked_add(footprint_work.compute_work()))
                 .and_then(|work| work.checked_add(publication_work))
+                .and_then(|work| work.checked_add(component_expansion.checked_mul(8)?))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             temporary_bytes: output_retained_bytes
                 .checked_mul(2)
                 .and_then(|bytes| bytes.checked_add(source_temporary_bytes))
+                .and_then(|bytes| bytes.checked_add(component_metadata_bytes))
+                .and_then(|bytes| bytes.checked_add(source_metadata_bytes))
+                .and_then(|bytes| bytes.checked_add(component_expansion))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             cloned_bytes,
             container_bytes: output_draft_bytes
@@ -17817,7 +17834,7 @@ fn snapshot_access_from_source(
         let next = compact_string_access::construct(
             kernel,
             source,
-            source_schema.body(),
+            source_body,
             &selectors,
             plan,
             &output_cost,
@@ -17885,7 +17902,7 @@ fn snapshot_access_from_source(
         .collect::<Result<Vec<_>, _>>()?;
     let data = snapshot_access_data(
         source,
-        source_schema.body(),
+        source_body,
         &selectors,
         plan,
         &output_cost,

@@ -81,6 +81,9 @@ mod local_buffer_qualification;
 #[path = "support/canonical_program_dynamic_buffers.rs"]
 mod dynamic_buffer_qualification;
 
+#[path = "support/canonical_program_dynamic_projections.rs"]
+mod dynamic_projection_qualification;
+
 #[path = "support/canonical_program_unsigned_conversion.rs"]
 mod unsigned_conversion_qualification;
 

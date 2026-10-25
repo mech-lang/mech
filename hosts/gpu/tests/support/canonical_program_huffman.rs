@@ -348,7 +348,7 @@ fn tuple_projection_requires_the_real_access_factory_and_constant_ordinal() {
 }
 
 #[test]
-fn full_huffman_resident_denial_preserves_the_real_comparison_budget_error() {
+fn full_huffman_resident_denial_preserves_the_real_resource_budget_error() {
     let source = format!(
         "{KERNEL}\n(run<bool>? | true => #MakeHuffman(frequencies<words>, symbols<u64>, max-length<u64>, scratch-counts<counters>, scratch-lengths<lengths>, scratch-words<words>, scratch-code-lengths<length-counts>) | false => (scratch-lengths<lengths>, scratch-words<words>))\n"
     );
@@ -443,12 +443,16 @@ fn full_huffman_resident_denial_preserves_the_real_comparison_budget_error() {
                 Ok(_) => panic!("the default resident whole-control budget must remain enforced"),
                 Err(error) => error,
             };
+            // Packed aggregate projections now prepay their draft expansion.
+            // With the unchanged default limits, compute admission is reached
+            // before comparison admission. Keep the precise resource error,
+            // rather than reclassifying it as InvalidOutput or lifting a cap.
             assert!(
                 matches!(error, mech_engine::resident::ResidentExecutionError::Kernel {
                 error: mech_core::ResidentKernelError::ResourceLimit {
-                    dimension: mech_core::MemoryBudgetDimension::ComparisonWork, required, limit, ..
+                    dimension: mech_core::MemoryBudgetDimension::ComputeWork, required, limit, ..
                 }, ..
-            } if required > limit && limit == mech_core::RESIDENT_MAX_COMPARISON_WORK),
+            } if required > limit && limit == mech_core::RESIDENT_MAX_COMPUTE_WORK),
                 "{error:?}"
             );
             assert_eq!(instance.published_epoch(), epoch);
