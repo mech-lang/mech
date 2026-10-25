@@ -3,7 +3,7 @@ use super::prefix_tests::{assert_unloaned, limits, source, string_value};
 use super::*;
 use crate::native_artifact::JitProgramArtifact;
 
-fn check(jit: &JitProgramArtifact, text: &str) {
+fn check(jit: &JitProgramArtifact, text: &str) -> u64 {
     let descriptor = jit.descriptor();
     let expected_memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
     let input = string_value(
@@ -138,7 +138,7 @@ fn check(jit: &JitProgramArtifact, text: &str) {
     drop(view);
     prepared.resume_capture_tail(&mut entry).unwrap();
     let mut actual = vec![None; expected.len()];
-    prepared.publish(&mut actual).unwrap();
+    let report = prepared.publish(&mut actual).unwrap();
     for (a, b) in actual.iter().zip(&expected) {
         assert_eq!(
             a.as_ref()
@@ -155,6 +155,7 @@ fn check(jit: &JitProgramArtifact, text: &str) {
     assert_eq!(memory.used_bytes(), 0);
     drop((expected, inputs, observations));
     assert_eq!(expected_memory.used_bytes(), 0);
+    report.fused_string_map_bytes
 }
 
 #[test]
@@ -197,9 +198,78 @@ fn full_knucleotide_original_and_decoded_execute_without_input_or_line_snapshots
         mech_engine::decode_program_artifact_bytecode_v1(product.bytecode()).unwrap(),
     ] {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
-        check(
-            &jit,
-            ">ONE\nAAA\n>TWO\nCCCC\n>THREE\nGGTATTTTAATTTATAGT\nGGTAC\n>FOUR\nT\n",
+        assert_eq!(
+            check(
+                &jit,
+                ">ONE\nAAA\n>TWO\nCCCC\n>THREE\nggtattttaatttatagt\nggtac\n>FOUR\nT\n",
+            ),
+            23
         );
+    }
+}
+
+fn mapped_scan(separator: &str, shared: bool) -> String {
+    let body = source()
+        .strip_suffix("result\n")
+        .unwrap()
+        .replace(
+            "rows := text/lines",
+            concat!(
+                r#"entries := {"a": "A", "b": "B", "x": "\r", "y": "\n", "\r": "R", "é": "É"}"#,
+                "\nrows := text/lines"
+            ),
+        )
+        .replace(
+            "text/join(rows[first..last], \"|\")",
+            "text/join(rows[first..last], \"\")",
+        );
+    format!(
+        "+> map\n{body}normalized := text/join([entries{{ch}} | ch <- result], {separator:?})\n{}\n",
+        if shared {
+            "(result, normalized)"
+        } else {
+            "normalized"
+        }
+    )
+}
+
+#[test]
+fn fused_join_map_captured_chunks_preserve_original_decoded_unicode_crlf_and_empty_results() {
+    for artifact in call_cache_tests::artifacts(&mapped_scan("", false)) {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        assert_eq!(
+            jit.descriptor()
+                .selected_joins
+                .maps
+                .iter()
+                .flatten()
+                .count(),
+            1
+        );
+        for (text, bytes) in [
+            ("open\nab\nba\nclose\n", 4),
+            ("open\r\na\r\r\nb\r\nclose\r\n", 3),
+            ("open\nxy\nclose\n", 2),
+            ("open\né\nb\nclose\n", 0),
+            ("", 0),
+            ("missing\n", 0),
+            ("open\n", 0),
+            ("ignoredé\nopen\nab\nclose\n", 0),
+            ("open\nab", 2),
+            ("open\n\nab\n\nclose\n", 2),
+        ] {
+            assert_eq!(check(&jit, text), bytes, "{text:?}");
+        }
+    }
+}
+
+#[test]
+fn fused_join_map_keeps_observed_sources_and_nonempty_map_join_separators_on_the_ordinary_path() {
+    for source in [mapped_scan("", true), mapped_scan(",", false)] {
+        for artifact in call_cache_tests::artifacts(&source) {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            assert_eq!(check(&jit, "open\nab\nclose\n"), 0);
+        }
     }
 }
