@@ -509,8 +509,13 @@ fn execute_length(
     let (value, work) = if source.body == SchemaBody::String {
         let text = source_text(source, input)?;
         admit_work(text.len(), 0)?;
+        let ascii = match input {
+            ResidentValueRef::Snapshot(_) => source.snapshot(input)?.string_ascii_without_crlf() == Some(true),
+            _ => false,
+        };
         (
-            primitives::grapheme_length(text).map_err(|_| ResidentKernelError::InvalidInput)?,
+            if ascii { super::budget::checked_u64(text.len())? }
+            else { primitives::grapheme_length(text).map_err(|_| ResidentKernelError::InvalidInput)? },
             text.len(),
         )
     } else {

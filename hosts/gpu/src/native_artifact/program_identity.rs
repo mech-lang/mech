@@ -295,7 +295,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 79;
 // ABI23 binds both payload layouts; the packed Frame remains nineteen words.
 // Policy65 prices complete frozen-map validation and private read probes;
 // physical canonical-map import, sorting and allocation are genuinely absent.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 66;
+// Policy67 admits the actual immutable-owner layout containing its inline
+// shared String representation fact. Original scan charges remain in force.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 67;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

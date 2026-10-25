@@ -166,6 +166,7 @@ impl Value {
             .map_err(|_| transfer_invariant("exclusive String gained a frozen data owner"))?;
         let FrozenSnapshotData {
             data,
+            string_ascii_without_crlf,
             resident_token,
             shape: data_shape,
             ownership: physical,
@@ -177,7 +178,7 @@ impl Value {
         // Retire stale import/shape/token metadata before allowing any capacity
         // credit. The original weak data shell may remain cache-owned, but has
         // zero strong owners and cannot match a new frozen allocation.
-        drop((resident_token, data_shape, physical, budget_imports, shape));
+        drop((string_ascii_without_crlf, resident_token, data_shape, physical, budget_imports, shape));
         let SnapshotBudgetOwnership {
             registration,
             schemas: admitted_schemas,
