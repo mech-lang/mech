@@ -241,7 +241,9 @@ fn all_eighteen_scalar_casts_match_actual_core_resident_and_jit_original_and_dec
                     NativeScalarValue::F64(F64Bits::from_bits(0)),
                 ],
                 NativeScalarKind::F64 => [NativeScalarValue::U64(0), NativeScalarValue::I64(0)],
-                NativeScalarKind::U8 | NativeScalarKind::U16 | NativeScalarKind::U32 => [NativeScalarValue::U64(0), NativeScalarValue::Bool(false)],
+                NativeScalarKind::U8 | NativeScalarKind::U16 | NativeScalarKind::U32 => {
+                    [NativeScalarValue::U64(0), NativeScalarValue::Bool(false)]
+                }
                 NativeScalarKind::Bool => unreachable!(),
             };
             for wrong in same_width_wrong_inputs {

@@ -3129,12 +3129,20 @@ mod control_preflight_tests {
     fn wire_depth_remains_finite_when_generic_json_recursion_limit_is_replaced() {
         let nested = |depth| format!("{}0{}", "{\"unknown\":".repeat(depth), "}".repeat(depth));
         let limits = ArtifactDecodeLimits::default();
-        assert!(preflight_control_graph(
-            nested(super::MAX_CONTROL_GRAPH_WIRE_DEPTH).as_bytes(), &limits,
-        ).is_ok());
-        assert!(preflight_control_graph(
-            nested(super::MAX_CONTROL_GRAPH_WIRE_DEPTH + 1).as_bytes(), &limits,
-        ).is_err());
+        assert!(
+            preflight_control_graph(
+                nested(super::MAX_CONTROL_GRAPH_WIRE_DEPTH).as_bytes(),
+                &limits,
+            )
+            .is_ok()
+        );
+        assert!(
+            preflight_control_graph(
+                nested(super::MAX_CONTROL_GRAPH_WIRE_DEPTH + 1).as_bytes(),
+                &limits,
+            )
+            .is_err()
+        );
     }
 
     #[test]

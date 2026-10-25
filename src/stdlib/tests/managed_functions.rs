@@ -23,11 +23,20 @@ fn maintained_catalog_has_no_open_or_unclassified_memory_implementation() {
 
 #[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
 fn is_word_operation(name: &str) -> bool {
-    matches!(name,
-        "bits/and" | "bits/or" | "bits/xor" | "bits/not"
-        | "bits/shift-left-wrap" | "bits/shift-right-wrap"
-        | "bits/leading-zeros" | "bits/trailing-zeros"
-        | "bits/wrapping-add" | "bits/wrapping-sub" | "bits/wrapping-mul")
+    matches!(
+        name,
+        "bits/and"
+            | "bits/or"
+            | "bits/xor"
+            | "bits/not"
+            | "bits/shift-left-wrap"
+            | "bits/shift-right-wrap"
+            | "bits/leading-zeros"
+            | "bits/trailing-zeros"
+            | "bits/wrapping-add"
+            | "bits/wrapping-sub"
+            | "bits/wrapping-mul"
+    )
 }
 
 #[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]

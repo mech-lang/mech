@@ -263,7 +263,6 @@ pub(in crate::native_artifact) fn op_tag(op: NativeScalarOp) -> u8 {
         NativeScalarOp::U64ToU8 => 68,
         NativeScalarOp::U64ToU16 => 69,
         NativeScalarOp::U64ToU32 => 70,
-
     }
 }
 

@@ -377,7 +377,9 @@ pub(in crate::native_artifact) fn primitive(
             return args[0];
         }
         U16ToU8 => {
-            let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 255i64);
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 255i64);
             guard(b, valid, error, STATUS_ARITHMETIC);
             return args[0];
         }
@@ -388,12 +390,16 @@ pub(in crate::native_artifact) fn primitive(
             return args[0];
         }
         U32ToU8 => {
-            let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 255i64);
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 255i64);
             guard(b, valid, error, STATUS_ARITHMETIC);
             return args[0];
         }
         U32ToU16 => {
-            let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 65535i64);
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 65535i64);
             guard(b, valid, error, STATUS_ARITHMETIC);
             return args[0];
         }
@@ -401,17 +407,23 @@ pub(in crate::native_artifact) fn primitive(
             return args[0];
         }
         U64ToU8 => {
-            let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 255i64);
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 255i64);
             guard(b, valid, error, STATUS_ARITHMETIC);
             return args[0];
         }
         U64ToU16 => {
-            let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 65535i64);
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 65535i64);
             guard(b, valid, error, STATUS_ARITHMETIC);
             return args[0];
         }
         U64ToU32 => {
-            let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 4294967295i64);
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 4294967295i64);
             guard(b, valid, error, STATUS_ARITHMETIC);
             return args[0];
         }
@@ -627,9 +639,10 @@ pub(in crate::native_artifact) fn primitive(
             let value = b.ins().icmp(cc, a, c);
             b.ins().uextend(types::I64, value)
         }
-        U8ToU16 | U8ToU32 | U8ToU64 | U16ToU8 | U16ToU32 | U16ToU64 | U32ToU8 | U32ToU16 | U32ToU64 | U64ToU8 | U64ToU16 | U64ToU32 | U64ToI64 | I64ToU64 | U64ToF64 | I64ToF64 | F64ToU64 | F64ToI64 | BoolNot | I64Neg
-        | F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt | F64Eq | F64Ne | F64Lt | F64Le
-        | F64Gt | F64Ge => unreachable!(),
+        U8ToU16 | U8ToU32 | U8ToU64 | U16ToU8 | U16ToU32 | U16ToU64 | U32ToU8 | U32ToU16
+        | U32ToU64 | U64ToU8 | U64ToU16 | U64ToU32 | U64ToI64 | I64ToU64 | U64ToF64 | I64ToF64
+        | F64ToU64 | F64ToI64 | BoolNot | I64Neg | F64Add | F64Sub | F64Mul | F64Div | F64Neg
+        | F64Sqrt | F64Eq | F64Ne | F64Lt | F64Le | F64Gt | F64Ge => unreachable!(),
     }
 }
 
@@ -751,7 +764,9 @@ fn define<M: Module>(
                 let word = b
                     .ins()
                     .load(types::I64, MemFlags::new(), inputs, offset(index)?);
-                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, maximum as i64);
+                let valid = b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, word, maximum as i64);
                 guard(&mut b, valid, error, STATUS_ABI);
             }
         }

@@ -90,8 +90,7 @@ pub(in crate::native_artifact) const fn primitive_work(op: NativeScalarOp) -> u6
         | NativeScalarOp::U32ToU64
         | NativeScalarOp::U64ToU8
         | NativeScalarOp::U64ToU16
-        | NativeScalarOp::U64ToU32
-        => 256,
+        | NativeScalarOp::U64ToU32 => 256,
     }
 }
 

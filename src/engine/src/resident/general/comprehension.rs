@@ -810,10 +810,17 @@ pub(super) fn bind_inner(
                             block: crate::ControlBlockId(control.id.0),
                             local: operation.local,
                             condition: input_reads[0],
-                            write: ResidentWriteLocation { slot: output_slot, storage: output.storage, region: output.region },
+                            write: ResidentWriteLocation {
+                                slot: output_slot,
+                                storage: output.storage,
+                                region: output.region,
+                            },
                         }));
                         instructions.push(ActivatedCollectionStep::Operation {
-                            node: index, work: 0, retained_local_count, excluded_locals,
+                            node: index,
+                            work: 0,
+                            retained_local_count,
+                            excluded_locals,
                         });
                         continue;
                     }

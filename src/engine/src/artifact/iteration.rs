@@ -411,8 +411,14 @@ pub(super) fn validate_iteration_inner(
             .collect::<Result<Vec<_>, _>>()?;
         match &operation.body {
             ControlOperationBody::Assert => {
-                if !super::control::is_assertion_signature(&draft.schemas, &operation_inputs, operation.schema) {
-                    return Err(invalid("lexical assertion requires one Bool input and Bool result"));
+                if !super::control::is_assertion_signature(
+                    &draft.schemas,
+                    &operation_inputs,
+                    operation.schema,
+                ) {
+                    return Err(invalid(
+                        "lexical assertion requires one Bool input and Bool result",
+                    ));
                 }
             }
             ControlOperationBody::Operation {

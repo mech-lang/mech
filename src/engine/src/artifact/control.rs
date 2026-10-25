@@ -747,7 +747,10 @@ pub(super) fn validate_match_inner(
             "match requires a supported result and scalar literal-pattern scrutinee",
         ));
     }
-    if !draft.schemas.get(scrutinee).is_some_and(is_control_pattern_schema)
+    if !draft
+        .schemas
+        .get(scrutinee)
+        .is_some_and(is_control_pattern_schema)
         && declaration.arms.iter().any(|arm| {
             matches!(
                 &arm.pattern,
@@ -943,7 +946,9 @@ pub(super) fn validate_match_inner(
                         }
                         ControlOperationBody::Assert => {
                             if !is_assertion_signature(&draft.schemas, &inputs, operation.schema) {
-                                return Err(invalid("lexical assertion requires one Bool input and Bool result"));
+                                return Err(invalid(
+                                    "lexical assertion requires one Bool input and Bool result",
+                                ));
                             }
                         }
                         ControlOperationBody::Recur(ancestor) => {
@@ -1094,7 +1099,9 @@ pub(super) fn validate_match_inner(
                     OutputConstruction::ReadModifyWrite { base_input, .. } => {
                         port.access == AccessMode::ReadWrite
                             && port.alias == (AliasPolicy::MayAlias { input: base_input })
-                            && contract.inputs.get(usize::from(base_input))
+                            && contract
+                                .inputs
+                                .get(usize::from(base_input))
                                 .is_some_and(|base| base.schema == operation.schema)
                     }
                 };
@@ -1653,18 +1660,32 @@ pub(crate) fn is_control_pattern_schema(schema: &mech_core::Schema) -> bool {
     fn carrier(body: &mech_core::SchemaBody) -> Option<bool> {
         use mech_core::SchemaBody as B;
         match body {
-            B::Matrix { element, dimensions } if dimensions.len() == 2
-                && matches!(element.as_ref(), B::UnsignedInteger(_)) => Some(true),
-            B::Tuple(fields) => fields.iter().try_fold(false, |matrix, body|
-                carrier(body).map(|child| matrix || child)),
-            B::Bool | B::Index | B::Id | B::Atom(_) | B::String
-            | B::UnsignedInteger(_) | B::SignedInteger(_) | B::FloatingPoint(_) => Some(false),
+            B::Matrix {
+                element,
+                dimensions,
+            } if dimensions.len() == 2 && matches!(element.as_ref(), B::UnsignedInteger(_)) => {
+                Some(true)
+            }
+            B::Tuple(fields) => fields.iter().try_fold(false, |matrix, body| {
+                carrier(body).map(|child| matrix || child)
+            }),
+            B::Bool
+            | B::Index
+            | B::Id
+            | B::Atom(_)
+            | B::String
+            | B::UnsignedInteger(_)
+            | B::SignedInteger(_)
+            | B::FloatingPoint(_) => Some(false),
             _ => None,
         }
     }
-    is_control_value_schema(schema) || (schema.dimension_parameters().iter()
-        .all(|parameter| parameter.lifetime() == mech_core::DimensionLifetime::Turn)
-        && carrier(schema.body()) == Some(true))
+    is_control_value_schema(schema)
+        || (schema
+            .dimension_parameters()
+            .iter()
+            .all(|parameter| parameter.lifetime() == mech_core::DimensionLifetime::Turn)
+            && carrier(schema.body()) == Some(true))
 }
 
 /// Selected control results may retain per-turn Matrix geometry in an

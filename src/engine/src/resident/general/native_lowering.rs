@@ -427,7 +427,11 @@ pub(super) fn port_layout(ty: &NativeScalarType) -> ResidentPortLayout {
         kind: match ty.kind {
             NativeScalarKind::Bool => ResidentValueKind::Bool,
             NativeScalarKind::F64 => ResidentValueKind::F64,
-            NativeScalarKind::U8 | NativeScalarKind::U16 | NativeScalarKind::U32 | NativeScalarKind::U64 | NativeScalarKind::I64 => ResidentValueKind::Snapshot,
+            NativeScalarKind::U8
+            | NativeScalarKind::U16
+            | NativeScalarKind::U32
+            | NativeScalarKind::U64
+            | NativeScalarKind::I64 => ResidentValueKind::Snapshot,
         },
         shape: ResidentShape::SCALAR,
         shape_instance: ty.descriptor.shape().clone(),

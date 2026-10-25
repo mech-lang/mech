@@ -38,6 +38,8 @@ pub(crate) mod sequence_sort;
 pub(crate) mod set;
 #[cfg(all(feature = "resident-artifact", feature = "convert"))]
 pub(crate) mod set_conversion;
+#[cfg(any(feature = "resident-artifact", feature = "native-artifact"))]
+pub(crate) mod structural_values;
 #[cfg(all(feature = "resident-artifact", feature = "table"))]
 pub(crate) mod table;
 #[cfg(feature = "resident-artifact")]
@@ -47,8 +49,6 @@ pub(crate) mod text_index;
 #[cfg(all(feature = "resident-artifact", feature = "pure_text"))]
 pub(crate) mod text_ops;
 mod workspace;
-#[cfg(any(feature = "resident-artifact", feature = "native-artifact"))]
-pub(crate) mod structural_values;
 mod efficacy {
     pub(crate) mod ekf;
 }

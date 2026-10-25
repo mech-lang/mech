@@ -5481,7 +5481,8 @@ fn closed_producer_disposition(
     }
     #[cfg(feature = "integer_bits")]
     if operation.module_path.as_ref() == ["bits"]
-        && crate::intrinsics::bits::OPERATIONS.iter()
+        && crate::intrinsics::bits::OPERATIONS
+            .iter()
             .any(|operation_kind| operation_kind.item() == operation.operation_name)
     {
         // These exact pure factories execute through their maintained kernels;
@@ -14092,7 +14093,9 @@ fn build_plan(
             steps
                 .iter()
                 .map(|step| match step {
-                    ActivatedTurnStep::Assert(_) => unreachable!("assertion is not a library kernel"),
+                    ActivatedTurnStep::Assert(_) => {
+                        unreachable!("assertion is not a library kernel")
+                    }
                     ActivatedTurnStep::Kernel(node) => node.clone(),
                     ActivatedTurnStep::External(_)
                     | ActivatedTurnStep::Match(_)
@@ -24745,13 +24748,19 @@ fn bind_control_block(
         } = &operation.body
         else {
             match &operation.body {
-                crate::ControlOperationBody::Assert => steps.push(ActivatedTurnStep::Assert(ActivatedAssertion {
-                    artifact_node: owner,
-                    block: block.id,
-                    local: operation.node,
-                    condition: input_reads[0],
-                    write: ResidentWriteLocation { slot: output_slot, storage: output.storage, region: output.region },
-                })),
+                crate::ControlOperationBody::Assert => {
+                    steps.push(ActivatedTurnStep::Assert(ActivatedAssertion {
+                        artifact_node: owner,
+                        block: block.id,
+                        local: operation.node,
+                        condition: input_reads[0],
+                        write: ResidentWriteLocation {
+                            slot: output_slot,
+                            storage: output.storage,
+                            region: output.region,
+                        },
+                    }))
+                }
                 crate::ControlOperationBody::Match(nested) => {
                     let prepared = prepare_match_node(
                         artifact,
@@ -24977,7 +24986,9 @@ fn bind_control_block(
         let rmw_base = base.and_then(|index| input_reads.get(index).copied());
         let read_start = reads.len() as u32;
         reads.extend(
-            input_reads.into_iter().enumerate()
+            input_reads
+                .into_iter()
+                .enumerate()
                 .filter_map(|(index, read)| (Some(index) != base).then_some(read)),
         );
         if policy.change_detection == ChangeDetectionPolicy::SemanticHash {

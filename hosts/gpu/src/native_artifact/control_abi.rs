@@ -74,7 +74,9 @@ impl NativeMatchDescriptor {
                         ([Some(yes), Some(no)], false)
                     }
                     NativeMatchTerminator::Complete => ([None, None], true),
-                    NativeMatchTerminator::Reject | NativeMatchTerminator::IntegrityFailure => ([None, None], false),
+                    NativeMatchTerminator::Reject | NativeMatchTerminator::IntegrityFailure => {
+                        ([None, None], false)
+                    }
                 };
                 let work = if complete {
                     completion

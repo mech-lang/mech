@@ -342,7 +342,8 @@ fn validate_schemas(
                     && elements.iter().zip(inputs).all(|(element, input)| {
                         is_native_state_carrier(element)
                             && crate::native_artifact::structural_values::carrier_component_matches(
-                                element, input.body(),
+                                element,
+                                input.body(),
                             )
                     })
             }
@@ -351,7 +352,8 @@ fn validate_schemas(
                     && fields.iter().zip(inputs).all(|(field, input)| {
                         is_native_state_carrier(&field.schema)
                             && crate::native_artifact::structural_values::carrier_component_matches(
-                                &field.schema, input.body(),
+                                &field.schema,
+                                input.body(),
                             )
                     })
             }
@@ -430,8 +432,10 @@ fn validate_schemas(
                 && inputs[0] == *declared_output
                 && inputs[1].dimension_parameters().is_empty()
                 && inputs[2].dimension_parameters().is_empty()
-                && matches!(inputs[2].body(), SchemaBody::Index
-                    | SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64))
+                && matches!(
+                    inputs[2].body(),
+                    SchemaBody::Index | SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
+                )
                 && matches!(first, SchemaBody::Matrix { element, .. }
                     if element.as_ref() == inputs[1].body())
         }
