@@ -66,7 +66,9 @@ fn simultaneous_worker_constructor_preflight_checks_bytes_and_nodes_without_leak
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
     let parent = session::Prepared::new(descriptor, tests::limits(), &memory).unwrap();
     let baseline = (memory.used_bytes(), memory.retained_nodes());
-    let bytes = session::Prepared::worker_setup_bytes(descriptor).unwrap() * 2;
+    let bytes = (session::Prepared::worker_setup_bytes(descriptor).unwrap()
+        + NativeLibraryWorkBudget::worker_account_metadata_bytes()) * 2
+        + NativeLibraryWorkBudget::worker_group_metadata_bytes();
     let nodes = session::Prepared::worker_setup_nodes(descriptor).unwrap() * 2;
     assert!(bytes > 0 && nodes > 0);
     for (byte_limit, node_limit, fits) in [

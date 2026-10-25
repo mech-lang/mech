@@ -337,9 +337,17 @@ impl PackedMap {
         // original remaining-allowance check succeeds, without holding the
         // shared worker mutex while calculating the invariant price.
         let prepared = self.price(self.frame.capacity, self.frame.len).map(fuel::Prepared::new);
-        let (count, funded) = self.work.with_unscoped_debit(|remaining| {
-            prepared?.select(remaining, self.funded)
-        })?.ok_or(Error::Binding("packed-map entered a foreign work scope"))?;
+        let full = prepared.as_ref().ok().and_then(fuel::Prepared::full_debit)
+            .zip(self.funded.checked_add(BATCH));
+        let credited = if let Some((price, funded)) = full {
+            self.work.try_charge_funded_batch(price.compute, price.comparison)?
+                .then_some((BATCH, funded))
+        } else { None };
+        let (count, funded) = if let Some(credited) = credited { credited } else {
+            self.work.with_unscoped_debit(|remaining| {
+                prepared?.select(remaining, self.funded)
+            })?.ok_or(Error::Binding("packed-map entered a foreign work scope"))?
+        };
         self.frame.fuel = count;
         self.issued = count;
         self.funded = funded;

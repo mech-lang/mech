@@ -5,6 +5,8 @@ use std::cell::Cell;
 
 #[path = "program_parallel_schedule_tests.rs"]
 mod schedule_tests;
+#[path = "program_parallel_credit_tests.rs"]
+mod credit_tests;
 
 thread_local! {
     static BATCHES: Cell<usize> = const { Cell::new(0) };

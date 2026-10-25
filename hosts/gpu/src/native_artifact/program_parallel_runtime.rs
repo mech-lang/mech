@@ -49,6 +49,9 @@ pub(super) struct Receipt {
     pub guarded_call_regions: u64,
     pub frozen_map_regions: u64,
     pub frozen_map_reads: u64,
+    pub worker_credit_claims: u64,
+    pub worker_credit_batches: u64,
+    pub worker_credit_reclaims: u64,
 }
 pub(super) struct Worker {
     pub region: usize,
@@ -82,7 +85,7 @@ fn scheduler_nodes(workers: usize, regions: usize, captures: usize) -> Result<u6
     // each task's escrow/local-account owner, scope/thread closure, handle,
     // job, result, receipt and capture-vector roots; then Capture entries.
     // Captured/result canonical payloads keep their independent shared claims.
-    amount(regions, 8, 16)?
+    amount(regions, 8, 17)?
         .checked_add(amount(workers, 16, 0)?)
         .and_then(|nodes| nodes.checked_add(amount(captures, workers as u64 + 1, 0).ok()?))
         .ok_or_else(|| invalid("parallel scheduler node count overflow"))
@@ -103,7 +106,10 @@ pub(super) fn worker_setup_fits(
     let nodes = super::session::Prepared::worker_setup_nodes(descriptor)?
         .checked_mul(task_count).ok_or_else(|| invalid("parallel worker setup node count overflow"))?;
     let bytes = super::session::Prepared::worker_setup_bytes(descriptor)?
-        .checked_mul(task_count).ok_or_else(|| invalid("parallel worker setup byte count overflow"))?;
+        .checked_add(NativeLibraryWorkBudget::worker_account_metadata_bytes())
+        .and_then(|bytes| bytes.checked_mul(task_count))
+        .and_then(|bytes| bytes.checked_add(NativeLibraryWorkBudget::worker_group_metadata_bytes()))
+        .ok_or_else(|| invalid("parallel worker setup byte count overflow"))?;
     // Keep both pending claims until the joint feasibility check succeeds.
     // A denied byte claim must also release the preceding node claim.
     let Ok(_nodes) = memory.reserve_nodes(nodes) else { return Ok(false); };
@@ -309,7 +315,14 @@ impl Context<'_, '_> {
         });
         // All worker-local ledgers have retired before reconciliation. Work
         // already spent stays charged even when any worker failed.
-        group.finish().map_err(|error| Error::Collection { origin, error })?;
+        let (_, credit) = group.finish_with_credit_statistics()
+            .map_err(|error| Error::Collection { origin, error })?;
+        self.worker_credit_claims = self.worker_credit_claims.checked_add(credit.claims)
+            .ok_or_else(|| invalid("parallel work-credit claim count overflow"))?;
+        self.worker_credit_batches = self.worker_credit_batches.checked_add(credit.batches)
+            .ok_or_else(|| invalid("parallel work-credit batch count overflow"))?;
+        self.worker_credit_reclaims = self.worker_credit_reclaims.checked_add(credit.reclaims)
+            .ok_or_else(|| invalid("parallel work-credit reclaim count overflow"))?;
         drop(stacks);
         let results = outcomes?;
         if results.iter().all(Result::is_ok) {
@@ -330,6 +343,9 @@ impl Context<'_, '_> {
             self.guarded_call_regions = self.guarded_call_regions.checked_add(result.guarded_call_regions).ok_or_else(|| invalid("parallel guarded call count overflow"))?;
             self.frozen_map_regions = self.frozen_map_regions.checked_add(result.frozen_map_regions).ok_or_else(|| invalid("parallel frozen region overflow"))?;
             self.frozen_map_reads = self.frozen_map_reads.checked_add(result.frozen_map_reads).ok_or_else(|| invalid("parallel frozen read overflow"))?;
+            self.worker_credit_claims = self.worker_credit_claims.checked_add(result.worker_credit_claims).ok_or_else(|| invalid("parallel work-credit statistics overflow"))?;
+            self.worker_credit_batches = self.worker_credit_batches.checked_add(result.worker_credit_batches).ok_or_else(|| invalid("parallel work-credit statistics overflow"))?;
+            self.worker_credit_reclaims = self.worker_credit_reclaims.checked_add(result.worker_credit_reclaims).ok_or_else(|| invalid("parallel work-credit statistics overflow"))?;
         }
         let mut pending = VecDeque::new();
         pending.try_reserve_exact(ready.len()).map_err(|_| invalid("parallel pending group allocation"))?;
@@ -405,7 +421,11 @@ impl Context<'_, '_> {
             packed_ssa_regions: self.packed_ssa_regions, guarded_loop_regions: self.guarded_loop_regions,
             guarded_call_regions: self.guarded_call_regions,
             frozen_map_regions: self.frozen_map_regions,
-            frozen_map_reads: self.frozen_map_reads });
+            frozen_map_reads: self.frozen_map_reads,
+            worker_credit_claims: self.worker_credit_claims,
+            worker_credit_batches: self.worker_credit_batches,
+            worker_credit_reclaims: self.worker_credit_reclaims,
+ });
         Ok(Some(1))
     }
 }

@@ -217,3 +217,51 @@ fn excess_worker_slots_retain_original_checked_execution_and_release_all_metadat
     assert_eq!(group.finish().unwrap(), (1, 1));
     assert_eq!(memory.used_bytes(), baseline);
 }
+
+#[test]
+fn comparison_denial_after_credit_reclamation_does_not_steal_remaining_compute() {
+    let (root, _) = root(512, 1, 1);
+    let group = root.reserve_worker_group(512, 512).unwrap();
+    let left = NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap();
+    let right = NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap();
+    for _ in 0..3 {
+        assert!(left.try_charge_funded_batch(8, 1).unwrap());
+    }
+    right.charge(480, 509).unwrap();
+    assert!(!left.try_charge_funded_batch(8, 1).unwrap());
+    assert!(matches!(
+        left.charge(8, 1),
+        Err(ResidentKernelError::ResourceLimit {
+            dimension: MemoryBudgetDimension::ComparisonWork,
+            required: 513,
+            limit: 512,
+            ..
+        })
+    ));
+    assert_eq!(left.used(), (24, 3));
+    drop((left, right));
+    assert_eq!(group.finish().unwrap(), (504, 512));
+    root.charge(8, 0).unwrap();
+    assert_eq!(root.used(), (512, 512));
+}
+
+#[test]
+#[cfg(panic = "unwind")]
+fn worker_unwind_settles_pending_credit_without_refunding_the_batch() {
+    let (root, memory) = root(1000, 1, 1);
+    let baseline = memory.used_bytes();
+    let group = root.reserve_worker_group(1000, 1000).unwrap();
+    let loan = group.worker_loan().unwrap();
+    assert!(
+        std::thread::spawn(move || {
+            let worker = NativeLibraryWorkBudget::from_worker_loan(loan).unwrap();
+            assert!(worker.try_charge_funded_batch(8, 3).unwrap());
+            panic!("owned credited worker unwind fixture");
+        })
+        .join()
+        .is_err()
+    );
+    assert_eq!(group.finish().unwrap(), (8, 3));
+    assert_eq!(root.used(), (8, 3));
+    assert_eq!(memory.used_bytes(), baseline);
+}
