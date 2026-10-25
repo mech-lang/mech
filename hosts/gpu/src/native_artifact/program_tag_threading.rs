@@ -50,15 +50,15 @@ impl Transfer {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum Target { Node(usize), Exit }
+pub(in crate::native_artifact) enum Target { Node(usize), Exit }
 #[derive(Clone, Debug)]
-pub(super) enum Edge {
+pub(in crate::native_artifact) enum Edge {
     Jump(Target),
     Branch { yes: Target, no: Target },
     Dispatch { cases: Vec<(u32, Target)>, other: Target },
     Reject,
 }
-pub(super) struct Node {
+pub(in crate::native_artifact) struct Node {
     pub site: usize,
     pub edge: Edge,
     /// A header may rematerialize the exact value proved at its incoming
@@ -67,7 +67,7 @@ pub(super) struct Node {
     pub folded_branch: bool,
     pub known_latch: bool,
 }
-pub(super) struct Graph {
+pub(in crate::native_artifact) struct Graph {
     pub carrier_word: usize,
     pub variants: Vec<u32>,
     pub nodes: Vec<Node>,
@@ -186,7 +186,7 @@ pub(super) fn derive(code: CodePlan<'_>, closed: &Layout, id: usize,
 /// The same bounded product graph over a proved callback-free scalar Tail.
 /// Borrowed actions can change their declared output, never a carrier home.
 /// Unknown host actions decline the graph rather than inventing a write set.
-pub(super) fn derive_scalar(code: CodePlan<'_>, closed: &Layout, id: usize,
+pub(in crate::native_artifact) fn derive_scalar(code: CodePlan<'_>, closed: &Layout, id: usize,
     aggregates: &NativeScalarAggregates,
     borrowed: &super::super::super::program_borrowed_layout::Layout) -> Option<Graph>
 {

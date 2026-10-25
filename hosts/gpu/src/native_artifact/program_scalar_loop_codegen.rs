@@ -135,7 +135,6 @@ fn scalar_action(b: &mut FunctionBuilder<'_>, words: &Words, action: &Scalar, er
             let value = primitive(b, *op, &args, error);
             words.write(b, output.get() as usize, value);
         }
-        _ => unreachable!("proved scalar Tail action"),
     }
 }
 
