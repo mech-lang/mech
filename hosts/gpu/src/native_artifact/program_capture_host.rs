@@ -162,7 +162,7 @@ impl<'a> NativeProgramExecutionSession<'a> {
         }
         capture
             .owner
-            .push(chunk.text())
+            .push_fragment(chunk.fragment())
             .map_err(|error| source_error(descriptor, error))?;
         capture.offset = capture
             .offset
@@ -174,7 +174,7 @@ impl<'a> NativeProgramExecutionSession<'a> {
         // Suspend before borrowing rows: the source-work envelope admits each
         // completed row to one window, including the remaining EOF window.
         // Unicode executes through maintained calls after source admission.
-        if !chunk.text().is_ascii() {
+        if !chunk.fragment().is_ascii() {
             capture.await_eof = true;
             return Ok(());
         }

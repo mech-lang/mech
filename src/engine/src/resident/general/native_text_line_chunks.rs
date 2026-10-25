@@ -392,17 +392,29 @@ impl NativeTextLineChunks {
     /// crossing fragments uses one amortized growing buffer, not one buffer
     /// per character or a repeated copy of its full prefix on every fragment.
     pub fn push(&mut self, text: &str) -> Result<(), InvokeError> {
+        self.push_with_facts(text, None)
+    }
+    /// Reuse actual decoder byte facts; this certificate grants no resource or
+    /// source authority. Preserve the original fragment admission and debit
+    /// before using the facts, including on declined/failed producer paths.
+    pub fn push_fragment(&mut self, fragment: mech_core::Utf8Fragment<'_>) -> Result<(), InvokeError> {
+        self.push_with_facts(
+            fragment.text(),
+            Some((fragment.is_ascii(), fragment.line_feeds())),
+        )
+    }
+    fn push_with_facts(&mut self, text: &str, facts: Option<(bool, usize)>) -> Result<(), InvokeError> {
         if self.failed || self.eof {
             return Err(InvokeError::InvalidInput);
         }
         self.failed = true;
-        let result = self.push_inner(text);
+        let result = self.push_inner(text, facts);
         if result.is_ok() {
             self.failed = false;
         }
         result
     }
-    fn push_inner(&mut self, mut text: &str) -> Result<(), InvokeError> {
+    fn push_inner(&mut self, mut text: &str, facts: Option<(bool, usize)>) -> Result<(), InvokeError> {
         let total = self
             .facts
             .bytes
@@ -418,19 +430,21 @@ impl NativeTextLineChunks {
                 .ok_or(InvokeError::InvalidInput)?,
         )?;
         self.facts.bytes = total;
-        self.facts.ascii &= text.is_ascii();
+        self.facts.ascii &= facts.map_or_else(|| text.is_ascii(), |facts| facts.0);
+        let mut known_lfs = facts.map(|facts| facts.1);
         if self.pending.bytes != 0 {
             if let Some(end) = text.find('\n') {
                 self.append_pending(&text[..end])?;
                 self.complete_pending(true)?;
                 text = &text[end + 1..];
+                known_lfs = known_lfs.map(|count| count - 1);
             } else {
                 return self.append_pending(text);
             }
         }
         if let Some(last) = text.rfind('\n') {
             let complete = &text[..last + 1];
-            let count = crate::intrinsics::text_ops::line_count(complete);
+            let count = known_lfs.unwrap_or_else(|| crate::intrinsics::text_ops::line_count(complete));
             let first = self
                 .facts
                 .lines

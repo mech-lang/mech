@@ -6,7 +6,7 @@
 //! No partial canonical String/Matrix/Value is constructed here. A receiver
 //! borrows valid text only for its synchronous call and must separately admit
 //! any backing it retains and any compiled computation it performs.
-use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, MemoryRuntimeError};
+use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, MemoryRuntimeError, Utf8Fragment};
 use std::io::{self, Read};
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
@@ -145,9 +145,17 @@ impl RuntimeTextCaptureBuffer {
     // consumer panic. A speculative host panic must not poison the provider's
     // lock, unlike a panic in that provider's OWN acquisition implementation.
     pub(crate) fn capture_deferred<R: Read, E>(
+        self,
+        reader: R,
+        mut consumer: impl FnMut(&str) -> Result<(), E>,
+    ) -> Result<RuntimeTextCaptureSummary, DeferredCaptureFailure<E>> {
+        self.capture_fragments_deferred(reader, |fragment| consumer(fragment.text()))
+    }
+
+    pub(crate) fn capture_fragments_deferred<R: Read, E>(
         mut self,
         mut reader: R,
-        mut consumer: impl FnMut(&str) -> Result<(), E>,
+        mut consumer: impl FnMut(Utf8Fragment<'_>) -> Result<(), E>,
     ) -> Result<RuntimeTextCaptureSummary, DeferredCaptureFailure<E>> {
         let acquisition = self.limit + 1; // checked by prepare
         let mut total = 0u64;
@@ -183,16 +191,16 @@ impl RuntimeTextCaptureBuffer {
                 continue;
             }
             let length = carry + read;
-            match std::str::from_utf8(&self.buffer[..length]) {
-                Ok(text) => {
-                    offer(text, &mut consumer, &mut consumer_failure);
+            match Utf8Fragment::decode(&self.buffer[..length]) {
+                Ok(fragment) => {
+                    offer(fragment, &mut consumer, &mut consumer_failure);
                     carry = 0;
                 }
                 Err(error) => {
                     let valid = error.valid_up_to();
-                    let text = std::str::from_utf8(&self.buffer[..valid])
+                    let fragment = Utf8Fragment::decode(&self.buffer[..valid])
                         .expect("Utf8Error identifies a valid prefix");
-                    offer(text, &mut consumer, &mut consumer_failure);
+                    offer(fragment, &mut consumer, &mut consumer_failure);
                     match error.error_len() {
                         Some(error_len) => {
                             utf8_error =
@@ -240,14 +248,14 @@ pub(crate) enum ConsumerFailure<E> {
     Panic(Box<dyn std::any::Any + Send>),
 }
 fn offer<E>(
-    text: &str,
-    consumer: &mut impl FnMut(&str) -> Result<(), E>,
+    fragment: Utf8Fragment<'_>,
+    consumer: &mut impl FnMut(Utf8Fragment<'_>) -> Result<(), E>,
     failure: &mut Option<ConsumerFailure<E>>,
 ) {
-    if text.is_empty() || failure.is_some() {
+    if fragment.text().is_empty() || failure.is_some() {
         return;
     }
-    *failure = match catch_unwind(AssertUnwindSafe(|| consumer(text))) {
+    *failure = match catch_unwind(AssertUnwindSafe(|| consumer(fragment))) {
         Ok(Ok(())) => None,
         Ok(Err(error)) => Some(ConsumerFailure::Error(error)),
         Err(payload) => Some(ConsumerFailure::Panic(payload)),

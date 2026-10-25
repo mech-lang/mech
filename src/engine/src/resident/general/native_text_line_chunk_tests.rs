@@ -127,6 +127,44 @@ fn every_short_utf8_split_matches_the_ordinary_lines_iterator() {
 }
 
 #[test]
+fn certified_fragments_preserve_geometry_admission_and_work_at_every_utf8_split() {
+    for source in ["", "a\0b\r\n\nlast\r", "é\r\n猫\n🦎", "\n\r\r\nend\n"] {
+        let boundaries = source.char_indices().map(|(index, _)| index)
+            .chain([source.len()]).collect::<Vec<_>>();
+        for &first in &boundaries {
+            for &second in boundaries.iter().filter(|&&index| index >= first) {
+                let mut expected = None;
+                for certified in [false, true] {
+                    let memory = ManagedMemoryBudget::new(4 * 1024 * 1024);
+                    let ledger = work(&memory);
+                    let mut store = prepare(source.len() as u64, 64, limits(), &ledger).unwrap();
+                    let mut observations = Vec::new();
+                    for fragment in ["", &source[..first], &source[first..second], &source[second..], ""] {
+                        if certified {
+                            store.push_fragment(mech_core::Utf8Fragment::decode(fragment.as_bytes()).unwrap()).unwrap();
+                        } else {
+                            store.push(fragment).unwrap();
+                        }
+                        observations.push((store.available_lines(), ledger.used(),
+                            store.retained_capacity_bytes(), store.peak_capacity_bytes(), memory.used_bytes()));
+                    }
+                    finish_matches(&mut store, source);
+                    observations.push((store.available_lines(), ledger.used(),
+                        store.retained_capacity_bytes(), store.peak_capacity_bytes(), memory.used_bytes()));
+                    if let Some(expected) = &expected {
+                        assert_eq!(&observations, expected, "{source:?}, {first}, {second}");
+                    } else {
+                        expected = Some(observations);
+                    }
+                    drop((store, ledger));
+                    assert_eq!(memory.used_bytes(), 0);
+                }
+            }
+        }
+    }
+}
+
+#[test]
 fn crlf_search_preserves_repeated_cr_and_every_utf8_fragment_split() {
     every_utf8_split_matches(&['a', '\r', '\n', 'é'], 5);
 }
@@ -377,7 +415,7 @@ fn exact_and_one_short_global_and_local_capacities_include_replacement_peaks() {
     let facts = store.finish().unwrap();
     drop((store, ledger));
     assert_eq!(memory.used_bytes(), 0);
-    for local in [false, true] {
+    for (local, certified) in [(false, false), (false, true), (true, false), (true, true)] {
         for short in [false, true] {
             let memory = ManagedMemoryBudget::new(if local {
                 1024 * 1024
@@ -390,7 +428,11 @@ fn exact_and_one_short_global_and_local_capacities_include_replacement_peaks() {
                 limits.max_temporary_bytes = Some(peak - u64::from(short));
             }
             let mut store = prepare(128, 128, limits, &ledger).unwrap();
-            let result = store.push(source);
+            let result = if certified {
+                store.push_fragment(mech_core::Utf8Fragment::decode(source.as_bytes()).unwrap())
+            } else {
+                store.push(source)
+            };
             if short {
                 assert!(result.is_err());
                 assert_eq!(store.line(1), None);
