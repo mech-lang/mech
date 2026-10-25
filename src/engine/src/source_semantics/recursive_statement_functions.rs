@@ -93,20 +93,23 @@ impl SemanticBuilder {
                 body: SchemaBody::Tuple(fields.into_boxed_slice()),
             }
         };
-        let capture_arguments = !argument_schema
+        let recursive = calls_function(body, name)?;
+        let supported_carrier = argument_schema
             .clone()
             .finalize()
             .is_ok_and(|schema| crate::is_control_pattern_schema(&schema));
-        if capture_arguments && calls_function(body, name)? {
+        if recursive && !supported_carrier {
             return Err(error(
                 "source-semantics/unsupported-recursive-argument",
                 format!("function {name} requires supported canonical argument bindings"),
             ));
         }
         // A nonrecursive checked call needs lexical ordering, not recursive
-        // pattern bindings. Reuse existing capture authority when its ordinary
-        // argument kinds cannot be recursive carriers. Keep the supported
-        // carrier path unchanged, including its argument transport costs.
+        // pattern bindings. Capture its arguments directly so the frame retains
+        // their immutable snapshots instead of copying their payloads into a
+        // composite and projecting them back out. Recursive calls still need
+        // the structural carrier that supplies each fresh invocation's bindings.
+        let capture_arguments = !recursive;
         let scrutinee = if capture_arguments {
             self.constant(BuiltinSchema::Bool, ValueDataDraft::Bool(true))
         } else if let [argument] = arguments {

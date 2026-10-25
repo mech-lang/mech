@@ -3,7 +3,7 @@ use super::{artifacts, equal, inputs, limits, reference, reference_result};
 use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
 use mech_gpu::native_artifact::{
     JitProgramArtifact, NativeIterationExecutionError, NativeProgramDescriptor,
-    NativeProgramExecutionError, NativeProgramExecutionLimits,
+    NativeProgramExecutionError,
 };
 
 #[path = "canonical_program_lexical_invariant_visits.rs"]
@@ -16,15 +16,6 @@ mod order;
 mod argument_kinds;
 
 pub(super) fn check_cases(source: &str, cases: &[(Vec<(&str, Data)>, Option<Data>)]) {
-    check_cases_with_policy(source, cases, None, limits());
-}
-
-fn check_cases_with_policy(
-    source: &str,
-    cases: &[(Vec<(&str, Data)>, Option<Data>)],
-    resident_denial: Option<&str>,
-    policy: NativeProgramExecutionLimits,
-) {
     for artifact in artifacts(source).0 {
         assert!(artifact.constraints().is_empty());
         let catalog = mech_stdlib::source_catalog();
@@ -41,7 +32,7 @@ fn check_cases_with_policy(
             let args = inputs(&artifact, named, &memory);
             if let Some(expected) = expected {
                 let ordinary = reference(&artifact, &args);
-                jit.evaluate_into(&args, &mut output, policy, &memory)
+                jit.evaluate_into(&args, &mut output, limits(), &memory)
                     .unwrap();
                 equal(&artifact, &output, &ordinary);
                 assert_eq!(
@@ -56,36 +47,11 @@ fn check_cases_with_policy(
                 );
             } else {
                 let error = reference_result(&artifact, &args).unwrap_err();
-                if let Some(dimension) = resident_denial {
-                    assert!(
-                        error.contains("ResourceLimit")
-                            && error.contains(dimension)
-                            && error.contains("limit: 16777216"),
-                        "{error}"
-                    );
-                    eprintln!("DEFLATE_ENTRY_RESIDENT_DEFAULT_DENIAL {error}");
-                } else {
-                    assert!(error.contains("LexicalIntegrity"), "{error}");
-                }
+                assert!(error.contains("LexicalIntegrity"), "{error}");
                 let prior = output.clone();
                 let before = memory.used_bytes();
-                if resident_denial.is_some() {
-                    // The ordinary native test allowance must still expose
-                    // argument-frame copying rather than hide or waive it.
-                    let denial = jit
-                        .evaluate_into(&args, &mut output, limits(), &memory)
-                        .unwrap_err();
-                    let detail = format!("{denial:?}");
-                    assert!(
-                        detail.contains("ResourceLimit") && detail.contains("ComputeWork"),
-                        "{detail}"
-                    );
-                    assert_eq!(memory.used_bytes(), before);
-                    assert!(output.iter().all(Option::is_none));
-                    eprintln!("DEFLATE_ENTRY_NATIVE_GENERIC_DENIAL {detail}");
-                }
                 let error = jit
-                    .evaluate_into(&args, &mut output, policy, &memory)
+                    .evaluate_into(&args, &mut output, limits(), &memory)
                     .unwrap_err();
                 let NativeProgramExecutionError::Control(
                     NativeIterationExecutionError::Integrity { origin },
@@ -375,22 +341,9 @@ fn binary_tree_table_and_window_checks_precede_the_later_reads() {
             ]
         };
         check_cases(&source, &[(named(1, 0, u64::MAX), None)]);
-        // Framing the complete checked invocation currently copies the full
-        // argument tuple. Keep and expose the resident default's admission
-        // denial; the explicitly qualified native path still must reach the
-        // window check before any input load or table update.
-        // Use the existing full-tree transition qualification policy. This
-        // pays for the physical copying without changing any host default.
-        let mut policy = limits();
-        policy.library.max_output_elements = Some(262144);
-        policy.execution.max_work = 10_000_000_000;
-        policy.library.max_compute_work = Some(10_000_000_000);
-        policy.library.max_comparison_work = Some(10_000_000_000);
-        check_cases_with_policy(
-            &source,
-            &[(named(262144, 5, 4), None)],
-            Some("TemporaryBytes"),
-            policy,
-        );
+        // The ordinary policy now reaches the lexical window check with the
+        // full table, without first copying a complete argument frame. Search
+        // and skip remain separate calls with their original argument lists.
+        check_cases(&source, &[(named(262144, 5, 4), None)]);
     }
 }
