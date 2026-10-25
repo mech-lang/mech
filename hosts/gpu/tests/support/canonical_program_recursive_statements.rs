@@ -277,3 +277,21 @@ fn checked_boolean_self_recursion_uses_fresh_arguments_in_application_stages() {
         }
     }
 }
+
+#[test]
+fn recursive_record_return_accepts_a_source_initialized_buffer() {
+    let source = "<result> := <{values<[u16]> left<u64>}>\nwalk(xs<[u16]>, left<u64>) => (out<result>) :=\n  out := ((left > 0u64)? | true => walk(xs, left - 1u64) | false => {values: xs, left: left}).\nnodes := [0u16 | i <- 0u64..=3u64, i < 3u64]\nwalk(nodes, count<u64>)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for count in [0, 3, 1] {
+            let args = inputs(&artifact, &[("count", Data::U64(count))], &memory);
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            equal(&artifact, &output, &reference(&artifact, &args));
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
