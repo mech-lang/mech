@@ -212,7 +212,9 @@ fn selected_template(
 // and lowers structurally total ordinary tail recursion on real argument values.
 // IR102 routes selected nested tail calls to the exact lexical target and does
 // not manufacture result copies for branches that only recur.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 102;
+// IR103 admits ordinary recursive statement frames and up to 32 lexical control
+// levels, with canonical identity conformance for compound function outputs.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 103;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
