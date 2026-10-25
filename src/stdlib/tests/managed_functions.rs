@@ -22,12 +22,24 @@ fn maintained_catalog_has_no_open_or_unclassified_memory_implementation() {
 }
 
 #[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
+fn is_word_operation(name: &str) -> bool {
+    matches!(name,
+        "bits/and" | "bits/or" | "bits/xor" | "bits/not"
+        | "bits/shift-left-wrap" | "bits/shift-right-wrap"
+        | "bits/leading-zeros" | "bits/trailing-zeros"
+        | "bits/wrapping-add" | "bits/wrapping-sub" | "bits/wrapping-mul")
+}
+
+#[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
 fn managed_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'static str> {
     use mech_core::{
         FunctionMatrixElement, FunctionMatrixStoragePattern, FunctionValueRepresentation,
     };
 
     let name = entry.name.as_str();
+    if is_word_operation(name) {
+        return Some("F01");
+    }
     if name.starts_with("Access")
         || name.starts_with("RecordAccess")
         || name.starts_with("TableAccess")
@@ -140,6 +152,9 @@ fn managed_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'s
 
 #[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
 fn managed_source_family(name: &str, intrinsic: bool) -> Option<&'static str> {
+    if is_word_operation(name) {
+        return Some("F01");
+    }
     if intrinsic {
         return if name.starts_with("access/") {
             Some("F04")
@@ -336,12 +351,24 @@ fn ordinary_map_additions_have_exact_aggregate_families_and_memory_classes() {
 
 #[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
 #[test]
-fn ordinary_sort_text_additions_have_exact_families_and_memory_classes() {
+fn ordinary_sort_text_and_word_additions_have_exact_families_and_memory_classes() {
+    assert_eq!(managed_source_family("bits/future-operation", false), None);
     let catalog = mech_stdlib::source_catalog();
     for (name, family, arity) in [
         ("sequence/sort-indices", "F06", 4),
         ("text/lines", "F03", 1),
         ("text/join", "F03", 2),
+        ("bits/and", "F01", 2),
+        ("bits/or", "F01", 2),
+        ("bits/xor", "F01", 2),
+        ("bits/not", "F01", 1),
+        ("bits/shift-left-wrap", "F01", 2),
+        ("bits/shift-right-wrap", "F01", 2),
+        ("bits/leading-zeros", "F01", 1),
+        ("bits/trailing-zeros", "F01", 1),
+        ("bits/wrapping-add", "F01", 2),
+        ("bits/wrapping-sub", "F01", 2),
+        ("bits/wrapping-mul", "F01", 2),
     ] {
         let operation = OperationId::from_name(name);
         let entries = catalog
