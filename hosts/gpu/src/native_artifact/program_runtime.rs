@@ -144,6 +144,12 @@ pub struct NativeProgramExecutionReport {
     pub frozen_map_regions: u64,
     /// Successful original source queries against those complete private maps.
     pub frozen_map_reads: u64,
+    /// Bounded paired reservations from the original worker-group escrow.
+    pub worker_credit_claims: u64,
+    /// Original full funded batches actually debited through those credits.
+    pub worker_credit_batches: u64,
+    /// Credit settlements that release an unused portion, never spent work.
+    pub worker_credit_reclaims: u64,
     /// Source comprehensions whose original child bodies completed in workers.
     pub parallel_regions: u64,
     /// Completed dispatches; one dispatch may cover several source regions.
@@ -245,6 +251,9 @@ struct Context<'plan, 'visit> {
     guarded_call_regions: u64,
     frozen_map_regions: u64,
     frozen_map_reads: u64,
+    worker_credit_claims: u64,
+    worker_credit_batches: u64,
+    worker_credit_reclaims: u64,
     parallel_regions: u64,
     parallel_batches: u64,
     parallel_tasks: u64,

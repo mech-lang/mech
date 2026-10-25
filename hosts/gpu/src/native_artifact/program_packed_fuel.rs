@@ -7,6 +7,12 @@ pub(super) struct Prepared {
     full_threshold: Option<Price>,
 }
 impl Prepared {
+    pub(super) fn full_debit(&self) -> Option<Price> {
+        self.full_threshold.map(|full| Price {
+            compute: full.compute / 4,
+            comparison: full.comparison / 4,
+        })
+    }
     pub(super) fn new(unit: Price) -> Self {
         // remaining / price / 4 >= BATCH exactly when remaining >=
         // price * (4 * BATCH), provided that product is representable.
