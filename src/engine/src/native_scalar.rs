@@ -137,6 +137,42 @@ pub enum NativeScalarOp {
     U64ToU16,
     #[cfg(any(feature = "convert", feature = "native-artifact"))]
     U64ToU32,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U8Eq,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U8Ne,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U8Lt,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U8Le,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U8Gt,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U8Ge,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U16Eq,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U16Ne,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U16Lt,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U16Le,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U16Gt,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U16Ge,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U32Eq,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U32Ne,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U32Lt,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U32Le,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U32Gt,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U32Ge,
 }
 
 impl NativeScalarOp {
@@ -174,6 +210,12 @@ impl NativeScalarOp {
             U64BitAnd | U64BitOr | U64BitXor | U64ShlWrap | U64ShrWrap | U64WrappingAdd
             | U64WrappingSub | U64WrappingMul => (&[U64, U64], U64),
             U64Add | U64Sub | U64Mul | U64Div | U64Rem => (&[U64, U64], U64),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U8Eq | U8Ne | U8Lt | U8Le | U8Gt | U8Ge => (&[U8, U8], Bool),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U16Eq | U16Ne | U16Lt | U16Le | U16Gt | U16Ge => (&[U16, U16], Bool),
+            #[cfg(any(feature = "convert", feature = "native-artifact"))]
+            U32Eq | U32Ne | U32Lt | U32Le | U32Gt | U32Ge => (&[U32, U32], Bool),
             U64Eq | U64Ne | U64Lt | U64Le | U64Gt | U64Ge => (&[U64, U64], Bool),
             I64Add | I64Sub | I64Mul | I64Div | I64Rem => (&[I64, I64], I64),
             I64Eq | I64Ne | I64Lt | I64Le | I64Gt | I64Ge => (&[I64, I64], Bool),

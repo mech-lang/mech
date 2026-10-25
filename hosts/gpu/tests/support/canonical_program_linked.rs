@@ -86,9 +86,19 @@ fn import_inputs(
 
 #[test]
 fn linked_assertion_rejection_preserves_publication_and_recovers() {
+    let source = "checked(n<u64>) => (out<u64>) :=\n  positive! := n > 0u64\n  out := 12u64 / n.\nchecked(input<u64>)\n";
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
+#[test]
+fn linked_narrow_comparison_assertion_preserves_publication_and_recovers() {
+    let source = "checked(n<u32>) => (out<u64>) :=\n  positive! := n > 0u32\n  wide<u64> := n\n  out := 12u64 / wide.\nchecked(input<u32>)\n";
+    linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
+}
+
+fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
     let temporary = tempfile::tempdir().unwrap();
     let directory = temporary.path();
-    let source = "checked(n<u64>) => (out<u64>) :=\n  positive! := n > 0u64\n  out := 12u64 / n.\nchecked(input<u64>)\n";
     let artifact = super::artifacts(source).0.into_iter().next().unwrap();
     let generated = generate_linked_program_application(
         &workspace(),
@@ -114,9 +124,14 @@ fn linked_assertion_rejection_preserves_publication_and_recovers() {
     assert_eq!(shell.matches(invocation).count(), 1);
     let driver = shell.replace(invocation, r#"
     for (number, expected) in [(3, Some(4)), (0, None), (2, Some(6))] {
+        let data = match inputs[0].canonical_data_draft().unwrap() {
+            mech_core::ValueDataDraft::U32(_) => mech_core::ValueDataDraft::U32(number.try_into().unwrap()),
+            mech_core::ValueDataDraft::U64(_) => mech_core::ValueDataDraft::U64(number),
+            _ => panic!("unexpected assertion input kind"),
+        };
         let value = ValueDraft {
             schema: inputs[0].schema(), shape_values: Box::new([]),
-            data: mech_core::ValueDataDraft::U64(number),
+            data,
         }.finalize(&SnapshotValidationContext::with_shared_schemas(&schemas)).unwrap();
         let mut reservation = memory.reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap()).unwrap();
         let arguments = [value.into_memory_budget(&mut reservation).unwrap()];
@@ -187,7 +202,7 @@ fn linked_assertion_rejection_preserves_publication_and_recovers() {
     assert_eq!(messages.build_finished, Some(true));
     let binary = messages.select_binary("lexical-retry").unwrap().executable;
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
-    let args = inputs(&artifact, &[("input", ValueDataDraft::U64(3))], &memory);
+    let args = inputs(&artifact, &[("input", input_word(3))], &memory);
     let input = input_file(directory, "checked", &args);
     let result = bounded(
         Command::new(binary)
@@ -208,7 +223,7 @@ fn linked_assertion_rejection_preserves_publication_and_recovers() {
         String::from_utf8_lossy(&result.stderr)
     );
     assert!(result.stderr.is_empty());
-    let recovery = inputs(&artifact, &[("input", ValueDataDraft::U64(2))], &memory);
+    let recovery = inputs(&artifact, &[("input", input_word(2))], &memory);
     assert_eq!(
         result.stdout,
         exported(&artifact, &reference_result(&artifact, &recovery).unwrap())

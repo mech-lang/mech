@@ -13,7 +13,8 @@ fn bytes(hash: &mut Sha256, value: &[u8]) {
     hash.update(value);
 }
 pub const NATIVE_ITERATION_LINK_IDENTITY_BYTES: usize = 176;
-pub const NATIVE_ITERATION_TYPED_IR_VERSION: u64 = 4;
+// Exact-width unsigned comparison primitives retain their semantic kinds.
+pub const NATIVE_ITERATION_TYPED_IR_VERSION: u64 = 5;
 pub const NATIVE_ITERATION_WORK_POLICY_VERSION: u64 = 2;
 const MAGIC: &[u8; 16] = b"MECHNATIVEITER\0\0";
 

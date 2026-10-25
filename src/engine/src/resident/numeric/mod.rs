@@ -2364,22 +2364,58 @@ fn bind_snapshot_comparison(
     } else {
         kernel
     };
-    let op = match (
-        left_element == &SchemaBody::SignedInteger(IntegerWidth::W64),
-        comparison,
-    ) {
-        (false, SemanticComparison::Equal) => super::native_semantics::NativeScalarOp::U64Eq,
-        (false, SemanticComparison::NotEqual) => super::native_semantics::NativeScalarOp::U64Ne,
-        (false, SemanticComparison::Less) => super::native_semantics::NativeScalarOp::U64Lt,
-        (false, SemanticComparison::LessEqual) => super::native_semantics::NativeScalarOp::U64Le,
-        (false, SemanticComparison::Greater) => super::native_semantics::NativeScalarOp::U64Gt,
-        (false, SemanticComparison::GreaterEqual) => super::native_semantics::NativeScalarOp::U64Ge,
-        (true, SemanticComparison::Equal) => super::native_semantics::NativeScalarOp::I64Eq,
-        (true, SemanticComparison::NotEqual) => super::native_semantics::NativeScalarOp::I64Ne,
-        (true, SemanticComparison::Less) => super::native_semantics::NativeScalarOp::I64Lt,
-        (true, SemanticComparison::LessEqual) => super::native_semantics::NativeScalarOp::I64Le,
-        (true, SemanticComparison::Greater) => super::native_semantics::NativeScalarOp::I64Gt,
-        (true, SemanticComparison::GreaterEqual) => super::native_semantics::NativeScalarOp::I64Ge,
+    use super::native_semantics::NativeScalarOp as Op;
+    use SemanticComparison as C;
+    let op = match (left_element, comparison) {
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W8), C::Equal) => Op::U8Eq,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W8), C::NotEqual) => Op::U8Ne,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W8), C::Less) => Op::U8Lt,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W8), C::LessEqual) => Op::U8Le,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W8), C::Greater) => Op::U8Gt,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W8), C::GreaterEqual) => Op::U8Ge,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W16), C::Equal) => Op::U16Eq,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W16), C::NotEqual) => Op::U16Ne,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W16), C::Less) => Op::U16Lt,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W16), C::LessEqual) => Op::U16Le,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W16), C::Greater) => Op::U16Gt,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W16), C::GreaterEqual) => Op::U16Ge,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W32), C::Equal) => Op::U32Eq,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W32), C::NotEqual) => Op::U32Ne,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W32), C::Less) => Op::U32Lt,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W32), C::LessEqual) => Op::U32Le,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W32), C::Greater) => Op::U32Gt,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W32), C::GreaterEqual) => Op::U32Ge,
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), C::Equal) => Op::U64Eq,
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), C::NotEqual) => Op::U64Ne,
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), C::Less) => Op::U64Lt,
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), C::LessEqual) => Op::U64Le,
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), C::Greater) => Op::U64Gt,
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), C::GreaterEqual) => Op::U64Ge,
+        (SchemaBody::SignedInteger(IntegerWidth::W64), C::Equal) => Op::I64Eq,
+        (SchemaBody::SignedInteger(IntegerWidth::W64), C::NotEqual) => Op::I64Ne,
+        (SchemaBody::SignedInteger(IntegerWidth::W64), C::Less) => Op::I64Lt,
+        (SchemaBody::SignedInteger(IntegerWidth::W64), C::LessEqual) => Op::I64Le,
+        (SchemaBody::SignedInteger(IntegerWidth::W64), C::Greater) => Op::I64Gt,
+        (SchemaBody::SignedInteger(IntegerWidth::W64), C::GreaterEqual) => Op::I64Ge,
+        _ => return Ok(kernel),
     };
     Ok(super::native_semantics::certify(request, kernel, op))
 }

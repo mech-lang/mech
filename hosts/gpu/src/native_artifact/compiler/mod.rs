@@ -656,13 +656,15 @@ pub(in crate::native_artifact) fn primitive(
         BoolAnd => b.ins().band(a, c),
         BoolOr => b.ins().bor(a, c),
         BoolXor => b.ins().bxor(a, c),
-        U64Eq | U64Ne | U64Lt | U64Le | U64Gt | U64Ge | BoolEq | BoolNe => {
+        U8Eq | U8Ne | U8Lt | U8Le | U8Gt | U8Ge | U16Eq | U16Ne | U16Lt | U16Le | U16Gt | U16Ge
+        | U32Eq | U32Ne | U32Lt | U32Le | U32Gt | U32Ge | U64Eq | U64Ne | U64Lt | U64Le | U64Gt
+        | U64Ge | BoolEq | BoolNe => {
             let cc = match op {
-                U64Eq | BoolEq => IntCC::Equal,
-                U64Ne | BoolNe => IntCC::NotEqual,
-                U64Lt => IntCC::UnsignedLessThan,
-                U64Le => IntCC::UnsignedLessThanOrEqual,
-                U64Gt => IntCC::UnsignedGreaterThan,
+                U8Eq | U16Eq | U32Eq | U64Eq | BoolEq => IntCC::Equal,
+                U8Ne | U16Ne | U32Ne | U64Ne | BoolNe => IntCC::NotEqual,
+                U8Lt | U16Lt | U32Lt | U64Lt => IntCC::UnsignedLessThan,
+                U8Le | U16Le | U32Le | U64Le => IntCC::UnsignedLessThanOrEqual,
+                U8Gt | U16Gt | U32Gt | U64Gt => IntCC::UnsignedGreaterThan,
                 _ => IntCC::UnsignedGreaterThanOrEqual,
             };
             let value = b.ins().icmp(cc, a, c);

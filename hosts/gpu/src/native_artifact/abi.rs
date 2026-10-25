@@ -37,6 +37,24 @@ pub(in crate::native_artifact) const fn primitive_work(op: NativeScalarOp) -> u6
         | NativeScalarOp::U64Mul
         | NativeScalarOp::U64Div
         | NativeScalarOp::U64Rem
+        | NativeScalarOp::U8Eq
+        | NativeScalarOp::U8Ne
+        | NativeScalarOp::U8Lt
+        | NativeScalarOp::U8Le
+        | NativeScalarOp::U8Gt
+        | NativeScalarOp::U8Ge
+        | NativeScalarOp::U16Eq
+        | NativeScalarOp::U16Ne
+        | NativeScalarOp::U16Lt
+        | NativeScalarOp::U16Le
+        | NativeScalarOp::U16Gt
+        | NativeScalarOp::U16Ge
+        | NativeScalarOp::U32Eq
+        | NativeScalarOp::U32Ne
+        | NativeScalarOp::U32Lt
+        | NativeScalarOp::U32Le
+        | NativeScalarOp::U32Gt
+        | NativeScalarOp::U32Ge
         | NativeScalarOp::U64Eq
         | NativeScalarOp::U64Ne
         | NativeScalarOp::U64Lt
