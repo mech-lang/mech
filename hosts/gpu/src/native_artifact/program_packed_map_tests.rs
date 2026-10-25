@@ -10,6 +10,8 @@ mod frozen_tests;
 mod lookup_cache_tests;
 #[path = "program_packed_domain_validation_tests.rs"]
 mod domain_validation_tests;
+#[path = "program_packed_probe_group_tests.rs"]
+mod probe_group_tests;
 
 fn limits() -> MemoryBudgetLimits {
     MemoryBudgetLimits {

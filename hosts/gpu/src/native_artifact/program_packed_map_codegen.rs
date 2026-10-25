@@ -329,7 +329,10 @@ fn probe_fresh_core_to(b: &mut FunctionBuilder<'_>, frame: &FrameState,
         let product_high = b.ins().umulhi(left, right);
         b.ins().bxor(product_low, product_high)
     } else { hash_words(b, low, high) };
-    let mask = b.ins().iadd_imm(capacity, -1);
+    // The private owner and generated probe use the same aligned partition.
+    // Positive power-of-two capacities are multiples of GROUP, so no candidate
+    // lane in an admitted group wraps past the payload allocation.
+    let mask = b.ins().iadd_imm(capacity, -(GROUP as i64));
     let index = b.ins().band(hash, mask);
     let tag = b.ins().ushr_imm(hash, 57);
     let slots = read!(b, frame, slots);
@@ -359,6 +362,8 @@ fn probe_fresh_core_to(b: &mut FunctionBuilder<'_>, frame: &FrameState,
             b.set_cold_block(empties);
             b.set_cold_block(advance);
         }
+        let group_offset = b.ins().imul_imm(index, slot_bytes(frame.domain) as i64);
+        let group_slots = b.ins().iadd(slots, group_offset);
         let group_address = b.ins().iadd(controls, index);
         let (matching, empty) = control_group(b, group_address, tag);
         let matching = if missing.is_some() { matching }
@@ -367,11 +372,12 @@ fn probe_fresh_core_to(b: &mut FunctionBuilder<'_>, frame: &FrameState,
         b.switch_to_block(candidates);
         let remaining = b.block_params(candidates)[0];
         let bit = b.ins().ctz(remaining);
-        let lane = b.ins().ushr_imm(bit, 3);
-        let bucket = b.ins().iadd(index, lane);
-        let bucket = b.ins().band(bucket, mask);
-        let address = b.ins().imul_imm(bucket, slot_bytes(frame.domain) as i64);
-        let address = b.ins().iadd(slots, address);
+        // Equality masks have their first set bit at 8 * lane. Both concrete
+        // slot strides are multiples of eight; scale that bit directly into a
+        // payload-byte displacement. This removes lane conversion and wrap
+        // dependencies after the control comparison, with a ready group base.
+        let displacement = b.ins().imul_imm(bit, (slot_bytes(frame.domain) / GROUP) as i64);
+        let address = b.ins().iadd(group_slots, displacement);
         let stored_low = get(b, address, core::mem::offset_of!(Slot, low));
         let same_low = b.ins().icmp(IntCC::Equal, low, stored_low);
         let same = if narrow { same_low } else {
