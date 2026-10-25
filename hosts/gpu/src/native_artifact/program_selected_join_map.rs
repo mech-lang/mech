@@ -74,6 +74,8 @@ impl Context<'_, '_> {
         separator: &Value,
         target: &String,
         compute: u64,
+        join_peak: u64,
+        join_nodes: u64,
     ) -> Result<Option<Prepared>, Error> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         if faults::disabled() {
@@ -129,23 +131,37 @@ impl Context<'_, '_> {
         let chunks = view
             .consuming_join_chunk_bound()
             .ok_or_else(|| invalid("joined map lost physical chunks"))?;
-        let bound = add(
-            add(mul(descriptor.scalar_bytes, 16)?, 16384)?,
-            add(
-                add(
-                    mul(view.payload_bytes(), 56)?,
-                    mul(view.count() as u64, 128)?,
-                )?,
-                add(
-                    mul(chunks, 2048)?,
-                    mul(entries.entries().len() as u64, 256)?,
-                )?,
-            )?,
-        )?;
-        if bound > compute {
+        // Optional estimates use a wider integer so an unfundable optimization
+        // declines instead of introducing a new source overflow/failure.
+        let bound = u128::from(descriptor.scalar_bytes) * 16
+            + 16384
+            + u128::from(view.payload_bytes()) * 56
+            + view.count() as u128 * 128
+            + u128::from(chunks) * 2048
+            + entries.entries().len() as u128 * 256;
+        if bound > u128::from(compute) {
             return Ok(None);
         }
         let memory = self.library.memory_budget();
+        let Some(map_bytes) = map.memory_budget_retained_bytes(&memory) else {
+            return Ok(None);
+        };
+        // The newly traversed map is an input to this composed operation.
+        // Include its FULL bound, even though its genuine global ownership is
+        // already shared with the arena. Tight cases keep the ordinary join.
+        let peak = u128::from(join_peak) + u128::from(map_bytes);
+        let nodes = u128::from(join_nodes) + entries.entries().len() as u128 * 2 + 4;
+        if self
+            .limits
+            .max_temporary_bytes
+            .is_none_or(|limit| peak > u128::from(limit))
+            || self
+                .limits
+                .max_retained_nodes
+                .is_none_or(|limit| nodes > u128::from(limit))
+        {
+            return Ok(None);
+        }
         let call = descriptor.calls[site]
             .as_ref()
             .ok_or_else(|| invalid("joined map lost its selected join"))?;

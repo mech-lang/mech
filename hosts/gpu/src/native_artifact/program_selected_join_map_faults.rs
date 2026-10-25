@@ -74,7 +74,7 @@ pub(in crate::native_artifact::program_runtime) fn demand() -> [u64; 6] {
         d.envelope,
     ]
 }
-pub(super) fn pressure(
+pub(in crate::native_artifact::program_runtime) fn pressure(
     ctx: &Context<'_, '_>,
 ) -> Result<
     (
@@ -100,7 +100,7 @@ pub(super) fn pressure(
         fire();
         let count = memory
             .limit_nodes()
-            .checked_sub(memory.used_nodes())
+            .checked_sub(memory.retained_nodes())
             .and_then(|n| n.checked_sub(remaining))
             .ok_or_else(|| invalid("test node pressure exceeds free nodes"))?;
         Some(memory.reserve_nodes(count)?)
@@ -109,7 +109,10 @@ pub(super) fn pressure(
     };
     Ok((bytes, nodes))
 }
-pub(super) fn before_join(ctx: &mut Context<'_, '_>, role: Site) {
+pub(in crate::native_artifact::program_runtime) fn before_join(
+    ctx: &mut Context<'_, '_>,
+    role: Site,
+) {
     if !matches!(role, Site::Join(_)) || FIRED.with(Cell::get) {
         return;
     }

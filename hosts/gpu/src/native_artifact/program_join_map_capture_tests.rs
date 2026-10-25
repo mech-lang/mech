@@ -26,7 +26,7 @@ fn cleanup(
     assert!(!trace.body_failed_before_eof);
     assert!(trace.output.is_empty());
     assert_eq!(memory.used_bytes(), 0);
-    assert_eq!(memory.used_nodes(), 0);
+    assert_eq!(memory.retained_nodes(), 0);
     drop(trace);
     fixture::no_resident(runtime);
     runtime.shutdown().unwrap();
