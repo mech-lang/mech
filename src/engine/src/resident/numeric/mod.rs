@@ -847,6 +847,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     linkage_factories::NUMERIC_MATRIX_TRANSPOSE.install(builder)?;
     linkage_factories::NUMERIC_CORE_ASSIGN.install(builder)?;
     linkage_factories::NUMERIC_CORE_ASSIGN_WHOLE_VALUE.install(builder)?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_indexed_assignment(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_AXIS.install(builder)?;
     linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_ROWS.install(builder)?;
     linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_COLUMNS.install(builder)?;
@@ -4191,7 +4194,7 @@ fn compound_f64(arithmetic: SemanticArithmetic, left: f64, right: f64) -> f64 {
     }
 }
 
-fn bind_indexed_assign(
+pub(super) fn bind_indexed_assign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_indexed_assign_with_region(request, RegionPolicy::IndexedAxis { axis: 0 })

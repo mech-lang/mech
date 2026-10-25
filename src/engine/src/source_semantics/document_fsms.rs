@@ -1200,11 +1200,14 @@ impl SemanticBuilder {
                     &mut inputs,
                     &mut captures,
                     |builder| {
-                        builder.lower_synchronous_fsm_transitions(
+                        builder.fsm_local_mutation_depth += 1;
+                        let result = builder.lower_synchronous_fsm_transitions(
                             machine,
                             &transitions,
                             &arm.syntax,
-                        )
+                        );
+                        builder.fsm_local_mutation_depth -= 1;
+                        result
                     },
                 )?;
                 if schema != machine.output {

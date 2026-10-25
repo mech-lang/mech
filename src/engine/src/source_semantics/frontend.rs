@@ -2830,6 +2830,7 @@ fn unresolved_empty(anchor: SourceSemanticAnchor) -> SourceSemanticError {
 #[derive(Clone, Copy)]
 enum PendingBinding {
     Value(PendingValue),
+    MutableLocal(PendingValue),
     MutableState(u32),
 }
 
@@ -3390,6 +3391,7 @@ struct SemanticBuilder {
     control_depth: usize,
     match_depth: usize,
     comprehension_depth: usize,
+    fsm_local_mutation_depth: usize,
     next_control_block: u32,
     anchor: SourceSemanticAnchor,
     constants: Vec<PendingConstant>,
@@ -3584,6 +3586,7 @@ impl SemanticBuilder {
             control_depth: 0,
             match_depth: 0,
             comprehension_depth: 0,
+            fsm_local_mutation_depth: 0,
             next_control_block: 0,
             anchor,
             constants: Vec::new(),
@@ -5254,7 +5257,9 @@ impl SemanticBuilder {
             )?;
         }
         value.resolved()?;
-        let bound = if definition.mutability_marker().is_some() {
+        let local_mutable =
+            definition.mutability_marker().is_some() && self.fsm_local_mutation_depth > 0;
+        let bound = if definition.mutability_marker().is_some() && !local_mutable {
             if self.external_definitions.contains(&name) {
                 return Err(SourceSemanticError {
                     code: "source-semantics/mutable-compute-input",
@@ -5292,7 +5297,7 @@ impl SemanticBuilder {
                 },
             });
             PendingValue::State(state)
-        } else if self.external_definitions.contains(&name) {
+        } else if self.external_definitions.contains(&name) && !local_mutable {
             let schema = self.schema_draft_of(value)?;
             // This projection retains the declared live port. Its default is
             // evaluated by the initialization projection, so initializer-only
@@ -5317,7 +5322,9 @@ impl SemanticBuilder {
             value
         };
         self.scope_definitions.insert(name.clone());
-        let binding = if definition.mutability_marker().is_some() {
+        let binding = if local_mutable {
+            PendingBinding::MutableLocal(bound)
+        } else if definition.mutability_marker().is_some() {
             let PendingValue::State(state) = bound else {
                 unreachable!("mutable definitions allocate a state slot")
             };
@@ -8032,7 +8039,7 @@ impl SemanticBuilder {
             )
             .chain(self.states.iter().map(|state| state.initializer))
             .chain(self.bindings.values().map(|binding| match *binding {
-                PendingBinding::Value(value) => value,
+                PendingBinding::Value(value) | PendingBinding::MutableLocal(value) => value,
                 PendingBinding::MutableState(state) => PendingValue::State(state),
             }))
         {

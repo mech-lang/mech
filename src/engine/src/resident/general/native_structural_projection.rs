@@ -169,8 +169,10 @@ pub fn native_project_structural_value(
             ])?,
             4096,
         ])?;
+        let expansion = budget::unsigned_word_draft_expansion(&mut meter, body, data)?;
         let workspace = add(&[
             owner_envelope,
+            expansion,
             mech_core::canonical_snapshot_draft_bytes(footprint)?,
             mech_core::canonical_snapshot_finalization_bytes(footprint)?,
             mul(&[Value::memory_budget_claim_metadata_bytes(), 2])?,

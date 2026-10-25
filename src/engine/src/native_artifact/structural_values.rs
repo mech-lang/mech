@@ -1,7 +1,16 @@
 //! Canonical child trees covered by the native projection's draft witness.
-//! Packed collections, field-label drafts and foreign Dynamic roots require
-//! their own expansion/ownership witnesses before this route can select them.
+//! Closed word matrices additionally prepay packed-to-draft expansion.
+//! Field-label drafts and foreign Dynamic roots still require their own witnesses.
 use mech_core::SchemaBody;
+
+/// Only closed, shallow unsigned buffers are covered by the packed expansion
+/// witness. Dynamic dimensions and nested element owners remain unsupported.
+pub(crate) fn closed_word_matrix(body: &SchemaBody) -> bool {
+    matches!(body, SchemaBody::Matrix { element, dimensions }
+        if dimensions.len() == 2
+            && dimensions.iter().all(|d| matches!(d, mech_core::DimensionExpr::Constant(_)))
+            && matches!(element.as_ref(), SchemaBody::UnsignedInteger(_)))
+}
 
 pub(crate) fn supported(body: &SchemaBody) -> bool {
     fn visit(body: &SchemaBody, depth: usize) -> bool {
@@ -19,6 +28,7 @@ pub(crate) fn supported(body: &SchemaBody) -> bool {
             | SchemaBody::FloatingPoint(_)
             | SchemaBody::Complex(_)
             | SchemaBody::Rational64 => true,
+            SchemaBody::Matrix { .. } => closed_word_matrix(body),
             SchemaBody::Tuple(items) => items.iter().all(|item| visit(item, depth + 1)),
             SchemaBody::Option(item) | SchemaBody::Set { element: item, .. } => {
                 visit(item, depth + 1)

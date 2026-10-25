@@ -716,6 +716,19 @@ fn enum_pack(
     if borrowed_inventory {
         meter.charge_compute_work(super::budget::checked_u64(payload_bytes)?)?;
     }
+    let expansion = if !borrowed_inventory {
+        if let ResidentValueRef::Snapshot([Some(value)]) = payload_input {
+            let schema = plan.schemas.get(payload_plan.source.schema_id)
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            super::budget::unsigned_word_draft_expansion(&mut meter, schema.body(), value.data())?
+        } else {
+            0
+        }
+    } else {
+        0
+    };
+    meter.charge_compute_work(super::budget::checked_cost_product(&[expansion, 8])?)?;
+    let expansion = checked_cost_usize(expansion)?;
     let measured = meter.estimate();
     let draft_bytes = core::mem::size_of::<ValueDataDraft>()
         .checked_add(payload_bytes)
@@ -729,6 +742,7 @@ fn enum_pack(
             output_bytes,
             temporary_bytes: output_bytes
                 .checked_add(draft_bytes)
+                .and_then(|bytes| bytes.checked_add(expansion))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             cloned_bytes: payload_bytes,
             container_bytes: root_bytes

@@ -286,7 +286,7 @@ impl SemanticBuilder {
         if let Some(function) = self.active_functions.last() {
             if matches!(
                 self.document_bindings.get(name),
-                Some(PendingBinding::MutableState(_))
+                Some(PendingBinding::MutableState(_) | PendingBinding::MutableLocal(_))
             ) {
                 return Err(SourceSemanticError {
                     code: "source-semantics/mutable-function-capture",
@@ -510,7 +510,7 @@ impl SemanticBuilder {
             .iter()
             .filter_map(|(name, binding)| match binding {
                 PendingBinding::Value(value) => Some((name.clone(), PendingBinding::Value(*value))),
-                PendingBinding::MutableState(_) => None,
+                PendingBinding::MutableState(_) | PendingBinding::MutableLocal(_) => None,
             })
             .collect::<BTreeMap<_, _>>();
         let mut parameter_names = BTreeSet::new();

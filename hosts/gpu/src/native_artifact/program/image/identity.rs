@@ -203,7 +203,8 @@ fn selected_template(
 // 79 was published by a subsequently reverted metadata experiment.
 // IR95 adds the maintained U64 word primitives. IR96 additionally selects
 // checked unsigned scalar conversions through the original conversion leaf.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 96;
+// IR97 includes pure indexed matrix replacements in local transition code.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 97;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

@@ -135,6 +135,7 @@ impl NativeCollectionPrimitive {
             Self::StringScalarAccess | Self::MatrixScalarAccess | Self::MapKeyAccess => {
                 "access/scalar"
             }
+            Self::MatrixIndexedReplace => "core/assign/indexed-axis",
             Self::SetContains => "set/element-of",
             Self::SetNotContains => "set/not-element-of",
             Self::StringEqual => "compare/eq",
@@ -176,6 +177,7 @@ impl NativeCollectionPrimitive {
     pub const fn arity(self) -> usize {
         match self {
             Self::CompositePack(arity) => arity,
+            Self::MatrixIndexedReplace => 3,
             #[cfg(feature = "map_ops")]
             Self::MapNew => 0,
             #[cfg(feature = "map_ops")]
@@ -287,6 +289,7 @@ fn is_count_map(body: &SchemaBody) -> bool {
 // still validate exact child schemas and admit recursive payload copies.
 fn is_native_state_carrier(body: &SchemaBody) -> bool {
     is_shallow_atomic(body)
+        || crate::native_artifact::structural_values::closed_word_matrix(body)
         || match body {
             SchemaBody::Map { key, value, .. } => {
                 is_shallow_atomic(key) && is_shallow_atomic(value)
@@ -319,7 +322,6 @@ fn validate_schemas(
     {
         return false;
     }
-    #[cfg(feature = "convert")]
     let declared_output = output;
     let output = output.body();
     if let NativeCollectionPrimitive::CompositePack(_) = primitive {
@@ -407,6 +409,16 @@ fn validate_schemas(
             is_shallow_matrix(first)
                 && positional
                 && matches!(first, SchemaBody::Matrix { element, .. } if element.as_ref() == output)
+        }
+        NativeCollectionPrimitive::MatrixIndexedReplace => {
+            is_shallow_matrix(first)
+                && inputs[0] == *declared_output
+                && inputs[1].dimension_parameters().is_empty()
+                && inputs[2].dimension_parameters().is_empty()
+                && matches!(inputs[2].body(), SchemaBody::Index
+                    | SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64))
+                && matches!(first, SchemaBody::Matrix { element, .. }
+                    if element.as_ref() == inputs[1].body())
         }
         NativeCollectionPrimitive::MatrixRangeAccess => {
             let selector = inputs[1].body();

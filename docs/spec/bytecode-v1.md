@@ -489,6 +489,10 @@ artifact tables.
 
 Finalization checks scope and dominance, closed value schemas, pure ordinary
 operation contracts, Boolean guard yields, and identical arm result schemas.
+A local read/modify/write operation must declare `ReadWrite`, `MayAlias` to
+its explicit base operand, and identical base/result schemas. Execution seeds
+a fresh local result from that operand and passes the remaining operands to
+the maintained kernel; earlier local values remain immutable.
 When `partial` is false, it also requires an unguarded wildcard/binding or
 coverage of both Boolean values. When `partial` is true, an unmatched value
 fails execution instead of producing a result. It rejects cross-block references
