@@ -23,6 +23,10 @@ fn complete_invocation_metadata_is_shared_and_denied_without_leaking_prior_state
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
     let parent = session::Prepared::new(descriptor, tests::limits(), &memory).unwrap();
     let baseline = (memory.used_bytes(), memory.retained_nodes(), memory.retained_snapshot_nodes());
+    let fixed_bytes = session::Prepared::worker_setup_bytes(descriptor).unwrap();
+    eprintln!("WORKER_SETUP_CENSUS held_bytes={} envelope_bytes={} constant_bounds={}", baseline.0,
+        fixed_bytes, descriptor.constant_bytes.iter().sum::<u64>());
+    assert!(baseline.0 <= fixed_bytes, "constructor ownership must fit its fixed preflight envelope");
     assert_eq!(baseline.1 - baseline.2, session::Prepared::worker_setup_nodes(descriptor).unwrap(),
         "fixed setup helper must equal the actual private constructor claims");
     assert!(baseline.1 > baseline.2 + caller_geometry::fixed_nodes().unwrap());
