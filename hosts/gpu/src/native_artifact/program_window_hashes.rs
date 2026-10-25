@@ -3,7 +3,7 @@
 //! up and updates one count, including keys never used by a later query.
 use super::super::{NativeProgramExecutionError as Error, invalid};
 use hashbrown::HashMap;
-use mech_core::{ManagedMemoryReservation, MemoryBudgetDimension as Dimension};
+use mech_core::{ManagedMemoryReservation, ManagedNodeReservation, MemoryBudgetDimension as Dimension};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchOrigin};
 
 pub(super) const MAX_WIDTH: u64 = (u128::BITS / 7) as u64;
@@ -13,6 +13,8 @@ pub(in crate::native_artifact::program_runtime) struct WindowHashes {
     counts: HashMap<u128, u64>,
     backing: ManagedMemoryReservation,
     _metadata: ManagedMemoryReservation,
+    entries: ManagedNodeReservation,
+    metadata_nodes: ManagedNodeReservation,
     length: usize,
     width: u64,
     accepted: u64,
@@ -23,6 +25,7 @@ pub(in crate::native_artifact::program_runtime) struct WindowHashes {
     origin: NativeMatchOrigin,
     work: NativeLibraryWorkBudget,
     temporary_limit: u64,
+    retained_limit: u64,
     error: Option<Error>,
 }
 
@@ -60,6 +63,7 @@ impl WindowHashes {
         origin: NativeMatchOrigin,
         work: NativeLibraryWorkBudget,
         temporary_limit: u64,
+        retained_limit: u64,
     ) -> Result<Self, Error> {
         let expected = if width > 0 && width <= length as u64 {
             length as u64 - width + 1
@@ -76,11 +80,20 @@ impl WindowHashes {
             metadata,
             Some(temporary_limit),
         )?;
+        let nodes = add(metadata, 2)?;
+        super::super::collection::check(
+            origin,
+            Dimension::RetainedNodes,
+            nodes,
+            Some(retained_limit),
+        )?;
         let memory = work.memory_budget();
         Ok(Self {
             counts: HashMap::new(),
             backing: memory.reserve_capacity(0)?,
             _metadata: memory.reserve_capacity(metadata)?,
+            entries: memory.reserve_nodes(0)?,
+            metadata_nodes: memory.reserve_nodes(nodes)?,
             length,
             width,
             accepted,
@@ -91,6 +104,7 @@ impl WindowHashes {
             origin,
             work,
             temporary_limit,
+            retained_limit,
             error: None,
         })
     }
@@ -148,7 +162,21 @@ impl WindowHashes {
                 .checked_add(1)
                 .ok_or_else(|| invalid("hash window count overflow"))?;
         } else {
-            if self.counts.len() == self.counts.capacity() {
+            let growth = self.counts.len() == self.counts.capacity();
+            // The private table persists even for query-only consumers, which
+            // never publish a canonical Map. Retain one claim per entry and
+            // admit duplicate entries plus the replacement table on rehash.
+            let rehash_nodes = if growth { add(self.counts.len() as u64, 1)? } else { 0 };
+            super::super::collection::check(
+                self.origin,
+                Dimension::RetainedNodes,
+                add(add(add(self.metadata_nodes.nodes(), self.entries.nodes())?, 1)?, rehash_nodes)?,
+                Some(self.retained_limit),
+            )?;
+            let memory = self.work.memory_budget();
+            let entry = memory.reserve_nodes(1)?;
+            let rehash = memory.reserve_nodes(rehash_nodes)?;
+            if growth {
                 let target = self
                     .counts
                     .capacity()
@@ -184,9 +212,11 @@ impl WindowHashes {
                 pending.resize_capacity(actual)?;
                 self.backing = pending;
             }
+            drop(rehash);
             // The second lookup/insert and any complete bucket scan were also
             // included in the conservative prepayment above.
             self.counts.insert(key, 1);
+            self.entries.merge(entry)?;
         }
         self.updated += 1;
         Ok(())
