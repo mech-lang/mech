@@ -1,3 +1,6 @@
+//! ABI32 stores the joined mapper's admitted table as 128 bytes: 0..127 are
+//! valid outputs (including zero), and the high bit denotes a missing entry.
+//! Both its scalar and vector paths read this same prepared representation.
 //! ABI31 binds owned selected-source geometry and exact initialized extents
 //! for direct generated transform/copy. Frame banks and signatures remain.
 //! ABI30 adds paired selected-join chunk loans and completed String-map entry.
@@ -7,7 +10,8 @@
 //! Entry phases, control pointer and scalar transport stay unchanged.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 31;
+pub(super) const VERSION: u64 = 32;
+pub(super) const JOIN_MAP_MISSING_BYTE: u8 = 0x80;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
 pub(super) const PHASE_PREFIX: u64 = 2;

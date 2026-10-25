@@ -33,14 +33,13 @@ impl Tables {
         let mut bands = Vec::new();
         let mut offsets = Vec::new();
         for index in 0..8 {
-            let low = b
-                .ins()
-                .load(types::I16X8, MemFlags::new(), table, index * 32);
-            let high = b
-                .ins()
-                .load(types::I16X8, MemFlags::new(), table, index * 32 + 16);
-            // Preserve valid zero outputs and EVERY unsigned missing marker.
-            bands.push(b.ins().uunarrow(low, high));
+            // The owning host already encoded valid ASCII values and the
+            // high-bit missing sentinel. Load only the eight final byte
+            // vectors; no conversion can be rematerialized in the row loop.
+            bands.push(
+                b.ins()
+                    .load(types::I8X16, MemFlags::new(), table, index * 16),
+            );
             let offset = b.ins().iconst(types::I8, (index * 16) as i64);
             offsets.push(b.ins().splat(types::I8X16, offset));
         }
@@ -168,8 +167,9 @@ fn define_impl<M: Module>(
         let invalid = b.ins().icmp(IntCC::UnsignedGreaterThan, end, offset_count);
         b.ins().brif(invalid, error, &[], setup, &[]);
         b.switch_to_block(setup);
-        // Hoist all sixteen immutable vectors out of the row loop, not once
-        // per short source row. There is no per-row host/library callback.
+        // Load the eight prepared byte vectors before row traversal. There
+        // are no u16 vectors or narrowing operations for the backend to keep
+        // live or rematerialize per short row, and no per-row host callback.
         let tables = vectorized.then(|| Tables::new(&mut b, table));
         let active = b.ins().ireduce(types::I8, enabled);
         let missing = b.ins().select(active, payload, zero);
@@ -308,15 +308,13 @@ fn define_impl<M: Module>(
         let ascii = b.ins().icmp_imm(IntCC::UnsignedLessThan, key, 128);
         b.ins().brif(ascii, map_lookup, &[], error, &[]);
         b.switch_to_block(map_lookup);
-        let at = b.ins().ishl_imm(key, 1);
-        let address = b.ins().iadd(table, at);
-        let value = b.ins().load(types::I16, MemFlags::new(), address, 0);
+        let address = b.ins().iadd(table, key);
+        let value = b.ins().load(types::I8, MemFlags::new(), address, 0);
         let present = b.ins().icmp_imm(IntCC::UnsignedLessThan, value, 128);
         b.ins().brif(present, map_write, &[], map_missing, &[]);
         b.switch_to_block(map_write);
-        let byte = b.ins().ireduce(types::I8, value);
         let address = b.ins().iadd(target, index);
-        b.ins().store(MemFlags::new(), byte, address, 0);
+        b.ins().store(MemFlags::new(), value, address, 0);
         let next = b.ins().iadd_imm(index, 1);
         b.ins().jump(map_scalar, &[next.into()]);
         b.switch_to_block(map_missing);
