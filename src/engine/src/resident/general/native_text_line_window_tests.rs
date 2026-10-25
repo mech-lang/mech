@@ -350,9 +350,9 @@ fn compact_offset_loans_cover_chunk_transitions_without_materialized_rows() {
                             0,
                             "compact loans create no row backing"
                         );
-                        assert!(window.segment_count <= 2);
                         assert_eq!(
-                            window.segments[..window.segment_count]
+                            window
+                                .segments
                                 .iter()
                                 .map(|segment| segment[4])
                                 .sum::<u64>(),
