@@ -1020,6 +1020,14 @@ pub(super) fn define_cfg<M: Module>(
                     let hooks = hooks
                         .as_ref()
                         .ok_or_else(|| backend("missing mixed call hooks"))?;
+                    #[cfg(feature = "canonical-native-program")]
+                    if joined_maps.iter().any(|(site, _)| *site as usize == index) {
+                        // Ordinary managed calls return no scalar result. Give
+                        // the optional composition handshake a fresh declined
+                        // marker rather than observing a prior scalar's word.
+                        let zero = b.ins().iconst(types::I64, 0);
+                        b.ins().store(MemFlags::new(), zero, hooks.result, 0);
+                    }
                     hooks.library(
                         &mut b,
                         index,
