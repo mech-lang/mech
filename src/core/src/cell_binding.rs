@@ -1056,7 +1056,8 @@ fn snapshot_managed_host_data_with_construction(
         FunctionValueRepresentation::U16 => scalar!(u16, U16, |value| value),
         #[cfg(feature = "u32")]
         FunctionValueRepresentation::U32 => scalar!(u32, U32, |value| value),
-        #[cfg(feature = "u64")]
+        // Canonical scalar words are available without the legacy U64 cell
+        // backing/factory feature (for example in the skinny bits profile).
         FunctionValueRepresentation::U64 => scalar!(u64, U64, |value| value),
         #[cfg(feature = "u128")]
         FunctionValueRepresentation::U128 => scalar!(u128, U128, |value| value),
@@ -1262,7 +1263,8 @@ pub(crate) fn initialize_managed_object_from_value(
         FunctionValueRepresentation::U16 => scalar!(u16, U16, |value| value),
         #[cfg(feature = "u32")]
         FunctionValueRepresentation::U32 => scalar!(u32, U32, |value| value),
-        #[cfg(feature = "u64")]
+        // Canonical scalar words are available without the legacy U64 cell
+        // backing/factory feature (for example in the skinny bits profile).
         FunctionValueRepresentation::U64 => scalar!(u64, U64, |value| value),
         #[cfg(feature = "u128")]
         FunctionValueRepresentation::U128 => scalar!(u128, U128, |value| value),

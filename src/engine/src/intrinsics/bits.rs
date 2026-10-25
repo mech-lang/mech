@@ -108,6 +108,7 @@ fn validate(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
     Ok(())
 }
 
+#[cfg(feature = "u64")]
 #[derive(Debug)]
 struct WordPorts {
     lhs: ManagedPort<u64>,
@@ -120,6 +121,7 @@ struct WordRuntime {
     operation: Operation,
     inputs: Vec<ValueCell>,
     output: ValueCell,
+    #[cfg(feature = "u64")]
     fixed: Option<WordPorts>,
 }
 impl MechFunctionImpl for WordRuntime {
@@ -133,6 +135,7 @@ impl MechFunctionImpl for WordRuntime {
         frame: &mut KernelMemoryFrame<'_>,
         _: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveSolveStatus> {
+        #[cfg(feature = "u64")]
         if let Some(ports) = &self.fixed {
             if let Some(rhs) = &ports.rhs {
                 frame.with_binary_port_views(&ports.lhs, rhs, &ports.output, |lhs, rhs, out| {
@@ -249,6 +252,7 @@ impl<const OP: usize> MechFunctionFactory for Factory<OP> {
             return Err(invalid());
         }
         validate(&output, &inputs)?;
+        #[cfg(feature = "u64")]
         let fixed = {
             // The call frame marshals canonical U64 inputs through the core
             // codec. Only the output's storage selects the publication path.
@@ -277,6 +281,7 @@ impl<const OP: usize> MechFunctionFactory for Factory<OP> {
             operation,
             inputs,
             output,
+            #[cfg(feature = "u64")]
             fixed,
         }))
     }
