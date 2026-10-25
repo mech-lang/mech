@@ -718,7 +718,9 @@ fn enum_pack(
     }
     let expansion = if !borrowed_inventory {
         if let ResidentValueRef::Snapshot([Some(value)]) = payload_input {
-            let schema = plan.schemas.get(payload_plan.source.schema_id)
+            let schema = plan
+                .schemas
+                .get(payload_plan.source.schema_id)
                 .ok_or(ResidentKernelError::InvalidInput)?;
             super::budget::unsigned_word_draft_expansion(&mut meter, schema.body(), value.data())?
         } else {

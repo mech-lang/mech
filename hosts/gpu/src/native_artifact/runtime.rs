@@ -90,12 +90,23 @@ pub enum NativeExecutionError {
         error: MemoryRuntimeError,
     },
 }
-pub(super) fn validate_output_word(output: usize, kind: NativeScalarKind, word: u64) -> Result<(), NativeExecutionError> {
+pub(super) fn validate_output_word(
+    output: usize,
+    kind: NativeScalarKind,
+    word: u64,
+) -> Result<(), NativeExecutionError> {
     if !kind.accepts_bits(word) {
         return Err(if kind == NativeScalarKind::Bool {
-            NativeExecutionError::InvalidOutputBool { output, value: word }
+            NativeExecutionError::InvalidOutputBool {
+                output,
+                value: word,
+            }
         } else {
-            NativeExecutionError::InvalidOutputUnsigned { output, kind, value: word }
+            NativeExecutionError::InvalidOutputUnsigned {
+                output,
+                kind,
+                value: word,
+            }
         });
     }
     Ok(())

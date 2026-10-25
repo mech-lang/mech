@@ -82,15 +82,27 @@ pub(in crate::native_artifact::program::runtime::collections) fn element(
             ),
             SequenceView::U8(values) => Element::Scalar(
                 NativeScalarKind::U8,
-                u64::from(*values.get(index).ok_or_else(|| invalid("generator index"))?),
+                u64::from(
+                    *values
+                        .get(index)
+                        .ok_or_else(|| invalid("generator index"))?,
+                ),
             ),
             SequenceView::U16(values) => Element::Scalar(
                 NativeScalarKind::U16,
-                u64::from(*values.get(index).ok_or_else(|| invalid("generator index"))?),
+                u64::from(
+                    *values
+                        .get(index)
+                        .ok_or_else(|| invalid("generator index"))?,
+                ),
             ),
             SequenceView::U32(values) => Element::Scalar(
                 NativeScalarKind::U32,
-                u64::from(*values.get(index).ok_or_else(|| invalid("generator index"))?),
+                u64::from(
+                    *values
+                        .get(index)
+                        .ok_or_else(|| invalid("generator index"))?,
+                ),
             ),
             SequenceView::U64(values) => Element::Scalar(
                 NativeScalarKind::U64,

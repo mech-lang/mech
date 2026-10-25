@@ -2,14 +2,14 @@
 //! Backedges are validated only through a declared loop. Each lexical body is
 //! checked once as an acyclic graph, beginning with ancestors plus its carrier;
 //! previous-visit body locals are never part of that initial definition set.
+#[cfg(all(feature = "map_ops", feature = "convert"))]
+use super::NativeScalarValue;
 use super::{
     NativeControlLoopRef as Loop, NativeIterationAction as Action, NativeIterationArtifactPlan,
     NativeIterationTerminator as Terminator, NativeIterationValueScope as Scope,
     NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeMatchValue as Value,
     NativeScalarKind,
 };
-#[cfg(all(feature = "map_ops", feature = "convert"))]
-use super::NativeScalarValue;
 use std::collections::VecDeque;
 
 pub(crate) trait ControlType: Eq {
@@ -654,29 +654,28 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 let body = structural_body(plan, *source, path)?;
                 let target = ty(*output)?.definition().ok_or(BAD)?;
                 if !match observation {
-                        Observation::CanonicalValue => {
-                            super::structural_values::carrier_component_matches(target.body(), body)
-                                && super::structural_values::supported(body)
-                        }
-                        Observation::U64 => {
-                            target.dimension_parameters().is_empty()
-                                && body == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
-                                && target.body() == body
-                        }
-                        Observation::EnumOrdinal { ordinal } => {
-                            target.dimension_parameters().is_empty()
-                                && matches!(body, SchemaBody::Enum { variants, .. } if (*ordinal as usize) < variants.len())
-                                && target.body() == &SchemaBody::Bool
-                        }
-                        Observation::StringEqual { peer } => {
-                            target.dimension_parameters().is_empty()
-                                && path.is_empty()
-                                && body == &SchemaBody::String
-                                && ty(*peer)? == ty(*source)?
-                                && target.body() == &SchemaBody::Bool
-                        }
+                    Observation::CanonicalValue => {
+                        super::structural_values::carrier_component_matches(target.body(), body)
+                            && super::structural_values::supported(body)
                     }
-                {
+                    Observation::U64 => {
+                        target.dimension_parameters().is_empty()
+                            && body == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
+                            && target.body() == body
+                    }
+                    Observation::EnumOrdinal { ordinal } => {
+                        target.dimension_parameters().is_empty()
+                            && matches!(body, SchemaBody::Enum { variants, .. } if (*ordinal as usize) < variants.len())
+                            && target.body() == &SchemaBody::Bool
+                    }
+                    Observation::StringEqual { peer } => {
+                        target.dimension_parameters().is_empty()
+                            && path.is_empty()
+                            && body == &SchemaBody::String
+                            && ty(*peer)? == ty(*source)?
+                            && target.body() == &SchemaBody::Bool
+                    }
+                } {
                     return Err(BAD);
                 }
             }

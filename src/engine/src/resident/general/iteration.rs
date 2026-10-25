@@ -26,7 +26,8 @@ pub(super) fn all_local_definitions(control: &crate::IterationDeclaration) -> Ve
             operation.schema,
         ));
         match &operation.body {
-            crate::ControlOperationBody::Operation { .. } | crate::ControlOperationBody::Assert => {}
+            crate::ControlOperationBody::Operation { .. } | crate::ControlOperationBody::Assert => {
+            }
             crate::ControlOperationBody::Match(nested) => {
                 output.extend(comprehension::all_match_local_definitions(nested))
             }

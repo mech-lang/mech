@@ -584,16 +584,23 @@ impl NativeCollectionCall {
             .for_each(|transaction| transaction.commit());
         drop(arguments);
         let base = match self.template.contract() {
-            mech_core::ResolvedOperationContract::Declared(contract) => match contract.outputs[0].construction {
-                mech_core::OutputConstruction::ReadModifyWrite { base_input, .. } => Some(usize::from(base_input)),
-                _ => None,
-            },
+            mech_core::ResolvedOperationContract::Declared(contract) => {
+                match contract.outputs[0].construction {
+                    mech_core::OutputConstruction::ReadModifyWrite { base_input, .. } => {
+                        Some(usize::from(base_input))
+                    }
+                    _ => None,
+                }
+            }
             _ => return Err(NativeCollectionInvocationError::InvalidInput),
         };
         // RMW kernels receive their explicit base as fresh private candidate,
         // never the previous visit's output. Other operands retain order.
         let mut candidate = if let Some(base) = base {
-            inputs.get(base).ok_or(NativeCollectionInvocationError::InvalidInput)?.clone()
+            inputs
+                .get(base)
+                .ok_or(NativeCollectionInvocationError::InvalidInput)?
+                .clone()
         } else {
             output.clone()
         };

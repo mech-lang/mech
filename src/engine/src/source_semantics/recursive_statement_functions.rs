@@ -52,7 +52,13 @@ impl SemanticBuilder {
             }
         };
         self.inline_function_body_frame(
-            name, body, parameters, arguments, call, expected, error,
+            name,
+            body,
+            parameters,
+            arguments,
+            call,
+            expected,
+            error,
             |builder| builder.inline_statement_function_body(name, body, call, error),
         )
     }
@@ -87,7 +93,9 @@ impl SemanticBuilder {
                 body: SchemaBody::Tuple(fields.into_boxed_slice()),
             }
         };
-        let capture_arguments = !argument_schema.clone().finalize()
+        let capture_arguments = !argument_schema
+            .clone()
+            .finalize()
             .is_ok_and(|schema| crate::is_control_pattern_schema(&schema));
         if capture_arguments && calls_function(body, name)? {
             return Err(error(
@@ -124,41 +132,42 @@ impl SemanticBuilder {
         let mut bindings = BTreeMap::new();
         let mut fields = Vec::new();
         if !capture_arguments {
-        for (local, ((parameter, _), argument)) in parameters.iter().zip(arguments).enumerate() {
-            let schema = self.schema_draft_of(*argument)?;
-            let index = u32::try_from(self.nodes.len()).map_err(|_| {
-                error(
-                    "source-semantics/unsupported-function-body",
-                    "too many function bindings".to_owned(),
-                )
-            })?;
-            let local = u32::try_from(local).map_err(|_| {
-                error(
-                    "source-semantics/unsupported-function-body",
-                    "too many function parameters".to_owned(),
-                )
-            })?;
-            self.nodes.push(PendingNode {
-                body: PendingNodeBody::CollectionBinding,
-                inferable_projection: false,
-                inputs: Vec::new(),
-                schema: schema.clone(),
-                exposes_output: true,
-                state: None,
-                semantic: SourceSemanticNode {
-                    operation: String::new(),
-                    role: "function-parameter",
-                    detail: Some(parameter.clone()),
-                    anchor: SourceSemanticAnchor::for_node(body),
-                },
-            });
-            self.bindings.insert(
-                parameter.clone(),
-                PendingBinding::Value(PendingValue::Node(index)),
-            );
-            bindings.insert(index, local);
-            fields.push(crate::CollectionPattern::Bind { local, schema });
-        }
+            for (local, ((parameter, _), argument)) in parameters.iter().zip(arguments).enumerate()
+            {
+                let schema = self.schema_draft_of(*argument)?;
+                let index = u32::try_from(self.nodes.len()).map_err(|_| {
+                    error(
+                        "source-semantics/unsupported-function-body",
+                        "too many function bindings".to_owned(),
+                    )
+                })?;
+                let local = u32::try_from(local).map_err(|_| {
+                    error(
+                        "source-semantics/unsupported-function-body",
+                        "too many function parameters".to_owned(),
+                    )
+                })?;
+                self.nodes.push(PendingNode {
+                    body: PendingNodeBody::CollectionBinding,
+                    inferable_projection: false,
+                    inputs: Vec::new(),
+                    schema: schema.clone(),
+                    exposes_output: true,
+                    state: None,
+                    semantic: SourceSemanticNode {
+                        operation: String::new(),
+                        role: "function-parameter",
+                        detail: Some(parameter.clone()),
+                        anchor: SourceSemanticAnchor::for_node(body),
+                    },
+                });
+                self.bindings.insert(
+                    parameter.clone(),
+                    PendingBinding::Value(PendingValue::Node(index)),
+                );
+                bindings.insert(index, local);
+                fields.push(crate::CollectionPattern::Bind { local, schema });
+            }
         }
         let pattern = if capture_arguments {
             crate::MatchPattern::Wildcard
@@ -177,15 +186,23 @@ impl SemanticBuilder {
             for argument in arguments {
                 let input = match inputs.iter().position(|value| value == argument) {
                     Some(input) => input,
-                    None => { inputs.push(*argument); inputs.len() - 1 }
+                    None => {
+                        inputs.push(*argument);
+                        inputs.len() - 1
+                    }
                 };
-                let input = u16::try_from(input).map_err(|_| error(
-                    "source-semantics/unsupported-function-body",
-                    "too many function captures".to_owned(),
-                ))?;
+                let input = u16::try_from(input).map_err(|_| {
+                    error(
+                        "source-semantics/unsupported-function-body",
+                        "too many function captures".to_owned(),
+                    )
+                })?;
                 if !captures.iter().any(|(existing, _, _)| *existing == input) {
-                    captures.push((input, self.schema_draft_of(*argument)?,
-                        !matches!(argument, PendingValue::Input(_))));
+                    captures.push((
+                        input,
+                        self.schema_draft_of(*argument)?,
+                        !matches!(argument, PendingValue::Input(_)),
+                    ));
                 }
             }
         }

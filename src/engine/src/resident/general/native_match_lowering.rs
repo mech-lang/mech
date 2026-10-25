@@ -389,10 +389,12 @@ impl Builder<'_> {
                 node: Some(at.node()),
             });
         };
-        if !fields.get(ordinal as usize).is_some_and(|body|
+        if !fields.get(ordinal as usize).is_some_and(|body| {
             crate::native_artifact::structural_values::carrier_component_matches(
-                self.ty(output).definition().body(), body,
-            )) {
+                self.ty(output).definition().body(),
+                body,
+            )
+        }) {
             return Err(Error::WitnessTypeMismatch { node: at.node() });
         }
         let id = self.block(at, NativeMatchAction::None)?;
@@ -445,8 +447,14 @@ impl Builder<'_> {
                 }
             };
             let unsigned_cast = arguments.len() == 1
-                && self.ty(output).scalar_kind().is_some_and(|kind| kind.unsigned_maximum().is_some())
-                && self.ty(arguments[0]).scalar_kind().is_some_and(|kind| kind.unsigned_maximum().is_some())
+                && self
+                    .ty(output)
+                    .scalar_kind()
+                    .is_some_and(|kind| kind.unsigned_maximum().is_some())
+                && self
+                    .ty(arguments[0])
+                    .scalar_kind()
+                    .is_some_and(|kind| kind.unsigned_maximum().is_some())
                 && self.ty(output).scalar_kind() != self.ty(arguments[0]).scalar_kind();
             match template {
                 // The actual conversion factory supplied this private proof.
@@ -682,15 +690,20 @@ impl Builder<'_> {
                 ControlOperationBody::Match(nested) => {
                     let selected_tail = tail_target.filter(|_| {
                         operation.node as usize + 1 == block.operations.len()
-                            && block.yield_value == ControlValue::Local {
-                                block: block.id,
-                                node: operation.node,
-                            }
+                            && block.yield_value
+                                == ControlValue::Local {
+                                    block: block.id,
+                                    node: operation.node,
+                                }
                             && !super::native_tail_lowering::has_own_recur(nested)
                     });
                     if let Some(target) = selected_tail {
                         let (start, returned) = self.matched_body_flow(
-                            at, nested, &args, result, Some(target.nested()?),
+                            at,
+                            nested,
+                            &args,
+                            result,
+                            Some(target.nested()?),
                         )?;
                         let Some(end) = returned else {
                             // Every selected child arm jumps to the owning
@@ -880,12 +893,14 @@ impl Builder<'_> {
         // result, so it uses ordinary total CFG lowering. Genuinely partial
         // (sticky) Match still requires persistent-state support and rejects.
         let exhaustive = declaration.arms.iter().any(|arm| {
-            arm.guard.is_none() && match &arm.pattern {
-                MatchPattern::Wildcard | MatchPattern::Bind => true,
-                MatchPattern::Structural(pattern) =>
-                    super::native_tail_lowering::irrefutable_pattern(pattern),
-                _ => false,
-            }
+            arm.guard.is_none()
+                && match &arm.pattern {
+                    MatchPattern::Wildcard | MatchPattern::Bind => true,
+                    MatchPattern::Structural(pattern) => {
+                        super::native_tail_lowering::irrefutable_pattern(pattern)
+                    }
+                    _ => false,
+                }
         });
         // Only the owning loop's root carries the separate enum-coverage proof
         // from tail_match. An outer target does not prove a child's partial
@@ -944,7 +959,8 @@ impl Builder<'_> {
                 _ => return Err(unsupported(owner, "aggregate or computed scalar pattern")),
             };
             let body = if let Some(target) = tail
-                && let Some(prefix) = super::native_tail_lowering::tail_prefix(&arm.body, target.ancestor)?
+                && let Some(prefix) =
+                    super::native_tail_lowering::tail_prefix(&arm.body, target.ancestor)?
             {
                 let (body, end, state) =
                     self.control_block(owner, declaration, &prefix, arguments, &bindings)?;
@@ -963,7 +979,12 @@ impl Builder<'_> {
                 body
             } else {
                 let (body, returned) = self.control_block_tail(
-                    owner, declaration, &arm.body, arguments, &bindings, tail,
+                    owner,
+                    declaration,
+                    &arm.body,
+                    arguments,
+                    &bindings,
+                    tail,
                 )?;
                 if let Some((body_tail, yielded)) = returned {
                     if self.ty(yielded) != self.ty(output) {

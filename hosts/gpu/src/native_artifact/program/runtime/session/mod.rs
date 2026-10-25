@@ -761,7 +761,9 @@ impl<'a> Prepared<'a> {
                     let kind = descriptor.metadata().plan.values()[slot as usize]
                         .scalar_kind()
                         .ok_or_else(|| invalid("worker scalar capture type"))?;
-                    if !kind.accepts_bits(word) { return Err(invalid("worker scalar capture exceeds its type")); }
+                    if !kind.accepts_bits(word) {
+                        return Err(invalid("worker scalar capture exceeds its type"));
+                    }
                     prepared.storage.values_mut()[locals_start + slot as usize] = word;
                 }
                 crate::native_artifact::program::runtime::invocation::parallel::Capture::Value(

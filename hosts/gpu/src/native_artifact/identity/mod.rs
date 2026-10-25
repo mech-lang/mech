@@ -158,7 +158,6 @@ pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeArtifactPlan) -> 
             NativeScalarKind::U8 => 5,
             NativeScalarKind::U16 => 6,
             NativeScalarKind::U32 => 7,
-
         }]);
         word(hash, u64::from(value.schema().get()));
         hash.update(value.schema_key().as_bytes());
@@ -313,7 +312,6 @@ pub(in crate::native_artifact) fn op_tag(op: NativeScalarOp) -> u8 {
         NativeScalarOp::U64ToU8 => 68,
         NativeScalarOp::U64ToU16 => 69,
         NativeScalarOp::U64ToU32 => 70,
-
     }
 }
 

@@ -5,8 +5,8 @@ use super::comprehension::{
 };
 use super::*;
 use mech_syntax::document::{
-    ApplicationExpressionSyntax, ComprehensionQualifierSyntax, ComprehensionQualifierValueSyntax, FunctionCallSyntax,
-    MatchArmSyntax, MatrixComprehensionSyntax, SetComprehensionSyntax,
+    ApplicationExpressionSyntax, ComprehensionQualifierSyntax, ComprehensionQualifierValueSyntax,
+    FunctionCallSyntax, MatchArmSyntax, MatrixComprehensionSyntax, SetComprehensionSyntax,
 };
 
 #[path = "recursive_statement_functions.rs"]
@@ -463,7 +463,9 @@ impl SemanticBuilder {
             if matches!(body, DocumentFunctionBody::Expression(_)) {
                 return Err(error(
                     "source-semantics/recursive-expression-function",
-                    format!("function {name} requires a pattern or statement body for canonical recursion"),
+                    format!(
+                        "function {name} requires a pattern or statement body for canonical recursion"
+                    ),
                 ));
             }
             let (expected, root_depth) = self
@@ -680,13 +682,17 @@ impl SemanticBuilder {
         let result = (|| match body {
             DocumentFunctionBody::Expression(body) => {
                 if self.control_depth == 0
-                    && contains_invariant(
-                        &body, &self.local_functions, &mut BTreeSet::new(), 0,
-                    )?
+                    && contains_invariant(&body, &self.local_functions, &mut BTreeSet::new(), 0)?
                 {
                     let expected = self.expression_function_schema(name, &body)?;
                     self.inline_function_body_frame(
-                        name, &body, &parameters, &arguments, call, expected, &error,
+                        name,
+                        &body,
+                        &parameters,
+                        &arguments,
+                        call,
+                        expected,
+                        &error,
                         |builder| builder.inline_expression_function_body(name, &body),
                     )
                 } else {
@@ -702,11 +708,19 @@ impl SemanticBuilder {
                 if calls_function(&body, name)?
                     || (self.control_depth == 0
                         && contains_invariant(
-                            &body, &self.local_functions, &mut BTreeSet::new(), 0,
+                            &body,
+                            &self.local_functions,
+                            &mut BTreeSet::new(),
+                            0,
                         )?)
                 {
                     self.inline_recursive_statement_function_body(
-                        name, &body, &parameters, &arguments, call, &error,
+                        name,
+                        &body,
+                        &parameters,
+                        &arguments,
+                        call,
+                        &error,
                     )
                 } else {
                     self.inline_statement_function_body(name, &body, call, &error)

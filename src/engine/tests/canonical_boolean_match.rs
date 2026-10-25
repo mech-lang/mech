@@ -37,22 +37,44 @@ fn lexical_assertion_signatures_are_validated_even_when_the_result_is_unused() {
     let mut graph = product.program().clone();
     let boolean = graph.inputs[0].schema;
     let scalar = graph.outputs[0].schema;
-    let SourceNodeBody::Match(root) = &mut graph.nodes[0].body else { panic!() };
+    let SourceNodeBody::Match(root) = &mut graph.nodes[0].body else {
+        panic!()
+    };
     let body = &mut root.arms[0].body;
     let scalar_constant = body.yield_value;
     root.arms[0].pattern = MatchPattern::Bind;
     let body = &mut root.arms[0].body;
-    body.parameters = vec![ControlParameter { source: ControlParameterSource::Scrutinee, schema: boolean }].into();
-    let predicate = ControlValue::Parameter { block: body.id, ordinal: 0 };
+    body.parameters = vec![ControlParameter {
+        source: ControlParameterSource::Scrutinee,
+        schema: boolean,
+    }]
+    .into();
+    let predicate = ControlValue::Parameter {
+        block: body.id,
+        ordinal: 0,
+    };
     body.operations = vec![ControlOperation {
-        node: 0, body: ControlOperationBody::Assert, inputs: vec![predicate].into(), schema: boolean,
-    }].into();
-    let rebuild = |graph: &SourceProgram| compile_source_program_with_control_contracts(
-        graph, &mut ArtifactBuildContext::new(product.schemas(), product.constants()), &[None],
-    );
+        node: 0,
+        body: ControlOperationBody::Assert,
+        inputs: vec![predicate].into(),
+        schema: boolean,
+    }]
+    .into();
+    let rebuild = |graph: &SourceProgram| {
+        compile_source_program_with_control_contracts(
+            graph,
+            &mut ArtifactBuildContext::new(product.schemas(), product.constants()),
+            &[None],
+        )
+    };
     let valid = rebuild(&graph).unwrap();
     let sections = encode_program_artifact_sections(&valid).unwrap();
-    assert_eq!(decode_program_artifact_sections(&sections).unwrap().revision(), valid.revision());
+    assert_eq!(
+        decode_program_artifact_sections(&sections)
+            .unwrap()
+            .revision(),
+        valid.revision()
+    );
     for (inputs, output) in [
         (vec![], boolean),
         (vec![predicate, predicate], boolean),
@@ -60,11 +82,15 @@ fn lexical_assertion_signatures_are_validated_even_when_the_result_is_unused() {
         (vec![predicate], scalar),
     ] {
         let mut bad = graph.clone();
-        let SourceNodeBody::Match(root) = &mut bad.nodes[0].body else { panic!() };
+        let SourceNodeBody::Match(root) = &mut bad.nodes[0].body else {
+            panic!()
+        };
         root.arms[0].body.operations[0].inputs = inputs.into();
         root.arms[0].body.operations[0].schema = output;
-        assert!(matches!(rebuild(&bad), Err(ArtifactBuildError::InvalidControl { reason, .. })
-            if reason == "lexical assertion requires one Bool input and Bool result"));
+        assert!(
+            matches!(rebuild(&bad), Err(ArtifactBuildError::InvalidControl { reason, .. })
+            if reason == "lexical assertion requires one Bool input and Bool result")
+        );
     }
     let mut nodes: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
     nodes["nodes"][0]["body"]["Match"]["arms"][0]["body"]["operations"][0]["schema"] =
@@ -72,21 +98,27 @@ fn lexical_assertion_signatures_are_validated_even_when_the_result_is_unused() {
     let mut bad = sections;
     bad.nodes = serde_json::to_vec(&nodes).unwrap();
     let error = decode_program_artifact_sections(&bad).unwrap_err();
-    assert!(format!("{error:?}").contains("lexical assertion requires one Bool input and Bool result"), "{error:?}");
+    assert!(
+        format!("{error:?}").contains("lexical assertion requires one Bool input and Bool result"),
+        "{error:?}"
+    );
 }
 
 #[test]
 fn function_local_assertions_reject_non_boolean_predicates_at_the_source() {
     use mech_syntax::document::DocumentSyntax;
     for predicate in ["n", "[true false]"] {
-        let source = format!("checked(n<u64>) => (out<u64>) :=\n  valid! := {predicate}\n  out := n.\nchecked(input<u64>)\n");
+        let source = format!(
+            "checked(n<u64>) => (out<u64>) :=\n  valid! := {predicate}\n  out := n.\nchecked(input<u64>)\n"
+        );
         let parsed = mech_syntax::document::parse_canonical_document(
             TextSnapshot::new(DocumentId(0xA55E28), Revision(1), source.as_str()).unwrap(),
             ParseConfig::default(),
         );
         assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
-        let error = CanonicalSourceFrontend.compile_document(
-            &DocumentSyntax::cast(parsed.syntax()).unwrap()).err()
+        let error = CanonicalSourceFrontend
+            .compile_document(&DocumentSyntax::cast(parsed.syntax()).unwrap())
+            .err()
             .expect("non-Boolean local predicate must be rejected");
         assert_eq!(error.code, "source-semantics/non-boolean-invariant");
     }

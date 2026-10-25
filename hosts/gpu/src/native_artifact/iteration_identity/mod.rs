@@ -134,7 +134,6 @@ pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeIterationArtifact
             NativeScalarKind::U8 => 5,
             NativeScalarKind::U16 => 6,
             NativeScalarKind::U32 => 7,
-
         }]);
         word(&mut hash, ty.schema().get() as u64);
         hash.update(ty.schema_key().as_bytes());

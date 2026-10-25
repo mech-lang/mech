@@ -19,11 +19,14 @@ use mech_core::{
 use std::sync::Arc;
 
 fn composite_shape_from_children(template: &NativeProgramLibraryTemplate) -> bool {
-    matches!(template.primitive(),
-        crate::resident::native_collection_semantics::NativeCollectionPrimitive::CompositePack(_))
-        && !template.output().dimension_parameters().is_empty()
-        && matches!(template.output().body(),
-            mech_core::SchemaBody::Tuple(_) | mech_core::SchemaBody::Record(_))
+    matches!(
+        template.primitive(),
+        crate::resident::native_collection_semantics::NativeCollectionPrimitive::CompositePack(_)
+    ) && !template.output().dimension_parameters().is_empty()
+        && matches!(
+            template.output().body(),
+            mech_core::SchemaBody::Tuple(_) | mech_core::SchemaBody::Record(_)
+        )
 }
 
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
@@ -260,14 +263,15 @@ pub fn prepare_native_program_library_call(
         .and_then(|n| n.checked_add(parameters.checked_mul(16)?))
         .and_then(|n| n.checked_add(256))
         .ok_or_else(|| super::invalid(node))?;
-    let output_follows_input = composite_shape_from_children(&template) || matches!(
-        template.contract(),
-        mech_core::ResolvedOperationContract::Declared(contract)
-            if matches!(&contract.outputs[0].construction,
-                mech_core::OutputConstruction::FullWrite {
-                    shape: mech_core::ShapeRule::SameAsInput { .. }
-                } | mech_core::OutputConstruction::ReadModifyWrite { .. })
-    );
+    let output_follows_input = composite_shape_from_children(&template)
+        || matches!(
+            template.contract(),
+            mech_core::ResolvedOperationContract::Declared(contract)
+                if matches!(&contract.outputs[0].construction,
+                    mech_core::OutputConstruction::FullWrite {
+                        shape: mech_core::ShapeRule::SameAsInput { .. }
+                    } | mech_core::OutputConstruction::ReadModifyWrite { .. })
+        );
     let (span_selector_metadata_bytes, span_selector_work) =
         string_span::selector_geometry_bounds(&template).ok_or_else(|| super::invalid(node))?;
     #[cfg(feature = "pure_text")]

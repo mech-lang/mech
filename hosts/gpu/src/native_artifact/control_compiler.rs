@@ -67,7 +67,9 @@ impl JitMatchArtifact {
         &self.descriptor
     }
     #[cfg(test)]
-    pub(super) fn test_checked_entry(&self) -> Entry { self.entry }
+    pub(super) fn test_checked_entry(&self) -> Entry {
+        self.entry
+    }
     pub fn evaluate_into(
         &self,
         inputs: &[NativeScalarValue],
@@ -449,8 +451,12 @@ fn define<M: Module>(
             let word = b
                 .ins()
                 .load(types::I64, MemFlags::new(), inputs, offset(index)?);
-            if let Some(maximum) = super::compiler::word_upper_bound(input.declaration().ty().kind()) {
-                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, maximum as i64);
+            if let Some(maximum) =
+                super::compiler::word_upper_bound(input.declaration().ty().kind())
+            {
+                let valid = b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, word, maximum as i64);
                 guard(&mut b, valid, error, STATUS_ABI);
             }
             b.ins().store(
@@ -700,7 +706,9 @@ pub(in crate::native_artifact) fn emit_branch_terminator(
             b.ins().return_(&[status]);
         }
         NativeMatchTerminator::IntegrityFailure => {
-            let status = b.ins().iconst(types::I64, super::abi::STATUS_INTEGRITY as i64);
+            let status = b
+                .ins()
+                .iconst(types::I64, super::abi::STATUS_INTEGRITY as i64);
             b.ins().return_(&[status]);
         }
         NativeMatchTerminator::Complete => {

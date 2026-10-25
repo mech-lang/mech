@@ -898,9 +898,18 @@ impl State {
                 }
                 let data = match ty.scalar_kind() {
                     Some(NativeScalarKind::Bool) if word <= 1 => ValueDataDraft::Bool(word != 0),
-                    Some(NativeScalarKind::U8) => ValueDataDraft::U8(u8::try_from(word).map_err(|_| invalid("narrow collected word exceeds its type"))?),
-                    Some(NativeScalarKind::U16) => ValueDataDraft::U16(u16::try_from(word).map_err(|_| invalid("narrow collected word exceeds its type"))?),
-                    Some(NativeScalarKind::U32) => ValueDataDraft::U32(u32::try_from(word).map_err(|_| invalid("narrow collected word exceeds its type"))?),
+                    Some(NativeScalarKind::U8) => ValueDataDraft::U8(
+                        u8::try_from(word)
+                            .map_err(|_| invalid("narrow collected word exceeds its type"))?,
+                    ),
+                    Some(NativeScalarKind::U16) => ValueDataDraft::U16(
+                        u16::try_from(word)
+                            .map_err(|_| invalid("narrow collected word exceeds its type"))?,
+                    ),
+                    Some(NativeScalarKind::U32) => ValueDataDraft::U32(
+                        u32::try_from(word)
+                            .map_err(|_| invalid("narrow collected word exceeds its type"))?,
+                    ),
                     Some(NativeScalarKind::U64) => ValueDataDraft::U64(word),
                     Some(NativeScalarKind::I64) => ValueDataDraft::I64(word as i64),
                     Some(NativeScalarKind::F64) => {

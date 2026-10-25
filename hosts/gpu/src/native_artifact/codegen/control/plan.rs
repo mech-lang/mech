@@ -153,10 +153,7 @@ impl<'a> CodePlan<'a> {
                 (c.value(), scalar)
             }
         };
-        Ok((
-            value,
-            scalar.map(NativeScalarValue::to_bits),
-        ))
+        Ok((value, scalar.map(NativeScalarValue::to_bits)))
     }
     pub fn validate(self) -> Result<(), NativeCompileError> {
         match self {
