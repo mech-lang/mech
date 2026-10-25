@@ -72,14 +72,20 @@ fn maintained_managed_word_factories_refresh_exact_u64_inputs() {
     ];
     for (item, unary, expected) in cases {
         let name = format!("bits/{item}");
-        // Exercise canonical, fixed-width, and mixed call-frame storage.
-        for backing in 0..8 {
-            let word = |mask| {
-                if backing & mask == 0 {
-                    ValueCell::from_snapshot(count(0).snapshot().unwrap()).unwrap()
-                } else {
-                    ValueCell::from_exact(0u64).unwrap()
+        // The skinny profile has canonical storage. When u64 is selected,
+        // also exercise every fixed-width and mixed call-frame combination.
+        #[cfg(feature = "u64")]
+        let backings = 0..8;
+        #[cfg(not(feature = "u64"))]
+        let backings = 0..1;
+        for backing in backings {
+            let word = |mask: u8| {
+                #[cfg(feature = "u64")]
+                if backing & mask != 0 {
+                    return ValueCell::from_exact(0u64).unwrap();
                 }
+                let _ = mask;
+                ValueCell::from_snapshot(count(0).snapshot().unwrap()).unwrap()
             };
             let lhs = word(1);
             let rhs = word(2);
