@@ -7,6 +7,8 @@ use crate::native_artifact::{NativeValueHandle, NativeWorkMeter};
 use mech_core::{MemoryBudgetLimits, Value};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
 
+mod word_reads;
+
 /// A synchronous reborrow with a map-specific surface, not execution authority.
 /// The enclosing invocation still owns phase validation and terminal handling.
 pub(in crate::native_artifact::program::runtime) struct MapExecution<'borrow, 'state, 'visit, 'plan>
@@ -608,6 +610,10 @@ impl Invocation<'_, '_, '_> {
             // the synchronous entry. Native code is suspended in this callback;
             // no Rust reference to the lane survives across native writes.
             let words = unsafe { core::slice::from_raw_parts(self.arguments, operands.len()) };
+            if let Some(word) = self.u64_matrix_element_call(site, words)? {
+                self.state.consumed = true;
+                return Ok(Some(word));
+            }
             if let Some(result) = self.line_matrix_call(site, words)? {
                 self.state.consumed = true;
                 return Ok(result);

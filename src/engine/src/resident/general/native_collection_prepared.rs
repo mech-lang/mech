@@ -28,6 +28,8 @@ mod histogram;
 mod string_map_entry;
 #[path = "native_collection_string_span.rs"]
 mod string_span;
+#[path = "native_collection_word_reads.rs"]
+mod word_reads;
 pub use string_span::NativeSelectedStringSpanSelector;
 #[cfg(feature = "pure_text")]
 #[path = "native_collection_private_string.rs"]

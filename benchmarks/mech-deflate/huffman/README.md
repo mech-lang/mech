@@ -25,6 +25,12 @@ immutable. The current value-copy implementation and native call metadata are
 expensive; the qualification uses an explicit 2 GiB memory account and larger
 finite work allowances. Host defaults are unchanged.
 
+Native work policy 67 reads U64 counters directly into native scalar storage
+through the maintained indexed-access operation. It keeps the original visits,
+checked selectors, source admission, and logical output limits, while avoiding
+transient selector/result snapshots. Narrow unsigned reads and buffer writes
+still use the existing canonical value path.
+
 The ordinary resident route retains its whole-control comparison-work cap. The
 full builder exceeds that cap even on a two-symbol input; a separate regression
 checks that this is reported as `ResourceLimit`, preserves the last published

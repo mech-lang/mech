@@ -63,6 +63,9 @@ mod access_qualification;
 #[path = "support/canonical_program_huffman.rs"]
 mod huffman_qualification;
 
+#[path = "support/canonical_program_word_reads.rs"]
+mod word_read_qualification;
+
 #[path = "support/canonical_program_local_buffers.rs"]
 mod local_buffer_qualification;
 

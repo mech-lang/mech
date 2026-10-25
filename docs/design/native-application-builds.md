@@ -307,6 +307,15 @@ constant one-based tuple selector can lower to a checked structural projection
 when the maintained access factory certifies the exact schemas and contract.
 Dynamic tuple selection remains outside this native subset.
 
+Linear U64 matrix reads with a scalar U64 selector can return the selected word
+directly into admitted native scalar storage. Selection still requires the
+maintained access factory's private evidence, the current same-account immutable
+source, and the shared one-based portable bounds check. Each read admits its
+source owner and active private buffers under call-scoped limits; the separate
+program memory account continues to cover all live roots. Logical one-element,
+eight-byte output limits remain enforced even though no selector/result snapshot
+is allocated. A later canonical use or publication constructs its real value.
+
 The [DEFLATE Huffman qualification](../../benchmarks/mech-deflate/huffman/README.md)
 exercises these operations against pinned C reference values. It uses explicit
 finite native work and memory allowances. The ordinary resident whole-control
