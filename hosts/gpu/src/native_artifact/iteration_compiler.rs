@@ -452,7 +452,7 @@ pub(super) fn define_cfg<M: Module>(
             .filter(|(map, ..)| layout.maps.iter().flatten().any(|proof| proof.collection == map.collection()))
             .map(|(region, ..)| {
                 let (function, stack, code) = super::program_compiler::join_map_codegen::define(module, region)?;
-                report.join_map_copies.push(super::iteration_codegen_report::JoinMapCopy {
+                report.join_map_copies.push(codegen_report::JoinMapCopy {
                     collection: region.collection(),
                     symbol: super::program_compiler::join_map_codegen::symbol(region.collection()),
                     stack_bytes: stack, code_bytes: code, geometry_words: 6,

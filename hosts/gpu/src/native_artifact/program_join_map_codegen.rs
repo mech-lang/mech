@@ -10,11 +10,11 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::NativeStringMapRegion;
 
-pub(super) fn symbol(collection: u32) -> String {
+pub(in crate::native_artifact) fn symbol(collection: u32) -> String {
     format!("mech_join_map_copy_region_{collection}")
 }
 
-pub(super) fn define<M: Module>(
+pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
     region: &NativeStringMapRegion,
 ) -> Result<(FuncId, u64, u64), NativeCompileError> {
