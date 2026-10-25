@@ -6,10 +6,48 @@ use mech_engine::native_artifact::NativeStringMapRegion;
 #[path = "program_string_map_owned_tests.rs"]
 mod owned_tests;
 
+enum Owned {
+    Snapshot(mech_core::snapshot::OwnedSnapshotBytes),
+    Private(mech_engine::native_artifact::NativePrivateStringBuffer),
+}
+impl Owned {
+    fn as_bytes(&self) -> &[u8] {
+        match self {
+            Self::Snapshot(owner) => owner.as_bytes(),
+            Self::Private(owner) => owner.as_bytes(),
+        }
+    }
+    fn retained_capacity_bytes(&self) -> u64 {
+        match self {
+            Self::Snapshot(owner) => owner.retained_capacity_bytes(),
+            Self::Private(owner) => owner.retained_capacity_bytes(),
+        }
+    }
+    fn as_mut_bytes(&mut self) -> Result<&mut [u8], Error> {
+        match self {
+            Self::Snapshot(owner) => Ok(owner.as_mut_bytes()),
+            // A joined buffer was already transformed and validated. It must
+            // travel straight to its original finish, never enter a new loan.
+            Self::Private(_) => Err(invalid("private joined map reentered mutable mapping")),
+        }
+    }
+    fn into_text_parts(self) -> Result<(String, ManagedMemoryReservation), Error> {
+        match self {
+            Self::Private(owner) => Ok(owner.into_parts()),
+            Self::Snapshot(owner) => {
+                let (bytes, charge) = owner.into_parts();
+                let text = String::from_utf8(bytes)
+                    .map_err(|_| invalid("compiled String map wrote invalid UTF8"))?;
+                Ok((text, charge))
+            }
+        }
+    }
+}
+
 pub(super) struct Buffer {
     table: Vec<u16>,
     bytes: Vec<u8>,
-    owned: Option<mech_core::snapshot::OwnedSnapshotBytes>,
+    owned: Option<Owned>,
     reservation: ManagedMemoryReservation,
 }
 impl State {
@@ -120,7 +158,7 @@ impl State {
         self.builder(id)?.join.as_mut().unwrap().compiled_map = Some(Buffer {
             table: Vec::new(),
             bytes: Vec::new(),
-            owned: Some(mapped.owner),
+            owned: Some(Owned::Private(mapped.owner)),
             reservation,
         });
         self.live_bytes = add(self.live_bytes, scratch)?;
@@ -251,7 +289,7 @@ impl State {
             drop(backing);
             match source.try_into_owned_string(&memory)? {
                 mech_core::snapshot::StringOwnershipTransfer::Owned(owned) => {
-                    (None, Some(owned.into_bytes()))
+                    (None, Some(Owned::Snapshot(owned.into_bytes())))
                 }
                 mech_core::snapshot::StringOwnershipTransfer::Unavailable(value) => {
                     // Other genuine owners (inputs, imports, captured aliases)
@@ -334,7 +372,7 @@ impl State {
         // The aliasing case derives BOTH pointers from the exclusive mutable
         // byte slice. No immutable String/Value loan remains across execution.
         let (input, output) = if let Some(owner) = owned.as_mut() {
-            let pointer = owner.as_mut_bytes().as_mut_ptr() as u64;
+            let pointer = owner.as_mut_bytes()?.as_mut_ptr() as u64;
             (pointer, pointer)
         } else {
             let Some(ValueData::String(text)) = source.as_ref().map(Value::data) else {
@@ -444,14 +482,24 @@ impl State {
                     .and_then(|join| join.compiled_map.as_ref())
                     .and_then(|buffer| buffer.owned.as_ref())
                     .ok_or_else(|| invalid("lost owned map source"))?;
-                selected.selected_owned_string_map_entry(
-                    &map,
-                    owner,
-                    processed as usize..processed as usize + 1,
-                    ctx.limits,
-                    &ctx.library,
-                    coexistence,
-                )
+                match owner {
+                    Owned::Snapshot(owner) => selected.selected_owned_string_map_entry(
+                        &map,
+                        owner,
+                        processed as usize..processed as usize + 1,
+                        ctx.limits,
+                        &ctx.library,
+                        coexistence,
+                    ),
+                    Owned::Private(owner) => selected.selected_private_string_map_entry(
+                        &map,
+                        owner,
+                        processed as usize..processed as usize + 1,
+                        ctx.limits,
+                        &ctx.library,
+                        coexistence,
+                    ),
+                }
             };
             let after = ctx.library.used();
             let builder = self.builder(id)?;
@@ -493,8 +541,16 @@ impl State {
             .compiled_map
             .take()
             .ok_or_else(|| invalid("compiled String map lost scratch"))?;
-        let bytes = if let Some(owner) = owned {
-            let (bytes, charge) = owner.into_parts();
+        if owned
+            .as_ref()
+            .map_or(bytes.len(), |owner| owner.as_bytes().len()) as u64
+            != accepted
+            || processed != accepted
+        {
+            return Err(invalid("compiled String map output count"));
+        }
+        let text = if let Some(owner) = owned {
+            let (text, charge) = owner.into_text_parts()?;
             // Source ownership was checked on this SAME account, and scratch
             // arithmetic was checked before either allocation or handoff.
             if charge.budget() != reservation.budget()
@@ -503,19 +559,15 @@ impl State {
                     .checked_add(reservation.capacity_bytes())
                     .is_none()
             {
-                drop(bytes);
+                drop(text);
                 return Err(invalid("owned map source charge changed"));
             }
             reservation.merge_capacity(charge)?;
-            bytes
+            text
         } else {
-            bytes
+            String::from_utf8(bytes)
+                .map_err(|_| invalid("compiled String map wrote invalid UTF8"))?
         };
-        if bytes.len() as u64 != accepted || processed != accepted {
-            return Err(invalid("compiled String map output count"));
-        }
-        let text = String::from_utf8(bytes)
-            .map_err(|_| invalid("compiled String map wrote invalid UTF8"))?;
         drop(table);
         drop(reservation.split_capacity(256)?);
         join.text = text;

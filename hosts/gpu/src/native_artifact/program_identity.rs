@@ -174,7 +174,10 @@ fn selected_template(
 // pinned one/two-chunk ASCII window. Other representations keep checked cells.
 // IR82 composes a sole-use selected join with its source-derived byte map in
 // initialized physical chunks. Original error/admission boundaries remain.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 82;
+// IR86 carries a private same-account initialized String buffer across a
+// complete-use-proved join/map chain, without a frozen intermediate or a
+// second UTF-8 scan. Original admissions, finite prices and ABI30 remain.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 86;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

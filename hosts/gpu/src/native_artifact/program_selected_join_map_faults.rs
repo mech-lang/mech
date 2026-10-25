@@ -11,6 +11,9 @@ pub(in crate::native_artifact::program_runtime) enum Fault {
     WrongMapGeneration,
     WrongCopySource,
     MissingOwner,
+    PrivateWrongAccount,
+    PrivateShortCapacity,
+    PrivateWrongFactory,
 }
 #[derive(Clone, Copy, Debug)]
 pub(in crate::native_artifact::program_runtime) enum Limit {
@@ -217,6 +220,45 @@ pub(super) fn after_mapped(ctx: &mut Context<'_, '_>) -> Result<(), Error> {
         Some(Fault::MissingOwner) => {
             fire();
             ctx.selected_join = None;
+        }
+        Some(
+            test @ (Fault::PrivateWrongAccount
+            | Fault::PrivateShortCapacity
+            | Fault::PrivateWrongFactory),
+        ) => {
+            fire();
+            let Some(State {
+                phase: Phase::Mapped(mapped),
+                region,
+                ..
+            }) = ctx.selected_join.as_ref()
+            else {
+                return Err(invalid("test missing private String buffer"));
+            };
+            let mut text = String::new();
+            text.try_reserve_exact(mapped.owner.as_bytes().len())
+                .unwrap();
+            text.push_str(core::str::from_utf8(mapped.owner.as_bytes()).unwrap());
+            let memory = if matches!(test, Fault::PrivateWrongAccount) {
+                mech_core::ManagedMemoryBudget::new(1024 * 1024)
+            } else {
+                ctx.library.memory_budget()
+            };
+            let capacity =
+                text.capacity() as u64 - u64::from(matches!(test, Fault::PrivateShortCapacity));
+            let claim = memory.reserve_capacity(capacity)?;
+            let join = &ctx.control.descriptor.selected_joins.regions[*region];
+            let site = if matches!(test, Fault::PrivateWrongFactory) {
+                ctx.control.descriptor.string_map_regions[0].selection_site() as usize
+            } else {
+                join.consumer() as usize
+            };
+            let call = ctx.control.descriptor.calls[site].as_ref().unwrap();
+            call.finish_private_string_buffer(text, claim, &ctx.library)
+                .map_err(|error| library(ctx, site, error))?;
+            return Err(invalid(
+                "private String owner accepted an invalid factory/account/capacity",
+            ));
         }
         _ => {}
     }
