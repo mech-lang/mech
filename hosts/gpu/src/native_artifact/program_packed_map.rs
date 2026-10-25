@@ -104,7 +104,9 @@ mod payload;
 #[cfg(test)]
 pub(super) use payload::NarrowSlot;
 use payload::Slots;
-pub(super) use payload::{narrow, slot_bytes, value_offset};
+#[cfg(any(test, feature = "canonical-native-program"))]
+pub(super) use payload::value_offset;
+pub(super) use payload::{narrow, slot_bytes};
 
 #[path = "program_frozen_packed_map.rs"]
 mod frozen;
@@ -113,6 +115,7 @@ pub(super) use frozen::FrozenPackedMap;
 #[path = "program_packed_lookup_cache.rs"]
 mod lookup;
 use lookup::LookupCache;
+#[cfg(feature = "canonical-native-program")]
 pub(super) use lookup::lookup_cache_entries;
 
 /// Counts bound one complete acyclic source-body traversal, including branches

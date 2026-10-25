@@ -15,12 +15,14 @@ pub(super) enum Kind {
     Projected,
 }
 impl Kind {
+    #[cfg(feature = "canonical-native-program")]
     pub const fn cells(self) -> usize {
         match self {
             Self::Full => 128,
             Self::Projected => 32,
         }
     }
+    #[cfg(feature = "canonical-native-program")]
     pub const fn suffix(self) -> &'static str {
         match self {
             Self::Full => "full",
