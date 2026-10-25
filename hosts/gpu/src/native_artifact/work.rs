@@ -25,7 +25,12 @@ mod tests {
         let mut parent = NativeWorkMeter::new(1000).unwrap();
         let library = parent.shared_library_budget(NativeExecutionPhase::Setup, 100, &memory).unwrap();
         let group = library.reserve_worker_group(100, 20).unwrap();
-        let capped = memory.with_limits(4096, 100);
+        let held = memory.used_bytes();
+        let exact = held + NativeLibraryWorkBudget::worker_account_metadata_bytes();
+        assert!(exact < memory.limit_bytes());
+        assert!(group.worker_loan_with_memory(&memory.with_limits(exact - 1, 100)).is_err());
+        assert_eq!(memory.used_bytes(), held);
+        let capped = memory.with_limits(exact, 100);
         let loan = group.worker_loan_with_memory(&capped).unwrap();
         let worker_memory = capped.clone();
         let used = std::thread::spawn(move || {
