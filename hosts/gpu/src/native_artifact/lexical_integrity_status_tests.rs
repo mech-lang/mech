@@ -148,7 +148,7 @@ fn program_integrity_status_cannot_replace_an_arithmetic_failure() {
     let before = memory.used_bytes();
     let mut output = vec![None; artifact.outputs().len()];
     let mapped = Cell::new(false);
-    let error = program_runtime::execute(
+    let error = program::runtime::execute(
         jit.descriptor(),
         |frame| {
             let status = unsafe { entry(frame) };
