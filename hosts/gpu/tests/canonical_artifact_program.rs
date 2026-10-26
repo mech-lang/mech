@@ -28,6 +28,9 @@ mod binding_pressure_qualification;
 #[path = "support/canonical_program_argument_transport.rs"]
 mod argument_transport_qualification;
 
+#[path = "support/canonical_program_shared_transport.rs"]
+mod shared_transport_qualification;
+
 #[path = "support/canonical_program_linked.rs"]
 mod linked_qualification;
 

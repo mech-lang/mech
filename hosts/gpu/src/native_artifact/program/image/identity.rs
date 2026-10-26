@@ -379,7 +379,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 106;
 // the existing routing, bounds, finalization and publication admission.
 // Policy80 admits optional binding caches only when the unchanged finite call
 // scope can coexist, otherwise invoking the same maintained leaf uncached.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 80;
+// Policy81 shares already-prepaid immutable arena owners for generated copies,
+// charging fixed alias work without repaying the one payload destruction.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 81;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

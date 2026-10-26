@@ -691,13 +691,11 @@ impl Invocation<'_, '_, '_> {
                 self.state.consumed = true;
                 return Ok(None);
             }
-            let value = self
-                .state
-                .arena
-                .copy_current(source.get(), &mut self.state.control.work)?;
-            self.state
-                .arena
-                .put(output.get(), &value, &mut self.state.control.work)?;
+            self.state.arena.copy_current_to(
+                source.get(),
+                output.get(),
+                &mut self.state.control.work,
+            )?;
             if let NativeIterationAction::Latch { iteration } =
                 descriptor.metadata().plan.blocks()[site].action()
                 && matches!(

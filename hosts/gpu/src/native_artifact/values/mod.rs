@@ -207,6 +207,51 @@ impl<'a> NativeValueArena<'a> {
             .ok_or(NativeValueError::StaleHandle)
     }
 
+    /// Generated reference copy of an already admitted current owner. Every
+    /// populated source was inserted by put (or this operation), so its one
+    /// eventual payload/schema destruction is already prepaid. Adding an Arc
+    /// alias needs only fixed read, publication and alias-retirement work; it
+    /// creates no new payload or budget wrapper. Destination retirement was
+    /// prepaid by its own insertion. All checks precede either replacement.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn copy_current_to(
+        &mut self,
+        source: u32,
+        target: u32,
+        work: &mut NativeWorkMeter,
+    ) -> Result<NativeValueHandle, NativeValueError> {
+        self.check_work(work)?;
+        work.charge(NativeExecutionPhase::Setup, 32)?;
+        let value = self
+            .values
+            .values()
+            .get(source as usize)
+            .ok_or(NativeValueError::InvalidSlot)?
+            .as_ref()
+            .ok_or(NativeValueError::StaleHandle)?;
+        work.charge(NativeExecutionPhase::Setup, 32)?;
+        let index = target as usize;
+        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
+        if value.schema() != ty.schema || value.schema_key() != ty.key {
+            return Err(NativeValueError::TypeMismatch);
+        }
+        value
+            .memory_budget_retained_bytes(&self.budget)
+            .ok_or(NativeValueError::UnadmittedPayload)?;
+        let generation = self.generations.values()[index]
+            .checked_add(1)
+            .ok_or(NativeValueError::GenerationExhausted)?;
+        work.charge(NativeExecutionPhase::Setup, 32)?;
+        let value = value.clone();
+        self.values.values_mut()[index] = Some(value);
+        self.generations.values_mut()[index] = generation;
+        Ok(NativeValueHandle {
+            domain: self.values.domain_id(),
+            slot: target,
+            generation,
+        })
+    }
+
     /// Private read inside an already prepaid generated operation. The caller
     /// must include this fixed-size slot/generation/refcount work in that
     /// operation's complete bound before entering this leaf. It cannot publish
