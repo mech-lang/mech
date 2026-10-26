@@ -120,6 +120,9 @@ mod binary_tree_qualification;
 #[path = "support/canonical_program_collector.rs"]
 mod collector_qualification;
 
+#[path = "support/canonical_program_block_statistics.rs"]
+mod block_statistics_qualification;
+
 #[path = "support/canonical_program_recursive_statements.rs"]
 mod recursive_statement_qualification;
 

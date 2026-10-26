@@ -233,6 +233,40 @@ cargo test --locked --offline -j1 -p mech-gpu --no-default-features \
   collector_qualification -- --test-threads=1 --nocapture
 ```
 
+## Block counter merges
+
+The [block-collector source](../../../hosts/gpu/tests/fixtures/native/deflate-block-collector.mec)
+now contains the original 259-entry U32 frequency merge and ten-type observation
+merge. Zero fresh frequencies skip their writes; observation merging updates all
+ten counters and resets the original fresh range. Both retain checked U32
+addition. The full block-collection loop is still being assembled.
+
+The minimal blocking operation was `left<u32> + right<u32>`: resident execution
+already accepted it, but native lowering rejected it as `MissingSemanticWitness`
+at the preceding compiler checkpoint. The maintained numeric leaf now certifies
+that exact scalar operation. Shared native emission checks the result against
+U32's maximum before storing it. Scalar IR 8 and program IR 108 include the new
+operation; program ABI 35 and work policy 83 are unchanged.
+
+`checked_u32_add_keeps_frequency_width_overflow_and_recovery` exercises direct
+arguments and buffer reads on original/decoded artifacts. The block-statistics
+tests execute all 259 counters, late overflow after earlier writes, nonzero
+observation offsets, U32 overflow before an also-failing U64 count addition,
+unchanged published outputs/input aliases, cleanup and recovery. The linked U32
+addition test restores the operation from its executable image in a runtime-only
+consumer. These are bounded regression checks, not a full compression benchmark.
+
+The [reference witness](block-statistics-reference.roc) calls the pinned original
+merge functions and independently checks the same full vectors and totals.
+Copy it beside the pinned package's modules and run:
+
+```sh
+roc test --opt=speed --verbose /path/to/pinned/roc-deflate/package/BlockStatisticsWitness.roc
+cargo test --locked --offline -j1 -p mech-gpu --no-default-features \
+  --features canonical-native-program --test canonical_artifact_program \
+  block_statistics_qualification -- --test-threads=1 --nocapture
+```
+
 The initial executable attempt completed no search positions. Cache construction
 rejected output admission at 16777228 bytes against the unchanged 16777216-byte
 limit. The generic comprehension builder stages scalar drafts instead of packed
