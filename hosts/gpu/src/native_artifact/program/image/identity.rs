@@ -221,7 +221,8 @@ fn selected_template(
 // integrity-failure terminals; no document constraint is hoisted out of a visit.
 // Exact-width unsigned comparison primitives retain their semantic kinds.
 // IR106 admits record-field access through the maintained snapshot selector.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 106;
+// IR107 binds pure uniform unsigned construction to its same-plan header.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 107;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -381,7 +382,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 106;
 // scope can coexist, otherwise invoking the same maintained leaf uncached.
 // Policy81 shares already-prepaid immutable arena owners for generated copies,
 // charging fixed alias work without repaying the one payload destruction.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 81;
+// Policy82 charges one admitted typed fill rather than unexecuted per-word
+// control/helper visits. Byte work, clone limits and publication stay funded.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 82;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

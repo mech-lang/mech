@@ -31,6 +31,10 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) max_library_inputs: usize,
     // Derived from this SAME immutable plan; callers cannot inject a region
     // from another artifact or rebind one to a different selected factory.
+    // Pure derived cache. Recomputed from the validated plan on image load;
+    // it is neither serialized authority nor another preparation pipeline.
+    pub(in crate::native_artifact) uniform_word_collections:
+        Box<[mech_engine::native_artifact::NativeUniformWordCollection]>,
     pub(in crate::native_artifact) window_regions:
         Box<[mech_engine::native_artifact::NativeWindowRegion]>,
     pub(in crate::native_artifact) string_map_regions:
@@ -248,6 +252,7 @@ impl PreparedNativeProgram {
             })
             .collect::<Result<Box<[_]>, _>>()?;
         query_stages::validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
+        let uniform_word_collections = facts.uniform_unsigned_collections().into_boxed_slice();
         let window_regions = plan.window_regions().into_boxed_slice();
         let occupied_frame =
             frame_prefix_words(&plan, &scalar_aggregates, &borrowed_strings, &closed_tails)
@@ -354,6 +359,7 @@ impl PreparedNativeProgram {
             scalar_bytes,
             observation_schema_bytes,
             max_library_inputs,
+            uniform_word_collections,
             window_regions,
             string_map_regions,
             scalar_aggregates,

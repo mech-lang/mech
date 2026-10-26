@@ -716,13 +716,31 @@ impl Invocation<'_, '_, '_> {
                 .collections
                 .take()
                 .ok_or_else(|| invalid("collection helper without state"))?;
-            let result = state.helper(
-                &mut CollectionExecution::new(self),
-                site,
-                [args[0], args[1]],
-            );
+            let uniform_iteration = match descriptor.metadata().plan.blocks()[site].terminator() {
+                NativeIterationTerminator::Header { iteration, .. } => Some(iteration),
+                _ => None,
+            };
+            let result = if uniform_iteration.is_some() {
+                state
+                    .fill_uniform_words(&mut CollectionExecution::new(self), site, args[0], args[1])
+                    .map(|filled| Some(u64::from(filled)))
+            } else {
+                state.helper(
+                    &mut CollectionExecution::new(self),
+                    site,
+                    [args[0], args[1]],
+                )
+            };
             self.state.collections = Some(state);
             let result = result?;
+            if let Some(iteration) = uniform_iteration
+                && result == Some(1)
+            {
+                // The proved pure region constructed its complete result. The
+                // next edge remains this same header's ordinary exit; do not
+                // fabricate source visits for operations no longer executed.
+                self.progress[iteration as usize * 2] = 0;
+            }
             self.state.consumed = true;
             Ok(result)
         } else {

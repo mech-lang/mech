@@ -327,6 +327,51 @@ impl Hooks {
         b.switch_to_block(ordinary);
         Ok(())
     }
+    #[cfg(feature = "canonical-native-program")]
+    pub fn uniform_words(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        site: usize,
+        region: &mech_engine::native_artifact::NativeUniformWordCollection,
+        locals: Value,
+        counter_slot: usize,
+        exit: Block,
+        error: Block,
+    ) -> Result<(), NativeCompileError> {
+        use crate::native_artifact::compiler::offset;
+        let length = crate::native_artifact::control_compiler::load(b, locals, region.limit())?;
+        let remaining = b
+            .ins()
+            .load(types::I64, MemFlags::new(), locals, offset(counter_slot)?);
+        // Preparation already rejected an overflowing inclusive range. Attempt
+        // once per fresh visit; a resource decline keeps the ordinary CFG.
+        let initial = b.ins().iadd_imm(length, 1);
+        let first = b.ins().icmp(IntCC::Equal, remaining, initial);
+        let attempt = b.create_block();
+        let ordinary = b.create_block();
+        b.ins().brif(first, attempt, &[], ordinary, &[]);
+        b.switch_to_block(attempt);
+        let word = crate::native_artifact::control_compiler::load(b, locals, region.word())?;
+        let zero = b.ins().iconst(types::I64, 0);
+        self.call(
+            b,
+            site,
+            GlobalHelper::Collection,
+            [word, length, zero],
+            error,
+        );
+        let ready = b.ins().load(types::I64, MemFlags::new(), self.result, 0);
+        let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, ready, 1);
+        guard(b, valid, error, crate::native_artifact::abi::STATUS_ABI);
+        let completed = b.create_block();
+        b.ins().brif(ready, completed, &[], ordinary, &[]);
+        b.switch_to_block(completed);
+        b.ins()
+            .store(MemFlags::new(), zero, locals, offset(counter_slot)?);
+        b.ins().jump(exit, &[]);
+        b.switch_to_block(ordinary);
+        Ok(())
+    }
     pub fn load<M: Module>(
         mixed: bool,
         b: &mut FunctionBuilder<'_>,

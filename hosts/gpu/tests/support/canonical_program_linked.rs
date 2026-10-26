@@ -96,6 +96,23 @@ fn linked_narrow_comparison_assertion_preserves_publication_and_recovers() {
     linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
 }
 
+#[test]
+fn linked_uniform_words_restore_the_same_plan_fact_and_recover() {
+    // The collection is used before the assertion on every visit. The linked
+    // Object's bulk helper therefore needs the fact restored from its image,
+    // including the rejected invocation between two successful invocations.
+    let source = "+> sequence\nchecked(n<u64>) => (out<u64>) :=\n  count := n + 2u64\n  words := [42u16 | i <- 0u64..=count, i < count]\n  size := sequence/length(words)\n  positive! := n > 0u64\n  out := 12u64 / (size - 2u64).\nchecked(input<u64>)\n";
+    for artifact in super::artifacts(source).0 {
+        let plan = mech_engine::native_artifact::lower_native_program_artifact(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+        )
+        .unwrap();
+        assert_eq!(plan.facts().uniform_unsigned_collections().len(), 1);
+    }
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
 fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
     let temporary = tempfile::tempdir().unwrap();
     let directory = temporary.path();

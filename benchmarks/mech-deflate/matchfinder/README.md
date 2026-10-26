@@ -345,6 +345,11 @@ recovery. Any bulk construction must derive eligibility through shared same-plan
 facts, retain source error/effect order and finite resource admission, and reject
 unproved/effectful bodies. No benchmark names or fixed buffer lengths select it.
 The unchanged six-position witness and its complete reference vectors remain
-the integration acceptance test. This construction improvement is not implemented
-at this checkpoint. Reserve/append/clear with retained capacity, the full collector,
-optimal parser, writer, `compress_into`, and complete compression timing remain.
+the integration acceptance test. This construction improvement was absent at
+`fd790ca0`. The subsequent [ordinary uniform-construction patch](../uniform-words/README.md)
+implements the precise pure region through shared facts and the existing packed
+builder. Its real-buffer initialization qualification executes 76 control visits;
+the six-position witness still rejects its unchanged work limit during a
+`sequence/length` admission. Reserve/append/clear with retained capacity, the full
+collector, optimal parser, writer, `compress_into`, and complete compression
+timing remain.

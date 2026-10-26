@@ -1,3 +1,5 @@
+//! ABI35 permits a proved uniform constructor at its own collection header.
+//! It reuses the existing collection helper lanes and frame layout.
 //! ABI34 adds a checked lexical-integrity failure status, sealed against
 //! the exact admitted visit. All ABI33 mapping representations remain.
 //! ABI33 shares an owner-prepared 16-byte header and 128-byte table allowance.
@@ -16,7 +18,7 @@
 use crate::native_artifact::abi::NativeEntryFrame;
 use crate::native_artifact::program::protocol::GlobalHelper;
 use core::ffi::c_void;
-pub(in crate::native_artifact) const VERSION: u64 = 34;
+pub(in crate::native_artifact) const VERSION: u64 = 35;
 pub(in crate::native_artifact) const JOIN_MAP_MISSING_BYTE: u8 = 0x80;
 pub(in crate::native_artifact) const PHASE_ACTIVATION: u64 = 0;
 pub(in crate::native_artifact) const PHASE_TURN: u64 = 1;

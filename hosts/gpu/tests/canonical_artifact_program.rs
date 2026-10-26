@@ -31,6 +31,9 @@ mod argument_transport_qualification;
 #[path = "support/canonical_program_shared_transport.rs"]
 mod shared_transport_qualification;
 
+#[path = "support/canonical_program_uniform_words.rs"]
+mod uniform_words_qualification;
+
 #[path = "support/canonical_program_linked.rs"]
 mod linked_qualification;
 

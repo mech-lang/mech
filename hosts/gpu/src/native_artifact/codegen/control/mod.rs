@@ -913,6 +913,31 @@ impl<'plan> CfgDefinition<'plan> {
                 b.switch_to_block(joined);
             }
             #[cfg(feature = "canonical-native-program")]
+            if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =
+                plan
+                && let NativeIterationTerminator::Header {
+                    iteration, exit, ..
+                } = block.terminator()
+                && let Some(region) = prepared
+                    .metadata()
+                    .uniform_word_collections
+                    .iter()
+                    .find(|region| region.iteration() == iteration)
+            {
+                hooks
+                    .as_ref()
+                    .ok_or_else(|| backend("uniform collection has no owner hooks"))?
+                    .uniform_words(
+                        b,
+                        index,
+                        region,
+                        locals,
+                        plan.value_count() + iteration as usize,
+                        blocks[exit as usize].expect("reachable collection exit"),
+                        error,
+                    )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
             if let NativeIterationTerminator::Header {
                 iteration, exit, ..
             } = block.terminator()

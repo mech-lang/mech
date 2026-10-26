@@ -10,6 +10,10 @@ use crate::native_artifact::{
 };
 use std::{borrow::Cow, cell::OnceCell};
 
+#[path = "uniform_word_collection.rs"]
+mod uniform_words;
+pub use uniform_words::NativeUniformWordCollection;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NativeProgramReadRole {
     Action(u32),

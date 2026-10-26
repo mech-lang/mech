@@ -28,6 +28,7 @@ pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
     allocation::exact_capacity(values, count, reason)
 }
 mod data;
+mod uniform_words;
 pub(in crate::native_artifact::program::runtime) fn source_count(
     value: &Value,
 ) -> Result<u64, Error> {
