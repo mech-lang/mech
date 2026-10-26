@@ -240,23 +240,32 @@ fn generated_launcher_references_individual_factories_and_pins_profile() {
         .unwrap();
         let main = std::fs::read_to_string(generated.root().join("src/main.rs")).unwrap();
         assert!(!main.contains("install_intrinsic_resident("));
-        let capture = main
+        let launcher = include_str!("../../src/native_artifact/launch/hosted/mod.rs");
+        let binding = include_str!("../../src/native_artifact/launch/program.rs");
+        let capture = launcher
             .find("with_prepared_canonical_native_resources_phased_text(")
             .unwrap();
         assert!(!main.contains("decode_program_artifact"));
         assert!(!main.contains("let artifact ="));
         assert!(
-            main.find("LinkedProgramArtifact::from_build_owned_image(")
+            main.find("BuildOwnedHostedBinding::from_build_owned_image(")
                 .unwrap()
-                < capture
+                < main
+                    .find("run_hosted_program_application(binding,")
+                    .unwrap()
         );
+        assert!(binding.contains("LinkedProgramArtifact::from_build_owned_image("));
+        assert!(launcher.find("binding.code.bind(&catalog)").unwrap() < capture);
         assert!(
-            main.find("CanonicalNativeResourceMetadata::decode_build_owned_image(")
+            launcher
+                .find("CanonicalNativeResourceMetadata::decode_build_owned_image(")
                 .unwrap()
                 < capture
         );
-        assert!(main.find("drop(catalog);").unwrap() < capture);
-        assert!(main.contains("hex(program_revision.as_bytes())"));
+        assert!(launcher.find("drop(catalog);").unwrap() < capture);
+        assert!(launcher.contains("hex(program_revision.as_bytes())"));
+        assert!(!launcher.contains("decode_program_artifact"));
+        assert!(!launcher.contains("let artifact ="));
         assert!(!main.contains("@INSTALL_CANONICAL_FACTORIES@"));
         assert!(!main.contains("\\\""));
         let object = emit_program_object(artifact, &full).unwrap();

@@ -432,3 +432,10 @@ states. Correct the stale contract to compare original/decoded native execution
 with the ordinary result and emit an Object, preserving all three rejection
 checks for suspending machines. This changes test expectations only. Retain the
 failed final run and the independently reproduced I failure in the evidence.
+
+Final hosted contracts inspect generated binding/dispatch in the thin main and
+image restoration, resource decoding, catalog release, prepare/resume and
+capture ordering in the compiled launcher that now owns those operations. The
+factory-selection, profile, image-pin and no-fallback assertions remain. The
+snapshot integration target also runs in the existing canonical program CI
+profile, so the canonical test inventory has an executable owner for it.
