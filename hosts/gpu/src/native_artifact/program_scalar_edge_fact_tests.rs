@@ -2,82 +2,29 @@
 //! substitutions: all source work, results, failures and origins must agree.
 use super::*;
 use crate::native_artifact::JitProgramArtifact;
-use crate::native_artifact::program_compiler::cfg_cleanup::{
-    take_cfg_cleanup_emissions, without_cfg_cleanup,
-};
-use crate::native_artifact::program_compiler::packed_loop_codegen::{
-    take_candidate_value_emissions, take_cold_recipe_emissions, take_constant_emissions,
-    take_count_bound_emissions, take_edge_fact_emissions, take_frame_effect_emissions,
-    take_invariant_emissions, take_lookup_fact_emissions, take_mutation_emissions,
-    take_outline_emissions, take_paired_candidate_emissions, take_steady_emissions,
-    take_tag_thread_emissions, without_candidate_value_loads, without_cold_recipes,
-    without_count_bounds, without_edge_facts, without_frame_effects, without_lookup_facts,
-    without_lookup_loop_split, without_loop_constants, without_loop_invariants,
-    without_loop_outlining, without_mutation_facts, without_paired_candidate_loads,
-    without_steady_loops, without_tag_threading,
-};
 
-#[derive(Clone, Copy)]
-enum Pass {
-    EdgeFacts,
-    TagThreading,
-    FrameEffects,
-    LookupFacts,
-    CfgCleanup,
-    LoopOutlining,
-    LoopInvariants,
-    PreservingCalls,
-    MutationFacts,
-    CountBounds,
-    LoopConstants,
-    SteadyLoops,
-    ColdRecipes,
-    LookupSplit,
-    CandidateValues,
-    PairedCandidates,
-}
+use crate::native_artifact::compilation::{EmissionCounters, OptimizationPass as Pass};
 impl Pass {
-    fn disabled<T>(self, f: impl FnOnce() -> T) -> T {
-        match self {
-            Self::EdgeFacts => without_edge_facts(f),
-            Self::TagThreading => without_tag_threading(f),
-            Self::FrameEffects => without_frame_effects(f),
-            Self::LookupFacts => without_lookup_facts(f),
-            Self::CfgCleanup => without_cfg_cleanup(f),
-            Self::LoopOutlining => without_loop_outlining(f),
-            Self::LoopInvariants => without_loop_invariants(f),
-            Self::PreservingCalls => {
-                crate::native_artifact::program_bound_shim::without_preserving_calls(f)
-            }
-            Self::MutationFacts => without_mutation_facts(f),
-            Self::CountBounds => without_count_bounds(f),
-            Self::LoopConstants => without_loop_constants(f),
-            Self::SteadyLoops => without_steady_loops(f),
-            Self::ColdRecipes => without_cold_recipes(f),
-            Self::LookupSplit => without_lookup_loop_split(f),
-            Self::CandidateValues => without_candidate_value_loads(f),
-            Self::PairedCandidates => without_paired_candidate_loads(f),
-        }
-    }
     fn check(
         self,
+        emissions: EmissionCounters,
         edges: (usize, usize),
         tags: (usize, usize, usize),
         effects: (usize, usize, usize),
         selected: bool,
     ) {
-        let lookups = take_lookup_fact_emissions();
-        let cfg = take_cfg_cleanup_emissions();
-        let outlined = take_outline_emissions();
-        let invariants = take_invariant_emissions();
-        let preserving = crate::native_artifact::program_bound_shim::take_emissions();
-        let mutation = take_mutation_emissions();
-        let counts = take_count_bound_emissions();
-        let constants = take_constant_emissions();
-        let steady = take_steady_emissions();
-        let recipes = take_cold_recipe_emissions();
-        let candidate_values = take_candidate_value_emissions();
-        let paired_candidates = take_paired_candidate_emissions();
+        let lookups = emissions.lookup_facts;
+        let cfg = emissions.cfg_cleanup;
+        let outlined = emissions.loop_outlining;
+        let invariants = emissions.loop_invariants;
+        let preserving = emissions.preserving_calls;
+        let mutation = emissions.mutation_facts;
+        let counts = emissions.count_bounds;
+        let constants = emissions.loop_constants;
+        let steady = emissions.steady_loops;
+        let recipes = emissions.cold_recipes;
+        let candidate_values = emissions.candidate_values;
+        let paired_candidates = emissions.paired_candidates;
         match self {
             Self::PairedCandidates if !selected => assert_eq!(paired_candidates, 0),
             Self::CandidateValues if !selected => assert_eq!(candidate_values, 0),
@@ -177,9 +124,8 @@ fn loop_invariants_metadata_binds_actual_calls_ranges_latches_and_refreshes() {
     );
     let artifact = tests::artifact_source(&source);
     let catalog = mech_stdlib::source_catalog();
-    take_invariant_emissions();
     let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
-    let emitted = take_invariant_emissions();
+    let emitted = object.test_emissions().loop_invariants;
     assert!(
         emitted.0 == 1 && emitted.1 >= 8 && emitted.2 > 0,
         "{emitted:?}"
@@ -228,9 +174,11 @@ fn loop_invariants_metadata_binds_actual_calls_ranges_latches_and_refreshes() {
         );
     }
     assert_eq!(r["refreshes"].as_array().unwrap().len(), 3);
-    let old = without_loop_invariants(|| {
-        crate::native_artifact::emit_program_object(&artifact, &catalog)
-    })
+    let old = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::LoopInvariants,
+    )
     .unwrap();
     assert!(
         old.metadata()["compiled_loop_invariants"]
@@ -238,7 +186,7 @@ fn loop_invariants_metadata_binds_actual_calls_ranges_latches_and_refreshes() {
             .unwrap()
             .is_empty()
     );
-    assert_eq!(take_invariant_emissions(), (0, 0, 0));
+    assert_eq!(old.test_emissions().loop_invariants, (0, 0, 0));
     for changed in [
         source.replace("index >= n", "index == n"),
         source.replace(
@@ -264,9 +212,8 @@ fn loop_outlining_metadata_and_total_stack_code_admission_include_owned_callees(
         structural_projection_tests::COUNT
     ));
     let catalog = mech_stdlib::source_catalog();
-    take_outline_emissions();
     let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
-    assert_eq!(take_outline_emissions(), 1);
+    assert_eq!(object.test_emissions().loop_outlining, 1);
     let metadata = object.metadata();
     let regions = metadata["compiled_outlined_loops"].as_array().unwrap();
     assert_eq!(regions.len(), 1);
@@ -311,9 +258,12 @@ fn loop_outlining_metadata_and_total_stack_code_admission_include_owned_callees(
         crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits)
             .is_err()
     );
-    let inline =
-        without_loop_outlining(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
-            .unwrap();
+    let inline = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::LoopOutlining,
+    )
+    .unwrap();
     assert!(
         inline.metadata()["compiled_outlined_loops"]
             .as_array()
@@ -381,9 +331,11 @@ fn preserving_calls_metadata_and_total_stack_code_include_the_nested_bridge() {
         crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits)
             .is_err()
     );
-    let ordinary = crate::native_artifact::program_bound_shim::without_preserving_calls(|| {
-        crate::native_artifact::emit_program_object(&artifact, &catalog)
-    })
+    let ordinary = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::PreservingCalls,
+    )
     .unwrap();
     assert!(ordinary.metadata()["compiled_bound_call_shim"].is_null());
     assert!(
@@ -432,9 +384,8 @@ fn lookup_facts_metadata_records_only_actual_current_key_substitutions() {
         structural_projection_tests::COUNT
     ));
     let catalog = mech_stdlib::source_catalog();
-    take_lookup_fact_emissions();
     let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
-    let actual = take_lookup_fact_emissions();
+    let actual = object.test_emissions().lookup_facts;
     let metadata = object.metadata();
     let receipt = &metadata["compiled_lookup_facts"];
     assert_eq!(receipt["complete"], true);
@@ -468,10 +419,13 @@ fn lookup_facts_metadata_records_only_actual_current_key_substitutions() {
         facts.contains("Fresh") && facts.contains("Present") && facts.contains("Cached"),
         "{facts:?}"
     );
-    let baseline =
-        without_lookup_facts(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
-            .unwrap();
-    assert_eq!(take_lookup_fact_emissions(), (0, 0));
+    let baseline = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::LookupFacts,
+    )
+    .unwrap();
+    assert_eq!(baseline.test_emissions().lookup_facts, (0, 0));
     let receipt = baseline.metadata();
     assert_eq!(receipt["compiled_lookup_facts"]["complete"], true);
     assert!(
@@ -489,9 +443,8 @@ fn object_metadata_records_actual_frame_sync_masks_and_disabled_absence() {
         structural_projection_tests::COUNT
     ));
     let catalog = mech_stdlib::source_catalog();
-    take_frame_effect_emissions();
     let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
-    let actual = take_frame_effect_emissions();
+    let actual = object.test_emissions().frame_effects;
     let metadata = object.metadata();
     let receipt = &metadata["compiled_frame_effects"];
     assert_eq!(receipt["complete"], true);
@@ -534,10 +487,13 @@ fn object_metadata_records_actual_frame_sync_masks_and_disabled_absence() {
     );
     assert_eq!(totals, actual);
     assert!(actual.1 < actual.0 * 14 && actual.2 < actual.0 * 14);
-    let plain =
-        without_frame_effects(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
-            .unwrap();
-    assert_eq!(take_frame_effect_emissions(), (0, 0, 0));
+    let plain = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::FrameEffects,
+    )
+    .unwrap();
+    assert_eq!(plain.test_emissions().frame_effects, (0, 0, 0));
     let metadata = plain.metadata();
     let regions = metadata["compiled_frame_effects"]["regions"]
         .as_array()
@@ -561,9 +517,8 @@ fn object_metadata_attests_tag_threading_and_original_source_frontiers() {
     let artifact =
         tests::artifact_source(&format!("{body}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n"));
     let catalog = mech_stdlib::source_catalog();
-    take_tag_thread_emissions();
     let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
-    let emitted = take_tag_thread_emissions();
+    let emitted = object.test_emissions().tag_threading;
     let metadata = object.metadata();
     let receipt = &metadata["compiled_tag_threading"];
     assert_eq!(receipt["complete"], true);
@@ -615,10 +570,13 @@ fn object_metadata_attests_tag_threading_and_original_source_frontiers() {
     for site in record["known_latches"].as_array().unwrap() {
         assert_eq!(*site, tail.tail.latch());
     }
-    let plain =
-        without_tag_threading(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
-            .unwrap();
-    assert_eq!(take_tag_thread_emissions(), (0, 0, 0));
+    let plain = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::TagThreading,
+    )
+    .unwrap();
+    assert_eq!(plain.test_emissions().tag_threading, (0, 0, 0));
     let plain = plain.metadata();
     assert_eq!(plain["compiled_tag_threading"]["complete"], true);
     assert!(
@@ -656,13 +614,16 @@ fn tag_threading_accepts_reordered_variants_and_an_initial_terminal_state() {
         )
         .unwrap();
         let catalog = mech_stdlib::source_catalog();
-        take_tag_thread_emissions();
         let threaded = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        let actual = take_tag_thread_emissions();
+        let actual = threaded.test_emissions().tag_threading;
         assert!(actual.0 > 0 && actual.1 >= 4 && actual.2 >= 2, "{actual:?}");
-        let plain =
-            without_tag_threading(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
-        assert_eq!(take_tag_thread_emissions(), (0, 0, 0));
+        let plain = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            crate::native_artifact::compilation::OptimizationPass::TagThreading,
+        )
+        .unwrap();
+        assert_eq!(plain.test_emissions().tag_threading, (0, 0, 0));
         let mut executions = Vec::new();
         for (version, jit) in [&threaded, &plain].into_iter().enumerate() {
             PUBLICATION_FRONTIERS.with(|records| records.borrow_mut().clear());
@@ -740,9 +701,8 @@ fn object_metadata_records_actual_source_edge_substitutions_and_disabled_absence
         structural_projection_tests::COUNT
     ));
     let catalog = mech_stdlib::source_catalog();
-    take_edge_fact_emissions();
     let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
-    let emitted = take_edge_fact_emissions();
+    let emitted = object.test_emissions().edge_facts;
     let metadata = object.metadata();
     let receipt = &metadata["compiled_source_edge_facts"];
     assert_eq!(receipt["complete"], true);
@@ -796,10 +756,13 @@ fn object_metadata_records_actual_source_edge_substitutions_and_disabled_absence
         assert_eq!(record["op"], serde_json::to_value(op).unwrap());
         assert_eq!(record["operands"], serde_json::to_value(operands).unwrap());
     }
-    let disabled =
-        without_edge_facts(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
-            .unwrap();
-    assert_eq!(take_edge_fact_emissions(), (0, 0));
+    let disabled = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::EdgeFacts,
+    )
+    .unwrap();
+    assert_eq!(disabled.test_emissions().edge_facts, (0, 0));
     let metadata = disabled.metadata();
     let receipt = &metadata["compiled_source_edge_facts"];
     assert_eq!(receipt["complete"], true);
@@ -870,27 +833,22 @@ sequence := text/join([letters{{char}} | char <- text<string>], "")
     .unwrap();
     for artifact in [original, decoded] {
         let catalog = mech_stdlib::source_catalog();
-        take_edge_fact_emissions();
-        take_tag_thread_emissions();
-        take_frame_effect_emissions();
-        take_candidate_value_emissions();
-        take_paired_candidate_emissions();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         if matches!(pass, Pass::CandidateValues) {
             assert!(
-                take_candidate_value_emissions() > 0,
+                optimized.test_emissions().candidate_values > 0,
                 "renamed parameterized source must select actual candidate loads"
             );
         }
         if compact {
             assert!(
-                take_paired_candidate_emissions() > 0,
+                optimized.test_emissions().paired_candidates > 0,
                 "compact immutable producer must select paired slot loads"
             );
         }
         if matches!(pass, Pass::SteadyLoops) {
             assert!(
-                take_steady_emissions() > 0,
+                optimized.test_emissions().steady_loops > 0,
                 "changed source must select the actual steady function"
             );
         }
@@ -899,26 +857,31 @@ sequence := text/join([letters{{char}} | char <- text<string>], "")
             Pass::ColdRecipes | Pass::LookupSplit | Pass::CandidateValues
         ) {
             assert!(
-                take_cold_recipe_emissions() > 0,
+                optimized.test_emissions().cold_recipes > 0,
                 "renamed parameterized source must emit actual cold recipes"
             );
         }
-        let emitted = take_edge_fact_emissions();
+        let emitted = optimized.test_emissions().edge_facts;
         assert!(
             emitted.0 >= 8 && emitted.1 >= 4,
             "actual emitted guard/arithmetic substitutions: {emitted:?}"
         );
-        let selected = take_tag_thread_emissions();
-        pass.check(emitted, selected, take_frame_effect_emissions(), true);
-        let unchanged = pass
-            .disabled(|| JitProgramArtifact::compile(&artifact, &catalog))
-            .unwrap();
-        let unchanged_facts = take_edge_fact_emissions();
-        let unchanged_tags = take_tag_thread_emissions();
+        let selected = optimized.test_emissions().tag_threading;
         pass.check(
+            optimized.test_emissions(),
+            emitted,
+            selected,
+            optimized.test_emissions().frame_effects,
+            true,
+        );
+        let unchanged = JitProgramArtifact::compile_for_test(&artifact, &catalog, pass).unwrap();
+        let unchanged_facts = unchanged.test_emissions().edge_facts;
+        let unchanged_tags = unchanged.test_emissions().tag_threading;
+        pass.check(
+            unchanged.test_emissions(),
             unchanged_facts,
             unchanged_tags,
-            take_frame_effect_emissions(),
+            unchanged.test_emissions().frame_effects,
             false,
         );
         let long_text = if compact {
@@ -1276,28 +1239,30 @@ fn arithmetic_failure_equivalence(pass: Pass) {
             "{body}\n#Count({text}, {width}u64, {n}u64, empty)\n"
         ));
         let catalog = mech_stdlib::source_catalog();
-        take_edge_fact_emissions();
-        take_tag_thread_emissions();
-        take_frame_effect_emissions();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        let emitted = take_edge_fact_emissions();
+        let emitted = optimized.test_emissions().edge_facts;
         if expected_packed {
             assert!(
                 emitted.0 >= 6,
                 "must actually remove dominated field guards"
             );
         }
-        let selected = take_tag_thread_emissions();
-        pass.check(emitted, selected, take_frame_effect_emissions(), true);
-        let unchanged = pass
-            .disabled(|| JitProgramArtifact::compile(&artifact, &catalog))
-            .unwrap();
-        let unchanged_facts = take_edge_fact_emissions();
-        let unchanged_tags = take_tag_thread_emissions();
+        let selected = optimized.test_emissions().tag_threading;
         pass.check(
+            optimized.test_emissions(),
+            emitted,
+            selected,
+            optimized.test_emissions().frame_effects,
+            true,
+        );
+        let unchanged = JitProgramArtifact::compile_for_test(&artifact, &catalog, pass).unwrap();
+        let unchanged_facts = unchanged.test_emissions().edge_facts;
+        let unchanged_tags = unchanged.test_emissions().tag_threading;
+        pass.check(
+            unchanged.test_emissions(),
             unchanged_facts,
             unchanged_tags,
-            take_frame_effect_emissions(),
+            unchanged.test_emissions().frame_effects,
             false,
         );
         let mut executions = Vec::new();
@@ -1362,4 +1327,61 @@ fn arithmetic_failure_equivalence(pass: Pass) {
             "unchanged first arithmetic failure and exact spending"
         );
     }
+}
+
+#[test]
+fn nested_and_concurrent_compilation_keep_options_and_actual_reports_isolated() {
+    use crate::native_artifact::compilation::{CompilationControls, OptimizationOptions};
+    fn compile(options: OptimizationOptions) -> (Vec<u8>, EmissionCounters) {
+        let artifact = tests::artifact_source(&format!(
+            "{}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n",
+            structural_projection_tests::COUNT,
+        ));
+        let catalog = mech_stdlib::source_catalog();
+        let object = crate::native_artifact::program_compiler::emit_program_object_with_options(
+            &artifact,
+            &catalog,
+            crate::native_artifact::NativeCompileLimits::default(),
+            &options,
+        )
+        .unwrap();
+        (object.bytes().to_vec(), object.test_emissions())
+    }
+    let choices = [
+        OptimizationOptions::default(),
+        OptimizationOptions::without(Pass::FrameEffects),
+        OptimizationOptions::without(Pass::EdgeFacts),
+        OptimizationOptions::without(Pass::LoopBounds),
+    ];
+    let expected = choices.map(compile);
+    assert!(expected[0].1.frame_effects.0 > 0 && expected[0].1.edge_facts.0 > 0);
+    assert_eq!(expected[1].1.frame_effects, (0, 0, 0));
+    assert_eq!(expected[2].1.edge_facts, (0, 0));
+    assert_eq!(expected[3].1.loop_bounds, (0, 0));
+    // An outer compiler context remains alive while an unrelated inner build
+    // requests different choices. Neither the defaults nor its observations
+    // inherit a surrounding experiment's options.
+    let outer = CompilationControls::new(choices[1]);
+    assert_eq!(compile(choices[2]), expected[2]);
+    assert_eq!(compile(choices[0]), expected[0]);
+    assert_eq!(compile(outer.options()), expected[1]);
+    let ready = std::sync::Barrier::new(choices.len());
+    std::thread::scope(|scope| {
+        let handles = choices
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(index, options)| {
+                let ready = &ready;
+                scope.spawn(move || {
+                    ready.wait();
+                    (index, compile(options))
+                })
+            })
+            .collect::<Vec<_>>();
+        for handle in handles {
+            let (index, observed) = handle.join().unwrap();
+            assert_eq!(observed, expected[index]);
+        }
+    });
 }

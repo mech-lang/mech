@@ -9,9 +9,8 @@ fn loop_constants_metadata_binds_stack_hash_values_source_endpoint_and_actual_lo
     );
     let artifact = tests::artifact_source(&source);
     let catalog = mech_stdlib::source_catalog();
-    take_constant_emissions();
     let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
-    let emitted = take_constant_emissions();
+    let emitted = object.test_emissions().loop_constants;
     assert!(emitted > 0);
     let metadata = object.metadata();
     let callers = &metadata["compiled_loop_constants"];
@@ -34,10 +33,13 @@ fn loop_constants_metadata_binds_stack_hash_values_source_endpoint_and_actual_lo
     assert!(caller["template_instructions"].as_u64().unwrap() <= 64);
     assert!(callee["emitted_hash_constant_loads"].as_u64().unwrap() > 0);
     assert_eq!(callee["emitted_endpoint_loads"], 1);
-    let reference =
-        without_loop_constants(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
-            .unwrap();
-    assert_eq!(take_constant_emissions(), 0);
+    let reference = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::LoopConstants,
+    )
+    .unwrap();
+    assert_eq!(reference.test_emissions().loop_constants, 0);
     let metadata = reference.metadata();
     assert!(
         metadata["compiled_loop_constants"]["callers"]
@@ -59,12 +61,13 @@ fn loop_constants_preserve_inline_fallback_without_an_outlined_private_abi() {
         structural_projection_tests::COUNT
     );
     let artifact = tests::artifact_source(&source);
-    take_constant_emissions();
-    let object = without_loop_outlining(|| {
-        crate::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
-    })
+    let object = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &mech_stdlib::source_catalog(),
+        crate::native_artifact::compilation::OptimizationPass::LoopOutlining,
+    )
     .unwrap();
-    assert_eq!(take_constant_emissions(), 0);
+    assert_eq!(object.test_emissions().loop_constants, 0);
     assert!(
         object.metadata()["compiled_loop_constants"]["callers"]
             .as_array()

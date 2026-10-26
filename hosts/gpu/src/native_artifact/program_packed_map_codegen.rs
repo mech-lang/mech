@@ -16,19 +16,7 @@ use cranelift_frontend::FunctionBuilder;
 
 #[path = "program_packed_frame_codegen.rs"]
 mod frame_state;
-pub(in crate::native_artifact) use frame_state::{FrameState, LookupMode, effects_enabled};
-#[cfg(test)]
-pub(in crate::native_artifact) use frame_state::{
-    take_candidate_value_emissions, without_candidate_value_loads,
-};
-#[cfg(test)]
-pub(in crate::native_artifact) use frame_state::{
-    take_frame_effect_emissions, without_frame_effects,
-};
-#[cfg(test)]
-pub(in crate::native_artifact) use frame_state::{
-    take_paired_candidate_emissions, without_paired_candidate_loads,
-};
+pub(in crate::native_artifact) use frame_state::{FrameState, LookupMode};
 
 #[cfg(test)]
 #[path = "program_packed_hash_tests.rs"]

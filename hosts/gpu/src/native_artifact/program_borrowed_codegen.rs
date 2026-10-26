@@ -7,6 +7,7 @@ use super::super::{
     program_hooks::Hooks,
 };
 use crate::native_artifact::codegen::common::ssa_words::Words;
+use crate::native_artifact::compilation::OptimizationOptions;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{NativeBorrowedStringAction as Action, NativeMatchValue};
@@ -27,6 +28,7 @@ fn word(
     Ok(b.ins().load(types::I64, flags, locals, offset(index)?))
 }
 fn pair(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     registers: Option<&Words>,
@@ -35,8 +37,20 @@ fn pair(
 ) -> Result<[Value; 2], NativeCompileError> {
     let slot = layout.slot(v);
     Ok([
-        word(b, locals, registers, slot, memory_regions::borrowed())?,
-        word(b, locals, registers, slot + 1, memory_regions::borrowed())?,
+        word(
+            b,
+            locals,
+            registers,
+            slot,
+            memory_regions::borrowed(options),
+        )?,
+        word(
+            b,
+            locals,
+            registers,
+            slot + 1,
+            memory_regions::borrowed(options),
+        )?,
     ])
 }
 fn put(
@@ -55,6 +69,7 @@ fn put(
     Ok(())
 }
 fn put_view(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     registers: Option<&Words>,
@@ -67,10 +82,11 @@ fn put_view(
         registers,
         slot,
         value,
-        memory_regions::borrowed(),
+        memory_regions::borrowed(options),
     )
 }
 pub(in crate::native_artifact) fn prepare(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &Layout,
@@ -82,6 +98,7 @@ pub(in crate::native_artifact) fn prepare(
         return Ok(());
     };
     prepare_region(
+        options,
         b,
         locals,
         &layout.regions[*region],
@@ -92,6 +109,7 @@ pub(in crate::native_artifact) fn prepare(
     )
 }
 pub(in crate::native_artifact) fn resume(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &RegionLayout,
@@ -100,6 +118,7 @@ pub(in crate::native_artifact) fn resume(
     error: Block,
 ) -> Result<(), NativeCompileError> {
     prepare_region(
+        options,
         b,
         locals,
         layout,
@@ -110,6 +129,7 @@ pub(in crate::native_artifact) fn resume(
     )
 }
 fn prepare_region(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &RegionLayout,
@@ -121,18 +141,19 @@ fn prepare_region(
     let zero = b.ins().iconst(types::I64, 0);
     hooks.call(b, site, operation, [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
-    put_view(b, locals, None, layout.ready, ready)?;
+    put_view(options, b, locals, None, layout.ready, ready)?;
     // The checked callback verifies capacity and writes every capture, even
     // for a declined representation. All targets are admitted native words.
     for index in 0..layout.capture_words() {
         let word = b
             .ins()
             .load(types::I64, MemFlags::new(), hooks.arguments, offset(index)?);
-        put_view(b, locals, None, layout.captures + index, word)?;
+        put_view(options, b, locals, None, layout.captures + index, word)?;
     }
     Ok(())
 }
 fn bounds(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     registers: Option<&Words>,
@@ -154,7 +175,7 @@ fn bounds(
     if let Some(words) = registers {
         words.spill_all(b, locals)?;
     }
-    super::tail_codegen::failure(b, locals, closed, site, hooks, error)?;
+    super::tail_codegen::failure(options, b, locals, closed, site, hooks, error)?;
     hooks.call(
         b,
         site,
@@ -173,6 +194,7 @@ fn bounds(
 /// Emit the native branch, leaving the builder in the ordinary fallback arm.
 /// The caller joins BOTH arms before emitting the original CFG terminator.
 pub(in crate::native_artifact) fn emit(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &Layout,
@@ -188,7 +210,7 @@ pub(in crate::native_artifact) fn emit(
     let layout = &layout.regions[region];
     let ready = b.ins().load(
         types::I64,
-        memory_regions::borrowed(),
+        memory_regions::borrowed(options),
         locals,
         offset(layout.ready)?,
     );
@@ -199,7 +221,7 @@ pub(in crate::native_artifact) fn emit(
     b.ins().brif(ready, native, &[], ordinary, &[]);
     b.switch_to_block(native);
     emit_native(
-        b, locals, None, None, layout, closed, site, action, hooks, error,
+        options, b, locals, None, None, layout, closed, site, action, hooks, error,
     )?;
     b.ins().jump(joined, &[]);
     b.switch_to_block(ordinary);
@@ -209,6 +231,7 @@ pub(in crate::native_artifact) fn emit(
 /// Emit only the admitted native action. The caller proves readiness once and
 /// owns boundary synchronization. Source bytes retain their original checks.
 pub(super) fn emit_native(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     registers: Option<&Words>,
@@ -228,13 +251,13 @@ pub(super) fn emit_native(
         // No fake Matrix handle is created; non-native inputs take the call below.
         Action::ConstantRange { .. } => {}
         Action::MatrixElement { source, index, .. } => {
-            let [table, count] = pair(b, locals, registers, layout, source)?;
+            let [table, count] = pair(options, b, locals, registers, layout, source)?;
             let first = word(
                 b,
                 locals,
                 registers,
                 layout.slot(source) + 2,
-                memory_regions::borrowed(),
+                memory_regions::borrowed(options),
             )?;
             let index = word(b, locals, registers, index.get() as usize, MemFlags::new())?;
             // Subtract the genuine global ordinal, never bias the table pointer
@@ -242,6 +265,7 @@ pub(super) fn emit_native(
             let offset = b.ins().isub(index, first);
             let valid = b.ins().icmp(IntCC::UnsignedLessThan, offset, count);
             bounds(
+                options,
                 b,
                 locals,
                 registers,
@@ -256,7 +280,7 @@ pub(super) fn emit_native(
             view = Some(line::load(b, table, offset));
         }
         Action::Copy { source, .. } => {
-            view = Some(pair(b, locals, registers, layout, source)?);
+            view = Some(pair(options, b, locals, registers, layout, source)?);
         }
         Action::Length { source, .. } => {
             // Length observes only the second home. Loading an unused pointer
@@ -268,7 +292,7 @@ pub(super) fn emit_native(
                 locals,
                 registers,
                 layout.slot(source) + 1,
-                memory_regions::borrowed(),
+                memory_regions::borrowed(options),
             )?;
             put(
                 b,
@@ -280,11 +304,12 @@ pub(super) fn emit_native(
             )?;
         }
         Action::ScalarSelect { source, index, .. } => {
-            let [pointer, length] = pair(b, locals, registers, layout, source)?;
+            let [pointer, length] = pair(options, b, locals, registers, layout, source)?;
             let index = word(b, locals, registers, index.get() as usize, MemFlags::new())?;
             let offset = b.ins().iadd_imm(index, -1);
             let valid = b.ins().icmp(IntCC::UnsignedLessThan, offset, length);
             bounds(
+                options,
                 b,
                 locals,
                 registers,
@@ -304,12 +329,13 @@ pub(super) fn emit_native(
             last,
             ..
         } => {
-            let [pointer, length] = pair(b, locals, registers, layout, source)?;
+            let [pointer, length] = pair(options, b, locals, registers, layout, source)?;
             let last_word = b.ins().iconst(types::I64, last as i64);
             let valid = b
                 .ins()
                 .icmp(IntCC::UnsignedGreaterThanOrEqual, length, last_word);
             bounds(
+                options,
                 b,
                 locals,
                 registers,
@@ -332,8 +358,8 @@ pub(super) fn emit_native(
             negate,
             ..
         } => {
-            let [left, length] = pair(b, locals, registers, layout, source)?;
-            let [right, right_length] = pair(b, locals, registers, layout, literal)?;
+            let [left, length] = pair(options, b, locals, registers, layout, source)?;
+            let [right, right_length] = pair(options, b, locals, registers, layout, literal)?;
             let same = b.ins().icmp(IntCC::Equal, length, right_length);
             let header = b.create_block();
             let body = b.create_block();
@@ -376,8 +402,15 @@ pub(super) fn emit_native(
         }
     }
     if let Some(words) = view {
-        put_view(b, locals, registers, layout.slot(output), words[0])?;
-        put_view(b, locals, registers, layout.slot(output) + 1, words[1])?;
+        put_view(options, b, locals, registers, layout.slot(output), words[0])?;
+        put_view(
+            options,
+            b,
+            locals,
+            registers,
+            layout.slot(output) + 1,
+            words[1],
+        )?;
     }
     Ok(())
 }

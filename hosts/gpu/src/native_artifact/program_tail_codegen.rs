@@ -6,37 +6,42 @@ use super::super::{
     program_hooks::Hooks,
     program_tail_layout::{Layout, Region},
 };
+use crate::native_artifact::compilation::OptimizationOptions;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 
-pub(in crate::native_artifact) fn flags(region: &Region) -> MemFlags {
+pub(in crate::native_artifact) fn flags(options: OptimizationOptions, region: &Region) -> MemFlags {
     if region.map.is_none() {
-        super::super::compiler::memory_regions::scalar_tail()
+        super::super::compiler::memory_regions::scalar_tail(options)
     } else {
         MemFlags::new()
     }
 }
 
 fn load(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     region: &Region,
     word: usize,
 ) -> Result<Value, NativeCompileError> {
     Ok(b.ins()
-        .load(types::I64, flags(region), locals, offset(word)?))
+        .load(types::I64, flags(options, region), locals, offset(word)?))
 }
 fn store(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     region: &Region,
     word: usize,
     value: Value,
 ) -> Result<(), NativeCompileError> {
-    b.ins().store(flags(region), value, locals, offset(word)?);
+    b.ins()
+        .store(flags(options, region), value, locals, offset(word)?);
     Ok(())
 }
 fn leave(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     region: &Region,
@@ -45,16 +50,16 @@ fn leave(
     hooks: &Hooks,
     error: Block,
 ) -> Result<(), NativeCompileError> {
-    let ready = load(b, locals, region, region.words)?;
+    let ready = load(options, b, locals, region, region.words)?;
     let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
     let finish = b.create_block();
     let done = b.create_block();
     b.ins().brif(ready, finish, &[], done, &[]);
     b.switch_to_block(finish);
-    let compute = load(b, locals, region, region.words + 1)?;
-    let comparison = load(b, locals, region, region.words + 2)?;
+    let compute = load(options, b, locals, region, region.words + 1)?;
+    let comparison = load(options, b, locals, region, region.words + 2)?;
     let zero = b.ins().iconst(types::I64, 0);
-    store(b, locals, region, region.words, zero)?;
+    store(options, b, locals, region, region.words, zero)?;
     let mode = b.ins().iconst(types::I64, mode);
     hooks.call_at(
         b,
@@ -68,6 +73,7 @@ fn leave(
     Ok(())
 }
 pub(in crate::native_artifact) fn failure(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &Layout,
@@ -77,11 +83,21 @@ pub(in crate::native_artifact) fn failure(
 ) -> Result<(), NativeCompileError> {
     if let Some(region) = layout.sites.get(site).copied().flatten() {
         let site = b.ins().iconst(types::I64, site as i64);
-        leave(b, locals, &layout.regions[region], site, 2, hooks, error)?;
+        leave(
+            options,
+            b,
+            locals,
+            &layout.regions[region],
+            site,
+            2,
+            hooks,
+            error,
+        )?;
     }
     Ok(())
 }
 pub(in crate::native_artifact) fn abort(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &Layout,
@@ -90,11 +106,12 @@ pub(in crate::native_artifact) fn abort(
     error: Block,
 ) -> Result<(), NativeCompileError> {
     for region in &layout.regions {
-        leave(b, locals, region, site, 3, hooks, error)?;
+        leave(options, b, locals, region, site, 3, hooks, error)?;
     }
     Ok(())
 }
 pub(in crate::native_artifact) fn prepare(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &Layout,
@@ -107,6 +124,7 @@ pub(in crate::native_artifact) fn prepare(
     };
     let region = &layout.regions[region];
     prepare_region(
+        options,
         b,
         locals,
         region,
@@ -117,6 +135,7 @@ pub(in crate::native_artifact) fn prepare(
     )
 }
 pub(in crate::native_artifact) fn resume(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &Layout,
@@ -128,6 +147,7 @@ pub(in crate::native_artifact) fn resume(
         return Ok(());
     };
     prepare_region(
+        options,
         b,
         locals,
         &layout.regions[region],
@@ -138,6 +158,7 @@ pub(in crate::native_artifact) fn resume(
     )
 }
 pub(in crate::native_artifact) fn pause(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &Layout,
@@ -147,16 +168,26 @@ pub(in crate::native_artifact) fn pause(
 ) -> Result<(), NativeCompileError> {
     if let Some(region) = layout.sites.get(site).copied().flatten() {
         let site = b.ins().iconst(types::I64, site as i64);
-        leave(b, locals, &layout.regions[region], site, 4, hooks, error)?;
+        leave(
+            options,
+            b,
+            locals,
+            &layout.regions[region],
+            site,
+            4,
+            hooks,
+            error,
+        )?;
         let zero = b.ins().iconst(types::I64, 0);
         // A declined loan may leave capture words in the unused fuel lane.
         for word in layout.regions[region].words..layout.regions[region].words + 3 {
-            store(b, locals, &layout.regions[region], word, zero)?;
+            store(options, b, locals, &layout.regions[region], word, zero)?;
         }
     }
     Ok(())
 }
 fn prepare_region(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     region: &Region,
@@ -185,12 +216,12 @@ fn prepare_region(
     }
     hooks.call(b, site, operation, [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
-    store(b, locals, region, region.words, ready)?;
+    store(options, b, locals, region, region.words, ready)?;
     for i in 0..if region.map.is_some() { 4 } else { 2 } {
         let word = b
             .ins()
             .load(types::I64, MemFlags::new(), hooks.arguments, offset(i)?);
-        store(b, locals, region, region.words + 1 + i, word)?;
+        store(options, b, locals, region, region.words + 1 + i, word)?;
     }
     Ok(())
 }
@@ -198,6 +229,7 @@ fn prepare_region(
 /// joins that callback at the returned block. Closed map bodies call only their
 /// private storage binding; scalar bodies have no callbacks.
 pub(in crate::native_artifact) fn admission(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &Layout,
@@ -207,13 +239,22 @@ pub(in crate::native_artifact) fn admission(
 ) -> Result<Option<Block>, NativeCompileError> {
     if let Some(region) = layout.exits.get(site).copied().flatten() {
         let site = b.ins().iconst(types::I64, site as i64);
-        leave(b, locals, &layout.regions[region], site, 0, hooks, error)?;
+        leave(
+            options,
+            b,
+            locals,
+            &layout.regions[region],
+            site,
+            0,
+            hooks,
+            error,
+        )?;
     }
     let Some(region) = layout.sites.get(site).copied().flatten() else {
         return Ok(None);
     };
     let region = &layout.regions[region];
-    let ready = load(b, locals, region, region.words)?;
+    let ready = load(options, b, locals, region, region.words)?;
     let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
     let native = b.create_block();
     let ordinary = b.create_block();
@@ -221,25 +262,25 @@ pub(in crate::native_artifact) fn admission(
     b.ins().brif(ready, native, &[], ordinary, &[]);
     b.switch_to_block(native);
     if site == region.tail.header() as usize && region.map.is_some() {
-        let remaining = load(b, locals, region, region.words + 1)?;
+        let remaining = load(options, b, locals, region, region.words + 1)?;
         let empty = b.ins().icmp_imm(IntCC::Equal, remaining, 0);
         let replenish = b.create_block();
         let funded = b.create_block();
         b.ins().brif(empty, replenish, &[], funded, &[]);
         b.switch_to_block(replenish);
-        let function = load(b, locals, region, region.words + 3)?;
-        let context = load(b, locals, region, region.words + 4)?;
+        let function = load(options, b, locals, region, region.words + 3)?;
+        let context = load(options, b, locals, region, region.words + 4)?;
         let zero = b.ins().iconst(types::I64, 0);
         hooks.bound_call(b, function, context, site, 0, [zero; 3], error);
         let count = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
-        store(b, locals, region, region.words + 1, count)?;
+        store(options, b, locals, region, region.words + 1, count)?;
         b.ins().jump(funded, &[]);
         b.switch_to_block(funded);
-        let remaining = load(b, locals, region, region.words + 1)?;
+        let remaining = load(options, b, locals, region, region.words + 1)?;
         let remaining = b.ins().iadd_imm(remaining, -1);
-        store(b, locals, region, region.words + 1, remaining)?;
+        store(options, b, locals, region, region.words + 1, remaining)?;
         if region.packed.is_some() {
-            let context = load(b, locals, region, region.words + 4)?;
+            let context = load(options, b, locals, region, region.words + 4)?;
             let frame = b.ins().load(types::I64, MemFlags::new(), context, 0);
             let selected = b.ins().icmp_imm(IntCC::NotEqual, frame, 0);
             let sync = b.create_block();
@@ -256,8 +297,8 @@ pub(in crate::native_artifact) fn admission(
             b.switch_to_block(ready);
         }
     } else if site == region.tail.header() as usize {
-        let compute = load(b, locals, region, region.words + 1)?;
-        let comparison = load(b, locals, region, region.words + 2)?;
+        let compute = load(options, b, locals, region, region.words + 1)?;
+        let comparison = load(options, b, locals, region, region.words + 2)?;
         let compute_cost = b.ins().iconst(types::I64, region.compute as i64);
         let comparison_cost = b.ins().iconst(types::I64, region.comparison as i64);
         let a = b
@@ -274,13 +315,13 @@ pub(in crate::native_artifact) fn admission(
         b.ins().brif(enough, funded, &[], fallback, &[]);
         b.switch_to_block(fallback);
         let site = b.ins().iconst(types::I64, site as i64);
-        leave(b, locals, region, site, 1, hooks, error)?;
+        leave(options, b, locals, region, site, 1, hooks, error)?;
         b.ins().jump(ordinary, &[]);
         b.switch_to_block(funded);
         let compute = b.ins().isub(compute, compute_cost);
         let comparison = b.ins().isub(comparison, comparison_cost);
-        store(b, locals, region, region.words + 1, compute)?;
-        store(b, locals, region, region.words + 2, comparison)?;
+        store(options, b, locals, region, region.words + 1, compute)?;
+        store(options, b, locals, region, region.words + 2, comparison)?;
     }
     b.ins().jump(joined, &[]);
     b.switch_to_block(ordinary);

@@ -2,6 +2,7 @@
 //! blocks and their phi inputs before register allocation. No runtime predicate,
 //! source operation, failure or work debit is assumed away.
 use super::super::{NativeCompileError, compiler::backend, iteration_compiler::CfgCleanup};
+use crate::native_artifact::compilation::{CompilationControls, OptimizationPass};
 use cranelift_codegen::{
     Context,
     ir::{Function, InstBuilder, InstructionData, Opcode, Value, ValueDef},
@@ -9,27 +10,6 @@ use cranelift_codegen::{
 };
 
 const MAX_ROUNDS: usize = 8;
-
-#[cfg(test)]
-thread_local! {
-    static DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    static EMISSIONS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_cfg_cleanup<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            DISABLED.with(|v| v.set(self.0));
-        }
-    }
-    let _restore = Restore(DISABLED.with(|v| v.replace(true)));
-    f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_cfg_cleanup_emissions() -> (usize, usize) {
-    EMISSIONS.with(|v| v.replace((0, 0)))
-}
 
 fn counts(function: &Function) -> (usize, usize) {
     (
@@ -87,14 +67,13 @@ fn fold(function: &mut Function) -> usize {
 }
 
 pub(in crate::native_artifact) fn optimize(
+    controls: &CompilationControls,
     context: &mut Context,
     isa: &dyn TargetIsa,
 ) -> Result<CfgCleanup, NativeCompileError> {
     let (before_blocks, before_instructions) = counts(&context.func);
-    #[cfg(not(test))]
-    let enabled = true;
-    #[cfg(test)]
-    let enabled = !DISABLED.with(std::cell::Cell::get);
+
+    let enabled = !!controls.enabled(OptimizationPass::CfgCleanup);
     let mut report = CfgCleanup {
         enabled,
         rounds: 0,
@@ -133,11 +112,7 @@ pub(in crate::native_artifact) fn optimize(
     let (blocks, instructions) = counts(&context.func);
     report.after_blocks = blocks;
     report.after_instructions = instructions;
-    #[cfg(test)]
-    EMISSIONS.with(|v| {
-        let old = v.get();
-        v.set((old.0 + 1, old.1 + report.constant_branches_removed));
-    });
+
     Ok(report)
 }
 
@@ -206,11 +181,15 @@ mod tests {
                 b.seal_all_blocks();
                 b.finalize();
             }
-            let report = if enabled {
-                optimize(&mut context, module.isa()).unwrap()
+            let options = if enabled {
+                crate::native_artifact::compilation::OptimizationOptions::default()
             } else {
-                without_cfg_cleanup(|| optimize(&mut context, module.isa())).unwrap()
+                crate::native_artifact::compilation::OptimizationOptions::without(
+                    crate::native_artifact::compilation::OptimizationPass::CfgCleanup,
+                )
             };
+            let controls = CompilationControls::new(options);
+            let report = optimize(&controls, &mut context, module.isa()).unwrap();
             assert_eq!(report.enabled, enabled);
             if enabled {
                 assert!(report.fixed_point && report.constant_branches_removed > 0);

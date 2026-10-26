@@ -11,24 +11,13 @@ use super::super::{
     program_tail_layout::{Layout, Region},
 };
 use super::packed_maps::{self, FrameState};
-#[cfg(test)]
-pub(in crate::native_artifact) use super::packed_maps::{
-    take_candidate_value_emissions, without_candidate_value_loads,
-};
-#[cfg(test)]
-pub(in crate::native_artifact) use super::packed_maps::{
-    take_frame_effect_emissions, without_frame_effects,
-};
-#[cfg(test)]
-pub(in crate::native_artifact) use super::packed_maps::{
-    take_paired_candidate_emissions, without_paired_candidate_loads,
-};
 use crate::native_artifact::codegen::common::{
     aggregates::{self as common_aggregates, aggregate_at, aggregate_words, field},
     ssa_words::Words,
     terminators::emit_source_terminator,
     word_access as common_words,
 };
+use crate::native_artifact::compilation::{CompilationControls, OptimizationPass};
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
@@ -57,37 +46,14 @@ mod outlined;
 #[path = "program_steady_loop.rs"]
 mod steady;
 use super::tag_threading;
-#[cfg(test)]
-pub(in crate::native_artifact) use count_bounds::{
-    take_count_bound_emissions, without_count_bounds,
-};
-pub(in crate::native_artifact) use invariants::enabled as invariant_loops_enabled;
-#[cfg(test)]
-pub(in crate::native_artifact) use invariants::{
-    take_invariant_emissions, without_loop_invariants,
-};
-#[cfg(test)]
-pub(in crate::native_artifact) use loop_constants::{
-    take_constant_emissions, without_loop_constants,
-};
-#[cfg(test)]
-pub(in crate::native_artifact) use mutation_facts::{
-    take_mutation_emissions, without_mutation_facts,
-};
+
 pub(in crate::native_artifact) use outlined::define_functions;
-#[cfg(test)]
-pub(in crate::native_artifact) use outlined::{take_outline_emissions, without_loop_outlining};
-#[cfg(test)]
-pub(in crate::native_artifact) use steady::without_lookup_loop_split;
-#[cfg(test)]
-pub(in crate::native_artifact) use steady::{take_cold_recipe_emissions, without_cold_recipes};
-#[cfg(test)]
-pub(in crate::native_artifact) use steady::{take_steady_emissions, without_steady_loops};
 
 // The bridge's extra fixed template is admitted only for the same bounded
 // graph and narrow helper effects that fit the unchanged source-site lane.
 // Unsupported or deliberately disabled proofs retain ordinary native calls.
 fn preserving_calls_proved(
+    controls: &CompilationControls,
     code: CodePlan<'_>,
     closed: &Layout,
     id: usize,
@@ -95,13 +61,12 @@ fn preserving_calls_proved(
     aggregates: &NativeScalarAggregates,
     slots: &BTreeSet<usize>,
 ) -> bool {
-    if !packed_maps::effects_enabled() || !invariants::enabled() {
+    if !controls.enabled(OptimizationPass::FrameEffects) || !invariants::enabled(controls) {
         return false;
     }
-    #[cfg(test)]
-    if TAG_THREADING_DISABLED.with(std::cell::Cell::get)
-        || LOOKUP_FACTS_DISABLED.with(std::cell::Cell::get)
-        || LOOP_BOUNDS_DISABLED.with(std::cell::Cell::get)
+    if !controls.enabled(OptimizationPass::TagThreading)
+        || !controls.enabled(OptimizationPass::LookupFacts)
+        || !controls.enabled(OptimizationPass::LoopBounds)
     {
         return false;
     }
@@ -112,7 +77,7 @@ fn preserving_calls_proved(
     else {
         return false;
     };
-    if invariants::derive(code, closed, id, owner, &graph, &bounds, slots).is_none() {
+    if invariants::derive(controls, code, closed, id, owner, &graph, &bounds, slots).is_none() {
         return false;
     }
     let Some(facts) = lookup_facts::derive(code, closed, id, owner, aggregates, &graph) else {
@@ -133,90 +98,6 @@ fn preserving_calls_proved(
             _ => true,
         }
     })
-}
-
-#[cfg(test)]
-thread_local! {
-    static EDGE_FACT_EMISSIONS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };
-    static EDGE_FACTS_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    static TAG_THREADING_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    static TAG_THREAD_EMISSIONS: std::cell::Cell<(usize, usize, usize)> = const { std::cell::Cell::new((0, 0, 0)) };
-    static LOOP_BOUNDS_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    static LOOP_BOUNDS_EMISSIONS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };
-    static LOOKUP_FACTS_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    static LOOKUP_FACT_EMISSIONS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_lookup_facts<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            LOOKUP_FACTS_DISABLED.with(|v| v.set(self.0));
-        }
-    }
-    let _restore = Restore(LOOKUP_FACTS_DISABLED.with(|v| v.replace(true)));
-    f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_lookup_fact_emissions() -> (usize, usize) {
-    LOOKUP_FACT_EMISSIONS.with(|v| v.replace((0, 0)))
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_loop_bounds<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            LOOP_BOUNDS_DISABLED.with(|v| v.set(self.0));
-        }
-    }
-    let _restore = Restore(LOOP_BOUNDS_DISABLED.with(|v| v.replace(true)));
-    f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_loop_bounds_emissions() -> (usize, usize) {
-    LOOP_BOUNDS_EMISSIONS.with(|v| v.replace((0, 0)))
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_edge_fact_emissions() -> (usize, usize) {
-    EDGE_FACT_EMISSIONS.with(|counts| counts.replace((0, 0)))
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_edge_facts<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            EDGE_FACTS_DISABLED.with(|disabled| disabled.set(self.0));
-        }
-    }
-    let _restore = Restore(EDGE_FACTS_DISABLED.with(|disabled| disabled.replace(true)));
-    f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_tag_threading<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            TAG_THREADING_DISABLED.with(|disabled| disabled.set(self.0));
-        }
-    }
-    let _restore = Restore(TAG_THREADING_DISABLED.with(|disabled| disabled.replace(true)));
-    f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_tag_thread_emissions() -> (usize, usize, usize) {
-    TAG_THREAD_EMISSIONS.with(|counts| counts.replace((0, 0, 0)))
-}
-fn note_edge_fact(arithmetic: bool) {
-    #[cfg(test)]
-    EDGE_FACT_EMISSIONS.with(|counts| {
-        let (guards, operations) = counts.get();
-        counts.set((
-            guards + usize::from(!arithmetic),
-            operations + usize::from(arithmetic),
-        ));
-    });
-    #[cfg(not(test))]
-    let _ = arithmetic;
 }
 
 fn words_for(
@@ -317,7 +198,6 @@ impl common_aggregates::GuardPolicy for ProvedGuards<'_> {
     ) -> Result<(), NativeCompileError> {
         if self.facts.guard(self.site, source, index, ordinal) {
             if let Some(report) = self.report.as_mut() {
-                note_edge_fact(false);
                 report.guard(self.region, self.site, source, index, ordinal);
             }
             Ok(())
@@ -378,6 +258,7 @@ fn spill(
 /// version returns only at the original exit/error boundary; declined runtime
 /// entry continues emitting and executing the untouched ordinary header.
 pub(in crate::native_artifact) fn emit_entry(
+    controls: &CompilationControls,
     b: &mut FunctionBuilder<'_>,
     frame: Value,
     locals: Value,
@@ -435,11 +316,15 @@ pub(in crate::native_artifact) fn emit_entry(
     // One actual-selection receipt per versioned region, never per iteration.
     hooks.bound_call(b, function, context, site, 13, [zero; 3], error);
     if let Some(function_ref) = outlined {
-        let endpoint = loop_constants::enabled()
-            .then(|| loop_constants::endpoint_words(code, closed, id, owner, aggregates, &slots))
+        let endpoint = loop_constants::enabled(controls)
+            .then(|| {
+                loop_constants::endpoint_words(
+                    controls, code, closed, id, owner, aggregates, &slots,
+                )
+            })
             .flatten();
         let mut arguments = vec![frame, locals, pointer, function, context, user_context];
-        if loop_constants::enabled() {
+        if loop_constants::enabled(controls) {
             arguments.push(loop_constants::bind(b, locals, code, endpoint)?);
         }
         let call = b.ins().call(function_ref, &arguments);
@@ -453,7 +338,7 @@ pub(in crate::native_artifact) fn emit_entry(
             &[status.into()],
         );
         let caller_work = b.func.dfg.num_insts() - entry_template_start;
-        if loop_constants::enabled() {
+        if loop_constants::enabled(controls) {
             report.loop_constant_caller(site, loop_constants::BYTES, endpoint, caller_work);
         }
         if caller_work > outlined::CALLER_TEMPLATE_BOUND {
@@ -464,6 +349,7 @@ pub(in crate::native_artifact) fn emit_entry(
     } else {
         let prefix_work = b.func.dfg.num_insts() - entry_template_start;
         emit_body(
+            controls,
             b,
             frame,
             locals,
@@ -507,6 +393,7 @@ fn eligible_slots(
 // The same proved body is emitted inline or into an owned native function.
 // Only its two exit edges differ; source actions and finite loans are shared.
 fn emit_body(
+    controls: &CompilationControls,
     b: &mut FunctionBuilder<'_>,
     frame: Value,
     locals: Value,
@@ -534,8 +421,7 @@ fn emit_body(
     let entry_shim_work = hooks.bound_shim_work();
     let facts = edge_facts::derive(code, closed, id, owner, aggregates, &slots).unwrap_or_default();
     let threaded = tag_threading::derive(code, closed, id, owner, aggregates);
-    #[cfg(test)]
-    let threaded = if TAG_THREADING_DISABLED.with(std::cell::Cell::get) {
+    let threaded = if !controls.enabled(OptimizationPass::TagThreading) {
         None
     } else {
         threaded
@@ -543,8 +429,7 @@ fn emit_body(
     let lookups = threaded
         .as_ref()
         .and_then(|graph| lookup_facts::derive(code, closed, id, owner, aggregates, graph));
-    #[cfg(test)]
-    let lookups = if LOOKUP_FACTS_DISABLED.with(std::cell::Cell::get) {
+    let lookups = if !controls.enabled(OptimizationPass::LookupFacts) {
         None
     } else {
         lookups
@@ -552,28 +437,27 @@ fn emit_body(
     let bounds = threaded
         .as_ref()
         .and_then(|graph| loop_bounds::derive(code, closed, id, owner, aggregates, graph, &slots));
-    #[cfg(test)]
-    let bounds = if LOOP_BOUNDS_DISABLED.with(std::cell::Cell::get) {
+    let bounds = if !controls.enabled(OptimizationPass::LoopBounds) {
         None
     } else {
         bounds
     };
-    #[cfg(test)]
-    let facts = if EDGE_FACTS_DISABLED.with(std::cell::Cell::get) {
+    let facts = if !controls.enabled(OptimizationPass::EdgeFacts) {
         edge_facts::Proof::default()
     } else {
         facts
     };
+    let packed_region_budget = controls.reserve_packed_region();
     let report_region = report.packed_ssa_region(site);
     let invariant = bounds
         .as_ref()
         .zip(threaded.as_ref())
         .and_then(|(bounds, graph)| {
-            invariants::derive(code, closed, id, owner, graph, bounds, &slots)
+            invariants::derive(controls, code, closed, id, owner, graph, bounds, &slots)
         });
     let invariant = if invariant.is_some()
-        && report_region.is_some()
-        && report.reserve_invariant_region(threaded.as_ref().unwrap().nodes.len() * 4)
+        && packed_region_budget
+        && controls.reserve_invariant_region(threaded.as_ref().unwrap().nodes.len() * 4)
     {
         invariant
     } else {
@@ -581,11 +465,13 @@ fn emit_body(
     };
     let mutation = bounds
         .as_ref()
-        .filter(|proof| proof.single_insert_nodes.is_some() && mutation_facts::enabled())
-        .filter(|_| report.reserve_mutation_region(threaded.as_ref().unwrap().nodes.len() * 8));
+        .filter(|proof| proof.single_insert_nodes.is_some() && mutation_facts::enabled(controls))
+        .filter(|_| controls.reserve_mutation_region(threaded.as_ref().unwrap().nodes.len() * 8));
     let count_values = mutation
-        .filter(|proof| proof.count_values.is_some() && count_bounds::enabled())
-        .filter(|_| report.reserve_count_value_region(threaded.as_ref().unwrap().nodes.len() * 5));
+        .filter(|proof| proof.count_values.is_some() && count_bounds::enabled(controls))
+        .filter(|_| {
+            controls.reserve_count_value_region(threaded.as_ref().unwrap().nodes.len() * 5)
+        });
     let steady = steady.filter(|_| {
         invariant.is_some()
             && mutation.is_some()
@@ -597,9 +483,13 @@ fn emit_body(
     let owner_index = region.map.unwrap();
     let setup = b.func.dfg.num_insts();
     let words = Words::new(b, locals, code, slots)?;
-    let packed =
-        FrameState::registers(b, pointer, region.packed.as_ref().unwrap().packing_domain())
-            .with_constant_packet(constant_packet);
+    let packed = FrameState::registers(
+        b,
+        pointer,
+        region.packed.as_ref().unwrap().packing_domain(),
+        controls.options(),
+    )
+    .with_constant_packet(constant_packet);
     let endpoint_loads = usize::from(constant_packet.is_some() && bounds.is_some());
     let entry_work = (b.func.dfg.num_insts() - setup) as u64;
     // The existing closed-body envelope includes 1024 fixed units per
@@ -958,7 +848,7 @@ fn emit_body(
                         b.ins().iadd(args[0], args[1])
                     } else if facts.arithmetic(index, *op, operands) {
                         use mech_engine::native_artifact::NativeScalarOp as Op;
-                        note_edge_fact(true);
+
                         let value = match op {
                             Op::U64Add => b.ins().iadd(args[0], args[1]),
                             Op::U64Sub => b.ins().isub(args[0], args[1]),
@@ -1141,15 +1031,6 @@ fn emit_body(
         }
     }
     if let Some(graph) = &threaded {
-        #[cfg(test)]
-        TAG_THREAD_EMISSIONS.with(|counts| {
-            let previous = counts.get();
-            counts.set((
-                previous.0 + emitted_sites.len(),
-                previous.1 + folded_branches.len(),
-                previous.2 + known_latches.len(),
-            ));
-        });
         report.tag_threading(
             site,
             graph.carrier_word,
@@ -1223,7 +1104,6 @@ fn emit_body(
         ));
     }
     if invariant.is_some() {
-        invariants::note(call_substitutions.len(), rolling_substitutions.len());
         report
             .loop_invariants
             .push(super::super::iteration_compiler::InvariantLoop {
@@ -1238,11 +1118,6 @@ fn emit_body(
             });
     }
     if let Some(proof) = mutation {
-        mutation_facts::note(
-            counter_headers.len(),
-            counter_checks_removed.len(),
-            nonempty_probes.len(),
-        );
         report
             .mutation_loops
             .push(super::super::iteration_compiler::MutationLoop {
@@ -1267,7 +1142,7 @@ fn emit_body(
     if let Some(proof) = count_values {
         let values = proof.count_values.as_ref().unwrap();
         let graph = threaded.as_ref().unwrap();
-        count_bounds::note(count_overflows_removed.len());
+
         report
             .count_value_loops
             .push(super::super::iteration_compiler::CountValueLoop {
@@ -1301,14 +1176,7 @@ fn emit_body(
             },
         );
     }
-    #[cfg(test)]
-    LOOKUP_FACT_EMISSIONS.with(|counts| {
-        let old = counts.get();
-        counts.set((
-            old.0 + usize::from(lookups.is_some()),
-            old.1 + lookup_substitutions.len(),
-        ));
-    });
+
     report.lookup_facts(
         site,
         version_nodes,
@@ -1316,11 +1184,6 @@ fn emit_body(
         lookup_substitutions,
     );
     if let Some(proof) = &bounds {
-        #[cfg(test)]
-        LOOP_BOUNDS_EMISSIONS.with(|counts| {
-            let old = counts.get();
-            counts.set((old.0 + 1, old.1 + certified_ranges.len()));
-        });
         report.guarded_loop(
             site,
             proof.index_word,

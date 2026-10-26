@@ -27,10 +27,6 @@ pub(in crate::native_artifact) struct CodegenReport {
     tag_records: usize,
     guarded_records: usize,
     lookup_records: usize,
-    invariant_records: usize,
-    mutation_records: usize,
-    count_value_records: usize,
-    steady_records: usize,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct ScalarLoop {
@@ -199,15 +195,6 @@ struct ConstantCaller {
     template_instructions: usize,
 }
 impl CodegenReport {
-    pub fn reserve_steady_region(&mut self, records: usize) -> bool {
-        if self.steady_loops.len() >= MAX_REGIONS
-            || self.steady_records.saturating_add(records) > MAX_SUBSTITUTIONS
-        {
-            return false;
-        }
-        self.steady_records += records;
-        true
-    }
     pub fn loop_constant_caller(
         &mut self,
         header: usize,
@@ -229,33 +216,6 @@ impl CodegenReport {
             ],
             template_instructions,
         });
-    }
-    pub fn reserve_count_value_region(&mut self, records: usize) -> bool {
-        if self.count_value_loops.len() >= MAX_REGIONS
-            || self.count_value_records.saturating_add(records) > MAX_SUBSTITUTIONS
-        {
-            return false;
-        }
-        self.count_value_records += records;
-        true
-    }
-    pub fn reserve_mutation_region(&mut self, records: usize) -> bool {
-        if self.mutation_loops.len() >= MAX_REGIONS
-            || self.mutation_records.saturating_add(records) > MAX_SUBSTITUTIONS
-        {
-            return false;
-        }
-        self.mutation_records += records;
-        true
-    }
-    pub fn reserve_invariant_region(&mut self, records: usize) -> bool {
-        if self.loop_invariants.len() >= MAX_REGIONS
-            || self.invariant_records.saturating_add(records) > MAX_SUBSTITUTIONS
-        {
-            return false;
-        }
-        self.invariant_records += records;
-        true
     }
 }
 #[derive(serde::Serialize)]
@@ -667,5 +627,137 @@ mod tests {
         report.lookup_facts(0, 32, 64, vec![(1, 2, 3, "Cached"); MAX_SUBSTITUTIONS + 1]);
         assert!(!report.lookup_facts.complete);
         assert!(report.lookup_facts.regions.is_empty());
+    }
+}
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+impl CodegenReport {
+    /// Immutable actual-emission observations from this compilation's bounded
+    /// report. There is no ambient counter to drain or leak to another build.
+    pub fn emission_counts(&self) -> super::super::compilation::EmissionCounters {
+        use super::super::compilation::EmissionCounters;
+        assert!(
+            self.source_edge_facts.complete
+                && self.tag_threading.complete
+                && self.frame_effects.complete
+                && self.guarded_loops.complete
+                && self.lookup_facts.complete
+                && self.loop_constants.complete,
+            "truncated emission report cannot qualify an ablation"
+        );
+        let mut counts = EmissionCounters::default();
+        counts.edge_facts = (
+            self.source_edge_facts
+                .regions
+                .iter()
+                .map(|r| r.guards.len())
+                .sum(),
+            self.source_edge_facts
+                .regions
+                .iter()
+                .map(|r| r.arithmetic.len())
+                .sum(),
+        );
+        counts.tag_threading = (
+            self.tag_threading
+                .regions
+                .iter()
+                .map(|r| r.product_nodes)
+                .sum(),
+            self.tag_threading
+                .regions
+                .iter()
+                .map(|r| r.folded_branches.len())
+                .sum(),
+            self.tag_threading
+                .regions
+                .iter()
+                .map(|r| r.known_latches.len())
+                .sum(),
+        );
+        for operation in self
+            .frame_effects
+            .regions
+            .iter()
+            .flat_map(|r| &r.operations)
+        {
+            let calls = usize::try_from(operation.emitted_calls).unwrap();
+            counts.frame_effects.0 += calls;
+            counts.frame_effects.1 += calls * operation.stored_words.len();
+            counts.frame_effects.2 += calls * operation.reloaded_words.len();
+        }
+        counts.loop_bounds = (
+            self.guarded_loops.regions.len(),
+            self.guarded_loops
+                .regions
+                .iter()
+                .map(|r| r.certified_range_versions.len())
+                .sum(),
+        );
+        counts.lookup_facts = (
+            self.lookup_facts
+                .regions
+                .iter()
+                .filter(|r| !r.substitutions.is_empty())
+                .count(),
+            self.lookup_facts
+                .regions
+                .iter()
+                .map(|r| r.substitutions.len())
+                .sum(),
+        );
+        if let Some(cfg) = &self.cfg_cleanup {
+            counts.cfg_cleanup = (usize::from(cfg.enabled), cfg.constant_branches_removed);
+        }
+        counts.loop_outlining = self.outlined_loops.len();
+        counts.loop_invariants = (
+            self.loop_invariants.len(),
+            self.loop_invariants
+                .iter()
+                .map(|r| r.call_substitutions.len())
+                .sum(),
+            self.loop_invariants
+                .iter()
+                .map(|r| r.rolling_substitutions.len())
+                .sum(),
+        );
+        counts.preserving_calls = self
+            .preserving_call_regions
+            .iter()
+            .map(|r| r.emitted_calls)
+            .sum();
+        counts.mutation_facts = (
+            self.mutation_loops
+                .iter()
+                .map(|r| r.counter_headers.len())
+                .sum(),
+            self.mutation_loops
+                .iter()
+                .map(|r| r.counter_checks_removed.len())
+                .sum(),
+            self.mutation_loops
+                .iter()
+                .map(|r| r.nonempty_probes.len())
+                .sum(),
+        );
+        counts.count_bounds = self
+            .count_value_loops
+            .iter()
+            .map(|r| r.overflow_checks_removed.len())
+            .sum();
+        counts.loop_constants = self.loop_constants.callers.len();
+        fn steady(value: &SteadyLoop, counts: &mut EmissionCounters) {
+            counts.steady_loops += 1;
+            counts.cold_recipes += value.cold_snapshot_recipes.len();
+            counts.candidate_values += value.candidate_value_loads;
+            counts.paired_candidates += value.paired_candidate_loads;
+            if let Some(child) = &value.lookup_cache_function {
+                steady(child, counts);
+            }
+        }
+        for value in &self.steady_loops {
+            steady(value, &mut counts);
+        }
+        counts
     }
 }
