@@ -12,9 +12,11 @@ fn expanded_then_counted(plan: &Plan) -> Result<ValidationInputs<'_, Plan>, &'st
     let cached = OnceCell::new();
     assert!(cached.set(Ok(actions)).is_ok());
     Ok(ValidationInputs {
-        plan,
-        counts,
-        actions: cached,
+        inputs: SemanticInputs {
+            plan,
+            counts: OnceCell::from(Ok(counts)),
+            actions: cached,
+        },
     })
 }
 
@@ -23,9 +25,11 @@ fn fresh(plan: &Plan) -> Result<(), &'static str> {
     // validator never used counts; its only inventory was actions then reads.
     text_join_sink::validate(&ValidationInputs::new(plan)?)?;
     guarded_histogram_query::validate(&ValidationInputs {
-        plan,
-        counts: Vec::new(),
-        actions: OnceCell::new(),
+        inputs: SemanticInputs {
+            plan,
+            counts: OnceCell::from(Ok(Vec::new())),
+            actions: OnceCell::new(),
+        },
     })?;
     histogram_sink::validate(&ValidationInputs::new(plan)?)?;
     string_span_projection::validate(&expanded_then_counted(plan)?)?;
@@ -47,11 +51,11 @@ fn validation_inventory_reuse_matches_fresh_original_and_decoded_plans() {
             let inputs = ValidationInputs::new(&plan).unwrap();
             assert!(std::ptr::eq(inputs.plan(), &plan));
             assert_eq!(inputs.counts(), semantic_use_counts(&plan).unwrap());
-            assert!(inputs.actions.get().is_none());
+            assert!(inputs.inputs.actions.get().is_none());
             text_join_sink::validate(&inputs).unwrap();
-            assert!(inputs.actions.get().is_none());
+            assert!(inputs.inputs.actions.get().is_none());
             guarded_histogram_query::validate(&inputs).unwrap();
-            assert!(inputs.actions.get().is_some());
+            assert!(inputs.inputs.actions.get().is_some());
             let first = inputs.actions().unwrap();
             assert!(std::ptr::eq(first, inputs.actions().unwrap()));
             assert_eq!(
@@ -196,7 +200,7 @@ fn validation_inventory_reuse_preserves_first_selected_diagnostic() {
             Err("invalid native selected TextJoin sink")
         );
         assert!(
-            inputs.actions.get().is_none(),
+            inputs.inputs.actions.get().is_none(),
             "later expansion must remain lazy after the earlier failure"
         );
     }

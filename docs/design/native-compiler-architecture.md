@@ -201,3 +201,30 @@ reporting. The scalar strategy uses the shared tag graph directly, with no
 packed-emitter import for neutral helpers. The native scope executes 415 passes,
 0 failures and 2 existing ignores; all 32 source/decoded snapshot files remain
 byte-identical to I. Engine facts work continues separately in this stage.
+
+Baseline feature-closure finding: the independent scalar runtime-only check
+fails at I because `ResidentBudgetMeter::for_native_projection` is compiled
+without any production projection consumer. The same check reproduced the
+failure in the unchanged I checkout. Gate that private constructor with its
+existing text/map consumers (or tests); its body, prices and supported features
+are unchanged. I remains fixed and its runnable public AOT control is preserved.
+
+Stage C facts: engine `NativeProgramFacts` is constructed only by the borrowed
+plan. Shared SemanticInputs keeps validation counts first and action expansion
+lazy; validation has its own fresh instance and no validated flag. Facts expose
+control edges/predecessors/reachability, strict dominance, lexical ancestry,
+producer roles and detailed read roles. Parallel transition/purity policy remains
+explicit and distinct from fusion reads. Its producer whitelist still excludes
+builder and virtual-consumer roles. Engine aggregate, map-owner and retention
+queries reuse same-plan semantic inputs and aggregate inventory; preparation
+moves the aggregate/frontier inventories out without cloning a plan or boxed
+metadata. Current-visit validation is never replaced with whole-graph dominance.
+
+Verification: 10 fusion/first-error/facts tests, all 84 engine native-artifact
+tests, 30 native line tests, 16 parallel execution tests and four independent
+identity-inventory tests pass. Source/decoded snapshot outputs still match all
+32 I files. Scalar runtime-only and program runtime-only checks now pass; the
+former also exposed an unused `NativeTypedStorage::admission_bytes` helper in
+I's scalar profile, now gated to its existing program/test callers. No helper
+body or accounting price changed. The other minimal closures and final process
+qualification remain required after all stages.

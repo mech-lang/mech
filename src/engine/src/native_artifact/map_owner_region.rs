@@ -107,23 +107,30 @@ impl Plan {
     /// Derive closed candidates from selected semantic operations and complete
     /// read inventory. This grants neither mutation nor native call authority.
     pub fn map_owner_regions(&self) -> Result<Box<[NativeMapOwnerRegion]>, &'static str> {
-        self.validate_current_visits()?;
-        let facts = self.map_write_uses()?;
-        let actions = super::fusion_semantics::semantic_actions(self)?;
-        let uses = super::fusion_semantics::reads(self, &actions)?;
-        let mut regions = Vec::new();
-        for (iteration, loop_) in self.iterations().iter().enumerate() {
-            let NativeControlLoop::Tail(tail) = loop_ else {
-                continue;
-            };
-            let iteration = iteration as u32;
-            let Some(region) = select(self, iteration, tail, &actions, &uses, &facts) else {
-                continue;
-            };
-            regions.push(region);
-        }
-        Ok(regions.into())
+        super::map_owner_region::derive(self, &self.facts())
     }
+}
+
+pub(in crate::native_artifact) fn derive(
+    plan: &Plan,
+    facts: &crate::native_artifact::NativeProgramFacts<'_>,
+) -> Result<Box<[NativeMapOwnerRegion]>, &'static str> {
+    plan.validate_current_visits()?;
+    let writes = plan.map_write_uses()?;
+    let actions = facts.actions()?;
+    let uses = facts.fusion_reads()?;
+    let mut regions = Vec::new();
+    for (iteration, loop_) in plan.iterations().iter().enumerate() {
+        let NativeControlLoop::Tail(tail) = loop_ else {
+            continue;
+        };
+        let iteration = iteration as u32;
+        let Some(region) = select(plan, iteration, tail, &actions, &uses, &writes) else {
+            continue;
+        };
+        regions.push(region);
+    }
+    Ok(regions.into())
 }
 
 fn select(

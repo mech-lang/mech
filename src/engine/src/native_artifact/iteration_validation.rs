@@ -380,19 +380,7 @@ fn string_element_map_cells(
         .ok_or(BAD)?;
     Ok([first, first.checked_add(1).ok_or(BAD)?])
 }
-fn scope_ancestor(plan: &impl ControlPlan, ancestor: Option<u32>, mut scope: Option<u32>) -> bool {
-    // Loop ids are pre-order; every parent must be earlier. The caller first
-    // validates this property, so the walk cannot cycle.
-    loop {
-        if scope == ancestor {
-            return true;
-        }
-        let Some(id) = scope else {
-            return false;
-        };
-        scope = plan.iteration(id as usize).parent();
-    }
-}
+use super::fusion_semantics::lexical_ancestor as scope_ancestor;
 fn readable(plan: &impl ControlPlan, value: Value, scope: Option<u32>, block: usize) -> bool {
     match plan.value_scopes().get(value.get() as usize) {
         Some(Scope::Immutable { iteration }) => scope_ancestor(plan, *iteration, scope),

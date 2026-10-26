@@ -5,7 +5,7 @@ use super::super::{NativeBorrowedStringAction as Borrowed, NativeTailLoop};
 use super::super::{NativeScalarAggregateAction as Aggregate, NativeScalarAggregates};
 use super::{
     NativeControlLoop, NativeTextLineCountFrontier, Plan, Value, definitions, predicate_branches,
-    reads, semantic_actions, successors,
+    successors,
 };
 
 /// The exact original read and the count-guard ordinals that collectively
@@ -259,24 +259,31 @@ impl Plan {
     /// Rederive both EOF and current-visit read proofs from this opaque plan.
     /// Consumers must separately prove retention and the owning host lifecycle.
     pub fn text_line_read_frontiers(&self) -> Vec<NativeTextLineReadFrontier> {
-        let counts = self.text_line_count_frontiers();
-        if counts.is_empty() {
-            return Vec::new();
-        }
-        let Ok(actions) = semantic_actions(self) else {
-            return Vec::new();
-        };
-        let Ok(uses) = reads(self, &actions) else {
-            return Vec::new();
-        };
-        let defs = definitions(self, &actions);
-        let borrowed = self.borrowed_string_regions();
-        let aggregates = self.scalar_aggregates();
-        counts
-            .into_iter()
-            .filter_map(|count| frontier(self, count, &defs, &uses, &borrowed, &aggregates))
-            .collect()
+        self.facts().text_line_read_frontiers()
     }
+}
+
+pub(in crate::native_artifact) fn derive(
+    plan: &Plan,
+    facts: &crate::native_artifact::NativeProgramFacts<'_>,
+) -> Vec<NativeTextLineReadFrontier> {
+    let counts = plan.text_line_count_frontiers();
+    if counts.is_empty() {
+        return Vec::new();
+    }
+    let Ok(actions) = facts.actions() else {
+        return Vec::new();
+    };
+    let Ok(uses) = facts.fusion_reads() else {
+        return Vec::new();
+    };
+    let defs = definitions(plan, &actions);
+    let borrowed = plan.borrowed_string_regions();
+    let aggregates = facts.scalar_aggregates();
+    counts
+        .into_iter()
+        .filter_map(|count| frontier(plan, count, &defs, &uses, &borrowed, &aggregates))
+        .collect()
 }
 
 #[cfg(all(test, feature = "source", feature = "semantic-compiler"))]

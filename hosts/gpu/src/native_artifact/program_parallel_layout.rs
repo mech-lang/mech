@@ -5,7 +5,7 @@ use mech_engine::native_artifact::{
     NativeControlLoop as Loop, NativeIterationAction as Action,
     NativeIterationTerminator as Terminator, NativeIterationValueScope as Scope,
     NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeMatchValue as Value,
-    NativeProgramArtifactPlan as Plan, NativeStructuralObservation as Observation,
+    NativeProgramArtifactPlan as Plan,
 };
 use std::collections::BTreeSet;
 
@@ -37,41 +37,20 @@ pub(super) struct Layout {
     pub regions: Box<[Region]>,
 }
 
-pub(super) fn successors(term: Terminator) -> [Option<u32>; 2] {
-    match term {
-        Terminator::Scalar(Term::Jump(next)) => [Some(next), None],
-        Terminator::Scalar(Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. }) => {
-            [Some(yes), Some(no)]
-        }
-        Terminator::Header { body, exit, .. } => [Some(body), Some(exit)],
-        Terminator::TailHeader { body, .. } => [Some(body), None],
-        _ => [None, None],
-    }
-}
-
 impl Layout {
     pub fn derive(
-        plan: &Plan,
+        facts: &mech_engine::native_artifact::NativeProgramFacts<'_>,
         aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
     ) -> Result<Self, &'static str> {
+        let plan = facts.plan();
         plan.validate_current_visits()?;
-        let mut reachable = BTreeSet::new();
-        let mut pending = vec![plan.entry()];
-        while let Some(site) = pending.pop() {
-            if reachable.insert(site) {
-                pending.extend(
-                    successors(plan.blocks()[site as usize].terminator())
-                        .into_iter()
-                        .flatten(),
-                );
-            }
-        }
+        facts.is_reachable(plan.entry())?;
         let mut regions = Vec::new();
         for (id, collection) in plan.collections().iter().enumerate() {
             // The first version parks one root builder and serializes nested
             // collections. Selected histogram/span storage has a different
             // yield protocol and remains on its ordinary path.
-            if !reachable.contains(&collection.begin())
+            if !facts.is_reachable(collection.begin())?
                 || collection.parent().is_some()
                 || collection.parent_collection().is_some()
                 || collection.generators().len() != 1
@@ -147,7 +126,7 @@ impl Layout {
                     valid = false;
                     break;
                 }
-                pending.extend(successors(block.terminator()).into_iter().flatten());
+                pending.extend(facts.successors(site)?.into_iter().flatten());
             }
             if !valid {
                 continue;
@@ -219,7 +198,7 @@ impl Layout {
                         break;
                     }
                 }
-                if reads(plan, block.action(), &mut capture).is_err() {
+                if facts.parallel_action_reads(site, &mut capture).is_err() {
                     valid = false;
                     break;
                 }
@@ -263,12 +242,12 @@ impl Layout {
         for leader in 0..regions.len() {
             let mut group = vec![leader as u32];
             let mut current = leader;
-            while let Some(next) = next_sibling(plan, &regions, current) {
+            while let Some(next) = next_sibling(facts, &regions, current) {
                 if group.contains(&(next as u32))
                     || !regions[next]
                         .captures
                         .iter()
-                        .all(|&slot| available_before(plan, slot, regions[leader].initialize))
+                        .all(|&slot| available_before(facts, slot, regions[leader].initialize))
                 {
                     break;
                 }
@@ -312,7 +291,12 @@ fn empty_prelude(plan: &Plan, begin: u32, initialize: u32) -> Option<Vec<u32>> {
 
 // Only a guaranteed pure root path can join sibling work. The parent still
 // executes every intervening source action and exposes its errors in order.
-fn next_sibling(plan: &Plan, regions: &[Region], current: usize) -> Option<usize> {
+fn next_sibling(
+    facts: &mech_engine::native_artifact::NativeProgramFacts<'_>,
+    regions: &[Region],
+    current: usize,
+) -> Option<usize> {
+    let plan = facts.plan();
     let finish = plan.collections()[regions[current].collection as usize].finish();
     let mut site = finish;
     let mut seen = BTreeSet::new();
@@ -331,15 +315,17 @@ fn next_sibling(plan: &Plan, regions: &[Region], current: usize) -> Option<usize
         }
         match block.action() {
             Action::Scalar(_) | Action::Structural { .. } => {}
-            Action::LibraryCall { template, .. } => pure(template).ok()?,
+            Action::LibraryCall { .. } => {
+                facts.parallel_action_reads(site, &mut |_| Ok(())).ok()?
+            }
             Action::CollectionFinish { collection }
                 if *collection == regions[current].collection => {}
             Action::TextJoinFinish { collection } => {
-                let ResultKind::TextJoin(sink) = plan.collections()[*collection as usize].result()
+                let ResultKind::TextJoin(_) = plan.collections()[*collection as usize].result()
                 else {
                     return None;
                 };
-                pure(sink.template()).ok()?;
+                facts.parallel_action_reads(site, &mut |_| Ok(())).ok()?;
             }
             _ => return None,
         }
@@ -353,198 +339,40 @@ fn next_sibling(plan: &Plan, regions: &[Region], current: usize) -> Option<usize
 // A unique root producer must dominate the leader's initialized frontier.
 // Multi-producer joins conservatively decline; existing lexical validation
 // already proves every accepted immutable capture has one current definition.
-fn available_before(plan: &Plan, slot: u32, frontier: u32) -> bool {
-    if plan
-        .constants()
+fn available_before(
+    facts: &mech_engine::native_artifact::NativeProgramFacts<'_>,
+    slot: u32,
+    frontier: u32,
+) -> bool {
+    use mech_engine::native_artifact::NativeProgramProducerRole as Role;
+    let Ok(definitions) = facts.definition_sites(slot) else {
+        return false;
+    };
+    if definitions
         .iter()
-        .any(|constant| constant.value().get() == slot)
-        || (0..plan.transport_input_count())
-            .any(|index| plan.transport_input_value(index).get() == slot)
+        .any(|d| matches!(d.role(), Role::Constant | Role::Input))
     {
         return true;
     }
-    let mut producers = plan
-        .blocks()
-        .iter()
-        .enumerate()
-        .filter_map(|(site, block)| {
-            let output = match block.action() {
-                Action::Scalar(Scalar::Primitive { output, .. } | Scalar::Copy { output, .. })
-                | Action::LibraryCall { output, .. }
-                | Action::Structural { output, .. } => Some(*output),
-                Action::CollectionFinish { collection }
-                    if matches!(
-                        plan.collections()[*collection as usize].result(),
-                        ResultKind::Materialized
-                    ) =>
-                {
-                    Some(plan.collections()[*collection as usize].output())
-                }
-                Action::TextJoinFinish { collection } => {
-                    match plan.collections()[*collection as usize].result() {
-                        ResultKind::TextJoin(sink) => Some(sink.output()),
-                        _ => None,
-                    }
-                }
-                _ => None,
-            };
-            (output.is_some_and(|output| output.get() == slot))
-                .then_some((site as u32, block.iteration()))
-        });
-    let Some((producer, None)) = producers.next() else {
+    let mut producers = definitions.iter().filter(|d| {
+        matches!(
+            d.role(),
+            Role::Scalar
+                | Role::Library
+                | Role::Structural
+                | Role::MaterializedCollection
+                | Role::TextJoin
+        )
+    });
+    let Some(producer) = producers.next() else {
         return false;
     };
-    if producers.next().is_some() || producer == frontier {
+    if producer.iteration().is_some() || producers.next().is_some() {
         return false;
     }
-    let mut pending = vec![plan.entry()];
-    let mut seen = BTreeSet::new();
-    while let Some(site) = pending.pop() {
-        if site == producer || !seen.insert(site) {
-            continue;
-        }
-        if site == frontier {
-            return false;
-        }
-        pending.extend(
-            successors(plan.blocks()[site as usize].terminator())
-                .into_iter()
-                .flatten(),
-        );
-    }
-    true
-}
-
-fn reads(
-    plan: &Plan,
-    action: &Action,
-    read: &mut impl FnMut(Value) -> Result<(), &'static str>,
-) -> Result<(), &'static str> {
-    match action {
-        Action::LibraryCall {
-            template, operands, ..
-        } => {
-            pure(template)?;
-            for &value in operands {
-                read(value)?;
-            }
-        }
-        Action::Scalar(Scalar::Primitive { operands, .. }) => {
-            for &value in operands {
-                read(value)?;
-            }
-        }
-        Action::Scalar(Scalar::Copy { source, .. })
-        | Action::CollectionPush { value: source, .. } => read(*source)?,
-        Action::Structural {
-            source,
-            observation,
-            ..
-        } => {
-            read(*source)?;
-            if let Observation::StringEqual { peer } = observation {
-                read(*peer)?;
-            }
-        }
-        Action::Initialize { iteration } | Action::Latch { iteration } => {
-            match &plan.iterations()[*iteration as usize] {
-                Loop::Collection(generator) => match generator.source() {
-                    Source::Value(value) => read(*value)?,
-                    Source::U64Range(cursor) => {
-                        pure(cursor.template())?;
-                        for &value in cursor.operands() {
-                            read(value)?;
-                        }
-                    }
-                },
-                Loop::Iteration(loop_) => {
-                    read(loop_.seed())?;
-                    read(loop_.next())?;
-                }
-                Loop::Tail(loop_) => {
-                    read(loop_.seed())?;
-                    read(loop_.next())?;
-                    read(loop_.returned())?;
-                }
-            }
-        }
-        Action::PrepareU64Range { iteration } => {
-            let Loop::Collection(generator) = &plan.iterations()[*iteration as usize] else {
-                return Err("parallel range owner");
-            };
-            let Source::U64Range(cursor) = generator.source() else {
-                return Err("parallel range source");
-            };
-            pure(cursor.template())?;
-            for &value in cursor.operands() {
-                read(value)?;
-            }
-        }
-        Action::CollectionBegin { collection } | Action::TextJoinFinish { collection } => {
-            if let ResultKind::TextJoin(sink) = plan.collections()[*collection as usize].result() {
-                pure(sink.template())?;
-                read(sink.separator())?;
-            }
-        }
-        Action::PrepareStringSpanSelector { collection }
-        | Action::ProjectStringSpan { collection } => {
-            let projection = plan.collections()[*collection as usize]
-                .string_span_projection()
-                .ok_or("parallel span proof")?;
-            pure(projection.range_template())?;
-            pure(projection.selection_template())?;
-            read(projection.source())?;
-            for &value in projection.operands() {
-                read(value)?;
-            }
-        }
-        Action::ProjectStringMapEntry { collection } => {
-            let projection = plan.collections()[*collection as usize]
-                .string_element_map_projection()
-                .ok_or("parallel map proof")?;
-            pure(projection.selection_template())?;
-            read(projection.map())?;
-            read(projection.element())?;
-        }
-        Action::HistogramQueryStep { collection, step } => {
-            let ResultKind::GuardedHistogramQuery(sink) =
-                plan.collections()[*collection as usize].result()
-            else {
-                return Err("parallel query proof");
-            };
-            if let Some(template) = sink.steps()[*step as usize].template() {
-                pure(template)?;
-            }
-            for &value in sink.steps()[*step as usize].operands() {
-                read(value)?;
-            }
-        }
-        Action::HistogramFinish { collection } => {
-            let collection = &plan.collections()[*collection as usize];
-            let ResultKind::Histogram(sink) = collection.result() else {
-                return Err("parallel histogram proof");
-            };
-            pure(sink.template())?;
-            read(collection.output())?;
-        }
-        Action::Scalar(Scalar::None)
-        | Action::CollectionElement { .. }
-        | Action::CollectionFinish { .. } => {}
-    }
-    Ok(())
-}
-
-fn pure(
-    template: &mech_engine::native_artifact::NativeProgramLibraryTemplate,
-) -> Result<(), &'static str> {
-    match template.contract() {
-        mech_core::ResolvedOperationContract::Declared(contract)
-            if contract.interaction == mech_core::ExternalInteraction::Pure =>
-        {
-            Ok(())
-        }
-        _ => Err("parallel body contains an external interaction"),
-    }
+    producer
+        .site()
+        .is_some_and(|site| facts.strictly_dominates(site, frontier).unwrap_or(false))
 }
 
 // These are compiler-enforced requirements, not unsafe assertions. All mutable

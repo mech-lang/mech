@@ -82,11 +82,12 @@ impl NativeMapKeySpan {
 fn key_spans(
     plan: &Plan,
     regions: &[NativeMapOwnerRegion],
+    facts: &crate::native_artifact::NativeProgramFacts<'_>,
 ) -> Result<Vec<NativeMapKeySpan>, &'static str> {
-    use super::fusion_semantics::{self, Read};
-    let actions = fusion_semantics::semantic_actions(plan)?;
-    let counts = fusion_semantics::semantic_use_counts(plan)?;
-    let uses = fusion_semantics::reads(plan, &actions)?;
+    use super::fusion_semantics::Read;
+    let actions = facts.actions()?;
+    let counts = facts.semantic_use_counts()?;
+    let uses = facts.fusion_reads()?;
     let mut result: Vec<NativeMapKeySpan> = Vec::new();
     for (index, region) in regions.iter().enumerate() {
         for &site in region.reads().iter().chain(region.writes()) {
@@ -349,126 +350,133 @@ impl Plan {
     /// Runtime lifetime/geometry/site checks remain required before emission
     /// of a full program can adopt these opaque owner words.
     pub fn map_owner_words(&self) -> Result<NativeMapOwnerWords, &'static str> {
-        let regions = self.map_owner_regions()?;
-        let spans = key_spans(self, &regions)?;
-        let mut span_sites = vec![None; self.blocks().len()];
-        let mut call_spans = vec![None; self.blocks().len()];
-        for (index, span) in spans.iter().enumerate() {
-            for site in [span.range_site, span.selection_site] {
-                if span_sites[site as usize].replace(index).is_some() {
-                    return Err("overlapping map key projections");
-                }
-            }
-            let region = &regions[span.region];
-            for &site in region.reads().iter().chain(region.writes()) {
-                if matches!(self.blocks()[site as usize].action(),
-                    Action::LibraryCall { operands, .. } if operands[1] == span.output)
-                {
-                    call_spans[site as usize] = Some(index);
-                }
-            }
-        }
-        let ordinary = self.scalar_aggregates();
-        let mut end = self
-            .values()
-            .len()
-            .checked_add(self.iterations().len())
-            .and_then(|n| n.checked_add(ordinary.words()))
-            .ok_or("map state frame overflow")?;
-        let base = self
-            .values()
-            .len()
-            .checked_add(self.iterations().len())
-            .ok_or("map state frame overflow")?;
-        let owner_base = end;
-        // Preserve every existing scalar component and its offsets. New owner
-        // words append after that complete layout; no strategy replaces it.
-        let mut slots = ordinary.slots.to_vec();
-        let mut actions = ordinary.actions.to_vec();
-        let mut initializers = vec![None; self.blocks().len()];
-        let mut exits = vec![None; self.blocks().len()];
-        let mut action_regions = vec![None; self.blocks().len()];
-        let mut call_regions = vec![None; self.blocks().len()];
-        for (index, region) in regions.iter().enumerate() {
-            initializers[region.tail().initialize() as usize] = Some(index);
-            exits[region.tail().exit() as usize] = Some(index);
-            for &site in region.reads().iter().chain(region.writes()) {
-                if call_regions[site as usize].replace(index).is_some() {
-                    return Err("overlapping map owner call regions");
-                }
-            }
-            let selected = |value: Value| region.values().contains(&value);
-            for &value in region.values() {
-                let definition = self.values()[value.get() as usize].definition();
-                let words = width(definition.body())?;
-                let at = if map(definition.body()) {
-                    value.get() as usize
-                } else {
-                    let at = end;
-                    end = end.checked_add(words).ok_or("map state frame overflow")?;
-                    at
-                };
-                if slots[value.get() as usize].replace((at, words)).is_some()
-                    || ordinary.slot(value).is_some()
-                {
-                    return Err("overlapping map state word selection");
-                }
-            }
-            for (site, block) in self.blocks().iter().enumerate() {
-                let action = match block.action() {
-                    Action::Scalar(Scalar::Copy { source, output }) if selected(*output) => {
-                        if !selected(*source) {
-                            return Err("foreign map state copy");
-                        }
-                        // A root binding is the zero-offset form of the same
-                        // fixed slice used by structural payload bindings.
-                        Some(Transport::Project {
-                            source: *source,
-                            offset: 0,
-                            guards: Box::new([]),
-                            output: *output,
-                        })
-                    }
-                    Action::Structural { source, .. } if selected(*source) => {
-                        Some(project(self, block.action())?)
-                    }
-                    Action::LibraryCall { output, .. } if selected(*output) => {
-                        pack(self, block.action())?
-                    }
-                    Action::Latch { iteration } if *iteration == region.iteration() => {
-                        Some(Transport::Copy {
-                            source: region.tail().next(),
-                            output: region.tail().carrier(),
-                        })
-                    }
-                    _ => None,
-                };
-                if let Some(action) = action {
-                    if actions[site].replace(action).is_some()
-                        || action_regions[site].replace(index).is_some()
-                    {
-                        return Err("overlapping map state transport actions");
-                    }
-                }
-            }
-        }
-        Ok(NativeMapOwnerWords {
-            regions,
-            spans: spans.into(),
-            span_sites: span_sites.into(),
-            call_spans: call_spans.into(),
-            initializers: initializers.into(),
-            exits: exits.into(),
-            action_regions: action_regions.into(),
-            call_regions: call_regions.into(),
-            owner_base,
-            frame_words: end,
-            aggregates: NativeScalarAggregates {
-                slots: slots.into(),
-                actions: actions.into(),
-                constants: ordinary.constants.clone(),
-                words: end - base,
-            },
-        })
+        self.facts().map_owner_words()
     }
+}
+
+pub(in crate::native_artifact) fn derive(
+    plan: &Plan,
+    facts: &crate::native_artifact::NativeProgramFacts<'_>,
+) -> Result<NativeMapOwnerWords, &'static str> {
+    let regions = super::map_owner_region::derive(plan, facts)?;
+    let spans = key_spans(plan, &regions, facts)?;
+    let mut span_sites = vec![None; plan.blocks().len()];
+    let mut call_spans = vec![None; plan.blocks().len()];
+    for (index, span) in spans.iter().enumerate() {
+        for site in [span.range_site, span.selection_site] {
+            if span_sites[site as usize].replace(index).is_some() {
+                return Err("overlapping map key projections");
+            }
+        }
+        let region = &regions[span.region];
+        for &site in region.reads().iter().chain(region.writes()) {
+            if matches!(plan.blocks()[site as usize].action(),
+                Action::LibraryCall { operands, .. } if operands[1] == span.output)
+            {
+                call_spans[site as usize] = Some(index);
+            }
+        }
+    }
+    let ordinary = facts.scalar_aggregates();
+    let mut end = plan
+        .values()
+        .len()
+        .checked_add(plan.iterations().len())
+        .and_then(|n| n.checked_add(ordinary.words()))
+        .ok_or("map state frame overflow")?;
+    let base = plan
+        .values()
+        .len()
+        .checked_add(plan.iterations().len())
+        .ok_or("map state frame overflow")?;
+    let owner_base = end;
+    // Preserve every existing scalar component and its offsets. New owner
+    // words append after that complete layout; no strategy replaces it.
+    let mut slots = ordinary.slots.to_vec();
+    let mut actions = ordinary.actions.to_vec();
+    let mut initializers = vec![None; plan.blocks().len()];
+    let mut exits = vec![None; plan.blocks().len()];
+    let mut action_regions = vec![None; plan.blocks().len()];
+    let mut call_regions = vec![None; plan.blocks().len()];
+    for (index, region) in regions.iter().enumerate() {
+        initializers[region.tail().initialize() as usize] = Some(index);
+        exits[region.tail().exit() as usize] = Some(index);
+        for &site in region.reads().iter().chain(region.writes()) {
+            if call_regions[site as usize].replace(index).is_some() {
+                return Err("overlapping map owner call regions");
+            }
+        }
+        let selected = |value: Value| region.values().contains(&value);
+        for &value in region.values() {
+            let definition = plan.values()[value.get() as usize].definition();
+            let words = width(definition.body())?;
+            let at = if map(definition.body()) {
+                value.get() as usize
+            } else {
+                let at = end;
+                end = end.checked_add(words).ok_or("map state frame overflow")?;
+                at
+            };
+            if slots[value.get() as usize].replace((at, words)).is_some()
+                || ordinary.slot(value).is_some()
+            {
+                return Err("overlapping map state word selection");
+            }
+        }
+        for (site, block) in plan.blocks().iter().enumerate() {
+            let action = match block.action() {
+                Action::Scalar(Scalar::Copy { source, output }) if selected(*output) => {
+                    if !selected(*source) {
+                        return Err("foreign map state copy");
+                    }
+                    // A root binding is the zero-offset form of the same
+                    // fixed slice used by structural payload bindings.
+                    Some(Transport::Project {
+                        source: *source,
+                        offset: 0,
+                        guards: Box::new([]),
+                        output: *output,
+                    })
+                }
+                Action::Structural { source, .. } if selected(*source) => {
+                    Some(project(plan, block.action())?)
+                }
+                Action::LibraryCall { output, .. } if selected(*output) => {
+                    pack(plan, block.action())?
+                }
+                Action::Latch { iteration } if *iteration == region.iteration() => {
+                    Some(Transport::Copy {
+                        source: region.tail().next(),
+                        output: region.tail().carrier(),
+                    })
+                }
+                _ => None,
+            };
+            if let Some(action) = action {
+                if actions[site].replace(action).is_some()
+                    || action_regions[site].replace(index).is_some()
+                {
+                    return Err("overlapping map state transport actions");
+                }
+            }
+        }
+    }
+    Ok(NativeMapOwnerWords {
+        regions,
+        spans: spans.into(),
+        span_sites: span_sites.into(),
+        call_spans: call_spans.into(),
+        initializers: initializers.into(),
+        exits: exits.into(),
+        action_regions: action_regions.into(),
+        call_regions: call_regions.into(),
+        owner_base,
+        frame_words: end,
+        aggregates: NativeScalarAggregates {
+            slots: slots.into(),
+            actions: actions.into(),
+            constants: ordinary.constants.clone(),
+            words: end - base,
+        },
+    })
 }

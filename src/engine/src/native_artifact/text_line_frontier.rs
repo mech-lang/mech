@@ -16,11 +16,11 @@ use super::{
 use mech_core::ValueData;
 
 #[path = "text_line_availability.rs"]
-mod availability;
+pub(in crate::native_artifact) mod availability;
 pub use availability::{NativeTextLineReadFrontier, NativeTextLineReadGuard};
 
 #[path = "text_line_retention.rs"]
-mod retention;
+pub(in crate::native_artifact) mod retention;
 pub use retention::{NativeTextLineRetentionFrontier, NativeTextLineRetentionState};
 
 /// A predicate at its original scalar comparison and branch sites. The count
