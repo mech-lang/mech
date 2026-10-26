@@ -5,7 +5,6 @@ use serde::{Serialize, Serializer};
 
 #[path = "program_descriptor_wire.rs"]
 mod wire;
-pub(in crate::native_artifact) use wire::proof;
 
 pub(super) fn serialize_schemas<S: Serializer>(
     schemas: &SchemaTable,

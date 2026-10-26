@@ -56,15 +56,21 @@ pub(super) fn before_call(
     match fault {
         Fault::ReplaySelection => {
             let index = ctx.selected_join.as_ref().unwrap().region;
-            let selection = ctx.control.descriptor.selected_joins.regions[index].selection();
+            let selection =
+                ctx.control.descriptor.metadata().selected_joins.regions[index].selection();
             ctx.selected_join_call(selection as usize, &[0, 0])?;
         }
         Fault::MissingSelection => {
             ctx.selected_join = None;
         }
         Fault::WrongRegion => {
-            ctx.selected_join.as_mut().unwrap().region =
-                ctx.control.descriptor.selected_joins.regions.len();
+            ctx.selected_join.as_mut().unwrap().region = ctx
+                .control
+                .descriptor
+                .metadata()
+                .selected_joins
+                .regions
+                .len();
         }
         Fault::WrongParent => {
             ctx.selected_join.as_mut().unwrap().parent = Some(u32::MAX);
@@ -214,8 +220,8 @@ fn actual_selected_join_local_exact_and_one_short_reach_the_consumer_and_recover
             demand.selection_slot_empty,
             "no intermediate canonical Matrix"
         );
-        let consumer = jit.descriptor().selected_joins.regions[0].consumer() as usize;
-        let origin = jit.descriptor().plan.blocks()[consumer].origin();
+        let consumer = jit.descriptor().metadata().selected_joins.regions[0].consumer() as usize;
+        let origin = jit.descriptor().metadata().plan.blocks()[consumer].origin();
         for dimension in [
             Dimension::TemporaryBytes,
             Dimension::OutputBytes,

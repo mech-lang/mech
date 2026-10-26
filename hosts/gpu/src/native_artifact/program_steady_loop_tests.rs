@@ -34,6 +34,7 @@ fn lookup_split_metadata_binds_owned_cache_widths_and_both_function_limits() {
     );
     let domain = object
         .descriptor()
+        .metadata()
         .closed_tails
         .regions
         .iter()
@@ -217,7 +218,7 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
         ])
     );
     let mut node_sites = std::collections::BTreeMap::new();
-    let closed = &object.descriptor().closed_tails;
+    let closed = &object.descriptor().metadata().closed_tails;
     let region = closed
         .regions
         .iter()

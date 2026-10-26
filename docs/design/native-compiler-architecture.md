@@ -158,5 +158,37 @@ Compare representative emitted guest instruction bodies and resource/identity
 outputs with I, not whole host executable bytes. Final changed-input oracle runs
 the same exact F and I executables on all seven retained changed inputs.
 
-Stage A baseline execution and control discovery are in progress. The final
-branch is not performance-qualified until the prescribed final evidence exists.
+## Implementation receipts
+
+Stage A fixes I before any samples. At I the current native scope executed
+415 passes, 0 failures and 2 existing ignores. These are measured counts, not
+copied historical counts. The public CLI built a runnable I AOT executable;
+its bytecode is `050db3a016f0caea04900d48940db5bbefc880c3ada507eff82c22c5b84418b0`
+and its object is `a45687cbcb1d8824a1de595545192e14b075462e309cbd3796286f04b1667f4c`,
+identical to W's retained guest object. Exact W/R executable hashes were verified
+without rebuilding either. Benchmark evidence starts at `0ed869eb0` on
+`codex/native-architecture-consolidation` in mech-lang/benchmarks.
+
+Stage B replaces the descriptor and compiler preparation recipes with
+`program/prepare::PreparedNativeProgram`. Program CodePlan borrows that object;
+source-backed linking shares the constructor, while image restoration assembles
+metadata through private format DTOs and retains its independent frozen-map and
+selected-join checks. Metadata is moved into the descriptor. Flat public
+serialization preserves all 25 fields and their order. Complete frontiers and
+the string-map inventory are shared with identity, with no hash transcript change.
+One ordered supplement composer preserves separate analysis/charged views.
+Frame-prefix arithmetic and final local-word lookup have one owner. Static
+emission-template bounds remain a separate compiler quantity.
+
+The post-preparation native scope executed 415 passes / 0 failures / 2 ignores.
+The subsequent wire/frame changes passed all four existing identity-inventory
+checks. The final source/decoded snapshot selection executes one test over four
+fixtures: all 32 object/metadata/image/bytecode files match I byte-for-byte.
+Program runtime-only compilation, all 90 workflow contracts, unsafe ownership,
+warning policy, planning quarantine and build-analysis layout checks pass.
+No replaced API is retained as a second preparer. Definition phase extraction
+continues alongside explicit compiler context work; the shared JIT/Object path
+has not been split into different emitters.
+
+Stages C–H and final qualification remain in progress. The final branch is not
+performance-qualified until the prescribed final evidence exists.

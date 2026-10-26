@@ -91,14 +91,19 @@ unsafe extern "C" fn observe(
     let index = site as usize;
     let args = [first, second, third];
     let descriptor = ctx.control.descriptor;
-    let selected_call = descriptor.map_owner_words.as_ref().and_then(|layout| {
-        crate::native_artifact::program_map_owner_layout::call_region(layout, index)
-    });
+    let selected_call = descriptor
+        .metadata()
+        .map_owner_words
+        .as_ref()
+        .and_then(|layout| {
+            crate::native_artifact::program_map_owner_layout::call_region(layout, index)
+        });
     if operation == LIBRARY && selected_call.is_some() {
         record(|r| r.canonical_map_calls += 1);
     }
     if operation == LIBRARY
         && descriptor
+            .metadata()
             .map_owner_words
             .as_ref()
             .is_some_and(|layout| layout.span_site(index).is_some())
@@ -184,7 +189,7 @@ unsafe extern "C" fn observe(
                 record(|r| r.entries += 1);
             }
         } else if operation == MAP_OWNER_CALL {
-            let layout = descriptor.map_owner_words.as_ref().unwrap();
+            let layout = descriptor.metadata().map_owner_words.as_ref().unwrap();
             let region = &layout.regions()[selected_call.unwrap()];
             if region.writes().contains(&(site as u32)) {
                 record(|r| r.writes += 1);
@@ -217,7 +222,7 @@ fn run_expected(
     expected: &[(&str, u64)],
 ) -> Report {
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
-    let mut outputs = vec![None; jit.descriptor().plan.transport_output_count()];
+    let mut outputs = vec![None; jit.descriptor().metadata().plan.transport_output_count()];
     MODE.with(|slot| slot.set(mode));
     FOREIGN.with(|slot| slot.set(foreign));
     REPORT.with(|report| *report.borrow_mut() = Report::default());
@@ -340,11 +345,17 @@ fn caller_census_declines_nested_control_even_when_its_result_is_scalar() {
             &mech_stdlib::source_catalog(),
         )
         .unwrap();
-        let layout = jit.descriptor().map_owner_words.as_ref().unwrap();
+        let layout = jit
+            .descriptor()
+            .metadata()
+            .map_owner_words
+            .as_ref()
+            .unwrap();
         assert_eq!(layout.regions().len(), 1);
         let owner = layout.regions()[0].iteration();
         assert!(
             jit.descriptor()
+                .metadata()
                 .plan
                 .iterations()
                 .iter()
@@ -468,6 +479,7 @@ fn projected_map_keys_preserve_refused_owner_entry_and_failure_cleanup() {
         .unwrap();
         assert_eq!(
             jit.descriptor()
+                .metadata()
                 .map_owner_words
                 .as_ref()
                 .unwrap()

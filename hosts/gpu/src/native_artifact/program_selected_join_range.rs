@@ -10,8 +10,8 @@ impl Context<'_, '_> {
         words: [u64; 2],
     ) -> Result<(), Error> {
         let descriptor = self.control.descriptor;
-        let region = &descriptor.selected_joins.regions[index];
-        let call = descriptor.calls[site]
+        let region = &descriptor.metadata().selected_joins.regions[index];
+        let call = descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("selected range has no prepared factory"))?;
         let state_bytes = size_of::<State>() as u64;

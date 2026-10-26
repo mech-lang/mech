@@ -10,11 +10,10 @@ pub(super) const OVERHEAD: u64 = 512;
 // Charged on every traversal, including the terminal one. The packed emitter
 // checks setup, tag dispatch and shared boundary templates against this lane.
 pub(super) const FIXED_OVERHEAD: u64 = 1024;
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Region {
     pub iteration: u32,
-    #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub tail: NativeTailLoop,
     pub borrowed: Option<usize>,
     /// Exclusive retained-map owner. Its private storage callbacks may debit
@@ -27,7 +26,7 @@ pub(super) struct Region {
     pub compute: u64,
     pub comparison: u64,
 }
-#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, serde::Serialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Layout {
     pub regions: Vec<Region>,
@@ -41,6 +40,8 @@ impl Layout {
         plan: &NativeProgramArtifactPlan,
         borrowed: &program_borrowed_layout::Layout,
         visits: &[NativeIterationVisit],
+        aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
+        owners: &mech_engine::native_artifact::NativeMapOwnerWords,
     ) -> Result<Self, &'static str> {
         let mut layout = Self {
             sites: vec![None; plan.blocks().len()],
@@ -48,8 +49,6 @@ impl Layout {
             exits: vec![None; plan.blocks().len()],
             ..Self::default()
         };
-        let aggregates = plan.scalar_aggregates();
-        let owners = plan.map_owner_words()?;
         let base = plan
             .values()
             .len()

@@ -18,9 +18,9 @@ impl State<'_> {
         ctx: &mut Context<'_, '_>,
         owner: usize,
     ) -> Result<Option<Caller>, Error> {
-        let layout = self.descriptor.map_owner_words.as_ref().unwrap();
+        let layout = self.descriptor.metadata().map_owner_words.as_ref().unwrap();
         let iteration = layout.regions()[owner].iteration();
-        let plan = &self.descriptor.plan;
+        let plan = &self.descriptor.metadata().plan;
         ctx.control.work.charge(
             Phase::Setup,
             add(
@@ -76,15 +76,22 @@ impl State<'_> {
     ) -> Result<Option<PublicationGeometry>, Error> {
         let cached = self.caller.as_ref().filter(|caller| {
             ctx.control.current == Some(caller.iteration)
-                && (self.descriptor.plan.blocks()[site].iteration() == Some(caller.iteration)
+                && (self.descriptor.metadata().plan.blocks()[site].iteration()
+                    == Some(caller.iteration)
                     || self
                         .descriptor
+                        .metadata()
                         .map_owner_words
                         .as_ref()
                         .unwrap()
                         .initializer(site)
                         .is_some_and(|id| {
-                            self.descriptor.map_owner_words.as_ref().unwrap().regions()[id]
+                            self.descriptor
+                                .metadata()
+                                .map_owner_words
+                                .as_ref()
+                                .unwrap()
+                                .regions()[id]
                                 .iteration()
                                 == caller.iteration
                         }))

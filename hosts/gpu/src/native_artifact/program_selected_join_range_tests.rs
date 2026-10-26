@@ -43,7 +43,7 @@ thread_local! {
 }
 
 fn observe(ctx: &Context<'_, '_>, index: usize, range: bool, compact: bool) {
-    let region = &ctx.control.descriptor.selected_joins.regions[index];
+    let region = &ctx.control.descriptor.metadata().selected_joins.regions[index];
     if region.range().is_none() {
         return;
     }
@@ -128,7 +128,7 @@ pub(super) fn before_call(
     let index = match role {
         Site::Range(i) | Site::Select(i) | Site::Join(i) => i,
     };
-    let region = &ctx.control.descriptor.selected_joins.regions[index];
+    let region = &ctx.control.descriptor.metadata().selected_joins.regions[index];
     let Some(range) = region.range() else {
         return Ok(());
     };
@@ -232,12 +232,13 @@ fn actual_compact_range_root_lexical_and_ordinary_unicode_fallback_keep_empty_pr
                     JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
                 assert!(
                     jit.descriptor()
+                        .metadata()
                         .selected_joins
                         .regions
                         .iter()
                         .any(|r| r.range().is_some())
                 );
-                assert_eq!(jit.descriptor().line_matrices.regions.len(), 1);
+                assert_eq!(jit.descriptor().metadata().line_matrices.regions.len(), 1);
                 let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
                 for text in ["a\nb\nc\nd", "a\nb\nc\né"] {
                     let args = inputs(&artifact, &memory, text, 2, if inclusive { 3 } else { 4 });
@@ -282,16 +283,17 @@ fn actual_compact_range_errors_keep_original_range_or_selection_origin_and_recov
                 JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
             let region = jit
                 .descriptor()
+                .metadata()
                 .selected_joins
                 .regions
                 .iter()
                 .find(|r| r.range().is_some())
                 .unwrap();
-            let range_origin = jit.descriptor().plan.blocks()
+            let range_origin = jit.descriptor().metadata().plan.blocks()
                 [region.range().unwrap().producer() as usize]
                 .origin();
             let selection_origin =
-                jit.descriptor().plan.blocks()[region.selection() as usize].origin();
+                jit.descriptor().metadata().plan.blocks()[region.selection() as usize].origin();
             let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
             let good = inputs(&artifact, &memory, "a\nb\nc\nd", 1, 3);
             let mut outputs = vec![None; artifact.outputs().len()];
@@ -335,12 +337,13 @@ fn actual_compact_range_local_metadata_limits_are_exact_and_cumulative_account_r
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let range = jit
             .descriptor()
+            .metadata()
             .selected_joins
             .regions
             .iter()
             .find_map(|r| r.range())
             .unwrap();
-        let origin = jit.descriptor().plan.blocks()[range.producer() as usize].origin();
+        let origin = jit.descriptor().metadata().plan.blocks()[range.producer() as usize].origin();
         let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
         let args = inputs(&artifact, &memory, "a\nb\nc\nd", 1, 3);
         let mut outputs = vec![None; artifact.outputs().len()];

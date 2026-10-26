@@ -75,6 +75,8 @@ mod iteration_identity;
 mod iteration_linked;
 mod iteration_runtime;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod program;
+#[cfg(feature = "canonical-native-program-runtime")]
 mod program_abi;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_ascii_map;

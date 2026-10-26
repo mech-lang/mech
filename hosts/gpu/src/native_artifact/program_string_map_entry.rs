@@ -41,13 +41,13 @@ impl State {
     ) -> Result<(), Error> {
         let descriptor = ctx.control.descriptor;
         let NativeControlLoop::Collection(generator) =
-            &descriptor.plan.iterations()[iteration as usize]
+            &descriptor.metadata().plan.iterations()[iteration as usize]
         else {
             return Err(invalid("String map key outside a collection generator"));
         };
         let id = generator.collection();
         self.builder(id)?;
-        let proof = descriptor.plan.collections()[id as usize]
+        let proof = descriptor.metadata().plan.collections()[id as usize]
             .string_element_map_projection()
             .ok_or_else(|| invalid("String map key lacks selected proof"))?;
         if proof.iteration() != iteration
@@ -134,7 +134,7 @@ impl State {
     ) -> Result<(), Error> {
         self.builder(id)?;
         let descriptor = ctx.control.descriptor;
-        let proof = descriptor.plan.collections()[id as usize]
+        let proof = descriptor.metadata().plan.collections()[id as usize]
             .string_element_map_projection()
             .ok_or_else(|| invalid("String map projection lacks selected proof"))?;
         if proof.selection_site() as usize != site {
@@ -165,7 +165,7 @@ impl State {
         ctx.arena.get(*handle, &mut ctx.control.work)?;
         let (visit, key_handle, key_owner, key_bytes, key_retained) =
             (*visit, *handle, owner.clone(), bytes.clone(), *retained);
-        let selected = descriptor.calls[site]
+        let selected = descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("String map entry lacks actual selected factory"))?;
         // Map acquisition remains LAZY at this original MapKeyAccess visit.
@@ -261,7 +261,7 @@ impl State {
         value: NativeMatchValue,
     ) -> Result<Yield, Error> {
         self.builder(id)?;
-        let collection = &ctx.control.descriptor.plan.collections()[id as usize];
+        let collection = &ctx.control.descriptor.metadata().plan.collections()[id as usize];
         let proof = collection
             .string_element_map_projection()
             .ok_or_else(|| invalid("String map sink lacks selected proof"))?;

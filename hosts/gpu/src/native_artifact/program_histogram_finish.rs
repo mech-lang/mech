@@ -16,8 +16,8 @@ impl State {
         ctx: &mut Context<'_, '_>,
         id: u32,
     ) -> Result<(), Error> {
-        let definition = &ctx.control.descriptor.plan.collections()[id as usize];
-        let metadata = ctx.control.descriptor.scalar_bytes;
+        let definition = &ctx.control.descriptor.metadata().plan.collections()[id as usize];
+        let metadata = ctx.control.descriptor.metadata().scalar_bytes;
         resource(
             ctx,
             id,
@@ -36,7 +36,8 @@ impl State {
             return Err(invalid("duplicate Histogram producer finish"));
         }
         mech_core::shape_for_resolved_extents(
-            ctx.control.descriptor.plan.values()[definition.output().get() as usize].definition(),
+            ctx.control.descriptor.metadata().plan.values()[definition.output().get() as usize]
+                .definition(),
             &[1, histogram.accepted],
         )
         .map_err(|_| invalid("collected output shape"))?;
@@ -51,10 +52,11 @@ impl State {
     ) -> Result<(), Error> {
         let definition = sink(ctx.control.descriptor, id)?;
         let origin = definition.template().origin();
-        let selected = ctx.control.descriptor.calls[definition.consumer() as usize]
+        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("Histogram finish lacks selected factory"))?;
-        let parent = ctx.control.descriptor.plan.collections()[id as usize].parent_collection();
+        let parent =
+            ctx.control.descriptor.metadata().plan.collections()[id as usize].parent_collection();
         if self.current != parent {
             return Err(invalid(
                 "Histogram consumer outside exact enclosing builder",
@@ -86,7 +88,7 @@ impl State {
         // conversion, key copies, frozen data and independent canonical owners
         // coexist with the complete admitted accumulator. No input-size array.
         let envelope = add(
-            ctx.control.descriptor.scalar_bytes,
+            ctx.control.descriptor.metadata().scalar_bytes,
             add(
                 add(mul(drafts, 2)?, mul(payload, 4)?)?,
                 add(mul(footprint.retained_bytes, 4)?, 4096)?,
@@ -143,7 +145,8 @@ impl State {
                 items: items.into_boxed_slice(),
             });
         }
-        let output = &ctx.control.descriptor.plan.values()[definition.output().get() as usize];
+        let output =
+            &ctx.control.descriptor.metadata().plan.values()[definition.output().get() as usize];
         let canonical = SnapshotCanonicalizationBudget::new(finalization);
         let value = ValueDraft {
             schema: output.schema(),
@@ -151,8 +154,10 @@ impl State {
             data: ValueDataDraft::Map(entries.into_boxed_slice()),
         }
         .finalize(
-            &SnapshotValidationContext::with_shared_schemas(&ctx.control.descriptor.schemas)
-                .with_canonicalization_budget(&canonical),
+            &SnapshotValidationContext::with_shared_schemas(
+                &ctx.control.descriptor.metadata().schemas,
+            )
+            .with_canonicalization_budget(&canonical),
         )
         .map_err(|_| Error::Library {
             origin,

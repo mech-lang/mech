@@ -17,7 +17,7 @@ text/join([count-text(text, width, sequence/length(item)) | item <- items], "|")
     for artifact in [original, decoded] {
         let catalog = mech_stdlib::source_catalog();
         let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        assert_eq!(jit.descriptor().parallel.regions.len(), 1);
+        assert_eq!(jit.descriptor().metadata().parallel.regions.len(), 1);
         let image = jit.descriptor().encode_build_owned_image().unwrap();
         // SAFETY: metadata and generated entry come from the same checked build.
         let restored =

@@ -12,10 +12,10 @@ pub(in super::super::super) fn before_stage(
     if FIRED.with(Cell::get) {
         return Ok(false);
     }
-    let (id, stage) = match ctx.control.descriptor.plan.blocks()[site].action() {
+    let (id, stage) = match ctx.control.descriptor.metadata().plan.blocks()[site].action() {
         Action::ProjectStringMapEntry { collection } => (*collection, 0),
         Action::CollectionPush { collection, .. }
-            if ctx.control.descriptor.plan.collections()[*collection as usize]
+            if ctx.control.descriptor.metadata().plan.collections()[*collection as usize]
                 .string_element_map_projection()
                 .is_some() =>
         {
@@ -37,7 +37,7 @@ pub(in super::super::super) fn before_stage(
         return Ok(false);
     }
     FIRED.with(|cell| cell.set(true));
-    let proof = ctx.control.descriptor.plan.collections()[id as usize]
+    let proof = ctx.control.descriptor.metadata().plan.collections()[id as usize]
         .string_element_map_projection()
         .ok_or_else(|| invalid("test String map proof"))?;
     match fault {
@@ -69,12 +69,19 @@ pub(in super::super::super) fn before_stage(
                 let Some(Lane::Key { owner, .. }) = state.string_maps[id as usize].as_ref() else {
                     return Err(invalid("test generated source lost key pin"));
                 };
-                let external_distinct = ctx.control.descriptor.plan.inputs().iter().all(|input| {
-                    ctx.arena
-                        .test_current_value(input.value().get())
-                        .is_none_or(|input| !input.shares_frozen_storage(owner))
-                });
-                let arena_aliases = (0..ctx.control.descriptor.types.len())
+                let external_distinct =
+                    ctx.control
+                        .descriptor
+                        .metadata()
+                        .plan
+                        .inputs()
+                        .iter()
+                        .all(|input| {
+                            ctx.arena
+                                .test_current_value(input.value().get())
+                                .is_none_or(|input| !input.shares_frozen_storage(owner))
+                        });
+                let arena_aliases = (0..ctx.control.descriptor.metadata().types.len())
                     .filter(|&slot| {
                         ctx.arena
                             .test_current_value(slot as u32)

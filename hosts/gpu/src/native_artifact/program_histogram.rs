@@ -45,6 +45,7 @@ fn sink(
     id: u32,
 ) -> Result<&NativeHistogramSink, Error> {
     match descriptor
+        .metadata()
         .plan
         .collections()
         .get(id as usize)
@@ -79,7 +80,7 @@ impl State {
         compute: u64,
         comparison: u64,
     ) -> Result<(), Error> {
-        let definition = &ctx.control.descriptor.plan.collections()[id as usize];
+        let definition = &ctx.control.descriptor.metadata().plan.collections()[id as usize];
         let origin = sink(ctx.control.descriptor, id)?.template().origin();
         let builder = self
             .builders
@@ -143,7 +144,7 @@ impl State {
     ) -> Result<(), Error> {
         let definition = sink(ctx.control.descriptor, id)?;
         let origin = definition.template().origin();
-        let selected = ctx.control.descriptor.calls[definition.consumer() as usize]
+        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("Histogram output lacks selected factory"))?;
         let footprint = selected
@@ -182,11 +183,11 @@ impl State {
         id: u32,
     ) -> Result<(), Error> {
         let NativeCollectionResult::Histogram(definition) =
-            ctx.control.descriptor.plan.collections()[id as usize].result()
+            ctx.control.descriptor.metadata().plan.collections()[id as usize].result()
         else {
             return Ok(());
         };
-        let selected = ctx.control.descriptor.calls[definition.consumer() as usize]
+        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("Histogram begin lacks actual selected factory"))?;
         let bytes = selected.binding_metadata_bytes();
@@ -229,7 +230,7 @@ impl State {
             work,
             parameters,
             original_scratch,
-            ctx.control.descriptor.scalar_bytes,
+            ctx.control.descriptor.metadata().scalar_bytes,
         )?;
         let memory = ctx.library.memory_budget();
         self.builder(id)?.histogram = Some(Builder {
@@ -265,7 +266,7 @@ impl State {
     ) -> Result<(), Error> {
         let definition = sink(ctx.control.descriptor, id)?;
         let origin = definition.template().origin();
-        let selected = ctx.control.descriptor.calls[definition.consumer() as usize]
+        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("Histogram append lacks selected semantics"))?;
         let part = yielded.text()?;

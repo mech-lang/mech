@@ -542,19 +542,24 @@ fn guarded_loop_metadata_records_emission_and_declines_changed_source_obligation
             }
             let descriptor = object.descriptor();
             let header = region["header"].as_u64().unwrap() as usize;
-            let region_id = descriptor.closed_tails.sites[header].unwrap();
+            let region_id = descriptor.metadata().closed_tails.sites[header].unwrap();
             for site in region["stop_guards"].as_array().unwrap() {
                 let site = site.as_u64().unwrap() as usize;
-                assert_eq!(descriptor.closed_tails.sites[site], Some(region_id));
+                assert_eq!(
+                    descriptor.metadata().closed_tails.sites[site],
+                    Some(region_id)
+                );
                 assert!(matches!(
-                    descriptor.plan.blocks()[site].terminator(),
+                    descriptor.metadata().plan.blocks()[site].terminator(),
                     NativeIterationTerminator::Scalar(NativeMatchTerminator::Branch { .. })
                 ));
             }
             for latch in region["recurrence_latches"].as_array().unwrap() {
                 assert_eq!(
                     *latch,
-                    descriptor.closed_tails.regions[region_id].tail.latch()
+                    descriptor.metadata().closed_tails.regions[region_id]
+                        .tail
+                        .latch()
                 );
             }
         }
@@ -610,7 +615,7 @@ fn guarded_loop_count_overflow_stays_at_the_source_replacement() {
         .unwrap_err();
         let receipt = terminal.get().unwrap();
         assert_eq!(receipt.0, STATUS_ARITHMETIC);
-        let origin = jit.descriptor().plan.blocks()[receipt.1 as usize].origin();
+        let origin = jit.descriptor().metadata().plan.blocks()[receipt.1 as usize].origin();
         assert!(matches!(&error, NativeProgramExecutionError::Control(
             NativeIterationExecutionError::Arithmetic { origin: actual }) if *actual == origin));
         let mut obs = OBS.with(|r| core::mem::take(&mut *r.borrow_mut()));

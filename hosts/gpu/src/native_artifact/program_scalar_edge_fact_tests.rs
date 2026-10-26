@@ -201,7 +201,7 @@ fn loop_invariants_metadata_binds_actual_calls_ranges_latches_and_refreshes() {
             assert_eq!(record[1], bounds["range_site"]);
         } else {
             let NativeIterationAction::LibraryCall { template, .. } =
-                object.descriptor().plan.blocks()[site].action()
+                object.descriptor().metadata().plan.blocks()[site].action()
             else {
                 panic!("original source map call");
             };
@@ -275,6 +275,7 @@ fn loop_outlining_metadata_and_total_stack_code_admission_include_owned_callees(
     assert!(
         object
             .descriptor()
+            .metadata()
             .closed_tails
             .regions
             .iter()
@@ -450,7 +451,7 @@ fn lookup_facts_metadata_records_only_actual_current_key_substitutions() {
         assert!(record["node"].as_u64().unwrap() < nodes);
         let site = record["site"].as_u64().unwrap() as usize;
         let NativeIterationAction::LibraryCall { template, .. } =
-            object.descriptor().plan.blocks()[site].action()
+            object.descriptor().metadata().plan.blocks()[site].action()
         else {
             panic!("source call");
         };
@@ -498,6 +499,7 @@ fn object_metadata_records_actual_frame_sync_masks_and_disabled_absence() {
     assert_eq!(regions.len(), 1);
     let tail = object
         .descriptor()
+        .metadata()
         .closed_tails
         .regions
         .iter()
@@ -570,12 +572,13 @@ fn object_metadata_attests_tag_threading_and_original_source_frontiers() {
     let record = &regions[0];
     let descriptor = object.descriptor();
     let tail = descriptor
+        .metadata()
         .closed_tails
         .regions
         .iter()
         .find(|r| r.packed.is_some())
         .unwrap();
-    let owner = descriptor.map_owner_words.as_ref().unwrap();
+    let owner = descriptor.metadata().map_owner_words.as_ref().unwrap();
     assert_eq!(record["header"], tail.tail.header());
     assert_eq!(
         record["carrier_word"],
@@ -599,14 +602,14 @@ fn object_metadata_attests_tag_threading_and_original_source_frontiers() {
     for site in record["folded_branches"].as_array().unwrap() {
         let site = site.as_u64().unwrap() as usize;
         assert!(matches!(
-            descriptor.plan.blocks()[site].terminator(),
+            descriptor.metadata().plan.blocks()[site].terminator(),
             NativeIterationTerminator::Scalar(
                 NativeMatchTerminator::Branch { .. } | NativeMatchTerminator::LiteralBranch { .. }
             )
         ));
         assert_eq!(
-            descriptor.closed_tails.sites[site],
-            descriptor.closed_tails.sites[tail.tail.header() as usize]
+            descriptor.metadata().closed_tails.sites[site],
+            descriptor.metadata().closed_tails.sites[tail.tail.header() as usize]
         );
     }
     for site in record["known_latches"].as_array().unwrap() {
@@ -747,6 +750,7 @@ fn object_metadata_records_actual_source_edge_substitutions_and_disabled_absence
     assert_eq!(regions.len(), 1);
     let descriptor = object.descriptor();
     let closed = descriptor
+        .metadata()
         .closed_tails
         .regions
         .iter()
@@ -760,13 +764,13 @@ fn object_metadata_records_actual_source_edge_substitutions_and_disabled_absence
         emitted.0 >= 8 && emitted.1 >= 4,
         "actual object substitutions: {emitted:?}"
     );
-    let owner = descriptor.map_owner_words.as_ref().unwrap();
+    let owner = descriptor.metadata().map_owner_words.as_ref().unwrap();
     for record in guards {
         let site = record["site"].as_u64().unwrap() as usize;
         let action = if owner.action_region(site) == closed.map {
             owner.aggregates().action(site)
         } else {
-            descriptor.scalar_aggregates.action(site)
+            descriptor.metadata().scalar_aggregates.action(site)
         }
         .unwrap();
         use mech_engine::native_artifact::NativeScalarAggregateAction as Aggregate;
@@ -785,7 +789,7 @@ fn object_metadata_records_actual_source_edge_substitutions_and_disabled_absence
     for record in arithmetic {
         let site = record["site"].as_u64().unwrap() as usize;
         let NativeIterationAction::Scalar(NativeMatchAction::Primitive { op, operands, .. }) =
-            descriptor.plan.blocks()[site].action()
+            descriptor.metadata().plan.blocks()[site].action()
         else {
             panic!("reported arithmetic source site");
         };
@@ -1336,7 +1340,7 @@ fn arithmetic_failure_equivalence(pass: Pass) {
             let (site, work, library_work) = terminal
                 .get()
                 .expect("original checked source arithmetic must fail");
-            let origin = jit.descriptor().plan.blocks()[site as usize].origin();
+            let origin = jit.descriptor().metadata().plan.blocks()[site as usize].origin();
             assert!(matches!(&error, NativeProgramExecutionError::Control(
                 NativeIterationExecutionError::Arithmetic { origin: actual }) if *actual == origin));
             let observed = OBS.with(|v| core::mem::take(&mut *v.borrow_mut()));

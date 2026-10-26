@@ -57,6 +57,7 @@ pub(super) fn before_account(
     let iteration = ctx
         .control
         .descriptor
+        .metadata()
         .plan
         .blocks()
         .get(site)
@@ -227,7 +228,7 @@ fn target(jit: &JitProgramArtifact) -> Target {
         range_origin: projection.range_template().origin(),
         selection_origin: projection.selection_template().origin(),
         collection_origin: collection.origin(),
-        price: jit.descriptor().calls[site as usize]
+        price: jit.descriptor().metadata().calls[site as usize]
             .as_ref()
             .unwrap()
             .selected_u64_string_span_selector_work(),

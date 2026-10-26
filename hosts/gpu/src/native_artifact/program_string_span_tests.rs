@@ -44,7 +44,7 @@ pub(in super::super::super) fn before_helper(
         return Ok(());
     }
     let Action::PrepareStringSpanSelector { collection } =
-        ctx.control.descriptor.plan.blocks()[site].action()
+        ctx.control.descriptor.metadata().plan.blocks()[site].action()
     else {
         return Ok(());
     };
@@ -61,7 +61,7 @@ pub(in super::super::super) fn before_helper(
     let malformed = if fault == Some(Fault::MalformedMaximumVisit) {
         u64::MAX
     } else {
-        ctx.control.descriptor.plan.blocks().len() as u64
+        ctx.control.descriptor.metadata().plan.blocks().len() as u64
     };
     ctx.visit(malformed)
 }
@@ -80,12 +80,12 @@ pub(in super::super) fn before_stage(
     if FIRED.with(core::cell::Cell::get) {
         return Ok(false);
     }
-    let action = ctx.control.descriptor.plan.blocks()[site].action();
+    let action = ctx.control.descriptor.metadata().plan.blocks()[site].action();
     let (id, stage) = match action {
         Action::PrepareStringSpanSelector { collection } => (*collection, 0),
         Action::ProjectStringSpan { collection } => (*collection, 1),
         Action::CollectionPush { collection, .. }
-            if ctx.control.descriptor.plan.collections()[*collection as usize]
+            if ctx.control.descriptor.metadata().plan.collections()[*collection as usize]
                 .string_span_projection()
                 .is_some() =>
         {
@@ -123,7 +123,7 @@ pub(in super::super) fn before_stage(
             }
         }
         Fault::OldSourceGeneration => {
-            let source = ctx.control.descriptor.plan.collections()[id as usize]
+            let source = ctx.control.descriptor.metadata().plan.collections()[id as usize]
                 .string_span_projection()
                 .ok_or_else(|| invalid("test span proof"))?
                 .source();
@@ -132,12 +132,12 @@ pub(in super::super) fn before_stage(
                 else {
                     return Err(invalid("test generated source lacks real pin"));
                 };
-                let input = ctx.control.descriptor.plan.inputs()[0].value();
+                let input = ctx.control.descriptor.metadata().plan.inputs()[0].value();
                 let distinct = ctx
                     .arena
                     .test_current_value(input.get())
                     .is_some_and(|input| !input.shares_frozen_storage(owner));
-                let aliases = (0..ctx.control.descriptor.types.len())
+                let aliases = (0..ctx.control.descriptor.metadata().types.len())
                     .filter(|&slot| {
                         ctx.arena
                             .test_current_value(slot as u32)
@@ -174,7 +174,7 @@ pub(in super::super) fn before_stage(
                 .retire_current(source.get(), &mut ctx.control.work)?;
         }
         Fault::ConsumedSpanReplay => {
-            let output = ctx.control.descriptor.plan.collections()[id as usize]
+            let output = ctx.control.descriptor.metadata().plan.collections()[id as usize]
                 .string_span_projection()
                 .ok_or_else(|| invalid("test span proof"))?
                 .output();
@@ -183,7 +183,7 @@ pub(in super::super) fn before_stage(
         }
         Fault::LeakedSpanAtLatch => return Ok(true),
         Fault::ObserveAbsentValues => {
-            let proof = ctx.control.descriptor.plan.collections()[id as usize]
+            let proof = ctx.control.descriptor.metadata().plan.collections()[id as usize]
                 .string_span_projection()
                 .ok_or_else(|| invalid("test span proof"))?;
             let selector_absent = matches!(

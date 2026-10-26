@@ -1,9 +1,11 @@
 //! Constructor-only association negatives; no generated callback is replaced.
 use super::*;
 use crate::native_artifact::{JitProgramArtifact, emit_program_object};
+use mech_core::FunctionCatalog;
 use mech_engine::native_artifact::{
     NativeArtifactLoweringError, NativeCollectionResult, NativeHistogramQueryStepKind as Step,
 };
+use mech_engine::{ProgramArtifact, native_artifact::prepare_native_program_library_call};
 use mech_syntax::document::{
     AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
     parse_canonical_document,
@@ -37,6 +39,7 @@ fn calls(
     catalog: &FunctionCatalog,
 ) -> Vec<Option<NativePreparedLibraryCall>> {
     descriptor
+        .metadata()
         .calls
         .iter()
         .map(|call| {
@@ -53,6 +56,7 @@ fn query_stage_constructor_and_link_rederive_exact_associations_and_reject_corru
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let descriptor = jit.descriptor();
         let sinks = descriptor
+            .metadata()
             .plan
             .collections()
             .iter()
@@ -68,12 +72,12 @@ fn query_stage_constructor_and_link_rederive_exact_associations_and_reject_corru
             "both actual root lookup bodies must select fused queries"
         );
         let (id, sink) = sinks[0];
-        validate_query_stages(&descriptor.plan, &descriptor.calls).unwrap();
+        validate_query_stages(&descriptor.metadata().plan, &descriptor.metadata().calls).unwrap();
         for &(collection, query) in &sinks {
             for (ordinal, step) in query.steps().iter().enumerate() {
                 descriptor.query_stage(collection, ordinal as u32).unwrap();
                 assert_eq!(
-                    descriptor.calls[step.site() as usize]
+                    descriptor.metadata().calls[step.site() as usize]
                         .as_ref()
                         .map(|c| c.template()),
                     step.template()
@@ -102,21 +106,24 @@ fn query_stage_constructor_and_link_rederive_exact_associations_and_reject_corru
             .site() as usize;
         let mut missing = calls(&artifact, descriptor, &catalog);
         missing[key] = None;
-        assert!(validate_query_stages(&descriptor.plan, &missing).is_err());
+        assert!(validate_query_stages(&descriptor.metadata().plan, &missing).is_err());
         let mut swapped = calls(&artifact, descriptor, &catalog);
         swapped.swap(key, membership);
-        assert!(validate_query_stages(&descriptor.plan, &swapped).is_err());
+        assert!(validate_query_stages(&descriptor.metadata().plan, &swapped).is_err());
         // Presence mismatch is separate from the same-kind foreign-origin case.
         let mut cleanup_presence = calls(&artifact, descriptor, &catalog);
         cleanup_presence[cleanup] = Some(
             prepare_native_program_library_call(
                 &artifact,
-                descriptor.calls[key].as_ref().unwrap().template(),
+                descriptor.metadata().calls[key]
+                    .as_ref()
+                    .unwrap()
+                    .template(),
                 &catalog,
             )
             .unwrap(),
         );
-        assert!(validate_query_stages(&descriptor.plan, &cleanup_presence).is_err());
+        assert!(validate_query_stages(&descriptor.metadata().plan, &cleanup_presence).is_err());
         let original_keys = sink
             .steps()
             .iter()
@@ -151,11 +158,11 @@ fn query_stage_constructor_and_link_rederive_exact_associations_and_reject_corru
         let mut wrong_origin = calls(&artifact, descriptor, &catalog);
         wrong_origin[key] =
             Some(prepare_native_program_library_call(&artifact, foreign_keys, &catalog).unwrap());
-        assert!(validate_query_stages(&descriptor.plan, &wrong_origin).is_err());
+        assert!(validate_query_stages(&descriptor.metadata().plan, &wrong_origin).is_err());
         assert!(
             validate_query_stages(
-                &descriptor.plan,
-                &descriptor.calls[..descriptor.calls.len() - 1]
+                &descriptor.metadata().plan,
+                &descriptor.metadata().calls[..descriptor.metadata().calls.len() - 1]
             )
             .is_err()
         );
@@ -167,7 +174,7 @@ fn query_stage_constructor_and_link_rederive_exact_associations_and_reject_corru
             object.identity().bytes(),
         )
         .unwrap();
-        validate_query_stages(&linked.plan, &linked.calls).unwrap();
+        validate_query_stages(&linked.metadata().plan, &linked.metadata().calls).unwrap();
         for &(collection, query) in &sinks {
             for ordinal in 0..query.steps().len() {
                 linked.query_stage(collection, ordinal as u32).unwrap();
@@ -197,6 +204,7 @@ fn query_stage_preparation_rejects_factory_key_and_memory_replacements_before_bi
         let object = emit_program_object(&artifact, &catalog).unwrap();
         let descriptor = object.descriptor();
         for step in descriptor
+            .metadata()
             .plan
             .collections()
             .iter()
@@ -237,13 +245,18 @@ fn query_stage_preparation_rejects_factory_key_and_memory_replacements_before_bi
                     Err(NativeArtifactLoweringError::MissingSemanticWitness { .. })
                 ));
                 assert!(
-                    NativeProgramDescriptor::prepare(
+                    crate::native_artifact::program::prepare::PreparedNativeProgram::prepare(
                         &artifact,
                         &replaced,
-                        descriptor.plan.clone(),
-                        descriptor.stack,
-                        descriptor.code,
+                        descriptor.metadata().plan.clone()
                     )
+                    .map(|prepared| NativeProgramDescriptor::from_prepared(
+                        prepared,
+                        crate::native_artifact::program_descriptor::NativeCodeFootprint {
+                            stack_bytes: descriptor.stack_bytes(),
+                            code_bytes: descriptor.code_bytes()
+                        }
+                    ))
                     .is_err()
                 );
                 assert!(JitProgramArtifact::compile(&artifact, &replaced).is_err());

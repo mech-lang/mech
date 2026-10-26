@@ -18,10 +18,10 @@ pub(super) fn limits() -> NativeProgramExecutionLimits {
 }
 
 fn input(descriptor: &NativeProgramDescriptor, text: &str, memory: &ManagedMemoryBudget) -> Value {
-    assert_eq!(descriptor.plan.inputs().len(), 1);
+    assert_eq!(descriptor.metadata().plan.inputs().len(), 1);
     string_value(
         descriptor,
-        descriptor.plan.inputs()[0].ty().schema(),
+        descriptor.metadata().plan.inputs()[0].ty().schema(),
         text,
         memory,
     )
@@ -39,7 +39,7 @@ pub(super) fn string_value(
         data: ValueDataDraft::String(text.into()),
     }
     .finalize(&SnapshotValidationContext::with_shared_schemas(
-        &descriptor.schemas,
+        &descriptor.metadata().schemas,
     ))
     .unwrap();
     let mut reservation = memory
@@ -49,27 +49,30 @@ pub(super) fn string_value(
 }
 
 fn carrier(prepared: &Prepared<'_>) -> Vec<u64> {
-    let region = prepared.descriptor.prefix.as_ref().unwrap();
+    let region = prepared.descriptor.metadata().prefix.as_ref().unwrap();
     let (_, width) = prepared
         .descriptor
+        .metadata()
         .scalar_aggregates
         .slot(region.tail.carrier())
         .unwrap();
-    let first = prepared.descriptor.plan.transport_input_count() + region.carrier;
+    let first = prepared.descriptor.metadata().plan.transport_input_count() + region.carrier;
     prepared.storage.values()[first..first + width].to_vec()
 }
 
 pub(super) fn assert_unloaned(prepared: &Prepared<'_>) {
-    let region = prepared.descriptor.prefix.as_ref().unwrap();
-    let layout = &prepared.descriptor.borrowed_strings.regions[region.borrowed];
-    let first = prepared.descriptor.plan.transport_input_count();
+    let region = prepared.descriptor.metadata().prefix.as_ref().unwrap();
+    let layout = &prepared.descriptor.metadata().borrowed_strings.regions[region.borrowed];
+    let first = prepared.descriptor.metadata().plan.transport_input_count();
     assert!(
         prepared.storage.values()[first + layout.ready..first + layout.end]
             .iter()
             .all(|word| *word == 0)
     );
-    if let Some(closed) = prepared.descriptor.closed_tails.sites[region.tail.header() as usize] {
-        let words = prepared.descriptor.closed_tails.regions[closed].words;
+    if let Some(closed) =
+        prepared.descriptor.metadata().closed_tails.sites[region.tail.header() as usize]
+    {
+        let words = prepared.descriptor.metadata().closed_tails.regions[closed].words;
         assert_eq!(
             &prepared.storage.values()[first + words..first + words + 3],
             &[0; 3]
@@ -78,10 +81,11 @@ pub(super) fn assert_unloaned(prepared: &Prepared<'_>) {
     let arguments = first
         + prepared.locals
         + prepared.progress
-        + prepared.descriptor.plan.transport_output_count()
+        + prepared.descriptor.metadata().plan.transport_output_count()
         + 1;
     assert!(
-        prepared.storage.values()[arguments..arguments + prepared.descriptor.max_library_inputs]
+        prepared.storage.values()
+            [arguments..arguments + prepared.descriptor.metadata().max_library_inputs]
             .iter()
             .all(|word| *word == 0)
     );
@@ -119,28 +123,31 @@ fn shared_retention_inventory_preserves_identity_and_capture_eligibility() {
             )
             .unwrap();
             let descriptor = jit.descriptor();
-            let frontiers = descriptor.plan.text_line_retention_frontiers();
-            let joins = descriptor.plan.selected_text_joins();
-            let lines = descriptor.plan.text_line_matrix_regions();
+            let frontiers = descriptor.metadata().plan.text_line_retention_frontiers();
+            let joins = descriptor.metadata().plan.selected_text_joins();
+            let lines = descriptor.metadata().plan.text_line_matrix_regions();
             let identity = |frontiers: &[_]| {
                 program_identity::typed_ir_sha256(
-                    &descriptor.plan,
+                    &descriptor.metadata().plan,
                     frontiers,
                     &joins,
                     &lines,
-                    descriptor.map_owner_words.as_ref(),
-                    &descriptor.frozen_maps,
+                    descriptor.metadata().map_owner_words.as_ref(),
+                    &descriptor.metadata().frozen_maps,
+                    &(&descriptor.metadata().plan).string_map_regions(),
                 )
             };
-            let independently_derived = program_prefix_layout::derive(
-                &descriptor.plan,
-                &descriptor.borrowed_strings,
-                &descriptor.visits,
+            let independently_derived = program_prefix_layout::derive_with_frontiers(
+                &descriptor.metadata().plan,
+                &descriptor.metadata().borrowed_strings,
+                &descriptor.metadata().visits,
+                &(&descriptor.metadata().plan).scalar_aggregates(),
+                &(&descriptor.metadata().plan).text_line_retention_frontiers(),
             )
             .unwrap();
-            assert_eq!(descriptor.prefix.is_some(), eligible);
+            assert_eq!(descriptor.metadata().prefix.is_some(), eligible);
             assert_eq!(
-                format!("{:?}", descriptor.prefix),
+                format!("{:?}", descriptor.metadata().prefix),
                 format!("{independently_derived:?}"),
             );
             assert_eq!(*descriptor.typed_ir_sha256(), identity(&frontiers));
@@ -152,9 +159,10 @@ fn shared_retention_inventory_preserves_identity_and_capture_eligibility() {
                 multiple.extend(frontiers.iter().cloned());
                 assert!(
                     program_prefix_layout::derive_with_frontiers(
-                        &descriptor.plan,
-                        &descriptor.borrowed_strings,
-                        &descriptor.visits,
+                        &descriptor.metadata().plan,
+                        &descriptor.metadata().borrowed_strings,
+                        &descriptor.metadata().visits,
+                        &descriptor.metadata().scalar_aggregates,
                         &multiple,
                     )
                     .unwrap()
@@ -178,7 +186,7 @@ fn original_and_decoded_selected_producer_own_the_incremental_line_storage() {
         )
         .unwrap();
         let descriptor = jit.descriptor();
-        let calls = descriptor.calls.iter().flatten();
+        let calls = descriptor.metadata().calls.iter().flatten();
         let producer = calls
             .clone()
             .find(|call| call.template().primitive() == NativeCollectionPrimitive::TextLines)
@@ -229,14 +237,14 @@ fn emitted_scanner_preserves_carrier_and_one_ledger_across_header_pauses() {
         )
         .unwrap();
         let descriptor = jit.descriptor();
-        assert!(descriptor.prefix.is_some());
+        assert!(descriptor.metadata().prefix.is_some());
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let inputs = [input(
             descriptor,
             "skip\nopen\nA\nB\nclose\nafter\n",
             &memory,
         )];
-        let mut outputs = vec![None; descriptor.plan.transport_output_count()];
+        let mut outputs = vec![None; descriptor.metadata().plan.transport_output_count()];
         let mut entry = jit.test_generated_entry();
         let mut prepared = Prepared::new(descriptor, limits(), &memory).unwrap();
         prepared.activate(&mut entry).unwrap();
@@ -316,7 +324,7 @@ fn entry_facts_refresh_after_repeated_empty_and_growing_prefixes() {
             "skip\nopen\nA\nB\nclose\nafter\n",
             &memory,
         )];
-        let mut outputs = vec![None; descriptor.plan.transport_output_count()];
+        let mut outputs = vec![None; descriptor.metadata().plan.transport_output_count()];
         let mut entry = jit.test_generated_entry();
         let mut prepared = Prepared::new(descriptor, limits(), &memory).unwrap();
         prepared.activate(&mut entry).unwrap();
@@ -359,6 +367,7 @@ fn emitted_frontier_drives_storage_discard_without_a_rust_scanner() {
         .unwrap();
         let descriptor = jit.descriptor();
         let producer = descriptor
+            .metadata()
             .calls
             .iter()
             .flatten()
@@ -367,7 +376,7 @@ fn emitted_frontier_drives_storage_discard_without_a_rust_scanner() {
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let text = "skip\nopen\nA\nB\nclose\nafter\n";
         let inputs = [input(descriptor, text, &memory)];
-        let mut outputs = vec![None; descriptor.plan.transport_output_count()];
+        let mut outputs = vec![None; descriptor.metadata().plan.transport_output_count()];
         let mut entry = jit.test_generated_entry();
         let mut prepared = Prepared::new(descriptor, limits(), &memory).unwrap();
         prepared.activate(&mut entry).unwrap();
@@ -435,7 +444,7 @@ fn empty_missing_marker_and_unicode_fallback_resume_to_exact_native_result() {
         ] {
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
             let inputs = [input(descriptor, text, &memory)];
-            let mut outputs = vec![None; descriptor.plan.transport_output_count()];
+            let mut outputs = vec![None; descriptor.metadata().plan.transport_output_count()];
             let mut entry = jit.test_generated_entry();
             let mut prepared = Prepared::new(descriptor, limits(), &memory).unwrap();
             prepared.activate(&mut entry).unwrap();
@@ -468,7 +477,7 @@ fn continuation_rejects_regression_false_extent_and_forged_pause_atomically() {
         for kind in 0..4 {
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
             let inputs = [input(descriptor, "open\nA\nclose\n", &memory)];
-            let outputs = vec![None; descriptor.plan.transport_output_count()];
+            let outputs = vec![None; descriptor.metadata().plan.transport_output_count()];
             let mut entry = jit.test_generated_entry();
             let mut prepared = Prepared::new(descriptor, limits(), &memory).unwrap();
             prepared.activate(&mut entry).unwrap();
@@ -505,7 +514,7 @@ fn returned_checkpoint_rejects_uncleared_lanes_and_mutated_immutable_facts() {
         for field in 0..7 {
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
             let inputs = [input(descriptor, "open\nA\nclose\n", &memory)];
-            let outputs = vec![None; descriptor.plan.transport_output_count()];
+            let outputs = vec![None; descriptor.metadata().plan.transport_output_count()];
             let mut native = jit.test_generated_entry();
             let mut entry = |frame| {
                 let status = native(frame);
@@ -557,6 +566,7 @@ fn real_full_source_selects_generic_header_continuation_without_enabling_capture
         .unwrap();
         let region = jit
             .descriptor()
+            .metadata()
             .prefix
             .as_ref()
             .expect("ordinary scanner proof");
@@ -567,17 +577,17 @@ fn real_full_source_selects_generic_header_continuation_without_enabling_capture
         // ONE genuine resource observation is already captured in this test;
         // production incremental I/O/admission is deliberately not claimed.
         let text = ">ONE\nAAA\n>TWO\nCCCC\n>THREE\nGGTATTTTAATTTATAGT\nGGTAC\n>FOUR\nT\n";
-        assert_eq!(jit.descriptor().plan.inputs().len(), 0);
-        assert_eq!(jit.descriptor().plan.observations().len(), 1);
+        assert_eq!(jit.descriptor().metadata().plan.inputs().len(), 0);
+        assert_eq!(jit.descriptor().metadata().plan.observations().len(), 1);
         let descriptor = jit.descriptor();
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let observations = [string_value(
             descriptor,
-            descriptor.plan.transport_input_type(0).schema(),
+            descriptor.metadata().plan.transport_input_type(0).schema(),
             text,
             &memory,
         )];
-        let mut expected = vec![None; descriptor.plan.transport_output_count()];
+        let mut expected = vec![None; descriptor.metadata().plan.transport_output_count()];
         let mut entry = jit.test_generated_entry();
         let mut ordinary = Prepared::new(descriptor, limits(), &memory).unwrap();
         ordinary.activate(&mut entry).unwrap();
@@ -610,12 +620,12 @@ fn real_full_source_selects_generic_header_continuation_without_enabling_capture
                 actual
                     .as_ref()
                     .unwrap()
-                    .canonical_snapshot_bytes(&descriptor.schemas)
+                    .canonical_snapshot_bytes(&descriptor.metadata().schemas)
                     .unwrap(),
                 expected
                     .as_ref()
                     .unwrap()
-                    .canonical_snapshot_bytes(&descriptor.schemas)
+                    .canonical_snapshot_bytes(&descriptor.metadata().schemas)
                     .unwrap(),
             );
         }
@@ -633,15 +643,16 @@ fn comparison_allowance_is_not_renewed_by_a_prefix_resume() {
         )
         .unwrap();
         let descriptor = jit.descriptor();
-        let region = descriptor.prefix.as_ref().unwrap();
-        let closed = descriptor.closed_tails.sites[region.tail.header() as usize].unwrap();
-        let allowance = descriptor.closed_tails.regions[closed].comparison;
+        let region = descriptor.metadata().prefix.as_ref().unwrap();
+        let closed =
+            descriptor.metadata().closed_tails.sites[region.tail.header() as usize].unwrap();
+        let allowance = descriptor.metadata().closed_tails.regions[closed].comparison;
         assert!(allowance > 0);
         let mut limits = limits();
         limits.library.max_comparison_work = Some(allowance);
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let inputs = [input(descriptor, "open\nA\nclose\n", &memory)];
-        let outputs = vec![None; descriptor.plan.transport_output_count()];
+        let outputs = vec![None; descriptor.metadata().plan.transport_output_count()];
         let mut entry = jit.test_generated_entry();
         let mut prepared = Prepared::new(descriptor, limits, &memory).unwrap();
         prepared.activate(&mut entry).unwrap();
@@ -666,7 +677,7 @@ fn unproved_backward_scan_and_completion_bypass_have_no_continuation() {
                 &mech_stdlib::source_catalog(),
             )
             .unwrap();
-            assert!(jit.descriptor().prefix.is_none(), "{source}");
+            assert!(jit.descriptor().metadata().prefix.is_none(), "{source}");
         }
     }
 }

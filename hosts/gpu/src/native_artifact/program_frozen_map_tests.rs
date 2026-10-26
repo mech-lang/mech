@@ -31,6 +31,7 @@ unsafe extern "C" fn observed(
         && ctx
             .control
             .descriptor
+            .metadata()
             .frozen_maps
             .exits
             .get(site as usize)
@@ -166,7 +167,7 @@ fn source(text: &str, width: usize, increment: u64, expression: &str) -> String 
 }
 
 fn require_selected(descriptor: &NativeProgramDescriptor) {
-    assert_eq!(descriptor.frozen_maps.regions.len(), 1);
+    assert_eq!(descriptor.metadata().frozen_maps.regions.len(), 1);
 }
 
 #[test]
@@ -184,14 +185,15 @@ fn frozen_prepared_constant_map_keeps_canonical_transport_across_activation() {
     let descriptor = jit.descriptor();
     assert!(
         descriptor
+            .metadata()
             .closed_tails
             .regions
             .iter()
             .any(|r| r.packed.is_some())
     );
-    assert!(descriptor.plan.activation_boundary().is_some());
+    assert!(descriptor.metadata().plan.activation_boundary().is_some());
     assert!(
-        descriptor.frozen_maps.regions.is_empty(),
+        descriptor.metadata().frozen_maps.regions.is_empty(),
         "private maps cannot cross activation"
     );
     let memory = ManagedMemoryBudget::new(256 << 20);
@@ -331,6 +333,7 @@ fn frozen_missing_get_keeps_original_library_origin_and_releases_every_owner() {
     let descriptor = jit.descriptor();
     require_selected(descriptor);
     let site = descriptor
+        .metadata()
         .frozen_maps
         .reads
         .iter()
@@ -352,7 +355,7 @@ fn frozen_missing_get_keeps_original_library_origin_and_releases_every_owner() {
         .unwrap_err();
         assert!(
             matches!(error, NativeProgramExecutionError::Library { origin, error: NativeCollectionInvocationError::Kernel(mech_core::ResidentKernelError::InvalidInput) }
-            if origin == descriptor.plan.blocks()[site].origin()),
+            if origin == descriptor.metadata().plan.blocks()[site].origin()),
             "{error:?}"
         );
         assert!(output.iter().all(Option::is_none));
@@ -370,7 +373,7 @@ fn frozen_tokens_cannot_cross_invocations_and_logical_caps_fail_at_original_exit
     )
     .unwrap();
     let descriptor = jit.descriptor();
-    let exit = descriptor.frozen_maps.regions[0].exit;
+    let exit = descriptor.metadata().frozen_maps.regions[0].exit;
     let memory = ManagedMemoryBudget::new(256 << 20);
     let args = query_inputs(&artifact, "abcabc", "a", &memory);
     let baseline = (memory.used_bytes(), memory.retained_nodes());
@@ -397,8 +400,8 @@ fn frozen_tokens_cannot_cross_invocations_and_logical_caps_fail_at_original_exit
                 assert_eq!(failed, exit);
             } else {
                 assert!(
-                    descriptor.frozen_maps.copies[failed].is_some()
-                        || descriptor.frozen_maps.reads[failed].is_some()
+                    descriptor.metadata().frozen_maps.copies[failed].is_some()
+                        || descriptor.metadata().frozen_maps.reads[failed].is_some()
                 );
             }
         }
@@ -414,7 +417,15 @@ fn frozen_unsupported_enumeration_executes_canonical_fallback_and_wire_proof_can
     let selected = tests::artifact_source(&source("abcabc", 1, 1, "alias{query}"));
     let selected_jit =
         crate::native_artifact::JitProgramArtifact::compile(&selected, &catalog).unwrap();
-    assert_eq!(selected_jit.descriptor().frozen_maps.regions.len(), 1);
+    assert_eq!(
+        selected_jit
+            .descriptor()
+            .metadata()
+            .frozen_maps
+            .regions
+            .len(),
+        1
+    );
     let image = selected_jit
         .descriptor()
         .encode_build_owned_image()
@@ -442,7 +453,7 @@ fn frozen_unsupported_enumeration_executes_canonical_fallback_and_wire_proof_can
         "sequence/length(map/keys(alias)) + alias{query}",
     ));
     let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-    assert!(jit.descriptor().frozen_maps.regions.is_empty());
+    assert!(jit.descriptor().metadata().frozen_maps.regions.is_empty());
     let memory = ManagedMemoryBudget::new(256 << 20);
     let args = query_inputs(&artifact, "abcabc", "a", &memory);
     let baseline = (memory.used_bytes(), memory.retained_nodes());

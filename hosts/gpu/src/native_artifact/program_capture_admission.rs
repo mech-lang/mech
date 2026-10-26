@@ -32,21 +32,21 @@ pub(super) fn preflight(
     if chunk_bytes == 0 || chunk_bytes > u32::MAX as usize || input_limit >= usize::MAX as u64 {
         return None;
     }
-    let region = descriptor.prefix.as_ref()?;
+    let region = descriptor.metadata().prefix.as_ref()?;
     let scan_states = region.frontier.scans_per_ordinal()?;
     let source = region.frontier.read().count().lines();
     if source.lengths().len() != 1 {
         return None;
     }
-    let producer = descriptor.calls[source.producer() as usize].as_ref()?;
+    let producer = descriptor.metadata().calls[source.producer() as usize].as_ref()?;
     let producer_compute = producer.text_line_capture_work_bound(input_limit)?;
     let library_compute = limits.library.max_compute_work?;
     let library_comparison = limits.library.max_comparison_work?;
     if producer_compute > library_compute {
         return None;
     }
-    let closed = descriptor.closed_tails.sites[region.tail.header() as usize]?;
-    let closed = &descriptor.closed_tails.regions[closed];
+    let closed = descriptor.metadata().closed_tails.sites[region.tail.header() as usize]?;
+    let closed = &descriptor.metadata().closed_tails.regions[closed];
     if closed.borrowed != Some(region.borrowed) || closed.iteration != region.frontier.iteration() {
         return None;
     }
@@ -55,13 +55,13 @@ pub(super) fn preflight(
     // scalar copies/packing and the deferred original source/length visits may
     // precede its first zero-available checkpoint. Even closed arithmetic here
     // could trap before a capture error that originally preceded it.
-    let mut site = descriptor.plan.activation_boundary()?;
+    let mut site = descriptor.metadata().plan.activation_boundary()?;
     let mut prelude = 0u64;
     let mut reached = false;
     let mut source_visits = 0u8;
-    for _ in 0..descriptor.plan.blocks().len() {
-        let block = descriptor.plan.blocks().get(site as usize)?;
-        let visit = descriptor.visits.get(site as usize)?;
+    for _ in 0..descriptor.metadata().plan.blocks().len() {
+        let block = descriptor.metadata().plan.blocks().get(site as usize)?;
+        let visit = descriptor.metadata().visits.get(site as usize)?;
         prelude = sum([prelude, visit.work, 256])?;
         if site == region.tail.initialize() {
             reached = true;
@@ -81,10 +81,14 @@ pub(super) fn preflight(
         if block.iteration().is_some() {
             return None;
         }
-        let allowed = descriptor.scalar_aggregates.action(site as usize).is_some()
+        let allowed = descriptor
+            .metadata()
+            .scalar_aggregates
+            .action(site as usize)
+            .is_some()
             || match block.action() {
                 Action::Scalar(Scalar::None) => true,
-                Action::Scalar(Scalar::Copy { output, .. }) => descriptor.plan.values()
+                Action::Scalar(Scalar::Copy { output, .. }) => descriptor.metadata().plan.values()
                     [output.get() as usize]
                     .scalar_kind()
                     .is_some(),
@@ -112,14 +116,14 @@ pub(super) fn preflight(
     // boundary covers initial/EOF bookkeeping without assuming nonempty input.
     let boundaries = input_limit.checked_add(1)?;
     let traversals = boundaries.checked_mul(scan_states)?;
-    let borrowed = &descriptor.borrowed_strings.regions[region.borrowed];
+    let borrowed = &descriptor.metadata().borrowed_strings.regions[region.borrowed];
     let captures = (borrowed.proof.matrices().len() + borrowed.proof.literals().len()) as u64;
-    let iterations = descriptor.plan.iterations().len() as u64;
-    let arguments = descriptor.max_library_inputs.max(1) as u64;
+    let iterations = descriptor.metadata().plan.iterations().len() as u64;
+    let arguments = descriptor.metadata().max_library_inputs.max(1) as u64;
     let checkpoint_words = sum([(borrowed.end - borrowed.ready) as u64, 3, arguments])?;
     let transition = sum([
         iterations.checked_mul(32)?,
-        (descriptor.plan.collections().len() as u64).checked_mul(32)?,
+        (descriptor.metadata().plan.collections().len() as u64).checked_mul(32)?,
         checkpoint_words.checked_mul(16)?,
         region.header_work,
         768,
@@ -135,12 +139,12 @@ pub(super) fn preflight(
         transition,
         guard.checked_mul(3)?,
         loan,
-        (descriptor.closed_tails.regions.len() as u64).checked_mul(128)?,
+        (descriptor.metadata().closed_tails.regions.len() as u64).checked_mul(128)?,
         arguments.checked_mul(16)?,
         region.header_work,
         2048,
     ])?;
-    let length = descriptor.calls[source.lengths()[0] as usize].as_ref()?;
+    let length = descriptor.metadata().calls[source.lengths()[0] as usize].as_ref()?;
     // A generated String bounds failure may reconstruct one selector and then
     // call the original failing leaf. Both keep their finite maintained caps;
     // the scanner stops on this first failure. Whole-source search/copy and
@@ -148,8 +152,8 @@ pub(super) fn preflight(
     let error_reconstruction = sum([
         library_compute.checked_mul(2)?,
         input_limit.checked_mul(512)?,
-        descriptor.scalar_bytes.checked_mul(256)?,
-        (descriptor.plan.values().len() as u64).checked_mul(256)?,
+        descriptor.metadata().scalar_bytes.checked_mul(256)?,
+        (descriptor.metadata().plan.values().len() as u64).checked_mul(256)?,
         (borrowed.proof.actions().len() as u64).checked_mul(256)?,
         65536,
     ])?;
@@ -161,7 +165,7 @@ pub(super) fn preflight(
     let output_retirement = memory_limit
         .checked_mul(4)?
         .checked_add(32)?
-        .checked_mul(descriptor.plan.transport_output_count() as u64)?;
+        .checked_mul(descriptor.metadata().plan.transport_output_count() as u64)?;
     let compute = sum([
         producer_compute,
         prelude,
@@ -188,10 +192,15 @@ pub(super) fn window_comparison_fits(
     new_rows: u64,
 ) -> bool {
     let required = (|| {
-        let region = descriptor.prefix.as_ref()?;
+        let region = descriptor.metadata().prefix.as_ref()?;
         let states = region.frontier.scans_per_ordinal()?;
-        let closed = descriptor.closed_tails.sites[region.tail.header() as usize]?;
-        let comparison = descriptor.closed_tails.regions.get(closed)?.comparison;
+        let closed = descriptor.metadata().closed_tails.sites[region.tail.header() as usize]?;
+        let comparison = descriptor
+            .metadata()
+            .closed_tails
+            .regions
+            .get(closed)?
+            .comparison;
         new_rows
             .checked_add(1)?
             .checked_mul(states)?

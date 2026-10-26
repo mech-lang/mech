@@ -99,8 +99,9 @@ unsafe extern "C" fn observe(
     ctx.limits = old;
     if op == CLOSED_TAIL_BEGIN && status == STATUS_OK && unsafe { *result } == 1 {
         note(|r| r.entries += 1);
-        let id = ctx.control.descriptor.closed_tails.initializers[site as usize].unwrap();
-        let proof = &ctx.control.descriptor.closed_tails.regions[id];
+        let id =
+            ctx.control.descriptor.metadata().closed_tails.initializers[site as usize].unwrap();
+        let proof = &ctx.control.descriptor.metadata().closed_tails.regions[id];
         let used = ctx.library.used();
         let previous = ctx.control.previous;
         if ctx.visit(u64::from(proof.tail.header())).is_ok()
@@ -145,6 +146,7 @@ sequence := text/join([letters{{char}} | char <- "acgtacgtacgtacgt"], "")
         let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let domains = jit
             .descriptor()
+            .metadata()
             .closed_tails
             .regions
             .iter()
@@ -272,6 +274,7 @@ fn packed_domain_boundaries_execute_rolling_keys_and_restore_descriptors_lossles
                     .unwrap();
             for descriptor in [jit.descriptor(), &restored] {
                 let proof = descriptor
+                    .metadata()
                     .closed_tails
                     .regions
                     .iter()
@@ -383,6 +386,7 @@ fn closed_map_binds_source_once_rejects_reentry_and_keeps_finite_fuel() {
         for descriptor in [jit.descriptor(), &restored] {
             assert_eq!(
                 descriptor
+                    .metadata()
                     .closed_tails
                     .regions
                     .iter()
@@ -513,6 +517,7 @@ text/join([count-text(n) | n <- [4u64 8u64]], "")
         let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         assert!(
             jit.descriptor()
+                .metadata()
                 .closed_tails
                 .regions
                 .iter()
@@ -633,9 +638,15 @@ fn closed_map_rechecks_changed_widths_and_current_string_bounds() {
                     if invalid { (1, 1) } else { (0, 3) }
                 );
                 if invalid {
-                    let selection =
-                        descriptor.map_owner_words.as_ref().unwrap().spans()[0].selection_site();
-                    let expected_origin = descriptor.plan.blocks()[selection as usize].origin();
+                    let selection = descriptor
+                        .metadata()
+                        .map_owner_words
+                        .as_ref()
+                        .unwrap()
+                        .spans()[0]
+                        .selection_site();
+                    let expected_origin =
+                        descriptor.metadata().plan.blocks()[selection as usize].origin();
                     assert!(
                         matches!(&outcome, Err(NativeProgramExecutionError::Library {
                         origin,
@@ -799,21 +810,18 @@ fn packed_map_transports_computed_and_copied_invariant_offsets() {
                     .unwrap();
             for descriptor in [jit.descriptor(), &restored] {
                 let proof = descriptor
+                    .metadata()
                     .closed_tails
                     .regions
                     .iter()
                     .find_map(|region| region.packed.as_ref())
                     .unwrap();
                 let end = proof.end_offset().expect("computed invariant offset");
-                assert!(
-                    descriptor
-                        .plan
-                        .blocks()
-                        .iter()
-                        .any(|block| matches!(block.action(),
+                assert!(descriptor.metadata().plan.blocks().iter().any(
+                    |block| matches!(block.action(),
                     NativeIterationAction::Scalar(NativeMatchAction::Primitive { output, .. }
-                        | NativeMatchAction::Copy { output, .. }) if output.get() == end))
-                );
+                        | NativeMatchAction::Copy { output, .. }) if output.get() == end)
+                ));
                 for seed in [0u64, 1] {
                     MODE.with(|v| v.set(Mode::Native));
                     OBS.with(|v| *v.borrow_mut() = Observation::default());
@@ -1117,6 +1125,7 @@ fn packed_generated_controls_compare_colliding_keys_across_wrap_and_growth() {
         let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let proof = jit
             .descriptor()
+            .metadata()
             .closed_tails
             .regions
             .iter()

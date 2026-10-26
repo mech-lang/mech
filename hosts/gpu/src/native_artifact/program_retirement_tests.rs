@@ -47,7 +47,7 @@ fn exact_retirement_sets_keep_captures_current_elements_and_tail_returns() {
             )
             .unwrap();
             plan.validate_current_visits().unwrap();
-            let tables = RetirementTables::derive(&plan).unwrap();
+            let tables = RetirementTables::derive(&plan, &(&plan).scalar_aggregates()).unwrap();
             let aggregates = plan.scalar_aggregates();
             for (iteration, control) in plan.iterations().iter().enumerate() {
                 for kind in KINDS {

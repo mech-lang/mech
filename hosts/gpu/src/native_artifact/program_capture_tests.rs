@@ -8,16 +8,16 @@ fn check(jit: &JitProgramArtifact, text: &str) -> u64 {
     let expected_memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
     let input = string_value(
         descriptor,
-        descriptor.plan.transport_input_type(0).schema(),
+        descriptor.metadata().plan.transport_input_type(0).schema(),
         text,
         &expected_memory,
     );
-    let (inputs, observations) = if descriptor.plan.inputs().len() == 1 {
+    let (inputs, observations) = if descriptor.metadata().plan.inputs().len() == 1 {
         (vec![input], vec![])
     } else {
         (vec![], vec![input])
     };
-    let mut expected = vec![None; descriptor.plan.transport_output_count()];
+    let mut expected = vec![None; descriptor.metadata().plan.transport_output_count()];
     let mut entry = jit.test_generated_entry();
     let mut ordinary = Prepared::new(descriptor, limits(), &expected_memory).unwrap();
     ordinary.activate(&mut entry).unwrap();
@@ -52,8 +52,15 @@ fn check(jit: &JitProgramArtifact, text: &str) -> u64 {
         coexistence.retained_nodes,
         lines.retained_nodes + collections.retained_nodes
     );
-    let source = descriptor.prefix.as_ref().unwrap().frontier.read().count();
-    let start = descriptor.plan.transport_input_count();
+    let source = descriptor
+        .metadata()
+        .prefix
+        .as_ref()
+        .unwrap()
+        .frontier
+        .read()
+        .count();
+    let start = descriptor.metadata().plan.transport_input_count();
     for count in source.counts() {
         prepared.storage.values_mut()[start + count.get() as usize] = u64::MAX;
     }
@@ -143,11 +150,11 @@ fn check(jit: &JitProgramArtifact, text: &str) -> u64 {
         assert_eq!(
             a.as_ref()
                 .unwrap()
-                .canonical_snapshot_bytes(&descriptor.schemas)
+                .canonical_snapshot_bytes(&descriptor.metadata().schemas)
                 .unwrap(),
             b.as_ref()
                 .unwrap()
-                .canonical_snapshot_bytes(&descriptor.schemas)
+                .canonical_snapshot_bytes(&descriptor.metadata().schemas)
                 .unwrap()
         );
     }
@@ -239,6 +246,7 @@ fn fused_join_map_captured_chunks_preserve_original_decoded_unicode_crlf_and_emp
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
         assert_eq!(
             jit.descriptor()
+                .metadata()
                 .selected_joins
                 .maps
                 .iter()

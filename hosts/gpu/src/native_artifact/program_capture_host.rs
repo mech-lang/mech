@@ -33,14 +33,14 @@ impl<'a> NativeProgramExecutionSession<'a> {
         };
         if !self.capture_offered
             || self.capture.is_some()
-            || !descriptor.plan.inputs().is_empty()
-            || descriptor.plan.observations().len() != 1
+            || !descriptor.metadata().plan.inputs().is_empty()
+            || descriptor.metadata().plan.observations().len() != 1
         {
             return Ok(CanonicalNativeResourcePrepared::snapshot(self));
         }
         state.work.charge(
             NativeExecutionPhase::Setup,
-            amount(descriptor.plan.blocks().len(), 256, 4096)?,
+            amount(descriptor.metadata().plan.blocks().len(), 256, 4096)?,
         )?;
         if capture_admission::preflight(
             descriptor,
@@ -98,6 +98,7 @@ impl<'a> NativeProgramExecutionSession<'a> {
         };
         drop(initial);
         let source = descriptor
+            .metadata()
             .prefix
             .as_ref()
             .unwrap()
@@ -141,12 +142,13 @@ impl<'a> NativeProgramExecutionSession<'a> {
             .as_mut()
             .ok_or_else(|| invalid("text delivery to snapshot session"))?;
         let source = descriptor
+            .metadata()
             .plan
             .observations()
             .first()
             .ok_or_else(|| invalid("text delivery has no admitted observation"))?;
         if chunk.invocation() != self.invocation
-            || chunk.program_revision() != descriptor.plan.program_revision()
+            || chunk.program_revision() != descriptor.metadata().plan.program_revision()
             || chunk.site().node() != source.node()
             || chunk.site().requirement() != source.requirement()
             || chunk.site().schema() != source.ty().schema()
@@ -278,6 +280,7 @@ impl<'a> NativeProgramExecutionSession<'a> {
             // fallible scanner allocation. Their admissions precede the
             // saved body failure; failed execution state has already retired.
             let source = descriptor
+                .metadata()
                 .prefix
                 .as_ref()
                 .unwrap()
@@ -285,7 +288,7 @@ impl<'a> NativeProgramExecutionSession<'a> {
                 .read()
                 .count()
                 .lines();
-            let view = descriptor.calls[source.producer() as usize]
+            let view = descriptor.metadata().calls[source.producer() as usize]
                 .as_ref()
                 .unwrap()
                 .text_line_matrix_from_capture(
@@ -296,7 +299,7 @@ impl<'a> NativeProgramExecutionSession<'a> {
                 )
                 .map_err(|error| source_error(descriptor, error))?;
             let length = source.lengths()[0] as usize;
-            descriptor.calls[length]
+            descriptor.metadata().calls[length]
                 .as_ref()
                 .unwrap()
                 .text_line_matrix_length(
@@ -306,7 +309,7 @@ impl<'a> NativeProgramExecutionSession<'a> {
                     capture.prior,
                 )
                 .map_err(|error| NativeProgramExecutionError::Library {
-                    origin: descriptor.plan.blocks()[length].origin(),
+                    origin: descriptor.metadata().plan.blocks()[length].origin(),
                     error,
                 })?;
             drop(view);
@@ -345,6 +348,7 @@ fn source_error(
     error: NativeCollectionInvocationError,
 ) -> NativeProgramExecutionError {
     let site = descriptor
+        .metadata()
         .prefix
         .as_ref()
         .unwrap()
@@ -354,7 +358,7 @@ fn source_error(
         .lines()
         .producer();
     NativeProgramExecutionError::Library {
-        origin: descriptor.plan.blocks()[site as usize].origin(),
+        origin: descriptor.metadata().plan.blocks()[site as usize].origin(),
         error,
     }
 }

@@ -165,6 +165,7 @@ impl Context<'_, '_> {
                 let region = self
                     .control
                     .descriptor
+                    .metadata()
                     .parallel
                     .regions
                     .get(worker.region)
@@ -189,6 +190,7 @@ impl Context<'_, '_> {
         let descriptor = self.control.descriptor;
         let id = usize::try_from(args[2]).map_err(|_| invalid("parallel region index overflow"))?;
         let region = descriptor
+            .metadata()
             .parallel
             .regions
             .get(id)
@@ -250,7 +252,7 @@ impl Context<'_, '_> {
         let own_context = (self as *mut Self).cast::<std::ffi::c_void>();
         if frame.base.context != own_context
             || frame.base.version != abi::VERSION
-            || frame.base.local_count < descriptor.plan.values().len() as u64
+            || frame.base.local_count < descriptor.metadata().plan.values().len() as u64
             || frame.base.locals.is_null()
             || frame.phase == abi::PHASE_WORKER
         {
@@ -272,11 +274,12 @@ impl Context<'_, '_> {
         // may raise its normal native-stack allowance; that cannot silently
         // enlarge the bounded stack reserved for these workers.
         const CALLBACK_HEADROOM: usize = 1024 * 1024;
-        if descriptor.stack > (STACK - CALLBACK_HEADROOM) as u64 {
+        if descriptor.stack_bytes() > (STACK - CALLBACK_HEADROOM) as u64 {
             return Ok(Some(0));
         }
         let capture_slots = region.group.iter().try_fold(0usize, |total, &member| {
             let member = descriptor
+                .metadata()
                 .parallel
                 .regions
                 .get(member as usize)
@@ -326,7 +329,7 @@ impl Context<'_, '_> {
         let mut task_count = 0u64;
         for &member in &region.group {
             let member = member as usize;
-            let selected = &descriptor.parallel.regions[member];
+            let selected = &descriptor.metadata().parallel.regions[member];
             let source = self
                 .arena
                 .copy_current(selected.source, &mut self.control.work)?;
@@ -348,7 +351,7 @@ impl Context<'_, '_> {
             }
             let mut captures = transport(selected.captures.len(), "parallel capture allocation")?;
             for &slot in &selected.captures {
-                if descriptor.plan.values()[slot as usize]
+                if descriptor.metadata().plan.values()[slot as usize]
                     .scalar_kind()
                     .is_some()
                 {
@@ -394,7 +397,7 @@ impl Context<'_, '_> {
         if !worker_setup_fits(descriptor, &memory, task_count)? {
             return Ok(Some(0));
         }
-        let origin = descriptor.plan.collections()[region.collection as usize].origin();
+        let origin = descriptor.metadata().plan.collections()[region.collection as usize].origin();
         let (compute, comparisons) = self
             .library
             .unscoped_remaining()
@@ -633,6 +636,7 @@ impl Context<'_, '_> {
         let id = usize::try_from(args[0]).map_err(|_| invalid("parallel take region overflow"))?;
         let descriptor = self.control.descriptor;
         let region = descriptor
+            .metadata()
             .parallel
             .regions
             .get(id)
@@ -677,7 +681,7 @@ impl Context<'_, '_> {
         }
         if !region.contains(receipt.previous)
             || !super::super::program_parallel_layout::successors(
-                descriptor.plan.blocks()[receipt.previous as usize].terminator(),
+                descriptor.metadata().plan.blocks()[receipt.previous as usize].terminator(),
             )
             .contains(&Some(region.push))
         {
@@ -714,6 +718,7 @@ impl Context<'_, '_> {
             .ok_or_else(|| invalid("worker yield in parent invocation"))?;
         let descriptor = self.control.descriptor;
         let region = descriptor
+            .metadata()
             .parallel
             .regions
             .get(worker.region)
@@ -729,7 +734,7 @@ impl Context<'_, '_> {
             || self.control.current != Some(region.iteration)
             || !region.contains(previous)
             || !super::super::program_parallel_layout::successors(
-                descriptor.plan.blocks()[previous as usize].terminator(),
+                descriptor.metadata().plan.blocks()[previous as usize].terminator(),
             )
             .contains(&Some(region.push))
             || (self.action_required(previous as usize) && !self.consumed)
@@ -738,7 +743,7 @@ impl Context<'_, '_> {
         {
             return Err(invalid("worker escaped its exact result boundary"));
         }
-        let value = if descriptor.plan.values()[region.output as usize]
+        let value = if descriptor.metadata().plan.values()[region.output as usize]
             .scalar_kind()
             .is_some()
         {

@@ -5,12 +5,10 @@ use mech_engine::native_artifact::{
     NativeControlLoop, NativeProgramArtifactPlan, NativeTailLoop, NativeTextLineRetentionFrontier,
 };
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Region {
-    #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub frontier: NativeTextLineRetentionFrontier,
-    #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub tail: NativeTailLoop,
     pub borrowed: usize,
     #[allow(
@@ -21,25 +19,13 @@ pub(super) struct Region {
     pub header_work: u64,
 }
 
-/// An early completion bypass must not publish while acquisition is pending.
-/// Conservatively require this root Tail to dominate EVERY completion; an
-/// unsupported graph retains the ordinary, complete snapshot execution path.
-#[cfg(feature = "canonical-native-program")]
-pub(super) fn derive(
-    plan: &NativeProgramArtifactPlan,
-    borrowed: &program_borrowed_layout::Layout,
-    visits: &[NativeIterationVisit],
-) -> Result<Option<Region>, &'static str> {
-    let frontiers = plan.text_line_retention_frontiers();
-    derive_with_frontiers(plan, borrowed, visits, &frontiers)
-}
-
 /// Descriptor preparation supplies its freshly derived, same-plan inventory;
 /// sharing it with identity hashing must not discard unsupported frontiers.
 pub(super) fn derive_with_frontiers(
     plan: &NativeProgramArtifactPlan,
     borrowed: &program_borrowed_layout::Layout,
     visits: &[NativeIterationVisit],
+    aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
     frontiers: &[NativeTextLineRetentionFrontier],
 ) -> Result<Option<Region>, &'static str> {
     let [frontier] = frontiers else {
@@ -68,7 +54,6 @@ pub(super) fn derive_with_frontiers(
         }
         pending.extend(visits[site as usize].successors().into_iter().flatten());
     }
-    let aggregates = plan.scalar_aggregates();
     let Some((_carrier, width)) = aggregates.slot(tail.carrier()) else {
         return Ok(None);
     };

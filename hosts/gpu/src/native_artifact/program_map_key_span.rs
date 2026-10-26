@@ -30,6 +30,7 @@ impl State<'_> {
         self.guard(ctx, site)?;
         let layout = self
             .descriptor
+            .metadata()
             .map_owner_words
             .as_ref()
             .ok_or_else(|| invalid("map key projection lacks layout"))?;
@@ -43,10 +44,10 @@ impl State<'_> {
         {
             return Err(invalid("map key projection outside owning loop"));
         }
-        let selected = self.descriptor.calls[site]
+        let selected = self.descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("map key projection lacks selected factory"))?;
-        let origin = self.descriptor.plan.blocks()[site].origin();
+        let origin = self.descriptor.metadata().plan.blocks()[site].origin();
         let geometry = self
             .geometry(ctx, site)?
             .ok_or_else(|| invalid("map key projection lacks caller geometry"))?;

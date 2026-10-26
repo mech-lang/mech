@@ -12,14 +12,13 @@ impl Context<'_, '_> {
         let descriptor = self.control.descriptor;
         self.control.work.charge(
             super::super::NativeExecutionPhase::Setup,
-            super::super::amount(descriptor.string_map_regions.len(), 128, 256)?,
+            super::super::amount(descriptor.metadata().string_map_regions.len(), 128, 256)?,
         )?;
-        let region = descriptor
-            .string_map_regions
+        let region = descriptor.metadata().string_map_regions
             .iter()
             .find(|region| {
                 u64::from(region.collection()) == args[1]
-                    && matches!(&descriptor.plan.iterations()[region.iteration() as usize],
+                    && matches!(&descriptor.metadata().plan.iterations()[region.iteration() as usize],
                 NativeControlLoop::Collection(generator) if generator.header() as usize==site)
             })
             .ok_or_else(|| invalid("compiled String map outside its immutable plan"))?;
@@ -74,12 +73,13 @@ impl Context<'_, '_> {
         }
         let descriptor = self.control.descriptor;
         let region = descriptor
+            .metadata()
             .string_map_regions
             .iter()
             .find(|r| r.collection() == collection)
             .ok_or_else(|| invalid("compiled String map lost its plan"))?;
         let NativeControlLoop::Collection(generator) =
-            &descriptor.plan.iterations()[region.iteration() as usize]
+            &descriptor.metadata().plan.iterations()[region.iteration() as usize]
         else {
             return Err(invalid("compiled String map lost generator"));
         };

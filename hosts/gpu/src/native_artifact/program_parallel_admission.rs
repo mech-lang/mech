@@ -6,22 +6,26 @@ use mech_core::ManagedNodeReservation;
 use mech_engine::native_artifact::{NativeCollectionResult, NativeIterationAction};
 
 pub(super) fn supported(descriptor: &NativeProgramDescriptor, id: usize) -> bool {
-    let Some(region) = descriptor.parallel.regions.get(id) else {
+    let Some(region) = descriptor.metadata().parallel.regions.get(id) else {
         return false;
     };
     for &site in &region.sites {
         let site = site as usize;
-        if descriptor.line_matrices.sites[site].is_some()
-            || descriptor.selected_joins.sites[site].is_some()
-            || descriptor.borrowed_strings.initializers[site].is_some()
-            || descriptor.borrowed_strings.action(site).is_some()
+        if descriptor.metadata().line_matrices.sites[site].is_some()
+            || descriptor.metadata().selected_joins.sites[site].is_some()
+            || descriptor.metadata().borrowed_strings.initializers[site].is_some()
+            || descriptor
+                .metadata()
+                .borrowed_strings
+                .action(site)
+                .is_some()
         {
             return false;
         }
         if let NativeIterationAction::CollectionBegin { collection } =
-            descriptor.plan.blocks()[site].action()
+            descriptor.metadata().plan.blocks()[site].action()
         {
-            let collection = &descriptor.plan.collections()[*collection as usize];
+            let collection = &descriptor.metadata().plan.collections()[*collection as usize];
             if collection.string_span_projection().is_some()
                 || collection.string_element_map_projection().is_some()
                 || !matches!(
@@ -66,6 +70,7 @@ impl Context<'_, '_> {
             let region = self
                 .control
                 .descriptor
+                .metadata()
                 .parallel
                 .regions
                 .get(id)

@@ -78,7 +78,7 @@ fn mul(a: u64, b: u64) -> Result<u64, Error> {
 }
 fn library(ctx: &Context<'_, '_>, site: usize, error: InvokeError) -> Error {
     Error::Library {
-        origin: ctx.control.descriptor.plan.blocks()[site].origin(),
+        origin: ctx.control.descriptor.metadata().plan.blocks()[site].origin(),
         error,
     }
 }
@@ -132,6 +132,7 @@ impl Context<'_, '_> {
         }
         let descriptor = self.control.descriptor;
         let region = descriptor
+            .metadata()
             .selected_joins
             .regions
             .get(state.region)
@@ -141,8 +142,9 @@ impl Context<'_, '_> {
             Phase::Selected(_) => region.consumer(),
             Phase::Fusing(_) | Phase::Mapped(_) => unreachable!(),
         } as usize;
-        let block = &descriptor.plan.blocks()[site];
-        if block.iteration() != descriptor.plan.blocks()[region.selection() as usize].iteration()
+        let block = &descriptor.metadata().plan.blocks()[site];
+        if block.iteration()
+            != descriptor.metadata().plan.blocks()[region.selection() as usize].iteration()
             || self.control.current != state.parent
             || (site != expected
                 && !matches!(
@@ -164,7 +166,7 @@ impl Context<'_, '_> {
     /// False selects the ordinary maintained calls, never a different executor.
     pub(super) fn selected_join_call(&mut self, site: usize, words: &[u64]) -> Result<bool, Error> {
         let descriptor = self.control.descriptor;
-        let Some(role) = descriptor.selected_joins.sites[site] else {
+        let Some(role) = descriptor.metadata().selected_joins.sites[site] else {
             return Ok(false);
         };
         #[cfg(all(test, feature = "canonical-native-program"))]
@@ -184,8 +186,8 @@ impl Context<'_, '_> {
         let index = match role {
             Site::Range(index) | Site::Select(index) | Site::Join(index) => index,
         };
-        let region = &descriptor.selected_joins.regions[index];
-        let call = descriptor.calls[site]
+        let region = &descriptor.metadata().selected_joins.regions[index];
+        let call = descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("selected join lost its prepared call"))?;
         match role {
@@ -326,7 +328,7 @@ impl Context<'_, '_> {
                 self.arena
                     .retire_current(region.selected().get(), &mut self.control.work)?;
                 if let Some(captured) = &self.line_matrices.captured {
-                    let lines = &descriptor.line_matrices.regions[captured.ordinal];
+                    let lines = &descriptor.metadata().line_matrices.regions[captured.ordinal];
                     if lines.matrix() == region.source()
                         && lines.selections() == [site as u32]
                         && self.line_window.is_none()
@@ -400,7 +402,8 @@ impl Context<'_, '_> {
         let Phase::Selected(view) = phase else {
             return Err(invalid("selected join consumer precedes selection"));
         };
-        let source = self.control.descriptor.selected_joins.regions[region_index].source();
+        let source =
+            self.control.descriptor.metadata().selected_joins.regions[region_index].source();
         let prior = self.selected_join_coexistence(Some(source))?;
         let compute_limit = self
             .limits
@@ -418,8 +421,8 @@ impl Context<'_, '_> {
                     .map_err(|e| library(self, site, e.into()))?;
                 let memory = self.library.memory_budget();
                 let descriptor = self.control.descriptor;
-                let region = &descriptor.selected_joins.regions[region_index];
-                let call = descriptor.calls[site]
+                let region = &descriptor.metadata().selected_joins.regions[region_index];
+                let call = descriptor.metadata().calls[site]
                     .as_ref()
                     .ok_or_else(|| invalid("selected join consumer call"))?;
                 let ValueData::String(text_separator) = separator.data() else {
@@ -442,7 +445,10 @@ impl Context<'_, '_> {
                     .map_err(|_| invalid("selected join output footprint"))?;
                 // Covers the actual target and canonical construction/import together,
                 // not a nonexistent intermediate Matrix or a credit for future drops.
-                let envelope = add(descriptor.scalar_bytes, add(mul(payload, 4)?, 4096)?)?;
+                let envelope = add(
+                    descriptor.metadata().scalar_bytes,
+                    add(mul(payload, 4)?, 4096)?,
+                )?;
                 let finalization = add(mul(payload, 8)?, 32)?;
                 let compute = add(
                     add(mul(envelope, 16)?, finalization)?,
@@ -561,14 +567,14 @@ impl Context<'_, '_> {
                 call.selected_matrix_join_append_consuming(view, separator, &mut text, &memory)
                     .map_err(|e| library(self, site, e))?;
                 let canonical = SnapshotCanonicalizationBudget::new(finalization);
-                let output = &descriptor.plan.values()[region.output().get() as usize];
+                let output = &descriptor.metadata().plan.values()[region.output().get() as usize];
                 ValueDraft {
                     schema: output.schema(),
                     shape_values: Box::new([]),
                     data: ValueDataDraft::String(text),
                 }
                 .finalize(
-                    &SnapshotValidationContext::with_shared_schemas(&descriptor.schemas)
+                    &SnapshotValidationContext::with_shared_schemas(&descriptor.metadata().schemas)
                         .with_canonicalization_budget(&canonical),
                 )
                 .map_err(Error::Snapshot)?

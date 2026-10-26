@@ -228,7 +228,7 @@ impl State {
         self.account(ctx, id, 0, add(mul(text.len() as u64, 64)?, 256)?)?;
         // Only descriptors that already fund the weak fact may use it. The
         // fresh source/generation checks and complete scan charge above stay.
-        let ascii = if ctx.control.descriptor.window_regions.is_empty() {
+        let ascii = if ctx.control.descriptor.metadata().window_regions.is_empty() {
             mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(text)
         } else {
             self.ascii_facts.inspect(&source)?
@@ -426,7 +426,8 @@ impl State {
                 .as_ref()
                 .ok_or_else(|| invalid("lost map root loan"))?
                 .clone();
-            let selected = ctx.control.descriptor.calls[region.selection_site() as usize]
+            let selected = ctx.control.descriptor.metadata().calls
+                [region.selection_site() as usize]
                 .as_ref()
                 .ok_or_else(|| invalid("compiled String map lost selected factory"))?;
             let builder = self.builder(id)?;

@@ -10,10 +10,9 @@ pub(super) enum Site {
     Join(usize),
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Layout {
-    #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub regions: Box<[NativeSelectedTextJoin]>,
     pub sites: Box<[Option<Site>]>,
     pub maps: Box<[Option<mapped::Map>]>,
@@ -41,7 +40,10 @@ impl Layout {
         Ok(())
     }
 
-    pub(super) fn derive(plan: &NativeProgramArtifactPlan) -> Result<Self, String> {
+    pub(super) fn derive(
+        plan: &NativeProgramArtifactPlan,
+        string_maps: &[mech_engine::native_artifact::NativeStringMapRegion],
+    ) -> Result<Self, String> {
         let regions = plan.selected_text_joins().into_boxed_slice();
         let mut sites = vec![None; plan.blocks().len()].into_boxed_slice();
         for (index, region) in regions.iter().enumerate() {
@@ -62,7 +64,6 @@ impl Layout {
                 }
             }
         }
-        let string_maps = plan.string_map_regions();
         let maps = regions
             .iter()
             .map(|join| mapped::derive(plan, join, &string_maps))

@@ -27,7 +27,7 @@ pub(super) struct Visit {
 }
 impl Visit {
     pub(super) fn current(ctx: &Context<'_, '_>, site: usize) -> Result<Self, Error> {
-        let iteration = ctx.control.descriptor.plan.blocks()[site]
+        let iteration = ctx.control.descriptor.metadata().plan.blocks()[site]
             .iteration()
             .ok_or_else(|| invalid("String span outside a generated candidate"))?;
         let remaining = *ctx
@@ -143,13 +143,13 @@ impl State {
             return Err(invalid("String span selector replayed before consumption"));
         }
         let descriptor = ctx.control.descriptor;
-        let proof = descriptor.plan.collections()[id as usize]
+        let proof = descriptor.metadata().plan.collections()[id as usize]
             .string_span_projection()
             .ok_or_else(|| invalid("String span selector lacks selected proof"))?;
         if proof.range_site() as usize != site {
             return Err(invalid("String span selector at another original site"));
         }
-        let selected = descriptor.calls[site]
+        let selected = descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("String span selector lacks retained factory"))?;
         // Descriptor preparation already bound this immutable exact template.
@@ -200,7 +200,7 @@ impl State {
     ) -> Result<(), Error> {
         self.builder(id)?;
         let descriptor = ctx.control.descriptor;
-        let proof = descriptor.plan.collections()[id as usize]
+        let proof = descriptor.metadata().plan.collections()[id as usize]
             .string_span_projection()
             .ok_or_else(|| invalid("String span projection lacks selected proof"))?;
         if proof.selection_site() as usize != site {
@@ -214,7 +214,7 @@ impl State {
         if visit != Visit::current(ctx, site)? {
             return Err(invalid("String span selector belongs to another candidate"));
         }
-        let selected = descriptor.calls[site]
+        let selected = descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("String span projection lacks retained factory"))?;
         let handle = ctx
@@ -343,7 +343,7 @@ impl State {
     ) -> Result<Yield, Error> {
         self.builder(id)?;
         let descriptor = ctx.control.descriptor;
-        let collection = &descriptor.plan.collections()[id as usize];
+        let collection = &descriptor.metadata().plan.collections()[id as usize];
         if collection.string_element_map_projection().is_some() {
             return self.take_string_map_yield(ctx, id, value);
         }

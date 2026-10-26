@@ -16,7 +16,7 @@ struct Observation {
 }
 thread_local! { static LAST: Cell<Option<Observation>> = const { Cell::new(None) }; }
 pub(super) fn observe(ctx: &Context<'_, '_>, ordinal: usize) {
-    let region = &ctx.control.descriptor.line_matrices.regions[ordinal];
+    let region = &ctx.control.descriptor.metadata().line_matrices.regions[ordinal];
     let view = ctx.line_matrices.views[ordinal].as_ref();
     LAST.with(|last| {
         last.set(Some(Observation {
@@ -176,7 +176,7 @@ fn emitted_scanner_uses_no_matrix_and_preserves_owner_over_activation_and_errors
             }
             let jit =
                 JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
-            assert_eq!(jit.descriptor().line_matrices.regions.len(), 1);
+            assert_eq!(jit.descriptor().metadata().line_matrices.regions.len(), 1);
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
             let mut outputs = vec![None; artifact.outputs().len()];
             let input = argument(&artifact, 3, &memory);

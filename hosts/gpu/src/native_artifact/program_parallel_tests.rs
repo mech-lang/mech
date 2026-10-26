@@ -31,6 +31,7 @@ unsafe extern "C" fn observe(
         && ctx
             .control
             .descriptor
+            .metadata()
             .parallel
             .regions
             .iter()
@@ -165,8 +166,13 @@ first + ";" + second
     for artifact in [original, decoded] {
         let catalog = mech_stdlib::source_catalog();
         let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        assert_eq!(jit.descriptor().parallel.regions.len(), 2);
-        assert_eq!(jit.descriptor().parallel.regions[0].group.as_ref(), &[0, 1]);
+        assert_eq!(jit.descriptor().metadata().parallel.regions.len(), 2);
+        assert_eq!(
+            jit.descriptor().metadata().parallel.regions[0]
+                .group
+                .as_ref(),
+            &[0, 1]
+        );
         let image = jit.descriptor().encode_build_owned_image().unwrap();
         // SAFETY: unchanged image and checked entry share this retained build.
         let restored =
@@ -292,13 +298,14 @@ text := text/join([letters{char} | char <- seed<string>], "")"#,
             2,
             "both worker source bodies have guarded versions"
         );
-        assert_eq!(jit.descriptor().parallel.regions.len(), 2);
+        assert_eq!(jit.descriptor().metadata().parallel.regions.len(), 2);
         let image = jit.descriptor().encode_build_owned_image().unwrap();
         // SAFETY: restored metadata and the retained generated entry share this build.
         let restored =
             unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
         for descriptor in [jit.descriptor(), &restored] {
             let domains = descriptor
+                .metadata()
                 .closed_tails
                 .regions
                 .iter()
@@ -312,6 +319,7 @@ text := text/join([letters{char} | char <- seed<string>], "")"#,
                 .collect::<Vec<_>>();
             assert_eq!(domains, [(2, Some(0)), (2, Some(0))]);
             for proof in descriptor
+                .metadata()
                 .closed_tails
                 .regions
                 .iter()
@@ -489,8 +497,13 @@ first + ";" + second
         &mech_stdlib::source_catalog(),
     )
     .unwrap();
-    assert_eq!(jit.descriptor().parallel.regions.len(), 2);
-    assert_eq!(jit.descriptor().parallel.regions[0].group.as_ref(), &[0, 1]);
+    assert_eq!(jit.descriptor().metadata().parallel.regions.len(), 2);
+    assert_eq!(
+        jit.descriptor().metadata().parallel.regions[0]
+            .group
+            .as_ref(),
+        &[0, 1]
+    );
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
     let args = vec![input(&artifact, &memory)];
     let baseline = (memory.used_bytes(), memory.retained_nodes());
@@ -754,7 +767,12 @@ first + ";" + second
         &mech_stdlib::source_catalog(),
     )
     .unwrap();
-    assert_eq!(jit.descriptor().parallel.regions[0].group.as_ref(), &[0, 1]);
+    assert_eq!(
+        jit.descriptor().metadata().parallel.regions[0]
+            .group
+            .as_ref(),
+        &[0, 1]
+    );
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
     let args = vec![input(&artifact, &memory)];
     let baseline = (memory.used_bytes(), memory.retained_nodes());
@@ -802,9 +820,19 @@ text/join([count-text(dependent, width, n) | n <- second-items], ",")
         &mech_stdlib::source_catalog(),
     )
     .unwrap();
-    assert_eq!(jit.descriptor().parallel.regions.len(), 2);
-    assert_eq!(jit.descriptor().parallel.regions[0].group.as_ref(), &[0]);
-    assert_eq!(jit.descriptor().parallel.regions[1].group.as_ref(), &[1]);
+    assert_eq!(jit.descriptor().metadata().parallel.regions.len(), 2);
+    assert_eq!(
+        jit.descriptor().metadata().parallel.regions[0]
+            .group
+            .as_ref(),
+        &[0]
+    );
+    assert_eq!(
+        jit.descriptor().metadata().parallel.regions[1]
+            .group
+            .as_ref(),
+        &[1]
+    );
 }
 
 #[test]
@@ -824,7 +852,7 @@ fn worker_phase_requires_owned_child_state_before_entering_source_body() {
     let baseline = (memory.used_bytes(), memory.retained_nodes());
     let mut output = vec![None; artifact.outputs().len()];
     let entry = jit.test_checked_entry();
-    let begin = jit.descriptor().parallel.regions[0].begin;
+    let begin = jit.descriptor().metadata().parallel.regions[0].begin;
     let error = execute(
         jit.descriptor(),
         |frame| {

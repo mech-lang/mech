@@ -45,7 +45,7 @@ impl State<'_> {
         if args[1..] != [0; 2] {
             return Err(invalid("malformed frozen-map argument lane"));
         }
-        let layout = &self.descriptor.frozen_maps;
+        let layout = &self.descriptor.metadata().frozen_maps;
         let selected = match operation {
             FROZEN_MAP_COPY => &layout.copies,
             FROZEN_MAP_READ => &layout.reads,
@@ -72,7 +72,7 @@ impl State<'_> {
         ctx.control
             .work
             .charge(Phase::Setup, amount(proof.aliases.len(), 128, 512)?)?;
-        let block = &self.descriptor.plan.blocks()[site];
+        let block = &self.descriptor.metadata().plan.blocks()[site];
         let result = match (operation, block.action()) {
             (FROZEN_MAP_COPY, Action::Scalar(Scalar::Copy { source, output })) => {
                 if !proof.aliases.contains(&source.get()) || !proof.aliases.contains(&output.get())
@@ -100,7 +100,7 @@ impl State<'_> {
                 let query = ctx
                     .arena
                     .copy_current(operands[1].get(), &mut ctx.control.work)?;
-                let ty = &self.descriptor.plan.values()[operands[1].get() as usize];
+                let ty = &self.descriptor.metadata().plan.values()[operands[1].get() as usize];
                 if query.schema() != ty.schema()
                     || query.schema_key() != ty.schema_key()
                     || query
@@ -140,7 +140,7 @@ impl State<'_> {
                         } else {
                             ValueData::U64(word)
                         };
-                        let out = &self.descriptor.plan.values()[output.get() as usize];
+                        let out = &self.descriptor.metadata().plan.values()[output.get() as usize];
                         let footprint =
                             canonical_data_retained_footprint(out.definition().body(), &raw)
                                 .map_err(|_| invalid("frozen read output footprint differs"))?;
@@ -158,7 +158,7 @@ impl State<'_> {
                         cap(ctx.limits.max_cloned_bytes)?;
                         let memory = work.memory_budget();
                         check(
-                            add(memory.used_bytes(), self.descriptor.scalar_bytes)?,
+                            add(memory.used_bytes(), self.descriptor.metadata().scalar_bytes)?,
                             ctx.limits.max_temporary_bytes,
                             "frozen read temporary bytes",
                         )?;
@@ -190,7 +190,7 @@ impl Context<'_, '_> {
         &self,
         site: usize,
     ) -> bool {
-        let proof = &self.control.descriptor.frozen_maps;
+        let proof = &self.control.descriptor.metadata().frozen_maps;
         proof
             .copies
             .get(site)
@@ -234,9 +234,13 @@ impl Context<'_, '_> {
         };
         self.control.work.charge(
             Phase::Setup,
-            amount(state.descriptor.frozen_maps.regions.len(), 64, 64)?,
+            amount(
+                state.descriptor.metadata().frozen_maps.regions.len(),
+                64,
+                64,
+            )?,
         )?;
-        for proof in &state.descriptor.frozen_maps.regions {
+        for proof in &state.descriptor.metadata().frozen_maps.regions {
             if proof.parent == Some(iteration) {
                 drop(state.slots[proof.owner].frozen.take());
             }

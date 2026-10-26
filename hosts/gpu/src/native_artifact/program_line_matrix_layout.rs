@@ -7,10 +7,9 @@ pub(super) enum Site {
     Length(usize),
 }
 
-#[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Debug, serde::Serialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Layout {
-    #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub regions: Vec<NativeTextLineMatrixRegion>,
     pub sites: Vec<Option<Site>>,
     pub matrices: Vec<Option<usize>>,

@@ -146,7 +146,7 @@ impl Owner<'_> {
             // A source lookup miss is a library failure, even when its table
             // access was lowered into the private packed representation.
             return Err(Error::Library {
-                origin: self.descriptor.plan.blocks()[site].origin(),
+                origin: self.descriptor.metadata().plan.blocks()[site].origin(),
                 error: mech_engine::native_artifact::NativeCollectionInvocationError::Kernel(
                     mech_core::ResidentKernelError::InvalidInput,
                 ),
@@ -187,7 +187,7 @@ impl Owner<'_> {
                                 self.selector.as_ref(),
                             )
                             .map_err(|error| Error::Library {
-                                origin: self.descriptor.plan.blocks()[site].origin(),
+                                origin: self.descriptor.metadata().plan.blocks()[site].origin(),
                                 error,
                             })
                     },
@@ -218,7 +218,7 @@ impl Owner<'_> {
             // original diagnostic origin after the range has succeeded.
             let selection_site = if op == 6 { self.selection_site } else { site };
             let bad = || Error::Library {
-                origin: self.descriptor.plan.blocks()[selection_site].origin(),
+                origin: self.descriptor.metadata().plan.blocks()[selection_site].origin(),
                 error: mech_engine::native_artifact::NativeCollectionInvocationError::Kernel(
                     mech_core::ResidentKernelError::InvalidInput,
                 ),
@@ -314,7 +314,7 @@ impl<'plan> State<'plan> {
         ctx: &mut Context<'plan, '_>,
         region: usize,
     ) -> Result<Option<[u64; 4]>, Error> {
-        let proof = &self.descriptor.closed_tails.regions[region];
+        let proof = &self.descriptor.metadata().closed_tails.regions[region];
         let index = proof
             .map
             .ok_or_else(|| invalid("closed map missing owner proof"))?;
@@ -340,7 +340,7 @@ impl<'plan> State<'plan> {
         let Some(binding) = self.slots[index].binding.as_ref() else {
             return Ok(None);
         };
-        let layout = self.descriptor.map_owner_words.as_ref().unwrap();
+        let layout = self.descriptor.metadata().map_owner_words.as_ref().unwrap();
         let span = layout
             .spans()
             .iter()
@@ -370,7 +370,7 @@ impl<'plan> State<'plan> {
         let Some(geometry) = self.geometry(ctx, proof.tail.initialize() as usize)? else {
             return Ok(None);
         };
-        let range = self.descriptor.calls[span.range_site() as usize]
+        let range = self.descriptor.metadata().calls[span.range_site() as usize]
             .as_ref()
             .ok_or_else(|| invalid("closed map missing maintained range factory"))?;
         // The selected range's shape/cardinality scratch is retained for this
@@ -536,7 +536,7 @@ impl<'plan, 'a> Context<'plan, 'a> {
         if !matches!(mode, 0 | 2 | 3) {
             return Err(invalid("closed map cannot suspend"));
         }
-        let index = self.control.descriptor.closed_tails.regions[region]
+        let index = self.control.descriptor.metadata().closed_tails.regions[region]
             .map
             .unwrap();
         let state = self
@@ -575,6 +575,7 @@ impl<'plan, 'a> Context<'plan, 'a> {
             if mode == 0 {
                 let frozen_proof = state
                     .descriptor
+                    .metadata()
                     .frozen_maps
                     .regions
                     .iter()

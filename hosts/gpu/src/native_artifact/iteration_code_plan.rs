@@ -9,28 +9,28 @@ use mech_engine::native_artifact::{
 pub(super) enum CodePlan<'a> {
     Scalar(&'a NativeIterationArtifactPlan),
     #[cfg(feature = "canonical-native-program")]
-    Program(&'a mech_engine::native_artifact::NativeProgramArtifactPlan),
+    Program(&'a super::program::prepare::PreparedNativeProgram),
 }
 impl<'a> CodePlan<'a> {
     pub fn blocks(self) -> &'a [NativeIterationBlock] {
         match self {
             Self::Scalar(p) => p.blocks(),
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(p) => p.blocks(),
+            Self::Program(p) => p.plan().blocks(),
         }
     }
     pub fn iteration_count(self) -> usize {
         match self {
             Self::Scalar(p) => p.iterations().len(),
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(p) => p.iterations().len(),
+            Self::Program(p) => p.plan().iterations().len(),
         }
     }
     pub fn iteration(self, index: usize) -> NativeControlLoopRef<'a> {
         match self {
             Self::Scalar(p) => (&p.iterations()[index]).into(),
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(p) => p.iterations()[index].as_ref(),
+            Self::Program(p) => p.plan().iterations()[index].as_ref(),
         }
     }
     pub fn is_program(self) -> bool {
@@ -44,42 +44,42 @@ impl<'a> CodePlan<'a> {
         match self {
             Self::Scalar(p) => p.entry(),
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(p) => p.entry(),
+            Self::Program(p) => p.plan().entry(),
         }
     }
     pub fn activation_boundary(self) -> Option<u32> {
         match self {
             Self::Scalar(_) => None,
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(plan) => plan.activation_boundary(),
+            Self::Program(plan) => plan.plan().activation_boundary(),
         }
     }
     pub fn value_count(self) -> usize {
         match self {
             Self::Scalar(p) => p.values().len(),
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(p) => p.values().len(),
+            Self::Program(p) => p.plan().values().len(),
         }
     }
     pub fn input_count(self) -> usize {
         match self {
             Self::Scalar(p) => p.inputs().len(),
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(p) => p.transport_input_count(),
+            Self::Program(p) => p.plan().transport_input_count(),
         }
     }
     pub fn output_count(self) -> usize {
         match self {
             Self::Scalar(p) => p.outputs().len(),
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(p) => p.transport_output_count(),
+            Self::Program(p) => p.plan().transport_output_count(),
         }
     }
     pub fn constant_count(self) -> usize {
         match self {
             Self::Scalar(p) => p.constants().len(),
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(p) => p.constants().len(),
+            Self::Program(p) => p.plan().constants().len(),
         }
     }
     pub fn kind(self, value: NativeMatchValue) -> Option<NativeScalarKind> {
@@ -87,6 +87,7 @@ impl<'a> CodePlan<'a> {
             Self::Scalar(p) => p.values().get(value.get() as usize).map(|ty| ty.kind()),
             #[cfg(feature = "canonical-native-program")]
             Self::Program(p) => p
+                .plan()
                 .values()
                 .get(value.get() as usize)
                 .and_then(|ty| ty.scalar_kind()),
@@ -96,14 +97,14 @@ impl<'a> CodePlan<'a> {
         match self {
             Self::Scalar(p) => p.inputs()[index].value(),
             #[cfg(feature = "canonical-native-program")]
-            Self::Program(p) => p.transport_input_value(index),
+            Self::Program(p) => p.plan().transport_input_value(index),
         }
     }
     #[cfg(feature = "canonical-native-program")]
     pub fn output(self, index: usize) -> NativeMatchValue {
         match self {
             Self::Scalar(p) => p.outputs()[index].value(),
-            Self::Program(p) => p.transport_output_value(index),
+            Self::Program(p) => p.plan().transport_output_value(index),
         }
     }
     pub fn constant(
@@ -117,6 +118,7 @@ impl<'a> CodePlan<'a> {
             ),
             #[cfg(feature = "canonical-native-program")]
             Self::Program(p) => {
+                let p = p.plan();
                 let c = &p.constants()[index];
                 let scalar = match (self.kind(c.value()), c.constant().data()) {
                     (None, _) => None,
@@ -157,6 +159,7 @@ impl<'a> CodePlan<'a> {
             Self::Scalar(p) => super::iteration_compiler::validate(p),
             #[cfg(feature = "canonical-native-program")]
             Self::Program(p) => p
+                .plan()
                 .validate_current_visits()
                 .map_err(|reason| NativeCompileError::InvalidPlan { node: None, reason }),
         }?;
