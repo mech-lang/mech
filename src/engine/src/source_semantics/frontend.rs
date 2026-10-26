@@ -10545,7 +10545,32 @@ impl SemanticBuilder {
                 // Selection drafts can retain unused source-axis declarations.
                 // Match results require the exact canonical schema later used
                 // by the artifact, rather than an identical draft environment.
-                let mut schema_identity = schema.clone().finalize().map_err(|error| {
+                let candidate_identity = schema.clone().finalize().map_err(|error| {
+                    internal(
+                        SourceSemanticAnchor::for_node(&arm.syntax),
+                        format!("unable to finalize match result schema: {error:?}"),
+                    )
+                })?;
+                if result_schema_identity
+                    .as_ref()
+                    .is_some_and(|expected| expected != &candidate_identity)
+                {
+                    let expected = result_schema.as_ref().unwrap();
+                    if body.specialize_tail_recur_result(expected, &arm.syntax) {
+                        schema = expected.clone();
+                    } else if lowered.iter().all(|arm| arm.body.tail_recur_result())
+                        && lowered
+                            .iter_mut()
+                            .all(|arm| arm.body.specialize_tail_recur_result(&schema, syntax))
+                    {
+                        result_schema = Some(schema.clone());
+                        result_schema_identity = Some(candidate_identity);
+                    }
+                }
+                // Dimension specialization supplies the concrete schema for
+                // terminal recursion; every arm still passes this exact final
+                // semantic check before it enters the canonical artifact.
+                let schema_identity = schema.clone().finalize().map_err(|error| {
                     internal(
                         SourceSemanticAnchor::for_node(&arm.syntax),
                         format!("unable to finalize match result schema: {error:?}"),
@@ -10555,24 +10580,11 @@ impl SemanticBuilder {
                     .as_ref()
                     .is_some_and(|expected| expected != &schema_identity)
                 {
-                    let expected = result_schema.as_ref().unwrap();
-                    if body.specialize_tail_recur_result(expected, &arm.syntax) {
-                        schema = expected.clone();
-                        schema_identity = result_schema_identity.as_ref().unwrap().clone();
-                    } else if lowered.iter().all(|arm| arm.body.tail_recur_result())
-                        && lowered
-                            .iter_mut()
-                            .all(|arm| arm.body.specialize_tail_recur_result(&schema, syntax))
-                    {
-                        result_schema = Some(schema.clone());
-                        result_schema_identity = Some(schema_identity.clone());
-                    } else {
-                        return Err(SourceSemanticError {
-                            code: "source-semantics/incompatible-match-result-kind",
-                            message: "match arms require one exact result schema".to_owned(),
-                            anchor: SourceSemanticAnchor::for_node(&arm.syntax),
-                        });
-                    }
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/incompatible-match-result-kind",
+                        message: "match arms require one exact result schema".to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(&arm.syntax),
+                    });
                 }
                 result_schema_identity.get_or_insert(schema_identity);
                 result_schema.get_or_insert(schema);
