@@ -258,11 +258,29 @@ publication and recovery. Field reads with both real buffers take about 0.044
 seconds and request 20384163 bytes across 9045 allocations in the unoptimized
 test build. The source/artifact checks and maintained access factory remain.
 
-The collector completes initialization and reaches its first cache-header write,
-but still completes no search position. The maintained `core/assign/indexed-axis`
-kernel requests 138048930 temporary bytes against 132918256 bytes available after
-binding. The call took 10.452813417 seconds and requested 151971689 bytes across
-33264 allocations before rejection. Publication remained empty and retained
-memory was unchanged. Requested allocation bytes are cumulative heap requests,
-not peak memory or measured copy bytes. This is the next compiler blocker;
-it is not a compression timing. All resource allowances remain unchanged.
+Plain unsigned indexed updates now construct a packed replacement after the
+existing bounds, routing and mutation admission. The maintained implementation's
+memory class admits its packed constructor instead of scalar drafts; other
+output kinds keep the canonical finalizer bound. Updating either end of the real
+1500513-word U32 buffer succeeds for original and decoded artifacts, takes about
+1.03 seconds and requests 6157958 allocation bytes. Bounds rejection preserves
+the preceding publication and input aliases, and the next valid update succeeds.
+Rectangular indexing is checked for U8/U16/U32/U64 buffers as well.
+
+The collector now gets past cache writes but still has no completed six-position
+result. At `core/composite-pack` (node 0, block 243, local 0), managed memory
+requires 274541914 bytes against the unchanged 268435456-byte limit. Execution
+took 15.377818042 seconds and requested 231881425 bytes across 195482 allocations.
+Publication remained empty and retained memory was unchanged. Intermediate
+positions are not published, so their completed count is unreported on failure.
+Requested allocation bytes are cumulative heap requests, not peak memory or
+measured copy bytes. This is the next compiler blocker; it is not a compression
+timing. All resource allowances and compressor expected values remain unchanged.
+
+Removing draft construction changes representation-dependent budget receipts:
+the shallow packed projection must fit below its old draft expansion, and the
+default resident Huffman call reaches ComparisonWork admission (68699 against
+65536) before ComputeWork. Those tests retain their rejection, publication,
+cleanup and retry checks. The broader run passed 116 tests; the precise updated
+Huffman budget check then passed separately. No compressor reference vector or
+qualification allowance was changed.

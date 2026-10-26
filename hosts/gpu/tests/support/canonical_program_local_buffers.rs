@@ -229,7 +229,7 @@ fn document_mutation_keeps_its_retained_state_semantics() {
 }
 
 #[test]
-fn packed_buffer_projection_admits_expanded_drafts_before_allocating() {
+fn packed_buffer_projection_admits_packed_storage_before_allocating() {
     use mech_core::{
         SchemaBody as B, ValueDraft,
         snapshot::{EnumDraft, SnapshotValidationContext},
@@ -333,8 +333,8 @@ fn packed_buffer_projection_admits_expanded_drafts_before_allocating() {
         let expansion = 4096
             * (core::mem::size_of::<Data>() + core::mem::size_of::<mech_core::ValueData>()) as u64;
         assert!(
-            violation.required > expansion,
-            "packed cells need expanded temporary storage"
+            violation.required > 4096 && violation.required < expansion,
+            "projection must fund its packed payload and owners without scalar drafts"
         );
         assert_eq!(memory.used_bytes(), before);
         policy.max_temporary_bytes = Some(violation.required - 1);

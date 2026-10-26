@@ -4,6 +4,59 @@ use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
 use mech_gpu::native_artifact::JitProgramArtifact;
 
 #[test]
+fn unsigned_updates_preserve_linear_indexing_of_rectangular_matrices() {
+    for width in [8, 16, 32, 64] {
+        let word = |value: u64| match width {
+            8 => Data::U8(value as u8),
+            16 => Data::U16(value as u16),
+            32 => Data::U32(value as u32),
+            64 => Data::U64(value),
+            _ => unreachable!(),
+        };
+        let source = format!(
+            "<buffer> := <[u{width}]:2,3>\nreplace(xs<buffer>, at<u64>, word<u{width}>) => (out<buffer>) :=\n  ~next := xs\n  next[at] = word\n  out := next.\nreplace(input<buffer>, at<u64>, word<u{width}>)\n"
+        );
+        for artifact in artifacts(&source).0 {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let mut output = vec![None; artifact.outputs().len()];
+            // Mech linear indices visit columns; canonical Matrix cells are
+            // stored by rows. Pin each destination independently of the kernel.
+            for (at, cell) in (1..=6).zip([0, 3, 1, 4, 2, 5]) {
+                let original = Data::Matrix((1..=6).map(word).collect());
+                let args = inputs(
+                    &artifact,
+                    &[
+                        ("input", original),
+                        ("at", Data::U64(at)),
+                        ("word", word(127)),
+                    ],
+                    &memory,
+                );
+                jit.evaluate_into(&args, &mut output, limits(), &memory)
+                    .unwrap();
+                equal(&artifact, &output, &reference(&artifact, &args));
+                let mut expected = (1..=6).map(word).collect::<Vec<_>>();
+                expected[cell] = word(127);
+                assert_eq!(
+                    output
+                        .last()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    Data::Matrix(expected.into())
+                );
+            }
+            drop(output);
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}
+
+#[test]
 fn real_u32_buffer_update_preserves_other_words_aliases_and_retries() {
     let source = "replace(xs<[u32]>, at<u64>, word<u32>) => (out<[u32]>) :=\n  ~next := xs\n  next[at] = word\n  out := next.\nreplace(input<[u32]>, at<u64>, word<u32>)\n";
     for (form, artifact) in ["original", "decoded"].into_iter().zip(artifacts(source).0) {

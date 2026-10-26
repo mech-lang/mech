@@ -3,6 +3,7 @@ mod compact_range;
 mod compact_string_access;
 pub mod linkage_factories;
 mod nested_assignment;
+mod packed_indexed_assign;
 mod promoted_assignment;
 mod selected_string_footprint;
 #[cfg(all(feature = "native-artifact", feature = "pure_text"))]
@@ -9424,12 +9425,18 @@ fn indexed_assign_snapshot(
         .checked_add(source_bytes)
         .and_then(|bytes| bytes.checked_add(execution_clone_footprint.retained_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let container_bytes = super::budget::checked_u64(
-        output_len
-            .checked_add(source_len)
-            .and_then(|count| count.checked_mul(core::mem::size_of::<ValueDataDraft>()))
-            .ok_or(ResidentKernelError::InvalidShape)?,
-    )?;
+    let packed = kernel.retained_state::<SemanticArithmetic>().is_none()
+        && super::structural_values::word_matrix(current_schema.body());
+    let container_bytes = if packed {
+        0
+    } else {
+        super::budget::checked_u64(
+            output_len
+                .checked_add(source_len)
+                .and_then(|count| count.checked_mul(core::mem::size_of::<ValueDataDraft>()))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )?
+    };
     let footprint_work = footprint_meter.estimate();
     let metadata = kernel
         .snapshot_output()
@@ -9488,6 +9495,26 @@ fn indexed_assign_snapshot(
     )?
     .admit()?
     .into_plan();
+    if packed {
+        let next = packed_indexed_assign::construct(
+            kernel,
+            current,
+            source,
+            packed_indexed_assign::Plan {
+                positions,
+                routing: source_routing,
+                rows,
+                columns,
+                source_rows,
+                source_columns,
+            },
+        )?;
+        let changed = !current
+            .snapshot_eq(schemas, &next, schemas)
+            .map_err(|_| ResidentKernelError::InvalidOutput)?;
+        *target = Some(next);
+        return Ok(changed);
+    }
     let ValueDataDraft::Matrix(mut next) = current
         .canonical_data_draft()
         .map_err(|_| ResidentKernelError::InvalidOutput)?

@@ -204,6 +204,16 @@ fn inputs(
                 .1
                 .clone();
             let shape_values = match &data {
+                ValueDataDraft::Matrix(_)
+                    if artifact
+                        .schemas()
+                        .get(input.schema)
+                        .unwrap()
+                        .dimension_parameters()
+                        .is_empty() =>
+                {
+                    Box::new([])
+                }
                 ValueDataDraft::Matrix(values) => mech_core::shape_for_resolved_extents(
                     artifact.schemas().get(input.schema).unwrap(),
                     &[1, values.len() as u64],

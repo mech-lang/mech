@@ -665,7 +665,7 @@ factory!(
     NUMERIC_CORE_ASSIGN_INDEXED_AXIS,
     &["core", "assign"],
     "indexed-axis",
-    CanonicalFinalize,
+    PackedUnsignedMatrixUpdateOrCanonicalFinalize,
     super::bind_indexed_assign
 );
 factory!(

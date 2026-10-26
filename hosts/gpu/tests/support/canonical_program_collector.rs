@@ -61,12 +61,43 @@ fn real_buffer_collector_prefix_carries_consecutive_search_and_skip_updates() {
                 }),
             _ => None,
         };
+        let failing_binding = match &result {
+            Err(mech_gpu::native_artifact::NativeProgramExecutionError::Library {
+                origin, ..
+            }) => jit
+                .descriptor()
+                .plan()
+                .blocks()
+                .iter()
+                .find(|block| block.origin() == *origin)
+                .and_then(|block| match block.action() {
+                    mech_engine::native_artifact::NativeIterationAction::LibraryCall {
+                        template,
+                        ..
+                    } => {
+                        let call =
+                            mech_engine::native_artifact::prepare_native_program_library_call(
+                                &artifact,
+                                template,
+                                &mech_stdlib::source_catalog(),
+                            )
+                            .unwrap();
+                        Some(
+                            serde_json::json!({"metadata_bytes":call.binding_metadata_bytes(),
+                            "inputs":template.inputs().len(),
+                            "output":format!("{:?}",template.output().body())}),
+                        )
+                    }
+                    _ => None,
+                }),
+            _ => None,
+        };
         println!(
             "{}",
             serde_json::json!({
                 "witness":"real-buffer-collector-prefix", "artifact":form,
                 "input_bytes":320, "requested_positions":6,
-                "completed_prefix_positions":if result.is_ok() {6} else {0},
+                "completed_prefix_positions":result.as_ref().ok().map(|_| 6),
                 "table_u16_entries":262_144, "cache_u32_words":1_500_513,
                 "depth":300, "nice":258, "compile_seconds":compile_seconds,
                 "elapsed_seconds":elapsed, "allocation_requests":allocations,
@@ -74,6 +105,7 @@ fn real_buffer_collector_prefix_carries_consecutive_search_and_skip_updates() {
                 "retained_before":retained_before,"retained_after":memory.used_bytes(),
                 "result":format!("{result:?}"),"success":result.is_ok(),
                 "failing_operation":failing_operation,
+                "failing_binding":failing_binding,
             })
         );
         assert!(

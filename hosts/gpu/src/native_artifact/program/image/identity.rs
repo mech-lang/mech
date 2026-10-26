@@ -58,6 +58,7 @@ fn selected_template(
         M::CanonicalFinalize => (6, 0, 0),
         M::CanonicalSortUnique => (7, 0, 0),
         M::PackedStringMatrixOrCanonicalFinalize => (8, 0, 0),
+        M::PackedUnsignedMatrixUpdateOrCanonicalFinalize => (9, 0, 0),
     };
     for number in [tag as u64, a as u64, b as u64] {
         word(hash, number);
@@ -374,7 +375,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 106;
 // through the existing typed constructor, without scalar draft expansion.
 // Policy78 keeps selected unsigned aggregate fields packed in the maintained
 // access leaf, with unchanged selector/shape checks and copy admission.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 78;
+// Policy79 constructs plain unsigned indexed updates in packed storage after
+// the existing routing, bounds, finalization and publication admission.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 79;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -724,6 +727,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
                     M::CanonicalFinalize => (6, 0, 0),
                     M::CanonicalSortUnique => (7, 0, 0),
                     M::PackedStringMatrixOrCanonicalFinalize => (8, 0, 0),
+                    M::PackedUnsignedMatrixUpdateOrCanonicalFinalize => (9, 0, 0),
                 };
                 for n in [tag, a as u64, b as u64] {
                     word(&mut hash, n);

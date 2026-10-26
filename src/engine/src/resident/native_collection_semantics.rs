@@ -165,7 +165,7 @@ pub mod linkage_factories {
         CORE_ASSIGN_INDEXED_AXIS,
         &["core", "assign"],
         "indexed-axis",
-        CanonicalFinalize,
+        ImplementationMemoryClass::PackedUnsignedMatrixUpdateOrCanonicalFinalize,
         super::super::numeric::bind_indexed_assign,
         NativeCollectionPrimitive::MatrixIndexedReplace
     );

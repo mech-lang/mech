@@ -16,6 +16,7 @@ enum MemoryClassImage {
     MatrixSolve,
     CanonicalFinalize,
     PackedStringMatrixOrCanonicalFinalize,
+    PackedUnsignedMatrixUpdateOrCanonicalFinalize,
     CanonicalSortUnique,
 }
 impl From<ImplementationMemoryClass> for MemoryClassImage {
@@ -30,6 +31,9 @@ impl From<ImplementationMemoryClass> for MemoryClassImage {
             M::MatrixSolve => Self::MatrixSolve,
             M::CanonicalFinalize => Self::CanonicalFinalize,
             M::PackedStringMatrixOrCanonicalFinalize => Self::PackedStringMatrixOrCanonicalFinalize,
+            M::PackedUnsignedMatrixUpdateOrCanonicalFinalize => {
+                Self::PackedUnsignedMatrixUpdateOrCanonicalFinalize
+            }
             M::CanonicalSortUnique => Self::CanonicalSortUnique,
         }
     }
@@ -78,6 +82,10 @@ fn memory_class_image_preserves_all_descriptive_tags_and_full_width_fields() {
         (
             M::CanonicalSortUnique,
             serde_json::json!("CanonicalSortUnique"),
+        ),
+        (
+            M::PackedUnsignedMatrixUpdateOrCanonicalFinalize,
+            serde_json::json!("PackedUnsignedMatrixUpdateOrCanonicalFinalize"),
         ),
     ] {
         assert_eq!(
