@@ -33,7 +33,9 @@ pub(super) const MOVE: u64 = GlobalHelper::Move.raw();
 pub(super) const COLLECTION: u64 = GlobalHelper::Collection.raw();
 pub(super) const OUTPUT_BASE: u64 = 3;
 // Private compiled-region loans within the SAME turn, not new transactions.
+#[cfg(any(test, feature = "canonical-native-program"))]
 pub(super) const BORROWED_STRINGS_PREPARE: u64 = GlobalHelper::BorrowedStringsPrepare.raw();
+#[cfg(any(test, feature = "canonical-native-program"))]
 pub(super) const CLOSED_TAIL_BEGIN: u64 = GlobalHelper::ClosedTailBegin.raw();
 #[cfg(test)]
 pub(super) const CLOSED_TAIL_END: u64 = GlobalHelper::ClosedTailEnd.raw();
