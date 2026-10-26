@@ -1,0 +1,24 @@
+{
+  "name": "uniform-final-real-buffer-witness",
+  "command": [
+    "/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-161b919374daec0a",
+    "collector_qualification::real_buffer",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-reality-check",
+  "head": "f0d209a6f482266790cdb14dd8c0a0662c33beb1",
+  "dirty": "",
+  "exit": 101,
+  "seconds": 50.491103172302246,
+  "log": "/private/tmp/mech-stack-landscape-20261026/reality-check/uniform-final-real-buffer-witness.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

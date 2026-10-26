@@ -1,0 +1,165 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-reality-check/src/core)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-deflate-reality-check/src/syntax)
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-deflate-reality-check/src/bytecode)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-reality-check/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-reality-check/src/compute)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-reality-check/src/stdlib)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-deflate-reality-check/src/runtime)
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/combinatorics)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/set)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/math)
+   Compiling mech-range v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/range)
+   Compiling mech-logic v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/logic)
+   Compiling mech-string v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/string)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/compare)
+   Compiling mech-stats v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/stats)
+   Compiling mech-matrix v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/matrix)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+   Compiling mech-build v0.3.5 (/private/tmp/mech-deflate-reality-check/src/build)
+    Finished `test` profile [unoptimized] target(s) in 8m 06s
+     Running tests/canonical_artifact_program.rs (/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-161b919374daec0a)
+
+running 125 tests
+test argument_transport_qualification::large_checked_arguments_keep_bounded_allocations_aliases_and_recovery ... ok
+test argument_transport_qualification::recursive_word_buffer_arguments_keep_packed_storage_checks_and_recovery ... ok
+test argument_transport_qualification::unused_unsigned_buffer_argument_keeps_its_check_before_caller_arithmetic ... ok
+test binary_tree_qualification::binary_tree_search_and_skip_compile_as_separate_native_walks ... ok
+test binary_tree_qualification::differential::binary_tree_search_and_skip_match_all_pinned_c_table_and_cache_transitions ... ok
+test binding_pressure_qualification::repeated_record_bindings_leave_room_for_execution_and_preserve_recovery ... ok
+test collection_qualification::collection_dimension_denials_release_workspace_preserve_output_and_recover ... ok
+test collection_qualification::collection_publication_counts_a_body_string_while_its_yield_draft_is_copied ... ok
+test collection_qualification::collection_publication_retained_nodes_match_the_canonical_matrix_footprint ... ok
+test collection_qualification::filtered_string_visits_admit_the_old_and_new_element_coexistence_peak ... ok
+test collection_qualification::filtered_wildcard_visits_remain_cumulative_collection_compute ... ok
+test collection_qualification::general_mech_window_function_compiles_without_a_window_helper ... ok
+test collection_qualification::generated_dynamic_ranges_feed_ordinary_comprehensions ... ok
+test collection_qualification::generated_nested_generators_filters_wildcards_and_literal_loops_keep_their_scopes ... ok
+test collection_qualification::large_unsigned_comprehension_initializes_a_real_buffer_and_recovers_after_denial ... ok
+test collection_qualification::late_checked_error_discards_partial_collection_and_recovers_on_the_same_jit ... ok
+test collection_qualification::one_compiled_pattern_lift_preserves_rows_columns_and_empty_axes_across_calls ... ok
+test collection_qualification::packed_word_collection_keeps_copy_limits_and_current_output_on_rejection ... ok
+test collection_qualification::scalar_matrix_and_ordered_set_sources_preserve_exact_element_kinds ... ok
+test collection_qualification::string_iteration_retirement_preserves_captures_yields_and_nested_results ... ok
+test collection_qualification::unicode_string_and_matrix_generators_keep_exact_canonical_elements ... ok
+test dynamic_buffer_qualification::deflate_node_helpers_can_return_their_dynamic_arrays_together ... ok
+test dynamic_buffer_qualification::dynamic_buffer_pack_rebinds_current_shapes_between_visits_in_one_invocation ... ok
+test dynamic_buffer_qualification::dynamic_buffer_tuple_failure_preserves_publication_and_memory_before_retry ... ok
+test dynamic_buffer_qualification::dynamic_buffer_tuple_images_require_the_exact_maintained_pack_factory ... ok
+test dynamic_buffer_qualification::dynamic_tuple_returns_keep_independent_current_buffer_shapes ... ok
+test dynamic_buffer_qualification::dynamic_word_buffers_pack_into_tuples ... ok
+test dynamic_buffer_qualification::nested_dynamic_buffer_tuple_and_record_components_keep_separate_shapes ... ok
+test dynamic_projection_qualification::admission::dynamic_projection_admits_shape_metadata_and_expanded_drafts_atomically ... ok
+test dynamic_projection_qualification::admission::dynamic_tuple_projections_check_factory_at_lowering_and_roundtrip_build_images ... ok
+test dynamic_projection_qualification::dynamic_array_constant_tuple_reads_preserve_nested_shapes ... ok
+test dynamic_projection_qualification::dynamic_array_tuple_destructuring_preserves_independent_parameter_arenas ... ok
+test dynamic_projection_qualification::record_field_binding_uses_the_current_selector_and_preserves_factory_evidence ... ok
+test dynamic_projection_qualification::record_fields_preserve_live_buffer_shapes_and_recover_after_later_failure ... ok
+test dynamic_projection_qualification::recursion::function_local_mutation_is_fresh_for_repeated_calls_and_broadcast_visits ... ok
+test dynamic_projection_qualification::recursion::non_tail_and_partial_recursion_keep_explicit_native_rejections ... ok
+test dynamic_projection_qualification::recursion::ordinary_tail_recursion_can_carry_and_update_dynamic_arrays ... ok
+test dynamic_projection_qualification::recursion::ordinary_tail_recursion_uses_scalar_argument_tuples_and_keeps_overflow_errors ... ok
+test huffman_qualification::constant_tuple_reads_preserve_heterogeneous_fields_and_image_metadata ... ok
+test huffman_qualification::deflate_huffman_kernel_matches_the_pinned_c_builder ... ok
+test huffman_qualification::full_huffman_resident_denial_preserves_the_real_resource_budget_error ... ok
+test huffman_qualification::minimal_resident_nested_tuple_return_preserves_the_buffer ... ok
+test huffman_qualification::nested_fsm_local_definitions_shadow_and_restore_the_callers_names ... ok
+test huffman_qualification::transition_tuple_destructuring_keeps_maintained_diagnostics ... ok
+test huffman_qualification::transition_tuple_destructuring_recomputes_bindings_on_every_visit ... ok
+test huffman_qualification::transition_tuple_rhs_keeps_unused_element_errors_atomic_and_recovers ... ok
+test huffman_qualification::tuple_projection_requires_the_real_access_factory_and_constant_ordinal ... ok
+test lexical_invariant_qualification::argument_kinds::float_buffer_capture_keeps_direct_and_expression_caller_checks_before_reads ... ok
+test lexical_invariant_qualification::argument_kinds::unused_argument_check_precedes_closed_caller_arithmetic ... ok
+test lexical_invariant_qualification::argument_kinds::unused_float_buffer_keeps_argument_order_and_assertion_recovery ... ok
+test lexical_invariant_qualification::binary_tree_table_and_window_checks_precede_the_later_reads ... ok
+test lexical_invariant_qualification::constant_false_invariant_is_dormant_in_an_unselected_function_arm ... ok
+test lexical_invariant_qualification::deflate_extension_checks_rocs_window_before_loading_or_advancing_the_length ... ok
+test lexical_invariant_qualification::document_invariants_keep_their_existing_root_constraint_semantics ... ok
+test lexical_invariant_qualification::filtered_comprehensions_skip_a_function_invariant_for_filtered_elements ... ok
+test lexical_invariant_qualification::function_invariant_precedes_later_closed_arithmetic ... ok
+test lexical_invariant_qualification::function_invariant_precedes_the_later_division_and_recovers ... ok
+test lexical_invariant_qualification::function_invariant_precedes_the_later_out_of_bounds_read ... ok
+test lexical_invariant_qualification::invariants_in_broadcasts_keep_empty_visits_and_discard_partial_results ... ok
+test lexical_invariant_qualification::lexical_integrity_has_its_own_failure_in_scalar_match_and_counted_profiles ... ok
+test lexical_invariant_qualification::order::a_reached_load_failure_precedes_a_later_false_assertion ... ok
+test lexical_invariant_qualification::order::evaluating_a_check_can_overflow_before_its_boolean_result_exists ... ok
+test lexical_invariant_qualification::order::nested_calls_use_each_calls_current_argument_in_source_order ... ok
+test lexical_invariant_qualification::order::two_false_checks_report_the_first_reached_check ... ok
+test lexical_invariant_qualification::visits::assertion_paths_keep_a_finite_work_limit_and_allow_retry ... ok
+test lexical_invariant_qualification::visits::expression_caller_keeps_a_checked_left_operand_before_a_closed_failure ... ok
+test lexical_invariant_qualification::visits::nested_counted_checked_call_precedes_later_closed_failure ... ok
+test lexical_invariant_qualification::visits::nested_piped_checked_call_precedes_later_closed_failure ... ok
+test lexical_invariant_qualification::visits::nested_unused_checked_call_precedes_later_closed_failure ... ok
+test lexical_invariant_qualification::visits::recursive_invariant_failure_discards_prior_buffer_writes_and_recovers ... ok
+test lexical_invariant_qualification::visits::resident_success_failure_retry_preserves_publication_aliases_and_memory ... ok
+test lexical_invariant_qualification::visits::unused_checked_result_is_observable_in_nested_invocations ... ok
+test lexical_invariant_qualification::zero_repeated_application_does_not_execute_a_constant_false_invariant ... ok
+test linked_qualification::linked_uniform_words_restore_the_same_plan_fact_and_recover ... FAILED
+test local_buffer_qualification::document_mutation_keeps_its_retained_state_semantics ... ok
+test local_buffer_qualification::enum_state_pack_admits_unsigned_buffer_draft_expansion ... ok
+test local_buffer_qualification::indexed_replace_images_restore_only_the_maintained_factory ... ok
+test local_buffer_qualification::local_word_buffer_versions_preserve_inputs_and_recover_after_bounds_errors ... ok
+test local_buffer_qualification::packed_buffer_projection_admits_packed_storage_before_allocating ... ok
+test local_buffer_qualification::transition_buffer_loop_carries_latest_version_between_visits ... ok
+test local_buffer_qualification::transition_local_scalar_versions_are_recomputed_on_each_visit ... ok
+test matchfinder_qualification::capacity::deflate_node_helpers_handle_the_full_binary_tree_table_capacity ... ok
+test matchfinder_qualification::deflate_biased_node_indices_keep_wrapping_window_arithmetic ... ok
+test matchfinder_qualification::deflate_matchfinder_byte_words_hash_and_extend_match_pinned_c ... ok
+test matchfinder_qualification::deflate_node_initialization_uses_a_comprehension_for_empty_and_live_extents ... ok
+test matchfinder_qualification::deflate_node_rebase_broadcast_matches_the_pinned_c_signed_bias ... ok
+test matchfinder_qualification::reads::deflate_byte_prefix_and_word_reads_default_zero_for_unreadable_windows ... ok
+test matchfinder_qualification::reads::deflate_prefix_and_word_reads_preserve_all_bits_at_unaligned_offsets ... ok
+test narrow_word_qualification::narrow_comparison_assertions_keep_error_order_publication_and_retry ... ok
+test narrow_word_qualification::narrow_comparisons_preserve_unsigned_boundaries_and_buffer_reads ... ok
+test narrow_word_qualification::narrow_generator_yields_and_checked_late_cast_errors_preserve_publication ... ok
+test narrow_word_qualification::narrow_reads_and_widening_execute_with_zero_snapshot_clones ... ok
+test narrow_word_qualification::narrow_selectors_keep_the_ordinary_indexed_access_fallback ... ok
+test nested_tail_qualification::nested_calls_cannot_discard_work_or_claim_a_partial_child_is_total ... ok
+test nested_tail_qualification::nested_tail_array_mutation_preserves_input_and_discards_late_failure ... ok
+test nested_tail_qualification::nested_tail_calls_keep_a_scalar_carrier_and_recover_after_work_denial ... ok
+test nested_tail_qualification::nested_tail_function_helpers_keep_their_own_loop_targets ... ok
+test nested_tail_qualification::ordinary_tail_calls_under_nested_matches_keep_the_outer_argument_tuple ... ok
+test nested_tail_qualification::scalar_tail_carriers_retire_managed_string_locals_between_visits ... ok
+test packed_field_qualification::real_word_buffer_fields_preserve_publication_aliases_and_recover_after_failure ... ok
+test packed_update_qualification::real_u32_buffer_update_preserves_other_words_aliases_and_retries ... ok
+test packed_update_qualification::unsigned_updates_preserve_linear_indexing_of_rectangular_matrices ... ok
+test range_cursor_qualification::hoisted_range_cursor_executes_before_the_builder_and_reads_each_invocations_endpoints ... ok
+test range_cursor_qualification::nested_selected_range_cursors_reset_for_each_outer_visit_and_each_invocation ... ok
+test range_cursor_qualification::range_cursor_selection_rejects_replaced_factories_before_binding_or_execution ... ok
+test range_cursor_qualification::representation::selected_range_layout_boundary_precedes_body_errors_and_matches_materialized_range ... ok
+test range_cursor_qualification::representation::selected_range_layout_check_does_not_move_admission_or_waive_real_output_quotas ... ok
+test range_cursor_qualification::selected_range_cursor_keeps_every_candidate_filter_order_and_only_admits_real_output ... ok
+test range_cursor_qualification::selected_range_cursor_preserves_terminal_empty_and_overflow_errors_and_recovers ... ok
+test recursive_statement_qualification::checked_boolean_self_recursion_uses_fresh_arguments_in_application_stages ... ok
+test recursive_statement_qualification::checked_self_recursion_agrees_for_direct_and_application_calls ... ok
+test recursive_statement_qualification::non_tail_statement_recursion_is_canonical_but_still_rejects_native_lowering ... ok
+test recursive_statement_qualification::recursive_record_return_accepts_a_source_initialized_buffer ... ok
+test recursive_statement_qualification::recursive_return_dimension_specialization_keeps_kinds_and_fixed_extents_exact ... ok
+test recursive_statement_qualification::recursive_statement_arrays_keep_their_shapes_and_fresh_mutable_locals ... ok
+test recursive_statement_qualification::recursive_statement_invariants_execute_on_the_current_visit ... ok
+test recursive_statement_qualification::recursive_statement_late_failure_and_work_denial_preserve_output_and_recover ... ok
+test recursive_statement_qualification::recursive_statement_locals_use_the_current_scalar_and_tuple_arguments ... ok
+test recursive_statement_qualification::recursive_statement_named_outputs_share_the_canonical_result_tuple ... ok
+test shared_transport_qualification::repeated_buffer_returns_share_storage_keep_finite_work_and_recover ... ok
+test uniform_words_qualification::repeated_uniform_calls_read_the_current_word_and_count ... ok
+test uniform_words_qualification::uniform_constructor_keeps_range_overflow_before_output_rejection ... ok
+test uniform_words_qualification::uniform_optimizer_leaves_selected_assertions_in_the_ordinary_body ... ok
+test uniform_words_qualification::uniform_unsigned_values_keep_clone_quotas_prior_outputs_and_recovery ... ok
+test uniform_words_qualification::uniform_word_facts_keep_the_exact_region_and_reject_effects_or_varying_yields ... ok
+
+failures:
+
+---- linked_qualification::linked_uniform_words_restore_the_same_plan_fact_and_recover stdout ----
+
+thread 'linked_qualification::linked_uniform_words_restore_the_same_plan_fact_and_recover' (15992541) panicked at hosts/gpu/tests/support/canonical_program_linked.rs:133:5:
+assertion `left == right` failed
+  left: 0
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    linked_qualification::linked_uniform_words_restore_the_same_plan_fact_and_recover
+
+test result: FAILED. 124 passed; 1 failed; 0 ignored; 0 measured; 133 filtered out; finished in 291.28s
+
+error: test failed, to rerun pass `-p mech-gpu --test canonical_artifact_program`
