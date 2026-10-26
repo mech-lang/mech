@@ -325,3 +325,13 @@ expose inherited compiler-only test imports, so the bounded eight-test launcher
 qualification uses the maintained host compiler test profile while runtime-only
 production compilation is checked independently. Final generated-process
 qualification and performance remain Stage H gates.
+
+Shared definition phases: the one JIT/Object path now separates declarations,
+checked entry/prologue, source actions/terminators and measured finalization.
+A private compiler-local definition borrows the same prepared metadata and owns
+its controls/report; it introduces no runtime representation or eligibility
+authority. Outlined functions retain their declaration order, every emitted
+visit retains the distinct conservative instruction-envelope check, and final
+stack/code totals still come from actual backend measurements including outlined
+bodies and shims. Both scalar-only and program compiler profiles compile; all
+32 source/decoded object/metadata/image/bytecode files still match I exactly.
