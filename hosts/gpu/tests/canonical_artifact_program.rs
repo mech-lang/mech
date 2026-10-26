@@ -93,6 +93,9 @@ mod dynamic_buffer_qualification;
 #[path = "support/canonical_program_dynamic_projections.rs"]
 mod dynamic_projection_qualification;
 
+#[path = "support/canonical_program_packed_fields.rs"]
+mod packed_field_qualification;
+
 #[path = "support/canonical_program_nested_tail.rs"]
 mod nested_tail_qualification;
 
