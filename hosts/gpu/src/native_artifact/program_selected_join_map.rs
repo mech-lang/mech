@@ -101,6 +101,7 @@ impl Context<'_, '_> {
         }
         let descriptor = self.control.descriptor;
         let Some(proof) = descriptor
+            .metadata()
             .selected_joins
             .maps
             .get(region)
@@ -124,7 +125,7 @@ impl Context<'_, '_> {
             return Ok(None);
         };
         let mech_engine::native_artifact::NativeCollectionResult::TextJoin(sink) =
-            descriptor.plan.collections()[proof.collection as usize].result()
+            descriptor.metadata().plan.collections()[proof.collection as usize].result()
         else {
             return Ok(None);
         };
@@ -148,7 +149,7 @@ impl Context<'_, '_> {
             .ok_or_else(|| invalid("joined map lost physical chunks"))?;
         // Optional estimates use a wider integer so an unfundable optimization
         // declines instead of introducing a new source overflow/failure.
-        let bound = u128::from(descriptor.scalar_bytes) * 16
+        let bound = u128::from(descriptor.metadata().scalar_bytes) * 16
             + 16384
             + u128::from(view.payload_bytes()) * 56
             + view.count() as u128 * 128
@@ -177,7 +178,7 @@ impl Context<'_, '_> {
         {
             return Ok(None);
         }
-        let call = descriptor.calls[site]
+        let call = descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("joined map lost its selected join"))?;
         if !call
@@ -235,6 +236,7 @@ impl Context<'_, '_> {
         let proof = self
             .control
             .descriptor
+            .metadata()
             .selected_joins
             .maps
             .get(state.region)
@@ -286,7 +288,7 @@ impl Context<'_, '_> {
         let Phase::Mapped(mapped) = &mut state.phase else {
             return Ok(None);
         };
-        let proof = self.control.descriptor.selected_joins.maps[state.region]
+        let proof = self.control.descriptor.metadata().selected_joins.maps[state.region]
             .as_ref()
             .ok_or_else(|| invalid("joined map initializer lost its use proof"))?;
         if mapped.initialized
@@ -310,7 +312,7 @@ impl Context<'_, '_> {
         if !matches!(state.phase, Phase::Mapped(_)) {
             return Err(invalid("String map reached an unfinished join"));
         }
-        let proof = self.control.descriptor.selected_joins.maps[state.region]
+        let proof = self.control.descriptor.metadata().selected_joins.maps[state.region]
             .as_ref()
             .ok_or_else(|| invalid("joined map header lost its proof"))?;
         if proof.collection != region.collection() || proof.iteration != region.iteration() {
@@ -355,7 +357,8 @@ impl Context<'_, '_> {
                 .selected_join
                 .as_mut()
                 .ok_or_else(|| invalid("joined-map copy has no owner"))?;
-            if descriptor.selected_joins.regions[state.region].consumer() as usize != site
+            if descriptor.metadata().selected_joins.regions[state.region].consumer() as usize
+                != site
                 || self.control.current != state.parent
             {
                 return Err(invalid("joined-map copy uses another visit"));
@@ -442,7 +445,9 @@ impl Context<'_, '_> {
             .selected_join
             .as_mut()
             .ok_or_else(|| invalid("joined-map completion lost its owner"))?;
-        if self.control.descriptor.selected_joins.regions[state.region].consumer() as usize != site
+        if self.control.descriptor.metadata().selected_joins.regions[state.region].consumer()
+            as usize
+            != site
             || self.control.current != state.parent
         {
             return Err(invalid("joined-map completion uses another visit"));
@@ -524,7 +529,7 @@ impl Context<'_, '_> {
         let text =
             String::from_utf8(bytes).map_err(|_| invalid("joined map wrote invalid UTF8"))?;
         let descriptor = self.control.descriptor;
-        let call = descriptor.calls[site]
+        let call = descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("joined map lost its prepared join factory"))?;
         // The original full join envelope was admitted before allocation. Move
@@ -540,7 +545,9 @@ impl Context<'_, '_> {
         drop(envelope);
         let memory = self.library.memory_budget();
         self.arena.retire_current(
-            descriptor.selected_joins.regions[region].output().get(),
+            descriptor.metadata().selected_joins.regions[region]
+                .output()
+                .get(),
             &mut self.control.work,
         )?;
         self.fused_string_map_bytes = self
@@ -557,7 +564,9 @@ impl Context<'_, '_> {
                 owner,
                 count: payload,
                 processed: missing.unwrap_or(payload),
-                slot: descriptor.selected_joins.regions[region].output().get(),
+                slot: descriptor.metadata().selected_joins.regions[region]
+                    .output()
+                    .get(),
                 initialized: false,
             }),
         });
@@ -572,7 +581,7 @@ fn library_at(
     error: InvokeError,
 ) -> Error {
     Error::Library {
-        origin: descriptor.plan.blocks()[site].origin(),
+        origin: descriptor.metadata().plan.blocks()[site].origin(),
         error,
     }
 }

@@ -38,7 +38,7 @@ fn complete_invocation_metadata_is_shared_and_denied_without_leaking_prior_state
         "WORKER_SETUP_CENSUS held_bytes={} envelope_bytes={} constant_bounds={}",
         baseline.0,
         fixed_bytes,
-        descriptor.constant_bytes.iter().sum::<u64>()
+        descriptor.metadata().constant_bytes.iter().sum::<u64>()
     );
     assert!(
         baseline.0 <= fixed_bytes,
@@ -96,8 +96,8 @@ fn simultaneous_worker_constructor_preflight_checks_bytes_and_nodes_without_leak
     .unwrap();
     let descriptor = jit.descriptor();
     assert_eq!(
-        descriptor.constant_admission_bytes,
-        descriptor.constant_bytes.iter().sum::<u64>()
+        descriptor.metadata().constant_admission_bytes,
+        descriptor.metadata().constant_bytes.iter().sum::<u64>()
     );
     let image = descriptor.encode_build_owned_image().unwrap();
     // SAFETY: this is the same still-owned generated build and exact image.
@@ -106,8 +106,8 @@ fn simultaneous_worker_constructor_preflight_checks_bytes_and_nodes_without_leak
     }
     .unwrap();
     assert_eq!(
-        restored.constant_admission_bytes,
-        descriptor.constant_admission_bytes
+        restored.metadata().constant_admission_bytes,
+        descriptor.metadata().constant_admission_bytes
     );
     assert_eq!(
         restored.encode_build_owned_image().unwrap(),
@@ -115,7 +115,7 @@ fn simultaneous_worker_constructor_preflight_checks_bytes_and_nodes_without_leak
         "derived constructor sums must not add an injectable serialized field"
     );
     let mut malformed: serde_json::Value = serde_json::from_slice(&image).unwrap();
-    assert!(descriptor.constant_bytes.len() > 1);
+    assert!(descriptor.metadata().constant_bytes.len() > 1);
     malformed["descriptor"]["constant_bytes"][0] = u64::MAX.into();
     let malformed = serde_json::to_vec(&malformed).unwrap();
     // SAFETY: decoder-only negative test; no result can execute generated code.
@@ -166,9 +166,10 @@ fn ordinary_nested_join_body_retains_parallel_node_admission() {
             &mech_stdlib::source_catalog(),
         )
         .unwrap();
-        assert!(!jit.descriptor().parallel.regions.is_empty());
+        assert!(!jit.descriptor().metadata().parallel.regions.is_empty());
         assert!(
             jit.descriptor()
+                .metadata()
                 .parallel
                 .regions
                 .iter()

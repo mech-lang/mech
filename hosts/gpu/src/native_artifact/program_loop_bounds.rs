@@ -655,9 +655,10 @@ pub(super) fn derive(
     graph: &Graph,
     slots: &BTreeSet<usize>,
 ) -> Option<Proof> {
-    let CodePlan::Program(plan) = code else {
+    let CodePlan::Program(prepared) = code else {
         return None;
     };
+    let plan = prepared.plan();
     if graph.nodes.len() > MAX_NODES || slots.len() > 512 {
         return None;
     }

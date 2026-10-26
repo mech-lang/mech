@@ -37,10 +37,11 @@ fn joined_map_proof_requires_a_complete_unobserved_copy_chain_to_the_exact_gener
         for artifact in artifacts(&(body.to_owned() + tail)) {
             let object = emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
             let descriptor = object.descriptor();
-            let maps = &descriptor.selected_joins.maps;
+            let maps = &descriptor.metadata().selected_joins.maps;
             assert_eq!(maps.iter().flatten().count(), expected);
             if let Some(proof) = maps.iter().flatten().next() {
                 let region = descriptor
+                    .metadata()
                     .string_map_regions
                     .iter()
                     .find(|r| r.collection() == proof.collection)
@@ -49,7 +50,7 @@ fn joined_map_proof_requires_a_complete_unobserved_copy_chain_to_the_exact_gener
                 assert_eq!(proof.source, region.source().get());
                 assert_eq!(proof.map, region.map().get());
                 assert!(proof.sites.windows(2).all(|pair| pair[0] < pair[1]));
-                assert!(proof.sites.iter().any(|&site| matches!(descriptor.plan.blocks()[site as usize].action(), mech_engine::native_artifact::NativeIterationAction::Initialize { iteration } if *iteration == proof.iteration)));
+                assert!(proof.sites.iter().any(|&site| matches!(descriptor.metadata().plan.blocks()[site as usize].action(), mech_engine::native_artifact::NativeIterationAction::Initialize { iteration } if *iteration == proof.iteration)));
             }
             if let Some(previous) = original.as_ref() {
                 assert_eq!(previous, maps);
@@ -64,7 +65,7 @@ fn joined_map_proof_requires_a_complete_unobserved_copy_chain_to_the_exact_gener
                 )
             }
             .unwrap();
-            assert_eq!(maps, &restored.selected_joins.maps);
+            assert_eq!(maps, &restored.metadata().selected_joins.maps);
             if expected != 0 {
                 let mut changed: serde_json::Value = serde_json::from_slice(&encoded).unwrap();
                 changed["descriptor"]["selected_joins"]["maps"][0]["source"] =
@@ -100,7 +101,7 @@ fn compact_range_layout_and_identity_preserve_original_decoded_library_visits() 
             let catalog = mech_stdlib::source_catalog();
             let object = emit_program_object(&artifact, &catalog).unwrap();
             let descriptor = object.descriptor();
-            let layout = &descriptor.selected_joins;
+            let layout = &descriptor.metadata().selected_joins;
             assert_eq!(layout.regions.len(), 1);
             let region = &layout.regions[0];
             assert!(matches!(

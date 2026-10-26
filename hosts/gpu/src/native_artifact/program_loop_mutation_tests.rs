@@ -43,7 +43,7 @@ fn mutation_facts_metadata_binds_actual_headers_insertions_and_nonempty_probes()
         assert!(pair[0].as_u64().unwrap() >= stride);
         let site = pair[1].as_u64().unwrap() as usize;
         let NativeIterationAction::LibraryCall { template, .. } =
-            object.descriptor().plan.blocks()[site].action()
+            object.descriptor().metadata().plan.blocks()[site].action()
         else {
             panic!("original insertion site");
         };

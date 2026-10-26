@@ -12,16 +12,23 @@ fn map_owner_descriptor_images_preserve_complete_same_build_layout() {
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let descriptor = jit.descriptor();
         assert_eq!(
-            descriptor.map_owner_words.as_ref().unwrap().regions().len(),
+            descriptor
+                .metadata()
+                .map_owner_words
+                .as_ref()
+                .unwrap()
+                .regions()
+                .len(),
             1
         );
-        let occupied = descriptor.plan.values().len()
-            + descriptor.plan.iterations().len()
-            + descriptor.scalar_aggregates.words()
-            + descriptor.borrowed_strings.words
-            + descriptor.closed_tails.words;
+        let occupied = descriptor.metadata().plan.values().len()
+            + descriptor.metadata().plan.iterations().len()
+            + descriptor.metadata().scalar_aggregates.words()
+            + descriptor.metadata().borrowed_strings.words
+            + descriptor.metadata().closed_tails.words;
         let expected = serde_json::to_value(
             descriptor
+                .metadata()
                 .plan
                 .map_owner_words()
                 .unwrap()
@@ -30,7 +37,7 @@ fn map_owner_descriptor_images_preserve_complete_same_build_layout() {
         )
         .unwrap();
         assert_eq!(
-            serde_json::to_value(&descriptor.map_owner_words).unwrap(),
+            serde_json::to_value(&descriptor.metadata().map_owner_words).unwrap(),
             expected
         );
         let encoded = descriptor.encode_build_owned_image().unwrap();
@@ -42,7 +49,7 @@ fn map_owner_descriptor_images_preserve_complete_same_build_layout() {
             unsafe { NativeProgramDescriptor::decode_build_owned_image(&encoded, &catalog) }
                 .unwrap();
         assert_eq!(
-            serde_json::to_value(&restored.map_owner_words).unwrap(),
+            serde_json::to_value(&restored.metadata().map_owner_words).unwrap(),
             expected
         );
         assert_eq!(restored.typed_ir_sha256(), descriptor.typed_ir_sha256());
@@ -81,11 +88,11 @@ fn map_owner_identity_covers_unused_candidates_words_and_site_inventories() {
     for artifact in artifacts(source) {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let descriptor = jit.descriptor();
-        let plan = &descriptor.plan;
+        let plan = &descriptor.metadata().plan;
         let frontiers = plan.text_line_retention_frontiers();
         let joins = plan.selected_text_joins();
         let lines = plan.text_line_matrix_regions();
-        let original = serde_json::to_value(&descriptor.map_owner_words).unwrap();
+        let original = serde_json::to_value(&descriptor.metadata().map_owner_words).unwrap();
         let mut changes = Vec::new();
         for path in [
             "/frame_words",
@@ -137,7 +144,8 @@ fn map_owner_identity_covers_unused_candidates_words_and_site_inventories() {
                     &joins,
                     &lines,
                     Some(&changed),
-                    &descriptor.frozen_maps
+                    &descriptor.metadata().frozen_maps,
+                    &(plan).string_map_regions()
                 ),
                 "a changed candidate/layout must change Object association",
             );
@@ -159,16 +167,17 @@ fn retained_map_descriptor_appends_state_after_existing_closed_loop_metadata() {
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let descriptor = jit.descriptor();
         assert!(
-            descriptor.closed_tails.words > 0,
+            descriptor.metadata().closed_tails.words > 0,
             "fixture must retain closed-loop metadata"
         );
-        let original = descriptor.plan.map_owner_words().unwrap();
-        let selected = descriptor.map_owner_words.as_ref().unwrap();
-        let gap = descriptor.borrowed_strings.words + descriptor.closed_tails.words;
+        let original = descriptor.metadata().plan.map_owner_words().unwrap();
+        let selected = descriptor.metadata().map_owner_words.as_ref().unwrap();
+        let gap =
+            descriptor.metadata().borrowed_strings.words + descriptor.metadata().closed_tails.words;
         assert!(gap > 0);
         assert_eq!(selected.owner_base(), original.owner_base() + gap);
         assert_eq!(selected.frame_words(), original.frame_words() + gap);
-        for index in 0..descriptor.plan.values().len() {
+        for index in 0..descriptor.metadata().plan.values().len() {
             let expected = original.aggregates().slot_at(index).map(|(at, count)| {
                 (
                     if at >= original.owner_base() {
@@ -188,8 +197,8 @@ fn retained_map_descriptor_appends_state_after_existing_closed_loop_metadata() {
             unsafe { NativeProgramDescriptor::decode_build_owned_image(&encoded, &catalog) }
                 .unwrap();
         assert_eq!(
-            serde_json::to_value(&loaded.map_owner_words).unwrap(),
-            serde_json::to_value(&descriptor.map_owner_words).unwrap()
+            serde_json::to_value(&loaded.metadata().map_owner_words).unwrap(),
+            serde_json::to_value(&descriptor.metadata().map_owner_words).unwrap()
         );
         let memory = mech_core::ManagedMemoryBudget::new(128 * 1024 * 1024);
         let mut outputs = vec![None; artifact.outputs().len()];
@@ -246,13 +255,13 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
             let jit =
                 JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
             let descriptor = jit.descriptor();
-            let plan = &descriptor.plan;
+            let plan = &descriptor.metadata().plan;
             let frontiers = plan.text_line_retention_frontiers();
             let joins = plan.selected_text_joins();
             let lines = plan.text_line_matrix_regions();
             let owners = plan.map_owner_words().unwrap();
             assert!(owners.regions().is_empty());
-            assert!(descriptor.map_owner_words.is_none());
+            assert!(descriptor.metadata().map_owner_words.is_none());
             let owners = None;
             assert_eq!(joins.len(), expected_joins, "{name}");
             assert_eq!(lines.len(), expected_lines, "{name}");
@@ -267,11 +276,18 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                 &joins,
                 &lines,
                 owners,
-                &descriptor.frozen_maps,
+                &descriptor.metadata().frozen_maps,
+                &(plan).string_map_regions(),
             );
             assert_eq!(*descriptor.typed_ir_sha256(), fresh, "{name}");
-            assert_eq!(descriptor.selected_joins.regions.len(), joins.len());
-            assert_eq!(descriptor.line_matrices.regions.len(), lines.len());
+            assert_eq!(
+                descriptor.metadata().selected_joins.regions.len(),
+                joins.len()
+            );
+            assert_eq!(
+                descriptor.metadata().line_matrices.regions.len(),
+                lines.len()
+            );
             if let Some(original) = original_identity {
                 assert_eq!(original, fresh, "original/decoded {name}");
             } else {
@@ -288,7 +304,8 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         &[],
                         &lines,
                         owners,
-                        &descriptor.frozen_maps
+                        &descriptor.metadata().frozen_maps,
+                        &(plan).string_map_regions()
                     )
                 );
                 let mut duplicated = joins.clone();
@@ -301,7 +318,8 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         &duplicated,
                         &lines,
                         owners,
-                        &descriptor.frozen_maps
+                        &descriptor.metadata().frozen_maps,
+                        &(plan).string_map_regions()
                     )
                 );
             }
@@ -314,7 +332,8 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         &joins,
                         &[],
                         owners,
-                        &descriptor.frozen_maps
+                        &descriptor.metadata().frozen_maps,
+                        &(plan).string_map_regions()
                     )
                 );
                 let mut duplicated = lines.clone();
@@ -327,7 +346,8 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         &joins,
                         &duplicated,
                         owners,
-                        &descriptor.frozen_maps
+                        &descriptor.metadata().frozen_maps,
+                        &(plan).string_map_regions()
                     )
                 );
             }
@@ -342,7 +362,8 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         &reversed,
                         &lines,
                         owners,
-                        &descriptor.frozen_maps
+                        &descriptor.metadata().frozen_maps,
+                        &(plan).string_map_regions()
                     )
                 );
             }
@@ -357,7 +378,8 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         &joins,
                         &reversed,
                         owners,
-                        &descriptor.frozen_maps
+                        &descriptor.metadata().frozen_maps,
+                        &(plan).string_map_regions()
                     )
                 );
             }

@@ -55,7 +55,15 @@ impl State {
         ctx: &Context<'_, '_>,
         site: usize,
     ) -> Option<HistogramVisit> {
-        let (collection, stage) = match ctx.control.descriptor.plan.blocks().get(site)?.action() {
+        let (collection, stage) = match ctx
+            .control
+            .descriptor
+            .metadata()
+            .plan
+            .blocks()
+            .get(site)?
+            .action()
+        {
             NativeIterationAction::CollectionPush { collection, .. } => {
                 (*collection, HistogramStage::Growth)
             }
@@ -115,7 +123,7 @@ impl State {
             .histogram
             .as_ref()
             .ok_or_else(|| invalid("observed Histogram state"))?;
-        let selected = ctx.control.descriptor.calls[definition.consumer() as usize]
+        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("observed Histogram selection"))?;
         let footprint = selected

@@ -5,6 +5,7 @@ use crate::native_artifact::{JitProgramArtifact, emit_program_object};
 use mech_engine::native_artifact::{
     NativeArtifactLoweringError, NativeCollectionPrimitive, NativeIterationAction,
 };
+use mech_engine::{ProgramArtifact, native_artifact::prepare_native_program_library_call};
 use mech_syntax::document::{
     AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
     parse_canonical_document,
@@ -50,6 +51,7 @@ fn string_map_projection_rejects_same_pointer_and_foreign_factories_before_bindi
         let object = emit_program_object(&artifact, &catalog).unwrap();
         let descriptor = object.descriptor();
         let projections = descriptor
+            .metadata()
             .plan
             .collections()
             .iter()
@@ -72,10 +74,13 @@ fn string_map_projection_rejects_same_pointer_and_foreign_factories_before_bindi
             template.primitive(),
             NativeCollectionPrimitive::MapKeyAccess
         );
-        assert!(matches!(descriptor.plan.blocks()[site].action(),
+        assert!(matches!(descriptor.metadata().plan.blocks()[site].action(),
             NativeIterationAction::ProjectStringMapEntry { collection } if *collection as usize == id));
         assert_eq!(
-            descriptor.calls[site].as_ref().unwrap().template(),
+            descriptor.metadata().calls[site]
+                .as_ref()
+                .unwrap()
+                .template(),
             template
         );
         assert_eq!(
@@ -86,13 +91,20 @@ fn string_map_projection_rejects_same_pointer_and_foreign_factories_before_bindi
         // Valid original-catalog controls isolate substitution rejection from
         // missing unrelated registrations or an unsupported source fixture.
         prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
-        NativeProgramDescriptor::prepare(
+        crate::native_artifact::program::prepare::PreparedNativeProgram::prepare(
             &artifact,
             &catalog,
-            descriptor.plan.clone(),
-            descriptor.stack,
-            descriptor.code,
+            descriptor.metadata().plan.clone(),
         )
+        .map(|prepared| {
+            NativeProgramDescriptor::from_prepared(
+                prepared,
+                crate::native_artifact::program_descriptor::NativeCodeFootprint {
+                    stack_bytes: descriptor.stack_bytes(),
+                    code_bytes: descriptor.code_bytes(),
+                },
+            )
+        })
         .unwrap();
         let linked = crate::native_artifact::program_linked::prepare_descriptor(
             &artifact,
@@ -168,13 +180,18 @@ fn string_map_projection_rejects_same_pointer_and_foreign_factories_before_bindi
                 "{label}: direct selected preparation accepted an uncertified factory"
             );
             assert!(
-                NativeProgramDescriptor::prepare(
+                crate::native_artifact::program::prepare::PreparedNativeProgram::prepare(
                     &artifact,
                     &replaced,
-                    descriptor.plan.clone(),
-                    descriptor.stack,
-                    descriptor.code,
+                    descriptor.metadata().plan.clone()
                 )
+                .map(|prepared| NativeProgramDescriptor::from_prepared(
+                    prepared,
+                    crate::native_artifact::program_descriptor::NativeCodeFootprint {
+                        stack_bytes: descriptor.stack_bytes(),
+                        code_bytes: descriptor.code_bytes()
+                    }
+                ))
                 .is_err(),
                 "{label}: descriptor accepted an uncertified factory"
             );

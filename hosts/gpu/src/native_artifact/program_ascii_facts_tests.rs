@@ -218,7 +218,7 @@ fn collection_counts_and_map_guards_share_facts_without_byte_counting_unicode_or
     .unwrap();
     for artifact in [original, decoded] {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
-        assert!(!jit.descriptor().window_regions.is_empty());
+        assert!(!jit.descriptor().metadata().window_regions.is_empty());
         for (seed, width, key, expected) in [
             ("abab", 2, "AB", 6),
             ("éé", 1, "É", 4),

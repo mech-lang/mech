@@ -43,7 +43,7 @@ impl State {
         memory: &ManagedMemoryBudget,
         work: &mut NativeWorkMeter,
     ) -> Result<Self, Error> {
-        let count = descriptor.line_matrices.regions.len();
+        let count = descriptor.metadata().line_matrices.regions.len();
         if count == 0 {
             return Ok(Self {
                 views: Box::new([]),
@@ -119,6 +119,7 @@ impl Context<'_, '_> {
         let ordinal = self
             .control
             .descriptor
+            .metadata()
             .line_matrices
             .matrices
             .get(value.get() as usize)
@@ -137,8 +138,9 @@ impl Context<'_, '_> {
             NativeExecutionPhase::Setup,
             amount(self.line_matrices.views.len(), 256, 256)?,
         )?;
-        let ordinal = skip
-            .and_then(|value| self.control.descriptor.line_matrices.matrices[value.get() as usize]);
+        let ordinal = skip.and_then(|value| {
+            self.control.descriptor.metadata().line_matrices.matrices[value.get() as usize]
+        });
         self.line_matrices
             .retained_demand(ordinal, &self.library.memory_budget())
     }
@@ -148,7 +150,7 @@ impl Context<'_, '_> {
         words: &[u64],
     ) -> Result<Option<Option<u64>>, Error> {
         let descriptor = self.control.descriptor;
-        let Some(role) = descriptor.line_matrices.sites[site] else {
+        let Some(role) = descriptor.metadata().line_matrices.sites[site] else {
             return Ok(None);
         };
         if words != [0] {
@@ -174,13 +176,13 @@ impl Context<'_, '_> {
             }
             return Ok(Some(None));
         }
-        let region = &descriptor.line_matrices.regions[ordinal];
-        let call = descriptor.calls[site]
+        let region = &descriptor.metadata().line_matrices.regions[ordinal];
+        let call = descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("line matrix selected call absent"))?;
         let prior = self.selected_join_coexistence(Some(region.matrix()))?;
         let failure = |error| Error::Library {
-            origin: descriptor.plan.blocks()[site].origin(),
+            origin: descriptor.metadata().plan.blocks()[site].origin(),
             error,
         };
         match role {

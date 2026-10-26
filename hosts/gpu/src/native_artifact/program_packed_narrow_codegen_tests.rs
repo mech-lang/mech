@@ -62,6 +62,7 @@ sequence := text/join([letters{{char}} | char <- text<string>], "")
             unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
         for descriptor in [jit.descriptor(), &restored] {
             let proof = descriptor
+                .metadata()
                 .closed_tails
                 .regions
                 .iter()

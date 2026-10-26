@@ -55,7 +55,7 @@ fn admit_output_retirement(
     memory: &ManagedMemoryBudget,
     library: &NativeLibraryWorkBudget,
 ) -> Result<(), NativeProgramExecutionError> {
-    let plan = &descriptor.plan;
+    let plan = &descriptor.metadata().plan;
     if outputs.len() != plan.transport_output_count() {
         return Err(NativeExecutionError::InvalidOutputs {
             expected: plan.transport_output_count(),
@@ -309,7 +309,7 @@ impl CallCacheLane {
         memory: &ManagedMemoryBudget,
         work: &mut NativeWorkMeter,
     ) -> Result<Self, NativeProgramExecutionError> {
-        let blocks = descriptor.plan.blocks();
+        let blocks = descriptor.metadata().plan.blocks();
         let count = blocks.len();
         let bytes = Self::metadata_bytes(count)?;
         if bytes > limit {
@@ -328,7 +328,7 @@ impl CallCacheLane {
         )?;
         let reservation = memory.reserve_capacity(bytes)?;
         let nodes = memory.reserve_nodes(bytes)?;
-        // NativeProgramDescriptor::prepare already ran BOTH canonical phase
+        // PreparedNativeProgram::prepare already ran BOTH canonical phase
         // and current-visit proofs. check_scope contracts each child loop to
         // initializer -> exit and rejects every remaining scope cycle. Thus
         // None is a once-only root DAG site, including nested Match arms;
@@ -427,8 +427,8 @@ impl<'a> Prepared<'a> {
     ) -> Result<u64, NativeProgramExecutionError> {
         let fixed = super::caller_geometry::fixed_nodes()?;
         let collections = collection::State::metadata_bytes(descriptor)?;
-        let call_caches = CallCacheLane::metadata_bytes(descriptor.plan.blocks().len())?;
-        let line_matrices = u64::from(!descriptor.line_matrices.regions.is_empty());
+        let call_caches = CallCacheLane::metadata_bytes(descriptor.metadata().plan.blocks().len())?;
+        let line_matrices = u64::from(!descriptor.metadata().line_matrices.regions.is_empty());
         let total = fixed
             .checked_add(collections)
             .and_then(|n| n.checked_add(call_caches))
@@ -451,21 +451,27 @@ impl<'a> Prepared<'a> {
                 NativeWordStorage::admission_bytes(geometry.words)?,
             ),
             (
-                amount(descriptor.types.len(), size_of::<Option<Value>>() as u64, 0)?,
-                NativeTypedStorage::<Option<Value>>::admission_bytes(descriptor.types.len())?,
-            ),
-            (
-                transport_bytes(descriptor.types.len())?,
-                NativeWordStorage::admission_bytes(descriptor.types.len())?,
-            ),
-            (
                 amount(
-                    descriptor.max_library_inputs,
+                    descriptor.metadata().types.len(),
                     size_of::<Option<Value>>() as u64,
                     0,
                 )?,
                 NativeTypedStorage::<Option<Value>>::admission_bytes(
-                    descriptor.max_library_inputs,
+                    descriptor.metadata().types.len(),
+                )?,
+            ),
+            (
+                transport_bytes(descriptor.metadata().types.len())?,
+                NativeWordStorage::admission_bytes(descriptor.metadata().types.len())?,
+            ),
+            (
+                amount(
+                    descriptor.metadata().max_library_inputs,
+                    size_of::<Option<Value>>() as u64,
+                    0,
+                )?,
+                NativeTypedStorage::<Option<Value>>::admission_bytes(
+                    descriptor.metadata().max_library_inputs,
                 )?,
             ),
         ] {
@@ -477,30 +483,15 @@ impl<'a> Prepared<'a> {
         // This immutable sum is established at prepare/decode time, so a
         // repeated dispatch never performs an unfunded constants-table scan.
         bytes
-            .checked_add(descriptor.constant_admission_bytes)
+            .checked_add(descriptor.metadata().constant_admission_bytes)
             .ok_or_else(|| invalid("worker constant admission overflow"))
     }
 
     fn setup_geometry(
         descriptor: &NativeProgramDescriptor,
     ) -> Result<SetupGeometry, NativeProgramExecutionError> {
-        let plan = &descriptor.plan;
-        let canonical_locals = plan
-            .values()
-            .len()
-            .checked_add(plan.iterations().len())
-            .and_then(|n| n.checked_add(descriptor.scalar_aggregates.words()))
-            .and_then(|n| n.checked_add(descriptor.borrowed_strings.words))
-            .and_then(|n| n.checked_add(descriptor.closed_tails.words))
-            .ok_or_else(|| invalid("local count overflow"))?;
-        let locals = descriptor
-            .map_owner_words
-            .as_ref()
-            .map_or(
-                Ok(canonical_locals),
-                super::super::program_map_owner_layout::local_words,
-            )
-            .map_err(invalid)?;
+        let plan = &descriptor.metadata().plan;
+        let locals = descriptor.metadata().local_words().map_err(invalid)?;
         let progress = plan
             .iterations()
             .len()
@@ -512,19 +503,19 @@ impl<'a> Prepared<'a> {
             .and_then(|n| n.checked_add(progress))
             .and_then(|n| n.checked_add(plan.transport_output_count()))
             .and_then(|n| n.checked_add(1))
-            .and_then(|n| n.checked_add(descriptor.max_library_inputs.max(1)))
-            .and_then(|n| n.checked_add(descriptor.retirements.words().len()))
+            .and_then(|n| n.checked_add(descriptor.metadata().max_library_inputs.max(1)))
+            .and_then(|n| n.checked_add(descriptor.metadata().retirements.words().len()))
             .ok_or_else(|| invalid("transport count overflow"))?;
         let bytes = transport_bytes(words)?
             .checked_add(amount(
-                descriptor.types.len(),
+                descriptor.metadata().types.len(),
                 (core::mem::size_of::<Option<Value>>() + 8) as u64,
                 0,
             )?)
             .and_then(|n| {
                 n.checked_add(
                     amount(
-                        descriptor.max_library_inputs,
+                        descriptor.metadata().max_library_inputs,
                         core::mem::size_of::<Option<Value>>() as u64,
                         0,
                     )
@@ -535,8 +526,10 @@ impl<'a> Prepared<'a> {
             .and_then(|n| n.checked_add(CallCacheLane::metadata_bytes(plan.blocks().len()).ok()?))
             .and_then(|n| {
                 n.checked_add(
-                    line_matrices::State::metadata_bytes(descriptor.line_matrices.regions.len())
-                        .ok()?,
+                    line_matrices::State::metadata_bytes(
+                        descriptor.metadata().line_matrices.regions.len(),
+                    )
+                    .ok()?,
                 )
             })
             .ok_or_else(|| invalid("combined transport overflow"))?;
@@ -562,15 +555,15 @@ impl<'a> Prepared<'a> {
         memory: &ManagedMemoryBudget,
         worker_budget: Option<NativeLibraryWorkBudget>,
     ) -> Result<Self, NativeProgramExecutionError> {
-        let plan = &descriptor.plan;
+        let plan = &descriptor.metadata().plan;
         if plan.activation_boundary().is_none() {
             return Err(invalid(
                 "managed execution has no certified activation boundary",
             ));
         }
-        if descriptor.stack > limits.execution.max_native_stack_bytes {
+        if descriptor.stack_bytes() > limits.execution.max_native_stack_bytes {
             return Err(NativeExecutionError::StackLimit {
-                required: descriptor.stack,
+                required: descriptor.stack_bytes(),
                 limit: limits.execution.max_native_stack_bytes,
             }
             .into());
@@ -614,7 +607,7 @@ impl<'a> Prepared<'a> {
         work.charge(
             NativeExecutionPhase::Setup,
             amount(
-                descriptor.max_library_inputs,
+                descriptor.metadata().max_library_inputs,
                 (core::mem::size_of::<Option<Value>>() as u64) * 8 + 64,
                 4096,
             )?,
@@ -636,24 +629,28 @@ impl<'a> Prepared<'a> {
         // Initialization was prepaid above; fund its copy before touching it.
         work.charge(
             NativeExecutionPhase::Setup,
-            amount(descriptor.retirements.words().len(), 16, 128)?,
+            amount(descriptor.metadata().retirements.words().len(), 16, 128)?,
         )?;
-        storage.values_mut()[words - descriptor.retirements.words().len()..]
-            .copy_from_slice(descriptor.retirements.words());
+        storage.values_mut()[words - descriptor.metadata().retirements.words().len()..]
+            .copy_from_slice(descriptor.metadata().retirements.words());
         let mut arena = NativeValueArena::new(
-            &descriptor.types,
+            &descriptor.metadata().types,
             limits.execution.max_transport_bytes,
             memory,
             &mut work,
         )?;
         let call_inputs = NativeTypedStorage::new_values(
-            descriptor.max_library_inputs,
+            descriptor.metadata().max_library_inputs,
             limits.execution.max_transport_bytes,
             memory,
         )?;
         // Constants and their retirement are funded only once, before any
         // generated activation. No fresh Values or observations are touched.
-        for (constant, &bound) in plan.constants().iter().zip(&descriptor.constant_bytes) {
+        for (constant, &bound) in plan
+            .constants()
+            .iter()
+            .zip(&descriptor.metadata().constant_bytes)
+        {
             work.charge(
                 NativeExecutionPhase::Setup,
                 bound
@@ -743,6 +740,7 @@ impl<'a> Prepared<'a> {
         captures: Vec<parallel::Capture>,
     ) -> Result<parallel::Receipt, NativeProgramExecutionError> {
         let region = descriptor
+            .metadata()
             .parallel
             .regions
             .get(worker.region)
@@ -760,21 +758,22 @@ impl<'a> Prepared<'a> {
             return Err(invalid("worker constructor capture/count mismatch"));
         }
         let mut prepared = Self::new_with_budget(descriptor, limits, memory, Some(library))?;
-        let locals_start = descriptor.plan.transport_input_count();
+        let locals_start = descriptor.metadata().plan.transport_input_count();
         let state = prepared.state.as_mut().unwrap();
         // A worker skips whole-program activation, but retains the SAME
         // immutable constants. Its private local lanes receive their original
         // words; no source computation or observation is rerun here.
-        for constant in descriptor.plan.constants() {
+        for constant in descriptor.metadata().plan.constants() {
             if let Some(kind) =
-                descriptor.plan.values()[constant.value().get() as usize].scalar_kind()
+                descriptor.metadata().plan.values()[constant.value().get() as usize].scalar_kind()
             {
                 prepared.storage.values_mut()[locals_start + constant.value().get() as usize] =
                     bits(constant.constant(), kind)?;
             }
         }
-        for (target, words) in descriptor.scalar_aggregates.constants() {
+        for (target, words) in descriptor.metadata().scalar_aggregates.constants() {
             let (start, count) = descriptor
+                .metadata()
                 .scalar_aggregates
                 .slot(*target)
                 .ok_or_else(|| invalid("worker aggregate constant has no words"))?;
@@ -787,7 +786,7 @@ impl<'a> Prepared<'a> {
         for (&expected, capture) in region.captures.iter().zip(captures) {
             match capture {
                 parallel::Capture::Word(slot, word) if slot == expected => {
-                    let kind = descriptor.plan.values()[slot as usize]
+                    let kind = descriptor.metadata().plan.values()[slot as usize]
                         .scalar_kind()
                         .ok_or_else(|| invalid("worker scalar capture type"))?;
                     if kind == NativeScalarKind::Bool && word > 1 {
@@ -796,7 +795,7 @@ impl<'a> Prepared<'a> {
                     prepared.storage.values_mut()[locals_start + slot as usize] = word;
                 }
                 parallel::Capture::Value(slot, value) if slot == expected => {
-                    if descriptor.plan.values()[slot as usize]
+                    if descriptor.metadata().plan.values()[slot as usize]
                         .scalar_kind()
                         .is_some()
                     {
@@ -849,7 +848,7 @@ impl<'a> Prepared<'a> {
             return Err(invalid("turn before generated activation"));
         }
         let descriptor = self.descriptor;
-        let plan = &descriptor.plan;
+        let plan = &descriptor.metadata().plan;
         if inputs.len() != plan.inputs().len() {
             return Err(NativeExecutionError::InvalidInputs {
                 expected: plan.inputs().len(),
@@ -888,8 +887,8 @@ impl<'a> Prepared<'a> {
             let (owned, _reservation) = import_string_observation(
                 value,
                 ty.schema(),
-                &descriptor.schemas,
-                descriptor.observation_schema_bytes,
+                &descriptor.metadata().schemas,
+                descriptor.metadata().observation_schema_bytes,
                 &self.memory,
                 &mut state.work,
             )?;
@@ -941,7 +940,7 @@ impl<'a> Prepared<'a> {
             .as_mut()
             .ok_or_else(|| invalid("consumed native state"))?;
         let published = state.arena.publish_range(
-            self.descriptor.plan.values().len(),
+            self.descriptor.metadata().plan.values().len(),
             outputs,
             &mut state.work,
         );
@@ -997,7 +996,7 @@ impl<'a> Prepared<'a> {
         window: Option<&mech_engine::native_artifact::NativeTextLineWindow<'_>>,
     ) -> Result<(), NativeProgramExecutionError> {
         if !self.activated
-            || self.descriptor.prefix.is_none()
+            || self.descriptor.metadata().prefix.is_none()
             || self.state.as_ref().is_none_or(|state| state.completed)
             || self
                 .prefix
@@ -1016,6 +1015,7 @@ impl<'a> Prepared<'a> {
                     Some(prefix::Input {
                         resume_site: self
                             .descriptor
+                            .metadata()
                             .plan
                             .activation_boundary()
                             .ok_or_else(|| invalid("prefix lacks exact resume boundary"))?,
@@ -1035,7 +1035,7 @@ impl<'a> Prepared<'a> {
         }
         let resume_site = self
             .paused
-            .or(self.descriptor.plan.activation_boundary())
+            .or(self.descriptor.metadata().plan.activation_boundary())
             .ok_or_else(|| invalid("prefix lacks exact resume boundary"))?;
         if eof {
             self.install_final_line_count(available)?;
@@ -1067,6 +1067,7 @@ impl<'a> Prepared<'a> {
     ) -> Result<(), NativeProgramExecutionError> {
         let exit = self
             .descriptor
+            .metadata()
             .prefix
             .as_ref()
             .ok_or_else(|| invalid("capture tail has no scan proof"))?
@@ -1104,7 +1105,7 @@ impl<'a> Prepared<'a> {
             return Err(invalid("capture tail cannot retain a scanner row loan"));
         }
         let descriptor = self.descriptor;
-        let plan = &descriptor.plan;
+        let plan = &descriptor.metadata().plan;
         let boundary = plan
             .activation_boundary()
             .ok_or_else(|| invalid("missing certified activation boundary"))?;
@@ -1114,7 +1115,7 @@ impl<'a> Prepared<'a> {
                 .ok_or_else(|| invalid("prefix entry without owned continuation facts"))?;
             if input.resume_site != self.paused.unwrap_or(boundary)
                 || !self.activated
-                || descriptor.prefix.is_none()
+                || descriptor.metadata().prefix.is_none()
             {
                 return Err(invalid("prefix entry outside owned resume boundary"));
             }
@@ -1154,6 +1155,7 @@ impl<'a> Prepared<'a> {
             .and_then(|work| {
                 work.checked_add(if prefix_input.is_some() {
                     descriptor
+                        .metadata()
                         .prefix
                         .as_ref()
                         .map_or(0, |region| region.header_work)
@@ -1174,7 +1176,8 @@ impl<'a> Prepared<'a> {
         let (progress_words, rest) = rest.split_at_mut(self.progress);
         let (output_words, rest) = rest.split_at_mut(plan.transport_output_count());
         let (result, rest) = rest.split_at_mut(1);
-        let (arguments, retirements) = rest.split_at_mut(descriptor.max_library_inputs.max(1));
+        let (arguments, retirements) =
+            rest.split_at_mut(descriptor.metadata().max_library_inputs.max(1));
         let input_pointer = input_words.as_ptr();
         let local_pointer = values.as_mut_ptr();
         let output_pointer = output_words.as_mut_ptr();
@@ -1202,7 +1205,7 @@ impl<'a> Prepared<'a> {
             limits: self.limits.library,
             result: result_pointer,
             arguments: argument_pointer,
-            argument_capacity: descriptor.max_library_inputs,
+            argument_capacity: descriptor.metadata().max_library_inputs,
             call_inputs: state.call_inputs,
             call_caches: state.call_caches,
             consumed: state.consumed,
@@ -1255,11 +1258,11 @@ impl<'a> Prepared<'a> {
             helper,
             result: result_pointer,
             arguments: argument_pointer,
-            argument_capacity: descriptor.max_library_inputs as u64,
+            argument_capacity: descriptor.metadata().max_library_inputs as u64,
             phase,
             resume_site: context.worker.as_ref().map_or_else(
                 || prefix_input.map_or(0, |input| u64::from(input.resume_site)),
-                |worker| u64::from(descriptor.parallel.regions[worker.region].begin),
+                |worker| u64::from(descriptor.metadata().parallel.regions[worker.region].begin),
             ),
             available_lines: context.worker.as_ref().map_or_else(
                 || prefix_input.map_or(0, |input| input.available),
@@ -1296,7 +1299,7 @@ impl<'a> Prepared<'a> {
             || frame.helper as usize != helper as *const () as usize
             || frame.result != result_pointer
             || frame.arguments != argument_pointer
-            || frame.argument_capacity != descriptor.max_library_inputs as u64
+            || frame.argument_capacity != descriptor.metadata().max_library_inputs as u64
             || frame.phase != phase
             || (frame.resume_site, frame.available_lines, frame.input_eof) != phase_words
         {
@@ -1317,7 +1320,7 @@ impl<'a> Prepared<'a> {
                     .as_ref()
                     .is_some_and(|state| !state.is_complete())
                 || context.control.previous.is_none_or(|previous| {
-                    !descriptor.visits[previous as usize]
+                    !descriptor.metadata().visits[previous as usize]
                         .successors()
                         .contains(&Some(boundary))
                         || (context.action_required(previous as usize) && !context.consumed)
@@ -1332,7 +1335,7 @@ impl<'a> Prepared<'a> {
                         .worker
                         .as_ref()
                         .ok_or_else(|| invalid("worker state lost"))?;
-                    let region = &descriptor.parallel.regions[worker.region];
+                    let region = &descriptor.metadata().parallel.regions[worker.region];
                     if worker.result.is_none()
                         || f.error_node != u64::from(region.push)
                         || context.control.completed
@@ -1394,7 +1397,7 @@ impl<'a> Prepared<'a> {
                 }
                 STATUS_ARITHMETIC | STATUS_REJECT => {
                     let id = context.failure_site(f.error_node)?;
-                    let site = &descriptor.visits[id as usize];
+                    let site = &descriptor.metadata().visits[id as usize];
                     return Err(if status == STATUS_ARITHMETIC && site.arithmetic {
                         NativeIterationExecutionError::Arithmetic {
                             origin: site.origin,

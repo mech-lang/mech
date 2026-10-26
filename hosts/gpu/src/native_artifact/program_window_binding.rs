@@ -73,7 +73,7 @@ impl State {
         let query_bytes = query_owner
             .memory_budget_retained_bytes(&ctx.library.memory_budget())
             .ok_or_else(|| invalid("compiled window query is unadmitted"))?;
-        let origin = ctx.control.descriptor.plan.collections()[id as usize].origin();
+        let origin = ctx.control.descriptor.metadata().plan.collections()[id as usize].origin();
         check(
             origin,
             Dimension::TemporaryBytes,

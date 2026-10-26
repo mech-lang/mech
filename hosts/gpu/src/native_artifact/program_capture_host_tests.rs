@@ -252,6 +252,7 @@ fn original_and_decoded_full_program_stream_through_authorized_cli_and_match_sna
         .expect("standard full program must qualify for finite streaming work");
         assert_eq!(
             jit.descriptor()
+                .metadata()
                 .prefix
                 .as_ref()
                 .unwrap()
@@ -260,9 +261,10 @@ fn original_and_decoded_full_program_stream_through_authorized_cli_and_match_sna
             Some(2)
         );
         let descriptor = jit.descriptor();
-        let region = descriptor.prefix.as_ref().unwrap();
-        let closed = descriptor.closed_tails.sites[region.tail.header() as usize].unwrap();
-        let comparison = descriptor.closed_tails.regions[closed].comparison;
+        let region = descriptor.metadata().prefix.as_ref().unwrap();
+        let closed =
+            descriptor.metadata().closed_tails.sites[region.tail.header() as usize].unwrap();
+        let comparison = descriptor.metadata().closed_tails.regions[closed].comparison;
         assert!(comparison > 0);
         let work_memory = ManagedMemoryBudget::new(4096);
         let work = NativeLibraryWorkBudget::new(1 << 40, comparison * 4, &work_memory).unwrap();
@@ -375,8 +377,8 @@ fn initial_scanner_allocation_failure_waits_for_late_capture_errors() {
     for artifact in artifacts {
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let descriptor = jit.descriptor();
-        let region = descriptor.prefix.as_ref().unwrap();
-        let borrowed = &descriptor.borrowed_strings.regions[region.borrowed];
+        let region = descriptor.metadata().prefix.as_ref().unwrap();
+        let borrowed = &descriptor.metadata().borrowed_strings.regions[region.borrowed];
         let captures = borrowed.proof.matrices().len() + borrowed.proof.literals().len();
         // This is one byte below the real borrowed-owner metadata component
         // in prepare_borrowed_region, independent of the source payload. The
@@ -562,7 +564,7 @@ fn extra_count_lookahead_uses_snapshot_before_one_byte_delivery() {
             &memory,
         )
         .unwrap();
-        assert!(jit.descriptor().prefix.is_none());
+        assert!(jit.descriptor().metadata().prefix.is_none());
         let trace = trace.lock().unwrap();
         assert_eq!((trace.captures, trace.snapshots, trace.writes), (0, 1, 1));
         assert_eq!(trace.output, reference.lock().unwrap().output);
@@ -590,7 +592,7 @@ fn returned_forward_endpoints_wait_for_real_rows_in_original_and_decoded_capture
         let (artifacts, catalog) = fixture::artifacts(&source);
         for artifact in artifacts {
             let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-            assert!(jit.descriptor().prefix.is_some(), "{transition}");
+            assert!(jit.descriptor().metadata().prefix.is_some(), "{transition}");
             let memory = ManagedMemoryBudget::new(TEST_MEMORY_LIMIT);
             let (mut ordinary, reference) = fixture::runtime(input, true);
             fixture::execute(&mut ordinary, &artifact, &jit, fixture::limits(), &memory).unwrap();
@@ -630,7 +632,7 @@ fn unavailable_terminal_endpoint_preserves_eof_selector_error_and_source_priorit
     let (artifacts, catalog) = fixture::artifacts(&source);
     for artifact in artifacts {
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        assert!(jit.descriptor().prefix.is_some());
+        assert!(jit.descriptor().metadata().prefix.is_some());
         let memory = ManagedMemoryBudget::new(TEST_MEMORY_LIMIT);
         let (mut ordinary, reference) = fixture::runtime(input, true);
         let error = fixture::execute(&mut ordinary, &artifact, &jit, fixture::limits(), &memory)
@@ -747,7 +749,7 @@ fn zero_live_retention_seed_preserves_successful_empty_original_and_decoded_exec
             &memory,
         )
         .unwrap();
-        assert!(jit.descriptor().prefix.is_none());
+        assert!(jit.descriptor().metadata().prefix.is_none());
         let trace = trace.lock().unwrap();
         assert_eq!((trace.captures, trace.snapshots, trace.writes), (0, 1, 1));
         assert!(trace.output.is_empty());
@@ -831,6 +833,7 @@ fn trapping_prelude_uses_snapshot_capture_and_preserves_late_source_error_priori
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let division = jit
             .descriptor()
+            .metadata()
             .plan
             .blocks()
             .iter()
@@ -848,6 +851,7 @@ fn trapping_prelude_uses_snapshot_capture_and_preserves_late_source_error_priori
             .expect("the trapping value must remain live in the real emitted program");
         assert!(
             !jit.descriptor()
+                .metadata()
                 .plan
                 .activation_nodes()
                 .contains(&division.origin().node()),

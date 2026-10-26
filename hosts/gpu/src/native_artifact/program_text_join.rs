@@ -40,6 +40,7 @@ impl Builder {
 }
 fn sink(descriptor: &NativeProgramDescriptor, id: u32) -> Result<&NativeTextJoinSink, Error> {
     match descriptor
+        .metadata()
         .plan
         .collections()
         .get(id as usize)
@@ -70,11 +71,11 @@ impl State {
         id: u32,
     ) -> Result<(), Error> {
         let NativeCollectionResult::TextJoin(definition) =
-            ctx.control.descriptor.plan.collections()[id as usize].result()
+            ctx.control.descriptor.metadata().plan.collections()[id as usize].result()
         else {
             return Ok(());
         };
-        let selected = ctx.control.descriptor.calls[definition.consumer() as usize]
+        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("TextJoin sink lacks retained selected factory"))?;
         let binding_bytes = selected.binding_metadata_bytes();
@@ -184,7 +185,7 @@ impl State {
         yielded: &super::string_span::Yield,
     ) -> Result<(), Error> {
         let definition = sink(ctx.control.descriptor, id)?;
-        let selected = ctx.control.descriptor.calls[definition.consumer() as usize]
+        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("TextJoin missing selected append"))?;
         let part = yielded.text()?;
@@ -325,11 +326,11 @@ impl State {
         ctx: &mut Context<'_, '_>,
         id: u32,
     ) -> Result<(), Error> {
-        let definition = &ctx.control.descriptor.plan.collections()[id as usize];
+        let definition = &ctx.control.descriptor.metadata().plan.collections()[id as usize];
         // Eliding the Matrix does NOT elide its declared shape obligations.
         // Validate the exact original 1xN shape at the original producer finish
         // after the same body visits, with metadata allocation/work prepaid.
-        let metadata = ctx.control.descriptor.scalar_bytes;
+        let metadata = ctx.control.descriptor.metadata().scalar_bytes;
         resource(
             ctx,
             id,
@@ -348,7 +349,8 @@ impl State {
             return Err(invalid("duplicate TextJoin producer finish"));
         }
         mech_core::shape_for_resolved_extents(
-            ctx.control.descriptor.plan.values()[definition.output().get() as usize].definition(),
+            ctx.control.descriptor.metadata().plan.values()[definition.output().get() as usize]
+                .definition(),
             &[1, join.accepted],
         )
         .map_err(|_| invalid("collected output shape"))?;
@@ -363,7 +365,7 @@ impl State {
         id: u32,
     ) -> Result<(), Error> {
         let definition = sink(ctx.control.descriptor, id)?;
-        let collection = &ctx.control.descriptor.plan.collections()[id as usize];
+        let collection = &ctx.control.descriptor.metadata().plan.collections()[id as usize];
         if self.current != collection.parent_collection() {
             return Err(invalid(
                 "TextJoin consumer outside exact lexical invocation",
@@ -385,7 +387,7 @@ impl State {
         let capacity = builder.reservation.capacity_bytes();
         let separator_bytes = join.separator_bytes;
         let envelope = add(
-            ctx.control.descriptor.scalar_bytes,
+            ctx.control.descriptor.metadata().scalar_bytes,
             add(mul(payload, 4)?, 4096)?,
         )?;
         let finalization = add(mul(payload, 8)?, 32)?;
@@ -449,7 +451,8 @@ impl State {
         builder.cloned_bytes = cloned;
         builder.compute = accumulated;
         let text = core::mem::take(&mut builder.join.as_mut().unwrap().text);
-        let output = &ctx.control.descriptor.plan.values()[definition.output().get() as usize];
+        let output =
+            &ctx.control.descriptor.metadata().plan.values()[definition.output().get() as usize];
         let canonical = SnapshotCanonicalizationBudget::new(finalization);
         let value = ValueDraft {
             schema: output.schema(),
@@ -457,8 +460,10 @@ impl State {
             data: ValueDataDraft::String(text),
         }
         .finalize(
-            &SnapshotValidationContext::with_shared_schemas(&ctx.control.descriptor.schemas)
-                .with_canonicalization_budget(&canonical),
+            &SnapshotValidationContext::with_shared_schemas(
+                &ctx.control.descriptor.metadata().schemas,
+            )
+            .with_canonicalization_budget(&canonical),
         )
         .map_err(Error::Snapshot)?
         .into_memory_budget(&mut reservation)?;

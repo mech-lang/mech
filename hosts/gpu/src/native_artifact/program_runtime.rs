@@ -179,16 +179,19 @@ fn test_corrupt_prefix_checkpoint(frame: *mut Frame, field: u8) {
         assert_eq!(frame.phase, super::program_abi::PHASE_PREFIX);
         let context = &*frame.base.context.cast::<Context<'_, '_>>();
         let descriptor = context.control.descriptor;
-        let region = descriptor.prefix.as_ref().unwrap();
-        let borrowed = &descriptor.borrowed_strings.regions[region.borrowed];
+        let region = descriptor.metadata().prefix.as_ref().unwrap();
+        let borrowed = &descriptor.metadata().borrowed_strings.regions[region.borrowed];
         match field {
             0..=2 => {
                 let word = match field {
                     0 => borrowed.ready,
                     1 => borrowed.end - 1,
                     _ => {
-                        descriptor.closed_tails.regions
-                            [descriptor.closed_tails.sites[region.tail.header() as usize].unwrap()]
+                        descriptor.metadata().closed_tails.regions[descriptor
+                            .metadata()
+                            .closed_tails
+                            .sites[region.tail.header() as usize]
+                            .unwrap()]
                         .words
                             + 1
                     }
@@ -303,13 +306,14 @@ impl Context<'_, '_> {
         if self
             .control
             .descriptor
+            .metadata()
             .scalar_aggregates
             .action(site)
             .is_some()
         {
             return None;
         }
-        let plan = &self.control.descriptor.plan;
+        let plan = &self.control.descriptor.metadata().plan;
         let pair = match plan.blocks()[site].action() {
             NativeIterationAction::Scalar(NativeMatchAction::Copy { source, output }) => {
                 (*source, *output)
@@ -350,6 +354,7 @@ impl Context<'_, '_> {
         if self
             .control
             .descriptor
+            .metadata()
             .scalar_aggregates
             .action(site)
             .is_some()
@@ -357,7 +362,7 @@ impl Context<'_, '_> {
             return false;
         }
         matches!(
-            self.control.descriptor.plan.blocks()[site].action(),
+            self.control.descriptor.metadata().plan.blocks()[site].action(),
             NativeIterationAction::LibraryCall { .. }
                 | NativeIterationAction::PrepareU64Range { .. }
                 | NativeIterationAction::PrepareStringSpanSelector { .. }
@@ -372,9 +377,9 @@ impl Context<'_, '_> {
                 | NativeIterationAction::HistogramQueryStep { .. }
                 | NativeIterationAction::HistogramFinish { .. }
         ) || self.needs_move(site).is_some()
-            || matches!(self.control.descriptor.plan.blocks()[site].action(),
+            || matches!(self.control.descriptor.metadata().plan.blocks()[site].action(),
                 NativeIterationAction::Initialize { iteration }
-                if matches!(self.control.descriptor.plan.iterations()[*iteration as usize], mech_engine::native_artifact::NativeControlLoop::Collection(_)))
+                if matches!(self.control.descriptor.metadata().plan.iterations()[*iteration as usize], mech_engine::native_artifact::NativeControlLoop::Collection(_)))
     }
     fn scalar(
         &mut self,
@@ -382,7 +387,7 @@ impl Context<'_, '_> {
         word: u64,
     ) -> Result<Value, NativeProgramExecutionError> {
         let descriptor = self.control.descriptor;
-        let ty = &descriptor.plan.values()[value.get() as usize];
+        let ty = &descriptor.metadata().plan.values()[value.get() as usize];
         let data = match ty.scalar_kind() {
             Some(NativeScalarKind::Bool) if word <= 1 => ValueDataDraft::Bool(word != 0),
             Some(NativeScalarKind::U64) => ValueDataDraft::U64(word),
@@ -393,6 +398,7 @@ impl Context<'_, '_> {
         // Covers construction, validation, ownership import AND retirement on
         // any later failed insertion. No allocation happens before admission.
         let work = descriptor
+            .metadata()
             .scalar_bytes
             .checked_mul(8)
             .and_then(|n| n.checked_add(128))
@@ -401,14 +407,14 @@ impl Context<'_, '_> {
             .work
             .charge(NativeExecutionPhase::Setup, work)?;
         let memory = self.library.memory_budget();
-        let mut reservation = memory.reserve_capacity(descriptor.scalar_bytes)?;
+        let mut reservation = memory.reserve_capacity(descriptor.metadata().scalar_bytes)?;
         ValueDraft {
             schema: ty.schema(),
             shape_values: Box::new([]),
             data,
         }
         .finalize(&SnapshotValidationContext::with_shared_schemas(
-            &descriptor.schemas,
+            &descriptor.metadata().schemas,
         ))
         .map_err(NativeProgramExecutionError::Snapshot)?
         .into_memory_budget(&mut reservation)
@@ -510,7 +516,12 @@ impl Context<'_, '_> {
         if self.borrowed_action(site).is_some() {
             return Err(invalid("ordinary helper at native borrowed String site"));
         }
-        if descriptor.scalar_aggregates.action(site).is_some() {
+        if descriptor
+            .metadata()
+            .scalar_aggregates
+            .action(site)
+            .is_some()
+        {
             return Err(invalid("helper at native-only aggregate site"));
         }
         if operation == super::program_abi::WINDOW_PREPARE {
@@ -536,7 +547,7 @@ impl Context<'_, '_> {
                 path,
                 observation,
                 ..
-            } = descriptor.plan.blocks()[site].action()
+            } = descriptor.metadata().plan.blocks()[site].action()
             else {
                 return Err(invalid(
                     "structural helper outside its exact canonical site",
@@ -550,7 +561,9 @@ impl Context<'_, '_> {
                 .and_then(|n| n.checked_add(64))
                 .ok_or_else(|| invalid("structural observation work overflow"))?;
             self.control.work.charge(
-                NativeExecutionPhase::Node(descriptor.plan.blocks()[site].origin().node()),
+                NativeExecutionPhase::Node(
+                    descriptor.metadata().plan.blocks()[site].origin().node(),
+                ),
                 work,
             )?;
             let root = self
@@ -558,7 +571,7 @@ impl Context<'_, '_> {
                 .copy_current(source.get(), &mut self.control.work)?;
             if *observation == Observation::CanonicalValue {
                 let NativeIterationAction::Structural { output, .. } =
-                    descriptor.plan.blocks()[site].action()
+                    descriptor.metadata().plan.blocks()[site].action()
                 else {
                     unreachable!()
                 };
@@ -575,22 +588,22 @@ impl Context<'_, '_> {
                     None
                 };
                 let result = mech_engine::native_artifact::native_project_structural_value(
-                    &descriptor.plan,
+                    &descriptor.metadata().plan,
                     site,
-                    &descriptor.schemas,
+                    &descriptor.metadata().schemas,
                     &root,
                     prior.as_ref(),
                     self.limits,
                     &self.library,
                 )
                 .map_err(|error| NativeProgramExecutionError::Library {
-                    origin: descriptor.plan.blocks()[site].origin(),
+                    origin: descriptor.metadata().plan.blocks()[site].origin(),
                     error,
                 })?;
                 self.arena
                     .put(output.get(), &result, &mut self.control.work)?;
                 self.consumed = true;
-                return descriptor.plan.values()[output.get() as usize]
+                return descriptor.metadata().plan.values()[output.get() as usize]
                     .scalar_kind()
                     .map(|kind| bits(&result, kind))
                     .transpose();
@@ -633,7 +646,7 @@ impl Context<'_, '_> {
                     // admit the complete worst-case raw-byte equality first.
                     self.library.charge(work, work).map_err(|error| {
                         NativeProgramExecutionError::Collection {
-                            origin: descriptor.plan.blocks()[site].origin(),
+                            origin: descriptor.metadata().plan.blocks()[site].origin(),
                             error,
                         }
                     })?;
@@ -653,7 +666,7 @@ impl Context<'_, '_> {
             }
             let NativeIterationAction::LibraryCall {
                 operands, output, ..
-            } = descriptor.plan.blocks()[site].action()
+            } = descriptor.metadata().plan.blocks()[site].action()
             else {
                 return Err(invalid("library helper outside selected call"));
             };
@@ -682,7 +695,7 @@ impl Context<'_, '_> {
                 return Ok(self.join_map_is_fusing().then_some(1));
             }
             for (index, &operand) in operands.iter().enumerate() {
-                let value = if descriptor.plan.values()[operand.get() as usize]
+                let value = if descriptor.metadata().plan.values()[operand.get() as usize]
                     .scalar_kind()
                     .is_some()
                 {
@@ -696,7 +709,7 @@ impl Context<'_, '_> {
                 };
                 self.call_inputs.values_mut()[index] = Some(value);
             }
-            let call = descriptor.calls[site]
+            let call = descriptor.metadata().calls[site]
                 .as_ref()
                 .ok_or_else(|| invalid("missing exact prepared selection"))?;
             let mut result = None;
@@ -713,14 +726,14 @@ impl Context<'_, '_> {
             // call's owners while the next site is being constructed.
             self.call_inputs.values_mut()[..operands.len()].fill(None);
             outcome.map_err(|error| NativeProgramExecutionError::Library {
-                origin: descriptor.plan.blocks()[site].origin(),
+                origin: descriptor.metadata().plan.blocks()[site].origin(),
                 error,
             })?;
             let result = result.ok_or_else(|| invalid("library omitted output"))?;
             self.arena
                 .put(output.get(), &result, &mut self.control.work)?;
             self.consumed = true;
-            descriptor.plan.values()[output.get() as usize]
+            descriptor.metadata().plan.values()[output.get() as usize]
                 .scalar_kind()
                 .map(|kind| bits(&result, kind))
                 .transpose()
@@ -741,9 +754,9 @@ impl Context<'_, '_> {
             self.arena
                 .put(output.get(), &value, &mut self.control.work)?;
             if let NativeIterationAction::Latch { iteration } =
-                descriptor.plan.blocks()[site].action()
+                descriptor.metadata().plan.blocks()[site].action()
                 && matches!(
-                    descriptor.plan.iterations()[*iteration as usize],
+                    descriptor.metadata().plan.iterations()[*iteration as usize],
                     mech_engine::native_artifact::NativeControlLoop::Tail(_)
                 )
             {
@@ -767,22 +780,29 @@ impl Context<'_, '_> {
         } else {
             if operation != OUTPUT_BASE + self.output_cursor as u64
                 || (self.action_required(site) && !self.consumed)
-                || descriptor.plan.blocks()[site].terminator()
+                || descriptor.metadata().plan.blocks()[site].terminator()
                     != NativeIterationTerminator::Scalar(NativeMatchTerminator::Complete)
             {
                 return Err(invalid("typed output outside exact completion order"));
             }
-            if self.output_cursor >= descriptor.plan.transport_output_count() {
+            if self.output_cursor >= descriptor.metadata().plan.transport_output_count() {
                 return Err(invalid("extra typed output"));
             }
-            let out = descriptor.plan.transport_output_value(self.output_cursor);
-            let ty = descriptor.plan.transport_output_type(self.output_cursor);
+            let out = descriptor
+                .metadata()
+                .plan
+                .transport_output_value(self.output_cursor);
+            let ty = descriptor
+                .metadata()
+                .plan
+                .transport_output_type(self.output_cursor);
             let value = if ty.scalar_kind().is_some() {
                 self.scalar(out, args[0])?
             } else {
                 self.arena.copy_current(out.get(), &mut self.control.work)?
             };
             let target = descriptor
+                .metadata()
                 .plan
                 .values()
                 .len()
@@ -814,6 +834,7 @@ impl Context<'_, '_> {
             && self
                 .control
                 .descriptor
+                .metadata()
                 .plan
                 .activation_boundary()
                 .map(u64::from)
@@ -838,6 +859,7 @@ impl Context<'_, '_> {
             && let Some(group) = self
                 .control
                 .descriptor
+                .metadata()
                 .map_admission
                 .group(previous as usize)
             && self.map_owners.active(group.owner)
@@ -863,14 +885,15 @@ impl Context<'_, '_> {
             && (self
                 .control
                 .descriptor
+                .metadata()
                 .scalar_aggregates
                 .action(previous as usize)
                 .is_some()
                 || self.retained_native_action(previous as usize))
             && let NativeIterationAction::Latch { iteration } =
-                self.control.descriptor.plan.blocks()[previous as usize].action()
+                self.control.descriptor.metadata().plan.blocks()[previous as usize].action()
             && matches!(
-                self.control.descriptor.plan.iterations()[*iteration as usize],
+                self.control.descriptor.metadata().plan.iterations()[*iteration as usize],
                 mech_engine::native_artifact::NativeControlLoop::Tail(_)
             )
         {
@@ -882,6 +905,7 @@ impl Context<'_, '_> {
             && !self
                 .control
                 .descriptor
+                .metadata()
                 .parallel
                 .regions
                 .get(worker.region)
@@ -892,6 +916,7 @@ impl Context<'_, '_> {
         let block = self
             .control
             .descriptor
+            .metadata()
             .plan
             .blocks()
             .get(index)
@@ -903,6 +928,7 @@ impl Context<'_, '_> {
         let group = self
             .control
             .descriptor
+            .metadata()
             .map_admission
             .group(index)
             .filter(|group| self.map_owners.active(group.owner));
@@ -914,6 +940,7 @@ impl Context<'_, '_> {
             let region = self
                 .control
                 .descriptor
+                .metadata()
                 .parallel
                 .regions
                 .get(worker.region)
@@ -938,9 +965,10 @@ impl Context<'_, '_> {
                 }
             })?;
         }
-        if let super::iteration_abi::Progress::Exit(iteration) = descriptor.visits[index].progress
+        if let super::iteration_abi::Progress::Exit(iteration) =
+            descriptor.metadata().visits[index].progress
             && self.borrowed_strings.as_ref().is_some_and(|state| {
-                descriptor.borrowed_strings.regions[state.region]
+                descriptor.metadata().borrowed_strings.regions[state.region]
                     .proof
                     .iteration()
                     == iteration
@@ -949,9 +977,9 @@ impl Context<'_, '_> {
             self.borrowed_strings = None;
         }
         if let super::iteration_abi::Progress::Exit(iteration) =
-            descriptor.visits[site as usize].progress
+            descriptor.metadata().visits[site as usize].progress
             && matches!(
-                descriptor.plan.iterations()[iteration as usize],
+                descriptor.metadata().plan.iterations()[iteration as usize],
                 mech_engine::native_artifact::NativeControlLoop::Tail(_)
             )
         {
@@ -959,9 +987,9 @@ impl Context<'_, '_> {
             self.retire_tail_locals(iteration, RetirementKind::TailExit)?;
         }
         if let super::iteration_abi::Progress::Exit(iteration) =
-            descriptor.visits[site as usize].progress
+            descriptor.metadata().visits[site as usize].progress
             && matches!(
-                descriptor.plan.iterations()[iteration as usize],
+                descriptor.metadata().plan.iterations()[iteration as usize],
                 mech_engine::native_artifact::NativeControlLoop::Collection(_)
             )
         {
@@ -1000,7 +1028,7 @@ impl Context<'_, '_> {
         if site == previous {
             return Ok(site);
         }
-        let layout = &self.control.descriptor.map_admission;
+        let layout = &self.control.descriptor.metadata().map_admission;
         if let Some(group) = layout.group(previous as usize)
             && self.map_owners.active(group.owner)
             && group.start() == previous
@@ -1021,6 +1049,7 @@ impl Context<'_, '_> {
         let slots = self
             .control
             .descriptor
+            .metadata()
             .retirements
             .slots(self.retirements, iteration, kind)
             .map_err(invalid)?;
@@ -1103,7 +1132,12 @@ pub(super) fn execute<F: FnMut(*mut Frame) -> u64>(
 ) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError> {
     // A raw immutable Value slice is not resource authority, even when every
     // resource result could be supplied as a lookalike typed input.
-    if !descriptor.plan.resource_requirements().is_empty() {
+    if !descriptor
+        .metadata()
+        .plan
+        .resource_requirements()
+        .is_empty()
+    {
         return Err(invalid(
             "hosted native plan requires a runtime-issued turn token",
         ));
@@ -1118,7 +1152,7 @@ fn verify_hosted_plan(
     bound: &mech_runtime::CanonicalNativeResourcePlan,
 ) -> Result<(), NativeProgramExecutionError> {
     use mech_runtime::CanonicalNativeResourceAction as Action;
-    let selected = &descriptor.plan;
+    let selected = &descriptor.metadata().plan;
     if revision != selected.program_revision()
         || bound.requirements() != selected.resource_requirements()
         || bound.observations().len() != selected.observations().len()
@@ -1171,7 +1205,7 @@ fn verify_hosted_turn(
     let expected = if turn.text_capture().is_some() {
         0
     } else {
-        descriptor.plan.observations().len()
+        descriptor.metadata().plan.observations().len()
     };
     if turn.observations().len() != expected {
         return Err(invalid(
@@ -1291,7 +1325,7 @@ mod histogram_query_observation_tests {
         let target = Target::of(&demand);
         let memory = ctx.library.memory_budget();
         let memory_before = memory.used_bytes();
-        let envelope = ctx.control.descriptor.scalar_bytes;
+        let envelope = ctx.control.descriptor.metadata().scalar_bytes;
         let mut ballast = None;
         let mut pressure_failed = false;
         if let Some((requested, short)) = PRESSURE.with(std::cell::Cell::get)
@@ -1699,7 +1733,8 @@ mod histogram_query_observation_tests {
                 .iter()
                 .position(|s| s.kind() == Step::Keys)
                 .unwrap() as u32;
-            let selected = jit.descriptor().calls[sink.steps()[ordinal as usize].site() as usize]
+            let selected = jit.descriptor().metadata().calls
+                [sink.steps()[ordinal as usize].site() as usize]
                 .as_ref()
                 .unwrap();
             assert_eq!(
@@ -1902,7 +1937,7 @@ mod histogram_query_observation_tests {
                     )),
                 "no unrelated earlier selected binder may mask the actual scalar boundary"
             );
-            let envelope = jit.descriptor().scalar_bytes;
+            let envelope = jit.descriptor().metadata().scalar_bytes;
             let args = args(&artifact, &memory, &[], "é\0x");
             let word = args[artifact
                 .inputs()
@@ -1914,7 +1949,7 @@ mod histogram_query_observation_tests {
             .memory_budget_retained_bytes(&memory)
             .unwrap();
             assert!(
-                jit.descriptor().scalar_bytes > word,
+                jit.descriptor().metadata().scalar_bytes > word,
                 "earlier captured-yield peak must fit"
             );
             let mut outputs = vec![None; artifact.outputs().len()];
@@ -2075,7 +2110,7 @@ mod histogram_query_observation_tests {
                     "second query must retain both old Bool/U64 roots before replacement"
                 );
                 assert!(target.before.reservation_bytes > 0 && target.before.query_bytes > 0);
-                let scalar_bytes = jit.descriptor().scalar_bytes;
+                let scalar_bytes = jit.descriptor().metadata().scalar_bytes;
                 let baseline_scalar = target.scalar.expect("actual scalar constructor boundary");
                 assert_eq!(baseline_scalar.envelope, scalar_bytes);
                 assert!(
@@ -2478,6 +2513,7 @@ mod histogram_observation_tests {
         );
         let binding = jit
             .descriptor()
+            .metadata()
             .calls
             .iter()
             .flatten()
@@ -2734,7 +2770,7 @@ mod histogram_observation_tests {
                 &mech_stdlib::source_catalog(),
             )
             .unwrap();
-            let args = args(&artifact, jit.descriptor().scalar_bytes, &memory);
+            let args = args(&artifact, jit.descriptor().metadata().scalar_bytes, &memory);
             let mut outputs = vec![None; artifact.outputs().len()];
             jit.evaluate_into(&args, &mut outputs, caps(), &memory)
                 .unwrap();
@@ -3527,23 +3563,29 @@ mod tests {
         if frame.phase != super::super::program_abi::PHASE_ACTIVATION {
             return false;
         }
-        assert!(!descriptor.plan.has_activation());
+        assert!(!descriptor.metadata().plan.has_activation());
         assert_eq!(
-            unsafe { (frame.base.admit_next)(frame.base.context, descriptor.plan.entry() as u64) },
+            unsafe {
+                (frame.base.admit_next)(
+                    frame.base.context,
+                    descriptor.metadata().plan.entry() as u64,
+                )
+            },
             STATUS_OK
         );
-        frame.base.error_node = u64::from(descriptor.plan.activation_boundary().unwrap());
+        frame.base.error_node =
+            u64::from(descriptor.metadata().plan.activation_boundary().unwrap());
         true
     }
     fn reach_call(frame: &mut Frame, descriptor: &NativeProgramDescriptor) -> u32 {
-        let mut site = descriptor.plan.activation_boundary().unwrap();
+        let mut site = descriptor.metadata().plan.activation_boundary().unwrap();
         loop {
             // SAFETY: injected tests use execute's retained callback and frame.
             assert_eq!(
                 unsafe { (frame.base.admit_next)(frame.base.context, site as u64) },
                 STATUS_OK
             );
-            let block = &descriptor.plan.blocks()[site as usize];
+            let block = &descriptor.metadata().plan.blocks()[site as usize];
             if matches!(block.action(), NativeIterationAction::LibraryCall { .. }) {
                 return site;
             }
@@ -3584,7 +3626,7 @@ mod tests {
                     };
                     if mode == 4 {
                         let NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(next)) =
-                            jit.descriptor().plan.blocks()[site as usize].terminator()
+                            jit.descriptor().metadata().plan.blocks()[site as usize].terminator()
                         else {
                             panic!("fixture terminator")
                         };
@@ -3597,12 +3639,13 @@ mod tests {
                     } else {
                         frame.arguments as u64
                     };
-                    let arity = match jit.descriptor().plan.blocks()[site as usize].action() {
-                        NativeIterationAction::LibraryCall { operands, .. } => {
-                            operands.len() as u64
-                        }
-                        _ => unreachable!(),
-                    };
+                    let arity =
+                        match jit.descriptor().metadata().plan.blocks()[site as usize].action() {
+                            NativeIterationAction::LibraryCall { operands, .. } => {
+                                operands.len() as u64
+                            }
+                            _ => unreachable!(),
+                        };
                     let second = if mode == 6 { arity + 1 } else { arity };
                     let third = u64::from(mode == 7);
                     if mode == 8 {
@@ -3676,7 +3719,12 @@ mod tests {
                 |raw| {
                     // SAFETY: the test receives this synchronous owned frame only.
                     let frame = unsafe { &mut *raw };
-                    let boundary = jit.descriptor().plan.activation_boundary().unwrap();
+                    let boundary = jit
+                        .descriptor()
+                        .metadata()
+                        .plan
+                        .activation_boundary()
+                        .unwrap();
                     if mode == 0 {
                         frame.phase = super::super::program_abi::PHASE_TURN;
                     } else if mode == 1 {
@@ -3773,9 +3821,9 @@ mod tests {
             super::super::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog())
                 .unwrap();
         let descriptor = jit.descriptor();
-        let collection = &descriptor.plan.collections()[0];
+        let collection = &descriptor.metadata().plan.collections()[0];
         let mech_engine::native_artifact::NativeControlLoop::Collection(generator) =
-            &descriptor.plan.iterations()[collection.generators()[0] as usize]
+            &descriptor.metadata().plan.iterations()[collection.generators()[0] as usize]
         else {
             panic!("collection generator")
         };
@@ -3822,13 +3870,13 @@ mod tests {
                     };
                     let next = |site: u32| {
                         let NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(next)) =
-                            descriptor.plan.blocks()[site as usize].terminator()
+                            descriptor.metadata().plan.blocks()[site as usize].terminator()
                         else {
                             panic!("straight-line collection setup")
                         };
                         next
                     };
-                    let mut site = descriptor.plan.activation_boundary().unwrap();
+                    let mut site = descriptor.metadata().plan.activation_boundary().unwrap();
                     loop {
                         assert_eq!(admit(site), STATUS_OK);
                         if site == collection.begin() {
@@ -3922,6 +3970,7 @@ mod tests {
                 .unwrap();
         let descriptor = jit.descriptor();
         let prepare = descriptor
+            .metadata()
             .plan
             .iterations()
             .iter()
@@ -3964,10 +4013,10 @@ mod tests {
                     if checkpoint_empty_activation(frame, descriptor) {
                         return super::super::program_abi::STATUS_ACTIVATED;
                     }
-                    let mut site = descriptor.plan.activation_boundary().unwrap();
+                    let mut site = descriptor.metadata().plan.activation_boundary().unwrap();
                     let next = |site: u32| {
                         let NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(next)) =
-                            descriptor.plan.blocks()[site as usize].terminator()
+                            descriptor.metadata().plan.blocks()[site as usize].terminator()
                         else {
                             panic!("straight range setup")
                         };
@@ -3981,7 +4030,7 @@ mod tests {
                         if site == prepare {
                             break;
                         }
-                        match descriptor.plan.blocks()[site as usize].action() {
+                        match descriptor.metadata().plan.blocks()[site as usize].action() {
                             NativeIterationAction::CollectionBegin { .. } => {
                                 // Inline ranges are prepared inside a live
                                 // builder. Consume its real required helper
@@ -4113,14 +4162,20 @@ mod tests {
             // private context. This shared borrow ends before helper mutates it.
             let ctx = unsafe { &*context.cast::<Context<'_, '_>>() };
             let site = usize::try_from(site).ok()?;
-            let block = ctx.control.descriptor.plan.blocks().get(site)?;
+            let block = ctx.control.descriptor.metadata().plan.blocks().get(site)?;
             if !matches!(
                 block.action(),
                 NativeIterationAction::PrepareU64Range { .. }
             ) {
                 return None;
             }
-            let selected = ctx.control.descriptor.calls.get(site)?.as_ref()?;
+            let selected = ctx
+                .control
+                .descriptor
+                .metadata()
+                .calls
+                .get(site)?
+                .as_ref()?;
             Some(RangeScratchObservation {
                 origin: block.origin(),
                 live_bytes: ctx.collections.as_ref()?.test_live_bytes(),

@@ -21,14 +21,13 @@ impl Context<'_, '_> {
         // their cost must also remain bounded for programs with many regions.
         self.control.work.charge(
             super::NativeExecutionPhase::Setup,
-            super::amount(descriptor.window_regions.len(), 128, 256)?,
+            super::amount(descriptor.metadata().window_regions.len(), 128, 256)?,
         )?;
-        let region = descriptor
-            .window_regions
+        let region = descriptor.metadata().window_regions
             .iter()
             .find(|region| {
                 u64::from(region.collection()) == args[2]
-                    && matches!(&descriptor.plan.iterations()[region.iteration() as usize],
+                    && matches!(&descriptor.metadata().plan.iterations()[region.iteration() as usize],
                     NativeControlLoop::Collection(generator) if generator.header() as usize == site)
             })
             .ok_or_else(|| invalid("compiled window outside its exact immutable plan"))?;
@@ -82,7 +81,7 @@ impl Context<'_, '_> {
             args[0],
             accepted,
             region.collection(),
-            descriptor.plan.collections()[region.collection() as usize].origin(),
+            descriptor.metadata().plan.collections()[region.collection() as usize].origin(),
             self.library.clone(),
             temporary,
             retained,
@@ -113,12 +112,13 @@ impl Context<'_, '_> {
         }
         let descriptor = self.control.descriptor;
         let region = descriptor
+            .metadata()
             .window_regions
             .iter()
             .find(|region| region.collection() == collection)
             .ok_or_else(|| invalid("compiled window lost its exact plan"))?;
         let NativeControlLoop::Collection(generator) =
-            &descriptor.plan.iterations()[region.iteration() as usize]
+            &descriptor.metadata().plan.iterations()[region.iteration() as usize]
         else {
             return Err(invalid("compiled window lost its generator"));
         };

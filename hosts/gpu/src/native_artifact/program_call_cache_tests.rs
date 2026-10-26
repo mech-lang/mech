@@ -53,6 +53,7 @@ fn lane(
 
 fn only_leaf(descriptor: &NativeProgramDescriptor) -> usize {
     let sites = descriptor
+        .metadata()
         .calls
         .iter()
         .enumerate()
@@ -68,7 +69,7 @@ fn text(
     text: &str,
     memory: &ManagedMemoryBudget,
 ) -> Value {
-    let call = descriptor.calls[site].as_ref().unwrap();
+    let call = descriptor.metadata().calls[site].as_ref().unwrap();
     let mech_core::ResolvedOperationContract::Declared(contract) = call.template().contract()
     else {
         panic!("declared String length");
@@ -80,7 +81,7 @@ fn text(
         data: ValueDataDraft::String(text.into()),
     }
     .finalize(&SnapshotValidationContext::with_shared_schemas(
-        &descriptor.schemas,
+        &descriptor.metadata().schemas,
     ))
     .unwrap();
     let mut reservation = memory
@@ -99,7 +100,11 @@ fn once_library_slot_retains_no_binding_or_planner_metadata() {
         .unwrap();
         let descriptor = jit.descriptor();
         let site = only_leaf(descriptor);
-        assert!(descriptor.plan.blocks()[site].iteration().is_none());
+        assert!(
+            descriptor.metadata().plan.blocks()[site]
+                .iteration()
+                .is_none()
+        );
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let (mut lane, library) = lane(descriptor, &memory);
         assert!(matches!(&lane.entries[site], CallCacheEntry::Once));
@@ -108,7 +113,7 @@ fn once_library_slot_retains_no_binding_or_planner_metadata() {
         let mut output = None;
         lane.invoke(
             site,
-            descriptor.calls[site].as_ref().unwrap(),
+            descriptor.metadata().calls[site].as_ref().unwrap(),
             &args,
             &mut output,
             policy(),
@@ -150,7 +155,7 @@ fn repeated_cache_demand_is_read_only_account_bound_and_keeps_nested_fuel() {
         assert_eq!(cold.retained_nodes, 0);
         let input = [Some(text(descriptor, site, &"é".repeat(4096), &memory))];
         let before = memory.used_bytes();
-        let call = descriptor.calls[site].as_ref().unwrap();
+        let call = descriptor.metadata().calls[site].as_ref().unwrap();
         let mut output = None;
         lane.invoke(site, call, &input, &mut output, policy(), &library)
             .unwrap();
@@ -238,14 +243,18 @@ fn repeated_library_slot_reuses_binding_but_reads_fresh_values_and_recovers() {
         .unwrap();
         let descriptor = jit.descriptor();
         let site = only_leaf(descriptor);
-        assert!(descriptor.plan.blocks()[site].iteration().is_some());
+        assert!(
+            descriptor.metadata().plan.blocks()[site]
+                .iteration()
+                .is_some()
+        );
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let (mut lane, library) = lane(descriptor, &memory);
         assert!(matches!(&lane.entries[site], CallCacheEntry::Repeated(..)));
         // Equal byte lengths and empty shape tapes are not value identity.
         let args = ["ABC", "e\u{301}"].map(|value| [Some(text(descriptor, site, value, &memory))]);
         let before = memory.used_bytes();
-        let call = descriptor.calls[site].as_ref().unwrap();
+        let call = descriptor.metadata().calls[site].as_ref().unwrap();
         let mut output = None;
         let start = library.used().0;
         lane.invoke(site, call, &args[0], &mut output, policy(), &library)
@@ -283,7 +292,8 @@ fn repeated_library_slot_reuses_binding_but_reads_fresh_values_and_recovers() {
         drop((output, lane));
         assert_eq!(
             memory.used_bytes(),
-            before - CallCacheLane::metadata_bytes(descriptor.plan.blocks().len()).unwrap()
+            before
+                - CallCacheLane::metadata_bytes(descriptor.metadata().plan.blocks().len()).unwrap()
         );
         drop((args, library));
         assert_eq!(memory.used_bytes(), 0);
@@ -327,9 +337,14 @@ fn once_repeatable_witness_covers_activation_matches_counted_collections_and_tai
             )
             .unwrap();
             let descriptor = jit.descriptor();
-            descriptor.plan.validate_current_visits().unwrap();
+            descriptor
+                .metadata()
+                .plan
+                .validate_current_visits()
+                .unwrap();
             assert_eq!(
                 descriptor
+                    .metadata()
                     .plan
                     .iterations()
                     .iter()
@@ -340,7 +355,7 @@ fn once_repeatable_witness_covers_activation_matches_counted_collections_and_tai
             let (lane, library) = lane(descriptor, &memory);
             let mut once_calls = 0;
             let mut repeated_calls = 0;
-            for (site, block) in descriptor.plan.blocks().iter().enumerate() {
+            for (site, block) in descriptor.metadata().plan.blocks().iter().enumerate() {
                 if !matches!(block.action(), NativeIterationAction::LibraryCall { .. }) {
                     continue;
                 }
@@ -371,9 +386,9 @@ fn preserved_control_checkpoint_edges_cannot_replay_root_sites() {
         )
         .unwrap();
         let descriptor = jit.descriptor();
-        assert!(descriptor.plan.has_activation());
-        let boundary = descriptor.plan.activation_boundary().unwrap();
-        let mut progress = vec![0; descriptor.plan.iterations().len() * 2];
+        assert!(descriptor.metadata().plan.has_activation());
+        let boundary = descriptor.metadata().plan.activation_boundary().unwrap();
+        let mut progress = vec![0; descriptor.metadata().plan.iterations().len() * 2];
         let mut control = Control {
             descriptor,
             progress: &mut progress,
@@ -384,18 +399,18 @@ fn preserved_control_checkpoint_edges_cannot_replay_root_sites() {
             visits: 0,
             error: None,
         };
-        let mut site = descriptor.plan.entry();
+        let mut site = descriptor.metadata().plan.entry();
         let mut closed_call = None;
         while site != boundary {
             control.visit(u64::from(site)).unwrap();
             if matches!(
-                descriptor.plan.blocks()[site as usize].action(),
+                descriptor.metadata().plan.blocks()[site as usize].action(),
                 NativeIterationAction::LibraryCall { .. }
             ) {
                 closed_call = Some(site);
             }
             let NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(next)) =
-                descriptor.plan.blocks()[site as usize].terminator()
+                descriptor.metadata().plan.blocks()[site as usize].terminator()
             else {
                 panic!("straight-line phase fixture");
             };
@@ -405,12 +420,16 @@ fn preserved_control_checkpoint_edges_cannot_replay_root_sites() {
         // Prepared::run preserves this exact continuation, rather than
         // restarting at entry; NativeProgramExecutionSession::resume consumes it.
         let before = control.visits;
-        assert!(control.visit(u64::from(descriptor.plan.entry())).is_err());
+        assert!(
+            control
+                .visit(u64::from(descriptor.metadata().plan.entry()))
+                .is_err()
+        );
         assert_eq!(control.visits, before);
         control.visit(u64::from(boundary)).unwrap();
         assert!(control.visit(u64::from(closed_call.unwrap())).is_err());
         let NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(mut next)) =
-            descriptor.plan.blocks()[boundary as usize].terminator()
+            descriptor.metadata().plan.blocks()[boundary as usize].terminator()
         else {
             panic!("checkpoint jump");
         };
@@ -420,13 +439,17 @@ fn preserved_control_checkpoint_edges_cannot_replay_root_sites() {
                 break;
             }
             let NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(successor)) =
-                descriptor.plan.blocks()[next as usize].terminator()
+                descriptor.metadata().plan.blocks()[next as usize].terminator()
             else {
                 panic!("straight-line turn fixture");
             };
             next = successor;
         }
-        assert!(control.visit(u64::from(descriptor.plan.entry())).is_err());
+        assert!(
+            control
+                .visit(u64::from(descriptor.metadata().plan.entry()))
+                .is_err()
+        );
     }
 }
 

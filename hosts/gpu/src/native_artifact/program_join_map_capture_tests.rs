@@ -38,8 +38,9 @@ fn fused_join_map_missing_key_keeps_the_original_lookup_origin_after_complete_in
     let (artifacts, catalog) = fixture::artifacts(&program());
     for artifact in artifacts {
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        let region = &jit.descriptor().string_map_regions[0];
-        let origin = jit.descriptor().plan.blocks()[region.selection_site() as usize].origin();
+        let region = &jit.descriptor().metadata().string_map_regions[0];
+        let origin =
+            jit.descriptor().metadata().plan.blocks()[region.selection_site() as usize].origin();
         let mut expected = None;
         for disable in [true, false] {
             let memory = ManagedMemoryBudget::new(TEST_MEMORY_LIMIT);
@@ -151,8 +152,9 @@ fn fused_join_map_original_join_one_short_limits_precede_the_later_missing_key()
     let (artifacts, catalog) = fixture::artifacts(&program());
     for artifact in artifacts {
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        let join = &jit.descriptor().selected_joins.regions[0];
-        let join_origin = jit.descriptor().plan.blocks()[join.consumer() as usize].origin();
+        let join = &jit.descriptor().metadata().selected_joins.regions[0];
+        let join_origin =
+            jit.descriptor().metadata().plan.blocks()[join.consumer() as usize].origin();
         let memory = ManagedMemoryBudget::new(TEST_MEMORY_LIMIT);
         let (mut initial, trace) = runtime(input, true, None);
         let sizes = with_control(Control::default(), || {

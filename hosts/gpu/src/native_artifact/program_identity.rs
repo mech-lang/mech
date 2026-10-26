@@ -397,6 +397,7 @@ pub(super) fn typed_ir_sha256(
     lines: &[NativeTextLineMatrixRegion],
     map_owners: Option<&mech_engine::native_artifact::NativeMapOwnerWords>,
     frozen_maps: &super::program_frozen_map_layout::Layout,
+    string_maps: &[mech_engine::native_artifact::NativeStringMapRegion],
 ) -> [u8; 32] {
     let mut hash = Sha256::new();
     hash.update(b"mech.canonical-managed-program-cfg\0");
@@ -481,7 +482,6 @@ pub(super) fn typed_ir_sha256(
     for node in plan.activation_nodes() {
         word(&mut hash, u64::from(node.get()));
     }
-    let string_maps = plan.string_map_regions();
     word(&mut hash, string_maps.len() as u64);
     for region in string_maps {
         for field in [

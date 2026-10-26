@@ -35,7 +35,12 @@ fn texts(value: &Value) -> Option<&[Box<str>]> {
 impl Context<'_, '_> {
     pub(super) fn borrowed_action(&self, site: usize) -> Option<&Action> {
         let state = self.borrowed_strings.as_ref()?;
-        let (region, action) = self.control.descriptor.borrowed_strings.action(site)?;
+        let (region, action) = self
+            .control
+            .descriptor
+            .metadata()
+            .borrowed_strings
+            .action(site)?;
         (state.active && state.region == region).then_some(action)
     }
     pub(super) fn prepare_borrowed_strings(
@@ -43,7 +48,12 @@ impl Context<'_, '_> {
         site: usize,
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
-        let ordinal = self.control.descriptor.borrowed_strings.initializers[site]
+        let ordinal = self
+            .control
+            .descriptor
+            .metadata()
+            .borrowed_strings
+            .initializers[site]
             .ok_or_else(|| invalid("borrowed String preparation outside initializer"))?;
         self.prepare_borrowed_region(site, args, ordinal)
     }
@@ -59,7 +69,7 @@ impl Context<'_, '_> {
             ));
         }
         let descriptor = self.control.descriptor;
-        let region = &descriptor.borrowed_strings.regions[ordinal];
+        let region = &descriptor.metadata().borrowed_strings.regions[ordinal];
         if self.control.current != Some(region.proof.iteration()) {
             return Err(invalid("borrowed String preparation outside current loop"));
         }
@@ -155,7 +165,7 @@ impl Context<'_, '_> {
             .ok_or_else(|| invalid("borrowed String temporary footprint overflow"))?;
         if temporary > limit {
             return Err(Error::Collection {
-                origin: descriptor.plan.blocks()[site].origin(),
+                origin: descriptor.metadata().plan.blocks()[site].origin(),
                 error: mech_core::ResidentKernelError::ResourceLimit {
                     phase: mech_core::ResidentResourcePhase::Admission,
                     dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
@@ -276,7 +286,7 @@ impl Context<'_, '_> {
             .ok_or_else(|| invalid("String failure outside native view"))?;
         let descriptor = self.control.descriptor;
         let NativeIterationAction::LibraryCall { operands, .. } =
-            descriptor.plan.blocks()[site].action()
+            descriptor.metadata().plan.blocks()[site].action()
         else {
             return Err(invalid("String failure outside selected library leaf"));
         };
@@ -285,14 +295,14 @@ impl Context<'_, '_> {
             && let Some(window) = self.prefix_line_window(*source)
         {
             let prior = self.selected_join_coexistence(Some(*source))?;
-            let call = descriptor.calls[site]
+            let call = descriptor.metadata().calls[site]
                 .as_ref()
                 .ok_or_else(|| invalid("line window bounds failure lost its selected call"))?;
             let result =
                 call.text_line_window_element(window, args[2], self.limits, &self.library, prior);
             let error = match result {
                 Err(error) => Error::Library {
-                    origin: descriptor.plan.blocks()[site].origin(),
+                    origin: descriptor.metadata().plan.blocks()[site].origin(),
                     error,
                 },
                 Ok(_) => invalid("borrowed line window bounds failure unexpectedly succeeded"),
@@ -304,14 +314,14 @@ impl Context<'_, '_> {
             && let Some(lines) = self.line_matrix(*source).cloned()
         {
             let prior = self.selected_join_coexistence(Some(*source))?;
-            let call = descriptor.calls[site]
+            let call = descriptor.metadata().calls[site]
                 .as_ref()
                 .ok_or_else(|| invalid("line matrix bounds failure lost its selected call"))?;
             let result =
                 call.text_line_matrix_element(&lines, args[2], self.limits, &self.library, prior);
             let error = match result {
                 Err(error) => Error::Library {
-                    origin: descriptor.plan.blocks()[site].origin(),
+                    origin: descriptor.metadata().plan.blocks()[site].origin(),
                     error,
                 },
                 Ok(_) => invalid("borrowed line bounds failure unexpectedly succeeded"),
@@ -327,7 +337,7 @@ impl Context<'_, '_> {
             self.control.work.charge(
                 NativeExecutionPhase::Setup,
                 amount(
-                    descriptor.borrowed_strings.regions[state.region]
+                    descriptor.metadata().borrowed_strings.regions[state.region]
                         .proof
                         .actions()
                         .len(),
@@ -335,7 +345,7 @@ impl Context<'_, '_> {
                     128,
                 )?,
             )?;
-            let restore = descriptor.borrowed_strings.regions[state.region]
+            let restore = descriptor.metadata().borrowed_strings.regions[state.region]
                 .proof
                 .actions()
                 .iter()
@@ -362,7 +372,7 @@ impl Context<'_, '_> {
                     .checked_add(texts(owner).map_or(1, |s| s.len()))
                     .ok_or_else(|| invalid("String failure owner scan overflow"))?;
             }
-            let region = &descriptor.borrowed_strings.regions[state.region];
+            let region = &descriptor.metadata().borrowed_strings.regions[state.region];
             let mut window_inspected = 0usize;
             for &matrix in region.proof.matrices() {
                 if let Some(window) = self.prefix_line_window(matrix) {
@@ -427,19 +437,19 @@ impl Context<'_, '_> {
                 }
             }
             let text = found.ok_or_else(|| invalid("String failure view is not owned"))?;
-            let bytes = amount(text.len(), 8, descriptor.scalar_bytes)?;
+            let bytes = amount(text.len(), 8, descriptor.metadata().scalar_bytes)?;
             self.control
                 .work
                 .charge(NativeExecutionPhase::Setup, bytes)?;
             let mut reservation = self.library.memory_budget().reserve_capacity(bytes)?;
             let value = mech_core::snapshot::ValueDraft {
-                schema: descriptor.plan.values()[source.get() as usize].schema(),
+                schema: descriptor.metadata().plan.values()[source.get() as usize].schema(),
                 shape_values: Box::new([]),
                 data: mech_core::snapshot::ValueDataDraft::String(text.to_owned()),
             }
             .finalize(
                 &mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(
-                    &descriptor.schemas,
+                    &descriptor.metadata().schemas,
                 ),
             )
             .map_err(Error::Snapshot)?
@@ -448,7 +458,7 @@ impl Context<'_, '_> {
                 .put(source.get(), &value, &mut self.control.work)?;
         }
         for (i, operand) in operands.iter().enumerate() {
-            let word = if descriptor.plan.values()[operand.get() as usize]
+            let word = if descriptor.metadata().plan.values()[operand.get() as usize]
                 .scalar_kind()
                 .is_some()
             {
@@ -479,7 +489,7 @@ impl Context<'_, '_> {
         )?;
         let NativeIterationAction::LibraryCall {
             operands, output, ..
-        } = descriptor.plan.blocks()[site].action()
+        } = descriptor.metadata().plan.blocks()[site].action()
         else {
             return Err(invalid("elided String selector lost its selected call"));
         };
@@ -490,7 +500,7 @@ impl Context<'_, '_> {
             let value = self.scalar(operand, words[i])?;
             self.call_inputs.values_mut()[i] = Some(value);
         }
-        let call = descriptor.calls[site]
+        let call = descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("elided String selector lost its prepared leaf"))?;
         let mut result = None;
@@ -504,7 +514,7 @@ impl Context<'_, '_> {
         );
         self.call_inputs.values_mut()[..2].fill(None);
         outcome.map_err(|error| Error::Library {
-            origin: descriptor.plan.blocks()[site].origin(),
+            origin: descriptor.metadata().plan.blocks()[site].origin(),
             error,
         })?;
         let result = result.ok_or_else(|| invalid("elided String selector omitted its result"))?;

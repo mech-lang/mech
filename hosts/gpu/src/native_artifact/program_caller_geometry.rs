@@ -22,7 +22,7 @@ impl Context<'_, '_> {
             self.call_caches
                 .caller_retained_nodes(&self.library)
                 .map_err(|error| Error::Library {
-                    origin: self.control.descriptor.plan.blocks()[site].origin(),
+                    origin: self.control.descriptor.metadata().plan.blocks()[site].origin(),
                     error,
                 })?,
         )

@@ -120,8 +120,15 @@ pub(super) fn prepare_descriptor(
     }
     let plan = lower_native_program_artifact(artifact, catalog)
         .map_err(|_| NativeLinkError::new("program Object has no current canonical selection"))?;
-    let descriptor = NativeProgramDescriptor::prepare(artifact, catalog, plan, stack, code)
+    let prepared = super::program::prepare::PreparedNativeProgram::prepare(artifact, catalog, plan)
         .map_err(|_| NativeLinkError::new("program Object selection could not be prepared"))?;
+    let descriptor = NativeProgramDescriptor::from_prepared(
+        prepared,
+        super::program_descriptor::NativeCodeFootprint {
+            stack_bytes: stack,
+            code_bytes: code,
+        },
+    );
     check_identity(&descriptor, identity)?;
     Ok(descriptor)
 }

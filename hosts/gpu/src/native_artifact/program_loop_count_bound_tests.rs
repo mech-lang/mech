@@ -33,7 +33,7 @@ fn count_bounds_metadata_binds_actual_reads_additions_and_guarded_emissions() {
         assert!(row[0].as_u64().unwrap() < stride);
         let site = row[1].as_u64().unwrap() as usize;
         assert!(matches!(
-            object.descriptor().plan.blocks()[site].action(),
+            object.descriptor().metadata().plan.blocks()[site].action(),
             NativeIterationAction::Scalar(
                 mech_engine::native_artifact::NativeMatchAction::Primitive {
                     op: mech_engine::native_artifact::NativeScalarOp::U64Add,
@@ -47,7 +47,7 @@ fn count_bounds_metadata_binds_actual_reads_additions_and_guarded_emissions() {
     for row in reads {
         let site = row[1].as_u64().unwrap() as usize;
         let NativeIterationAction::LibraryCall { template, .. } =
-            object.descriptor().plan.blocks()[site].action()
+            object.descriptor().metadata().plan.blocks()[site].action()
         else {
             panic!("original map read");
         };

@@ -6,10 +6,9 @@ use mech_engine::native_artifact::{
     NativeIterationAction, NativeProgramArtifactPlan,
 };
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct RegionLayout {
-    #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub proof: Region,
     // The code generator writes these lanes; the owning runtime independently
     // verifies their clearance before accepting a continuation checkpoint.
@@ -24,7 +23,7 @@ pub(super) struct RegionLayout {
         dead_code,
         reason = "build-only descriptors retain runtime capture offsets in the shared image layout"
     )]
-    slots: Box<[Option<usize>]>,
+    pub(in crate::native_artifact) slots: Box<[Option<usize>]>,
 }
 impl RegionLayout {
     #[cfg(feature = "canonical-native-program")]
@@ -35,7 +34,7 @@ impl RegionLayout {
         self.proof.matrices().len() * 3 + self.proof.literals().len() * 2
     }
 }
-#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, serde::Serialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Layout {
     pub regions: Vec<RegionLayout>,
@@ -44,7 +43,10 @@ pub(super) struct Layout {
     pub words: usize,
 }
 impl Layout {
-    pub fn derive(plan: &NativeProgramArtifactPlan) -> Result<Self, &'static str> {
+    pub fn derive(
+        plan: &NativeProgramArtifactPlan,
+        aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
+    ) -> Result<Self, &'static str> {
         let mut layout = Self {
             initializers: vec![None; plan.blocks().len()],
             actions: vec![None; plan.blocks().len()],
@@ -54,7 +56,7 @@ impl Layout {
             .values()
             .len()
             .checked_add(plan.iterations().len())
-            .and_then(|n| n.checked_add(plan.scalar_aggregates().words()))
+            .and_then(|n| n.checked_add(aggregates.words()))
             .ok_or("borrowed String local count overflow")?;
         let mut next = base;
         for proof in plan.borrowed_string_regions() {

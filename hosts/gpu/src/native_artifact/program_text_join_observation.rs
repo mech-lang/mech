@@ -52,7 +52,7 @@ impl State {
         ctx: &Context<'_, '_>,
         site: usize,
     ) -> Result<Option<TextJoinDemand>, Error> {
-        let Some(block) = ctx.control.descriptor.plan.blocks().get(site) else {
+        let Some(block) = ctx.control.descriptor.metadata().plan.blocks().get(site) else {
             return Ok(None);
         };
         let (id, value, stage) = match block.action() {
@@ -64,7 +64,14 @@ impl State {
             }
             _ => return Ok(None),
         };
-        let Some(definition) = ctx.control.descriptor.plan.collections().get(id as usize) else {
+        let Some(definition) = ctx
+            .control
+            .descriptor
+            .metadata()
+            .plan
+            .collections()
+            .get(id as usize)
+        else {
             return Ok(None);
         };
         let NativeCollectionResult::TextJoin(sink) = definition.result() else {
@@ -166,7 +173,7 @@ impl State {
                     return Ok(None);
                 }
                 let envelope = add(
-                    ctx.control.descriptor.scalar_bytes,
+                    ctx.control.descriptor.metadata().scalar_bytes,
                     add(mul(payload, 4)?, 4096)?,
                 )?;
                 let finalization = add(mul(payload, 8)?, 32)?;

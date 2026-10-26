@@ -223,7 +223,7 @@ impl State {
     }
 
     pub(super) fn metadata_bytes(descriptor: &NativeProgramDescriptor) -> Result<u64, Error> {
-        let plan = &descriptor.plan;
+        let plan = &descriptor.metadata().plan;
         if plan.collections().is_empty() {
             return Ok(0);
         }
@@ -231,7 +231,7 @@ impl State {
             (size_of::<[u64; 6]>()
                 + size_of::<Vec<Option<string_span::Lane>>>()
                 + size_of::<Vec<Option<string_map_entry::Lane>>>()) as u64
-                + if descriptor.window_regions.is_empty() {
+                + if descriptor.metadata().window_regions.is_empty() {
                     0
                 } else {
                     ascii_facts::Cache::metadata_bytes()
@@ -256,7 +256,7 @@ impl State {
         memory: &ManagedMemoryBudget,
         work: &mut NativeWorkMeter,
     ) -> Result<Option<Self>, Error> {
-        let plan = &descriptor.plan;
+        let plan = &descriptor.metadata().plan;
         if plan.collections().is_empty() {
             return Ok(None);
         }
@@ -350,7 +350,7 @@ impl State {
         clones: u64,
         compute: u64,
     ) -> Result<(), Error> {
-        let origin = ctx.control.descriptor.plan.collections()[id as usize].origin();
+        let origin = ctx.control.descriptor.metadata().plan.collections()[id as usize].origin();
         let builder = self.builder(id)?;
         let cloned = add(builder.cloned_bytes, clones)?;
         let used = add(builder.compute, compute)?;
@@ -387,7 +387,7 @@ impl State {
         }
         let word = words[0];
         let descriptor = ctx.control.descriptor;
-        let plan = &descriptor.plan;
+        let plan = &descriptor.metadata().plan;
         if !matches!(
             plan.blocks()[site].action(),
             Action::PrepareU64Range { .. } | Action::PrepareStringSpanSelector { .. }
@@ -439,7 +439,7 @@ impl State {
                         "range preparation outside its fresh lexical invocation",
                     ));
                 }
-                let selected = descriptor.calls[site]
+                let selected = descriptor.metadata().calls[site]
                     .as_ref()
                     .ok_or_else(|| invalid("range preparation lacks actual selected factory"))?;
                 let bytes = selected.binding_metadata_bytes();
@@ -547,7 +547,7 @@ impl State {
                             // charge above even when this exact root is a hit.
                             let count = match value.data() {
                                 ValueData::String(text)
-                                    if !descriptor.window_regions.is_empty()
+                                    if !descriptor.metadata().window_regions.is_empty()
                                         && self.ascii_facts.inspect(&value)? =>
                                 {
                                     u64::try_from(text.len())
@@ -576,7 +576,7 @@ impl State {
                     self.account(ctx, definition.collection(), 0, cost)?;
                 }
                 let (count, index_offset) = if let Some(worker) = &ctx.worker
-                    && descriptor.parallel.regions[worker.region].iteration == *iteration
+                    && descriptor.metadata().parallel.regions[worker.region].iteration == *iteration
                 {
                     if count != worker.count
                         || worker.index >= count
@@ -669,7 +669,7 @@ impl State {
                         if !valid {
                             return Err(invalid("managed generator element schema differs"));
                         }
-                        let envelope = add(descriptor.scalar_bytes, mul(bytes, 4)?)?;
+                        let envelope = add(descriptor.metadata().scalar_bytes, mul(bytes, 4)?)?;
                         check(
                             definition.origin(),
                             Dimension::TemporaryBytes,
@@ -690,7 +690,7 @@ impl State {
                             data,
                         }
                         .finalize(&SnapshotValidationContext::with_shared_schemas(
-                            &descriptor.schemas,
+                            &descriptor.metadata().schemas,
                         ))
                         .map_err(Error::Snapshot)?
                         .into_memory_budget(&mut reservation)?;
@@ -940,13 +940,13 @@ impl State {
     }
     fn finish(&mut self, ctx: &mut Context<'_, '_>, id: u32) -> Result<(), Error> {
         let descriptor = ctx.control.descriptor;
-        let definition = &descriptor.plan.collections()[id as usize];
-        let output = &descriptor.plan.values()[definition.output().get() as usize];
+        let definition = &descriptor.metadata().plan.collections()[id as usize];
+        let output = &descriptor.metadata().plan.values()[definition.output().get() as usize];
         let builder = self.builder(id)?;
         let count = builder.values.len() as u64;
         let payload = builder.payload_bytes;
         let envelope = add(
-            descriptor.scalar_bytes,
+            descriptor.metadata().scalar_bytes,
             add(mul(builder.reservation.capacity_bytes(), 4)?, 4096)?,
         )?;
         self.account(ctx, id, payload, add(mul(envelope, 16)?, 256)?)?;
@@ -985,7 +985,7 @@ impl State {
         // Normal scalar comprehensions are always 1xN, including 1x0.
         let extents = if definition.kind() == ComprehensionKind::MatrixPreserveShape {
             let NativeControlLoop::Collection(generator) =
-                &descriptor.plan.iterations()[definition.generators()[0] as usize]
+                &descriptor.metadata().plan.iterations()[definition.generators()[0] as usize]
             else {
                 return Err(invalid("preserved collection lacks a matrix generator"));
             };
@@ -996,7 +996,8 @@ impl State {
             let source = ctx
                 .arena
                 .copy_current(source_value.get(), &mut ctx.control.work)?;
-            let schema = descriptor.plan.values()[source_value.get() as usize].definition();
+            let schema =
+                descriptor.metadata().plan.values()[source_value.get() as usize].definition();
             let mech_core::SchemaBody::Matrix { dimensions, .. } = schema.body() else {
                 return Err(invalid("preserved source is not a matrix"));
             };
@@ -1028,7 +1029,7 @@ impl State {
             data: ValueDataDraft::Matrix(data),
         }
         .finalize(&SnapshotValidationContext::with_shared_schemas(
-            &descriptor.schemas,
+            &descriptor.metadata().schemas,
         ))
         .map_err(Error::Snapshot)?
         .into_memory_budget(&mut reservation)?;

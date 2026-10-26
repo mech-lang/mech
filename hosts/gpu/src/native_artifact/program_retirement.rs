@@ -25,12 +25,14 @@ pub(in crate::native_artifact) struct RetirementTables {
     iterations: usize,
 }
 impl RetirementTables {
-    pub(super) fn derive(plan: &NativeProgramArtifactPlan) -> Result<Self, &'static str> {
+    pub(in crate::native_artifact) fn derive(
+        plan: &NativeProgramArtifactPlan,
+        aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
+    ) -> Result<Self, &'static str> {
         if plan.values().len() != plan.value_scopes().len() {
             return Err("retirement scope count differs from values");
         }
         let iterations = plan.iterations().len();
-        let aggregates = plan.scalar_aggregates();
         let ranges = iterations
             .checked_mul(KINDS.len())
             .ok_or("retirement range count overflow")?;

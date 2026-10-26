@@ -532,15 +532,23 @@ empty<{string:u64}> := map/new()
         )
         .unwrap();
         let owners = plan.map_owner_words().unwrap();
-        let borrowed = super::super::program_borrowed_layout::Layout::derive(&plan).unwrap();
+        let borrowed =
+            super::super::program_borrowed_layout::Layout::derive(&plan, &plan.scalar_aggregates())
+                .unwrap();
         let visits = super::super::iteration_abi::control_visits(
             plan.blocks(),
             plan.iterations().iter().map(Into::into),
             0,
         )
         .unwrap();
-        let closed =
-            super::super::program_tail_layout::Layout::derive(&plan, &borrowed, &visits).unwrap();
+        let closed = super::super::program_tail_layout::Layout::derive(
+            &plan,
+            &borrowed,
+            &visits,
+            &plan.scalar_aggregates(),
+            &owners,
+        )
+        .unwrap();
         (plan, owners, closed)
     }
     fn lookup(body: &str, expression: &str) -> String {

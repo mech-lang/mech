@@ -73,6 +73,7 @@ fn native_structural_map_states_execute_all_seven_counting_widths() {
         let image = jit.descriptor().encode_build_owned_image().unwrap();
         assert_eq!(
             jit.descriptor()
+                .metadata()
                 .map_owner_words
                 .as_ref()
                 .unwrap()
@@ -269,6 +270,7 @@ fn map_key_projection_declines_other_key_observers_and_preserves_bounds_failure(
                 JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
             assert_eq!(
                 jit.descriptor()
+                    .metadata()
                     .map_owner_words
                     .as_ref()
                     .unwrap()

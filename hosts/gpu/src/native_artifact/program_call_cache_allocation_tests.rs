@@ -20,7 +20,7 @@ fn shared_call_lane_node_ceiling_denies_before_backing_allocation() {
     )
     .unwrap();
     let descriptor = jit.descriptor();
-    let bytes = CallCacheLane::metadata_bytes(descriptor.plan.blocks().len()).unwrap();
+    let bytes = CallCacheLane::metadata_bytes(descriptor.metadata().plan.blocks().len()).unwrap();
     let memory = ManagedMemoryBudget::new(bytes * 4).with_limits(bytes * 4, bytes * 2 - 1);
     let mut work = NativeWorkMeter::new(1_000_000_000).unwrap();
     let first = CallCacheLane::new(descriptor, bytes, &memory, &mut work).unwrap();
@@ -60,7 +60,7 @@ fn actual_lane_exact_and_one_short_keep_setup_error_order_and_debit() {
             )
             .unwrap();
             let descriptor = jit.descriptor();
-            let count = descriptor.plan.blocks().len();
+            let count = descriptor.metadata().plan.blocks().len();
             let bytes = CallCacheLane::metadata_bytes(count).unwrap();
             let debit = bytes * 8 + 128;
             // These are actual lane-constructor boundaries, NOT whole-turn peaks.
@@ -81,7 +81,7 @@ fn actual_lane_exact_and_one_short_keep_setup_error_order_and_debit() {
                         assert!(
                             lane.entries
                                 .iter()
-                                .zip(descriptor.plan.blocks())
+                                .zip(descriptor.metadata().plan.blocks())
                                 .all(|(entry, block)| matches!(entry, CallCacheEntry::Once)
                                     == block.iteration().is_none())
                         );
@@ -155,7 +155,8 @@ fn actual_jit_excess_lane_preserves_prior_output_and_same_account_recovery() {
         let prior = outputs[0].as_ref().unwrap().clone();
         assert!(matches!(prior.data(), ValueData::U64(2)));
         let baseline = memory.used_bytes();
-        let bytes = CallCacheLane::metadata_bytes(descriptor.plan.blocks().len()).unwrap();
+        let bytes =
+            CallCacheLane::metadata_bytes(descriptor.metadata().plan.blocks().len()).unwrap();
         let (result, stats) = call_cache_allocation::with_extra(1, &memory, || {
             jit.evaluate_into(&args, &mut outputs, limits(), &memory)
         });
@@ -177,7 +178,7 @@ fn actual_jit_excess_lane_preserves_prior_output_and_same_account_recovery() {
         result.unwrap();
         assert_eq!(
             (stats.0, stats.1, stats.2),
-            (1, descriptor.plan.blocks().len(), 0)
+            (1, descriptor.metadata().plan.blocks().len(), 0)
         );
         assert!(matches!(
             outputs[0].as_ref().unwrap().data(),

@@ -22,7 +22,7 @@ impl Context<'_, '_> {
         use mech_engine::native_artifact::NativeBorrowedStringAction;
         let descriptor = self.control.descriptor;
         let Some((_, NativeBorrowedStringAction::MatrixElement { source, output, .. })) =
-            descriptor.borrowed_strings.action(site)
+            descriptor.metadata().borrowed_strings.action(site)
         else {
             return Ok(false);
         };
@@ -34,7 +34,7 @@ impl Context<'_, '_> {
                 "captured line element has invalid managed operands",
             ));
         };
-        let call = descriptor.calls[site]
+        let call = descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("captured line element lost its selected factory"))?;
         use mech_core::snapshot::{
@@ -44,7 +44,7 @@ impl Context<'_, '_> {
             MemoryBudgetDimension as Dimension, ResidentKernelError, ResidentResourcePhase,
         };
         let failure = |error| NativeProgramExecutionError::Library {
-            origin: descriptor.plan.blocks()[site].origin(),
+            origin: descriptor.metadata().plan.blocks()[site].origin(),
             error,
         };
         let compute_limit = self
@@ -71,7 +71,7 @@ impl Context<'_, '_> {
                 // Use the same canonical String construction envelope as the
                 // selected join: real output, copy/finalization staging and import
                 // coexist with the still-pinned packed source and row loan.
-                let envelope = amount(text.len(), 4, descriptor.scalar_bytes)?
+                let envelope = amount(text.len(), 4, descriptor.metadata().scalar_bytes)?
                     .checked_add(4096)
                     .ok_or_else(|| invalid("captured cell staging overflow"))?;
                 let finalization = amount(text.len(), 8, 32)?;
@@ -147,12 +147,12 @@ impl Context<'_, '_> {
                 owned.push_str(text);
                 let canonical = SnapshotCanonicalizationBudget::new(finalization);
                 let value = ValueDraft {
-                    schema: descriptor.plan.values()[output.get() as usize].schema(),
+                    schema: descriptor.metadata().plan.values()[output.get() as usize].schema(),
                     shape_values: Box::new([]),
                     data: ValueDataDraft::String(owned),
                 }
                 .finalize(
-                    &SnapshotValidationContext::with_shared_schemas(&descriptor.schemas)
+                    &SnapshotValidationContext::with_shared_schemas(&descriptor.metadata().schemas)
                         .with_canonicalization_budget(&canonical),
                 )
                 .map_err(NativeProgramExecutionError::Snapshot)?
@@ -204,6 +204,7 @@ impl Prepared<'_> {
     ) -> Result<(), NativeProgramExecutionError> {
         let region = self
             .descriptor
+            .metadata()
             .prefix
             .as_ref()
             .ok_or_else(|| invalid("final count without selected line frontier"))?;
@@ -212,7 +213,7 @@ impl Prepared<'_> {
             .as_mut()
             .ok_or_else(|| invalid("consumed native state"))?;
         let matrix = region.frontier.read().count().lines().matrix();
-        let ordinal = self.descriptor.line_matrices.matrices[matrix.get() as usize]
+        let ordinal = self.descriptor.metadata().line_matrices.matrices[matrix.get() as usize]
             .ok_or_else(|| invalid("final count lost its selected line producer"))?;
         let actual = if let Some(view) = &state.line_matrices.views[ordinal] {
             view.count() as u64
@@ -230,7 +231,7 @@ impl Prepared<'_> {
         state
             .work
             .charge(NativeExecutionPhase::Setup, amount(counts.len(), 16, 128)?)?;
-        let first = self.descriptor.plan.transport_input_count();
+        let first = self.descriptor.metadata().plan.transport_input_count();
         for value in counts {
             self.storage.values_mut()[first + value.get() as usize] = actual;
         }
@@ -244,19 +245,20 @@ impl Prepared<'_> {
     ) -> Result<NativeTextLineChunks, NativeProgramExecutionError> {
         let descriptor = self.descriptor;
         let region = descriptor
+            .metadata()
             .prefix
             .as_ref()
             .ok_or_else(|| invalid("capture lacks compiled retention proof"))?;
         let source = region.frontier.read().count().lines();
         if !self.activated
             || self.prefix.is_some()
-            || descriptor.plan.transport_input_count() != 1
-            || descriptor.plan.transport_input_value(0) != source.source()
+            || descriptor.metadata().plan.transport_input_count() != 1
+            || descriptor.metadata().plan.transport_input_value(0) != source.source()
             || source.lengths().len() != 1
-            || descriptor.plan.blocks()[source.producer() as usize]
+            || descriptor.metadata().plan.blocks()[source.producer() as usize]
                 .iteration()
                 .is_some()
-            || descriptor.plan.blocks()[source.lengths()[0] as usize]
+            || descriptor.metadata().plan.blocks()[source.lengths()[0] as usize]
                 .iteration()
                 .is_some()
         {
@@ -268,18 +270,18 @@ impl Prepared<'_> {
             .state
             .as_mut()
             .ok_or_else(|| invalid("consumed native state"))?;
-        let ordinal = descriptor.line_matrices.matrices[source.matrix().get() as usize]
+        let ordinal = descriptor.metadata().line_matrices.matrices[source.matrix().get() as usize]
             .ok_or_else(|| invalid("capture lacks selected line owner slot"))?;
         if state.line_matrices.captured.is_some() || state.line_matrices.views[ordinal].is_some() {
             return Err(invalid("capture source already installed"));
         }
         let site = source.producer() as usize;
-        let owner = descriptor.calls[site]
+        let owner = descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("capture source selection absent"))?
             .prepare_text_line_chunks(input_limit, fragment, self.limits.library, &state.library)
             .map_err(|error| NativeProgramExecutionError::Library {
-                origin: descriptor.plan.blocks()[site].origin(),
+                origin: descriptor.metadata().plan.blocks()[site].origin(),
                 error,
             })?;
         state.line_matrices.captured = Some(line_matrices::Captured {
@@ -296,6 +298,7 @@ impl Prepared<'_> {
     ) -> Result<Rc<NativeTextLineMatrix>, NativeProgramExecutionError> {
         let descriptor = self.descriptor;
         let source = descriptor
+            .metadata()
             .prefix
             .as_ref()
             .ok_or_else(|| invalid("capture lost compiled retention proof"))?
@@ -323,20 +326,20 @@ impl Prepared<'_> {
         }
         let site = source.producer() as usize;
         let prior = capture_source_coexistence(state, captured.ordinal, &self.memory)?;
-        let view = descriptor.calls[site]
+        let view = descriptor.metadata().calls[site]
             .as_ref()
             .unwrap()
             .text_line_matrix_from_capture(owner, self.limits.library, &state.library, prior)
             .map_err(|error| NativeProgramExecutionError::Library {
-                origin: descriptor.plan.blocks()[site].origin(),
+                origin: descriptor.metadata().plan.blocks()[site].origin(),
                 error,
             })?;
-        descriptor.calls[length]
+        descriptor.metadata().calls[length]
             .as_ref()
             .unwrap()
             .text_line_matrix_length(&view, self.limits.library, &state.library, prior)
             .map_err(|error| NativeProgramExecutionError::Library {
-                origin: descriptor.plan.blocks()[length].origin(),
+                origin: descriptor.metadata().plan.blocks()[length].origin(),
                 error,
             })?;
         let view = Rc::new(view);

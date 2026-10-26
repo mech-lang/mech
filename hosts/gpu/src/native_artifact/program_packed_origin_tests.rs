@@ -184,12 +184,13 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
                         .unwrap();
                 for descriptor in [jit.descriptor(), &restored] {
                     let region = descriptor
+                        .metadata()
                         .closed_tails
                         .regions
                         .iter()
                         .find(|r| r.packed.is_some())
                         .expect("fixture must retain its packed proof");
-                    let owner = descriptor.map_owner_words.as_ref().unwrap();
+                    let owner = descriptor.metadata().map_owner_words.as_ref().unwrap();
                     let span = owner
                         .spans()
                         .iter()
@@ -198,6 +199,7 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
                     let tag_word = owner.aggregates().slot(region.tail.carrier()).unwrap().0;
                     let call_site = |primitive| {
                         descriptor
+                            .metadata()
                             .plan
                             .blocks()
                             .iter()
@@ -214,11 +216,11 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
                     };
                     let replacement_site = || {
                         let NativeIterationAction::LibraryCall { operands, .. } =
-                            descriptor.plan.blocks()[call_site(P::MapInsert)].action()
+                            descriptor.metadata().plan.blocks()[call_site(P::MapInsert)].action()
                         else {
                             unreachable!()
                         };
-                        descriptor.plan.blocks().iter().position(|block| matches!(block.action(),
+                        descriptor.metadata().plan.blocks().iter().position(|block| matches!(block.action(),
                             NativeIterationAction::Scalar(NativeMatchAction::Primitive { output, .. })
                                 if *output == operands[2])).expect("source replacement arithmetic")
                     };
@@ -315,11 +317,14 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
                         .get()
                         .expect("generated failure must leave its original site");
                     let site = usize::try_from(site).unwrap();
-                    assert!(descriptor.closed_tails.sites[site].is_some(), "{failure:?}");
+                    assert!(
+                        descriptor.metadata().closed_tails.sites[site].is_some(),
+                        "{failure:?}"
+                    );
                     if let Some(expected) = expected_site {
                         assert_eq!(site, expected, "{failure:?}");
                     }
-                    let source_origin = descriptor.plan.blocks()[site].origin();
+                    let source_origin = descriptor.metadata().plan.blocks()[site].origin();
                     let error = outcome.unwrap_err();
                     match failure {
                         Failure::Add | Failure::Subtract | Failure::Divide => {
@@ -333,7 +338,7 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
                         Failure::Reject => {
                             assert_eq!(status, STATUS_REJECT);
                             assert!(matches!(
-                                descriptor.plan.blocks()[site].terminator(),
+                                descriptor.metadata().plan.blocks()[site].terminator(),
                                 NativeIterationTerminator::Scalar(NativeMatchTerminator::Reject)
                             ));
                             assert!(
@@ -348,8 +353,9 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
                             assert_eq!(observed.bound[6], 1);
                             // Range+selection are fused, but the maintained library
                             // failure must identify the selection, not the range.
-                            let selection =
-                                descriptor.plan.blocks()[span.selection_site() as usize].origin();
+                            let selection = descriptor.metadata().plan.blocks()
+                                [span.selection_site() as usize]
+                                .origin();
                             assert!(
                                 matches!(&error, NativeProgramExecutionError::Library {
                                 origin, error: NativeCollectionInvocationError::Kernel(mech_core::ResidentKernelError::InvalidInput),

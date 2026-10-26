@@ -1,7 +1,9 @@
 //! ABI16 facade over the SAME canonical iteration CFG definition pass.
 use super::compiler::{backend, host_supported};
 use super::iteration_code_plan::CodePlan;
+use super::program::prepare::PreparedNativeProgram;
 use super::program_abi::{ENTRY, Entry, VERSION};
+use super::program_descriptor::NativeCodeFootprint;
 use super::{
     NativeCompileError, NativeCompileLimits, NativeProgramDescriptor, NativeProgramExecutionError,
     NativeProgramExecutionLimits, NativeProgramExecutionReport, NativeProgramObjectIdentity,
@@ -102,15 +104,22 @@ impl JitProgramArtifact {
             cranelift_jit::JITBuilder::with_flags(PROGRAM_CODEGEN_FLAGS, default_libcall_names())
                 .map_err(backend)?;
         let mut module = cranelift_jit::JITModule::new(builder);
+        preflight(&plan, &module, limits)?;
+        let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
         let (function, stack, code, _) = super::iteration_compiler::define_cfg(
-            CodePlan::Program(&plan),
+            CodePlan::Program(&prepared),
             ENTRY,
             VERSION,
             &mut module,
             limits,
         )?;
-        let descriptor = NativeProgramDescriptor::prepare(artifact, catalog, plan, stack, code)
-            .map_err(backend)?;
+        let descriptor = NativeProgramDescriptor::from_prepared(
+            prepared,
+            NativeCodeFootprint {
+                stack_bytes: stack,
+                code_bytes: code,
+            },
+        );
         module.finalize_definitions().map_err(backend)?;
         // SAFETY: define_cfg emits exactly the private ABI16 signature, and
         // this owner retains the module for every synchronous invocation.
@@ -200,18 +209,18 @@ impl NativeProgramObject {
             "code_bytes": self.descriptor.code_bytes(),
             "object_bytes": self.bytes.len(),
             "object_optimization": "speed",
-            "compiled_window_accumulator": (!self.descriptor.window_regions.is_empty()).then_some("hashbrown-0.15.5-entry-updates"),
-            "compiled_window_query_regions": self.descriptor.window_regions.iter().filter(|region| region.query().is_some()).count(),
-            "compiled_window_histogram_regions": self.descriptor.window_regions.iter().filter(|region| region.query().is_none()).count(),
-            "compiled_string_map_regions": self.descriptor.string_map_regions.len(),
-            "unboxed_scalar_aggregate_values": self.descriptor.scalar_aggregates.value_count(),
-            "borrowed_string_regions": self.descriptor.borrowed_strings.regions.len(),
-            "closed_tail_regions": self.descriptor.closed_tails.regions.len(),
-            "private_frozen_map_candidates": self.descriptor.frozen_maps.regions.len(),
-            "retained_map_scalar_admission_groups": self.descriptor.map_admission.groups.len(),
-            "selected_matrix_join_regions": self.descriptor.selected_joins.regions.len(),
-            "private_line_matrix_regions": self.descriptor.line_matrices.regions.len(),
-            "compiled_header_continuation_regions": usize::from(self.descriptor.prefix.is_some()),
+            "compiled_window_accumulator": (!self.descriptor.metadata().window_regions.is_empty()).then_some("hashbrown-0.15.5-entry-updates"),
+            "compiled_window_query_regions": self.descriptor.metadata().window_regions.iter().filter(|region| region.query().is_some()).count(),
+            "compiled_window_histogram_regions": self.descriptor.metadata().window_regions.iter().filter(|region| region.query().is_none()).count(),
+            "compiled_string_map_regions": self.descriptor.metadata().string_map_regions.len(),
+            "unboxed_scalar_aggregate_values": self.descriptor.metadata().scalar_aggregates.value_count(),
+            "borrowed_string_regions": self.descriptor.metadata().borrowed_strings.regions.len(),
+            "closed_tail_regions": self.descriptor.metadata().closed_tails.regions.len(),
+            "private_frozen_map_candidates": self.descriptor.metadata().frozen_maps.regions.len(),
+            "retained_map_scalar_admission_groups": self.descriptor.metadata().map_admission.groups.len(),
+            "selected_matrix_join_regions": self.descriptor.metadata().selected_joins.regions.len(),
+            "private_line_matrix_regions": self.descriptor.metadata().line_matrices.regions.len(),
+            "compiled_header_continuation_regions": usize::from(self.descriptor.metadata().prefix.is_some()),
             "compiled_source_edge_facts": &self.codegen.source_edge_facts,
             "compiled_tag_threading": &self.codegen.tag_threading,
             "compiled_frame_effects": &self.codegen.frame_effects,
@@ -259,15 +268,22 @@ pub fn emit_program_object_with_limits(
         ObjectBuilder::new(isa, "mech_canonical_program", default_libcall_names())
             .map_err(backend)?,
     );
+    preflight(&plan, &module, limits)?;
+    let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
     let (_, stack, code, codegen) = super::iteration_compiler::define_cfg(
-        CodePlan::Program(&plan),
+        CodePlan::Program(&prepared),
         ENTRY,
         VERSION,
         &mut module,
         limits,
     )?;
-    let descriptor =
-        NativeProgramDescriptor::prepare(artifact, catalog, plan, stack, code).map_err(backend)?;
+    let descriptor = NativeProgramDescriptor::from_prepared(
+        prepared,
+        NativeCodeFootprint {
+            stack_bytes: stack,
+            code_bytes: code,
+        },
+    );
     let identity = NativeProgramObjectIdentity::from_descriptor(&descriptor).map_err(backend)?;
     let id = module
         .declare_data(identity.symbol(), Linkage::Export, false, false)
@@ -282,4 +298,21 @@ pub fn emit_program_object_with_limits(
         identity,
         codegen,
     })
+}
+
+fn preflight<M: Module>(
+    plan: &mech_engine::native_artifact::NativeProgramArtifactPlan,
+    module: &M,
+    limits: NativeCompileLimits,
+) -> Result<(), NativeCompileError> {
+    if module.target_config().pointer_type() != cranelift_codegen::ir::types::I64 {
+        return Err(NativeCompileError::UnsupportedHost);
+    }
+    super::iteration_compiler::preflight_counts(
+        plan.blocks().len(),
+        plan.transport_input_count(),
+        plan.transport_output_count(),
+        plan.values().len(),
+        limits,
+    )
 }

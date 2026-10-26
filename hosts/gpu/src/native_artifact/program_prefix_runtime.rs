@@ -17,11 +17,12 @@ pub(super) fn validate_window(
 ) -> Result<(), Error> {
     let input = input.ok_or_else(|| invalid("line window outside continuation entry"))?;
     let region = descriptor
+        .metadata()
         .prefix
         .as_ref()
         .ok_or_else(|| invalid("line window lacks exact scan proof"))?;
     let source = region.frontier.read().count().lines();
-    if descriptor.borrowed_strings.regions[region.borrowed]
+    if descriptor.metadata().borrowed_strings.regions[region.borrowed]
         .proof
         .matrices()
         != [source.matrix()]
@@ -33,12 +34,12 @@ pub(super) fn validate_window(
         ));
     }
     let site = source.producer() as usize;
-    descriptor.calls[site]
+    descriptor.metadata().calls[site]
         .as_ref()
         .ok_or_else(|| invalid("line window producer absent"))?
         .bind_text_line_window(window, work)
         .map_err(|error| Error::Library {
-            origin: descriptor.plan.blocks()[site].origin(),
+            origin: descriptor.metadata().plan.blocks()[site].origin(),
             error,
         })?;
     Ok(())
@@ -49,7 +50,7 @@ impl<'plan, 'visit> Context<'plan, 'visit> {
         &self,
         matrix: NativeMatchValue,
     ) -> Option<&'visit NativeTextLineWindow<'visit>> {
-        let region = self.control.descriptor.prefix.as_ref()?;
+        let region = self.control.descriptor.metadata().prefix.as_ref()?;
         (region.frontier.read().count().lines().matrix() == matrix)
             .then_some(self.line_window)
             .flatten()
@@ -128,13 +129,14 @@ impl State {
 
 pub(super) fn checkpoint_words(descriptor: &NativeProgramDescriptor) -> Result<usize, Error> {
     let region = descriptor
+        .metadata()
         .prefix
         .as_ref()
         .ok_or_else(|| invalid("prefix lacks same-plan proof"))?;
-    let borrowed = &descriptor.borrowed_strings.regions[region.borrowed];
+    let borrowed = &descriptor.metadata().borrowed_strings.regions[region.borrowed];
     (borrowed.end - borrowed.ready)
         .checked_add(3)
-        .and_then(|words| words.checked_add(descriptor.max_library_inputs.max(1)))
+        .and_then(|words| words.checked_add(descriptor.metadata().max_library_inputs.max(1)))
         .ok_or_else(|| invalid("prefix checkpoint lane size overflows"))
 }
 
@@ -144,18 +146,21 @@ pub(super) fn check_cleared(
     arguments: &[u64],
 ) -> Result<(), Error> {
     let region = descriptor
+        .metadata()
         .prefix
         .as_ref()
         .ok_or_else(|| invalid("prefix lacks same-plan proof"))?;
-    let borrowed = &descriptor.borrowed_strings.regions[region.borrowed];
+    let borrowed = &descriptor.metadata().borrowed_strings.regions[region.borrowed];
     if locals[borrowed.ready..borrowed.end]
         .iter()
         .any(|word| *word != 0)
         || arguments.iter().any(|word| *word != 0)
-        || descriptor.closed_tails.sites[region.tail.header() as usize].is_some_and(|closed| {
-            let words = descriptor.closed_tails.regions[closed].words;
-            locals[words..words + 3].iter().any(|word| *word != 0)
-        })
+        || descriptor.metadata().closed_tails.sites[region.tail.header() as usize].is_some_and(
+            |closed| {
+                let words = descriptor.metadata().closed_tails.regions[closed].words;
+                locals[words..words + 3].iter().any(|word| *word != 0)
+            },
+        )
     {
         return Err(invalid("native prefix checkpoint retained borrowed words"));
     }
@@ -173,6 +178,7 @@ impl Context<'_, '_> {
         let region = self
             .control
             .descriptor
+            .metadata()
             .prefix
             .as_ref()
             .ok_or_else(|| invalid("prefix lacks same-plan proof"))?;
@@ -190,6 +196,7 @@ impl Context<'_, '_> {
         let region = self
             .control
             .descriptor
+            .metadata()
             .prefix
             .as_ref()
             .ok_or_else(|| invalid("prefix lacks same-plan proof"))?;
@@ -230,6 +237,7 @@ impl Context<'_, '_> {
         let region = self
             .control
             .descriptor
+            .metadata()
             .prefix
             .as_ref()
             .ok_or_else(|| invalid("scan exit lacks same-plan proof"))?;
@@ -287,7 +295,7 @@ impl Context<'_, '_> {
         {
             return Err(invalid("malformed or overlapping prefix loan"));
         }
-        let region = self.control.descriptor.prefix.as_ref().unwrap();
+        let region = self.control.descriptor.metadata().prefix.as_ref().unwrap();
         let borrowed = region.borrowed;
         let input = self.prefix.as_ref().unwrap().input;
         match operation {
@@ -355,7 +363,7 @@ impl Context<'_, '_> {
                 if input.resume_site != site || !prefix.borrowed_resumed || prefix.tail_resumed {
                     return Err(invalid("duplicate or unordered prefix fuel resume"));
                 }
-                let closed = self.control.descriptor.closed_tails.sites[site as usize]
+                let closed = self.control.descriptor.metadata().closed_tails.sites[site as usize]
                     .ok_or_else(|| invalid("prefix fuel resume outside closed Tail"))?;
                 let result = self.begin_closed_region(site as usize, args, closed)?;
                 self.prefix.as_mut().unwrap().tail_resumed = true;

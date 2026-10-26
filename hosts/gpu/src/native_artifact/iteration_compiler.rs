@@ -260,6 +260,24 @@ fn define<M: Module>(
     ))
 }
 
+pub(super) fn preflight_counts(
+    blocks: usize,
+    inputs: usize,
+    outputs: usize,
+    values: usize,
+    limits: NativeCompileLimits,
+) -> Result<(), NativeCompileError> {
+    limit("Iteration blocks", blocks as u64, limits.max_nodes)?;
+    limit("Iteration inputs", inputs as u64, limits.max_inputs)?;
+    limit("Iteration outputs", outputs as u64, limits.max_outputs)?;
+    limit(
+        "Iteration scalar values",
+        values as u64,
+        limits.max_nodes.saturating_mul(8),
+    )?;
+    Ok(())
+}
+
 pub(super) fn define_cfg<M: Module>(
     plan: super::iteration_code_plan::CodePlan<'_>,
     entry_symbol: &str,
@@ -279,157 +297,79 @@ pub(super) fn define_cfg<M: Module>(
     if module.target_config().pointer_type() != types::I64 {
         return Err(NativeCompileError::UnsupportedHost);
     }
-    limit(
-        "Iteration blocks",
-        plan.blocks().len() as u64,
-        limits.max_nodes,
-    )?;
-    limit(
-        "Iteration inputs",
-        plan.input_count() as u64,
-        limits.max_inputs,
-    )?;
-    limit(
-        "Iteration outputs",
-        plan.output_count() as u64,
-        limits.max_outputs,
-    )?;
-    limit(
-        "Iteration scalar values",
-        plan.value_count() as u64,
-        limits.max_nodes.saturating_mul(8),
+    preflight_counts(
+        plan.blocks().len(),
+        plan.input_count(),
+        plan.output_count(),
+        plan.value_count(),
+        limits,
     )?;
     #[cfg(feature = "canonical-native-program")]
-    let aggregates = match plan {
-        super::iteration_code_plan::CodePlan::Program(program) => program.scalar_aggregates(),
-        _ => Default::default(),
-    };
+    let empty_aggregates = Default::default();
     #[cfg(feature = "canonical-native-program")]
-    let aggregate_words = aggregates.words();
+    let empty_parallel = Default::default();
     #[cfg(feature = "canonical-native-program")]
-    let parallel = match plan {
-        super::iteration_code_plan::CodePlan::Program(program) => {
-            super::program_parallel_layout::Layout::derive(program).map_err(backend)?
-        }
-        _ => Default::default(),
-    };
-    #[cfg(not(feature = "canonical-native-program"))]
-    let aggregate_words = 0;
+    let empty_borrowed = Default::default();
     #[cfg(feature = "canonical-native-program")]
-    let borrowed = match plan {
-        super::iteration_code_plan::CodePlan::Program(program) => {
-            super::program_borrowed_layout::Layout::derive(program).map_err(backend)?
-        }
-        _ => Default::default(),
-    };
+    let empty_closed = Default::default();
     #[cfg(feature = "canonical-native-program")]
-    let borrowed_words = borrowed.words;
-    #[cfg(not(feature = "canonical-native-program"))]
-    let borrowed_words = 0;
+    let empty_prefix = None;
     #[cfg(feature = "canonical-native-program")]
-    let (closed, prefix, map_admission) = match plan {
-        super::iteration_code_plan::CodePlan::Program(program) => {
-            // No completion block belongs to a closed Tail. Its completion
-            // envelope is irrelevant to the body bound, not a second work policy.
-            let mut visits = super::iteration_abi::control_visits(
-                program.blocks(),
-                program.iterations().iter().map(Into::into),
-                0,
-            )
-            .map_err(backend)?;
-            super::program_selected_join_layout::Layout::derive(program)
-                .map_err(backend)?
-                .fund_visit_checks(&mut visits)
-                .map_err(backend)?;
-            let prefix = super::program_prefix_layout::derive(program, &borrowed, &visits)
-                .map_err(backend)?;
-            for (site, visit) in visits.iter_mut().enumerate() {
-                visit.work = visit
-                    .work
-                    .checked_add(borrowed.extra_work(site).map_err(backend)?)
-                    .and_then(|work| {
-                        work.checked_add(super::program_prefix_layout::extra_work(
-                            prefix.as_ref(),
-                            site,
-                        ))
-                    })
-                    .ok_or_else(|| backend("Tail visit cost overflow"))?;
-            }
-            let owner_prices = program.map_owner_words().map_err(backend)?;
-            for (site, visit) in visits.iter_mut().enumerate() {
-                visit.work = visit
-                    .work
-                    .checked_add(
-                        super::program_map_owner_layout::extra_work(&owner_prices, site)
-                            .map_err(backend)?,
-                    )
-                    .ok_or_else(|| backend("map owner visit work overflow"))?;
-            }
-            let closed = super::program_tail_layout::Layout::derive(program, &borrowed, &visits)
-                .map_err(backend)?;
-            for (site, visit) in visits.iter_mut().enumerate() {
-                visit.work = visit
-                    .work
-                    .checked_add(closed.extra_work(site))
-                    .ok_or_else(|| backend("closed Tail work overflow"))?;
-            }
-            let map_admission =
-                super::program_map_admission::Layout::derive(program, &owner_prices, &visits)
-                    .map_err(backend)?;
-            (closed, prefix, map_admission)
-        }
-        _ => (Default::default(), None, Default::default()),
-    };
+    let empty_admission = Default::default();
     #[cfg(feature = "canonical-native-program")]
-    let closed_words = closed.words;
-    #[cfg(not(feature = "canonical-native-program"))]
-    let closed_words = 0;
-    let canonical_local_count = plan
-        .value_count()
-        .checked_add(plan.iteration_count())
-        .and_then(|n| n.checked_add(aggregate_words))
-        .and_then(|n| n.checked_add(borrowed_words))
-        .and_then(|n| n.checked_add(closed_words))
-        .ok_or_else(|| backend("iteration local count overflow"))?;
+    let empty_owner = None;
     #[cfg(feature = "canonical-native-program")]
-    let owner = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
-        let layout = program
-            .map_owner_words()
-            .map_err(backend)?
-            .after_frame_words(canonical_local_count)
-            .map_err(backend)?;
-        (!layout.regions().is_empty()).then_some(layout)
-    } else {
-        None
-    };
+    let empty_frozen = Default::default();
     #[cfg(feature = "canonical-native-program")]
-    let frozen = if let (super::iteration_code_plan::CodePlan::Program(program), Some(owner)) =
-        (plan, owner.as_ref())
+    let (aggregates, parallel, borrowed, closed, prefix, map_admission, owner, frozen) = match plan
     {
-        super::program_frozen_map_layout::Layout::derive(program, owner, &closed)
-            .map_err(backend)?
-    } else {
-        Default::default()
+        super::iteration_code_plan::CodePlan::Program(prepared) => {
+            let m = prepared.metadata();
+            (
+                &m.scalar_aggregates,
+                &m.parallel,
+                &m.borrowed_strings,
+                &m.closed_tails,
+                &m.prefix,
+                &m.map_admission,
+                &m.map_owner_words,
+                &m.frozen_maps,
+            )
+        }
+        _ => (
+            &empty_aggregates,
+            &empty_parallel,
+            &empty_borrowed,
+            &empty_closed,
+            &empty_prefix,
+            &empty_admission,
+            &empty_owner,
+            &empty_frozen,
+        ),
     };
-    #[cfg(feature = "canonical-native-program")]
-    let local_count = owner
-        .as_ref()
-        .map_or(
-            Ok(canonical_local_count),
-            super::program_map_owner_layout::local_words,
-        )
-        .map_err(backend)?;
-    #[cfg(not(feature = "canonical-native-program"))]
-    let local_count = canonical_local_count;
+    let local_count = match plan {
+        super::iteration_code_plan::CodePlan::Scalar(p) => p
+            .values()
+            .len()
+            .checked_add(p.iterations().len())
+            .ok_or_else(|| backend("iteration local count overflow"))?,
+        #[cfg(feature = "canonical-native-program")]
+        super::iteration_code_plan::CodePlan::Program(p) => {
+            p.metadata().local_words().map_err(backend)?
+        }
+    };
     offset(local_count)?;
     offset(plan.input_count())?;
     offset(plan.output_count())?;
     plan.validate()?;
     #[cfg(feature = "canonical-native-program")]
     let window_functions = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+        let prepared = program;
+        let program = prepared;
         program
-            .window_regions()
-            .into_iter()
+            .metadata()
+            .window_regions
+            .iter()
             .map(|region| {
                 let (function, _, stack, code) =
                     super::program_compiler::window_codegen::define(module, &region)?;
@@ -441,9 +381,12 @@ pub(super) fn define_cfg<M: Module>(
     };
     #[cfg(feature = "canonical-native-program")]
     let map_functions = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+        let prepared = program;
+        let program = prepared;
         program
-            .string_map_regions()
-            .into_iter()
+            .metadata()
+            .string_map_regions
+            .iter()
             .map(|region| {
                 let (function, stack, code) =
                     super::program_compiler::string_map_codegen::define(module, &region)?;
@@ -455,8 +398,9 @@ pub(super) fn define_cfg<M: Module>(
     };
     #[cfg(feature = "canonical-native-program")]
     let joined_functions = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
-        let layout =
-            super::program_selected_join_layout::Layout::derive(program).map_err(backend)?;
+        let prepared = program;
+        let program = prepared;
+        let layout = &program.metadata().selected_joins;
         map_functions
             .iter()
             .filter(|(map, ..)| {
@@ -485,8 +429,9 @@ pub(super) fn define_cfg<M: Module>(
     };
     #[cfg(feature = "canonical-native-program")]
     let joined_maps = if let super::iteration_code_plan::CodePlan::Program(program) = plan {
-        let layout =
-            super::program_selected_join_layout::Layout::derive(program).map_err(backend)?;
+        let prepared = program;
+        let program = prepared;
+        let layout = &program.metadata().selected_joins;
         layout
             .regions
             .iter()
@@ -829,6 +774,8 @@ pub(super) fn define_cfg<M: Module>(
             set_origin_with_flags(&mut b, frame, index as u64, origin_flags);
             #[cfg(feature = "canonical-native-program")]
             if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+                let prepared = program;
+                let program = prepared.plan();
                 super::program_compiler::parallel_codegen::before_visit(
                     &mut b,
                     program,
@@ -1017,6 +964,7 @@ pub(super) fn define_cfg<M: Module>(
                         let super::iteration_code_plan::CodePlan::Program(program) = plan else {
                             return Err(backend("String span requires managed program transport"));
                         };
+                        let program = program.plan();
                         let projection = program.collections()[*collection as usize]
                             .string_span_projection()
                             .ok_or_else(|| backend("String span lacks selected proof"))?;
@@ -1303,6 +1251,7 @@ pub(super) fn define_cfg<M: Module>(
                                 "histogram query requires managed program transport",
                             ));
                         };
+                        let program = program.plan();
                         let mech_engine::native_artifact::NativeCollectionResult::GuardedHistogramQuery(sink) =
                             program.collections()[*collection as usize].result() else {
                             return Err(backend("histogram query compiler lacks selected proof"));
@@ -1341,6 +1290,8 @@ pub(super) fn define_cfg<M: Module>(
             }
             #[cfg(feature = "canonical-native-program")]
             if let super::iteration_code_plan::CodePlan::Program(program) = plan {
+                let prepared = program;
+                let program = prepared.plan();
                 super::program_compiler::parallel_codegen::after_action(
                     &mut b,
                     program,
@@ -1422,44 +1373,7 @@ pub(super) fn define_cfg<M: Module>(
                 }
             }
             let emitted = (b.func.dfg.num_insts() - before) as u64;
-            let bound = match block.action() {
-                NativeIterationAction::Scalar(NativeMatchAction::Primitive { op, .. }) => {
-                    super::abi::primitive_work(*op)
-                        .checked_add(128)
-                        .ok_or_else(|| backend("iteration work overflow"))?
-                }
-                _ => {
-                    if block.terminator()
-                        == NativeIterationTerminator::Scalar(NativeMatchTerminator::Complete)
-                    {
-                        (plan.output_count() as u64)
-                            .checked_mul(if plan.is_program() { 64 } else { 8 })
-                            .and_then(|v| {
-                                v.checked_add((plan.iteration_count() as u64).checked_mul(8)?)
-                            })
-                            .and_then(|v| v.checked_add(256))
-                            .ok_or_else(|| backend("iteration completion overflow"))?
-                    } else {
-                        256
-                    }
-                }
-            };
-            let bound = bound
-                .checked_add(
-                    super::iteration_abi::helper_operand_work(block.action()).map_err(backend)?,
-                )
-                .ok_or_else(|| backend("iteration operand work overflow"))?;
-            #[cfg(feature = "canonical-native-program")]
-            let bound = bound
-                .checked_add(borrowed.extra_work(index).map_err(backend)?)
-                .and_then(|n| n.checked_add(closed.extra_work(index)))
-                .and_then(|n| {
-                    n.checked_add(super::program_prefix_layout::extra_work(
-                        prefix.as_ref(),
-                        index,
-                    ))
-                })
-                .ok_or_else(|| backend("borrowed String instruction work overflow"))?;
+            let bound = emission_template_bound(plan, index)?;
             if emitted.checked_add(128).is_none_or(|total| total > bound) {
                 return Err(NativeCompileError::InvalidPlan {
                     node: Some(block.origin().node()),
@@ -1534,4 +1448,58 @@ pub(super) fn define_cfg<M: Module>(
     limit("Iteration stack", stack, limits.max_stack_bytes)?;
     limit("Iteration code", code, limits.max_code_bytes)?;
     Ok((function, stack, code, report))
+}
+
+// This is the emitted-instruction envelope, not either runtime visit view.
+// Primitive precedence and included supplements intentionally differ.
+fn emission_template_bound(
+    plan: super::iteration_code_plan::CodePlan<'_>,
+    index: usize,
+) -> Result<u64, NativeCompileError> {
+    let block = &plan.blocks()[index];
+    let bound = match block.action() {
+        NativeIterationAction::Scalar(NativeMatchAction::Primitive { op, .. }) => {
+            super::abi::primitive_work(*op)
+                .checked_add(128)
+                .ok_or_else(|| backend("iteration work overflow"))?
+        }
+        _ => {
+            if block.terminator()
+                == NativeIterationTerminator::Scalar(NativeMatchTerminator::Complete)
+            {
+                (plan.output_count() as u64)
+                    .checked_mul(if plan.is_program() { 64 } else { 8 })
+                    .and_then(|v| v.checked_add((plan.iteration_count() as u64).checked_mul(8)?))
+                    .and_then(|v| v.checked_add(256))
+                    .ok_or_else(|| backend("iteration completion overflow"))?
+            } else {
+                256
+            }
+        }
+    };
+    let bound = bound
+        .checked_add(super::iteration_abi::helper_operand_work(block.action()).map_err(backend)?)
+        .ok_or_else(|| backend("iteration operand work overflow"))?;
+    #[cfg(feature = "canonical-native-program")]
+    let bound = if let super::iteration_code_plan::CodePlan::Program(prepared) = plan {
+        let metadata = prepared.metadata();
+        bound
+            .checked_add(
+                metadata
+                    .borrowed_strings
+                    .extra_work(index)
+                    .map_err(backend)?,
+            )
+            .and_then(|n| n.checked_add(metadata.closed_tails.extra_work(index)))
+            .and_then(|n| {
+                n.checked_add(super::program_prefix_layout::extra_work(
+                    metadata.prefix.as_ref(),
+                    index,
+                ))
+            })
+            .ok_or_else(|| backend("borrowed String instruction work overflow"))?
+    } else {
+        bound
+    };
+    Ok(bound)
 }

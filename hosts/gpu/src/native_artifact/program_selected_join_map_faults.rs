@@ -254,7 +254,7 @@ pub(super) fn after_mapped(ctx: &mut Context<'_, '_>) -> Result<(), Error> {
                 return Err(invalid("test missing mapped owner"));
             };
             let map = mapped.map.clone();
-            let slot = ctx.control.descriptor.selected_joins.maps[*region]
+            let slot = ctx.control.descriptor.metadata().selected_joins.maps[*region]
                 .as_ref()
                 .unwrap()
                 .map;
@@ -301,13 +301,15 @@ pub(super) fn after_mapped(ctx: &mut Context<'_, '_>) -> Result<(), Error> {
             let capacity =
                 text.capacity() as u64 - u64::from(matches!(test, Fault::PrivateShortCapacity));
             let claim = memory.reserve_capacity(capacity)?;
-            let join = &ctx.control.descriptor.selected_joins.regions[*region];
+            let join = &ctx.control.descriptor.metadata().selected_joins.regions[*region];
             let site = if matches!(test, Fault::PrivateWrongFactory) {
-                ctx.control.descriptor.string_map_regions[0].selection_site() as usize
+                ctx.control.descriptor.metadata().string_map_regions[0].selection_site() as usize
             } else {
                 join.consumer() as usize
             };
-            let call = ctx.control.descriptor.calls[site].as_ref().unwrap();
+            let call = ctx.control.descriptor.metadata().calls[site]
+                .as_ref()
+                .unwrap();
             call.finish_private_string_buffer(text, claim, &ctx.library)
                 .map_err(|error| library(ctx, site, error))?;
             return Err(invalid(

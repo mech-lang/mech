@@ -15,7 +15,7 @@ impl Context<'_, '_> {
         site: usize,
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
-        let layout = &self.control.descriptor.closed_tails;
+        let layout = &self.control.descriptor.metadata().closed_tails;
         let region = layout
             .initializers
             .get(site)
@@ -30,7 +30,7 @@ impl Context<'_, '_> {
         args: [u64; 3],
         region: usize,
     ) -> Result<Option<u64>, Error> {
-        let proof = &self.control.descriptor.closed_tails.regions[region];
+        let proof = &self.control.descriptor.metadata().closed_tails.regions[region];
         if args != [0; 3]
             || self.closed_tail.is_some()
             || self.window_region.is_some()
@@ -38,7 +38,7 @@ impl Context<'_, '_> {
         {
             return Err(invalid("duplicate or malformed closed Tail entry"));
         }
-        let layout = &self.control.descriptor.closed_tails;
+        let layout = &self.control.descriptor.metadata().closed_tails;
         let proof = &layout.regions[region];
         if self.control.current != Some(proof.iteration)
             || self.control.progress[proof.iteration as usize * 2..][..2] != [0, 1]
@@ -94,7 +94,7 @@ impl Context<'_, '_> {
             .take()
             .ok_or_else(|| invalid("closed Tail exit without entry"))?;
         let descriptor = self.control.descriptor;
-        let layout = &descriptor.closed_tails;
+        let layout = &descriptor.metadata().closed_tails;
         let proof = &layout.regions[state.region];
         if self.control.previous != Some(state.entry)
             || self.control.current != Some(proof.iteration)
@@ -157,7 +157,7 @@ impl Context<'_, '_> {
         self.library
             .charge(compute, comparison)
             .map_err(|error| Error::Collection {
-                origin: descriptor.plan.blocks()[site].origin(),
+                origin: descriptor.metadata().plan.blocks()[site].origin(),
                 error,
             })?;
         // This is one proved bulk transition, not fabricated/replayed per-op

@@ -16,19 +16,19 @@ fn run_windowed_delivery(
 ) -> Vec<Box<[u8]>> {
     let descriptor = jit.descriptor();
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
-    assert_eq!(descriptor.plan.transport_input_count(), 1);
+    assert_eq!(descriptor.metadata().plan.transport_input_count(), 1);
     let value = string_value(
         descriptor,
-        descriptor.plan.transport_input_type(0).schema(),
+        descriptor.metadata().plan.transport_input_type(0).schema(),
         text,
         &memory,
     );
-    let (inputs, observations) = if descriptor.plan.inputs().len() == 1 {
+    let (inputs, observations) = if descriptor.metadata().plan.inputs().len() == 1 {
         (vec![value], vec![])
     } else {
         (vec![], vec![value])
     };
-    let mut expected = vec![None; descriptor.plan.transport_output_count()];
+    let mut expected = vec![None; descriptor.metadata().plan.transport_output_count()];
     let mut entry = jit.test_generated_entry();
     let mut ordinary = Prepared::new(descriptor, limits(), &memory).unwrap();
     ordinary.activate(&mut entry).unwrap();
@@ -43,6 +43,7 @@ fn run_windowed_delivery(
         .unwrap();
     let library = prepared.state.as_ref().unwrap().library.clone();
     let site = descriptor
+        .metadata()
         .prefix
         .as_ref()
         .unwrap()
@@ -51,7 +52,7 @@ fn run_windowed_delivery(
         .count()
         .lines()
         .producer() as usize;
-    let producer = descriptor.calls[site].as_ref().unwrap();
+    let producer = descriptor.metadata().calls[site].as_ref().unwrap();
     let mut owner = producer
         .prepare_text_line_chunks(text.len() as u64, 4, limits().library, &library)
         .unwrap();
@@ -122,19 +123,19 @@ fn run_windowed_delivery(
             actual
                 .as_ref()
                 .unwrap()
-                .canonical_snapshot_bytes(&descriptor.schemas)
+                .canonical_snapshot_bytes(&descriptor.metadata().schemas)
                 .unwrap(),
         );
         assert_eq!(
             actual
                 .as_ref()
                 .unwrap()
-                .canonical_snapshot_bytes(&descriptor.schemas)
+                .canonical_snapshot_bytes(&descriptor.metadata().schemas)
                 .unwrap(),
             expected
                 .as_ref()
                 .unwrap()
-                .canonical_snapshot_bytes(&descriptor.schemas)
+                .canonical_snapshot_bytes(&descriptor.metadata().schemas)
                 .unwrap(),
         );
     }
@@ -156,7 +157,7 @@ fn private_home_contract_preserves_results_across_callbacks_and_window_resumes()
         let alias_only =
             without_nontrapping_homes(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
         let descriptor = optimized.descriptor();
-        assert!(!descriptor.closed_tails.regions.is_empty());
+        assert!(!descriptor.metadata().closed_tails.regions.is_empty());
         for (text, expected) in [
             ("skip\nopen\nA\nB\nclose\nafter\n", "A|B"),
             (
@@ -168,15 +169,15 @@ fn private_home_contract_preserves_results_across_callbacks_and_window_resumes()
             ("open\nA", "A"),
         ] {
             let expected = ValueDraft {
-                schema: descriptor.plan.transport_output_type(0).schema(),
+                schema: descriptor.metadata().plan.transport_output_type(0).schema(),
                 shape_values: Box::new([]),
                 data: ValueDataDraft::String(expected.into()),
             }
             .finalize(&SnapshotValidationContext::with_shared_schemas(
-                &descriptor.schemas,
+                &descriptor.metadata().schemas,
             ))
             .unwrap()
-            .canonical_snapshot_bytes(&descriptor.schemas)
+            .canonical_snapshot_bytes(&descriptor.metadata().schemas)
             .unwrap();
             for incremental in [false, true] {
                 for jit in [&ordinary, &alias_only, &optimized] {
@@ -211,11 +212,11 @@ fn private_home_contract_preserves_first_failure_and_finite_work_accounting() {
                 let descriptor = jit.descriptor();
                 let inputs = [string_value(
                     descriptor,
-                    descriptor.plan.transport_input_type(0).schema(),
+                    descriptor.metadata().plan.transport_input_type(0).schema(),
                     "skip\nopen\nA\nB\nclose\nafter\n",
                     &memory,
                 )];
-                let mut outputs = vec![None; descriptor.plan.transport_output_count()];
+                let mut outputs = vec![None; descriptor.metadata().plan.transport_output_count()];
                 let mut limit = limits();
                 limit.execution.max_work = max_work;
                 let outcome = jit.evaluate_into(&inputs, &mut outputs, limit, &memory);
@@ -309,11 +310,12 @@ fn pure_scalar_graph_preserves_first_errors_and_original_finite_work() {
                     let descriptor = jit.descriptor();
                     let inputs = [string_value(
                         descriptor,
-                        descriptor.plan.transport_input_type(0).schema(),
+                        descriptor.metadata().plan.transport_input_type(0).schema(),
                         "skip\nopen\nA\nB\nclose\nafter\n",
                         &memory,
                     )];
-                    let mut outputs = vec![None; descriptor.plan.transport_output_count()];
+                    let mut outputs =
+                        vec![None; descriptor.metadata().plan.transport_output_count()];
                     let mut limit = limits();
                     limit.execution.max_work = max_work;
                     let result = jit.evaluate_into(&inputs, &mut outputs, limit, &memory);
@@ -361,7 +363,7 @@ fn forward_jumps_discard_only_completed_input_without_rejecting_valid_carriers()
     let jumping = source().replace("i + 1u64", "i + 2u64");
     for artifact in call_cache_tests::artifacts(&jumping) {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
-        assert!(jit.descriptor().prefix.is_some());
+        assert!(jit.descriptor().metadata().prefix.is_some());
         run_windowed(
             &jit,
             "skip\nignored\nopen\nignored\nA\nignored\nclose\nafter\n",
@@ -410,11 +412,11 @@ fn foreign_producer_or_work_ledger_and_false_extent_fail_before_native_entry() {
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
             let inputs = [string_value(
                 descriptor,
-                descriptor.plan.inputs()[0].ty().schema(),
+                descriptor.metadata().plan.inputs()[0].ty().schema(),
                 "open\nA\nclose\n",
                 &memory,
             )];
-            let outputs = vec![None; descriptor.plan.transport_output_count()];
+            let outputs = vec![None; descriptor.metadata().plan.transport_output_count()];
             let mut entry = jit.test_generated_entry();
             let mut prepared = Prepared::new(descriptor, limits(), &memory).unwrap();
             prepared.activate(&mut entry).unwrap();
@@ -430,6 +432,7 @@ fn foreign_producer_or_work_ledger_and_false_extent_fail_before_native_entry() {
                 descriptor
             };
             let site = source_descriptor
+                .metadata()
                 .prefix
                 .as_ref()
                 .unwrap()
@@ -438,7 +441,7 @@ fn foreign_producer_or_work_ledger_and_false_extent_fail_before_native_entry() {
                 .count()
                 .lines()
                 .producer() as usize;
-            let mut owner = source_descriptor.calls[site]
+            let mut owner = source_descriptor.metadata().calls[site]
                 .as_ref()
                 .unwrap()
                 .prepare_text_line_chunks(128, 128, limits().library, &library)
@@ -483,12 +486,13 @@ fn framing_work_reaches_the_global_work_limit_before_any_generated_prefix_instru
         let text = "open\nA\nclose\n".to_owned() + &"x".repeat(4096);
         let inputs = [string_value(
             descriptor,
-            descriptor.plan.inputs()[0].ty().schema(),
+            descriptor.metadata().plan.inputs()[0].ty().schema(),
             &text,
             &memory,
         )];
-        let outputs = vec![None; descriptor.plan.transport_output_count()];
+        let outputs = vec![None; descriptor.metadata().plan.transport_output_count()];
         let site = descriptor
+            .metadata()
             .prefix
             .as_ref()
             .unwrap()
@@ -497,7 +501,7 @@ fn framing_work_reaches_the_global_work_limit_before_any_generated_prefix_instru
             .count()
             .lines()
             .producer() as usize;
-        let producer = descriptor.calls[site].as_ref().unwrap();
+        let producer = descriptor.metadata().calls[site].as_ref().unwrap();
         let mut entry = jit.test_generated_entry();
         let mut probe = Prepared::new(descriptor, limits(), &memory).unwrap();
         probe.activate(&mut entry).unwrap();

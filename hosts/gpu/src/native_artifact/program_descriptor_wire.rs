@@ -61,6 +61,9 @@ impl<T: ProofImage> ProofImage for Option<T> {
     }
 }
 
+#[path = "program/image/wire/layouts.rs"]
+mod layouts;
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Slot {
@@ -120,11 +123,11 @@ struct Descriptor<'a> {
     frozen_maps: native::program_frozen_map_layout::Layout,
     map_admission: native::program_map_admission::Layout,
     parallel: native::program_parallel_layout::Layout,
-    borrowed_strings: native::program_borrowed_layout::Layout,
-    closed_tails: native::program_tail_layout::Layout,
-    selected_joins: native::program_selected_join_layout::Layout,
-    line_matrices: native::program_line_matrix_layout::Layout,
-    prefix: Option<native::program_prefix_layout::Region>,
+    borrowed_strings: layouts::Borrowed,
+    closed_tails: layouts::Tails,
+    selected_joins: layouts::SelectedJoins,
+    line_matrices: layouts::LineMatrices,
+    prefix: Option<layouts::Prefix>,
     stack: u64,
     code: u64,
     identity: [u8; 32],
@@ -196,48 +199,52 @@ pub(super) fn decode(
     {
         return Err("descriptor image inventory differs from its plan".into());
     }
+    let closed_tails = w.closed_tails.into();
     let frozen_maps = w
         .map_owner_words
         .as_ref()
-        .map(|owner| {
-            native::program_frozen_map_layout::Layout::derive(&plan, owner, &w.closed_tails)
-        })
+        .map(|owner| native::program_frozen_map_layout::Layout::derive(&plan, owner, &closed_tails))
         .transpose()
         .map_err(str::to_owned)?
         .unwrap_or_default();
     if frozen_maps != w.frozen_maps {
         return Err("frozen-map descriptor proof differs from its complete source uses".into());
     }
-    let selected_joins = native::program_selected_join_layout::Layout::derive(&plan)?;
+    let selected_joins =
+        native::program_selected_join_layout::Layout::derive(&plan, &plan.string_map_regions())?;
     if selected_joins.maps != w.selected_joins.maps {
         return Err("selected-join map proof differs from its complete source uses".into());
     }
     let descriptor = NativeProgramDescriptor {
-        plan,
-        schemas,
-        calls,
-        types,
-        visits: w.visits.into_vec().into_iter().map(Into::into).collect(),
-        retirements: w.retirements,
-        constant_admission_bytes: super::super::constant_admission_total(&w.constant_bytes)?,
-        constant_bytes: w.constant_bytes,
-        scalar_bytes: w.scalar_bytes,
-        observation_schema_bytes: w.observation_schema_bytes,
-        max_library_inputs: w.max_library_inputs,
-        window_regions: w.window_regions,
-        string_map_regions: w.string_map_regions,
-        scalar_aggregates: w.scalar_aggregates,
-        map_owner_words: w.map_owner_words,
-        frozen_maps,
-        map_admission: w.map_admission,
-        parallel: w.parallel,
-        borrowed_strings: w.borrowed_strings,
-        closed_tails: w.closed_tails,
-        selected_joins: w.selected_joins,
-        line_matrices: w.line_matrices,
-        prefix: w.prefix,
-        stack: w.stack,
-        code: w.code,
+        metadata: native::program::prepare::ProgramMetadata {
+            plan,
+            schemas,
+            calls,
+            types,
+            visits: w.visits.into_vec().into_iter().map(Into::into).collect(),
+            retirements: w.retirements,
+            constant_admission_bytes: super::super::constant_admission_total(&w.constant_bytes)?,
+            constant_bytes: w.constant_bytes,
+            scalar_bytes: w.scalar_bytes,
+            observation_schema_bytes: w.observation_schema_bytes,
+            max_library_inputs: w.max_library_inputs,
+            window_regions: w.window_regions,
+            string_map_regions: w.string_map_regions,
+            scalar_aggregates: w.scalar_aggregates,
+            map_owner_words: w.map_owner_words,
+            frozen_maps,
+            map_admission: w.map_admission,
+            parallel: w.parallel,
+            borrowed_strings: w.borrowed_strings.into(),
+            closed_tails,
+            selected_joins: w.selected_joins.into(),
+            line_matrices: w.line_matrices.into(),
+            prefix: w.prefix.map(Into::into),
+        },
+        footprint: native::program_descriptor::NativeCodeFootprint {
+            stack_bytes: w.stack,
+            code_bytes: w.code,
+        },
         identity: w.identity,
     };
     // Wire shape, canonical schemas and actual factories were checked above.

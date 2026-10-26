@@ -36,7 +36,7 @@ impl State {
         iteration: u32,
     ) -> Result<(), Error> {
         ctx.retire_frozen_maps(iteration)?;
-        let plan = &ctx.control.descriptor.plan;
+        let plan = &ctx.control.descriptor.metadata().plan;
         let NativeControlLoop::Collection(definition) = &plan.iterations()[iteration as usize]
         else {
             return Err(invalid("collection retirement on a fold"));
@@ -44,6 +44,7 @@ impl State {
         let slots = ctx
             .control
             .descriptor
+            .metadata()
             .retirements
             .slots(ctx.retirements, iteration, RetirementKind::Collection)
             .map_err(invalid)?;

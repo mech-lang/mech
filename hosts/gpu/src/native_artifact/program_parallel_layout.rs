@@ -50,9 +50,11 @@ pub(super) fn successors(term: Terminator) -> [Option<u32>; 2] {
 }
 
 impl Layout {
-    pub fn derive(plan: &Plan) -> Result<Self, &'static str> {
+    pub fn derive(
+        plan: &Plan,
+        aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
+    ) -> Result<Self, &'static str> {
         plan.validate_current_visits()?;
-        let aggregates = plan.scalar_aggregates();
         let mut reachable = BTreeSet::new();
         let mut pending = vec![plan.entry()];
         while let Some(site) = pending.pop() {

@@ -106,10 +106,12 @@ impl<'plan> State<'plan> {
     ) -> Result<Option<Self>, Error> {
         work.check_memory_budget(memory)?;
         let count = descriptor
+            .metadata()
             .map_owner_words
             .as_ref()
             .map_or(0, |layout| layout.regions().len());
         let span_count = descriptor
+            .metadata()
             .map_owner_words
             .as_ref()
             .map_or(0, |layout| layout.spans().len());
@@ -195,6 +197,7 @@ impl<'plan> State<'plan> {
 
     fn region(&self, index: usize) -> Result<&'plan NativeMapOwnerRegion, Error> {
         self.descriptor
+            .metadata()
             .map_owner_words
             .as_ref()
             .and_then(|layout| layout.regions().get(index))
@@ -247,6 +250,7 @@ impl<'plan> State<'plan> {
         self.guard(ctx, site)?;
         let index = self
             .descriptor
+            .metadata()
             .map_owner_words
             .as_ref()
             .and_then(|layout| layout.initializer(site))
@@ -266,9 +270,9 @@ impl<'plan> State<'plan> {
             .arena
             .copy_current(region.tail().seed().get(), &mut ctx.control.work)?;
         let imported = Binding::import(
-            &self.descriptor.plan,
+            &self.descriptor.metadata().plan,
             region,
-            &self.descriptor.schemas,
+            &self.descriptor.metadata().schemas,
             &source,
             ctx.library.clone(),
             geometry,
@@ -314,6 +318,7 @@ impl<'plan> State<'plan> {
         self.guard(ctx, site)?;
         let layout = self
             .descriptor
+            .metadata()
             .map_owner_words
             .as_ref()
             .ok_or_else(|| invalid("retained map call has no descriptor layout"))?;
@@ -327,7 +332,8 @@ impl<'plan> State<'plan> {
         if ctx.control.current != Some(region.iteration()) {
             return Err(invalid("retained map call is outside owning loop"));
         }
-        let Action::LibraryCall { operands, .. } = self.descriptor.plan.blocks()[site].action()
+        let Action::LibraryCall { operands, .. } =
+            self.descriptor.metadata().plan.blocks()[site].action()
         else {
             return Err(invalid("retained map call lacks exact library action"));
         };
@@ -409,6 +415,7 @@ impl<'plan> State<'plan> {
         self.guard(ctx, site)?;
         let index = self
             .descriptor
+            .metadata()
             .map_owner_words
             .as_ref()
             .and_then(|layout| layout.exit(site))
@@ -427,22 +434,23 @@ impl<'plan> State<'plan> {
         let value = if let Some(frozen) = slot.frozen.as_ref() {
             let proof = self
                 .descriptor
+                .metadata()
                 .frozen_maps
                 .exits
                 .get(site)
                 .copied()
                 .flatten()
-                .and_then(|id| self.descriptor.frozen_maps.regions.get(id))
+                .and_then(|id| self.descriptor.metadata().frozen_maps.regions.get(id))
                 .ok_or_else(|| invalid("frozen publication lacks complete-use proof"))?;
             if proof.owner != index || frozen.parent != proof.parent || frozen.token != 0 {
                 return Err(invalid("frozen publication owner/phase differs"));
             }
             let schema = binding
-                .frozen_exit_schema(site, token, &self.descriptor.schemas)
+                .frozen_exit_schema(site, token, &self.descriptor.metadata().schemas)
                 .map_err(storage_error)?;
             frozen
                 .map
-                .admit_output(&self.descriptor.schemas, schema, ctx.limits)
+                .admit_output(&self.descriptor.metadata().schemas, schema, ctx.limits)
                 .map_err(storage_error)?;
             slot.frozen.as_mut().unwrap().token = token;
             ctx.frozen_map_regions = add(ctx.frozen_map_regions, 1)?;
@@ -450,7 +458,13 @@ impl<'plan> State<'plan> {
         } else {
             Publication::Canonical(
                 binding
-                    .finish(site, token, &self.descriptor.schemas, geometry, ctx.limits)
+                    .finish(
+                        site,
+                        token,
+                        &self.descriptor.metadata().schemas,
+                        geometry,
+                        ctx.limits,
+                    )
                     .map_err(storage_error)?,
             )
         };
@@ -466,7 +480,7 @@ impl<'plan> State<'plan> {
         {
             self.caller = None;
         }
-        let layout = self.descriptor.map_owner_words.as_ref().unwrap();
+        let layout = self.descriptor.metadata().map_owner_words.as_ref().unwrap();
         ctx.control
             .work
             .charge(Phase::Setup, amount(layout.spans().len(), 128, 128)?)?;
@@ -491,7 +505,12 @@ impl Context<'_, '_> {
         let Some(state) = self.map_owners.state.as_mut() else {
             return Ok(());
         };
-        let layout = state.descriptor.map_owner_words.as_ref().unwrap();
+        let layout = state
+            .descriptor
+            .metadata()
+            .map_owner_words
+            .as_ref()
+            .unwrap();
         self.control
             .work
             .charge(Phase::Setup, amount(layout.spans().len(), 64, 64)?)?;
@@ -505,6 +524,7 @@ impl Context<'_, '_> {
     pub(super) fn retained_native_span(&self, site: usize) -> bool {
         self.control
             .descriptor
+            .metadata()
             .map_owner_words
             .as_ref()
             .is_some_and(|layout| {
@@ -526,6 +546,7 @@ impl Context<'_, '_> {
             || self
                 .map_owners
                 .descriptor
+                .metadata()
                 .map_owner_words
                 .as_ref()
                 .and_then(|layout| layout.initializer(site))
@@ -594,6 +615,7 @@ impl Context<'_, '_> {
     pub(super) fn retained_native_action(&self, site: usize) -> bool {
         self.control
             .descriptor
+            .metadata()
             .map_owner_words
             .as_ref()
             .and_then(|layout| {
@@ -604,6 +626,7 @@ impl Context<'_, '_> {
     pub(super) fn retained_native_exit(&self, site: usize) -> bool {
         self.control
             .descriptor
+            .metadata()
             .map_owner_words
             .as_ref()
             .and_then(|layout| layout.exit(site))
@@ -618,6 +641,7 @@ impl Context<'_, '_> {
     pub(super) fn retained_native_call(&self, site: usize) -> bool {
         self.control
             .descriptor
+            .metadata()
             .map_owner_words
             .as_ref()
             .and_then(|layout| {
@@ -642,7 +666,13 @@ impl Context<'_, '_> {
                 return Err(invalid("malformed retained map entry"));
             }
             if let Some(words) = self.begin_retained_map(site)? {
-                let layout = self.control.descriptor.map_owner_words.as_ref().unwrap();
+                let layout = self
+                    .control
+                    .descriptor
+                    .metadata()
+                    .map_owner_words
+                    .as_ref()
+                    .unwrap();
                 let index = layout.initializer(site).unwrap();
                 let count = layout
                     .aggregates()
@@ -676,7 +706,7 @@ impl Context<'_, '_> {
             Ok(None)
         } else if operation == MAP_OWNER_CALL {
             let Action::LibraryCall { operands, .. } =
-                self.control.descriptor.plan.blocks()[site].action()
+                self.control.descriptor.metadata().plan.blocks()[site].action()
             else {
                 return Err(invalid("retained map helper outside library call"));
             };
@@ -703,7 +733,7 @@ impl Context<'_, '_> {
             let Action::Scalar(mech_engine::native_artifact::NativeMatchAction::Copy {
                 output,
                 ..
-            }) = self.control.descriptor.plan.blocks()[site].action()
+            }) = self.control.descriptor.metadata().plan.blocks()[site].action()
             else {
                 return Err(invalid("retained map exit lacks canonical destination"));
             };

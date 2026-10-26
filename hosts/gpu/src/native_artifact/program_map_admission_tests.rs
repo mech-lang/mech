@@ -36,7 +36,12 @@ fn note(f: impl FnOnce(&mut Observation)) {
 unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
     // SAFETY: this is the exact callback/context supplied by the checked entry.
     let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
-    let group = ctx.control.descriptor.map_admission.group(site as usize);
+    let group = ctx
+        .control
+        .descriptor
+        .metadata()
+        .map_admission
+        .group(site as usize);
     let native = group.is_some_and(|group| ctx.map_owners.active(group.owner));
     note(|r| {
         r.calls += 1;
@@ -129,11 +134,13 @@ unsafe extern "C" fn observe_helper(
         let work = ctx
             .control
             .descriptor
+            .metadata()
             .map_admission
             .group(site as usize)
-            .map_or(ctx.control.descriptor.visits[site as usize].work, |group| {
-                group.work
-            });
+            .map_or(
+                ctx.control.descriptor.metadata().visits[site as usize].work,
+                |group| group.work,
+            );
         let used = ctx.library.used();
         if ctx.library.restrict(used.0 + work - 1, used.1).is_err() {
             note(|r| r.errors.push("could not restrict fused helper admission"));
@@ -180,7 +187,7 @@ unsafe extern "C" fn observe_helper(
         );
         if ctx.helper(site, operation, [first, second, third]).is_ok()
             || ctx
-                .visit(ctx.control.descriptor.plan.entry() as u64)
+                .visit(ctx.control.descriptor.metadata().plan.entry() as u64)
                 .is_ok()
         {
             note(|r| {
@@ -271,9 +278,10 @@ fn native_map_groups_reduce_actual_callbacks_preserve_fallback_and_deny_one_shor
             unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
         assert_eq!(restored.encode_build_owned_image().unwrap(), image);
         for descriptor in [jit.descriptor(), &restored] {
-            assert!(!descriptor.map_admission.groups.is_empty());
+            assert!(!descriptor.metadata().map_admission.groups.is_empty());
             assert!(
                 descriptor
+                    .metadata()
                     .map_admission
                     .groups
                     .iter()
@@ -367,6 +375,7 @@ fn native_map_group_arithmetic_failure_keeps_the_original_interior_origin() {
         let previous = previous.unwrap();
         let group = jit
             .descriptor()
+            .metadata()
             .map_admission
             .group(previous as usize)
             .unwrap();
@@ -383,7 +392,10 @@ fn native_map_group_arithmetic_failure_keeps_the_original_interior_origin() {
         else {
             panic!("expected the original arithmetic failure: {result:?}");
         };
-        assert_eq!(origin, jit.descriptor().visits[failed as usize].origin);
+        assert_eq!(
+            origin,
+            jit.descriptor().metadata().visits[failed as usize].origin
+        );
         assert!(outputs.iter().all(Option::is_none));
         drop((outputs, input));
         assert_eq!(
