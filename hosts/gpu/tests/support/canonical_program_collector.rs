@@ -80,8 +80,38 @@ fn real_buffer_collector_prefix_carries_consecutive_search_and_skip_updates() {
                 .value
         };
         assert_eq!(field("next-position"), &Data::U64(6));
-        assert!(matches!(field("tables"), Data::Matrix(values) if values.len() == 262_144));
-        assert!(matches!(field("cache"), Data::Matrix(values) if values.len() == 1_500_513));
+        // The pinned optimized reference checks every entry of these vectors.
+        // Compare outside the measured execution, including untouched entries.
+        let mut tables = vec![Data::U16(0); 262_144];
+        for (index, value) in [
+            (65536, 32768),
+            (131072, 32768),
+            (127616, 32773),
+            (174848, 32773),
+            (174849, 32772),
+        ] {
+            tables[index] = Data::U16(value);
+        }
+        assert_eq!(field("tables"), &Data::Matrix(tables.into()));
+        let mut cache = vec![Data::U32(0); 1_500_513];
+        for (slot, value) in cache.iter_mut().zip([
+            6356992, 6356992, 65539, 65794, 6356994, 6356992, 6356992, 6356992,
+        ]) {
+            *slot = Data::U32(value);
+        }
+        assert_eq!(field("cache"), &Data::Matrix(cache.into()));
+        for (name, value) in [
+            ("next-hash3", 21888),
+            ("next-hash4", 62080),
+            ("cache-ptr", 8),
+            ("skip", 254),
+            ("base", 0),
+            ("next-slide", 320),
+            ("maximum", 258),
+            ("nice", 258),
+        ] {
+            assert_eq!(field(name), &Data::U64(value), "{name}");
+        }
         drop((output, args, aliases));
         assert_eq!(memory.used_bytes(), 0);
     }

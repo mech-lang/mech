@@ -83,7 +83,7 @@ The ordinary host profile retains its 65536-element cap. Work units include
 admission and publication and are not machine instruction counts or timings.
 Other qualification limits and host defaults are unchanged.
 
-The optimal parser, block writer, efficient buffer ownership, and `reymont`
+The complete block collector, optimal parser, block writer, efficient buffer ownership, and `reymont`
 compression timing remain outstanding. These component checks record no
 compression performance result. Source licenses are retained
 in [the shared notices](../../../hosts/gpu/tests/fixtures/native/deflate-huffman-LICENSES.md).
@@ -155,9 +155,10 @@ Compiler work should support the equivalent Mech program, including ordinary
 collection operations and buffer updates, rather than change the algorithm to
 suit the backend.
 
-Before timing, finish the known word-load, prefetch,
-wrapping-conversion, and buffer-ownership differences, and inspect the
-first-four-word generated code.
+Obtain a complete correct baseline before optional performance tuning. Record
+the remaining word-load, prefetch, wrapping-conversion, and generated-code
+differences alongside that baseline. Fix compiler paths that prevent execution
+using the unchanged real-buffer witness before proceeding.
 Match the Roc harness's output-buffer reuse and
 timed boundaries: input reading, output clearing, validation, and file writing
 are outside compression timing; compression's own allocation and work remain
@@ -201,3 +202,41 @@ including changing input extents and valid reads after zero fallbacks. Existing
 C oracle values, transition cases, search and skip signatures, entry assertions,
 limits, and qualification allowances are unchanged. The byte assembly remains
 explicit; this correction does not claim native bulk-load or prefetch parity.
+
+## Consecutive real-buffer prefix
+
+[The prefix source](../../../hosts/gpu/tests/fixtures/native/deflate-collector.mec)
+initializes the 262144-entry U16 tree and 1500513-word U32 cache in Mech and
+attempts six consecutive positions in one compiled computation. The input is
+320 copies of byte 97, with depth 300 and nice length 258. The first three
+positions search; the next three skip. This is a bounded state-update witness,
+not a complete block collector: observations, block decisions and carryover
+still need to be connected.
+
+The [reference witness](collector-prefix-reference.roc) calls the pinned search
+and skip implementations and checks every tree and cache entry. Copy it beside
+`Matchfinder.roc` and `BtMatchfinder.roc` in the pinned package, then run it with
+the compiler revision specified above:
+
+```sh
+cp benchmarks/mech-deflate/matchfinder/collector-prefix-reference.roc \
+  /path/to/pinned/roc-deflate/package/CollectorPrefixWitness.roc
+roc test --opt=speed /path/to/pinned/roc-deflate/package/CollectorPrefixWitness.roc
+```
+
+The Mech test keeps initialization inside the measured call, reports allocation
+requests and elapsed time, and compares the full state outside measurement:
+
+```sh
+cargo test --locked --offline -j1 -p mech-gpu --no-default-features \
+  --features canonical-native-program --test canonical_artifact_program \
+  collector_qualification -- --test-threads=1 --nocapture
+```
+
+The initial executable attempt completed no search positions. Cache construction
+rejected output admission at 16777228 bytes against the unchanged 16777216-byte
+limit. The generic comprehension builder stages scalar drafts instead of packed
+U32 cells. Its actual execution requested 101445977 allocation bytes in 397
+requests and took 3.51036625 seconds in the unoptimized Rust test profile. The
+failure left publication empty and retained memory unchanged. This is a compiler
+representation blocker, not a compression performance result.
