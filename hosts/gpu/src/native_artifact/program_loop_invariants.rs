@@ -1,42 +1,17 @@
 //! Guard private call flags and peel adjacency only inside the existing
 //! source-derived window-loop certificate. Unknown shapes keep checked code.
 use super::*;
+use crate::native_artifact::compilation::{CompilationControls, OptimizationPass};
 
-#[cfg(test)]
-thread_local! {
-    static DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    static EMISSIONS: std::cell::Cell<(usize, usize, usize)> = const { std::cell::Cell::new((0, 0, 0)) };
-}
-pub(in crate::native_artifact) fn enabled() -> bool {
-    #[cfg(test)]
-    {
-        !DISABLED.with(std::cell::Cell::get)
-    }
-    #[cfg(not(test))]
-    {
-        true
-    }
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_loop_invariants<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            DISABLED.with(|v| v.set(self.0));
-        }
-    }
-    let _restore = Restore(DISABLED.with(|v| v.replace(true)));
-    f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_invariant_emissions() -> (usize, usize, usize) {
-    EMISSIONS.with(|v| v.replace((0, 0, 0)))
+pub(in crate::native_artifact) fn enabled(controls: &CompilationControls) -> bool {
+    controls.enabled(OptimizationPass::LoopInvariants)
 }
 
 pub(super) struct Proof {
     pub steady_latches: BTreeSet<usize>,
 }
 pub(super) fn derive(
+    controls: &CompilationControls,
     code: CodePlan<'_>,
     closed: &Layout,
     id: usize,
@@ -47,7 +22,7 @@ pub(super) fn derive(
 ) -> Option<Proof> {
     // Four versions fit the existing 1024-node bound. These setup/refresh
     // bounds also leave space in the unchanged fixed work envelope.
-    if !enabled() || graph.nodes.len() > 256 || slots.len() > 256 {
+    if !enabled(controls) || graph.nodes.len() > 256 || slots.len() > 256 {
         return None;
     }
     let region = &closed.regions[id];
@@ -96,13 +71,4 @@ pub(super) fn calls_allowed(b: &mut FunctionBuilder<'_>, frame: &FrameState) -> 
         allowed = b.ins().band(allowed, nonzero);
     }
     allowed
-}
-pub(super) fn note(calls: usize, ranges: usize) {
-    #[cfg(test)]
-    EMISSIONS.with(|v| {
-        let old = v.get();
-        v.set((old.0 + 1, old.1 + calls, old.2 + ranges));
-    });
-    #[cfg(not(test))]
-    let _ = (calls, ranges);
 }

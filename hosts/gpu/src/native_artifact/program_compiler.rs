@@ -65,6 +65,8 @@ pub struct JitProgramArtifact {
     _module: cranelift_jit::JITModule,
     entry: Entry,
     descriptor: NativeProgramDescriptor,
+    #[cfg(test)]
+    codegen: super::iteration_compiler::CodegenReport,
 }
 impl JitProgramArtifact {
     /// Execute only generated closed activation before provider capture.
@@ -96,6 +98,19 @@ impl JitProgramArtifact {
         catalog: &FunctionCatalog,
         limits: NativeCompileLimits,
     ) -> Result<Self, NativeCompileError> {
+        Self::compile_with_options(
+            artifact,
+            catalog,
+            limits,
+            &super::compilation::OptimizationOptions::default(),
+        )
+    }
+    fn compile_with_options(
+        artifact: &ProgramArtifact,
+        catalog: &FunctionCatalog,
+        limits: NativeCompileLimits,
+        options: &super::compilation::OptimizationOptions,
+    ) -> Result<Self, NativeCompileError> {
         host_supported()?;
         let plan = lower_native_program_artifact(artifact, catalog).map_err(backend)?;
         let builder =
@@ -104,12 +119,13 @@ impl JitProgramArtifact {
         let mut module = cranelift_jit::JITModule::new(builder);
         preflight(&plan, &module, limits)?;
         let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
-        let (function, stack, code, _) = super::iteration_compiler::define_cfg(
+        let (function, stack, code, _codegen) = super::iteration_compiler::define_cfg(
             CodePlan::Program(&prepared),
             ENTRY,
             VERSION,
             &mut module,
             limits,
+            options,
         )?;
         let descriptor = NativeProgramDescriptor::from_prepared(
             prepared,
@@ -128,7 +144,28 @@ impl JitProgramArtifact {
             _module: module,
             entry,
             descriptor,
+            #[cfg(test)]
+            codegen: _codegen,
         })
+    }
+    #[cfg(test)]
+    pub(in crate::native_artifact) fn compile_for_test(
+        artifact: &ProgramArtifact,
+        catalog: &FunctionCatalog,
+        pass: super::compilation::OptimizationPass,
+    ) -> Result<Self, NativeCompileError> {
+        Self::compile_with_options(
+            artifact,
+            catalog,
+            NativeCompileLimits::default(),
+            &super::compilation::OptimizationOptions::without(pass),
+        )
+    }
+    #[cfg(test)]
+    pub(in crate::native_artifact) fn test_emissions(
+        &self,
+    ) -> super::compilation::EmissionCounters {
+        self.codegen.emission_counts()
     }
     pub fn descriptor(&self) -> &NativeProgramDescriptor {
         &self.descriptor
@@ -252,6 +289,19 @@ pub fn emit_program_object_with_limits(
     catalog: &FunctionCatalog,
     limits: NativeCompileLimits,
 ) -> Result<NativeProgramObject, NativeCompileError> {
+    emit_program_object_with_options(
+        artifact,
+        catalog,
+        limits,
+        &super::compilation::OptimizationOptions::default(),
+    )
+}
+pub(in crate::native_artifact) fn emit_program_object_with_options(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    limits: NativeCompileLimits,
+    options: &super::compilation::OptimizationOptions,
+) -> Result<NativeProgramObject, NativeCompileError> {
     host_supported()?;
     let plan = lower_native_program_artifact(artifact, catalog).map_err(backend)?;
     let mut flags = settings::builder();
@@ -274,6 +324,7 @@ pub fn emit_program_object_with_limits(
         VERSION,
         &mut module,
         limits,
+        options,
     )?;
     let descriptor = NativeProgramDescriptor::from_prepared(
         prepared,
@@ -313,4 +364,26 @@ fn preflight<M: Module>(
         plan.values().len(),
         limits,
     )
+}
+
+#[cfg(test)]
+pub(in crate::native_artifact) fn emit_program_object_for_test(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    pass: super::compilation::OptimizationPass,
+) -> Result<NativeProgramObject, NativeCompileError> {
+    emit_program_object_with_options(
+        artifact,
+        catalog,
+        NativeCompileLimits::default(),
+        &super::compilation::OptimizationOptions::without(pass),
+    )
+}
+#[cfg(test)]
+impl NativeProgramObject {
+    pub(in crate::native_artifact) fn test_emissions(
+        &self,
+    ) -> super::compilation::EmissionCounters {
+        self.codegen.emission_counts()
+    }
 }

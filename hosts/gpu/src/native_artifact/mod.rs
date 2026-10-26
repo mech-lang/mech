@@ -171,3 +171,6 @@ mod owned_string_map;
 
 #[cfg(feature = "canonical-native-program")]
 mod codegen;
+
+#[cfg(feature = "canonical-native")]
+mod compilation;

@@ -1,10 +1,6 @@
 //! Execute the same source with and without guarded loop versions. Publication
 //! is independently hash-seeded, so exact work is compared before that boundary.
 use super::*;
-use crate::native_artifact::program_compiler::packed_loop_codegen::{
-    take_lookup_fact_emissions, take_loop_bounds_emissions, without_lookup_facts,
-    without_loop_bounds,
-};
 
 unsafe extern "C" fn observed(
     raw: *mut c_void,
@@ -112,26 +108,17 @@ fn parameterized_equivalence(
     .unwrap();
     for artifact in [original, decoded] {
         let catalog = mech_stdlib::source_catalog();
-        take_loop_bounds_emissions();
-        take_lookup_fact_emissions();
-        take_outline_emissions();
-        take_mutation_emissions();
-        take_count_bound_emissions();
-        take_constant_emissions();
-        if compare_preserving {
-            crate::native_artifact::program_bound_shim::take_emissions();
-        }
-        take_steady_emissions();
+        if compare_preserving {}
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         if compare_steady {
-            assert!(take_steady_emissions() > 0);
+            assert!(optimized.test_emissions().steady_loops > 0);
         }
-        let mutation_optimized = take_mutation_emissions().0 > 0;
-        let constant_emitted = take_constant_emissions();
+        let mutation_optimized = optimized.test_emissions().mutation_facts.0 > 0;
+        let constant_emitted = optimized.test_emissions().loop_constants;
         if compare_constants {
             assert!(constant_emitted > 0);
         }
-        let count_emitted = take_count_bound_emissions();
+        let count_emitted = optimized.test_emissions().count_bounds;
         if compare_counts {
             assert!(
                 count_emitted > 0,
@@ -145,72 +132,112 @@ fn parameterized_equivalence(
             );
         }
         if compare_preserving && cfg!(target_arch = "aarch64") {
-            assert!(crate::native_artifact::program_bound_shim::take_emissions() > 0);
+            assert!(optimized.test_emissions().preserving_calls > 0);
         }
-        assert_eq!(take_outline_emissions(), 1);
-        let emitted = take_loop_bounds_emissions();
+        assert_eq!(optimized.test_emissions().loop_outlining, 1);
+        let emitted = optimized.test_emissions().loop_bounds;
         assert_eq!(
             emitted.0, 1,
             "must emit the guarded graph, not only its fallback"
         );
         assert!(emitted.1 > 0);
-        let lookup_emissions = take_lookup_fact_emissions();
+        let lookup_emissions = optimized.test_emissions().lookup_facts;
         assert!(lookup_emissions.0 > 0 && lookup_emissions.1 >= 4);
-        take_outline_emissions();
         let baseline = if compare_steady {
-            without_steady_loops(|| JitProgramArtifact::compile(&artifact, &catalog))
+            JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                crate::native_artifact::compilation::OptimizationPass::SteadyLoops,
+            )
         } else if compare_constants {
-            without_loop_constants(|| JitProgramArtifact::compile(&artifact, &catalog))
+            JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                crate::native_artifact::compilation::OptimizationPass::LoopConstants,
+            )
         } else if compare_counts {
-            without_count_bounds(|| JitProgramArtifact::compile(&artifact, &catalog))
+            JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                crate::native_artifact::compilation::OptimizationPass::CountBounds,
+            )
         } else if compare_mutation {
-            without_mutation_facts(|| JitProgramArtifact::compile(&artifact, &catalog))
+            JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                crate::native_artifact::compilation::OptimizationPass::MutationFacts,
+            )
         } else if compare_preserving {
-            crate::native_artifact::program_bound_shim::without_preserving_calls(|| {
-                JitProgramArtifact::compile(&artifact, &catalog)
-            })
+            JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                crate::native_artifact::compilation::OptimizationPass::PreservingCalls,
+            )
         } else if compare_invariants {
-            without_loop_invariants(|| JitProgramArtifact::compile(&artifact, &catalog))
+            JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                crate::native_artifact::compilation::OptimizationPass::LoopInvariants,
+            )
         } else if compare_outlining {
-            without_loop_outlining(|| JitProgramArtifact::compile(&artifact, &catalog))
+            JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                crate::native_artifact::compilation::OptimizationPass::LoopOutlining,
+            )
         } else if compare_cfg_cleanup {
-            without_cfg_cleanup(|| JitProgramArtifact::compile(&artifact, &catalog))
+            JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                crate::native_artifact::compilation::OptimizationPass::CfgCleanup,
+            )
         } else if compare_lookup_facts {
-            without_lookup_facts(|| JitProgramArtifact::compile(&artifact, &catalog))
+            JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                crate::native_artifact::compilation::OptimizationPass::LookupFacts,
+            )
         } else {
-            without_loop_bounds(|| JitProgramArtifact::compile(&artifact, &catalog))
+            JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                crate::native_artifact::compilation::OptimizationPass::LoopBounds,
+            )
         }
         .unwrap();
-        let mutation_baseline = take_mutation_emissions().0 > 0;
+        let mutation_baseline = baseline.test_emissions().mutation_facts.0 > 0;
         if compare_steady {
-            assert_eq!(take_steady_emissions(), 0);
-            assert_eq!(take_loop_bounds_emissions(), emitted);
+            assert_eq!(baseline.test_emissions().steady_loops, 0);
+            assert_eq!(baseline.test_emissions().loop_bounds, emitted);
         } else if compare_constants {
-            assert_eq!(take_constant_emissions(), 0);
-            assert_eq!(take_loop_bounds_emissions(), emitted);
+            assert_eq!(baseline.test_emissions().loop_constants, 0);
+            assert_eq!(baseline.test_emissions().loop_bounds, emitted);
         } else if compare_counts {
-            assert_eq!(take_count_bound_emissions(), 0);
-            assert_eq!(take_loop_bounds_emissions(), emitted);
+            assert_eq!(baseline.test_emissions().count_bounds, 0);
+            assert_eq!(baseline.test_emissions().loop_bounds, emitted);
         } else if compare_mutation {
             assert!(!mutation_baseline);
-            assert_eq!(take_loop_bounds_emissions(), emitted);
+            assert_eq!(baseline.test_emissions().loop_bounds, emitted);
         } else if compare_preserving {
-            assert_eq!(take_loop_bounds_emissions(), emitted);
+            assert_eq!(baseline.test_emissions().loop_bounds, emitted);
         } else if compare_invariants {
             // The candidate emits three guarded copies (checked calls,
             // allowed calls, steady rolling); the reference emits only one.
             assert_eq!(emitted.1 % 3, 0);
-            assert_eq!(take_loop_bounds_emissions(), (emitted.0, emitted.1 / 3));
+            assert_eq!(
+                baseline.test_emissions().loop_bounds,
+                (emitted.0, emitted.1 / 3)
+            );
         } else if compare_outlining {
-            assert_eq!(take_outline_emissions(), 0);
-            assert_eq!(take_loop_bounds_emissions(), emitted);
+            assert_eq!(baseline.test_emissions().loop_outlining, 0);
+            assert_eq!(baseline.test_emissions().loop_bounds, emitted);
         } else if compare_lookup_facts {
-            assert_eq!(take_lookup_fact_emissions(), (0, 0));
-            assert_eq!(take_loop_bounds_emissions(), emitted);
+            assert_eq!(baseline.test_emissions().lookup_facts, (0, 0));
+            assert_eq!(baseline.test_emissions().loop_bounds, emitted);
         } else if compare_cfg_cleanup {
-            assert_eq!(take_loop_bounds_emissions(), emitted);
+            assert_eq!(baseline.test_emissions().loop_bounds, emitted);
         } else {
-            assert_eq!(take_loop_bounds_emissions(), (0, 0));
+            assert_eq!(baseline.test_emissions().loop_bounds, (0, 0));
         }
         let long = "a".repeat(1024);
         let cases = [
@@ -504,9 +531,8 @@ fn guarded_loop_metadata_records_emission_and_declines_changed_source_obligation
         let artifact =
             tests::artifact_source(&format!("{body}\n#Count(\"abcabc\", 2u64, 6u64, empty)\n"));
         let catalog = mech_stdlib::source_catalog();
-        take_loop_bounds_emissions();
         let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
-        let emitted = take_loop_bounds_emissions();
+        let emitted = object.test_emissions().loop_bounds;
         let metadata = object.metadata();
         let receipt = &metadata["compiled_guarded_loops"];
         assert_eq!(receipt["complete"], true);
@@ -572,12 +598,15 @@ fn guarded_loop_count_overflow_stays_at_the_source_replacement() {
         .replace("previous + 1u64", "previous + 18446744073709551615u64");
     let artifact = tests::artifact_source(&format!("{body}\n#Count(\"aa\", 1u64, 2u64, empty)\n"));
     let catalog = mech_stdlib::source_catalog();
-    take_loop_bounds_emissions();
     let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-    assert_eq!(take_loop_bounds_emissions().0, 1);
-    let baseline =
-        without_loop_bounds(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
-    assert_eq!(take_loop_bounds_emissions(), (0, 0));
+    assert_eq!(optimized.test_emissions().loop_bounds.0, 1);
+    let baseline = JitProgramArtifact::compile_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::LoopBounds,
+    )
+    .unwrap();
+    assert_eq!(baseline.test_emissions().loop_bounds, (0, 0));
     let mut results = Vec::new();
     for (version, jit) in [&optimized, &baseline].into_iter().enumerate() {
         MODE.with(|m| m.set(Mode::Native));

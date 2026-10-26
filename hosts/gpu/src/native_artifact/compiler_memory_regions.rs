@@ -19,79 +19,56 @@
 //! source bytes, row offsets, map storage or callback argument/result buffers.
 use cranelift_codegen::ir::{AliasRegion, MemFlags};
 
-#[cfg(all(test, feature = "canonical-native-program"))]
-thread_local! {
-    static ENABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(true) };
-    static NONTRAPPING: std::cell::Cell<bool> = const { std::cell::Cell::new(true) };
-}
+use super::super::compilation::OptimizationOptions;
+#[cfg(feature = "canonical-native-program")]
+use super::super::compilation::OptimizationPass;
 
-fn flags(region: AliasRegion) -> MemFlags {
-    #[cfg(all(test, feature = "canonical-native-program"))]
-    if !ENABLED.with(std::cell::Cell::get) {
+fn flags(options: OptimizationOptions, region: AliasRegion) -> MemFlags {
+    #[cfg(feature = "canonical-native-program")]
+    if !options.enabled(OptimizationPass::DisjointState) {
         return MemFlags::new();
     }
     let flags = MemFlags::new().with_alias_region(Some(region));
-    #[cfg(all(test, feature = "canonical-native-program"))]
-    if !NONTRAPPING.with(std::cell::Cell::get) {
+    #[cfg(feature = "canonical-native-program")]
+    if !options.enabled(OptimizationPass::NontrappingHomes) {
         return flags;
     }
+    #[cfg(not(feature = "canonical-native-program"))]
+    let _ = options;
     flags.with_notrap()
 }
-
-pub(in crate::native_artifact) fn origin() -> MemFlags {
-    flags(AliasRegion::Vmctx)
+pub(in crate::native_artifact) fn origin(options: OptimizationOptions) -> MemFlags {
+    flags(options, AliasRegion::Vmctx)
 }
 #[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) fn borrowed() -> MemFlags {
-    flags(AliasRegion::Heap)
+pub(in crate::native_artifact) fn borrowed(options: OptimizationOptions) -> MemFlags {
+    flags(options, AliasRegion::Heap)
 }
 #[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) fn scalar_tail() -> MemFlags {
-    flags(AliasRegion::Table)
-}
-
-#[cfg(all(test, feature = "canonical-native-program"))]
-pub(in crate::native_artifact) fn without_disjoint_state<T>(run: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            ENABLED.with(|v| v.set(self.0));
-        }
-    }
-    let _restore = Restore(ENABLED.with(|v| v.replace(false)));
-    run()
-}
-
-/// Differential reference that retains the existing alias regions.
-#[cfg(all(test, feature = "canonical-native-program"))]
-pub(in crate::native_artifact) fn without_nontrapping_homes<T>(run: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            NONTRAPPING.with(|v| v.set(self.0));
-        }
-    }
-    let _restore = Restore(NONTRAPPING.with(|v| v.replace(false)));
-    run()
+pub(in crate::native_artifact) fn scalar_tail(options: OptimizationOptions) -> MemFlags {
+    flags(options, AliasRegion::Table)
 }
 
 #[test]
 #[cfg(feature = "canonical-native-program")]
 fn private_home_flags_keep_mutability_and_control_flow_constraints() {
     for get in [origin, borrowed, scalar_tail] {
-        let optimized = get();
+        let optimized = get(OptimizationOptions::default());
         assert!(optimized.notrap());
         assert!(!optimized.readonly());
         assert!(!optimized.aligned());
         assert!(!optimized.can_move());
-        let reference = without_nontrapping_homes(get);
+        let reference = get(OptimizationOptions::without(
+            OptimizationPass::NontrappingHomes,
+        ));
         assert_eq!(optimized, reference.with_notrap());
         assert!(!reference.notrap());
-        assert_eq!(without_disjoint_state(get), MemFlags::new());
         assert_eq!(
-            get(),
-            optimized,
-            "reference scopes must restore the contract"
+            get(OptimizationOptions::without(
+                OptimizationPass::DisjointState
+            )),
+            MemFlags::new()
         );
+        assert_eq!(get(OptimizationOptions::default()), optimized);
     }
 }

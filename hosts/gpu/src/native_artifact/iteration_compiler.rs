@@ -253,6 +253,7 @@ fn define<M: Module>(
         VERSION,
         module,
         limits,
+        &super::compilation::OptimizationOptions::default(),
     )?;
     Ok((
         function,
@@ -284,12 +285,17 @@ pub(super) fn define_cfg<M: Module>(
     version: u64,
     module: &mut M,
     limits: NativeCompileLimits,
+    options: &super::compilation::OptimizationOptions,
 ) -> Result<(FuncId, u64, u64, CodegenReport), NativeCompileError> {
     let report = CodegenReport::default();
     #[cfg(feature = "canonical-native-program")]
     let mut report = report;
+    #[cfg(feature = "canonical-native-program")]
+    let controls = super::compilation::CompilationControls::new(*options);
+    #[cfg(not(feature = "canonical-native-program"))]
+    let _ = options;
     let origin_flags = if plan.is_program() {
-        super::compiler::memory_regions::origin()
+        super::compiler::memory_regions::origin(*options)
     } else {
         MemFlags::new()
     };
@@ -453,6 +459,7 @@ pub(super) fn define_cfg<M: Module>(
     #[cfg(feature = "canonical-native-program")]
     let (packed_functions, bound_call_shim) =
         super::program_compiler::packed_loop_codegen::define_functions(
+            &controls,
             module,
             entry_symbol,
             plan,
@@ -707,6 +714,7 @@ pub(super) fn define_cfg<M: Module>(
                 b.ins().brif(at_header, reopen, &[], snapshot, &[]);
                 b.switch_to_block(reopen);
                 super::program_compiler::prefix_codegen::resume(
+                    *options,
                     &mut b,
                     locals,
                     region,
@@ -738,6 +746,7 @@ pub(super) fn define_cfg<M: Module>(
             #[cfg(feature = "canonical-native-program")]
             if let Some(hooks) = &hooks {
                 super::program_compiler::scalar_loop_codegen::emit_entry(
+                    &controls,
                     &mut b,
                     frame,
                     locals,
@@ -758,6 +767,7 @@ pub(super) fn define_cfg<M: Module>(
                     .find(|(site, _, _, _)| *site == index)
                     .map(|(_, function, _, _)| module.declare_func_in_func(*function, b.func));
                 super::program_compiler::packed_loop_codegen::emit_entry(
+                    &controls,
                     &mut b,
                     frame,
                     locals,
@@ -809,6 +819,7 @@ pub(super) fn define_cfg<M: Module>(
                 && region.tail.header() as usize == index
             {
                 super::program_compiler::prefix_codegen::gate(
+                    *options,
                     &mut b,
                     locals,
                     prefix_facts.expect("managed prefix entry facts"),
@@ -822,7 +833,7 @@ pub(super) fn define_cfg<M: Module>(
             #[cfg(feature = "canonical-native-program")]
             let admission_join = if let Some(hooks) = &hooks {
                 super::program_compiler::tail_codegen::admission(
-                    &mut b, locals, &closed, index, hooks, error,
+                    *options, &mut b, locals, &closed, index, hooks, error,
                 )?
             } else {
                 None
@@ -840,6 +851,7 @@ pub(super) fn define_cfg<M: Module>(
                 && region.tail.exit() as usize == index
             {
                 super::program_compiler::prefix_codegen::scanned(
+                    *options,
                     &mut b,
                     locals,
                     prefix_facts.expect("managed prefix entry facts"),
@@ -917,11 +929,12 @@ pub(super) fn define_cfg<M: Module>(
             #[cfg(feature = "canonical-native-program")]
             if let Some(hooks) = &hooks {
                 super::program_compiler::borrowed_codegen::prepare(
-                    &mut b, locals, &borrowed, index, hooks, error,
+                    *options, &mut b, locals, &borrowed, index, hooks, error,
                 )?;
             }
             #[cfg(feature = "canonical-native-program")]
             let borrowed_join = super::program_compiler::borrowed_codegen::emit(
+                *options,
                 &mut b,
                 locals,
                 &borrowed,
@@ -1289,7 +1302,7 @@ pub(super) fn define_cfg<M: Module>(
             #[cfg(feature = "canonical-native-program")]
             if let Some(hooks) = &hooks {
                 super::program_compiler::tail_codegen::prepare(
-                    &mut b, locals, &closed, index, hooks, error,
+                    *options, &mut b, locals, &closed, index, hooks, error,
                 )?;
             }
             #[cfg(feature = "canonical-native-program")]
@@ -1396,7 +1409,7 @@ pub(super) fn define_cfg<M: Module>(
                 core::mem::offset_of!(Frame, error_node) as i32,
             );
             super::program_compiler::tail_codegen::abort(
-                &mut b, locals, &closed, site, hooks, error,
+                *options, &mut b, locals, &closed, site, hooks, error,
             )?;
         }
         b.ins().jump(error, &[status.into()]);
@@ -1409,6 +1422,7 @@ pub(super) fn define_cfg<M: Module>(
     #[cfg(feature = "canonical-native-program")]
     if plan.is_program() {
         report.cfg_cleanup = Some(super::program_compiler::cfg_cleanup::optimize(
+            &controls,
             &mut context,
             module.isa(),
         )?);

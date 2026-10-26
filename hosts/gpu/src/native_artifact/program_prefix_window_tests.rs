@@ -146,16 +146,21 @@ fn run_windowed_delivery(
 
 #[test]
 fn private_home_contract_preserves_results_across_callbacks_and_window_resumes() {
-    use crate::native_artifact::compiler::memory_regions::{
-        without_disjoint_state, without_nontrapping_homes,
-    };
     for artifact in call_cache_tests::artifacts(source()) {
         let catalog = mech_stdlib::source_catalog();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        let ordinary =
-            without_disjoint_state(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
-        let alias_only =
-            without_nontrapping_homes(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+        let ordinary = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            crate::native_artifact::compilation::OptimizationPass::DisjointState,
+        )
+        .unwrap();
+        let alias_only = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            crate::native_artifact::compilation::OptimizationPass::NontrappingHomes,
+        )
+        .unwrap();
         let descriptor = optimized.descriptor();
         assert!(!descriptor.metadata().closed_tails.regions.is_empty());
         for (text, expected) in [
@@ -193,16 +198,21 @@ fn private_home_contract_preserves_results_across_callbacks_and_window_resumes()
 
 #[test]
 fn private_home_contract_preserves_first_failure_and_finite_work_accounting() {
-    use crate::native_artifact::compiler::memory_regions::{
-        without_disjoint_state, without_nontrapping_homes,
-    };
     for artifact in call_cache_tests::artifacts(source()) {
         let catalog = mech_stdlib::source_catalog();
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        let ordinary =
-            without_disjoint_state(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
-        let alias_only =
-            without_nontrapping_homes(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+        let ordinary = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            crate::native_artifact::compilation::OptimizationPass::DisjointState,
+        )
+        .unwrap();
+        let alias_only = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            crate::native_artifact::compilation::OptimizationPass::NontrappingHomes,
+        )
+        .unwrap();
         let mut failed = 0;
         let mut succeeded = 0;
         for max_work in [0, 256, 4096, 65536, 1_000_000_000] {
@@ -242,7 +252,6 @@ fn private_home_contract_preserves_first_failure_and_finite_work_accounting() {
 
 #[test]
 fn pure_scalar_graph_preserves_window_resumes_against_memory_backed_reference() {
-    use crate::native_artifact::program_compiler::scalar_loop_codegen::without_scalar_loops;
     let renamed = source()
         .replace("#Locate", "#FindRows")
         .replace(":Skip", ":Search")
@@ -261,9 +270,11 @@ fn pure_scalar_graph_preserves_window_resumes_against_memory_backed_reference() 
             assert!(!proof["known_latches"].as_array().unwrap().is_empty());
             assert!(proof["fixed_template_instructions"].as_u64().unwrap() <= 1024);
             assert!(proof["maximum_source_instructions"].as_u64().unwrap() <= 512);
-            let reference = without_scalar_loops(|| {
-                crate::native_artifact::emit_program_object(&artifact, &catalog)
-            })
+            let reference = crate::native_artifact::program_compiler::emit_program_object_for_test(
+                &artifact,
+                &catalog,
+                crate::native_artifact::compilation::OptimizationPass::ScalarLoops,
+            )
             .unwrap();
             assert!(
                 reference.metadata()["compiled_scalar_loops"]
@@ -272,8 +283,12 @@ fn pure_scalar_graph_preserves_window_resumes_against_memory_backed_reference() 
                     .is_empty()
             );
             let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-            let ordinary =
-                without_scalar_loops(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+            let ordinary = JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                crate::native_artifact::compilation::OptimizationPass::ScalarLoops,
+            )
+            .unwrap();
             for text in [
                 "skip\nopen\nA\nB\nclose\nafter\n",
                 "skip\r\nopen\r\ne\u{301}\r\n猫\r\nclose\r\nafter\r",
@@ -295,14 +310,17 @@ fn pure_scalar_graph_preserves_window_resumes_against_memory_backed_reference() 
 
 #[test]
 fn pure_scalar_graph_preserves_first_errors_and_original_finite_work() {
-    use crate::native_artifact::program_compiler::scalar_loop_codegen::without_scalar_loops;
     let overflow = source().replace(":Skip(i + 1u64)", ":Skip(i + 18446744073709551615u64)");
     for source in [source(), overflow.as_str()] {
         for artifact in call_cache_tests::artifacts(source) {
             let catalog = mech_stdlib::source_catalog();
             let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-            let ordinary =
-                without_scalar_loops(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+            let ordinary = JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                crate::native_artifact::compilation::OptimizationPass::ScalarLoops,
+            )
+            .unwrap();
             for max_work in [0, 256, 4096, 65536, 1_000_000_000] {
                 let mut outcomes = Vec::new();
                 for jit in [&ordinary, &optimized] {

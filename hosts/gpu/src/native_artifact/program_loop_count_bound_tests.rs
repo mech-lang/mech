@@ -9,9 +9,8 @@ fn count_bounds_metadata_binds_actual_reads_additions_and_guarded_emissions() {
     );
     let artifact = tests::artifact_source(&source);
     let catalog = mech_stdlib::source_catalog();
-    take_count_bound_emissions();
     let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
-    let emitted = take_count_bound_emissions();
+    let emitted = object.test_emissions().count_bounds;
     assert!(
         emitted > 0,
         "the fixture must change actual source additions"
@@ -68,10 +67,13 @@ fn count_bounds_metadata_binds_actual_reads_additions_and_guarded_emissions() {
                 .any(|original| original[0] == node % stride && original[1] == row[1])
         );
     }
-    let reference =
-        without_count_bounds(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
-            .unwrap();
-    assert_eq!(take_count_bound_emissions(), 0);
+    let reference = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::CountBounds,
+    )
+    .unwrap();
+    assert_eq!(reference.test_emissions().count_bounds, 0);
     assert!(
         reference.metadata()["compiled_count_value_loops"]
             .as_array()

@@ -2,6 +2,7 @@
 //! confined to one successful traversal; completed edges rebase index+1 to
 //! the next cursor. Unknown values are never replaced by guessed recipes.
 use super::*;
+use crate::native_artifact::compilation::{CompilationControls, OptimizationPass};
 
 const MAX_PATHS: usize = 64;
 const MAX_STEPS: usize = 4096;
@@ -104,31 +105,6 @@ impl Proof {
             .map(Snapshot::records)
             .sum()
     }
-}
-
-#[cfg(test)]
-thread_local! {
-    static DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    static EMISSIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
-}
-#[cfg(test)]
-pub(super) fn take_emissions() -> usize {
-    EMISSIONS.with(|value| value.replace(0))
-}
-#[cfg(test)]
-pub(super) fn note_emissions(count: usize) {
-    EMISSIONS.with(|value| value.set(value.get() + count));
-}
-#[cfg(test)]
-pub(super) fn without<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            DISABLED.with(|value| value.set(self.0));
-        }
-    }
-    let _restore = Restore(DISABLED.with(|value| value.replace(true)));
-    f()
 }
 
 fn merge(states: &mut BTreeMap<usize, State>, node: usize, state: &State) {
@@ -254,6 +230,7 @@ fn apply(
 }
 
 pub(super) fn derive(
+    controls: &CompilationControls,
     code: CodePlan<'_>,
     closed: &Layout,
     id: usize,
@@ -262,8 +239,7 @@ pub(super) fn derive(
     source: &super::Proof,
     slots: &BTreeSet<usize>,
 ) -> Option<Proof> {
-    #[cfg(test)]
-    if DISABLED.with(std::cell::Cell::get) {
+    if !controls.enabled(OptimizationPass::ColdRecipes) {
         return None;
     }
     let mut initial = State {

@@ -17,9 +17,11 @@ fn lookup_split_metadata_binds_owned_cache_widths_and_both_function_limits() {
     assert_eq!(cached["lookup_mode"], "direct");
     assert!(ordinary["candidate_value_loads"].as_u64().unwrap() > 0);
     assert_eq!(cached["candidate_value_loads"], 0);
-    let reference = without_candidate_value_loads(|| {
-        crate::native_artifact::emit_program_object(&artifact, &catalog)
-    })
+    let reference = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::CandidateValues,
+    )
     .unwrap();
     assert_eq!(
         reference.metadata()["compiled_steady_loops"][0]["candidate_value_loads"],
@@ -96,9 +98,11 @@ fn lookup_split_metadata_binds_owned_cache_widths_and_both_function_limits() {
         crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits)
             .is_err()
     );
-    let dynamic = without_lookup_loop_split(|| {
-        crate::native_artifact::emit_program_object(&artifact, &catalog)
-    })
+    let dynamic = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::LookupSplit,
+    )
     .unwrap();
     let dynamic = &dynamic.metadata()["compiled_steady_loops"][0];
     assert_eq!(dynamic["lookup_mode"], "dynamic");
@@ -138,9 +142,8 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
     );
     let artifact = tests::artifact_source(&source);
     let catalog = mech_stdlib::source_catalog();
-    take_steady_emissions();
     let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
-    assert_eq!(take_steady_emissions(), 1);
+    assert_eq!(object.test_emissions().steady_loops, 1);
     let metadata = object.metadata();
     let loops = metadata["compiled_steady_loops"].as_array().unwrap();
     assert_eq!(loops.len(), 1);
@@ -247,16 +250,19 @@ fn steady_metadata_binds_original_nodes_live_continuations_and_native_limits() {
     }
     assert!(bound["fixed_template_instructions"].as_u64().unwrap() <= 1024);
     assert!(pure["maximum_source_instructions"].as_u64().unwrap() <= 512);
-    let baseline =
-        without_steady_loops(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
-            .unwrap();
+    let baseline = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::SteadyLoops,
+    )
+    .unwrap();
     assert!(
         baseline.metadata()["compiled_steady_loops"]
             .as_array()
             .unwrap()
             .is_empty()
     );
-    assert_eq!(take_steady_emissions(), 0);
+    assert_eq!(baseline.test_emissions().steady_loops, 0);
     let mut limits = crate::native_artifact::NativeCompileLimits::default();
     limits.max_stack_bytes = metadata["stack_bytes"].as_u64().unwrap() - 1;
     assert!(
@@ -304,9 +310,12 @@ fn steady_declines_changed_recurrences_unbounded_counts_and_missing_outlining() 
         );
     }
     let artifact = tests::artifact_source(&format!("{body}\n#Count(\"aaaa\",1u64,4u64,empty)\n"));
-    let inline =
-        without_loop_outlining(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
-            .unwrap();
+    let inline = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::LoopOutlining,
+    )
+    .unwrap();
     assert!(
         inline.metadata()["compiled_steady_loops"]
             .as_array()

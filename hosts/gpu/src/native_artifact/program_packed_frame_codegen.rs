@@ -4,6 +4,7 @@
 use super::super::super::{
     program_hooks::Hooks, program_key_domain::Domain, program_packed_map::Frame,
 };
+use crate::native_artifact::compilation::OptimizationPass;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::{FunctionBuilder, Variable};
 use std::cell::Cell;
@@ -95,71 +96,6 @@ fn effects(operation: u64) -> Option<Effects> {
     })
 }
 
-#[cfg(test)]
-thread_local! {
-    static EFFECTS_DISABLED: Cell<bool> = const { Cell::new(false) };
-    static CANDIDATE_VALUES_DISABLED: Cell<bool> = const { Cell::new(false) };
-    static PAIRED_CANDIDATES_DISABLED: Cell<bool> = const { Cell::new(false) };
-    static CANDIDATE_VALUE_EMISSIONS: Cell<usize> = const { Cell::new(0) };
-    static PAIRED_CANDIDATE_EMISSIONS: Cell<usize> = const { Cell::new(0) };
-    static EMISSIONS: Cell<(usize, usize, usize)> = const { Cell::new((0, 0, 0)) };
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_candidate_value_loads<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            CANDIDATE_VALUES_DISABLED.with(|v| v.set(self.0));
-        }
-    }
-    let _restore = Restore(CANDIDATE_VALUES_DISABLED.with(|v| v.replace(true)));
-    f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_candidate_value_emissions() -> usize {
-    CANDIDATE_VALUE_EMISSIONS.with(|v| v.replace(0))
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_paired_candidate_loads<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            PAIRED_CANDIDATES_DISABLED.with(|v| v.set(self.0));
-        }
-    }
-    let _restore = Restore(PAIRED_CANDIDATES_DISABLED.with(|v| v.replace(true)));
-    f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_paired_candidate_emissions() -> usize {
-    PAIRED_CANDIDATE_EMISSIONS.with(|v| v.replace(0))
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_frame_effects<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            EFFECTS_DISABLED.with(|disabled| disabled.set(self.0));
-        }
-    }
-    let _restore = Restore(EFFECTS_DISABLED.with(|disabled| disabled.replace(true)));
-    f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_frame_effect_emissions() -> (usize, usize, usize) {
-    EMISSIONS.with(|counts| counts.replace((0, 0, 0)))
-}
-pub(in crate::native_artifact) fn effects_enabled() -> bool {
-    #[cfg(test)]
-    {
-        !EFFECTS_DISABLED.with(Cell::get)
-    }
-    #[cfg(not(test))]
-    {
-        true
-    }
-}
-
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(in crate::native_artifact) enum LookupMode {
     Dynamic,
@@ -168,6 +104,7 @@ pub(in crate::native_artifact) enum LookupMode {
 }
 
 pub(in crate::native_artifact) struct FrameState {
+    options: crate::native_artifact::compilation::OptimizationOptions,
     pointer: Value,
     words: Option<Vec<Variable>>,
     effects_enabled: bool,
@@ -191,6 +128,7 @@ impl FrameState {
     pub(super) fn memory(pointer: Value, domain: Domain) -> Self {
         Self {
             pointer,
+            options: crate::native_artifact::compilation::OptimizationOptions::default(),
             words: None,
             effects_enabled: false,
             dirty_only: false,
@@ -210,6 +148,7 @@ impl FrameState {
         b: &mut FunctionBuilder<'_>,
         pointer: Value,
         domain: Domain,
+        options: crate::native_artifact::compilation::OptimizationOptions,
     ) -> Self {
         assert_eq!(core::mem::size_of::<Frame>() % 8, 0);
         let words = (0..core::mem::size_of::<Frame>() / 8)
@@ -222,10 +161,11 @@ impl FrameState {
                 variable
             })
             .collect();
-        let effects_enabled = effects_enabled();
-        let dirty_only = super::super::packed_loop_codegen::invariant_loops_enabled();
+        let effects_enabled = options.enabled(OptimizationPass::FrameEffects);
+        let dirty_only = options.enabled(OptimizationPass::LoopInvariants);
         Self {
             pointer,
+            options,
             words: Some(words),
             effects_enabled,
             dirty_only,
@@ -286,8 +226,7 @@ impl FrameState {
         mut self,
         b: &mut FunctionBuilder<'_>,
     ) -> Self {
-        #[cfg(test)]
-        if CANDIDATE_VALUES_DISABLED.with(Cell::get) {
+        if !self.options.enabled(OptimizationPass::CandidateValues) {
             return self;
         }
         if self.lookup_mode == LookupMode::Hash && self.words.is_some() {
@@ -305,8 +244,7 @@ impl FrameState {
         self.candidate_value.is_some()
     }
     pub(super) fn paired_candidates_enabled(&self) -> bool {
-        #[cfg(test)]
-        if PAIRED_CANDIDATES_DISABLED.with(Cell::get) {
+        if !self.options.enabled(OptimizationPass::PairedCandidates) {
             return false;
         }
         self.has_candidate_values()
@@ -315,8 +253,6 @@ impl FrameState {
         assert!(self.has_candidate_values());
         self.paired_candidate_loads
             .set(self.paired_candidate_loads.get() + 1);
-        #[cfg(test)]
-        PAIRED_CANDIDATE_EMISSIONS.with(|v| v.set(v.get() + 1));
     }
     pub(in crate::native_artifact) fn paired_candidate_loads(&self) -> usize {
         self.paired_candidate_loads.get()
@@ -325,8 +261,6 @@ impl FrameState {
         assert!(self.has_candidate_values());
         self.candidate_value_loads
             .set(self.candidate_value_loads.get() + 1);
-        #[cfg(test)]
-        CANDIDATE_VALUE_EMISSIONS.with(|v| v.set(v.get() + 1));
     }
     pub(in crate::native_artifact) fn candidate_value_loads(&self) -> usize {
         self.candidate_value_loads.get()
@@ -506,15 +440,6 @@ impl FrameState {
             let mut counts = self.emissions.get();
             counts[operation as usize] += 1;
             self.emissions.set(counts);
-            #[cfg(test)]
-            EMISSIONS.with(|counts| {
-                let (calls, before, after) = counts.get();
-                counts.set((
-                    calls + 1,
-                    before + stores.count_ones() as usize,
-                    after + loads.count_ones() as usize,
-                ));
-            });
         }
     }
     pub(in crate::native_artifact) fn effect_emissions(&self) -> Vec<(u64, u64, u64, u64)> {
@@ -537,6 +462,7 @@ impl FrameState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::native_artifact::compilation::OptimizationOptions;
     use cranelift_codegen::ir::{AbiParam, Function, Opcode};
     use cranelift_frontend::FunctionBuilderContext;
     use cranelift_module::default_libcall_names;
@@ -579,10 +505,18 @@ mod tests {
                     .unwrap()
                     .unwrap();
                 let state = match mode {
-                    0 => FrameState::registers(&mut b, pointer, Domain::ascii()),
-                    1 => without_frame_effects(|| {
-                        FrameState::registers(&mut b, pointer, Domain::ascii())
-                    }),
+                    0 => FrameState::registers(
+                        &mut b,
+                        pointer,
+                        Domain::ascii(),
+                        OptimizationOptions::default(),
+                    ),
+                    1 => FrameState::registers(
+                        &mut b,
+                        pointer,
+                        Domain::ascii(),
+                        OptimizationOptions::without(OptimizationPass::FrameEffects),
+                    ),
                     _ => FrameState::memory(pointer, Domain::ascii()),
                 };
                 let zero = b.ins().iconst(types::I64, 0);

@@ -88,7 +88,11 @@ mod tests {
         .unwrap();
         let mut module = cranelift_jit::JITModule::new(builder);
         let mut report = super::super::iteration_compiler::CodegenReport::default();
+        let controls = crate::native_artifact::compilation::CompilationControls::new(
+            crate::native_artifact::compilation::OptimizationOptions::default(),
+        );
         let shim = super::super::program_bound_shim::define(
+            &controls,
             &mut module,
             "binding_test",
             super::super::NativeCompileLimits::default(),
@@ -296,7 +300,7 @@ impl Hooks {
             }
             b.ins().call(shim, &[scratch]);
             self.bound_shim_calls.set(self.bound_shim_calls.get() + 1);
-            super::program_bound_shim::note_call();
+
             b.ins().load(
                 types::I64,
                 MemFlags::new(),

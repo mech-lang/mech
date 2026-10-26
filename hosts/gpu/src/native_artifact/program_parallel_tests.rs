@@ -268,7 +268,6 @@ first + ";" + second
 
 #[test]
 fn parallel_narrow_compact_domains_preserve_all_seven_source_maps_and_shared_cleanup() {
-    use crate::native_artifact::program_compiler::packed_loop_codegen::take_loop_bounds_emissions;
     let source = source(
         "number/format(h{\"A\"}, 0u64)",
         r#"
@@ -291,10 +290,9 @@ text := text/join([letters{char} | char <- seed<string>], "")"#,
     .unwrap();
     for artifact in [original, decoded] {
         let catalog = mech_stdlib::source_catalog();
-        take_loop_bounds_emissions();
         let jit = crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         assert_eq!(
-            take_loop_bounds_emissions().0,
+            jit.test_emissions().loop_bounds.0,
             2,
             "both worker source bodies have guarded versions"
         );

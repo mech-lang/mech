@@ -2,6 +2,7 @@
 //! boundaries return a source continuation, never a whole-workload result.
 //! The original generated CFG executes refills, insertions and exact errors.
 use super::*;
+use crate::native_artifact::compilation::{CompilationControls, OptimizationPass};
 use crate::native_artifact::{
     NativeCompileLimits,
     compiler::{compiled_stack_bytes, limit},
@@ -12,48 +13,6 @@ use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::NativeScalarOp as Op;
 #[path = "program_cold_recipes.rs"]
 mod cold_recipes;
-
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_cold_recipes<T>(f: impl FnOnce() -> T) -> T {
-    cold_recipes::without(f)
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_cold_recipe_emissions() -> usize {
-    cold_recipes::take_emissions()
-}
-
-#[cfg(test)]
-thread_local! {
-    static DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    static LOOKUP_SPLIT_DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    static EMISSIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_lookup_loop_split<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            LOOKUP_SPLIT_DISABLED.with(|v| v.set(self.0));
-        }
-    }
-    let _restore = Restore(LOOKUP_SPLIT_DISABLED.with(|v| v.replace(true)));
-    f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_steady_loops<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            DISABLED.with(|v| v.set(self.0));
-        }
-    }
-    let _restore = Restore(DISABLED.with(|v| v.replace(true)));
-    f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_steady_emissions() -> usize {
-    EMISSIONS.with(|v| v.replace(0))
-}
 
 pub(super) struct Proof {
     graph: tag_threading::Graph,
@@ -109,6 +68,7 @@ fn targets(
 }
 
 fn derive(
+    controls: &CompilationControls,
     code: CodePlan<'_>,
     closed: &Layout,
     id: usize,
@@ -116,20 +76,19 @@ fn derive(
     aggregates: &NativeScalarAggregates,
     slots: &BTreeSet<usize>,
 ) -> Option<Proof> {
-    #[cfg(test)]
-    if DISABLED.with(std::cell::Cell::get)
-        || TAG_THREADING_DISABLED.with(std::cell::Cell::get)
-        || LOOP_BOUNDS_DISABLED.with(std::cell::Cell::get)
-        || LOOKUP_FACTS_DISABLED.with(std::cell::Cell::get)
-        || EDGE_FACTS_DISABLED.with(std::cell::Cell::get)
+    if !controls.enabled(OptimizationPass::SteadyLoops)
+        || !controls.enabled(OptimizationPass::TagThreading)
+        || !controls.enabled(OptimizationPass::LoopBounds)
+        || !controls.enabled(OptimizationPass::LookupFacts)
+        || !controls.enabled(OptimizationPass::EdgeFacts)
     {
         return None;
     }
-    if !invariants::enabled()
-        || !mutation_facts::enabled()
-        || !count_bounds::enabled()
-        || !loop_constants::enabled()
-        || !packed_maps::effects_enabled()
+    if !invariants::enabled(controls)
+        || !mutation_facts::enabled(controls)
+        || !count_bounds::enabled(controls)
+        || !loop_constants::enabled(controls)
+        || !controls.enabled(OptimizationPass::FrameEffects)
     {
         return None;
     }
@@ -137,7 +96,7 @@ fn derive(
     let bounds = loop_bounds::derive(code, closed, id, owner, aggregates, &graph, slots)?;
     bounds.single_insert_nodes.as_ref()?;
     bounds.count_values.as_ref()?;
-    invariants::derive(code, closed, id, owner, &graph, &bounds, slots)?;
+    invariants::derive(controls, code, closed, id, owner, &graph, &bounds, slots)?;
     let facts = edge_facts::derive(code, closed, id, owner, aggregates, slots)?;
     let lookups = lookup_facts::derive(code, closed, id, owner, aggregates, &graph)?;
     let live = loop_bounds::continuation_liveness(code, closed, id, owner, aggregates, &graph)?;
@@ -271,7 +230,8 @@ fn derive(
         active,
         snapshots: None,
     };
-    proof.snapshots = cold_recipes::derive(code, closed, id, owner, aggregates, &proof, slots);
+    proof.snapshots =
+        cold_recipes::derive(controls, code, closed, id, owner, aggregates, &proof, slots);
     Some(proof)
 }
 
@@ -445,6 +405,7 @@ fn emit_snapshot(
 }
 
 pub(super) fn define<M: Module>(
+    controls: &CompilationControls,
     module: &mut M,
     symbol: &str,
     code: CodePlan<'_>,
@@ -456,9 +417,9 @@ pub(super) fn define<M: Module>(
     limits: NativeCompileLimits,
     report: &mut CodegenReport,
 ) -> Result<Option<Definition>, NativeCompileError> {
-    #[cfg(test)]
-    if LOOKUP_SPLIT_DISABLED.with(std::cell::Cell::get) {
+    if !controls.enabled(OptimizationPass::LookupSplit) {
         return define_version(
+            controls,
             module,
             symbol,
             code,
@@ -473,6 +434,7 @@ pub(super) fn define<M: Module>(
         );
     }
     let Some(mut ordinary) = define_version(
+        controls,
         module,
         symbol,
         code,
@@ -490,6 +452,7 @@ pub(super) fn define<M: Module>(
     };
     let index = report.steady_loops.len() - 1;
     if let Some(cached) = define_version(
+        controls,
         module,
         symbol,
         code,
@@ -502,6 +465,7 @@ pub(super) fn define<M: Module>(
         report,
         packed_maps::LookupMode::Direct,
     )? {
+        controls.nest_steady_region();
         let cached_report = report
             .steady_loops
             .pop()
@@ -534,6 +498,7 @@ pub(super) fn define<M: Module>(
 }
 
 fn define_version<M: Module>(
+    controls: &CompilationControls,
     module: &mut M,
     symbol: &str,
     code: CodePlan<'_>,
@@ -546,7 +511,7 @@ fn define_version<M: Module>(
     report: &mut CodegenReport,
     mode: packed_maps::LookupMode,
 ) -> Result<Option<Definition>, NativeCompileError> {
-    let Some(mut proof) = derive(code, closed, id, owner, aggregates, slots) else {
+    let Some(mut proof) = derive(controls, code, closed, id, owner, aggregates, slots) else {
         return Ok(None);
     };
     let direct = mode == packed_maps::LookupMode::Direct;
@@ -591,11 +556,11 @@ fn define_version<M: Module>(
         .snapshots
         .as_ref()
         .map_or(0, cold_recipes::Proof::records);
-    if !report.reserve_steady_region(records + extra_records) {
+    if !controls.reserve_steady_region(records + extra_records) {
         // Metadata admission is unchanged. If the optional recipes cannot
         // fit, retain the already admitted checked snapshot implementation.
         proof.snapshots = None;
-        if !report.reserve_steady_region(records) {
+        if !controls.reserve_steady_region(records) {
             return Ok(None);
         }
     }
@@ -678,6 +643,7 @@ fn define_version<M: Module>(
                 &mut b,
                 args[1],
                 closed.regions[id].packed.as_ref().unwrap().packing_domain(),
+                controls.options(),
             )
             .with_constant_values([args[2], args[3]])
             .with_specialized_width(width)
@@ -1038,7 +1004,8 @@ fn define_version<M: Module>(
         b.seal_all_blocks();
         b.finalize();
     }
-    let initial_cleanup = super::super::cfg_cleanup::optimize(&mut context, module.isa())?;
+    let initial_cleanup =
+        super::super::cfg_cleanup::optimize(controls, &mut context, module.isa())?;
     // The helper-free graph has no externally callable continuation. Fold its
     // scalar expressions before retiring constant control edges and their
     // phi inputs; otherwise the backend keeps source branches on literal
@@ -1050,7 +1017,7 @@ fn define_version<M: Module>(
             &mut cranelift_codegen::control::ControlPlane::default(),
         )
         .map_err(backend)?;
-    let mut cleanup = super::super::cfg_cleanup::optimize(&mut context, module.isa())?;
+    let mut cleanup = super::super::cfg_cleanup::optimize(controls, &mut context, module.isa())?;
     cleanup.pre_codegen_data_passes = 1;
     cleanup.constant_branches_removed += initial_cleanup.constant_branches_removed;
     cleanup.before_blocks = initial_cleanup.before_blocks;
@@ -1100,8 +1067,7 @@ fn define_version<M: Module>(
         .collect::<BTreeMap<_, _>>()
         .into_values()
         .collect::<Vec<_>>();
-    #[cfg(test)]
-    cold_recipes::note_emissions(cold_snapshot_recipes.len());
+
     let native_calls = context
         .func
         .layout
@@ -1193,10 +1159,7 @@ fn define_version<M: Module>(
             code_bytes: bytes,
             cleanup,
         });
-    #[cfg(test)]
-    if !direct {
-        EMISSIONS.with(|v| v.set(v.get() + 1));
-    }
+    if !direct {}
     Ok(Some(Definition {
         function,
         cached_function: None,

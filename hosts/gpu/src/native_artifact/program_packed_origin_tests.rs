@@ -137,39 +137,33 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
         .unwrap();
         for artifact in [original, decoded] {
             let catalog = mech_stdlib::source_catalog();
-            use crate::native_artifact::program_compiler::packed_loop_codegen::{
-                take_edge_fact_emissions, take_frame_effect_emissions, take_loop_bounds_emissions,
-                take_tag_thread_emissions, without_frame_effects,
-            };
             let mut executions = Vec::new();
             for disabled in [false, true] {
-                take_edge_fact_emissions();
-                take_tag_thread_emissions();
-                take_frame_effect_emissions();
-                take_loop_bounds_emissions();
-                let compile =
-                    || crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog);
                 let jit = if disabled {
-                    without_frame_effects(compile)
+                    crate::native_artifact::JitProgramArtifact::compile_for_test(
+                        &artifact,
+                        &catalog,
+                        crate::native_artifact::compilation::OptimizationPass::FrameEffects,
+                    )
                 } else {
-                    compile()
+                    crate::native_artifact::JitProgramArtifact::compile(&artifact, &catalog)
                 }
                 .unwrap();
-                let emissions = take_edge_fact_emissions();
+                let emissions = jit.test_emissions().edge_facts;
                 assert!(
                     emissions.0 >= 8,
                     "{failure:?}: error fixture must use the edge-fact substitutions: {emissions:?}"
                 );
-                let threading = take_tag_thread_emissions();
+                let threading = jit.test_emissions().tag_threading;
                 assert!(
                     threading.0 > 0 && threading.1 >= 4 && threading.2 >= 2,
                     "{failure:?}: error fixture must use tag threading: {threading:?}"
                 );
                 assert!(
-                    take_loop_bounds_emissions().0 > 0,
+                    jit.test_emissions().loop_bounds.0 > 0,
                     "{failure:?}: guarded graph must be present even for unknown tags and failed runtime selectors"
                 );
-                let effects = take_frame_effect_emissions();
+                let effects = jit.test_emissions().frame_effects;
                 if disabled {
                     assert_eq!(effects, (0, 0, 0));
                 } else {

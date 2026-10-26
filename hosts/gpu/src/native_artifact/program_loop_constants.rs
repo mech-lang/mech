@@ -1,42 +1,18 @@
 //! Immutable caller storage for owned outlined loops. Only this private call
 //! receives its pointer; helpers and source Values never receive or mutate it.
 use super::*;
+use crate::native_artifact::compilation::{CompilationControls, OptimizationPass};
 use crate::native_artifact::program_packed_map::{HASH_FIRST, HASH_SECOND};
 use cranelift_codegen::ir::{StackSlotData, StackSlotKind};
 
 pub(super) const BYTES: u32 = 24;
-#[cfg(test)]
-thread_local! {
-    static DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    static EMISSIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
-}
-pub(super) fn enabled() -> bool {
-    #[cfg(test)]
-    {
-        !DISABLED.with(std::cell::Cell::get)
-    }
-    #[cfg(not(test))]
-    {
-        true
-    }
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_loop_constants<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            DISABLED.with(|v| v.set(self.0));
-        }
-    }
-    let _restore = Restore(DISABLED.with(|v| v.replace(true)));
-    f()
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn take_constant_emissions() -> usize {
-    EMISSIONS.with(|v| v.replace(0))
+
+pub(super) fn enabled(controls: &CompilationControls) -> bool {
+    controls.enabled(OptimizationPass::LoopConstants)
 }
 
 pub(super) fn endpoint_words(
+    controls: &CompilationControls,
     code: CodePlan<'_>,
     closed: &Layout,
     id: usize,
@@ -44,9 +20,8 @@ pub(super) fn endpoint_words(
     aggregates: &NativeScalarAggregates,
     slots: &BTreeSet<usize>,
 ) -> Option<[usize; 2]> {
-    #[cfg(test)]
-    if TAG_THREADING_DISABLED.with(std::cell::Cell::get)
-        || LOOP_BOUNDS_DISABLED.with(std::cell::Cell::get)
+    if !controls.enabled(OptimizationPass::TagThreading)
+        || !controls.enabled(OptimizationPass::LoopBounds)
     {
         return None;
     }
@@ -100,7 +75,6 @@ pub(super) fn bind(
         b.ins()
             .store(MemFlags::new(), value, pointer, (index * 8) as i32);
     }
-    #[cfg(test)]
-    EMISSIONS.with(|v| v.set(v.get() + 1));
+
     Ok(pointer)
 }

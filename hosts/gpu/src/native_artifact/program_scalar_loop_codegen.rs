@@ -15,6 +15,7 @@ use super::{borrowed_codegen, prefix_codegen, tag_threading};
 use crate::native_artifact::codegen::common::{
     aggregates, ssa_words::Words, terminators, word_access::SsaWords,
 };
+use crate::native_artifact::compilation::{CompilationControls, OptimizationPass};
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
@@ -25,22 +26,6 @@ use std::collections::BTreeSet;
 use tag_threading::{Edge, Target};
 
 const MAX_WORDS: usize = 192;
-
-#[cfg(test)]
-thread_local! {
-    static DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-}
-#[cfg(test)]
-pub(in crate::native_artifact) fn without_scalar_loops<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            DISABLED.with(|v| v.set(self.0));
-        }
-    }
-    let _restore = Restore(DISABLED.with(|v| v.replace(true)));
-    f()
-}
 
 fn slots(
     code: CodePlan<'_>,
@@ -185,6 +170,7 @@ fn prefix_count_action(
 }
 
 pub(in crate::native_artifact) fn emit_entry(
+    controls: &CompilationControls,
     b: &mut FunctionBuilder<'_>,
     frame: Value,
     locals: Value,
@@ -200,8 +186,7 @@ pub(in crate::native_artifact) fn emit_entry(
     error: Block,
     report: &mut CodegenReport,
 ) -> Result<(), NativeCompileError> {
-    #[cfg(test)]
-    if DISABLED.with(std::cell::Cell::get) {
+    if !controls.enabled(OptimizationPass::ScalarLoops) {
         return Ok(());
     }
     let Some(id) = closed.sites.get(site).copied().flatten() else {
@@ -210,7 +195,7 @@ pub(in crate::native_artifact) fn emit_entry(
     let region = &closed.regions[id];
     if region.tail.header() as usize != site
         || region.map.is_some()
-        || report.scalar_loops.len() >= 256
+        || !controls.scalar_region_available()
     {
         return Ok(());
     }
@@ -327,6 +312,7 @@ pub(in crate::native_artifact) fn emit_entry(
             // Bounds failures synchronize before the original failure/refund
             // callbacks. Their error edge must not re-spill stale ready words.
             borrowed_codegen::emit_native(
+                controls.options(),
                 b,
                 locals,
                 Some(&words),
@@ -416,6 +402,7 @@ pub(in crate::native_artifact) fn emit_entry(
             "scalar SSA boundaries exceed original fixed envelope",
         ));
     }
+    controls.emitted_scalar_region();
     report.scalar_loops.push(ScalarLoop {
         header: site,
         carrier_word: graph.carrier_word,

@@ -4,6 +4,7 @@ use super::{
     NativeCompileError, NativeCompileLimits,
     compiler::{backend, compiled_stack_bytes, limit},
 };
+use crate::native_artifact::compilation::{CompilationControls, OptimizationPass};
 use cranelift_codegen::{
     ir::{AbiParam, InstBuilder, MemFlags, types},
     isa::CallConv,
@@ -30,32 +31,8 @@ pub(super) struct Definition {
     pub code: u64,
 }
 
-#[cfg(test)]
-thread_local! {
-    static DISABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    static EMISSIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
-}
-#[cfg(test)]
-pub(super) fn take_emissions() -> usize {
-    EMISSIONS.with(|v| v.replace(0))
-}
-pub(super) fn note_call() {
-    #[cfg(test)]
-    EMISSIONS.with(|v| v.set(v.get() + 1));
-}
-#[cfg(test)]
-pub(super) fn without_preserving_calls<T>(f: impl FnOnce() -> T) -> T {
-    struct Restore(bool);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            DISABLED.with(|v| v.set(self.0));
-        }
-    }
-    let _restore = Restore(DISABLED.with(|v| v.replace(true)));
-    f()
-}
-
 pub(super) fn define<M: Module>(
+    controls: &CompilationControls,
     module: &mut M,
     entry: &str,
     limits: NativeCompileLimits,
@@ -64,8 +41,7 @@ pub(super) fn define<M: Module>(
     if !cfg!(target_arch = "aarch64") {
         return Ok(None);
     }
-    #[cfg(test)]
-    if DISABLED.with(std::cell::Cell::get) {
+    if !controls.enabled(OptimizationPass::PreservingCalls) {
         return Ok(None);
     }
     let symbol = format!("{entry}_preserving_bound_call");
@@ -178,7 +154,11 @@ mod tests {
         .unwrap();
         let mut module = cranelift_jit::JITModule::new(builder);
         let mut report = super::super::iteration_compiler::CodegenReport::default();
+        let controls = crate::native_artifact::compilation::CompilationControls::new(
+            crate::native_artifact::compilation::OptimizationOptions::default(),
+        );
         let shim = define(
+            &controls,
             &mut module,
             "bridge_test",
             NativeCompileLimits::default(),

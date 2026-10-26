@@ -9,9 +9,8 @@ fn mutation_facts_metadata_binds_actual_headers_insertions_and_nonempty_probes()
     );
     let artifact = tests::artifact_source(&source);
     let catalog = mech_stdlib::source_catalog();
-    take_mutation_emissions();
     let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
-    let emitted = take_mutation_emissions();
+    let emitted = object.test_emissions().mutation_facts;
     assert!(
         emitted.0 > 0 && emitted.1 > 0 && emitted.2 > 0,
         "{emitted:?}"
@@ -59,10 +58,13 @@ fn mutation_facts_metadata_binds_actual_headers_insertions_and_nonempty_probes()
             "only the completed steady recurrence"
         );
     }
-    let reference =
-        without_mutation_facts(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
-            .unwrap();
-    assert_eq!(take_mutation_emissions(), (0, 0, 0));
+    let reference = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::MutationFacts,
+    )
+    .unwrap();
+    assert_eq!(reference.test_emissions().mutation_facts, (0, 0, 0));
     assert!(
         reference.metadata()["compiled_mutation_loops"]
             .as_array()
@@ -111,8 +113,12 @@ fn mutation_facts_decline_skipped_double_insertions_and_other_state_entries() {
                 .is_empty()
         );
         let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        let reference =
-            without_mutation_facts(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+        let reference = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            crate::native_artifact::compilation::OptimizationPass::MutationFacts,
+        )
+        .unwrap();
         let mut executions = Vec::new();
         for jit in [&optimized, &reference] {
             PUBLICATION_FRONTIERS.with(|records| records.borrow_mut().clear());

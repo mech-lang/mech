@@ -9,6 +9,7 @@ use super::super::{
     program_prefix_layout::Region,
     program_tail_layout,
 };
+use crate::native_artifact::compilation::OptimizationOptions;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::NativeMatchAction;
@@ -141,6 +142,7 @@ pub(in crate::native_artifact) fn count_action(
 }
 
 pub(in crate::native_artifact) fn resume(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     region: &Region,
@@ -151,6 +153,7 @@ pub(in crate::native_artifact) fn resume(
 ) -> Result<(), NativeCompileError> {
     let site = region.tail.header() as usize;
     super::borrowed_codegen::resume(
+        options,
         b,
         locals,
         &borrowed.regions[region.borrowed],
@@ -158,7 +161,7 @@ pub(in crate::native_artifact) fn resume(
         hooks,
         error,
     )?;
-    super::tail_codegen::resume(b, locals, closed, site, hooks, error)
+    super::tail_codegen::resume(options, b, locals, closed, site, hooks, error)
 }
 
 /// End the scanner at its original exit, before that exit is visited. Closed
@@ -166,6 +169,7 @@ pub(in crate::native_artifact) fn resume(
 /// source lane before the helper retires the immutable owner loan, so the
 /// owning session can release external row loans before final range consumers.
 pub(in crate::native_artifact) fn scanned(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     facts: EntryFacts,
@@ -184,7 +188,7 @@ pub(in crate::native_artifact) fn scanned(
     let layout = &borrowed.regions[region.borrowed];
     for word in layout.ready..layout.end {
         b.ins().store(
-            super::super::compiler::memory_regions::borrowed(),
+            super::super::compiler::memory_regions::borrowed(options),
             zero,
             locals,
             offset(word)?,
@@ -195,7 +199,7 @@ pub(in crate::native_artifact) fn scanned(
         let words = loan.words;
         for word in words..words + 3 {
             b.ins().store(
-                super::tail_codegen::flags(loan),
+                super::tail_codegen::flags(options, loan),
                 zero,
                 locals,
                 offset(word)?,
@@ -218,6 +222,7 @@ pub(in crate::native_artifact) fn scanned(
 }
 
 pub(in crate::native_artifact) fn gate(
+    options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     facts: EntryFacts,
@@ -323,13 +328,13 @@ pub(in crate::native_artifact) fn gate(
         keep_closed = b.ins().select(matches, closed, keep_closed);
     }
     let site = region.tail.header() as usize;
-    super::tail_codegen::pause(b, locals, closed, site, hooks, error)?;
+    super::tail_codegen::pause(options, b, locals, closed, site, hooks, error)?;
     let layout = &borrowed.regions[region.borrowed];
     // Clear all raw pair lanes, including derived Strings from the last
     // traversal, BEFORE the helper drops their actual immutable owner loans.
     for word in layout.ready..layout.end {
         b.ins().store(
-            super::super::compiler::memory_regions::borrowed(),
+            super::super::compiler::memory_regions::borrowed(options),
             zero,
             locals,
             offset(word)?,

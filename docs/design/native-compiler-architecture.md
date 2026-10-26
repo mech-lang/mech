@@ -228,3 +228,20 @@ former also exposed an unused `NativeTypedStorage::admission_bytes` helper in
 I's scalar profile, now gated to its existing program/test callers. No helper
 body or accounting price changed. The other minimal closures and final process
 qualification remain required after all stages.
+
+
+Stage D: each shared JIT/Object definition receives immutable
+`OptimizationOptions`; public entry points supply the fixed default. Private
+tests disable one pass per build. The compiler context owns bounded selection
+budgets independently from `CodegenReport`; reports record actual emissions and
+cannot authorize eligibility. All compiler TLS switches and draining counters,
+including disjoint/nontrapping home experiments, are deleted. Read-only test
+summaries come from the artifact's bounded report. Default source/decoded
+snapshots retain all 32 I files byte-for-byte. The full ablation scope and the
+new nested/concurrent context test are running; final qualification remains open.
+
+Before Stage E, actual pinned-host layouts are Invocation/Context 2432 bytes,
+Frame 144 bytes, and map Slot 968 bytes. The fixed caller price is 2432 + 144 +
+128 = 2704; keep that charged envelope after grouping state and retain the
+three Option-backed Slot fields. The layout extraction must fit the existing
+128-byte conservative margin without repricing or moving finite frontiers.

@@ -9,9 +9,8 @@ fn cold_recipes_bind_actual_live_words_initial_and_completed_source_edges() {
         structural_projection_tests::COUNT
     ));
     let catalog = mech_stdlib::source_catalog();
-    take_cold_recipe_emissions();
     let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
-    let emissions = take_cold_recipe_emissions();
+    let emissions = object.test_emissions().cold_recipes;
     let metadata = object.metadata();
     let loops = metadata["compiled_steady_loops"].as_array().unwrap();
     assert_eq!(loops.len(), 1);
@@ -77,10 +76,13 @@ fn cold_recipes_bind_actual_live_words_initial_and_completed_source_edges() {
         }
         assert!(initial && completed && body);
     }
-    let original =
-        without_cold_recipes(|| crate::native_artifact::emit_program_object(&artifact, &catalog))
-            .unwrap();
-    assert_eq!(take_cold_recipe_emissions(), 0);
+    let original = crate::native_artifact::program_compiler::emit_program_object_for_test(
+        &artifact,
+        &catalog,
+        crate::native_artifact::compilation::OptimizationPass::ColdRecipes,
+    )
+    .unwrap();
+    assert_eq!(original.test_emissions().cold_recipes, 0);
     assert!(
         !original.metadata()["compiled_steady_loops"]
             .as_array()
