@@ -443,16 +443,16 @@ fn full_huffman_resident_denial_preserves_the_real_resource_budget_error() {
                 Ok(_) => panic!("the default resident whole-control budget must remain enforced"),
                 Err(error) => error,
             };
-            // Packed aggregate projections now prepay their draft expansion.
-            // With the unchanged default limits, compute admission is reached
-            // before comparison admission. Keep the precise resource error,
-            // rather than reclassifying it as InvalidOutput or lifting a cap.
+            // Packed aggregate projection no longer constructs per-word
+            // drafts. With the unchanged defaults, this program now reaches
+            // comparison admission first. Keep the precise resource error
+            // and verify atomic rejection/retry under those same limits.
             assert!(
                 matches!(error, mech_engine::resident::ResidentExecutionError::Kernel {
                 error: mech_core::ResidentKernelError::ResourceLimit {
-                    dimension: mech_core::MemoryBudgetDimension::ComputeWork, required, limit, ..
+                    dimension: mech_core::MemoryBudgetDimension::ComparisonWork, required, limit, ..
                 }, ..
-            } if required > limit && limit == mech_core::RESIDENT_MAX_COMPUTE_WORK),
+            } if required > limit && limit == mech_core::RESIDENT_MAX_COMPARISON_WORK),
                 "{error:?}"
             );
             assert_eq!(instance.published_epoch(), epoch);
