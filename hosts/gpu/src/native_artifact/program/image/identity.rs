@@ -384,7 +384,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 107;
 // charging fixed alias work without repaying the one payload destruction.
 // Policy82 charges one admitted typed fill rather than unexecuted per-word
 // control/helper visits. Byte work, clone limits and publication stay funded.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 82;
+// Policy83 reads selected unsigned-matrix length into its admitted native word
+// without constructing an unused general binding or canonical scalar owner.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 83;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

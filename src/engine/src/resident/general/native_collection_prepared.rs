@@ -53,6 +53,9 @@ mod histogram;
 mod string_map_entry;
 #[path = "native_collection_string_span.rs"]
 mod string_span;
+#[cfg(feature = "pure_text")]
+#[path = "native_collection_unsigned_lengths.rs"]
+mod unsigned_lengths;
 #[path = "native_collection_word_reads.rs"]
 mod word_reads;
 pub use string_span::NativeSelectedStringSpanSelector;
