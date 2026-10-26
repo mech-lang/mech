@@ -68,8 +68,9 @@ impl PreparedNativeProgram {
             return Err("mixed canonical revision mismatch".into());
         }
         plan.validate_current_visits().map_err(str::to_owned)?;
-        let scalar_aggregates = plan.scalar_aggregates();
-        let parallel = native::program_parallel_layout::Layout::derive(&plan, &scalar_aggregates)
+        let facts = plan.facts();
+        let scalar_aggregates = facts.scalar_aggregates();
+        let parallel = native::program_parallel_layout::Layout::derive(&facts, &scalar_aggregates)
             .map_err(str::to_owned)?;
         let retirements =
             RetirementTables::derive(&plan, &scalar_aggregates).map_err(str::to_owned)?;
@@ -105,7 +106,7 @@ impl PreparedNativeProgram {
         // Derive this proof once from the SAME immutable plan. Both layout and
         // identity inspect the complete result, including unsupported/multiple
         // frontiers; no caller-provided or persistent proof cache is consulted.
-        let line_retention_frontiers = plan.text_line_retention_frontiers();
+        let line_retention_frontiers = facts.text_line_retention_frontiers();
         let prefix = native::program_prefix_layout::derive_with_frontiers(
             &plan,
             &borrowed_strings,
@@ -127,7 +128,7 @@ impl PreparedNativeProgram {
             },
             "borrowed String visit work overflow",
         )?;
-        let map_owner_words = plan.map_owner_words().map_err(str::to_owned)?;
+        let map_owner_words = facts.map_owner_words().map_err(str::to_owned)?;
         compose_work(
             &mut analysis_visits,
             &mut visits,
@@ -340,6 +341,7 @@ impl PreparedNativeProgram {
             .transpose()
             .map_err(str::to_owned)?
             .unwrap_or_default();
+        let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
         let metadata = ProgramMetadata {
             plan,
             schemas: Arc::new(artifact.schemas().clone()),

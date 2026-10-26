@@ -56,6 +56,7 @@ impl NativeTypedStorage<Option<mech_core::Value>> {
     }
 }
 impl<T: PlannedArenaElement> NativeTypedStorage<T> {
+    #[cfg(any(test, feature = "canonical-native-program-runtime"))]
     pub(super) fn admission_bytes(count: usize) -> Result<u64, NativeExecutionError> {
         let bytes = count
             .checked_mul(core::mem::size_of::<T>())

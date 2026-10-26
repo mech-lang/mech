@@ -2658,7 +2658,10 @@ impl ResidentBudgetMeter {
         }
     }
 
-    #[cfg(feature = "native-artifact")]
+    #[cfg(all(
+        feature = "native-artifact",
+        any(test, feature = "pure_text", feature = "map_ops")
+    ))]
     pub(crate) fn for_native_projection(
         work: &NativeLibraryWorkBudget,
         limits: mech_core::MemoryBudgetLimits,

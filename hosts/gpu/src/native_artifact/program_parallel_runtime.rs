@@ -680,7 +680,7 @@ impl Context<'_, '_> {
             batch.regions.pop_front();
         }
         if !region.contains(receipt.previous)
-            || !super::super::program_parallel_layout::successors(
+            || !mech_engine::native_artifact::NativeProgramFacts::control_successors(
                 descriptor.metadata().plan.blocks()[receipt.previous as usize].terminator(),
             )
             .contains(&Some(region.push))
@@ -733,7 +733,7 @@ impl Context<'_, '_> {
             || worker.result.is_some()
             || self.control.current != Some(region.iteration)
             || !region.contains(previous)
-            || !super::super::program_parallel_layout::successors(
+            || !mech_engine::native_artifact::NativeProgramFacts::control_successors(
                 descriptor.metadata().plan.blocks()[previous as usize].terminator(),
             )
             .contains(&Some(region.push))
