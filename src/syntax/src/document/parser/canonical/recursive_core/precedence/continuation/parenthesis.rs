@@ -27,6 +27,8 @@ pub(super) enum Phase {
     RetryBody(Owner, Marker),
     FormulaSpace(Owner, Marker, ParserCheckpoint),
     FormulaClose(Owner, Marker, ParserCheckpoint),
+    ExpressionSpace(Owner, ParserCheckpoint),
+    ExpressionClose(Owner, ParserCheckpoint),
     RecoveredProbe(Owner, ParserCheckpoint),
     StartList(Body),
     Loop(Body),
@@ -141,7 +143,7 @@ impl Continuation {
                 if self.result == Attempt::Matched {
                     let node = parser.start();
                     self.parenthesis(Phase::FirstBody(owner, after_open, node));
-                    self.push(Frame::Expression(Box::new(expression::Phase::Body)));
+                    self.push(Frame::Expression(Box::new(expression::Phase::CompleteBody)));
                 } else {
                     self.result = Attempt::NoMatch;
                 }
@@ -158,11 +160,8 @@ impl Continuation {
                 }
                 FactAttempt::Matched(_) => {
                     node.complete(parser, SyntaxKind::Expression);
-                    self.parenthesis(Phase::StartList(Body {
-                        owner,
-                        selected: false,
-                        committed: false,
-                    }));
+                    self.parenthesis(Phase::ExpressionSpace(owner, parser.checkpoint()));
+                    self.base(rules::SPACE_TAB0);
                 }
                 FactAttempt::Recovered(_) | FactAttempt::Committed => {
                     node.complete(parser, SyntaxKind::Expression);
@@ -173,7 +172,7 @@ impl Continuation {
                 if self.result == Attempt::Matched {
                     let node = parser.start();
                     self.parenthesis(Phase::RetryBody(owner, node));
-                    self.push(Frame::Expression(Box::new(expression::Phase::Body)));
+                    self.push(Frame::Expression(Box::new(expression::Phase::CompleteBody)));
                 } else {
                     self.result = Attempt::NoMatch;
                 }
@@ -224,6 +223,38 @@ impl Continuation {
                     self.parenthesis(Phase::StartList(Body {
                         owner,
                         selected: true,
+                        committed: false,
+                    }));
+                }
+            }
+            Phase::ExpressionSpace(owner, checkpoint) => {
+                if self.result == Attempt::Matched {
+                    self.parenthesis(Phase::ExpressionClose(owner, checkpoint));
+                    self.base(rules::RIGHT_PARENTHESIS);
+                } else {
+                    parser.rewind(checkpoint);
+                    self.parenthesis(Phase::StartList(Body {
+                        owner,
+                        selected: false,
+                        committed: false,
+                    }));
+                }
+            }
+            Phase::ExpressionClose(owner, checkpoint) => {
+                if self.result == Attempt::Matched {
+                    self.parenthesis_finish(
+                        parser,
+                        Body {
+                            owner,
+                            selected: true,
+                            committed: false,
+                        },
+                    );
+                } else {
+                    parser.rewind(checkpoint);
+                    self.parenthesis(Phase::StartList(Body {
+                        owner,
+                        selected: false,
                         committed: false,
                     }));
                 }

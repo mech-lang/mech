@@ -23,6 +23,18 @@ fn add(left: u64, right: u64) -> MemoryRuntimeResult<u64> {
         })
 }
 
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(in crate::resident) fn native_scope_metadata_bytes() -> u64 {
+    // Native calls use zero dense String trackers: only these two concrete
+    // Rc owners allocate. Reservation transfers themselves do not allocate.
+    (core::mem::size_of::<ResidentPayloadOwner>()
+        + core::mem::size_of::<ResidentPayloadAdmission>()
+        + 4 * core::mem::size_of::<usize>()) as u64
+}
+
 #[derive(Debug)]
 pub(crate) struct ResidentPayloadOwner {
     budget: ManagedMemoryBudget,
@@ -170,6 +182,18 @@ pub(crate) struct ResidentPayloadAdmission {
 }
 
 impl ResidentPayloadAdmission {
+    #[cfg(all(
+        feature = "native-artifact",
+        any(feature = "pure_text", feature = "map_ops")
+    ))]
+    pub(super) fn record_error(&self, error: MemoryRuntimeError) {
+        *self.last_error.borrow_mut() = Some(error);
+    }
+
+    pub(crate) fn auxiliary_bytes(&self) -> u64 {
+        self.auxiliary.get()
+    }
+
     pub(crate) fn admit_plan(&self, plan: &TurnMemoryPlan) -> MemoryRuntimeResult<()> {
         let payload = plan
             .call
@@ -187,10 +211,20 @@ impl ResidentPayloadAdmission {
         } else {
             0
         };
-        self.admit_peak(
-            add(plan.demand.turn_peak_bytes.max(payload), metadata)?,
-            payload,
-        )?;
+        // Lexical index backing is independently reserved by this exact
+        // active domain/account. It remains in finite turn-peak admission,
+        // but must not be reserved again by a candidate output scope.
+        let already_owned = super::super::text_index::reserved_bytes_for(&self.owner.budget);
+        let candidate_peak = plan
+            .demand
+            .turn_peak_bytes
+            .checked_sub(already_owned)
+            .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "resident independently owned index backing",
+                current: plan.demand.turn_peak_bytes,
+                change: already_owned,
+            })?;
+        self.admit_peak(add(candidate_peak.max(payload), metadata)?, payload)?;
         self.materializing.set(true);
         Ok(())
     }

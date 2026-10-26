@@ -1,7 +1,7 @@
 CLI Host
 ===============================================================================
 
-The CLI host exposes arguments, environment and output streams as contexts.
+The CLI host exposes arguments, environment, a standard-input snapshot and output streams as contexts.
 
 1. Contexts
 -------------------------------------------------------------------------------
@@ -9,11 +9,12 @@ The CLI host exposes arguments, environment and output streams as contexts.
 ```text
 cli/env
 cli/args
+cli/stdin
 cli/stdout
 cli/stderr
 ```
 
-`cli/env` and `cli/args` support reads. `cli/stdout` and `cli/stderr` support writes/sends.
+`cli/env`, `cli/args` and `cli/stdin` support reads. `cli/stdout` and `cli/stderr` support writes/sends.
 
 2. Pages
 -------------------------------------------------------------------------------
@@ -21,6 +22,7 @@ cli/stderr
 - [Manifest](manifest.html)
 - [Environment](env.html)
 - [Arguments](args.html)
+- [Standard Input](stdin.html)
 - [Stdout and Stderr](stdout-stderr.html)
 - [Grants](grants.html)
 - [Examples](examples.html)

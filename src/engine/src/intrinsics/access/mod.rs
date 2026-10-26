@@ -28,12 +28,9 @@ pub use self::table::*;
 #[cfg(feature = "tuple")]
 pub use self::tuple::*;
 
-#[cfg(all(
-    feature = "semantic-compiler",
-    any(feature = "record", feature = "table")
-))]
+#[cfg(all(feature = "semantic-compiler", feature = "assign", feature = "record"))]
 use crate::UndefinedRecordFieldError;
-#[cfg(all(feature = "semantic-compiler", feature = "table"))]
+#[cfg(all(feature = "semantic-compiler", feature = "assign", feature = "table"))]
 use crate::UndefinedTableColumnError;
 #[cfg(feature = "semantic-compiler")]
 use crate::intrinsics::canonical_access::{
@@ -187,11 +184,11 @@ declare_structural_access_alias!(
 );
 
 /// Installs every enabled concrete access factory into the supplied catalog.
-pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+pub(crate) fn install_runtime(_builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrix")]
-    matrix::install_runtime(builder)?;
+    matrix::install_runtime(_builder)?;
     #[cfg(feature = "tuple")]
-    tuple::install_runtime(builder)?;
+    tuple::install_runtime(_builder)?;
     Ok(())
 }
 
@@ -205,9 +202,12 @@ pub(crate) fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResu
     Ok(())
 }
 
+#[cfg(feature = "semantic-compiler")]
+mod managed_string;
+
 pub struct AccessScalar {}
 
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
+#[cfg(feature = "semantic-compiler")]
 fn canonical_matrix_dimensions(value: &ValueCell) -> MResult<(usize, usize)> {
     let crate::SchemaBody::Matrix { dimensions, .. } = value.closed_schema_body()? else {
         return Err(MechError::new(
@@ -270,9 +270,14 @@ impl MechFunctionImpl for CanonicalAccess {
         if !self.output_requires_canonical_builder() {
             return Ok(None);
         }
+        if self.is_managed_string_selection() {
+            // Exact payload discovery belongs to admitted execution. The
+            // request-aware hook below uses current input witnesses instead.
+            return Ok(None);
+        }
         let SchemaBody::Matrix { element, .. } = self.source.closed_schema_body()? else {
-            // Selecting one member, column, or grapheme cannot retain more
-            // canonical data than the already-borrowed aggregate/String that
+            // Selecting one member or column cannot retain more canonical
+            // data than the already-borrowed aggregate that
             // contains it. This complete-source upper bound avoids building a
             // candidate or selector result before admission.
             let mut footprint = self.source.current_memory_footprint()?;
@@ -375,6 +380,26 @@ impl MechFunctionImpl for CanonicalAccess {
         Ok(Some(vec![footprint].into_boxed_slice()))
     }
 
+    fn planned_output_footprints_with_request(
+        &self,
+        request: &mech_core::ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        if self.is_managed_string_selection() {
+            return self.managed_string_output_footprints(request);
+        }
+        self.planned_output_footprints()
+    }
+
+    fn planned_execution_demand(
+        &self,
+        request: &mech_core::ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<mech_core::PlannedExecutionDemand> {
+        if self.is_managed_string_selection() {
+            return self.managed_string_execution_demand(request);
+        }
+        Ok(mech_core::PlannedExecutionDemand::default())
+    }
+
     fn solve_managed(
         &self,
         frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -454,6 +479,7 @@ fn canonical_selector_cardinality_bound(
 
 #[cfg(feature = "semantic-compiler")]
 impl CanonicalAccess {
+    #[cfg(feature = "matrix")]
     fn typed_matrix(
         source: ValueCell,
         selectors: Vec<CanonicalAccessSelector>,
@@ -512,6 +538,9 @@ impl CanonicalAccess {
     }
 
     fn stage_managed(&self, frame: &mut mech_core::KernelMemoryFrame<'_>) -> MResult<()> {
+        if self.is_managed_string_selection() {
+            return self.stage_managed_string(frame);
+        }
         let footprint = self.prospective_output_footprint()?;
         frame.with_admitted_canonical_output(&self.output, footprint, |_, construction| {
             let next = construction.try_rebind_snapshot_candidate_with(&self.output, || {
@@ -642,8 +671,21 @@ fn canonical_access_result(
                 .iter()
                 .position(|field| hash_str(&field.name) == field_id)
                 .ok_or_else(|| {
-                    MechError::new(UndefinedRecordFieldError { id: field_id }, None)
+                    #[cfg(all(feature = "assign", feature = "record"))]
+                    {
+                        MechError::new(UndefinedRecordFieldError { id: field_id }, None)
+                            .with_compiler_loc()
+                    }
+                    #[cfg(not(all(feature = "assign", feature = "record")))]
+                    {
+                        MechError::new(
+                            GenericError {
+                                msg: format!("record field {field_id:?} is not defined"),
+                            },
+                            None,
+                        )
                         .with_compiler_loc()
+                    }
                 })?;
             let ValueDataDraft::Record(values) = canonical_draft(source)? else {
                 unreachable!()
@@ -709,8 +751,21 @@ fn canonical_access_result(
                 .iter()
                 .position(|column| hash_str(&column.name) == column_id)
                 .ok_or_else(|| {
-                    MechError::new(UndefinedTableColumnError { id: column_id }, None)
+                    #[cfg(all(feature = "assign", feature = "table"))]
+                    {
+                        MechError::new(UndefinedTableColumnError { id: column_id }, None)
+                            .with_compiler_loc()
+                    }
+                    #[cfg(not(all(feature = "assign", feature = "table")))]
+                    {
+                        MechError::new(
+                            GenericError {
+                                msg: format!("table column {column_id:?} is not defined"),
+                            },
+                            None,
+                        )
                         .with_compiler_loc()
+                    }
                 })?;
             let ValueDataDraft::Table(values) = canonical_draft(source)? else {
                 unreachable!()
@@ -726,19 +781,27 @@ fn canonical_access_result(
             if matches!(selectors[0], CanonicalAccessSelector::All) {
                 return source.detached_clone();
             }
-            let index = canonical_indices(&selectors[0], usize::MAX)?[0];
-            let ValueData::String(value) = source.snapshot()?.data().clone() else {
-                unreachable!()
+            let snapshot = source.snapshot()?;
+            let ValueData::String(value) = snapshot.data() else {
+                unreachable!("String schema retains String data")
             };
-            let grapheme = grapheme::Graphemes::from_usvs(&value)
+            let graphemes = grapheme::Graphemes::from_usvs(value)
                 .iter()
-                .nth(index)
-                .map(|value| value.as_str().to_owned())
-                .ok_or_else(|| {
-                    MechError::new(crate::intrinsics::IndexOutOfBoundsError, None)
-                        .with_compiler_loc()
-                })?;
-            ValueCell::from_exact(grapheme)
+                .collect::<Vec<_>>();
+            let selected = canonical_indices(&selectors[0], graphemes.len())?;
+            let text = selected
+                .iter()
+                .map(|&index| {
+                    graphemes
+                        .get(index)
+                        .map(|value| value.as_str())
+                        .ok_or_else(|| {
+                            MechError::new(crate::intrinsics::IndexOutOfBoundsError, None)
+                                .with_compiler_loc()
+                        })
+                })
+                .collect::<MResult<String>>()?;
+            ValueCell::from_exact(text)
         }
         SchemaBody::Matrix { element, .. } if (1..=2).contains(&selectors.len()) => {
             let (rows, columns) = canonical_matrix_dimensions(source)?;
@@ -894,7 +957,11 @@ fn canonical_access(
         SchemaBody::Matrix { .. } => "MatrixAccessCanonical",
         _ => fallback_name,
     };
-    let output = canonical_access_result(&source, &selectors)?;
+    let output = if matches!(source.closed_schema_body()?, SchemaBody::String) {
+        managed_string::empty_seed(&selectors)?
+    } else {
+        canonical_access_result(&source, &selectors)?
+    };
     let inputs = std::iter::once(source.clone())
         .chain(selectors.iter().filter_map(|selector| match selector {
             CanonicalAccessSelector::Cell(cell) => Some(cell.clone()),
@@ -1124,10 +1191,16 @@ impl CanonicalFunctionSpecializer for AccessColumn {
 mod canonical_aggregate_access_tests {
     use super::*;
 
-    fn managed_scalar_access(source: ValueCell, selector: ValueCell) -> SpecializedFunction {
-        let output =
-            canonical_access_result(&source, &[CanonicalAccessSelector::Cell(selector.clone())])
-                .unwrap();
+    pub(super) fn managed_scalar_access(
+        source: ValueCell,
+        selector: ValueCell,
+    ) -> SpecializedFunction {
+        let selectors = [CanonicalAccessSelector::Cell(selector.clone())];
+        let output = if matches!(source.closed_schema_body().unwrap(), SchemaBody::String) {
+            managed_string::empty_seed(&selectors).unwrap()
+        } else {
+            canonical_access_result(&source, &selectors).unwrap()
+        };
         let invocation =
             FunctionInvocation::binary(output.clone(), source.clone(), selector.clone());
         crate::test_support::managed_implementation_instance(
@@ -1145,7 +1218,7 @@ mod canonical_aggregate_access_tests {
         .unwrap()
     }
 
-    fn assert_string(value: &ValueCell, expected: &str) {
+    pub(super) fn assert_string(value: &ValueCell, expected: &str) {
         assert!(matches!(
             value.snapshot().unwrap().data(),
             ValueData::String(value) if value.as_ref() == expected
@@ -1313,6 +1386,66 @@ mod canonical_aggregate_access_tests {
             assert!(
                 matches!(selected.snapshot().unwrap().data(), ValueData::String(value) if value.as_ref() == text)
             );
+        }
+    }
+
+    #[test]
+    fn managed_string_selection_preserves_graphemes_order_repeats_and_empty() {
+        for (ordinals, expected) in [
+            (vec![2], "👩🏽‍💻"),
+            (vec![1, 2], "e\u{301}👩🏽‍💻"),
+            (vec![3, 1, 3, 2], "Ze\u{301}Z👩🏽‍💻"),
+            (vec![], ""),
+        ] {
+            let source = ValueCell::from_exact("e\u{301}👩🏽‍💻Z".to_owned()).unwrap();
+            let selector = ValueCell::from_schema_data(
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+                    dimensions: vec![
+                        DimensionExpr::Constant(ordinals.len() as u64),
+                        DimensionExpr::Constant(1),
+                    ]
+                    .into_boxed_slice(),
+                },
+                ValueDataDraft::Matrix(ordinals.into_iter().map(ValueDataDraft::U64).collect()),
+            )
+            .unwrap();
+            let function = managed_scalar_access(source, selector);
+            function.instance().solve_result().unwrap();
+            assert_string(function.instance().output(), expected);
+        }
+    }
+
+    #[test]
+    fn managed_string_gather_admits_growth_and_rejects_invalid_reactive_indices() {
+        let grapheme = format!("e{}", "\u{301}".repeat(1024));
+        let source = ValueCell::from_exact(format!("{grapheme}Z")).unwrap();
+        let selector = ValueCell::from_schema_data(
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+                dimensions: vec![DimensionExpr::Constant(3), DimensionExpr::Constant(1)]
+                    .into_boxed_slice(),
+            },
+            ValueDataDraft::Matrix(vec![ValueDataDraft::U64(1); 3].into_boxed_slice()),
+        )
+        .unwrap();
+        let function = managed_scalar_access(source, selector.clone());
+        function.instance().solve_result().unwrap();
+        assert_string(function.instance().output(), &grapheme.repeat(3));
+        for invalid in [0, 3] {
+            let next = selector
+                .rebuild_data_draft(ValueDataDraft::Matrix(
+                    vec![
+                        ValueDataDraft::U64(1),
+                        ValueDataDraft::U64(1),
+                        ValueDataDraft::U64(invalid),
+                    ]
+                    .into_boxed_slice(),
+                ))
+                .unwrap();
+            selector.replace(&next).unwrap();
+            assert!(function.instance().solve_result().is_err());
+            assert_string(function.instance().output(), &grapheme.repeat(3));
         }
     }
 }

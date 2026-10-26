@@ -240,6 +240,9 @@ macro_rules! executable_nodes {
 }
 
 executable_nodes! {
+    (ApplicationExpression, ApplicationExpressionSyntax, ApplicationExpression, "application-expression"),
+    (ApplicationOperator, ApplicationOperatorSyntax, ApplicationOperator, "application-operator"),
+    (ApplicationStage, ApplicationStageSyntax, ApplicationStage, "application-stage"),
     (ArgumentList, ArgumentListSyntax, ArgumentList, "argument-list"),
     (RecordBinding, RecordBindingSyntax, RecordBinding, "binding"),
     (BraceSubscript, BraceSubscriptSyntax, BraceSubscript, "brace-subscript"),

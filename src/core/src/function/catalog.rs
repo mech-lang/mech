@@ -514,6 +514,12 @@ pub struct FunctionSpecializerEntry {
 }
 
 impl FunctionSpecializerEntry {
+    /// All registered semantic contract variants, for descriptive tooling.
+    /// Returning metadata does not select a contract or authorize execution.
+    pub fn operation_contracts(&self) -> &[OperationContractDeclaration] {
+        &self.operation_contracts
+    }
+
     fn operation_contract_for_output_shape(
         &self,
         input_count: usize,
@@ -713,8 +719,45 @@ pub fn maintained_source_type_declaration(
     ) {
         declaration.parameter_names = Some(vec!["left".into(), "right".into()].into_boxed_slice());
     }
+    match canonical_name {
+        "number/parse-u64" => {
+            declaration.parameter_names = Some(vec!["text".into()].into_boxed_slice())
+        }
+        "number/format" => {
+            declaration.parameter_names =
+                Some(vec!["value".into(), "precision".into()].into_boxed_slice())
+        }
+        "sequence/length" => {
+            declaration.parameter_names = Some(vec!["value".into()].into_boxed_slice())
+        }
+        "sequence/sort-indices" => {
+            declaration.parameter_names = Some(
+                vec![
+                    "primary".into(),
+                    "primary-order".into(),
+                    "secondary".into(),
+                    "secondary-order".into(),
+                ]
+                .into_boxed_slice(),
+            )
+        }
+        "text/lines" => declaration.parameter_names = Some(vec!["text".into()].into_boxed_slice()),
+        "text/join" => {
+            declaration.parameter_names =
+                Some(vec!["values".into(), "separator".into()].into_boxed_slice())
+        }
+        "map/histogram" | "map/keys" | "map/values" => {
+            declaration.parameter_names = Some(vec!["value".into()].into_boxed_slice())
+        }
+        _ => {}
+    }
     validate_type_declaration(canonical_name, &declaration)?;
     let output_rule = match canonical_name {
+        "map/histogram" => Some(ResolvedOutputSchemaRule::Declared(crate::SchemaBody::Map {
+            key: Box::new(crate::SchemaBody::String),
+            value: Box::new(crate::SchemaBody::UnsignedInteger(crate::IntegerWidth::W64)),
+            cardinality: crate::CardinalitySpec::Dynamic { upper_bound: None },
+        })),
         "matrix/transpose" => Some(ResolvedOutputSchemaRule::TransposeOfInput(0)),
         "set/cartesian-product" => Some(ResolvedOutputSchemaRule::DynamicSetCartesianProduct),
         "set/powerset" => Some(ResolvedOutputSchemaRule::DynamicSetPowerset),
@@ -1601,7 +1644,35 @@ impl FunctionCatalogBuilder {
             )
             .with_compiler_loc());
         };
-        if self.resident_factories.contains_key(&key) {
+        self.insert_resident_factory_entry(ResidentKernelFactoryEntry::new(
+            key,
+            implementation_memory,
+            factory,
+        ))
+    }
+
+    /// Installs an unchanged implementation entry. Existing registration
+    /// callers use insert_resident_factory and start without an attachment.
+    pub fn insert_resident_factory_entry(
+        &mut self,
+        entry: ResidentKernelFactoryEntry,
+    ) -> MResult<()> {
+        let key = entry.key();
+        if key.module_path.is_empty()
+            || key.module_path.iter().any(String::is_empty)
+            || key.operation_name.is_empty()
+        {
+            return Err(MechError::new(
+                FunctionCatalogInvalidName {
+                    category: "resident function",
+                    name: String::new(),
+                    id: 0,
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        if self.resident_factories.contains_key(key) {
             return Err(MechError::new(
                 FunctionCatalogInvalidName {
                     category: "duplicate resident function",
@@ -1612,14 +1683,7 @@ impl FunctionCatalogBuilder {
             )
             .with_compiler_loc());
         }
-        self.resident_factories.insert(
-            key.clone(),
-            ResidentKernelFactoryEntry {
-                key,
-                implementation_memory,
-                factory,
-            },
-        );
+        self.resident_factories.insert(key.clone(), entry);
         Ok(())
     }
 

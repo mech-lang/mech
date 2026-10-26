@@ -53,8 +53,8 @@ fn cli_hosted_native_application_builds_and_emits_once() {
     assert_eq!(result.plan.run_grants[0].host_instance, "cli");
     assert_eq!(result.plan.run_grants[0].host_context, "stdout");
     let runtime = result.runtime_source.unwrap();
-    assert!(runtime.contains("mech_terminal::CliHostFactory::new"));
-    assert_eq!(runtime.matches("CliHostFactory::new").count(), 1);
+    assert!(runtime.contains("mech_terminal::CliHostFactory::with_arguments"));
+    assert_eq!(runtime.matches("CliHostFactory::with_arguments").count(), 1);
 
     let output = result.stdout.unwrap();
     assert_eq!(output.matches("phase1-hosted-ok").count(), 1);

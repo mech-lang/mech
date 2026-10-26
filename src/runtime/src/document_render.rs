@@ -3514,6 +3514,30 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
             _ => None,
         })
         .collect::<Vec<_>>();
+    let mut statement_functions = Vec::new();
+    collect_nodes(
+        node,
+        SyntaxKind::FunctionDefineStatements,
+        &mut statement_functions,
+    );
+    // Read historical named signatures, but print the common output arrow.
+    // Only the first signature token is eligible; body assignments retain `=`.
+    let signature_equals = statement_functions
+        .into_iter()
+        .filter_map(|body| {
+            body.tokens().into_iter().find(|token| {
+                !matches!(
+                    token.kind(),
+                    SyntaxKind::Whitespace
+                        | SyntaxKind::Tab
+                        | SyntaxKind::Newline
+                        | SyntaxKind::CarriageReturn
+                )
+            })
+        })
+        .filter(|token| token.kind() == SyntaxKind::Equal)
+        .map(|token| token.range())
+        .collect::<Vec<_>>();
     let mut binding_nodes = Vec::new();
     for kind in [
         SyntaxKind::MapEntry,
@@ -3540,8 +3564,14 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
     let mut previous_was_prefix = false;
     let mut previous_was_separator = false;
     for token in node.tokens() {
-        let kind = token.kind();
-        let text = token.text().map_err(|_| range_error(token.range()))?;
+        let (kind, text) = if signature_equals.contains(&token.range()) {
+            (SyntaxKind::OutputOperator, "=>".to_owned())
+        } else {
+            (
+                token.kind(),
+                token.text().map_err(|_| range_error(token.range()))?,
+            )
+        };
         let literal = protected
             .iter()
             .find(|range| token.range().start >= range.start && token.range().end <= range.end)

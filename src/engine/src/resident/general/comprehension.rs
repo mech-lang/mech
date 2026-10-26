@@ -54,6 +54,9 @@ pub struct ActivatedComprehensionNode {
     /// execution can import every schema owner reachable from the actual
     /// comprehension inputs.
     pub schema_reads: Box<[ResidentReadLocation]>,
+    /// Captured/constant scalar String bindings proved read-only through all
+    /// descendants of this lexical invocation. Reuse never crosses an entry.
+    pub(crate) invariant_text_sources: Box<[ResidentReadLocation]>,
     pub yield_value: ResidentReadLocation,
     pub yield_schema: SchemaId,
 }
@@ -108,6 +111,9 @@ pub(super) fn all_local_definitions(
                         | crate::ControlOperationBody::Suspend
                         | crate::ControlOperationBody::Publish => {}
                         crate::ControlOperationBody::Match(nested) => append_match(nested, output),
+                        crate::ControlOperationBody::Iteration(nested) => {
+                            output.extend(super::iteration::all_local_definitions(nested))
+                        }
                         crate::ControlOperationBody::Comprehension(nested) => {
                             append_comprehension(nested, output)
                         }
@@ -146,6 +152,9 @@ pub(super) fn all_local_definitions(
                     next_local += 1;
                     match &operation.body {
                         crate::ControlOperationBody::Match(nested) => append_match(nested, output),
+                        crate::ControlOperationBody::Iteration(nested) => {
+                            output.extend(super::iteration::all_local_definitions(nested))
+                        }
                         crate::ControlOperationBody::Comprehension(nested) => {
                             append_comprehension(nested, output)
                         }
@@ -187,6 +196,9 @@ pub(super) fn all_match_local_definitions(
                         | crate::ControlOperationBody::Suspend
                         | crate::ControlOperationBody::Publish => {}
                         crate::ControlOperationBody::Match(nested) => append(nested, output),
+                        crate::ControlOperationBody::Iteration(nested) => {
+                            output.extend(super::iteration::all_local_definitions(nested))
+                        }
                         crate::ControlOperationBody::Comprehension(nested) => {
                             output.extend(all_local_definitions(nested));
                         }
@@ -210,6 +222,7 @@ pub(super) fn owns_output(artifact: &ProgramArtifact, mut slot: CellSlotId) -> b
                 return matches!(
                     artifact.nodes()[node.get() as usize].body,
                     crate::ExecutableNodeBody::Comprehension(_)
+                        | crate::ExecutableNodeBody::Iteration(_)
                 );
             }
             ProducerReference::Output {
@@ -233,7 +246,10 @@ fn primitive(body: &SchemaBody) -> bool {
 fn operation_retained_local_scope(
     operation: &crate::ComprehensionOperation,
 ) -> Option<(u32, Box<[u32]>)> {
-    let nested_match = matches!(operation.body, crate::ControlOperationBody::Match(_));
+    let nested_match = matches!(
+        operation.body,
+        crate::ControlOperationBody::Match(_) | crate::ControlOperationBody::Iteration(_)
+    );
     let retained_local_count = operation.local.checked_add(u32::from(nested_match))?;
     let excluded_locals = if nested_match {
         Box::new([])
@@ -386,6 +402,7 @@ fn generator_element_schema(
 ) -> Option<Option<SchemaId>> {
     let element = match source.body() {
         SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => element.as_ref(),
+        SchemaBody::String => source.body(),
         _ => return None,
     };
     if matches!(pattern, crate::CollectionPattern::Wildcard) {
@@ -566,6 +583,11 @@ pub(super) fn bind(
     ResidentActivationError,
 > {
     let captures = node_inputs(artifact, owner)?;
+    let capture_reads = captures
+        .iter()
+        .copied()
+        .map(|source| resolve_read(layout, source))
+        .collect::<Result<Vec<_>, _>>()?;
     let output_slot = node_output_slot(artifact, owner)?;
     bind_inner(
         artifact,
@@ -573,6 +595,7 @@ pub(super) fn bind(
         owner,
         control,
         &captures,
+        &capture_reads,
         output_slot,
         layout,
         steps,
@@ -581,12 +604,30 @@ pub(super) fn bind(
     )
 }
 
+// Binding appends each nested control and all its descendants to the same
+// step inventory. New String Set results may use a nested control only when
+// every child kernel declares its own runtime accounting. Older controls keep
+// their existing fixed-work compatibility paths. Recursion and live effects
+// are not admitted by this collection slice.
+fn runtime_metered_descendants(steps: &[ActivatedTurnStep]) -> bool {
+    steps.iter().all(|step| match step {
+        ActivatedTurnStep::Kernel(node) => {
+            node.kernel.work_accounting() == mech_core::ResidentKernelWorkAccounting::RuntimeMetered
+        }
+        ActivatedTurnStep::Match(_)
+        | ActivatedTurnStep::Comprehension(_)
+        | ActivatedTurnStep::Iteration(_) => true,
+        _ => false,
+    })
+}
+
 pub(super) fn bind_inner(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
     owner: NodeId,
     control: &crate::ComprehensionDeclaration,
     captures: &[ArtifactSource],
+    capture_reads: &[ResidentReadLocation],
     output_slot: CellSlotId,
     layout: &LayoutBuild,
     steps: &mut Vec<ActivatedTurnStep>,
@@ -604,6 +645,9 @@ pub(super) fn bind_inner(
     ResidentActivationError,
 > {
     let unsupported = || ResidentActivationError::UnsupportedControlLayout { node: owner };
+    if captures.len() != capture_reads.len() {
+        return Err(unsupported());
+    }
     let output = slot_port_layout(&layout.slots[output_slot.get() as usize]);
     if output.kind != ResidentValueKind::Snapshot
         || !artifact
@@ -611,18 +655,37 @@ pub(super) fn bind_inner(
             .get(output.schema_id)
             .is_some_and(|schema| match schema.body() {
                 SchemaBody::Matrix { .. } => true,
-                SchemaBody::Set { element, .. } => primitive(element),
+                SchemaBody::Set { element, .. } => {
+                    super::execution::comprehension_execution::collection_set_element_supported(
+                        element,
+                    )
+                }
                 _ => false,
             })
     {
         return Err(unsupported());
     }
+    // String Set results are newly supported here. Do not extend the old
+    // blanket Snapshot-work fallback to their unclassified body kernels.
+    let string_set = artifact.schemas().get(output.schema_id).is_some_and(|schema| {
+        matches!(schema.body(), SchemaBody::Set { element, .. } if element.as_ref() == &SchemaBody::String)
+    });
     let source = |value: crate::ComprehensionValue| match value {
         crate::ComprehensionValue::Constant(id) => ArtifactSource::Constant(id),
         crate::ComprehensionValue::Input(ordinal) => captures[ordinal as usize],
         crate::ComprehensionValue::Local(local) => {
             ArtifactSource::Slot(layout.control_locals[&(owner, control.id.0, local)].0)
         }
+    };
+    // Semantic ArtifactSources retain schema and memory-plan authority, but
+    // execution reads may be lexical snapshots of those same source slots.
+    // Preserve that distinction through every nested collection boundary.
+    let read = |value: crate::ComprehensionValue| match value {
+        crate::ComprehensionValue::Input(ordinal) => capture_reads
+            .get(ordinal as usize)
+            .copied()
+            .ok_or_else(unsupported),
+        _ => resolve_read(layout, source(value)),
     };
     let port = |source: ArtifactSource| -> Result<ResidentPortLayout, ResidentActivationError> {
         match source {
@@ -689,13 +752,13 @@ pub(super) fn bind_inner(
                         let source = source_for_value(value, captures, owner, control.id.0, layout);
                         let peer = port(source)?;
                         Ok(ActivatedPatternValue {
-                            location: resolve_read(layout, source)?,
+                            location: read(value)?,
                             schema: peer.schema_id,
                         })
                     },
                 )?;
                 instructions.push(ActivatedCollectionStep::Generator {
-                    source: resolve_read(layout, source)?,
+                    source: read(*value)?,
                     source_schema: input.schema_id,
                     discard_from,
                     binding_end,
@@ -708,9 +771,9 @@ pub(super) fn bind_inner(
                     pattern,
                 });
             }
-            crate::ComprehensionStep::Filter(value) => instructions.push(
-                ActivatedCollectionStep::Filter(resolve_read(layout, source(*value))?),
-            ),
+            crate::ComprehensionStep::Filter(value) => {
+                instructions.push(ActivatedCollectionStep::Filter(read(*value)?))
+            }
             crate::ComprehensionStep::Operation(operation) => {
                 debug_assert_eq!(operation.local as usize, next_local);
                 next_local += 1;
@@ -728,10 +791,11 @@ pub(super) fn bind_inner(
                     .copied()
                     .map(port)
                     .collect::<Result<Vec<_>, _>>()?;
-                let input_reads = input_sources
+                let input_reads = operation
+                    .inputs
                     .iter()
                     .copied()
-                    .map(|source| resolve_read(layout, source))
+                    .map(read)
                     .collect::<Result<Vec<_>, _>>()?;
                 let (retained_local_count, excluded_locals) =
                     operation_retained_local_scope(operation).ok_or_else(unsupported)?;
@@ -766,11 +830,65 @@ pub(super) fn bind_inner(
                             calls,
                             &[index],
                         )?;
+                        if string_set
+                            && !runtime_metered_descendants(&steps[index.get() as usize + 1..])
+                        {
+                            return Err(unsupported());
+                        }
                         let ActivatedTurnStep::Match(prepared) = &mut steps[index.get() as usize]
                         else {
                             unreachable!()
                         };
                         prepared.arms = arms;
+                        instructions.push(ActivatedCollectionStep::Operation {
+                            node: index,
+                            work: 0,
+                            retained_local_count,
+                            excluded_locals,
+                        });
+                        continue;
+                    }
+                    crate::ControlOperationBody::Iteration(nested) => {
+                        let index = ActivatedNodeIndex(steps.len() as u32);
+                        let prepared = super::iteration::prepare(
+                            artifact,
+                            owner,
+                            memory_node,
+                            nested,
+                            &input_sources,
+                            &input_reads,
+                            output_slot,
+                            layout,
+                        )?;
+                        steps.push(ActivatedTurnStep::Iteration(std::sync::Arc::new(prepared)));
+                        let body = super::iteration::bind_body(
+                            artifact,
+                            catalog,
+                            owner,
+                            memory_node,
+                            nested,
+                            &input_sources,
+                            &input_reads,
+                            output_slot,
+                            layout,
+                            steps,
+                            reads,
+                            calls,
+                            &[],
+                        )?;
+                        if string_set
+                            && !runtime_metered_descendants(&steps[index.get() as usize + 1..])
+                        {
+                            return Err(unsupported());
+                        }
+                        let ActivatedTurnStep::Iteration(prepared) =
+                            &mut steps[index.get() as usize]
+                        else {
+                            unreachable!()
+                        };
+                        std::sync::Arc::get_mut(prepared)
+                            .expect("unpublished collection iteration plan")
+                            .body = Some(body);
                         instructions.push(ActivatedCollectionStep::Operation {
                             node: index,
                             work: 0,
@@ -798,6 +916,7 @@ pub(super) fn bind_inner(
                                 steps: Box::new([]),
                                 locals: Box::new([]),
                                 schema_reads: Box::new([]),
+                                invariant_text_sources: Box::new([]),
                                 yield_value: ResidentReadLocation::Scratch(output.region),
                                 yield_schema: output.schema,
                             },
@@ -815,12 +934,18 @@ pub(super) fn bind_inner(
                             owner,
                             nested,
                             &input_sources,
+                            &input_reads,
                             output_slot,
                             layout,
                             steps,
                             reads,
                             calls,
                         )?;
+                        if string_set
+                            && !runtime_metered_descendants(&steps[index.get() as usize + 1..])
+                        {
+                            return Err(unsupported());
+                        }
                         let ActivatedTurnStep::Comprehension(prepared) =
                             &mut steps[index.get() as usize]
                         else {
@@ -885,6 +1010,7 @@ pub(super) fn bind_inner(
                 };
                 let policy = &contract.outputs[0];
                 let index = ActivatedNodeIndex(steps.len() as u32);
+                let work_accounting = kernel.work_accounting();
                 steps.push(ActivatedTurnStep::Kernel(ActivatedKernelNode {
                     artifact_node: owner,
                     memory_node,
@@ -937,63 +1063,72 @@ pub(super) fn bind_inner(
                         total.checked_add(input.shape.len()? as u64)
                     })
                     .ok_or_else(unsupported)?;
-                let work = if output.region.kind == ResidentValueKind::Snapshot {
-                    // Snapshot-producing kernels carry their complete retained
-                    // and transient demand in the bound call plan. The control
-                    // meter owns only the repeated dispatch overhead here.
-                    0
-                } else if fixed_scalar {
-                    256
-                } else if name == "convert/kind"
-                    && input_layouts.len() == 1
-                    && crate::is_control_scalar_schema(
-                        artifact.schemas().get(input_layouts[0].schema_id).unwrap(),
-                    )
-                    && crate::is_control_scalar_schema(
-                        artifact.schemas().get(output.schema).unwrap(),
-                    )
-                {
-                    // Scalar conversion takes fixed work even when the source
-                    // uses a canonical snapshot lane (for example, u8).
-                    256
-                } else if matches!(name.as_str(), "stats/sum/column" | "stats/sum/row") {
-                    // Reduction kernels admit their complete scan before execution.
-                    0
-                } else if name == "access/scalar"
-                    && input_layouts
-                        .first()
-                        .is_some_and(|port| port.kind == ResidentValueKind::Snapshot)
-                {
-                    // Turn-shaped pattern bindings live in canonical snapshot
-                    // storage. The managed access kernel and its bound call
-                    // plan own selection materialization and admission.
-                    0
-                } else if matches!(
-                    name.as_str(),
-                    "matrix/horzcat" | "matrix/vertcat" | "access/scalar"
-                ) && output.region.kind != ResidentValueKind::Snapshot
-                    && input_layouts.iter().all(|port| {
-                        matches!(
-                            port.kind,
-                            ResidentValueKind::Bool
-                                | ResidentValueKind::Index
-                                | ResidentValueKind::F64
+                let work =
+                    if work_accounting == mech_core::ResidentKernelWorkAccounting::RuntimeMetered {
+                        // The actual selected implementation admits its variable
+                        // demand. The collection still meters repeated dispatch
+                        // and supplies the same call plan and retained-live demand.
+                        0
+                    } else if output.region.kind == ResidentValueKind::Snapshot && !string_set {
+                        // Legacy Snapshot-producing kernels carry their complete retained
+                        // and transient demand in the bound call plan. The control
+                        // meter owns only the repeated dispatch overhead here.
+                        0
+                    } else if fixed_scalar {
+                        256
+                    } else if name == "convert/kind"
+                        && input_layouts.len() == 1
+                        && crate::is_control_scalar_schema(
+                            artifact.schemas().get(input_layouts[0].schema_id).unwrap(),
                         )
-                    })
-                {
-                    elements.checked_mul(64).ok_or_else(unsupported)?
-                } else if name == "set/define"
-                    && input_layouts.iter().all(|port| {
-                        primitive(artifact.schemas().get(port.schema_id).unwrap().body())
-                    })
-                {
-                    elements
-                        .checked_mul(elements)
-                        .and_then(|work| work.checked_mul(64))
-                        .ok_or_else(unsupported)?
-                } else {
-                    return Err(unsupported());
-                };
+                        && crate::is_control_scalar_schema(
+                            artifact.schemas().get(output.schema).unwrap(),
+                        )
+                    {
+                        // Scalar conversion takes fixed work even when the source
+                        // uses a canonical snapshot lane (for example, u8).
+                        256
+                    } else if !string_set
+                        && matches!(name.as_str(), "stats/sum/column" | "stats/sum/row")
+                    {
+                        // Reduction kernels admit their complete scan before execution.
+                        0
+                    } else if !string_set
+                        && name == "access/scalar"
+                        && input_layouts
+                            .first()
+                            .is_some_and(|port| port.kind == ResidentValueKind::Snapshot)
+                    {
+                        // Turn-shaped pattern bindings live in canonical snapshot
+                        // storage. The managed access kernel and its bound call
+                        // plan own selection materialization and admission.
+                        0
+                    } else if matches!(
+                        name.as_str(),
+                        "matrix/horzcat" | "matrix/vertcat" | "access/scalar"
+                    ) && output.region.kind != ResidentValueKind::Snapshot
+                        && input_layouts.iter().all(|port| {
+                            matches!(
+                                port.kind,
+                                ResidentValueKind::Bool
+                                    | ResidentValueKind::Index
+                                    | ResidentValueKind::F64
+                            )
+                        })
+                    {
+                        elements.checked_mul(64).ok_or_else(unsupported)?
+                    } else if name == "set/define"
+                        && input_layouts.iter().all(|port| {
+                            primitive(artifact.schemas().get(port.schema_id).unwrap().body())
+                        })
+                    {
+                        elements
+                            .checked_mul(elements)
+                            .and_then(|work| work.checked_mul(64))
+                            .ok_or_else(unsupported)?
+                    } else {
+                        return Err(unsupported());
+                    };
                 instructions.push(ActivatedCollectionStep::Operation {
                     node: index,
                     work,
@@ -1018,7 +1153,7 @@ pub(super) fn bind_inner(
         instructions.into_boxed_slice(),
         locals,
         schema_reads.into_boxed_slice(),
-        resolve_read(layout, source(control.yield_value))?,
+        read(control.yield_value)?,
         yielded.schema_id,
         memory,
     ))
@@ -1052,8 +1187,22 @@ fn materialization_memory(
     let name = match kind {
         crate::ComprehensionKind::Matrix => "matrix-comprehension",
         crate::ComprehensionKind::MatrixPreserveShape => "shape-preserving-matrix-comprehension",
+        crate::ComprehensionKind::MatrixHorizontalBlocks { .. } => {
+            "horizontal-block-matrix-comprehension"
+        }
         crate::ComprehensionKind::Set => "set-comprehension",
     };
+    control_materialization_memory(artifact, name, inputs, output)
+}
+
+/// A typed control boundary uses the ordinary planner for its actual output
+/// representation. Its body retains its own semantic operation contracts.
+pub(super) fn control_materialization_memory(
+    artifact: &ProgramArtifact,
+    name: &str,
+    inputs: &[ResidentPortLayout],
+    output: &ResidentPortLayout,
+) -> Result<mech_core::CallMemoryPlan, ResidentActivationError> {
     let declaration = mech_core::OperationContractDeclaration {
         inputs: mech_core::InputPortLayout::Fixed(
             vec![

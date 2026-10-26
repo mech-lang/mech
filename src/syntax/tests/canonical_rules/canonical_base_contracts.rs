@@ -230,7 +230,16 @@ fn whitespace_classes_preserve_the_frozen_distinctions() {
 
 #[test]
 fn identifiers_and_path_segments_keep_canonical_boundaries() {
-    for accepted in ["a-b", "a/b", "A*", "Δx^2", "💡"] {
+    for accepted in [
+        "a-b",
+        "a/b",
+        "A*",
+        "Δx^2",
+        "💡",
+        "counts_keys",
+        "user_data_keys",
+        "Δ_length",
+    ] {
         let parsed = parse(accepted, rules::IDENTIFIER);
         assert!(parsed.matched, "{accepted:?}");
         assert_eq!(parsed.consumed.end, TextSize(accepted.len() as u32));
@@ -263,6 +272,39 @@ fn identifiers_and_path_segments_keep_canonical_boundaries() {
             "{bounded:?}"
         );
     }
+}
+
+#[test]
+fn underscore_names_are_lossless_identifiers_without_changing_empty_or_digit_syntax() {
+    for name in [
+        "counts_keys",
+        "user_data_keys",
+        "matrix_length",
+        "name__part",
+        "name_",
+    ] {
+        let parsed = parse(name, rules::IDENTIFIER);
+        assert!(parsed.matched);
+        assert_eq!(parsed.consumed.end, TextSize(name.len() as u32));
+        validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed).unwrap();
+        assert_eq!(
+            reconstruct_source_range(&parsed.root, &parsed.source, parsed.consumed).unwrap(),
+            name
+        );
+    }
+    assert!(!parse("_", rules::IDENTIFIER).matched);
+    assert!(!parse("_counts", rules::IDENTIFIER).matched);
+    assert_eq!(
+        parse("1_000", rules::DIGIT_SEQUENCE).consumed.end,
+        TextSize(5)
+    );
+    // Import path segments retain their separate, unchanged namespace grammar.
+    assert_eq!(
+        parse("module_item", rules::IDENTIFIER_PATH_SEGMENT)
+            .consumed
+            .end,
+        TextSize(6)
+    );
 }
 
 #[test]

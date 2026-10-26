@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-use mech_core::{MResult, MechError, MechErrorKind, OperationContractDeclaration, Value};
+use mech_core::{MResult, MechError, MechErrorKind, OperationContractDeclaration, Schema, Value};
 
 use crate::extension::catch_extension;
 #[cfg(any(test, feature = "runtime"))]
@@ -17,6 +17,14 @@ use crate::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeCompensatableEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
 };
+
+#[cfg(all(
+    feature = "runtime",
+    feature = "string",
+    feature = "canonical-native-resources"
+))]
+#[path = "resource_text_delivery.rs"]
+mod text_delivery;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeResourceReadRequest {
@@ -38,6 +46,19 @@ pub struct RuntimeResourceWritePreflightRequest {
     pub context_name: String,
     pub operation: RuntimeCapabilityOperation,
     pub intent: RuntimeResourceWriteIntent,
+}
+
+/// Static payload-schema admission is separate from validation of a real value.
+/// Every admitted write still passes through the provider's `prepare_write`
+/// before it can be published or delivered.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ResourceSchemaPreflight {
+    /// The provider checked the payload's declared structure. Value-dependent
+    /// constraints, including dynamic members and numeric domains, remain live.
+    Validated,
+    /// The provider cannot establish the payload's structure from its schema.
+    /// Planning retains that uncertainty; execution must validate the real value.
+    DeferredToRuntime,
 }
 
 #[derive(Clone, Debug)]
@@ -127,6 +148,48 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
 
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
 
+    /// Effect-free opt-in for a dedicated one-shot text source. Ordinary
+    /// providers keep their immutable cached-snapshot semantics. Returning
+    /// true is a host lifecycle promise, not another capability or URI.
+    #[cfg(all(feature = "runtime", feature = "string"))]
+    fn supports_single_use_text_capture(&self, _request: &RuntimeResourceReadRequest) -> bool {
+        false
+    }
+
+    /// Lend the authorized one-shot reader exactly once, synchronously. Do not
+    /// read before/after `capture`, retain it, or replay it on failure. The
+    /// runtime owns UTF-8 validation, byte caps, scratch, error ordering and the
+    /// receiver; this method grants no authority to run Mech or publish effects.
+    #[cfg(all(feature = "runtime", feature = "string"))]
+    fn with_single_use_text_reader(
+        &self,
+        _request: RuntimeResourceReadRequest,
+        _capture: &mut dyn FnMut(&mut dyn std::io::Read) -> MResult<()>,
+    ) -> MResult<()> {
+        Err(MechError::new(
+            crate::NativeResourceBindingError {
+                reason: "provider does not support dedicated one-shot text capture".into(),
+            },
+            None,
+        ))
+    }
+
+    /// Map capture failures to this provider's ordinary diagnostic vocabulary.
+    /// Native-consumer failures never pass through this hook or lose their kind.
+    #[cfg(all(feature = "runtime", feature = "string"))]
+    fn text_capture_error(
+        &self,
+        _request: &RuntimeResourceReadRequest,
+        error: crate::RuntimeTextCaptureError<std::convert::Infallible>,
+    ) -> MechError {
+        MechError::new(
+            crate::NativeResourceBindingError {
+                reason: error.to_string(),
+            },
+            None,
+        )
+    }
+
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
         Err(MechError::new(
             RuntimeResourceWriteUnsupported {
@@ -136,6 +199,18 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
             },
             None,
         ))
+    }
+
+    /// Effect-free admission of a declared payload schema without constructing
+    /// an example value or evaluating resource observations. The default keeps
+    /// existing providers compatible and explicitly defers their payload check.
+    fn preflight_write_schema(
+        &self,
+        request: RuntimeResourceWritePreflightRequest,
+        _payload_schema: &Schema,
+    ) -> MResult<ResourceSchemaPreflight> {
+        self.preflight_write(request)?;
+        Ok(ResourceSchemaPreflight::DeferredToRuntime)
     }
 
     /// Effect-free native/source planning hook that validates both the target
@@ -213,7 +288,7 @@ impl RuntimeResidentProviderBinding {
         )
     }
 
-    #[cfg(any(test, feature = "resident-routing"))]
+    #[cfg(feature = "resident-routing")]
     pub(crate) fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         invoke_extension(
             format!("resource provider `{}`", self.scheme),
@@ -497,6 +572,33 @@ impl RuntimeResourceRegistry {
             format!("resource provider `{scheme}`"),
             "plan_write",
             || entry.provider.plan_write(request),
+        )
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    pub(crate) fn preflight_write_schema(
+        &self,
+        request: RuntimeResourceWritePreflightRequest,
+        payload_schema: &Schema,
+    ) -> MResult<ResourceSchemaPreflight> {
+        let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
+        let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
+            return Err(MechError::new(
+                RuntimeResourceProviderNotFound {
+                    scheme,
+                    uri: request.base_uri,
+                },
+                None,
+            ));
+        };
+        invoke_extension(
+            format!("resource provider `{scheme}`"),
+            "preflight_write_schema",
+            || {
+                entry
+                    .provider
+                    .preflight_write_schema(request, payload_schema)
+            },
         )
     }
 
@@ -1222,6 +1324,155 @@ mod tests {
 
         assert_eq!(error.kind_name(), "RuntimeResourceReadNotPlannable");
         assert_eq!(reads.load(Ordering::SeqCst), 0);
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    #[derive(Debug)]
+    struct LegacySchemaProvider {
+        bases: Vec<String>,
+        preflights: Arc<AtomicUsize>,
+        observations_or_preparations: Arc<AtomicUsize>,
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    impl RuntimeResourceProvider for LegacySchemaProvider {
+        fn scheme(&self) -> &str {
+            "schema-test"
+        }
+
+        fn base_uris(&self) -> Vec<String> {
+            self.bases.clone()
+        }
+
+        fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
+            if self.bases.len() > 1 {
+                vec![self.bases.clone()]
+            } else {
+                Vec::new()
+            }
+        }
+
+        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+            self.observations_or_preparations
+                .fetch_add(1, Ordering::SeqCst);
+            ValueCell::unit().snapshot()
+        }
+
+        fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+            self.preflights.fetch_add(1, Ordering::SeqCst);
+            if self.bases.contains(&request.base_uri)
+                && request.path == "text"
+                && request.operation == RuntimeCapabilityOperation::Write
+                && request.intent == RuntimeResourceWriteIntent::Send
+            {
+                Ok(())
+            } else {
+                Err(MechError::new(
+                    RuntimeResourceWriteUnsupported {
+                        scheme: self.scheme().to_owned(),
+                        base_uri: request.base_uri,
+                        path: request.path,
+                    },
+                    None,
+                ))
+            }
+        }
+
+        fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
+            self.observations_or_preparations
+                .fetch_add(1, Ordering::SeqCst);
+            Err(MechError::new(
+                RuntimeResourceWriteUnsupported {
+                    scheme: self.scheme().to_owned(),
+                    base_uri: request.base_uri,
+                    path: request.path,
+                },
+                None,
+            ))
+        }
+
+        fn prepare_write(
+            &self,
+            request: RuntimeResourceWriteRequest,
+        ) -> MResult<PreparedRuntimeEffect> {
+            self.observations_or_preparations
+                .fetch_add(1, Ordering::SeqCst);
+            Err(MechError::new(
+                RuntimeResourceWriteUnsupported {
+                    scheme: self.scheme().to_owned(),
+                    base_uri: request.base_uri,
+                    path: request.path,
+                },
+                None,
+            ))
+        }
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    #[test]
+    fn default_schema_preflight_defers_payload_and_preserves_provider_ownership() {
+        let preflights = Arc::new(AtomicUsize::new(0));
+        let other_preflights = Arc::new(AtomicUsize::new(0));
+        let observations_or_preparations = Arc::new(AtomicUsize::new(0));
+        let mut registry = RuntimeResourceRegistry::new();
+        for (bases, calls) in [
+            (
+                vec!["schema-test://owner", "schema-test://alias"],
+                &preflights,
+            ),
+            (vec!["schema-test://other"], &other_preflights),
+        ] {
+            registry
+                .register_provider(Box::new(LegacySchemaProvider {
+                    bases: bases.into_iter().map(str::to_owned).collect(),
+                    preflights: Arc::clone(calls),
+                    observations_or_preparations: Arc::clone(&observations_or_preparations),
+                }))
+                .unwrap();
+        }
+        let schema = mech_core::SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: mech_core::SchemaBody::Bool,
+        }
+        .finalize()
+        .unwrap();
+        let request = |base_uri: &str, path: &str| RuntimeResourceWritePreflightRequest {
+            base_uri: base_uri.to_owned(),
+            path: path.to_owned(),
+            context_name: "owner".to_owned(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Send,
+        };
+        for base in ["schema-test://owner", "schema-test://alias"] {
+            assert_eq!(
+                registry
+                    .preflight_write_schema(request(base, "text"), &schema)
+                    .unwrap(),
+                ResourceSchemaPreflight::DeferredToRuntime
+            );
+        }
+        assert_eq!(preflights.load(Ordering::SeqCst), 2);
+        let error = registry
+            .preflight_write_schema(request("schema-test://owner", "invalid"), &schema)
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "RuntimeResourceWriteUnsupported");
+        assert_eq!(preflights.load(Ordering::SeqCst), 3);
+        for base in ["schema-test://owner-other", "unowned://owner"] {
+            let error = registry
+                .preflight_write_schema(request(base, "text"), &schema)
+                .unwrap_err();
+            assert_eq!(error.kind_name(), "RuntimeResourceProviderNotFound");
+        }
+        assert_eq!(preflights.load(Ordering::SeqCst), 3);
+        assert_eq!(
+            registry
+                .preflight_write_schema(request("schema-test://other", "text"), &schema)
+                .unwrap(),
+            ResourceSchemaPreflight::DeferredToRuntime
+        );
+        assert_eq!(other_preflights.load(Ordering::SeqCst), 1);
+        assert_eq!(preflights.load(Ordering::SeqCst), 3);
+        assert_eq!(observations_or_preparations.load(Ordering::SeqCst), 0);
     }
 
     #[derive(Debug)]

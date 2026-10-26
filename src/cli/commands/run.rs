@@ -13,7 +13,7 @@ use crate::cli::capabilities;
 use crate::cli::config;
 use crate::cli::outcome::CliOutcome;
 use crate::cli::run::{
-    RunInputMode, cli_module_options, new_cli_runtime_with_source_resolver_and_host_factories,
+    RunInputMode, cli_module_options, cli_runtime_builder_with_cli_host_factory,
 };
 use crate::cli::runtime_plan::RunExecutionPlan;
 use crate::source_discovery::{
@@ -44,6 +44,7 @@ pub(crate) fn command() -> Command {
       .help("Source .mec files, project folders, or inline Mech code.")
       .required(false)
       .action(ArgAction::Append))
+    .arg(crate::cli::run::payload_arguments_arg())
     .arg(Arg::new("debug")
       .short('d')
       .long("debug")
@@ -350,14 +351,18 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     };
     #[cfg(not(feature = "compute_backends_native"))]
     let (host_factories, coordinator) = (Vec::new(), compiled_compute);
-    let mut runtime = new_cli_runtime_with_source_resolver_and_host_factories(
+    let mut runtime = cli_runtime_builder_with_cli_host_factory(
         plan.runtime_config.clone(),
         &plan.cli_grants,
         &plan.configured_hosts,
         &plan.configured_run_grants,
         host_factories,
-        resolver,
-    )?;
+        Box::new(mech_terminal::CliHostFactory::with_arguments(
+            plan.payload_arguments.clone(),
+        )?),
+    )?
+    .source_resolver(resolver)
+    .build()?;
 
     let result: MResult<RuntimeValueSnapshot> = if let Some(coordinator) = coordinator {
         runtime
@@ -705,6 +710,7 @@ mod command_outcome_tests {
             runtime_info: false,
             max_live_turns: None,
             backend_override: None,
+            payload_arguments: Vec::new(),
             loaded_config: None,
             config_event: ConfigLoadEvent::NotFound,
             cli_capability_selection: CliHostCapabilitySelection::default(),

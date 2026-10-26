@@ -46,7 +46,11 @@ pub fn load_cli_config_with_inputs(
     matches: &clap::ArgMatches,
     project_inputs: &[String],
 ) -> MResult<Option<LoadedMechConfig>> {
-    load_cli_config_report_with_inputs(matches, project_inputs).map(|loaded| loaded.config)
+    load_cli_config_report_with_inputs(matches, project_inputs).map(|loaded| {
+        // Callers of this adapter request configuration without its discovery report.
+        drop(loaded.event);
+        loaded.config
+    })
 }
 
 pub(crate) fn load_cli_config_report_with_inputs(

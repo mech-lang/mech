@@ -8,7 +8,7 @@ import csv
 import subprocess
 from pathlib import Path
 
-EXPECTED_RULES = 539
+EXPECTED_RULES = 543
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = REPOSITORY_ROOT / "docs/design/grammar-audit/ports.tsv"
 OUTPUT = (

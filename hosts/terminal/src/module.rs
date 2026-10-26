@@ -13,6 +13,11 @@ pub fn cli_host_manifest() -> mech_core::MResult<mech_runtime::HostManifestConfi
                 operations: vec!["read".to_string()],
             },
             mech_runtime::HostContextManifest {
+                name: "stdin".to_string(),
+                base_uri_template: "cli://{instance}/stdin".to_string(),
+                operations: vec!["read".to_string()],
+            },
+            mech_runtime::HostContextManifest {
                 name: "stdout".to_string(),
                 base_uri_template: "cli://{instance}/stdout".to_string(),
                 operations: vec!["write".to_string()],

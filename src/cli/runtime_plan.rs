@@ -5,6 +5,7 @@ use crate::cli::host_grants;
 use crate::cli::run::{RunInputMode, effective_run_runtime_config};
 use crate::cli::run_options::PreparedRunOptions;
 use crate::generate_uuid;
+use std::ffi::OsString;
 
 pub(crate) struct RunExecutionPlan {
     pub runtime_config: RuntimeConfig,
@@ -18,6 +19,7 @@ pub(crate) struct RunExecutionPlan {
     pub configured_hosts: Vec<HostInstanceConfig>,
     pub configured_run_grants: Vec<RunResourceGrantConfig>,
     pub backend_override: Option<String>,
+    pub payload_arguments: Vec<OsString>,
     pub filesystem_access: crate::cli::capabilities::FilesystemRuntimeAccess,
     pub config_event: crate::cli::config::ConfigLoadEvent,
 }
@@ -85,6 +87,7 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
         configured_hosts,
         configured_run_grants,
         backend_override: options.backend_override,
+        payload_arguments: options.payload_arguments,
         filesystem_access,
         config_event,
     })
@@ -163,6 +166,7 @@ mod tests {
             runtime_info: false,
             max_live_turns: None,
             backend_override: None,
+            payload_arguments: Vec::new(),
             loaded_config: None,
             config_event: ConfigLoadEvent::NotFound,
             cli_capability_selection: CliHostCapabilitySelection::default(),
@@ -194,6 +198,7 @@ mod tests {
             runtime_info: false,
             max_live_turns: None,
             backend_override: None,
+            payload_arguments: Vec::new(),
             loaded_config: None,
             config_event: ConfigLoadEvent::NotFound,
             cli_capability_selection: CliHostCapabilitySelection::default(),

@@ -3,7 +3,10 @@ use std::sync::Arc;
 use mech_core::{MResult, MechError};
 use mech_runtime::{ConfigValue, RuntimeHostFactory};
 
-use super::{NativeHostCatalog, NativeHostCatalogInvalid, NativeHostLinkage, NativeTargetFamily};
+use super::{
+    NativeHostCatalog, NativeHostCatalogInvalid, NativeHostFactoryInput, NativeHostLinkage,
+    NativeTargetFamily,
+};
 
 const STANDARD_TARGETS: &[NativeTargetFamily] =
     &[NativeTargetFamily::Unix, NativeTargetFamily::Windows];
@@ -73,88 +76,106 @@ fn robot_arm_planning_factory() -> MResult<Box<dyn RuntimeHostFactory>> {
     Ok(Box::new(mech_robot_arm::RobotArmHostFactory::new()?))
 }
 
-fn standard_native_host_registrations() -> Vec<NativeHostLinkage> {
+fn standard_native_host_registrations() -> Vec<(NativeHostLinkage, NativeHostFactoryInput)> {
     vec![
-        NativeHostLinkage {
-            provider: "cli",
-            package: "mech-terminal",
-            crate_name: "mech_terminal",
-            cargo_features: &["provider"],
-            factory_path: "mech_terminal::CliHostFactory::new",
-            supported_targets: STANDARD_TARGETS,
-            manifest: mech_terminal::cli_host_manifest,
-            validate_settings: validate_cli_settings,
-            planning_factory: cli_planning_factory,
-        },
-        NativeHostLinkage {
-            provider: "console",
-            package: "mech-console",
-            crate_name: "mech_console",
-            cargo_features: &["native"],
-            factory_path: "mech_console::NativeConsoleHostFactory::new",
-            supported_targets: STANDARD_TARGETS,
-            manifest: mech_console::console_host_manifest,
-            validate_settings: validate_console_settings,
-            planning_factory: console_planning_factory,
-        },
-        NativeHostLinkage {
-            provider: "scene",
-            package: "mech-scene",
-            crate_name: "mech_scene",
-            cargo_features: &["native"],
-            factory_path: "mech_scene::NativeSceneHostFactory::new",
-            supported_targets: STANDARD_TARGETS,
-            manifest: mech_scene::scene_host_manifest,
-            validate_settings: validate_scene_settings,
-            planning_factory: scene_planning_factory,
-        },
-        NativeHostLinkage {
-            provider: "time",
-            package: "mech-time",
-            crate_name: "mech_time",
-            cargo_features: &["native"],
-            factory_path: "mech_time::NativeTimeHostFactory::new",
-            supported_targets: STANDARD_TARGETS,
-            manifest: mech_time::time_host_manifest,
-            validate_settings: validate_time_settings,
-            planning_factory: time_planning_factory,
-        },
-        NativeHostLinkage {
-            provider: "timer",
-            package: "mech-timer",
-            crate_name: "mech_timer",
-            cargo_features: &["native"],
-            factory_path: "mech_timer::NativeTimerHostFactory::new",
-            supported_targets: STANDARD_TARGETS,
-            manifest: mech_timer::timer_host_manifest,
-            validate_settings: validate_timer_settings,
-            planning_factory: timer_planning_factory,
-        },
+        (
+            NativeHostLinkage {
+                provider: "cli",
+                package: "mech-terminal",
+                crate_name: "mech_terminal",
+                cargo_features: &["provider"],
+                factory_path: "mech_terminal::CliHostFactory::with_arguments",
+                supported_targets: STANDARD_TARGETS,
+                manifest: mech_terminal::cli_host_manifest,
+                validate_settings: validate_cli_settings,
+                planning_factory: cli_planning_factory,
+            },
+            NativeHostFactoryInput::ProgramArguments,
+        ),
+        (
+            NativeHostLinkage {
+                provider: "console",
+                package: "mech-console",
+                crate_name: "mech_console",
+                cargo_features: &["native"],
+                factory_path: "mech_console::NativeConsoleHostFactory::new",
+                supported_targets: STANDARD_TARGETS,
+                manifest: mech_console::console_host_manifest,
+                validate_settings: validate_console_settings,
+                planning_factory: console_planning_factory,
+            },
+            NativeHostFactoryInput::None,
+        ),
+        (
+            NativeHostLinkage {
+                provider: "scene",
+                package: "mech-scene",
+                crate_name: "mech_scene",
+                cargo_features: &["native"],
+                factory_path: "mech_scene::NativeSceneHostFactory::new",
+                supported_targets: STANDARD_TARGETS,
+                manifest: mech_scene::scene_host_manifest,
+                validate_settings: validate_scene_settings,
+                planning_factory: scene_planning_factory,
+            },
+            NativeHostFactoryInput::None,
+        ),
+        (
+            NativeHostLinkage {
+                provider: "time",
+                package: "mech-time",
+                crate_name: "mech_time",
+                cargo_features: &["native"],
+                factory_path: "mech_time::NativeTimeHostFactory::new",
+                supported_targets: STANDARD_TARGETS,
+                manifest: mech_time::time_host_manifest,
+                validate_settings: validate_time_settings,
+                planning_factory: time_planning_factory,
+            },
+            NativeHostFactoryInput::None,
+        ),
+        (
+            NativeHostLinkage {
+                provider: "timer",
+                package: "mech-timer",
+                crate_name: "mech_timer",
+                cargo_features: &["native"],
+                factory_path: "mech_timer::NativeTimerHostFactory::new",
+                supported_targets: STANDARD_TARGETS,
+                manifest: mech_timer::timer_host_manifest,
+                validate_settings: validate_timer_settings,
+                planning_factory: timer_planning_factory,
+            },
+            NativeHostFactoryInput::None,
+        ),
     ]
 }
 
 #[cfg(feature = "full-hosts")]
-fn full_native_host_registrations() -> Vec<NativeHostLinkage> {
+fn full_native_host_registrations() -> Vec<(NativeHostLinkage, NativeHostFactoryInput)> {
     let mut registrations = standard_native_host_registrations();
-    registrations.push(NativeHostLinkage {
-        provider: "robot-arm",
-        package: "mech-robot-arm",
-        crate_name: "mech_robot_arm",
-        cargo_features: &["provider"],
-        factory_path: "mech_robot_arm::RobotArmHostFactory::new",
-        supported_targets: STANDARD_TARGETS,
-        manifest: mech_robot_arm::robot_arm_host_manifest,
-        validate_settings: validate_robot_arm_settings,
-        planning_factory: robot_arm_planning_factory,
-    });
+    registrations.push((
+        NativeHostLinkage {
+            provider: "robot-arm",
+            package: "mech-robot-arm",
+            crate_name: "mech_robot_arm",
+            cargo_features: &["provider"],
+            factory_path: "mech_robot_arm::RobotArmHostFactory::new",
+            supported_targets: STANDARD_TARGETS,
+            manifest: mech_robot_arm::robot_arm_host_manifest,
+            validate_settings: validate_robot_arm_settings,
+            planning_factory: robot_arm_planning_factory,
+        },
+        NativeHostFactoryInput::None,
+    ));
     registrations
 }
 
 /// Returns the trusted native-host catalog for the standard distribution.
 pub fn standard_native_host_catalog() -> MResult<Arc<NativeHostCatalog>> {
     let mut catalog = NativeHostCatalog::new();
-    for linkage in standard_native_host_registrations() {
-        catalog.insert_provider(linkage)?;
+    for (linkage, input) in standard_native_host_registrations() {
+        catalog.insert_provider_with_input(linkage, input)?;
     }
     Ok(Arc::new(catalog))
 }
@@ -163,8 +184,8 @@ pub fn standard_native_host_catalog() -> MResult<Arc<NativeHostCatalog>> {
 #[cfg(feature = "full-hosts")]
 pub fn full_native_host_catalog() -> MResult<Arc<NativeHostCatalog>> {
     let mut catalog = NativeHostCatalog::new();
-    for linkage in full_native_host_registrations() {
-        catalog.insert_provider(linkage)?;
+    for (linkage, input) in full_native_host_registrations() {
+        catalog.insert_provider_with_input(linkage, input)?;
     }
     Ok(Arc::new(catalog))
 }
@@ -181,8 +202,8 @@ pub fn selected_native_host_catalog() -> MResult<Arc<NativeHostCatalog>> {
 pub fn standard_planning_host_factory(provider: &str) -> MResult<Box<dyn RuntimeHostFactory>> {
     standard_native_host_registrations()
         .into_iter()
-        .find(|linkage| linkage.provider == provider)
-        .map(|linkage| (linkage.planning_factory)())
+        .find(|(linkage, _)| linkage.provider == provider)
+        .map(|(linkage, _)| (linkage.planning_factory)())
         .unwrap_or_else(|| {
             Err(MechError::new(
                 NativeHostCatalogInvalid {
@@ -245,7 +266,7 @@ mod tests {
             .collect::<Vec<_>>();
         let planning_names = standard_native_host_registrations()
             .into_iter()
-            .map(|linkage| linkage.provider)
+            .map(|(linkage, _)| linkage.provider)
             .collect::<Vec<_>>();
         assert_eq!(catalog_names, planning_names);
         for provider in catalog_names {
@@ -263,6 +284,23 @@ mod tests {
         let catalog = standard_native_host_catalog().unwrap();
         for (_, linkage) in catalog.providers() {
             assert_eq!(linkage.supported_targets, STANDARD_TARGETS);
+        }
+    }
+
+    #[test]
+    fn cli_explicitly_receives_program_arguments_and_other_factories_keep_no_input() {
+        let catalog = standard_native_host_catalog().unwrap();
+        let (cli, input) = catalog.provider_registration("cli").unwrap();
+        assert_eq!(
+            cli.factory_path,
+            "mech_terminal::CliHostFactory::with_arguments"
+        );
+        assert_eq!(input, NativeHostFactoryInput::ProgramArguments);
+        for provider in ["console", "scene", "time", "timer"] {
+            assert_eq!(
+                catalog.provider_registration(provider).unwrap().1,
+                NativeHostFactoryInput::None
+            );
         }
     }
 }

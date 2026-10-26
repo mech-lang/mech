@@ -1,6 +1,7 @@
 //! Resumable precedence and atom parsing, including recursive structures,
 //! pattern matching, and state-machine values.
 use super::super::super::{literals as leaf_literals, paths, primitives, strings};
+mod application;
 mod brace;
 mod bracket;
 mod collection;
@@ -83,6 +84,7 @@ pub(crate) fn supports(rule: RuleId) -> bool {
     matches!(
         rule,
         rules::EXPRESSION
+            | rules::APPLICATION_EXPRESSION
             | rules::VARIABLE_DEFINE
             | rules::MATCH_ARM
             | rules::BINDING
@@ -93,7 +95,8 @@ pub(crate) fn supports(rule: RuleId) -> bool {
             | rules::MATRIX_ROW
             | rules::MATRIX
             | rules::MATRIX_COMPREHENSION
-    ) || fsm::supports(rule)
+    ) || application::supports(rule)
+        || fsm::supports(rule)
         || pattern::supports(rule)
         || comprehension::supports(rule)
         || collection::supports(rule)
@@ -123,6 +126,7 @@ struct Level {
     committed: bool,
 }
 enum Frame {
+    Application(Box<application::Phase>),
     Brace(Box<brace::Phase>),
     Bracket(Box<bracket::Phase>),
     Inline(Box<inline::Phase>),
@@ -174,6 +178,8 @@ enum Frame {
     FactorStem(ParserCheckpoint),
     FactorSelection(ParserCheckpoint, bool),
     FactorValue(Marker),
+    PostfixBase(Marker),
+    PostfixSelection(Marker, bool),
     FactorSuffix(Marker, bool),
     Unary(bool),
     UnaryOperator(Marker, bool),
@@ -472,7 +478,7 @@ impl Continuation {
             Frame::ParenSpace => {
                 if self.result == Attempt::Matched {
                     self.push(Frame::ParenFormula);
-                    self.push(Frame::Call(rules::FORMULA));
+                    self.push(Frame::Expression(Box::new(expression::Phase::EnterGrouped)));
                 }
             }
             Frame::ParenFormula => {
@@ -694,6 +700,14 @@ impl Continuation {
                         self.push(Frame::MatchArm(Box::new(match_arm::Phase::Enter)));
                     } else if rule == rules::VARIABLE_DEFINE {
                         self.push(Frame::Definition(Box::new(definition::Phase::Start)));
+                    } else if application::supports(rule) {
+                        self.push(Frame::Application(Box::new(application::Phase::Enter(
+                            rule,
+                        ))));
+                    } else if rule == rules::APPLICATION_EXPRESSION {
+                        self.push(Frame::Expression(Box::new(
+                            expression::Phase::ApplicationEnter,
+                        )));
                     } else if fsm::supports(rule) {
                         self.push(Frame::Fsm(Box::new(fsm::Phase::Enter(rule))));
                     } else if rule == rules::EXPRESSION {
@@ -992,6 +1006,8 @@ impl Continuation {
                         return Progress::NeedInput;
                     }
                     if parser.cursor().starts_with("(") {
+                        let base = parser.start();
+                        self.push(Frame::PostfixBase(base));
                         self.push(Frame::Parenthesis(Box::new(parenthesis::Phase::Enter)));
                     } else {
                         self.push(Frame::FactorNegated);
@@ -1013,7 +1029,9 @@ impl Continuation {
                         if parser.cursor().starts_with("[") {
                             self.push(Frame::Bracket(Box::new(bracket::Phase::Project)));
                         } else if parser.cursor().starts_with("{") {
-                            self.push(Frame::Brace(Box::new(brace::Phase::Enter(false))));
+                            // A delimited comprehension is a value at any formula operand,
+                            // including a membership RHS and a function argument.
+                            self.push(Frame::Brace(Box::new(brace::Phase::Enter(true))));
                         } else if parser.cursor().starts_with(":") {
                             self.push(Frame::Collection(Box::new(collection::Phase::Colon)));
                         } else {
@@ -1069,6 +1087,8 @@ impl Continuation {
                             || parser.cursor().starts_with("{");
                         parser.rewind(stem);
                         if call {
+                            let base = parser.start();
+                            self.push(Frame::PostfixBase(base));
                             self.push(Frame::Call(rules::FUNCTION_CALL));
                         } else if slice {
                             self.push(Frame::Call(rules::SLICE));
@@ -1079,6 +1099,59 @@ impl Continuation {
                         parser.rewind(stem);
                         self.result = Attempt::NoMatch;
                     }
+                }
+                Frame::PostfixBase(base) => {
+                    if self.result == Attempt::NoMatch || parser.is_halted() {
+                        super::super::finish_provisional_marker(parser, base, SyntaxKind::Slice);
+                        if parser.is_halted() {
+                            self.result = Attempt::Committed;
+                        }
+                    } else {
+                        if !final_input
+                            && (parser.is_eof()
+                                || (parser.cursor().byte() == Some(b'.')
+                                    && parser.cursor().byte_at(1).is_none()))
+                        {
+                            self.push(Frame::PostfixBase(base));
+                            return Progress::NeedInput;
+                        }
+                        // As for an identifier base, a function terminator or
+                        // range operator belongs to its enclosing owner. Probe
+                        // subscripts only after an adjacent selector prefix.
+                        let slice = (parser.cursor().starts_with(".")
+                            && !parser.cursor().starts_with("..")
+                            && parser
+                                .cursor()
+                                .byte_at(1)
+                                .is_some_and(|next| !next.is_ascii_whitespace()))
+                            || parser.cursor().starts_with("[")
+                            || parser.cursor().starts_with("{");
+                        if slice {
+                            self.push(Frame::PostfixSelection(
+                                base,
+                                self.result == Attempt::Committed,
+                            ));
+                            self.push(Frame::Call(rules::SUBSCRIPT));
+                        } else {
+                            super::super::finish_provisional_marker(
+                                parser,
+                                base,
+                                SyntaxKind::Slice,
+                            );
+                        }
+                    }
+                }
+                Frame::PostfixSelection(base, committed) => {
+                    if self.result == Attempt::NoMatch {
+                        super::super::finish_provisional_marker(parser, base, SyntaxKind::Slice);
+                    } else {
+                        base.complete(parser, SyntaxKind::Slice);
+                    }
+                    self.result = if committed || self.result == Attempt::Committed {
+                        Attempt::Committed
+                    } else {
+                        Attempt::Matched
+                    };
                 }
                 Frame::FactorValue(node) => {
                     if self.result == Attempt::NoMatch {
@@ -1312,21 +1385,35 @@ impl Continuation {
                 Frame::MatchArm(phase) => self.arm_frame(parser, phase),
                 Frame::Pattern(phase) => self.pattern_frame(parser, phase),
                 Frame::Fsm(phase) => self.fsm_frame(parser, phase),
+                Frame::Application(phase) => {
+                    if let Some(progress) = self.application_frame(parser, phase, final_input) {
+                        return progress;
+                    }
+                }
                 Frame::Expression(phase) => {
                     if let Some(progress) = self.expression_frame(parser, phase, final_input) {
                         return progress;
                     }
                 }
                 Frame::RecoverOperand(index) => {
-                    self.push(Frame::Required(Box::new(Required::new(
-                        parser.current_rule().unwrap_or(rules::EXPRESSION),
-                        "syntax/missing-operator-operand",
-                        "missing expression after operator",
-                        "expression",
-                        &[],
-                        &[],
-                        Some(index),
-                    ))));
+                    // Application owns the surrounding stages, while an
+                    // ordinary delimited seed retains its expression diagnostic.
+                    let owner = match parser.current_rule() {
+                        Some(rules::APPLICATION_EXPRESSION) | None => rules::EXPRESSION,
+                        Some(rule) => rule,
+                    };
+                    self.push(Frame::Required(Box::new(
+                        Required::new(
+                            owner,
+                            "syntax/missing-operator-operand",
+                            "missing expression after operator",
+                            "expression",
+                            &[],
+                            &[],
+                            Some(index),
+                        )
+                        .with_diagnostic_rule(owner),
+                    )));
                 }
                 Frame::Required(mut child) => {
                     let before = *allowance;
@@ -1396,6 +1483,70 @@ impl Continuation {
 mod tests {
     use super::super::super::super::continuation_test_support::assert_partitions;
     use super::*;
+
+    #[test]
+    fn evaluated_selection_bases_do_not_extend_assignment_targets() {
+        for text in [
+            "f()[1u64] = 9u64",
+            "([1u64 2u64])[1u64] = 9u64",
+            "({field: 1u64}).field = 9u64",
+        ] {
+            let source = crate::document::TextSnapshot::new(
+                crate::document::DocumentId(0x504f5354),
+                crate::document::Revision(0),
+                text,
+            )
+            .unwrap();
+            let assignment =
+                crate::document::parser::canonical::parse_canonical_document_rule_for_test(
+                    source.clone(),
+                    rules::VARIABLE_ASSIGN,
+                    crate::document::ParseConfig::default(),
+                )
+                .unwrap();
+            assert!(!assignment.matched, "{text:?}: {assignment:?}");
+            assert_eq!(assignment.consumed.len().0, 0, "{text:?}");
+            let target =
+                crate::document::parser::canonical::parse_canonical_document_rule_for_test(
+                    source,
+                    rules::SLICE_REF,
+                    crate::document::ParseConfig::default(),
+                )
+                .unwrap();
+            assert!(target.consumed.end.0 <= 1, "{text:?}: {target:?}");
+        }
+    }
+
+    #[test]
+    fn direct_slice_rule_owns_evaluated_bases_at_all_input_cuts() {
+        let cases = [
+            (rules::SLICE, "f()[1u64]"),
+            (rules::SLICE, "f(x)[1u64].field[2u64]"),
+            (rules::SLICE, "(f(x))[1u64]"),
+            (rules::SLICE, "([1u64 2u64])[2u64]"),
+        ];
+        for (rule, text) in cases {
+            let parsed =
+                crate::document::parser::canonical::parse_canonical_executable_rule_for_test(
+                    crate::document::TextSnapshot::new(
+                        crate::document::DocumentId(0x504f5354),
+                        crate::document::Revision(0),
+                        text,
+                    )
+                    .unwrap(),
+                    rule,
+                    crate::document::ParseConfig::default(),
+                )
+                .unwrap();
+            assert!(
+                parsed.is_strictly_clean(),
+                "{text:?}: {:?}",
+                parsed.diagnostics
+            );
+            assert_eq!(parsed.consumed.end.0 as usize, text.len());
+        }
+        assert_partitions::<Continuation>(&cases);
+    }
 
     #[test]
     fn every_frozen_recursive_rule_has_a_canonical_continuation() {

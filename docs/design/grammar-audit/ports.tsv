@@ -17,6 +17,9 @@ and	expressions	certified	certified	supporting	node:AndOperation	expression	expr
 any	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
 any-token	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
 apostrophe	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+application-expression	functions	certified	certified	executable-core	node:ApplicationExpression	executable	Typed canonical application; direct syntax, recovery, streaming and artifact-ready semantic witnesses are retained in the certification and validation records.
+application-operator	functions	certified	certified	executable-core	node:ApplicationOperator	executable	Canonical application support; typed source and recovery behavior are exercised by application conformance tests.
+application-stage	functions	certified	certified	executable-core	node:ApplicationStage	executable	Canonical application support; typed source and recovery behavior are exercised by application conformance tests.
 argument-list	functions	certified	certified	executable-core	node:ArgumentList	executable	executable grammar canonical recursive core; semantic disposition: structural.
 assign-operator	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
 asterisk	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
@@ -182,6 +185,7 @@ full-join	expressions	certified	certified	supporting	node:FullJoinOperation	expr
 function-arg	functions	certified	syntax-only	supporting	node:FunctionArg	document	document canonical document closure generated from the specification.
 function-call	functions	certified	certified	executable-core	node:FunctionCall	executable	executable grammar canonical recursive core; semantic disposition: executable.
 function-define	functions	certified	syntax-only	supporting	node:FunctionDefine	document	document canonical document closure generated from the specification.
+function-define-expression	functions	certified	syntax-only	supporting	node:FunctionDefineExpression	document	Canonical application support; typed source and recovery behavior are exercised by application conformance tests.
 function-define-match-arms	functions	certified	syntax-only	supporting	node:FunctionDefineMatchArms	document	document canonical document closure generated from the specification.
 function-define-statements	functions	certified	syntax-only	supporting	node:FunctionDefineStatements	document	document canonical document closure generated from the specification.
 function-match-arm	functions	certified	syntax-only	supporting	node:FunctionMatchArm	document	document canonical document closure generated from the specification.

@@ -21,7 +21,8 @@ REQUIRED = (
     "src/engine/src/artifact/compiler.rs",
     "src/engine/src/program/compiler_planning.rs",
     "src/engine/src/resident/general/mod.rs",
-    "src/build/src/analysis/bytecode.rs",
+    "src/engine/src/resident/native_semantics.rs",
+    "src/build/src/analysis/bytecode/mod.rs",
     "src/build/src/plan/model.rs",
     "src/core/tests/canonical_type_contract.rs",
     "src/engine/tests/canonical_type_contract.rs",
@@ -44,7 +45,7 @@ PRESENCE = {
     "src/core/src/program/compiler/context.rs": (
         "instruction_type_bindings", "register_type_descriptors",
     ),
-    "src/build/src/analysis/bytecode.rs": (
+    "src/build/src/analysis/bytecode/mod.rs": (
         "validate_bound_call_for_target", "instruction_type_bindings",
     ),
 }
@@ -243,9 +244,12 @@ def failures(root: Path) -> list[str]:
         found.append("instance certification trusts an implementation semantic contract")
 
     resident = sources.get("src/engine/src/resident/general/mod.rs", "")
-    binder = rust_function_body(resident, "bind_resident_operation")
+    wrapper = re.sub(r"\s+", "", rust_function_body(resident, "bind_resident_operation"))
+    if not re.search(r"bind_operation_for_target\(artifact,catalog,node_id,operation,contract_id,input_layouts,output_layout,ExecutionTarget::ResidentCpu,?\)", wrapper):
+        found.append("resident wrapper does not preserve the actual inputs and ResidentCpu target")
+    binder = rust_function_body(resident, "bind_operation_for_target")
     compact_binder = re.sub(r"\s+", "", binder)
-    if "BoundCall::artifact_operation(" not in compact_binder:
+    if "BoundCall::artifact_operation_for_target(" not in compact_binder:
         found.append("resident activation does not bind the actual artifact operation")
     if (
         "ResolvedOperationDescriptor::from_resolved_contract(" not in compact_binder
@@ -256,7 +260,8 @@ def failures(root: Path) -> list[str]:
         found.append("resident binding does not derive semantic descriptors from the actual artifact contract and layouts")
     if "resident_call_memory_plan(&resident_context.bound_call," not in compact_binder:
         found.append("resident call-memory planning does not consume the selected BoundCall")
-    if ".with_bound_call(resident_context.bound_call)" not in compact_binder:
+    seal_binding = re.sub(r"\s+", "", rust_function_body(sources.get("src/engine/src/resident/native_semantics.rs", ""), "bind_call"))
+    if "super::native_semantics::bind_call(kernel,&bind_request,resident_context.bound_call)" not in compact_binder or ".with_bound_call(bound_call.clone())" not in seal_binding:
         found.append("resident executable kernel does not retain its selected BoundCall")
     for independent in (
         "implementation().semantic_operation_name()",
@@ -284,7 +289,7 @@ def failures(root: Path) -> list[str]:
     ):
         found.append("BoundResidentKernel does not retain and expose the selected semantic BoundCall")
 
-    native = sources.get("src/build/src/analysis/bytecode.rs", "")
+    native = sources.get("src/build/src/analysis/bytecode/mod.rs", "")
     if "validate_bound_call_for_target(binding, ExecutionTarget::Native)" not in native:
         found.append("native planning does not consume and validate semantic type bindings")
 

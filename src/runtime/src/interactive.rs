@@ -776,10 +776,13 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         let Some(runtime) = self.runtime.as_ref() else {
             return Ok(None);
         };
-        if runtime.root_symbol_output_id(name).is_none() {
+        let Some(output) = runtime.root_symbol_output_id(name) else {
             return Ok(None);
-        }
-        runtime.root_symbol_value(name).map(Some)
+        };
+        // A declared observation can legitimately await its first accepted
+        // input after replacement. Optional inspection preserves that absence;
+        // it must not turn a live formatter placeholder into a program error.
+        runtime.output_value(output)
     }
 
     pub fn symbol_output_id(&self, name: &str) -> Option<mech_core::OutputId> {

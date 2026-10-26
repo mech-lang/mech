@@ -44,6 +44,9 @@ impl NativeResourceRequirement {
             {
                 Ok(())
             }
+            ("cli://cli/stdin", "stdin", NativeResourceIntent::Read) if self.path == "text" => {
+                Ok(())
+            }
             _ => Err("unsupported native resource base/context/path/intent".into()),
         }
     }
@@ -414,7 +417,7 @@ impl SourceBindings {
                 let item = text(body.item().ok_or("missing native import item")?.syntax())?;
                 if let Some(context) = alias.context() {
                     let alias = text(context.name().ok_or("missing context alias")?.syntax())?;
-                    if module != "cli" || !matches!(item.as_str(), "args" | "stdout") {
+                    if module != "cli" || !matches!(item.as_str(), "args" | "stdin" | "stdout") {
                         return Err("unsupported native activated context target".into());
                     }
                     if self.contexts.insert(alias.clone(), item).is_some() {
@@ -576,6 +579,74 @@ mod tests {
     }
 
     #[test]
+    fn stdin_lowers_through_the_same_snapshot_text_read_route() {
+        let program =
+            compile("+> @in := cli/stdin\n+> @out := cli/stdout\nx := @in/text\n@out/text <- x\n")
+                .unwrap();
+        let requests = program.resource_requirements().unwrap();
+        assert_eq!(
+            requests[0],
+            NativeResourceRequirement {
+                base_uri: "cli://cli/stdin".into(),
+                context_name: "stdin".into(),
+                path: "text".into(),
+                intent: NativeResourceIntent::Read,
+            }
+        );
+        assert_eq!(program.nodes[0].op, RESOURCE_READ_OP);
+        assert_eq!(
+            program.resource_requirement_for_node(0).unwrap(),
+            Some(requests[0].clone())
+        );
+        assert_eq!(
+            program
+                .scheduled()
+                .unwrap()
+                .resource_requirements()
+                .unwrap(),
+            requests
+        );
+        for (base, context, path, intent) in [
+            ("cli://stdin", "stdin", "text", NativeResourceIntent::Read),
+            (
+                "cli://cli/stdin",
+                "args",
+                "text",
+                NativeResourceIntent::Read,
+            ),
+            (
+                "cli://cli/stdin",
+                "stdin",
+                "line",
+                NativeResourceIntent::Read,
+            ),
+            (
+                "cli://cli/stdin",
+                "stdin",
+                "text/1",
+                NativeResourceIntent::Read,
+            ),
+            (
+                "cli://cli/stdin",
+                "stdin",
+                "text",
+                NativeResourceIntent::Send,
+            ),
+        ] {
+            assert!(
+                NativeResourceRequirement {
+                    base_uri: base.into(),
+                    context_name: context.into(),
+                    path: path.into(),
+                    intent,
+                }
+                .validate()
+                .is_err()
+            );
+        }
+    }
+
+    #[test]
     fn imports_resolve_aliases_and_reject_unknown_or_conflicting_exports() {
         for import in [
             "+> parse := number/parse-u64",
@@ -637,6 +708,9 @@ mod tests {
             "n := number/parse-u64(@missing/1)\n",
             "+> @a := cli/args\n+> @a := cli/args\nn := number/parse-u64(@a/1)\n",
             "+> @a := cli/stdout\nx := @a/line\n",
+            "+> @a := cli/stdin\n@a/text <- \"x\"\n",
+            "+> @a := cli/stdin\nx := @a/line\n",
+            "+> @a := cli/stdin\nx := @a/1\n",
             "+> @a := cli/args\n@a/1 <- \"x\"\n",
             "+> @a := cli/args\nx := @a/zero\n",
             "+> @a := cli/args\nx := @a/0\n",

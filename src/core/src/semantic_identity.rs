@@ -52,6 +52,7 @@ opaque_hash_id!(KeyHash);
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(transparent)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct ConstantId(u32);
 
 impl ConstantId {

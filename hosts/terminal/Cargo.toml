@@ -12,6 +12,7 @@ rust-version = "1.92"
 
 [features]
 default = []
+# Canonical byte/count snapshots do not enable legacy boxed-u8/u64 features.
 provider = ["mech-core/string"]
 
 [dependencies]
@@ -24,4 +25,9 @@ mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features
 [[test]]
 name = "provider"
 path = "tests/provider.rs"
+required-features = ["provider"]
+
+[[test]]
+name = "provider_argument_count"
+path = "tests/provider_argument_count.rs"
 required-features = ["provider"]

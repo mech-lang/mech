@@ -192,6 +192,7 @@ impl Continuation {
                             OperatorGuard::NotMatrixMultiply => {
                                 self.call_bool(rules::MATRIX_MULTIPLY)
                             }
+                            OperatorGuard::NotXor => self.call_bool(rules::XOR),
                             OperatorGuard::NotGeneratorArrow => self.base(rules::GENERATOR_ARROW),
                             OperatorGuard::None => unreachable!("unguarded leaf handled above"),
                         }

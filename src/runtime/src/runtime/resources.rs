@@ -246,8 +246,29 @@ impl MechRuntime {
     fn read_resource_with_context_map<T>(
         &mut self,
         context: &mut RuntimeContext,
-        mut request: RuntimeResourceReadRequest,
+        request: RuntimeResourceReadRequest,
         finish: impl FnOnce(Value) -> MResult<T>,
+    ) -> MResult<T> {
+        self.read_resource_with_context_delivery(context, request, |resources, request, staged| {
+            finish(match staged {
+                Some(value) => value,
+                None => resources.read(request)?,
+            })
+        })
+    }
+
+    /// The ONE resource-read authorization/transaction gate. Delivery may use
+    /// a snapshot or an explicitly scoped native capture, but never chooses a
+    /// new request or bypasses staged values, capability use, or cleanup.
+    pub(super) fn read_resource_with_context_delivery<T>(
+        &mut self,
+        context: &mut RuntimeContext,
+        mut request: RuntimeResourceReadRequest,
+        deliver: impl FnOnce(
+            &crate::RuntimeResourceRegistry,
+            RuntimeResourceReadRequest,
+            Option<Value>,
+        ) -> MResult<T>,
     ) -> MResult<T> {
         self.validate_context_for_runtime(context)?;
         let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
@@ -258,7 +279,7 @@ impl MechRuntime {
                 context,
                 RuntimeTransactionScope::ImplicitResourceOperation,
             )?;
-            let value = match self.read_resource_with_context_map(context, request, finish) {
+            let value = match self.read_resource_with_context_delivery(context, request, deliver) {
                 Ok(value) => value,
                 Err(error) => {
                     return Err(self.cleanup_failed_implicit_resource_operation(
@@ -292,11 +313,10 @@ impl MechRuntime {
                 .effects
                 .staged_resource_value(&resource_identity, &request.path)
             {
-                return finish(value);
+                return deliver(&self.resources, request, Some(value));
             }
         }
-        let value = self.resources.read(request)?;
-        finish(value)
+        deliver(&self.resources, request, None)
     }
 
     pub(crate) fn authorize_resource_with_context(

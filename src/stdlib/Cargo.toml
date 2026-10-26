@@ -100,6 +100,8 @@ standard_compiler = ["standard_source", "compiler"]
 
 full_runtime = ["runtime", "full_values", "full_operations"]
 full_source = ["full_runtime", "semantic-compiler"]
+# Metadata-only canonical artifact lowering; no native code generator is enabled.
+native-artifact = ["mech-engine/native-artifact"]
 full_compiler = ["full_source", "compiler", "mech-engine/resident-artifact"]
 
 standard_values = [
@@ -121,6 +123,9 @@ full_values = [
 ]
 
 standard_operations = [
+  "pure_text",
+  "map_ops",
+  "sequence_sort",
   "access", "assign", "convert", "variable_define", "invariant_define", "variables",
   "subscript_default",
   "matrix_horzcat", "matrix_vertcat", "matrix_comprehensions",
@@ -141,6 +146,9 @@ standard_operations = [
 ]
 
 full_operations = [
+  "pure_text",
+  "map_ops",
+  "sequence_sort",
   "access", "assign", "convert", "variable_define", "invariant_define", "variables",
   "subscript_default",
   "matrix_horzcat", "matrix_vertcat", "matrix_comprehensions",
@@ -167,6 +175,9 @@ full_operations = [
 access = ["mech-engine/access"]
 assign = ["mech-engine/assign"]
 convert = ["mech-engine/convert"]
+pure_text = ["mech-engine/pure_text"]
+map_ops = ["mech-engine/map_ops"]
+sequence_sort = ["mech-engine/sequence_sort"]
 variable_define = ["mech-engine/variable_define"]
 invariant_define = ["mech-engine/invariant_define"]
 variables = ["mech-engine/variables"]
@@ -364,3 +375,24 @@ nalgebra = { version = "0.34.1" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
+
+[[test]]
+name = "native_artifact_lowering"
+required-features = ["full_compiler", "native-artifact"]
+
+[[test]]
+name = "native_artifact_i64_lowering"
+required-features = ["full_compiler", "native-artifact"]
+
+[[test]]
+name = "native_artifact_f64_lowering"
+required-features = ["full_compiler", "native-artifact"]
+
+[[test]]
+name = "native_artifact_cast_lowering"
+path = "tests/native_artifact_cast_lowering.rs"
+required-features = ["full_compiler", "native-artifact"]
+
+[[test]]
+name = "native_artifact_iteration_lowering"
+required-features = ["full_compiler", "native-artifact"]

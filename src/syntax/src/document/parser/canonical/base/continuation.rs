@@ -201,6 +201,7 @@ impl Continuation {
                 self.push(Frame::FirstRepeat(&[
                     rules::ALPHA_TOKEN,
                     rules::DIGIT_TOKEN,
+                    rules::UNDERSCORE,
                     rules::IDENTIFIER_SYMBOL,
                     rules::EMOJI,
                 ]));

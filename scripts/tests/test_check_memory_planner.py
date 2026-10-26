@@ -228,10 +228,19 @@ class MemoryPlannerCheckerTests(unittest.TestCase):
         self.replace(
             root,
             "src/engine/src/resident/budget.rs",
-            "demand: ResourceDemand,",
-            "demand: ResourceDemand,\n    bytes: u64,",
+            "pub(crate) struct KernelCostEstimate {\n    demand: ResourceDemand,",
+            "pub(crate) struct KernelCostEstimate {\n    demand: ResourceDemand,\n    bytes: u64,",
         )
         self.assert_failure(root, "second Resident resource authority")
+
+    def test_18_function_parameters_are_not_a_second_resident_estimate(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/engine/src/resident/budget.rs",
+            "\nfn ordinary_preview(demand: ResourceDemand, bytes: u64) {}\n",
+        )
+        self.assertEqual(CHECKER.failures(root), [])
 
     def test_19_managed_allocator_concept_fails(self):
         root = self.fixture()
@@ -418,11 +427,14 @@ class MemoryPlannerCheckerTests(unittest.TestCase):
 
     def test_35b_resident_synthetic_program_plan_fails(self):
         root = self.fixture()
+        admission = (
+            "pub(crate) fn admit_control(self) -> Result<AdmittedKernel<P>, ResidentKernelError> {"
+        )
         self.replace(
             root,
             "src/engine/src/resident/budget.rs",
-            "let _scope = ControlWorkScopeGuard::enter();",
-            "let _scope = ControlWorkScopeGuard::enter();\n        let _ = ProgramMemoryPlan { values: Box::new([]) };",
+            admission,
+            admission + "\n        let _ = ProgramMemoryPlan { values: Box::new([]) };",
         )
         self.assert_failure(root, "control admission manufactures a synthetic memory plan")
 
@@ -431,8 +443,8 @@ class MemoryPlannerCheckerTests(unittest.TestCase):
         self.replace(
             root,
             "src/engine/src/resident/budget.rs",
-            "#[cfg(test)]\nfn detached_turn_plan",
-            "fn detached_turn_plan",
+            "#[cfg(test)]\npub(crate) fn detached_turn_plan",
+            "pub(crate) fn detached_turn_plan",
         )
         self.assert_failure(root, "detached turn-plan helper is available in production")
 

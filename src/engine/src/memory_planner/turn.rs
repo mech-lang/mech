@@ -36,6 +36,10 @@ pub struct TurnMemoryPlan {
     pub storage_buffer_bytes: u64,
     pub budget_limits: MemoryBudgetLimits,
     pub budget_violations: Box<[MemoryBudgetViolation]>,
+    /// Scoped independently owned String-index storage already included in
+    /// facts.additional_demand. Lazy growth is reconciled at each permit.
+    #[cfg(feature = "resident-artifact")]
+    pub(crate) resident_text_index_baseline: (u64, u64),
 }
 
 pub fn plan_turn_memory(
@@ -242,6 +246,8 @@ pub fn plan_turn_memory(
     budget_violations.sort();
     budget_violations.dedup();
     Ok(TurnMemoryPlan {
+        #[cfg(feature = "resident-artifact")]
+        resident_text_index_baseline: (0, 0),
         node,
         facts: facts.clone(),
         call: turn_call,
@@ -576,7 +582,24 @@ pub(crate) fn plan_current_resident_turn(
     node: NodeId,
     facts: &TurnMemoryFacts,
 ) -> Result<TurnMemoryPlan, MemoryPlanError> {
-    plan_turn_memory(plan, node, facts)
+    let (bytes, nodes) = crate::resident::text_index::live_demand();
+    if (bytes, nodes) == (0, 0) {
+        return plan_turn_memory(plan, node, facts);
+    }
+    let mut facts = facts.clone();
+    facts.additional_demand.turn_peak_bytes = facts
+        .additional_demand
+        .turn_peak_bytes
+        .checked_add(bytes)
+        .ok_or(MemoryPlanError::TargetAddressOverflow)?;
+    facts.additional_demand.retained_nodes = facts
+        .additional_demand
+        .retained_nodes
+        .checked_add(nodes)
+        .ok_or(MemoryPlanError::TargetAddressOverflow)?;
+    let mut current = plan_turn_memory(plan, node, &facts)?;
+    current.resident_text_index_baseline = (bytes, nodes);
+    Ok(current)
 }
 
 /// Re-run the complete call derivation with both the live candidate and the

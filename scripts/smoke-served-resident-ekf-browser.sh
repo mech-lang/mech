@@ -361,6 +361,7 @@ harness = r'''<script>
     let busySymbolAbsent = expectedComputeBackend !== "wgpu";
     let busyLogicalProgressUnchanged = expectedComputeBackend !== "wgpu";
     let applicationQualifiedBeforeReset = false;
+    let incompatibleEditAttempted = expectedComputeBackend !== "wgpu";
     let incompatibleEditRequested = expectedComputeBackend !== "wgpu";
     let incompatibleGenerationChanged = expectedComputeBackend !== "wgpu";
     let incompatibleResourcesReplaced = expectedComputeBackend !== "wgpu";
@@ -565,23 +566,32 @@ harness = r'''<script>
       }
       if (
         expectedComputeBackend === "wgpu" && applicationQualifiedBeforeReset &&
-        !incompatibleEditRequested
+        !incompatibleEditAttempted
       ) {
-        const source = acceptedSource();
-        const nextSource = source.replace(
-          `filter-count := ${expectedComputeInstances}.0`,
-          `filter-count := ${expectedComputeInstances + 1}.0`,
-        );
-        if (nextSource === source) {
-          throw new Error(
-            "the incompatible EKF source probe could not change the compute storage shape",
+        // A rejected replacement is a failed oracle, not another request to
+        // compile on every compute completion until the idle watchdog expires.
+        incompatibleEditAttempted = true;
+        try {
+          const source = acceptedSource();
+          const nextSource = source.replace(
+            `filter-count := ${expectedComputeInstances}.0`,
+            `filter-count := ${expectedComputeInstances + 1}.0`,
           );
-        }
-        incompatibleBefore = computeIdentity();
-        const accepted = globalThis.MechDocumentController?.replaceSource(nextSource);
-        incompatibleEditRequested = accepted === nextSource;
-        if (incompatibleEditRequested) {
+          if (nextSource === source) {
+            throw new Error(
+              "the incompatible EKF source probe could not change the compute storage shape",
+            );
+          }
+          incompatibleBefore = computeIdentity();
+          const accepted = globalThis.MechDocumentController?.replaceSource(nextSource);
+          incompatibleEditRequested = accepted === nextSource;
+          if (!incompatibleEditRequested) {
+            throw new Error("the incompatible EKF source replacement was not accepted");
+          }
           signalMilestone("incompatible-replacement-accepted");
+        } catch (error) {
+          root.dataset.mechPageError = diagnosticText(error);
+          signalCompletion("ekf-finished");
         }
       }
     });
@@ -1119,6 +1129,16 @@ harness = r'''<script>
       root.dataset.mechObservedComputePhysicalOutputBuffers =
         root.dataset.mechComputePhysicalOutputBuffers || "missing";
       root.dataset.mechObservedContinuityEditRequested = String(continuityEditRequested);
+      root.dataset.mechObservedContinuitySourceAccepted = String(
+        continuityEditRequested && acceptedSource().includes("continuity-probe"),
+      );
+      root.dataset.mechObservedReplDiagnostics = JSON.stringify(
+        [...document.querySelectorAll(".mech-repl-diagnostic, .mech-repl-response")]
+          .map(element => ({
+            code: element.dataset.mechDiagnosticCode || "",
+            text: (element.textContent || "").slice(0, 1000),
+          })),
+      );
       root.dataset.mechObservedContinuityGenerationChanged =
         String(continuityGenerationChanged);
       root.dataset.mechObservedContinuityResourcePreserved =
@@ -1182,6 +1202,8 @@ harness = r'''<script>
       )?.getAttribute("opacity") || "";
       root.dataset.mechObservedIncompatibleEditRequested =
         String(incompatibleEditRequested);
+      root.dataset.mechObservedIncompatibleEditAttempted =
+        String(incompatibleEditAttempted);
       root.dataset.mechObservedIncompatibleGenerationChanged =
         String(incompatibleGenerationChanged);
       root.dataset.mechObservedIncompatibleResourcesReplaced =
@@ -1508,6 +1530,20 @@ with BrowserCompletionServer() as completion:
             }
             if isinstance(progress_data, dict):
                 write_dataset_snapshot(dom_file, progress_data)
+        if not milestones.get("done"):
+            # A progress beacon describes an earlier successful turn, not the
+            # state which stopped the run. Capture the live error/oracle data
+            # when the renderer still answers; never treat it as qualification.
+            try:
+                live_dataset = browser.evaluate(
+                    "Object.fromEntries(Object.entries(document.documentElement.dataset))",
+                    timeout=5,
+                )
+                if isinstance(live_dataset, dict):
+                    milestones["failureDataset"] = live_dataset
+                    write_dataset_snapshot(dom_file, live_dataset)
+            except Exception as error:
+                milestones["failureSnapshotError"] = str(error)
         browser.close()
         with Path(chrome_log).open("ab") as log:
             log.write((

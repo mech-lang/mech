@@ -125,6 +125,26 @@ pub trait MechFunctionImpl {
         Ok(None)
     }
 
+    /// Plans prospective output payload from the current input descriptors and
+    /// already measured footprints. Implementations must not reconstruct or scan
+    /// input payloads here. The default preserves the existing footprint hook.
+    fn planned_output_footprints_with_request(
+        &self,
+        _: &ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        self.planned_output_footprints()
+    }
+
+    /// Declares additional work and temporary storage before any call frame is
+    /// acquired. Bounds derive from the current request, without another input
+    /// payload traversal. The default adds no demand or workspace.
+    fn planned_execution_demand(
+        &self,
+        _: &ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<PlannedExecutionDemand> {
+        Ok(PlannedExecutionDemand::default())
+    }
+
     /// Declares the only cases where a payload output may intentionally use
     /// its published footprint without a prospective construction witness.
     fn payload_output_plan_policy(&self) -> PayloadOutputPlanPolicy {
@@ -338,8 +358,28 @@ struct ManagedFunctionBinding {
     current: core::cell::RefCell<ManagedCallRealization>,
 }
 
+struct ManagedCallPlan {
+    base: Rc<CallMemoryPlan>,
+    admitted: Rc<CallMemoryPlan>,
+    execution_demand: PlannedExecutionDemand,
+}
+
+impl ManagedCallPlan {
+    fn initial(base: Rc<CallMemoryPlan>) -> Self {
+        Self {
+            admitted: base.clone(),
+            base,
+            execution_demand: PlannedExecutionDemand::default(),
+        }
+    }
+}
+
 struct ManagedCallRealization {
     domain: MemoryDomain,
+    // Keep the clean planner result independently of its implementation demand.
+    // Every refresh starts here, so repeated calls cannot accumulate augmentation.
+    base_plan: Rc<CallMemoryPlan>,
+    execution_demand: PlannedExecutionDemand,
     plan: Rc<CallMemoryPlan>,
     realized: RealizedMemoryPlan,
     initialization: PreparedCallAccess,
@@ -414,11 +454,16 @@ impl PreparedExternalResult {
 impl ManagedCallRealization {
     fn prepare(
         domain: MemoryDomain,
-        plan: Rc<CallMemoryPlan>,
+        planned: ManagedCallPlan,
         output: &ValueCell,
         managed_inputs: &[ValueCell],
         output_policy: PayloadOutputPlanPolicy,
     ) -> MResult<Self> {
+        let ManagedCallPlan {
+            base,
+            admitted: plan,
+            execution_demand,
+        } = planned;
         let existing = output.managed_host_binding()?.filter(|live| {
             live.realized.domain() == domain.id()
                 && live
@@ -449,6 +494,8 @@ impl ManagedCallRealization {
         )?;
         Ok(Self {
             domain,
+            base_plan: base,
+            execution_demand,
             plan,
             realized,
             initialization,
@@ -456,15 +503,41 @@ impl ManagedCallRealization {
         })
     }
 
+    fn admit_execution_demand(
+        &self,
+        base: Rc<CallMemoryPlan>,
+        execution_demand: PlannedExecutionDemand,
+    ) -> MResult<Option<ManagedCallPlan>> {
+        if base.as_ref() == self.base_plan.as_ref() && execution_demand == self.execution_demand {
+            return Ok(None);
+        }
+        let admitted = if execution_demand == PlannedExecutionDemand::default() {
+            base.clone()
+        } else {
+            Rc::new(
+                crate::memory_plan::augment_call_execution_demand(base.as_ref(), execution_demand)
+                    .map_err(|error| MechError::new(error, None).with_compiler_loc())?,
+            )
+        };
+        Ok(Some(ManagedCallPlan {
+            base,
+            admitted,
+            execution_demand,
+        }))
+    }
+
     fn refreshed_plan(
         &self,
         managed_inputs: &[ValueCell],
         output: &ValueCell,
         output_shapes: Option<&[ShapeInstance]>,
-        output_footprints: Option<&[CurrentMemoryFootprint]>,
+        prepared_output_footprints: Option<&[CurrentMemoryFootprint]>,
+        plan_implementation_footprints: bool,
         output_policy: PayloadOutputPlanPolicy,
-    ) -> MResult<Option<Rc<CallMemoryPlan>>> {
-        if managed_inputs.len() != self.plan.inputs.len() {
+        implementation: &dyn MechFunction,
+    ) -> MResult<Option<ManagedCallPlan>> {
+        let template = self.base_plan.as_ref();
+        if managed_inputs.len() != template.inputs.len() {
             return Err(
                 MechError::new(MemoryPlanError::DescriptorArityMismatch, None).with_compiler_loc(),
             );
@@ -472,20 +545,19 @@ impl ManagedCallRealization {
         let planned_inputs = managed_inputs.iter().collect::<Vec<_>>();
         let inputs_unchanged = planned_inputs
             .iter()
-            .zip(self.plan.inputs.iter())
+            .zip(template.inputs.iter())
             .all(|(cell, port)| *cell.shape() == *port.descriptor.shape());
         let outputs_unchanged = output_shapes.is_none_or(|shapes| {
-            shapes.len() == self.plan.outputs.len()
+            shapes.len() == template.outputs.len()
                 && shapes
                     .iter()
-                    .zip(self.plan.outputs.iter())
+                    .zip(template.outputs.iter())
                     .all(|(shape, port)| shape == port.descriptor.shape())
         });
-        let payload_dependent = self
-            .plan
+        let payload_dependent = template
             .input_storage
             .iter()
-            .chain(self.plan.output_storage.iter())
+            .chain(template.output_storage.iter())
             .any(|storage| {
                 matches!(
                     storage.slot,
@@ -493,7 +565,15 @@ impl ManagedCallRealization {
                 )
             });
         if inputs_unchanged && outputs_unchanged && !payload_dependent {
-            return Ok(None);
+            let request = ExecutionDemandPlanningRequest {
+                inputs: template.bound_call.inputs(),
+                input_witnesses: &template.input_witnesses,
+            };
+            if plan_implementation_footprints {
+                let _ = implementation.planned_output_footprints_with_request(&request)?;
+            }
+            let demand = implementation.planned_execution_demand(&request)?;
+            return self.admit_execution_demand(self.base_plan.clone(), demand);
         }
         let inputs = planned_inputs
             .iter()
@@ -501,7 +581,7 @@ impl ManagedCallRealization {
             .collect::<MResult<Vec<_>>>()?
             .into_boxed_slice();
         let mut outputs = Vec::new();
-        for (index, previous) in self.plan.bound_call.outputs().iter().enumerate() {
+        for (index, previous) in template.bound_call.outputs().iter().enumerate() {
             if let Some(shape) = output_shapes.and_then(|shapes| shapes.get(index)) {
                 outputs.push(ResolvedValueDescriptor::from_schema(
                     previous.schema().clone(),
@@ -509,7 +589,7 @@ impl ManagedCallRealization {
                 )?);
                 continue;
             }
-            let policy = &self.plan.bound_call.operation_descriptor().contract.outputs[index];
+            let policy = &template.bound_call.operation_descriptor().contract.outputs[index];
             let shape_rule = match policy.construction {
                 OutputConstruction::FullWrite { shape } | OutputConstruction::Replace { shape } => {
                     shape
@@ -518,10 +598,6 @@ impl ManagedCallRealization {
                     ShapeRule::SameAsInput { input: base_input }
                 }
                 OutputConstruction::Build { .. } => {
-                    // Aggregate builders may change a dynamic cardinality
-                    // without changing their closed descriptor shape. Their
-                    // prospective payload witness, supplied separately,
-                    // drives allocation and admission for this turn.
                     outputs.push(previous.clone());
                     continue;
                 }
@@ -554,28 +630,59 @@ impl ManagedCallRealization {
                 shape,
             )?);
         }
-        let current = self
-            .plan
+        let current = template
             .bound_call
             .with_current_descriptors(inputs, outputs.into_boxed_slice())?;
         if !payload_dependent {
-            let geometry_plan = replan_fixed_call_geometry(&self.plan, &current)
+            let base = replan_fixed_call_geometry(template, &current)
                 .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
-            return Ok(Some(Rc::new(geometry_plan)));
+            let request = ExecutionDemandPlanningRequest {
+                inputs: current.inputs(),
+                input_witnesses: &base.input_witnesses,
+            };
+            if plan_implementation_footprints {
+                let _ = implementation.planned_output_footprints_with_request(&request)?;
+            }
+            let demand = implementation.planned_execution_demand(&request)?;
+            return self.admit_execution_demand(Rc::new(base), demand);
         }
 
+        // Measure each current input once. Both prospective-output and work
+        // hooks consume this exact metadata; neither needs to inspect backing data.
+        let input_witnesses = planned_inputs
+            .iter()
+            .map(|cell| {
+                cell.current_memory_footprint()
+                    .map(MemoryFootprintWitness::Known)
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        let request = ExecutionDemandPlanningRequest {
+            inputs: current.inputs(),
+            input_witnesses: &input_witnesses,
+        };
+        let implementation_footprints = if plan_implementation_footprints {
+            implementation.planned_output_footprints_with_request(&request)?
+        } else {
+            None
+        };
+        let output_footprints = if plan_implementation_footprints {
+            implementation_footprints.as_deref()
+        } else {
+            prepared_output_footprints
+        };
+        let demand = implementation.planned_execution_demand(&request)?;
         let mut resolved = BTreeMap::new();
-        for (index, cell) in planned_inputs.iter().enumerate() {
+        for (index, witness) in input_witnesses.iter().enumerate() {
+            let MemoryFootprintWitness::Known(footprint) = witness else {
+                unreachable!("current input footprints are measured above");
+            };
             let port = u16::try_from(index).map_err(|_| {
                 MechError::new(MemoryPlanError::DescriptorArityMismatch, None).with_compiler_loc()
             })?;
-            resolved.insert(
-                (PortDirection::Input, port),
-                cell.current_memory_footprint()?,
-            );
+            resolved.insert((PortDirection::Input, port), *footprint);
         }
         if let Some(footprints) = output_footprints {
-            if footprints.len() != self.plan.outputs.len() {
+            if footprints.len() != template.outputs.len() {
                 return Err(
                     MechError::new(MemoryPlanError::DescriptorArityMismatch, None)
                         .with_compiler_loc(),
@@ -592,7 +699,7 @@ impl ManagedCallRealization {
                 resolved.insert((PortDirection::Output, port), footprint);
             }
         } else {
-            let output_payload_dependent = self.plan.output_storage.iter().any(|storage| {
+            let output_payload_dependent = template.output_storage.iter().any(|storage| {
                 matches!(
                     storage.slot,
                     PlannedSlotKind::StringHeader | PlannedSlotKind::CanonicalValueHandle
@@ -601,15 +708,15 @@ impl ManagedCallRealization {
             if output_payload_dependent && output_policy == PayloadOutputPlanPolicy::Missing {
                 return Err(MechError::from(
                     MemoryRuntimeError::CandidateValidationFailed {
-                        object: self.plan.outputs.first().map(|output| output.object),
+                        object: template.outputs.first().map(|output| output.object),
                         reason: format!(
                             "payload-producing operation `{}` has no prospective output-footprint authority",
-                            self.plan.bound_call.operation_descriptor().canonical_name,
+                            template.bound_call.operation_descriptor().canonical_name
                         ),
                     },
                 ));
             }
-            for index in 0..self.plan.outputs.len() {
+            for index in 0..template.outputs.len() {
                 let port = u16::try_from(index).map_err(|_| {
                     MechError::new(MemoryPlanError::DescriptorArityMismatch, None)
                         .with_compiler_loc()
@@ -621,14 +728,10 @@ impl ManagedCallRealization {
             }
         }
         let published_outputs = [output.current_memory_footprint()?];
-        let plan =
-            resolve_current_call_memory(&self.plan, &current, &resolved, Some(&published_outputs))
+        let base =
+            resolve_current_call_memory(template, &current, &resolved, Some(&published_outputs))
                 .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
-        if plan == *self.plan {
-            Ok(None)
-        } else {
-            Ok(Some(Rc::new(plan)))
-        }
+        self.admit_execution_demand(Rc::new(base), demand)
     }
 
     fn initialize_inputs(&self, managed_inputs: &[ValueCell]) -> MResult<()> {
@@ -838,7 +941,7 @@ impl FunctionInstance {
         }
         let current = ManagedCallRealization::prepare(
             domain,
-            plan,
+            ManagedCallPlan::initial(plan),
             invocation.output_cell(),
             &managed_inputs,
             output_policy,
@@ -994,7 +1097,9 @@ impl FunctionInstance {
                     self.output(),
                     None,
                     None,
+                    false,
                     output_policy,
+                    self.implementation.as_ref(),
                 )?
                 .map(|plan| {
                     ManagedCallRealization::prepare(
@@ -1033,17 +1138,18 @@ impl FunctionInstance {
             Some(result) => Some(vec![result.shape.clone()].into_boxed_slice()),
             None => self.implementation.planned_output_shapes()?,
         };
-        let output_footprints = match external_result.as_ref() {
-            Some(result) => Some(vec![result.footprint].into_boxed_slice()),
-            None => self.implementation.planned_output_footprints()?,
-        };
+        let output_footprints = external_result
+            .as_ref()
+            .map(|result| vec![result.footprint].into_boxed_slice());
         let planning = preliminary_candidate.as_ref().unwrap_or(&current);
         let final_plan = planning.refreshed_plan(
             &self.managed_inputs,
             self.output(),
             output_shapes.as_deref(),
             output_footprints.as_deref(),
+            external_result.is_none(),
             output_policy,
+            self.implementation.as_ref(),
         )?;
         let candidate = if let Some(plan) = final_plan {
             Some(ManagedCallRealization::prepare(
@@ -1568,6 +1674,21 @@ impl MechFunctionImpl for SemanticMechFunction {
 
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
         self.function.planned_output_footprints()
+    }
+
+    fn planned_output_footprints_with_request(
+        &self,
+        request: &ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        self.function
+            .planned_output_footprints_with_request(request)
+    }
+
+    fn planned_execution_demand(
+        &self,
+        request: &ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<PlannedExecutionDemand> {
+        self.function.planned_execution_demand(request)
     }
 
     fn payload_output_plan_policy(&self) -> PayloadOutputPlanPolicy {
@@ -3465,3 +3586,12 @@ impl MechErrorKind for IncorrectNumberOfArguments {
         )
     }
 }
+
+#[cfg(all(
+    test,
+    feature = "u64",
+    feature = "f64",
+    feature = "matrixd",
+    not(feature = "no_std")
+))]
+mod execution_demand_tests;

@@ -28,13 +28,15 @@ use crate::{
     },
 };
 
+#[cfg(feature = "resident-routing")]
+use super::retained_input_value_bytes;
 use super::{
     BoundResidentEffect, BoundResidentExternalPlan, CapturedInputBatch, CapturedInputFact,
     ResidentExternalAuthority, ResidentExternalTurnMode, ResidentOutboxPayload,
     ResidentTurnReceiptV1, ResidentTurnRecord, bind_external_requirements,
     bind_replay_requirements, resident_effect_id, resident_effect_ids_hash,
     resident_idempotency_key, resident_idempotency_keys_hash, resident_outbox_policy,
-    resident_transaction_id, retained_input_value_bytes,
+    resident_transaction_id,
 };
 use crate::runtime::effect_journal::{
     RuntimeEffectJournal, deliver_prepared_after_commit, validate_prepared_after_commit,
@@ -196,6 +198,11 @@ pub struct ResidentExternalCoordinator {
     latest_live_inputs: Vec<Option<Value>>,
     latest_live_input_bytes: Vec<usize>,
     latest_live_input_retained_bytes: usize,
+    // The latest capture may belong to a rejected turn. Projections of the
+    // published state must retain the snapshot that actually published.
+    published_live_inputs: Vec<Option<Value>>,
+    published_live_input_bytes: Vec<usize>,
+    published_live_input_retained_bytes: usize,
     pending_live_inputs: Vec<Option<Value>>,
     pending_live_input_bytes: Vec<usize>,
     pending_live_input_retained_bytes: usize,
@@ -353,6 +360,8 @@ impl ResidentExternalCoordinator {
         let publication_authority = RuntimeResidentPublicationAuthority { _private: () };
         let latest_live_inputs = vec![None; bound.observations().len()];
         let latest_live_input_bytes = vec![0; bound.observations().len()];
+        let published_live_inputs = vec![None; bound.observations().len()];
+        let published_live_input_bytes = vec![0; bound.observations().len()];
         let pending_live_inputs = vec![None; bound.observations().len()];
         let pending_live_input_bytes = vec![0; bound.observations().len()];
         Ok(Self {
@@ -378,6 +387,9 @@ impl ResidentExternalCoordinator {
             latest_live_inputs,
             latest_live_input_bytes,
             latest_live_input_retained_bytes: 0,
+            published_live_inputs,
+            published_live_input_bytes,
+            published_live_input_retained_bytes: 0,
             pending_live_inputs,
             pending_live_input_bytes,
             pending_live_input_retained_bytes: 0,
@@ -429,8 +441,8 @@ impl ResidentExternalCoordinator {
             .expect("resident instance is present")
     }
 
-    /// Transfers both the last retained live-input snapshot and any staged
-    /// capture-only replacements across a compatible resident replacement.
+    /// Transfers the latest captured snapshot, the last published snapshot,
+    /// and staged capture-only replacements across a compatible replacement.
     /// Observation node/slot identities are artifact local, so migration
     /// matches the stable resource request plus its schema and shape, then
     /// re-materializes the value against the candidate schema table. Every
@@ -449,12 +461,52 @@ impl ResidentExternalCoordinator {
             "live input snapshot",
         )?;
         self.install_live_input_replacements(replacements)?;
+        let published_replacements = self.compatible_live_input_replacements_from(
+            previous,
+            &previous.published_live_inputs,
+            "published input snapshot",
+        )?;
+        self.install_published_live_input_replacements(published_replacements)?;
         let pending_replacements = self.compatible_live_input_replacements_from(
             previous,
             &previous.pending_live_inputs,
             "pending live input snapshot",
         )?;
         self.install_pending_live_input_replacements(pending_replacements)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    pub(crate) fn refresh_output_projections(
+        &mut self,
+        targets: &std::collections::BTreeSet<CellSlotId>,
+        candidate_owned_states: &std::collections::BTreeSet<CellSlotId>,
+    ) -> Result<(), ResidentExecutionError> {
+        let inputs = self
+            .bound
+            .observations()
+            .iter()
+            .zip(&self.published_live_inputs)
+            .filter_map(|(observation, value)| {
+                Some(CapturedValueInput {
+                    slot: observation.input.slot,
+                    value: value.as_ref()?,
+                })
+            })
+            .collect::<Vec<_>>();
+        let instance = self
+            .instance
+            .as_mut()
+            .expect("resident instance is present");
+        instance.refresh_replacement_projections(
+            &self.artifact,
+            targets,
+            &inputs,
+            candidate_owned_states,
+        )?;
+        // Migration changes the published snapshot without creating a turn.
+        // The next rejected receipt must describe that same snapshot.
+        self.published_state_hash = instance.published_state_hash();
+        Ok(())
     }
 
     #[cfg(feature = "resident-routing-source")]
@@ -475,22 +527,15 @@ impl ResidentExternalCoordinator {
             ) else {
                 continue;
             };
-            let migrated = value
-                .rebind(
-                    target.input.schema,
-                    &target.input.shape,
-                    self.artifact.schemas(),
-                )
+            let migrated = self
+                .rebind_observation_value(target, value)
                 .map_err(|error| {
                     invalid_value(format!(
                         "{snapshot_name} is incompatible with the replacement: {error:?}"
                     ))
                 })?;
-            let retained_bytes = retained_input_value_bytes(
-                &migrated,
-                &target.input.shape,
-                self.artifact.schemas(),
-            )?;
+            let retained_bytes =
+                retained_input_value_bytes(&migrated, migrated.shape(), self.artifact.schemas())?;
             replacements.push((target_ordinal, migrated, retained_bytes));
         }
         Ok(replacements)
@@ -608,6 +653,7 @@ impl ResidentExternalCoordinator {
             .into_boxed_slice())
     }
 
+    #[cfg(feature = "resident-routing")]
     pub(crate) fn has_driverless_trigger_observation(&self) -> MResult<bool> {
         Ok(!self.replay_bootstrap.driverless_trigger_inputs.is_empty())
     }
@@ -627,25 +673,16 @@ impl ResidentExternalCoordinator {
             }) else {
                 continue;
             };
-            let value = update
-                .value
-                .clone()
-                .into_value()?
-                .rebind(
-                    observation.input.schema,
-                    &observation.input.shape,
-                    self.artifact.schemas(),
-                )
+            let source_value = update.value.clone().into_value()?;
+            let value = self
+                .rebind_observation_value(observation, &source_value)
                 .map_err(|error| {
                     invalid_value(format!(
                         "host input does not match the observed schema: {error:?}"
                     ))
                 })?;
-            let retained_bytes = retained_input_value_bytes(
-                &value,
-                &observation.input.shape,
-                self.artifact.schemas(),
-            )?;
+            let retained_bytes =
+                retained_input_value_bytes(&value, value.shape(), self.artifact.schemas())?;
             replacements.push((ordinal, value, retained_bytes));
         }
         self.install_pending_live_input_replacements(replacements)
@@ -672,6 +709,7 @@ impl ResidentExternalCoordinator {
         Ok(())
     }
 
+    #[cfg(feature = "resident-routing")]
     fn install_pending_live_input_replacements(
         &mut self,
         replacements: Vec<(usize, Value, usize)>,
@@ -719,6 +757,28 @@ impl ResidentExternalCoordinator {
         Ok(())
     }
 
+    #[cfg(feature = "resident-routing-source")]
+    fn install_published_live_input_replacements(
+        &mut self,
+        replacements: Vec<(usize, Value, usize)>,
+    ) -> MResult<()> {
+        let retained_bytes = live_input_retained_bytes_after_replacements(
+            self.published_live_input_retained_bytes,
+            &self.published_live_input_bytes,
+            replacements
+                .iter()
+                .map(|(ordinal, _, retained_bytes)| (*ordinal, *retained_bytes)),
+            self.latest_live_input_byte_limit,
+        )?;
+        for (ordinal, value, replacement_bytes) in replacements {
+            self.published_live_inputs[ordinal] = Some(value);
+            self.published_live_input_bytes[ordinal] = replacement_bytes;
+        }
+        self.published_live_input_retained_bytes = retained_bytes;
+        Ok(())
+    }
+
+    #[cfg(feature = "resident-routing")]
     fn has_pending_live_inputs(&self) -> bool {
         self.pending_live_inputs.iter().any(Option::is_some)
     }
@@ -892,6 +952,68 @@ impl ResidentExternalCoordinator {
         self.reserve_live_turn()
     }
 
+    /// Resolve geometry in the target schema's own dimension environment.
+    /// The planning value seeds activation geometry; only Turn declarations
+    /// permit later observations to differ from that seed.
+    fn rebind_observation_value(
+        &self,
+        observation: &super::BoundResidentObservation,
+        value: &Value,
+    ) -> MResult<Value> {
+        let target = self
+            .instance()
+            .plan
+            .slots
+            .iter()
+            .find(|slot| slot.artifact_id == observation.input.artifact_slot)
+            .ok_or_else(|| invalid_value("observation slot is unavailable".to_owned()))?;
+        let schema = self
+            .artifact
+            .schemas()
+            .get(observation.input.schema)
+            .ok_or_else(|| invalid_value("observation schema is unavailable".to_owned()))?;
+        if target.schema != observation.input.schema
+            || target.schema_key != observation.input.schema_key
+            || target.shape != observation.input.shape
+            || schema.key() != observation.input.schema_key
+        {
+            return Err(invalid_value(
+                "observation differs from its activated slot".to_owned(),
+            ));
+        }
+        let source_schemas = value
+            .schemas()
+            .ok_or_else(|| invalid_value("observation value has no schema owner".to_owned()))?;
+        value.validate_against(&source_schemas).map_err(|error| {
+            invalid_value(format!("observation snapshot is invalid: {error:?}"))
+        })?;
+        let source_schema = source_schemas
+            .get(value.schema())
+            .ok_or_else(|| invalid_value("observation value schema is unavailable".to_owned()))?;
+        let actual_body = source_schema.closed_body(value.shape())?;
+        let shape =
+            mech_core::shape_for_schema_components(schema, &[(schema.body(), actual_body)], None)
+                .map_err(|error| {
+                invalid_value(format!(
+                    "observation geometry does not satisfy its declared schema: {error:?}"
+                ))
+            })?;
+        if (target.activation_fixed_shape && shape != target.shape)
+            || !mech_core::shape_change_allowed(schema, &target.shape, &shape)
+        {
+            return Err(invalid_value(
+                "observation changes fixed activation geometry".to_owned(),
+            ));
+        }
+        value
+            .rebind(observation.input.schema, &shape, self.artifact.schemas())
+            .map_err(|error| {
+                invalid_value(format!(
+                    "observation payload does not match its declared schema: {error:?}"
+                ))
+            })
+    }
+
     fn validate_host_updates(&self, updates: &[crate::RuntimeHostInputUpdate]) -> MResult<()> {
         let mut sources = std::collections::BTreeSet::new();
         for update in updates {
@@ -912,12 +1034,7 @@ impl ResidentExternalCoordinator {
             }
             let value = update.value.clone().into_value()?;
             for observation in matching {
-                value
-                    .rebind(
-                        observation.input.schema,
-                        &observation.input.shape,
-                        self.artifact.schemas(),
-                    )
+                self.rebind_observation_value(observation, &value)
                     .map_err(|error| {
                         invalid_value(format!(
                             "host input does not match its activated schema: {error:?}"
@@ -1318,6 +1435,7 @@ impl ResidentExternalCoordinator {
             if let Some(batch) = batch {
                 self.remember_live_inputs(batch);
             }
+            self.remember_published_inputs();
             if let Some(next_input) = next_input {
                 self.next_input = next_input;
             }
@@ -1889,6 +2007,7 @@ impl ResidentExternalCoordinator {
             }
         };
         self.publish_prepared(turn, prepared_turn)?;
+        self.remember_published_inputs();
         let receipt_sequence = self.append_receipt(prepared_receipt);
         if let Some(prepared) = prepared_outbox {
             self.outbox.append(prepared);
@@ -1944,15 +2063,8 @@ impl ResidentExternalCoordinator {
                     })
                 });
                 let value = if let Some(update) = packet_value {
-                    update
-                        .value
-                        .clone()
-                        .into_value()?
-                        .rebind(
-                            observation.input.schema,
-                            &observation.input.shape,
-                            self.artifact.schemas(),
-                        )
+                    let source_value = update.value.clone().into_value()?;
+                    self.rebind_observation_value(observation, &source_value)
                         .map_err(|error| {
                             invalid_value(format!(
                                 "host input does not match the observed schema: {error:?}"
@@ -2007,17 +2119,12 @@ impl ResidentExternalCoordinator {
                         observation.provider_binding.as_ref().ok_or_else(|| {
                             invalid_value("live observation has no provider binding".to_owned())
                         })?;
-                    provider_binding
-                        .read(RuntimeResourceReadRequest {
-                            base_uri: observation.request.base_uri.clone(),
-                            path: observation.request.path.clone(),
-                            context_name: observation.request.context_name.clone(),
-                        })?
-                        .rebind(
-                            observation.input.schema,
-                            &observation.input.shape,
-                            self.artifact.schemas(),
-                        )
+                    let source_value = provider_binding.read(RuntimeResourceReadRequest {
+                        base_uri: observation.request.base_uri.clone(),
+                        path: observation.request.path.clone(),
+                        context_name: observation.request.context_name.clone(),
+                    })?;
+                    self.rebind_observation_value(observation, &source_value)
                         .map_err(|error| {
                             invalid_value(format!(
                                 "provider input does not match the observed schema: {error:?}"
@@ -2054,7 +2161,7 @@ impl ResidentExternalCoordinator {
                     observation.node,
                     observation.input.artifact_slot,
                     observation.input.schema_key,
-                    observation.input.shape.clone(),
+                    value.shape().clone(),
                     value,
                     trigger,
                     self.artifact.schemas(),
@@ -2073,7 +2180,7 @@ impl ResidentExternalCoordinator {
             .facts
             .iter()
             .map(|fact| {
-                CapturedInputFact::new_with_trigger(
+                let canonical = CapturedInputFact::new_with_trigger(
                     fact.sequence,
                     fact.requirement,
                     fact.node,
@@ -2083,7 +2190,11 @@ impl ResidentExternalCoordinator {
                     fact.value.clone(),
                     fact.trigger,
                     self.artifact.schemas(),
-                )
+                )?;
+                if canonical.payload_hash != fact.payload_hash {
+                    return invalid_coordinator("replay fact payload hash is invalid");
+                }
+                Ok(canonical)
             })
             .collect::<MResult<Vec<_>>>()?;
         let canonical = CapturedInputBatch::new(facts)?;
@@ -2106,14 +2217,19 @@ impl ResidentExternalCoordinator {
                 || fact.node != observation.node
                 || fact.slot != observation.input.artifact_slot
                 || fact.schema_key != observation.input.schema_key
-                || fact.shape != observation.input.shape
                 || fact.value.schema() != observation.input.schema
                 || fact.value.schema_key() != observation.input.schema_key
-                || fact.value.shape() != &observation.input.shape
+                || fact.value.shape() != &fact.shape
                 || fact.value.value_hash(self.artifact.schemas()).ok() != Some(fact.payload_hash)
             {
                 return invalid_coordinator(
                     "replay batch differs from the activated observation plan",
+                );
+            }
+            let rebound = self.rebind_observation_value(observation, &fact.value)?;
+            if rebound.shape() != &fact.shape {
+                return invalid_coordinator(
+                    "replay fact differs from its validated observation geometry",
                 );
             }
             for (previous_fact, previous_observation) in canonical.facts[..ordinal]
@@ -2734,6 +2850,20 @@ impl ResidentExternalCoordinator {
             .checked_add(1)
             .ok_or_else(sequence_exhausted)?;
         Ok(())
+    }
+
+    fn remember_published_inputs(&mut self) {
+        // The complete captured snapshot was admitted against input_bytes
+        // before execution. Value clones retain immutable Arc-backed payloads;
+        // clone_from reuses these fixed observation-sized vectors.
+        self.published_live_inputs
+            .clone_from(&self.latest_live_inputs);
+        self.published_live_input_bytes
+            .clone_from(&self.latest_live_input_bytes);
+        self.published_live_input_retained_bytes = self.latest_live_input_retained_bytes;
+        debug_assert!(
+            self.published_live_input_retained_bytes <= self.latest_live_input_byte_limit
+        );
     }
 
     fn remember_live_inputs(&mut self, batch: &CapturedInputBatch) {

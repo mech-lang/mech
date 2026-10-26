@@ -188,8 +188,7 @@ pub fn prospective_string_value_footprint(
         .and_then(|bytes| bytes.checked_add(payload_bytes))
         .ok_or(ValueFootprintError::ArithmeticOverflow)?;
     let node_count = if matrix {
-        element_count
-            .checked_add(3)
+        prospective_packed_matrix_node_count(&SchemaBody::String, element_count)
             .ok_or(ValueFootprintError::ArithmeticOverflow)?
     } else {
         2
@@ -199,6 +198,25 @@ pub fn prospective_string_value_footprint(
         retained_bytes,
         node_count,
     })
+}
+
+/// Canonical Value, Matrix and packed-sequence containers are three nodes,
+/// even for an empty matrix. Packed String sequences additionally own one
+/// String node per element. Recursive/composite sequences need their own
+/// schema-directed prospective traversal rather than this shallow witness.
+pub fn prospective_packed_matrix_node_count(element: &SchemaBody, count: u64) -> Option<u64> {
+    match element {
+        SchemaBody::String => count.checked_add(3),
+        SchemaBody::Bool
+        | SchemaBody::Index
+        | SchemaBody::Id
+        | SchemaBody::UnsignedInteger(_)
+        | SchemaBody::SignedInteger(_)
+        | SchemaBody::FloatingPoint(_)
+        | SchemaBody::Complex(_)
+        | SchemaBody::Rational64 => Some(3),
+        _ => None,
+    }
 }
 
 impl Sha256SnapshotSink {
@@ -1147,7 +1165,14 @@ fn retained_data_footprint(
     }
 }
 
-pub(super) fn encode_data(schema: &SchemaBody, data: &ValueData, sink: &mut dyn SnapshotByteSink) {
+// Preserve the concrete sink through the SAME recursive encoder. In particular,
+// length-only measurement can specialize away byte conversion/writer dispatch
+// without maintaining a second encoding formula or changing its saturation.
+pub(super) fn encode_data<S: SnapshotByteSink + ?Sized>(
+    schema: &SchemaBody,
+    data: &ValueData,
+    sink: &mut S,
+) {
     if let SchemaBody::IntegerInterval(interval) = schema {
         return encode_data(&interval.base_body(), data, sink);
     }
@@ -1269,7 +1294,11 @@ pub(super) fn encode_data(schema: &SchemaBody, data: &ValueData, sink: &mut dyn 
     }
 }
 
-fn encode_sequence(schema: &SchemaBody, values: &SequenceStorage, sink: &mut dyn SnapshotByteSink) {
+fn encode_sequence<S: SnapshotByteSink + ?Sized>(
+    schema: &SchemaBody,
+    values: &SequenceStorage,
+    sink: &mut S,
+) {
     macro_rules! primitive {
         ($values:expr) => {
             for value in $values.iter() {
@@ -1340,18 +1369,22 @@ fn encode_sequence(schema: &SchemaBody, values: &SequenceStorage, sink: &mut dyn
     }
 }
 
-fn write_u8(sink: &mut dyn SnapshotByteSink, value: u8) {
+fn write_u8<S: SnapshotByteSink + ?Sized>(sink: &mut S, value: u8) {
     sink.write(&[value]);
 }
 
-fn write_u64(sink: &mut dyn SnapshotByteSink, value: u64) {
+fn write_u64<S: SnapshotByteSink + ?Sized>(sink: &mut S, value: u64) {
     sink.write(&value.to_le_bytes());
 }
 
-fn write_utf8(sink: &mut dyn SnapshotByteSink, value: &str) {
+fn write_utf8<S: SnapshotByteSink + ?Sized>(sink: &mut S, value: &str) {
     write_u64(sink, value.len() as u64);
     sink.write(value.as_bytes());
 }
+
+#[cfg(test)]
+#[path = "encoding_sink_tests.rs"]
+mod sink_tests;
 
 #[cfg(test)]
 mod tests {

@@ -195,6 +195,14 @@ fn validate_integrity_constraint_marker_canonical(
 
 #[cfg(feature = "semantic-compiler")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "pure_text")]
+    super::pure_text::install_source(builder)?;
+    #[cfg(feature = "pure_text")]
+    super::text_ops::install_source(builder)?;
+    #[cfg(feature = "map_ops")]
+    super::map_ops::install_source(builder)?;
+    #[cfg(feature = "sequence_sort")]
+    super::sequence_sort::install_source(builder)?;
     #[cfg(feature = "matrix_horzcat")]
     crate::intrinsics::horzcat::install_source_runtime(builder)?;
     #[cfg(feature = "matrix_comprehensions")]
@@ -425,6 +433,9 @@ pub fn install_runtime(
         feature = "invariant_define",
         feature = "matrix_horzcat",
         feature = "matrix_vertcat",
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_sort",
         feature = "table"
     ))]
     builder: &mut FunctionCatalogBuilder,
@@ -439,10 +450,21 @@ pub fn install_runtime(
         feature = "invariant_define",
         feature = "matrix_horzcat",
         feature = "matrix_vertcat",
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_sort",
         feature = "table"
     )))]
     _: &mut FunctionCatalogBuilder,
 ) -> MResult<()> {
+    #[cfg(feature = "pure_text")]
+    super::pure_text::install_runtime(builder)?;
+    #[cfg(feature = "pure_text")]
+    super::text_ops::install_runtime(builder)?;
+    #[cfg(feature = "map_ops")]
+    super::map_ops::install_runtime(builder)?;
+    #[cfg(feature = "sequence_sort")]
+    super::sequence_sort::install_runtime(builder)?;
     #[cfg(feature = "access")]
     super::access::install_runtime(builder)?;
     #[cfg(feature = "assign")]

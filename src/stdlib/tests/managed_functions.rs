@@ -15,6 +15,7 @@ fn maintained_catalog_has_no_open_or_unclassified_memory_implementation() {
             | ImplementationMemoryClass::ExternalMarshalling
             | ImplementationMemoryClass::MatrixSolve
             | ImplementationMemoryClass::CanonicalFinalize
+            | ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize
             | ImplementationMemoryClass::CanonicalSortUnique => {}
         }
     }
@@ -59,7 +60,13 @@ fn managed_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'s
             _ => Some("F02"),
         };
     }
-    if name.starts_with("Concat") {
+    if name.starts_with("Concat")
+        || name.starts_with("NumberFormat")
+        || matches!(
+            name,
+            "number/parse-u64" | "sequence/length" | "text/lines" | "text/join"
+        )
+    {
         return Some("F03");
     }
     if name.starts_with("HorizontalConcatenate")
@@ -70,6 +77,10 @@ fn managed_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'s
             name,
             "set/define"
                 | "set/comprehension"
+                | "map/histogram"
+                | "map/keys"
+                | "map/values"
+                | "sequence/sort-indices"
                 | "matrix/comprehension"
                 | "matrix/horzcat"
                 | "matrix/vertcat"
@@ -139,13 +150,24 @@ fn managed_source_family(name: &str, intrinsic: bool) -> Option<&'static str> {
             None
         };
     }
-    if name.starts_with("string/") {
+    if name.starts_with("string/")
+        || matches!(
+            name,
+            "number/parse-u64" | "number/format" | "sequence/length" | "text/lines" | "text/join"
+        )
+    {
         Some("F03")
     } else if name.starts_with("table/")
         || name.starts_with("set/")
         || matches!(
             name,
-            "matrix/comprehension" | "matrix/horzcat" | "matrix/vertcat"
+            "matrix/comprehension"
+                | "matrix/horzcat"
+                | "matrix/vertcat"
+                | "map/histogram"
+                | "map/keys"
+                | "map/values"
+                | "sequence/sort-indices"
         )
     {
         Some("F06")
@@ -231,6 +253,10 @@ fn scratch_owning_families_never_fall_back_to_an_open_memory_class() {
         ("matrix/solve", ImplementationMemoryClass::MatrixSolve),
         ("set/union", ImplementationMemoryClass::CanonicalSortUnique),
         (
+            "map/histogram",
+            ImplementationMemoryClass::CanonicalSortUnique,
+        ),
+        (
             "set/intersection",
             ImplementationMemoryClass::CanonicalSortUnique,
         ),
@@ -252,6 +278,103 @@ fn scratch_owning_families_never_fall_back_to_an_open_memory_class() {
                 .all(|entry| entry.implementation_memory_class() == expected),
             "{operation} has a non-managed scratch declaration"
         );
+    }
+}
+
+#[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
+#[test]
+fn ordinary_map_additions_have_exact_aggregate_families_and_memory_classes() {
+    let catalog = mech_stdlib::source_catalog();
+    let expected = [
+        (
+            "map/histogram",
+            0x0089_e5df_42d1_3de4,
+            ImplementationMemoryClass::CanonicalSortUnique,
+        ),
+        (
+            "map/keys",
+            0x0054_5bda_103a_f406,
+            ImplementationMemoryClass::CanonicalFinalize,
+        ),
+        (
+            "map/values",
+            0x009a_fda2_41ea_5663,
+            ImplementationMemoryClass::CanonicalFinalize,
+        ),
+    ];
+    for (name, id, memory) in expected {
+        let operation = OperationId::from_name(name);
+        assert_eq!(operation.raw(), id);
+        let entries = catalog
+            .runtime_entries_for_binding(
+                RuntimeBindingSelector::Operation(operation),
+                ExecutionTarget::DirectRuntime,
+            )
+            .collect::<Vec<_>>();
+        let [entry] = entries.as_slice() else {
+            panic!("expected exactly one map factory for {name}")
+        };
+        assert_eq!(entry.name, name);
+        assert_eq!(entry.id.raw(), id);
+        assert_eq!(managed_runtime_family(entry), Some("F06"));
+        assert_eq!(managed_source_family(name, false), Some("F06"));
+        assert_eq!(entry.implementation_memory_class(), memory);
+        let export = catalog
+            .module_export("map", name.split_once('/').unwrap().1)
+            .unwrap();
+        assert_eq!(export.exposure, mech_core::FunctionExposure::ModuleOnly);
+        assert_eq!(catalog.exports_for_operation(operation).len(), 1);
+    }
+    assert_eq!(catalog.module_exports("map").len(), 3);
+}
+
+#[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
+#[test]
+fn ordinary_sort_text_additions_have_exact_families_and_memory_classes() {
+    let catalog = mech_stdlib::source_catalog();
+    for (name, family, arity) in [
+        ("sequence/sort-indices", "F06", 4),
+        ("text/lines", "F03", 1),
+        ("text/join", "F03", 2),
+    ] {
+        let operation = OperationId::from_name(name);
+        let entries = catalog
+            .runtime_entries_for_binding(
+                RuntimeBindingSelector::Operation(operation),
+                ExecutionTarget::DirectRuntime,
+            )
+            .collect::<Vec<_>>();
+        let [entry] = entries.as_slice() else {
+            panic!("expected one ordinary factory {name}")
+        };
+        assert_eq!(entry.name, name);
+        assert_eq!(entry.id.raw(), operation.raw());
+        use mech_core::{FunctionValueRepresentation as Value, RuntimeFunctionSignature};
+        let signature = match arity {
+            1 => RuntimeFunctionSignature::unary(Value::AnyValue, Value::AnyValue),
+            2 => {
+                RuntimeFunctionSignature::binary(Value::AnyValue, Value::AnyValue, Value::AnyValue)
+            }
+            4 => RuntimeFunctionSignature::quaternary(
+                Value::AnyValue,
+                Value::AnyValue,
+                Value::String,
+                Value::AnyValue,
+                Value::String,
+            ),
+            _ => unreachable!(),
+        };
+        assert_eq!(entry.signature(), signature);
+        assert_eq!(managed_runtime_family(entry), Some(family));
+        assert_eq!(managed_source_family(name, false), Some(family));
+        assert_eq!(
+            entry.implementation_memory_class(),
+            ImplementationMemoryClass::CanonicalFinalize
+        );
+        let (module, item) = name.split_once('/').unwrap();
+        let export = catalog.module_export(module, item).unwrap();
+        assert_eq!(export.exposure, mech_core::FunctionExposure::ModuleOnly);
+        assert_eq!(catalog.exports_for_operation(operation).len(), 1);
     }
 }
 

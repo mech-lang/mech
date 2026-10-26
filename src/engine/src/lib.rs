@@ -1,5 +1,9 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
 #![feature(where_clause_attrs)]
+#![cfg_attr(
+    all(feature = "native-artifact", feature = "pure_text"),
+    feature(portable_simd)
+)]
 
 #[cfg(all(feature = "no_std", not(feature = "std")))]
 #[macro_use]
@@ -23,6 +27,21 @@ pub mod intrinsics;
 pub mod memory_planner;
 #[cfg(any(feature = "semantic-compiler", feature = "resident-artifact"))]
 pub mod memory_runtime;
+#[cfg(feature = "native-artifact")]
+pub mod native_artifact;
+/// Separately linkable declarations of the SAME maintained canonical factories.
+/// Generated applications select these from private registration evidence;
+/// this is packaging, not an alternate evaluator or capability authority.
+#[cfg(feature = "native-artifact")]
+pub mod linked_factories {
+    pub use crate::resident::matrix_literal::linkage_factories::*;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    pub use crate::resident::native_collection_semantics::linkage_factories::*;
+    pub use crate::resident::native_factory_linkage::{
+        NativeFactoryLinkageProfile, NativeLinkedFactory,
+    };
+    pub use crate::resident::numeric::linkage_factories::*;
+}
 #[cfg(feature = "native-sequence")]
 pub mod native_sequence;
 pub mod numeric_optimizations;
@@ -34,6 +53,11 @@ mod resident;
 pub mod resident;
 #[cfg(feature = "resident-artifact")]
 mod resident_value_adapter;
+#[cfg(any(
+    feature = "resident-artifact",
+    all(feature = "semantic-compiler", feature = "access")
+))]
+mod text_index;
 #[cfg(feature = "resident-ekf")]
 #[doc(hidden)]
 pub mod __resident_ekf {
@@ -117,8 +141,21 @@ pub mod __mech_native {
     pub use crate::intrinsics::horzcat::__mech_native::*;
     #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
     pub use crate::intrinsics::kind_conversion::install_runtime_kind_conversion;
+    #[cfg(feature = "map_ops")]
+    pub use crate::intrinsics::map_ops::{
+        install_map_histogram, install_map_keys, install_map_values,
+    };
+    #[cfg(feature = "pure_text")]
+    pub use crate::intrinsics::pure_text::{
+        install_number_format_matrix, install_number_format_scalar, install_parse_u64,
+        install_sequence_length,
+    };
+    #[cfg(feature = "sequence_sort")]
+    pub use crate::intrinsics::sequence_sort::install_sequence_sort_indices;
     #[cfg(feature = "table")]
     pub use crate::intrinsics::table_ops::__mech_native::*;
+    #[cfg(feature = "pure_text")]
+    pub use crate::intrinsics::text_ops::{install_text_join, install_text_lines};
     #[cfg(feature = "matrix_vertcat")]
     pub use crate::intrinsics::vertcat::__mech_native::*;
 }
@@ -304,3 +341,6 @@ pub mod artifact;
     feature = "semantic-compiler"
 ))]
 pub use crate::artifact::*;
+
+#[cfg(feature = "resident-artifact")]
+mod native_scalar;

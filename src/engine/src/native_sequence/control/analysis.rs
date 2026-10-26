@@ -115,6 +115,7 @@ fn expression(
     }
     match &value.op {
         Op::Integer(_)
+        | Op::SignedInteger(_)
         | Op::Float(_)
         | Op::Boolean(_)
         | Op::Text(_)
@@ -125,8 +126,11 @@ fn expression(
         | Op::Local(_)
         | Op::Tuple(_)
         | Op::Field(_, _)
+        | Op::Convert(_)
         | Op::Match { .. }
         | Op::Reduce { .. }
+        | Op::Fold { .. }
+        | Op::Accumulate { .. }
         | Op::Sequence { .. } => {}
         Op::Primitive(name, _) => {
             if name == "io/argument-u64" {
@@ -234,7 +238,11 @@ fn operands(value: &Expr) -> Vec<&Expr> {
         | Op::Invoke { arguments: a, .. }
         | Op::Heap { arguments: a, .. }
         | Op::Print { values: a, .. } => a.iter().collect(),
-        Op::Field(e, _) | Op::Loop { initial: e, .. } => vec![e],
+        Op::Field(e, _)
+        | Op::Convert(e)
+        | Op::Fold { body: e, .. }
+        | Op::Accumulate { value: e, .. }
+        | Op::Loop { initial: e, .. } => vec![e],
         Op::Branch {
             condition, state, ..
         } => vec![condition, state],
@@ -278,6 +286,7 @@ fn operands(value: &Expr) -> Vec<&Expr> {
             ..
         } => vec![count, state, width, buffer],
         Op::Integer(_)
+        | Op::SignedInteger(_)
         | Op::Float(_)
         | Op::Boolean(_)
         | Op::Text(_)

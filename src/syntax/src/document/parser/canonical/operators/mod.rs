@@ -82,6 +82,7 @@ enum OperatorGuard {
     None,
     NotCommentSigil,
     NotMatrixMultiply,
+    NotXor,
     NotGeneratorArrow,
 }
 

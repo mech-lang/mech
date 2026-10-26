@@ -5,6 +5,7 @@ use crate::cli::outcome::RootFlags;
 use crate::cli::run::{RunInputMode, classify_run_inputs, cli_host_capability_selection};
 use crate::cli::{capabilities, config, host_grants};
 use crate::{LoadedMechConfig, resolve_config_path};
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 pub(crate) struct RunCliArgs {
@@ -16,6 +17,7 @@ pub(crate) struct RunCliArgs {
     pub runtime_info: bool,
     pub max_live_turns: Option<usize>,
     pub backend_override: Option<String>,
+    pub payload_arguments: Vec<OsString>,
     pub cli_capability_selection: host_grants::CliHostCapabilitySelection,
 }
 
@@ -49,6 +51,11 @@ impl RunCliArgs {
                 .and_then(|matches| matches.get_one::<usize>("max-live-turns").copied()),
             backend_override: run_matches
                 .and_then(|matches| matches.get_one::<String>("backend").cloned()),
+            payload_arguments: run_matches
+                .unwrap_or(root_matches)
+                .get_many::<OsString>("payload_arguments")
+                .map(|arguments| arguments.cloned().collect())
+                .unwrap_or_default(),
             cli_capability_selection: cli_host_capability_selection(root_matches, run_matches),
         })
     }
@@ -63,6 +70,7 @@ pub(crate) struct PreparedRunOptions {
     pub runtime_info: bool,
     pub max_live_turns: Option<usize>,
     pub backend_override: Option<String>,
+    pub payload_arguments: Vec<OsString>,
     pub loaded_config: Option<crate::LoadedMechConfig>,
     pub config_event: config::ConfigLoadEvent,
     pub cli_capability_selection: host_grants::CliHostCapabilitySelection,
@@ -91,6 +99,7 @@ pub(crate) fn prepare_run_options(
         runtime_info: args.runtime_info,
         max_live_turns: args.max_live_turns,
         backend_override: args.backend_override,
+        payload_arguments: args.payload_arguments,
         loaded_config,
         config_event: loaded.event,
         cli_capability_selection: args.cli_capability_selection,

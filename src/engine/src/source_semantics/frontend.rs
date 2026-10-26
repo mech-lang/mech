@@ -1,3 +1,20 @@
+#[path = "annotation_conversion_shape.rs"]
+mod annotation_conversion_shape;
+
+#[cfg(all(
+    test,
+    feature = "matrix",
+    feature = "set",
+    feature = "u8",
+    feature = "convert"
+))]
+#[path = "annotation_conversion_shape_tests.rs"]
+mod annotation_conversion_shape_tests;
+
+#[path = "application.rs"]
+mod application;
+use application::{PendingIteration, resolve_iteration};
+
 #[path = "constant_binding.rs"]
 mod constant_binding;
 
@@ -13,6 +30,9 @@ mod document_lowering;
 
 #[path = "output_projection.rs"]
 mod output_projection;
+
+#[path = "underscore_addressing.rs"]
+mod underscore_addressing;
 
 use mech_core::snapshot::{
     Complex32Bits, Complex64Bits, EnumDraft, F32Bits, F64Bits, OptionDraft, ReifiedKind,
@@ -106,9 +126,27 @@ pub struct CanonicalSourceProgram {
     source_nominal_declarations: Box<[crate::SourceNominalDeclaration]>,
 }
 
+fn closed_input_schema_drafts(
+    schemas: BTreeMap<String, SchemaBody>,
+) -> BTreeMap<String, SchemaDraft> {
+    schemas
+        .into_iter()
+        .map(|(name, body)| {
+            (
+                name,
+                SchemaDraft {
+                    body,
+                    dimension_parameters: Box::new([]),
+                },
+            )
+        })
+        .collect()
+}
+
 /// One retained root in an explicitly ordered compilation. Imported roots refer
 /// to exported graph bindings, so their live dependencies remain in the artifact.
-pub struct CanonicalOrderedDocument {
+#[derive(Clone)]
+pub struct CanonicalOrderedDocument<S = SchemaBody> {
     pub document: DocumentSyntax,
     pub nominal_origin: Option<CanonicalNominalPath>,
     pub nominal_package_id: Option<String>,
@@ -117,7 +155,7 @@ pub struct CanonicalOrderedDocument {
     /// published root result. Linked dependencies retain their live graph and
     /// exports without becoming additional program outputs.
     pub publish_result: bool,
-    pub input_schemas: BTreeMap<String, SchemaBody>,
+    pub input_schemas: BTreeMap<String, S>,
     pub resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     pub imports: BTreeMap<String, CanonicalOrderedImport>,
     pub resolved_modules: BTreeSet<String>,
@@ -141,6 +179,29 @@ impl CanonicalSourceFrontend {
     pub fn compile_ordered_documents_with_catalog(
         &self,
         documents: &[CanonicalOrderedDocument],
+        catalog: Arc<mech_core::FunctionCatalog>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        let documents = documents
+            .iter()
+            .map(|root| CanonicalOrderedDocument {
+                document: root.document.clone(),
+                nominal_origin: root.nominal_origin.clone(),
+                nominal_package_id: root.nominal_package_id.clone(),
+                identity: root.identity,
+                publish_result: root.publish_result,
+                input_schemas: closed_input_schema_drafts(root.input_schemas.clone()),
+                resource_writes: root.resource_writes.clone(),
+                imports: root.imports.clone(),
+                resolved_modules: root.resolved_modules.clone(),
+            })
+            .collect::<Vec<_>>();
+        self.compile_ordered_documents_with_catalog_schema_drafts(&documents, catalog)
+    }
+
+    /// Lower ordered roots without closing declared input dimensions.
+    pub fn compile_ordered_documents_with_catalog_schema_drafts(
+        &self,
+        documents: &[CanonicalOrderedDocument<SchemaDraft>],
         catalog: Arc<mech_core::FunctionCatalog>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         for root in documents {
@@ -325,7 +386,8 @@ impl CanonicalSourceProgram {
                     }),
                 crate::SourceNodeBody::Match(_)
                 | crate::SourceNodeBody::Activation(_)
-                | crate::SourceNodeBody::Comprehension(_) => Ok(None),
+                | crate::SourceNodeBody::Comprehension(_)
+                | crate::SourceNodeBody::Iteration(_) => Ok(None),
                 crate::SourceNodeBody::Fsm(_) => Ok(None),
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -389,6 +451,7 @@ impl CanonicalSourceProgram {
                 crate::SourceNodeBody::Match(_)
                 | crate::SourceNodeBody::Activation(_)
                 | crate::SourceNodeBody::Comprehension(_)
+                | crate::SourceNodeBody::Iteration(_)
                 | crate::SourceNodeBody::Fsm(_) => Ok(None),
             })
             .collect::<mech_core::MResult<Vec<_>>>()?;
@@ -822,6 +885,20 @@ impl CanonicalSourceFrontend {
         catalog: Arc<mech_core::FunctionCatalog>,
         input_schemas: BTreeMap<String, SchemaBody>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_document_with_catalog_and_input_schemas_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_document_with_catalog_and_input_schemas_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document_with_catalog_and_input_schemas(
             document,
@@ -838,6 +915,24 @@ impl CanonicalSourceFrontend {
         document: &DocumentSyntax,
         catalog: Arc<mech_core::FunctionCatalog>,
         input_schemas: BTreeMap<String, SchemaBody>,
+        resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_document_with_catalog_and_resources_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_reads,
+            resource_writes,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_document_with_catalog_and_resources_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
         resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
@@ -859,6 +954,24 @@ impl CanonicalSourceFrontend {
         resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_interactive_document_with_catalog_and_resources_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_reads,
+            resource_writes,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_interactive_document_with_catalog_and_resources_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
+        resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         self.compile_document_resource_projection(
             document,
             catalog,
@@ -873,7 +986,7 @@ impl CanonicalSourceFrontend {
         &self,
         document: &DocumentSyntax,
         catalog: Arc<mech_core::FunctionCatalog>,
-        input_schemas: BTreeMap<String, SchemaBody>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
         resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         interactive: bool,
@@ -914,6 +1027,28 @@ impl CanonicalSourceFrontend {
         published_bindings: &BTreeSet<String>,
         resolved_source_modules: &BTreeSet<String>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_document_with_planning_contract_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_writes,
+            external_definitions,
+            published_bindings,
+            resolved_source_modules,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_document_with_planning_contract_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_definitions: &BTreeSet<String>,
+        published_bindings: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         self.compile_document_with_planning_projection(
             document,
             catalog,
@@ -932,6 +1067,28 @@ impl CanonicalSourceFrontend {
         document: &DocumentSyntax,
         catalog: Arc<mech_core::FunctionCatalog>,
         input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_definitions: &BTreeSet<String>,
+        published_bindings: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_interactive_document_with_planning_contract_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_writes,
+            external_definitions,
+            published_bindings,
+            resolved_source_modules,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_interactive_document_with_planning_contract_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         external_definitions: &BTreeSet<String>,
         published_bindings: &BTreeSet<String>,
@@ -961,6 +1118,26 @@ impl CanonicalSourceFrontend {
         resolved_source_modules: &BTreeSet<String>,
         boundary: mech_syntax::document::TextSize,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_interactive_document_with_retained_result_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_writes,
+            resolved_source_modules,
+            boundary,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_interactive_document_with_retained_result_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        resolved_source_modules: &BTreeSet<String>,
+        boundary: mech_syntax::document::TextSize,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document_with_capture_options(
             document,
@@ -981,7 +1158,7 @@ impl CanonicalSourceFrontend {
         &self,
         document: &DocumentSyntax,
         catalog: Arc<mech_core::FunctionCatalog>,
-        input_schemas: BTreeMap<String, SchemaBody>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         external_definitions: &BTreeSet<String>,
         published_bindings: &BTreeSet<String>,
@@ -1044,7 +1221,27 @@ impl CanonicalSourceFrontend {
         external_inputs: &BTreeSet<String>,
         retained_outputs: &BTreeSet<String>,
     ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
-        self.compile_mixed_document_with_planning_contract(
+        self.compile_mixed_document_with_catalog_and_resources_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_writes,
+            external_inputs,
+            retained_outputs,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_mixed_document_with_catalog_and_resources_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_inputs: &BTreeSet<String>,
+        retained_outputs: &BTreeSet<String>,
+    ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
+        self.compile_mixed_document_with_planning_contract_schema_drafts(
             document,
             catalog,
             input_schemas,
@@ -1066,7 +1263,29 @@ impl CanonicalSourceFrontend {
         retained_outputs: &BTreeSet<String>,
         resolved_source_modules: &BTreeSet<String>,
     ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
-        let prepared = self.prepare_mixed_document_with_planning_contract(
+        self.compile_mixed_document_with_planning_contract_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_writes,
+            external_inputs,
+            retained_outputs,
+            resolved_source_modules,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_mixed_document_with_planning_contract_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_inputs: &BTreeSet<String>,
+        retained_outputs: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
+        let prepared = self.prepare_mixed_document_with_planning_contract_schema_drafts(
             document,
             catalog,
             input_schemas,
@@ -1091,6 +1310,28 @@ impl CanonicalSourceFrontend {
         document: &DocumentSyntax,
         catalog: Arc<mech_core::FunctionCatalog>,
         input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_inputs: &BTreeSet<String>,
+        retained_outputs: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> Result<CanonicalMixedSourcePreparation, SourceSemanticError> {
+        self.prepare_mixed_document_with_planning_contract_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_writes,
+            external_inputs,
+            retained_outputs,
+            resolved_source_modules,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn prepare_mixed_document_with_planning_contract_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         external_inputs: &BTreeSet<String>,
         retained_outputs: &BTreeSet<String>,
@@ -1367,6 +1608,19 @@ impl SourceSchemas {
             .map(|value| insert(&value.schema))
             .collect::<Result<Vec<_>, _>>()?;
         for node in nodes {
+            if let PendingNodeBody::Iteration(control) = &node.body {
+                let mut failure = None;
+                control.visit_schemas(&mut |schema| {
+                    if failure.is_none()
+                        && let Err(error) = insert(schema)
+                    {
+                        failure = Some(error);
+                    }
+                });
+                if let Some(error) = failure {
+                    return Err(error);
+                }
+            }
             if let PendingNodeBody::Comprehension(control) = &node.body {
                 let mut failure = None;
                 control.visit_schemas(&mut |schema| {
@@ -1718,14 +1972,128 @@ fn builtin_schema_for_body(body: &SchemaBody) -> Option<BuiltinSchema> {
 enum ExpectedSchema<'schema> {
     Value(&'schema SchemaDraft),
     MatrixElement(&'schema SchemaDraft),
+    CallArgument(&'schema SchemaDraft),
 }
 
 impl<'schema> ExpectedSchema<'schema> {
     fn schema(self) -> &'schema SchemaDraft {
         match self {
-            Self::Value(schema) | Self::MatrixElement(schema) => schema,
+            Self::Value(schema) | Self::MatrixElement(schema) | Self::CallArgument(schema) => {
+                schema
+            }
         }
     }
+}
+
+fn call_numeric_context(expected: Option<ExpectedSchema<'_>>) -> Option<BuiltinSchema> {
+    let ExpectedSchema::CallArgument(schema) = expected? else {
+        return None;
+    };
+    let builtin = builtin_schema_for_body(&schema.body)?;
+    builtin_kind(builtin)
+        .is_some_and(is_numeric)
+        .then_some(builtin)
+}
+
+fn value_overload_accepts_arity(overload: &mech_core::FunctionTypeOverload, arity: usize) -> bool {
+    let accepts_arity = match overload.scheme.inputs() {
+        InputKindScheme::Fixed(inputs) => inputs.len() == arity,
+        InputKindScheme::Variadic {
+            prefix,
+            min_repetitions,
+            ..
+        } => arity >= prefix.len().saturating_add(*min_repetitions as usize),
+    };
+    accepts_arity
+        && overload
+            .input_layout
+            .iter()
+            .all(|kind| *kind == SourceInputKind::Value)
+}
+
+fn concrete_call_context_kind(kind: &KindExpr) -> bool {
+    match kind {
+        KindExpr::Wildcard | KindExpr::Never | KindExpr::Hole | KindExpr::Parameter(_) => false,
+        KindExpr::Matrix { element, .. }
+        | KindExpr::Option(element)
+        | KindExpr::Set { element, .. }
+        | KindExpr::Reference(element)
+        | KindExpr::TypeOf(element) => concrete_call_context_kind(element),
+        KindExpr::Tuple(items) => items.iter().all(concrete_call_context_kind),
+        KindExpr::Record(fields)
+        | KindExpr::Table {
+            columns: fields, ..
+        } => fields
+            .iter()
+            .all(|field| concrete_call_context_kind(&field.kind)),
+        KindExpr::Map { key, value, .. } => {
+            concrete_call_context_kind(key) && concrete_call_context_kind(value)
+        }
+        _ => true,
+    }
+}
+
+fn declared_call_argument_contexts(
+    declaration: &mech_core::FunctionTypeDeclaration,
+    names: &[String],
+    anchor: SourceSemanticAnchor,
+) -> Vec<Option<SchemaDraft>> {
+    let none = || vec![None; names.len()];
+    if declaration.template.is_some() {
+        return none();
+    }
+    let ordinals = if names.iter().any(|name| !name.is_empty()) {
+        let Some(parameters) = declaration.parameter_names.as_ref() else {
+            return none();
+        };
+        let mut bound = vec![false; parameters.len()];
+        let mut ordinals = Vec::with_capacity(names.len());
+        for name in names {
+            let ordinal = if name.is_empty() {
+                bound.iter().position(|bound| !bound)
+            } else {
+                parameters.iter().position(|parameter| parameter == name)
+            };
+            let Some(ordinal) = ordinal else {
+                return none();
+            };
+            if core::mem::replace(&mut bound[ordinal], true) {
+                return none();
+            }
+            ordinals.push(ordinal);
+        }
+        if bound.iter().any(|bound| !bound) {
+            return none();
+        }
+        ordinals
+    } else {
+        (0..names.len()).collect()
+    };
+    ordinals
+        .into_iter()
+        .map(|ordinal| {
+            let mut common = None;
+            for overload in declaration
+                .overloads
+                .iter()
+                .filter(|overload| value_overload_accepts_arity(overload, names.len()))
+            {
+                let kind = match overload.scheme.inputs() {
+                    InputKindScheme::Fixed(inputs) => inputs.get(ordinal)?,
+                    InputKindScheme::Variadic {
+                        prefix, repeated, ..
+                    } => prefix.get(ordinal).unwrap_or(repeated),
+                };
+                if !concrete_call_context_kind(kind) || common.is_some_and(|common| common != kind)
+                {
+                    return None;
+                }
+                common = Some(kind);
+            }
+            let resolved = ResolvedType::new(common?.clone(), Box::new([])).ok()?;
+            schema_draft_from_resolved(&resolved, anchor, &[]).ok()
+        })
+        .collect()
 }
 
 fn require_keyable_map_key(
@@ -2414,6 +2782,7 @@ enum PendingNodeBody {
     Match(PendingMatch),
     Activation(PendingMatch),
     Comprehension(PendingComprehension),
+    Iteration(PendingIteration),
     Fsm(crate::FsmDeclaration),
     CollectionBinding,
     RecursiveCall(u8),
@@ -2443,6 +2812,9 @@ impl PendingMatch {
                     match &operation.body {
                         PendingControlOperationBody::Match(nested) => nested.visit_schemas(visit),
                         PendingControlOperationBody::Comprehension(nested) => {
+                            nested.visit_schemas(visit)
+                        }
+                        PendingControlOperationBody::Iteration(nested) => {
                             nested.visit_schemas(visit)
                         }
                         PendingControlOperationBody::Operation { .. }
@@ -2854,6 +3226,7 @@ enum PendingControlOperationBody {
     },
     Match(PendingMatch),
     Comprehension(PendingComprehension),
+    Iteration(PendingIteration),
     Recur(u8),
 
     Suspend,
@@ -2958,6 +3331,7 @@ struct SemanticBuilder {
     outputs: Vec<PendingOutput>,
     constraints: Vec<PendingConstraint>,
     bindings: BTreeMap<String, PendingBinding>,
+    document_bindings: BTreeMap<String, PendingBinding>,
     scope_definitions: BTreeSet<String>,
     external_definitions: BTreeSet<String>,
     local_functions: BTreeMap<String, SyntaxNode>,
@@ -3151,6 +3525,7 @@ impl SemanticBuilder {
             outputs: Vec::new(),
             constraints: Vec::new(),
             bindings: BTreeMap::new(),
+            document_bindings: BTreeMap::new(),
             scope_definitions: BTreeSet::new(),
             external_definitions: BTreeSet::new(),
             local_functions: BTreeMap::new(),
@@ -3186,21 +3561,15 @@ impl SemanticBuilder {
     fn with_function_catalog_and_input_schemas(
         anchor: SourceSemanticAnchor,
         function_catalog: Arc<mech_core::FunctionCatalog>,
-        input_schemas: BTreeMap<String, SchemaBody>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
     ) -> Result<Self, SourceSemanticError> {
         let mut builder = Self::with_function_catalog(anchor, function_catalog)?;
-        builder.input_schema_overrides = input_schemas
-            .into_iter()
-            .map(|(name, body)| {
-                (
-                    name,
-                    SchemaDraft {
-                        body,
-                        dimension_parameters: Box::new([]),
-                    },
-                )
-            })
-            .collect();
+        for schema in input_schemas.values() {
+            schema.clone().finalize().map_err(|error| {
+                internal(anchor, format!("invalid declared input schema: {error:?}"))
+            })?;
+        }
+        builder.input_schema_overrides = input_schemas;
         Ok(builder)
     }
 
@@ -3644,9 +4013,12 @@ impl SemanticBuilder {
         expected: Option<ExpectedSchema<'_>>,
     ) -> Result<PendingValue, SourceSemanticError> {
         match body {
+            ExpressionBodySyntax::Application(value) => self.application(value),
             ExpressionBodySyntax::FsmPipe(pipe) => self.fsm_pipe(pipe),
             ExpressionBodySyntax::SetComprehension(value) => self.set_comprehension(value),
-            ExpressionBodySyntax::MatrixComprehension(value) => self.matrix_comprehension(value),
+            ExpressionBodySyntax::MatrixComprehension(value) => {
+                self.matrix_comprehension(value, expected)
+            }
             ExpressionBodySyntax::Range(range) => self.range(range),
             ExpressionBodySyntax::Formula(formula) => self.formula_with_expected(formula, expected),
         }
@@ -3916,14 +4288,59 @@ impl SemanticBuilder {
             None
         };
         let value = self.required(factor.value(), factor.syntax(), "a factor value")?;
-        let mut result = match value {
+        let mut result = self.factor_value_with_expected(value, expected)?;
+        if factor.transpose().is_some() {
+            result = if self.is_genuinely_dynamic(result)? {
+                self.emit(
+                    "matrix/transpose",
+                    vec![result],
+                    BuiltinSchema::Dynamic,
+                    factor.syntax(),
+                    "postfix",
+                    None,
+                )
+            } else {
+                let Some((inputs, schema)) = self.resolve_maintained_call(
+                    "matrix/transpose",
+                    vec![result],
+                    factor.syntax(),
+                )?
+                else {
+                    return Err(internal(
+                        SourceSemanticAnchor::for_node(factor.syntax()),
+                        "matrix transpose has no maintained type declaration".to_owned(),
+                    ));
+                };
+                self.emit_with_schema_draft(
+                    "matrix/transpose",
+                    inputs,
+                    schema,
+                    factor.syntax(),
+                    "postfix",
+                    None,
+                )
+            };
+        }
+        Ok(result)
+    }
+
+    fn factor_value_with_expected(
+        &mut self,
+        value: FactorValueSyntax,
+        expected: Option<ExpectedSchema<'_>>,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        Ok(match value {
             FactorValueSyntax::Parenthetical(value) => {
-                let expression = self.required(
-                    value.expression(),
-                    value.syntax(),
-                    "a parenthesized expression",
-                )?;
-                self.expression_body_with_expected(&expression, expected)?
+                if let Some(expression) = value.complete_expression() {
+                    self.expression_with_expected(&expression, expected)?.0
+                } else {
+                    let expression = self.required(
+                        value.expression(),
+                        value.syntax(),
+                        "a parenthesized expression",
+                    )?;
+                    self.expression_body_with_expected(&expression, expected)?
+                }
             }
             FactorValueSyntax::Negate(value) => {
                 if let Some(literal) = self.negated_number_literal(&value, expected)? {
@@ -4008,9 +4425,7 @@ impl SemanticBuilder {
                 )
             }
             FactorValueSyntax::Structure(value) => self.structure(&value, expected)?,
-            FactorValueSyntax::Literal(value) => {
-                self.literal(&value, expected.map(ExpectedSchema::schema))?
-            }
+            FactorValueSyntax::Literal(value) => self.literal(&value, expected)?,
             FactorValueSyntax::Call(value) => {
                 let function =
                     self.required(value.function(), value.syntax(), "a function name")?;
@@ -4040,7 +4455,7 @@ impl SemanticBuilder {
                     value.syntax(),
                     "a function argument list",
                 )?;
-                let mut inputs = Vec::new();
+                let mut values = Vec::new();
                 let mut names = Vec::new();
                 for argument in arguments.arguments() {
                     match argument {
@@ -4050,7 +4465,7 @@ impl SemanticBuilder {
                                 argument.syntax(),
                                 "an argument value",
                             )?;
-                            inputs.push(self.expression(&value)?.0);
+                            values.push(value);
                             names.push(String::new());
                         }
                         AnyCallArgumentSyntax::Bound(argument) => {
@@ -4065,10 +4480,34 @@ impl SemanticBuilder {
                                 "a bound argument value",
                             )?;
                             names.push(node_text(name.syntax())?);
-                            inputs.push(self.expression(&value)?.0);
+                            values.push(value);
                         }
                     }
                 }
+                let contexts = declaration.as_ref().map_or_else(
+                    || vec![None; values.len()],
+                    |(_, declaration)| {
+                        declared_call_argument_contexts(
+                            declaration,
+                            &names,
+                            SourceSemanticAnchor::for_node(value.syntax()),
+                        )
+                    },
+                );
+                // Lower in source order, applying only metadata shared by all
+                // arity-compatible overloads. Named inputs are reordered below
+                // after their producing operations have retained that order.
+                let mut inputs = values
+                    .iter()
+                    .zip(&contexts)
+                    .map(|(value, context)| {
+                        self.expression_with_expected(
+                            value,
+                            context.as_ref().map(ExpectedSchema::CallArgument),
+                        )
+                        .map(|value| value.0)
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
                 if let Some((function_name, declaration)) = declaration {
                     if names.iter().any(|name| !name.is_empty()) {
                         let parameters = declaration.parameter_names.as_ref().ok_or_else(|| {
@@ -4146,43 +4585,13 @@ impl SemanticBuilder {
                     self.inline_document_function(&function_name, inputs, &names, value.syntax())?
                 }
             }
-            FactorValueSyntax::MatrixComprehension(value) => self.matrix_comprehension(&value)?,
+            FactorValueSyntax::MatrixComprehension(value) => {
+                self.matrix_comprehension(&value, expected)?
+            }
+            FactorValueSyntax::SetComprehension(value) => self.set_comprehension(&value)?,
             FactorValueSyntax::Slice(value) => self.slice(&value)?,
             FactorValueSyntax::Variable(value) => self.variable(&value)?,
-        };
-        if factor.transpose().is_some() {
-            result = if self.is_genuinely_dynamic(result)? {
-                self.emit(
-                    "matrix/transpose",
-                    vec![result],
-                    BuiltinSchema::Dynamic,
-                    factor.syntax(),
-                    "postfix",
-                    None,
-                )
-            } else {
-                let Some((inputs, schema)) = self.resolve_maintained_call(
-                    "matrix/transpose",
-                    vec![result],
-                    factor.syntax(),
-                )?
-                else {
-                    return Err(internal(
-                        SourceSemanticAnchor::for_node(factor.syntax()),
-                        "matrix transpose has no maintained type declaration".to_owned(),
-                    ));
-                };
-                self.emit_with_schema_draft(
-                    "matrix/transpose",
-                    inputs,
-                    schema,
-                    factor.syntax(),
-                    "postfix",
-                    None,
-                )
-            };
-        }
-        Ok(result)
+        })
     }
 
     fn resolve_maintained_call(
@@ -4314,21 +4723,7 @@ impl SemanticBuilder {
         let overloads = declaration
             .overloads
             .iter()
-            .filter(|overload| {
-                let accepts_arity = match overload.scheme.inputs() {
-                    InputKindScheme::Fixed(expected) => expected.len() == inputs.len(),
-                    InputKindScheme::Variadic {
-                        prefix,
-                        min_repetitions,
-                        ..
-                    } => inputs.len() >= prefix.len().saturating_add(*min_repetitions as usize),
-                };
-                accepts_arity
-                    && overload
-                        .input_layout
-                        .iter()
-                        .all(|kind| *kind == SourceInputKind::Value)
-            })
+            .filter(|overload| value_overload_accepts_arity(overload, inputs.len()))
             .collect::<Vec<_>>();
         if overloads.is_empty() {
             return Err(SourceSemanticError {
@@ -4374,37 +4769,23 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(syntax),
             });
         };
-        let output_rule = resolved
-            .candidate_ids
-            .iter()
-            .map(|candidate| {
-                overloads
-                    .iter()
-                    .find(|overload| u64::from(overload.id) == *candidate)
-                    .and_then(|overload| overload.output_schema_rules.first())
-                    .cloned()
-                    .ok_or_else(|| {
-                        internal(
-                            SourceSemanticAnchor::for_node(syntax),
-                            format!(
-                                "maintained function {name} selected an unknown output-schema rule"
-                            ),
-                        )
-                    })
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        let Some(first_rule) = output_rule.first() else {
-            return Err(internal(
-                SourceSemanticAnchor::for_node(syntax),
-                format!("maintained function {name} selected no overload"),
-            ));
-        };
-        if output_rule.iter().any(|rule| rule != first_rule) {
-            return Err(internal(
-                SourceSemanticAnchor::for_node(syntax),
-                format!("maintained function {name} selected conflicting output-schema rules"),
-            ));
-        }
+        let first_rule =
+            crate::function::select_resolved_output_schema_rule(&declaration, &resolved).map_err(
+                |error| {
+                    let reason = match error {
+                    crate::function::ResolvedOutputSchemaRuleSelectionError::UnknownRule =>
+                        "selected an unknown output-schema rule",
+                    crate::function::ResolvedOutputSchemaRuleSelectionError::NoSelection =>
+                        "selected no overload",
+                    crate::function::ResolvedOutputSchemaRuleSelectionError::ConflictingRules =>
+                        "selected conflicting output-schema rules",
+                };
+                    internal(
+                        SourceSemanticAnchor::for_node(syntax),
+                        format!("maintained function {name} {reason}"),
+                    )
+                },
+            )?;
         let mut input_schemas = inputs
             .iter()
             .map(|input| self.schema_draft_of(*input))
@@ -4566,6 +4947,7 @@ impl SemanticBuilder {
 
     fn variable(&mut self, variable: &VariableSyntax) -> Result<PendingValue, SourceSemanticError> {
         let stem = self.required(variable.stem(), variable.syntax(), "a variable stem")?;
+        let identifier_stem = matches!(&stem, VariableStemSyntax::Identifier(_));
         let (name, syntax) = match stem {
             VariableStemSyntax::Identifier(value) => {
                 (node_text(value.syntax())?, value.syntax().clone())
@@ -4587,6 +4969,17 @@ impl SemanticBuilder {
                     variable.syntax(),
                     "source-semantics/incompatible-local-kind",
                     "local value does not satisfy its occurrence annotation",
+                )
+            });
+        }
+        if identifier_stem && let Some(value) = self.underscore_address(&name, variable.syntax())? {
+            return annotation.map_or(Ok(value), |expected| {
+                self.conform_schema_draft(
+                    value,
+                    &expected,
+                    variable.syntax(),
+                    "source-semantics/incompatible-local-kind",
+                    "addressed value does not satisfy its occurrence annotation",
                 )
             });
         }
@@ -4664,6 +5057,17 @@ impl SemanticBuilder {
         &mut self,
         definition: &VariableDefineSyntax,
     ) -> Result<(PendingValue, SyntaxNode), SourceSemanticError> {
+        self.definition_with_expected_bindings(definition, &BTreeMap::new())
+    }
+
+    /// A caller may contribute an expected kind for an exact binding in its
+    /// lexical statement scope. A body annotation remains the closest source
+    /// authority; the caller still performs its final result conformance.
+    fn definition_with_expected_bindings(
+        &mut self,
+        definition: &VariableDefineSyntax,
+        expected_bindings: &BTreeMap<String, SchemaDraft>,
+    ) -> Result<(PendingValue, SyntaxNode), SourceSemanticError> {
         let variable = self.required(
             definition.variable(),
             definition.syntax(),
@@ -4696,7 +5100,8 @@ impl SemanticBuilder {
         let expected = variable
             .annotation()
             .map(|annotation| self.annotation_schema_draft(&annotation))
-            .transpose()?;
+            .transpose()?
+            .or_else(|| expected_bindings.get(&name).cloned());
         let initializer_nodes = self.nodes.len();
         let initializer_states = self.states.len();
         let initializer_constraints = self.constraints.len();
@@ -4792,8 +5197,10 @@ impl SemanticBuilder {
     fn literal(
         &mut self,
         literal: &LiteralSyntax,
-        contextual: Option<&SchemaDraft>,
+        contextual: Option<ExpectedSchema<'_>>,
     ) -> Result<PendingValue, SourceSemanticError> {
+        let numeric_context = call_numeric_context(contextual);
+        let contextual = contextual.map(ExpectedSchema::schema);
         // Source empty has no runtime schema. An explicit optional annotation
         // may resolve it here; otherwise its source anchor travels in compiler IR.
         if let Some(LiteralValueSyntax::Empty(value)) = literal.value() {
@@ -4945,6 +5352,13 @@ impl SemanticBuilder {
             }
             LiteralValueSyntax::Number(value) => {
                 let source = canonical_number_source(&value)?;
+                let annotation = if literal.annotation().is_none()
+                    && selected_integer_suffix(&value)?.is_none()
+                {
+                    annotation.or(numeric_context)
+                } else {
+                    annotation
+                };
                 self.number_literal(&value, annotation, source)
             }
             LiteralValueSyntax::Empty(_) => {
@@ -5108,6 +5522,17 @@ impl SemanticBuilder {
                 return Ok(Some(value));
             }
         }
+        if literal.annotation().is_none()
+            && selected_integer_suffix(&number)?.is_none()
+            && let Some(annotation) = call_numeric_context(expected)
+        {
+            let source = canonical_number_source(&number)?;
+            if !source.ends_with(['i', 'j']) {
+                return self
+                    .number_literal(&number, Some(annotation), format!("-{source}"))
+                    .map(Some);
+            }
+        }
         let annotation = literal
             .annotation()
             .map(|annotation| self.scalar_annotation_schema(&annotation))
@@ -5213,9 +5638,10 @@ impl SemanticBuilder {
                     .map(|value| value.0);
             }
         }
+        let comprehension_expected = expected;
         let matrix_element = expected.and_then(|context| match context {
             ExpectedSchema::MatrixElement(element) => Some(element.clone()),
-            ExpectedSchema::Value(schema) => {
+            ExpectedSchema::Value(schema) | ExpectedSchema::CallArgument(schema) => {
                 let body = match &schema.body {
                     SchemaBody::Option(payload) => payload.as_ref(),
                     body => body,
@@ -5239,7 +5665,9 @@ impl SemanticBuilder {
         let expected = context.as_ref();
         match value {
             StructureValueSyntax::Matrix(value) => self.matrix(&value, matrix_element.as_ref()),
-            StructureValueSyntax::MatrixComprehension(value) => self.matrix_comprehension(&value),
+            StructureValueSyntax::MatrixComprehension(value) => {
+                self.matrix_comprehension(&value, comprehension_expected)
+            }
             StructureValueSyntax::Table(value) => self.table(&value, expected),
             StructureValueSyntax::Map(value) => self.map(&value, expected),
             StructureValueSyntax::Record(value) => self.record(&value, expected),
@@ -6260,6 +6688,9 @@ impl SemanticBuilder {
         let stem = match stem {
             SliceStemSyntax::Identifier(value) => self.value_for_name_node(value.syntax())?,
             SliceStemSyntax::Context(value) => self.input_for_node(value.syntax())?,
+            // The selected result's expectation does not describe its base.
+            // Lower the base once through the ordinary factor/catalog path.
+            SliceStemSyntax::Value(value) => self.factor_value_with_expected(value, None)?,
         };
         let subscripts = self.required(slice.subscripts(), slice.syntax(), "subscripts")?;
         let mut value = stem;
@@ -6684,18 +7115,21 @@ impl SemanticBuilder {
             value.value(),
             value.qualifiers(),
             "set/comprehension",
+            None,
         )
     }
 
     fn matrix_comprehension(
         &mut self,
         value: &MatrixComprehensionSyntax,
+        expected: Option<ExpectedSchema<'_>>,
     ) -> Result<PendingValue, SourceSemanticError> {
         self.comprehension(
             value.syntax(),
             value.value(),
             value.qualifiers(),
             "matrix/comprehension",
+            expected,
         )
     }
 
@@ -6889,6 +7323,11 @@ impl SemanticBuilder {
         if let Some(value) = self.bindings.get(&name).copied() {
             return self.read_document_binding(value, node);
         }
+        if node.kind() == SyntaxKind::Identifier
+            && let Some(value) = self.underscore_address(&name, node)?
+        {
+            return Ok(value);
+        }
         self.require_function_local_binding(&name, node)?;
         if let Some(index) = self.input_by_name.get(&name) {
             return Ok(PendingValue::Input(*index));
@@ -7058,8 +7497,13 @@ impl SemanticBuilder {
         if source == target {
             return Ok(value);
         }
+        let operation = if plan.step.contains_matrix_to_set() {
+            "convert/set"
+        } else {
+            "convert/kind"
+        };
         Ok(self.emit_with_schema_draft(
-            "convert/kind",
+            operation,
             vec![value],
             target,
             syntax,
@@ -7678,6 +8122,14 @@ impl SemanticBuilder {
                                 })
                             }),
                         }
+                    }
+                    PendingNodeBody::Iteration(control) => {
+                        contracts.push(None);
+                        crate::SourceNodeBody::Iteration(resolve_iteration(
+                            control,
+                            &schemas.table,
+                            &constant_ids,
+                        ))
                     }
                     PendingNodeBody::Comprehension(control) => {
                         contracts.push(None);
@@ -8677,10 +9129,19 @@ fn specialize_annotation_dimensions(
         .map_err(|failure| error(failure.to_string()))?;
     let expected = ResolvedType::from_schema_body(&expected.body, &expected.dimension_parameters)
         .map_err(|failure| error(failure.to_string()))?;
+    let mut parameters = expected.dimension_parameters().to_vec();
+    let input_shape = annotation_conversion_shape::input_shape(
+        actual.kind(),
+        &shape(expected.kind()),
+        &mut parameters,
+    )
+    .ok_or_else(|| {
+        error("annotation dimension count exceeds the canonical index range".to_owned())
+    })?;
     let scheme = mech_core::KindScheme::new(
         Box::new([]),
-        expected.dimension_parameters().to_vec().into_boxed_slice(),
-        InputKindScheme::Fixed(vec![shape(expected.kind())].into_boxed_slice()),
+        parameters.into_boxed_slice(),
+        InputKindScheme::Fixed(vec![input_shape].into_boxed_slice()),
         vec![expected.kind().clone()].into_boxed_slice(),
         Box::new([]),
     )
@@ -9610,12 +10071,19 @@ impl SemanticBuilder {
             anchor: SourceSemanticAnchor::for_node(syntax),
         };
         let scrutinee_schema = self.schema_draft_of(scrutinee)?;
+        // A selected scalar can carry unused source-axis declarations in its
+        // draft. Literal compatibility follows the same finalized schema
+        // identity later used by the artifact, not those unused declarations.
+        let literal_scrutinee_schema = scrutinee_schema.clone().finalize().map_err(|error| {
+            internal(SourceSemanticAnchor::for_node(syntax), format!("{error:?}"))
+        })?;
         let mut inputs = vec![scrutinee];
         let mut captures = Vec::new();
         let mut lowered = Vec::new();
         let mut coverage =
             StructuralPatternCoverage::new(structural_coverage_space(&scrutinee_schema));
         let mut result_schema = None;
+        let mut result_schema_identity = None;
         for arm in arms {
             if activation && coverage.is_complete() {
                 return Err(SourceSemanticError {
@@ -9707,7 +10175,15 @@ impl SemanticBuilder {
                                         expression.syntax(),
                                     ));
                                 };
-                                if self.constants[index].schema != scrutinee_schema {
+                                if self.constants[index].schema != scrutinee_schema
+                                    && self.constants[index]
+                                        .schema
+                                        .clone()
+                                        .finalize()
+                                        .ok()
+                                        .as_ref()
+                                        != Some(&literal_scrutinee_schema)
+                                {
                                     return Err(error(
                                         "match literal pattern must have the scrutinee schema",
                                         expression.syntax(),
@@ -9774,10 +10250,7 @@ impl SemanticBuilder {
                     },
                 };
                 if matches!(pattern, crate::MatchPattern::Literal(_))
-                    && !scrutinee_schema
-                        .clone()
-                        .finalize()
-                        .is_ok_and(|schema| crate::is_control_scalar_schema(&schema))
+                    && !crate::is_control_literal_schema(&literal_scrutinee_schema)
                 {
                     return Err(error(
                         "literal patterns require a concrete scalar scrutinee",
@@ -9882,9 +10355,18 @@ impl SemanticBuilder {
                         result?
                     }
                 };
-                if result_schema
+                // Selection drafts can retain unused source-axis declarations.
+                // Match results require the exact canonical schema later used
+                // by the artifact, rather than an identical draft environment.
+                let schema_identity = schema.clone().finalize().map_err(|error| {
+                    internal(
+                        SourceSemanticAnchor::for_node(&arm.syntax),
+                        format!("unable to finalize match result schema: {error:?}"),
+                    )
+                })?;
+                if result_schema_identity
                     .as_ref()
-                    .is_some_and(|expected| expected != &schema)
+                    .is_some_and(|expected| expected != &schema_identity)
                 {
                     return Err(SourceSemanticError {
                         code: "source-semantics/incompatible-match-result-kind",
@@ -9892,6 +10374,7 @@ impl SemanticBuilder {
                         anchor: SourceSemanticAnchor::for_node(&arm.syntax),
                     });
                 }
+                result_schema_identity.get_or_insert(schema_identity);
                 result_schema.get_or_insert(schema);
                 Ok(PendingMatchArm {
                     pattern,
@@ -10034,7 +10517,7 @@ impl SemanticBuilder {
         let unsupported = || SourceSemanticError {
             code: "source-semantics/unsupported-match-block",
             message:
-                "match blocks require pure maintained operations and closed final value schemas"
+                "match blocks require pure maintained operations and supported final value schemas"
                     .to_owned(),
             anchor: SourceSemanticAnchor::for_node(syntax),
         };
@@ -10050,11 +10533,11 @@ impl SemanticBuilder {
         self.control_depth -= 1;
         let nodes = self.nodes.split_off(start);
         let (value, schema) = result?;
-        let closed_value = |schema: &SchemaDraft| {
+        let result_value = |schema: &SchemaDraft| {
             schema
                 .clone()
                 .finalize()
-                .is_ok_and(|schema| crate::is_control_value_schema(&schema))
+                .is_ok_and(|schema| crate::is_control_result_schema(&schema))
         };
         let intermediate_value = |schema: &SchemaDraft| {
             schema
@@ -10062,7 +10545,7 @@ impl SemanticBuilder {
                 .finalize()
                 .is_ok_and(|schema| !matches!(schema.body(), SchemaBody::Dynamic))
         };
-        if !closed_value(&schema) {
+        if !result_value(&schema) {
             return Err(unsupported());
         }
         let mut parameters = Vec::<(crate::ControlParameterSource, SchemaDraft)>::new();
@@ -10092,7 +10575,12 @@ impl SemanticBuilder {
                         // projected schema. Array-rest bindings deliberately carry
                         // a per-turn dimension, so they are not ordinary closed
                         // captures and must retain that live schema into the block.
-                        if pattern_binding.is_none() && !closed_value(&schema) {
+                        if pattern_binding.is_none()
+                            && !schema
+                                .clone()
+                                .finalize()
+                                .is_ok_and(|schema| crate::is_control_capture_schema(&schema))
+                        {
                             return Err(unsupported());
                         }
                         let source =
@@ -10139,7 +10627,7 @@ impl SemanticBuilder {
         for node in nodes {
             // Intermediate results may carry per-turn dimensions through
             // pure operations. Only the selected block's final yield must be
-            // a closed match value.
+            // an admitted control result with its actual snapshot shape.
             if node.state.is_some()
                 || (!intermediate_value(&node.schema)
                     && !matches!(&node.body, PendingNodeBody::Comprehension(_)))
@@ -10160,6 +10648,9 @@ impl SemanticBuilder {
                 PendingNodeBody::Match(control) => PendingControlOperationBody::Match(control),
                 PendingNodeBody::Comprehension(control) => {
                     PendingControlOperationBody::Comprehension(control)
+                }
+                PendingNodeBody::Iteration(control) => {
+                    PendingControlOperationBody::Iteration(control)
                 }
                 PendingNodeBody::RecursiveCall(ancestor) => {
                     PendingControlOperationBody::Recur(ancestor)
@@ -10192,6 +10683,87 @@ impl SemanticBuilder {
     }
 }
 
+fn resolve_pending_control_block(
+    block: &PendingControlBlock,
+    schemas: &SchemaTable,
+    constants: &[mech_core::ConstantId],
+) -> crate::ControlBlock<OperationContractDeclaration> {
+    let schema = |draft: &SchemaDraft| {
+        schemas
+            .find_by_key(
+                draft
+                    .clone()
+                    .finalize()
+                    .expect("validated control schema")
+                    .key(),
+            )
+            .expect("retained control schema")
+    };
+
+    let value = |value| match value {
+        PendingControlValue::Constant(index) => crate::ControlValue::Constant(constants[index]),
+        PendingControlValue::Parameter(ordinal) => crate::ControlValue::Parameter {
+            block: block.id,
+            ordinal,
+        },
+        PendingControlValue::Local(node) => crate::ControlValue::Local {
+            block: block.id,
+            node,
+        },
+    };
+    crate::ControlBlock {
+        id: block.id,
+        parameters: block
+            .parameters
+            .iter()
+            .map(|(source, draft)| crate::ControlParameter {
+                source: *source,
+                schema: schema(draft),
+            })
+            .collect(),
+        operations: block
+            .operations
+            .iter()
+            .enumerate()
+            .map(|(index, operation)| crate::ControlOperation {
+                node: index as u32,
+                body: match &operation.body {
+                    PendingControlOperationBody::Operation {
+                        operation,
+                        contract,
+                    } => crate::ControlOperationBody::Operation {
+                        operation: operation.clone(),
+                        contract: contract.clone(),
+                    },
+                    PendingControlOperationBody::Match(nested) => {
+                        crate::ControlOperationBody::Match(resolve_pending_match(
+                            nested, schemas, constants,
+                        ))
+                    }
+                    PendingControlOperationBody::Comprehension(nested) => {
+                        crate::ControlOperationBody::Comprehension(resolve_comprehension(
+                            nested, schemas, constants,
+                        ))
+                    }
+                    PendingControlOperationBody::Iteration(nested) => {
+                        crate::ControlOperationBody::Iteration(resolve_iteration(
+                            nested, schemas, constants,
+                        ))
+                    }
+                    PendingControlOperationBody::Recur(ancestor) => {
+                        crate::ControlOperationBody::Recur(*ancestor)
+                    }
+                    PendingControlOperationBody::Suspend => crate::ControlOperationBody::Suspend,
+                    PendingControlOperationBody::Publish => crate::ControlOperationBody::Publish,
+                },
+                inputs: operation.inputs.iter().copied().map(value).collect(),
+                schema: schema(&operation.schema),
+            })
+            .collect(),
+        yield_value: value(block.yield_value),
+    }
+}
+
 fn resolve_pending_match(
     control: &PendingMatch,
     schemas: &SchemaTable,
@@ -10208,69 +10780,8 @@ fn resolve_pending_match(
             )
             .expect("retained control schema")
     };
-    let block = |block: &PendingControlBlock| {
-        let value = |value| match value {
-            PendingControlValue::Constant(index) => crate::ControlValue::Constant(constants[index]),
-            PendingControlValue::Parameter(ordinal) => crate::ControlValue::Parameter {
-                block: block.id,
-                ordinal,
-            },
-            PendingControlValue::Local(node) => crate::ControlValue::Local {
-                block: block.id,
-                node,
-            },
-        };
-        crate::ControlBlock {
-            id: block.id,
-            parameters: block
-                .parameters
-                .iter()
-                .map(|(source, draft)| crate::ControlParameter {
-                    source: *source,
-                    schema: schema(draft),
-                })
-                .collect(),
-            operations: block
-                .operations
-                .iter()
-                .enumerate()
-                .map(|(index, operation)| crate::ControlOperation {
-                    node: index as u32,
-                    body: match &operation.body {
-                        PendingControlOperationBody::Operation {
-                            operation,
-                            contract,
-                        } => crate::ControlOperationBody::Operation {
-                            operation: operation.clone(),
-                            contract: contract.clone(),
-                        },
-                        PendingControlOperationBody::Match(nested) => {
-                            crate::ControlOperationBody::Match(resolve_pending_match(
-                                nested, schemas, constants,
-                            ))
-                        }
-                        PendingControlOperationBody::Comprehension(nested) => {
-                            crate::ControlOperationBody::Comprehension(resolve_comprehension(
-                                nested, schemas, constants,
-                            ))
-                        }
-                        PendingControlOperationBody::Recur(ancestor) => {
-                            crate::ControlOperationBody::Recur(*ancestor)
-                        }
-                        PendingControlOperationBody::Suspend => {
-                            crate::ControlOperationBody::Suspend
-                        }
-                        PendingControlOperationBody::Publish => {
-                            crate::ControlOperationBody::Publish
-                        }
-                    },
-                    inputs: operation.inputs.iter().copied().map(value).collect(),
-                    schema: schema(&operation.schema),
-                })
-                .collect(),
-            yield_value: value(block.yield_value),
-        }
-    };
+    let block =
+        |block: &PendingControlBlock| resolve_pending_control_block(block, schemas, constants);
     crate::MatchDeclaration {
         scrutinee: 0,
         partial: control.partial,

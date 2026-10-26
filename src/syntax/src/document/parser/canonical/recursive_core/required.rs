@@ -174,6 +174,7 @@ enum Phase<'a> {
 }
 pub(super) struct Required<'a> {
     target: RuleId,
+    diagnostic_rule: Option<RuleId>,
     code: &'a str,
     message: &'a str,
     production: &'a str,
@@ -194,6 +195,7 @@ impl<'a> Required<'a> {
     ) -> Self {
         Self {
             target,
+            diagnostic_rule: None,
             code,
             message,
             production,
@@ -202,6 +204,10 @@ impl<'a> Required<'a> {
             phase: Phase::Horizontal,
             work: 0,
         }
+    }
+    pub fn with_diagnostic_rule(mut self, rule: RuleId) -> Self {
+        self.diagnostic_rule = Some(rule);
+        self
     }
     pub fn token(
         target: RuleId,
@@ -224,12 +230,10 @@ impl<'a> Required<'a> {
                 None,
             ),
         };
-        self.phase = Phase::Missing(MissingContinuation::new(
-            self.code,
-            self.message,
-            expected,
-            token,
-        ));
+        self.phase = Phase::Missing(
+            MissingContinuation::new(self.code, self.message, expected, token)
+                .with_diagnostic_rule(self.diagnostic_rule),
+        );
     }
     pub fn advance(
         &mut self,
@@ -311,19 +315,22 @@ impl<'a> Required<'a> {
                     match result {
                         BoundaryProgress::Complete(true) => self.missing(),
                         BoundaryProgress::Complete(false) => {
-                            self.phase = Phase::Abandon(AbandonContinuation::new(
-                                self.target,
-                                if self.token.is_some() {
-                                    "syntax/unexpected-token-source"
-                                } else {
-                                    "syntax/unexpected-production-source"
-                                },
-                                if self.token.is_some() {
-                                    "unexpected source where a required token was expected"
-                                } else {
-                                    "unexpected source where a required production was expected"
-                                },
-                            ));
+                            self.phase = Phase::Abandon(
+                                AbandonContinuation::new(
+                                    self.target,
+                                    if self.token.is_some() {
+                                        "syntax/unexpected-token-source"
+                                    } else {
+                                        "syntax/unexpected-production-source"
+                                    },
+                                    if self.token.is_some() {
+                                        "unexpected source where a required token was expected"
+                                    } else {
+                                        "unexpected source where a required production was expected"
+                                    },
+                                )
+                                .with_diagnostic_rule(self.diagnostic_rule),
+                            );
                         }
                         BoundaryProgress::NeedInput => {
                             self.phase = Phase::Probe(character);
