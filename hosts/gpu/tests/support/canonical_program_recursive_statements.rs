@@ -280,18 +280,85 @@ fn checked_boolean_self_recursion_uses_fresh_arguments_in_application_stages() {
 
 #[test]
 fn recursive_record_return_accepts_a_source_initialized_buffer() {
-    let source = "<result> := <{values<[u16]> left<u64>}>\nwalk(xs<[u16]>, left<u64>) => (out<result>) :=\n  out := ((left > 0u64)? | true => walk(xs, left - 1u64) | false => {values: xs, left: left}).\nnodes := [0u16 | i <- 0u64..=3u64, i < 3u64]\nwalk(nodes, count<u64>)\n";
-    for artifact in artifacts(source).0 {
-        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
-        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
-        let mut output = vec![None; artifact.outputs().len()];
-        for count in [0, 3, 1] {
-            let args = inputs(&artifact, &[("count", Data::U64(count))], &memory);
-            jit.evaluate_into(&args, &mut output, limits(), &memory)
-                .unwrap();
-            equal(&artifact, &output, &reference(&artifact, &args));
+    for arms in [
+        "| true => walk(xs, left - 1u64) | false => {values: xs, left: left}",
+        "| false => {values: xs, left: left} | true => walk(xs, left - 1u64)",
+    ] {
+        let source = format!(
+            "<result> := <{{values<[u16]> left<u64>}}>\nwalk(xs<[u16]>, left<u64>) => (out<result>) :=\n  out := ((left > 0u64)? {arms}).\nnodes := [0u16 | i <- 0u64..=3u64, i < 3u64]\nwalk(nodes, count<u64>)\n"
+        );
+        for artifact in artifacts(&source).0 {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let mut output = vec![None; artifact.outputs().len()];
+            for count in [0, 3, 1] {
+                let args = inputs(&artifact, &[("count", Data::U64(count))], &memory);
+                jit.evaluate_into(&args, &mut output, limits(), &memory)
+                    .unwrap();
+                equal(&artifact, &output, &reference(&artifact, &args));
+                let Data::Record(fields) = output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap()
+                else {
+                    panic!("expected record")
+                };
+                assert_eq!(
+                    fields
+                        .iter()
+                        .find(|field| field.name == "values")
+                        .unwrap()
+                        .value,
+                    Data::Matrix(vec![Data::U16(0); 3].into())
+                );
+                assert_eq!(
+                    fields
+                        .iter()
+                        .find(|field| field.name == "left")
+                        .unwrap()
+                        .value,
+                    Data::U64(0)
+                );
+            }
+            drop(output);
+            assert_eq!(memory.used_bytes(), 0);
         }
-        drop(output);
-        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn recursive_return_dimension_specialization_keeps_kinds_and_fixed_extents_exact() {
+    use mech_engine::CanonicalSourceFrontend;
+    use mech_syntax::document::{
+        AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
+        parse_canonical_document,
+    };
+    for (input_kind, result_kind) in [("u32", "[u16]"), ("u16", "[u16]:1,3")] {
+        for arms in [
+            "| true => walk(xs, left - 1u64) | false => {values: xs, left: left}",
+            "| false => {values: xs, left: left} | true => walk(xs, left - 1u64)",
+        ] {
+            let source = format!(
+                "<result> := <{{values<{result_kind}> left<u64>}}>\nwalk(xs<[{input_kind}]>, left<u64>) => (out<result>) :=\n  out := ((left > 0u64)? {arms}).\nnodes := [1{input_kind}, 2{input_kind}]\nwalk(nodes, count<u64>)\n"
+            );
+            let parsed = parse_canonical_document(
+                TextSnapshot::new(DocumentId(7), Revision(1), source.as_str()).unwrap(),
+                ParseConfig::default(),
+            );
+            assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+            let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
+            let error = CanonicalSourceFrontend
+                .compile_document_with_catalog(&syntax, mech_stdlib::source_catalog())
+                .err()
+                .expect("incompatible recursive return must fail before artifact creation");
+            assert_eq!(
+                error.code, "source-semantics/incompatible-match-result-kind",
+                "{error:?}"
+            );
+        }
     }
 }

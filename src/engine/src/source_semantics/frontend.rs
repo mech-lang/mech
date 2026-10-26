@@ -3321,6 +3321,39 @@ struct PendingControlBlock {
     yield_value: PendingControlValue,
 }
 
+impl PendingControlBlock {
+    fn tail_recur_result(&self) -> bool {
+        matches!(self.yield_value, PendingControlValue::Local(index)
+            if index as usize + 1 == self.operations.len()
+                && matches!(self.operations[index as usize].body, PendingControlOperationBody::Recur(_)))
+    }
+
+    fn specialize_tail_recur_result(&mut self, result: &SchemaDraft, syntax: &SyntaxNode) -> bool {
+        if !self.tail_recur_result() {
+            return false;
+        }
+        let operation = self.operations.last_mut().unwrap();
+        // Recur transfers control and produces no intermediate value. Its
+        // declared return dimensions are placeholders until a returning arm
+        // supplies the function's actual result schema. Only specialize those
+        // dimensions; concrete values and scalar kinds retain exact matching.
+        let Ok(specialized) = specialize_annotation_dimensions(result, &operation.schema, syntax)
+        else {
+            return false;
+        };
+        if specialized
+            .finalize()
+            .ok()
+            .zip(result.clone().finalize().ok())
+            .is_none_or(|(declared, actual)| declared != actual)
+        {
+            return false;
+        }
+        operation.schema = result.clone();
+        true
+    }
+}
+
 struct PendingNode {
     body: PendingNodeBody,
     inferable_projection: bool,
@@ -10233,11 +10266,11 @@ impl SemanticBuilder {
         })?;
         let mut inputs = vec![scrutinee];
         let mut captures = Vec::new();
-        let mut lowered = Vec::new();
+        let mut lowered = Vec::<PendingMatchArm>::new();
         let mut coverage =
             StructuralPatternCoverage::new(structural_coverage_space(&scrutinee_schema));
-        let mut result_schema = None;
-        let mut result_schema_identity = None;
+        let mut result_schema = None::<SchemaDraft>;
+        let mut result_schema_identity = None::<mech_core::Schema>;
         for arm in arms {
             if activation && coverage.is_complete() {
                 return Err(SourceSemanticError {
@@ -10444,7 +10477,7 @@ impl SemanticBuilder {
                 } else {
                     None
                 };
-                let (body, schema) = match &arm.body {
+                let (mut body, mut schema) = match &arm.body {
                     SourceMatchBody::Expression(result) => self.control_block(
                         result,
                         &pattern,
@@ -10512,7 +10545,7 @@ impl SemanticBuilder {
                 // Selection drafts can retain unused source-axis declarations.
                 // Match results require the exact canonical schema later used
                 // by the artifact, rather than an identical draft environment.
-                let schema_identity = schema.clone().finalize().map_err(|error| {
+                let mut schema_identity = schema.clone().finalize().map_err(|error| {
                     internal(
                         SourceSemanticAnchor::for_node(&arm.syntax),
                         format!("unable to finalize match result schema: {error:?}"),
@@ -10522,11 +10555,24 @@ impl SemanticBuilder {
                     .as_ref()
                     .is_some_and(|expected| expected != &schema_identity)
                 {
-                    return Err(SourceSemanticError {
-                        code: "source-semantics/incompatible-match-result-kind",
-                        message: "match arms require one exact result schema".to_owned(),
-                        anchor: SourceSemanticAnchor::for_node(&arm.syntax),
-                    });
+                    let expected = result_schema.as_ref().unwrap();
+                    if body.specialize_tail_recur_result(expected, &arm.syntax) {
+                        schema = expected.clone();
+                        schema_identity = result_schema_identity.as_ref().unwrap().clone();
+                    } else if lowered.iter().all(|arm| arm.body.tail_recur_result())
+                        && lowered
+                            .iter_mut()
+                            .all(|arm| arm.body.specialize_tail_recur_result(&schema, syntax))
+                    {
+                        result_schema = Some(schema.clone());
+                        result_schema_identity = Some(schema_identity.clone());
+                    } else {
+                        return Err(SourceSemanticError {
+                            code: "source-semantics/incompatible-match-result-kind",
+                            message: "match arms require one exact result schema".to_owned(),
+                            anchor: SourceSemanticAnchor::for_node(&arm.syntax),
+                        });
+                    }
                 }
                 result_schema_identity.get_or_insert(schema_identity);
                 result_schema.get_or_insert(schema);
