@@ -102,8 +102,9 @@ fn original_and_decoded_closed_program_generate_same_hosted_object_and_pins() {
         assert!(main.contains("run_hosted_program_application(binding,"));
         let launcher = include_str!("../../src/native_artifact/launch/hosted/mod.rs");
         assert!(launcher.contains("with_prepared_canonical_native_resources_phased_text"));
-        assert!(launcher.contains("linked.prepare_hosted"));
-        assert!(launcher.contains("resume_hosted_into"));
+        let compact = launcher.split_whitespace().collect::<String>();
+        assert!(compact.contains("linked.prepare_hosted("));
+        assert!(compact.contains("session.resume_hosted_into("));
         let object = mech_gpu::native_artifact::emit_program_object(artifact, &catalog).unwrap();
         let linkage =
             mech_engine::linked_factories::NativeFactoryLinkageProfile::derive_native_image(
