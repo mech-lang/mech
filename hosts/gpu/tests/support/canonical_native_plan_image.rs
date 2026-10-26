@@ -169,7 +169,10 @@ fn generated_hosted_application_pins_the_same_object_descriptor() {
         assert!(!main.contains("decode_program_artifact"));
         assert!(!main.contains("CanonicalNativeResourceMetadata::prepare"));
         assert!(!main.contains("lower_native_program_artifact"));
-        assert!(main.contains("LinkedProgramArtifact::from_build_owned_image"));
+        assert!(main.contains("BuildOwnedHostedBinding::from_build_owned_image("));
+        assert!(main.contains("run_hosted_program_application(binding,"));
+        let binding = include_str!("../../src/native_artifact/launch/program.rs");
+        assert!(binding.contains("LinkedProgramArtifact::from_build_owned_image("));
         assert!(main.contains("include_bytes!(\"../native-descriptor.bin\")"));
         assert!(!main.contains("include_bytes!(\"../native-descriptor.json\")"));
         let object = mech_gpu::native_artifact::emit_program_object(artifact, &catalog).unwrap();
