@@ -19,19 +19,19 @@
 //! source bytes, row offsets, map storage or callback argument/result buffers.
 use cranelift_codegen::ir::{AliasRegion, MemFlags};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "canonical-native-program"))]
 thread_local! {
     static ENABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(true) };
     static NONTRAPPING: std::cell::Cell<bool> = const { std::cell::Cell::new(true) };
 }
 
 fn flags(region: AliasRegion) -> MemFlags {
-    #[cfg(test)]
+    #[cfg(all(test, feature = "canonical-native-program"))]
     if !ENABLED.with(std::cell::Cell::get) {
         return MemFlags::new();
     }
     let flags = MemFlags::new().with_alias_region(Some(region));
-    #[cfg(test)]
+    #[cfg(all(test, feature = "canonical-native-program"))]
     if !NONTRAPPING.with(std::cell::Cell::get) {
         return flags;
     }
@@ -50,7 +50,7 @@ pub(in crate::native_artifact) fn scalar_tail() -> MemFlags {
     flags(AliasRegion::Table)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "canonical-native-program"))]
 pub(in crate::native_artifact) fn without_disjoint_state<T>(run: impl FnOnce() -> T) -> T {
     struct Restore(bool);
     impl Drop for Restore {
@@ -63,7 +63,7 @@ pub(in crate::native_artifact) fn without_disjoint_state<T>(run: impl FnOnce() -
 }
 
 /// Differential reference that retains the existing alias regions.
-#[cfg(test)]
+#[cfg(all(test, feature = "canonical-native-program"))]
 pub(in crate::native_artifact) fn without_nontrapping_homes<T>(run: impl FnOnce() -> T) -> T {
     struct Restore(bool);
     impl Drop for Restore {
