@@ -1,7 +1,16 @@
 //! Bounded product CFG for a closed enum-state Tail. Only the actual current
 //! tag survives a latch. Integer ranges, predicates about mutable words, and
 //! assumptions about the initializer do not cross an iteration boundary.
-use super::*;
+use crate::native_artifact::codegen::common::aggregates::{aggregate_at, field};
+use crate::native_artifact::{iteration_code_plan::CodePlan, program_tail_layout::Layout};
+use mech_engine::native_artifact::{
+    NativeAggregateWord as Word, NativeCollectionPrimitive as P, NativeIterationAction as Action,
+    NativeIterationTerminator as Term, NativeMapOwnerWords, NativeMatchAction as Scalar,
+    NativeMatchTerminator as Branch, NativeScalarAggregateAction as Aggregate,
+    NativeScalarAggregates, NativeScalarKind,
+};
+use std::collections::{BTreeMap, BTreeSet};
+
 use mech_engine::native_artifact::NativeScalarOp as Op;
 
 const MAX_SITES: usize = 256;
@@ -312,7 +321,7 @@ pub(in crate::native_artifact) fn derive_scalar(
     closed: &Layout,
     id: usize,
     aggregates: &NativeScalarAggregates,
-    borrowed: &super::super::super::program_borrowed_layout::Layout,
+    borrowed: &crate::native_artifact::program_borrowed_layout::Layout,
 ) -> Option<Graph> {
     let region = &closed.regions[id];
     if region.map.is_some() {

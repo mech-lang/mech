@@ -192,3 +192,12 @@ has not been split into different emitters.
 
 Stages C–H and final qualification remain in progress. The final branch is not
 performance-qualified until the prescribed final evidence exists.
+
+Stage C emission: `codegen/common` owns SSA homes, static WordAccess adapters,
+Pack/Copy/Project/Observe and ordinary source terminators. Both aggregate bodies
+are replaced, including overlap-safe reads before writes. Checked guards emit
+the existing checks; packed strategies consume current-site facts and retain
+reporting. The scalar strategy uses the shared tag graph directly, with no
+packed-emitter import for neutral helpers. The native scope executes 415 passes,
+0 failures and 2 existing ignores; all 32 source/decoded snapshot files remain
+byte-identical to I. Engine facts work continues separately in this stage.

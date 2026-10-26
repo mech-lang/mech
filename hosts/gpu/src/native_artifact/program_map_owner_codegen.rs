@@ -340,7 +340,13 @@ pub(in crate::native_artifact) fn emit(
         )?;
         let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         store(b, locals, output.get() as usize, word)?;
-    } else if !super::scalar_aggregates::emit(b, locals, owner.aggregates(), site, error)? {
+    } else if !crate::native_artifact::codegen::common::aggregates::emit_memory(
+        b,
+        locals,
+        owner.aggregates(),
+        site,
+        error,
+    )? {
         return Err(backend("map owner action lacks word transport"));
     }
     b.ins().jump(joined, &[]);

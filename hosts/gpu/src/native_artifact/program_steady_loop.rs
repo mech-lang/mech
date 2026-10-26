@@ -761,7 +761,7 @@ fn define_version<M: Module>(
                     closed.regions[id].map.unwrap(),
                     node.site,
                 ) {
-                    emit_aggregate_body(
+                    emit_with_fact_guards(
                         &mut b,
                         &words,
                         layout,

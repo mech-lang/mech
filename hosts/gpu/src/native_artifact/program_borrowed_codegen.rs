@@ -6,7 +6,7 @@ use super::super::{
     program_borrowed_layout::{Layout, RegionLayout},
     program_hooks::Hooks,
 };
-use super::ssa_words::Words;
+use crate::native_artifact::codegen::common::ssa_words::Words;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{NativeBorrowedStringAction as Action, NativeMatchValue};

@@ -49,7 +49,7 @@ impl Compiled {
             b.append_block_param(failed, types::I64);
             b.switch_to_block(start);
             let locals = b.block_params(start)[0];
-            assert!(emit(&mut b, locals, words.aggregates(), site, failed).unwrap());
+            assert!(emit_memory(&mut b, locals, words.aggregates(), site, failed).unwrap());
             let success = b.ins().iconst(types::I64, abi::STATUS_OK as i64);
             b.ins().return_(&[success]);
             b.switch_to_block(failed);
