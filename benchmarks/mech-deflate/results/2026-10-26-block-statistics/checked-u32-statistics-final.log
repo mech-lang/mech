@@ -1,0 +1,9 @@
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+error[E0599]: no variant named `Primitive` found for enum `NativeIterationAction`
+   --> hosts/gpu/tests/support/canonical_program_block_statistics.rs:160:92
+    |
+160 | ...ive_artifact::NativeIterationAction::Primitive { op, .. }) if *op == if word_overflow { mech_engine::native_artifact::NativeScal...
+    |                                         ^^^^^^^^^ variant not found in `NativeIterationAction`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `mech-gpu` (test "canonical_artifact_program") due to 1 previous error

@@ -1,0 +1,14 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-reality-check/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-reality-check/src/compute)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-deflate-reality-check/src/runtime)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-reality-check/src/stdlib)
+   Compiling mech-build v0.3.5 (/private/tmp/mech-deflate-reality-check/src/build)
+    Finished `test` profile [unoptimized] target(s) in 1m 41s
+     Running tests/canonical_artifact_program.rs (/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-161b919374daec0a)
+
+running 1 test
+test narrow_word_qualification::checked_u32_add_keeps_frequency_width_overflow_and_recovery ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 261 filtered out; finished in 5.37s
+

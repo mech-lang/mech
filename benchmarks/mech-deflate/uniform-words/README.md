@@ -67,6 +67,8 @@ assertion, with success, rejection before division, and successful recovery.
 The real-buffer initialization and six-position collector witnesses retain the
 same sources, complete reference arrays and limits. This change does not provide
 retained-capacity append/clear, complete block collection, parsing, block writing
-or `compress_into`. The six-position witness remains an acceptance failure until
-it finishes under its existing policy; measuring a rejection does not establish
-a compression time.
+or `compress_into`. At the constructor checkpoint the six-position witness still
+failed. The subsequent selected-length fix completes it under the existing
+policy, with every expected word checked on both artifact forms; see the
+[current checkpoint](../results/2026-10-26-block-statistics/REPORT.md). There is
+still no complete compression time.

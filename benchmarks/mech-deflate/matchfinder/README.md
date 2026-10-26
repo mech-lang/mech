@@ -207,11 +207,16 @@ explicit; this correction does not claim native bulk-load or prefetch parity.
 
 [The prefix source](../../../hosts/gpu/tests/fixtures/native/deflate-collector.mec)
 initializes the 262144-entry U16 tree and 1500513-word U32 cache in Mech and
-attempts six consecutive positions in one compiled computation. The input is
+completes six consecutive positions in one compiled computation. The input is
 320 copies of byte 97, with depth 300 and nice length 258. The first three
 positions search; the next three skip. This is a bounded state-update witness,
 not a complete block collector: observations, block decisions and carryover
 still need to be connected.
+
+The [current checkpoint](../results/2026-10-26-block-statistics/REPORT.md) records
+the completed original/decoded trace, full-vector agreement and unchanged
+allowances. The current compiler is `799f26b3765e8b807775a627b2ba23e1eb010a7c`.
+Earlier admission failures below are historical.
 
 The [reference witness](collector-prefix-reference.roc) calls the pinned search
 and skip implementations and checks every tree and cache entry. Copy it beside
@@ -266,6 +271,8 @@ cargo test --locked --offline -j1 -p mech-gpu --no-default-features \
   --features canonical-native-program --test canonical_artifact_program \
   block_statistics_qualification -- --test-threads=1 --nocapture
 ```
+
+## Earlier checkpoints
 
 The initial executable attempt completed no search positions. Cache construction
 rejected output admission at 16777228 bytes against the unchanged 16777216-byte
