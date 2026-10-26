@@ -294,3 +294,9 @@ failures and two existing ignores; focused owner/frozen/effect tests execute
 15 passes. Scalar-only compiler compilation now passes after retaining the
 existing program-only report/flag gates. Final feature/process/performance
 qualification remains pending.
+
+
+The independent Stage E minimal closures all pass: no native features, scalar
+runtime, program runtime and hosted program runtime. The scalar compiler-only
+closure also passes. Two remaining raw tag aliases are scoped to their
+codegen/test consumers; runtime dispatch uses the typed protocol directly.
