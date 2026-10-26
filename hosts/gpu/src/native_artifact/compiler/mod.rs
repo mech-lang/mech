@@ -353,8 +353,12 @@ pub(in crate::native_artifact) fn admit(
     guard(b, valid, error, STATUS_ADMISSION);
 }
 pub(in crate::native_artifact) fn word_upper_bound(kind: NativeScalarKind) -> Option<u64> {
-    if kind == NativeScalarKind::Bool { Some(1) }
-    else { kind.unsigned_maximum().filter(|maximum| *maximum != u64::MAX) }
+    if kind == NativeScalarKind::Bool {
+        Some(1)
+    } else {
+        kind.unsigned_maximum()
+            .filter(|maximum| *maximum != u64::MAX)
+    }
 }
 pub(in crate::native_artifact) fn primitive(
     b: &mut FunctionBuilder<'_>,

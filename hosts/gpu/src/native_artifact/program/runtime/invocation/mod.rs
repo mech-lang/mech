@@ -313,9 +313,15 @@ impl Invocation<'_, '_, '_> {
         let ty = &descriptor.metadata().plan.values()[value.get() as usize];
         let data = match ty.scalar_kind() {
             Some(NativeScalarKind::Bool) if word <= 1 => ValueDataDraft::Bool(word != 0),
-            Some(NativeScalarKind::U8) => ValueDataDraft::U8(u8::try_from(word).map_err(|_| invalid("narrow scalar word exceeds its type"))?),
-            Some(NativeScalarKind::U16) => ValueDataDraft::U16(u16::try_from(word).map_err(|_| invalid("narrow scalar word exceeds its type"))?),
-            Some(NativeScalarKind::U32) => ValueDataDraft::U32(u32::try_from(word).map_err(|_| invalid("narrow scalar word exceeds its type"))?),
+            Some(NativeScalarKind::U8) => ValueDataDraft::U8(
+                u8::try_from(word).map_err(|_| invalid("narrow scalar word exceeds its type"))?,
+            ),
+            Some(NativeScalarKind::U16) => ValueDataDraft::U16(
+                u16::try_from(word).map_err(|_| invalid("narrow scalar word exceeds its type"))?,
+            ),
+            Some(NativeScalarKind::U32) => ValueDataDraft::U32(
+                u32::try_from(word).map_err(|_| invalid("narrow scalar word exceeds its type"))?,
+            ),
             Some(NativeScalarKind::U64) => ValueDataDraft::U64(word),
             Some(NativeScalarKind::I64) => ValueDataDraft::I64(word as i64),
             Some(NativeScalarKind::F64) => ValueDataDraft::F64(F64Bits::from_bits(word)),
@@ -835,9 +841,16 @@ impl Invocation<'_, '_, '_> {
                 self.descriptor.metadata().plan.blocks()[previous as usize].action()
             && let mech_engine::native_artifact::NativeControlLoop::Tail(tail) =
                 &self.descriptor.metadata().plan.iterations()[*iteration as usize]
-            && (self.descriptor.metadata().scalar_aggregates.action(previous as usize).is_some()
+            && (self
+                .descriptor
+                .metadata()
+                .scalar_aggregates
+                .action(previous as usize)
+                .is_some()
                 || self.retained_native_action(previous as usize)
-                || self.descriptor.metadata().plan.values()[tail.carrier().get() as usize].scalar_kind().is_some())
+                || self.descriptor.metadata().plan.values()[tail.carrier().get() as usize]
+                    .scalar_kind()
+                    .is_some())
         {
             self.retire_tail_locals(*iteration, RetirementKind::TailLatch)?;
         }

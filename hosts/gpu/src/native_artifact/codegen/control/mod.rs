@@ -561,8 +561,13 @@ impl<'plan> CfgDefinition<'plan> {
             let word = b
                 .ins()
                 .load(types::I64, MemFlags::new(), inputs, offset(index)?);
-            if let Some(maximum) = plan.kind(value).and_then(crate::native_artifact::compiler::word_upper_bound) {
-                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, maximum as i64);
+            if let Some(maximum) = plan
+                .kind(value)
+                .and_then(crate::native_artifact::compiler::word_upper_bound)
+            {
+                let valid = b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, word, maximum as i64);
                 guard(b, valid, error, STATUS_ABI);
             }
             b.ins()
@@ -1190,7 +1195,12 @@ impl<'plan> CfgDefinition<'plan> {
                             let zero = b.ins().iconst(types::I64, 0);
                             if !aggregate && plan.kind(tail.carrier()).is_some() {
                                 let value = load(b, locals, tail.seed())?;
-                                b.ins().store(MemFlags::new(), value, locals, offset(tail.carrier().get() as usize)?);
+                                b.ins().store(
+                                    MemFlags::new(),
+                                    value,
+                                    locals,
+                                    offset(tail.carrier().get() as usize)?,
+                                );
                             } else if !aggregate {
                                 hooks
                                     .as_ref()
@@ -1209,7 +1219,12 @@ impl<'plan> CfgDefinition<'plan> {
                     {
                         if !aggregate && plan.kind(tail.carrier()).is_some() {
                             let value = load(b, locals, tail.next())?;
-                            b.ins().store(MemFlags::new(), value, locals, offset(tail.carrier().get() as usize)?);
+                            b.ins().store(
+                                MemFlags::new(),
+                                value,
+                                locals,
+                                offset(tail.carrier().get() as usize)?,
+                            );
                         } else if !aggregate {
                             let hooks = hooks
                                 .as_ref()

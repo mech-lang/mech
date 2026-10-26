@@ -30,7 +30,8 @@ impl Invocation<'_, '_, '_> {
             || descriptor.metadata().plan.values()[operands[1].get() as usize].scalar_kind()
                 != Some(NativeScalarKind::U64)
             || !descriptor.metadata().plan.values()[output.get() as usize]
-                .scalar_kind().is_some_and(|kind| kind.unsigned_maximum().is_some())
+                .scalar_kind()
+                .is_some_and(|kind| kind.unsigned_maximum().is_some())
         {
             return Err(invalid("word read native transport differs"));
         }
@@ -50,7 +51,13 @@ impl Invocation<'_, '_, '_> {
             .arena
             .copy_current(operands[0].get(), &mut self.state.control.work)?;
         let word = call
-            .unsigned_matrix_element(&source, words[1], self.limits, &self.state.library, coexistence)
+            .unsigned_matrix_element(
+                &source,
+                words[1],
+                self.limits,
+                &self.state.library,
+                coexistence,
+            )
             .map_err(|error| Error::Library {
                 origin: descriptor.metadata().plan.blocks()[site].origin(),
                 error,
