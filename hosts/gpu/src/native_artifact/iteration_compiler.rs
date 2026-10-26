@@ -230,11 +230,17 @@ fn load(
 }
 
 #[path = "iteration_codegen_report.rs"]
+#[cfg(feature = "canonical-native-program")]
 mod codegen_report;
+#[cfg(feature = "canonical-native-program")]
 pub(super) use codegen_report::{
     BoundCallShim, CfgCleanup, CodegenReport, ColdSnapshot, CountValueLoop, InvariantLoop,
     MutationLoop, OutlinedLoop, PreservingCallRegion, RegionToken, ScalarLoop, SteadyLoop,
 };
+
+#[cfg(not(feature = "canonical-native-program"))]
+#[derive(Default)]
+pub(super) struct CodegenReport;
 
 fn define<M: Module>(
     plan: &NativeIterationArtifactPlan,
@@ -261,7 +267,9 @@ pub(super) fn define_cfg<M: Module>(
     module: &mut M,
     limits: NativeCompileLimits,
 ) -> Result<(FuncId, u64, u64, CodegenReport), NativeCompileError> {
-    let mut report = CodegenReport::default();
+    let report = CodegenReport::default();
+    #[cfg(feature = "canonical-native-program")]
+    let mut report = report;
     let origin_flags = if plan.is_program() {
         super::compiler::memory_regions::origin()
     } else {

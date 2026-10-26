@@ -5453,7 +5453,7 @@ fn closed_producer_disposition(
     if operation.module_path.as_ref() == ["map"]
         && matches!(
             operation.operation_name.as_str(),
-            "histogram" | "keys" | "values"
+            "histogram" | "keys" | "values" | "new" | "contains-key"
         )
         || operation.module_path.as_ref() == ["number"]
             && matches!(operation.operation_name.as_str(), "format" | "parse-u64")
@@ -5469,6 +5469,9 @@ fn closed_producer_disposition(
             "insert" | "remove" => Some(ClosedProducerDisposition::DeferredStatefulMutation),
             _ => None,
         };
+    }
+    if operation.module_path.as_ref() == ["map"] && operation.operation_name == "insert" {
+        return Some(ClosedProducerDisposition::DeferredStatefulMutation);
     }
     // These owners mutate state and are not eligible closed value producers.
     if operation
@@ -22568,6 +22571,21 @@ mod shape_fact_tests {
             (&["compare"], "gte"),
         ];
         const DEFERRED_PRODUCERS: &[(&[&str], &str, ClosedProducerDisposition)] = &[
+            (
+                &["map"],
+                "new",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["map"],
+                "contains-key",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["map"],
+                "insert",
+                ClosedProducerDisposition::DeferredStatefulMutation,
+            ),
             (
                 &["map"],
                 "histogram",

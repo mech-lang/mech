@@ -208,6 +208,7 @@ impl CodegenReport {
         self.steady_records += records;
         true
     }
+    #[cfg(feature = "canonical-native-program")]
     pub fn loop_constant_caller(
         &mut self,
         header: usize,

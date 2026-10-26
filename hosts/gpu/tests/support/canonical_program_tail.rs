@@ -325,7 +325,7 @@ fn tail_work_denial_after_managed_state_transitions_is_atomic_and_recovers() {
 }
 
 #[test]
-fn non_u64_state_bindings_and_suspending_machines_do_not_gain_native_fallbacks() {
+fn atomic_structural_state_bindings_execute_and_suspending_machines_stay_closed() {
     for (source, named) in [
         (
             "#TextState(s<string>) => <bool>\n  | :Step(value<string>)\n  | :Done(value<u64>).\n#TextState(s) -> :Step(s)\n  :Step(value) -> :Done(1u64)\n  :Done(value) => true.\n#TextState(input<string>)\n",
@@ -347,13 +347,13 @@ fn non_u64_state_bindings_and_suspending_machines_do_not_gain_native_fallbacks()
                 ordinary.last().unwrap().canonical_data_draft().unwrap(),
                 Data::Bool(true)
             );
-            assert!(
-                lower_native_program_artifact(&artifact, &mech_stdlib::source_catalog()).is_err()
-            );
-            assert!(
-                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).is_err()
-            );
-            assert!(emit_program_object(&artifact, &mech_stdlib::source_catalog()).is_err());
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let mut output = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            equal(&artifact, &output, &ordinary);
+            emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
         }
     }
     let asynchronous = "#Deferred() => <u64>\n  | :Start\n  | :Done(value<u64>).\n#Deferred() -> :Start\n  :Start ~> :Done(42u64)\n  :Done(value) => value.\n#Deferred()\n";

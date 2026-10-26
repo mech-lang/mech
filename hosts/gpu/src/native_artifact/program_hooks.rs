@@ -1,7 +1,9 @@
 //! Emission of explicit leaf/transport hooks, never a graph evaluator.
 use super::NativeCompileError;
 use super::compiler::guard;
-use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, SigRef, Value, condcodes::IntCC, types};
+#[cfg(feature = "canonical-native-program")]
+use cranelift_codegen::ir::MemFlags;
+use cranelift_codegen::ir::{Block, InstBuilder, SigRef, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use cranelift_module::Module;
 

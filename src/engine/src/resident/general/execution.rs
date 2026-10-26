@@ -7007,6 +7007,8 @@ mod tests {
                 value: ResidentValueRef::F64(&[1.0]),
             }])
             .unwrap_err();
+        // This tail match charges the two scalar operands together, so its
+        // first rejected debit exceeds the even comparison limit by two.
         assert!(
             matches!(
                 error,
@@ -7018,7 +7020,7 @@ mod tests {
                         limit,
                     },
                     ..
-                } if required == mech_core::RESIDENT_MAX_COMPARISON_WORK + 1
+                } if required == mech_core::RESIDENT_MAX_COMPARISON_WORK + 2
                     && limit == mech_core::RESIDENT_MAX_COMPARISON_WORK
             ),
             "{error:?}"
