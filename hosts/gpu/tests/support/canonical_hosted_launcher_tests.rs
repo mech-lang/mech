@@ -54,21 +54,46 @@ pub(super) fn qualify(target: &Path, evidence: &Path, release: bool) -> Value {
         true,
     )
     .unwrap()
-    .with_current_dir(workspace)
+    .with_current_dir(&workspace)
     .command();
     command
-        .args([
-            "--",
-            "native_artifact::launch::hosted::tests::",
-            "--test-threads=1",
-            "--color",
-            "never",
-        ])
+        .args(["--no-run", "--message-format=json-render-diagnostics"])
         .env("CARGO_INCREMENTAL", "0")
         .env("CARGO_BUILD_JOBS", "1")
         .env("CARGO_PROFILE_DEV_DEBUG", "0")
         .env("CARGO_PROFILE_TEST_DEBUG", "0");
-    let output = bounded(&mut command, evidence, "compiled-launcher-tests", 300);
+    // A cold library build includes compiler dev-dependencies. Give compilation
+    // the same bound as the hosted harness build, then execute its actual saved
+    // library executable under the separate, unchanged test deadline.
+    let compiled = bounded(&mut command, evidence, "compiled-launcher-compile", 1080);
+    assert!(
+        compiled.status.success(),
+        "compiled launcher build: {}",
+        String::from_utf8_lossy(&compiled.stderr)
+    );
+    let executables = compiled
+        .stdout
+        .split(|&byte| byte == b'\n')
+        .filter_map(|line| serde_json::from_slice::<Value>(line).ok())
+        .filter(|message| {
+            message["reason"] == "compiler-artifact"
+                && message["target"]["name"] == "mech_gpu"
+                && message["profile"]["test"] == true
+        })
+        .filter_map(|message| message["executable"].as_str().map(std::path::PathBuf::from))
+        .collect::<Vec<_>>();
+    assert_eq!(executables.len(), 1, "one actual compiled library harness");
+    let executable = &executables[0];
+    assert!(executable.is_absolute() && executable.is_file());
+    let executable_hash = hash(&std::fs::read(executable).unwrap());
+    let mut tests = std::process::Command::new(executable);
+    tests.current_dir(workspace).args([
+        "native_artifact::launch::hosted::tests::",
+        "--test-threads=1",
+        "--color",
+        "never",
+    ]);
+    let output = bounded(&mut tests, evidence, "compiled-launcher-tests", 300);
     assert!(
         output.status.success(),
         "compiled launcher tests: {}",
@@ -79,7 +104,10 @@ pub(super) fn qualify(target: &Path, evidence: &Path, release: bool) -> Value {
         "missing/filtered/duplicate launcher tests: {}",
         String::from_utf8_lossy(&output.stdout)
     );
+    assert_eq!(hash(&std::fs::read(executable).unwrap()), executable_hash);
     json!({"implementation":"compiled-launcher-library", "passed": TESTS.len(), "tests": TESTS,
+        "executable": executable, "executable_sha256": executable_hash,
+        "compile_stdout_sha256": hash(&compiled.stdout), "compile_stderr_sha256": hash(&compiled.stderr),
         "stdout_sha256": hash(&output.stdout), "stderr_sha256": hash(&output.stderr)})
 }
 
