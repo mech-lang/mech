@@ -136,6 +136,7 @@ impl NativeCollectionPrimitive {
             | Self::MatrixScalarAccess
             | Self::TupleScalarProjection
             | Self::MapKeyAccess => "access/scalar",
+            Self::RecordFieldAccess => "access/column",
             Self::MatrixIndexedReplace => "core/assign/indexed-axis",
             Self::SetContains => "set/element-of",
             Self::SetNotContains => "set/not-element-of",
@@ -194,6 +195,7 @@ impl NativeCollectionPrimitive {
             | Self::StringScalarAccess
             | Self::MatrixScalarAccess
             | Self::TupleScalarProjection
+            | Self::RecordFieldAccess
             | Self::MapKeyAccess
             | Self::SetContains
             | Self::SetNotContains
@@ -417,6 +419,12 @@ fn validate_schemas(
                 && crate::native_artifact::structural_values::supported(output)
                 && matches!(first, SchemaBody::Tuple(fields) if fields.iter().any(|field|
                     crate::native_artifact::structural_values::carrier_component_matches(output, field)))
+        }
+        NativeCollectionPrimitive::RecordFieldAccess => {
+            inputs[1].body() == &SchemaBody::Id
+                && is_native_state_carrier(output)
+                && matches!(first, SchemaBody::Record(fields) if fields.iter().any(|field|
+                    crate::native_artifact::structural_values::carrier_component_matches(output, &field.schema)))
         }
         NativeCollectionPrimitive::MatrixScalarAccess => {
             let selector = inputs[1].body();

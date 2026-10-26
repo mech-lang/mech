@@ -219,7 +219,8 @@ fn selected_template(
 // IR104 preserves lexical Assert operations as checked branches with distinct
 // integrity-failure terminals; no document constraint is hoisted out of a visit.
 // Exact-width unsigned comparison primitives retain their semantic kinds.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 105;
+// IR106 admits record-field access through the maintained snapshot selector.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 106;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

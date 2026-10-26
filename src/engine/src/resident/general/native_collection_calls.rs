@@ -213,14 +213,48 @@ fn bind_selected(
             node: template.origin().node(),
         })?
         .factory();
+    let selector = constant_record_selector(artifact, &template);
     bind_current(
         artifact.schemas(),
         template,
         factory,
         input_parameters,
         output_parameters,
+        selector,
         limits,
     )
+}
+
+fn constant_record_selector(
+    artifact: &ProgramArtifact,
+    template: &NativeProgramLibraryTemplate,
+) -> Option<u64> {
+    use super::native_collection_templates::NativeCollectionLexicalSource as Source;
+    if template.primitive() != crate::native_artifact::NativeCollectionPrimitive::RecordFieldAccess
+    {
+        return None;
+    }
+    let constant = template
+        .root()
+        .and_then(|root| match root.sources().get(1) {
+            Some(crate::ArtifactSource::Constant(id)) => Some(*id),
+            _ => None,
+        })
+        .or_else(|| {
+            template
+                .lexical()
+                .and_then(|lexical| match lexical.sources().get(1) {
+                    Some(Source::Control(crate::ControlValue::Constant(id)))
+                    | Some(Source::Comprehension(crate::ComprehensionValue::Constant(id))) => {
+                        Some(*id)
+                    }
+                    _ => None,
+                })
+        })?;
+    match artifact.constants().get(constant)?.data() {
+        mech_core::ValueData::Id(id) => Some(*id),
+        _ => None,
+    }
 }
 
 pub(super) fn finite_limits(node: NodeId, limits: MemoryBudgetLimits) -> Result<(), Error> {
@@ -250,6 +284,7 @@ fn bind_current(
     factory: ResidentKernelFactory,
     input_parameters: &[&[u64]],
     output_parameters: &[u64],
+    record_selector: Option<u64>,
     limits: MemoryBudgetLimits,
 ) -> Result<NativeCollectionCall, Error> {
     let node = template.origin().node();
@@ -262,13 +297,25 @@ fn bind_current(
     let ResolvedOperationContract::Declared(contract) = template.contract() else {
         return Err(invalid(node));
     };
-    let inputs = contract
+    let mut inputs = contract
         .inputs
         .iter()
         .zip(template.inputs())
         .zip(input_parameters)
         .map(|((port, schema), parameters)| layout(node, port.schema, schema, parameters))
         .collect::<Result<Box<[_]>, _>>()?;
+    if template.primitive() == crate::native_artifact::NativeCollectionPrimitive::RecordFieldAccess
+    {
+        // The maintained heterogeneous-record binder needs the actual field
+        // selector, just as resident activation does. It still checks the
+        // selected component's schema and validates the live Id at invocation.
+        inputs
+            .get_mut(1)
+            .ok_or_else(|| invalid(node))?
+            .resolved_selector = Some(mech_core::ResidentResolvedSelector::Id(
+            record_selector.ok_or_else(|| invalid(node))?,
+        ));
+    }
     let output = layout(
         node,
         contract.outputs[0].schema,

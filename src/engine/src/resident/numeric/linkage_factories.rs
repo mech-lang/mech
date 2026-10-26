@@ -546,6 +546,10 @@ factory!(
     CanonicalFinalize,
     super::bind_semantic_scalar_access
 );
+#[cfg(any(
+    feature = "native-artifact",
+    not(any(feature = "pure_text", feature = "map_ops"))
+))]
 factory!(
     NUMERIC_ACCESS_COLUMN,
     &["access"],

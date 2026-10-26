@@ -29,6 +29,20 @@ fn composite_shape_from_children(template: &NativeProgramLibraryTemplate) -> boo
         )
 }
 
+fn record_selector(
+    template: &NativeProgramLibraryTemplate,
+    inputs: &[Option<Value>],
+) -> Option<u64> {
+    if template.primitive() != crate::native_artifact::NativeCollectionPrimitive::RecordFieldAccess
+    {
+        return None;
+    }
+    match inputs.get(1)?.as_ref()?.data() {
+        mech_core::ValueData::Id(id) => Some(*id),
+        _ => None,
+    }
+}
+
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 #[path = "native_collection_prepared_image.rs"]
 mod image;
@@ -538,6 +552,7 @@ impl NativePreparedLibraryCall {
             self.factory,
             &parameters,
             output_parameters,
+            record_selector(&self.template, inputs),
             limits,
         )
         .map_err(InvokeError::Binding)
@@ -549,6 +564,17 @@ impl NativePreparedLibraryCall {
         inputs: &[Option<Value>],
         output: &Option<Value>,
     ) -> bool {
+        if self.template.primitive()
+            == crate::native_artifact::NativeCollectionPrimitive::RecordFieldAccess
+            && call
+                .inputs()
+                .get(1)
+                .and_then(|input| input.resolved_selector)
+                != record_selector(&self.template, inputs)
+                    .map(mech_core::ResidentResolvedSelector::Id)
+        {
+            return false;
+        }
         if inputs.len() != call.inputs().len()
             || !inputs
                 .iter()

@@ -23,6 +23,7 @@ pub enum NativeCollectionPrimitive {
     MatrixScalarAccess,
     #[cfg(feature = "native-artifact")]
     TupleScalarProjection,
+    RecordFieldAccess,
     #[cfg(feature = "native-artifact")]
     MatrixRangeAccess,
     MatrixIndexedReplace,
@@ -151,6 +152,14 @@ pub mod linkage_factories {
         ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize,
         super::super::numeric::bind_semantic_range_access,
         NativeCollectionPrimitive::StringRangeAccess
+    );
+    factory!(
+        ACCESS_COLUMN,
+        &["access"],
+        "column",
+        CanonicalFinalize,
+        super::super::numeric::bind_snapshot_access,
+        NativeCollectionPrimitive::RecordFieldAccess
     );
     factory!(
         CORE_ASSIGN_INDEXED_AXIS,
@@ -352,6 +361,10 @@ pub(super) fn register_access(builder: &mut FunctionCatalogBuilder, scalar: bool
     } else {
         ACCESS_RANGE.install(builder)
     }
+}
+
+pub(super) fn register_column_access(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    ACCESS_COLUMN.install(builder)
 }
 
 pub(super) fn register_indexed_assignment(builder: &mut FunctionCatalogBuilder) -> MResult<()> {

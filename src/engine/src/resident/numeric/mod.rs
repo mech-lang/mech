@@ -827,6 +827,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     super::native_collection_semantics::register_access(builder, true)?;
     #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     linkage_factories::NUMERIC_ACCESS_SCALAR.install(builder)?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_column_access(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
     linkage_factories::NUMERIC_ACCESS_COLUMN.install(builder)?;
     linkage_factories::NUMERIC_ACCESS_ROWS.install(builder)?;
     linkage_factories::NUMERIC_ACCESS_COLUMNS.install(builder)?;
@@ -6294,7 +6297,7 @@ fn bind_semantic_columns_access(
         .or_else(|_| bind_snapshot_access_mode(request, Some(ResolvedSelectionMode::Columns)))
 }
 
-fn bind_snapshot_access(
+pub(super) fn bind_snapshot_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_snapshot_access_mode(request, None)

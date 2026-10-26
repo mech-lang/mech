@@ -462,6 +462,7 @@ impl NativePreparedLibraryCall {
             self.factory,
             &[&[]],
             shape.parameter_values(),
+            None,
             limits,
         )
         .map_err(InvokeError::Binding)?;
