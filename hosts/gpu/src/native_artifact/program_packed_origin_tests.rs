@@ -75,7 +75,7 @@ unsafe extern "C" fn observe_origin(
         if HELPER_FAULT.with(|fault| fault.replace(false)) {
             // SAFETY: the maintained begin just returned four private words
             // to this pinned session; word 2 is its exact bound callback.
-            let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
+            let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
             if ctx.argument_capacity >= 4 && !ctx.arguments.is_null() {
                 let original = unsafe { *ctx.arguments.add(2) };
                 // SAFETY: this is the original maintained callback word, not
@@ -274,13 +274,14 @@ fn packed_ssa_cold_errors_keep_source_status_origin_and_cleanup() {
                                 status,
                                 STATUS_ARITHMETIC | STATUS_REJECT | STATUS_ADMISSION | STATUS_ABI
                             ) {
-                                let ctx =
-                                    unsafe { &*(*frame).base.context.cast::<Context<'_, '_>>() };
+                                let ctx = unsafe {
+                                    &*(*frame).base.context.cast::<Invocation<'_, '_, '_>>()
+                                };
                                 terminal.set(Some((
                                     status,
                                     unsafe { (*frame).base.error_node },
-                                    ctx.control.work.used(),
-                                    ctx.library.used(),
+                                    ctx.state.control.work.used(),
+                                    ctx.state.library.used(),
                                 )));
                             }
                             status

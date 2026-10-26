@@ -82,7 +82,7 @@ pub(in crate::native_artifact::program_runtime) fn demand() -> [u64; 6] {
     ]
 }
 pub(in crate::native_artifact::program_runtime) fn pressure(
-    ctx: &Context<'_, '_>,
+    ctx: &Invocation<'_, '_, '_>,
 ) -> Result<
     (
         Option<ManagedMemoryReservation>,
@@ -91,7 +91,7 @@ pub(in crate::native_artifact::program_runtime) fn pressure(
     Error,
 > {
     let control = CONTROL.with(Cell::get);
-    let memory = ctx.library.memory_budget();
+    let memory = ctx.state.library.memory_budget();
     let bytes = if let Some(remaining) = control.global_bytes {
         fire();
         let count = memory
@@ -117,7 +117,7 @@ pub(in crate::native_artifact::program_runtime) fn pressure(
     Ok((bytes, nodes))
 }
 pub(in crate::native_artifact::program_runtime) fn before_join(
-    ctx: &mut Context<'_, '_>,
+    ctx: &mut Invocation<'_, '_, '_>,
     role: Site,
 ) {
     if !matches!(role, Site::Join(_)) || FIRED.with(Cell::get) {
@@ -144,7 +144,7 @@ fn fault() -> Option<Fault> {
 fn fire() {
     FIRED.with(|v| v.set(true));
 }
-pub(super) fn before_prepare(ctx: &mut Context<'_, '_>, site: usize) -> Result<(), Error> {
+pub(super) fn before_prepare(ctx: &mut Invocation<'_, '_, '_>, site: usize) -> Result<(), Error> {
     if !ctx.join_map_is_fusing() {
         return Ok(());
     }
@@ -162,14 +162,14 @@ pub(super) fn before_prepare(ctx: &mut Context<'_, '_>, site: usize) -> Result<(
     }
     Ok(())
 }
-pub(super) fn after_prepare(ctx: &mut Context<'_, '_>, site: usize) -> Result<(), Error> {
+pub(super) fn after_prepare(ctx: &mut Invocation<'_, '_, '_>, site: usize) -> Result<(), Error> {
     if matches!(fault(), Some(Fault::ReplayPrepare)) {
         fire();
         ctx.prepare_join_map_chunk(site, [0; 3])?;
     }
     Ok(())
 }
-pub(super) fn before_finish(ctx: &mut Context<'_, '_>, site: usize) -> Result<bool, Error> {
+pub(super) fn before_finish(ctx: &mut Invocation<'_, '_, '_>, site: usize) -> Result<bool, Error> {
     match fault() {
         Some(Fault::ExcessCompletion) => {
             fire();
@@ -241,7 +241,7 @@ pub(super) fn before_finish(ctx: &mut Context<'_, '_>, site: usize) -> Result<bo
     }
     Ok(false)
 }
-pub(super) fn after_mapped(ctx: &mut Context<'_, '_>) -> Result<(), Error> {
+pub(super) fn after_mapped(ctx: &mut Invocation<'_, '_, '_>) -> Result<(), Error> {
     match fault() {
         Some(Fault::WrongMapGeneration) => {
             fire();
@@ -254,12 +254,16 @@ pub(super) fn after_mapped(ctx: &mut Context<'_, '_>) -> Result<(), Error> {
                 return Err(invalid("test missing mapped owner"));
             };
             let map = mapped.map.clone();
-            let slot = ctx.control.descriptor.metadata().selected_joins.maps[*region]
+            let slot = ctx.descriptor.metadata().selected_joins.maps[*region]
                 .as_ref()
                 .unwrap()
                 .map;
-            ctx.arena.retire_current(slot, &mut ctx.control.work)?;
-            ctx.arena.put(slot, &map, &mut ctx.control.work)?;
+            ctx.state
+                .arena
+                .retire_current(slot, &mut ctx.state.control.work)?;
+            ctx.state
+                .arena
+                .put(slot, &map, &mut ctx.state.control.work)?;
         }
         Some(Fault::WrongCopySource) => {
             fire();
@@ -296,21 +300,19 @@ pub(super) fn after_mapped(ctx: &mut Context<'_, '_>) -> Result<(), Error> {
             let memory = if matches!(test, Fault::PrivateWrongAccount) {
                 mech_core::ManagedMemoryBudget::new(1024 * 1024)
             } else {
-                ctx.library.memory_budget()
+                ctx.state.library.memory_budget()
             };
             let capacity =
                 text.capacity() as u64 - u64::from(matches!(test, Fault::PrivateShortCapacity));
             let claim = memory.reserve_capacity(capacity)?;
-            let join = &ctx.control.descriptor.metadata().selected_joins.regions[*region];
+            let join = &ctx.descriptor.metadata().selected_joins.regions[*region];
             let site = if matches!(test, Fault::PrivateWrongFactory) {
-                ctx.control.descriptor.metadata().string_map_regions[0].selection_site() as usize
+                ctx.descriptor.metadata().string_map_regions[0].selection_site() as usize
             } else {
                 join.consumer() as usize
             };
-            let call = ctx.control.descriptor.metadata().calls[site]
-                .as_ref()
-                .unwrap();
-            call.finish_private_string_buffer(text, claim, &ctx.library)
+            let call = ctx.descriptor.metadata().calls[site].as_ref().unwrap();
+            call.finish_private_string_buffer(text, claim, &ctx.state.library)
                 .map_err(|error| library(ctx, site, error))?;
             return Err(invalid(
                 "private String owner accepted an invalid factory/account/capacity",

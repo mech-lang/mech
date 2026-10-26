@@ -86,11 +86,11 @@ unsafe extern "C" fn observe(
 ) -> u64 {
     // SAFETY: execute owns this exact context through the synchronous entry;
     // every reference ends before delegation or return to generated code.
-    let ctx = unsafe { &mut *context.cast::<Context<'_, '_>>() };
+    let ctx = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
     let mode = MODE.with(Cell::get);
     let index = site as usize;
     let args = [first, second, third];
-    let descriptor = ctx.control.descriptor;
+    let descriptor = ctx.descriptor;
     let selected_call = descriptor
         .metadata()
         .map_owner_words
@@ -117,7 +117,7 @@ unsafe extern "C" fn observe(
     if operation == MAP_OWNER_BEGIN {
         rejected(ctx.retained_map_helper(index, operation, [1, 0, 0]));
         if matches!(mode, Mode::ForeignDescriptor | Mode::ForeignLedger) {
-            let memory = ctx.library.memory_budget();
+            let memory = ctx.state.library.memory_budget();
             let foreign = FOREIGN.with(Cell::get);
             // SAFETY: run pins both JIT descriptors until execute returns.
             let lane_descriptor = if mode == Mode::ForeignDescriptor {
@@ -138,12 +138,12 @@ unsafe extern "C" fn observe(
                 State::new(
                     lane_descriptor,
                     &memory,
-                    &mut ctx.control.work,
+                    &mut ctx.state.control.work,
                     ctx.limits.max_temporary_bytes.unwrap(),
                 )
             };
             match lane {
-                Ok(mut lane) => rejected(lane.begin(ctx, index)),
+                Ok(mut lane) => rejected(lane.try_begin_retained(ctx, index)),
                 Err(error) => record(|r| r.errors.push(format!("foreign setup: {error:?}"))),
             }
         }
@@ -179,7 +179,7 @@ unsafe extern "C" fn observe(
     }
     // SAFETY: the original helper receives exactly this live admitted frame.
     let status = unsafe { helper(context, site, operation, first, second, third, result) };
-    let ctx = unsafe { &mut *context.cast::<Context<'_, '_>>() };
+    let ctx = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
     ctx.limits = old_limits;
     if status == STATUS_OK {
         if operation == MAP_OWNER_BEGIN {

@@ -1,7 +1,7 @@
 //! Reconcile a closed generated Tail to the SAME invocation account.
 //! The generated body consumes finite native fuel; this never executes a loop.
 use super::super::NativeExecutionPhase;
-use super::{Context, NativeProgramExecutionError as Error, amount, invalid};
+use super::{Invocation, NativeProgramExecutionError as Error, amount, invalid};
 
 pub(super) struct State {
     region: usize,
@@ -9,13 +9,13 @@ pub(super) struct State {
     remaining: (u64, u64),
     entry: u32,
 }
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
     pub(super) fn begin_closed_tail(
         &mut self,
         site: usize,
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
-        let layout = &self.control.descriptor.metadata().closed_tails;
+        let layout = &self.descriptor.metadata().closed_tails;
         let region = layout
             .initializers
             .get(site)
@@ -30,23 +30,23 @@ impl Context<'_, '_> {
         args: [u64; 3],
         region: usize,
     ) -> Result<Option<u64>, Error> {
-        let proof = &self.control.descriptor.metadata().closed_tails.regions[region];
+        let proof = &self.descriptor.metadata().closed_tails.regions[region];
         if args != [0; 3]
             || self.closed_tail.is_some()
             || self.window_region.is_some()
-            || (self.consumed && proof.map.is_none())
+            || (self.state.consumed && proof.map.is_none())
         {
             return Err(invalid("duplicate or malformed closed Tail entry"));
         }
-        let layout = &self.control.descriptor.metadata().closed_tails;
+        let layout = &self.descriptor.metadata().closed_tails;
         let proof = &layout.regions[region];
-        if self.control.current != Some(proof.iteration)
-            || self.control.progress[proof.iteration as usize * 2..][..2] != [0, 1]
+        if self.state.control.current != Some(proof.iteration)
+            || self.progress[proof.iteration as usize * 2..][..2] != [0, 1]
         {
             return Err(invalid("closed Tail outside active invocation"));
         }
         // Covers entry/exit metadata and all exceptional cleanup dispatch arms.
-        self.control.work.charge(
+        self.state.control.work.charge(
             NativeExecutionPhase::Setup,
             amount(layout.regions.len(), 128, 1024)?,
         )?;
@@ -58,7 +58,7 @@ impl Context<'_, '_> {
         }) {
             return Ok(Some(0));
         }
-        let Some(remaining) = self.library.unscoped_remaining() else {
+        let Some(remaining) = self.state.library.unscoped_remaining() else {
             return Ok(Some(0));
         };
         if proof.map.is_some() {
@@ -74,9 +74,10 @@ impl Context<'_, '_> {
         }
         self.closed_tail = Some(State {
             region,
-            used: self.library.used(),
+            used: self.state.library.used(),
             remaining,
             entry: self
+                .state
                 .control
                 .previous
                 .ok_or_else(|| invalid("closed Tail has no current predecessor"))?,
@@ -93,15 +94,15 @@ impl Context<'_, '_> {
             .closed_tail
             .take()
             .ok_or_else(|| invalid("closed Tail exit without entry"))?;
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let layout = &descriptor.metadata().closed_tails;
         let proof = &layout.regions[state.region];
-        if self.control.previous != Some(state.entry)
-            || self.control.current != Some(proof.iteration)
-            || self.control.progress[proof.iteration as usize * 2..][..2] != [0, 1]
+        if self.state.control.previous != Some(state.entry)
+            || self.state.control.current != Some(proof.iteration)
+            || self.progress[proof.iteration as usize * 2..][..2] != [0, 1]
             || (proof.map.is_none()
-                && (self.library.used() != state.used
-                    || self.library.unscoped_remaining() != Some(state.remaining)))
+                && (self.state.library.used() != state.used
+                    || self.state.library.unscoped_remaining() != Some(state.remaining)))
         {
             return Err(invalid(
                 "closed Tail account or entry changed during native execution",
@@ -111,7 +112,7 @@ impl Context<'_, '_> {
             if args[1] != 0 {
                 return Err(invalid("closed map comparison lane changed"));
             }
-            (0, 0, self.end_closed_map(state.region, args[0], args[2])?)
+            (0, 0, self.reconcile_closed(state.region, args[0], args[2])?)
         } else {
             let compute = state
                 .remaining
@@ -154,7 +155,8 @@ impl Context<'_, '_> {
             2 | 3 if layout.sites.get(site).copied().flatten() == Some(state.region) => site as u32,
             _ => return Err(invalid("closed Tail exit outside its proved boundary")),
         };
-        self.library
+        self.state
+            .library
             .charge(compute, comparison)
             .map_err(|error| Error::Collection {
                 origin: descriptor.metadata().plan.blocks()[site].origin(),
@@ -162,11 +164,11 @@ impl Context<'_, '_> {
             })?;
         // This is one proved bulk transition, not fabricated/replayed per-op
         // visits. The report counts the remaining actual admitted CFG visits.
-        self.control.previous = Some(previous);
+        self.state.control.previous = Some(previous);
         if proof.map.is_some() && args[2] == 0 {
-            self.map_owners.closed_exit = Some((previous, proof.tail.exit()));
+            self.state.map_owners.closed_exit = Some((previous, proof.tail.exit()));
         }
-        self.consumed = false;
+        self.state.consumed = false;
         if args[2] == 3 {
             // Arithmetic/rejection exits have no leaf callback to consume the
             // owner loan. Drop it before the existing typed error is returned.

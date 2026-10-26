@@ -1,7 +1,7 @@
 //! Private range geometry at the original selected producer visit.
 use super::*;
 
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
     pub(super) fn prepare_selected_join_range(
         &mut self,
         site: usize,
@@ -9,7 +9,7 @@ impl Context<'_, '_> {
         lines: Rc<NativeTextLineMatrix>,
         words: [u64; 2],
     ) -> Result<(), Error> {
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let region = &descriptor.metadata().selected_joins.regions[index];
         let call = descriptor.metadata().calls[site]
             .as_ref()
@@ -35,6 +35,7 @@ impl Context<'_, '_> {
             .max_comparison_work
             .ok_or_else(|| invalid("selected range requires finite comparison work"))?;
         let (selector, reservation) = self
+            .state
             .library
             .with_call_limits(compute_limit, comparison_limit, || {
                 require(
@@ -51,10 +52,12 @@ impl Context<'_, '_> {
                     prior.retained_nodes,
                     self.limits.max_retained_nodes,
                 )?;
-                self.library
+                self.state
+                    .library
                     .charge(price, 0)
                     .map_err(|error| library(self, site, error.into()))?;
                 let reservation = self
+                    .state
                     .library
                     .memory_budget()
                     .reserve_capacity(state_bytes)
@@ -64,6 +67,7 @@ impl Context<'_, '_> {
                 // the later selection admits its own real witness scratch.
                 // Retiring capacity does not refund any cumulative work.
                 let _witness = self
+                    .state
                     .library
                     .memory_budget()
                     .reserve_capacity(witness_bytes)
@@ -80,14 +84,16 @@ impl Context<'_, '_> {
         // Retire stale results from a previous ordinary lexical invocation
         // only after the current original range succeeds. Both slots stay
         // empty throughout this private producer/consumer sequence.
-        self.arena
-            .retire_current(region.selector().get(), &mut self.control.work)?;
-        self.arena
-            .retire_current(region.selected().get(), &mut self.control.work)?;
+        self.state
+            .arena
+            .retire_current(region.selector().get(), &mut self.state.control.work)?;
+        self.state
+            .arena
+            .retire_current(region.selected().get(), &mut self.state.control.work)?;
         self.selected_join = Some(State {
             phase: Phase::Range { lines, selector },
             region: index,
-            parent: self.control.current,
+            parent: self.state.control.current,
             reservation,
         });
         #[cfg(all(test, feature = "canonical-native-program"))]

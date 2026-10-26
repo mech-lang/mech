@@ -524,7 +524,7 @@ fn framing_work_reaches_the_global_work_limit_before_any_generated_prefix_instru
         let mut probe = Prepared::new(descriptor, limits(), &memory).unwrap();
         probe.activate(&mut entry).unwrap();
         probe.import_turn(&inputs, &[], &outputs).unwrap();
-        let baseline = probe.state.as_ref().unwrap().work.used();
+        let baseline = probe.state.as_ref().unwrap().control.work.used();
         let ledger = probe.state.as_ref().unwrap().library.clone();
         let mut owner = producer
             .prepare_text_line_chunks(text.len() as u64, text.len(), limits().library, &ledger)
@@ -534,7 +534,7 @@ fn framing_work_reaches_the_global_work_limit_before_any_generated_prefix_instru
         producer.bind_text_line_window(&window, &ledger).unwrap();
         let required = baseline + window.producer_compute_work();
         assert_eq!(
-            probe.state.as_ref().unwrap().work.used(),
+            probe.state.as_ref().unwrap().control.work.used(),
             required,
             "the program meter must already include every storage debit exactly once"
         );
@@ -545,7 +545,10 @@ fn framing_work_reaches_the_global_work_limit_before_any_generated_prefix_instru
         let mut prepared = Prepared::new(descriptor, limited, &memory).unwrap();
         prepared.activate(&mut entry).unwrap();
         prepared.import_turn(&inputs, &[], &outputs).unwrap();
-        assert_eq!(prepared.state.as_ref().unwrap().work.used(), baseline);
+        assert_eq!(
+            prepared.state.as_ref().unwrap().control.work.used(),
+            baseline
+        );
         let ledger = prepared.state.as_ref().unwrap().library.clone();
         let mut owner = producer
             .prepare_text_line_chunks(text.len() as u64, text.len(), limited.library, &ledger)

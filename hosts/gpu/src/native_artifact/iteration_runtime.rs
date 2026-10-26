@@ -102,19 +102,32 @@ impl VisitPlan for NativeIterationDescriptor {
         (&self.iterations[index]).into()
     }
 }
-pub(super) struct Context<'a, D: VisitPlan> {
-    pub(super) descriptor: &'a D,
-    // Separate managed backing from generated code's locals/counters; no raw
-    // machine pointer aliases this exclusive callback progress slice.
-    pub(super) progress: &'a mut [u64],
+pub(super) struct ControlState {
     pub(super) current: Option<u32>,
     pub(super) previous: Option<u32>,
     pub(super) completed: bool,
     pub(super) work: NativeWorkMeter,
     pub(super) visits: u64,
+}
+impl ControlState {
+    pub(super) fn new(work: NativeWorkMeter) -> Self {
+        Self {
+            current: None,
+            previous: None,
+            completed: false,
+            work,
+            visits: 0,
+        }
+    }
+}
+pub(super) struct ControlView<'state, 'visit, D: VisitPlan> {
+    pub(super) state: &'state mut ControlState,
+    pub(super) descriptor: &'visit D,
+    // No generated machine pointer aliases this callback progress slice.
+    pub(super) progress: &'state mut [u64],
     pub(super) error: Option<NativeIterationExecutionError>,
 }
-impl<D: VisitPlan> Context<'_, D> {
+impl<D: VisitPlan> ControlView<'_, '_, D> {
     pub(super) fn visit(&mut self, raw: u64) -> Result<(), NativeIterationExecutionError> {
         self.visit_with_work(raw, None)
     }
@@ -126,7 +139,7 @@ impl<D: VisitPlan> Context<'_, D> {
         raw: u64,
         group_work: Option<u64>,
     ) -> Result<(), NativeIterationExecutionError> {
-        self.visit_from(raw, group_work, self.previous)
+        self.visit_from(raw, group_work, self.state.previous)
     }
 
     // A paid native path supplies its proved frontier predecessor. Keep the
@@ -146,9 +159,9 @@ impl<D: VisitPlan> Context<'_, D> {
         raw: u64,
         entry: u32,
     ) -> Result<(), NativeIterationExecutionError> {
-        if self.previous.is_some()
-            || self.current.is_some()
-            || self.completed
+        if self.state.previous.is_some()
+            || self.state.current.is_some()
+            || self.state.completed
             || self.progress.iter().any(|&word| word != 0)
         {
             return Err(invalid("outlined entry requires fresh worker control"));
@@ -164,7 +177,7 @@ impl<D: VisitPlan> Context<'_, D> {
         entry: u32,
     ) -> Result<(), NativeIterationExecutionError> {
         let id = u32::try_from(raw).ok();
-        let allowed = !self.completed
+        let allowed = !self.state.completed
             && match previous {
                 None => id == Some(entry),
                 Some(previous) => {
@@ -186,7 +199,7 @@ impl<D: VisitPlan> Context<'_, D> {
             };
         if !allowed {
             return Err(NativeIterationExecutionError::Visit {
-                previous: self.previous,
+                previous: self.state.previous,
                 actual: raw,
             });
         }
@@ -202,11 +215,13 @@ impl<D: VisitPlan> Context<'_, D> {
         if work < site.work {
             return Err(invalid("group admission underfunds its entry"));
         }
-        charge(&mut self.work, work, Some(site.origin))?;
+        charge(&mut self.state.work, work, Some(site.origin))?;
         match site.progress {
             Progress::Initialize(iteration) => {
                 let data = self.descriptor.iteration(iteration as usize);
-                if self.current != data.parent() || self.progress[iteration as usize * 2 + 1] != 0 {
+                if self.state.current != data.parent()
+                    || self.progress[iteration as usize * 2 + 1] != 0
+                {
                     return Err(invalid(
                         "iteration initialized outside exact parent invocation",
                     ));
@@ -227,18 +242,18 @@ impl<D: VisitPlan> Context<'_, D> {
                         self.progress[iteration as usize * 2 + 1] = 1;
                     }
                 }
-                self.current = Some(iteration);
+                self.state.current = Some(iteration);
             }
             Progress::Exit(iteration) => {
-                if self.current != Some(iteration)
+                if self.state.current != Some(iteration)
                     || self.progress[iteration as usize * 2] != 0
                     || self.progress[iteration as usize * 2 + 1] != 1
                 {
                     return Err(invalid("iteration exited before exact count"));
                 }
                 self.progress[iteration as usize * 2 + 1] = 0;
-                self.current = self.descriptor.iteration(iteration as usize).parent();
-                if self.current != site.iteration {
+                self.state.current = self.descriptor.iteration(iteration as usize).parent();
+                if self.state.current != site.iteration {
                     return Err(invalid("iteration exit parent mismatch"));
                 }
             }
@@ -247,7 +262,7 @@ impl<D: VisitPlan> Context<'_, D> {
                     self.descriptor.iteration(iteration as usize),
                     mech_engine::native_artifact::NativeControlLoopRef::Tail(_)
                 );
-                if self.current != Some(iteration)
+                if self.state.current != Some(iteration)
                     || self.progress[iteration as usize * 2 + 1] != 1
                     || (!tail && self.progress[iteration as usize * 2] == 0)
                 {
@@ -258,25 +273,26 @@ impl<D: VisitPlan> Context<'_, D> {
                 }
             }
             Progress::Header(iteration) => {
-                if self.current != Some(iteration) || self.progress[iteration as usize * 2 + 1] != 1
+                if self.state.current != Some(iteration)
+                    || self.progress[iteration as usize * 2 + 1] != 1
                 {
                     return Err(invalid("loop header before admitted live count"));
                 }
             }
             Progress::Normal => {
-                if self.current != site.iteration {
+                if self.state.current != site.iteration {
                     return Err(invalid("iteration visit outside lexical invocation"));
                 }
             }
         }
         if site.complete
-            && (self.current.is_some() || self.progress.chunks_exact(2).any(|v| v[1] != 0))
+            && (self.state.current.is_some() || self.progress.chunks_exact(2).any(|v| v[1] != 0))
         {
             return Err(invalid("completion with active iteration"));
         }
-        self.previous = Some(id);
-        self.completed = site.complete;
-        self.visits = add(self.visits, 1)?;
+        self.state.previous = Some(id);
+        self.state.completed = site.complete;
+        self.state.visits = add(self.state.visits, 1)?;
         Ok(())
     }
 
@@ -291,8 +307,9 @@ impl<D: VisitPlan> Context<'_, D> {
                 self.descriptor.iteration(iteration as usize),
                 mech_engine::native_artifact::NativeControlLoopRef::Collection(_)
             )
-            || self.current != Some(iteration)
+            || self.state.current != Some(iteration)
             || self
+                .state
                 .previous
                 .map(|site| self.descriptor.visits()[site as usize].progress)
                 != Some(Progress::Initialize(iteration))
@@ -300,7 +317,7 @@ impl<D: VisitPlan> Context<'_, D> {
         {
             return Err(invalid("live count outside exact collection initializer"));
         }
-        charge(&mut self.work, 32, None)?;
+        charge(&mut self.state.work, 32, None)?;
         self.progress[iteration as usize * 2] = count;
         self.progress[iteration as usize * 2 + 1] = 1;
         Ok(())
@@ -311,7 +328,7 @@ unsafe extern "C" fn admit(context: *mut c_void, id: u64) -> u64 {
         return STATUS_ABI;
     }
     // SAFETY: execute owns context and disjoint progress backing synchronously.
-    let context = unsafe { &mut *context.cast::<Context<'_, NativeIterationDescriptor>>() };
+    let context = unsafe { &mut *context.cast::<ControlView<'_, '_, NativeIterationDescriptor>>() };
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
@@ -417,18 +434,15 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
     let input_pointer = input_words.as_ptr();
     let local_pointer = values.as_mut_ptr();
     let output_pointer = output_words.as_mut_ptr();
-    let mut context = Context {
+    let mut control_state = ControlState::new(work);
+    let mut context = ControlView {
+        state: &mut control_state,
         descriptor,
         progress: progress_words,
-        current: None,
-        previous: None,
-        completed: false,
-        work,
-        visits: 0,
         error: None,
     };
     let context_pointer =
-        (&mut context as *mut Context<'_, NativeIterationDescriptor>).cast::<c_void>();
+        (&mut context as *mut ControlView<'_, '_, NativeIterationDescriptor>).cast::<c_void>();
     let mut frame = Frame {
         version: VERSION,
         input_count: inputs.len() as u64,
@@ -459,12 +473,13 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
     }
     match status {
         STATUS_OK => {
-            if !context.completed || frame.error_node != NO_NODE {
+            if !context.state.completed || frame.error_node != NO_NODE {
                 return Err(invalid("iteration omitted atomic completion"));
             }
         }
         STATUS_ARITHMETIC | STATUS_REJECT => {
             let id = context
+                .state
                 .previous
                 .ok_or_else(|| invalid("iteration failure before admitted visit"))?;
             let site = &descriptor.visits[id as usize];
@@ -513,9 +528,9 @@ pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
         };
     }
     Ok(NativeIterationExecutionReport {
-        work: context.work.used(),
+        work: context.state.work.used(),
         transport_bytes: bytes,
-        visits: context.visits,
+        visits: context.state.visits,
     })
 }
 
@@ -554,14 +569,11 @@ mod tests {
             let descriptor = NativeIterationDescriptor::from_plan(&plan, 32, 1).unwrap();
             let iteration = descriptor.iterations[0].clone();
             let mut progress = [0; 2];
-            let mut context = Context {
+            let mut control_state = ControlState::new(NativeWorkMeter::new(100_000).unwrap());
+            let mut context = ControlView {
+                state: &mut control_state,
                 descriptor: &descriptor,
                 progress: &mut progress,
-                current: None,
-                previous: None,
-                completed: false,
-                work: NativeWorkMeter::new(100_000).unwrap(),
-                visits: 0,
                 error: None,
             };
             context.visit(descriptor.entry as u64).unwrap();
@@ -572,13 +584,21 @@ mod tests {
             } else {
                 iteration.exit()
             };
-            let before = (context.work.used(), context.visits, context.progress[0]);
+            let before = (
+                context.state.work.used(),
+                context.state.visits,
+                context.progress[0],
+            );
             assert!(matches!(
                 context.visit(denied as u64),
                 Err(NativeIterationExecutionError::Visit { .. })
             ));
             assert_eq!(
-                (context.work.used(), context.visits, context.progress[0]),
+                (
+                    context.state.work.used(),
+                    context.state.visits,
+                    context.progress[0]
+                ),
                 before
             );
             // Identity's body has one no-op block. No hidden execution or
@@ -589,7 +609,7 @@ mod tests {
                 context.visit(iteration.header() as u64).unwrap();
             }
             context.visit(iteration.exit() as u64).unwrap();
-            assert_eq!(context.current, None);
+            assert_eq!(context.state.current, None);
             assert_eq!(&*context.progress, &[0, 0]);
             assert!(context.visit(iteration.header() as u64).is_err());
         }

@@ -4,7 +4,9 @@ use super::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
 };
 use super::iteration_abi::STATUS_REJECT;
-use super::iteration_runtime::{Context as Control, NativeIterationExecutionError};
+use super::iteration_runtime::{
+    ControlState, ControlView as Control, NativeIterationExecutionError,
+};
 use super::memory::{NativeTypedStorage, NativeWordStorage, transport_bytes};
 use super::program_abi::{COLLECTION, Frame, LIBRARY, MOVE, OUTPUT_BASE, VERSION};
 use super::program_descriptor::RetirementKind;
@@ -177,8 +179,8 @@ fn test_corrupt_prefix_checkpoint(frame: *mut Frame, field: u8) {
     unsafe {
         let frame = &mut *frame;
         assert_eq!(frame.phase, super::program_abi::PHASE_PREFIX);
-        let context = &*frame.base.context.cast::<Context<'_, '_>>();
-        let descriptor = context.control.descriptor;
+        let context = &*frame.base.context.cast::<Invocation<'_, '_, '_>>();
+        let descriptor = context.descriptor;
         let region = descriptor.metadata().prefix.as_ref().unwrap();
         let borrowed = &descriptor.metadata().borrowed_strings.regions[region.borrowed];
         match field {
@@ -219,32 +221,8 @@ fn bits(value: &Value, kind: NativeScalarKind) -> Result<u64, NativeProgramExecu
         _ => Err(invalid("canonical scalar payload/type mismatch")),
     }
 }
-struct Context<'plan, 'visit> {
-    retirements: &'visit [u64],
-    control: Control<'visit, NativeProgramDescriptor>,
-    // Sources are cheap shared roots from the arena; drop collection state
-    // first, while that arena still owns their prepaid retirement obligation.
-    map_owners: map_owners::Session<'plan>,
-    collections: Option<collection::State>,
-    borrowed_strings: Option<borrowed::State>,
-    closed_tail: Option<closed_tail::State>,
-    selected_join: Option<selected_join::State>,
-    line_matrices: line_matrices::State,
-    arena: NativeValueArena<'plan>,
-    library: NativeLibraryWorkBudget,
-    limits: MemoryBudgetLimits,
-    result: *mut u64,
-    arguments: *mut u64,
-    argument_capacity: usize,
-    call_inputs: NativeTypedStorage<Option<Value>>,
-    call_caches: session::CallCacheLane,
-    consumed: bool,
-    output_cursor: usize,
-    error: Option<NativeProgramExecutionError>,
-    activation_phase: bool,
-    execution_limits: NativeExecutionLimits,
-    worker: Option<parallel::Worker>,
-    parallel_batch: Option<parallel::Batch>,
+#[derive(Default)]
+struct RuntimeStats {
     hash_table_regions: u64,
     hash_table_updates: u64,
     packed_map_regions: u64,
@@ -263,13 +241,56 @@ struct Context<'plan, 'visit> {
     parallel_batches: u64,
     parallel_tasks: u64,
     parallel_peak_workers: u64,
+}
+struct ExecutionState<'plan> {
+    // Owners retire before the arena; backing storage retires before claims.
+    map_owners: map_owners::Session<'plan>,
+    collections: Option<collection::State>,
+    line_matrices: line_matrices::State,
+    arena: NativeValueArena<'plan>,
+    call_inputs: NativeTypedStorage<Option<Value>>,
+    call_caches: session::CallCacheLane,
+    library: NativeLibraryWorkBudget,
+    control: ControlState,
+    stats: RuntimeStats,
+    consumed: bool,
+    output_cursor: usize,
+}
+struct Invocation<'state, 'visit, 'plan> {
+    state: &'state mut ExecutionState<'plan>,
+    descriptor: &'plan NativeProgramDescriptor,
+    retirements: &'visit [u64],
+    progress: &'visit mut [u64],
+    borrowed_strings: Option<borrowed::State>,
+    closed_tail: Option<closed_tail::State>,
+    selected_join: Option<selected_join::State>,
+    limits: MemoryBudgetLimits,
+    result: *mut u64,
+    arguments: *mut u64,
+    argument_capacity: usize,
+    error: Option<NativeProgramExecutionError>,
+    activation_phase: bool,
+    execution_limits: NativeExecutionLimits,
+    worker: Option<parallel::Worker>,
+    parallel_batch: Option<parallel::Batch>,
     window_region: Option<(u32, u64)>,
     window_hashes: Option<Box<window_round::hashes::WindowHashes>>,
     prefix: Option<prefix::State>,
-    // The borrow pins real UTF-8 backing for this synchronous entry only.
+    // Pins UTF-8 backing for this synchronous entry only.
     line_window: Option<&'visit mech_engine::native_artifact::NativeTextLineWindow<'visit>>,
 }
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
+    fn control(&mut self) -> Control<'_, '_, NativeProgramDescriptor> {
+        Control {
+            state: &mut self.state.control,
+            descriptor: self.descriptor,
+            progress: self.progress,
+            error: None,
+        }
+    }
+}
+
+impl Invocation<'_, '_, '_> {
     fn write_borrowed_word(
         &mut self,
         index: usize,
@@ -304,7 +325,6 @@ impl Context<'_, '_> {
             return None;
         }
         if self
-            .control
             .descriptor
             .metadata()
             .scalar_aggregates
@@ -313,7 +333,7 @@ impl Context<'_, '_> {
         {
             return None;
         }
-        let plan = &self.control.descriptor.metadata().plan;
+        let plan = &self.descriptor.metadata().plan;
         let pair = match plan.blocks()[site].action() {
             NativeIterationAction::Scalar(NativeMatchAction::Copy { source, output }) => {
                 (*source, *output)
@@ -352,7 +372,6 @@ impl Context<'_, '_> {
             return false;
         }
         if self
-            .control
             .descriptor
             .metadata()
             .scalar_aggregates
@@ -362,7 +381,7 @@ impl Context<'_, '_> {
             return false;
         }
         matches!(
-            self.control.descriptor.metadata().plan.blocks()[site].action(),
+            self.descriptor.metadata().plan.blocks()[site].action(),
             NativeIterationAction::LibraryCall { .. }
                 | NativeIterationAction::PrepareU64Range { .. }
                 | NativeIterationAction::PrepareStringSpanSelector { .. }
@@ -377,16 +396,16 @@ impl Context<'_, '_> {
                 | NativeIterationAction::HistogramQueryStep { .. }
                 | NativeIterationAction::HistogramFinish { .. }
         ) || self.needs_move(site).is_some()
-            || matches!(self.control.descriptor.metadata().plan.blocks()[site].action(),
+            || matches!(self.descriptor.metadata().plan.blocks()[site].action(),
                 NativeIterationAction::Initialize { iteration }
-                if matches!(self.control.descriptor.metadata().plan.iterations()[*iteration as usize], mech_engine::native_artifact::NativeControlLoop::Collection(_)))
+                if matches!(self.descriptor.metadata().plan.iterations()[*iteration as usize], mech_engine::native_artifact::NativeControlLoop::Collection(_)))
     }
     fn scalar(
         &mut self,
         value: NativeMatchValue,
         word: u64,
     ) -> Result<Value, NativeProgramExecutionError> {
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let ty = &descriptor.metadata().plan.values()[value.get() as usize];
         let data = match ty.scalar_kind() {
             Some(NativeScalarKind::Bool) if word <= 1 => ValueDataDraft::Bool(word != 0),
@@ -403,10 +422,11 @@ impl Context<'_, '_> {
             .checked_mul(8)
             .and_then(|n| n.checked_add(128))
             .ok_or_else(|| invalid("scalar setup work overflow"))?;
-        self.control
+        self.state
+            .control
             .work
             .charge(NativeExecutionPhase::Setup, work)?;
-        let memory = self.library.memory_budget();
+        let memory = self.state.library.memory_budget();
         let mut reservation = memory.reserve_capacity(descriptor.metadata().scalar_bytes)?;
         ValueDraft {
             schema: ty.schema(),
@@ -474,13 +494,13 @@ impl Context<'_, '_> {
         {
             self.visit(site)?;
         }
-        if self.control.previous.map(u64::from) != Some(site) {
+        if self.state.control.previous.map(u64::from) != Some(site) {
             return Err(invalid("helper outside exact admitted visit"));
         }
         let site = site as usize;
         #[cfg(all(test, feature = "canonical-native-program"))]
         collection::before_span_helper(self, site)?;
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         if operation == super::program_abi::CLOSED_TAIL_BEGIN {
             return self.begin_closed_tail(site, args);
         }
@@ -539,7 +559,7 @@ impl Context<'_, '_> {
         } else if self.window_region.is_some() {
             Err(invalid("helper while compiled String loans are active"))
         } else if operation == 0xffff_ffff_ffff_fff0 {
-            if self.consumed || args != [0; 3] {
+            if self.state.consumed || args != [0; 3] {
                 return Err(invalid("duplicate or malformed structural observation"));
             }
             let NativeIterationAction::Structural {
@@ -560,15 +580,16 @@ impl Context<'_, '_> {
                 .checked_mul(32)
                 .and_then(|n| n.checked_add(64))
                 .ok_or_else(|| invalid("structural observation work overflow"))?;
-            self.control.work.charge(
+            self.state.control.work.charge(
                 NativeExecutionPhase::Node(
                     descriptor.metadata().plan.blocks()[site].origin().node(),
                 ),
                 work,
             )?;
             let root = self
+                .state
                 .arena
-                .copy_current(source.get(), &mut self.control.work)?;
+                .copy_current(source.get(), &mut self.state.control.work)?;
             if *observation == Observation::CanonicalValue {
                 let NativeIterationAction::Structural { output, .. } =
                     descriptor.metadata().plan.blocks()[site].action()
@@ -576,13 +597,15 @@ impl Context<'_, '_> {
                     unreachable!()
                 };
                 let prior = if self
+                    .state
                     .arena
-                    .current_retained_bytes(output.get(), &mut self.control.work)?
+                    .current_retained_bytes(output.get(), &mut self.state.control.work)?
                     .is_some()
                 {
                     Some(
-                        self.arena
-                            .copy_current(output.get(), &mut self.control.work)?,
+                        self.state
+                            .arena
+                            .copy_current(output.get(), &mut self.state.control.work)?,
                     )
                 } else {
                     None
@@ -594,15 +617,16 @@ impl Context<'_, '_> {
                     &root,
                     prior.as_ref(),
                     self.limits,
-                    &self.library,
+                    &self.state.library,
                 )
                 .map_err(|error| NativeProgramExecutionError::Library {
                     origin: descriptor.metadata().plan.blocks()[site].origin(),
                     error,
                 })?;
-                self.arena
-                    .put(output.get(), &result, &mut self.control.work)?;
-                self.consumed = true;
+                self.state
+                    .arena
+                    .put(output.get(), &result, &mut self.state.control.work)?;
+                self.state.consumed = true;
                 return descriptor.metadata().plan.values()[output.get() as usize]
                     .scalar_kind()
                     .map(|kind| bits(&result, kind))
@@ -635,8 +659,9 @@ impl Context<'_, '_> {
                 }
                 (Observation::StringEqual { peer }, ValueData::String(left)) => {
                     let peer = self
+                        .state
                         .arena
-                        .copy_current(peer.get(), &mut self.control.work)?;
+                        .copy_current(peer.get(), &mut self.state.control.work)?;
                     let ValueData::String(right) = peer.data() else {
                         return Err(invalid("structural String peer has another kind"));
                     };
@@ -644,7 +669,7 @@ impl Context<'_, '_> {
                         .map_err(|_| invalid("structural String comparison work overflow"))?;
                     // Both finite cumulative compute and comparison accounts
                     // admit the complete worst-case raw-byte equality first.
-                    self.library.charge(work, work).map_err(|error| {
+                    self.state.library.charge(work, work).map_err(|error| {
                         NativeProgramExecutionError::Collection {
                             origin: descriptor.metadata().plan.blocks()[site].origin(),
                             error,
@@ -658,10 +683,10 @@ impl Context<'_, '_> {
                     ));
                 }
             };
-            self.consumed = true;
+            self.state.consumed = true;
             Ok(Some(word))
         } else if operation == LIBRARY {
-            if self.consumed {
+            if self.state.consumed {
                 return Err(invalid("duplicate library helper"));
             }
             let NativeIterationAction::LibraryCall {
@@ -683,15 +708,15 @@ impl Context<'_, '_> {
             // no Rust reference to the lane survives across native writes.
             let words = unsafe { core::slice::from_raw_parts(self.arguments, operands.len()) };
             if let Some(result) = self.line_matrix_call(site, words)? {
-                self.consumed = true;
+                self.state.consumed = true;
                 return Ok(result);
             }
             if self.captured_line_element_call(site, words)? {
-                self.consumed = true;
+                self.state.consumed = true;
                 return Ok(None);
             }
             if self.selected_join_call(site, words)? {
-                self.consumed = true;
+                self.state.consumed = true;
                 return Ok(self.join_map_is_fusing().then_some(1));
             }
             for (index, &operand) in operands.iter().enumerate() {
@@ -704,55 +729,59 @@ impl Context<'_, '_> {
                     if words[index] != 0 {
                         return Err(invalid("managed operand has a native payload"));
                     }
-                    self.arena
-                        .copy_current(operand.get(), &mut self.control.work)?
+                    self.state
+                        .arena
+                        .copy_current(operand.get(), &mut self.state.control.work)?
                 };
-                self.call_inputs.values_mut()[index] = Some(value);
+                self.state.call_inputs.values_mut()[index] = Some(value);
             }
             let call = descriptor.metadata().calls[site]
                 .as_ref()
                 .ok_or_else(|| invalid("missing exact prepared selection"))?;
             let mut result = None;
-            let outcome = self.call_caches.invoke(
+            let outcome = self.state.call_caches.invoke(
                 site,
                 call,
-                &self.call_inputs.values()[..operands.len()],
+                &self.state.call_inputs.values()[..operands.len()],
                 &mut result,
                 self.limits,
-                &self.library,
+                &self.state.library,
             );
             // Every scalar/imported owner prepaid retirement before insertion.
             // Clear both successful and failed calls without retaining an old
             // call's owners while the next site is being constructed.
-            self.call_inputs.values_mut()[..operands.len()].fill(None);
+            self.state.call_inputs.values_mut()[..operands.len()].fill(None);
             outcome.map_err(|error| NativeProgramExecutionError::Library {
                 origin: descriptor.metadata().plan.blocks()[site].origin(),
                 error,
             })?;
             let result = result.ok_or_else(|| invalid("library omitted output"))?;
-            self.arena
-                .put(output.get(), &result, &mut self.control.work)?;
-            self.consumed = true;
+            self.state
+                .arena
+                .put(output.get(), &result, &mut self.state.control.work)?;
+            self.state.consumed = true;
             descriptor.metadata().plan.values()[output.get() as usize]
                 .scalar_kind()
                 .map(|kind| bits(&result, kind))
                 .transpose()
         } else if operation == MOVE {
-            if self.consumed {
+            if self.state.consumed {
                 return Err(invalid("duplicate managed move"));
             }
             let (source, output) = self
                 .needs_move(site)
                 .ok_or_else(|| invalid("move outside managed copy/carrier"))?;
             if self.move_joined_map(source.get(), output.get())? {
-                self.consumed = true;
+                self.state.consumed = true;
                 return Ok(None);
             }
             let value = self
+                .state
                 .arena
-                .copy_current(source.get(), &mut self.control.work)?;
-            self.arena
-                .put(output.get(), &value, &mut self.control.work)?;
+                .copy_current(source.get(), &mut self.state.control.work)?;
+            self.state
+                .arena
+                .put(output.get(), &value, &mut self.state.control.work)?;
             if let NativeIterationAction::Latch { iteration } =
                 descriptor.metadata().plan.blocks()[site].action()
                 && matches!(
@@ -762,55 +791,60 @@ impl Context<'_, '_> {
             {
                 self.retire_tail_locals(*iteration, RetirementKind::TailLatch)?;
             }
-            self.consumed = true;
+            self.state.consumed = true;
             Ok(None)
         } else if operation == COLLECTION {
-            if self.consumed || args[2] != 0 {
+            if self.state.consumed || args[2] != 0 {
                 return Err(invalid("duplicate collection helper"));
             }
             let mut state = self
+                .state
                 .collections
                 .take()
                 .ok_or_else(|| invalid("collection helper without state"))?;
             let result = state.helper(self, site, [args[0], args[1]]);
-            self.collections = Some(state);
+            self.state.collections = Some(state);
             let result = result?;
-            self.consumed = true;
+            self.state.consumed = true;
             Ok(result)
         } else {
-            if operation != OUTPUT_BASE + self.output_cursor as u64
-                || (self.action_required(site) && !self.consumed)
+            if operation != OUTPUT_BASE + self.state.output_cursor as u64
+                || (self.action_required(site) && !self.state.consumed)
                 || descriptor.metadata().plan.blocks()[site].terminator()
                     != NativeIterationTerminator::Scalar(NativeMatchTerminator::Complete)
             {
                 return Err(invalid("typed output outside exact completion order"));
             }
-            if self.output_cursor >= descriptor.metadata().plan.transport_output_count() {
+            if self.state.output_cursor >= descriptor.metadata().plan.transport_output_count() {
                 return Err(invalid("extra typed output"));
             }
             let out = descriptor
                 .metadata()
                 .plan
-                .transport_output_value(self.output_cursor);
+                .transport_output_value(self.state.output_cursor);
             let ty = descriptor
                 .metadata()
                 .plan
-                .transport_output_type(self.output_cursor);
+                .transport_output_type(self.state.output_cursor);
             let value = if ty.scalar_kind().is_some() {
                 self.scalar(out, args[0])?
             } else {
-                self.arena.copy_current(out.get(), &mut self.control.work)?
+                self.state
+                    .arena
+                    .copy_current(out.get(), &mut self.state.control.work)?
             };
             let target = descriptor
                 .metadata()
                 .plan
                 .values()
                 .len()
-                .checked_add(self.output_cursor)
+                .checked_add(self.state.output_cursor)
                 .and_then(|n| u32::try_from(n).ok())
                 .ok_or_else(|| invalid("typed output slot overflow"))?;
-            self.arena.put(target, &value, &mut self.control.work)?;
-            self.output_cursor += 1;
+            self.state
+                .arena
+                .put(target, &value, &mut self.state.control.work)?;
+            self.state.output_cursor += 1;
             Ok(None)
         }
     }
@@ -832,7 +866,6 @@ impl Context<'_, '_> {
         }
         if self.activation_phase
             && self
-                .control
                 .descriptor
                 .metadata()
                 .plan
@@ -844,25 +877,24 @@ impl Context<'_, '_> {
                 "activation checkpoint must return before its fresh visit",
             ));
         }
-        if let Some(previous) = self.control.previous
+        if let Some(previous) = self.state.control.previous
             && self.action_required(previous as usize)
-            && !self.consumed
+            && !self.state.consumed
         {
             return Err(invalid("entry omitted current required helper"));
         }
-        let previous = if let Some((from, to)) = self.map_owners.closed_exit {
-            if self.control.previous != Some(from) || site != u64::from(to) {
+        let previous = if let Some((from, to)) = self.state.map_owners.closed_exit {
+            if self.state.control.previous != Some(from) || site != u64::from(to) {
                 return Err(invalid("visit outside closed map exit frontier"));
             }
             Some(from)
-        } else if let Some(previous) = self.control.previous
+        } else if let Some(previous) = self.state.control.previous
             && let Some(group) = self
-                .control
                 .descriptor
                 .metadata()
                 .map_admission
                 .group(previous as usize)
-            && self.map_owners.active(group.owner)
+            && self.state.map_owners.has_retained_binding(group.owner)
         {
             if previous != group.start() {
                 return Err(invalid("native path lost its entry"));
@@ -875,7 +907,7 @@ impl Context<'_, '_> {
                     .ok_or_else(|| invalid("visit outside prepaid native path frontier"))?,
             )
         } else {
-            self.control.previous
+            self.state.control.previous
         };
         // A native aggregate latch has no managed move callback. Retire the
         // OTHER managed loop locals after that generated copy, before the next
@@ -883,7 +915,6 @@ impl Context<'_, '_> {
         // no heap payload and are absent from the retirement inventory.
         if let Some(previous) = previous
             && (self
-                .control
                 .descriptor
                 .metadata()
                 .scalar_aggregates
@@ -891,9 +922,9 @@ impl Context<'_, '_> {
                 .is_some()
                 || self.retained_native_action(previous as usize))
             && let NativeIterationAction::Latch { iteration } =
-                self.control.descriptor.metadata().plan.blocks()[previous as usize].action()
+                self.descriptor.metadata().plan.blocks()[previous as usize].action()
             && matches!(
-                self.control.descriptor.metadata().plan.iterations()[*iteration as usize],
+                self.descriptor.metadata().plan.iterations()[*iteration as usize],
                 mech_engine::native_artifact::NativeControlLoop::Tail(_)
             )
         {
@@ -903,7 +934,6 @@ impl Context<'_, '_> {
             usize::try_from(site).map_err(|_| invalid("program visit site outside descriptor"))?;
         if let Some(worker) = &self.worker
             && !self
-                .control
                 .descriptor
                 .metadata()
                 .parallel
@@ -914,7 +944,6 @@ impl Context<'_, '_> {
             return Err(invalid("worker visited outside its outlined source body"));
         }
         let block = self
-            .control
             .descriptor
             .metadata()
             .plan
@@ -922,23 +951,21 @@ impl Context<'_, '_> {
             .get(index)
             .ok_or_else(|| invalid("program visit site outside descriptor"))?;
         self.validate_selected_join_boundary(index)?;
-        if let Some(state) = &self.collections {
+        if let Some(state) = &self.state.collections {
             state.validate_span_boundary(block.action())?;
         }
         let group = self
-            .control
             .descriptor
             .metadata()
             .map_admission
             .group(index)
-            .filter(|group| self.map_owners.active(group.owner));
+            .filter(|group| self.state.map_owners.has_retained_binding(group.owner));
         if group.is_some_and(|group| u64::from(group.start()) != site) {
             return Err(invalid("ordinary visit inside admitted scalar group"));
         }
         if previous.is_none() && self.worker.is_some() {
             let worker = self.worker.as_ref().unwrap();
             let region = self
-                .control
                 .descriptor
                 .metadata()
                 .parallel
@@ -948,17 +975,17 @@ impl Context<'_, '_> {
             if site != u64::from(region.begin) || group.is_some() {
                 return Err(invalid("worker entry outside constructor proof"));
             }
-            self.control.visit_outlined_entry(site, region.begin)?;
+            self.control().visit_outlined_entry(site, region.begin)?;
         } else {
-            self.control
+            self.control()
                 .visit_from(site, group.map(|group| group.work), previous)?;
         }
-        self.map_owners.closed_exit = None;
-        let descriptor = self.control.descriptor;
+        self.state.map_owners.closed_exit = None;
+        let descriptor = self.descriptor;
         if let Some(mech_engine::native_artifact::NativeBorrowedStringAction::Equal { .. }) =
             self.borrowed_action(index)
         {
-            self.library.charge(32, 32).map_err(|error| {
+            self.state.library.charge(32, 32).map_err(|error| {
                 NativeProgramExecutionError::Collection {
                     origin: block.origin(),
                     error,
@@ -994,25 +1021,27 @@ impl Context<'_, '_> {
             )
         {
             let mut state = self
+                .state
                 .collections
                 .take()
                 .ok_or_else(|| invalid("collection exit without state"))?;
             let result = state.release_source(self, iteration);
-            self.collections = Some(state);
+            self.state.collections = Some(state);
             result?;
         }
-        if self.control.completed
+        if self.state.control.completed
             && self
+                .state
                 .collections
                 .as_ref()
                 .is_some_and(|state| !state.is_complete())
         {
             return Err(invalid("completion with an active collection builder"));
         }
-        if self.control.completed && self.has_retained_maps() {
+        if self.state.control.completed && self.has_retained_maps() {
             return Err(invalid("completion with an active retained map owner"));
         }
-        self.consumed = false;
+        self.state.consumed = false;
         // Keep the actual admitted anchor. The next callback must belong to
         // this prepaid path's exact frontier; interior failures retain their
         // original source sites. No synthetic per-instruction visits occur.
@@ -1021,6 +1050,7 @@ impl Context<'_, '_> {
 
     fn failure_site(&self, raw: u64) -> Result<u32, NativeProgramExecutionError> {
         let previous = self
+            .state
             .control
             .previous
             .ok_or_else(|| invalid("program failure before visit"))?;
@@ -1028,9 +1058,9 @@ impl Context<'_, '_> {
         if site == previous {
             return Ok(site);
         }
-        let layout = &self.control.descriptor.metadata().map_admission;
+        let layout = &self.descriptor.metadata().map_admission;
         if let Some(group) = layout.group(previous as usize)
-            && self.map_owners.active(group.owner)
+            && self.state.map_owners.has_retained_binding(group.owner)
             && group.start() == previous
             && group.sites.contains(&site)
         {
@@ -1044,22 +1074,23 @@ impl Context<'_, '_> {
         iteration: u32,
         kind: RetirementKind,
     ) -> Result<(), NativeProgramExecutionError> {
-        self.retire_map_keys(iteration)?;
-        self.retire_frozen_maps(iteration)?;
+        self.retire_keys(iteration)?;
+        self.retire_frozen(iteration)?;
         let slots = self
-            .control
             .descriptor
             .metadata()
             .retirements
             .slots(self.retirements, iteration, kind)
             .map_err(invalid)?;
         let scan = amount(slots.len(), 16, 64)?;
-        self.control
+        self.state
+            .control
             .work
             .charge(NativeExecutionPhase::Setup, scan)?;
         for &slot in slots {
-            self.arena
-                .retire_current(slot as u32, &mut self.control.work)?;
+            self.state
+                .arena
+                .retire_current(slot as u32, &mut self.state.control.work)?;
         }
         Ok(())
     }
@@ -1070,7 +1101,7 @@ unsafe extern "C" fn admit(context: *mut c_void, site: u64) -> u64 {
     }
     // SAFETY: execute retains this invocation context and disjoint backing for
     // the synchronous private entry; no pointer escapes the call.
-    let context = unsafe { &mut *context.cast::<Context<'_, '_>>() };
+    let context = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
@@ -1096,7 +1127,7 @@ unsafe extern "C" fn helper(
         return STATUS_ABI;
     }
     // SAFETY: the private entry receives only execute's retained context.
-    let context = unsafe { &mut *context.cast::<Context<'_, '_>>() };
+    let context = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
@@ -1308,14 +1339,14 @@ mod histogram_query_observation_tests {
         static SCALAR: std::cell::Cell<Option<ScalarBoundary>> = const { std::cell::Cell::new(None) };
     }
     /// This safe test-only header hook runs immediately before the unchanged
-    /// Context::scalar reservation E; selected-stage lookup allocates nothing.
+    /// Invocation::scalar reservation E; selected-stage lookup allocates nothing.
     /// Ballast is an ordinary reservation on the SAME immutable account; no
     /// quota, production price, body, generation or Value owner is changed.
     /// It returns the guard so pressure encloses only that real constructor.
     /// There are deliberately no assertions that could unwind through C.
     pub(super) fn before_scalar(
         state: &collection::State,
-        ctx: &Context<'_, '_>,
+        ctx: &Invocation<'_, '_, '_>,
         id: u32,
         ordinal: u32,
         previous_output_bytes: Option<u64>,
@@ -1323,9 +1354,9 @@ mod histogram_query_observation_tests {
         let mut demand = state.test_query_state(id)?;
         demand.step = Some(ordinal);
         let target = Target::of(&demand);
-        let memory = ctx.library.memory_budget();
+        let memory = ctx.state.library.memory_budget();
         let memory_before = memory.used_bytes();
-        let envelope = ctx.control.descriptor.metadata().scalar_bytes;
+        let envelope = ctx.descriptor.metadata().scalar_bytes;
         let mut ballast = None;
         let mut pressure_failed = false;
         if let Some((requested, short)) = PRESSURE.with(std::cell::Cell::get)
@@ -1355,7 +1386,7 @@ mod histogram_query_observation_tests {
                 scalar_owners: state.test_query_scalar_owners(),
                 memory_before,
                 memory_pressured,
-                work_before: ctx.control.work.used(),
+                work_before: ctx.state.control.work.used(),
                 pressure_failed,
             }))
         });
@@ -1374,13 +1405,18 @@ mod histogram_query_observation_tests {
     ) -> u64 {
         SCALAR.with(|slot| slot.set(None));
         let before = (|| {
-            // SAFETY: execute retains this initialized Context for the actual JIT.
-            let ctx = unsafe { &*context.cast::<Context<'_, '_>>() };
+            // SAFETY: execute retains this initialized Invocation for the actual JIT.
+            let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
             let demand = ctx
+                .state
                 .collections
                 .as_ref()?
                 .test_query_demand(ctx, usize::try_from(site).ok()?)?;
-            Some((demand, ctx.library.memory_budget(), ctx.control.work.used()))
+            Some((
+                demand,
+                ctx.state.library.memory_budget(),
+                ctx.state.control.work.used(),
+            ))
         })();
         let memory_before = before
             .as_ref()
@@ -1390,16 +1426,19 @@ mod histogram_query_observation_tests {
             unsafe { super::helper(context, site, operation, first, second, third, result) };
         if let Some((demand, memory, work_before)) = before {
             // SAFETY: the real helper's exclusive borrow has ended.
-            let ctx = unsafe { &*context.cast::<Context<'_, '_>>() };
+            let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
             let after = ctx
+                .state
                 .collections
                 .as_ref()
                 .and_then(|state| state.test_query_state(demand.collection));
             let live_after = ctx
+                .state
                 .collections
                 .as_ref()
                 .map_or(0, |state| state.test_live_bytes());
             let scalar_owners_after = ctx
+                .state
                 .collections
                 .as_ref()
                 .map_or((0, 0), |state| state.test_query_scalar_owners());
@@ -1411,7 +1450,7 @@ mod histogram_query_observation_tests {
                     memory_before,
                     memory_after: memory.used_bytes(),
                     work_before,
-                    work_after: ctx.control.work.used(),
+                    work_after: ctx.state.control.work.used(),
                     live_after,
                     scalar_owners_after,
                     scalar: SCALAR.with(std::cell::Cell::take),
@@ -2133,7 +2172,7 @@ mod histogram_query_observation_tests {
                         Some((target, short)),
                     );
                     let actual = row(&rows, target);
-                    let boundary = actual.scalar.expect("reached unchanged Context::scalar");
+                    let boundary = actual.scalar.expect("reached unchanged Invocation::scalar");
                     assert_eq!(boundary.target, target);
                     assert!(
                         !boundary.pressure_failed,
@@ -2282,14 +2321,19 @@ mod histogram_observation_tests {
     ) -> u64 {
         collection::State::test_histogram_clear_observation();
         let before = (|| {
-            // SAFETY: execute retains the synchronous Context; the shared borrow
+            // SAFETY: execute retains the synchronous Invocation; the shared borrow
             // ends before delegating unchanged arguments to the exclusive helper.
-            let ctx = unsafe { &*context.cast::<Context<'_, '_>>() };
+            let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
             let visit = ctx
+                .state
                 .collections
                 .as_ref()?
                 .test_histogram_visit(ctx, usize::try_from(site).ok()?)?;
-            Some((visit, ctx.library.memory_budget(), ctx.control.work.used()))
+            Some((
+                visit,
+                ctx.state.library.memory_budget(),
+                ctx.state.control.work.used(),
+            ))
         })();
         let (mut ballast, mut remaining, mut pressure_failed) = (None, None, false);
         if let Some((visit, memory, _)) = &before {
@@ -2323,9 +2367,10 @@ mod histogram_observation_tests {
             unsafe { super::helper(context, site, operation, first, second, third, result) };
         if let Some((visit, memory, work_before)) = before {
             // SAFETY: the delegated exclusive helper borrow has ended.
-            let ctx = unsafe { &*context.cast::<Context<'_, '_>>() };
+            let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
             let demand = collection::State::test_histogram_take_observation();
             let after = ctx
+                .state
                 .collections
                 .as_ref()
                 .and_then(|state| state.test_histogram_storage(visit.collection));
@@ -2337,7 +2382,7 @@ mod histogram_observation_tests {
                     memory_before: memory_before.unwrap_or(0),
                     memory_after: memory.used_bytes(),
                     work_before,
-                    work_after: ctx.control.work.used(),
+                    work_after: ctx.state.control.work.used(),
                     global_remaining: remaining,
                     status: if pressure_failed { u64::MAX } else { status },
                 })
@@ -3027,12 +3072,16 @@ mod text_join_observation_tests {
         let before = (|| {
             // SAFETY: execute retains this exact context for the synchronous JIT
             // entry. This shared borrow ends before calling the real helper.
-            let ctx = unsafe { &*context.cast::<Context<'_, '_>>() };
-            let state = ctx.collections.as_ref()?;
+            let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+            let state = ctx.state.collections.as_ref()?;
             let demand = state
                 .test_text_join_demand(ctx, usize::try_from(site).ok()?)
                 .ok()??;
-            Some((demand, ctx.library.memory_budget(), ctx.control.work.used()))
+            Some((
+                demand,
+                ctx.state.library.memory_budget(),
+                ctx.state.control.work.used(),
+            ))
         })();
         let mut pressure_failure = false;
         let mut ballast = None;
@@ -3069,8 +3118,9 @@ mod text_join_observation_tests {
             unsafe { super::helper(context, site, operation, first, second, third, result) };
         if let Some((demand, memory, work_before)) = before {
             // SAFETY: helper returned and its exclusive borrow has ended.
-            let ctx = unsafe { &*context.cast::<Context<'_, '_>>() };
+            let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
             let after_storage = ctx
+                .state
                 .collections
                 .as_ref()
                 .and_then(|state| state.test_text_join_storage(demand.collection));
@@ -3080,7 +3130,7 @@ mod text_join_observation_tests {
                 memory_before: memory_before.unwrap_or(0),
                 memory_after: memory.used_bytes(),
                 work_before,
-                work_after: ctx.control.work.used(),
+                work_after: ctx.state.control.work.used(),
                 global_remaining,
                 status: if pressure_failure { u64::MAX } else { status },
             };
@@ -4160,30 +4210,24 @@ mod tests {
         let before = (|| {
             // SAFETY: the actual generated entry forwards execute's retained
             // private context. This shared borrow ends before helper mutates it.
-            let ctx = unsafe { &*context.cast::<Context<'_, '_>>() };
+            let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
             let site = usize::try_from(site).ok()?;
-            let block = ctx.control.descriptor.metadata().plan.blocks().get(site)?;
+            let block = ctx.descriptor.metadata().plan.blocks().get(site)?;
             if !matches!(
                 block.action(),
                 NativeIterationAction::PrepareU64Range { .. }
             ) {
                 return None;
             }
-            let selected = ctx
-                .control
-                .descriptor
-                .metadata()
-                .calls
-                .get(site)?
-                .as_ref()?;
+            let selected = ctx.descriptor.metadata().calls.get(site)?.as_ref()?;
             Some(RangeScratchObservation {
                 origin: block.origin(),
-                live_bytes: ctx.collections.as_ref()?.test_live_bytes(),
+                live_bytes: ctx.state.collections.as_ref()?.test_live_bytes(),
                 scratch_bytes: selected.binding_metadata_bytes(),
                 binding_work: selected.binding_work(),
-                memory_before: ctx.library.memory_budget().used_bytes(),
+                memory_before: ctx.state.library.memory_budget().used_bytes(),
                 memory_after: 0,
-                work_before: ctx.control.work.used(),
+                work_before: ctx.state.control.work.used(),
                 work_after: 0,
                 status: 0,
             })
@@ -4194,9 +4238,9 @@ mod tests {
             unsafe { super::helper(context, site, operation, first, second, third, result) };
         if let Some(mut observation) = before {
             // SAFETY: helper has returned and its exclusive borrow ended.
-            let ctx = unsafe { &*context.cast::<Context<'_, '_>>() };
-            observation.memory_after = ctx.library.memory_budget().used_bytes();
-            observation.work_after = ctx.control.work.used();
+            let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+            observation.memory_after = ctx.state.library.memory_budget().used_bytes();
+            observation.work_after = ctx.state.control.work.used();
             observation.status = status;
             RANGE_SCRATCH_OBSERVATIONS.with(|rows| rows.borrow_mut().push(observation));
         }
@@ -4537,3 +4581,13 @@ mod tests {
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "program_structural_projection_tests.rs"]
 mod structural_projection_tests;
+
+#[test]
+fn native_runtime_consolidation_preserves_the_charged_layout_envelope() {
+    let persistent = core::mem::size_of::<ExecutionState<'_>>();
+    let invocation = core::mem::size_of::<Invocation<'_, '_, '_>>();
+    eprintln!("native-layout: persistent={persistent} invocation={invocation}");
+    assert!(persistent + invocation <= 2432 + 128);
+    assert_eq!(caller_geometry::fixed_nodes().unwrap(), 2704);
+    assert_eq!(core::mem::size_of::<Frame>(), 144);
+}

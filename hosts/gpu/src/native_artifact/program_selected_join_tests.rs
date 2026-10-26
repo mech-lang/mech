@@ -42,7 +42,7 @@ enum Fault {
 // Corrupt only private protocol state at the actual emitted consumer. The
 // ordinary production guards and selected calls still decide the outcome.
 pub(super) fn before_call(
-    ctx: &mut Context<'_, '_>,
+    ctx: &mut Invocation<'_, '_, '_>,
     site: usize,
     role: Site,
 ) -> Result<bool, Error> {
@@ -56,21 +56,15 @@ pub(super) fn before_call(
     match fault {
         Fault::ReplaySelection => {
             let index = ctx.selected_join.as_ref().unwrap().region;
-            let selection =
-                ctx.control.descriptor.metadata().selected_joins.regions[index].selection();
+            let selection = ctx.descriptor.metadata().selected_joins.regions[index].selection();
             ctx.selected_join_call(selection as usize, &[0, 0])?;
         }
         Fault::MissingSelection => {
             ctx.selected_join = None;
         }
         Fault::WrongRegion => {
-            ctx.selected_join.as_mut().unwrap().region = ctx
-                .control
-                .descriptor
-                .metadata()
-                .selected_joins
-                .regions
-                .len();
+            ctx.selected_join.as_mut().unwrap().region =
+                ctx.descriptor.metadata().selected_joins.regions.len();
         }
         Fault::WrongParent => {
             ctx.selected_join.as_mut().unwrap().parent = Some(u32::MAX);
@@ -78,7 +72,7 @@ pub(super) fn before_call(
         Fault::SkipConsumer => return Ok(true),
         Fault::MalformedVisit => {
             // Isolate the actual bounds/pending-state guard from omission.
-            ctx.consumed = true;
+            ctx.state.consumed = true;
             ctx.visit(u64::MAX)?;
         }
         Fault::ConsumeTwice => {
@@ -89,12 +83,12 @@ pub(super) fn before_call(
 }
 
 pub(super) fn observe(
-    ctx: &Context<'_, '_>,
+    ctx: &Invocation<'_, '_, '_>,
     site: usize,
     demand: Demand,
 ) -> Result<Option<ManagedMemoryReservation>, Error> {
     LAST.with(|slot| slot.set(Some(demand)));
-    let memory = ctx.library.memory_budget();
+    let memory = ctx.state.library.memory_budget();
     match PRESSURE.with(Cell::get) {
         None => Ok(None),
         Some(Pressure::Import(steps)) => {

@@ -89,11 +89,14 @@ unsafe extern "C" fn observe_publication_frontier(
         // SAFETY: this observer receives the same pinned owned context as the
         // maintained helper. Capture before table import/publication, whose
         // independently seeded hash iteration can change heapsort's work.
-        let ctx = unsafe { &*raw.cast::<Context<'_, '_>>() };
+        let ctx = unsafe { &*raw.cast::<Invocation<'_, '_, '_>>() };
         PUBLICATION_FRONTIERS.with(|records| {
-            records
-                .borrow_mut()
-                .push((site, first, ctx.control.work.used(), ctx.library.used()))
+            records.borrow_mut().push((
+                site,
+                first,
+                ctx.state.control.work.used(),
+                ctx.state.library.used(),
+            ))
         });
     }
     // SAFETY: unchanged arguments and original maintained helper contract.
@@ -1012,12 +1015,13 @@ sequence := text/join([letters{{char}} | char <- text<string>], "")
                         unsafe {
                             (*frame).helper = old;
                         }
-                        let ctx = unsafe { &*(*frame).base.context.cast::<Context<'_, '_>>() };
+                        let ctx =
+                            unsafe { &*(*frame).base.context.cast::<Invocation<'_, '_, '_>>() };
                         terminal.set(Some((
                             status,
                             (status != STATUS_OK).then(|| unsafe { (*frame).base.error_node }),
-                            ctx.control.work.used(),
-                            ctx.library.used(),
+                            ctx.state.control.work.used(),
+                            ctx.state.library.used(),
                         )));
                         status
                     },
@@ -1286,12 +1290,12 @@ fn arithmetic_failure_equivalence(pass: Pass) {
                     unsafe {
                         (*frame).helper = old;
                     }
-                    let ctx = unsafe { &*(*frame).base.context.cast::<Context<'_, '_>>() };
+                    let ctx = unsafe { &*(*frame).base.context.cast::<Invocation<'_, '_, '_>>() };
                     terminal.set((status == STATUS_ARITHMETIC).then(|| {
                         (
                             unsafe { (*frame).base.error_node },
-                            ctx.control.work.used(),
-                            ctx.library.used(),
+                            ctx.state.control.work.used(),
+                            ctx.state.library.used(),
                         )
                     }));
                     status

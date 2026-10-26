@@ -3,7 +3,7 @@ use super::super::{
     NativeExecutionPhase,
     memory::{NativeTypedStorage, NativeWordStorage},
 };
-use super::{Context, NativeProgramExecutionError as Error, amount, invalid};
+use super::{Invocation, NativeProgramExecutionError as Error, amount, invalid};
 use mech_core::{Value, ValueData, snapshot::SequenceView};
 use mech_engine::native_artifact::{NativeBorrowedStringAction as Action, NativeIterationAction};
 
@@ -32,15 +32,10 @@ fn texts(value: &Value) -> Option<&[Box<str>]> {
         _ => None,
     }
 }
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
     pub(super) fn borrowed_action(&self, site: usize) -> Option<&Action> {
         let state = self.borrowed_strings.as_ref()?;
-        let (region, action) = self
-            .control
-            .descriptor
-            .metadata()
-            .borrowed_strings
-            .action(site)?;
+        let (region, action) = self.descriptor.metadata().borrowed_strings.action(site)?;
         (state.active && state.region == region).then_some(action)
     }
     pub(super) fn prepare_borrowed_strings(
@@ -48,12 +43,7 @@ impl Context<'_, '_> {
         site: usize,
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
-        let ordinal = self
-            .control
-            .descriptor
-            .metadata()
-            .borrowed_strings
-            .initializers[site]
+        let ordinal = self.descriptor.metadata().borrowed_strings.initializers[site]
             .ok_or_else(|| invalid("borrowed String preparation outside initializer"))?;
         self.prepare_borrowed_region(site, args, ordinal)
     }
@@ -63,23 +53,24 @@ impl Context<'_, '_> {
         args: [u64; 3],
         ordinal: usize,
     ) -> Result<Option<u64>, Error> {
-        if self.borrowed_strings.is_some() || self.consumed || args != [0; 3] {
+        if self.borrowed_strings.is_some() || self.state.consumed || args != [0; 3] {
             return Err(invalid(
                 "duplicate or malformed borrowed String preparation",
             ));
         }
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let region = &descriptor.metadata().borrowed_strings.regions[ordinal];
-        if self.control.current != Some(region.proof.iteration()) {
+        if self.state.control.current != Some(region.proof.iteration()) {
             return Err(invalid("borrowed String preparation outside current loop"));
         }
         let count = region.proof.matrices().len() + region.proof.literals().len();
-        let memory = self.library.memory_budget();
+        let memory = self.state.library.memory_budget();
         let limit = self
             .limits
             .max_temporary_bytes
             .ok_or_else(|| invalid("unbounded String view metadata"))?;
-        self.control
+        self.state
+            .control
             .work
             .charge(NativeExecutionPhase::Setup, amount(count, 256, 4096)?)?;
         let mut owners = NativeTypedStorage::new_values(count, limit, &memory)?;
@@ -100,10 +91,13 @@ impl Context<'_, '_> {
                 None
             };
             if let Some(window) = window {
-                // This immutable Context loan owns the actual source cells.
+                // This immutable Invocation loan owns the actual source cells.
                 // No canonical source String or Matrix exists before EOF,
                 // and the window's admitted capacity includes its row table.
-                self.control.work.charge(NativeExecutionPhase::Setup, 128)?;
+                self.state
+                    .control
+                    .work
+                    .charge(NativeExecutionPhase::Setup, 128)?;
                 active &= window.is_ascii();
                 source_bytes = source_bytes
                     .checked_add(window.retained_capacity_bytes())
@@ -116,7 +110,10 @@ impl Context<'_, '_> {
                 None
             };
             let owner = if let Some(lines) = &lines {
-                self.control.work.charge(NativeExecutionPhase::Setup, 128)?;
+                self.state
+                    .control
+                    .work
+                    .charge(NativeExecutionPhase::Setup, 128)?;
                 line_metadata_bytes = line_metadata_bytes
                     .checked_add(lines.metadata_bytes())
                     .ok_or_else(|| invalid("borrowed line metadata overflow"))?;
@@ -126,8 +123,9 @@ impl Context<'_, '_> {
                     .ok_or_else(|| invalid("captured line matrix requires an actual row window"))?
                     .clone()
             } else {
-                self.arena
-                    .copy_current(value.get(), &mut self.control.work)?
+                self.state
+                    .arena
+                    .copy_current(value.get(), &mut self.state.control.work)?
             };
             if self.prefix.is_some() && i < region.proof.matrices().len() {
                 let actual = lines
@@ -174,7 +172,8 @@ impl Context<'_, '_> {
                 },
             });
         }
-        self.control
+        self.state
+            .control
             .work
             .charge(NativeExecutionPhase::Setup, amount(rows, 128, 4096)?)?;
         let mut table = NativeWordStorage::new(words, limit, Some(&memory))?;
@@ -198,7 +197,8 @@ impl Context<'_, '_> {
                     // ASCII except CRLF has exactly one byte per canonical grapheme.
                     // Admit ASCII + CR-absence + possible pair scans before
                     // examining payload bytes, under the same4*len bound.
-                    self.control
+                    self.state
+                        .control
                         .work
                         .charge(NativeExecutionPhase::Setup, amount(text.len(), 4, 32)?)?;
                     active &= mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(text);
@@ -215,7 +215,7 @@ impl Context<'_, '_> {
                 if let Some(window) = self.prefix_line_window(region.proof.matrices()[i]) {
                     window.native_rows()
                 } else if let Some(lines) = self.line_matrix(region.proof.matrices()[i]) {
-                    // The Context/session pins this exact immutable table across
+                    // The Invocation/session pins this exact immutable table across
                     // the native scanner; its real String owner is also pinned
                     // in owners. No second pointer table or Matrix is allocated.
                     let rows = lines.rows().ok_or_else(|| {
@@ -284,7 +284,7 @@ impl Context<'_, '_> {
             .borrowed_action(site)
             .cloned()
             .ok_or_else(|| invalid("String failure outside native view"))?;
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let NativeIterationAction::LibraryCall { operands, .. } =
             descriptor.metadata().plan.blocks()[site].action()
         else {
@@ -298,8 +298,13 @@ impl Context<'_, '_> {
             let call = descriptor.metadata().calls[site]
                 .as_ref()
                 .ok_or_else(|| invalid("line window bounds failure lost its selected call"))?;
-            let result =
-                call.text_line_window_element(window, args[2], self.limits, &self.library, prior);
+            let result = call.text_line_window_element(
+                window,
+                args[2],
+                self.limits,
+                &self.state.library,
+                prior,
+            );
             let error = match result {
                 Err(error) => Error::Library {
                     origin: descriptor.metadata().plan.blocks()[site].origin(),
@@ -317,8 +322,13 @@ impl Context<'_, '_> {
             let call = descriptor.metadata().calls[site]
                 .as_ref()
                 .ok_or_else(|| invalid("line matrix bounds failure lost its selected call"))?;
-            let result =
-                call.text_line_matrix_element(&lines, args[2], self.limits, &self.library, prior);
+            let result = call.text_line_matrix_element(
+                &lines,
+                args[2],
+                self.limits,
+                &self.state.library,
+                prior,
+            );
             let error = match result {
                 Err(error) => Error::Library {
                     origin: descriptor.metadata().plan.blocks()[site].origin(),
@@ -334,7 +344,7 @@ impl Context<'_, '_> {
             // actual maintained leaf so the original String leaf can report
             // its exact error. This does not change generated control progress.
             let selector = operands[1];
-            self.control.work.charge(
+            self.state.control.work.charge(
                 NativeExecutionPhase::Setup,
                 amount(
                     descriptor.metadata().borrowed_strings.regions[state.region]
@@ -381,7 +391,7 @@ impl Context<'_, '_> {
                         .ok_or_else(|| invalid("String failure window scan overflow"))?;
                 }
             }
-            self.control.work.charge(
+            self.state.control.work.charge(
                 NativeExecutionPhase::Setup,
                 amount(inspected, 64, 128)?
                     .checked_add(amount(window_inspected, 256, 0)?)
@@ -438,10 +448,11 @@ impl Context<'_, '_> {
             }
             let text = found.ok_or_else(|| invalid("String failure view is not owned"))?;
             let bytes = amount(text.len(), 8, descriptor.metadata().scalar_bytes)?;
-            self.control
+            self.state
+                .control
                 .work
                 .charge(NativeExecutionPhase::Setup, bytes)?;
-            let mut reservation = self.library.memory_budget().reserve_capacity(bytes)?;
+            let mut reservation = self.state.library.memory_budget().reserve_capacity(bytes)?;
             let value = mech_core::snapshot::ValueDraft {
                 schema: descriptor.metadata().plan.values()[source.get() as usize].schema(),
                 shape_values: Box::new([]),
@@ -454,8 +465,9 @@ impl Context<'_, '_> {
             )
             .map_err(Error::Snapshot)?
             .into_memory_budget(&mut reservation)?;
-            self.arena
-                .put(source.get(), &value, &mut self.control.work)?;
+            self.state
+                .arena
+                .put(source.get(), &value, &mut self.state.control.work)?;
         }
         for (i, operand) in operands.iter().enumerate() {
             let word = if descriptor.metadata().plan.values()[operand.get() as usize]
@@ -482,10 +494,10 @@ impl Context<'_, '_> {
     }
 
     fn restore_borrowed_selector(&mut self, site: usize, words: [u64; 2]) -> Result<(), Error> {
-        let descriptor = self.control.descriptor;
-        self.control.work.charge(
+        let descriptor = self.descriptor;
+        self.state.control.work.charge(
             NativeExecutionPhase::Setup,
-            amount(self.call_inputs.values().len(), 16, 128)?,
+            amount(self.state.call_inputs.values().len(), 16, 128)?,
         )?;
         let NativeIterationAction::LibraryCall {
             operands, output, ..
@@ -493,33 +505,34 @@ impl Context<'_, '_> {
         else {
             return Err(invalid("elided String selector lost its selected call"));
         };
-        if operands.len() != 2 || self.call_inputs.values().iter().any(Option::is_some) {
+        if operands.len() != 2 || self.state.call_inputs.values().iter().any(Option::is_some) {
             return Err(invalid("elided String selector has stale call owners"));
         }
         for (i, &operand) in operands.iter().enumerate() {
             let value = self.scalar(operand, words[i])?;
-            self.call_inputs.values_mut()[i] = Some(value);
+            self.state.call_inputs.values_mut()[i] = Some(value);
         }
         let call = descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("elided String selector lost its prepared leaf"))?;
         let mut result = None;
-        let outcome = self.call_caches.invoke(
+        let outcome = self.state.call_caches.invoke(
             site,
             call,
-            &self.call_inputs.values()[..2],
+            &self.state.call_inputs.values()[..2],
             &mut result,
             self.limits,
-            &self.library,
+            &self.state.library,
         );
-        self.call_inputs.values_mut()[..2].fill(None);
+        self.state.call_inputs.values_mut()[..2].fill(None);
         outcome.map_err(|error| Error::Library {
             origin: descriptor.metadata().plan.blocks()[site].origin(),
             error,
         })?;
         let result = result.ok_or_else(|| invalid("elided String selector omitted its result"))?;
-        self.arena
-            .put(output.get(), &result, &mut self.control.work)?;
+        self.state
+            .arena
+            .put(output.get(), &result, &mut self.state.control.work)?;
         Ok(())
     }
 }

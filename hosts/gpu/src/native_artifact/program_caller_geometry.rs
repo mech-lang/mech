@@ -1,6 +1,6 @@
 //! Current canonical caller holdings. Future retained-map owners must add their
 //! private table/owner-lane nodes; a view never grants execution authority.
-use super::{Context, Frame, NativeProgramExecutionError as Error, invalid};
+use super::{Frame, Invocation, NativeProgramExecutionError as Error, invalid};
 use crate::native_artifact::{NativeExecutionPhase, owned_string_map::PublicationGeometry};
 
 fn add(a: u64, b: u64) -> Result<u64, Error> {
@@ -8,21 +8,26 @@ fn add(a: u64, b: u64) -> Result<u64, Error> {
         .ok_or_else(|| invalid("native caller node geometry overflows"))
 }
 
+// Preserve the existing 64-bit ABI caller envelope. Grouping persistent state
+// made its combined layout smaller; repricing is a separate resource change.
+const CHARGED_INVOCATION_BYTES: u64 = 2432;
+
 pub(super) fn fixed_nodes() -> Result<u64, Error> {
-    (core::mem::size_of::<Context<'_, '_>>() as u64)
+    CHARGED_INVOCATION_BYTES
         .checked_add(core::mem::size_of::<Frame>() as u64)
         .and_then(|n| n.checked_add(128))
         .ok_or_else(|| invalid("native caller fixed geometry overflows"))
 }
 
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
     pub(super) fn retained_caller_dynamic_nodes(&self, site: usize) -> Result<u64, Error> {
         add(
-            self.library.memory_budget().retained_snapshot_nodes(),
-            self.call_caches
-                .caller_retained_nodes(&self.library)
+            self.state.library.memory_budget().retained_snapshot_nodes(),
+            self.state
+                .call_caches
+                .caller_retained_nodes(&self.state.library)
                 .map_err(|error| Error::Library {
-                    origin: self.control.descriptor.metadata().plan.blocks()[site].origin(),
+                    origin: self.descriptor.metadata().plan.blocks()[site].origin(),
                     error,
                 })?,
         )
@@ -38,7 +43,10 @@ impl Context<'_, '_> {
 
     fn check_caller_geometry_visit(&self, site: usize) -> Result<(), Error> {
         let current = u32::try_from(site).map_err(|_| invalid("caller geometry site overflows"))?;
-        if self.control.previous != Some(current) || self.control.completed || self.consumed {
+        if self.state.control.previous != Some(current)
+            || self.state.control.completed
+            || self.state.consumed
+        {
             return Err(invalid("caller geometry outside fresh current visit"));
         }
         Ok(())
@@ -63,7 +71,7 @@ impl Context<'_, '_> {
         };
         let nodes = add(fixed, self.retained_caller_dynamic_nodes(site)?)?;
         Ok(Some(PublicationGeometry {
-            live_bytes: self.library.memory_budget().used_bytes(),
+            live_bytes: self.state.library.memory_budget().used_bytes(),
             live_nodes: nodes,
         }))
     }
@@ -83,16 +91,19 @@ impl Context<'_, '_> {
         {
             return Ok(None);
         }
-        let memory = self.library.memory_budget();
-        self.control.work.check_memory_budget(&memory)?;
-        self.control.work.charge(NativeExecutionPhase::Setup, 512)?;
+        let memory = self.state.library.memory_budget();
+        self.state.control.work.check_memory_budget(&memory)?;
+        self.state
+            .control
+            .work
+            .charge(NativeExecutionPhase::Setup, 512)?;
         // Fixed invocation/frame/transport roots. This bound excludes variable
         // payload backing, so a long String is never priced as one node/byte.
         let mut nodes = fixed_nodes()?;
-        if let Some(collections) = &self.collections {
+        if let Some(collections) = &self.state.collections {
             nodes = add(
                 nodes,
-                collections.caller_retained_nodes(&mut self.control.work)?,
+                collections.caller_retained_nodes(&mut self.state.control.work)?,
             )?;
         }
         nodes = add(nodes, self.line_matrix_coexistence(None)?.retained_nodes)?;

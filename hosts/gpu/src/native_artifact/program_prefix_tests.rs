@@ -249,7 +249,7 @@ fn emitted_scanner_preserves_carrier_and_one_ledger_across_header_pauses() {
         let mut prepared = Prepared::new(descriptor, limits(), &memory).unwrap();
         prepared.activate(&mut entry).unwrap();
         prepared.import_turn(&inputs, &[], &outputs).unwrap();
-        let mut work = prepared.state.as_ref().unwrap().work.used();
+        let mut work = prepared.state.as_ref().unwrap().control.work.used();
         let mut comparison = 0;
         let mut states = Vec::new();
         for available in 0..=6 {
@@ -279,10 +279,10 @@ fn emitted_scanner_preserves_carrier_and_one_ledger_across_header_pauses() {
             assert_unloaned(&prepared);
             assert!(outputs.iter().all(Option::is_none));
             let state = prepared.state.as_ref().unwrap();
-            assert!(state.work.used() > work);
+            assert!(state.control.work.used() > work);
             assert!(state.library.used().1 >= comparison);
-            assert!(!state.completed);
-            work = state.work.used();
+            assert!(!state.control.completed);
+            work = state.control.work.used();
             comparison = state.library.used().1;
             states.push(carrier(&prepared));
         }

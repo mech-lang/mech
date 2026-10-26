@@ -1,7 +1,7 @@
 //! Fixed-policy witnesses around the SAME emitted selector account/constructor.
 //! Copy-only observers cannot replace a helper, mutate a ledger, or unwind C.
 use super::super::super::tests::{artifact_source, limits};
-use super::{Context, Error, Lane, State, Visit};
+use super::{Error, Invocation, Lane, State, Visit};
 use crate::native_artifact::{JitProgramArtifact, NativeProgramExecutionLimits};
 use mech_core::{
     DimensionExpr, IntegerWidth, ManagedMemoryBudget, MemoryBudgetDimension, ResidentKernelError,
@@ -48,14 +48,13 @@ fn update(change: impl FnOnce(&mut Record)) {
 }
 pub(super) fn before_account(
     state: &State,
-    ctx: &Context<'_, '_>,
+    ctx: &Invocation<'_, '_, '_>,
     site: usize,
     collection: u32,
     words: [u64; 2],
     price: u64,
 ) {
     let iteration = ctx
-        .control
         .descriptor
         .metadata()
         .plan
@@ -65,21 +64,21 @@ pub(super) fn before_account(
     let remaining = iteration.and_then(|i| {
         (i as usize)
             .checked_mul(2)
-            .and_then(|i| ctx.control.progress.get(i).copied())
+            .and_then(|i| ctx.progress.get(i).copied())
     });
     let prior = state
         .builders
         .get(collection as usize)
         .and_then(Option::as_ref)
         .map(|b| b.compute);
-    let native = ctx.control.work.used();
+    let native = ctx.state.control.work.used();
     RECORD.with(|cell| {
         let calls = cell.get().map_or(1, |r| r.calls.saturating_add(1));
         cell.set(Some(Record {
             site: site as u32,
             collection,
             iteration,
-            current: ctx.control.current,
+            current: ctx.state.control.current,
             remaining,
             words,
             prior,
@@ -98,10 +97,10 @@ pub(super) fn before_account(
         }));
     });
 }
-pub(super) fn after_account(state: &State, ctx: &Context<'_, '_>, ok: bool) {
+pub(super) fn after_account(state: &State, ctx: &Invocation<'_, '_, '_>, ok: bool) {
     update(|r| {
         r.account_ok = Some(ok);
-        r.native_after = ctx.control.work.used();
+        r.native_after = ctx.state.control.work.used();
         r.builder_after = state
             .builders
             .get(r.collection as usize)
@@ -112,10 +111,10 @@ pub(super) fn after_account(state: &State, ctx: &Context<'_, '_>, ok: bool) {
 pub(super) fn before_constructor() {
     update(|r| r.constructor_called = true);
 }
-pub(super) fn after_constructor(ctx: &Context<'_, '_>, ok: bool) {
+pub(super) fn after_constructor(ctx: &Invocation<'_, '_, '_>, ok: bool) {
     update(|r| {
         r.constructor_ok = Some(ok);
-        r.native_constructed = Some(ctx.control.work.used());
+        r.native_constructed = Some(ctx.state.control.work.used());
     });
 }
 pub(super) fn after_install(state: &State, collection: u32) {

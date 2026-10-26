@@ -13,10 +13,14 @@ unsafe extern "C" fn observed(
 ) -> u64 {
     if op == CLOSED_TAIL_END {
         // SAFETY: same live invocation and same frontier as the existing observer.
-        let ctx = unsafe { &*raw.cast::<Context<'_, '_>>() };
+        let ctx = unsafe { &*raw.cast::<Invocation<'_, '_, '_>>() };
         PUBLICATION_FRONTIERS.with(|r| {
-            r.borrow_mut()
-                .push((site, first, ctx.control.work.used(), ctx.library.used()))
+            r.borrow_mut().push((
+                site,
+                first,
+                ctx.state.control.work.used(),
+                ctx.state.library.used(),
+            ))
         });
     }
     // SAFETY: the maintained observer delegates all original operations and
@@ -347,12 +351,13 @@ fn parameterized_equivalence(
                         unsafe {
                             (*frame).helper = old;
                         }
-                        let ctx = unsafe { &*(*frame).base.context.cast::<Context<'_, '_>>() };
+                        let ctx =
+                            unsafe { &*(*frame).base.context.cast::<Invocation<'_, '_, '_>>() };
                         terminal.set(Some((
                             status,
                             (status != STATUS_OK).then(|| unsafe { (*frame).base.error_node }),
-                            ctx.control.work.used(),
-                            ctx.library.used(),
+                            ctx.state.control.work.used(),
+                            ctx.state.library.used(),
                         )));
                         status
                     },
@@ -627,12 +632,12 @@ fn guarded_loop_count_overflow_stays_at_the_source_replacement() {
                 unsafe {
                     (*frame).helper = old;
                 }
-                let ctx = unsafe { &*(*frame).base.context.cast::<Context<'_, '_>>() };
+                let ctx = unsafe { &*(*frame).base.context.cast::<Invocation<'_, '_, '_>>() };
                 terminal.set(Some((
                     status,
                     unsafe { (*frame).base.error_node },
-                    ctx.control.work.used(),
-                    ctx.library.used(),
+                    ctx.state.control.work.used(),
+                    ctx.state.library.used(),
                 )));
                 status
             },

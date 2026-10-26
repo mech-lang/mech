@@ -35,14 +35,9 @@ fn note(f: impl FnOnce(&mut Observation)) {
 
 unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
     // SAFETY: this is the exact callback/context supplied by the checked entry.
-    let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
-    let group = ctx
-        .control
-        .descriptor
-        .metadata()
-        .map_admission
-        .group(site as usize);
-    let native = group.is_some_and(|group| ctx.map_owners.active(group.owner));
+    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
+    let group = ctx.descriptor.metadata().map_admission.group(site as usize);
+    let native = group.is_some_and(|group| ctx.state.map_owners.has_retained_binding(group.owner));
     note(|r| {
         r.calls += 1;
         if let Some(group) = group {
@@ -60,9 +55,14 @@ unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
     let limited =
         native && MODE.with(Cell::get) == Mode::Limited && !OBS.with(|r| r.borrow().limited);
     if limited {
-        let used = ctx.library.used();
+        let used = ctx.state.library.used();
         let work = group.unwrap().work;
-        if ctx.library.restrict(used.0 + work - 1, used.1).is_err() {
+        if ctx
+            .state
+            .library
+            .restrict(used.0 + work - 1, used.1)
+            .is_err()
+        {
             note(|r| {
                 r.errors
                     .push("could not establish exact one-short group allowance")
@@ -70,11 +70,13 @@ unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
         }
         note(|r| r.limited = true);
     }
-    let before = (ctx.control.previous, ctx.control.work.used());
+    let before = (ctx.state.control.previous, ctx.state.control.work.used());
     // SAFETY: delegate unchanged to the real current-visit admission callback.
     let status = unsafe { super::admit(raw, site) };
-    let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
-    if limited && (status == STATUS_OK || before != (ctx.control.previous, ctx.control.work.used()))
+    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
+    if limited
+        && (status == STATUS_OK
+            || before != (ctx.state.control.previous, ctx.state.control.work.used()))
     {
         note(|r| {
             r.errors
@@ -83,7 +85,7 @@ unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
     }
     if status == STATUS_OK && native && !OBS.with(|r| r.borrow().probes != 0) {
         let group = group.unwrap();
-        let before = (ctx.control.previous, ctx.control.work.used());
+        let before = (ctx.state.control.previous, ctx.state.control.work.used());
         if before.0 != Some(group.start()) {
             note(|r| r.errors.push("group did not retain its admitted anchor"));
         }
@@ -96,7 +98,7 @@ unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
                     .push("group replay, interior visit or foreign failure was accepted")
             });
         }
-        if before != (ctx.control.previous, ctx.control.work.used()) {
+        if before != (ctx.state.control.previous, ctx.state.control.work.used()) {
             note(|r| {
                 r.errors
                     .push("rejected group probe changed the ledger or predecessor")
@@ -115,34 +117,38 @@ unsafe extern "C" fn observe_helper(
     third: u64,
     result: *mut u64,
 ) -> u64 {
-    let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
+    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     let previous = ctx.limits;
     let fused = (operation == super::super::program_abi::MAP_OWNER_CALL
         && ctx.retained_native_call(site as usize))
         || (operation == super::super::program_abi::MAP_OWNER_SPAN
             && ctx.retained_native_span(site as usize));
     let before = (
-        ctx.control.previous,
-        ctx.control.work.used(),
-        ctx.control.visits,
-        ctx.hash_table_updates,
+        ctx.state.control.previous,
+        ctx.state.control.work.used(),
+        ctx.state.control.visits,
+        ctx.state.stats.hash_table_updates,
     );
     let limited = fused
         && MODE.with(Cell::get) == Mode::LimitedHelper
         && !OBS.with(|r| r.borrow().limited_helper);
     if limited {
         let work = ctx
-            .control
             .descriptor
             .metadata()
             .map_admission
             .group(site as usize)
             .map_or(
-                ctx.control.descriptor.metadata().visits[site as usize].work,
+                ctx.descriptor.metadata().visits[site as usize].work,
                 |group| group.work,
             );
-        let used = ctx.library.used();
-        if ctx.library.restrict(used.0 + work - 1, used.1).is_err() {
+        let used = ctx.state.library.used();
+        if ctx
+            .state
+            .library
+            .restrict(used.0 + work - 1, used.1)
+            .is_err()
+        {
             note(|r| r.errors.push("could not restrict fused helper admission"));
         }
         note(|r| r.limited_helper = true);
@@ -154,16 +160,16 @@ unsafe extern "C" fn observe_helper(
     }
     // SAFETY: the real helper receives the checked frame's unchanged arguments.
     let status = unsafe { super::helper(raw, site, operation, first, second, third, result) };
-    let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
+    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     ctx.limits = previous;
     if limited
         && (status == STATUS_OK
             || before
                 != (
-                    ctx.control.previous,
-                    ctx.control.work.used(),
-                    ctx.control.visits,
-                    ctx.hash_table_updates,
+                    ctx.state.control.previous,
+                    ctx.state.control.work.used(),
+                    ctx.state.control.visits,
+                    ctx.state.stats.hash_table_updates,
                 ))
     {
         note(|r| {
@@ -173,21 +179,23 @@ unsafe extern "C" fn observe_helper(
     }
     if fused && status == STATUS_OK {
         note(|r| r.fused += 1);
-        if ctx.control.previous != Some(site as u32) || ctx.control.visits != before.2 + 1 {
+        if ctx.state.control.previous != Some(site as u32)
+            || ctx.state.control.visits != before.2 + 1
+        {
             note(|r| {
                 r.errors
                     .push("helper was not admitted exactly once at its own boundary")
             });
         }
         let before = (
-            ctx.control.previous,
-            ctx.control.work.used(),
-            ctx.control.visits,
-            ctx.hash_table_updates,
+            ctx.state.control.previous,
+            ctx.state.control.work.used(),
+            ctx.state.control.visits,
+            ctx.state.stats.hash_table_updates,
         );
         if ctx.helper(site, operation, [first, second, third]).is_ok()
             || ctx
-                .visit(ctx.control.descriptor.metadata().plan.entry() as u64)
+                .visit(ctx.descriptor.metadata().plan.entry() as u64)
                 .is_ok()
         {
             note(|r| {
@@ -197,10 +205,10 @@ unsafe extern "C" fn observe_helper(
         }
         if before
             != (
-                ctx.control.previous,
-                ctx.control.work.used(),
-                ctx.control.visits,
-                ctx.hash_table_updates,
+                ctx.state.control.previous,
+                ctx.state.control.work.used(),
+                ctx.state.control.visits,
+                ctx.state.stats.hash_table_updates,
             )
         {
             note(|r| {
@@ -238,9 +246,12 @@ fn run(
             }
             let status = unsafe { entry(frame) };
             if matches!(status, STATUS_ARITHMETIC | STATUS_REJECT) {
-                let ctx = unsafe { &*(*frame).base.context.cast::<Context<'_, '_>>() };
+                let ctx = unsafe { &*(*frame).base.context.cast::<Invocation<'_, '_, '_>>() };
                 note(|r| {
-                    r.failure = Some((unsafe { (*frame).base.error_node }, ctx.control.previous))
+                    r.failure = Some((
+                        unsafe { (*frame).base.error_node },
+                        ctx.state.control.previous,
+                    ))
                 });
             }
             unsafe {

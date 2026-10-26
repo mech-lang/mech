@@ -1,7 +1,7 @@
 //! Borrow a selected String key at its original range and selection visits.
 //! The maintained String index handles Unicode and CRLF; no alternate index,
 //! synthetic selector Value, map algorithm or canonical key is constructed.
-use super::{Context, Error, State, add, invalid};
+use super::{Error, Invocation, State, add, invalid};
 use crate::native_artifact::{NativeExecutionPhase as Phase, NativeValueHandle};
 use mech_core::{
     ManagedNodeReservation, MemoryBudgetDimension as Dimension, ResourceDemand, Value, ValueData,
@@ -23,7 +23,7 @@ pub(super) enum Lane {
 impl State<'_> {
     pub(super) fn project_key(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         site: usize,
         args: [u64; 3],
     ) -> Result<(), Error> {
@@ -39,7 +39,7 @@ impl State<'_> {
             .ok_or_else(|| invalid("unselected map key projection"))?;
         let proof = &layout.spans()[id];
         let region = &layout.regions()[proof.region()];
-        if ctx.control.current != Some(region.iteration())
+        if ctx.state.control.current != Some(region.iteration())
             || self.slots[proof.region()].binding.is_none()
         {
             return Err(invalid("map key projection outside owning loop"));
@@ -69,8 +69,8 @@ impl State<'_> {
                 work,
                 ctx.limits.max_compute_work,
             )?;
-            ctx.control.work.charge(Phase::Setup, work)?;
-            let _reservation = ctx.library.memory_budget().reserve_capacity(bytes)?;
+            ctx.state.control.work.charge(Phase::Setup, work)?;
+            let _reservation = ctx.state.library.memory_budget().reserve_capacity(bytes)?;
             let selector = selected
                 .selected_u64_string_span_selector(args[0], args[1])
                 .map_err(|error| Error::Library { origin, error })?;
@@ -84,6 +84,7 @@ impl State<'_> {
             };
             let selector = *selector;
             let nodes = ctx
+                .state
                 .library
                 .memory_budget()
                 .with_limits(
@@ -92,11 +93,16 @@ impl State<'_> {
                 )
                 .reserve_nodes(2)?;
             let handle = ctx
+                .state
                 .arena
-                .current_handle(proof.source().get(), &mut ctx.control.work)?;
-            let owner = ctx.arena.get(handle, &mut ctx.control.work)?.clone();
+                .current_handle(proof.source().get(), &mut ctx.state.control.work)?;
+            let owner = ctx
+                .state
+                .arena
+                .get(handle, &mut ctx.state.control.work)?
+                .clone();
             let super::super::session::CallCacheEntry::Repeated(cache, _) =
-                &ctx.call_caches.entries[site]
+                &ctx.state.call_caches.entries[site]
             else {
                 return Err(invalid("map key selection lacks repeated cache"));
             };
@@ -112,14 +118,15 @@ impl State<'_> {
                 ..ResourceDemand::default()
             };
             let bytes = ctx
+                .state
                 .call_caches
-                .with_repeated(site, &ctx.library, |cache| {
+                .with_repeated(site, &ctx.state.library, |cache| {
                     selected.selected_u64_string_span(
                         cache,
                         &owner,
                         &selector,
                         ctx.limits,
-                        &ctx.library,
+                        &ctx.state.library,
                         coexistence,
                     )
                 })
@@ -135,7 +142,7 @@ impl State<'_> {
                 _nodes: nodes,
             });
         }
-        self.last_owned_visit = Some(ctx.control.visits);
+        self.last_owned_visit = Some(ctx.state.control.visits);
         Ok(())
     }
 }

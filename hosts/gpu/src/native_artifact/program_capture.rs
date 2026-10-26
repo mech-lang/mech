@@ -13,14 +13,14 @@ use mech_engine::native_artifact::{NativeTextLineChunks, NativeTextLineMatrix};
 ))]
 use std::rc::Rc;
 
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
     pub(in crate::native_artifact) fn captured_line_element_call(
         &mut self,
         site: usize,
         words: &[u64],
     ) -> Result<bool, NativeProgramExecutionError> {
         use mech_engine::native_artifact::NativeBorrowedStringAction;
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let Some((_, NativeBorrowedStringAction::MatrixElement { source, output, .. })) =
             descriptor.metadata().borrowed_strings.action(site)
         else {
@@ -58,7 +58,7 @@ impl Context<'_, '_> {
         // Cloning preserves the SAME invocation account. Its outer call scope
         // includes selection, Unicode materialization and arena publication;
         // the nested private projection cannot refill this leaf's allowance.
-        let library = self.library.clone();
+        let library = self.state.library.clone();
         library
             .with_call_limits(compute_limit, comparison_limit, || {
                 let prior = self.selected_join_coexistence(Some(*source))?;
@@ -158,8 +158,9 @@ impl Context<'_, '_> {
                 .map_err(NativeProgramExecutionError::Snapshot)?
                 .into_memory_budget(&mut reservation)
                 .map_err(|error| failure(error.into()))?;
-                self.arena
-                    .put(output.get(), &value, &mut self.control.work)?;
+                self.state
+                    .arena
+                    .put(output.get(), &value, &mut self.state.control.work)?;
                 Ok(true)
             })
             .map_err(|error| failure(error.into()))?
@@ -171,7 +172,7 @@ impl Context<'_, '_> {
     all(test, feature = "canonical-native-program")
 ))]
 pub(super) fn capture_source_coexistence(
-    state: &OwnedState<'_>,
+    state: &ExecutionState<'_>,
     skip: usize,
     memory: &ManagedMemoryBudget,
 ) -> Result<mech_core::ResourceDemand, NativeProgramExecutionError> {
@@ -218,7 +219,9 @@ impl Prepared<'_> {
         let actual = if let Some(view) = &state.line_matrices.views[ordinal] {
             view.count() as u64
         } else {
-            let value = state.arena.copy_current(matrix.get(), &mut state.work)?;
+            let value = state
+                .arena
+                .copy_current(matrix.get(), &mut state.control.work)?;
             let ValueData::Matrix(matrix) = value.data() else {
                 return Err(invalid("final count has no admitted line matrix"));
             };
@@ -229,6 +232,7 @@ impl Prepared<'_> {
         }
         let counts = region.frontier.read().count().counts();
         state
+            .control
             .work
             .charge(NativeExecutionPhase::Setup, amount(counts.len(), 16, 128)?)?;
         let first = self.descriptor.metadata().plan.transport_input_count();

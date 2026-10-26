@@ -25,11 +25,10 @@ unsafe extern "C" fn observed(
     third: u64,
     result: *mut u64,
 ) -> u64 {
-    let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
+    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     let old = ctx.limits;
     let frozen_exit = op == MAP_OWNER_END
         && ctx
-            .control
             .descriptor
             .metadata()
             .frozen_maps
@@ -48,16 +47,19 @@ unsafe extern "C" fn observed(
             first
         };
     if matches!(op, FROZEN_MAP_COPY | FROZEN_MAP_READ) {
-        let spent = (ctx.control.work.used(), ctx.library.used());
+        let spent = (ctx.state.control.work.used(), ctx.state.library.used());
         let ordinary = if op == FROZEN_MAP_COPY { MOVE } else { LIBRARY };
         assert!(
             ctx.helper(site, ordinary, [0; 3]).is_err(),
             "private map cannot enter an ordinary managed helper"
         );
-        assert_eq!((ctx.control.work.used(), ctx.library.used()), spent);
+        assert_eq!(
+            (ctx.state.control.work.used(), ctx.state.library.used()),
+            spent
+        );
     }
     let status = unsafe { helper(raw, site, op, first, second, third, result) };
-    let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
+    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     ctx.limits = old;
     if status != STATUS_OK {
         FAILURE_SITE.with(|value| value.set(Some(site as usize)));
@@ -70,12 +72,15 @@ unsafe extern "C" fn observed(
         SAVED.with(|saved| saved.set(unsafe { *result }));
     }
     if status == STATUS_OK && matches!(op, FROZEN_MAP_COPY | FROZEN_MAP_READ) {
-        let spent = (ctx.control.work.used(), ctx.library.used());
+        let spent = (ctx.state.control.work.used(), ctx.state.library.used());
         assert!(
             ctx.helper(site, op, [first, second, third]).is_err(),
             "same visit cannot replay a private read/copy"
         );
-        assert_eq!((ctx.control.work.used(), ctx.library.used()), spent);
+        assert_eq!(
+            (ctx.state.control.work.used(), ctx.state.library.used()),
+            spent
+        );
         REPLAYS.with(|count| count.set(count.get() + 1));
     }
     status

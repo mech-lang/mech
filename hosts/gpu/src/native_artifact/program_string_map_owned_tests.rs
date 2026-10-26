@@ -16,7 +16,7 @@ struct Observation {
 }
 thread_local! { static LAST: Cell<Option<Observation>> = const { Cell::new(None) }; }
 pub(super) fn observe(
-    ctx: &Context<'_, '_>,
+    ctx: &Invocation<'_, '_, '_>,
     region: &NativeStringMapRegion,
     aliased: bool,
     owned: bool,
@@ -26,6 +26,7 @@ pub(super) fn observe(
             owned,
             aliased,
             source_present: ctx
+                .state
                 .arena
                 .test_current_value(region.source().get())
                 .is_some(),

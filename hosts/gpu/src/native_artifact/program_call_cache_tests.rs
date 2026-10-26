@@ -389,14 +389,11 @@ fn preserved_control_checkpoint_edges_cannot_replay_root_sites() {
         assert!(descriptor.metadata().plan.has_activation());
         let boundary = descriptor.metadata().plan.activation_boundary().unwrap();
         let mut progress = vec![0; descriptor.metadata().plan.iterations().len() * 2];
+        let mut control_state = ControlState::new(NativeWorkMeter::new(1_000_000_000).unwrap());
         let mut control = Control {
+            state: &mut control_state,
             descriptor,
             progress: &mut progress,
-            current: None,
-            previous: None,
-            completed: false,
-            work: NativeWorkMeter::new(1_000_000_000).unwrap(),
-            visits: 0,
             error: None,
         };
         let mut site = descriptor.metadata().plan.entry();
@@ -419,13 +416,13 @@ fn preserved_control_checkpoint_edges_cannot_replay_root_sites() {
         assert!(closed_call.is_some());
         // Prepared::run preserves this exact continuation, rather than
         // restarting at entry; NativeProgramExecutionSession::resume consumes it.
-        let before = control.visits;
+        let before = control.state.visits;
         assert!(
             control
                 .visit(u64::from(descriptor.metadata().plan.entry()))
                 .is_err()
         );
-        assert_eq!(control.visits, before);
+        assert_eq!(control.state.visits, before);
         control.visit(u64::from(boundary)).unwrap();
         assert!(control.visit(u64::from(closed_call.unwrap())).is_err());
         let NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(mut next)) =
@@ -435,7 +432,7 @@ fn preserved_control_checkpoint_edges_cannot_replay_root_sites() {
         };
         loop {
             control.visit(u64::from(next)).unwrap();
-            if control.completed {
+            if control.state.completed {
                 break;
             }
             let NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(successor)) =

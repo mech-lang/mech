@@ -747,7 +747,7 @@ impl CodegenReport {
             .sum();
         counts.loop_constants = self.loop_constants.callers.len();
         fn steady(value: &SteadyLoop, counts: &mut EmissionCounters) {
-            counts.steady_loops += 1;
+            counts.steady_loops += usize::from(value.lookup_mode != "direct");
             counts.cold_recipes += value.cold_snapshot_recipes.len();
             counts.candidate_values += value.candidate_value_loads;
             counts.paired_candidates += value.paired_candidate_loads;

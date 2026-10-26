@@ -49,10 +49,10 @@ impl State {
     }
     pub(in crate::native_artifact) fn test_text_join_demand(
         &self,
-        ctx: &Context<'_, '_>,
+        ctx: &Invocation<'_, '_, '_>,
         site: usize,
     ) -> Result<Option<TextJoinDemand>, Error> {
-        let Some(block) = ctx.control.descriptor.metadata().plan.blocks().get(site) else {
+        let Some(block) = ctx.descriptor.metadata().plan.blocks().get(site) else {
             return Ok(None);
         };
         let (id, value, stage) = match block.action() {
@@ -65,7 +65,6 @@ impl State {
             _ => return Ok(None),
         };
         let Some(definition) = ctx
-            .control
             .descriptor
             .metadata()
             .plan
@@ -109,6 +108,7 @@ impl State {
         match stage {
             TextJoinStage::Growth => {
                 let value = ctx
+                    .state
                     .arena
                     .test_current_value(value.unwrap().get())
                     .ok_or_else(|| invalid("test observation lacks current selected yield"))?;
@@ -136,7 +136,7 @@ impl State {
                     return Ok(None);
                 }
                 let retained = value
-                    .memory_budget_retained_bytes(&ctx.library.memory_budget())
+                    .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
                     .ok_or_else(|| invalid("test observed unadmitted yield"))?;
                 demand.current_yield_bytes = retained;
                 let tracked = self
@@ -145,7 +145,8 @@ impl State {
                     .flatten()
                     .filter_map(|source| source.element)
                     .any(|(handle, _)| {
-                        ctx.arena
+                        ctx.state
+                            .arena
                             .test_handle_value(handle)
                             .is_some_and(|current| current.shares_frozen_storage(value))
                     });
@@ -173,7 +174,7 @@ impl State {
                     return Ok(None);
                 }
                 let envelope = add(
-                    ctx.control.descriptor.metadata().scalar_bytes,
+                    ctx.descriptor.metadata().scalar_bytes,
                     add(mul(payload, 4)?, 4096)?,
                 )?;
                 let finalization = add(mul(payload, 8)?, 32)?;

@@ -3,7 +3,7 @@
 //! independent copies. Ancestor captures and this generator's old element stay
 //! live until replacement, including during the next allocation's admission.
 use super::super::super::program_descriptor::RetirementKind;
-use super::{Context, Error, State, add, invalid, mul};
+use super::{Error, Invocation, State, add, invalid, mul};
 use mech_engine::native_artifact::NativeControlLoop;
 
 impl State {
@@ -13,36 +13,35 @@ impl State {
     /// exact frozen storage through generation-checked handles, not equality.
     pub(super) fn untracked_yield_bytes(
         &self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         value: Option<&mech_core::Value>,
     ) -> Result<u64, Error> {
         let Some(value) = value else { return Ok(0) };
         for source in self.sources.iter().flatten() {
             if let Some((handle, _)) = source.element {
-                let tracked = ctx.arena.get(handle, &mut ctx.control.work)?;
+                let tracked = ctx.state.arena.get(handle, &mut ctx.state.control.work)?;
                 if value.shares_frozen_storage(tracked) {
                     return Ok(0);
                 }
             }
         }
         value
-            .memory_budget_retained_bytes(&ctx.library.memory_budget())
+            .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
             .ok_or_else(|| invalid("unadmitted body-produced collection value"))
     }
 
     pub(super) fn retire_locals(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         iteration: u32,
     ) -> Result<(), Error> {
-        ctx.retire_frozen_maps(iteration)?;
-        let plan = &ctx.control.descriptor.metadata().plan;
+        ctx.retire_frozen(iteration)?;
+        let plan = &ctx.descriptor.metadata().plan;
         let NativeControlLoop::Collection(definition) = &plan.iterations()[iteration as usize]
         else {
             return Err(invalid("collection retirement on a fold"));
         };
         let slots = ctx
-            .control
             .descriptor
             .metadata()
             .retirements
@@ -57,15 +56,16 @@ impl State {
             add(mul(slots.len() as u64, 16)?, 64)?,
         )?;
         for &slot in slots {
-            ctx.arena
-                .retire_current(slot as u32, &mut ctx.control.work)?;
+            ctx.state
+                .arena
+                .retire_current(slot as u32, &mut ctx.state.control.work)?;
         }
         Ok(())
     }
 
     pub(in super::super) fn release_source(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         iteration: u32,
     ) -> Result<(), Error> {
         if self.active_string_spans != 0 || self.active_string_maps != 0 {
@@ -84,7 +84,7 @@ impl State {
         if let Some((handle, retained)) = source.element {
             // take validates the exact saved generation. Discard only after
             // all aliases in this lexical invocation have really been retired.
-            drop(ctx.arena.take(handle, &mut ctx.control.work)?);
+            drop(ctx.state.arena.take(handle, &mut ctx.state.control.work)?);
             self.live_bytes = self
                 .live_bytes
                 .checked_sub(retained)

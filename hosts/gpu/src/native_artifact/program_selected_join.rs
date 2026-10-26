@@ -1,5 +1,5 @@
 //! Preserve original range/selection/join visits without private Matrix payloads.
-use super::{Context, NativeProgramExecutionError as Error, invalid};
+use super::{Invocation, NativeProgramExecutionError as Error, invalid};
 use crate::native_artifact::{NativeExecutionPhase, program_selected_join_layout::Site};
 use mech_core::{
     ManagedMemoryReservation, MemoryBudgetDimension as Dimension, ResidentKernelError,
@@ -76,14 +76,14 @@ fn mul(a: u64, b: u64) -> Result<u64, Error> {
     a.checked_mul(b)
         .ok_or_else(|| invalid("selected join demand overflow"))
 }
-fn library(ctx: &Context<'_, '_>, site: usize, error: InvokeError) -> Error {
+fn library(ctx: &Invocation<'_, '_, '_>, site: usize, error: InvokeError) -> Error {
     Error::Library {
-        origin: ctx.control.descriptor.metadata().plan.blocks()[site].origin(),
+        origin: ctx.descriptor.metadata().plan.blocks()[site].origin(),
         error,
     }
 }
 fn require(
-    ctx: &Context<'_, '_>,
+    ctx: &Invocation<'_, '_, '_>,
     site: usize,
     dimension: Dimension,
     required: u64,
@@ -106,12 +106,13 @@ fn require(
     Ok(())
 }
 
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
     pub(super) fn selected_join_coexistence(
         &mut self,
         skip: Option<mech_engine::native_artifact::NativeMatchValue>,
     ) -> Result<ResourceDemand, Error> {
         let mut prior = self
+            .state
             .collections
             .as_ref()
             .map_or(Ok(ResourceDemand::default()), |state| {
@@ -130,7 +131,7 @@ impl Context<'_, '_> {
         if matches!(state.phase, Phase::Fusing(_) | Phase::Mapped(_)) {
             return self.join_map_boundary(site, state);
         }
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let region = descriptor
             .metadata()
             .selected_joins
@@ -145,7 +146,7 @@ impl Context<'_, '_> {
         let block = &descriptor.metadata().plan.blocks()[site];
         if block.iteration()
             != descriptor.metadata().plan.blocks()[region.selection() as usize].iteration()
-            || self.control.current != state.parent
+            || self.state.control.current != state.parent
             || (site != expected
                 && !matches!(
                     (block.action(), block.terminator()),
@@ -165,7 +166,7 @@ impl Context<'_, '_> {
     /// The outer helper already checked the exact current visit and ABI lane.
     /// False selects the ordinary maintained calls, never a different executor.
     pub(super) fn selected_join_call(&mut self, site: usize, words: &[u64]) -> Result<bool, Error> {
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let Some(role) = descriptor.metadata().selected_joins.sites[site] else {
             return Ok(false);
         };
@@ -182,7 +183,10 @@ impl Context<'_, '_> {
                 "selected join requires its two managed operand words",
             ));
         }
-        self.control.work.charge(NativeExecutionPhase::Setup, 512)?;
+        self.state
+            .control
+            .work
+            .charge(NativeExecutionPhase::Setup, 512)?;
         let index = match role {
             Site::Range(index) | Site::Select(index) | Site::Join(index) => index,
         };
@@ -225,7 +229,7 @@ impl Context<'_, '_> {
                         parent,
                         reservation,
                     }) if pending_region == index
-                        && parent == self.control.current
+                        && parent == self.state.control.current
                         && region.range().is_some()
                         && lines
                             .as_ref()
@@ -244,8 +248,12 @@ impl Context<'_, '_> {
                 if region.range().is_some()
                     && compact.is_none()
                     && self
+                        .state
                         .arena
-                        .current_retained_bytes(region.selector().get(), &mut self.control.work)?
+                        .current_retained_bytes(
+                            region.selector().get(),
+                            &mut self.state.control.work,
+                        )?
                         .is_none()
                 {
                     return Err(invalid(
@@ -256,13 +264,15 @@ impl Context<'_, '_> {
                     for (lane, value) in
                         [region.source(), region.selector()].into_iter().enumerate()
                     {
-                        self.call_inputs.values_mut()[lane] = Some(
-                            self.arena
-                                .copy_current(value.get(), &mut self.control.work)?,
+                        self.state.call_inputs.values_mut()[lane] = Some(
+                            self.state
+                                .arena
+                                .copy_current(value.get(), &mut self.state.control.work)?,
                         );
                     }
-                    if !call.supports_selected_string_matrix(&self.call_inputs.values()[..2]) {
-                        self.call_inputs.values_mut()[..2].fill(None);
+                    if !call.supports_selected_string_matrix(&self.state.call_inputs.values()[..2])
+                    {
+                        self.state.call_inputs.values_mut()[..2].fill(None);
                         return Ok(false);
                     }
                 }
@@ -283,10 +293,12 @@ impl Context<'_, '_> {
                 let reservation = if let Some(reservation) = reserved {
                     reservation
                 } else {
-                    self.control
+                    self.state
+                        .control
                         .work
                         .charge(NativeExecutionPhase::Setup, add(mul(metadata, 8)?, 256)?)?;
-                    self.library
+                    self.state
+                        .library
                         .memory_budget()
                         .reserve_capacity(metadata)
                         .map_err(|error| library(self, site, error.into()))?
@@ -297,37 +309,39 @@ impl Context<'_, '_> {
                             &lines,
                             &selector,
                             self.limits,
-                            &self.library,
+                            &self.state.library,
                             prior,
                         )
                     } else {
                         let selector = self
+                            .state
                             .arena
-                            .copy_current(region.selector().get(), &mut self.control.work)?;
+                            .copy_current(region.selector().get(), &mut self.state.control.work)?;
                         call.selected_text_line_matrix(
                             &lines,
                             &selector,
                             self.limits,
-                            &self.library,
+                            &self.state.library,
                             prior,
                         )
                     }
                 } else {
                     call.selected_string_matrix(
-                        &self.call_inputs.values()[..2],
+                        &self.state.call_inputs.values()[..2],
                         self.limits,
-                        &self.library,
+                        &self.state.library,
                         prior,
                     )
                 };
-                self.call_inputs.values_mut()[..2].fill(None);
+                self.state.call_inputs.values_mut()[..2].fill(None);
                 let view = result.map_err(|error| library(self, site, error))?;
                 // A previous ordinary-representation iteration may have left
                 // its unobservable result here. Retire it only after the fresh
                 // projection succeeds; never substitute it for this view.
-                self.arena
-                    .retire_current(region.selected().get(), &mut self.control.work)?;
-                if let Some(captured) = &self.line_matrices.captured {
+                self.state
+                    .arena
+                    .retire_current(region.selected().get(), &mut self.state.control.work)?;
+                if let Some(captured) = &self.state.line_matrices.captured {
                     let lines = &descriptor.metadata().line_matrices.regions[captured.ordinal];
                     if lines.matrix() == region.source()
                         && lines.selections() == [site as u32]
@@ -337,13 +351,13 @@ impl Context<'_, '_> {
                         // The complete-use proof has one final selection, and
                         // the scanner's EOF checkpoint already ended its loan.
                         // Transfer the remaining owner to this selected join.
-                        self.line_matrices.views[captured.ordinal] = None;
+                        self.state.line_matrices.views[captured.ordinal] = None;
                     }
                 }
                 self.selected_join = Some(State {
                     phase: Phase::Selected(view),
                     region: index,
-                    parent: self.control.current,
+                    parent: self.state.control.current,
                     reservation,
                 });
                 #[cfg(all(test, feature = "canonical-native-program"))]
@@ -356,8 +370,12 @@ impl Context<'_, '_> {
                     // Missing/replayed private state must never fall through
                     // to a call needing an intentionally absent Matrix.
                     if self
+                        .state
                         .arena
-                        .current_retained_bytes(region.selected().get(), &mut self.control.work)?
+                        .current_retained_bytes(
+                            region.selected().get(),
+                            &mut self.state.control.work,
+                        )?
                         .is_none()
                     {
                         return Err(invalid("selected join consumer has no selected owner"));
@@ -365,18 +383,22 @@ impl Context<'_, '_> {
                     return Ok(false);
                 };
                 if state.region != index
-                    || state.parent != self.control.current
+                    || state.parent != self.state.control.current
                     || !matches!(state.phase, Phase::Selected(_))
                 {
                     return Err(invalid("selected join consumer has another projection"));
                 }
                 let separator = self
+                    .state
                     .arena
-                    .copy_current(region.separator().get(), &mut self.control.work)?;
+                    .copy_current(region.separator().get(), &mut self.state.control.work)?;
                 match self.finish_selected_join(site, state, &separator)? {
                     Completion::Value(value) => {
-                        self.arena
-                            .put(region.output().get(), &value, &mut self.control.work)?;
+                        self.state.arena.put(
+                            region.output().get(),
+                            &value,
+                            &mut self.state.control.work,
+                        )?;
                     }
                     Completion::Private(state) => {
                         self.selected_join = Some(state);
@@ -402,8 +424,7 @@ impl Context<'_, '_> {
         let Phase::Selected(view) = phase else {
             return Err(invalid("selected join consumer precedes selection"));
         };
-        let source =
-            self.control.descriptor.metadata().selected_joins.regions[region_index].source();
+        let source = self.descriptor.metadata().selected_joins.regions[region_index].source();
         let prior = self.selected_join_coexistence(Some(source))?;
         let compute_limit = self
             .limits
@@ -413,14 +434,15 @@ impl Context<'_, '_> {
             .limits
             .max_comparison_work
             .ok_or_else(|| invalid("selected join comparison limit"))?;
-        let account = self.library.clone();
+        let account = self.state.library.clone();
         account
             .with_call_limits(compute_limit, comparison_limit, || {
-                self.library
+                self.state
+                    .library
                     .charge(512, 0)
                     .map_err(|e| library(self, site, e.into()))?;
-                let memory = self.library.memory_budget();
-                let descriptor = self.control.descriptor;
+                let memory = self.state.library.memory_budget();
+                let descriptor = self.descriptor;
                 let region = &descriptor.metadata().selected_joins.regions[region_index];
                 let call = descriptor.metadata().calls[site]
                     .as_ref()
@@ -483,6 +505,7 @@ impl Context<'_, '_> {
                         nodes,
                         compute: add(compute, 512)?,
                         compute_prefix: self
+                            .state
                             .library
                             .used()
                             .0
@@ -490,6 +513,7 @@ impl Context<'_, '_> {
                             .ok_or_else(|| invalid("selected join lost its paid header"))?,
                         envelope,
                         selection_slot_empty: self
+                            .state
                             .arena
                             .test_current_value(region.selected().get())
                             .is_none(),
@@ -531,7 +555,8 @@ impl Context<'_, '_> {
                 ] {
                     require(self, site, dimension, required, limit)?;
                 }
-                self.library
+                self.state
+                    .library
                     .charge(compute, 0)
                     .map_err(|e| library(self, site, e.into()))?;
                 let mut reservation = memory

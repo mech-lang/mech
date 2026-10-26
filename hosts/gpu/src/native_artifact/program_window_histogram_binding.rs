@@ -96,7 +96,7 @@ impl State {
     }
     pub(in crate::native_artifact::program_runtime) fn prepare_compiled_histogram(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         region: &NativeWindowRegion,
         width: u64,
         length: u64,
@@ -108,8 +108,8 @@ impl State {
         }
         let id = region.collection();
         super::super::charge(
-            &mut ctx.control.work,
-            super::super::super::amount(ctx.call_inputs.values().len(), 16, 128)?,
+            &mut ctx.state.control.work,
+            super::super::super::amount(ctx.state.call_inputs.values().len(), 16, 128)?,
         )?;
         let histogram = self
             .builder(id)?
@@ -120,14 +120,15 @@ impl State {
             || histogram.accepted != 0
             || !histogram.entries.is_empty()
             || histogram.compiled_bins.is_some()
-            || ctx.call_inputs.values().len() < 2
-            || ctx.call_inputs.values().iter().any(Option::is_some)
+            || ctx.state.call_inputs.values().len() < 2
+            || ctx.state.call_inputs.values().iter().any(Option::is_some)
         {
             return Err(invalid("compiled Histogram has stale owners or sink state"));
         }
         let source = ctx
+            .state
             .arena
-            .copy_current(region.source().get(), &mut ctx.control.work)?;
+            .copy_current(region.source().get(), &mut ctx.state.control.work)?;
         let ValueData::String(text) = source.data() else {
             return Err(invalid("compiled Histogram requires a genuine String root"));
         };
@@ -151,10 +152,10 @@ impl State {
             1usize << (width as usize * 7)
         };
         let source_bytes = source
-            .memory_budget_retained_bytes(&ctx.library.memory_budget())
+            .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
             .ok_or_else(|| invalid("compiled Histogram source is unadmitted"))?;
         let temporary_base = add(self.live_bytes, source_bytes)?;
-        let memory = ctx.library.memory_budget();
+        let memory = ctx.state.library.memory_budget();
         let banked = layout::prefer_banks(
             width,
             accepted,
@@ -197,7 +198,7 @@ impl State {
         let (physical_cells, reservation) = reserve_layout(&memory, cells, width, banked)?;
         let reserved_bytes = reservation.capacity_bytes();
         #[cfg(all(test, feature = "canonical-native-program"))]
-        tests::record(physical_cells, reserved_bytes, ctx.library.used().0);
+        tests::record(physical_cells, reserved_bytes, ctx.state.library.used().0);
         let mut values = Vec::new();
         values
             .try_reserve_exact(physical_cells)
@@ -224,13 +225,13 @@ impl State {
         // The actual immutable source and actual mutable scratch allocation
         // remain owned across the synchronous native call. No Rust reference
         // to the scratch spans generated writes; no other callback may run.
-        ctx.call_inputs.values_mut()[0] = Some(source);
+        ctx.state.call_inputs.values_mut()[0] = Some(source);
         Ok(Some((words, accepted)))
     }
 
     pub(in crate::native_artifact::program_runtime) fn finish_compiled_histogram(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
         accepted: u64,
         counted: u64,
@@ -269,9 +270,11 @@ impl State {
         let payload = mul(distinct, width as u64)?;
         let vector_bytes = mul(distinct, size_of::<Entry>() as u64)?;
         let backing = add(vector_bytes, payload)?;
-        let source_bytes = ctx.call_inputs.values()[0]
+        let source_bytes = ctx.state.call_inputs.values()[0]
             .as_ref()
-            .and_then(|value| value.memory_budget_retained_bytes(&ctx.library.memory_budget()))
+            .and_then(|value| {
+                value.memory_budget_retained_bytes(&ctx.state.library.memory_budget())
+            })
             .ok_or_else(|| invalid("compiled Histogram source loan disappeared"))?;
         self.histogram_output(ctx, id, distinct, payload)?;
         resource(
@@ -293,7 +296,7 @@ impl State {
             .compiled_bins
             .take()
             .unwrap();
-        let mut reservation = bins.reserve_result(&ctx.library.memory_budget(), backing)?;
+        let mut reservation = bins.reserve_result(&ctx.state.library.memory_budget(), backing)?;
         let key_reservation = reservation.split_capacity(payload)?;
         let mut entries = Vec::new();
         entries

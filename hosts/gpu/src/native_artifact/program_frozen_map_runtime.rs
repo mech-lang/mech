@@ -1,6 +1,6 @@
 //! Invocation-local immutable owners. Tokens never enter canonical Value data
 //! and cannot escape the proved original immutable parent visit.
-use super::{Context, Error, State, add, amount, invalid, storage_error};
+use super::{Error, Invocation, State, add, amount, invalid, storage_error};
 use crate::native_artifact::{
     NativeExecutionPhase as Phase,
     program_abi::{FROZEN_MAP_COPY, FROZEN_MAP_READ},
@@ -36,7 +36,7 @@ fn check(required: u64, limit: Option<u64>, field: &'static str) -> Result<(), E
 impl State<'_> {
     fn frozen_call(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         site: usize,
         operation: u64,
         args: [u64; 3],
@@ -64,12 +64,13 @@ impl State<'_> {
         if args[0] == 0
             || args[0] != frozen.token
             || frozen.parent != proof.parent
-            || ctx.control.current != proof.parent
-            || ctx.control.visits <= frozen.born_visit
+            || ctx.state.control.current != proof.parent
+            || ctx.state.control.visits <= frozen.born_visit
         {
             return Err(invalid("stale or foreign frozen-map token/scope"));
         }
-        ctx.control
+        ctx.state
+            .control
             .work
             .charge(Phase::Setup, amount(proof.aliases.len(), 128, 512)?)?;
         let block = &self.descriptor.metadata().plan.blocks()[site];
@@ -81,7 +82,7 @@ impl State<'_> {
                         "frozen-map copy differs from exact alias inventory",
                     ));
                 }
-                ctx.control.work.charge(Phase::Setup, 256)?;
+                ctx.state.control.work.charge(Phase::Setup, 256)?;
                 args[0]
             }
             (
@@ -98,13 +99,14 @@ impl State<'_> {
                     ));
                 }
                 let query = ctx
+                    .state
                     .arena
-                    .copy_current(operands[1].get(), &mut ctx.control.work)?;
+                    .copy_current(operands[1].get(), &mut ctx.state.control.work)?;
                 let ty = &self.descriptor.metadata().plan.values()[operands[1].get() as usize];
                 if query.schema() != ty.schema()
                     || query.schema_key() != ty.schema_key()
                     || query
-                        .memory_budget_retained_bytes(&ctx.library.memory_budget())
+                        .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
                         .is_none()
                 {
                     return Err(invalid("unadmitted or wrong typed frozen-map query"));
@@ -117,7 +119,7 @@ impl State<'_> {
                     Primitive::MapKeyAccess => false,
                     _ => return Err(invalid("frozen helper is not a read-only map operation")),
                 };
-                let work = ctx.library.clone();
+                let work = ctx.state.library.clone();
                 // One finite original call scope covers the full byte/probe
                 // work and typed output. No per-key or per-probe cap renewal.
                 work.with_call_limits(
@@ -170,7 +172,9 @@ impl State<'_> {
                         work.charge(add(footprint.encoded_bytes, 256)?, 0)
                             .map_err(|error| storage_error(super::StorageError::Work(error)))?;
                         let value = ctx.scalar(*output, word)?;
-                        ctx.arena.put(output.get(), &value, &mut ctx.control.work)?;
+                        ctx.state
+                            .arena
+                            .put(output.get(), &value, &mut ctx.state.control.work)?;
                         Ok(word)
                     },
                 )
@@ -178,19 +182,19 @@ impl State<'_> {
             }
             _ => return Err(invalid("frozen-map helper differs from original action")),
         };
-        self.last_owned_visit = Some(ctx.control.visits);
+        self.last_owned_visit = Some(ctx.state.control.visits);
         if operation == FROZEN_MAP_READ {
-            ctx.frozen_map_reads = add(ctx.frozen_map_reads, 1)?;
+            ctx.state.stats.frozen_map_reads = add(ctx.state.stats.frozen_map_reads, 1)?;
         }
         Ok(result)
     }
 }
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
     pub(in crate::native_artifact::program_runtime) fn frozen_native_action(
         &self,
         site: usize,
     ) -> bool {
-        let proof = &self.control.descriptor.metadata().frozen_maps;
+        let proof = &self.descriptor.metadata().frozen_maps;
         proof
             .copies
             .get(site)
@@ -198,7 +202,8 @@ impl Context<'_, '_> {
             .flatten()
             .or_else(|| proof.reads.get(site).copied().flatten())
             .and_then(|id| {
-                self.map_owners
+                self.state
+                    .map_owners
                     .state
                     .as_ref()?
                     .slots
@@ -215,24 +220,25 @@ impl Context<'_, '_> {
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
         let mut state = self
+            .state
             .map_owners
             .state
             .take()
             .ok_or_else(|| invalid("frozen-map helper before admitted session"))?;
         let result = state.frozen_call(self, site, operation, args);
-        self.map_owners.state = Some(state);
+        self.state.map_owners.state = Some(state);
         let word = result?;
-        self.consumed = true;
+        self.state.consumed = true;
         Ok(Some(word))
     }
-    pub(in crate::native_artifact::program_runtime) fn retire_frozen_maps(
+    pub(in crate::native_artifact::program_runtime) fn retire_frozen(
         &mut self,
         iteration: u32,
     ) -> Result<(), Error> {
-        let Some(state) = self.map_owners.state.as_mut() else {
+        let Some(state) = self.state.map_owners.state.as_mut() else {
             return Ok(());
         };
-        self.control.work.charge(
+        self.state.control.work.charge(
             Phase::Setup,
             amount(
                 state.descriptor.metadata().frozen_maps.regions.len(),

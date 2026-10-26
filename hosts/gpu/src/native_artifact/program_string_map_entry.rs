@@ -1,7 +1,7 @@
 //! A compiler-proved borrowed String element and selected Map entry. Neither
 //! absent semantic Value exists in the arena; generated code retains all visits.
 use super::string_span::{Visit, Yield};
-use super::{Context, Dimension, Error, SourceBacking, State, add, check, data, invalid, mul};
+use super::{Dimension, Error, Invocation, SourceBacking, State, add, check, data, invalid, mul};
 use crate::native_artifact::NativeValueHandle;
 use mech_core::{ResourceDemand, Value, ValueData, WorkDemand};
 use mech_engine::native_artifact::{NativeControlLoop, NativeMatchValue};
@@ -34,12 +34,12 @@ pub(super) enum Lane {
 impl State {
     pub(super) fn prepare_string_map_key(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         site: usize,
         iteration: u32,
         ordinal: u64,
     ) -> Result<(), Error> {
-        let descriptor = ctx.control.descriptor;
+        let descriptor = ctx.descriptor;
         let NativeControlLoop::Collection(generator) =
             &descriptor.metadata().plan.iterations()[iteration as usize]
         else {
@@ -66,7 +66,7 @@ impl State {
         };
         // This handle was captured with this exact source at Initialize.
         // Reject replacement before borrowing the maintained cursor's bytes.
-        ctx.arena.get(handle, &mut ctx.control.work)?;
+        ctx.state.arena.get(handle, &mut ctx.state.control.work)?;
         let (data::Element::Text(text), next) = data::element(owner, ordinal, source.byte_offset)?
         else {
             return Err(invalid("String map key source element differs"));
@@ -82,7 +82,7 @@ impl State {
         }
         let bytes = text.len() as u64;
         let retained = owner
-            .memory_budget_retained_bytes(&ctx.library.memory_budget())
+            .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
             .ok_or_else(|| invalid("String map key has no complete same-account owner"))?;
         // Keep the maintained cursor/header work. No key bytes are copied, so
         // the eliminated canonical element's clone traffic is genuinely zero.
@@ -128,12 +128,12 @@ impl State {
 
     pub(super) fn project_string_map_entry(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         site: usize,
         id: u32,
     ) -> Result<(), Error> {
         self.builder(id)?;
-        let descriptor = ctx.control.descriptor;
+        let descriptor = ctx.descriptor;
         let proof = descriptor.metadata().plan.collections()[id as usize]
             .string_element_map_projection()
             .ok_or_else(|| invalid("String map projection lacks selected proof"))?;
@@ -154,15 +154,16 @@ impl State {
             return Err(invalid("String map key belongs to another candidate"));
         }
         if ctx
+            .state
             .arena
-            .current_handle(proof.source().get(), &mut ctx.control.work)?
+            .current_handle(proof.source().get(), &mut ctx.state.control.work)?
             != *handle
         {
             return Err(invalid(
                 "String map key belongs to another source generation",
             ));
         }
-        ctx.arena.get(*handle, &mut ctx.control.work)?;
+        ctx.state.arena.get(*handle, &mut ctx.state.control.work)?;
         let (visit, key_handle, key_owner, key_bytes, key_retained) =
             (*visit, *handle, owner.clone(), bytes.clone(), *retained);
         let selected = descriptor.metadata().calls[site]
@@ -171,11 +172,16 @@ impl State {
         // Map acquisition remains LAZY at this original MapKeyAccess visit.
         // Empty generators never inspect a map or reserve its owner footprint.
         let map_handle = ctx
+            .state
             .arena
-            .current_handle(proof.map().get(), &mut ctx.control.work)?;
-        let map_owner = ctx.arena.get(map_handle, &mut ctx.control.work)?.clone();
+            .current_handle(proof.map().get(), &mut ctx.state.control.work)?;
+        let map_owner = ctx
+            .state
+            .arena
+            .get(map_handle, &mut ctx.state.control.work)?
+            .clone();
         let map_retained = map_owner
-            .memory_budget_retained_bytes(&ctx.library.memory_budget())
+            .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
             .ok_or_else(|| invalid("String map source has no complete same-account owner"))?;
         let ValueData::Map(map) = map_owner.data() else {
             return Err(invalid("String map source is not Map"));
@@ -203,16 +209,16 @@ impl State {
             },
             ..ResourceDemand::default()
         };
-        let before = ctx.library.used();
+        let before = ctx.state.library.used();
         let outcome = selected.selected_string_map_entry(
             &map_owner,
             &key_owner,
             key_bytes,
             ctx.limits,
-            &ctx.library,
+            &ctx.state.library,
             coexistence,
         );
-        let after = ctx.library.used();
+        let after = ctx.state.library.used();
         #[cfg(all(test, feature = "canonical-native-program"))]
         tests::after_project(
             site,
@@ -256,16 +262,17 @@ impl State {
 
     pub(super) fn take_string_map_yield(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
         value: NativeMatchValue,
     ) -> Result<Yield, Error> {
         self.builder(id)?;
-        let collection = &ctx.control.descriptor.metadata().plan.collections()[id as usize];
+        let collection = &ctx.descriptor.metadata().plan.collections()[id as usize];
         let proof = collection
             .string_element_map_projection()
             .ok_or_else(|| invalid("String map sink lacks selected proof"))?;
         let site = ctx
+            .state
             .control
             .previous
             .ok_or_else(|| invalid("String map yield before visit"))?;
@@ -285,20 +292,26 @@ impl State {
             return Err(invalid("String map entry belongs to another candidate"));
         }
         if ctx
+            .state
             .arena
-            .current_handle(proof.source().get(), &mut ctx.control.work)?
+            .current_handle(proof.source().get(), &mut ctx.state.control.work)?
             != *key_handle
             || ctx
+                .state
                 .arena
-                .current_handle(proof.map().get(), &mut ctx.control.work)?
+                .current_handle(proof.map().get(), &mut ctx.state.control.work)?
                 != *map_handle
         {
             return Err(invalid(
                 "String map entry belongs to another source generation",
             ));
         }
-        ctx.arena.get(*key_handle, &mut ctx.control.work)?;
-        ctx.arena.get(*map_handle, &mut ctx.control.work)?;
+        ctx.state
+            .arena
+            .get(*key_handle, &mut ctx.state.control.work)?;
+        ctx.state
+            .arena
+            .get(*map_handle, &mut ctx.state.control.work)?;
         let active = self
             .active_string_maps
             .checked_sub(1)

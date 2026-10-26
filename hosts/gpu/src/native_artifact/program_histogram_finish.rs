@@ -13,11 +13,11 @@ mod allocation_tests;
 impl State {
     pub(in crate::native_artifact) fn park_histogram(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
     ) -> Result<(), Error> {
-        let definition = &ctx.control.descriptor.metadata().plan.collections()[id as usize];
-        let metadata = ctx.control.descriptor.metadata().scalar_bytes;
+        let definition = &ctx.descriptor.metadata().plan.collections()[id as usize];
+        let metadata = ctx.descriptor.metadata().scalar_bytes;
         resource(
             ctx,
             id,
@@ -26,7 +26,11 @@ impl State {
             ctx.limits.max_temporary_bytes,
         )?;
         self.histogram_account(ctx, id, 0, add(mul(metadata, 8)?, 64)?, 0)?;
-        let _shape = ctx.library.memory_budget().reserve_capacity(metadata)?;
+        let _shape = ctx
+            .state
+            .library
+            .memory_budget()
+            .reserve_capacity(metadata)?;
         let histogram = self
             .builder(id)?
             .histogram
@@ -36,7 +40,7 @@ impl State {
             return Err(invalid("duplicate Histogram producer finish"));
         }
         mech_core::shape_for_resolved_extents(
-            ctx.control.descriptor.metadata().plan.values()[definition.output().get() as usize]
+            ctx.descriptor.metadata().plan.values()[definition.output().get() as usize]
                 .definition(),
             &[1, histogram.accepted],
         )
@@ -47,16 +51,15 @@ impl State {
     }
     pub(in crate::native_artifact) fn finish_histogram(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
     ) -> Result<(), Error> {
-        let definition = sink(ctx.control.descriptor, id)?;
+        let definition = sink(ctx.descriptor, id)?;
         let origin = definition.template().origin();
-        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
+        let selected = ctx.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("Histogram finish lacks selected factory"))?;
-        let parent =
-            ctx.control.descriptor.metadata().plan.collections()[id as usize].parent_collection();
+        let parent = ctx.descriptor.metadata().plan.collections()[id as usize].parent_collection();
         if self.current != parent {
             return Err(invalid(
                 "Histogram consumer outside exact enclosing builder",
@@ -88,7 +91,7 @@ impl State {
         // conversion, key copies, frozen data and independent canonical owners
         // coexist with the complete admitted accumulator. No input-size array.
         let envelope = add(
-            ctx.control.descriptor.metadata().scalar_bytes,
+            ctx.descriptor.metadata().scalar_bytes,
             add(
                 add(mul(drafts, 2)?, mul(payload, 4)?)?,
                 add(mul(footprint.retained_bytes, 4)?, 4096)?,
@@ -118,9 +121,13 @@ impl State {
             ctx.limits.max_temporary_bytes,
         )?;
         self.histogram_account(ctx, id, payload, compute, finalization)?;
-        let mut reservation = ctx.library.memory_budget().reserve_capacity(envelope)?;
+        let mut reservation = ctx
+            .state
+            .library
+            .memory_budget()
+            .reserve_capacity(envelope)?;
         #[cfg(all(test, feature = "canonical-native-program"))]
-        allocation::observation::admitted(&ctx.library, envelope);
+        allocation::observation::admitted(&ctx.state.library, envelope);
         let histogram = self.builders[id as usize]
             .as_ref()
             .unwrap()
@@ -145,8 +152,7 @@ impl State {
                 items: items.into_boxed_slice(),
             });
         }
-        let output =
-            &ctx.control.descriptor.metadata().plan.values()[definition.output().get() as usize];
+        let output = &ctx.descriptor.metadata().plan.values()[definition.output().get() as usize];
         let canonical = SnapshotCanonicalizationBudget::new(finalization);
         let value = ValueDraft {
             schema: output.schema(),
@@ -154,10 +160,8 @@ impl State {
             data: ValueDataDraft::Map(entries.into_boxed_slice()),
         }
         .finalize(
-            &SnapshotValidationContext::with_shared_schemas(
-                &ctx.control.descriptor.metadata().schemas,
-            )
-            .with_canonicalization_budget(&canonical),
+            &SnapshotValidationContext::with_shared_schemas(&ctx.descriptor.metadata().schemas)
+                .with_canonicalization_budget(&canonical),
         )
         .map_err(|_| Error::Library {
             origin,
@@ -166,8 +170,11 @@ impl State {
             ),
         })?
         .into_memory_budget(&mut reservation)?;
-        ctx.arena
-            .put(definition.output().get(), &value, &mut ctx.control.work)?;
+        ctx.state.arena.put(
+            definition.output().get(),
+            &value,
+            &mut ctx.state.control.work,
+        )?;
         let builder = self.builders[id as usize].take().unwrap();
         drop(builder); // Drop every actual key/vector before capacity credit.
         self.live_bytes = self

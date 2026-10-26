@@ -1,6 +1,6 @@
 //! An admitted selected TextJoin append sink. This helper accepts ONE already
 //! evaluated yield; emitted CFG alone runs every source/body/filter/branch.
-use super::{Context, Dimension, Error, State, add, charge, check, invalid, mul};
+use super::{Dimension, Error, Invocation, State, add, charge, check, invalid, mul};
 use crate::native_artifact::NativeProgramDescriptor;
 use mech_core::{
     ManagedMemoryReservation, Value, ValueData,
@@ -51,14 +51,14 @@ fn sink(descriptor: &NativeProgramDescriptor, id: u32) -> Result<&NativeTextJoin
     }
 }
 fn resource(
-    ctx: &Context<'_, '_>,
+    ctx: &Invocation<'_, '_, '_>,
     id: u32,
     dimension: Dimension,
     required: u64,
     limit: Option<u64>,
 ) -> Result<(), Error> {
     check(
-        sink(ctx.control.descriptor, id)?.template().origin(),
+        sink(ctx.descriptor, id)?.template().origin(),
         dimension,
         required,
         limit,
@@ -67,15 +67,15 @@ fn resource(
 impl State {
     pub(super) fn begin_text_join(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
     ) -> Result<(), Error> {
         let NativeCollectionResult::TextJoin(definition) =
-            ctx.control.descriptor.metadata().plan.collections()[id as usize].result()
+            ctx.descriptor.metadata().plan.collections()[id as usize].result()
         else {
             return Ok(());
         };
-        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
+        let selected = ctx.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("TextJoin sink lacks retained selected factory"))?;
         let binding_bytes = selected.binding_metadata_bytes();
@@ -89,6 +89,7 @@ impl State {
         )?;
         self.account(ctx, id, 0, binding_work)?;
         let _binding = ctx
+            .state
             .library
             .memory_budget()
             .reserve_capacity(binding_bytes)?;
@@ -98,13 +99,14 @@ impl State {
             return Err(invalid("TextJoin sink selection differs"));
         }
         let separator = ctx
+            .state
             .arena
-            .copy_current(definition.separator().get(), &mut ctx.control.work)?;
+            .copy_current(definition.separator().get(), &mut ctx.state.control.work)?;
         if !matches!(separator.data(), ValueData::String(_)) {
             return Err(invalid("TextJoin separator is not String"));
         }
         let separator_bytes = separator
-            .memory_budget_retained_bytes(&ctx.library.memory_budget())
+            .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
             .ok_or_else(|| invalid("unadmitted TextJoin separator"))?;
         resource(
             ctx,
@@ -152,7 +154,7 @@ impl State {
             empty.retained_bytes,
             ctx.limits.max_output_bytes,
         )?;
-        let nodes = ctx.library.memory_budget().reserve_nodes(4)?;
+        let nodes = ctx.state.library.memory_budget().reserve_nodes(4)?;
         self.builder(id)?.join = Some(Builder {
             text: String::new(),
             compiled_map: None,
@@ -168,7 +170,7 @@ impl State {
 
     pub(super) fn push_text_join(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
         value: NativeMatchValue,
     ) -> Result<(), Error> {
@@ -180,12 +182,12 @@ impl State {
 
     fn append_text_join(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
         yielded: &super::string_span::Yield,
     ) -> Result<(), Error> {
-        let definition = sink(ctx.control.descriptor, id)?;
-        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
+        let definition = sink(ctx.descriptor, id)?;
+        let selected = ctx.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("TextJoin missing selected append"))?;
         let part = yielded.text()?;
@@ -280,12 +282,13 @@ impl State {
         )?;
         self.account(ctx, id, add(append, moved)?, compute)?;
         let _replacement_node = ctx
+            .state
             .library
             .memory_budget()
             .reserve_nodes(u64::from(growing))?;
         let mut replacement: Option<(String, ManagedMemoryReservation)> = if growing {
             let (mut text, reservation) =
-                super::allocation::text(capacity, &ctx.library.memory_budget())?;
+                super::allocation::text(capacity, &ctx.state.library.memory_budget())?;
             let previous = &self.builder(id)?.join.as_ref().unwrap().text;
             text.push_str(previous);
             Some((text, reservation))
@@ -323,14 +326,14 @@ impl State {
 
     pub(super) fn park_text_join(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
     ) -> Result<(), Error> {
-        let definition = &ctx.control.descriptor.metadata().plan.collections()[id as usize];
+        let definition = &ctx.descriptor.metadata().plan.collections()[id as usize];
         // Eliding the Matrix does NOT elide its declared shape obligations.
         // Validate the exact original 1xN shape at the original producer finish
         // after the same body visits, with metadata allocation/work prepaid.
-        let metadata = ctx.control.descriptor.metadata().scalar_bytes;
+        let metadata = ctx.descriptor.metadata().scalar_bytes;
         resource(
             ctx,
             id,
@@ -339,7 +342,11 @@ impl State {
             ctx.limits.max_temporary_bytes,
         )?;
         self.account(ctx, id, 0, add(mul(metadata, 8)?, 64)?)?;
-        let _shape = ctx.library.memory_budget().reserve_capacity(metadata)?;
+        let _shape = ctx
+            .state
+            .library
+            .memory_budget()
+            .reserve_capacity(metadata)?;
         let join = self
             .builder(id)?
             .join
@@ -349,7 +356,7 @@ impl State {
             return Err(invalid("duplicate TextJoin producer finish"));
         }
         mech_core::shape_for_resolved_extents(
-            ctx.control.descriptor.metadata().plan.values()[definition.output().get() as usize]
+            ctx.descriptor.metadata().plan.values()[definition.output().get() as usize]
                 .definition(),
             &[1, join.accepted],
         )
@@ -361,11 +368,11 @@ impl State {
 
     pub(super) fn finish_text_join(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
     ) -> Result<(), Error> {
-        let definition = sink(ctx.control.descriptor, id)?;
-        let collection = &ctx.control.descriptor.metadata().plan.collections()[id as usize];
+        let definition = sink(ctx.descriptor, id)?;
+        let collection = &ctx.descriptor.metadata().plan.collections()[id as usize];
         if self.current != collection.parent_collection() {
             return Err(invalid(
                 "TextJoin consumer outside exact lexical invocation",
@@ -387,7 +394,7 @@ impl State {
         let capacity = builder.reservation.capacity_bytes();
         let separator_bytes = join.separator_bytes;
         let envelope = add(
-            ctx.control.descriptor.metadata().scalar_bytes,
+            ctx.descriptor.metadata().scalar_bytes,
             add(mul(payload, 4)?, 4096)?,
         )?;
         let finalization = add(mul(payload, 8)?, 32)?;
@@ -441,18 +448,22 @@ impl State {
         // There is no previous canonical value in an SSA sink-result slot.
         // Keep the existing arena/session transaction-publication behavior;
         // no fabricated per-yield equality or renewed comparison ledger.
-        charge(&mut ctx.control.work, compute)?;
+        charge(&mut ctx.state.control.work, compute)?;
         let _publication_nodes = ctx
+            .state
             .library
             .memory_budget()
             .reserve_nodes(footprint.node_count)?;
-        let mut reservation = ctx.library.memory_budget().reserve_capacity(envelope)?;
+        let mut reservation = ctx
+            .state
+            .library
+            .memory_budget()
+            .reserve_capacity(envelope)?;
         let builder = self.builders[id as usize].as_mut().unwrap();
         builder.cloned_bytes = cloned;
         builder.compute = accumulated;
         let text = core::mem::take(&mut builder.join.as_mut().unwrap().text);
-        let output =
-            &ctx.control.descriptor.metadata().plan.values()[definition.output().get() as usize];
+        let output = &ctx.descriptor.metadata().plan.values()[definition.output().get() as usize];
         let canonical = SnapshotCanonicalizationBudget::new(finalization);
         let value = ValueDraft {
             schema: output.schema(),
@@ -460,15 +471,16 @@ impl State {
             data: ValueDataDraft::String(text),
         }
         .finalize(
-            &SnapshotValidationContext::with_shared_schemas(
-                &ctx.control.descriptor.metadata().schemas,
-            )
-            .with_canonicalization_budget(&canonical),
+            &SnapshotValidationContext::with_shared_schemas(&ctx.descriptor.metadata().schemas)
+                .with_canonicalization_budget(&canonical),
         )
         .map_err(Error::Snapshot)?
         .into_memory_budget(&mut reservation)?;
-        ctx.arena
-            .put(definition.output().get(), &value, &mut ctx.control.work)?;
+        ctx.state.arena.put(
+            definition.output().get(),
+            &value,
+            &mut ctx.state.control.work,
+        )?;
         let builder = self.builders[id as usize].take().unwrap();
         drop(builder); // Retire separator and remaining backing before credit.
         self.live_bytes = self
