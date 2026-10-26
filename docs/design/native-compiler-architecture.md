@@ -423,3 +423,12 @@ byte-for-byte after the owner/view extraction. Formatting, unsafe ownership,
 warning policy, module-layout and 90 workflow contract checks pass. Final
 qualification uses the committed candidate and retains the required public CLI,
 hosted process, changed-input and performance gates.
+
+
+Final integration baseline finding: the retained negative non-U64 Tail fixture
+expects string/F64 state-machine lowering to fail, but that same assertion fails
+on unchanged I. The implementation already supports those atomic structural
+states. Correct the stale contract to compare original/decoded native execution
+with the ordinary result and emit an Object, preserving all three rejection
+checks for suspending machines. This changes test expectations only. Retain the
+failed final run and the independently reproduced I failure in the evidence.
