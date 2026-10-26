@@ -1,0 +1,180 @@
+   Compiling indexmap v2.14.0
+   Compiling syn v3.0.3
+   Compiling serde_derive v1.0.229
+   Compiling serde v1.0.229
+   Compiling cpufeatures v0.3.0
+   Compiling serde_json v1.0.151
+   Compiling bincode v2.0.1
+   Compiling nalgebra v0.34.2
+   Compiling sha2 v0.11.0
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-reality-check/src/core)
+   Compiling gimli v0.33.0
+   Compiling cranelift-codegen v0.131.3
+   Compiling cpufeatures v0.2.17
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-deflate-reality-check/src/syntax)
+   Compiling sha2 v0.10.9
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-deflate-reality-check/src/bytecode)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-reality-check/src/engine)
+   Compiling cranelift-module v0.131.3
+   Compiling mach2 v0.4.3
+   Compiling region v3.0.2
+   Compiling object v0.39.1
+   Compiling cranelift-native v0.131.3
+   Compiling wasmtime-internal-jit-icache-coherence v44.0.3
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-reality-check/src/stdlib)
+   Compiling toml_edit v0.23.10+spec-1.0.0
+   Compiling cranelift-jit v0.131.3
+   Compiling cranelift-object v0.131.3
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-reality-check/src/compute)
+   Compiling cranelift-frontend v0.131.3
+   Compiling mech-math v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/math)
+   Compiling mech-range v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/range)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/compare)
+error: unused macro definition: `eq_mat_vec_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/eq.rs:110:14
+    |
+110 | macro_rules! eq_mat_vec_op {
+    |              ^^^^^^^^^^^^^
+    |
+    = note: `-D unused-macros` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(unused_macros)]`
+
+error: unused macro definition: `eq_vec_mat_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/eq.rs:144:14
+    |
+144 | macro_rules! eq_vec_mat_op {
+    |              ^^^^^^^^^^^^^
+
+error: unused macro definition: `eq_mat_row_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/eq.rs:178:14
+    |
+178 | macro_rules! eq_mat_row_op {
+    |              ^^^^^^^^^^^^^
+
+error: unused macro definition: `eq_row_mat_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/eq.rs:212:14
+    |
+212 | macro_rules! eq_row_mat_op {
+    |              ^^^^^^^^^^^^^
+
+error: unused macro definition: `gt_mat_vec_op`
+  --> /private/tmp/mech-deflate-reality-check/machines/compare/src/gt.rs:75:14
+   |
+75 | macro_rules! gt_mat_vec_op {
+   |              ^^^^^^^^^^^^^
+
+error: unused macro definition: `gt_vec_mat_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/gt.rs:100:14
+    |
+100 | macro_rules! gt_vec_mat_op {
+    |              ^^^^^^^^^^^^^
+
+error: unused macro definition: `gt_mat_row_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/gt.rs:125:14
+    |
+125 | macro_rules! gt_mat_row_op {
+    |              ^^^^^^^^^^^^^
+
+error: unused macro definition: `gt_row_mat_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/gt.rs:150:14
+    |
+150 | macro_rules! gt_row_mat_op {
+    |              ^^^^^^^^^^^^^
+
+error: unused macro definition: `gte_mat_vec_op`
+  --> /private/tmp/mech-deflate-reality-check/machines/compare/src/gte.rs:75:14
+   |
+75 | macro_rules! gte_mat_vec_op {
+   |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `gte_vec_mat_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/gte.rs:100:14
+    |
+100 | macro_rules! gte_vec_mat_op {
+    |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `gte_mat_row_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/gte.rs:125:14
+    |
+125 | macro_rules! gte_mat_row_op {
+    |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `gte_row_mat_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/gte.rs:150:14
+    |
+150 | macro_rules! gte_row_mat_op {
+    |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `lt_mat_vec_op`
+  --> /private/tmp/mech-deflate-reality-check/machines/compare/src/lt.rs:79:14
+   |
+79 | macro_rules! lt_mat_vec_op {
+   |              ^^^^^^^^^^^^^
+
+error: unused macro definition: `lt_vec_mat_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/lt.rs:105:14
+    |
+105 | macro_rules! lt_vec_mat_op {
+    |              ^^^^^^^^^^^^^
+
+error: unused macro definition: `lt_mat_row_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/lt.rs:131:14
+    |
+131 | macro_rules! lt_mat_row_op {
+    |              ^^^^^^^^^^^^^
+
+error: unused macro definition: `lt_row_mat_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/lt.rs:157:14
+    |
+157 | macro_rules! lt_row_mat_op {
+    |              ^^^^^^^^^^^^^
+
+error: unused macro definition: `lte_mat_vec_op`
+  --> /private/tmp/mech-deflate-reality-check/machines/compare/src/lte.rs:75:14
+   |
+75 | macro_rules! lte_mat_vec_op {
+   |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `lte_vec_mat_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/lte.rs:100:14
+    |
+100 | macro_rules! lte_vec_mat_op {
+    |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `lte_mat_row_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/lte.rs:125:14
+    |
+125 | macro_rules! lte_mat_row_op {
+    |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `lte_row_mat_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/lte.rs:150:14
+    |
+150 | macro_rules! lte_row_mat_op {
+    |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `neq_mat_vec_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/neq.rs:111:14
+    |
+111 | macro_rules! neq_mat_vec_op {
+    |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `neq_vec_mat_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/neq.rs:145:14
+    |
+145 | macro_rules! neq_vec_mat_op {
+    |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `neq_mat_row_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/neq.rs:179:14
+    |
+179 | macro_rules! neq_mat_row_op {
+    |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `neq_row_mat_op`
+   --> /private/tmp/mech-deflate-reality-check/machines/compare/src/neq.rs:213:14
+    |
+213 | macro_rules! neq_row_mat_op {
+    |              ^^^^^^^^^^^^^^
+
+error: could not compile `mech-compare` (lib) due to 24 previous errors
