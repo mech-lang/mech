@@ -571,6 +571,16 @@ pub(in crate::native_artifact) fn primitive(
             }
         }
         U64BitNot | U64Clz | U64Ctz => unreachable!(),
+        U32Add => {
+            // Both inputs are validated exact-width words. Their sum fits the
+            // I64 transport lane; overflow is tested at the semantic U32 width.
+            let value = b.ins().iadd(a, c);
+            let valid =
+                b.ins()
+                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, value, i64::from(u32::MAX));
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            value
+        }
         U64Add | U64Sub | U64Mul => {
             let (value, overflow) = match op {
                 U64Add => b.ins().uadd_overflow(a, c),

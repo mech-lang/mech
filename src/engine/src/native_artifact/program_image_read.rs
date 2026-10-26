@@ -57,7 +57,7 @@ macro_rules! scalar_operations {
 scalar_operations! {
     U64BitAnd, U64BitOr, U64BitXor, U64BitNot, U64ShlWrap, U64ShrWrap, U64Clz, U64Ctz, U64WrappingAdd, U64WrappingSub, U64WrappingMul,
     U8Eq, U8Ne, U8Lt, U8Le, U8Gt, U8Ge, U16Eq, U16Ne, U16Lt, U16Le, U16Gt, U16Ge, U32Eq, U32Ne, U32Lt, U32Le, U32Gt, U32Ge,
-    U64Add, U64Sub, U64Mul, U64Div, U64Rem, U64Eq, U64Ne, U64Lt, U64Le, U64Gt, U64Ge,
+    U32Add, U64Add, U64Sub, U64Mul, U64Div, U64Rem, U64Eq, U64Ne, U64Lt, U64Le, U64Gt, U64Ge,
     BoolAnd, BoolOr, BoolXor, BoolNot, BoolEq, BoolNe,
     I64Add, I64Sub, I64Mul, I64Div, I64Rem, I64Neg, I64Eq, I64Ne, I64Lt, I64Le, I64Gt, I64Ge,
     F64Add, F64Sub, F64Mul, F64Div, F64Neg, F64Sqrt, F64Eq, F64Ne, F64Lt, F64Le, F64Gt, F64Ge,

@@ -22,6 +22,84 @@ fn matrix(width: u32, values: &[u64]) -> Data {
 }
 
 #[test]
+fn checked_u32_add_keeps_frequency_width_overflow_and_recovery() {
+    // CompressOptimal.merge_match_len_freqs and CompressLazy.merge_observations
+    // add U32 counters with checked arithmetic. This is their minimal operation.
+    for source in [
+        "left<u32> + right<u32>\n",
+        "values := words<[u32]>\nvalues[1u64] + values[2u64]\n",
+    ] {
+        let (forms, last) = artifacts(source);
+        for artifact in forms {
+            let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+            let mut cases = Vec::new();
+            for (left, right) in [
+                (0, 0),
+                (u32::MAX, 0),
+                (0x7fff_ffff, 1),
+                (u32::MAX - 1, 1),
+                (u32::MAX, 1),
+                (u32::MAX, u32::MAX),
+                (9, 3),
+            ] {
+                let named = if source.starts_with("values") {
+                    vec![("words", matrix(32, &[left.into(), right.into()]))]
+                } else {
+                    vec![("left", Data::U32(left)), ("right", Data::U32(right))]
+                };
+                let args = inputs(&artifact, &named, &memory);
+                let ordinary = reference_result(&artifact, &args);
+                match left.checked_add(right) {
+                    Some(sum) => assert_eq!(
+                        ordinary.as_ref().unwrap()[last]
+                            .canonical_data_draft()
+                            .unwrap(),
+                        Data::U32(sum)
+                    ),
+                    None => assert!(ordinary.as_ref().unwrap_err().contains("Arithmetic")),
+                }
+                cases.push((args, ordinary));
+            }
+            let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog())
+                .expect("checked U32 frequency addition must have its own native witness");
+            let mut output = vec![None; artifact.outputs().len()];
+            for (args, ordinary) in &cases {
+                let aliases = args.clone();
+                let prior = output.clone();
+                let retained = memory.used_bytes();
+                let result = jit.evaluate_into(args, &mut output, limits(), &memory);
+                match ordinary {
+                    Ok(expected) => {
+                        result.unwrap();
+                        equal(&artifact, &output, expected);
+                    }
+                    Err(_) => {
+                        assert!(matches!(result,
+                            Err(mech_gpu::native_artifact::NativeProgramExecutionError::Control(
+                                mech_gpu::native_artifact::NativeIterationExecutionError::Arithmetic { .. }
+                            ))), "{result:?}");
+                        assert_eq!(memory.used_bytes(), retained);
+                        assert!(output.iter().zip(&prior).all(|(value, old)| {
+                            value
+                                .as_ref()
+                                .unwrap()
+                                .shares_frozen_storage(old.as_ref().unwrap())
+                        }));
+                    }
+                }
+                assert!(
+                    args.iter()
+                        .zip(&aliases)
+                        .all(|(value, alias)| value.shares_frozen_storage(alias))
+                );
+            }
+            drop((output, cases));
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}
+
+#[test]
 fn narrow_comparisons_preserve_unsigned_boundaries_and_buffer_reads() {
     // The pinned component source compares U32 hash sequences/frequencies and
     // U8 bytes before widening. Exercise the complete unsigned word family.

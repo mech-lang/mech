@@ -3340,6 +3340,18 @@ fn bind_snapshot_numeric_binary(
     } else {
         kernel
     };
+    // The maintained U32 leaf checks at the counter's own width. Certify only
+    // this exact scalar schema; matrices and other arithmetic keep their paths.
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    if arithmetic == SemanticArithmetic::Add
+        && output_element == &SchemaBody::UnsignedInteger(IntegerWidth::W32)
+    {
+        return Ok(super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::U32Add,
+        ));
+    }
     let op = match (
         output_element == &SchemaBody::SignedInteger(IntegerWidth::W64),
         arithmetic,

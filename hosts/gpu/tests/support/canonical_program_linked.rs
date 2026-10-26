@@ -97,6 +97,12 @@ fn linked_narrow_comparison_assertion_preserves_publication_and_recovers() {
 }
 
 #[test]
+fn linked_checked_u32_add_restores_its_operation_and_recovers() {
+    let source = "checked(n<u32>) => (out<u64>) :=\n  positive! := n > 0u32\n  incremented := n + 1u32\n  wide<u64> := incremented\n  out := 12u64 / (wide - 1u64).\nchecked(input<u32>)\n";
+    linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
+}
+
+#[test]
 fn linked_uniform_words_restore_the_same_plan_fact_and_recover() {
     // The collection is used before the assertion on every visit. The linked
     // Object's bulk helper therefore needs the fact restored from its image,

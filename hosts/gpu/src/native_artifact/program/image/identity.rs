@@ -222,7 +222,8 @@ fn selected_template(
 // Exact-width unsigned comparison primitives retain their semantic kinds.
 // IR106 admits record-field access through the maintained snapshot selector.
 // IR107 binds pure uniform unsigned construction to its same-plan header.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 107;
+// IR108 selects checked U32 counter addition through the maintained scalar leaf.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 108;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
