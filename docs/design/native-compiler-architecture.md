@@ -269,3 +269,28 @@ within the previous 2432 + 128 allowance. The caller charge remains 2704 bytes
 and Frame remains 144. Slot remains 968 bytes. The layout guards, shared control
 progress regression, malformed checkpoint regression and corrected steady
 report regression pass. Slot lifecycle/protocol consolidation continues next.
+
+
+Stage E lifecycle/protocol: unchanged three-Option Slot backing now has named
+install/take/freeze/publication transitions and a borrowed diagnostic SlotPhase
+covering Vacant, Retained, Closed, FrozenPending, FrozenPublished and terminal
+partial storage. The generated-entry observers inspect real phases; injected
+counter overflow after frozen token assignment observes a cleanup-only partial
+state and complete owner retirement. `has_retained_binding` retains the former
+`active` meaning; active_tables updates and closed callback restoration order
+are unchanged. Closed maps still reject suspend modes 1/4; scalar tail modes
+remain separate. Read/copy, retirement and retained/closed admission have named
+lifecycle entry points.
+
+GlobalHelper and OwnerOperation are separate typed domains. Codegen's global
+and bound-call APIs cannot exchange them. Encoders retain every u64 number;
+classification at runtime rejects nothing ahead of current site/phase/admission
+checks. Unknown Owner values retain the original late key/error checks. The
+live structural observation is named, output construction is checked, ignored
+lanes and conservative 13/14 effects are preserved. No unchecked enum cast is
+used. All source/decoded guest objects, metadata, images and bytecode still
+match 32 baseline I files. The full native scope executes 418 passes, zero
+failures and two existing ignores; focused owner/frozen/effect tests execute
+15 passes. Scalar-only compiler compilation now passes after retaining the
+existing program-only report/flag gates. Final feature/process/performance
+qualification remains pending.

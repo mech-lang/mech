@@ -1,6 +1,7 @@
 //! A private storage binding for one closed, generated source loop. This module
 //! never traverses the input, chooses a source branch, or computes an update.
 use super::{Binding, Error, Invocation, State, add, invalid, storage_error};
+use crate::native_artifact::program::protocol::OwnerOperation;
 use crate::native_artifact::program_packed_map::{BodyPrice, PackedMap};
 use crate::native_artifact::{
     NativeExecutionPhase as Phase, owned_string_map::PublicationGeometry,
@@ -14,7 +15,7 @@ use mech_engine::native_artifact::{
 };
 
 #[repr(C)]
-pub(super) struct Owner<'plan> {
+pub(in crate::native_artifact::program_runtime) struct Owner<'plan> {
     // Private generated-code prefix. No source Value can carry this address.
     packed_frame: u64,
     packed: Option<PackedMap>,
@@ -47,7 +48,8 @@ impl Owner<'_> {
     fn call(&mut self, site: usize, op: u64, args: [u64; 3]) -> Result<u64, Error> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         super::super::map_closed_tests::record_bound_call(op);
-        if op == 13 {
+        let op = OwnerOperation::decode(op);
+        if op == OwnerOperation::EnterPackedSsa {
             let packed = self
                 .packed
                 .as_ref()
@@ -66,7 +68,7 @@ impl Owner<'_> {
             self.packed_ssa_entered = true;
             return Ok(0);
         }
-        if op == 14 {
+        if op == OwnerOperation::EnterGuardedLoop {
             let packed = self
                 .packed
                 .as_ref()
@@ -101,7 +103,7 @@ impl Owner<'_> {
             }
             return Ok(0);
         }
-        if op == 0 {
+        if op == OwnerOperation::Refill {
             if let Some(packed) = self.packed.as_mut() {
                 let count = packed.refill().map_err(storage_error)?;
                 self.funded = add(self.funded, count)?;
@@ -128,7 +130,7 @@ impl Owner<'_> {
             self.probe = None;
             return Ok(count);
         }
-        if op == 7 {
+        if op == OwnerOperation::InsertMissingPacked {
             let packed = self
                 .packed
                 .as_mut()
@@ -142,7 +144,7 @@ impl Owner<'_> {
                 .map_err(storage_error)?;
             return Ok(0);
         }
-        if op == 8 {
+        if op == OwnerOperation::MissingKeyFailure {
             // A source lookup miss is a library failure, even when its table
             // access was lowered into the private packed representation.
             return Err(Error::Library {
@@ -152,24 +154,29 @@ impl Owner<'_> {
                 ),
             });
         }
-        if op == 9 {
+        if op == OwnerOperation::InvalidPackedOperation {
             return Err(invalid("invalid generated packed-map operation"));
         }
-        if matches!(op, 10..=12) {
+        if matches!(
+            op,
+            OwnerOperation::RangeCallDenied
+                | OwnerOperation::ReadCallDenied
+                | OwnerOperation::WriteCallDenied
+        ) {
             let packed = self
                 .packed
                 .as_ref()
                 .ok_or_else(|| invalid("packed call cap without owner"))?;
             packed
                 .check_call(match op {
-                    10 => 6,
-                    11 => 3,
-                    _ => 5,
+                    OwnerOperation::RangeCallDenied => OwnerOperation::PrepareAndSelectRange.raw(),
+                    OwnerOperation::ReadCallDenied => OwnerOperation::ContainsKey.raw(),
+                    _ => OwnerOperation::InsertKey.raw(),
                 })
                 .map_err(storage_error)?;
             return Err(invalid("packed call flag denied an allowed operation"));
         }
-        if op == 1 || op == 6 {
+        if op == OwnerOperation::PrepareRange || op == OwnerOperation::PrepareAndSelectRange {
             let selector = self
                 .work
                 .with_call_limits(
@@ -198,14 +205,14 @@ impl Owner<'_> {
             self.selector_current = true;
             self.key = None;
             self.probe = None;
-            if op == 1 {
+            if op == OwnerOperation::PrepareRange {
                 return Ok(0);
             }
         }
         let ValueData::String(text) = self.source.data() else {
             return Err(invalid("closed map lost pinned String"));
         };
-        if op == 2 || op == 6 {
+        if op == OwnerOperation::SelectRange || op == OwnerOperation::PrepareAndSelectRange {
             if !core::mem::take(&mut self.selector_current) {
                 return Err(invalid("closed map selection without current range"));
             }
@@ -216,7 +223,11 @@ impl Owner<'_> {
             // Fusion moves no fallible source instruction across this pair:
             // only empty blocks/jumps intervene. Preserve the selection's
             // original diagnostic origin after the range has succeeded.
-            let selection_site = if op == 6 { self.selection_site } else { site };
+            let selection_site = if op == OwnerOperation::PrepareAndSelectRange {
+                self.selection_site
+            } else {
+                site
+            };
             let bad = || Error::Library {
                 origin: self.descriptor.metadata().plan.blocks()[selection_site].origin(),
                 error: mech_engine::native_artifact::NativeCollectionInvocationError::Kernel(
@@ -243,11 +254,16 @@ impl Owner<'_> {
             .get(bytes.clone())
             .ok_or_else(|| invalid("closed map key bounds"))?;
         match op {
-            3 | 4 => self
+            OwnerOperation::ContainsKey | OwnerOperation::ReadKey => self
                 .binding
-                .native_read(key, op == 3, &mut self.probe, self.limits)
+                .native_read(
+                    key,
+                    op == OwnerOperation::ContainsKey,
+                    &mut self.probe,
+                    self.limits,
+                )
                 .map_err(storage_error),
-            5 => {
+            OwnerOperation::InsertKey => {
                 let geometry = PublicationGeometry {
                     live_bytes: self.work.memory_budget().used_bytes(),
                     live_nodes: add(
@@ -464,7 +480,7 @@ impl<'plan> State<'plan> {
                 }
             }
         }
-        let binding = self.slots[index].binding.take().unwrap();
+        let binding = self.slots[index].take_binding().unwrap();
         let mut owner = Box::new(Owner {
             packed_frame: 0,
             packed,
@@ -513,7 +529,7 @@ impl<'plan> State<'plan> {
             super::super::map_closed_tests::record_packed_entry();
         }
         let pointer = (&mut *owner as *mut Owner<'plan>) as u64;
-        self.slots[index].closed = Some(owner);
+        self.slots[index].close(owner);
         Ok(Some([0, 0, call as *const () as u64, pointer]))
     }
 }
@@ -549,8 +565,7 @@ impl<'state, 'plan, 'a> Invocation<'state, 'a, 'plan> {
             .as_mut()
             .ok_or_else(|| invalid("closed map session lost"))?;
         let owner = state.slots[index]
-            .closed
-            .take()
+            .take_closed()
             .ok_or_else(|| invalid("closed map owner lost"))?;
         let Owner {
             mut binding,
@@ -564,7 +579,7 @@ impl<'state, 'plan, 'a> Invocation<'state, 'a, 'plan> {
             ..
         } = *owner;
         if let Some(error) = error {
-            state.slots[index].binding = Some(binding);
+            state.slots[index].retain(binding);
             return Err(error);
         }
         let traversals = funded
@@ -598,7 +613,7 @@ impl<'state, 'plan, 'a> Invocation<'state, 'a, 'plan> {
                     if map.updates() != updates || map.traversals() != traversals {
                         return Err(invalid("frozen map completion differs"));
                     }
-                    state.slots[index].frozen = Some(super::frozen::FrozenSlot {
+                    state.slots[index].stage_frozen(super::frozen::FrozenSlot {
                         map,
                         token: 0,
                         parent: proof.parent,
@@ -613,7 +628,7 @@ impl<'state, 'plan, 'a> Invocation<'state, 'a, 'plan> {
                 }
             }
         }
-        state.slots[index].binding = Some(binding);
+        state.slots[index].retain(binding);
         self.state.stats.hash_table_updates = add(self.state.stats.hash_table_updates, updates)?;
         if is_packed {
             self.state.stats.packed_map_updates =

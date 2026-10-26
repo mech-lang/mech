@@ -8,12 +8,15 @@ use super::iteration_runtime::{
     ControlState, ControlView as Control, NativeIterationExecutionError,
 };
 use super::memory::{NativeTypedStorage, NativeWordStorage, transport_bytes};
-use super::program_abi::{COLLECTION, Frame, LIBRARY, MOVE, OUTPUT_BASE, VERSION};
+#[cfg(test)]
+use super::program_abi::{COLLECTION, LIBRARY, MOVE};
+use super::program_abi::{Frame, OUTPUT_BASE, VERSION};
 use super::program_descriptor::RetirementKind;
 use super::{
     NativeExecutionError, NativeExecutionLimits, NativeExecutionPhase, NativeProgramDescriptor,
     NativeValueArena, NativeValueError, NativeWorkMeter,
 };
+use crate::native_artifact::program::protocol::GlobalHelper;
 use mech_core::{
     ManagedMemoryBudget, MemoryBudgetLimits, Value, ValueData,
     snapshot::{F64Bits, SnapshotValidationContext, ValueDataDraft, ValueDraft},
@@ -446,6 +449,7 @@ impl Invocation<'_, '_, '_> {
         operation: u64,
         args: [u64; 3],
     ) -> Result<Option<u64>, NativeProgramExecutionError> {
+        let tag = GlobalHelper::decode(operation);
         if self
             .prefix
             .as_ref()
@@ -453,7 +457,7 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("helper after native prefix checkpoint"));
         }
-        if operation == super::program_abi::CLOSED_TAIL_END {
+        if tag == GlobalHelper::ClosedTailEnd {
             let site = usize::try_from(site).map_err(|_| invalid("closed Tail site overflow"))?;
             return self.end_closed_tail(site, args);
         }
@@ -463,11 +467,11 @@ impl Invocation<'_, '_, '_> {
             ));
         }
         if matches!(
-            operation,
-            super::program_abi::PARALLEL_RUN
-                | super::program_abi::PARALLEL_TAKE
-                | super::program_abi::PARALLEL_YIELD
-                | super::program_abi::PARALLEL_ENTER
+            tag,
+            GlobalHelper::ParallelRun
+                | GlobalHelper::ParallelTake
+                | GlobalHelper::ParallelYield
+                | GlobalHelper::ParallelEnter
         ) {
             return self.parallel_helper(
                 usize::try_from(site).map_err(|_| invalid("parallel helper site overflow"))?,
@@ -476,21 +480,19 @@ impl Invocation<'_, '_, '_> {
             );
         }
         if matches!(
-            operation,
-            super::program_abi::PREFIX_PAUSE
-                | super::program_abi::PREFIX_BORROWED_RESUME
-                | super::program_abi::PREFIX_TAIL_RESUME
-                | super::program_abi::PREFIX_SCANNED
+            tag,
+            GlobalHelper::PrefixPause
+                | GlobalHelper::PrefixBorrowedResume
+                | GlobalHelper::PrefixTailResume
+                | GlobalHelper::PrefixScanned
         ) {
             return self.prefix_helper(site, operation, args);
         }
         // Native path interiors have no callback. A selected map operation
         // admits its own observable boundary before reading any operands or
         // mutating storage. Canonical/refused execution keeps ordinary visits.
-        if (operation == super::program_abi::MAP_OWNER_CALL
-            && self.retained_native_call(site as usize))
-            || (operation == super::program_abi::MAP_OWNER_SPAN
-                && self.retained_native_span(site as usize))
+        if (tag == GlobalHelper::MapOwnerCall && self.retained_native_call(site as usize))
+            || (tag == GlobalHelper::MapOwnerSpan && self.retained_native_span(site as usize))
         {
             self.visit(site)?;
         }
@@ -501,21 +503,21 @@ impl Invocation<'_, '_, '_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         collection::before_span_helper(self, site)?;
         let descriptor = self.descriptor;
-        if operation == super::program_abi::CLOSED_TAIL_BEGIN {
+        if tag == GlobalHelper::ClosedTailBegin {
             return self.begin_closed_tail(site, args);
         }
         if matches!(
-            operation,
-            super::program_abi::MAP_OWNER_BEGIN
-                | super::program_abi::MAP_OWNER_CALL
-                | super::program_abi::MAP_OWNER_END
-                | super::program_abi::MAP_OWNER_SPAN
+            tag,
+            GlobalHelper::MapOwnerBegin
+                | GlobalHelper::MapOwnerCall
+                | GlobalHelper::MapOwnerEnd
+                | GlobalHelper::MapOwnerSpan
         ) {
             return self.retained_map_helper(site, operation, args);
         }
         if matches!(
-            operation,
-            super::program_abi::FROZEN_MAP_COPY | super::program_abi::FROZEN_MAP_READ
+            tag,
+            GlobalHelper::FrozenMapCopy | GlobalHelper::FrozenMapRead
         ) {
             return self.frozen_map_helper(site, operation, args);
         }
@@ -527,10 +529,10 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("ordinary helper at retained native map site"));
         }
-        if operation == super::program_abi::BORROWED_STRINGS_PREPARE {
+        if tag == GlobalHelper::BorrowedStringsPrepare {
             return self.prepare_borrowed_strings(site, args);
         }
-        if operation == super::program_abi::BORROWED_STRING_FAILURE {
+        if tag == GlobalHelper::BorrowedStringFailure {
             return self.borrowed_string_failure(site, args);
         }
         if self.borrowed_action(site).is_some() {
@@ -544,21 +546,21 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("helper at native-only aggregate site"));
         }
-        if operation == super::program_abi::WINDOW_PREPARE {
+        if tag == GlobalHelper::WindowPrepare {
             self.prepare_window_region(site, args)
-        } else if operation == super::program_abi::WINDOW_FINISH {
+        } else if tag == GlobalHelper::WindowFinish {
             self.finish_window_region(site, args)
-        } else if operation == super::program_abi::STRING_MAP_PREPARE {
+        } else if tag == GlobalHelper::StringMapPrepare {
             self.prepare_string_map_region(site, args)
-        } else if operation == super::program_abi::STRING_MAP_FINISH {
+        } else if tag == GlobalHelper::StringMapFinish {
             self.finish_string_map_region(site, args)
-        } else if operation == super::program_abi::JOIN_MAP_PREPARE {
+        } else if tag == GlobalHelper::JoinMapPrepare {
             self.prepare_join_map_chunk(site, args)
-        } else if operation == super::program_abi::JOIN_MAP_FINISH {
+        } else if tag == GlobalHelper::JoinMapFinish {
             self.finish_join_map_chunk(site, args)
         } else if self.window_region.is_some() {
             Err(invalid("helper while compiled String loans are active"))
-        } else if operation == 0xffff_ffff_ffff_fff0 {
+        } else if tag == GlobalHelper::StructuralObservation {
             if self.state.consumed || args != [0; 3] {
                 return Err(invalid("duplicate or malformed structural observation"));
             }
@@ -685,7 +687,7 @@ impl Invocation<'_, '_, '_> {
             };
             self.state.consumed = true;
             Ok(Some(word))
-        } else if operation == LIBRARY {
+        } else if tag == GlobalHelper::Library {
             if self.state.consumed {
                 return Err(invalid("duplicate library helper"));
             }
@@ -764,7 +766,7 @@ impl Invocation<'_, '_, '_> {
                 .scalar_kind()
                 .map(|kind| bits(&result, kind))
                 .transpose()
-        } else if operation == MOVE {
+        } else if tag == GlobalHelper::Move {
             if self.state.consumed {
                 return Err(invalid("duplicate managed move"));
             }
@@ -793,7 +795,7 @@ impl Invocation<'_, '_, '_> {
             }
             self.state.consumed = true;
             Ok(None)
-        } else if operation == COLLECTION {
+        } else if tag == GlobalHelper::Collection {
             if self.state.consumed || args[2] != 0 {
                 return Err(invalid("duplicate collection helper"));
             }
@@ -808,7 +810,7 @@ impl Invocation<'_, '_, '_> {
             self.state.consumed = true;
             Ok(result)
         } else {
-            if operation != OUTPUT_BASE + self.state.output_cursor as u64
+            if tag != GlobalHelper::decode(OUTPUT_BASE + self.state.output_cursor as u64)
                 || (self.action_required(site) && !self.state.consumed)
                 || descriptor.metadata().plan.blocks()[site].terminator()
                     != NativeIterationTerminator::Scalar(NativeMatchTerminator::Complete)

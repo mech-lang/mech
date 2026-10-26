@@ -1,7 +1,12 @@
 //! Emission of explicit leaf/transport hooks, never a graph evaluator.
 use super::NativeCompileError;
 use super::compiler::guard;
-use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, SigRef, Value, condcodes::IntCC, types};
+use crate::native_artifact::program::protocol::GlobalHelper;
+#[cfg(feature = "canonical-native-program")]
+use crate::native_artifact::program::protocol::OwnerOperation;
+#[cfg(feature = "canonical-native-program")]
+use cranelift_codegen::ir::MemFlags;
+use cranelift_codegen::ir::{Block, InstBuilder, SigRef, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use cranelift_module::Module;
 
@@ -153,7 +158,7 @@ mod tests {
                     if index == 2 { other_function } else { function },
                     if index == 3 { other_context } else { pointer },
                     input[0] as usize,
-                    input[1],
+                    OwnerOperation::decode(input[1]),
                     arguments,
                     error,
                 );
@@ -277,12 +282,12 @@ impl Hooks {
         function: Value,
         context: Value,
         site: usize,
-        operation: u64,
+        operation: OwnerOperation,
         args: [Value; 3],
         error: Block,
     ) {
         let site = b.ins().iconst(types::I64, site as i64);
-        let operation = b.ins().iconst(types::I64, operation as i64);
+        let operation = b.ins().iconst(types::I64, operation.raw() as i64);
         // A distinct function/context value has no binding proof. Retain the
         // ordinary native call rather than using an earlier helper's words.
         let binding = self
@@ -333,7 +338,6 @@ impl Hooks {
         error: Block,
     ) -> Result<(), NativeCompileError> {
         use super::compiler::offset;
-        use super::program_abi::{JOIN_MAP_FINISH, JOIN_MAP_PREPARE};
         self.require_argument_words(b, 5, error);
         let zero = b.ins().iconst(types::I64, 0);
         let header = b.create_block();
@@ -344,7 +348,7 @@ impl Hooks {
         guard(b, valid, error, super::abi::STATUS_ABI);
         b.ins().brif(ready, header, &[], done, &[]);
         b.switch_to_block(header);
-        self.call(b, site, JOIN_MAP_PREPARE, [zero; 3], error);
+        self.call(b, site, GlobalHelper::JoinMapPrepare, [zero; 3], error);
         let more = b.ins().load(types::I64, MemFlags::new(), self.result, 0);
         let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, more, 1);
         guard(b, valid, error, super::abi::STATUS_ABI);
@@ -359,7 +363,13 @@ impl Hooks {
         }
         let call = b.ins().call(function, &words);
         let processed = b.inst_results(call)[0];
-        self.call(b, site, JOIN_MAP_FINISH, [processed, zero, zero], error);
+        self.call(
+            b,
+            site,
+            GlobalHelper::JoinMapFinish,
+            [processed, zero, zero],
+            error,
+        );
         b.ins().jump(header, &[]);
         b.switch_to_block(done);
         Ok(())
@@ -377,7 +387,6 @@ impl Hooks {
         error: Block,
     ) -> Result<(), NativeCompileError> {
         use super::compiler::offset;
-        use super::program_abi::{STRING_MAP_FINISH, STRING_MAP_PREPARE};
         use cranelift_codegen::ir::MemFlags;
         let enough = b
             .ins()
@@ -391,7 +400,7 @@ impl Hooks {
         self.call(
             b,
             site,
-            STRING_MAP_PREPARE,
+            GlobalHelper::StringMapPrepare,
             [remaining, collection, zero],
             error,
         );
@@ -418,7 +427,7 @@ impl Hooks {
         self.call(
             b,
             site,
-            STRING_MAP_FINISH,
+            GlobalHelper::StringMapFinish,
             [processed, collection, zero],
             error,
         );
@@ -438,10 +447,7 @@ impl Hooks {
         exit: Block,
         error: Block,
     ) -> Result<(), NativeCompileError> {
-        use super::{
-            compiler::{guard, offset},
-            program_abi::{WINDOW_FINISH, WINDOW_PREPARE},
-        };
+        use super::compiler::{guard, offset};
         use cranelift_codegen::ir::MemFlags;
         let required =
             b.ins()
@@ -461,7 +467,13 @@ impl Hooks {
         b.ins().brif(first, attempt, &[], ordinary, &[]);
         b.switch_to_block(attempt);
         let collection = b.ins().iconst(types::I64, region.collection() as i64);
-        self.call(b, site, WINDOW_PREPARE, [width, length, collection], error);
+        self.call(
+            b,
+            site,
+            GlobalHelper::WindowPrepare,
+            [width, length, collection],
+            error,
+        );
         let ready = b.ins().load(types::I64, MemFlags::new(), self.result, 0);
         let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
         let native = b.create_block();
@@ -478,7 +490,13 @@ impl Hooks {
         let call = b.ins().call(function, &words);
         let count = b.inst_results(call)[0];
         let zero = b.ins().iconst(types::I64, 0);
-        self.call(b, site, WINDOW_FINISH, [count, collection, zero], error);
+        self.call(
+            b,
+            site,
+            GlobalHelper::WindowFinish,
+            [count, collection, zero],
+            error,
+        );
         b.ins().jump(exit, &[]);
         b.switch_to_block(ordinary);
         Ok(())
@@ -563,6 +581,7 @@ impl Hooks {
         is_scalar: impl Fn(mech_engine::native_artifact::NativeMatchValue) -> bool,
         error: Block,
     ) -> Result<(), NativeCompileError> {
+        let operation = GlobalHelper::decode(operation);
         #[cfg(feature = "canonical-native-program")]
         {
             let count = b.ins().iconst(types::I64, operands.len() as i64);
@@ -603,7 +622,7 @@ impl Hooks {
         &self,
         b: &mut FunctionBuilder<'_>,
         site: usize,
-        operation: u64,
+        operation: GlobalHelper,
         args: [Value; 3],
         error: Block,
     ) {
@@ -614,11 +633,11 @@ impl Hooks {
         &self,
         b: &mut FunctionBuilder<'_>,
         site: Value,
-        operation: u64,
+        operation: GlobalHelper,
         args: [Value; 3],
         error: Block,
     ) {
-        let operation = b.ins().iconst(types::I64, operation as i64);
+        let operation = b.ins().iconst(types::I64, operation.raw() as i64);
         let call = b.ins().call_indirect(
             self.signature,
             self.function,
@@ -651,7 +670,7 @@ impl Hooks {
             self.call(
                 b,
                 site,
-                super::program_abi::COLLECTION,
+                GlobalHelper::Collection,
                 [args[0], args[1], zero],
                 error,
             );
@@ -672,8 +691,7 @@ impl Hooks {
         value: Value,
         error: Block,
     ) -> Result<(), NativeCompileError> {
-        let operation = super::program_abi::OUTPUT_BASE
-            .checked_add(ordinal as u64)
+        let operation = GlobalHelper::output(ordinal as u64)
             .ok_or_else(|| super::compiler::backend("output helper ordinal overflow"))?;
         let zero = b.ins().iconst(types::I64, 0);
         self.call(b, site, operation, [value, zero, zero], error);

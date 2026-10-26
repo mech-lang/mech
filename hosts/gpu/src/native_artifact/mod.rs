@@ -74,7 +74,10 @@ mod iteration_compiler;
 mod iteration_identity;
 mod iteration_linked;
 mod iteration_runtime;
-#[cfg(feature = "canonical-native-program-runtime")]
+#[cfg(any(
+    feature = "canonical-native",
+    feature = "canonical-native-program-runtime"
+))]
 mod program;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod program_abi;

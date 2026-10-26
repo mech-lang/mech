@@ -45,7 +45,7 @@ impl<'plan> Session<'plan> {
         self.state
             .as_ref()
             .and_then(|state| state.slots.get(index))
-            .is_some_and(|slot| slot.binding.is_some())
+            .is_some_and(Slot::has_retained_binding)
     }
 }
 
@@ -54,6 +54,127 @@ struct Slot<'plan> {
     closed: Option<Box<closed::Owner<'plan>>>,
     frozen: Option<FrozenSlot>,
 }
+// These operations move already admitted storage in the existing order. They
+// add no rollback or retry path, and keep the original three Option fields.
+impl<'plan> Slot<'plan> {
+    fn vacant() -> Self {
+        Self {
+            binding: None,
+            closed: None,
+            frozen: None,
+        }
+    }
+    fn has_retained_binding(&self) -> bool {
+        self.binding.is_some()
+    }
+    fn retain(&mut self, binding: Binding<'plan>) {
+        self.binding = Some(binding);
+    }
+    fn close(&mut self, owner: Box<closed::Owner<'plan>>) {
+        self.closed = Some(owner);
+    }
+    fn stage_frozen(&mut self, frozen: FrozenSlot) {
+        self.frozen = Some(frozen);
+    }
+    fn mark_frozen_published(&mut self, token: u64) {
+        self.frozen.as_mut().unwrap().token = token;
+    }
+    fn take_binding(&mut self) -> Option<Binding<'plan>> {
+        self.binding.take()
+    }
+    fn take_closed(&mut self) -> Option<Box<closed::Owner<'plan>>> {
+        self.closed.take()
+    }
+    fn retire_frozen(&mut self) {
+        drop(self.frozen.take());
+    }
+}
+
+#[cfg(test)]
+pub(in crate::native_artifact::program_runtime) enum SlotPhase<'slot, 'plan> {
+    Vacant,
+    Retained(&'slot Binding<'plan>),
+    Closed(&'slot closed::Owner<'plan>),
+    FrozenPending {
+        binding: &'slot Binding<'plan>,
+        frozen: &'slot FrozenSlot,
+    },
+    FrozenPublished(&'slot FrozenSlot),
+    // Cleanup-only error states are observable, but never resumable.
+    TerminalPartial {
+        binding: Option<&'slot Binding<'plan>>,
+        closed: Option<&'slot closed::Owner<'plan>>,
+        frozen: Option<&'slot FrozenSlot>,
+    },
+}
+#[cfg(test)]
+impl core::fmt::Debug for SlotPhase<'_, '_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Vacant => f.write_str("Vacant"),
+            Self::Retained(binding) => f
+                .debug_tuple("Retained")
+                .field(&core::ptr::from_ref(*binding))
+                .finish(),
+            Self::Closed(owner) => f
+                .debug_tuple("Closed")
+                .field(&core::ptr::from_ref(*owner))
+                .finish(),
+            Self::FrozenPending { binding, frozen } => f
+                .debug_struct("FrozenPending")
+                .field("binding", &core::ptr::from_ref(*binding))
+                .field("token", &frozen.token)
+                .field("parent", &frozen.parent)
+                .field("born_visit", &frozen.born_visit)
+                .finish(),
+            Self::FrozenPublished(frozen) => f
+                .debug_struct("FrozenPublished")
+                .field("token", &frozen.token)
+                .field("parent", &frozen.parent)
+                .field("born_visit", &frozen.born_visit)
+                .finish(),
+            Self::TerminalPartial {
+                binding,
+                closed,
+                frozen,
+            } => f
+                .debug_struct("TerminalPartial")
+                .field("binding", &binding.is_some())
+                .field("closed", &closed.is_some())
+                .field("frozen_token", &frozen.map(|f| f.token))
+                .finish(),
+        }
+    }
+}
+#[cfg(test)]
+impl Slot<'_> {
+    fn phase(&self) -> SlotPhase<'_, '_> {
+        match (&self.binding, &self.closed, &self.frozen) {
+            (None, None, None) => SlotPhase::Vacant,
+            (Some(binding), None, None) => SlotPhase::Retained(binding),
+            (None, Some(owner), None) => SlotPhase::Closed(owner),
+            (Some(binding), None, Some(frozen)) if frozen.token == 0 => {
+                SlotPhase::FrozenPending { binding, frozen }
+            }
+            (None, None, Some(frozen)) if frozen.token != 0 => SlotPhase::FrozenPublished(frozen),
+            (binding, closed, frozen) => SlotPhase::TerminalPartial {
+                binding: binding.as_ref(),
+                closed: closed.as_deref(),
+                frozen: frozen.as_ref(),
+            },
+        }
+    }
+}
+#[cfg(test)]
+impl Session<'_> {
+    pub(in crate::native_artifact::program_runtime) fn slot_phase(
+        &self,
+        index: usize,
+    ) -> Option<SlotPhase<'_, '_>> {
+        self.state.as_ref()?.slots.get(index).map(Slot::phase)
+    }
+}
+
 pub(super) struct State<'plan> {
     // Tables/keys retire before the enclosing admitted fixed lane.
     slots: Box<[Slot<'plan>]>,
@@ -150,11 +271,7 @@ impl<'plan> State<'plan> {
         if slots.try_reserve_exact(count).is_err() || slots.capacity() != count {
             return Ok(None);
         }
-        slots.resize_with(count, || Slot {
-            binding: None,
-            closed: None,
-            frozen: None,
-        });
+        slots.resize_with(count, Slot::vacant);
         let mut spans = Vec::new();
         if spans.try_reserve_exact(span_count).is_err() || spans.capacity() != span_count {
             return Ok(None);
@@ -292,7 +409,7 @@ impl<'plan> State<'plan> {
                     .hash_table_regions
                     .checked_add(1)
                     .ok_or_else(|| invalid("retained map table counter overflow"))?;
-                self.slots[index].binding = Some(binding);
+                self.slots[index].retain(binding);
                 self.caller = caller;
                 self.last_owned_visit = Some(ctx.state.control.visits);
                 Ok(Some(words))
@@ -459,7 +576,7 @@ impl<'plan> State<'plan> {
                 .map
                 .admit_output(&self.descriptor.metadata().schemas, schema, ctx.limits)
                 .map_err(storage_error)?;
-            slot.frozen.as_mut().unwrap().token = token;
+            slot.mark_frozen_published(token);
             ctx.state.stats.frozen_map_regions = add(ctx.state.stats.frozen_map_regions, 1)?;
             Publication::Frozen(token)
         } else {
@@ -479,7 +596,7 @@ impl<'plan> State<'plan> {
             .active_tables
             .checked_sub(1)
             .ok_or_else(|| invalid("retained map owner count underflow"))?;
-        drop(self.slots[index].binding.take());
+        drop(self.slots[index].take_binding());
         if self
             .caller
             .as_ref()

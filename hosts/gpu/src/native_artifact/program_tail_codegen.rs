@@ -7,6 +7,9 @@ use super::super::{
     program_tail_layout::{Layout, Region},
 };
 use crate::native_artifact::compilation::OptimizationOptions;
+#[cfg(feature = "canonical-native-program-runtime")]
+use crate::native_artifact::program::protocol::GlobalHelper;
+use crate::native_artifact::program::protocol::OwnerOperation;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 
@@ -64,7 +67,7 @@ fn leave(
     hooks.call_at(
         b,
         site,
-        program_abi::CLOSED_TAIL_END,
+        GlobalHelper::ClosedTailEnd,
         [compute, comparison, mode],
         error,
     );
@@ -214,7 +217,7 @@ fn prepare_region(
         // replaces words 0..4 with its private return values.
         hooks.write_entry_words(b, &offsets, error)?;
     }
-    hooks.call(b, site, operation, [zero; 3], error);
+    hooks.call(b, site, GlobalHelper::decode(operation), [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     store(options, b, locals, region, region.words, ready)?;
     for i in 0..if region.map.is_some() { 4 } else { 2 } {
@@ -271,7 +274,15 @@ pub(in crate::native_artifact) fn admission(
         let function = load(options, b, locals, region, region.words + 3)?;
         let context = load(options, b, locals, region, region.words + 4)?;
         let zero = b.ins().iconst(types::I64, 0);
-        hooks.bound_call(b, function, context, site, 0, [zero; 3], error);
+        hooks.bound_call(
+            b,
+            function,
+            context,
+            site,
+            OwnerOperation::Refill,
+            [zero; 3],
+            error,
+        );
         let count = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         store(options, b, locals, region, region.words + 1, count)?;
         b.ins().jump(funded, &[]);

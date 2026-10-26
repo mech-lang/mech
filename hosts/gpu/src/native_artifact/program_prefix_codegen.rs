@@ -10,6 +10,7 @@ use super::super::{
     program_tail_layout,
 };
 use crate::native_artifact::compilation::OptimizationOptions;
+use crate::native_artifact::program::protocol::GlobalHelper;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::NativeMatchAction;
@@ -209,7 +210,7 @@ pub(in crate::native_artifact) fn scanned(
     hooks.call(
         b,
         region.tail.exit() as usize,
-        program_abi::PREFIX_SCANNED,
+        GlobalHelper::PrefixScanned,
         [zero; 3],
         error,
     );
@@ -343,7 +344,7 @@ pub(in crate::native_artifact) fn gate(
     hooks.call(
         b,
         site,
-        program_abi::PREFIX_PAUSE,
+        GlobalHelper::PrefixPause,
         [keep_first, keep_end, keep_closed],
         error,
     );
