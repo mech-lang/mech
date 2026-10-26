@@ -370,7 +370,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 106;
 // their packed publication and relocating growth without scalar draft arrays.
 // Computed cursor words and transferred packed output have no payload clone;
 // their source checks and arithmetic/construction work remain charged.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 76;
+// Policy77 projects unsigned matrix arguments with one admitted packed copy
+// through the existing typed constructor, without scalar draft expansion.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 77;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

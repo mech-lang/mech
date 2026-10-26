@@ -1,5 +1,5 @@
-//! Canonical child trees covered by the native projection's draft witness.
-//! Word matrices additionally prepay packed-to-draft and shape expansion.
+//! Canonical child trees covered by the native projection's construction witness.
+//! Word matrices use their typed packed constructor with admitted shape closure.
 //! Field-label drafts and foreign Dynamic roots still require their own witnesses.
 use mech_core::SchemaBody;
 

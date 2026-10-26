@@ -253,11 +253,20 @@ pub fn native_project_structural_value(
             ])?,
             4096,
         ])?;
-        let expansion = budget::unsigned_word_draft_expansion(&mut meter, body, data)?;
+        let packed = crate::resident::structural_values::word_matrix(body);
+        let draft_bytes = if packed {
+            // The typed constructor consumes one packed clone. It never
+            // allocates an intermediate draft or canonical cell per word.
+            0
+        } else {
+            add(&[
+                budget::unsigned_word_draft_expansion(&mut meter, body, data)?,
+                mech_core::canonical_snapshot_draft_bytes(footprint)?,
+            ])?
+        };
         let workspace = add(&[
             owner_envelope,
-            expansion,
-            mech_core::canonical_snapshot_draft_bytes(footprint)?,
+            draft_bytes,
             mech_core::canonical_snapshot_finalization_bytes(footprint)?,
             mul(&[Value::memory_budget_claim_metadata_bytes(), 2])?,
         ])?;
@@ -305,16 +314,44 @@ pub fn native_project_structural_value(
         let canonical = mech_core::snapshot::SnapshotCanonicalizationBudget::new(finalization_work);
         let context = mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(schemas)
             .with_canonicalization_budget(&canonical);
-        let data =
-            mech_core::snapshot::canonical_snapshot_data_draft_with_context(body, data, &context)
-                .map_err(|_| ResidentKernelError::InvalidInput)?;
-        let value = ValueDraft {
-            schema: output_type.schema(),
-            shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
-            data,
-        }
-        .finalize(&context)
-        .map_err(|_| ResidentKernelError::InvalidOutput)?;
+        let value = if packed {
+            copy_packed_word_matrix(output_type.schema(), shape, data, Arc::clone(schemas))?
+        } else {
+            let data = mech_core::snapshot::canonical_snapshot_data_draft_with_context(
+                body, data, &context,
+            )
+            .map_err(|_| ResidentKernelError::InvalidInput)?;
+            ValueDraft {
+                schema: output_type.schema(),
+                shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
+                data,
+            }
+            .finalize(&context)
+            .map_err(|_| ResidentKernelError::InvalidOutput)?
+        };
         Ok(value.into_memory_budget(&mut reservation)?)
     })?
+}
+
+fn copy_packed_word_matrix(
+    schema: mech_core::SchemaId,
+    shape: mech_core::ShapeInstance,
+    data: &ValueData,
+    schemas: Arc<SchemaTable>,
+) -> Result<Value, ResidentKernelError> {
+    use mech_core::snapshot::SequenceView;
+    let ValueData::Matrix(matrix) = data else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    // These existing constructors validate the exact element kind, current
+    // shape and cardinality. Every allocation is funded by workspace above.
+    match matrix.elements() {
+        SequenceView::U8(words) => Value::from_u8_matrix(schema, shape, words.into(), schemas),
+        SequenceView::U16(words) => Value::from_u16_matrix(schema, shape, words.into(), schemas),
+        SequenceView::U32(words) => Value::from_u32_matrix(schema, shape, words.into(), schemas),
+        SequenceView::U64(words) => Value::from_u64_matrix(schema, shape, words.into(), schemas),
+        SequenceView::U128(words) => Value::from_u128_matrix(schema, shape, words.into(), schemas),
+        _ => return Err(ResidentKernelError::InvalidInput),
+    }
+    .map_err(|_| ResidentKernelError::InvalidOutput)
 }

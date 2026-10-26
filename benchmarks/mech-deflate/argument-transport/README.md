@@ -63,3 +63,18 @@ This improvement does not remove recursive carrier copies, copies needed to
 publish modified buffers, or other component costs. Algorithms, search limits,
 tables, buffer sizes, and compression timing boundaries are unchanged. A complete
 compressor and its timing remain later work.
+
+The recursive real-buffer regression added at `31322cc81762ae2772e062f05c0c8c48988f6d8f`
+calls a checked function for two visits with the same 262144 U16 entries and
+1500513 U32 words. Before the projection correction, argument binding rejects
+192652773 temporary bytes against the 134217728-byte cap. The selected cache
+was rebuilt through per-word drafts. Unsigned matrix projection now copies one
+packed backing through the existing typed constructor, retaining exact kind,
+shape, copy admission and failure cleanup.
+
+The unchanged original and decoded cases now complete in about 0.045 seconds
+per valid call in the unoptimized test build. Each requests 26770112 cumulative
+allocation bytes in 7100 requests. Assertion rejection preserves the previously
+published output and input aliases; the next valid call recovers. The small case
+also agrees with resident execution. These are argument-transport measurements,
+not compression timings, and physical payload copies remain.
