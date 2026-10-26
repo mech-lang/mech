@@ -50,14 +50,12 @@ pub(super) mod packed_maps;
 pub(super) mod parallel_codegen;
 #[path = "program_prefix_codegen.rs"]
 pub(super) mod prefix_codegen;
-#[path = "program_scalar_aggregates.rs"]
-pub(super) mod scalar_aggregates;
 #[path = "program_scalar_loop_codegen.rs"]
 pub(super) mod scalar_loop_codegen;
-#[path = "program_ssa_words.rs"]
-pub(super) mod ssa_words;
 #[path = "program_string_map_codegen.rs"]
 pub(super) mod string_map_codegen;
+#[path = "program_tag_threading.rs"]
+pub(super) mod tag_threading;
 #[path = "program_tail_codegen.rs"]
 pub(super) mod tail_codegen;
 #[path = "program_window_codegen.rs"]

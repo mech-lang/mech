@@ -617,7 +617,11 @@ pub(super) fn define_cfg<M: Module>(
         }
         let callback_signature = b.import_signature(callback_signature);
         #[cfg(feature = "canonical-native-program")]
-        super::program_compiler::scalar_aggregates::constants(&mut b, locals, &aggregates)?;
+        crate::native_artifact::codegen::common::aggregates::constants(
+            &mut b,
+            locals,
+            &aggregates,
+        )?;
         let mut reachable = vec![false; plan.blocks().len()];
         let mut pending = vec![plan.entry() as usize];
         while let Some(id) = pending.pop() {
@@ -941,7 +945,7 @@ pub(super) fn define_cfg<M: Module>(
             #[cfg(not(feature = "canonical-native-program"))]
             let owner_handled = false;
             #[cfg(feature = "canonical-native-program")]
-            let aggregate = super::program_compiler::scalar_aggregates::emit(
+            let aggregate = crate::native_artifact::codegen::common::aggregates::emit_memory(
                 &mut b,
                 locals,
                 &aggregates,

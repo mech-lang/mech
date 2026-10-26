@@ -168,3 +168,6 @@ pub use program_runtime::{
 mod owned_map_binding;
 #[cfg(feature = "canonical-native-program-runtime")]
 mod owned_string_map;
+
+#[cfg(feature = "canonical-native-program")]
+mod codegen;

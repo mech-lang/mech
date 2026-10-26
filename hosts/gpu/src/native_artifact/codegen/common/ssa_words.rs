@@ -1,15 +1,15 @@
 //! Shared SSA homes for admitted native scalar and aggregate word lanes.
 //! Only explicit boundary synchronization touches the original local array.
-use super::super::{NativeCompileError, compiler::offset, iteration_code_plan::CodePlan};
+use crate::native_artifact::{NativeCompileError, compiler::offset, iteration_code_plan::CodePlan};
 use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::{FunctionBuilder, Variable};
 use std::collections::{BTreeMap, BTreeSet};
 
-pub(super) struct Words {
+pub(in crate::native_artifact) struct Words {
     variables: BTreeMap<usize, Variable>,
 }
 impl Words {
-    pub(super) fn new(
+    pub(in crate::native_artifact) fn new(
         b: &mut FunctionBuilder<'_>,
         locals: Value,
         code: CodePlan<'_>,
@@ -35,20 +35,29 @@ impl Words {
         }
         Ok(Self { variables })
     }
-    pub(super) fn read(&self, b: &mut FunctionBuilder<'_>, slot: usize) -> Value {
+    pub(in crate::native_artifact) fn read(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        slot: usize,
+    ) -> Value {
         b.use_var(self.variables[&slot])
     }
-    pub(super) fn write(&self, b: &mut FunctionBuilder<'_>, slot: usize, value: Value) {
+    pub(in crate::native_artifact) fn write(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        slot: usize,
+        value: Value,
+    ) {
         b.def_var(self.variables[&slot], value);
     }
-    pub(super) fn spill_all(
+    pub(in crate::native_artifact) fn spill_all(
         &self,
         b: &mut FunctionBuilder<'_>,
         locals: Value,
     ) -> Result<(), NativeCompileError> {
         self.spill_live(b, locals, &self.variables.keys().copied().collect())
     }
-    pub(super) fn spill_live(
+    pub(in crate::native_artifact) fn spill_live(
         &self,
         b: &mut FunctionBuilder<'_>,
         locals: Value,
@@ -60,7 +69,7 @@ impl Words {
         }
         Ok(())
     }
-    pub(super) fn reload_live(
+    pub(in crate::native_artifact) fn reload_live(
         &self,
         b: &mut FunctionBuilder<'_>,
         locals: Value,

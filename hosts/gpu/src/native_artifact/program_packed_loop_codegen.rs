@@ -4,7 +4,7 @@
 use super::super::iteration_compiler::{CodegenReport, RegionToken};
 use super::super::{
     NativeCompileError,
-    compiler::{backend, guard, offset, primitive, set_origin},
+    compiler::{backend, offset, primitive, set_origin},
     iteration_code_plan::CodePlan,
     program_hooks::Hooks,
     program_packed_map::Frame,
@@ -23,12 +23,13 @@ pub(in crate::native_artifact) use super::packed_maps::{
 pub(in crate::native_artifact) use super::packed_maps::{
     take_paired_candidate_emissions, without_paired_candidate_loads,
 };
-use super::ssa_words::Words;
-use cranelift_codegen::ir::{
-    Block, InstBuilder, MemFlags, Value,
-    condcodes::{FloatCC, IntCC},
-    types,
+use crate::native_artifact::codegen::common::{
+    aggregates::{self as common_aggregates, aggregate_at, aggregate_words, field},
+    ssa_words::Words,
+    terminators::emit_source_terminator,
+    word_access as common_words,
 };
+use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
     NativeAggregateWord as Word, NativeCollectionPrimitive as P, NativeIterationAction as Action,
@@ -55,8 +56,7 @@ mod mutation_facts;
 mod outlined;
 #[path = "program_steady_loop.rs"]
 mod steady;
-#[path = "program_tag_threading.rs"]
-pub(super) mod tag_threading;
+use super::tag_threading;
 #[cfg(test)]
 pub(in crate::native_artifact) use count_bounds::{
     take_count_bound_emissions, without_count_bounds,
@@ -219,94 +219,6 @@ fn note_edge_fact(arithmetic: bool) {
     let _ = arithmetic;
 }
 
-fn field(layout: &NativeScalarAggregates, value: NativeMatchValue, index: usize) -> Option<usize> {
-    let (base, count) = layout.slot(value)?;
-    (index < count).then(|| base + index)
-}
-pub(super) fn aggregate_words(
-    layout: &NativeScalarAggregates,
-    action: &Aggregate,
-    words: &mut BTreeSet<usize>,
-) -> Option<()> {
-    let output = match action {
-        Aggregate::Pack {
-            output,
-            words: inputs,
-        } => {
-            for input in inputs {
-                match input {
-                    Word::Scalar(value) => {
-                        words.insert(value.get() as usize);
-                    }
-                    Word::Field(value, index) => {
-                        words.insert(field(layout, *value, *index)?);
-                    }
-                    Word::Constant(_) => {}
-                }
-            }
-            *output
-        }
-        Aggregate::Copy { source, output } => {
-            let (_, count) = layout.slot(*output)?;
-            for index in 0..count {
-                words.insert(field(layout, *source, index)?);
-            }
-            *output
-        }
-        Aggregate::Project {
-            source,
-            offset,
-            guards,
-            output,
-        } => {
-            for &(index, _) in guards {
-                words.insert(field(layout, *source, index)?);
-            }
-            let (_, count) = layout.slot(*output)?;
-            for index in 0..count {
-                words.insert(field(layout, *source, offset.checked_add(index)?)?);
-            }
-            *output
-        }
-        Aggregate::Observe {
-            source,
-            offset,
-            guards,
-            output,
-            ..
-        } => {
-            for &(index, _) in guards {
-                words.insert(field(layout, *source, index)?);
-            }
-            words.insert(field(layout, *source, *offset)?);
-            words.insert(output.get() as usize);
-            return Some(());
-        }
-    };
-    let (base, count) = layout.slot(output)?;
-    words.extend(base..base + count);
-    Some(())
-}
-fn aggregate_at<'a>(
-    owner: &'a NativeMapOwnerWords,
-    ordinary: &'a NativeScalarAggregates,
-    owner_index: usize,
-    site: usize,
-) -> Option<(&'a NativeScalarAggregates, &'a Aggregate)> {
-    if owner.action_region(site) == Some(owner_index) {
-        owner
-            .aggregates()
-            .action(site)
-            .map(|action| (owner.aggregates(), action))
-    } else {
-        ordinary.action(site).map(|action| (ordinary, action))
-    }
-}
-
-/// Additional emission proof: every action in the already closed, single-entry
-/// Tail has a complete word interpretation. Unsupported actions keep the old
-/// generated CFG. The existing owner proof supplies dominance, lifetime and
-/// single-backedge invariants; no spelling of a source function is recognized.
 fn words_for(
     code: CodePlan<'_>,
     closed: &Layout,
@@ -385,26 +297,44 @@ fn words_for(
         .then_some(words)
 }
 
-pub(super) fn emit_scalar_aggregate(
-    b: &mut FunctionBuilder<'_>,
-    state: &Words,
-    layout: &NativeScalarAggregates,
-    action: &Aggregate,
+// Current-traversal guard proof and actual-emission reporting remain strategy-owned.
+struct ProvedGuards<'a> {
     site: usize,
-    error: Block,
-) -> Result<(), NativeCompileError> {
-    emit_aggregate_body(
-        b,
-        state,
-        layout,
-        action,
-        site,
-        &edge_facts::Proof::default(),
-        error,
-        None,
-    )
+    facts: &'a edge_facts::Proof,
+    report: Option<&'a mut CodegenReport>,
+    region: Option<RegionToken>,
 }
-
+impl common_aggregates::GuardPolicy for ProvedGuards<'_> {
+    fn projection<W: common_words::WordAccess>(
+        &mut self,
+        b: &mut FunctionBuilder<'_>,
+        words: &mut W,
+        word: common_words::LocalWord,
+        source: NativeMatchValue,
+        index: usize,
+        ordinal: u32,
+        error: Block,
+    ) -> Result<(), NativeCompileError> {
+        if self.facts.guard(self.site, source, index, ordinal) {
+            if let Some(report) = self.report.as_mut() {
+                note_edge_fact(false);
+                report.guard(self.region, self.site, source, index, ordinal);
+            }
+            Ok(())
+        } else {
+            common_aggregates::GuardPolicy::projection(
+                &mut common_aggregates::CheckedGuards,
+                b,
+                words,
+                word,
+                source,
+                index,
+                ordinal,
+                error,
+            )
+        }
+    }
+}
 fn emit_aggregate(
     b: &mut FunctionBuilder<'_>,
     state: &Words,
@@ -416,110 +346,19 @@ fn emit_aggregate(
     report: &mut CodegenReport,
     report_region: Option<RegionToken>,
 ) -> Result<(), NativeCompileError> {
-    emit_aggregate_body(
+    common_aggregates::emit(
         b,
-        state,
+        &mut common_words::SsaWords(state),
         layout,
         action,
-        site,
-        facts,
         error,
-        Some((report, report_region)),
+        &mut ProvedGuards {
+            site,
+            facts,
+            report: Some(report),
+            region: report_region,
+        },
     )
-}
-fn emit_aggregate_body(
-    b: &mut FunctionBuilder<'_>,
-    state: &Words,
-    layout: &NativeScalarAggregates,
-    action: &Aggregate,
-    site: usize,
-    facts: &edge_facts::Proof,
-    error: Block,
-    mut evidence: Option<(&mut CodegenReport, Option<RegionToken>)>,
-) -> Result<(), NativeCompileError> {
-    let at = |value, index| {
-        field(layout, value, index).ok_or_else(|| backend("packed SSA aggregate field"))
-    };
-    let (output, values) = match action {
-        Aggregate::Pack { output, words } => {
-            let values = words
-                .iter()
-                .map(|word| {
-                    Ok(match word {
-                        Word::Scalar(source) => state.read(b, source.get() as usize),
-                        Word::Field(source, index) => state.read(b, at(*source, *index)?),
-                        Word::Constant(word) => b.ins().iconst(types::I64, *word as i64),
-                    })
-                })
-                .collect::<Result<Vec<_>, NativeCompileError>>()?;
-            (*output, values)
-        }
-        Aggregate::Copy { source, output } => {
-            let count = layout.slot(*output).unwrap().1;
-            // Materialize every source before changing an overlapping carrier.
-            let values = (0..count)
-                .map(|i| Ok(state.read(b, at(*source, i)?)))
-                .collect::<Result<Vec<_>, NativeCompileError>>()?;
-            (*output, values)
-        }
-        Aggregate::Project {
-            source,
-            offset,
-            guards,
-            output,
-        } => {
-            for &(index, ordinal) in guards {
-                if facts.guard(site, *source, index, ordinal) {
-                    if let Some((report, region)) = evidence.as_mut() {
-                        note_edge_fact(false);
-                        report.guard(*region, site, *source, index, ordinal);
-                    }
-                    continue;
-                }
-                let tag = state.read(b, at(*source, index)?);
-                let valid = b.ins().icmp_imm(IntCC::Equal, tag, i64::from(ordinal));
-                guard(b, valid, error, super::super::abi::STATUS_ABI);
-            }
-            let count = layout.slot(*output).unwrap().1;
-            let values = (0..count)
-                .map(|i| Ok(state.read(b, at(*source, offset + i)?)))
-                .collect::<Result<Vec<_>, NativeCompileError>>()?;
-            (*output, values)
-        }
-        Aggregate::Observe {
-            source,
-            offset,
-            ordinal,
-            guards,
-            output,
-        } => {
-            for &(index, ordinal) in guards {
-                if facts.guard(site, *source, index, ordinal) {
-                    if let Some((report, region)) = evidence.as_mut() {
-                        note_edge_fact(false);
-                        report.guard(*region, site, *source, index, ordinal);
-                    }
-                    continue;
-                }
-                let tag = state.read(b, at(*source, index)?);
-                let valid = b.ins().icmp_imm(IntCC::Equal, tag, i64::from(ordinal));
-                guard(b, valid, error, super::super::abi::STATUS_ABI);
-            }
-            let value = state.read(b, at(*source, *offset)?);
-            let value = if let Some(ordinal) = ordinal {
-                let equal = b.ins().icmp_imm(IntCC::Equal, value, i64::from(*ordinal));
-                b.ins().uextend(types::I64, equal)
-            } else {
-                value
-            };
-            state.write(b, output.get() as usize, value);
-            return Ok(());
-        }
-    };
-    for (index, value) in values.into_iter().enumerate() {
-        state.write(b, at(output, index)?, value);
-    }
-    Ok(())
 }
 
 fn spill(
@@ -1499,48 +1338,28 @@ fn emit_body(
     Ok((packed.constant_hash_loads(), endpoint_loads))
 }
 
-pub(super) fn emit_source_terminator(
+fn emit_with_fact_guards(
     b: &mut FunctionBuilder<'_>,
-    words: &Words,
-    code: CodePlan<'_>,
-    terminator: Term,
-    fail_at: Block,
-    target: impl Fn(u32) -> Block,
-) {
-    match terminator {
-        Term::TailHeader { body, .. } | Term::Scalar(Branch::Jump(body)) => {
-            b.ins().jump(target(body), &[]);
-        }
-        Term::Scalar(Branch::Branch { condition, yes, no }) => {
-            let value = words.read(b, condition.get() as usize);
-            b.ins().brif(value, target(yes), &[], target(no), &[]);
-        }
-        Term::Scalar(Branch::LiteralBranch {
-            left,
-            right,
-            yes,
-            no,
-        }) => {
-            let kind = code.kind(left).unwrap();
-            let left = words.read(b, left.get() as usize);
-            let right = words.read(b, right.get() as usize);
-            let equal = if kind == NativeScalarKind::F64 {
-                let left = b.ins().bitcast(types::F64, MemFlags::new(), left);
-                let right = b.ins().bitcast(types::F64, MemFlags::new(), right);
-                b.ins().fcmp(FloatCC::Equal, left, right)
-            } else {
-                b.ins().icmp(IntCC::Equal, left, right)
-            };
-            b.ins().brif(equal, target(yes), &[], target(no), &[]);
-        }
-        Term::Scalar(Branch::Reject) => {
-            // Exhaustive source matches retain their fail-closed default
-            // arm. Preserve its origin and unwind the owned frame/fuel.
-            let status = b
-                .ins()
-                .iconst(types::I64, super::super::control_abi::STATUS_REJECT as i64);
-            b.ins().jump(fail_at, &[status.into()]);
-        }
-        _ => unreachable!("checked packed SSA terminator"),
-    }
+    state: &Words,
+    layout: &NativeScalarAggregates,
+    action: &Aggregate,
+    site: usize,
+    facts: &edge_facts::Proof,
+    error: Block,
+    evidence: Option<(&mut CodegenReport, Option<RegionToken>)>,
+) -> Result<(), NativeCompileError> {
+    let (report, region) = evidence.map_or((None, None), |(report, region)| (Some(report), region));
+    common_aggregates::emit(
+        b,
+        &mut common_words::SsaWords(state),
+        layout,
+        action,
+        error,
+        &mut ProvedGuards {
+            site,
+            facts,
+            report,
+            region,
+        },
+    )
 }

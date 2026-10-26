@@ -1,5 +1,5 @@
 //! Register-backed execution of a proved callback-free scalar Tail.
-//! Reuses the packed emitter's bounded tag graph and aggregate/branch algebra;
+//! Reuses the shared bounded tag graph and aggregate/branch algebra;
 //! the owning host still sees the original pause, error and exit frontiers.
 use super::super::{
     NativeCompileError,
@@ -11,15 +11,18 @@ use super::super::{
     program_prefix_layout,
     program_tail_layout::{self, Layout},
 };
-use super::{borrowed_codegen, packed_loop_codegen as packed, prefix_codegen, ssa_words::Words};
+use super::{borrowed_codegen, prefix_codegen, tag_threading};
+use crate::native_artifact::codegen::common::{
+    aggregates, ssa_words::Words, terminators, word_access::SsaWords,
+};
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeIterationTerminator as Term,
     NativeMatchAction as Scalar, NativeMatchTerminator as Branch, NativeScalarAggregates,
 };
-use packed::tag_threading::{self, Edge, Target};
 use std::collections::BTreeSet;
+use tag_threading::{Edge, Target};
 
 const MAX_WORDS: usize = 192;
 
@@ -60,7 +63,7 @@ fn slots(
             continue;
         }
         if let Some(action) = aggregates.action(site) {
-            packed::aggregate_words(aggregates, action, &mut words)?;
+            aggregates::aggregate_words(aggregates, action, &mut words)?;
         } else if let Some((borrow, _)) = borrowed.action(site) {
             if Some(borrow) != region.borrowed {
                 return None;
@@ -312,7 +315,14 @@ pub(in crate::native_artifact) fn emit_entry(
             words.write(b, region.words + 2, comparison);
         }
         if let Some(action) = aggregates.action(index) {
-            packed::emit_scalar_aggregate(b, &words, aggregates, action, index, fail_at)?;
+            aggregates::emit(
+                b,
+                &mut SsaWords(&words),
+                aggregates,
+                action,
+                fail_at,
+                &mut aggregates::CheckedGuards,
+            )?;
         } else if let Some((borrow, action)) = borrowed.action(index) {
             // Bounds failures synchronize before the original failure/refund
             // callbacks. Their error edge must not re-spill stale ready words.
@@ -350,7 +360,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.ins().jump(target(*other), &[]);
             }
             Edge::Branch { yes, no } => {
-                packed::emit_source_terminator(
+                terminators::emit_source_terminator(
                     b,
                     &words,
                     code,
@@ -367,7 +377,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     },
                 );
             }
-            Edge::Reject => packed::emit_source_terminator(
+            Edge::Reject => terminators::emit_source_terminator(
                 b,
                 &words,
                 code,
