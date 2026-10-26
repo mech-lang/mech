@@ -6,14 +6,14 @@ use mech_core::FunctionCatalog;
 use std::ffi::c_void;
 type Entry = unsafe extern "C" fn(*mut c_void) -> u64;
 type Catalog = fn() -> Result<FunctionCatalog, String>;
-pub(super) struct ProgramCode {
+pub(in crate::native_artifact::launch) struct ProgramCode {
     image: &'static [u8],
     identity: &'static [u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES],
     entry: Entry,
-    pub(super) catalog: Catalog,
+    pub(in crate::native_artifact::launch) catalog: Catalog,
 }
 impl ProgramCode {
-    pub(super) fn bind(
+    pub(in crate::native_artifact::launch) fn bind(
         &self,
         catalog: &FunctionCatalog,
     ) -> Result<LinkedProgramArtifact, NativeLinkError> {
@@ -30,7 +30,7 @@ impl ProgramCode {
     }
 }
 /// A checked-build binding for the explicit managed qualification shell.
-pub struct BuildOwnedProgramBinding(pub(super) ProgramCode);
+pub struct BuildOwnedProgramBinding(pub(in crate::native_artifact::launch) ProgramCode);
 impl BuildOwnedProgramBinding {
     /// # Safety
     /// Image, identity and entry must be process-lifetime data from the SAME
@@ -54,9 +54,9 @@ impl BuildOwnedProgramBinding {
 #[cfg(feature = "canonical-native-program-host-runtime")]
 /// A same-build program/resource image binding for the capability-secured shell.
 pub struct BuildOwnedHostedBinding {
-    pub(super) code: ProgramCode,
-    pub(super) resource_image: &'static [u8],
-    pub(super) route: &'static str,
+    pub(in crate::native_artifact::launch) code: ProgramCode,
+    pub(in crate::native_artifact::launch) resource_image: &'static [u8],
+    pub(in crate::native_artifact::launch) route: &'static str,
 }
 #[cfg(feature = "canonical-native-program-host-runtime")]
 impl BuildOwnedHostedBinding {

@@ -1,15 +1,14 @@
 //! Immutable same-plan metadata preparation. No backend or execution authority.
 use crate::native_artifact as native;
+use crate::native_artifact::NativeValueSlot;
+use crate::native_artifact::iteration_abi::NativeIterationVisit;
+use crate::native_artifact::program::prepare::retirement::RetirementTables;
 use mech_core::{FunctionCatalog, SchemaTable, Value};
-use mech_engine::{
-    ProgramArtifact,
-    native_artifact::{
-        NativeIterationAction, NativePreparedLibraryCall, NativeProgramArtifactPlan,
-        NativeTextLineRetentionFrontier, prepare_native_program_library_call,
-    },
+use mech_engine::ProgramArtifact;
+use mech_engine::native_artifact::{
+    NativeIterationAction, NativePreparedLibraryCall, NativeProgramArtifactPlan,
+    NativeTextLineRetentionFrontier, prepare_native_program_library_call,
 };
-use native::program_descriptor::{RetirementTables, constant_admission_total};
-use native::{NativeValueSlot, iteration_abi::NativeIterationVisit};
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -42,14 +41,14 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     // Merely carrying this metadata does not select retained runtime storage.
     pub(in crate::native_artifact) map_owner_words:
         Option<mech_engine::native_artifact::NativeMapOwnerWords>,
-    pub(in crate::native_artifact) frozen_maps: native::program_frozen_map_layout::Layout,
-    pub(in crate::native_artifact) map_admission: native::program_map_admission::Layout,
-    pub(in crate::native_artifact) parallel: native::program_parallel_layout::Layout,
-    pub(in crate::native_artifact) borrowed_strings: native::program_borrowed_layout::Layout,
-    pub(in crate::native_artifact) closed_tails: native::program_tail_layout::Layout,
-    pub(in crate::native_artifact) selected_joins: native::program_selected_join_layout::Layout,
-    pub(in crate::native_artifact) line_matrices: native::program_line_matrix_layout::Layout,
-    pub(in crate::native_artifact) prefix: Option<native::program_prefix_layout::Region>,
+    pub(in crate::native_artifact) frozen_maps: native::program::prepare::frozen_map::Layout,
+    pub(in crate::native_artifact) map_admission: native::program::prepare::map_admission::Layout,
+    pub(in crate::native_artifact) parallel: native::program::prepare::parallel::Layout,
+    pub(in crate::native_artifact) borrowed_strings: native::program::prepare::borrowed::Layout,
+    pub(in crate::native_artifact) closed_tails: native::program::prepare::tail::Layout,
+    pub(in crate::native_artifact) selected_joins: native::program::prepare::selected_join::Layout,
+    pub(in crate::native_artifact) line_matrices: native::program::prepare::line_matrix::Layout,
+    pub(in crate::native_artifact) prefix: Option<native::program::prepare::prefix::Region>,
 }
 
 /// Exactly one owned plan and its derived metadata, shared by emission and
@@ -70,8 +69,9 @@ impl PreparedNativeProgram {
         plan.validate_current_visits().map_err(str::to_owned)?;
         let facts = plan.facts();
         let scalar_aggregates = facts.scalar_aggregates();
-        let parallel = native::program_parallel_layout::Layout::derive(&facts, &scalar_aggregates)
-            .map_err(str::to_owned)?;
+        let parallel =
+            native::program::prepare::parallel::Layout::derive(&facts, &scalar_aggregates)
+                .map_err(str::to_owned)?;
         let retirements =
             RetirementTables::derive(&plan, &scalar_aggregates).map_err(str::to_owned)?;
         let completion = (plan.transport_output_count() as u64)
@@ -80,11 +80,11 @@ impl PreparedNativeProgram {
             .and_then(|n| n.checked_add(256))
             .ok_or("program completion overflow")?;
         let borrowed_strings =
-            native::program_borrowed_layout::Layout::derive(&plan, &scalar_aggregates)?;
+            native::program::prepare::borrowed::Layout::derive(&plan, &scalar_aggregates)?;
         let string_map_regions = plan.string_map_regions().into_boxed_slice();
         let selected_joins =
-            native::program_selected_join_layout::Layout::derive(&plan, &string_map_regions)?;
-        let line_matrices = native::program_line_matrix_layout::Layout::derive(&plan)?;
+            native::program::prepare::selected_join::Layout::derive(&plan, &string_map_regions)?;
+        let line_matrices = native::program::prepare::line_matrix::Layout::derive(&plan)?;
         let mut analysis_visits = native::iteration_abi::control_visits(
             plan.blocks(),
             plan.iterations().iter().map(Into::into),
@@ -107,7 +107,7 @@ impl PreparedNativeProgram {
         // identity inspect the complete result, including unsupported/multiple
         // frontiers; no caller-provided or persistent proof cache is consulted.
         let line_retention_frontiers = facts.text_line_retention_frontiers();
-        let prefix = native::program_prefix_layout::derive_with_frontiers(
+        let prefix = native::program::prepare::prefix::derive_with_frontiers(
             &plan,
             &borrowed_strings,
             &analysis_visits,
@@ -120,7 +120,7 @@ impl PreparedNativeProgram {
             |site| {
                 borrowed_strings
                     .extra_work(site)?
-                    .checked_add(native::program_prefix_layout::extra_work(
+                    .checked_add(native::program::prepare::prefix::extra_work(
                         prefix.as_ref(),
                         site,
                     ))
@@ -132,10 +132,10 @@ impl PreparedNativeProgram {
         compose_work(
             &mut analysis_visits,
             &mut visits,
-            |site| native::program_map_owner_layout::extra_work(&map_owner_words, site),
+            |site| native::program::prepare::map_owner::extra_work(&map_owner_words, site),
             "map owner visit work overflow",
         )?;
-        let closed_tails = native::program_tail_layout::Layout::derive(
+        let closed_tails = native::program::prepare::tail::Layout::derive(
             &plan,
             &borrowed_strings,
             &analysis_visits,
@@ -148,7 +148,7 @@ impl PreparedNativeProgram {
             |site| Ok(closed_tails.extra_work(site)),
             "closed Tail work overflow",
         )?;
-        let map_admission = native::program_map_admission::Layout::derive(
+        let map_admission = native::program::prepare::map_admission::Layout::derive(
             &plan,
             &map_owner_words,
             &analysis_visits,
@@ -247,7 +247,7 @@ impl PreparedNativeProgram {
                 _ => Ok(None),
             })
             .collect::<Result<Box<[_]>, _>>()?;
-        native::program_descriptor::validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
+        query_stages::validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
         let window_regions = plan.window_regions().into_boxed_slice();
         let occupied_frame =
             frame_prefix_words(&plan, &scalar_aggregates, &borrowed_strings, &closed_tails)
@@ -285,7 +285,7 @@ impl PreparedNativeProgram {
             .max(
                 map_owner_words
                     .as_ref()
-                    .map_or(0, native::program_map_owner_layout::initial_words),
+                    .map_or(0, native::program::prepare::map_owner::initial_words),
             )
             .max(usize::from(!parallel.regions.is_empty()))
             .max(if closed_tails.regions.is_empty() {
@@ -336,7 +336,7 @@ impl PreparedNativeProgram {
         let frozen_maps = map_owner_words
             .as_ref()
             .map(|owner| {
-                native::program_frozen_map_layout::Layout::derive(&plan, owner, &closed_tails)
+                native::program::prepare::frozen_map::Layout::derive(&plan, owner, &closed_tails)
             })
             .transpose()
             .map_err(str::to_owned)?
@@ -412,8 +412,8 @@ fn compose_work(
 fn frame_prefix_words(
     plan: &NativeProgramArtifactPlan,
     aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
-    borrowed: &native::program_borrowed_layout::Layout,
-    closed: &native::program_tail_layout::Layout,
+    borrowed: &native::program::prepare::borrowed::Layout,
+    closed: &native::program::prepare::tail::Layout,
 ) -> Option<usize> {
     plan.values()
         .len()
@@ -433,6 +433,52 @@ impl ProgramMetadata {
         .ok_or("local count overflow")?;
         self.map_owner_words
             .as_ref()
-            .map_or(Ok(prefix), native::program_map_owner_layout::local_words)
+            .map_or(Ok(prefix), native::program::prepare::map_owner::local_words)
     }
 }
+
+#[path = "retirement/mod.rs"]
+pub(in crate::native_artifact) mod retirement;
+
+pub(in crate::native_artifact) fn constant_admission_total(bounds: &[u64]) -> Result<u64, String> {
+    bounds
+        .iter()
+        .try_fold(0u64, |sum, &bound| sum.checked_add(bound))
+        .ok_or_else(|| "constant admission total overflows".to_owned())
+}
+
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "borrowed.rs"]
+pub(in crate::native_artifact) mod borrowed;
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "frozen_map/mod.rs"]
+pub(in crate::native_artifact) mod frozen_map;
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "line_matrix.rs"]
+pub(in crate::native_artifact) mod line_matrix;
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "map_admission.rs"]
+pub(in crate::native_artifact) mod map_admission;
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "map_owner.rs"]
+pub(in crate::native_artifact) mod map_owner;
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "packed_map/mod.rs"]
+pub(in crate::native_artifact) mod packed_map;
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "parallel.rs"]
+pub(in crate::native_artifact) mod parallel;
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "prefix.rs"]
+pub(in crate::native_artifact) mod prefix;
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "selected_join/mod.rs"]
+pub(in crate::native_artifact) mod selected_join;
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "tail.rs"]
+pub(in crate::native_artifact) mod tail;
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "window_histogram/mod.rs"]
+pub(in crate::native_artifact) mod window_histogram;
+
+pub(in crate::native_artifact) mod query_stages;

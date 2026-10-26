@@ -1,7 +1,7 @@
 //! Private format adapters. They neither derive semantic facts nor grant code
 //! authority; the confined loader retains its independent association checks.
-use super::proof;
 use crate::native_artifact as native;
+use crate::native_artifact::program::image::decode::wire::proof;
 use mech_engine::native_artifact::{
     NativeBorrowedStringRegion, NativeSelectedTextJoin, NativeTailLoop, NativeTextLineMatrixRegion,
     NativeTextLineRetentionFrontier,
@@ -17,7 +17,7 @@ struct BorrowedRegion {
     end: usize,
     slots: Box<[Option<usize>]>,
 }
-impl From<BorrowedRegion> for native::program_borrowed_layout::RegionLayout {
+impl From<BorrowedRegion> for native::program::prepare::borrowed::RegionLayout {
     fn from(w: BorrowedRegion) -> Self {
         Self {
             proof: w.proof,
@@ -30,13 +30,13 @@ impl From<BorrowedRegion> for native::program_borrowed_layout::RegionLayout {
 }
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct Borrowed {
+pub(in crate::native_artifact::program::image::decode::wire) struct Borrowed {
     regions: Vec<BorrowedRegion>,
     initializers: Vec<Option<usize>>,
     actions: Vec<Option<(usize, usize)>>,
     words: usize,
 }
-impl From<Borrowed> for native::program_borrowed_layout::Layout {
+impl From<Borrowed> for native::program::prepare::borrowed::Layout {
     fn from(w: Borrowed) -> Self {
         Self {
             regions: w.regions.into_iter().map(Into::into).collect(),
@@ -54,12 +54,12 @@ struct TailRegion {
     tail: NativeTailLoop,
     borrowed: Option<usize>,
     map: Option<usize>,
-    packed: Option<native::program_map_packed_layout::Proof>,
+    packed: Option<native::program::prepare::packed_map::Proof>,
     words: usize,
     compute: u64,
     comparison: u64,
 }
-impl From<TailRegion> for native::program_tail_layout::Region {
+impl From<TailRegion> for native::program::prepare::tail::Region {
     fn from(w: TailRegion) -> Self {
         Self {
             iteration: w.iteration,
@@ -75,14 +75,14 @@ impl From<TailRegion> for native::program_tail_layout::Region {
 }
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct Tails {
+pub(in crate::native_artifact::program::image::decode::wire) struct Tails {
     regions: Vec<TailRegion>,
     sites: Vec<Option<usize>>,
     initializers: Vec<Option<usize>>,
     exits: Vec<Option<usize>>,
     words: usize,
 }
-impl From<Tails> for native::program_tail_layout::Layout {
+impl From<Tails> for native::program::prepare::tail::Layout {
     fn from(w: Tails) -> Self {
         Self {
             regions: w.regions.into_iter().map(Into::into).collect(),
@@ -95,7 +95,7 @@ impl From<Tails> for native::program_tail_layout::Layout {
 }
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct Prefix {
+pub(in crate::native_artifact::program::image::decode::wire) struct Prefix {
     #[serde(deserialize_with = "proof")]
     frontier: NativeTextLineRetentionFrontier,
     #[serde(deserialize_with = "proof")]
@@ -104,7 +104,7 @@ pub(super) struct Prefix {
     carrier: usize,
     header_work: u64,
 }
-impl From<Prefix> for native::program_prefix_layout::Region {
+impl From<Prefix> for native::program::prepare::prefix::Region {
     fn from(w: Prefix) -> Self {
         Self {
             frontier: w.frontier,
@@ -117,13 +117,14 @@ impl From<Prefix> for native::program_prefix_layout::Region {
 }
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct SelectedJoins {
+pub(in crate::native_artifact::program::image::decode::wire) struct SelectedJoins {
     #[serde(deserialize_with = "proof")]
     regions: Box<[NativeSelectedTextJoin]>,
-    sites: Box<[Option<native::program_selected_join_layout::Site>]>,
-    pub(super) maps: Box<[Option<native::program_selected_join_layout::mapped::Map>]>,
+    sites: Box<[Option<native::program::prepare::selected_join::Site>]>,
+    pub(in crate::native_artifact::program::image::decode::wire) maps:
+        Box<[Option<native::program::prepare::selected_join::mapped::Map>]>,
 }
-impl From<SelectedJoins> for native::program_selected_join_layout::Layout {
+impl From<SelectedJoins> for native::program::prepare::selected_join::Layout {
     fn from(w: SelectedJoins) -> Self {
         Self {
             regions: w.regions,
@@ -134,13 +135,13 @@ impl From<SelectedJoins> for native::program_selected_join_layout::Layout {
 }
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct LineMatrices {
+pub(in crate::native_artifact::program::image::decode::wire) struct LineMatrices {
     #[serde(deserialize_with = "proof")]
     regions: Vec<NativeTextLineMatrixRegion>,
-    sites: Vec<Option<native::program_line_matrix_layout::Site>>,
+    sites: Vec<Option<native::program::prepare::line_matrix::Site>>,
     matrices: Vec<Option<usize>>,
 }
-impl From<LineMatrices> for native::program_line_matrix_layout::Layout {
+impl From<LineMatrices> for native::program::prepare::line_matrix::Layout {
     fn from(w: LineMatrices) -> Self {
         Self {
             regions: w.regions,

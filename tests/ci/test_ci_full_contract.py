@@ -290,7 +290,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         commands = contracts.replace("\\\n", " ")
         self.assertRegex(commands, r"--features canonical-native-program\s+--test canonical_artifact_program\s+-- --test-threads=1")
         self.assertIn("--features canonical-native-program-runtime --lib", commands)
-        self.assertRegex(commands, r"--features canonical-native-program\s+--lib native_artifact::program_runtime::tests\s+-- --test-threads=1")
+        self.assertRegex(commands, r"--features canonical-native-program\s+--lib native_artifact::program::runtime::tests\s+-- --test-threads=1")
         manifest = (ROOT / "hosts/gpu/Cargo.toml").read_text()
         self.assertRegex(manifest, r'name = "canonical_artifact_program"\s+required-features = \["canonical-native-program"\]')
         self.assertNotIn("--no-run", contracts)
@@ -1275,6 +1275,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         for path in ("src/cli/commands/build_cranelift.rs",
                      "hosts/gpu/Cargo.toml",
                      "hosts/gpu/src/native_artifact/launch/*.rs",
+                     "hosts/gpu/src/native_artifact/launch/hosted/*.rs",
                      "src/cli/commands/build_cranelift_tests.rs", "tests/canonical_native_build.rs",
                      "tests/support/canonical_native_build.rs",
                      "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",

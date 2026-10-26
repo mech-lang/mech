@@ -1,15 +1,11 @@
 //! Linked managed CFG qualification shell, not a source evaluator or I/O host.
-use super::program::BuildOwnedProgramBinding;
+use crate::native_artifact::launch::program::BuildOwnedProgramBinding;
 use crate::native_artifact::{NativeExecutionLimits, NativeProgramExecutionLimits};
-use mech_core::{
-    ManagedMemoryBudget,
-    snapshot::{SnapshotValidationContext, ValueDraft},
-};
-use std::{
-    ffi::{OsStr, OsString},
-    io::{Read, Write},
-    sync::Arc,
-};
+use mech_core::ManagedMemoryBudget;
+use mech_core::snapshot::{SnapshotValidationContext, ValueDraft};
+use std::ffi::{OsStr, OsString};
+use std::io::{Read, Write};
+use std::sync::Arc;
 
 fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
@@ -42,7 +38,7 @@ pub fn run_program_application(
     limits.library.max_comparison_work = Some(unsigned(&arguments[3])?);
     limits.library.max_temporary_bytes = Some(unsigned(&arguments[4])?);
     // Metadata/factory selection only; no frontend, JIT or graph execution.
-    let catalog = super::scalar::metadata_catalog(binding.0.catalog)?;
+    let catalog = crate::native_artifact::launch::scalar::metadata_catalog(binding.0.catalog)?;
     let linked = binding
         .0
         .bind(&catalog)

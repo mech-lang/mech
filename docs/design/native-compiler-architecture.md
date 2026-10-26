@@ -55,7 +55,7 @@ or performs compiler analysis. Representation modules never own global dispatch.
 
 ## Preparation and work
 
-One owned `PreparedNativeProgram` will hold `ProgramMetadata` and complete
+One owned `PreparedNativeProgram` holds `ProgramMetadata` and complete
 text-line frontiers. Its private fields are exposed by typed shared accessors.
 CodePlan keeps distinct scalar and prepared-program variants. Emission borrows
 preparation; descriptor finalization hashes complete inventories, then moves
@@ -85,7 +85,7 @@ remain in the identity transcript.
 
 ## Runtime and protocols
 
-One ExecutionState will own control, arena, collections/maps, retained calls,
+One ExecutionState owns control, arena, collections/maps, retained calls,
 caches, stats and cursors. ControlState is shared mechanically with iteration
 execution. Invocation borrows state and disjoint transport lanes synchronously.
 `Prepared.state` remains optional: take before admission, invoke, validate and
@@ -190,8 +190,8 @@ No replaced API is retained as a second preparer. Definition phase extraction
 continues alongside explicit compiler context work; the shared JIT/Object path
 has not been split into different emitters.
 
-Stages C–H and final qualification remain in progress. The final branch is not
-performance-qualified until the prescribed final evidence exists.
+The receipts below record the later stages. Final qualification remains open
+until the prescribed final evidence exists.
 
 Stage C emission: `codegen/common` owns SSA homes, static WordAccess adapters,
 Pack/Copy/Project/Observe and ordinary source terminators. Both aggregate bodies
@@ -335,3 +335,91 @@ visit retains the distinct conservative instruction-envelope check, and final
 stack/code totals still come from actual backend measurements including outlined
 bodies and shims. Both scalar-only and program compiler profiles compile; all
 32 source/decoded object/metadata/image/bytecode files still match I exactly.
+
+
+Stage G ownership: preparation, strategy emission, descriptor image/protocol,
+persistent runtime state, transient invocation loans, and compiled launchers now
+have physical owners. There are no flat `program_*` Rust modules or private
+compatibility aliases at the native facade. Public names and feature gates stay
+on that facade. [The move manifest](native-compiler-migration.json) records each
+old physical path and its current owner, including runtime/orchestration splits.
+
+| Responsibility | Current owner | Allowed consumers and boundaries |
+| --- | --- | --- |
+| Same-plan semantic facts/proofs | engine `native_artifact::{program_facts,fusion_semantics}` | preparation and validation borrow immutable facts; eligibility policies stay with their consumer |
+| Ordered preparation, work supplements and frame assignment | `program/prepare/mod.rs::{prepare,compose_work,frame_prefix_words}` | JIT/Object and source-backed linking share one constructor; no production image/codegen/parser dependency |
+| Query-stage validation and retirement/cache derivation | `program/prepare/{query_stages,retirement}` | source preparation and independent image reconstruction use metadata operations without a prepare-to-image cycle |
+| Neutral emission and scalar semantics | `codegen/common` | memory and SSA adapters; no packed strategy imports |
+| Shared definition phases/options/reports | `codegen/control`, `codegen/options.rs` | one JIT/Object declaration, prologue, action and measurement path; reports remain observational |
+| Program-specific strategies | `program/codegen` | consume same prepared metadata and engine proofs |
+| Wire, proof DTOs, identity and independent loading | `program/image/{decode,wire,identity.rs,packing.rs}` | build-owned loading preserves its separate ordered checks and same-Object binding |
+| Persistent state and stats | `program/runtime/state.rs` | one value moved through phases; no transfer mirrors |
+| Global dispatch and transient loans | `program/runtime/invocation`, `program/runtime/hooks.rs` | synchronous borrows; take before admission and restore only on complete success |
+| Collection and map representation/storage | `program/runtime/{collections,maps,lines}` | restricted helper views; storage modules do not own global dispatch |
+| Phase orchestration | `program/runtime/session` | sessions schedule/validate phases without probing maps or running compiler analysis |
+| Numeric helper transport | `program/protocol` | separate global and bound-owner types, unchanged numeric ABI/effects |
+| Runtime application lifecycle | `launch` | compiled typed launch adapters, thin build-owned generated bindings |
+
+`MapExecution` and `CollectionExecution` each borrow one invocation pointer and
+expose the ledger, arena operations and exact owner continuations their callers
+need. They have no Deref, whole-state getter, output publication cursor, global
+helper entry, or cached proof authority. Read-only collection accounting and
+test observations use `&impl CollectionRead`, with static dispatch. Test-only
+arena observations and fault injection retain the existing real-helper checks.
+No extra owner, Value clone, allocation, lock, dynamic dispatch or resource price
+is introduced. The views keep the original arena debit operations and the four
+identical input-bank header charges share one operation at their original sites.
+
+All transient loan methods live under `invocation/`. Five orchestration files
+compile as private children of their storage owner where they need access to its
+backing representation. This keeps Slot and collection fields private while
+putting the loan-lifetime implementation in its physical owner. These child
+modules do not grant storage helpers access to the rest of an invocation. The
+restricted views apply to owned map/collection helpers; session construction and
+the invocation orchestrator still assemble the existing disjoint loans.
+
+The unchanged RuntimeStats and ExecutionState fields retain their order and
+types. State remains 1104 bytes, Invocation 1288, Frame 144 and Slot 968. Both
+8-byte helper views fit with state/invocation in the prior 2432 + 128 envelope;
+the caller charge remains 2704. Error-only partial Slot phases and stable boxed
+packed frames retain their old cleanup and pointer-refresh rules.
+
+Physical CI filters, source pins, warning exceptions and unsafe declarations
+move with their contracts. Large inline tests are adjacent to the same owner;
+fixture include paths still resolve to the same bytes. `launch/hosted` source
+pins include both the owner and its adjacent contracts. The generic Rust-layout
+check is only a path guard; the owner table, restricted interfaces, independent
+feature closures and retained behavior/codegen evidence establish these
+architectural boundaries.
+
+Final deletion manifest (the old names identify the replaced authority):
+
+| Removed authority | Replacement and preserved distinction |
+| --- | --- |
+| `iteration_compiler::define_cfg` program setup and `NativeProgramDescriptor::prepare` recipe | one `PreparedNativeProgram::prepare`; scalar CodePlan stays distinct |
+| compiler/descriptor duplicate visit supplement loops and owner relocations | `program/prepare::{compose_work,frame_prefix_words}`; analysis, charged visits and static instruction bounds retain distinct meanings |
+| host graph reconstruction and duplicate aggregate emission bodies | engine facts and `codegen/common`; fusion/parallel policies remain explicit |
+| scalar imports of neutral functions from packed emitters | `codegen/common` and shared control graph |
+| ambient compiler TLS pass flags and draining `take_*_emissions` counters | immutable options, compiler-local budgets and actual emission report |
+| runtime Context/OwnedState and session field-transfer literals | one persistent ExecutionState/RuntimeStats and short-lived Invocation |
+| repeated direct Slot transitions and duplicated raw numeric dispatch | named unchanged-backing lifecycle methods and typed `program/protocol` |
+| repeated scalar-family and hosted generated launcher bodies | compiled `launch` with build-owned symbol/image bindings |
+| flat program-prefixed modules and inline contract blocks | the move manifest's physical owners and adjacent tests |
+
+Supported scalar, match, iteration, managed, hosted, optional benchmark-policy
+and native-source APIs remain maintained. None is retired based on output-only
+agreement. Final correctness, public-process and performance receipts follow
+below when executed; Stage G does not establish a runtime performance claim.
+
+
+Stage G validation: the full retained native scope executes 426 passes, zero
+failures and two existing manual ignores. The combined state/invocation/view
+layout guard passes separately after including both views. All five independent
+build profiles pass (none, scalar runtime, program runtime, hosted runtime and
+scalar compiler). Their four runtime-only dependency trees contain no parser,
+Cranelift, JIT/compiler feature or resident-routing dependency. All 32 original/
+decoded object, metadata, descriptor image and bytecode files still match I
+byte-for-byte after the owner/view extraction. Formatting, unsafe ownership,
+warning policy, module-layout and 90 workflow contract checks pass. Final
+qualification uses the committed candidate and retains the required public CLI,
+hosted process, changed-input and performance gates.

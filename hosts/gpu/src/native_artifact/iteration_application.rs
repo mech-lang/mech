@@ -1,9 +1,9 @@
 //! Thin canonical Iteration route over the common pinned workspace generator.
-use super::application::{
+use crate::native_artifact::application::{
     GeneratedLinkedApplication, LinkedApplicationInputs, LinkedApplicationProfile,
     NativeApplicationError, prepare_destination, render_main, write_linked_application,
 };
-use super::emit_iteration_object;
+use crate::native_artifact::emit_iteration_object;
 use mech_core::FunctionCatalog;
 use mech_engine::native_artifact::lower_scalar_iteration_artifact;
 use mech_engine::{ProgramArtifact, encode_program_artifact_bytecode_v1};

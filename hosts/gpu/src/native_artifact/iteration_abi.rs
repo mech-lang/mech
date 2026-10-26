@@ -5,14 +5,14 @@ use mech_engine::native_artifact::{
     NativeIterationTerminator as Terminator, NativeMatchAction as Scalar, NativeMatchOrigin,
     NativeMatchTerminator as Term, NativeScalarType,
 };
-pub(super) const VERSION: u64 = 3;
+pub(in crate::native_artifact) const VERSION: u64 = 3;
 #[cfg(feature = "canonical-native")]
-pub(super) const ENTRY: &str = "mech_canonical_scalar_iteration_entry_v1";
-pub(super) const STATUS_REJECT: u64 = 4;
+pub(in crate::native_artifact) const ENTRY: &str = "mech_canonical_scalar_iteration_entry_v1";
+pub(in crate::native_artifact) const STATUS_REJECT: u64 = 4;
 #[cfg(feature = "canonical-native")]
-pub(super) use super::abi::RawEntry as Entry;
+pub(in crate::native_artifact) use crate::native_artifact::abi::RawEntry as Entry;
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-pub(super) enum Progress {
+pub(in crate::native_artifact) enum Progress {
     Normal,
     Initialize(u32),
     Header(u32),
@@ -21,14 +21,14 @@ pub(super) enum Progress {
 }
 #[derive(Clone, Copy, Debug, serde::Serialize)]
 pub struct NativeIterationVisit {
-    pub(super) origin: NativeMatchOrigin,
-    pub(super) successors: [Option<u32>; 2],
-    pub(super) iteration: Option<u32>,
-    pub(super) progress: Progress,
-    pub(super) complete: bool,
-    pub(super) arithmetic: bool,
-    pub(super) reject: bool,
-    pub(super) work: u64,
+    pub(in crate::native_artifact) origin: NativeMatchOrigin,
+    pub(in crate::native_artifact) successors: [Option<u32>; 2],
+    pub(in crate::native_artifact) iteration: Option<u32>,
+    pub(in crate::native_artifact) progress: Progress,
+    pub(in crate::native_artifact) complete: bool,
+    pub(in crate::native_artifact) arithmetic: bool,
+    pub(in crate::native_artifact) reject: bool,
+    pub(in crate::native_artifact) work: u64,
 }
 impl NativeIterationVisit {
     pub const fn origin(&self) -> NativeMatchOrigin {
@@ -49,20 +49,20 @@ impl NativeIterationVisit {
 }
 #[derive(Clone, Debug)]
 pub struct NativeIterationDescriptor {
-    pub(super) entry: u32,
-    pub(super) revision: ProgramRevision,
-    pub(super) inputs: Box<[NativeScalarType]>,
-    pub(super) outputs: Box<[NativeScalarType]>,
-    pub(super) value_count: usize,
-    pub(super) constant_count: usize,
-    pub(super) visits: Box<[NativeIterationVisit]>,
-    pub(super) iterations: Box<[NativeIterationLoop]>,
-    pub(super) stack_bytes: u64,
-    pub(super) code_bytes: u64,
-    pub(super) identity: [u8; 32],
+    pub(in crate::native_artifact) entry: u32,
+    pub(in crate::native_artifact) revision: ProgramRevision,
+    pub(in crate::native_artifact) inputs: Box<[NativeScalarType]>,
+    pub(in crate::native_artifact) outputs: Box<[NativeScalarType]>,
+    pub(in crate::native_artifact) value_count: usize,
+    pub(in crate::native_artifact) constant_count: usize,
+    pub(in crate::native_artifact) visits: Box<[NativeIterationVisit]>,
+    pub(in crate::native_artifact) iterations: Box<[NativeIterationLoop]>,
+    pub(in crate::native_artifact) stack_bytes: u64,
+    pub(in crate::native_artifact) code_bytes: u64,
+    pub(in crate::native_artifact) identity: [u8; 32],
 }
 impl NativeIterationDescriptor {
-    pub(super) fn from_plan(
+    pub(in crate::native_artifact) fn from_plan(
         plan: &Plan,
         stack_bytes: u64,
         code_bytes: u64,
@@ -93,7 +93,7 @@ impl NativeIterationDescriptor {
             iterations: plan.iterations().into(),
             stack_bytes,
             code_bytes,
-            identity: super::iteration_identity::typed_ir_sha256(plan),
+            identity: crate::native_artifact::iteration_identity::typed_ir_sha256(plan),
         })
     }
     pub const fn revision(&self) -> ProgramRevision {
@@ -126,12 +126,12 @@ impl NativeIterationDescriptor {
     pub fn typed_ir_sha256(&self) -> &[u8; 32] {
         &self.identity
     }
-    pub(super) fn local_count(&self) -> Option<usize> {
+    pub(in crate::native_artifact) fn local_count(&self) -> Option<usize> {
         self.value_count.checked_add(self.iterations.len())
     }
 }
 
-pub(super) fn control_visits<'a>(
+pub(in crate::native_artifact) fn control_visits<'a>(
     blocks: &[mech_engine::native_artifact::NativeIterationBlock],
     iterations: impl Iterator<Item = mech_engine::native_artifact::NativeControlLoopRef<'a>> + Clone,
     completion: u64,
@@ -164,9 +164,11 @@ pub(super) fn control_visits<'a>(
             completion
         } else {
             match block.action() {
-                Action::Scalar(Scalar::Primitive { op, .. }) => super::abi::primitive_work(*op)
-                    .checked_add(128)
-                    .ok_or("iteration primitive work overflow")?,
+                Action::Scalar(Scalar::Primitive { op, .. }) => {
+                    crate::native_artifact::abi::primitive_work(*op)
+                        .checked_add(128)
+                        .ok_or("iteration primitive work overflow")?
+                }
                 _ => 256,
             }
         };
@@ -191,7 +193,9 @@ pub(super) fn control_visits<'a>(
 // with slack for address formation. Both emitted-code validation and runtime
 // current-visit admission use this same arity-derived bound. Scalar ABI3 has
 // no LibraryCall actions and therefore retains its existing work policy.
-pub(super) fn helper_operand_work(action: &Action) -> Result<u64, &'static str> {
+pub(in crate::native_artifact) fn helper_operand_work(
+    action: &Action,
+) -> Result<u64, &'static str> {
     match action {
         Action::PrepareU64Range { .. } | Action::PrepareStringSpanSelector { .. } => Ok(16),
         Action::LibraryCall { operands, .. } => (operands.len() as u64)

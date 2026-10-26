@@ -1,17 +1,15 @@
 //! One scalar-family shell, with statically selected linked artifact adapters.
-use super::super::{
+use crate::native_artifact::launch::arguments::{append_scalar, options, scalar_argument};
+use crate::native_artifact::{
     LinkedArtifact, LinkedIterationArtifact, LinkedMatchArtifact,
     NATIVE_ITERATION_LINK_IDENTITY_BYTES, NATIVE_LINK_IDENTITY_BYTES,
     NATIVE_MATCH_LINK_IDENTITY_BYTES, NativeExecutionLimits,
 };
-use super::arguments::{append_scalar, options, scalar_argument};
 use mech_core::{FunctionCatalog, ManagedMemoryBudget};
 use mech_engine::native_artifact::{NativeScalarType, NativeScalarValue};
 use sha2::{Digest, Sha256};
-use std::{
-    ffi::{OsString, c_void},
-    io::Write,
-};
+use std::ffi::{OsString, c_void};
+use std::io::Write;
 
 type Entry = unsafe extern "C" fn(*mut c_void) -> u64;
 type Catalog = fn() -> Result<FunctionCatalog, String>;
@@ -33,7 +31,9 @@ fn decode<const N: usize>(binding: &Binding<N>) -> Result<mech_engine::ProgramAr
     mech_engine::decode_program_artifact_bytecode_v1(binding.bytecode)
         .map_err(|error| format!("canonical artifact decode: {error:?}"))
 }
-pub(super) fn metadata_catalog(factory: Catalog) -> Result<FunctionCatalog, String> {
+pub(in crate::native_artifact::launch) fn metadata_catalog(
+    factory: Catalog,
+) -> Result<FunctionCatalog, String> {
     std::thread::Builder::new()
         .name("canonical-native-catalog".into())
         .stack_size(64 * 1024 * 1024)

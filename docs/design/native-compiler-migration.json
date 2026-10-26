@@ -1,0 +1,953 @@
+{
+  "schema": "mech.native-compiler-migration.v1",
+  "from_commit": "4ce4f310bc951461bc8e73c029c0b2241b168d11",
+  "moves": [
+    {
+      "old": "hosts/gpu/src/native_artifact/application.rs",
+      "owner": "hosts/gpu/src/native_artifact/application/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/application_value_features.rs",
+      "owner": "hosts/gpu/src/native_artifact/application/value_features/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/benchmark_policy.rs",
+      "owner": "hosts/gpu/src/native_artifact/benchmark_policy/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/benchmark_policy_storage_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/benchmark_policy/tests/storage.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/benchmark_policy_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/benchmark_policy/tests/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/codegen/common/aggregates.rs",
+      "owner": "hosts/gpu/src/native_artifact/codegen/common/aggregates/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/compilation.rs",
+      "owner": "hosts/gpu/src/native_artifact/codegen/options.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/compiler.rs",
+      "owner": "hosts/gpu/src/native_artifact/compiler/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/compiler_memory_regions.rs",
+      "owner": "hosts/gpu/src/native_artifact/codegen/common/memory_regions.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/control_identity.rs",
+      "owner": "hosts/gpu/src/native_artifact/control_identity/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/control_runtime.rs",
+      "owner": "hosts/gpu/src/native_artifact/control_runtime/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/identity.rs",
+      "owner": "hosts/gpu/src/native_artifact/identity/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/iteration_code_plan.rs",
+      "owner": "hosts/gpu/src/native_artifact/codegen/control/plan.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/iteration_codegen_report.rs",
+      "owner": "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/iteration_identity.rs",
+      "owner": "hosts/gpu/src/native_artifact/iteration_identity/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/iteration_runtime.rs",
+      "owner": "hosts/gpu/src/native_artifact/iteration_runtime/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/launch/hosted.rs",
+      "owner": "hosts/gpu/src/native_artifact/launch/hosted/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/launch/hosted_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/launch/hosted/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/memory.rs",
+      "owner": "hosts/gpu/src/native_artifact/memory/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/owned_map_binding.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/binding/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/owned_map_binding_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/binding/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/owned_string_map.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/string/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/owned_string_map_publication.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/string/publication/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/owned_string_map_publication_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/string/publication/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/owned_string_map_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/string/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_abi.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/protocol/abi.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_admitted_allocation.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/allocation/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_application.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/application.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_ascii_facts.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/ascii_facts/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_ascii_facts_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/ascii_facts/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_ascii_map.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/ascii/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_ascii_map_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/ascii_map.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_borrowed_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/borrowed/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_borrowed_layout.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/borrowed.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_borrowed_line_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/borrowed/line.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_borrowed_strings.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/borrowed.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_bound_shim.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/bound_shim/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_call_cache_allocation.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/call_cache_allocation/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_call_cache_allocation_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/call_cache_tests/allocation_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_call_cache_backing_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/call_cache_allocation/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_call_cache_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/call_cache_tests/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_caller_geometry.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_caller_geometry_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_capture.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/capture.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_capture_admission.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/capture_admission.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_capture_chunk_boundary_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/capture_host_tests/chunk_boundaries.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_capture_host.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/capture_host.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_capture_host_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/capture_host_tests/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_capture_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/capture_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_cfg_cleanup.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_cold_recipe_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/closed_tests/edge_facts/cold_recipe_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_cold_recipes.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/steady/cold_recipes/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_collection.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_collection_data.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/data.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_collection_lifetime.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/lifetime.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_compiler.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/compiler.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_descriptor.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/image/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_descriptor_image.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/image/decode/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_descriptor_wire.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/image/wire/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_frozen_map_layout.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/frozen_map/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_frozen_map_runtime.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/owner/frozen.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_frozen_map_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/frozen_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_frozen_packed_map.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/packed/frozen.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_frozen_packed_map_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/packed/tests/frozen_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_histogram.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/histogram/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_histogram_finish.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/histogram/finish/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_histogram_finish_allocation.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/histogram/finish/allocation/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_histogram_finish_allocation_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/histogram/finish/allocation_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_histogram_layout.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/histogram_layout/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_histogram_observation.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/histogram/observation.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_histogram_query.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/histogram_query/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_hooks.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/hooks/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_identity.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/image/identity.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_identity_inventory_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/identity_inventory_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_image_packing.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/image/packing.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_join_map_capture_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/capture_host_tests/joined_map_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_join_map_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/join_map/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_join_map_codegen_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/join_map/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_key_domain.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/key_domain/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_line_matrices.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/lines/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_line_matrix_layout.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/line_matrix.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_line_matrix_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/lines/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_linked.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/linked.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_lookup_facts.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/lookup_facts/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_loop_bounds.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/loop_bounds/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_loop_bounds_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/closed_tests/edge_facts/loop_bounds_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_loop_constant_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/closed_tests/edge_facts/constant_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_loop_constants.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/loop_constants.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_loop_count_bound_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/closed_tests/edge_facts/count_bound_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_loop_count_bounds.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/count_bounds.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_loop_invariants.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/invariants.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_loop_mutation_facts.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/mutation_facts.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_loop_mutation_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/closed_tests/edge_facts/mutation_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_map_admission.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/map_admission.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_map_admission_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/admission_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_map_caller_geometry.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/owner/caller_geometry.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_map_closed_runtime.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/owner/closed.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_map_closed_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/closed_tests/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_map_key_span.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/owner/spans.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_map_owner_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/map_owner.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_map_owner_layout.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/map_owner.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_map_owner_runtime.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/owner/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_map_owner_runtime_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/owner/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_map_owner_word_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/codegen/common/aggregates/map_owner_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_map_packed_layout.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/packed_map/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_observation_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/observation_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_output_retirement_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/output_retirement_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_domain_validation_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/packed/tests/domain_validation_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_frame_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_map/frame_state/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_fuel.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/packed/fuel/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_hash_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_map/hash_tests/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_lookup_cache.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/packed/lookup.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_lookup_cache_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/packed/tests/lookup_cache_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_loop_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_loop_functions.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/outlined.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_map.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/packed/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_map_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_map/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_map_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/packed/tests/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_narrow_codegen_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/closed_tests/narrow_codegen.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_narrow_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/packed/tests/narrow_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_origin_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/closed_tests/cold_origins.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_probe_group_codegen_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_map/hash_tests/probe_group_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_probe_group_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/packed/tests/probe_group_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_slots.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/packed/payload.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_parallel_admission.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/admission/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_parallel_admission_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/admission/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_parallel_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/parallel.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_parallel_credit_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/tests/credit_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_parallel_layout.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/parallel.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_parallel_runtime.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_parallel_schedule.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/schedule.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_parallel_schedule_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/tests/schedule_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_parallel_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/tests/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_prefix_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/prefix/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_prefix_codegen_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/prefix/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_prefix_layout.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/prefix.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_prefix_runtime.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/prefix/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_prefix_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/prefix_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_prefix_window_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/prefix_window_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_query_stage_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/query_stages/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_retirement.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/retirement/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_retirement_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/retirement/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_runtime.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_scalar_edge_fact_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/closed_tests/edge_facts/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_scalar_edge_facts.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/edge_facts/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_scalar_loop_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/scalar_loop.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_selected_join.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/joins/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_selected_join_layout.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/selected_join/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_selected_join_layout_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/selected_join/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_selected_join_map.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/joins/mapped/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_selected_join_map_faults.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/joins/mapped/faults.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_selected_join_map_layout.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/selected_join/mapped.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_selected_join_range.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/joins/range.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_selected_join_range_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/joins/range_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_selected_join_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/joins/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_session.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_steady_loop.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/steady/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_steady_loop_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/closed_tests/edge_facts/steady_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_map_batches.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/string_map/batches.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_map_binding.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/text_join/compiled_map/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_map_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/string_map/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_map_codegen_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/string_map/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_map_entry.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/string_map_entry/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_map_entry_faults.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/string_map_entry/tests/faults.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_map_entry_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/string_map_entry/tests/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_map_factory_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/image/string_map_factory_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_map_owned_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/text_join/compiled_map/owned_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_map_round.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/window/string_map.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_map_simd.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/string_map/simd.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_span.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/string_span/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_span_boundary_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/string_span/boundary_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_span_selector_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/string_span/selector_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_string_span_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/string_span/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_structural_projection_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/structural_projection_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_tag_threading.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/tag_threading/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_tail_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/tail.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_tail_layout.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/tail.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_tail_runtime.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/tail.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_text_join.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/text_join/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_text_join_observation.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/text_join/observation.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_binding.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/histogram_query/compiled_window.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/window/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_codegen_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/window/tests/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_hash_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/window/hashes.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_hashes.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/window/hashes/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_hashes_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/window/hashes/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_histogram_binding.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/histogram/window/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_histogram_binding_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/histogram/window/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_histogram_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/window/histogram.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_histogram_layout.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/window_histogram/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_histogram_reference.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/window/tests/histogram_reference.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_histogram_tests.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/window/tests/histogram_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_query_codegen.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/window/query/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_query_simd.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/window/query/simd.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_round.rs",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/window/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/values.rs",
+      "owner": "hosts/gpu/src/native_artifact/values/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/work.rs",
+      "owner": "hosts/gpu/src/native_artifact/work/mod.rs"
+    }
+  ],
+  "splits": {
+    "hosts/gpu/src/native_artifact/program_runtime.rs": [
+      "hosts/gpu/src/native_artifact/program/runtime/mod.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/state.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/hooks.rs"
+    ]
+  },
+  "invocation_orchestration_splits": {
+    "lines/mod.rs": "hosts/gpu/src/native_artifact/program/runtime/invocation/line_calls.rs",
+    "session/capture.rs": "hosts/gpu/src/native_artifact/program/runtime/invocation/captured_calls.rs",
+    "maps/owner/mod.rs": "hosts/gpu/src/native_artifact/program/runtime/invocation/map_calls.rs",
+    "maps/owner/closed.rs": "hosts/gpu/src/native_artifact/program/runtime/invocation/closed_map_calls.rs",
+    "maps/owner/frozen.rs": "hosts/gpu/src/native_artifact/program/runtime/invocation/frozen_map_calls.rs"
+  },
+  "test_extractions": [
+    {
+      "old": "hosts/gpu/src/native_artifact/application_value_features.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/application/value_features/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/compiler.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/compiler/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/control_identity.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/control_identity/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/control_runtime.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/control_runtime/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/identity.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/identity/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/iteration_codegen_report.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/codegen/control/report/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/iteration_identity.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/iteration_identity/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/iteration_runtime.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/iteration_runtime/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/memory.rs::admission_tests",
+      "owner": "hosts/gpu/src/native_artifact/memory/admission_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_admitted_allocation.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/allocation/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_ascii_map.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/ascii/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_bound_shim.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/bound_shim/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_cfg_cleanup.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_cold_recipes.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/steady/cold_recipes/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_frozen_map_layout.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/frozen_map/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_histogram_layout.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/collections/histogram_layout/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_hooks.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/hooks/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_key_domain.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/key_domain/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_lookup_facts.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/lookup_facts/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_loop_bounds.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/loop_bounds/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_map_packed_layout.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/packed_map/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_frame_codegen.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_map/frame_state/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_packed_fuel.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/maps/packed/fuel/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_prefix_runtime.rs::retention_tests",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/invocation/prefix/retention_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_runtime.rs::histogram_observation_tests",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/histogram_observation_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_runtime.rs::histogram_query_observation_tests",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/histogram_query_observation_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_runtime.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_runtime.rs::text_join_observation_tests",
+      "owner": "hosts/gpu/src/native_artifact/program/runtime/text_join_observation_tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_scalar_edge_facts.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/packed_loop/edge_facts/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_tag_threading.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/codegen/tag_threading/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_window_histogram_layout.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/window_histogram/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/values.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/values/tests.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/work.rs::tests",
+      "owner": "hosts/gpu/src/native_artifact/work/tests.rs"
+    }
+  ],
+  "preparation_extractions": [
+    {
+      "old": "hosts/gpu/src/native_artifact/program_descriptor.rs::query_step,validate_query_stages",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/query_stages/mod.rs"
+    },
+    {
+      "old": "hosts/gpu/src/native_artifact/program_descriptor.rs::retirement import and constant_admission_total",
+      "owner": "hosts/gpu/src/native_artifact/program/prepare/{retirement/mod.rs,mod.rs}"
+    }
+  ]
+}

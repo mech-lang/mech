@@ -1,6 +1,8 @@
 //! Shared SSA homes for admitted native scalar and aggregate word lanes.
 //! Only explicit boundary synchronization touches the original local array.
-use crate::native_artifact::{NativeCompileError, compiler::offset, iteration_code_plan::CodePlan};
+use crate::native_artifact::NativeCompileError;
+use crate::native_artifact::codegen::control::plan::CodePlan;
+use crate::native_artifact::compiler::offset;
 use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::{FunctionBuilder, Variable};
 use std::collections::{BTreeMap, BTreeSet};
