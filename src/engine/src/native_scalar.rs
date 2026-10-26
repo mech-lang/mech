@@ -6,11 +6,15 @@ pub enum NativeScalarKind {
     U64,
     I64,
     F64,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
     U8,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
     U16,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
     U32,
 }
 
+#[cfg(feature = "native-artifact")]
 impl NativeScalarKind {
     /// Maximum canonical unsigned payload; other kinds preserve their own bits.
     pub const fn unsigned_maximum(self) -> Option<u64> {

@@ -58,8 +58,11 @@ fn scalar_port(
     };
     let expected = match kind {
         NativeScalarKind::Bool => SchemaBody::Bool,
+        #[cfg(any(feature = "convert", feature = "native-artifact"))]
         NativeScalarKind::U8 => SchemaBody::UnsignedInteger(IntegerWidth::W8),
+        #[cfg(any(feature = "convert", feature = "native-artifact"))]
         NativeScalarKind::U16 => SchemaBody::UnsignedInteger(IntegerWidth::W16),
+        #[cfg(any(feature = "convert", feature = "native-artifact"))]
         NativeScalarKind::U32 => SchemaBody::UnsignedInteger(IntegerWidth::W32),
 
         NativeScalarKind::U64 => SchemaBody::UnsignedInteger(IntegerWidth::W64),
@@ -77,6 +80,7 @@ fn scalar_port(
                 NativeScalarKind::Bool => ResidentValueKind::Bool,
                 NativeScalarKind::F64 => ResidentValueKind::F64,
                 NativeScalarKind::U64 | NativeScalarKind::I64 => ResidentValueKind::Snapshot,
+                #[cfg(any(feature = "convert", feature = "native-artifact"))]
                 NativeScalarKind::U8 | NativeScalarKind::U16 | NativeScalarKind::U32 => {
                     ResidentValueKind::Snapshot
                 }
@@ -287,8 +291,11 @@ mod tests {
                 SchemaBody::UnsignedInteger(IntegerWidth::W64),
                 SchemaBody::SignedInteger(IntegerWidth::W64),
                 SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+                #[cfg(any(feature = "convert", feature = "native-artifact"))]
                 SchemaBody::UnsignedInteger(IntegerWidth::W8),
+                #[cfg(any(feature = "convert", feature = "native-artifact"))]
                 SchemaBody::UnsignedInteger(IntegerWidth::W16),
+                #[cfg(any(feature = "convert", feature = "native-artifact"))]
                 SchemaBody::UnsignedInteger(IntegerWidth::W32),
             ]
             .into_iter()
@@ -318,8 +325,11 @@ mod tests {
                     NativeScalarKind::U64 => ids[1],
                     NativeScalarKind::I64 => ids[2],
                     NativeScalarKind::F64 => ids[3],
+                    #[cfg(any(feature = "convert", feature = "native-artifact"))]
                     NativeScalarKind::U8 => ids[4],
+                    #[cfg(any(feature = "convert", feature = "native-artifact"))]
                     NativeScalarKind::U16 => ids[5],
+                    #[cfg(any(feature = "convert", feature = "native-artifact"))]
                     NativeScalarKind::U32 => ids[6],
                 };
                 ResidentPortLayout {
@@ -331,6 +341,7 @@ mod tests {
                         NativeScalarKind::U64 | NativeScalarKind::I64 => {
                             ResidentValueKind::Snapshot
                         }
+                        #[cfg(any(feature = "convert", feature = "native-artifact"))]
                         NativeScalarKind::U8 | NativeScalarKind::U16 | NativeScalarKind::U32 => {
                             ResidentValueKind::Snapshot
                         }
