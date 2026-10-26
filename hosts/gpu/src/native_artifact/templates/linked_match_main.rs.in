@@ -1,84 +1,25 @@
-//! Canonical artifact linked-entry shell. Kernel evaluation is not interpreted.
-use mech_engine::native_artifact::{
-    NativeScalarKind, NativeScalarValue, lower_scalar_match_artifact,
-};
-use mech_gpu::native_artifact::{
-    LinkedMatchArtifact, NATIVE_MATCH_LINK_IDENTITY_BYTES, NativeExecutionLimits,
-};
-use sha2::{Digest, Sha256};
-use std::{
-    ffi::{OsString, c_void},
-    io::Write,
-};
-
+//! Build-owned symbols and statically selected compiled launcher.
+use std::ffi::c_void;
+use mech_gpu::native_artifact::{NATIVE_MATCH_LINK_IDENTITY_BYTES, launch::{BuildOwnedMatchBinding, run_match_application}};
 unsafe extern "C" {
     #[link_name = "mech_canonical_scalar_match_entry_v1"]
     fn linked_entry(frame: *mut c_void) -> u64;
     #[link_name = "@IDENTITY_SYMBOL@"]
     static LINKED_IDENTITY: [u8; NATIVE_MATCH_LINK_IDENTITY_BYTES];
 }
-fn hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
-}
-@ARGUMENT_HELPERS@
-fn run() -> Result<(), String> {
-    let bytecode = include_bytes!("../program.mecb");
-    if hex(&Sha256::digest(bytecode)) != "@BYTECODE_SHA256@" {
-        return Err("embedded canonical bytecode identity mismatch".into());
-    }
-    let artifact = mech_engine::decode_program_artifact_bytecode_v1(bytecode)
-        .map_err(|error| format!("canonical artifact decode: {error:?}"))?;
-    // Metadata selection only: no activation, value folding, resident kernel
-    // execution, source compilation, JIT, or machine-code generation here.
-    let catalog = std::thread::Builder::new()
-        .name("canonical-native-catalog".into())
-        .stack_size(64 * 1024 * 1024)
-        .spawn(|| -> Result<_, String> {
-            let mut builder = mech_core::FunctionCatalogBuilder::new();
-            // Canonical artifacts bind through resident entries, not legacy
-            // bytecode runtime factories. Do not retain their unused callees.
+fn catalog() -> Result<mech_core::FunctionCatalog, String> {
+    let mut builder = mech_core::FunctionCatalogBuilder::new();
 @INSTALL_CANONICAL_FACTORIES@
-            builder.build().map_err(|error| format!("{error:?}"))
-        })
-        .map_err(|error| error.to_string())?
-        .join()
-        .map_err(|_| "canonical metadata catalog construction panicked")??;
-    let plan =
-        lower_scalar_match_artifact(&artifact, &catalog).map_err(|error| error.to_string())?;
-    // SAFETY: build.rs verifies all generated inputs and exact Object pin.
-    // Both symbols are linked from that one unchanged checked emitter object;
-    // the digest-qualified identity symbol makes a different-IR substitution
-    // fail at link time. Both symbols live for the process. The constructor
-    // checks its revision/IR/ABI/target/frame/counts against the actual plan.
-    let linked =
-        unsafe { LinkedMatchArtifact::from_build_owned_entry(&plan, &LINKED_IDENTITY, linked_entry) }
-            .map_err(|error| error.to_string())?;
-    let (limits, budget, arguments) = options(std::env::args_os().skip(1).collect())?;
-    if arguments.len() != plan.inputs().len() {
-        return Err(format!("expected {} typed inputs", plan.inputs().len()));
-    }
-    let mut inputs = Vec::with_capacity(arguments.len());
-    for (argument, input) in arguments.iter().zip(linked.descriptor().inputs()) {
-        inputs.push(scalar_argument(argument, input.kind())?);
-    }
-    let mut outputs = vec![NativeScalarValue::U64(0); plan.outputs().len()];
-    let budget = budget.map(mech_core::ManagedMemoryBudget::new);
-    linked
-        .evaluate_into(&inputs, &mut outputs, limits, budget.as_ref())
-        .map_err(|error| error.to_string())?;
-    // Formatting belongs to this explicit shell, after atomic typed compute.
-    let mut result = String::new();
-    for value in outputs {
-        append_scalar(&mut result, value);
-    }
-    let stdout = std::io::stdout();
-    let mut stdout = stdout.lock();
-    stdout.write_all(result.as_bytes()).map_err(|error| error.to_string())?;
-    stdout.flush().map_err(|error| error.to_string())
+    builder.build().map_err(|error| format!("{error:?}"))
 }
 fn main() {
-    if let Err(error) = run() {
-        eprintln!("{error}");
-        std::process::exit(1);
+    // SAFETY: build.rs verifies the unchanged bytecode/Object/generated-input
+    // pins. These process-lifetime symbols come from that SAME checked Object.
+    let binding = unsafe { BuildOwnedMatchBinding::from_build_owned_entry(
+        include_bytes!("../program.mecb"), "@BYTECODE_SHA256@",
+        &LINKED_IDENTITY, linked_entry, catalog,
+    ) };
+    if let Err(error) = run_match_application(binding, std::env::args_os().skip(1).collect()) {
+        eprintln!("{error}"); std::process::exit(1);
     }
 }

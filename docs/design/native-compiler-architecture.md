@@ -300,3 +300,28 @@ The independent Stage E minimal closures all pass: no native features, scalar
 runtime, program runtime and hosted program runtime. The scalar compiler-only
 closure also passes. Two remaining raw tag aliases are scoped to their
 codegen/test consumers; runtime dispatch uses the typed protocol directly.
+
+Stage F: compiled `launch` modules own scalar-family argument parsing,
+evaluation/formatting, managed qualification I/O, and secured hosted lifecycle.
+The generated mains contain only same-Object symbol/image bindings, maintained
+catalog installation and typed dispatch. Private binding fields require the
+existing unsafe checked-build provenance contract; public run functions do not
+authenticate arbitrary pointers. Image/identity and resource admission checks
+still run independently. The hosted runtime owns its terminal/provider
+dependency; base program-runtime does not acquire it. Secured and optional
+benchmark launch schemas stay separate even when Cargo unifies features.
+
+All eight retained acquisition/argument/drop tests now run as compiled library
+tests. The additional feature-unification schema regression passes (nine total
+in that profile). Generated-process qualification requires the exact eight
+compiled test names and one nonempty complete summary, and retains its actual
+application launches and pin-rejection builds. The qualifier's negative/empty
+selection contract passes. CI source pins include the compiled launcher owner.
+The six scalar-family integration suites execute 44 passes, zero failures and
+one existing ignored linked-process case. All four independent minimal library
+checks pass, as does the optional benchmark runtime check; 90 workflow contracts,
+unsafe-boundary and warning-policy checks pass. Runtime-only *library tests*
+expose inherited compiler-only test imports, so the bounded eight-test launcher
+qualification uses the maintained host compiler test profile while runtime-only
+production compilation is checked independently. Final generated-process
+qualification and performance remain Stage H gates.

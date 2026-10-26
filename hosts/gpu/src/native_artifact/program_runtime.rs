@@ -8,7 +8,7 @@ use super::iteration_runtime::{
     ControlState, ControlView as Control, NativeIterationExecutionError,
 };
 use super::memory::{NativeTypedStorage, NativeWordStorage, transport_bytes};
-#[cfg(test)]
+#[cfg(all(test, feature = "canonical-native-program"))]
 use super::program_abi::{COLLECTION, LIBRARY, MOVE};
 use super::program_abi::{Frame, OUTPUT_BASE, VERSION};
 use super::program_descriptor::RetirementKind;
