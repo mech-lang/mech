@@ -8,6 +8,7 @@ use super::control_compiler::{emit_scalar_action, emit_scalar_terminator};
 use super::iteration_abi::{ENTRY, Entry, NativeIterationDescriptor, VERSION};
 use super::iteration_runtime::{NativeIterationExecutionError, NativeIterationExecutionReport};
 use super::{NativeCompileError, NativeCompileLimits, NativeExecutionLimits};
+use crate::native_artifact::program::protocol::GlobalHelper;
 use cranelift_codegen::{
     ir::{AbiParam, InstBuilder, MemFlags, Value, condcodes::IntCC, types},
     settings::{self, Configurable},
@@ -239,7 +240,6 @@ pub(super) use codegen_report::{
 };
 
 #[cfg(not(feature = "canonical-native-program"))]
-#[derive(Default)]
 pub(super) struct CodegenReport;
 
 fn define<M: Module>(
@@ -287,9 +287,10 @@ pub(super) fn define_cfg<M: Module>(
     limits: NativeCompileLimits,
     options: &super::compilation::OptimizationOptions,
 ) -> Result<(FuncId, u64, u64, CodegenReport), NativeCompileError> {
-    let report = CodegenReport::default();
     #[cfg(feature = "canonical-native-program")]
-    let mut report = report;
+    let mut report = CodegenReport::default();
+    #[cfg(not(feature = "canonical-native-program"))]
+    let report = CodegenReport;
     #[cfg(feature = "canonical-native-program")]
     let controls = super::compilation::CompilationControls::new(*options);
     #[cfg(not(feature = "canonical-native-program"))]
@@ -1022,7 +1023,13 @@ pub(super) fn define_cfg<M: Module>(
                         .as_ref()
                         .ok_or_else(|| backend("structural observation without managed hooks"))?;
                     let zero = b.ins().iconst(types::I64, 0);
-                    hooks.call(&mut b, index, 0xffff_ffff_ffff_fff0, [zero; 3], error);
+                    hooks.call(
+                        &mut b,
+                        index,
+                        GlobalHelper::StructuralObservation,
+                        [zero; 3],
+                        error,
+                    );
                     if plan.kind(*output).is_some() {
                         let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
                         b.ins().store(
@@ -1112,7 +1119,7 @@ pub(super) fn define_cfg<M: Module>(
                             .as_ref()
                             .ok_or_else(|| backend("missing managed move hook"))?;
                         let zero = b.ins().iconst(types::I64, 0);
-                        hooks.call(&mut b, index, 1, [zero; 3], error);
+                        hooks.call(&mut b, index, GlobalHelper::decode(1), [zero; 3], error);
                     } else {
                         emit_scalar_action(&mut b, locals, action, error)?;
                     }
@@ -1137,7 +1144,13 @@ pub(super) fn define_cfg<M: Module>(
                                     .as_ref()
                                     .ok_or_else(|| backend("missing managed carrier hook"))?;
                                 let zero = b.ins().iconst(types::I64, 0);
-                                hooks.call(&mut b, index, 1, [zero; 3], error);
+                                hooks.call(
+                                    &mut b,
+                                    index,
+                                    GlobalHelper::decode(1),
+                                    [zero; 3],
+                                    error,
+                                );
                             }
                             b.ins().iconst(types::I64, iteration.count() as i64)
                         }
@@ -1155,7 +1168,7 @@ pub(super) fn define_cfg<M: Module>(
                                 hooks
                                     .as_ref()
                                     .ok_or_else(|| backend("missing tail initializer hook"))?
-                                    .call(&mut b, index, 1, [zero; 3], error);
+                                    .call(&mut b, index, GlobalHelper::Move, [zero; 3], error);
                             }
                             zero
                         }
@@ -1173,7 +1186,7 @@ pub(super) fn define_cfg<M: Module>(
                                 .as_ref()
                                 .ok_or_else(|| backend("missing tail latch hook"))?;
                             let zero = b.ins().iconst(types::I64, 0);
-                            hooks.call(&mut b, index, 1, [zero; 3], error);
+                            hooks.call(&mut b, index, GlobalHelper::decode(1), [zero; 3], error);
                         }
                     } else {
                         let id = *iteration as usize;
@@ -1204,7 +1217,13 @@ pub(super) fn define_cfg<M: Module>(
                                     .as_ref()
                                     .ok_or_else(|| backend("missing managed latch hook"))?;
                                 let zero = b.ins().iconst(types::I64, 0);
-                                hooks.call(&mut b, index, 1, [zero; 3], error);
+                                hooks.call(
+                                    &mut b,
+                                    index,
+                                    GlobalHelper::decode(1),
+                                    [zero; 3],
+                                    error,
+                                );
                             }
                         }
                         let remaining = b.ins().iadd_imm(counter, -1);

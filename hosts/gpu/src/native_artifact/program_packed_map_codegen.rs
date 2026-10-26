@@ -9,6 +9,8 @@ use super::super::{
         Frame, GROUP, HASH_FIRST, HASH_SECOND, Slot, narrow, slot_bytes, value_offset,
     },
 };
+#[cfg(feature = "canonical-native-program-runtime")]
+use crate::native_artifact::program::protocol::OwnerOperation;
 use cranelift_codegen::ir::{
     Block, Endianness, InstBuilder, MemFlags, Value, condcodes::IntCC, types,
 };
@@ -86,7 +88,16 @@ fn fail(
     error: Block,
 ) {
     let zero = b.ins().iconst(types::I64, 0);
-    frame.call(b, hooks, function, context, site, op, [zero; 3], error);
+    frame.call(
+        b,
+        hooks,
+        function,
+        context,
+        site,
+        OwnerOperation::decode(op),
+        [zero; 3],
+        error,
+    );
     // The private failure operation always returns an error. Keep malformed
     // host behavior from resuming an unchecked native memory operation.
     super::super::compiler::guard(b, zero, error, super::super::abi::STATUS_ABI);
@@ -239,7 +250,7 @@ pub(super) fn select_state_proved(
             function,
             context,
             site,
-            6,
+            OwnerOperation::PrepareAndSelectRange,
             [start, end, zero],
             error,
         );
@@ -1024,7 +1035,7 @@ pub(super) fn operation_state_proved(
                 function,
                 context,
                 site,
-                7,
+                OwnerOperation::InsertMissingPacked,
                 [zero, zero, replacement],
                 error,
             );

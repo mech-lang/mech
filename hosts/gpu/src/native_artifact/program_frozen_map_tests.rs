@@ -9,6 +9,7 @@ enum Mode {
     Normal,
     Stale,
     ExitLimit,
+    CounterOverflow,
 }
 thread_local! {
     static MODE: Cell<Mode> = const { Cell::new(Mode::Normal) };
@@ -40,6 +41,22 @@ unsafe extern "C" fn observed(
     if frozen_exit && MODE.with(Cell::get) == Mode::ExitLimit {
         ctx.limits.max_output_bytes = Some(0);
     }
+    let frozen_pending = if frozen_exit {
+        let proof = &ctx.descriptor.metadata().frozen_maps;
+        let owner = proof.regions[proof.exits[site as usize].unwrap()].owner;
+        let phase = ctx.state.map_owners.slot_phase(owner).unwrap();
+        let pending = matches!(phase, map_owners::SlotPhase::FrozenPending { .. });
+        assert!(
+            pending || matches!(phase, map_owners::SlotPhase::Retained(_)),
+            "{phase:?}"
+        );
+        if pending && MODE.with(Cell::get) == Mode::CounterOverflow {
+            ctx.state.stats.frozen_map_regions = u64::MAX;
+        }
+        pending
+    } else {
+        false
+    };
     let first =
         if matches!(op, FROZEN_MAP_COPY | FROZEN_MAP_READ) && MODE.with(Cell::get) == Mode::Stale {
             SAVED.with(Cell::get)
@@ -61,6 +78,23 @@ unsafe extern "C" fn observed(
     let status = unsafe { helper(raw, site, op, first, second, third, result) };
     let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     ctx.limits = old;
+    if frozen_pending && (status == STATUS_OK || MODE.with(Cell::get) == Mode::CounterOverflow) {
+        let proof = &ctx.descriptor.metadata().frozen_maps;
+        let owner = proof.regions[proof.exits[site as usize].unwrap()].owner;
+        let phase = ctx.state.map_owners.slot_phase(owner).unwrap();
+        if status == STATUS_OK {
+            assert!(
+                matches!(phase, map_owners::SlotPhase::FrozenPublished(_)),
+                "{phase:?}"
+            );
+        } else {
+            assert!(
+                matches!(phase, map_owners::SlotPhase::TerminalPartial { .. }),
+                "{phase:?}"
+            );
+        }
+    }
+
     if status != STATUS_OK {
         FAILURE_SITE.with(|value| value.set(Some(site as usize)));
     }
@@ -382,7 +416,12 @@ fn frozen_tokens_cannot_cross_invocations_and_logical_caps_fail_at_original_exit
     let memory = ManagedMemoryBudget::new(256 << 20);
     let args = query_inputs(&artifact, "abcabc", "a", &memory);
     let baseline = (memory.used_bytes(), memory.retained_nodes());
-    for mode in [Mode::Normal, Mode::Stale, Mode::ExitLimit] {
+    for mode in [
+        Mode::Normal,
+        Mode::Stale,
+        Mode::ExitLimit,
+        Mode::CounterOverflow,
+    ] {
         MODE.with(|v| v.set(mode));
         FAILURE_SITE.with(|v| v.set(None));
         let mut output = vec![None; artifact.outputs().len()];
@@ -401,7 +440,7 @@ fn frozen_tokens_cannot_cross_invocations_and_logical_caps_fail_at_original_exit
             assert!(result.is_err());
             assert!(output.iter().all(Option::is_none));
             let failed = FAILURE_SITE.with(Cell::get).unwrap();
-            if mode == Mode::ExitLimit {
+            if matches!(mode, Mode::ExitLimit | Mode::CounterOverflow) {
                 assert_eq!(failed, exit);
             } else {
                 assert!(

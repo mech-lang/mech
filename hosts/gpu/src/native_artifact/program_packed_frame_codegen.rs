@@ -5,6 +5,8 @@ use super::super::super::{
     program_hooks::Hooks, program_key_domain::Domain, program_packed_map::Frame,
 };
 use crate::native_artifact::compilation::OptimizationPass;
+#[cfg(feature = "canonical-native-program-runtime")]
+use crate::native_artifact::program::protocol::OwnerOperation;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::{FunctionBuilder, Variable};
 use std::cell::Cell;
@@ -58,17 +60,17 @@ impl Effects {
         self.reads & GENERATED
     }
 }
-fn effects(operation: u64) -> Option<Effects> {
+fn effects(operation: OwnerOperation) -> Option<Effects> {
     // This table belongs ONLY to the function/context pair installed by
     // program_map_closed_runtime::begin. It is not an arbitrary host-call
     // annotation. Validation still reads all its original fields, including
     // the runtime-owned words already current in memory.
     Some(match operation {
-        0 => Effects {
+        OwnerOperation::Refill => Effects {
             reads: VALIDATION_READS,
             writes: fields!(fuel, entry_known, entry_pointer),
         },
-        7 => Effects {
+        OwnerOperation::InsertMissingPacked => Effects {
             reads: VALIDATION_READS | fields!(key_low, key_high, entry_pointer, updates),
             writes: fields!(
                 slots,
@@ -82,11 +84,15 @@ fn effects(operation: u64) -> Option<Effects> {
                 write_call_allowed
             ),
         },
-        6 | 8 | 9 => Effects {
+        OwnerOperation::PrepareAndSelectRange
+        | OwnerOperation::MissingKeyFailure
+        | OwnerOperation::InvalidPackedOperation => Effects {
             reads: 0,
             writes: 0,
         },
-        10..=12 => Effects {
+        OwnerOperation::RangeCallDenied
+        | OwnerOperation::ReadCallDenied
+        | OwnerOperation::WriteCallDenied => Effects {
             reads: VALIDATION_READS,
             writes: 0,
         },
@@ -420,7 +426,7 @@ impl FrameState {
         function: Value,
         context: Value,
         site: usize,
-        operation: u64,
+        operation: OwnerOperation,
         args: [Value; 3],
         error: Block,
     ) {
@@ -438,7 +444,7 @@ impl FrameState {
         self.reload_mask(b, loads);
         if selected.is_some() {
             let mut counts = self.emissions.get();
-            counts[operation as usize] += 1;
+            counts[operation.raw() as usize] += 1;
             self.emissions.set(counts);
         }
     }
@@ -451,8 +457,8 @@ impl FrameState {
                 if count == 0 {
                     return None;
                 }
-                let effects =
-                    effects(op as u64).expect("only proved operations receive emission receipts");
+                let effects = effects(OwnerOperation::decode(op as u64))
+                    .expect("only proved operations receive emission receipts");
                 Some((op as u64, count, effects.stores(), effects.writes))
             })
             .collect()
@@ -521,9 +527,18 @@ mod tests {
                 };
                 let zero = b.ins().iconst(types::I64, 0);
                 let before = memory_instructions(b.func);
-                state.call(&mut b, &hooks, pointer, pointer, 17, op, [zero; 3], error);
+                state.call(
+                    &mut b,
+                    &hooks,
+                    pointer,
+                    pointer,
+                    17,
+                    OwnerOperation::decode(op),
+                    [zero; 3],
+                    error,
+                );
                 let after = memory_instructions(b.func);
-                let expected = match (mode, effects(op)) {
+                let expected = match (mode, effects(OwnerOperation::decode(op))) {
                     (0, Some(effect)) => (
                         effect.stores().count_ones() as usize,
                         effect.writes.count_ones() as usize,
@@ -538,7 +553,7 @@ mod tests {
                 );
                 assert_eq!(
                     !state.effect_emissions().is_empty(),
-                    mode == 0 && effects(op).is_some()
+                    mode == 0 && effects(OwnerOperation::decode(op)).is_some()
                 );
                 state.spill(&mut b);
                 let final_spill = memory_instructions(b.func);
@@ -561,14 +576,14 @@ mod tests {
     fn private_effect_masks_cover_validation_growth_and_all_generated_writes() {
         assert_eq!((MUTABLE.count_ones(), GENERATED.count_ones()), (14, 7));
         assert_eq!(IMMUTABLE & GENERATED, 0);
-        let refill = effects(0).unwrap();
+        let refill = effects(OwnerOperation::Refill).unwrap();
         assert_eq!(
             (refill.stores().count_ones(), refill.writes.count_ones()),
             (2, 3)
         );
         assert_eq!(refill.stores(), fields!(fuel, entry_known));
         assert_eq!(refill.writes, fields!(fuel, entry_known, entry_pointer));
-        let insert = effects(7).unwrap();
+        let insert = effects(OwnerOperation::InsertMissingPacked).unwrap();
         assert_eq!(
             (insert.stores().count_ones(), insert.writes.count_ones()),
             (6, 9)
@@ -589,13 +604,13 @@ mod tests {
             )
         );
         for op in [0, 7, 10, 11, 12] {
-            let effect = effects(op).unwrap();
+            let effect = effects(OwnerOperation::decode(op)).unwrap();
             assert_eq!(effect.reads & VALIDATION_READS, VALIDATION_READS);
             assert_eq!(effect.writes & IMMUTABLE, 0);
         }
         for op in [6, 8, 9] {
             assert_eq!(
-                effects(op),
+                effects(OwnerOperation::decode(op)),
                 Some(Effects {
                     reads: 0,
                     writes: 0
@@ -603,7 +618,7 @@ mod tests {
             );
         }
         for op in [1, 2, 3, 4, 5, 13, 14, u64::MAX] {
-            assert_eq!(effects(op), None);
+            assert_eq!(effects(OwnerOperation::decode(op)), None);
         }
     }
 }

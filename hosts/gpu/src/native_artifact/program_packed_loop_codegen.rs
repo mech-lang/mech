@@ -18,6 +18,8 @@ use crate::native_artifact::codegen::common::{
     word_access as common_words,
 };
 use crate::native_artifact::compilation::{CompilationControls, OptimizationPass};
+#[cfg(feature = "canonical-native-program-runtime")]
+use crate::native_artifact::program::protocol::OwnerOperation;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
@@ -314,7 +316,15 @@ pub(in crate::native_artifact) fn emit_entry(
     );
     let zero = b.ins().iconst(types::I64, 0);
     // One actual-selection receipt per versioned region, never per iteration.
-    hooks.bound_call(b, function, context, site, 13, [zero; 3], error);
+    hooks.bound_call(
+        b,
+        function,
+        context,
+        site,
+        OwnerOperation::EnterPackedSsa,
+        [zero; 3],
+        error,
+    );
     if let Some(function_ref) = outlined {
         let endpoint = loop_constants::enabled(controls)
             .then(|| {
@@ -586,7 +596,7 @@ fn emit_body(
             function,
             context,
             site,
-            14,
+            OwnerOperation::EnterGuardedLoop,
             [width, limit, call_guard],
             error,
         );
@@ -670,7 +680,16 @@ fn emit_body(
             let funded = b.create_block();
             b.ins().brif(fuel, funded, &[], replenish, &[]);
             b.switch_to_block(replenish);
-            packed.call(b, hooks, function, context, index, 0, [zero; 3], fail_at);
+            packed.call(
+                b,
+                hooks,
+                function,
+                context,
+                index,
+                OwnerOperation::Refill,
+                [zero; 3],
+                fail_at,
+            );
             let count = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
             packed.write(b, core::mem::offset_of!(Frame, fuel), count);
             b.ins().jump(funded, &[]);

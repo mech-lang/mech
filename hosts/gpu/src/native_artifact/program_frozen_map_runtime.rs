@@ -17,7 +17,7 @@ use mech_engine::native_artifact::{
 #[cfg(test)]
 thread_local! { pub(in crate::native_artifact::program_runtime) static TEST_DISABLE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) }; }
 
-pub(super) struct FrozenSlot {
+pub(in crate::native_artifact::program_runtime) struct FrozenSlot {
     pub map: FrozenPackedMap,
     pub token: u64,
     pub parent: Option<u32>,
@@ -34,7 +34,23 @@ fn check(required: u64, limit: Option<u64>, field: &'static str) -> Result<(), E
     }
 }
 impl State<'_> {
-    fn frozen_call(
+    fn read_frozen(
+        &mut self,
+        ctx: &mut Invocation<'_, '_, '_>,
+        site: usize,
+        args: [u64; 3],
+    ) -> Result<u64, Error> {
+        self.access_frozen(ctx, site, FROZEN_MAP_READ, args)
+    }
+    fn copy_frozen(
+        &mut self,
+        ctx: &mut Invocation<'_, '_, '_>,
+        site: usize,
+        args: [u64; 3],
+    ) -> Result<u64, Error> {
+        self.access_frozen(ctx, site, FROZEN_MAP_COPY, args)
+    }
+    fn access_frozen(
         &mut self,
         ctx: &mut Invocation<'_, '_, '_>,
         site: usize,
@@ -225,7 +241,11 @@ impl Invocation<'_, '_, '_> {
             .state
             .take()
             .ok_or_else(|| invalid("frozen-map helper before admitted session"))?;
-        let result = state.frozen_call(self, site, operation, args);
+        let result = match operation {
+            FROZEN_MAP_COPY => state.copy_frozen(self, site, args),
+            FROZEN_MAP_READ => state.read_frozen(self, site, args),
+            _ => state.access_frozen(self, site, operation, args),
+        };
         self.state.map_owners.state = Some(state);
         let word = result?;
         self.state.consumed = true;
@@ -248,7 +268,7 @@ impl Invocation<'_, '_, '_> {
         )?;
         for proof in &state.descriptor.metadata().frozen_maps.regions {
             if proof.parent == Some(iteration) {
-                drop(state.slots[proof.owner].frozen.take());
+                state.slots[proof.owner].retire_frozen();
             }
         }
         Ok(())

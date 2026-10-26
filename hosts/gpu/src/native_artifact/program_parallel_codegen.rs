@@ -3,6 +3,7 @@ use super::super::{
     NativeCompileError, compiler::offset, program_abi as abi, program_hooks::Hooks,
     program_parallel_layout::Layout,
 };
+use crate::native_artifact::program::protocol::GlobalHelper;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{NativeIterationAction as Action, NativeProgramArtifactPlan};
@@ -50,7 +51,7 @@ pub(in crate::native_artifact) fn dispatch(
         hooks.call(
             b,
             region.begin as usize,
-            abi::PARALLEL_ENTER,
+            GlobalHelper::ParallelEnter,
             [id, index, count],
             error,
         );
@@ -117,7 +118,13 @@ pub(in crate::native_artifact) fn before_visit(
         zero
     };
     let id = b.ins().iconst(types::I64, id as i64);
-    hooks.call(b, site, abi::PARALLEL_YIELD, [word, id, zero], error);
+    hooks.call(
+        b,
+        site,
+        GlobalHelper::ParallelYield,
+        [word, id, zero],
+        error,
+    );
     let status = b.ins().iconst(types::I64, abi::STATUS_WORKER_RESULT as i64);
     b.ins().return_(&[status]);
     b.switch_to_block(ordinary);
@@ -155,7 +162,13 @@ pub(in crate::native_artifact) fn after_action(
     let id_word = b.ins().iconst(types::I64, id as i64);
     let zero = b.ins().iconst(types::I64, 0);
     if region.initialize as usize == site {
-        hooks.call(b, site, abi::PARALLEL_RUN, [entry, frame, id_word], error);
+        hooks.call(
+            b,
+            site,
+            GlobalHelper::ParallelRun,
+            [entry, frame, id_word],
+            error,
+        );
     } else {
         if !matches!(
             plan.blocks()[site].action(),
@@ -165,7 +178,13 @@ pub(in crate::native_artifact) fn after_action(
                 "parallel body lacks original element",
             ));
         }
-        hooks.call(b, site, abi::PARALLEL_TAKE, [id_word, zero, zero], error);
+        hooks.call(
+            b,
+            site,
+            GlobalHelper::ParallelTake,
+            [id_word, zero, zero],
+            error,
+        );
         let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
         let publish = b.create_block();

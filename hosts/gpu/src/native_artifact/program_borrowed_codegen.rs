@@ -8,6 +8,7 @@ use super::super::{
 };
 use crate::native_artifact::codegen::common::ssa_words::Words;
 use crate::native_artifact::compilation::OptimizationOptions;
+use crate::native_artifact::program::protocol::GlobalHelper;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{NativeBorrowedStringAction as Action, NativeMatchValue};
@@ -139,7 +140,7 @@ fn prepare_region(
     error: Block,
 ) -> Result<(), NativeCompileError> {
     let zero = b.ins().iconst(types::I64, 0);
-    hooks.call(b, site, operation, [zero; 3], error);
+    hooks.call(b, site, GlobalHelper::decode(operation), [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     put_view(options, b, locals, None, layout.ready, ready)?;
     // The checked callback verifies capacity and writes every capture, even
@@ -176,13 +177,7 @@ fn bounds(
         words.spill_all(b, locals)?;
     }
     super::tail_codegen::failure(options, b, locals, closed, site, hooks, error)?;
-    hooks.call(
-        b,
-        site,
-        super::super::program_abi::BORROWED_STRING_FAILURE,
-        args,
-        error,
-    );
+    hooks.call(b, site, GlobalHelper::BorrowedStringFailure, args, error);
     // A bounds callback must fail. Never continue with an unbound pointer.
     let status = b
         .ins()

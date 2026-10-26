@@ -4,13 +4,13 @@ use super::super::{
     NativeCompileError,
     compiler::{backend, offset},
     iteration_code_plan::CodePlan,
-    program_abi::{
-        FROZEN_MAP_COPY, FROZEN_MAP_READ, MAP_OWNER_BEGIN, MAP_OWNER_CALL, MAP_OWNER_END,
-        MAP_OWNER_SPAN,
-    },
+    program_abi::{FROZEN_MAP_COPY, FROZEN_MAP_READ, MAP_OWNER_CALL},
     program_hooks::Hooks,
     program_map_owner_layout as layout,
 };
+#[cfg(feature = "canonical-native-program-runtime")]
+use crate::native_artifact::program::protocol::GlobalHelper;
+use crate::native_artifact::program::protocol::OwnerOperation;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{NativeIterationAction, NativeMapOwnerWords};
@@ -112,7 +112,7 @@ pub(in crate::native_artifact) fn emit(
     let ordinary = b.create_block();
     let joined = b.create_block();
     if entry.is_some() {
-        hooks.call(b, site, MAP_OWNER_BEGIN, [zero; 3], error);
+        hooks.call(b, site, GlobalHelper::MapOwnerBegin, [zero; 3], error);
         let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         store(b, locals, flag, ready)?;
         let selected = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
@@ -159,7 +159,13 @@ pub(in crate::native_artifact) fn emit(
             return Err(backend("frozen map owner mismatch"));
         }
         let token = load(b, locals, source.get() as usize)?;
-        hooks.call(b, site, operation, [token, zero, zero], error);
+        hooks.call(
+            b,
+            site,
+            GlobalHelper::decode(operation),
+            [token, zero, zero],
+            error,
+        );
         let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         store(b, locals, output.get() as usize, word)?;
         b.ins().jump(joined, &[]);
@@ -287,7 +293,15 @@ pub(in crate::native_artifact) fn emit(
             (Some(op), [zero, zero, value], Some(*output))
         };
         if let Some(op) = op {
-            hooks.bound_call(b, function, context, site, op, args, error);
+            hooks.bound_call(
+                b,
+                function,
+                context,
+                site,
+                OwnerOperation::decode(op),
+                args,
+                error,
+            );
         }
         if let Some(output) = output {
             let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
@@ -306,10 +320,16 @@ pub(in crate::native_artifact) fn emit(
         } else {
             [zero; 3]
         };
-        hooks.call(b, site, MAP_OWNER_SPAN, args, error);
+        hooks.call(b, site, GlobalHelper::MapOwnerSpan, args, error);
     } else if exit.is_some() {
         let token = load(b, locals, region.tail().returned().get() as usize)?;
-        hooks.call(b, site, MAP_OWNER_END, [token, zero, zero], error);
+        hooks.call(
+            b,
+            site,
+            GlobalHelper::MapOwnerEnd,
+            [token, zero, zero],
+            error,
+        );
         let token = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         store(b, locals, flag, token)?;
         // Canonical publication returns zero; private publication returns the

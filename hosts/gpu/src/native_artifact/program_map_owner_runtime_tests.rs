@@ -182,6 +182,17 @@ unsafe extern "C" fn observe(
     let ctx = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
     ctx.limits = old_limits;
     if status == STATUS_OK {
+        if operation == MAP_OWNER_BEGIN && unsafe { *result } != 0 {
+            let owner = descriptor
+                .metadata()
+                .map_owner_words
+                .as_ref()
+                .unwrap()
+                .initializer(index)
+                .unwrap();
+            let phase = ctx.state.map_owners.slot_phase(owner).unwrap();
+            assert!(matches!(phase, super::SlotPhase::Retained(_)), "{phase:?}");
+        }
         if operation == MAP_OWNER_BEGIN {
             if unsafe { *result } == 0 {
                 record(|r| r.declined += 1);
