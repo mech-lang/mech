@@ -647,6 +647,33 @@ impl NativePreparedLibraryCall {
                     .as_ref()
                     .and_then(|binding| binding.call.as_ref())
                     .is_some_and(|call| self.geometry_matches(call, inputs, output));
+                if !hit && cache.binding.is_none() {
+                    work.charge(512, 0)?;
+                    // Binding capacity is already subtracted from the nested
+                    // temporary allowance below. Their complete coexistence
+                    // bound is therefore the original finite allowance, plus
+                    // the two concrete scope owners. Prove that headroom
+                    // before retaining a new optional binding. No binder or
+                    // kernel runs while these probe bytes are held.
+                    let headroom = limits.max_temporary_bytes.unwrap().checked_add(
+                        crate::resident::budget::payload::native_scope_metadata_bytes(),
+                    );
+                    let fits = match headroom {
+                        Some(bytes) => match memory.reserve_capacity(bytes) {
+                            Ok(probe) => {
+                                drop(probe);
+                                true
+                            }
+                            Err(mech_core::MemoryRuntimeError::BudgetExceeded { .. }) => false,
+                            Err(error) => return Err(error.into()),
+                        },
+                        None => false,
+                    };
+                    if !fits {
+                        work.charge(self.binding_work, 0)?;
+                        return self.invoke_validated_current(inputs, output, limits, work);
+                    }
+                }
                 if !hit {
                     let owner_bytes = core::mem::size_of::<CachedBinding>() as u64;
                     let bytes = self
@@ -769,37 +796,50 @@ impl NativePreparedLibraryCall {
                 work.charge(self.binding_work, 0)?;
                 let memory = work.memory_budget();
                 self.validate_values(inputs, output, &memory)?;
-                live::check_measurement_with_limits(
-                    CurrentMemoryFootprint::default(),
-                    ResourceDemand {
-                        turn_peak_bytes: self.binding_bytes,
-                        retained_nodes: self.binding_nodes,
-                        ..ResourceDemand::default()
-                    },
-                    limits,
-                )?;
-                let _binding = memory.reserve_capacity(self.binding_bytes)?;
-                // This record remains live during invocation. Its reservation is
-                // therefore subtracted from the nested temporary allowance; a
-                // large invocation account cannot lift the original call policy.
-                let mut nested = limits;
-                nested.max_temporary_bytes = Some(
-                    limits
-                        .max_temporary_bytes
-                        .unwrap()
-                        .checked_sub(self.binding_bytes)
-                        .ok_or(MemoryPlanError::TargetAddressOverflow)?,
-                );
-                nested.max_retained_nodes = Some(
-                    limits
-                        .max_retained_nodes
-                        .unwrap()
-                        .checked_sub(self.binding_nodes)
-                        .ok_or(MemoryPlanError::TargetAddressOverflow)?,
-                );
-                let call = self.bind_values(inputs, output, nested)?;
-                call.invoke(inputs, output, work)
+                self.invoke_validated_current(inputs, output, limits, work)
             },
         )?
+    }
+    // Both entry points already validated their exact operands and charged
+    // binding work inside the original enclosing call scope. Sharing this
+    // leaf path cannot renew that scope or change its publication boundary.
+    fn invoke_validated_current(
+        &self,
+        inputs: &[Option<Value>],
+        output: &mut Option<Value>,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<bool, InvokeError> {
+        let memory = work.memory_budget();
+        live::check_measurement_with_limits(
+            CurrentMemoryFootprint::default(),
+            ResourceDemand {
+                turn_peak_bytes: self.binding_bytes,
+                retained_nodes: self.binding_nodes,
+                ..ResourceDemand::default()
+            },
+            limits,
+        )?;
+        let _binding = memory.reserve_capacity(self.binding_bytes)?;
+        // This record remains live during invocation. Its reservation is
+        // therefore subtracted from the nested temporary allowance; a
+        // large invocation account cannot lift the original call policy.
+        let mut nested = limits;
+        nested.max_temporary_bytes = Some(
+            limits
+                .max_temporary_bytes
+                .unwrap()
+                .checked_sub(self.binding_bytes)
+                .ok_or(MemoryPlanError::TargetAddressOverflow)?,
+        );
+        nested.max_retained_nodes = Some(
+            limits
+                .max_retained_nodes
+                .unwrap()
+                .checked_sub(self.binding_nodes)
+                .ok_or(MemoryPlanError::TargetAddressOverflow)?,
+        );
+        let call = self.bind_values(inputs, output, nested)?;
+        call.invoke(inputs, output, work)
     }
 }

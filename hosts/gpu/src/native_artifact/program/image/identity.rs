@@ -377,7 +377,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 106;
 // access leaf, with unchanged selector/shape checks and copy admission.
 // Policy79 constructs plain unsigned indexed updates in packed storage after
 // the existing routing, bounds, finalization and publication admission.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 79;
+// Policy80 admits optional binding caches only when the unchanged finite call
+// scope can coexist, otherwise invoking the same maintained leaf uncached.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 80;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

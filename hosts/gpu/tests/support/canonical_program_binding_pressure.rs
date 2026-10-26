@@ -104,8 +104,84 @@ fn repeated_record_bindings_leave_room_for_execution_and_preserve_recovery() {
                 .turn_peak_bytes
                 == 0
         }));
+        let fresh = args
+            .iter()
+            .map(|argument| {
+                let value = argument.as_ref().unwrap();
+                if !matches!(value.data(), mech_core::ValueData::U64(_)) {
+                    return argument.clone();
+                }
+                let value = ValueDraft {
+                    schema: value.schema(),
+                    shape_values: Box::new([]),
+                    data: Data::U64(29),
+                }
+                .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                .unwrap();
+                let mut reservation = memory
+                    .reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap())
+                    .unwrap();
+                Some(value.into_memory_budget(&mut reservation).unwrap())
+            })
+            .collect::<Vec<_>>();
+        let mut fresh_expected = None;
+        call.invoke_current(&fresh, &mut fresh_expected, policy, &work)
+            .unwrap();
+        assert_ne!(
+            fresh_expected
+                .as_ref()
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            expected
+        );
+        call.invoke_current_cached(
+            caches.last_mut().unwrap(),
+            &fresh,
+            &mut output,
+            policy,
+            &work,
+        )
+        .unwrap();
+        assert_eq!(
+            output.as_ref().unwrap().canonical_data_draft().unwrap(),
+            fresh_expected
+                .as_ref()
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap()
+        );
         let prior = output.clone();
         let before = memory.used_bytes();
+        let spent = work.used().0;
+        let rejected = work
+            .with_call_limits(call.binding_metadata_bytes(), 10_000_000_000, || {
+                call.invoke_current_cached(
+                    caches.last_mut().unwrap(),
+                    &args,
+                    &mut output,
+                    policy,
+                    &work,
+                )
+            })
+            .unwrap();
+        assert!(matches!(
+            rejected,
+            Err(NativeCollectionInvocationError::Kernel(
+                mech_core::ResidentKernelError::ResourceLimit {
+                    dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                    ..
+                }
+            ))
+        ));
+        assert!(work.used().0 > spent, "a failed call preserves its debits");
+        assert_eq!(memory.used_bytes(), before);
+        assert!(
+            output
+                .as_ref()
+                .unwrap()
+                .shares_frozen_storage(prior.as_ref().unwrap())
+        );
         let mut invalid = args.clone();
         invalid[0] = None;
         let rejected = call.invoke_current_cached(
@@ -144,7 +220,17 @@ fn repeated_record_bindings_leave_room_for_execution_and_preserve_recovery() {
                 .unwrap()
                 .shares_frozen_storage(alias.as_ref().unwrap())
         }));
-        drop((output, prior, invalid, caches, args, aliases, work));
+        drop((
+            output,
+            prior,
+            invalid,
+            caches,
+            args,
+            aliases,
+            fresh,
+            fresh_expected,
+            work,
+        ));
         assert_eq!(memory.used_bytes(), 0);
     }
 }
