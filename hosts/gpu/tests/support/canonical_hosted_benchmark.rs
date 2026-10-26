@@ -49,7 +49,21 @@ fn benchmark_generator_preserves_the_original_object_and_isolates_policy_control
                 fs::read(benchmark.root().join(relative)).unwrap()
             );
         }
-        for project in [&secured, &benchmark] {
+        let launcher = include_str!("../../src/native_artifact/launch/hosted/mod.rs");
+        let compact = launcher.split_whitespace().collect::<String>();
+        for same_boundary in [
+            "with_prepared_canonical_native_resources_phased_text",
+            "CanonicalNativeResourceMetadata::decode_build_owned_image",
+            "linked.prepare_hosted",
+            "session.resume_hosted_into",
+            "runtime.shutdown()",
+        ] {
+            assert!(compact.contains(same_boundary));
+        }
+        for (project, dispatch) in [
+            (&secured, "run_hosted_program_application(binding,"),
+            (&benchmark, "run_benchmark_program_application(binding,"),
+        ] {
             for (relative, expected) in project.pins() {
                 assert_eq!(&pin(&project.root().join(relative)), expected);
             }
@@ -57,23 +71,19 @@ fn benchmark_generator_preserves_the_original_object_and_isolates_policy_control
             assert_eq!(project.metadata()["timing_samples"], 0);
             let main = fs::read_to_string(project.root().join("src/main.rs")).unwrap();
             assert!(!main.contains("@BENCHMARK_") && !main.contains("@HOSTED_"));
-            for same_boundary in [
-                "with_prepared_canonical_native_resources_phased_text",
-                "CanonicalNativeResourceMetadata::decode_build_owned_image",
-                "linked.prepare_hosted",
-                "session.resume_hosted_into",
-                "runtime.shutdown()",
-            ] {
-                assert!(main.contains(same_boundary));
-            }
+            assert!(main.contains("BuildOwnedHostedBinding::from_build_owned_image("));
+            assert!(main.contains(dispatch));
         }
         let normal = fs::read_to_string(secured.root().join("src/main.rs")).unwrap();
         assert!(!normal.contains("NativeBenchmark") && !normal.contains("benchmark_policy"));
-        assert!(normal.contains("#[serde(deny_unknown_fields)]"));
+        assert!(launcher.contains("#[serde(deny_unknown_fields, rename = \"Launch\")]"));
+        assert!(launcher.contains("launch_schema!(Launch,);"));
         let experiment = fs::read_to_string(benchmark.root().join("src/main.rs")).unwrap();
-        assert!(experiment.contains("benchmark_policy: String,"));
-        assert!(experiment.contains("NativeBenchmarkPolicy::parse(&launch.benchmark_policy)"));
-        assert!(experiment.contains(".capability_kernel(NativeBenchmarkCapabilityKernel::new("));
+        assert!(launcher.contains("launch_schema!(BenchmarkLaunch, benchmark_policy: String,);"));
+        assert!(launcher.contains("NativeBenchmarkPolicy::parse(&parsed.benchmark_policy)"));
+        assert!(compact.contains(
+            ".capability_kernel(crate::native_artifact::NativeBenchmarkCapabilityKernel::new("
+        ));
         assert!(!experiment.contains("MECH_NATIVE_SECURITY"));
         assert_eq!(
             secured.metadata()["route"],
