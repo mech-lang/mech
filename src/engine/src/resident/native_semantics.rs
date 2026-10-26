@@ -58,11 +58,8 @@ fn scalar_port(
     };
     let expected = match kind {
         NativeScalarKind::Bool => SchemaBody::Bool,
-        #[cfg(feature = "convert")]
         NativeScalarKind::U8 => SchemaBody::UnsignedInteger(IntegerWidth::W8),
-        #[cfg(feature = "convert")]
         NativeScalarKind::U16 => SchemaBody::UnsignedInteger(IntegerWidth::W16),
-        #[cfg(feature = "convert")]
         NativeScalarKind::U32 => SchemaBody::UnsignedInteger(IntegerWidth::W32),
 
         NativeScalarKind::U64 => SchemaBody::UnsignedInteger(IntegerWidth::W64),
@@ -80,7 +77,6 @@ fn scalar_port(
                 NativeScalarKind::Bool => ResidentValueKind::Bool,
                 NativeScalarKind::F64 => ResidentValueKind::F64,
                 NativeScalarKind::U64 | NativeScalarKind::I64 => ResidentValueKind::Snapshot,
-                #[cfg(feature = "convert")]
                 NativeScalarKind::U8 | NativeScalarKind::U16 | NativeScalarKind::U32 => {
                     ResidentValueKind::Snapshot
                 }
@@ -291,11 +287,8 @@ mod tests {
                 SchemaBody::UnsignedInteger(IntegerWidth::W64),
                 SchemaBody::SignedInteger(IntegerWidth::W64),
                 SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
-                #[cfg(feature = "convert")]
                 SchemaBody::UnsignedInteger(IntegerWidth::W8),
-                #[cfg(feature = "convert")]
                 SchemaBody::UnsignedInteger(IntegerWidth::W16),
-                #[cfg(feature = "convert")]
                 SchemaBody::UnsignedInteger(IntegerWidth::W32),
             ]
             .into_iter()
@@ -325,11 +318,8 @@ mod tests {
                     NativeScalarKind::U64 => ids[1],
                     NativeScalarKind::I64 => ids[2],
                     NativeScalarKind::F64 => ids[3],
-                    #[cfg(feature = "convert")]
                     NativeScalarKind::U8 => ids[4],
-                    #[cfg(feature = "convert")]
                     NativeScalarKind::U16 => ids[5],
-                    #[cfg(feature = "convert")]
                     NativeScalarKind::U32 => ids[6],
                 };
                 ResidentPortLayout {
@@ -341,7 +331,6 @@ mod tests {
                         NativeScalarKind::U64 | NativeScalarKind::I64 => {
                             ResidentValueKind::Snapshot
                         }
-                        #[cfg(feature = "convert")]
                         NativeScalarKind::U8 | NativeScalarKind::U16 | NativeScalarKind::U32 => {
                             ResidentValueKind::Snapshot
                         }
@@ -446,6 +435,27 @@ mod tests {
                 exact_cardinality: None,
                 maximum_cardinality: None,
             }
+        }
+    }
+
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    #[test]
+    fn shared_unsigned_scalar_layouts_do_not_depend_on_conversion_factories() {
+        use NativeScalarKind::{Bool, U8, U16, U32};
+        use NativeScalarOp::{U8Eq, U16Eq, U32Eq};
+        for (op, kind, wrong_kind) in [(U8Eq, U8, U16), (U16Eq, U16, U32), (U32Eq, U32, U8)] {
+            assert_eq!(op.signature(), (&[kind, kind][..], Bool));
+            let binding = Binding::scalar(op);
+            let request = binding.request();
+            for port in &binding.inputs {
+                assert!(scalar_port(&request, port, kind));
+                assert!(!scalar_port(&request, port, wrong_kind));
+                let mut wrong_representation = port.clone();
+                wrong_representation.kind = ResidentValueKind::Bool;
+                assert!(!scalar_port(&request, &wrong_representation, kind));
+            }
+            assert!(scalar_port(&request, &binding.output, Bool));
+            assert!(!scalar_port(&request, &binding.output, kind));
         }
     }
 
