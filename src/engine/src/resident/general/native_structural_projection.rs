@@ -315,7 +315,12 @@ pub fn native_project_structural_value(
         let context = mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(schemas)
             .with_canonicalization_budget(&canonical);
         let value = if packed {
-            copy_packed_word_matrix(output_type.schema(), shape, data, Arc::clone(schemas))?
+            crate::resident::packed_word_matrix::copy(
+                output_type.schema(),
+                shape,
+                data,
+                Arc::clone(schemas),
+            )?
         } else {
             let data = mech_core::snapshot::canonical_snapshot_data_draft_with_context(
                 body, data, &context,
@@ -331,27 +336,4 @@ pub fn native_project_structural_value(
         };
         Ok(value.into_memory_budget(&mut reservation)?)
     })?
-}
-
-fn copy_packed_word_matrix(
-    schema: mech_core::SchemaId,
-    shape: mech_core::ShapeInstance,
-    data: &ValueData,
-    schemas: Arc<SchemaTable>,
-) -> Result<Value, ResidentKernelError> {
-    use mech_core::snapshot::SequenceView;
-    let ValueData::Matrix(matrix) = data else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    // These existing constructors validate the exact element kind, current
-    // shape and cardinality. Every allocation is funded by workspace above.
-    match matrix.elements() {
-        SequenceView::U8(words) => Value::from_u8_matrix(schema, shape, words.into(), schemas),
-        SequenceView::U16(words) => Value::from_u16_matrix(schema, shape, words.into(), schemas),
-        SequenceView::U32(words) => Value::from_u32_matrix(schema, shape, words.into(), schemas),
-        SequenceView::U64(words) => Value::from_u64_matrix(schema, shape, words.into(), schemas),
-        SequenceView::U128(words) => Value::from_u128_matrix(schema, shape, words.into(), schemas),
-        _ => return Err(ResidentKernelError::InvalidInput),
-    }
-    .map_err(|_| ResidentKernelError::InvalidOutput)
 }

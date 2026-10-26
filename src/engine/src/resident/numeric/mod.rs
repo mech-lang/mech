@@ -17760,12 +17760,18 @@ fn snapshot_access_from_source(
         (None, 0)
     };
     let resolved_output_shape = component_shape.or(resolved_output_shape);
-    let component_expansion = component
-        .map(|(body, data)| {
-            super::budget::unsigned_word_draft_expansion(&mut footprint_meter, body, data)
-        })
-        .transpose()?
-        .unwrap_or(0);
+    let packed_component = snapshot_output
+        && component.is_some_and(|(body, _)| super::structural_values::word_matrix(body));
+    let component_expansion = if packed_component {
+        0
+    } else {
+        component
+            .map(|(body, data)| {
+                super::budget::unsigned_word_draft_expansion(&mut footprint_meter, body, data)
+            })
+            .transpose()?
+            .unwrap_or(0)
+    };
     let footprint_work = footprint_meter.estimate();
     let publication_equality_work = match prior_output_footprint {
         Some(prior) => prior_schema_comparison_work
@@ -17810,7 +17816,9 @@ fn snapshot_access_from_source(
     let compact_strings = snapshot_output && compact_string_access::supports(kernel, source, plan);
     let output_draft_bytes = output_cost
         .count
-        .checked_mul(if compact_strings {
+        .checked_mul(if packed_component {
+            0
+        } else if compact_strings {
             core::mem::size_of::<Box<str>>()
         } else {
             core::mem::size_of::<ValueDataDraft>()
@@ -17888,6 +17896,41 @@ fn snapshot_access_from_source(
     )?
     .admit()?
     .into_plan();
+    if packed_component {
+        // The live selector and independent component shape were validated
+        // above. Keep unsigned buffers packed through this same access leaf;
+        // admission still covers the payload copy, owners and publication.
+        let (_, data) = component.ok_or(ResidentKernelError::InvalidInput)?;
+        let declared = kernel
+            .snapshot_output()
+            .ok_or(ResidentKernelError::InvalidOutput)?;
+        let shape = resolved_output_shape.as_ref().unwrap_or(&declared.shape);
+        let next = super::packed_word_matrix::copy(
+            plan.output_schema,
+            shape.clone(),
+            data,
+            Arc::clone(
+                kernel
+                    .shared_snapshot_schemas()
+                    .ok_or(ResidentKernelError::InvalidOutput)?,
+            ),
+        )?;
+        let ResidentValueMut::Snapshot([target]) = output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        let changed = target
+            .as_ref()
+            .map(|previous| {
+                previous
+                    .snapshot_eq(schemas, &next, schemas)
+                    .map(|same| !same)
+            })
+            .transpose()
+            .map_err(|_| ResidentKernelError::InvalidOutput)?
+            .unwrap_or(true);
+        *target = Some(next);
+        return Ok(changed);
+    }
     if compact_strings {
         let selectors = plan
             .selectors

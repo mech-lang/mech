@@ -30,6 +30,8 @@ pub(crate) mod native_factory_linkage;
 pub(crate) mod native_semantics;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod numeric;
+#[cfg(feature = "resident-artifact")]
+mod packed_word_matrix;
 #[cfg(all(feature = "resident-artifact", feature = "pure_text"))]
 pub(crate) mod pure_text;
 #[cfg(all(feature = "resident-artifact", feature = "sequence_sort"))]

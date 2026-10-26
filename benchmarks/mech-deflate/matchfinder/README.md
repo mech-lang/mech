@@ -251,11 +251,18 @@ output rejection after success, unchanged published aliases, cleanup and retry.
 The selected collection, recursion, assertion, projection and component run
 passed all 113 tests without changing component expectations or allowances.
 
-The collector now completes initialization but still reaches no search position.
-Its recursive argument projection expands the packed cache through scalar drafts.
-That attempt requires 192971994 temporary bytes against the unchanged 134217728
-limit. The call took 8.406550375 seconds and requested 48572983 bytes across
-6003 allocation requests before rejection. Publication remained empty and
-retained memory was unchanged. Requested allocation bytes are cumulative heap
-requests, not peak memory or measured copy bytes. This is the next compiler
-blocker; it is not a compression timing.
+Recursive unsigned argument projection and aggregate field reads now use the
+existing packed constructors. Their standalone real-buffer regressions complete
+for original and decoded artifacts, including late failure, unchanged prior
+publication and recovery. Field reads with both real buffers take about 0.044
+seconds and request 20384163 bytes across 9045 allocations in the unoptimized
+test build. The source/artifact checks and maintained access factory remain.
+
+The collector completes initialization and reaches its first cache-header write,
+but still completes no search position. The maintained `core/assign/indexed-axis`
+kernel requests 138048930 temporary bytes against 132918256 bytes available after
+binding. The call took 10.452813417 seconds and requested 151971689 bytes across
+33264 allocations before rejection. Publication remained empty and retained
+memory was unchanged. Requested allocation bytes are cumulative heap requests,
+not peak memory or measured copy bytes. This is the next compiler blocker;
+it is not a compression timing. All resource allowances remain unchanged.

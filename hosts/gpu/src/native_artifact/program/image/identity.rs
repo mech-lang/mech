@@ -372,7 +372,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 106;
 // their source checks and arithmetic/construction work remain charged.
 // Policy77 projects unsigned matrix arguments with one admitted packed copy
 // through the existing typed constructor, without scalar draft expansion.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 77;
+// Policy78 keeps selected unsigned aggregate fields packed in the maintained
+// access leaf, with unchanged selector/shape checks and copy admission.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 78;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

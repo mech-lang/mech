@@ -47,7 +47,18 @@ fn real_buffer_collector_prefix_carries_consecutive_search_and_skip_updates() {
                 .blocks()
                 .iter()
                 .find(|block| block.origin() == *origin)
-                .map(|block| format!("{:?}", block.action())),
+                .map(|block| match block.action() {
+                    mech_engine::native_artifact::NativeIterationAction::LibraryCall {
+                        template,
+                        ..
+                    } => template.primitive().name().to_owned(),
+                    mech_engine::native_artifact::NativeIterationAction::Structural {
+                        path,
+                        observation,
+                        ..
+                    } => format!("structural {observation:?} at {path:?}"),
+                    action => format!("{action:?}"),
+                }),
             _ => None,
         };
         println!(
