@@ -1,0 +1,9 @@
+{
+  "src/engine/src/resident/general/native_collection_record_words.rs": "781adbc02f55389cb7083b1a13b4af1a33d21eb767b6a51d9e0879144b46a539",
+  "src/engine/src/resident/general/native_collection_prepared.rs": "2c9941830f4ebf0a197560943f0e2186c0740b0061994e52f6da91c01d6bcdd2",
+  "src/engine/src/resident/numeric/mod.rs": "815f8e2dc9006f6b957b57798b0f402acbddf902464c99be0340d6286aba32ec",
+  "hosts/gpu/src/native_artifact/program/runtime/invocation/word_reads.rs": "33c156c4e74f9c50555cdccb94bd59d64940fd563fb605433a676745c32e6593",
+  "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs": "bc88ec2f53fec3a68963c6f691549403434ce81b7a3e4d0e53e86e177b5c6308",
+  "hosts/gpu/src/native_artifact/program/image/identity.rs": "5c879747cbc171db230d10a55114e6a7221e9a1ddea2bf41f611d0120d4ced71",
+  "hosts/gpu/tests/support/canonical_program_record_words.rs": "96ef6fcb01cd720db5463d09e6d3da11fa15922afd1a6d8a93201cdab92d9309"
+}

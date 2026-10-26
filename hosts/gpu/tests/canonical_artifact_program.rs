@@ -84,6 +84,9 @@ mod huffman_qualification;
 #[path = "support/canonical_program_word_reads.rs"]
 mod word_read_qualification;
 
+#[path = "support/canonical_program_record_words.rs"]
+mod record_word_qualification;
+
 #[path = "support/canonical_program_unsigned_lengths.rs"]
 mod unsigned_length_qualification;
 

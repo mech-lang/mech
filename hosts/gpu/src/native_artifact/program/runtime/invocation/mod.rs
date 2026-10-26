@@ -619,6 +619,10 @@ impl Invocation<'_, '_, '_> {
             // the synchronous entry. Native code is suspended in this callback;
             // no Rust reference to the lane survives across native writes.
             let words = unsafe { core::slice::from_raw_parts(self.arguments, operands.len()) };
+            if let Some(word) = self.record_scalar_field_call(site, words)? {
+                self.state.consumed = true;
+                return Ok(Some(word));
+            }
             if let Some(word) = self.unsigned_matrix_length_call(site, words)? {
                 self.state.consumed = true;
                 return Ok(Some(word));

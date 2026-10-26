@@ -1,0 +1,14 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-reality-check/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-reality-check/src/compute)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-deflate-reality-check/src/runtime)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-reality-check/src/stdlib)
+   Compiling mech-build v0.3.5 (/private/tmp/mech-deflate-reality-check/src/build)
+error[E0432]: unresolved import `mech_core::snapshot::RecordFieldDraft`
+ --> hosts/gpu/tests/support/canonical_program_record_words.rs:5:25
+  |
+5 |     snapshot::{F64Bits, RecordFieldDraft},
+  |                         ^^^^^^^^^^^^^^^^ no `RecordFieldDraft` in `snapshot`
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `mech-gpu` (test "canonical_artifact_program") due to 1 previous error

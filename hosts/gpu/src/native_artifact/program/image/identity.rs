@@ -387,7 +387,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 108;
 // control/helper visits. Byte work, clone limits and publication stay funded.
 // Policy83 reads selected unsigned-matrix length into its admitted native word
 // without constructing an unused general binding or canonical scalar owner.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 83;
+// Policy84 returns selected scalar record fields into their native lane without
+// general call binding, dimension closure or a canonical scalar result owner.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 84;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

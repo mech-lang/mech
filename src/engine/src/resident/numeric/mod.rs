@@ -16679,8 +16679,18 @@ fn named_schema_ordinal_with_meter<'a>(
     selected: u64,
     meter: &mut super::budget::ResidentBudgetMeter,
 ) -> Result<usize, ResidentKernelError> {
+    named_schema_ordinal(names, selected, |bytes| meter.charge_comparison_work(bytes))
+}
+
+// Both the maintained selector and its selected native scalar projection use
+// this exact first-match name interpretation. Admission precedes each hash.
+pub(in crate::resident) fn named_schema_ordinal<'a>(
+    names: impl IntoIterator<Item = &'a str>,
+    selected: u64,
+    mut charge: impl FnMut(u64) -> Result<(), ResidentKernelError>,
+) -> Result<usize, ResidentKernelError> {
     for (ordinal, name) in names.into_iter().enumerate() {
-        meter.charge_comparison_work(super::budget::checked_u64(name.len().max(1))?)?;
+        charge(super::budget::checked_u64(name.len().max(1))?)?;
         if mech_core::hash_str(name) == selected {
             return Ok(ordinal);
         }

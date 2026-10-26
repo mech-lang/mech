@@ -3,6 +3,68 @@ use super::{Error, Invocation, invalid};
 use mech_engine::native_artifact::{NativeIterationAction as Action, NativeScalarKind};
 
 impl Invocation<'_, '_, '_> {
+    pub(super) fn record_scalar_field_call(
+        &mut self,
+        site: usize,
+        words: &[u64],
+    ) -> Result<Option<u64>, Error> {
+        let descriptor = self.descriptor;
+        let Some(call) = descriptor.metadata().calls[site].as_ref() else {
+            return Ok(None);
+        };
+        let Some(kind) = call.record_scalar_field_kind() else {
+            return Ok(None);
+        };
+        let Action::LibraryCall {
+            operands, output, ..
+        } = descriptor.metadata().plan.blocks()[site].action()
+        else {
+            return Err(invalid("record scalar outside selected call"));
+        };
+        if operands.len() != 2
+            || words != [0, 0]
+            || operands.iter().any(|value| {
+                descriptor.metadata().plan.values()[value.get() as usize]
+                    .scalar_kind()
+                    .is_some()
+            })
+            || descriptor.metadata().plan.values()[output.get() as usize].scalar_kind()
+                != Some(kind)
+        {
+            return Err(invalid("record scalar native transport differs"));
+        }
+        if self.line_window.is_some()
+            || self.window_region.is_some()
+            || self.window_hashes.is_some()
+            || self.closed_tail.is_some()
+            || self.prefix.as_ref().is_some_and(|prefix| !prefix.input.eof)
+        {
+            return Ok(None);
+        }
+        let coexistence = self.selected_join_coexistence(None)?;
+        let source = self
+            .state
+            .arena
+            .copy_current(operands[0].get(), &mut self.state.control.work)?;
+        let selector = self
+            .state
+            .arena
+            .copy_current(operands[1].get(), &mut self.state.control.work)?;
+        let word = call
+            .record_scalar_field(
+                &source,
+                &selector,
+                self.limits,
+                &self.state.library,
+                coexistence,
+            )
+            .map_err(|error| Error::Library {
+                origin: descriptor.metadata().plan.blocks()[site].origin(),
+                error,
+            })?;
+        Ok(Some(word))
+    }
+
     pub(super) fn unsigned_matrix_length_call(
         &mut self,
         site: usize,

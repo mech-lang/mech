@@ -49,6 +49,8 @@ mod image;
 
 #[path = "native_collection_histogram.rs"]
 mod histogram;
+#[path = "native_collection_record_words.rs"]
+mod record_words;
 #[path = "native_collection_string_map_entry.rs"]
 mod string_map_entry;
 #[path = "native_collection_string_span.rs"]
