@@ -121,6 +121,48 @@ impl CargoInvocation {
         )
     }
 
+    /// Execute a compiled library contract suite with pinned, locked inputs.
+    pub fn test_library(
+        manifest_path: impl AsRef<Path>,
+        package: &str,
+        features: &[&str],
+        target_dir: impl AsRef<Path>,
+        release: bool,
+        offline: bool,
+    ) -> MResult<Self> {
+        validate_project_binary_name(package)?;
+        let mut arguments = vec![
+            OsString::from(format!("+{NATIVE_RUST_TOOLCHAIN}")),
+            OsString::from("test"),
+            OsString::from("--manifest-path"),
+            manifest_path.as_ref().as_os_str().to_owned(),
+            OsString::from("--package"),
+            OsString::from(package),
+            OsString::from("--lib"),
+            OsString::from("--no-default-features"),
+            OsString::from("--locked"),
+            OsString::from("--message-format=json-render-diagnostics"),
+            OsString::from("--target-dir"),
+            target_dir.as_ref().as_os_str().to_owned(),
+        ];
+        if !features.is_empty() {
+            arguments.extend([
+                OsString::from("--features"),
+                OsString::from(features.join(",")),
+            ]);
+        }
+        if release {
+            arguments.push(OsString::from("--release"));
+        }
+        if offline {
+            arguments.push(OsString::from("--offline"));
+        }
+        Ok(Self {
+            arguments,
+            current_dir: None,
+        })
+    }
+
     fn binary(
         action: &'static str,
         manifest_path: impl AsRef<Path>,

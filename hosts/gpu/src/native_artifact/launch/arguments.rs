@@ -1,3 +1,6 @@
+use super::super::NativeExecutionLimits;
+use mech_engine::native_artifact::{NativeScalarKind, NativeScalarValue};
+use std::ffi::OsString;
 fn unsigned(text: &str) -> Result<u64, String> {
     if text.is_empty() || !text.bytes().all(|c| c.is_ascii_digit()) {
         return Err("invalid U64 argument".into());
@@ -12,7 +15,9 @@ fn signed(text: &str) -> Result<i64, String> {
     text.parse().map_err(|_| "invalid I64 argument".into())
 }
 fn floating_bits(text: &str) -> Result<mech_core::snapshot::F64Bits, String> {
-    let digits = text.strip_prefix("f64:").ok_or("invalid F64 bit argument")?;
+    let digits = text
+        .strip_prefix("f64:")
+        .ok_or("invalid F64 bit argument")?;
     if digits.len() != 16 || !digits.bytes().all(|byte| byte.is_ascii_hexdigit()) {
         return Err("invalid F64 bit argument".into());
     }
@@ -20,7 +25,7 @@ fn floating_bits(text: &str) -> Result<mech_core::snapshot::F64Bits, String> {
         .map(mech_core::snapshot::F64Bits::from_bits)
         .map_err(|_| "invalid F64 bit argument".into())
 }
-fn options(
+pub(super) fn options(
     arguments: Vec<OsString>,
 ) -> Result<(NativeExecutionLimits, Option<u64>, Vec<OsString>), String> {
     let mut limits = NativeExecutionLimits::default();
@@ -64,7 +69,10 @@ fn options(
     }
     Ok((limits, budget, payload))
 }
-fn scalar_argument(argument: &std::ffi::OsStr, kind: NativeScalarKind) -> Result<NativeScalarValue, String> {
+pub(super) fn scalar_argument(
+    argument: &std::ffi::OsStr,
+    kind: NativeScalarKind,
+) -> Result<NativeScalarValue, String> {
     let text = argument.to_str().ok_or("argument is not Unicode")?;
     Ok(match kind {
         NativeScalarKind::U64 => NativeScalarValue::U64(unsigned(text)?),
@@ -77,12 +85,13 @@ fn scalar_argument(argument: &std::ffi::OsStr, kind: NativeScalarKind) -> Result
         }),
     })
 }
-fn append_scalar(result: &mut String, value: NativeScalarValue) {
+pub(super) fn append_scalar(result: &mut String, value: NativeScalarValue) {
     use std::fmt::Write;
     match value {
         NativeScalarValue::Bool(v) => writeln!(result, "{v}"),
         NativeScalarValue::U64(v) => writeln!(result, "{v}"),
         NativeScalarValue::I64(v) => writeln!(result, "{v}"),
         NativeScalarValue::F64(v) => writeln!(result, "f64:{:016x}", v.bits()),
-    }.expect("String formatting cannot fail");
+    }
+    .expect("String formatting cannot fail");
 }

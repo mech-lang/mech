@@ -180,13 +180,8 @@ fn complete_original_and_decoded_knucleotide_same_binary_policy_controls() {
         let binary = directory.join("native-executable");
         fs::copy(&built_binary, &binary).unwrap();
         let binary_pin = pin(&binary);
-        let generated_template_tests = template_tests::qualify(
-            &project.manifest_path(),
-            binary_name,
-            &target,
-            &directory,
-            profile.release(),
-        );
+        let compiled_launcher_tests =
+            launcher_tests::qualify(&target, &directory, profile.release());
         assert_eq!(pin(&built_binary), binary_pin);
         let cases = cases::qualify(&binary, &directory, &binary_pin);
         let pin_rejections = if index == 0 {
@@ -215,7 +210,7 @@ fn complete_original_and_decoded_knucleotide_same_binary_policy_controls() {
         results.push(json!({"variant":index, "binary":binary, "binary_sha256":binary_pin,
             "rust_profile":profile.name(),"program_revision":revision,
             "runtime_units":units, "compiler_profiles":compiler_profiles, "cases":cases,
-            "generated_template_tests":generated_template_tests, "pin_rejections":pin_rejections,
+            "compiled_launcher_tests":compiled_launcher_tests, "pin_rejections":pin_rejections,
             "source_sha256":hash(FULL.as_bytes()), "bytecode_sha256":pin(&project.root().join("program.mecb")),
             "object_sha256":pin(&project.root().join("program.o")), "identity_sha256":pin(&project.root().join("object-identity.bin"))}));
     }

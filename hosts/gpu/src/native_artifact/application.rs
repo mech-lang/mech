@@ -192,10 +192,6 @@ pub(super) fn render_main(template: &str, symbol: &str, bytecode: &[u8]) -> Stri
     template
         .replace("@IDENTITY_SYMBOL@", symbol)
         .replace("@BYTECODE_SHA256@", &digest(bytecode))
-        .replace(
-            "@ARGUMENT_HELPERS@",
-            include_str!("templates/linked_arguments.rs.in"),
-        )
 }
 
 /// Derives a real private-witness plan from `artifact` and the actual catalog,
@@ -323,9 +319,8 @@ pub(super) fn write_linked_application(
             ", features = [\"serde\"]",
             ", \"string\", \"pure_text\", \"map_ops\", \"access\", \"set\", \"tuple\", \"enum\", \"sequence_sort\"",
             format!(
-                "serde_json = \"1.0\"\nserde = {{ version = \"1.0\", features = [\"derive\"] }}\nmech-runtime = {{ path = {}, default-features = false, features = [\"runtime\", \"string\", \"{hosted_runtime_feature}\"] }}\nmech-terminal = {{ path = {}, default-features = false, features = [\"provider\"] }}\n",
+                "serde_json = \"1.0\"\nserde = {{ version = \"1.0\", features = [\"derive\"] }}\nmech-runtime = {{ path = {}, default-features = false, features = [\"runtime\", \"string\", \"{hosted_runtime_feature}\"] }}\n",
                 json_string(&format!("{workspace_text}/src/runtime")),
-                json_string(&format!("{workspace_text}/hosts/terminal")),
             ),
         ),
     };

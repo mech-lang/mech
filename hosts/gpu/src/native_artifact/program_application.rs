@@ -196,32 +196,16 @@ fn render_hosted_main(symbol: &str, bytecode: &[u8], route: &str, benchmark: boo
         symbol,
         bytecode,
     );
-    let controls = if benchmark {
-        [
-            "use mech_gpu::native_artifact::{NativeBenchmarkCapabilityKernel, NativeBenchmarkPolicy};",
-            "benchmark_policy: String,",
-            "let benchmark_policy = NativeBenchmarkPolicy::parse(&launch.benchmark_policy).map_err(diagnostic)?;",
-            ".capability_kernel(NativeBenchmarkCapabilityKernel::new(benchmark_policy, launch.grants.len(), &memory).map_err(diagnostic)?)",
-            "benchmark_policy.name()",
-        ]
-    } else {
-        ["", "", "", "", "\"secured\""]
-    };
-    let mut main = main.replace(
+    main.replace(
         "@HOSTED_ROUTE_LITERAL@",
         &serde_json::to_string(route).unwrap(),
-    );
-    for (marker, replacement) in [
-        "@BENCHMARK_POLICY_IMPORT@",
-        "@BENCHMARK_POLICY_FIELD@",
-        "@BENCHMARK_POLICY_PARSE@",
-        "@BENCHMARK_POLICY_KERNEL@",
-        "@HOSTED_POLICY_EXPRESSION@",
-    ]
-    .into_iter()
-    .zip(controls)
-    {
-        main = main.replace(marker, replacement);
-    }
-    main
+    )
+    .replace(
+        "@HOSTED_LAUNCHER@",
+        if benchmark {
+            "run_benchmark_program_application"
+        } else {
+            "run_hosted_program_application"
+        },
+    )
 }
