@@ -52,17 +52,10 @@ impl State {
     }
     pub(in crate::native_artifact) fn test_histogram_visit(
         &self,
-        ctx: &Context<'_, '_>,
+        ctx: &Invocation<'_, '_, '_>,
         site: usize,
     ) -> Option<HistogramVisit> {
-        let (collection, stage) = match ctx
-            .control
-            .descriptor
-            .metadata()
-            .plan
-            .blocks()
-            .get(site)?
-            .action()
+        let (collection, stage) = match ctx.descriptor.metadata().plan.blocks().get(site)?.action()
         {
             NativeIterationAction::CollectionPush { collection, .. } => {
                 (*collection, HistogramStage::Growth)
@@ -103,7 +96,7 @@ impl State {
     }
     pub(in crate::native_artifact) fn test_histogram_record(
         &self,
-        ctx: &Context<'_, '_>,
+        ctx: &Invocation<'_, '_, '_>,
         id: u32,
         stage: HistogramStage,
         reservation_bytes: u64,
@@ -115,7 +108,7 @@ impl State {
         current_yield_bytes: u64,
         untracked_yield_bytes: u64,
     ) -> Result<(), Error> {
-        let definition = sink(ctx.control.descriptor, id)?;
+        let definition = sink(ctx.descriptor, id)?;
         let builder = self.builders[id as usize]
             .as_ref()
             .ok_or_else(|| invalid("observed Histogram builder"))?;
@@ -123,7 +116,7 @@ impl State {
             .histogram
             .as_ref()
             .ok_or_else(|| invalid("observed Histogram state"))?;
-        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
+        let selected = ctx.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("observed Histogram selection"))?;
         let footprint = selected

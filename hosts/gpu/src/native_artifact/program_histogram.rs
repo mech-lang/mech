@@ -1,6 +1,6 @@
 //! One admitted full String histogram sink. Ordinary generated CFG consumes
 //! each selected String; proved window regions can fill its accumulator in bulk.
-use super::{Context, Dimension, Error, State, add, check, invalid, mul};
+use super::{Dimension, Error, Invocation, State, add, check, invalid, mul};
 use core::mem::size_of;
 use mech_core::ManagedMemoryReservation;
 use mech_engine::native_artifact::{NativeCollectionResult, NativeHistogramSink, NativeMatchValue};
@@ -58,14 +58,14 @@ fn sink(
     }
 }
 fn resource(
-    ctx: &Context<'_, '_>,
+    ctx: &Invocation<'_, '_, '_>,
     id: u32,
     dimension: Dimension,
     required: u64,
     limit: Option<u64>,
 ) -> Result<(), Error> {
     check(
-        sink(ctx.control.descriptor, id)?.template().origin(),
+        sink(ctx.descriptor, id)?.template().origin(),
         dimension,
         required,
         limit,
@@ -74,14 +74,14 @@ fn resource(
 impl State {
     fn histogram_account(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
         clones: u64,
         compute: u64,
         comparison: u64,
     ) -> Result<(), Error> {
-        let definition = &ctx.control.descriptor.metadata().plan.collections()[id as usize];
-        let origin = sink(ctx.control.descriptor, id)?.template().origin();
+        let definition = &ctx.descriptor.metadata().plan.collections()[id as usize];
+        let origin = sink(ctx.descriptor, id)?.template().origin();
         let builder = self
             .builders
             .get_mut(id as usize)
@@ -127,7 +127,8 @@ impl State {
         )?;
         // NativeWorkMeter is attached to this very account. Do not debit both
         // meters or introduce/reset a per-yield comparison allowance.
-        ctx.library
+        ctx.state
+            .library
             .charge(compute, comparison)
             .map_err(|error| Error::Collection { origin, error })?;
         builder.cloned_bytes = cloned;
@@ -137,14 +138,14 @@ impl State {
     }
     fn histogram_output(
         &self,
-        ctx: &Context<'_, '_>,
+        ctx: &Invocation<'_, '_, '_>,
         id: u32,
         count: u64,
         payload: u64,
     ) -> Result<(), Error> {
-        let definition = sink(ctx.control.descriptor, id)?;
+        let definition = sink(ctx.descriptor, id)?;
         let origin = definition.template().origin();
-        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
+        let selected = ctx.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("Histogram output lacks selected factory"))?;
         let footprint = selected
@@ -179,15 +180,15 @@ impl State {
     }
     pub(super) fn begin_histogram(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
     ) -> Result<(), Error> {
         let NativeCollectionResult::Histogram(definition) =
-            ctx.control.descriptor.metadata().plan.collections()[id as usize].result()
+            ctx.descriptor.metadata().plan.collections()[id as usize].result()
         else {
             return Ok(());
         };
-        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
+        let selected = ctx.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("Histogram begin lacks actual selected factory"))?;
         let bytes = selected.binding_metadata_bytes();
@@ -199,7 +200,7 @@ impl State {
             ctx.limits.max_temporary_bytes,
         )?;
         self.account(ctx, id, 0, selected.binding_work())?;
-        let _binding = ctx.library.memory_budget().reserve_capacity(bytes)?;
+        let _binding = ctx.state.library.memory_budget().reserve_capacity(bytes)?;
         if selected.template() != definition.template() {
             return Err(invalid(
                 "Histogram selection differs after complete binding admission",
@@ -210,7 +211,7 @@ impl State {
         // bounds accepted A<=W/128, all yielded payload<=W and actual D<=A.
         // Prove original producer/canonical Map representability before any
         // yield can be discarded. No allocation, guessed D, or late fallback.
-        let work = ctx.control.work.limit().min(
+        let work = ctx.state.control.work.limit().min(
             ctx.limits
                 .max_compute_work
                 .ok_or_else(|| invalid("Histogram requires finite compute work"))?,
@@ -230,9 +231,9 @@ impl State {
             work,
             parameters,
             original_scratch,
-            ctx.control.descriptor.metadata().scalar_bytes,
+            ctx.descriptor.metadata().scalar_bytes,
         )?;
-        let memory = ctx.library.memory_budget();
+        let memory = ctx.state.library.memory_budget();
         self.builder(id)?.histogram = Some(Builder {
             entries: Vec::new(),
             compiled_bins: None,
@@ -248,7 +249,7 @@ impl State {
     }
     pub(super) fn push_histogram(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
         value: NativeMatchValue,
     ) -> Result<(), Error> {
@@ -260,13 +261,13 @@ impl State {
 
     fn append_histogram(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
         yielded: &super::string_span::Yield,
     ) -> Result<(), Error> {
-        let definition = sink(ctx.control.descriptor, id)?;
+        let definition = sink(ctx.descriptor, id)?;
         let origin = definition.template().origin();
-        let selected = ctx.control.descriptor.metadata().calls[definition.consumer() as usize]
+        let selected = ctx.descriptor.metadata().calls[definition.consumer() as usize]
             .as_ref()
             .ok_or_else(|| invalid("Histogram append lacks selected semantics"))?;
         let part = yielded.text()?;
@@ -295,7 +296,7 @@ impl State {
                 payload,
                 yielded
                     .owner
-                    .memory_budget_retained_bytes(&ctx.library.memory_budget())
+                    .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
                     .ok_or_else(|| invalid("observed current Histogram yield"))?,
                 untracked,
             )?;
@@ -406,7 +407,7 @@ impl State {
             payload,
             yielded
                 .owner
-                .memory_budget_retained_bytes(&ctx.library.memory_budget())
+                .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
                 .ok_or_else(|| invalid("observed Histogram yield must be admitted"))?,
             untracked,
         )?;
@@ -422,6 +423,7 @@ impl State {
         // eventual cleanup before reserving/allocating/copying either buffer.
         self.histogram_account(ctx, id, key_bytes, compute, 0)?;
         let mut pending = ctx
+            .state
             .library
             .memory_budget()
             .reserve_capacity(pending_bytes)?;

@@ -1,6 +1,6 @@
 //! A private storage binding for one closed, generated source loop. This module
 //! never traverses the input, chooses a source branch, or computes an update.
-use super::{Binding, Context, Error, State, add, invalid, storage_error};
+use super::{Binding, Error, Invocation, State, add, invalid, storage_error};
 use crate::native_artifact::program_packed_map::{BodyPrice, PackedMap};
 use crate::native_artifact::{
     NativeExecutionPhase as Phase, owned_string_map::PublicationGeometry,
@@ -309,20 +309,20 @@ unsafe extern "C" fn call(
 }
 
 impl<'plan> State<'plan> {
-    fn begin_closed(
+    fn try_begin_closed(
         &mut self,
-        ctx: &mut Context<'plan, '_>,
+        ctx: &mut Invocation<'_, '_, 'plan>,
         region: usize,
     ) -> Result<Option<[u64; 4]>, Error> {
         let proof = &self.descriptor.metadata().closed_tails.regions[region];
         let index = proof
             .map
             .ok_or_else(|| invalid("closed map missing owner proof"))?;
-        if !core::ptr::eq(self.descriptor, ctx.control.descriptor)
-            || self.work_identity != ctx.control.work.identity()
-            || ctx.control.previous != Some(proof.tail.initialize())
-            || self.last_owned_visit != Some(ctx.control.visits)
-            || !ctx.consumed
+        if !core::ptr::eq(self.descriptor, ctx.descriptor)
+            || self.work_identity != ctx.state.control.work.identity()
+            || ctx.state.control.previous != Some(proof.tail.initialize())
+            || self.last_owned_visit != Some(ctx.state.control.visits)
+            || !ctx.state.consumed
         {
             return Err(invalid(
                 "closed map binding outside its consumed initializer",
@@ -347,8 +347,9 @@ impl<'plan> State<'plan> {
             .find(|span| span.region() == index)
             .ok_or_else(|| invalid("closed map missing key projection"))?;
         let source = ctx
+            .state
             .arena
-            .copy_current(span.source().get(), &mut ctx.control.work)?;
+            .copy_current(span.source().get(), &mut ctx.state.control.work)?;
         let ValueData::String(text) = source.data() else {
             return Ok(None);
         };
@@ -356,12 +357,12 @@ impl<'plan> State<'plan> {
             .checked_mul(64)
             .and_then(|n| n.checked_add(512))
             .ok_or_else(|| invalid("closed map String scan overflow"))?;
-        ctx.control.work.charge(Phase::Setup, scan)?;
+        ctx.state.control.work.charge(Phase::Setup, scan)?;
         if source.string_ascii_without_crlf() != Some(true) {
             return Ok(None);
         }
         if source
-            .memory_budget_retained_bytes(&ctx.library.memory_budget())
+            .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
             .is_none()
         {
             return Err(invalid("closed map String lacks invocation admission"));
@@ -384,7 +385,7 @@ impl<'plan> State<'plan> {
         {
             return Ok(None);
         }
-        let memory = ctx.library.memory_budget().with_limits(
+        let memory = ctx.state.library.memory_budget().with_limits(
             ctx.limits.max_temporary_bytes.unwrap(),
             ctx.limits.max_retained_nodes.unwrap(),
         );
@@ -423,12 +424,13 @@ impl<'plan> State<'plan> {
                 // a source branch that might never execute the range at all.
                 let compute = range.selected_u64_string_span_selector_work();
                 let admitted = if compute <= ctx.limits.max_compute_work.unwrap() {
-                    ctx.library
+                    ctx.state
+                        .library
                         .with_call_limits(
                             ctx.limits.max_compute_work.unwrap(),
                             ctx.limits.max_comparison_work.unwrap(),
                             || {
-                                ctx.library.charge(compute, 0)?;
+                                ctx.state.library.charge(compute, 0)?;
                                 Ok::<_, mech_core::ResidentKernelError>(
                                     range.selected_u64_string_span_selector(1, end).is_ok(),
                                 )
@@ -445,7 +447,7 @@ impl<'plan> State<'plan> {
                     let region = &layout.regions()[index];
                     packed = Some(
                         PackedMap::new_encoded(
-                            ctx.library.clone(),
+                            ctx.state.library.clone(),
                             ctx.limits,
                             width,
                             BodyPrice {
@@ -479,7 +481,7 @@ impl<'plan> State<'plan> {
             selector_current: false,
             key: None,
             probe: None,
-            work: ctx.library.clone(),
+            work: ctx.state.library.clone(),
             limits: ctx.limits,
             outside_nodes,
             body_work: proof.compute,
@@ -502,9 +504,10 @@ impl<'plan> State<'plan> {
                 (*frame).source_len = text.len() as u64;
             }
             owner.packed_frame = frame as u64;
-            ctx.packed_map_regions = add(ctx.packed_map_regions, 1)?;
+            ctx.state.stats.packed_map_regions = add(ctx.state.stats.packed_map_regions, 1)?;
             if packed.uses_lookup_cache() {
-                ctx.direct_lookup_regions = add(ctx.direct_lookup_regions, 1)?;
+                ctx.state.stats.direct_lookup_regions =
+                    add(ctx.state.stats.direct_lookup_regions, 1)?;
             }
             #[cfg(all(test, feature = "canonical-native-program"))]
             super::super::map_closed_tests::record_packed_entry();
@@ -515,19 +518,19 @@ impl<'plan> State<'plan> {
     }
 }
 
-impl<'plan, 'a> Context<'plan, 'a> {
+impl<'state, 'plan, 'a> Invocation<'state, 'a, 'plan> {
     pub(in crate::native_artifact::program_runtime) fn begin_closed_map(
         &mut self,
         region: usize,
     ) -> Result<Option<[u64; 4]>, Error> {
-        let Some(mut state) = self.map_owners.state.take() else {
+        let Some(mut state) = self.state.map_owners.state.take() else {
             return Ok(None);
         };
-        let result = state.begin_closed(self, region);
-        self.map_owners.state = Some(state);
+        let result = state.try_begin_closed(self, region);
+        self.state.map_owners.state = Some(state);
         result
     }
-    pub(in crate::native_artifact::program_runtime) fn end_closed_map(
+    pub(in crate::native_artifact::program_runtime) fn reconcile_closed(
         &mut self,
         region: usize,
         remaining: u64,
@@ -536,10 +539,11 @@ impl<'plan, 'a> Context<'plan, 'a> {
         if !matches!(mode, 0 | 2 | 3) {
             return Err(invalid("closed map cannot suspend"));
         }
-        let index = self.control.descriptor.metadata().closed_tails.regions[region]
+        let index = self.descriptor.metadata().closed_tails.regions[region]
             .map
             .unwrap();
         let state = self
+            .state
             .map_owners
             .state
             .as_mut()
@@ -598,7 +602,7 @@ impl<'plan, 'a> Context<'plan, 'a> {
                         map,
                         token: 0,
                         parent: proof.parent,
-                        born_visit: self.control.visits,
+                        born_visit: self.state.control.visits,
                     });
                 } else {
                     let (map, written, consumed) = packed.finish().map_err(storage_error)?;
@@ -610,18 +614,19 @@ impl<'plan, 'a> Context<'plan, 'a> {
             }
         }
         state.slots[index].binding = Some(binding);
-        self.hash_table_updates = add(self.hash_table_updates, updates)?;
+        self.state.stats.hash_table_updates = add(self.state.stats.hash_table_updates, updates)?;
         if is_packed {
-            self.packed_map_updates = add(self.packed_map_updates, updates)?;
+            self.state.stats.packed_map_updates =
+                add(self.state.stats.packed_map_updates, updates)?;
         }
         if packed_ssa_entered {
-            self.packed_ssa_regions = add(self.packed_ssa_regions, 1)?;
+            self.state.stats.packed_ssa_regions = add(self.state.stats.packed_ssa_regions, 1)?;
         }
         if guarded_loop_entered {
-            self.guarded_loop_regions = add(self.guarded_loop_regions, 1)?;
+            self.state.stats.guarded_loop_regions = add(self.state.stats.guarded_loop_regions, 1)?;
         }
         if guarded_calls_entered {
-            self.guarded_call_regions = add(self.guarded_call_regions, 1)?;
+            self.state.stats.guarded_call_regions = add(self.state.stats.guarded_call_regions, 1)?;
         }
         Ok(traversals)
     }

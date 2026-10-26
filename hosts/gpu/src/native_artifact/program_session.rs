@@ -354,45 +354,9 @@ impl CallCacheLane {
     }
 }
 
-struct OwnedState<'a> {
-    // Preserve collection-before-arena retirement ordering.
-    map_owners: map_owners::Session<'a>,
-    collections: Option<collection::State>,
-    line_matrices: line_matrices::State,
-    arena: NativeValueArena<'a>,
-    call_inputs: NativeTypedStorage<Option<Value>>,
-    call_caches: CallCacheLane,
-    library: NativeLibraryWorkBudget,
-    work: NativeWorkMeter,
-    current: Option<u32>,
-    previous: Option<u32>,
-    completed: bool,
-    visits: u64,
-    hash_table_regions: u64,
-    hash_table_updates: u64,
-    packed_map_regions: u64,
-    direct_lookup_regions: u64,
-    packed_map_updates: u64,
-    packed_ssa_regions: u64,
-    guarded_loop_regions: u64,
-    guarded_call_regions: u64,
-    frozen_map_regions: u64,
-    frozen_map_reads: u64,
-    worker_credit_claims: u64,
-    worker_credit_batches: u64,
-    worker_credit_reclaims: u64,
-    fused_string_map_bytes: u64,
-    parallel_regions: u64,
-    parallel_batches: u64,
-    parallel_tasks: u64,
-    parallel_peak_workers: u64,
-    consumed: bool,
-    output_cursor: usize,
-}
-
 pub(super) struct Prepared<'a> {
     descriptor: &'a NativeProgramDescriptor,
-    state: Option<OwnedState<'a>>,
+    state: Option<ExecutionState<'a>>,
     storage: NativeWordStorage,
     memory: ManagedMemoryBudget,
     limits: NativeProgramExecutionLimits,
@@ -405,7 +369,7 @@ pub(super) struct Prepared<'a> {
     retention: Option<prefix::Retention>,
     window_work_seen: u64,
     worker: Option<parallel::Worker>,
-    // Invocation/frame roots outlive every synchronous Context and worker.
+    // Invocation/frame roots outlive every synchronous Invocation and worker.
     // Payload Values and private owners hold their separate shared claims.
     _fixed_nodes: mech_core::ManagedNodeReservation,
 }
@@ -693,7 +657,7 @@ impl<'a> Prepared<'a> {
             window_work_seen: 0,
             worker: None,
             _fixed_nodes: fixed_nodes,
-            state: Some(OwnedState {
+            state: Some(ExecutionState {
                 map_owners: map_owners::Session::new(descriptor),
                 collections,
                 line_matrices,
@@ -701,29 +665,8 @@ impl<'a> Prepared<'a> {
                 call_inputs,
                 call_caches,
                 library,
-                work,
-                current: None,
-                previous: None,
-                completed: false,
-                visits: 0,
-                hash_table_regions: 0,
-                hash_table_updates: 0,
-                packed_map_regions: 0,
-                direct_lookup_regions: 0,
-                packed_map_updates: 0,
-                packed_ssa_regions: 0,
-                guarded_loop_regions: 0,
-                guarded_call_regions: 0,
-                frozen_map_regions: 0,
-                frozen_map_reads: 0,
-                worker_credit_claims: 0,
-                worker_credit_batches: 0,
-                worker_credit_reclaims: 0,
-                fused_string_map_bytes: 0,
-                parallel_regions: 0,
-                parallel_batches: 0,
-                parallel_tasks: 0,
-                parallel_peak_workers: 0,
+                control: ControlState::new(work),
+                stats: RuntimeStats::default(),
                 consumed: false,
                 output_cursor: 0,
             }),
@@ -801,7 +744,7 @@ impl<'a> Prepared<'a> {
                     {
                         return Err(invalid("worker managed capture type"));
                     }
-                    state.arena.put(slot, &value, &mut state.work)?;
+                    state.arena.put(slot, &value, &mut state.control.work)?;
                 }
                 _ => return Err(invalid("worker capture inventory differs")),
             }
@@ -869,9 +812,11 @@ impl<'a> Prepared<'a> {
         // has succeeded. Publication still cannot fail partway through.
         admit_output_retirement(descriptor, outputs, &self.memory, &state.library)?;
         for (index, value) in inputs.iter().enumerate() {
-            state
-                .arena
-                .put(plan.inputs()[index].value().get(), value, &mut state.work)?;
+            state.arena.put(
+                plan.inputs()[index].value().get(),
+                value,
+                &mut state.control.work,
+            )?;
         }
         for (ordinal, value) in observations.iter().enumerate() {
             let index = inputs
@@ -890,12 +835,12 @@ impl<'a> Prepared<'a> {
                 &descriptor.metadata().schemas,
                 descriptor.metadata().observation_schema_bytes,
                 &self.memory,
-                &mut state.work,
+                &mut state.control.work,
             )?;
             state.arena.put(
                 plan.transport_input_value(index).get(),
                 &owned,
-                &mut state.work,
+                &mut state.control.work,
             )?;
         }
         // This is typed transport only, not expression evaluation. Closed
@@ -932,7 +877,12 @@ impl<'a> Prepared<'a> {
         mut self,
         outputs: &mut [Option<Value>],
     ) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError> {
-        if self.paused.is_some() || !self.state.as_ref().is_some_and(|state| state.completed) {
+        if self.paused.is_some()
+            || !self
+                .state
+                .as_ref()
+                .is_some_and(|state| state.control.completed)
+        {
             return Err(invalid("publication before exact native completion"));
         }
         let state = self
@@ -942,32 +892,32 @@ impl<'a> Prepared<'a> {
         let published = state.arena.publish_range(
             self.descriptor.metadata().plan.values().len(),
             outputs,
-            &mut state.work,
+            &mut state.control.work,
         );
         published?;
         Ok(NativeProgramExecutionReport {
-            work: state.work.used(),
+            work: state.control.work.used(),
             comparison_work: state.library.used().1,
-            visits: state.visits,
+            visits: state.control.visits,
             transport_bytes: self.bytes,
-            hash_table_regions: state.hash_table_regions,
-            hash_table_updates: state.hash_table_updates,
-            packed_map_regions: state.packed_map_regions,
-            direct_lookup_regions: state.direct_lookup_regions,
-            packed_map_updates: state.packed_map_updates,
-            packed_ssa_regions: state.packed_ssa_regions,
-            guarded_loop_regions: state.guarded_loop_regions,
-            guarded_call_regions: state.guarded_call_regions,
-            frozen_map_regions: state.frozen_map_regions,
-            frozen_map_reads: state.frozen_map_reads,
-            worker_credit_claims: state.worker_credit_claims,
-            worker_credit_batches: state.worker_credit_batches,
-            worker_credit_reclaims: state.worker_credit_reclaims,
-            fused_string_map_bytes: state.fused_string_map_bytes,
-            parallel_regions: state.parallel_regions,
-            parallel_batches: state.parallel_batches,
-            parallel_tasks: state.parallel_tasks,
-            parallel_peak_workers: state.parallel_peak_workers,
+            hash_table_regions: state.stats.hash_table_regions,
+            hash_table_updates: state.stats.hash_table_updates,
+            packed_map_regions: state.stats.packed_map_regions,
+            direct_lookup_regions: state.stats.direct_lookup_regions,
+            packed_map_updates: state.stats.packed_map_updates,
+            packed_ssa_regions: state.stats.packed_ssa_regions,
+            guarded_loop_regions: state.stats.guarded_loop_regions,
+            guarded_call_regions: state.stats.guarded_call_regions,
+            frozen_map_regions: state.stats.frozen_map_regions,
+            frozen_map_reads: state.stats.frozen_map_reads,
+            worker_credit_claims: state.stats.worker_credit_claims,
+            worker_credit_batches: state.stats.worker_credit_batches,
+            worker_credit_reclaims: state.stats.worker_credit_reclaims,
+            fused_string_map_bytes: state.stats.fused_string_map_bytes,
+            parallel_regions: state.stats.parallel_regions,
+            parallel_batches: state.stats.parallel_batches,
+            parallel_tasks: state.stats.parallel_tasks,
+            parallel_peak_workers: state.stats.parallel_peak_workers,
         })
     }
 
@@ -997,7 +947,10 @@ impl<'a> Prepared<'a> {
     ) -> Result<(), NativeProgramExecutionError> {
         if !self.activated
             || self.descriptor.metadata().prefix.is_none()
-            || self.state.as_ref().is_none_or(|state| state.completed)
+            || self
+                .state
+                .as_ref()
+                .is_none_or(|state| state.control.completed)
             || self
                 .prefix
                 .is_some_and(|prior| prior.eof || available < prior.available)
@@ -1165,6 +1118,7 @@ impl<'a> Prepared<'a> {
             })
             .ok_or_else(|| invalid("native phase work overflow"))?;
         let transitioned = state
+            .control
             .work
             .charge(NativeExecutionPhase::Setup, transition_work);
         transitioned?;
@@ -1183,56 +1137,23 @@ impl<'a> Prepared<'a> {
         let output_pointer = output_words.as_mut_ptr();
         let result_pointer = result.as_mut_ptr();
         let argument_pointer = arguments.as_mut_ptr();
-        let mut context = Context {
+        let mut context = Invocation {
             // Native frame pointers/capacities name only the earlier lanes.
             // This immutable final lane is private to the checked callback.
             retirements,
-            control: Control {
-                descriptor,
-                progress: progress_words,
-                current: state.current,
-                previous: state.previous,
-                completed: state.completed,
-                work: state.work,
-                visits: state.visits,
-                error: None,
-            },
-            map_owners: state.map_owners,
-            collections: state.collections,
-            line_matrices: state.line_matrices,
-            arena: state.arena,
-            library: state.library,
+            descriptor,
+            progress: progress_words,
+            state: &mut state,
+
             limits: self.limits.library,
             result: result_pointer,
             arguments: argument_pointer,
             argument_capacity: descriptor.metadata().max_library_inputs,
-            call_inputs: state.call_inputs,
-            call_caches: state.call_caches,
-            consumed: state.consumed,
-            output_cursor: state.output_cursor,
             error: None,
             activation_phase: phase == PHASE_ACTIVATION,
             execution_limits: self.limits.execution,
             worker: self.worker.take(),
             parallel_batch: None,
-            hash_table_regions: state.hash_table_regions,
-            hash_table_updates: state.hash_table_updates,
-            packed_map_regions: state.packed_map_regions,
-            direct_lookup_regions: state.direct_lookup_regions,
-            packed_map_updates: state.packed_map_updates,
-            packed_ssa_regions: state.packed_ssa_regions,
-            guarded_loop_regions: state.guarded_loop_regions,
-            guarded_call_regions: state.guarded_call_regions,
-            frozen_map_regions: state.frozen_map_regions,
-            frozen_map_reads: state.frozen_map_reads,
-            worker_credit_claims: state.worker_credit_claims,
-            worker_credit_batches: state.worker_credit_batches,
-            worker_credit_reclaims: state.worker_credit_reclaims,
-            fused_string_map_bytes: state.fused_string_map_bytes,
-            parallel_regions: state.parallel_regions,
-            parallel_batches: state.parallel_batches,
-            parallel_tasks: state.parallel_tasks,
-            parallel_peak_workers: state.parallel_peak_workers,
             window_region: None,
             window_hashes: None,
             borrowed_strings: None,
@@ -1241,7 +1162,7 @@ impl<'a> Prepared<'a> {
             prefix: prefix_input.map(|input| prefix::State::new(input, self.retention)),
             line_window,
         };
-        let context_pointer = (&mut context as *mut Context<'_, '_>).cast::<c_void>();
+        let context_pointer = (&mut context as *mut Invocation<'_, '_, '_>).cast::<c_void>();
         let mut frame = Frame {
             base: NativeEntryFrame {
                 version: VERSION,
@@ -1307,23 +1228,20 @@ impl<'a> Prepared<'a> {
         }
         if phase == PHASE_ACTIVATION && status == STATUS_ACTIVATED {
             if f.error_node != u64::from(boundary)
-                || context.control.completed
-                || context.control.current.is_some()
+                || context.state.control.completed
+                || context.state.control.current.is_some()
+                || context.progress.chunks_exact(2).any(|value| value[1] != 0)
+                || context.state.output_cursor != 0
                 || context
-                    .control
-                    .progress
-                    .chunks_exact(2)
-                    .any(|value| value[1] != 0)
-                || context.output_cursor != 0
-                || context
+                    .state
                     .collections
                     .as_ref()
                     .is_some_and(|state| !state.is_complete())
-                || context.control.previous.is_none_or(|previous| {
+                || context.state.control.previous.is_none_or(|previous| {
                     !descriptor.metadata().visits[previous as usize]
                         .successors()
                         .contains(&Some(boundary))
-                        || (context.action_required(previous as usize) && !context.consumed)
+                        || (context.action_required(previous as usize) && !context.state.consumed)
                 })
             {
                 return Err(invalid("native entry omitted exact activation checkpoint"));
@@ -1338,20 +1256,20 @@ impl<'a> Prepared<'a> {
                     let region = &descriptor.metadata().parallel.regions[worker.region];
                     if worker.result.is_none()
                         || f.error_node != u64::from(region.push)
-                        || context.control.completed
-                        || context.output_cursor != 0
-                        || context.control.current != Some(region.iteration)
+                        || context.state.control.completed
+                        || context.state.output_cursor != 0
+                        || context.state.control.current != Some(region.iteration)
                         || context.parallel_batch.is_some()
                     {
                         return Err(invalid("worker omitted exact source result frontier"));
                     }
                 }
                 STATUS_OK if phase == PHASE_TURN || phase == PHASE_CAPTURE_TAIL => {
-                    if !context.control.completed
+                    if !context.state.control.completed
                         || f.error_node != NO_NODE
-                        || context.output_cursor != plan.transport_output_count()
-                        || context.control.previous.is_some_and(|site| {
-                            context.action_required(site as usize) && !context.consumed
+                        || context.state.output_cursor != plan.transport_output_count()
+                        || context.state.control.previous.is_some_and(|site| {
+                            context.action_required(site as usize) && !context.state.consumed
                         })
                     {
                         return Err(invalid("program omitted atomic completion"));
@@ -1418,41 +1336,9 @@ impl<'a> Prepared<'a> {
         if context.parallel_batch.is_some() {
             return Err(invalid("native phase left pending parallel results"));
         }
-        self.worker = context.worker;
-        self.state = Some(OwnedState {
-            map_owners: context.map_owners,
-            collections: context.collections,
-            line_matrices: context.line_matrices,
-            arena: context.arena,
-            call_inputs: context.call_inputs,
-            call_caches: context.call_caches,
-            library: context.library,
-            work: context.control.work,
-            current: context.control.current,
-            previous: context.control.previous,
-            completed: context.control.completed,
-            visits: context.control.visits,
-            hash_table_regions: context.hash_table_regions,
-            hash_table_updates: context.hash_table_updates,
-            packed_map_regions: context.packed_map_regions,
-            direct_lookup_regions: context.direct_lookup_regions,
-            packed_map_updates: context.packed_map_updates,
-            packed_ssa_regions: context.packed_ssa_regions,
-            guarded_loop_regions: context.guarded_loop_regions,
-            guarded_call_regions: context.guarded_call_regions,
-            frozen_map_regions: context.frozen_map_regions,
-            frozen_map_reads: context.frozen_map_reads,
-            worker_credit_claims: context.worker_credit_claims,
-            worker_credit_batches: context.worker_credit_batches,
-            worker_credit_reclaims: context.worker_credit_reclaims,
-            fused_string_map_bytes: context.fused_string_map_bytes,
-            parallel_regions: context.parallel_regions,
-            parallel_batches: context.parallel_batches,
-            parallel_tasks: context.parallel_tasks,
-            parallel_peak_workers: context.parallel_peak_workers,
-            consumed: context.consumed,
-            output_cursor: context.output_cursor,
-        });
+        self.worker = context.worker.take();
+        drop(context);
+        self.state = Some(state);
         Ok(())
     }
 }

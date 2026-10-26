@@ -28,11 +28,11 @@ thread_local! {
 }
 
 /// Deliberately forge only the incoming visit number, before the ordinary
-/// collection helper takes State out of Context. The actual emitted callback
+/// collection helper takes State out of Invocation. The actual emitted callback
 /// has already admitted this valid Prepare site. Mark its required helper
 /// consumed so the test cannot be satisfied by the earlier omission check.
 pub(in super::super::super) fn before_helper(
-    ctx: &mut Context<'_, '_>,
+    ctx: &mut Invocation<'_, '_, '_>,
     site: usize,
 ) -> Result<(), Error> {
     let fault = FAULT.with(core::cell::Cell::get);
@@ -44,24 +44,25 @@ pub(in super::super::super) fn before_helper(
         return Ok(());
     }
     let Action::PrepareStringSpanSelector { collection } =
-        ctx.control.descriptor.metadata().plan.blocks()[site].action()
+        ctx.descriptor.metadata().plan.blocks()[site].action()
     else {
         return Ok(());
     };
     let state = ctx
+        .state
         .collections
         .as_ref()
         .ok_or_else(|| invalid("test malformed visit lost collection State"))?;
-    if state.current != Some(*collection) || ctx.consumed {
+    if state.current != Some(*collection) || ctx.state.consumed {
         return Err(invalid("test malformed visit lacks fresh active builder"));
     }
     GUARD_WITH_STATE.with(|guard| guard.set(true));
-    ctx.consumed = true;
+    ctx.state.consumed = true;
     FIRED.with(|fired| fired.set(true));
     let malformed = if fault == Some(Fault::MalformedMaximumVisit) {
         u64::MAX
     } else {
-        ctx.control.descriptor.metadata().plan.blocks().len() as u64
+        ctx.descriptor.metadata().plan.blocks().len() as u64
     };
     ctx.visit(malformed)
 }
@@ -70,7 +71,7 @@ pub(in super::super::super) fn before_helper(
 /// modes call the unchanged production stage immediately after this safe hook.
 pub(in super::super) fn before_stage(
     state: &mut State,
-    ctx: &mut Context<'_, '_>,
+    ctx: &mut Invocation<'_, '_, '_>,
     site: usize,
     words: [u64; 2],
 ) -> Result<bool, Error> {
@@ -80,12 +81,12 @@ pub(in super::super) fn before_stage(
     if FIRED.with(core::cell::Cell::get) {
         return Ok(false);
     }
-    let action = ctx.control.descriptor.metadata().plan.blocks()[site].action();
+    let action = ctx.descriptor.metadata().plan.blocks()[site].action();
     let (id, stage) = match action {
         Action::PrepareStringSpanSelector { collection } => (*collection, 0),
         Action::ProjectStringSpan { collection } => (*collection, 1),
         Action::CollectionPush { collection, .. }
-            if ctx.control.descriptor.metadata().plan.collections()[*collection as usize]
+            if ctx.descriptor.metadata().plan.collections()[*collection as usize]
                 .string_span_projection()
                 .is_some() =>
         {
@@ -123,7 +124,7 @@ pub(in super::super) fn before_stage(
             }
         }
         Fault::OldSourceGeneration => {
-            let source = ctx.control.descriptor.metadata().plan.collections()[id as usize]
+            let source = ctx.descriptor.metadata().plan.collections()[id as usize]
                 .string_span_projection()
                 .ok_or_else(|| invalid("test span proof"))?
                 .source();
@@ -132,19 +133,22 @@ pub(in super::super) fn before_stage(
                 else {
                     return Err(invalid("test generated source lacks real pin"));
                 };
-                let input = ctx.control.descriptor.metadata().plan.inputs()[0].value();
+                let input = ctx.descriptor.metadata().plan.inputs()[0].value();
                 let distinct = ctx
+                    .state
                     .arena
                     .test_current_value(input.get())
                     .is_some_and(|input| !input.shares_frozen_storage(owner));
-                let aliases = (0..ctx.control.descriptor.metadata().types.len())
+                let aliases = (0..ctx.descriptor.metadata().types.len())
                     .filter(|&slot| {
-                        ctx.arena
+                        ctx.state
+                            .arena
                             .test_current_value(slot as u32)
                             .is_some_and(|value| value.shares_frozen_storage(owner))
                     })
                     .count();
                 let no_call_alias = ctx
+                    .state
                     .call_inputs
                     .values()
                     .iter()
@@ -170,11 +174,12 @@ pub(in super::super) fn before_stage(
                     ));
                 }
             }
-            ctx.arena
-                .retire_current(source.get(), &mut ctx.control.work)?;
+            ctx.state
+                .arena
+                .retire_current(source.get(), &mut ctx.state.control.work)?;
         }
         Fault::ConsumedSpanReplay => {
-            let output = ctx.control.descriptor.metadata().plan.collections()[id as usize]
+            let output = ctx.descriptor.metadata().plan.collections()[id as usize]
                 .string_span_projection()
                 .ok_or_else(|| invalid("test span proof"))?
                 .output();
@@ -183,23 +188,27 @@ pub(in super::super) fn before_stage(
         }
         Fault::LeakedSpanAtLatch => return Ok(true),
         Fault::ObserveAbsentValues => {
-            let proof = ctx.control.descriptor.metadata().plan.collections()[id as usize]
+            let proof = ctx.descriptor.metadata().plan.collections()[id as usize]
                 .string_span_projection()
                 .ok_or_else(|| invalid("test span proof"))?;
             let selector_absent = matches!(
-                ctx.arena
-                    .copy_current(proof.selector().get(), &mut ctx.control.work),
+                ctx.state
+                    .arena
+                    .copy_current(proof.selector().get(), &mut ctx.state.control.work),
                 Err(NativeValueError::StaleHandle)
             );
             let output_absent = matches!(
-                ctx.arena
-                    .copy_current(proof.output().get(), &mut ctx.control.work),
+                ctx.state
+                    .arena
+                    .copy_current(proof.output().get(), &mut ctx.state.control.work),
                 Err(NativeValueError::StaleHandle)
             );
             ABSENT.with(|absent| absent.set(selector_absent && output_absent));
         }
         Fault::MalformedMaximumVisit | Fault::MalformedOnePastVisit => {
-            return Err(invalid("test malformed visit did not reach Context guard"));
+            return Err(invalid(
+                "test malformed visit did not reach Invocation guard",
+            ));
         }
     }
     Ok(false)

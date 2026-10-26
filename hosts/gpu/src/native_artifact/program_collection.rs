@@ -1,6 +1,6 @@
 //! Admitted element transport and collection construction, not body execution.
 //! Generated blocks own every generator, filter, arithmetic op and backedge.
-use super::{Context, NativeProgramExecutionError as Error, invalid};
+use super::{Invocation, NativeProgramExecutionError as Error, invalid};
 use crate::native_artifact::{
     NativeExecutionPhase as Phase, NativeProgramDescriptor, NativeValueHandle, NativeWorkMeter,
 };
@@ -345,12 +345,12 @@ impl State {
     }
     fn account(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
         clones: u64,
         compute: u64,
     ) -> Result<(), Error> {
-        let origin = ctx.control.descriptor.metadata().plan.collections()[id as usize].origin();
+        let origin = ctx.descriptor.metadata().plan.collections()[id as usize].origin();
         let builder = self.builder(id)?;
         let cloned = add(builder.cloned_bytes, clones)?;
         let used = add(builder.compute, compute)?;
@@ -366,14 +366,14 @@ impl State {
             used,
             ctx.limits.max_compute_work,
         )?;
-        charge(&mut ctx.control.work, compute)?;
+        charge(&mut ctx.state.control.work, compute)?;
         builder.cloned_bytes = cloned;
         builder.compute = used;
         Ok(())
     }
     pub(super) fn helper(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         site: usize,
         words: [u64; 2],
     ) -> Result<Option<u64>, Error> {
@@ -386,7 +386,7 @@ impl State {
             return Ok(None);
         }
         let word = words[0];
-        let descriptor = ctx.control.descriptor;
+        let descriptor = ctx.descriptor;
         let plan = &descriptor.metadata().plan;
         if !matches!(
             plan.blocks()[site].action(),
@@ -456,8 +456,8 @@ impl State {
                     work,
                     ctx.limits.max_compute_work,
                 )?;
-                charge(&mut ctx.control.work, work)?;
-                let _scratch = ctx.library.memory_budget().reserve_capacity(bytes)?;
+                charge(&mut ctx.state.control.work, work)?;
+                let _scratch = ctx.state.library.memory_budget().reserve_capacity(bytes)?;
                 // Full template equality may traverse schema/contract trees;
                 // it belongs AFTER the unchanged complete work/scratch debit.
                 if selected.template() != cursor.template() {
@@ -482,8 +482,8 @@ impl State {
                 {
                     return Err(invalid("collection begin outside exact enclosing builder"));
                 }
-                charge(&mut ctx.control.work, 64)?;
-                let nodes = ctx.library.memory_budget().reserve_nodes(2)?;
+                charge(&mut ctx.state.control.work, 64)?;
+                let nodes = ctx.state.library.memory_budget().reserve_nodes(2)?;
                 self.builders[*collection as usize] = Some(Builder {
                     values: Vec::new(),
                     join: None,
@@ -493,7 +493,7 @@ impl State {
                     cloned_bytes: 0,
                     compute: 0,
                     projection_comparison: 0,
-                    reservation: ctx.library.memory_budget().reserve_capacity(0)?,
+                    reservation: ctx.state.library.memory_budget().reserve_capacity(0)?,
                     nodes,
                 });
                 self.current = Some(*collection);
@@ -523,20 +523,22 @@ impl State {
                             )?;
                             (SourceBacking::ConsumedString, None, count, 0)
                         } else {
-                            let handle = if plan.collections()[definition.collection() as usize]
-                                .string_element_map_projection()
-                                .is_some()
-                            {
-                                Some(
-                                    ctx.arena
-                                        .current_handle(source.get(), &mut ctx.control.work)?,
-                                )
-                            } else {
-                                None
-                            };
+                            let handle =
+                                if plan.collections()[definition.collection() as usize]
+                                    .string_element_map_projection()
+                                    .is_some()
+                                {
+                                    Some(ctx.state.arena.current_handle(
+                                        source.get(),
+                                        &mut ctx.state.control.work,
+                                    )?)
+                                } else {
+                                    None
+                                };
                             let value = ctx
+                                .state
                                 .arena
-                                .copy_current(source.get(), &mut ctx.control.work)?;
+                                .copy_current(source.get(), &mut ctx.state.control.work)?;
                             let cost = match value.data() {
                                 ValueData::String(text) => add(mul(text.len() as u64, 64)?, 64)?,
                                 _ => 64,
@@ -591,7 +593,7 @@ impl State {
                 } else {
                     (count, 0)
                 };
-                ctx.control.bind_collection_count(*iteration, count)?;
+                ctx.control().bind_collection_count(*iteration, count)?;
                 self.sources[*iteration as usize] = Some(Source {
                     backing,
                     handle,
@@ -617,7 +619,7 @@ impl State {
                     .ok_or_else(|| invalid("missing collection source"))?;
                 let index = source
                     .count
-                    .checked_sub(ctx.control.progress[*iteration as usize * 2])
+                    .checked_sub(ctx.progress[*iteration as usize * 2])
                     .filter(|index| *index < source.count)
                     .ok_or_else(|| invalid("collection element outside current count"))?
                     .checked_add(source.index_offset)
@@ -676,9 +678,12 @@ impl State {
                             add(self.live_bytes, envelope)?,
                             ctx.limits.max_temporary_bytes,
                         )?;
-                        charge(&mut ctx.control.work, add(mul(envelope, 8)?, 128)?)?;
-                        let mut reservation =
-                            ctx.library.memory_budget().reserve_capacity(envelope)?;
+                        charge(&mut ctx.state.control.work, add(mul(envelope, 8)?, 128)?)?;
+                        let mut reservation = ctx
+                            .state
+                            .library
+                            .memory_budget()
+                            .reserve_capacity(envelope)?;
                         let data = match element {
                             data::Element::Text(text) => ValueDataDraft::String(text.to_owned()),
                             data::Element::Index(index) => ValueDataDraft::Index(index),
@@ -695,7 +700,7 @@ impl State {
                         .map_err(Error::Snapshot)?
                         .into_memory_budget(&mut reservation)?;
                         let retained = value
-                            .memory_budget_retained_bytes(&ctx.library.memory_budget())
+                            .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
                             .ok_or_else(|| invalid("unadmitted collection element"))?;
                         let old = self.sources[*iteration as usize]
                             .as_ref()
@@ -711,7 +716,11 @@ impl State {
                         // The old element remains charged through construction
                         // of the new envelope. All its iteration-local aliases
                         // were retired above; put now releases its final slot.
-                        let handle = ctx.arena.put(output.get(), &value, &mut ctx.control.work)?;
+                        let handle = ctx.state.arena.put(
+                            output.get(),
+                            &value,
+                            &mut ctx.state.control.work,
+                        )?;
                         self.sources[*iteration as usize].as_mut().unwrap().element =
                             Some((handle, retained));
                         self.live_bytes = live;
@@ -759,7 +768,11 @@ impl State {
                 }
                 let ty = &plan.values()[value.get() as usize];
                 let owned = if ty.scalar_kind().is_none() {
-                    Some(ctx.arena.copy_current(value.get(), &mut ctx.control.work)?)
+                    Some(
+                        ctx.state
+                            .arena
+                            .copy_current(value.get(), &mut ctx.state.control.work)?,
+                    )
                 } else {
                     None
                 };
@@ -852,12 +865,12 @@ impl State {
                     0
                 };
                 charge(
-                    &mut ctx.control.work,
+                    &mut ctx.state.control.work,
                     add(add(mul(extra, 16)?, mul(moved, 4)?)?, 128)?,
                 )?;
                 // The pending draft and replacement carrier coexist with the
                 // original builder until every fallible allocation succeeds.
-                let memory = ctx.library.memory_budget();
+                let memory = ctx.state.library.memory_budget();
                 let pending_node = memory.reserve_nodes(1)?;
                 let _replacement_node =
                     memory.reserve_nodes(u64::from(capacity > builder.values.capacity()))?;
@@ -938,8 +951,8 @@ impl State {
             _ => Err(invalid("collection helper outside a collection action")),
         }
     }
-    fn finish(&mut self, ctx: &mut Context<'_, '_>, id: u32) -> Result<(), Error> {
-        let descriptor = ctx.control.descriptor;
+    fn finish(&mut self, ctx: &mut Invocation<'_, '_, '_>, id: u32) -> Result<(), Error> {
+        let descriptor = ctx.descriptor;
         let definition = &descriptor.metadata().plan.collections()[id as usize];
         let output = &descriptor.metadata().plan.values()[definition.output().get() as usize];
         let builder = self.builder(id)?;
@@ -978,10 +991,15 @@ impl State {
             ctx.limits.max_retained_nodes,
         )?;
         let _publication_nodes = ctx
+            .state
             .library
             .memory_budget()
             .reserve_nodes(data::output_nodes(output.definition().body(), count)?)?;
-        let mut reservation = ctx.library.memory_budget().reserve_capacity(envelope)?;
+        let mut reservation = ctx
+            .state
+            .library
+            .memory_budget()
+            .reserve_capacity(envelope)?;
         // Normal scalar comprehensions are always 1xN, including 1x0.
         let extents = if definition.kind() == ComprehensionKind::MatrixPreserveShape {
             let NativeControlLoop::Collection(generator) =
@@ -994,8 +1012,9 @@ impl State {
                 .materialized_value()
                 .ok_or_else(|| invalid("shape preservation requires a materialized source"))?;
             let source = ctx
+                .state
                 .arena
-                .copy_current(source_value.get(), &mut ctx.control.work)?;
+                .copy_current(source_value.get(), &mut ctx.state.control.work)?;
             let schema =
                 descriptor.metadata().plan.values()[source_value.get() as usize].definition();
             let mech_core::SchemaBody::Matrix { dimensions, .. } = schema.body() else {
@@ -1033,8 +1052,11 @@ impl State {
         ))
         .map_err(Error::Snapshot)?
         .into_memory_budget(&mut reservation)?;
-        ctx.arena
-            .put(definition.output().get(), &value, &mut ctx.control.work)?;
+        ctx.state.arena.put(
+            definition.output().get(),
+            &value,
+            &mut ctx.state.control.work,
+        )?;
         let builder = self.builders[id as usize].take().unwrap();
         self.live_bytes = self
             .live_bytes

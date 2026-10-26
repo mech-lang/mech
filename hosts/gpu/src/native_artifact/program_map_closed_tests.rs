@@ -59,7 +59,7 @@ unsafe extern "C" fn observe(
     result: *mut u64,
 ) -> u64 {
     // SAFETY: execute pins this context for the synchronous checked entry.
-    let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
+    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     let old = ctx.limits;
     let mode = MODE.with(Cell::get);
     if op == CLOSED_TAIL_BEGIN && mode == Mode::Decline {
@@ -95,19 +95,18 @@ unsafe extern "C" fn observe(
     };
     // SAFETY: unchanged maintained helper and its exact result lane.
     let status = unsafe { helper(raw, site, op, first, second, third, result) };
-    let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
+    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     ctx.limits = old;
     if op == CLOSED_TAIL_BEGIN && status == STATUS_OK && unsafe { *result } == 1 {
         note(|r| r.entries += 1);
-        let id =
-            ctx.control.descriptor.metadata().closed_tails.initializers[site as usize].unwrap();
-        let proof = &ctx.control.descriptor.metadata().closed_tails.regions[id];
-        let used = ctx.library.used();
-        let previous = ctx.control.previous;
+        let id = ctx.descriptor.metadata().closed_tails.initializers[site as usize].unwrap();
+        let proof = &ctx.descriptor.metadata().closed_tails.regions[id];
+        let used = ctx.state.library.used();
+        let previous = ctx.state.control.previous;
         if ctx.visit(u64::from(proof.tail.header())).is_ok()
             || ctx.helper(site, MAP_OWNER_CALL, [0; 3]).is_ok()
-            || ctx.library.used() != used
-            || ctx.control.previous != previous
+            || ctx.state.library.used() != used
+            || ctx.state.control.previous != previous
         {
             note(|r| {
                 r.errors
@@ -117,7 +116,8 @@ unsafe extern "C" fn observe(
             note(|r| r.rejected += 2);
         }
         if mode == Mode::OneShort {
-            ctx.library
+            ctx.state
+                .library
                 .restrict(used.0 + proof.compute - 1, used.1)
                 .unwrap();
         }

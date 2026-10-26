@@ -3,7 +3,7 @@
 //! boundaries. Source acquisition and final admission belong to the session.
 use super::super::{NativeExecutionPhase, program_abi};
 use super::{
-    Context, NativeProgramDescriptor, NativeProgramExecutionError as Error, amount, invalid,
+    Invocation, NativeProgramDescriptor, NativeProgramExecutionError as Error, amount, invalid,
 };
 use mech_engine::native_artifact::{
     NativeLibraryWorkBudget, NativeMatchValue, NativeTextLineWindow,
@@ -45,12 +45,12 @@ pub(super) fn validate_window(
     Ok(())
 }
 
-impl<'plan, 'visit> Context<'plan, 'visit> {
+impl<'state, 'plan, 'visit> Invocation<'state, 'visit, 'plan> {
     pub(super) fn prefix_line_window(
         &self,
         matrix: NativeMatchValue,
     ) -> Option<&'visit NativeTextLineWindow<'visit>> {
-        let region = self.control.descriptor.metadata().prefix.as_ref()?;
+        let region = self.descriptor.metadata().prefix.as_ref()?;
         (region.frontier.read().count().lines().matrix() == matrix)
             .then_some(self.line_window)
             .flatten()
@@ -166,7 +166,7 @@ pub(super) fn check_cleared(
     }
     Ok(())
 }
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
     pub(super) fn validate_prefix_extent(
         &self,
         matrix: NativeMatchValue,
@@ -176,7 +176,6 @@ impl Context<'_, '_> {
             return Ok(());
         };
         let region = self
-            .control
             .descriptor
             .metadata()
             .prefix
@@ -194,7 +193,6 @@ impl Context<'_, '_> {
     }
     pub(super) fn check_prefix_header(&self, site: u32) -> Result<(), Error> {
         let region = self
-            .control
             .descriptor
             .metadata()
             .prefix
@@ -208,12 +206,11 @@ impl Context<'_, '_> {
             || self.activation_phase
             || prefix.paused.is_some()
             || prefix.scanned.is_some()
-            || self.control.completed
-            || self.output_cursor != 0
-            || self.consumed
-            || self.control.current != Some(region.frontier.iteration())
+            || self.state.control.completed
+            || self.state.output_cursor != 0
+            || self.state.consumed
+            || self.state.control.current != Some(region.frontier.iteration())
             || self
-                .control
                 .progress
                 .chunks_exact(2)
                 .enumerate()
@@ -225,7 +222,7 @@ impl Context<'_, '_> {
                     }
                 })
             || ![Some(region.tail.initialize()), Some(region.tail.latch())]
-                .contains(&self.control.previous)
+                .contains(&self.state.control.previous)
         {
             return Err(invalid("prefix outside its exact active header boundary"));
         }
@@ -235,7 +232,6 @@ impl Context<'_, '_> {
     /// it have not. No caller-provided state ordinal is interpreted here.
     pub(super) fn check_prefix_exit(&self, site: u32) -> Result<(), Error> {
         let region = self
-            .control
             .descriptor
             .metadata()
             .prefix
@@ -249,13 +245,12 @@ impl Context<'_, '_> {
             || !prefix.input.eof
             || self.activation_phase
             || prefix.paused.is_some()
-            || self.control.completed
-            || self.output_cursor != 0
-            || self.consumed
-            || self.control.current != Some(region.frontier.iteration())
-            || self.control.previous != Some(region.tail.finish())
+            || self.state.control.completed
+            || self.state.output_cursor != 0
+            || self.state.consumed
+            || self.state.control.current != Some(region.frontier.iteration())
+            || self.state.control.previous != Some(region.tail.finish())
             || self
-                .control
                 .progress
                 .chunks_exact(2)
                 .enumerate()
@@ -280,9 +275,9 @@ impl Context<'_, '_> {
         let site = u32::try_from(site).map_err(|_| invalid("prefix site overflows"))?;
         // Every resume/pause guard scans the progress table. Prepay EACH scan,
         // not just the single owning entry's epilogue, on this same account.
-        self.control.work.charge(
+        self.state.control.work.charge(
             NativeExecutionPhase::Setup,
-            amount(self.control.progress.len() / 2, 64, 1024)?,
+            amount(self.progress.len() / 2, 64, 1024)?,
         )?;
         if operation == program_abi::PREFIX_SCANNED {
             self.check_prefix_exit(site)?;
@@ -295,7 +290,7 @@ impl Context<'_, '_> {
         {
             return Err(invalid("malformed or overlapping prefix loan"));
         }
-        let region = self.control.descriptor.metadata().prefix.as_ref().unwrap();
+        let region = self.descriptor.metadata().prefix.as_ref().unwrap();
         let borrowed = region.borrowed;
         let input = self.prefix.as_ref().unwrap().input;
         match operation {
@@ -309,7 +304,7 @@ impl Context<'_, '_> {
                 {
                     return Err(invalid("scan exit omitted its exact loan reconciliation"));
                 }
-                self.control.work.charge(
+                self.state.control.work.charge(
                     NativeExecutionPhase::Setup,
                     amount(self.argument_capacity, 16, 1024)?,
                 )?;
@@ -337,7 +332,7 @@ impl Context<'_, '_> {
                         "prefix pause omitted its exact loan reconciliation",
                     ));
                 }
-                self.control.work.charge(
+                self.state.control.work.charge(
                     NativeExecutionPhase::Setup,
                     amount(self.argument_capacity, 16, 1024)?,
                 )?;
@@ -363,7 +358,7 @@ impl Context<'_, '_> {
                 if input.resume_site != site || !prefix.borrowed_resumed || prefix.tail_resumed {
                     return Err(invalid("duplicate or unordered prefix fuel resume"));
                 }
-                let closed = self.control.descriptor.metadata().closed_tails.sites[site as usize]
+                let closed = self.descriptor.metadata().closed_tails.sites[site as usize]
                     .ok_or_else(|| invalid("prefix fuel resume outside closed Tail"))?;
                 let result = self.begin_closed_region(site as usize, args, closed)?;
                 self.prefix.as_mut().unwrap().tail_resumed = true;

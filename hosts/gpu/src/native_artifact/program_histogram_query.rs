@@ -1,6 +1,6 @@
 //! One already-evaluated String yield, never a producer or graph evaluator.
 //! The selected factory/typed CFG proof owns every elided intermediate.
-use super::{Context, Dimension, Error, State, add, charge, check, invalid, mul};
+use super::{Dimension, Error, Invocation, State, add, charge, check, invalid, mul};
 use crate::native_artifact::{NativeProgramDescriptor, NativeValueHandle};
 use core::mem::size_of;
 use mech_core::{Value, ValueData, snapshot::canonical_data_retained_footprint};
@@ -63,14 +63,14 @@ impl State {
     /// nevertheless admitted in this component's finite cumulative allowance.
     fn query_account(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
         clones: u64,
         compute: u64,
         comparison: u64,
         external: u64,
     ) -> Result<(), Error> {
-        let origin = ctx.control.descriptor.metadata().plan.collections()[id as usize].origin();
+        let origin = ctx.descriptor.metadata().plan.collections()[id as usize].origin();
         let builder = self
             .builders
             .get(id as usize)
@@ -100,8 +100,9 @@ impl State {
             compared,
             ctx.limits.max_comparison_work,
         )?;
-        charge(&mut ctx.control.work, compute)?;
-        ctx.library
+        charge(&mut ctx.state.control.work, compute)?;
+        ctx.state
+            .library
             .charge(0, comparison)
             .map_err(|error| Error::Collection { origin, error })?;
         let builder = self.builders[id as usize].as_mut().unwrap();
@@ -115,11 +116,11 @@ impl State {
 
     pub(super) fn begin_histogram_query(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
     ) -> Result<(), Error> {
         let NativeCollectionResult::GuardedHistogramQuery(definition) =
-            ctx.control.descriptor.metadata().plan.collections()[id as usize].result()
+            ctx.descriptor.metadata().plan.collections()[id as usize].result()
         else {
             return Ok(());
         };
@@ -137,23 +138,19 @@ impl State {
             0,
             0,
         )?;
-        let work = ctx.control.work.limit().min(
+        let work = ctx.state.control.work.limit().min(
             ctx.limits
                 .max_compute_work
                 .ok_or_else(|| invalid("histogram query needs finite compute"))?,
         );
-        let producer_parameters = ctx.control.descriptor.metadata().plan.values()[ctx
-            .control
-            .descriptor
-            .metadata()
-            .plan
-            .collections()[id as usize]
-            .output()
-            .get()
-            as usize]
-            .definition()
-            .dimension_parameters()
-            .len();
+        let producer_parameters =
+            ctx.descriptor.metadata().plan.values()[ctx.descriptor.metadata().plan.collections()
+                [id as usize]
+                .output()
+                .get() as usize]
+                .definition()
+                .dimension_parameters()
+                .len();
         let parameters = definition
             .steps()
             .iter()
@@ -174,7 +171,7 @@ impl State {
             .find(|step| step.kind() == Step::Histogram)
             .ok_or_else(|| invalid("histogram query lacks maintained layout witness"))?
             .site();
-        let histogram = ctx.control.descriptor.metadata().calls[histogram_site as usize]
+        let histogram = ctx.descriptor.metadata().calls[histogram_site as usize]
             .as_ref()
             .ok_or_else(|| invalid("histogram query lacks maintained layout witness"))?;
         let scratch = histogram
@@ -186,17 +183,22 @@ impl State {
             work,
             parameters,
             scratch,
-            ctx.control.descriptor.metadata().scalar_bytes,
+            ctx.descriptor.metadata().scalar_bytes,
         )?;
         let handle = ctx
+            .state
             .arena
-            .current_handle(definition.query().get(), &mut ctx.control.work)?;
-        let query = ctx.arena.get(handle, &mut ctx.control.work)?.clone();
+            .current_handle(definition.query().get(), &mut ctx.state.control.work)?;
+        let query = ctx
+            .state
+            .arena
+            .get(handle, &mut ctx.state.control.work)?
+            .clone();
         if !matches!(query.data(), ValueData::String(_)) {
             return Err(invalid("histogram query captured non-String"));
         }
         let query_bytes = query
-            .memory_budget_retained_bytes(&ctx.library.memory_budget())
+            .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
             .ok_or_else(|| invalid("histogram query captured unadmitted owner"))?;
         let mut scalar_bytes = 0;
         let mut scalar_nodes = 0;
@@ -206,8 +208,9 @@ impl State {
                     .output()
                     .ok_or_else(|| invalid("histogram query scalar stage lacks output"))?;
                 if let Some(bytes) = ctx
+                    .state
                     .arena
-                    .current_retained_bytes(output.get(), &mut ctx.control.work)?
+                    .current_retained_bytes(output.get(), &mut ctx.state.control.work)?
                 {
                     scalar_bytes = add(scalar_bytes, bytes)?;
                     scalar_nodes = add(scalar_nodes, 2)?;
@@ -220,7 +223,7 @@ impl State {
         if scalar_bytes > self.query_scalar_bytes || scalar_nodes > self.query_scalar_nodes {
             return Err(invalid("histogram query lost scalar owner accounting"));
         }
-        let origin = ctx.control.descriptor.metadata().plan.collections()[id as usize].origin();
+        let origin = ctx.descriptor.metadata().plan.collections()[id as usize].origin();
         check(
             origin,
             Dimension::TemporaryBytes,
@@ -251,7 +254,7 @@ impl State {
 
     pub(super) fn push_histogram_query(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
         value: NativeMatchValue,
     ) -> Result<(), Error> {
@@ -263,7 +266,7 @@ impl State {
 
     fn append_histogram_query(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
         yielded: &super::string_span::Yield,
     ) -> Result<(), Error> {
@@ -279,7 +282,7 @@ impl State {
         let pair = add(part.len().max(key.len()) as u64, 8)?;
         let accepted = add(query.accepted, 1)?;
         let scalar_nodes = self.retained_nodes()?;
-        let origin = ctx.control.descriptor.metadata().plan.collections()[id as usize].origin();
+        let origin = ctx.descriptor.metadata().plan.collections()[id as usize].origin();
         // Pay exact source-alias header inspection before scanning handles.
         self.query_account(ctx, id, 0, self.string_yield_alias_work(yielded)?, 0, 0)?;
         let untracked = self.untracked_string_yield(ctx, yielded)?;
@@ -299,14 +302,17 @@ impl State {
         // prepaid before the first byte read. Never stop after the first hit.
         self.query_account(ctx, id, 0, add(pair, 128)?, pair, 0)?;
         let query = self.query_builder(id)?;
-        let current = ctx.arena.get(query.handle, &mut ctx.control.work)?;
+        let current = ctx
+            .state
+            .arena
+            .get(query.handle, &mut ctx.state.control.work)?;
         if !query.query.shares_frozen_storage(current) {
             return Err(invalid("histogram query generation changed"));
         }
         let ValueData::String(key) = query.query.data() else {
             unreachable!("validated query String")
         };
-        let histogram = ctx.control.descriptor.metadata().calls[query.histogram_site as usize]
+        let histogram = ctx.descriptor.metadata().calls[query.histogram_site as usize]
             .as_ref()
             .ok_or_else(|| invalid("histogram query lost maintained comparison witness"))?;
         // The maintained family's exact raw UTF-8 order supplies equality;
@@ -341,12 +347,12 @@ impl State {
 
     pub(super) fn park_histogram_query(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
     ) -> Result<(), Error> {
         self.builder(id)?;
-        let definition = &ctx.control.descriptor.metadata().plan.collections()[id as usize];
-        let metadata = ctx.control.descriptor.metadata().scalar_bytes;
+        let definition = &ctx.descriptor.metadata().plan.collections()[id as usize];
+        let metadata = ctx.descriptor.metadata().scalar_bytes;
         check(
             definition.origin(),
             Dimension::TemporaryBytes,
@@ -354,13 +360,17 @@ impl State {
             ctx.limits.max_temporary_bytes,
         )?;
         self.query_account(ctx, id, 0, add(mul(metadata, 8)?, 64)?, 0, 0)?;
-        let _scratch = ctx.library.memory_budget().reserve_capacity(metadata)?;
+        let _scratch = ctx
+            .state
+            .library
+            .memory_budget()
+            .reserve_capacity(metadata)?;
         let query = self.query_builder(id)?;
         if query.phase.is_some() {
             return Err(invalid("duplicate histogram query producer finish"));
         }
         mech_core::shape_for_resolved_extents(
-            ctx.control.descriptor.metadata().plan.values()[definition.output().get() as usize]
+            ctx.descriptor.metadata().plan.values()[definition.output().get() as usize]
                 .definition(),
             &[1, query.accepted],
         )
@@ -378,16 +388,16 @@ impl State {
 
     pub(super) fn step_histogram_query(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
         ordinal: u32,
     ) -> Result<Option<u64>, Error> {
-        let definition = sink(ctx.control.descriptor, id)?;
+        let definition = sink(ctx.descriptor, id)?;
         let step = definition
             .steps()
             .get(ordinal as usize)
             .ok_or_else(|| invalid("histogram query step outside proof"))?;
-        let collection = &ctx.control.descriptor.metadata().plan.collections()[id as usize];
+        let collection = &ctx.descriptor.metadata().plan.collections()[id as usize];
         if self.current != collection.parent_collection() {
             return Err(invalid(
                 "histogram query consumer outside lexical invocation",
@@ -406,17 +416,16 @@ impl State {
         }
         // Saved generation and same-account arena are checked on every stage,
         // including the false arm's cleanup. No source/output payload is read.
-        ctx.arena.get(query.handle, &mut ctx.control.work)?;
+        ctx.state
+            .arena
+            .get(query.handle, &mut ctx.state.control.work)?;
         // The immutable descriptor already proved this SAME step's complete
         // selected template against its actual artifact and maintained factory.
         // No binder, planner, schema clone or intermediate Value is built here.
         // Preserve the existing fixed stage-header allowance for association,
         // counter/phase reads and transition; dynamic checks remain per visit.
         self.query_account(ctx, id, 0, 128, 0, 0)?;
-        ctx.control
-            .descriptor
-            .query_stage(id, ordinal)
-            .map_err(invalid)?;
+        ctx.descriptor.query_stage(id, ordinal).map_err(invalid)?;
         let word = match step.kind() {
             Step::Membership => Some(u64::from(self.query_builder(id)?.matched != 0)),
             Step::Lookup => Some(self.query_builder(id)?.matched),
@@ -426,7 +435,7 @@ impl State {
             let output = step
                 .output()
                 .ok_or_else(|| invalid("histogram query omitted scalar output"))?;
-            let ty = &ctx.control.descriptor.metadata().plan.values()[output.get() as usize];
+            let ty = &ctx.descriptor.metadata().plan.values()[output.get() as usize];
             // No new scalar authority: reuse the existing admitted constructor
             // and Value arena, including schema/shape validation and complete
             // native-account ownership plus unchanged 4*retained+32 retirement.
@@ -439,8 +448,9 @@ impl State {
                 .map_err(|_| invalid("histogram query scalar footprint"))?;
             let output_bytes = add(footprint.retained_bytes, size_of::<Value>() as u64)?;
             let previous = ctx
+                .state
                 .arena
-                .current_retained_bytes(output.get(), &mut ctx.control.work)?;
+                .current_retained_bytes(output.get(), &mut ctx.state.control.work)?;
             // The new scalar coexists with every old scalar owner until put;
             // replacing an occupied slot is not an early node credit.
             let nodes = add(self.retained_nodes()?, 4)?;
@@ -462,7 +472,7 @@ impl State {
                 nodes,
                 ctx.limits.max_retained_nodes,
             )?;
-            let envelope = ctx.control.descriptor.metadata().scalar_bytes;
+            let envelope = ctx.descriptor.metadata().scalar_bytes;
             check(
                 collection.origin(),
                 Dimension::TemporaryBytes,
@@ -482,7 +492,7 @@ impl State {
             #[cfg(all(test, feature = "canonical-native-program"))]
             drop(scalar_pressure);
             let retained = value
-                .memory_budget_retained_bytes(&ctx.library.memory_budget())
+                .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
                 .ok_or_else(|| invalid("histogram query scalar is unadmitted"))?;
             self.query_account(ctx, id, 0, 0, 0, add(mul(retained, 4)?, 64)?)?;
             let old = previous.unwrap_or(0);
@@ -516,7 +526,9 @@ impl State {
             } else {
                 query.scalar_nodes
             };
-            ctx.arena.put(output.get(), &value, &mut ctx.control.work)?;
+            ctx.state
+                .arena
+                .put(output.get(), &value, &mut ctx.state.control.work)?;
             // Replacement credit begins only AFTER put dropped the old root.
             self.live_bytes = live_bytes;
             self.query_scalar_bytes = scalar_bytes;
@@ -601,11 +613,11 @@ impl State {
     /// String payloads. It cannot select a body, alter caps or admit a helper.
     pub(in crate::native_artifact) fn test_query_demand(
         &self,
-        ctx: &Context<'_, '_>,
+        ctx: &Invocation<'_, '_, '_>,
         site: usize,
     ) -> Option<QueryDemand> {
         use mech_engine::native_artifact::NativeIterationAction as Action;
-        let plan = &ctx.control.descriptor.metadata().plan;
+        let plan = &ctx.descriptor.metadata().plan;
         let (id, value, ordinal) = match plan.blocks().get(site)?.action() {
             Action::CollectionPush { collection, value } => (*collection, Some(*value), None),
             Action::HistogramQueryStep { collection, step } => (*collection, None, Some(*step)),
@@ -618,19 +630,19 @@ impl State {
             return None;
         };
         if let Some(value) = value {
-            let value = ctx.arena.test_current_value(value.get())?;
+            let value = ctx.state.arena.test_current_value(value.get())?;
             let ValueData::String(text) = value.data() else {
                 return None;
             };
             let untracked = if self.sources.iter().flatten().any(|source| {
                 source
                     .element
-                    .and_then(|(handle, _)| ctx.arena.test_handle_value(handle))
+                    .and_then(|(handle, _)| ctx.state.arena.test_handle_value(handle))
                     .is_some_and(|tracked| value.shares_frozen_storage(tracked))
             }) {
                 0
             } else {
-                value.memory_budget_retained_bytes(&ctx.library.memory_budget())?
+                value.memory_budget_retained_bytes(&ctx.state.library.memory_budget())?
             };
             demand.comparison_required = query
                 .comparison
@@ -638,12 +650,12 @@ impl State {
                 .checked_add(8)?;
             demand.temporary_required = self.live_bytes.checked_add(untracked)?;
         } else {
-            let step = sink(ctx.control.descriptor, id)
+            let step = sink(ctx.descriptor, id)
                 .ok()?
                 .steps()
                 .get(ordinal? as usize)?;
             if matches!(step.kind(), Step::Membership | Step::Lookup) {
-                demand.reservation_bytes = ctx.control.descriptor.metadata().scalar_bytes;
+                demand.reservation_bytes = ctx.descriptor.metadata().scalar_bytes;
                 demand.temporary_required =
                     self.live_bytes.checked_add(demand.reservation_bytes)?;
             } else {

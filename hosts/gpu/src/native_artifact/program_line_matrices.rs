@@ -1,6 +1,6 @@
 //! Preserve original visits while retaining one admitted immutable line table.
 //! The matrix slot stays empty; no canonical Value represents this private view.
-use super::{Context, NativeProgramExecutionError as Error, amount, invalid};
+use super::{Invocation, NativeProgramExecutionError as Error, amount, invalid};
 use crate::native_artifact::{
     NativeExecutionPhase, NativeProgramDescriptor, NativeWorkMeter,
     program_line_matrix_layout::Site,
@@ -114,10 +114,9 @@ impl State {
     }
 }
 
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
     pub(super) fn line_matrix(&self, value: NativeMatchValue) -> Option<&Rc<NativeTextLineMatrix>> {
         let ordinal = self
-            .control
             .descriptor
             .metadata()
             .line_matrices
@@ -125,42 +124,46 @@ impl Context<'_, '_> {
             .get(value.get() as usize)
             .copied()
             .flatten()?;
-        self.line_matrices.views.get(ordinal)?.as_ref()
+        self.state.line_matrices.views.get(ordinal)?.as_ref()
     }
     pub(super) fn line_matrix_coexistence(
         &mut self,
         skip: Option<NativeMatchValue>,
     ) -> Result<ResourceDemand, Error> {
-        if self.line_matrices.views.is_empty() {
+        if self.state.line_matrices.views.is_empty() {
             return Ok(ResourceDemand::default());
         }
-        self.control.work.charge(
+        self.state.control.work.charge(
             NativeExecutionPhase::Setup,
-            amount(self.line_matrices.views.len(), 256, 256)?,
+            amount(self.state.line_matrices.views.len(), 256, 256)?,
         )?;
         let ordinal = skip.and_then(|value| {
-            self.control.descriptor.metadata().line_matrices.matrices[value.get() as usize]
+            self.descriptor.metadata().line_matrices.matrices[value.get() as usize]
         });
-        self.line_matrices
-            .retained_demand(ordinal, &self.library.memory_budget())
+        self.state
+            .line_matrices
+            .retained_demand(ordinal, &self.state.library.memory_budget())
     }
     pub(super) fn line_matrix_call(
         &mut self,
         site: usize,
         words: &[u64],
     ) -> Result<Option<Option<u64>>, Error> {
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let Some(role) = descriptor.metadata().line_matrices.sites[site] else {
             return Ok(None);
         };
         if words != [0] {
             return Err(invalid("line matrix managed operand lane differs"));
         }
-        self.control.work.charge(NativeExecutionPhase::Setup, 512)?;
+        self.state
+            .control
+            .work
+            .charge(NativeExecutionPhase::Setup, 512)?;
         let ordinal = match role {
             Site::Produce(index) | Site::Length(index) => index,
         };
-        if let Some(captured) = &mut self.line_matrices.captured
+        if let Some(captured) = &mut self.state.line_matrices.captured
             && captured.ordinal == ordinal
             && self.prefix.as_ref().is_some_and(|prefix| !prefix.input.eof)
         {
@@ -187,27 +190,32 @@ impl Context<'_, '_> {
         };
         match role {
             Site::Produce(_) => {
-                if self.line_matrices.views[ordinal].is_some() {
+                if self.state.line_matrices.views[ordinal].is_some() {
                     return Err(invalid("line matrix producer repeated"));
                 }
                 let source = self
+                    .state
                     .arena
-                    .copy_current(region.source().get(), &mut self.control.work)?;
+                    .copy_current(region.source().get(), &mut self.state.control.work)?;
                 match call
-                    .text_line_matrix_or_canonical(&source, self.limits, &self.library, prior)
+                    .text_line_matrix_or_canonical(&source, self.limits, &self.state.library, prior)
                     .map_err(failure)?
                 {
                     NativeTextLineMatrixChoice::View(view) => {
                         if !view.is_ascii() {
                             return Err(invalid("native line view lacks byte identity"));
                         }
-                        self.arena
-                            .retire_current(region.matrix().get(), &mut self.control.work)?;
-                        self.line_matrices.views[ordinal] = Some(Rc::new(view));
+                        self.state
+                            .arena
+                            .retire_current(region.matrix().get(), &mut self.state.control.work)?;
+                        self.state.line_matrices.views[ordinal] = Some(Rc::new(view));
                     }
                     NativeTextLineMatrixChoice::Canonical(value) => {
-                        self.arena
-                            .put(region.matrix().get(), &value, &mut self.control.work)?;
+                        self.state.arena.put(
+                            region.matrix().get(),
+                            &value,
+                            &mut self.state.control.work,
+                        )?;
                     }
                 }
                 #[cfg(all(test, feature = "canonical-native-program"))]
@@ -215,11 +223,11 @@ impl Context<'_, '_> {
                 Ok(Some(None))
             }
             Site::Length(_) => {
-                let Some(view) = self.line_matrices.views[ordinal].as_ref() else {
+                let Some(view) = self.state.line_matrices.views[ordinal].as_ref() else {
                     return Ok(None);
                 };
                 let count = call
-                    .text_line_matrix_length(view, self.limits, &self.library, prior)
+                    .text_line_matrix_length(view, self.limits, &self.state.library, prior)
                     .map_err(failure)?;
                 Ok(Some(Some(count)))
             }

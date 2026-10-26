@@ -1,6 +1,6 @@
 //! Shared admission for retained worker state and a suspended parent. No
 //! source work is performed here; unsupported private strategies stay serial.
-use super::{Context, NativeProgramExecutionError as Error, amount, invalid};
+use super::{Invocation, NativeProgramExecutionError as Error, amount, invalid};
 use crate::native_artifact::{NativeExecutionPhase, NativeProgramDescriptor};
 use mech_core::ManagedNodeReservation;
 use mech_engine::native_artifact::{NativeCollectionResult, NativeIterationAction};
@@ -44,7 +44,7 @@ pub(super) fn supported(descriptor: &NativeProgramDescriptor, id: usize) -> bool
 #[path = "program_parallel_admission_tests.rs"]
 mod tests;
 
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
     /// The caller must retain this claim until every scoped worker has joined.
     /// Fixed invocation roots, collection/cache lanes, materialized drafts,
     /// TextJoin, cache metadata, canonical Values and private maps already own
@@ -68,7 +68,6 @@ impl Context<'_, '_> {
         }
         let count = regions.iter().try_fold(0usize, |sum, &id| {
             let region = self
-                .control
                 .descriptor
                 .metadata()
                 .parallel
@@ -78,16 +77,14 @@ impl Context<'_, '_> {
             sum.checked_add(region.sites.len())
                 .ok_or_else(|| invalid("parallel admission sites overflow"))
         })?;
-        self.control
+        self.state
+            .control
             .work
             .charge(NativeExecutionPhase::Setup, amount(count, 128, 512)?)?;
-        if regions
-            .iter()
-            .any(|&id| !supported(self.control.descriptor, id))
-        {
+        if regions.iter().any(|&id| !supported(self.descriptor, id)) {
             return Ok(None);
         }
-        let memory = self.library.memory_budget().with_limits(
+        let memory = self.state.library.memory_budget().with_limits(
             self.limits
                 .max_temporary_bytes
                 .ok_or_else(|| invalid("parallel admission requires finite bytes"))?,
@@ -95,8 +92,8 @@ impl Context<'_, '_> {
                 .max_retained_nodes
                 .ok_or_else(|| invalid("parallel admission requires finite nodes"))?,
         );
-        let collection = if let Some(collection) = &self.collections {
-            let Some(nodes) = collection.parked_private_nodes(&mut self.control.work)? else {
+        let collection = if let Some(collection) = &self.state.collections {
+            let Some(nodes) = collection.parked_private_nodes(&mut self.state.control.work)? else {
                 return Ok(None);
             };
             nodes
@@ -104,7 +101,7 @@ impl Context<'_, '_> {
             0
         };
         let nodes = collection
-            .checked_add(self.line_matrices.parked_view_nodes(&memory)?)
+            .checked_add(self.state.line_matrices.parked_view_nodes(&memory)?)
             .ok_or_else(|| invalid("parallel parent node inventory overflows"))?;
         Ok(memory.reserve_nodes(nodes).ok())
     }

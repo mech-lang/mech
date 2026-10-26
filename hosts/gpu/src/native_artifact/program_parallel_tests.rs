@@ -24,12 +24,11 @@ unsafe extern "C" fn observe(
 ) -> u64 {
     // SAFETY: the checked parent entry owns this exact live context. Workers
     // retain their ordinary helper; the observer changes only parent pushes.
-    let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
+    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     let old = ctx.limits;
     if op == COLLECTION
         && FAIL_PUSH.with(Cell::get)
         && ctx
-            .control
             .descriptor
             .metadata()
             .parallel
@@ -40,7 +39,7 @@ unsafe extern "C" fn observe(
         ctx.limits.max_output_bytes = Some(0);
     }
     let status = unsafe { helper(raw, site, op, first, second, third, result) };
-    let ctx = unsafe { &mut *raw.cast::<Context<'_, '_>>() };
+    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     ctx.limits = old;
     if op == PARALLEL_RUN && status == STATUS_OK && unsafe { *result } == 1 {
         BATCHES.with(|count| count.set(count.get() + 1));

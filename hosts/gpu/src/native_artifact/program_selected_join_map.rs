@@ -83,7 +83,7 @@ impl Fusing {
         }))
     }
 }
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
     pub(super) fn prepare_join_map(
         &mut self,
         site: usize,
@@ -99,7 +99,7 @@ impl Context<'_, '_> {
         if faults::disabled() {
             return Ok(None);
         }
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let Some(proof) = descriptor
             .metadata()
             .selected_joins
@@ -119,8 +119,9 @@ impl Context<'_, '_> {
         // scalar/metadata envelope below covers both current-slot reads; do not
         // debit that same work again inside an exactly exhausted call scope.
         let Some((map, handle)) = self
+            .state
             .arena
-            .copy_current_prepaid(proof.map, &self.control.work)?
+            .copy_current_prepaid(proof.map, &self.state.control.work)?
         else {
             return Ok(None);
         };
@@ -130,8 +131,9 @@ impl Context<'_, '_> {
             return Ok(None);
         };
         let Some((final_separator, _)) = self
+            .state
             .arena
-            .copy_current_prepaid(sink.separator().get(), &self.control.work)?
+            .copy_current_prepaid(sink.separator().get(), &self.state.control.work)?
         else {
             return Ok(None);
         };
@@ -158,7 +160,7 @@ impl Context<'_, '_> {
         if bound > u128::from(compute) {
             return Ok(None);
         }
-        let memory = self.library.memory_budget();
+        let memory = self.state.library.memory_budget();
         let Some(map_bytes) = map.memory_budget_retained_bytes(&memory) else {
             return Ok(None);
         };
@@ -234,7 +236,6 @@ impl Context<'_, '_> {
     }
     pub(super) fn join_map_boundary(&self, site: usize, state: &State) -> Result<(), Error> {
         let proof = self
-            .control
             .descriptor
             .metadata()
             .selected_joins
@@ -250,7 +251,9 @@ impl Context<'_, '_> {
         } else {
             state.parent
         };
-        if proof.sites.binary_search(&(site as u32)).is_err() || self.control.current != expected {
+        if proof.sites.binary_search(&(site as u32)).is_err()
+            || self.state.control.current != expected
+        {
             return Err(invalid(
                 "joined map escaped its proved copy/initializer path",
             ));
@@ -273,7 +276,9 @@ impl Context<'_, '_> {
         }
         // Match the original Copy's replacement point for a previous lexical
         // invocation; the new private owner is never installed as that Value.
-        self.arena.retire_current(output, &mut self.control.work)?;
+        self.state
+            .arena
+            .retire_current(output, &mut self.state.control.work)?;
         mapped.slot = output;
         Ok(true)
     }
@@ -288,14 +293,14 @@ impl Context<'_, '_> {
         let Phase::Mapped(mapped) = &mut state.phase else {
             return Ok(None);
         };
-        let proof = self.control.descriptor.metadata().selected_joins.maps[state.region]
+        let proof = self.descriptor.metadata().selected_joins.maps[state.region]
             .as_ref()
             .ok_or_else(|| invalid("joined map initializer lost its use proof"))?;
         if mapped.initialized
             || proof.iteration != iteration
             || proof.source != source
             || mapped.slot != source
-            || self.control.current != Some(iteration)
+            || self.state.control.current != Some(iteration)
         {
             return Err(invalid("joined map initialized outside its exact consumer"));
         }
@@ -312,7 +317,7 @@ impl Context<'_, '_> {
         if !matches!(state.phase, Phase::Mapped(_)) {
             return Err(invalid("String map reached an unfinished join"));
         }
-        let proof = self.control.descriptor.metadata().selected_joins.maps[state.region]
+        let proof = self.descriptor.metadata().selected_joins.maps[state.region]
             .as_ref()
             .ok_or_else(|| invalid("joined map header lost its proof"))?;
         if proof.collection != region.collection() || proof.iteration != region.iteration() {
@@ -328,12 +333,14 @@ impl Context<'_, '_> {
         if !mapped.initialized
             || mapped.slot != region.source().get()
             || self
+                .state
                 .arena
-                .current_handle(region.map().get(), &mut self.control.work)?
+                .current_handle(region.map().get(), &mut self.state.control.work)?
                 != mapped.handle
             || !self
+                .state
                 .arena
-                .get(mapped.handle, &mut self.control.work)?
+                .get(mapped.handle, &mut self.state.control.work)?
                 .shares_frozen_storage(&mapped.map)
         {
             return Err(invalid("joined map source/map generation changed"));
@@ -346,12 +353,12 @@ impl Context<'_, '_> {
         site: usize,
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
-        if args != [0; 3] || !self.consumed {
+        if args != [0; 3] || !self.state.consumed {
             return Err(invalid("joined-map copy precedes its admitted join"));
         }
         #[cfg(all(test, feature = "canonical-native-program-host"))]
         faults::before_prepare(self, site)?;
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let words = {
             let state = self
                 .selected_join
@@ -359,7 +366,7 @@ impl Context<'_, '_> {
                 .ok_or_else(|| invalid("joined-map copy has no owner"))?;
             if descriptor.metadata().selected_joins.regions[state.region].consumer() as usize
                 != site
-                || self.control.current != state.parent
+                || self.state.control.current != state.parent
             {
                 return Err(invalid("joined-map copy uses another visit"));
             }
@@ -434,7 +441,7 @@ impl Context<'_, '_> {
         site: usize,
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
-        if args[1..] != [0; 2] || !self.consumed {
+        if args[1..] != [0; 2] || !self.state.consumed {
             return Err(invalid("joined-map completion arguments"));
         }
         #[cfg(all(test, feature = "canonical-native-program-host"))]
@@ -445,10 +452,9 @@ impl Context<'_, '_> {
             .selected_join
             .as_mut()
             .ok_or_else(|| invalid("joined-map completion lost its owner"))?;
-        if self.control.descriptor.metadata().selected_joins.regions[state.region].consumer()
-            as usize
+        if self.descriptor.metadata().selected_joins.regions[state.region].consumer() as usize
             != site
-            || self.control.current != state.parent
+            || self.state.control.current != state.parent
         {
             return Err(invalid("joined-map completion uses another visit"));
         }
@@ -528,7 +534,7 @@ impl Context<'_, '_> {
         drop((view, table, nodes, reservation));
         let text =
             String::from_utf8(bytes).map_err(|_| invalid("joined map wrote invalid UTF8"))?;
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let call = descriptor.metadata().calls[site]
             .as_ref()
             .ok_or_else(|| invalid("joined map lost its prepared join factory"))?;
@@ -540,17 +546,19 @@ impl Context<'_, '_> {
         let capacity = text.capacity() as u64;
         let backing = envelope.split_capacity(capacity)?;
         let owner = call
-            .finish_private_string_buffer(text, backing, &self.library)
+            .finish_private_string_buffer(text, backing, &self.state.library)
             .map_err(|e| library(self, site, e))?;
         drop(envelope);
-        let memory = self.library.memory_budget();
-        self.arena.retire_current(
+        let memory = self.state.library.memory_budget();
+        self.state.arena.retire_current(
             descriptor.metadata().selected_joins.regions[region]
                 .output()
                 .get(),
-            &mut self.control.work,
+            &mut self.state.control.work,
         )?;
-        self.fused_string_map_bytes = self
+        self.state.stats.fused_string_map_bytes = self
+            .state
+            .stats
             .fused_string_map_bytes
             .checked_add(payload)
             .ok_or_else(|| invalid("joined-map byte counter overflow"))?;

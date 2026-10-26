@@ -1,7 +1,7 @@
 //! Hoist the outer caller census only when a map loop cannot change it.
 //! Snapshot holdings and call-cache metadata remain fresh observations; table
 //! and projected-key holdings are added by the owning lane on every operation.
-use super::{Context, Error, State, add, invalid};
+use super::{Error, Invocation, State, add, invalid};
 use crate::native_artifact::{
     NativeExecutionPhase as Phase, owned_string_map::PublicationGeometry,
 };
@@ -15,13 +15,13 @@ pub(super) struct Caller {
 impl State<'_> {
     pub(super) fn capture_caller(
         &self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         owner: usize,
     ) -> Result<Option<Caller>, Error> {
         let layout = self.descriptor.metadata().map_owner_words.as_ref().unwrap();
         let iteration = layout.regions()[owner].iteration();
         let plan = &self.descriptor.metadata().plan;
-        ctx.control.work.charge(
+        ctx.state.control.work.charge(
             Phase::Setup,
             add(
                 super::amount(plan.blocks().len(), 128, 512)?,
@@ -71,11 +71,11 @@ impl State<'_> {
 
     pub(super) fn caller_geometry(
         &self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         site: usize,
     ) -> Result<Option<PublicationGeometry>, Error> {
         let cached = self.caller.as_ref().filter(|caller| {
-            ctx.control.current == Some(caller.iteration)
+            ctx.state.control.current == Some(caller.iteration)
                 && (self.descriptor.metadata().plan.blocks()[site].iteration()
                     == Some(caller.iteration)
                     || self
@@ -101,9 +101,9 @@ impl State<'_> {
         let Some(caller) = cached else {
             return ctx.retained_caller_geometry(site);
         };
-        ctx.control.work.charge(Phase::Setup, 256)?;
+        ctx.state.control.work.charge(Phase::Setup, 256)?;
         let geometry = PublicationGeometry {
-            live_bytes: ctx.library.memory_budget().used_bytes(),
+            live_bytes: ctx.state.library.memory_budget().used_bytes(),
             live_nodes: add(caller.fixed_nodes, ctx.retained_caller_dynamic_nodes(site)?)?,
         };
         // Independently check the retained local component. Shared snapshots

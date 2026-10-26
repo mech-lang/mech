@@ -55,7 +55,7 @@ pub(super) const PARALLEL_RUN: u64 = u64::MAX - 20;
 pub(super) const PARALLEL_TAKE: u64 = u64::MAX - 21;
 pub(super) const PARALLEL_YIELD: u64 = u64::MAX - 22;
 pub(super) const PARALLEL_ENTER: u64 = u64::MAX - 23;
-// Global Context helpers; distinct from private bound Owner operations.
+// Global Invocation helpers; distinct from private bound Owner operations.
 pub(super) const FROZEN_MAP_COPY: u64 = u64::MAX - 24;
 pub(super) const FROZEN_MAP_READ: u64 = u64::MAX - 25;
 pub(super) type Helper =

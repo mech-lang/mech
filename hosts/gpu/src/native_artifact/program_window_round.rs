@@ -1,25 +1,25 @@
 //! Short-lived owner loans for a compiler-proved loop INSIDE one host round.
 //! No loop evaluation, provider access, renewed budget or transaction here.
-use super::{Context, NativeProgramExecutionError as Error, invalid};
+use super::{Invocation, NativeProgramExecutionError as Error, invalid};
 use mech_engine::native_artifact::NativeControlLoop;
 #[path = "program_window_hashes.rs"]
 pub(super) mod hashes;
 #[path = "program_string_map_round.rs"]
 mod string_map;
 
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
     pub(super) fn prepare_window_region(
         &mut self,
         site: usize,
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
-        if self.window_hashes.is_some() || self.window_region.is_some() || self.consumed {
+        if self.window_hashes.is_some() || self.window_region.is_some() || self.state.consumed {
             return Err(invalid("duplicate compiled window preparation"));
         }
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         // Pay both immutable region-table lookups (prepare and finish) once;
         // their cost must also remain bounded for programs with many regions.
-        self.control.work.charge(
+        self.state.control.work.charge(
             super::NativeExecutionPhase::Setup,
             super::amount(descriptor.metadata().window_regions.len(), 128, 256)?,
         )?;
@@ -35,13 +35,14 @@ impl Context<'_, '_> {
             return Ok(Some(0));
         }
         let iteration = region.iteration() as usize;
-        if self.control.current != Some(region.iteration())
-            || self.control.progress[iteration * 2 + 1] != 1
-            || args[1].checked_add(1) != Some(self.control.progress[iteration * 2])
+        if self.state.control.current != Some(region.iteration())
+            || self.progress[iteration * 2 + 1] != 1
+            || args[1].checked_add(1) != Some(self.progress[iteration * 2])
         {
             return Err(invalid("compiled window outside its fresh source count"));
         }
         let mut state = self
+            .state
             .collections
             .take()
             .ok_or_else(|| invalid("compiled window has no collection state"))?;
@@ -50,19 +51,19 @@ impl Context<'_, '_> {
         } else {
             state.prepare_compiled_histogram(self, region, args[0], args[1])
         };
-        self.collections = Some(state);
+        self.state.collections = Some(state);
         let Some((_words, accepted)) = result? else {
             // Same compiler/CFG handles representations not covered by this
             // machine-code variant. No resident or historical executor.
             return Ok(Some(0));
         };
-        let source = self.call_inputs.values()[0]
+        let source = self.state.call_inputs.values()[0]
             .as_ref()
             .ok_or_else(|| invalid("hash window lost its admitted source"))?;
         let mech_core::ValueData::String(text) = source.data() else {
             return Err(invalid("hash window source is not String"));
         };
-        let memory = self.library.memory_budget();
+        let memory = self.state.library.memory_budget();
         // Existing preparation includes all current source/query/scratch owners.
         // Its shared-account observation is deliberately conservative for the
         // component allowance and cannot grant additional global capacity.
@@ -82,7 +83,7 @@ impl Context<'_, '_> {
             accepted,
             region.collection(),
             descriptor.metadata().plan.collections()[region.collection() as usize].origin(),
-            self.library.clone(),
+            self.state.library.clone(),
             temporary,
             retained,
         )?;
@@ -110,7 +111,7 @@ impl Context<'_, '_> {
         if args[1] != u64::from(collection) || args[2] != 0 || args[0] > accepted {
             return Err(invalid("compiled window count outside admitted bound"));
         }
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let region = descriptor
             .metadata()
             .window_regions
@@ -122,7 +123,9 @@ impl Context<'_, '_> {
         else {
             return Err(invalid("compiled window lost its generator"));
         };
-        if generator.header() as usize != site || self.control.current != Some(region.iteration()) {
+        if generator.header() as usize != site
+            || self.state.control.current != Some(region.iteration())
+        {
             return Err(invalid("compiled window finish outside its entry"));
         }
         let hashes = self
@@ -130,16 +133,20 @@ impl Context<'_, '_> {
             .take()
             .ok_or_else(|| invalid("compiled window lost its hash table"))?;
         hashes.validate(collection, accepted, args[0])?;
-        self.hash_table_regions = self
+        self.state.stats.hash_table_regions = self
+            .state
+            .stats
             .hash_table_regions
             .checked_add(1)
             .ok_or_else(|| invalid("hash table region witness overflow"))?;
-        self.hash_table_updates = self
+        self.state.stats.hash_table_updates = self
+            .state
+            .stats
             .hash_table_updates
             .checked_add(hashes.completed_updates())
             .ok_or_else(|| invalid("hash table update witness overflow"))?;
         let counted = if region.query().is_some() {
-            let query = self.call_inputs.values()[1]
+            let query = self.state.call_inputs.values()[1]
                 .as_ref()
                 .ok_or_else(|| invalid("hash window lost its query"))?;
             let mech_core::ValueData::String(query) = query.data() else {
@@ -150,6 +157,7 @@ impl Context<'_, '_> {
             accepted
         };
         let mut state = self
+            .state
             .collections
             .take()
             .ok_or_else(|| invalid("compiled window lost its state"))?;
@@ -163,13 +171,13 @@ impl Context<'_, '_> {
         } else {
             state.finish_compiled_histogram(self, collection, accepted, args[0])
         };
-        self.collections = Some(state);
+        self.state.collections = Some(state);
         result?;
         // Only this closed, compiler-proved region may exhaust its own finite
         // generator in bulk. The next ordinary CFG edge is the SAME header's
         // exit. Do not replay/fabricate a billion old operation visits.
-        self.control.progress[region.iteration() as usize * 2] = 0;
-        self.call_inputs.values_mut()[..2].fill(None);
+        self.progress[region.iteration() as usize * 2] = 0;
+        self.state.call_inputs.values_mut()[..2].fill(None);
         self.window_region = None;
         Ok(None)
     }

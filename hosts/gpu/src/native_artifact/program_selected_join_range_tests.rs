@@ -42,8 +42,8 @@ thread_local! {
     static ORIGINAL_LIMITS: Cell<Option<MemoryBudgetLimits>> = const { Cell::new(None) };
 }
 
-fn observe(ctx: &Context<'_, '_>, index: usize, range: bool, compact: bool) {
-    let region = &ctx.control.descriptor.metadata().selected_joins.regions[index];
+fn observe(ctx: &Invocation<'_, '_, '_>, index: usize, range: bool, compact: bool) {
+    let region = &ctx.descriptor.metadata().selected_joins.regions[index];
     if region.range().is_none() {
         return;
     }
@@ -52,14 +52,16 @@ fn observe(ctx: &Context<'_, '_>, index: usize, range: bool, compact: bool) {
             range,
             compact,
             selector_empty: ctx
+                .state
                 .arena
                 .test_current_value(region.selector().get())
                 .is_none(),
             selected_empty: ctx
+                .state
                 .arena
                 .test_current_value(region.selected().get())
                 .is_none(),
-            parent: ctx.control.current,
+            parent: ctx.state.control.current,
             persistent_metadata: ctx
                 .selected_join
                 .as_ref()
@@ -69,17 +71,17 @@ fn observe(ctx: &Context<'_, '_>, index: usize, range: bool, compact: bool) {
         })
     });
 }
-pub(super) fn after_range(ctx: &mut Context<'_, '_>, index: usize) {
+pub(super) fn after_range(ctx: &mut Invocation<'_, '_, '_>, index: usize) {
     observe(ctx, index, true, true);
     if let Some(limits) = ORIGINAL_LIMITS.with(Cell::take) {
         ctx.limits = limits;
     }
 }
-pub(super) fn after_selection(ctx: &Context<'_, '_>, index: usize, compact: bool) {
+pub(super) fn after_selection(ctx: &Invocation<'_, '_, '_>, index: usize, compact: bool) {
     observe(ctx, index, false, compact);
 }
 pub(super) fn before_range_admission(
-    ctx: &mut Context<'_, '_>,
+    ctx: &mut Invocation<'_, '_, '_>,
     _site: usize,
     prior: ResourceDemand,
     metadata: u64,
@@ -106,7 +108,7 @@ pub(super) fn before_range_admission(
     }
 }
 pub(super) fn before_call(
-    ctx: &mut Context<'_, '_>,
+    ctx: &mut Invocation<'_, '_, '_>,
     site: usize,
     role: Site,
     words: &[u64],
@@ -128,7 +130,7 @@ pub(super) fn before_call(
     let index = match role {
         Site::Range(i) | Site::Select(i) | Site::Join(i) => i,
     };
-    let region = &ctx.control.descriptor.metadata().selected_joins.regions[index];
+    let region = &ctx.descriptor.metadata().selected_joins.regions[index];
     let Some(range) = region.range() else {
         return Ok(());
     };

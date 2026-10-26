@@ -245,3 +245,27 @@ Frame 144 bytes, and map Slot 968 bytes. The fixed caller price is 2432 + 144 +
 128 = 2704; keep that charged envelope after grouping state and retain the
 three Option-backed Slot fields. The layout extraction must fit the existing
 128-byte conservative margin without repricing or moving finite frontiers.
+
+
+Stage D completion evidence: nested/default/concurrent Object compilations have
+isolated options, reports and identical bytes for equal options. The native run
+completed 415 passes, two existing ignores and one report-summary assertion
+failure (a direct lookup callee was counted as a second top-level steady loop).
+The summary now retains the existing non-direct definition meaning; the actual
+emission/metadata and guest bytes did not change. Its focused regression passes.
+Final native qualification after runtime extraction remains required.
+
+Stage E ownership: `ExecutionState` owns one ControlState, one RuntimeStats,
+arena, owners, caches, library ledger and publication cursor. Invocation borrows
+that same local state plus disjoint transport/progress for a synchronous phase;
+ControlView borrows the shared ledger mechanically in both iteration and
+program execution. The mirror OwnedState and both field-transfer literals are
+deleted. State is taken at the existing boundary and restored only after all
+successful phase checks and the Invocation has dropped. An error never restores
+it. No allocation, lock, dynamic dispatch or self-referential owner was added.
+
+The new persistent state is 1104 bytes and invocation 1288 (2392 combined),
+within the previous 2432 + 128 allowance. The caller charge remains 2704 bytes
+and Frame remains 144. Slot remains 968 bytes. The layout guards, shared control
+progress regression, malformed checkpoint regression and corrected steady
+report regression pass. Slot lifecycle/protocol consolidation continues next.

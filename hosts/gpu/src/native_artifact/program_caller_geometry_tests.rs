@@ -28,20 +28,20 @@ unsafe extern "C" fn observe(
     if matches!(operation, LIBRARY | MOVE | COLLECTION) {
         // SAFETY: native code is suspended at the real helper boundary. The
         // exclusive diagnostic borrow ends before delegating unchanged args.
-        let ctx = unsafe { &mut *context.cast::<Context<'_, '_>>() };
-        let memory = ctx.library.memory_budget();
+        let ctx = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+        let memory = ctx.state.library.memory_budget();
         let snapshots = memory.retained_snapshot_nodes();
-        let before = ctx.library.used().0;
+        let before = ctx.state.library.used().0;
         let wrong_site_denied = ctx.retained_caller_geometry(site as usize + 1).is_err();
         let outcome = ctx.retained_caller_geometry(site as usize);
         if matches!(outcome, Ok(Some(_))) {
             // Independent scan checks the maintained total against all live
             // cache owners, including selected String-span index mutations.
             let mut scanned = 0u64;
-            for entry in &ctx.call_caches.entries {
+            for entry in &ctx.state.call_caches.entries {
                 if let session::CallCacheEntry::Repeated(cache, tracked) = entry {
                     let actual = cache
-                        .retained_metadata_demand(&ctx.library)
+                        .retained_metadata_demand(&ctx.state.library)
                         .unwrap()
                         .retained_nodes;
                     assert_eq!(*tracked, actual);
@@ -49,8 +49,12 @@ unsafe extern "C" fn observe(
                 }
             }
             assert_eq!(
-                ctx.call_caches.caller_retained_nodes(&ctx.library).unwrap(),
-                session::CallCacheLane::metadata_bytes(ctx.call_caches.entries.len()).unwrap()
+                ctx.state
+                    .call_caches
+                    .caller_retained_nodes(&ctx.state.library)
+                    .unwrap(),
+                session::CallCacheLane::metadata_bytes(ctx.state.call_caches.entries.len())
+                    .unwrap()
                     + scanned
             );
         }
@@ -59,9 +63,10 @@ unsafe extern "C" fn observe(
                 snapshot_nodes: snapshots,
                 nodes: geometry.live_nodes,
                 bytes: geometry.live_bytes,
-                work: ctx.library.used().0 - before,
+                work: ctx.state.library.used().0 - before,
                 activation: ctx.activation_phase,
                 builders: ctx
+                    .state
                     .collections
                     .as_ref()
                     .map_or(0, |state| state.test_builder_kinds()),

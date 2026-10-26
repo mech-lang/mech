@@ -5,34 +5,38 @@ use mech_engine::native_artifact::NativeWindowRegion;
 impl State {
     pub(in crate::native_artifact::program_runtime) fn prepare_compiled_window(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         region: &NativeWindowRegion,
         width: u64,
         length: u64,
     ) -> Result<Option<([u64; 5], u64)>, Error> {
         let id = region.collection();
         super::charge(
-            &mut ctx.control.work,
-            super::super::super::amount(ctx.call_inputs.values().len(), 16, 128)?,
+            &mut ctx.state.control.work,
+            super::super::super::amount(ctx.state.call_inputs.values().len(), 16, 128)?,
         )?;
         self.builder(id)?;
         let query = self.query_builder(id)?;
         if query.phase.is_some()
             || query.accepted != 0
             || query.matched != 0
-            || ctx.call_inputs.values().len() < 2
-            || ctx.call_inputs.values().iter().any(Option::is_some)
+            || ctx.state.call_inputs.values().len() < 2
+            || ctx.state.call_inputs.values().iter().any(Option::is_some)
         {
             return Err(invalid("compiled window has stale owners or query state"));
         }
-        let current_query = ctx.arena.get(query.handle, &mut ctx.control.work)?;
+        let current_query = ctx
+            .state
+            .arena
+            .get(query.handle, &mut ctx.state.control.work)?;
         if !query.query.shares_frozen_storage(current_query) {
             return Err(invalid("compiled window query generation changed"));
         }
         let query_owner = query.query.clone();
         let source = ctx
+            .state
             .arena
-            .copy_current(region.source().get(), &mut ctx.control.work)?;
+            .copy_current(region.source().get(), &mut ctx.state.control.work)?;
         let (ValueData::String(text), ValueData::String(key)) = (source.data(), query_owner.data())
         else {
             return Err(invalid("compiled window requires genuine String roots"));
@@ -68,12 +72,12 @@ impl State {
             512,
         )?;
         let source_bytes = source
-            .memory_budget_retained_bytes(&ctx.library.memory_budget())
+            .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
             .ok_or_else(|| invalid("compiled window source is unadmitted"))?;
         let query_bytes = query_owner
-            .memory_budget_retained_bytes(&ctx.library.memory_budget())
+            .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
             .ok_or_else(|| invalid("compiled window query is unadmitted"))?;
-        let origin = ctx.control.descriptor.metadata().plan.collections()[id as usize].origin();
+        let origin = ctx.descriptor.metadata().plan.collections()[id as usize].origin();
         check(
             origin,
             Dimension::TemporaryBytes,
@@ -96,8 +100,8 @@ impl State {
         ];
         // Existing admitted typed storage retains BOTH owners until the
         // matching finish callback, including query/source aliasing and error.
-        ctx.call_inputs.values_mut()[0] = Some(source);
-        ctx.call_inputs.values_mut()[1] = Some(query_owner);
+        ctx.state.call_inputs.values_mut()[0] = Some(source);
+        ctx.state.call_inputs.values_mut()[1] = Some(query_owner);
         Ok(Some((words, accepted)))
     }
 

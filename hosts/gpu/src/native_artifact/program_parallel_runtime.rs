@@ -1,6 +1,6 @@
 //! Scoped execution of original generated comprehension bodies. This module
 //! schedules entries and transports immutable results; it evaluates no CFG.
-use super::{Context, NativeProgramExecutionError as Error, amount, invalid};
+use super::{Invocation, NativeProgramExecutionError as Error, amount, invalid};
 use crate::native_artifact::{
     NativeExecutionPhase as Phase, NativeProgramExecutionLimits,
     program_abi::{self as abi, Frame},
@@ -146,7 +146,7 @@ pub(super) fn worker_setup_fits(
     Ok(true)
 }
 
-impl Context<'_, '_> {
+impl Invocation<'_, '_, '_> {
     pub(super) fn parallel_helper(
         &mut self,
         site: usize,
@@ -163,7 +163,6 @@ impl Context<'_, '_> {
                     .as_ref()
                     .ok_or_else(|| invalid("worker entry without owned child state"))?;
                 let region = self
-                    .control
                     .descriptor
                     .metadata()
                     .parallel
@@ -173,13 +172,13 @@ impl Context<'_, '_> {
                 if site != region.begin as usize
                     || args != [worker.region as u64, worker.index, worker.count]
                     || worker.result.is_some()
-                    || self.control.previous.is_some()
-                    || self.control.current.is_some()
-                    || self.control.completed
+                    || self.state.control.previous.is_some()
+                    || self.state.control.current.is_some()
+                    || self.state.control.completed
                 {
                     return Err(invalid("worker entry differs from constructor boundary"));
                 }
-                self.control.work.charge(Phase::Setup, 256)?;
+                self.state.control.work.charge(Phase::Setup, 256)?;
                 Ok(None)
             }
             _ => Err(invalid("unknown parallel entry operation")),
@@ -187,7 +186,7 @@ impl Context<'_, '_> {
     }
 
     fn run_parallel(&mut self, site: usize, args: [u64; 3]) -> Result<Option<u64>, Error> {
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let id = usize::try_from(args[2]).map_err(|_| invalid("parallel region index overflow"))?;
         let region = descriptor
             .metadata()
@@ -196,9 +195,9 @@ impl Context<'_, '_> {
             .get(id)
             .ok_or_else(|| invalid("parallel region outside descriptor"))?;
         if region.initialize as usize != site
-            || self.control.previous != Some(site as u32)
-            || self.control.current != Some(region.iteration)
-            || !self.consumed
+            || self.state.control.previous != Some(site as u32)
+            || self.state.control.current != Some(region.iteration)
+            || !self.state.consumed
         {
             return Err(invalid(
                 "parallel dispatch outside exact initialized collection",
@@ -207,7 +206,7 @@ impl Context<'_, '_> {
         if self.worker.is_some() || self.activation_phase {
             return Ok(Some(0));
         }
-        let count = self.control.progress[region.iteration as usize * 2];
+        let count = self.progress[region.iteration as usize * 2];
         if let Some(batch) = &self.parallel_batch {
             let pending = batch
                 .regions
@@ -219,8 +218,9 @@ impl Context<'_, '_> {
                 ));
             }
             let source = self
+                .state
                 .arena
-                .copy_current(region.source, &mut self.control.work)?;
+                .copy_current(region.source, &mut self.state.control.work)?;
             if !source.shares_frozen_storage(&pending.source) {
                 return Err(invalid("future parallel source changed identity"));
             }
@@ -236,7 +236,7 @@ impl Context<'_, '_> {
         if count == 0 || count > workers as u64 || region.group.len() > workers {
             return Ok(Some(0));
         }
-        let Some((compute, _)) = self.library.unscoped_remaining() else {
+        let Some((compute, _)) = self.state.library.unscoped_remaining() else {
             return Ok(Some(0));
         };
         if compute == 0 {
@@ -258,7 +258,7 @@ impl Context<'_, '_> {
         {
             return Err(invalid("parallel dispatch passed a foreign frame"));
         }
-        let memory = self.library.memory_budget().with_limits(
+        let memory = self.state.library.memory_budget().with_limits(
             self.limits
                 .max_temporary_bytes
                 .ok_or_else(|| invalid("parallel requires finite bytes"))?,
@@ -304,7 +304,7 @@ impl Context<'_, '_> {
             0,
         )?)
         .ok_or_else(|| invalid("parallel metadata overflow"))?;
-        self.control.work.charge(
+        self.state.control.work.charge(
             Phase::Setup,
             metadata
                 .checked_mul(8)
@@ -331,8 +331,9 @@ impl Context<'_, '_> {
             let member = member as usize;
             let selected = &descriptor.metadata().parallel.regions[member];
             let source = self
+                .state
                 .arena
-                .copy_current(selected.source, &mut self.control.work)?;
+                .copy_current(selected.source, &mut self.state.control.work)?;
             if !matches!(
                 source.data(),
                 mech_core::ValueData::Matrix(_) | mech_core::ValueData::Set(_)
@@ -363,7 +364,9 @@ impl Context<'_, '_> {
                 } else {
                     captures.push(Capture::Value(
                         slot,
-                        self.arena.copy_current(slot, &mut self.control.work)?,
+                        self.state
+                            .arena
+                            .copy_current(slot, &mut self.state.control.work)?,
                     ));
                 }
             }
@@ -399,10 +402,12 @@ impl Context<'_, '_> {
         }
         let origin = descriptor.metadata().plan.collections()[region.collection as usize].origin();
         let (compute, comparisons) = self
+            .state
             .library
             .unscoped_remaining()
             .ok_or_else(|| invalid("parallel scope changed during admission"))?;
         let group = self
+            .state
             .library
             .reserve_worker_group_with_memory(compute, comparisons, &memory)
             .map_err(|error| budget_error(error, origin))?;
@@ -514,96 +519,139 @@ impl Context<'_, '_> {
         let (_, credit) = group
             .finish_with_credit_statistics()
             .map_err(|error| Error::Collection { origin, error })?;
-        self.worker_credit_claims = self
+        self.state.stats.worker_credit_claims = self
+            .state
+            .stats
             .worker_credit_claims
             .checked_add(credit.claims)
             .ok_or_else(|| invalid("parallel work-credit claim count overflow"))?;
-        self.worker_credit_batches = self
+        self.state.stats.worker_credit_batches = self
+            .state
+            .stats
             .worker_credit_batches
             .checked_add(credit.batches)
             .ok_or_else(|| invalid("parallel work-credit batch count overflow"))?;
-        self.worker_credit_reclaims = self
+        self.state.stats.worker_credit_reclaims = self
+            .state
+            .stats
             .worker_credit_reclaims
             .checked_add(credit.reclaims)
             .ok_or_else(|| invalid("parallel work-credit reclaim count overflow"))?;
         drop(stacks);
         let results = outcomes?;
         if results.iter().all(Result::is_ok) {
-            self.parallel_batches = self
+            self.state.stats.parallel_batches = self
+                .state
+                .stats
                 .parallel_batches
                 .checked_add(1)
                 .ok_or_else(|| invalid("parallel batch count overflow"))?;
-            self.parallel_regions = self
+            self.state.stats.parallel_regions = self
+                .state
+                .stats
                 .parallel_regions
                 .checked_add(ready.len() as u64)
                 .ok_or_else(|| invalid("parallel batch count overflow"))?;
-            self.parallel_tasks = self
+            self.state.stats.parallel_tasks = self
+                .state
+                .stats
                 .parallel_tasks
                 .checked_add(task_count)
                 .ok_or_else(|| invalid("parallel task count overflow"))?;
-            self.parallel_peak_workers = self
+            self.state.stats.parallel_peak_workers = self
+                .state
+                .stats
                 .parallel_peak_workers
                 .max(activity.peak.load(Ordering::Relaxed) as u64);
         }
         for result in results.iter().filter_map(|result| result.as_ref().ok()) {
-            self.control.visits = self
+            self.state.control.visits = self
+                .state
                 .control
                 .visits
                 .checked_add(result.visits)
                 .ok_or_else(|| invalid("parallel visit overflow"))?;
-            self.hash_table_regions = self
+            self.state.stats.hash_table_regions = self
+                .state
+                .stats
                 .hash_table_regions
                 .checked_add(result.hash_regions)
                 .ok_or_else(|| invalid("parallel region overflow"))?;
-            self.hash_table_updates = self
+            self.state.stats.hash_table_updates = self
+                .state
+                .stats
                 .hash_table_updates
                 .checked_add(result.hash_updates)
                 .ok_or_else(|| invalid("parallel update overflow"))?;
-            self.packed_map_regions = self
+            self.state.stats.packed_map_regions = self
+                .state
+                .stats
                 .packed_map_regions
                 .checked_add(result.packed_regions)
                 .ok_or_else(|| invalid("parallel packed region overflow"))?;
-            self.direct_lookup_regions = self
+            self.state.stats.direct_lookup_regions = self
+                .state
+                .stats
                 .direct_lookup_regions
                 .checked_add(result.direct_lookup_regions)
                 .ok_or_else(|| invalid("parallel direct lookup region overflow"))?;
-            self.packed_map_updates = self
+            self.state.stats.packed_map_updates = self
+                .state
+                .stats
                 .packed_map_updates
                 .checked_add(result.packed_updates)
                 .ok_or_else(|| invalid("parallel packed update overflow"))?;
-            self.packed_ssa_regions = self
+            self.state.stats.packed_ssa_regions = self
+                .state
+                .stats
                 .packed_ssa_regions
                 .checked_add(result.packed_ssa_regions)
                 .ok_or_else(|| invalid("parallel SSA region overflow"))?;
-            self.guarded_loop_regions = self
+            self.state.stats.guarded_loop_regions = self
+                .state
+                .stats
                 .guarded_loop_regions
                 .checked_add(result.guarded_loop_regions)
                 .ok_or_else(|| invalid("parallel guarded loop count overflow"))?;
-            self.guarded_call_regions = self
+            self.state.stats.guarded_call_regions = self
+                .state
+                .stats
                 .guarded_call_regions
                 .checked_add(result.guarded_call_regions)
                 .ok_or_else(|| invalid("parallel guarded call count overflow"))?;
-            self.frozen_map_regions = self
+            self.state.stats.frozen_map_regions = self
+                .state
+                .stats
                 .frozen_map_regions
                 .checked_add(result.frozen_map_regions)
                 .ok_or_else(|| invalid("parallel frozen region overflow"))?;
-            self.frozen_map_reads = self
+            self.state.stats.frozen_map_reads = self
+                .state
+                .stats
                 .frozen_map_reads
                 .checked_add(result.frozen_map_reads)
                 .ok_or_else(|| invalid("parallel frozen read overflow"))?;
-            self.worker_credit_claims = self
+            self.state.stats.worker_credit_claims = self
+                .state
+                .stats
                 .worker_credit_claims
                 .checked_add(result.worker_credit_claims)
                 .ok_or_else(|| invalid("parallel work-credit statistics overflow"))?;
-            self.worker_credit_batches = self
+            self.state.stats.worker_credit_batches = self
+                .state
+                .stats
                 .worker_credit_batches
                 .checked_add(result.worker_credit_batches)
                 .ok_or_else(|| invalid("parallel work-credit statistics overflow"))?;
-            self.worker_credit_reclaims = self
+            self.state.stats.worker_credit_reclaims = self
+                .state
+                .stats
                 .worker_credit_reclaims
                 .checked_add(result.worker_credit_reclaims)
                 .ok_or_else(|| invalid("parallel work-credit statistics overflow"))?;
-            self.fused_string_map_bytes = self
+            self.state.stats.fused_string_map_bytes = self
+                .state
+                .stats
                 .fused_string_map_bytes
                 .checked_add(result.fused_string_map_bytes)
                 .ok_or_else(|| invalid("parallel joined map byte overflow"))?;
@@ -634,7 +682,7 @@ impl Context<'_, '_> {
 
     fn take_parallel(&mut self, site: usize, args: [u64; 3]) -> Result<Option<u64>, Error> {
         let id = usize::try_from(args[0]).map_err(|_| invalid("parallel take region overflow"))?;
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let region = descriptor
             .metadata()
             .parallel
@@ -643,8 +691,8 @@ impl Context<'_, '_> {
             .ok_or_else(|| invalid("parallel take region"))?;
         if args[1..] != [0; 2]
             || region.body as usize != site
-            || self.control.previous != Some(site as u32)
-            || !self.consumed
+            || self.state.control.previous != Some(site as u32)
+            || !self.state.consumed
         {
             return Err(invalid("parallel take outside original element"));
         }
@@ -656,10 +704,10 @@ impl Context<'_, '_> {
             .front_mut()
             .ok_or_else(|| invalid("parallel group omitted region"))?;
         if pending.region != id
-            || self.control.current != Some(region.iteration)
+            || self.state.control.current != Some(region.iteration)
             || pending
                 .count
-                .checked_sub(self.control.progress[region.iteration as usize * 2])
+                .checked_sub(self.progress[region.iteration as usize * 2])
                 != Some(pending.next)
         {
             return Err(invalid(
@@ -690,14 +738,15 @@ impl Context<'_, '_> {
         match receipt.value {
             Yield::Word(word) => self.write_borrowed_word(0, word)?,
             Yield::Value(value) => {
-                self.arena
-                    .put(region.output, &value, &mut self.control.work)?;
+                self.state
+                    .arena
+                    .put(region.output, &value, &mut self.state.control.work)?;
             }
         }
         // The private receipt certifies execution of this exact body under a
         // child loan. Only its original push successor becomes admissible.
-        self.control.previous = Some(receipt.previous);
-        self.consumed = true;
+        self.state.control.previous = Some(receipt.previous);
+        self.state.consumed = true;
         if self
             .parallel_batch
             .as_ref()
@@ -716,7 +765,7 @@ impl Context<'_, '_> {
             .worker
             .as_ref()
             .ok_or_else(|| invalid("worker yield in parent invocation"))?;
-        let descriptor = self.control.descriptor;
+        let descriptor = self.descriptor;
         let region = descriptor
             .metadata()
             .parallel
@@ -724,6 +773,7 @@ impl Context<'_, '_> {
             .get(worker.region)
             .ok_or_else(|| invalid("worker proof region"))?;
         let previous = self
+            .state
             .control
             .previous
             .ok_or_else(|| invalid("worker yield before body"))?;
@@ -731,13 +781,13 @@ impl Context<'_, '_> {
             || args[2] != 0
             || region.push as usize != site
             || worker.result.is_some()
-            || self.control.current != Some(region.iteration)
+            || self.state.control.current != Some(region.iteration)
             || !region.contains(previous)
             || !mech_engine::native_artifact::NativeProgramFacts::control_successors(
                 descriptor.metadata().plan.blocks()[previous as usize].terminator(),
             )
             .contains(&Some(region.push))
-            || (self.action_required(previous as usize) && !self.consumed)
+            || (self.action_required(previous as usize) && !self.state.consumed)
             || self.closed_tail.is_some()
             || self.borrowed_strings.is_some()
         {
@@ -753,28 +803,29 @@ impl Context<'_, '_> {
                 return Err(invalid("managed worker result has scalar payload"));
             }
             Yield::Value(
-                self.arena
-                    .copy_current(region.output, &mut self.control.work)?,
+                self.state
+                    .arena
+                    .copy_current(region.output, &mut self.state.control.work)?,
             )
         };
         self.worker.as_mut().unwrap().result = Some(Receipt {
             value,
             previous,
-            visits: self.control.visits,
-            hash_regions: self.hash_table_regions,
-            hash_updates: self.hash_table_updates,
-            packed_regions: self.packed_map_regions,
-            packed_updates: self.packed_map_updates,
-            direct_lookup_regions: self.direct_lookup_regions,
-            packed_ssa_regions: self.packed_ssa_regions,
-            guarded_loop_regions: self.guarded_loop_regions,
-            guarded_call_regions: self.guarded_call_regions,
-            frozen_map_regions: self.frozen_map_regions,
-            frozen_map_reads: self.frozen_map_reads,
-            worker_credit_claims: self.worker_credit_claims,
-            worker_credit_batches: self.worker_credit_batches,
-            worker_credit_reclaims: self.worker_credit_reclaims,
-            fused_string_map_bytes: self.fused_string_map_bytes,
+            visits: self.state.control.visits,
+            hash_regions: self.state.stats.hash_table_regions,
+            hash_updates: self.state.stats.hash_table_updates,
+            packed_regions: self.state.stats.packed_map_regions,
+            packed_updates: self.state.stats.packed_map_updates,
+            direct_lookup_regions: self.state.stats.direct_lookup_regions,
+            packed_ssa_regions: self.state.stats.packed_ssa_regions,
+            guarded_loop_regions: self.state.stats.guarded_loop_regions,
+            guarded_call_regions: self.state.stats.guarded_call_regions,
+            frozen_map_regions: self.state.stats.frozen_map_regions,
+            frozen_map_reads: self.state.stats.frozen_map_reads,
+            worker_credit_claims: self.state.stats.worker_credit_claims,
+            worker_credit_batches: self.state.stats.worker_credit_batches,
+            worker_credit_reclaims: self.state.stats.worker_credit_reclaims,
+            fused_string_map_bytes: self.state.stats.fused_string_map_bytes,
         });
         Ok(Some(1))
     }

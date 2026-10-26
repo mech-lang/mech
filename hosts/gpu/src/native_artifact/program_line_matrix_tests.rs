@@ -15,13 +15,14 @@ struct Observation {
     rows: usize,
 }
 thread_local! { static LAST: Cell<Option<Observation>> = const { Cell::new(None) }; }
-pub(super) fn observe(ctx: &Context<'_, '_>, ordinal: usize) {
-    let region = &ctx.control.descriptor.metadata().line_matrices.regions[ordinal];
-    let view = ctx.line_matrices.views[ordinal].as_ref();
+pub(super) fn observe(ctx: &Invocation<'_, '_, '_>, ordinal: usize) {
+    let region = &ctx.descriptor.metadata().line_matrices.regions[ordinal];
+    let view = ctx.state.line_matrices.views[ordinal].as_ref();
     LAST.with(|last| {
         last.set(Some(Observation {
             private: view.is_some(),
             matrix_present: ctx
+                .state
                 .arena
                 .test_current_value(region.matrix().get())
                 .is_some(),

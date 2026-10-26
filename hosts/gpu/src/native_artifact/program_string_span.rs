@@ -1,7 +1,7 @@
 //! One compiler-proved current-visit String span, never a canonical Value.
 //! Original Range and String selector visits still run independently. The
 //! selected sink borrows bytes only while consuming this private lane.
-use super::{Action, Context, Dimension, Error, State, add, check, invalid};
+use super::{Action, Dimension, Error, Invocation, State, add, check, invalid};
 use crate::native_artifact::NativeValueHandle;
 use mech_core::{ResourceDemand, Value, ValueData, WorkDemand};
 use mech_engine::native_artifact::{NativeMatchValue, NativeSelectedStringSpanSelector};
@@ -26,12 +26,11 @@ pub(super) struct Visit {
     pub(super) remaining: u64,
 }
 impl Visit {
-    pub(super) fn current(ctx: &Context<'_, '_>, site: usize) -> Result<Self, Error> {
-        let iteration = ctx.control.descriptor.metadata().plan.blocks()[site]
+    pub(super) fn current(ctx: &Invocation<'_, '_, '_>, site: usize) -> Result<Self, Error> {
+        let iteration = ctx.descriptor.metadata().plan.blocks()[site]
             .iteration()
             .ok_or_else(|| invalid("String span outside a generated candidate"))?;
         let remaining = *ctx
-            .control
             .progress
             .get(iteration as usize * 2)
             .ok_or_else(|| invalid("String span iteration outside progress"))?;
@@ -133,7 +132,7 @@ impl State {
 
     pub(super) fn prepare_string_span(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         site: usize,
         id: u32,
         words: [u64; 2],
@@ -142,7 +141,7 @@ impl State {
         if self.string_spans[id as usize].is_some() {
             return Err(invalid("String span selector replayed before consumption"));
         }
-        let descriptor = ctx.control.descriptor;
+        let descriptor = ctx.descriptor;
         let proof = descriptor.metadata().plan.collections()[id as usize]
             .string_span_projection()
             .ok_or_else(|| invalid("String span selector lacks selected proof"))?;
@@ -170,7 +169,7 @@ impl State {
         #[cfg(all(test, feature = "canonical-native-program"))]
         selector_tests::after_account(self, ctx, account.is_ok());
         account?;
-        let _binding = ctx.library.memory_budget().reserve_capacity(bytes)?;
+        let _binding = ctx.state.library.memory_budget().reserve_capacity(bytes)?;
         #[cfg(all(test, feature = "canonical-native-program"))]
         selector_tests::before_constructor();
         let constructed = selected.selected_u64_string_span_selector(words[0], words[1]);
@@ -194,12 +193,12 @@ impl State {
 
     pub(super) fn project_string_span(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         site: usize,
         id: u32,
     ) -> Result<(), Error> {
         self.builder(id)?;
-        let descriptor = ctx.control.descriptor;
+        let descriptor = ctx.descriptor;
         let proof = descriptor.metadata().plan.collections()[id as usize]
             .string_span_projection()
             .ok_or_else(|| invalid("String span projection lacks selected proof"))?;
@@ -218,14 +217,19 @@ impl State {
             .as_ref()
             .ok_or_else(|| invalid("String span projection lacks retained factory"))?;
         let handle = ctx
+            .state
             .arena
-            .current_handle(proof.source().get(), &mut ctx.control.work)?;
+            .current_handle(proof.source().get(), &mut ctx.state.control.work)?;
         // get() validates this SAME arena/account/generation before taking an
         // exact strong clone. No storage-content comparison deduplicates an
         // import/schema wrapper, and no leaf-sized claim replaces this owner.
-        let owner = ctx.arena.get(handle, &mut ctx.control.work)?.clone();
+        let owner = ctx
+            .state
+            .arena
+            .get(handle, &mut ctx.state.control.work)?
+            .clone();
         let retained = owner
-            .memory_budget_retained_bytes(&ctx.library.memory_budget())
+            .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
             .ok_or_else(|| invalid("String span source has no complete same-account owner"))?;
         let (prior_clones, prior_compute, prior_comparison) = {
             let builder = self.builder(id)?;
@@ -236,7 +240,7 @@ impl State {
             (builder.cloned_bytes, builder.compute, comparison)
         };
         let super::super::session::CallCacheEntry::Repeated(cache, _) =
-            &ctx.call_caches.entries[site]
+            &ctx.state.call_caches.entries[site]
         else {
             return Err(invalid(
                 "String span projection lacks its repeated-site cache",
@@ -264,19 +268,22 @@ impl State {
         // The maintained wrapper admits the full source owner + real selected
         // metadata/index residency, using the same finite account and Slot.
         // It does not create a selector Value or synthetic TurnMemoryPlan.
-        let before_work = ctx.library.used();
-        let outcome = ctx.call_caches.with_repeated(site, &ctx.library, |cache| {
-            selected.selected_u64_string_span(
-                cache,
-                &owner,
-                &selector,
-                ctx.limits,
-                &ctx.library,
-                coexistence,
-            )
-        });
+        let before_work = ctx.state.library.used();
+        let outcome = ctx
+            .state
+            .call_caches
+            .with_repeated(site, &ctx.state.library, |cache| {
+                selected.selected_u64_string_span(
+                    cache,
+                    &owner,
+                    &selector,
+                    ctx.limits,
+                    &ctx.state.library,
+                    coexistence,
+                )
+            });
         let super::super::session::CallCacheEntry::Repeated(cache, _) =
-            &ctx.call_caches.entries[site]
+            &ctx.state.call_caches.entries[site]
         else {
             unreachable!("retained cache kind");
         };
@@ -284,7 +291,7 @@ impl State {
         let new_nodes = cache.retained_projection_nodes();
         #[cfg(all(test, feature = "canonical-native-program"))]
         boundary_tests::observe(site as u32, visit, outcome.is_ok(), new_bytes, new_nodes);
-        let after_work = ctx.library.used();
+        let after_work = ctx.state.library.used();
         let compute = after_work
             .0
             .checked_sub(before_work.0)
@@ -337,18 +344,19 @@ impl State {
 
     pub(super) fn take_string_yield(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         id: u32,
         value: NativeMatchValue,
     ) -> Result<Yield, Error> {
         self.builder(id)?;
-        let descriptor = ctx.control.descriptor;
+        let descriptor = ctx.descriptor;
         let collection = &descriptor.metadata().plan.collections()[id as usize];
         if collection.string_element_map_projection().is_some() {
             return self.take_string_map_yield(ctx, id, value);
         }
         if let Some(proof) = collection.string_span_projection() {
             let site = ctx
+                .state
                 .control
                 .previous
                 .ok_or_else(|| invalid("String span yield before visit"))?;
@@ -362,7 +370,7 @@ impl State {
             if *visit != Visit::current(ctx, site as usize)? {
                 return Err(invalid("String span yield belongs to another candidate"));
             }
-            ctx.arena.get(*handle, &mut ctx.control.work)?;
+            ctx.state.arena.get(*handle, &mut ctx.state.control.work)?;
             let active = self
                 .active_string_spans
                 .checked_sub(1)
@@ -387,7 +395,10 @@ impl State {
             })
         } else {
             Ok(Yield {
-                owner: ctx.arena.copy_current(value.get(), &mut ctx.control.work)?,
+                owner: ctx
+                    .state
+                    .arena
+                    .copy_current(value.get(), &mut ctx.state.control.work)?,
                 bytes: None,
                 entry: None,
                 _key_owner: None,
@@ -399,7 +410,7 @@ impl State {
 
     pub(super) fn untracked_string_yield(
         &self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         value: &Yield,
     ) -> Result<u64, Error> {
         if value.bytes.is_some() || value.entry.is_some() {

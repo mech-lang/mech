@@ -56,7 +56,7 @@ impl State {
     /// private owner. No semantic joined-source Value is installed or read.
     pub(in crate::native_artifact::program_runtime) fn prepare_joined_string_map(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         region: &NativeStringMapRegion,
         remaining: u64,
     ) -> Result<Option<u64>, Error> {
@@ -92,18 +92,19 @@ impl State {
             return Err(invalid("joined String map sink state differs"));
         }
         charge(
-            &mut ctx.control.work,
-            super::super::super::amount(ctx.call_inputs.values().len(), 16, 128)?,
+            &mut ctx.state.control.work,
+            super::super::super::amount(ctx.state.call_inputs.values().len(), 16, 128)?,
         )?;
-        if ctx.call_inputs.values().len() < 2
-            || ctx.call_inputs.values().iter().any(Option::is_some)
+        if ctx.state.call_inputs.values().len() < 2
+            || ctx.state.call_inputs.values().iter().any(Option::is_some)
         {
             return Err(invalid("joined String map has stale argument owners"));
         }
         for slot in region.owned_source_slots() {
             if ctx
+                .state
                 .arena
-                .current_retained_bytes(slot.get(), &mut ctx.control.work)?
+                .current_retained_bytes(slot.get(), &mut ctx.state.control.work)?
                 .is_some()
             {
                 return Err(invalid(
@@ -119,7 +120,7 @@ impl State {
         };
         let entries = entries.entries().len() as u64;
         self.account(ctx, id, 0, add(mul(entries, 256)?, 1024)?)?;
-        let memory = ctx.library.memory_budget();
+        let memory = ctx.state.library.memory_budget();
         if mapped.owner.memory_budget() != memory
             || mapped.owner.as_bytes().len() as u64 != remaining
         {
@@ -163,8 +164,8 @@ impl State {
             reservation,
         });
         self.live_bytes = add(self.live_bytes, scratch)?;
-        ctx.call_inputs.values_mut()[0] = None;
-        ctx.call_inputs.values_mut()[1] = Some(mapped.map);
+        ctx.state.call_inputs.values_mut()[0] = None;
+        ctx.state.call_inputs.values_mut()[1] = Some(mapped.map);
         #[cfg(all(test, feature = "canonical-native-program"))]
         owned_tests::observe(ctx, region, true, true);
         Ok(Some(processed))
@@ -172,7 +173,7 @@ impl State {
 
     pub(in crate::native_artifact::program_runtime) fn prepare_compiled_string_map(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         region: &NativeStringMapRegion,
         remaining: u64,
     ) -> Result<Option<[u64; 5]>, Error> {
@@ -199,21 +200,23 @@ impl State {
             return Ok(None);
         }
         charge(
-            &mut ctx.control.work,
-            super::super::super::amount(ctx.call_inputs.values().len(), 16, 128)?,
+            &mut ctx.state.control.work,
+            super::super::super::amount(ctx.state.call_inputs.values().len(), 16, 128)?,
         )?;
-        if ctx.call_inputs.values().len() < 2
-            || ctx.call_inputs.values().iter().any(Option::is_some)
+        if ctx.state.call_inputs.values().len() < 2
+            || ctx.state.call_inputs.values().iter().any(Option::is_some)
         {
             return Err(invalid("compiled String map has stale argument owners"));
         }
         let source = ctx
+            .state
             .arena
-            .copy_current(region.source().get(), &mut ctx.control.work)?;
+            .copy_current(region.source().get(), &mut ctx.state.control.work)?;
         let initialized = self.sources[region.iteration() as usize].as_ref().unwrap();
         let handle = ctx
+            .state
             .arena
-            .current_handle(region.source().get(), &mut ctx.control.work)?;
+            .current_handle(region.source().get(), &mut ctx.state.control.work)?;
         if initialized.handle != Some(handle)
             || !matches!(&initialized.backing,super::super::SourceBacking::Value(owner)
                 if owner.shares_frozen_storage(&source))
@@ -228,7 +231,7 @@ impl State {
         self.account(ctx, id, 0, add(mul(text.len() as u64, 64)?, 256)?)?;
         // Only descriptors that already fund the weak fact may use it. The
         // fresh source/generation checks and complete scan charge above stay.
-        let ascii = if ctx.control.descriptor.metadata().window_regions.is_empty() {
+        let ascii = if ctx.descriptor.metadata().window_regions.is_empty() {
             mech_engine::intrinsics::text_graphemes::is_ascii_without_crlf(text)
         } else {
             self.ascii_facts.inspect(&source)?
@@ -240,8 +243,9 @@ impl State {
             return Err(invalid("compiled String map count differs from source"));
         }
         let map_owner = ctx
+            .state
             .arena
-            .copy_current(region.map().get(), &mut ctx.control.work)?;
+            .copy_current(region.map().get(), &mut ctx.state.control.work)?;
         let ValueData::Map(map) = map_owner.data() else {
             return Err(invalid("compiled String map root kind"));
         };
@@ -259,7 +263,7 @@ impl State {
                 return Ok(None);
             }
         }
-        let memory = ctx.library.memory_budget();
+        let memory = ctx.state.library.memory_budget();
         let source_bytes = source
             .memory_budget_retained_bytes(&memory)
             .ok_or_else(|| invalid("unadmitted String map source"))?;
@@ -274,12 +278,15 @@ impl State {
             // sweep. Retire only this CURRENT frozen allocation and invalidate
             // its handles before trying to consume its sole remaining owner.
             charge(
-                &mut ctx.control.work,
+                &mut ctx.state.control.work,
                 super::super::super::amount(region.owned_source_slots().len(), 64, 512)?,
             )?;
             for value in region.owned_source_slots() {
-                ctx.arena
-                    .retire_current_matching(value.get(), &source, &mut ctx.control.work)?;
+                ctx.state.arena.retire_current_matching(
+                    value.get(),
+                    &source,
+                    &mut ctx.state.control.work,
+                )?;
             }
             let initialized = self.sources[region.iteration() as usize].as_mut().unwrap();
             let backing = core::mem::replace(
@@ -296,9 +303,11 @@ impl State {
                     // Other genuine owners (inputs, imports, captured aliases)
                     // keep the immutable route. Restore its new current handle;
                     // no source bytes or frozen identity changed on rejection.
-                    let handle =
-                        ctx.arena
-                            .put(region.source().get(), &value, &mut ctx.control.work)?;
+                    let handle = ctx.state.arena.put(
+                        region.source().get(),
+                        &value,
+                        &mut ctx.state.control.work,
+                    )?;
                     let initialized = self.sources[region.iteration() as usize].as_mut().unwrap();
                     initialized.backing = super::super::SourceBacking::Value(value.clone());
                     initialized.handle = Some(handle);
@@ -390,8 +399,8 @@ impl State {
             reservation,
         });
         self.live_bytes = add(self.live_bytes, scratch)?;
-        ctx.call_inputs.values_mut()[0] = source;
-        ctx.call_inputs.values_mut()[1] = Some(map_owner);
+        ctx.state.call_inputs.values_mut()[0] = source;
+        ctx.state.call_inputs.values_mut()[1] = Some(map_owner);
         #[cfg(all(test, feature = "canonical-native-program"))]
         owned_tests::observe(
             ctx,
@@ -412,7 +421,7 @@ impl State {
 
     pub(in crate::native_artifact::program_runtime) fn finish_compiled_string_map(
         &mut self,
-        ctx: &mut Context<'_, '_>,
+        ctx: &mut Invocation<'_, '_, '_>,
         region: &NativeStringMapRegion,
         accepted: u64,
         processed: u64,
@@ -421,13 +430,12 @@ impl State {
         if processed < accepted {
             // Preserve the actual selected missing-key error and origin. This
             // is one error call after the loop, never a per-character helper.
-            let source = ctx.call_inputs.values()[0].clone();
-            let map = ctx.call_inputs.values()[1]
+            let source = ctx.state.call_inputs.values()[0].clone();
+            let map = ctx.state.call_inputs.values()[1]
                 .as_ref()
                 .ok_or_else(|| invalid("lost map root loan"))?
                 .clone();
-            let selected = ctx.control.descriptor.metadata().calls
-                [region.selection_site() as usize]
+            let selected = ctx.descriptor.metadata().calls[region.selection_site() as usize]
                 .as_ref()
                 .ok_or_else(|| invalid("compiled String map lost selected factory"))?;
             let builder = self.builder(id)?;
@@ -439,12 +447,12 @@ impl State {
                         .as_ref()
                         .map(|source| {
                             source
-                                .memory_budget_retained_bytes(&ctx.library.memory_budget())
+                                .memory_budget_retained_bytes(&ctx.state.library.memory_budget())
                                 .ok_or_else(|| invalid("unadmitted map source"))
                         })
                         .transpose()?
                         .unwrap_or(0),
-                    map.memory_budget_retained_bytes(&ctx.library.memory_budget())
+                    map.memory_budget_retained_bytes(&ctx.state.library.memory_budget())
                         .ok_or_else(|| invalid("unadmitted map root"))?,
                 )?,
             )?;
@@ -468,14 +476,14 @@ impl State {
                 },
                 ..Default::default()
             };
-            let before = ctx.library.used();
+            let before = ctx.state.library.used();
             let result = if let Some(source) = source.as_ref() {
                 selected.selected_string_map_entry(
                     &map,
                     source,
                     processed as usize..processed as usize + 1,
                     ctx.limits,
-                    &ctx.library,
+                    &ctx.state.library,
                     coexistence,
                 )
             } else {
@@ -491,7 +499,7 @@ impl State {
                         owner,
                         processed as usize..processed as usize + 1,
                         ctx.limits,
-                        &ctx.library,
+                        &ctx.state.library,
                         coexistence,
                     ),
                     Owned::Private(owner) => selected.selected_private_string_map_entry(
@@ -499,12 +507,12 @@ impl State {
                         owner,
                         processed as usize..processed as usize + 1,
                         ctx.limits,
-                        &ctx.library,
+                        &ctx.state.library,
                         coexistence,
                     ),
                 }
             };
-            let after = ctx.library.used();
+            let after = ctx.state.library.used();
             let builder = self.builder(id)?;
             builder.compute = add(
                 prior.0,

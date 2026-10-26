@@ -38,7 +38,7 @@ impl<'a> NativeProgramExecutionSession<'a> {
         {
             return Ok(CanonicalNativeResourcePrepared::snapshot(self));
         }
-        state.work.charge(
+        state.control.work.charge(
             NativeExecutionPhase::Setup,
             amount(descriptor.metadata().plan.blocks().len(), 256, 4096)?,
         )?;

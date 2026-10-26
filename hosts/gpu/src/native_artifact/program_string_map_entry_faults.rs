@@ -3,7 +3,7 @@ use super::*;
 
 pub(in super::super::super) fn before_stage(
     state: &mut State,
-    ctx: &mut Context<'_, '_>,
+    ctx: &mut Invocation<'_, '_, '_>,
     site: usize,
 ) -> Result<bool, Error> {
     let Some(fault) = FAULT.with(Cell::get) else {
@@ -12,10 +12,10 @@ pub(in super::super::super) fn before_stage(
     if FIRED.with(Cell::get) {
         return Ok(false);
     }
-    let (id, stage) = match ctx.control.descriptor.metadata().plan.blocks()[site].action() {
+    let (id, stage) = match ctx.descriptor.metadata().plan.blocks()[site].action() {
         Action::ProjectStringMapEntry { collection } => (*collection, 0),
         Action::CollectionPush { collection, .. }
-            if ctx.control.descriptor.metadata().plan.collections()[*collection as usize]
+            if ctx.descriptor.metadata().plan.collections()[*collection as usize]
                 .string_element_map_projection()
                 .is_some() =>
         {
@@ -37,7 +37,7 @@ pub(in super::super::super) fn before_stage(
         return Ok(false);
     }
     FIRED.with(|cell| cell.set(true));
-    let proof = ctx.control.descriptor.metadata().plan.collections()[id as usize]
+    let proof = ctx.descriptor.metadata().plan.collections()[id as usize]
         .string_element_map_projection()
         .ok_or_else(|| invalid("test String map proof"))?;
     match fault {
@@ -70,20 +70,16 @@ pub(in super::super::super) fn before_stage(
                     return Err(invalid("test generated source lost key pin"));
                 };
                 let external_distinct =
-                    ctx.control
-                        .descriptor
-                        .metadata()
-                        .plan
-                        .inputs()
-                        .iter()
-                        .all(|input| {
-                            ctx.arena
-                                .test_current_value(input.value().get())
-                                .is_none_or(|input| !input.shares_frozen_storage(owner))
-                        });
-                let arena_aliases = (0..ctx.control.descriptor.metadata().types.len())
+                    ctx.descriptor.metadata().plan.inputs().iter().all(|input| {
+                        ctx.state
+                            .arena
+                            .test_current_value(input.value().get())
+                            .is_none_or(|input| !input.shares_frozen_storage(owner))
+                    });
+                let arena_aliases = (0..ctx.descriptor.metadata().types.len())
                     .filter(|&slot| {
-                        ctx.arena
+                        ctx.state
+                            .arena
                             .test_current_value(slot as u32)
                             .is_some_and(|value| value.shares_frozen_storage(owner))
                     })
@@ -91,6 +87,7 @@ pub(in super::super::super) fn before_stage(
                 let source_aliases = state.sources.iter().flatten().filter(|source|
                     matches!(&source.backing, SourceBacking::Value(value) if value.shares_frozen_storage(owner))).count();
                 let no_call_alias = ctx
+                    .state
                     .call_inputs
                     .values()
                     .iter()
@@ -105,24 +102,28 @@ pub(in super::super::super) fn before_stage(
                 // Error cleanup drops the Source backing BEFORE the private
                 // lane. After this retirement the lane becomes its last pin.
             }
-            ctx.arena
-                .retire_current(proof.source().get(), &mut ctx.control.work)?;
+            ctx.state
+                .arena
+                .retire_current(proof.source().get(), &mut ctx.state.control.work)?;
         }
         Fault::OldMapGeneration => ctx
+            .state
             .arena
-            .retire_current(proof.map().get(), &mut ctx.control.work)?,
+            .retire_current(proof.map().get(), &mut ctx.state.control.work)?,
         Fault::ForeignKeyHandle => {
             let foreign = ctx
+                .state
                 .arena
-                .current_handle(proof.map().get(), &mut ctx.control.work)?;
+                .current_handle(proof.map().get(), &mut ctx.state.control.work)?;
             if let Some(Lane::Key { handle, .. }) = state.string_maps[id as usize].as_mut() {
                 *handle = foreign;
             }
         }
         Fault::ForeignMapHandle => {
             let foreign = ctx
+                .state
                 .arena
-                .current_handle(proof.source().get(), &mut ctx.control.work)?;
+                .current_handle(proof.source().get(), &mut ctx.state.control.work)?;
             if let Some(Lane::Entry { map_handle, .. }) = state.string_maps[id as usize].as_mut() {
                 *map_handle = foreign;
             }
@@ -138,13 +139,15 @@ pub(in super::super::super) fn before_stage(
         Fault::LeakedAtLatch => return Ok(true),
         Fault::ObserveAbsent => {
             let key = matches!(
-                ctx.arena
-                    .copy_current(proof.element().get(), &mut ctx.control.work),
+                ctx.state
+                    .arena
+                    .copy_current(proof.element().get(), &mut ctx.state.control.work),
                 Err(NativeValueError::StaleHandle)
             );
             let output = matches!(
-                ctx.arena
-                    .copy_current(proof.output().get(), &mut ctx.control.work),
+                ctx.state
+                    .arena
+                    .copy_current(proof.output().get(), &mut ctx.state.control.work),
                 Err(NativeValueError::StaleHandle)
             );
             ABSENT.with(|cell| cell.set(key && output));
