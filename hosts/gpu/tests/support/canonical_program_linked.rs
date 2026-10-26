@@ -113,46 +113,20 @@ fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
     // reuses the maintained shell and the SAME pinned Object/descriptor, with
     // only the test driver's invocation sequence replaced. It contains no JIT.
     let shell = fs::read_to_string(generated.root().join("src/main.rs")).unwrap();
-    // The auxiliary binary lives one directory deeper than the pinned shell.
-    let descriptor = "include_bytes!(\"../native-descriptor.bin\")";
-    assert_eq!(shell.matches(descriptor).count(), 1);
-    let shell = shell.replace(
-        descriptor,
-        "include_bytes!(\"../../native-descriptor.bin\")",
+    // The maintained shell now delegates its invocation to the launcher. Keep
+    // its exact catalog and Object symbols, and supply only a qualification
+    // driver against the public same-image binding API.
+    let (prefix, _) = shell.split_once("fn main() {").unwrap();
+    let import = "use mech_gpu::native_artifact::{NATIVE_PROGRAM_LINK_IDENTITY_BYTES, launch::{BuildOwnedProgramBinding, run_program_application}};";
+    assert_eq!(prefix.matches(import).count(), 1);
+    let prefix = prefix.replace(
+        import,
+        "use mech_gpu::native_artifact::NATIVE_PROGRAM_LINK_IDENTITY_BYTES;",
     );
-    let invocation = "    linked.evaluate_into(&inputs, &mut outputs, limits, &memory).map_err(|error| error.to_string())?;";
-    assert_eq!(shell.matches(invocation).count(), 1);
-    let driver = shell.replace(invocation, r#"
-    for (number, expected) in [(3, Some(4)), (0, None), (2, Some(6))] {
-        let data = match inputs[0].canonical_data_draft().unwrap() {
-            mech_core::ValueDataDraft::U32(_) => mech_core::ValueDataDraft::U32(number.try_into().unwrap()),
-            mech_core::ValueDataDraft::U64(_) => mech_core::ValueDataDraft::U64(number),
-            _ => panic!("unexpected assertion input kind"),
-        };
-        let value = ValueDraft {
-            schema: inputs[0].schema(), shape_values: Box::new([]),
-            data,
-        }.finalize(&SnapshotValidationContext::with_shared_schemas(&schemas)).unwrap();
-        let mut reservation = memory.reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap()).unwrap();
-        let arguments = [value.into_memory_budget(&mut reservation).unwrap()];
-        let prior = outputs.clone(); // Retain published aliases across rejection.
-        let before = memory.used_bytes();
-        let result = linked.evaluate_into(&arguments, &mut outputs, limits, &memory);
-        if let Some(expected) = expected {
-            assert!(result.unwrap().visits > 0);
-            assert_eq!(outputs[0].as_ref().unwrap().canonical_data_draft().unwrap(), mech_core::ValueDataDraft::U64(expected));
-        } else {
-            let mech_gpu::native_artifact::NativeProgramExecutionError::Control(
-                mech_gpu::native_artifact::NativeIterationExecutionError::Integrity { origin }
-            ) = result.unwrap_err() else { panic!("expected lexical integrity before division") };
-            assert!(origin.block().is_some() && origin.local().is_some());
-            for (actual, old) in outputs.iter().zip(&prior) {
-                assert!(actual.as_ref().unwrap().snapshot_eq(&schemas, old.as_ref().unwrap(), &schemas).unwrap());
-            }
-            assert_eq!(memory.used_bytes(), before);
-        }
-    }
-"#);
+    let driver = format!(
+        "#![deny(warnings)]\n{prefix}\n{}",
+        include_str!("linked_assertion_retry.rs.in")
+    );
     fs::create_dir(generated.root().join("src/bin")).unwrap();
     fs::write(generated.root().join("src/bin/lexical-retry.rs"), driver).unwrap();
     fs::copy(
@@ -188,6 +162,7 @@ fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
     command
         .env("CARGO_INCREMENTAL", "0")
         .env("CARGO_PROFILE_DEV_DEBUG", "0")
+        .env("RUSTFLAGS", "-D warnings")
         .env("CARGO_BUILD_JOBS", "1");
     let built = bounded(&mut command, directory, "build", 15 * 60);
     assert!(
