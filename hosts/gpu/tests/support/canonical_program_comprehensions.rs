@@ -91,6 +91,58 @@ fn large_unsigned_comprehension_initializes_a_real_buffer_and_recovers_after_den
 }
 
 #[test]
+fn packed_word_collection_keeps_copy_limits_and_current_output_on_rejection() {
+    let source = "[7u32 | i <- 0u64..=count<u64>, i < count]\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let args = inputs(&artifact, &[("count", ValueDataDraft::U64(3))], &memory);
+        let mut output = vec![None; artifact.outputs().len()];
+        let mut policy = limits();
+        // The cursor computes its words; the three output writes consume
+        // twelve bytes. Finalization transfers the packed buffer to its Value.
+        policy.library.max_cloned_bytes = Some(12);
+        jit.evaluate_into(&args, &mut output, policy, &memory)
+            .unwrap();
+        equal(&artifact, &output, &reference(&artifact, &args));
+        let prior = output.clone();
+        let before = memory.used_bytes();
+        policy.library.max_cloned_bytes = Some(11);
+        let error = jit
+            .evaluate_into(&args, &mut output, policy, &memory)
+            .unwrap_err();
+        assert!(
+            matches!(
+                error,
+                NativeProgramExecutionError::Collection {
+                    error: ResidentKernelError::ResourceLimit {
+                        dimension: Dimension::ClonedBytes,
+                        required: 12,
+                        limit: 11,
+                        ..
+                    },
+                    ..
+                }
+            ),
+            "{error:?}"
+        );
+        assert_eq!(memory.used_bytes(), before);
+        assert!(output.iter().zip(&prior).all(|(value, old)| {
+            value
+                .as_ref()
+                .unwrap()
+                .shares_frozen_storage(old.as_ref().unwrap())
+        }));
+        policy.library.max_cloned_bytes = Some(12);
+        jit.evaluate_into(&args, &mut output, policy, &memory)
+            .unwrap();
+        equal(&artifact, &output, &reference(&artifact, &args));
+        drop((args, output, prior));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
 fn generated_dynamic_ranges_feed_ordinary_comprehensions() {
     let (variants, _) = artifacts("[i + 1u64 | i <- 0u64..count<u64>]\n");
     for artifact in variants {

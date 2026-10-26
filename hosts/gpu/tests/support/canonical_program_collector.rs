@@ -38,6 +38,18 @@ fn real_buffer_collector_prefix_carries_consecutive_search_and_skip_updates() {
             jit.evaluate_into(&args, &mut output, policy, &memory)
         });
         let elapsed = start.elapsed().as_secs_f64();
+        let failing_operation = match &result {
+            Err(mech_gpu::native_artifact::NativeProgramExecutionError::Library {
+                origin, ..
+            }) => jit
+                .descriptor()
+                .plan()
+                .blocks()
+                .iter()
+                .find(|block| block.origin() == *origin)
+                .map(|block| format!("{:?}", block.action())),
+            _ => None,
+        };
         println!(
             "{}",
             serde_json::json!({
@@ -50,6 +62,7 @@ fn real_buffer_collector_prefix_carries_consecutive_search_and_skip_updates() {
                 "requested_allocation_bytes":requested_bytes,
                 "retained_before":retained_before,"retained_after":memory.used_bytes(),
                 "result":format!("{result:?}"),"success":result.is_ok(),
+                "failing_operation":failing_operation,
             })
         );
         assert!(

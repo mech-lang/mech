@@ -366,7 +366,11 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 106;
 // other managed locals after the generated latch, as for native aggregates.
 // Policy75 charges each assertion's actual generated branch/copy/failure visit
 // and seals integrity status to the precise admitted failure terminal.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 75;
+// Policy76 stores collected unsigned words at their exact widths and admits
+// their packed publication and relocating growth without scalar draft arrays.
+// Computed cursor words and transferred packed output have no payload clone;
+// their source checks and arithmetic/construction work remain charged.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 76;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

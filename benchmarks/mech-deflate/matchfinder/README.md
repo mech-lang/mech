@@ -240,3 +240,22 @@ U32 cells. Its actual execution requested 101445977 allocation bytes in 397
 requests and took 3.51036625 seconds in the unoptimized Rust test profile. The
 failure left publication empty and retained memory unchanged. This is a compiler
 representation blocker, not a compression performance result.
+
+Unsigned comprehensions now accumulate U8/U16/U32/U64 cells at their exact
+width and transfer the completed backing to the existing canonical constructor.
+The standalone 1500513-word U32 initialization succeeds for original and decoded
+artifacts under the same limits. In the unoptimized test build it took
+6.870867625 and 6.874258709 seconds respectively, with 176 allocation requests
+and 22798145 requested bytes per call. The regression also checks every word,
+output rejection after success, unchanged published aliases, cleanup and retry.
+The selected collection, recursion, assertion, projection and component run
+passed all 113 tests without changing component expectations or allowances.
+
+The collector now completes initialization but still reaches no search position.
+Its recursive argument projection expands the packed cache through scalar drafts.
+That attempt requires 192971994 temporary bytes against the unchanged 134217728
+limit. The call took 8.406550375 seconds and requested 48572983 bytes across
+6003 allocation requests before rejection. Publication remained empty and
+retained memory was unchanged. Requested allocation bytes are cumulative heap
+requests, not peak memory or measured copy bytes. This is the next compiler
+blocker; it is not a compression timing.
