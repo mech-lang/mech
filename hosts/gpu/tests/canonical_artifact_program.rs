@@ -126,6 +126,9 @@ mod collector_qualification;
 #[path = "support/canonical_program_block_statistics.rs"]
 mod block_statistics_qualification;
 
+#[path = "support/canonical_program_full_block.rs"]
+mod full_block_qualification;
+
 #[path = "support/canonical_program_recursive_statements.rs"]
 mod recursive_statement_qualification;
 
