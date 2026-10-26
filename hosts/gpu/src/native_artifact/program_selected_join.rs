@@ -18,7 +18,7 @@ use std::rc::Rc;
 
 #[path = "program_selected_join_map.rs"]
 mod mapped;
-#[cfg(all(test, feature = "canonical-native-program"))]
+#[cfg(all(test, feature = "canonical-native-program-host"))]
 pub(in crate::native_artifact::program_runtime) use mapped::faults::{
     Control as JoinMapControl, Fault as JoinMapFault, Limit as JoinMapLimit,
     demand as join_map_demand, fired as join_map_fault_fired, started as join_map_started,
@@ -173,7 +173,7 @@ impl Context<'_, '_> {
         if tests::before_call(self, site, role)? {
             return Ok(true);
         }
-        #[cfg(all(test, feature = "canonical-native-program"))]
+        #[cfg(all(test, feature = "canonical-native-program-host"))]
         mapped::faults::before_join(self, role);
         if !matches!(role, Site::Range(_)) && words != [0, 0] {
             return Err(invalid(
@@ -489,7 +489,7 @@ impl Context<'_, '_> {
                             .is_none(),
                     },
                 )?;
-                #[cfg(all(test, feature = "canonical-native-program"))]
+                #[cfg(all(test, feature = "canonical-native-program-host"))]
                 let _composition_pressure = mapped::faults::pressure(self)?;
                 for (dimension, required, limit) in [
                     (

@@ -86,7 +86,7 @@ pub(super) fn prepare(table: &mut [u8]) -> MappingKind {
     MappingKind::Projected
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "canonical-native-program-host"))]
 pub(super) fn test_table(cells: &[u16; 128]) -> [u8; BYTES] {
     let mut table = [MISSING; BYTES];
     for (output, &value) in table[HEADER..].iter_mut().zip(cells) {

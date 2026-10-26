@@ -2,6 +2,33 @@ use super::*;
 use mech_core::ManagedMemoryBudget;
 use std::collections::BTreeMap;
 
+// Independent expected words for the generated frame and slot ABI.
+pub(super) const FRAME_WORDS: usize = 20;
+pub(super) const SLOTS: usize = 0;
+pub(super) const CAPACITY: usize = 1;
+pub(super) const LENGTH: usize = 2;
+pub(super) const FUEL: usize = 3;
+pub(super) const UPDATES: usize = 4;
+pub(super) const KEY_LOW: usize = 5;
+pub(super) const KEY_HIGH: usize = 6;
+pub(super) const ENTRY_POINTER: usize = 7;
+pub(super) const ENTRY_KNOWN: usize = 8;
+pub(super) const SOURCE_PTR: usize = 9;
+pub(super) const SOURCE_LEN: usize = 10;
+pub(super) const WIDTH: usize = 11;
+pub(super) const PREVIOUS_START: usize = 12;
+pub(super) const LOW_MASK: usize = 13;
+pub(super) const HIGH_MASK: usize = 14;
+pub(super) const RANGE_CALL_ALLOWED: usize = 15;
+pub(super) const READ_CALL_ALLOWED: usize = 16;
+pub(super) const WRITE_CALL_ALLOWED: usize = 17;
+pub(super) const CONTROLS: usize = 18;
+pub(super) const LOOKUP_CACHE: usize = 19;
+pub(super) const SLOT_WORDS: usize = 3;
+pub(super) const SLOT_LOW: usize = 0;
+pub(super) const SLOT_HIGH: usize = 1;
+pub(super) const SLOT_VALUE: usize = 2;
+
 #[path = "program_packed_domain_validation_tests.rs"]
 mod domain_validation_tests;
 #[path = "program_frozen_packed_map_tests.rs"]
