@@ -14,6 +14,80 @@ const SOURCE: &str = concat!(
 );
 
 #[test]
+fn real_buffer_collector_initialization_keeps_its_full_zeroed_state() {
+    let source = SOURCE.replace(
+        "optimal-collect-prefix(input<[u8]>, 6u64)",
+        "optimal-collect-prefix(input<[u8]>, 0u64)",
+    );
+    for (form, artifact) in ["original", "decoded"]
+        .into_iter()
+        .zip(artifacts(&source).0)
+    {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let args = inputs(
+            &artifact,
+            &[("input", Data::Matrix(vec![Data::U8(b'a'); 320].into()))],
+            &memory,
+        );
+        let mut output = vec![None; artifact.outputs().len()];
+        let mut policy = limits();
+        policy.library.max_output_elements = Some(1_500_513);
+        policy.library.max_compute_work = Some(10_000_000_000);
+        policy.library.max_comparison_work = Some(10_000_000_000);
+        policy.execution.max_work = 10_000_000_000;
+        let start = Instant::now();
+        let (result, allocations, requested) = allocation_probe::measured_with_bytes(|| {
+            jit.evaluate_into(&args, &mut output, policy, &memory)
+        });
+        println!(
+            "{}",
+            serde_json::json!({"witness":"real-buffer-collector-initialization", "artifact":form,
+                "elapsed_seconds":start.elapsed().as_secs_f64(), "allocation_requests":allocations,
+                "requested_allocation_bytes":requested,"result":format!("{result:?}")})
+        );
+        result.unwrap();
+        let Data::Record(fields) = output
+            .last()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap()
+        else {
+            panic!("collector state");
+        };
+        for (name, count, zero) in [
+            ("tables", 262_144, Data::U16(0)),
+            ("cache", 1_500_513, Data::U32(0)),
+        ] {
+            let Data::Matrix(words) = &fields
+                .iter()
+                .find(|field| field.name == name)
+                .unwrap()
+                .value
+            else {
+                panic!("packed buffer")
+            };
+            assert_eq!(words.len(), count);
+            assert!(words.iter().all(|word| word == &zero));
+        }
+        for name in ["next-position", "cache-ptr"] {
+            assert_eq!(
+                fields
+                    .iter()
+                    .find(|field| field.name == name)
+                    .unwrap()
+                    .value,
+                Data::U64(0)
+            );
+        }
+        drop((output, args));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
 fn real_buffer_collector_prefix_carries_consecutive_search_and_skip_updates() {
     for (form, artifact) in ["original", "decoded"].into_iter().zip(artifacts(SOURCE).0) {
         let compile_start = Instant::now();

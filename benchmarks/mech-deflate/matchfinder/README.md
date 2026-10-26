@@ -267,14 +267,14 @@ output kinds keep the canonical finalizer bound. Updating either end of the real
 the preceding publication and input aliases, and the next valid update succeeds.
 Rectangular indexing is checked for U8/U16/U32/U64 buffers as well.
 
-The collector now gets past cache writes but still has no completed six-position
+The earlier collector attempt got past cache writes but had no completed six-position
 result. At `core/composite-pack` (node 0, block 243, local 0), managed memory
 requires 274541914 bytes against the unchanged 268435456-byte limit. Execution
 took 15.377818042 seconds and requested 231881425 bytes across 195482 allocations.
 Publication remained empty and retained memory was unchanged. Intermediate
 positions are not published, so their completed count is unreported on failure.
 Requested allocation bytes are cumulative heap requests, not peak memory or
-measured copy bytes. This is the next compiler blocker; it is not a compression
+measured copy bytes. This was the next compiler blocker; it is not a compression
 timing. All resource allowances and compressor expected values remain unchanged.
 
 Removing draft construction changes representation-dependent budget receipts:
@@ -284,3 +284,67 @@ default resident Huffman call reaches ComparisonWork admission (68699 against
 cleanup and retry checks. The broader run passed 116 tests; the precise updated
 Huffman budget check then passed separately. No compressor reference vector or
 qualification allowance was changed.
+
+## Invocation accounting and initialization checkpoint
+
+Optional per-site bindings could exhaust managed capacity before a mandatory
+call scope was admitted. A small original/decoded record-packing regression
+reproduces that failure with two three-element buffers and twelve cache slots.
+New bindings now prove that the existing finite temporary allowance can coexist;
+otherwise the same selected leaf executes uncached. Binding prices, call limits,
+publication boundaries and failed-call debits are unchanged. Changing scalar
+arguments, invalid input, a tighter enclosing work scope, cleanup and same-account
+retry are covered. This gets the real-buffer witness past its earlier memory
+refusal, but does not establish a completed collector prefix.
+
+Generated reference copies also repaid full payload destruction even though
+their source arena owner had already funded that one destruction. A private
+same-arena copy now retains the immutable owner and pays fixed alias work. It
+does not change `Value` construction or admission, create a payload copy, or
+allocate a new budget wrapper. Generation, schema, account and finite-work checks
+precede replacement. Native work policy 81 identifies the new accounting path;
+the program IR, ABI, frame and slot layouts are unchanged.
+
+The source regression relays a 1500513-word U32 buffer 64 times. The parent hits
+the unchanged one-billion native work limit. The new path completes original
+and decoded artifacts, retaining the input's exact frozen storage. The measured
+call requests 16254 heap bytes across 130 allocations. Fresh values, assertion
+failure, unchanged prior publication and retry are checked. These measurements
+describe reference transport, not compression or removal of aggregate copies.
+
+The six-position collector still reaches its ten-billion work limit. Its latest
+uninstrumented run took 17.0618445 seconds and requested 285481056 heap bytes in
+294081 allocations before rejection. Publication remained empty and retained
+memory returned to its pre-call value. The completed-position count remains
+unreported because failed execution does not publish intermediate state.
+
+The separate zero-position trace executes the same initialization and returns
+the complete state. Every tree and cache entry is checked. Original and decoded
+artifacts each consume 5981116713 work units and 12338685 generated control visits.
+They take 8.595357125 and 8.583951292 seconds respectively in the unoptimized
+test profile, requesting about 61.2 MB cumulatively. Initialization and returning
+the state are inside measurement; compilation and checking are outside it.
+
+The next bounded compiler requirement is efficient general constant-yield
+unsigned collection construction. Pinned source revision
+`671077457ff7ef3a3d44caf715a3fc595addf379` uses `List.repeat` in
+`Matchfinder.roc:36` and `CompressOptimal.roc:718`. The existing minimal source
+reproducer is:
+
+```mech
+repeat(value<u32>, count<u64>) => (out<[u32]>) :=
+  out := [value | i <- 0u64..=count, i < count].
+repeat(word<u32>, count<u64>)
+```
+
+The maintained acceptance test is
+`large_unsigned_comprehension_initializes_a_real_buffer_and_recovers_after_denial`.
+It covers zero, small and real cache lengths, nonzero cells, original/decoded
+artifacts, resident agreement on small inputs, refusal after publication and
+recovery. Any bulk construction must derive eligibility through shared same-plan
+facts, retain source error/effect order and finite resource admission, and reject
+unproved/effectful bodies. No benchmark names or fixed buffer lengths select it.
+The unchanged six-position witness and its complete reference vectors remain
+the integration acceptance test. This construction improvement is not implemented
+at this checkpoint. Reserve/append/clear with retained capacity, the full collector,
+optimal parser, writer, `compress_into`, and complete compression timing remain.
