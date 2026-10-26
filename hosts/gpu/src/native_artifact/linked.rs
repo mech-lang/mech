@@ -1,7 +1,9 @@
 //! Explicit build-owned FFI binding, followed by the same managed evaluator as JIT.
-use super::abi::NativeAbiDescriptor;
-use super::identity::{NATIVE_LINK_IDENTITY_BYTES, descriptor_from_identity};
-use super::runtime::{NativeExecutionError, NativeExecutionLimits, NativeExecutionReport};
+use crate::native_artifact::abi::NativeAbiDescriptor;
+use crate::native_artifact::identity::{NATIVE_LINK_IDENTITY_BYTES, descriptor_from_identity};
+use crate::native_artifact::runtime::{
+    NativeExecutionError, NativeExecutionLimits, NativeExecutionReport,
+};
 use core::ffi::c_void;
 use mech_core::ManagedMemoryBudget;
 use mech_engine::native_artifact::{NativeArtifactPlan, NativeScalarValue};
@@ -11,7 +13,7 @@ pub struct NativeLinkError {
     reason: &'static str,
 }
 impl NativeLinkError {
-    pub(super) const fn new(reason: &'static str) -> Self {
+    pub(in crate::native_artifact) const fn new(reason: &'static str) -> Self {
         Self { reason }
     }
 }
@@ -68,7 +70,7 @@ impl LinkedArtifact {
         limits: NativeExecutionLimits,
         budget: Option<&ManagedMemoryBudget>,
     ) -> Result<NativeExecutionReport, NativeExecutionError> {
-        super::runtime::execute(
+        crate::native_artifact::runtime::execute(
             &self.descriptor,
             |frame| {
                 // SAFETY: the unsafe constructor established this exact

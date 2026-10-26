@@ -425,9 +425,10 @@ jobs:
             src/cli/commands/build_cranelift_tests.rs tests/canonical_native_build.rs \
             tests/support/canonical_native_build.rs \
             hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec \
-            hosts/gpu/src/native_artifact/application.rs hosts/gpu/src/native_artifact/mod.rs \
-            hosts/gpu/src/native_artifact/program_application.rs \
+            hosts/gpu/src/native_artifact/application/mod.rs hosts/gpu/src/native_artifact/mod.rs \
+            hosts/gpu/src/native_artifact/program/application.rs \
             hosts/gpu/src/native_artifact/launch/*.rs \
+            hosts/gpu/src/native_artifact/launch/hosted/*.rs \
             hosts/gpu/src/native_artifact/templates/linked_*.in \
             src/runtime/src/runtime/program/compiler.rs \
             src/runtime/src/runtime/program/compiler_retained_input.rs \

@@ -1,5 +1,6 @@
 //! Compile-time storage adapters; no guest dispatch, vtable or allocation.
-use crate::native_artifact::{NativeCompileError, compiler::offset};
+use crate::native_artifact::NativeCompileError;
+use crate::native_artifact::compiler::offset;
 use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
 
@@ -40,7 +41,9 @@ impl WordAccess for MemoryWords {
         Ok(())
     }
 }
-pub(in crate::native_artifact) struct SsaWords<'a>(pub &'a super::ssa_words::Words);
+pub(in crate::native_artifact) struct SsaWords<'a>(
+    pub &'a crate::native_artifact::codegen::common::ssa_words::Words,
+);
 impl WordAccess for SsaWords<'_> {
     fn read(
         &mut self,

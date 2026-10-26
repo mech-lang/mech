@@ -1,8 +1,9 @@
 //! Typed private helper domains. Raw u64 lanes remain the unchanged transport.
 #[cfg(feature = "canonical-native-program-runtime")]
-mod owner;
+#[path = "owner.rs"]
+pub(in crate::native_artifact::program::protocol) mod owner;
 #[cfg(feature = "canonical-native-program-runtime")]
-pub(in crate::native_artifact) use owner::OwnerOperation;
+pub(in crate::native_artifact) use crate::native_artifact::program::protocol::owner::OwnerOperation;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::native_artifact) struct OutputIndex(u64);
@@ -116,3 +117,7 @@ impl GlobalHelper {
         }
     }
 }
+
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "abi.rs"]
+pub(in crate::native_artifact) mod abi;

@@ -1,11 +1,8 @@
 //! Ordinary source terminators shared by scalar and packed SSA strategies.
-use super::ssa_words::Words;
-use crate::native_artifact::iteration_code_plan::CodePlan;
-use cranelift_codegen::ir::{
-    Block, InstBuilder, MemFlags,
-    condcodes::{FloatCC, IntCC},
-    types,
-};
+use crate::native_artifact::codegen::common::ssa_words::Words;
+use crate::native_artifact::codegen::control::plan::CodePlan;
+use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
+use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
     NativeIterationTerminator as Term, NativeMatchTerminator as Branch, NativeScalarKind,

@@ -1,4 +1,4 @@
-use super::super::NativeExecutionLimits;
+use crate::native_artifact::NativeExecutionLimits;
 use mech_engine::native_artifact::{NativeScalarKind, NativeScalarValue};
 use std::ffi::OsString;
 fn unsigned(text: &str) -> Result<u64, String> {
@@ -25,7 +25,7 @@ fn floating_bits(text: &str) -> Result<mech_core::snapshot::F64Bits, String> {
         .map(mech_core::snapshot::F64Bits::from_bits)
         .map_err(|_| "invalid F64 bit argument".into())
 }
-pub(super) fn options(
+pub(in crate::native_artifact::launch) fn options(
     arguments: Vec<OsString>,
 ) -> Result<(NativeExecutionLimits, Option<u64>, Vec<OsString>), String> {
     let mut limits = NativeExecutionLimits::default();
@@ -69,7 +69,7 @@ pub(super) fn options(
     }
     Ok((limits, budget, payload))
 }
-pub(super) fn scalar_argument(
+pub(in crate::native_artifact::launch) fn scalar_argument(
     argument: &std::ffi::OsStr,
     kind: NativeScalarKind,
 ) -> Result<NativeScalarValue, String> {
@@ -85,7 +85,10 @@ pub(super) fn scalar_argument(
         }),
     })
 }
-pub(super) fn append_scalar(result: &mut String, value: NativeScalarValue) {
+pub(in crate::native_artifact::launch) fn append_scalar(
+    result: &mut String,
+    value: NativeScalarValue,
+) {
     use std::fmt::Write;
     match value {
         NativeScalarValue::Bool(v) => writeln!(result, "{v}"),

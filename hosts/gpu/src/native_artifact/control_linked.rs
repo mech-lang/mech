@@ -1,7 +1,9 @@
 //! Build-owned canonical Match entry, using the same managed evaluator as JIT.
-use super::control_abi::NativeMatchDescriptor;
-use super::control_identity::{NATIVE_MATCH_LINK_IDENTITY_BYTES, descriptor_from_identity};
-use super::{
+use crate::native_artifact::control_abi::NativeMatchDescriptor;
+use crate::native_artifact::control_identity::{
+    NATIVE_MATCH_LINK_IDENTITY_BYTES, descriptor_from_identity,
+};
+use crate::native_artifact::{
     NativeExecutionLimits, NativeLinkError, NativeMatchExecutionError, NativeMatchExecutionReport,
 };
 use core::ffi::c_void;
@@ -43,7 +45,7 @@ impl LinkedMatchArtifact {
         limits: NativeExecutionLimits,
         budget: Option<&ManagedMemoryBudget>,
     ) -> Result<NativeMatchExecutionReport, NativeMatchExecutionError> {
-        super::control_runtime::execute(
+        crate::native_artifact::control_runtime::execute(
             &self.descriptor,
             |frame| {
                 // SAFETY: constructor proves the same exact checked entry;

@@ -1,20 +1,20 @@
 //! Canonical scalar CFG definition shared by JIT and Object emission.
-use super::abi::{NO_NODE, NativeEntryFrame as Frame, STATUS_ABI, STATUS_OK};
-use super::compiler::{
+use crate::native_artifact::abi::{NO_NODE, NativeEntryFrame as Frame, STATUS_ABI, STATUS_OK};
+use crate::native_artifact::compiler::{
     admit, backend, compiled_stack_bytes, frame_load, guard, host_supported, limit, offset,
     primitive, set_origin,
 };
-use super::control_abi::{ENTRY, Entry, NativeMatchDescriptor, STATUS_REJECT, VERSION};
-use super::control_runtime::{NativeMatchExecutionError, NativeMatchExecutionReport};
-use super::{NativeCompileError, NativeCompileLimits, NativeExecutionLimits};
-use cranelift_codegen::{
-    ir::{
-        AbiParam, InstBuilder, MemFlags, Value,
-        condcodes::{FloatCC, IntCC},
-        types,
-    },
-    settings::{self, Configurable},
+use crate::native_artifact::control_abi::{
+    ENTRY, Entry, NativeMatchDescriptor, STATUS_REJECT, VERSION,
 };
+use crate::native_artifact::control_runtime::{
+    NativeMatchExecutionError, NativeMatchExecutionReport,
+};
+use crate::native_artifact::{NativeCompileError, NativeCompileLimits, NativeExecutionLimits};
+use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
+use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, Value, types};
+use cranelift_codegen::settings;
+use cranelift_codegen::settings::Configurable;
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{DataDescription, FuncId, Linkage, Module, default_libcall_names};
 use cranelift_object::{ObjectBuilder, ObjectModule};
@@ -73,7 +73,7 @@ impl JitMatchArtifact {
         limits: NativeExecutionLimits,
         budget: Option<&ManagedMemoryBudget>,
     ) -> Result<NativeMatchExecutionReport, NativeMatchExecutionError> {
-        super::control_runtime::execute(
+        crate::native_artifact::control_runtime::execute(
             &self.descriptor,
             |frame| {
                 // SAFETY: this owner created and retains the exact checked entry.
@@ -89,7 +89,7 @@ impl JitMatchArtifact {
 pub struct NativeMatchObject {
     bytes: Vec<u8>,
     descriptor: NativeMatchDescriptor,
-    identity: super::control_identity::NativeMatchObjectIdentity,
+    identity: crate::native_artifact::control_identity::NativeMatchObjectIdentity,
 }
 impl NativeMatchObject {
     pub fn bytes(&self) -> &[u8] {
@@ -104,13 +104,13 @@ impl NativeMatchObject {
     pub fn identity_symbol(&self) -> &str {
         self.identity.symbol()
     }
-    pub fn identity(&self) -> &super::control_identity::NativeMatchObjectIdentity {
+    pub fn identity(&self) -> &crate::native_artifact::control_identity::NativeMatchObjectIdentity {
         &self.identity
     }
     pub fn metadata(&self) -> serde_json::Value {
         serde_json::json!({
             "schema":"mech.canonical-scalar-match-object.v1","control_abi_version":VERSION,
-            "typed_ir_sha256":super::identity::hex(self.descriptor.typed_ir_sha256()),
+            "typed_ir_sha256":crate::native_artifact::identity::hex(self.descriptor.typed_ir_sha256()),
             "identity_symbol":self.identity.symbol(),"stack_bytes":self.descriptor.stack_bytes(),"code_bytes":self.descriptor.code_bytes(),
             "linked":false,"executed":false,"timing_samples":0,
         })
@@ -144,7 +144,10 @@ pub fn emit_match_object_with_limits(
             .map_err(backend)?,
     );
     let (_, descriptor) = define(plan, &mut module, limits)?;
-    let identity = super::control_identity::NativeMatchObjectIdentity::from_descriptor(&descriptor)
+    let identity =
+        crate::native_artifact::control_identity::NativeMatchObjectIdentity::from_descriptor(
+            &descriptor,
+        )
         .map_err(backend)?;
     let id = module
         .declare_data(identity.symbol(), Linkage::Export, false, false)
@@ -335,7 +338,7 @@ fn validate(plan: &NativeMatchArtifactPlan) -> Result<(), NativeCompileError> {
     Ok(())
 }
 
-pub(super) fn load(
+pub(in crate::native_artifact) fn load(
     b: &mut FunctionBuilder<'_>,
     locals: Value,
     value: NativeMatchValue,
@@ -515,7 +518,9 @@ fn define<M: Module>(
             )?;
             let emitted = (b.func.dfg.num_insts() - before) as u64;
             let bound = match block.action() {
-                NativeMatchAction::Primitive { op, .. } => super::abi::primitive_work(*op),
+                NativeMatchAction::Primitive { op, .. } => {
+                    crate::native_artifact::abi::primitive_work(*op)
+                }
                 _ => {
                     if block.terminator() == NativeMatchTerminator::Complete {
                         (plan.outputs().len() as u64)
@@ -559,7 +564,7 @@ fn define<M: Module>(
 }
 
 /// One maintained scalar semantic emitter, shared by acyclic and loop CFGs.
-pub(super) fn emit_scalar_action(
+pub(in crate::native_artifact) fn emit_scalar_action(
     b: &mut FunctionBuilder<'_>,
     locals: Value,
     action: &NativeMatchAction,
@@ -600,7 +605,7 @@ pub(super) fn emit_scalar_action(
 }
 
 /// Literal branches preserve language equality for all exact scalar kinds.
-pub(super) fn emit_scalar_terminator(
+pub(in crate::native_artifact) fn emit_scalar_terminator(
     b: &mut FunctionBuilder<'_>,
     frame: Value,
     locals: Value,
@@ -628,7 +633,7 @@ pub(super) fn emit_scalar_terminator(
 
 /// The same native branches serve scalar and mixed-value CFGs. A mixed value
 /// never acquires a fictitious scalar type merely to reuse this emitter.
-pub(super) fn emit_branch_terminator(
+pub(in crate::native_artifact) fn emit_branch_terminator(
     b: &mut FunctionBuilder<'_>,
     locals: Value,
     terminator: NativeMatchTerminator,

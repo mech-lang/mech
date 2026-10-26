@@ -631,16 +631,16 @@ jobs:
             --test canonical_artifact_program -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program \
-            --lib native_artifact::program_runtime::tests -- --test-threads=1
+            --lib native_artifact::program::runtime::tests -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program \
-            --lib native_artifact::program_runtime::session::prefix_tests -- --test-threads=1
+            --lib native_artifact::program::runtime::session::prefix_tests -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program \
-            --lib native_artifact::program_runtime::session::prefix_window_tests -- --test-threads=1
+            --lib native_artifact::program::runtime::session::prefix_window_tests -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program \
-            --lib native_artifact::program_runtime::prefix::retention_tests -- --test-threads=1
+            --lib native_artifact::program::runtime::invocation::prefix::retention_tests -- --test-threads=1
           cargo +nightly-2026-03-03 check --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program-runtime --lib
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \

@@ -4,12 +4,12 @@ use mech_engine::native_artifact::{NativeArtifactPlan, NativeScalarOp, NativeSca
 
 pub const NATIVE_ARTIFACT_ABI_VERSION: u64 = 1;
 pub const NATIVE_ARTIFACT_ENTRY_SYMBOL: &str = "mech_canonical_scalar_entry_v1";
-pub(super) const ABI_VERSION: u64 = NATIVE_ARTIFACT_ABI_VERSION;
-pub(super) const NO_NODE: u64 = u64::MAX;
-pub(super) const STATUS_OK: u64 = 0;
-pub(super) const STATUS_ARITHMETIC: u64 = 1;
-pub(super) const STATUS_ADMISSION: u64 = 2;
-pub(super) const STATUS_ABI: u64 = 3;
+pub(in crate::native_artifact) const ABI_VERSION: u64 = NATIVE_ARTIFACT_ABI_VERSION;
+pub(in crate::native_artifact) const NO_NODE: u64 = u64::MAX;
+pub(in crate::native_artifact) const STATUS_OK: u64 = 0;
+pub(in crate::native_artifact) const STATUS_ARITHMETIC: u64 = 1;
+pub(in crate::native_artifact) const STATUS_ADMISSION: u64 = 2;
+pub(in crate::native_artifact) const STATUS_ABI: u64 = 3;
 
 /// Checked primitive work in conservative logical units. One unit bounds one
 /// explicit scalar/guard/load/store bookkeeping action, not machine cycles.
@@ -18,7 +18,7 @@ pub(super) const STATUS_ABI: u64 = 3;
 /// fit these256 units, including admission dispatch, guards and local store.
 /// This cost policy is separate from the selected binder's semantic witness
 /// and from the adapter's conservative source scratch metadata.
-pub(super) const fn primitive_work(op: NativeScalarOp) -> u64 {
+pub(in crate::native_artifact) const fn primitive_work(op: NativeScalarOp) -> u64 {
     match op {
         NativeScalarOp::U64Add
         | NativeScalarOp::U64Sub
@@ -83,7 +83,7 @@ pub struct NativeAbiDescriptor {
     typed_ir_sha256: [u8; 32],
 }
 impl NativeAbiDescriptor {
-    pub(super) fn from_compiled(
+    pub(in crate::native_artifact) fn from_compiled(
         plan: &NativeArtifactPlan,
         stack_bytes: u64,
         code_bytes: u64,
@@ -95,7 +95,7 @@ impl NativeAbiDescriptor {
             lets: plan.lets().iter().map(|v| (v.node(), v.op())).collect(),
             stack_bytes,
             code_bytes,
-            typed_ir_sha256: super::identity::typed_ir_sha256(plan),
+            typed_ir_sha256: crate::native_artifact::identity::typed_ir_sha256(plan),
         }
     }
     pub fn typed_ir_sha256(&self) -> &[u8; 32] {
@@ -130,7 +130,7 @@ impl NativeAbiDescriptor {
 /// Signed I64 values retain their two's-complement bits in one eight-byte lane.
 /// F64 values retain every IEEE bit, including signed zero and NaN payloads.
 #[repr(C)]
-pub(super) struct NativeEntryFrame {
+pub(in crate::native_artifact) struct NativeEntryFrame {
     pub version: u64,
     pub input_count: u64,
     pub local_count: u64,
@@ -143,4 +143,4 @@ pub(super) struct NativeEntryFrame {
     pub error_node: u64,
 }
 #[cfg(feature = "canonical-native")]
-pub(super) type RawEntry = unsafe extern "C" fn(*mut NativeEntryFrame) -> u64;
+pub(in crate::native_artifact) type RawEntry = unsafe extern "C" fn(*mut NativeEntryFrame) -> u64;
