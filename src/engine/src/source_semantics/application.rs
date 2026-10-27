@@ -26,7 +26,11 @@ pub(super) struct PendingIteration {
 }
 
 impl PendingIteration {
-    pub(super) fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+    pub(super) fn visit_schemas(
+        &self,
+        constants: &[PendingConstant],
+        visit: &mut impl FnMut(&SchemaDraft),
+    ) {
         visit(&self.carrier);
         for (_, schema, _) in &self.captures {
             visit(schema);
@@ -37,9 +41,15 @@ impl PendingIteration {
         for operation in &self.body.operations {
             visit(&operation.schema);
             match &operation.body {
-                PendingControlOperationBody::Match(nested) => nested.visit_schemas(visit),
-                PendingControlOperationBody::Comprehension(nested) => nested.visit_schemas(visit),
-                PendingControlOperationBody::Iteration(nested) => nested.visit_schemas(visit),
+                PendingControlOperationBody::Match(nested) => {
+                    nested.visit_schemas(constants, visit)
+                }
+                PendingControlOperationBody::Comprehension(nested) => {
+                    nested.visit_schemas(constants, visit)
+                }
+                PendingControlOperationBody::Iteration(nested) => {
+                    nested.visit_schemas(constants, visit)
+                }
                 PendingControlOperationBody::Operation { .. }
                 | PendingControlOperationBody::Recur(_)
                 | PendingControlOperationBody::Suspend

@@ -8,30 +8,29 @@ mod support;
 use support::evaluate;
 
 #[test]
-fn source_map_assignment_inserts_a_missing_key_without_a_counting_helper() {
-    for setup in ["", "counts{\"existing\"} = 7u64\n"] {
+fn source_map_assignment_rejects_missing_keys() {
+    for setup in ["", "counts = map/insert(counts, \"existing\", 7u64)\n"] {
         let source = format!(
-            "+> map\n~counts<{{string:u64}}> := map/new()\n{setup}counts{{\"é\"}} = 1u64\ncounts{{\"é\"}} = 3u64\ncounts\n"
+            "+> map\n~counts<{{string:u64}}> := map/new()\n{setup}counts{{\"é\"}} = 1u64\ncounts\n"
         );
-        let output = evaluate(&source).unwrap_or_else(|error| panic!("{source}: {error:?}"));
-        let ValueData::Map(map) = output.data() else {
-            panic!("expected map")
-        };
-        let inserted = map
-            .entries()
-            .iter()
-            .find(
-                |entry| matches!(entry.key().data(), ValueData::String(key) if key.as_ref() == "é"),
-            )
-            .expect("new key must be present");
-        assert!(matches!(inserted.value(), ValueData::U64(3)));
-        assert_eq!(map.entries().len(), if setup.is_empty() { 1 } else { 2 });
+        assert!(
+            matches!(
+                evaluate(&source),
+                Err(support::CanonicalEvaluationError::Execution(
+                    mech_engine::resident::ResidentExecutionError::Kernel {
+                        error: mech_core::ResidentKernelError::InvalidInput,
+                        ..
+                    }
+                ))
+            ),
+            "accepted missing-key assignment or returned another error: {source}"
+        );
     }
 }
 
 #[test]
-fn source_map_assignment_supports_numeric_keys_and_string_values() {
-    let output = evaluate("+> map\n~labels<{u64:string}> := map/new()\nlabels{7u64} = \"α\"\nlabels{9u64} = \"β\"\nlabels{7u64} = \"γ\"\nlabels\n").unwrap();
+fn source_map_insert_adds_keys_and_assignment_updates_existing_numeric_keys() {
+    let output = evaluate("+> map\n~labels<{u64:string}> := map/new()\nlabels = map/insert(labels, 7u64, \"α\")\nlabels = map/insert(labels, 9u64, \"β\")\nlabels{7u64} = \"γ\"\nlabels\n").unwrap();
     let ValueData::Map(map) = output.data() else {
         panic!("expected map")
     };
