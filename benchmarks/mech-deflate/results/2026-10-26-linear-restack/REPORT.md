@@ -47,9 +47,17 @@ A local conflict-resolution script initially mishandled empty sections and resum
 - Pinned-toolchain `cargo fmt --all -- --check`: passed.
 - Native build-analysis layout, warning policy, resident routing and source catalog checks: passed.
 - Source/bytecode fixture equivalence and complete linear ancestry: passed.
-- The selected component, assertion, recursion, transport, word-read and real-buffer test command is running at publication time. It uses `canonical-native-program`, locked offline dependencies, one build job, no incremental/debug information, and warnings as errors. No passing test count is claimed before the terminal receipt.
+- The selected component, assertion, recursion, transport, word-read and real-buffer command passes **143 tests**, with **0 failed, 0 ignored, 127 filtered**, in **358.76 seconds** of test execution. Its code pin is `4ea406e00f66a098b1e36d9b2e8a0b2474ee33d9`; total command time is 834.80 seconds including the initial rebuild from the new worktree. It uses `canonical-native-program`, locked offline dependencies, one build job, no incremental/debug information, and warnings as errors. These are final-stack checks, not separate qualification of every intermediate head.
+- The `canonical-native-program-runtime` library check passes in 15.92 seconds at documentation head `428436517187ab25ce19d6d2bd07cd9b01958aa2`, with identical compiler/runtime source.
 - New linked/AOT, the full feature matrix and remote CI have not been qualified by this restack. CI completion is not awaited.
 
 The cumulative `git diff --check` reports whitespace in historical raw `.log` receipts. Running the same check on the previous code series reproduces exactly those findings. The check excluding raw log receipts passes; raw evidence is kept byte-identical. This is inherited receipt formatting, not an introduced compiler change.
 
 The collector remains incomplete. Its existing fixed-budget witness and larger diagnostic limitations remain visible in #938. This restack does not turn those failures into successes, change their allowances, or establish a full compression timing.
+
+
+## Published native stack
+
+GitHub's registered stack 936 now contains all 24 PRs in order: #934 → #935 → #939 → #913–#927 → #930 → #931 → #932 → #933 → #937 → #938. Every direct base ref and base SHA was independently verified against the preceding head by the GitHub API. The old stack 928, which still included closed #911, was dissolved before retargeting. PR numbers, draft states, code reviews and discussions are retained. The API verification is archived beside this report.
+
+Twenty active CI runs triggered by this restack received successful cancellation requests. #929 and foundation runs were left untouched. This is not passing CI evidence; local executed results are reported above.
