@@ -225,7 +225,8 @@ fn selected_template(
 // IR108 selects checked U32 counter addition through the maintained scalar leaf.
 // IR109 derives original-site last-use candidates for packed buffer calls.
 // The cache is rebuilt from the validated plan, not accepted as image authority.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 109;
+// IR110 adds checked U8 addition and U32 subtraction.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 110;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

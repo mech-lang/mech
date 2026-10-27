@@ -379,3 +379,95 @@ fn narrow_selectors_keep_the_ordinary_indexed_access_fallback() {
         }
     }
 }
+
+#[test]
+fn writer_narrow_arithmetic_preserves_width_paths_failure_and_retry() {
+    // Match-length extra bits subtract U32 values; code lengths add U8 values.
+    for (width, op) in [(32, "-"), (8, "+")] {
+        let maximum = (1u64 << width) - 1;
+        for form in ["scalar", "buffer", "selected"] {
+            let expression = if form == "buffer" {
+                "values[1u64] OP values[2u64]".replace("OP", op)
+            } else {
+                format!("left<u{width}> {op} right<u{width}>")
+            };
+            let source = match form {
+                "buffer" => format!("values := words<[u{width}]>\n{expression}\n"),
+                "selected" => {
+                    format!("(enabled<bool>? | true => {expression} | false => 0u{width})\n")
+                }
+                _ => format!("{expression}\n"),
+            };
+            let (forms, last) = artifacts(&source);
+            for artifact in forms {
+                let jit =
+                    JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+                let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+                let mut output = vec![None; artifact.outputs().len()];
+                for (left, right, enabled) in [
+                    (0, 0, true),
+                    (maximum, 0, true),
+                    (maximum, 1, true),
+                    (0, 1, true),
+                    (maximum, maximum, false),
+                    (0, maximum, false),
+                    (9, 3, true),
+                ] {
+                    let expected = if form == "selected" && !enabled {
+                        Some(0)
+                    } else if op == "+" {
+                        left.checked_add(right).filter(|&sum| sum <= maximum)
+                    } else {
+                        left.checked_sub(right)
+                    };
+                    let mut named = if form == "buffer" {
+                        vec![("words", matrix(width, &[left, right]))]
+                    } else {
+                        vec![("left", word(width, left)), ("right", word(width, right))]
+                    };
+                    if form == "selected" {
+                        named.push(("enabled", Data::Bool(enabled)));
+                    }
+                    let args = inputs(&artifact, &named, &memory);
+                    let aliases = args.clone();
+                    let prior = output.clone();
+                    let retained = memory.used_bytes();
+                    let nodes = memory.retained_snapshot_nodes();
+                    let native = jit.evaluate_into(&args, &mut output, limits(), &memory);
+                    let resident = reference_result(&artifact, &args);
+                    if let Some(expected) = expected {
+                        native.unwrap();
+                        equal(&artifact, &output, &resident.unwrap());
+                        assert_eq!(
+                            output[last]
+                                .as_ref()
+                                .unwrap()
+                                .canonical_data_draft()
+                                .unwrap(),
+                            word(width, expected)
+                        );
+                    } else {
+                        assert!(format!("{:?}", native.unwrap_err()).contains("Arithmetic"));
+                        assert!(resident.unwrap_err().contains("Arithmetic"));
+                        assert_eq!(memory.used_bytes(), retained);
+                        assert_eq!(memory.retained_snapshot_nodes(), nodes);
+                        assert!(output.iter().zip(&prior).all(|(value, old)| {
+                            value
+                                .as_ref()
+                                .unwrap()
+                                .shares_frozen_storage(old.as_ref().unwrap())
+                        }));
+                    }
+                    assert!(
+                        args.iter()
+                            .zip(&aliases)
+                            .all(|(value, alias)| value.shares_frozen_storage(alias))
+                    );
+                }
+                drop(output);
+                assert_eq!(memory.used_bytes(), 0);
+                assert_eq!(memory.retained_snapshot_nodes(), 0);
+            }
+        }
+    }
+}

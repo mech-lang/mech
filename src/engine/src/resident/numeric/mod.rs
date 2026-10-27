@@ -3411,17 +3411,26 @@ fn bind_snapshot_numeric_binary(
     } else {
         kernel
     };
-    // The maintained U32 leaf checks at the counter's own width. Certify only
-    // this exact scalar schema; matrices and other arithmetic keep their paths.
+    // Certify the exact checked widths needed by counters and code lengths.
+    // The certificate still rejects non-scalar layouts and mismatched inputs.
     #[cfg(any(feature = "convert", feature = "native-artifact"))]
-    if arithmetic == SemanticArithmetic::Add
-        && output_element == &SchemaBody::UnsignedInteger(IntegerWidth::W32)
     {
-        return Ok(super::native_semantics::certify(
-            request,
-            kernel,
-            super::native_semantics::NativeScalarOp::U32Add,
-        ));
+        use super::native_semantics::NativeScalarOp;
+        let narrow = match (output_element, arithmetic) {
+            (SchemaBody::UnsignedInteger(IntegerWidth::W32), SemanticArithmetic::Add) => {
+                Some(NativeScalarOp::U32Add)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W32), SemanticArithmetic::Subtract) => {
+                Some(NativeScalarOp::U32Sub)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W8), SemanticArithmetic::Add) => {
+                Some(NativeScalarOp::U8Add)
+            }
+            _ => None,
+        };
+        if let Some(op) = narrow {
+            return Ok(super::native_semantics::certify(request, kernel, op));
+        }
     }
     let op = match (
         output_element == &SchemaBody::SignedInteger(IntegerWidth::W64),

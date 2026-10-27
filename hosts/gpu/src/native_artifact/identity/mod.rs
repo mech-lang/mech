@@ -8,8 +8,8 @@ use transcript::{bytes, scalar_type as ty, scalar_value, word};
 
 /// Fixed exported data size for the build-owned entry pairing record.
 pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
-// Exact-width checked U32 addition joins the unsigned scalar vocabulary.
-pub const NATIVE_TYPED_IR_VERSION: u64 = 8;
+// Exact-width checked U8 addition and U32 subtraction join the scalar vocabulary.
+pub const NATIVE_TYPED_IR_VERSION: u64 = 9;
 pub const NATIVE_WORK_POLICY_VERSION: u64 = 1;
 const MAGIC: &[u8; 16] = b"MECHNATIVEOBJv1\0";
 
@@ -206,6 +206,8 @@ pub(in crate::native_artifact) fn op_tag(op: NativeScalarOp) -> u8 {
         NativeScalarOp::U64WrappingSub => 57,
         NativeScalarOp::U64WrappingMul => 58,
         NativeScalarOp::U32Add => 89,
+        NativeScalarOp::U32Sub => 90,
+        NativeScalarOp::U8Add => 91,
         NativeScalarOp::U64Add => 1,
         NativeScalarOp::U64Sub => 2,
         NativeScalarOp::U64Mul => 3,

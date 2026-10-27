@@ -143,6 +143,12 @@ fn linked_record_matrix_constructor_and_update_restore_and_recover() {
     linked_assertion_retry(source, ValueDataDraft::U64);
 }
 
+#[test]
+fn linked_writer_narrow_arithmetic_restores_and_recovers() {
+    let source = "checked(n<u32>) => (out<u64>) :=\n  positive! := n > 0u32\n  remaining := n - 1u32\n  width<u8> := n\n  extended := width + 1u8\n  wide<u64> := extended\n  left<u64> := remaining\n  nwide<u64> := n\n  out := 12u64 / (left + wide - nwide).\nchecked(input<u32>)\n";
+    linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
+}
+
 fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
     let temporary = tempfile::tempdir().unwrap();
     let directory = temporary.path();
