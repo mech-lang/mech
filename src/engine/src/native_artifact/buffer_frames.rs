@@ -96,6 +96,13 @@ fn fields(plan: &Plan, value: Value) -> Option<usize> {
             {
                 buffer = true
             }
+            // A fixed aggregate matrix remains an admitted immutable Value.
+            // It is not a packed buffer, but must not force sibling buffers
+            // through canonical snapshot packing and discard their capacity.
+            SchemaBody::Matrix {
+                element,
+                dimensions,
+            } if dimensions.len() == 2 && crate::is_control_fixed_aggregate_element(element) => {}
             _ => return None,
         }
     }

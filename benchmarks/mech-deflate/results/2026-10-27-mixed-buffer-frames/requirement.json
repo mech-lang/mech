@@ -1,0 +1,34 @@
+{
+  "base": "88605b57230b5a76c36f58f3977b3261fdbe47c8",
+  "operation": "Carry the existing output buffer and List(Sequence) through the write_sequences loop; clear and reuse the same output reservation",
+  "blocking_reference": "Pinned 671077457ff7ef3a3d44caf715a3fc595addf379 BlockOut.roc:365-488, level-12 all-literal path",
+  "reproducer": "writer-mixed-frame-repro.mec",
+  "observed": {
+    "capacities_requested": [
+      512,
+      6633832
+    ],
+    "capacities_retained": [
+      64,
+      64
+    ],
+    "allocation_requests": [
+      11699,
+      11699
+    ],
+    "allocated_bytes": [
+      883047,
+      7516367
+    ],
+    "resource_denial": null
+  },
+  "suspected_path": "native_artifact/buffer_frames.rs fields rejects a fixed-record matrix leaf in the argument tuple; generic snapshot frame loses sibling buffer spare capacity",
+  "next_change": "Qualify fixed-record/tuple matrix leaves as admitted immutable Values in private pack/copy/project frames, preserving shape closure and existing ownership/alias validation; no new source representation",
+  "acceptance": [
+    "Minimal witness retains 512 and 6633832 capacities; equal warmed allocation scaling is exactly one initial payload",
+    "Original/decoded, aliases, selected failure then retry, zero memory after drop",
+    "Full sequence writer byte/bit-state agreement unchanged for 14 cases",
+    "Internal writer/clear/append capacity and allocation evidence for all cases",
+    "Existing record ownership, native frame architecture checks and linked execution"
+  ]
+}

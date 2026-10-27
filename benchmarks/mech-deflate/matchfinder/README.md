@@ -1,5 +1,30 @@
 # DEFLATE binary-tree match finder
 
+
+## Mixed record-list and buffer frames
+
+The sequence writer carries a byte output buffer alongside a list of fixed
+sequence records. At compiler base `88605b57230b5a76c36f58f3977b3261fdbe47c8`,
+that combination fell back to canonical snapshot packing: a reservation of
+6,633,832 bytes became 64 after return, clear, and append. The minimal witness
+and unchanged-limit receipts are in
+[the mixed-frame evidence directory](../results/2026-10-27-mixed-buffer-frames/).
+
+Private frame eligibility now accepts an immutable matrix of fixed record or
+tuple elements beside an ordinary unsigned buffer. Existing ownership lanes,
+turn lifetime checks, and connected-component eligibility still apply. The
+aggregate matrix itself is not classified as a packed word buffer. Native IR
+114 prevents reuse of images planned with the former eligibility rules.
+
+Original and decoded execution retain exactly the requested 512 or 6,633,832
+bytes. After equal metadata warmup, both sizes request 5,842 allocations; their
+allocated-byte difference is exactly the reservation difference, 6,633,320.
+The regression checks aliases, failure after a previous publication, retry,
+cleanup, and a zero cloned-byte allowance. The resident comparison uses 512:
+the full reservation exceeds its unchanged temporary-byte admission limit
+(33,171,230 required versus 16,777,216 allowed). This is not a full compression
+measurement.
+
 ## Record argument checkpoint: 2026-10-27
 
 Fixed record/tuple elements can now cross turn-shaped matrix argument and capture

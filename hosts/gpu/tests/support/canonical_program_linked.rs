@@ -167,7 +167,27 @@ fn linked_recursive_record_matrix_arguments_preserve_publication_and_recover() {
     linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
 }
 
+#[test]
+fn linked_mixed_record_buffer_frames_preserve_publication_and_recover() {
+    let source = "+> sequence\n<entry> := <{length<u32> offset<u16>}>\nwalk(bytes<[u8]>, entries<[entry]>, left<u64>) => (out<{bytes<[u8]> length<u32>}>) :=\n  current := entries[1u64]\n  positive! := current.length > 0u32\n  next := ((left > 0u64)? | true => sequence/append(bytes, 17u8) | false => bytes)\n  out := ((left > 0u64)? | true => walk(next, entries, left - 1u64) | false => {bytes: next, length: current.length}).\nchecked(n<u32>) => (out<u64>) :=\n  entries := [{length: n, offset: 32768u16}]\n  written := walk(sequence/with-capacity(0u8, 6633832u64), entries, 2u64)\n  length<u64> := written.length\n  out := 12u64 / (length + sequence/length(written.bytes) - 2u64).\nchecked(input<u32>)\n";
+    // The linked executable keeps the real reservation. The resident oracle
+    // uses identical operations with a smaller reservation: reserving the real
+    // buffer exceeds its default work allowance before producing any value.
+    let oracle = source.replace("6633832u64", "512u64");
+    linked_assertion_retry_with_oracle(source, &oracle, |n| {
+        ValueDataDraft::U32(n.try_into().unwrap())
+    });
+}
+
 fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
+    linked_assertion_retry_with_oracle(source, source, input_word);
+}
+
+fn linked_assertion_retry_with_oracle(
+    source: &str,
+    oracle_source: &str,
+    input_word: fn(u64) -> ValueDataDraft,
+) {
     let temporary = tempfile::tempdir().unwrap();
     let directory = temporary.path();
     let artifact = super::artifacts(source).0.into_iter().next().unwrap();
@@ -269,10 +289,15 @@ fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
         String::from_utf8_lossy(&result.stderr)
     );
     assert!(result.stderr.is_empty());
-    let recovery = inputs(&artifact, &[("input", input_word(2))], &memory);
+    let oracle = super::artifacts(oracle_source)
+        .0
+        .into_iter()
+        .next()
+        .unwrap();
+    let recovery = inputs(&oracle, &[("input", input_word(2))], &memory);
     assert_eq!(
         result.stdout,
-        exported(&artifact, &reference_result(&artifact, &recovery).unwrap())
+        exported(&oracle, &reference_result(&oracle, &recovery).unwrap())
     );
     for (relative, expected) in generated.pins() {
         assert_eq!(&pin(&generated.root().join(relative)), expected);

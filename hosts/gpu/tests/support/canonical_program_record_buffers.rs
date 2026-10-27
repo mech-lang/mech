@@ -1077,3 +1077,102 @@ fn recursive_tuple_matrix_arguments_preserve_nested_fixed_elements() {
         assert_eq!(memory.retained_snapshot_nodes(), 0);
     }
 }
+
+#[test]
+fn mixed_record_buffer_frames_keep_capacity_aliases_and_failure_recovery() {
+    let source = "+> sequence\n<entry> := <{length<u32> offset<u16>}>\nappend-byte(bytes<[u8]>, at<u64>) => (out<[u8]>) :=\n  byte<u8> := at\n  out := sequence/append(bytes, byte).\nwalk(bytes<[u8]>, entries<[entry]>, at<u64>, reject-at<u64>) => (out<{bytes<[u8]>}>) :=\n  allowed! := at != reject-at\n  more := at < sequence/length(entries)\n  next := (more? | true => append-byte(bytes, at) | false => bytes)\n  out := (more? | true => walk(next, entries, at + 1u64, reject-at) | false => {bytes: next}).\nwritten := walk(sequence/with-capacity(0u8, capacity<u64>), entries<[entry]>, 0u64, reject-at<u64>)\nsequence/append(sequence/clear(written.bytes), 17u8)\n";
+    let record = Data::Record(
+        [("length", Data::U32(258)), ("offset", Data::U16(32768))]
+            .into_iter()
+            .map(|(name, value)| mech_core::snapshot::NamedValueDraft {
+                name: name.into(),
+                value,
+            })
+            .collect(),
+    );
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let mut measured = Vec::new();
+        for capacity in [512, 6633832] {
+            let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
+            let mut output = vec![None; artifact.outputs().len()];
+            for (count, reject) in [(3, u64::MAX), (3, 1), (2, u64::MAX), (2, 3)] {
+                let entries = Data::Matrix(vec![record.clone(); count].into());
+                let args = inputs(
+                    &artifact,
+                    &[
+                        ("entries", entries.clone()),
+                        ("capacity", Data::U64(capacity)),
+                        ("reject-at", Data::U64(reject)),
+                    ],
+                    &memory,
+                );
+                let aliases = args.clone();
+                let prior = output.clone();
+                let retained = memory.used_bytes();
+                let nodes = memory.retained_snapshot_nodes();
+                let mut policy = limits();
+                policy.library.max_cloned_bytes = Some(0);
+                let result = jit.evaluate_into(&args, &mut output, policy, &memory);
+                // The resident snapshot path exceeds its unchanged 16 MiB temporary
+                // budget at the real reservation. Native zero-copy ownership is
+                // qualified at both sizes; semantic agreement uses the small one.
+                let resident = (capacity == 512).then(|| reference_result(&artifact, &args));
+                if reject == 1 {
+                    if let Some(resident) = resident {
+                        assert!(resident.is_err());
+                    }
+                    let error = format!("{:?}", result.unwrap_err());
+                    assert!(error.contains("Integrity"), "{error}");
+                    assert_eq!(memory.used_bytes(), retained);
+                    assert_eq!(memory.retained_snapshot_nodes(), nodes);
+                    assert!(output.iter().zip(&prior).all(|(a, b)| {
+                        a.as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(b.as_ref().unwrap())
+                    }));
+                } else {
+                    result.unwrap();
+                    if let Some(resident) = resident {
+                        super::equal(&artifact, &output, &resident.unwrap());
+                    }
+                    let value = output.last().unwrap().as_ref().unwrap();
+                    assert_eq!(
+                        value.canonical_data_draft().unwrap(),
+                        Data::Matrix(vec![Data::U8(17)].into())
+                    );
+                    let ValueData::Matrix(matrix) = value.data() else {
+                        panic!()
+                    };
+                    assert_eq!(matrix.unsigned_buffer_capacity(), Some(capacity as usize));
+                    if count == 3 {
+                        let (result, requests, bytes) =
+                            allocation_probe::measured_with_bytes(|| {
+                                jit.evaluate_into(&args, &mut output, policy, &memory)
+                            });
+                        result.unwrap();
+                        measured.push(bytes);
+                        println!(
+                            "{}",
+                            serde_json::json!({"witness":"mixed-record-buffer-frames","capacity":capacity,"requests":requests,"allocated_bytes":bytes})
+                        );
+                    }
+                }
+                assert!(
+                    args.iter()
+                        .zip(&aliases)
+                        .all(|(a, b)| a.shares_frozen_storage(b))
+                );
+                assert!(
+                    aliases
+                        .iter()
+                        .any(|value| value.canonical_data_draft().unwrap() == entries)
+                );
+            }
+            drop(output);
+            assert_eq!(memory.used_bytes(), 0);
+            assert_eq!(memory.retained_snapshot_nodes(), 0);
+        }
+        assert_eq!(measured[1] - measured[0], 6633832 - 512);
+    }
+}
