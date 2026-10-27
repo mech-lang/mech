@@ -1151,7 +1151,10 @@ pub(super) fn validate_match_inner(
 }
 
 /// Structural admission limits shared by source finalization and wire defaults.
-pub const MAX_CONTROL_ARMS: usize = 4_096;
+// A composed program with 4,867 arms fits the existing block, operation,
+// operand, local-slot and depth bounds. Share this finite arm budget with wire
+// preflight; callers can still request a smaller decode budget.
+pub const MAX_CONTROL_ARMS: usize = 8_192;
 pub const MAX_CONTROL_BLOCKS: usize = 8_192;
 pub const MAX_CONTROL_OPERATIONS: usize = 65_536;
 pub const MAX_CONTROL_OPERANDS: usize = 262_144;
@@ -2068,6 +2071,66 @@ mod tests {
             }
         ));
         assert_eq!(count, usize::MAX);
+    }
+
+    #[cfg(feature = "full_source")]
+    #[test]
+    fn composed_boolean_checks_exceed_former_arm_budget_and_round_trip() {
+        use core::fmt::Write;
+        use mech_syntax::document::{
+            AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
+            parse_canonical_document,
+        };
+        let mut source = String::from("checked(flag<bool>, allowed<bool>) => (out<bool>) :=\n");
+        for index in 0..2049 {
+            writeln!(
+                source,
+                "  gate{index}! := (flag? | true => allowed | false => true)"
+            )
+            .unwrap();
+        }
+        source.push_str("  out := allowed.\nchecked(flag<bool>, allowed<bool>)\n");
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(9), Revision(1), source.as_str()).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+        let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
+        let original = crate::CanonicalSourceFrontend
+            .compile_document(&syntax)
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        assert!(original.nodes().iter().any(|node| {
+            let counts = match &node.body {
+                super::super::ExecutableNodeBody::Match(value)
+                | super::super::ExecutableNodeBody::Activation(value) => {
+                    match_counts(value, node.node)
+                }
+                super::super::ExecutableNodeBody::Comprehension(value) => {
+                    control_counts(ControlRef::Comprehension(value), node.node)
+                }
+                super::super::ExecutableNodeBody::Iteration(value) => {
+                    control_counts(ControlRef::Iteration(value), node.node)
+                }
+                _ => return false,
+            };
+            counts.unwrap()[0] > 4096
+        }));
+        let bytes = crate::encode_program_artifact_bytecode_v1(&original).unwrap();
+        let decoded = crate::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert_eq!(original.revision(), decoded.revision());
+        let sections = mech_core::CanonicalArtifactBytecode::from_bytes(&bytes).unwrap();
+        let error = crate::decode_program_artifact_sections_with_limits(
+            &sections.artifact,
+            crate::ArtifactDecodeLimits {
+                max_control_arms: 4096,
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(&error, crate::ArtifactBytecodeError::Json(_)));
+        assert!(format!("{error:?}").contains("control graph item limit"));
     }
 
     #[test]
