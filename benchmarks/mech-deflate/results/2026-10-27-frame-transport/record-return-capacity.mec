@@ -1,0 +1,5 @@
++> sequence
+pack(nodes<[u64]>) => (out<{nodes<[u64]>}>) :=
+  out := {nodes: nodes}.
+returned := pack(sequence/with-capacity(0u64, capacity<u64>))
+sequence/append(returned.nodes, 17u64)

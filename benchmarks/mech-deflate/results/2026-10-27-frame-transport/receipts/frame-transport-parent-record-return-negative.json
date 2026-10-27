@@ -1,0 +1,31 @@
+{
+  "name": "frame-transport-parent-record-return-negative",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "--manifest-path",
+    "/private/tmp/mech-frame-parent-driver/Cargo.toml",
+    "pending_record_return",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-frame-transport-parent",
+  "head": "851507304181308ddbadcd96bec24859e8deeed4",
+  "dirty": "",
+  "exit": 101,
+  "seconds": 58.52425980567932,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/frame-transport-parent-record-return-negative.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

@@ -1,0 +1,249 @@
+extern crate self as mech_stdlib;
+pub fn source_catalog() -> std::sync::Arc<mech_core::FunctionCatalog> { catalog() }
+use mech_core::{ManagedMemoryBudget, ReactiveInstanceId, Value, ValueData, ValueDataDraft,
+    snapshot::{SnapshotValidationContext, ValueDraft}};
+use mech_engine::{CanonicalSourceFrontend, ProgramArtifact, SourceDocumentOutputKind,
+    resident::{ActivationFacts, CapturedValueInput, activate}};
+use mech_gpu::native_artifact::{JitProgramArtifact, NativeExecutionLimits, NativeProgramExecutionLimits};
+use mech_syntax::document::{AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot, parse_canonical_document};
+use std::sync::{Arc, LazyLock};
+#[path = "/private/tmp/mech-deflate-linear-stack/src/core/tests/support/allocation_probe.rs"]
+mod allocation_probe;
+#[global_allocator]
+static ALLOCATOR: allocation_probe::ProbeAllocator = allocation_probe::ProbeAllocator;
+fn catalog() -> Arc<mech_core::FunctionCatalog> {
+    static CATALOG: LazyLock<Arc<mech_core::FunctionCatalog>> = LazyLock::new(|| {
+        let mut b = mech_core::FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_runtime(&mut b).unwrap();
+        mech_engine::install_intrinsic_compiler_runtime(&mut b).unwrap();
+        mech_engine::install_intrinsic_source(&mut b).unwrap();
+        mech_engine::install_intrinsic_resident(&mut b).unwrap();
+        Arc::new(b.build().unwrap())
+    });
+    CATALOG.clone()
+}
+fn artifacts(source: &str) -> ([ProgramArtifact; 2], usize) {
+    artifacts_mode(source, false)
+}
+fn artifacts_mode(source: &str, interactive: bool) -> ([ProgramArtifact; 2], usize) {
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x50524f47), Revision(1), source).unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(
+        parsed.is_strictly_clean(),
+        "{source}: {:?}",
+        parsed.diagnostics
+    );
+    let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
+    let product = if interactive {
+        CanonicalSourceFrontend
+            .compile_interactive_document_with_catalog(&syntax, catalog())
+    } else {
+        CanonicalSourceFrontend
+            .compile_document_with_catalog(&syntax, catalog())
+    }
+    .unwrap();
+    let last = product
+        .document_outputs()
+        .iter()
+        .rev()
+        .find(|out| out.kind == SourceDocumentOutputKind::Program)
+        .unwrap()
+        .output as usize;
+    let original = product.compile_artifact().unwrap();
+    if std::env::var_os("MECH_DUMP_PLAN").is_some() {
+        let plan = mech_engine::native_artifact::lower_native_program_artifact(&original, &catalog()).unwrap();
+        use mech_engine::native_artifact::NativeIterationAction as A;
+        eprintln!("FRAMES {:?}",plan.facts().buffer_frames());
+        for (index, ty) in plan.values().iter().enumerate() { eprintln!("VALUE {index} schema={:?} parameters={} {:?}",ty.schema(),ty.definition().dimension_parameters().len(),ty.definition().body()); }
+        for (index, block) in plan.blocks().iter().enumerate() {
+            match block.action() { A::LibraryCall { template, operands, output } => eprintln!("BLOCK {index} LIB {:?} {operands:?} -> {output:?}",template.primitive()), action => eprintln!("BLOCK {index} {action:?}") }
+            eprintln!("  BRANCH {:?}",block.terminator());
+        }
+        for (index, iteration) in plan.iterations().iter().enumerate() { eprintln!("LOOP {index} {iteration:?}"); }
+        std::process::exit(0);
+    }
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
+    )
+    .unwrap();
+    ([original, decoded], last)
+}
+fn limits() -> NativeProgramExecutionLimits {
+    let mut library = mech_core::TargetMemoryProfile::current_resident_cpu()
+        .unwrap()
+        .limits;
+    // Explicit finite qualification policy, NOT a default-budget/performance claim.
+    library.max_compute_work = Some(134_217_728);
+    library.max_comparison_work = Some(1_000_000);
+    library.max_temporary_bytes = Some(128 * 1024 * 1024);
+    NativeProgramExecutionLimits {
+        execution: NativeExecutionLimits {
+            max_work: 1_000_000_000,
+            ..NativeExecutionLimits::default()
+        },
+        library,
+    }
+}
+fn inputs(
+    artifact: &ProgramArtifact,
+    named: &[(&str, ValueDataDraft)],
+    memory: &ManagedMemoryBudget,
+) -> Vec<Value> {
+    artifact
+        .inputs()
+        .iter()
+        .map(|input| {
+            let name = mech_engine::decode_source_input_name(&input.name).unwrap();
+            let data = named
+                .iter()
+                .find(|(key, _)| *key == name)
+                .unwrap_or_else(|| panic!("missing {name}"))
+                .1
+                .clone();
+            let shape_values = match &data {
+                ValueDataDraft::Matrix(_)
+                    if artifact
+                        .schemas()
+                        .get(input.schema)
+                        .unwrap()
+                        .dimension_parameters()
+                        .is_empty() =>
+                {
+                    Box::new([])
+                }
+                ValueDataDraft::Matrix(values) => mech_core::shape_for_resolved_extents(
+                    artifact.schemas().get(input.schema).unwrap(),
+                    &[1, values.len() as u64],
+                )
+                .unwrap()
+                .parameter_values()
+                .to_vec()
+                .into_boxed_slice(),
+                _ => Box::new([]),
+            };
+            let value = ValueDraft {
+                schema: input.schema,
+                shape_values,
+                data,
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .unwrap();
+            let mut reservation = memory
+                .reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap())
+                .unwrap();
+            value.into_memory_budget(&mut reservation).unwrap()
+        })
+        .collect()
+}
+fn reference(artifact: &ProgramArtifact, args: &[Value]) -> Vec<Value> {
+    reference_result(artifact, args).unwrap()
+}
+fn reference_result(artifact: &ProgramArtifact, args: &[Value]) -> Result<Vec<Value>, String> {
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x50524f47, 0),
+        artifact,
+        &catalog(),
+        &ActivationFacts::default(),
+    )
+    .map_err(|error| format!("{error:?}"))?;
+    let captured = instance
+        .plan
+        .inputs
+        .iter()
+        .map(|input| CapturedValueInput {
+            slot: input.slot,
+            value: &args[artifact
+                .inputs()
+                .iter()
+                .position(|v| v.slot == input.artifact_slot)
+                .unwrap()],
+        })
+        .collect::<Vec<_>>();
+    instance
+        .prepare_turn_values(&captured)
+        .map_err(|error| format!("{error:?}"))?
+        .publish()
+        .map_err(|error| format!("{error:?}"))?;
+    (0..artifact.outputs().len())
+        .map(|index| {
+            instance
+                .copied_output(index)
+                .map_err(|error| format!("{error:?}"))
+        })
+        .collect()
+}
+fn main() {
+    let _ = allocation_probe::measured(|| ());
+    let args = std::env::args().collect::<Vec<_>>();
+    if let Some(path) = args.get(1) {
+        let source = std::fs::read_to_string(path).unwrap();
+        run(&source, args.get(2).map_or(32, |n| n.parse().unwrap()), !args.iter().any(|arg| arg == "--native-only"));
+    } else {
+        for (width, capacity) in [(64, 305257), (8, 6633832)] {
+            let source = format!("+> sequence\nsequence/append(sequence/clear(sequence/append(sequence/reserve(sequence/with-capacity(0u{width}, capacity<u64>), 3u64), 17u{width})), 129u{width})\n");
+            run(&source, 16, true);
+            run(&source, capacity, false);
+        }
+    }
+}
+fn run(source: &str, capacity: u64, check_resident: bool) {
+    let (forms, last) = artifacts(source);
+    for (form, artifact) in forms.into_iter().enumerate() {
+        let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
+        let args = inputs(&artifact, &[("capacity", ValueDataDraft::U64(capacity)), ("count", ValueDataDraft::U64(3)), ("values", ValueDataDraft::Matrix(vec![].into()))], &memory);
+        if check_resident { let r = reference(&artifact, &args); println!("resident={:?}", r[last].canonical_data_draft().unwrap()); }
+        let jit = JitProgramArtifact::compile(&artifact, &catalog()).unwrap();
+        let mut output = vec![None; artifact.outputs().len()];
+        let mut policy = limits();
+        policy.execution.max_work = 1_000_000_000_000;
+        policy.library.max_compute_work = Some(1_000_000_000_000);
+        let start=std::time::Instant::now();
+        let (result, requests, bytes)=allocation_probe::measured_with_bytes(|| jit.evaluate_into(&args,&mut output,policy,&memory));
+        result.unwrap();
+        let elapsed=start.elapsed();
+        let value=output[last].as_ref().unwrap();
+        let ValueData::Matrix(matrix)=value.data() else { panic!("not a matrix") };
+        println!("form={form} input_capacity={capacity} output_capacity={:?} value={:?} elapsed={elapsed:?} allocations={requests} requested_bytes={bytes} retained_bytes={}",matrix.unsigned_buffer_capacity(),value.canonical_data_draft().unwrap(),memory.used_bytes());
+        if !std::env::args().any(|arg| arg == "--observe-capacity") { assert_eq!(matrix.unsigned_buffer_capacity(),Some(capacity as usize)); }
+        drop((args, output));
+        assert_eq!(memory.used_bytes(),0);
+    }
+}
+
+pub fn equal(artifact: &ProgramArtifact, left: &[Option<Value>], right: &[Value]) {
+    assert_eq!(left.len(), right.len());
+    for (index, (left, right)) in left.iter().zip(right).enumerate() {
+        assert!(
+            left.as_ref()
+                .unwrap()
+                .snapshot_eq(artifact.schemas(), right, artifact.schemas())
+                .unwrap(),
+            "output {index}: {left:?} != {right:?}"
+        );
+    }
+}
+#[cfg(test)]
+#[path = "/private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_sequence_capacity.rs"]
+mod sequence_capacity_qualification;
+
+#[cfg(test)]
+#[path = "/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/results/2026-10-27-sequence-operations/pending-recursive-capacity.rs.txt"]
+mod pending_recursive_capacity;
+
+#[cfg(test)]
+#[path = "/private/tmp/mech-sequence-buffer-driver/argument_transport_prefix.rs"]
+mod argument_transport_qualification;
+
+#[cfg(test)]
+#[path = "/private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_buffer_frames.rs"]
+mod buffer_frame_qualification;
+
+#[cfg(test)]
+#[path = "/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/results/2026-10-27-frame-transport/pending-record-return.rs.txt"]
+mod pending_record_return;
+
+#[cfg(test)]
+#[path = "/private/tmp/mech-sequence-buffer-driver/iteration_frame.rs"]
+mod iteration_frame;

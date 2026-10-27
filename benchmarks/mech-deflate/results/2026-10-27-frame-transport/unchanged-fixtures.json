@@ -1,0 +1,300 @@
+{
+  "base": "851507304181308ddbadcd96bec24859e8deeed4",
+  "code_head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+  "files": 73,
+  "all_byte_identical": true,
+  "sha256": [
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-binary-tree-reference.json",
+      "sha256": "2764da110d37216fea21d05e5d1dad75f90dbc4ff7564fd74e3e37ea726519e6"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-binary-tree.mec",
+      "sha256": "dd60cc6210256a75dff97a9df2c3b5f9d073220836a8edc8787422a8ded2518c"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-block-collector.mec",
+      "sha256": "1a16469ff01b349c4bffebfaa63090facc9135a9069a8d8b163578f7f379d5d0"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-block-heuristics.mec",
+      "sha256": "4f4491dc7d100373788bf777e6798fdb03251ae6ea81874be00721910c2c12d8"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-block-loop.mec",
+      "sha256": "c2a35cff5cb4437fc077f68ebd320efe1dbf48e3373697e3bc7a509333c61694"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-block-reference.json",
+      "sha256": "b3e3b92b9704467e2c504d0adfe166fd69520ad9114300675d051067cc26767b"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-collector.mec",
+      "sha256": "6efeaf50c93c8d5abc008c82203a655828cefac06dda2bdfb125764472375075"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-huffman-LICENSES.md",
+      "sha256": "95ffc575765392b4c4f3ded48b0de204df5211e2e9960d0bb4142aeec09c239b"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-huffman-reference.json",
+      "sha256": "78ceedb88f20ac0558d42297580df582c568d24cd5a03be8efb5ecb3a515644a"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-huffman.mec",
+      "sha256": "0c7a3cba4bc06a23962a6f05e004390f3aea5202fff6600e6efe4dbcc120cd59"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-matchfinder-reference.json",
+      "sha256": "24c50fda51186eb7e419c5001e0cc2db05f9e2f1086b38fea9fe5d75c742efbd"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-matchfinder.mec",
+      "sha256": "c0b1504fac74da69953c822597b0b135d363fe76efd96b3a92b5de9931bcba93"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/fannkuch-advance-fsm.mec",
+      "sha256": "97f9c85207de43573c3e4978c76c041762f7b86ad95784adadc753a9861f095a"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/fannkuch-control-baseline.mec",
+      "sha256": "95ce7215c776bdf70117f36578b584815f06a8993d78727327b6774ce113a83f"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/fannkuch-idiomatic.mec",
+      "sha256": "247533ea7f73a161e513bf7f49e45b9add5dfd3c38b538bbb399ee1cf6123093"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/inverse-power.mec",
+      "sha256": "7c28be659650af7e756d571f29c1c6343f90e4da6bbb292eab6e801d6c44fa76"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+      "sha256": "12cadfcd00e25605f190e9d360f7f7bb661be8a02754961055ee5b6dfa84b60f"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/map-owner-binding-state.mec",
+      "sha256": "b3f40fe3951ab0b6205388cca8a3cae173e0c55d16ec229c07c1e1fab870a0d3"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/map-owner-word-state.mec",
+      "sha256": "ca458753859e4764f943a1ec9138b3390b300a0ebce127c8a6d6c4845770123d"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/map-state-two-updates.mec",
+      "sha256": "986d5097f347611ccfbb6034e98c4167ceae06e4a31fa03e58c5511da0a3d73d"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/pair-grid.mec",
+      "sha256": "60e8216d6ce36f4c623e15498eee6f2cfccc759cb7eb0e2acadc897abc54ceae"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/record-bindings.mec",
+      "sha256": "59838d4be853c08aa7290ef1208de930b841120159adfed2b8c3d94344110262"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/record-compact.mec",
+      "sha256": "fed3c747c88b5f6402e37e41a8f1284b763abbdb0b742d857242f6250b043516"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/scalar-grid.mec",
+      "sha256": "67df472bd05815fbe516f3dc82b0a6827feef204f6eb5226466660b6277efeba"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/threshold-map.mec",
+      "sha256": "9a2023e6593f70392fc34c52d1c72343836baa26de715d61df5577596acbea75"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/window-histogram.mec",
+      "sha256": "61887e18656183704269fa020fe945756db22c9c2415f62a175b0937c2819022"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/window-query.mec",
+      "sha256": "8ab28f7e11e6dbd17d97cfd103447b79ad4a24fcefbf951702e16b4dd534b185"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/windows.mec",
+      "sha256": "839335703de26d6650ccb57be91bb0dce84efeb47875a8465d9f4a203ffe50a3"
+    },
+    {
+      "path": "src/engine/tests/fixtures/comprehension-legacy-v1/manifest.json",
+      "sha256": "47dc7998b28745789b627f0757c442c7d0ab33326e13b5f8260a4e78c3f58706"
+    },
+    {
+      "path": "src/engine/tests/fixtures/comprehension-legacy-v1/matrix-nested.mecb",
+      "sha256": "011f60703bebf40051d324515da7d8d9c5eda3890c61a29f090658be9fa9895d"
+    },
+    {
+      "path": "src/engine/tests/fixtures/comprehension-legacy-v1/matrix-preserve-shape.mecb",
+      "sha256": "56b2628821f4b13c8fd0710141e5bf822fc5d7aa81e0f134908b75bb72596a9b"
+    },
+    {
+      "path": "src/engine/tests/fixtures/comprehension-legacy-v1/matrix-scalar.mecb",
+      "sha256": "ffe9794e186f7c960cc536f0f610a9106d72297dc7a3f815e9f6b2d7930c8d53"
+    },
+    {
+      "path": "src/engine/tests/fixtures/comprehension-legacy-v1/set-scalar.mecb",
+      "sha256": "b3019e8aded0957fabb36539f2a0c5cc4608aca00fc597439e289564489372df"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/canonical-composites.mecb",
+      "sha256": "fc1aa5f79f3f4ad48de5ac73faa5e73564e0e231cbb83300461a8262bfcb8071"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/canonical-matrices.mecb",
+      "sha256": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/canonical-scalars.mecb",
+      "sha256": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/cli-stdout.mecb",
+      "sha256": "ae2c45dbf3909a19a32104461189b0473ce8e086b4ada415a53d72b37c55ef63"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/console.mecb",
+      "sha256": "d98e975ec157e86d4864cc4c1438d8f3a1a308373f99c5e7cbbb15a23fc1135e"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/dynamic-matrix-add-f64.mecb",
+      "sha256": "71a1615e89fb99ee3bd75f67403b2efa343490c0ab103e9910c918958643ea10"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/fixed-matrix-add-f64.mecb",
+      "sha256": "1ed732381c296f4976910279ee2ab1669242df03a82c8379f3738c552a3b289f"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/literal-f64.mecb",
+      "sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/manifest.json",
+      "sha256": "fedc28adf00c1017437f144ef1d1321f6518baa666544cf043fe62779f1ddb3e"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/named-module-operation.mecb",
+      "sha256": "5c3479f03426abfdde3da24fbc3a30930b6bf2fbe7831958a8c89d12190d9e5c"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/quaternary.mecb",
+      "sha256": "42d67c147771a84043fe8042c3774003ea6af2ba9c5df50a9c5945ee04f95343"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/robot-arm.mecb",
+      "sha256": "720259f477d3013a9e91d4b38894155afa81fbf70c6fedfceb516aa589f2b1f1"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/scalar-add-f64.mecb",
+      "sha256": "8365f40db18b4aa9de3c940a6a70b3012affd7921ff6bb3b7ef4f4c70c94a2ba"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/scene.mecb",
+      "sha256": "3d45533ad0c3d20edbacf8df2063fd6a2a9047096935cfd710b9633a5ee93bc2"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/cli-stdout.mec",
+      "sha256": "41077ad6f64ee24bf4fd2318d1ddf3257500bd8e761332246c50657b5f7afea3"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/console.mec",
+      "sha256": "b98ad529c82059ce76aa56cb31f158f62a6cb1bd28df2ba24c47b7789d1432a8"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/dynamic-matrix-add-f64.mec",
+      "sha256": "1499dba3c6472e9e624fa8187f84634b519b45b06f03db4e4a1e83b96ca62305"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/fixed-matrix-add-f64.mec",
+      "sha256": "dede682c7612014381e1fd3f85ce39e235dbdca9e12ffe689fff6a5009d77d8f"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/literal-f64.mec",
+      "sha256": "53519e43db90bd08ff4459fd23fc944324ffb7d8f542ccc0b44257afea2ef525"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/named-module-operation.mec",
+      "sha256": "1692d77fc4b7241e43d6222d3ae2a26532085937fa0746b5572677438f88b835"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/quaternary.mec",
+      "sha256": "d5150defed76d3dad901f1453510c854ac6df1d9cbdfb255db0b4f4320b9b4ef"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/robot-arm.mec",
+      "sha256": "c3569d4b433028b2142dd70c92ee36843a890a67d19d519f640a0ec73b3b6e46"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/scalar-add.mec",
+      "sha256": "f7f171b8ee6611dd107d06fdd0cb2bb123132b88f155630921d5346ae7fcc315"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/scene.mec",
+      "sha256": "c60e1bc960e15cd4f66163bffc2275fb79835c397be4499ab7caf2530eef3abd"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/string.mec",
+      "sha256": "4adfcfc310efedbb3906489cfd253abfe8257a759a080bb4c11c1832a23c2a49"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/structural-match.mec",
+      "sha256": "70f64fa1c535a9ff7ff861851c36e9c64bac58410bc55519ba9152f52296ef8f"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/synthetic-live-read.mec",
+      "sha256": "04875485b68ccba8ddd11964a5bf2eda817ae7354c0688abc7fe7769f559f435"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/ternary.mec",
+      "sha256": "4c5b8aef4e5337bb7f2ee174a51212a3b4ebf2a5c7d369d8abc67e1dc6373b49"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/time.mec",
+      "sha256": "e3ca776da87076d7205f3d32653f3a7c377d5745ce824f7e4cde2816bdfb73d0"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/timer.mec",
+      "sha256": "aa459ce9a6e8e6aba4588d29e05f88105b518fb5f69aad02ba21c83719e33ef9"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/unary.mec",
+      "sha256": "b8274cdc41467395599227a51b1d93a498b2f24a308c431b9d5b1c922d02fe34"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/sources/variadic-horzcat-f64.mec",
+      "sha256": "3949a6a12f635ac29f88e0ac4e975b83b89f7cd500d9789506ba91465948a683"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/string.mecb",
+      "sha256": "da2a2857ce811ed6cb2775e314fbc9dbd3815266b47d5fc09c80e364eca3d050"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/structural-match.mecb",
+      "sha256": "8fb86cbd1bfcfb71f7777c3d2f9cd06161fb0c018209114e2bd00f95e2c64063"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/synthetic-live-read.mecb",
+      "sha256": "a3e43cd42f1671d8d59eb66e8718819481d65f2e62dc684eb84b775649cc95cd"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/ternary.mecb",
+      "sha256": "e26845e0f0f452b9ab323b013a7af3c4ba2c54e979ec7420c8dffc96b352e001"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/time.mecb",
+      "sha256": "6147e49b16e2a582dc52e9323580d3487af9284943f490c289fff36dd2172c98"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/timer.mecb",
+      "sha256": "300dd1be8aca6fbea087329cf073b8b70ebb6954e8eef7ef3ec6c72e2e629d20"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/unary.mecb",
+      "sha256": "aa114a2c3d4b47242dc8859be9cd8d3ad8b92f272be30a9c960642ee983aef23"
+    },
+    {
+      "path": "tests/architecture/bytecode-v1/variadic-horzcat-f64.mecb",
+      "sha256": "eda339f98f7a133fdb2d8049d74d5e81d494d8a85209a43a8db02f39aef1485a"
+    }
+  ]
+}

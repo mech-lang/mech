@@ -1,0 +1,31 @@
+{
+  "name": "frame-transport-real-argument-plan",
+  "command": [
+    "env",
+    "MECH_DUMP_PLAN=1",
+    "cargo",
+    "run",
+    "--locked",
+    "--offline",
+    "-j1",
+    "--manifest-path",
+    "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+    "--",
+    "/private/tmp/mech-sequence-buffer-driver/recursive-real-arguments.mec"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "851507304181308ddbadcd96bec24859e8deeed4",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 1.0540452003479004,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/frame-transport-real-argument-plan.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

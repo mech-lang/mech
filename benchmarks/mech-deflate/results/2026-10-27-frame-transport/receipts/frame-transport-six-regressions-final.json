@@ -1,0 +1,31 @@
+{
+  "name": "frame-transport-six-regressions-final",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "--manifest-path",
+    "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+    "buffer_frame_qualification",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "851507304181308ddbadcd96bec24859e8deeed4",
+  "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/image/wire/mod.rs\n M hosts/gpu/src/native_artifact/program/prepare/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/session/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/state.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M hosts/gpu/tests/support/canonical_program_linked.rs\n M src/engine/src/native_artifact/mod.rs\n M src/engine/src/resident/general/native_collection_prepared.rs\n?? hosts/gpu/src/native_artifact/program/runtime/buffer_frames.rs\n?? hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n?? hosts/gpu/tests/support/canonical_program_buffer_frames.rs\n?? src/engine/src/native_artifact/buffer_frames.rs\n?? src/engine/src/resident/general/native_collection_buffer_frames.rs\n",
+  "exit": 0,
+  "seconds": 46.24667000770569,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/frame-transport-six-regressions-final.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

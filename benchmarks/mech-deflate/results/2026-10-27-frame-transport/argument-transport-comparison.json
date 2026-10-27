@@ -1,0 +1,186 @@
+{
+  "before_compiler": "aad1f6528dd49815be930bf42f044296968fa38e",
+  "after_compiler": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+  "source_test": "hosts/gpu/tests/support/canonical_program_argument_transport.rs",
+  "source_unchanged": true,
+  "before": [
+    {
+      "allocation_requests": 5509,
+      "allowed": true,
+      "artifact": "original",
+      "cache_words": 31,
+      "elapsed_seconds": 0.002157917,
+      "requested_allocation_bytes": 507339,
+      "result": "Ok(NativeProgramExecutionReport { work: 37419974, comparison_work: 320, visits: 53, transport_bytes: 4888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "table_entries": 16,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 5508,
+      "allowed": true,
+      "artifact": "original",
+      "cache_words": 1500513,
+      "elapsed_seconds": 0.051525167,
+      "requested_allocation_bytes": 26611790,
+      "result": "Ok(NativeProgramExecutionReport { work: 311531822, comparison_work: 13052688, visits: 53, transport_bytes: 4888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "table_entries": 262144,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 2802,
+      "allowed": false,
+      "artifact": "original",
+      "cache_words": 1500513,
+      "elapsed_seconds": 0.025022916,
+      "requested_allocation_bytes": 13315186,
+      "result": "Err(Control(Integrity { origin: NativeMatchOrigin { node: NodeId(1), block: Some(0), local: Some(0) } }))",
+      "table_entries": 262144,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 5508,
+      "allowed": true,
+      "artifact": "original",
+      "cache_words": 1500513,
+      "elapsed_seconds": 0.0486695,
+      "requested_allocation_bytes": 26611790,
+      "result": "Ok(NativeProgramExecutionReport { work: 311531822, comparison_work: 13052688, visits: 53, transport_bytes: 4888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "table_entries": 262144,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 5508,
+      "allowed": true,
+      "artifact": "decoded",
+      "cache_words": 31,
+      "elapsed_seconds": 0.002003959,
+      "requested_allocation_bytes": 507275,
+      "result": "Ok(NativeProgramExecutionReport { work: 37419974, comparison_work: 320, visits: 53, transport_bytes: 4888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "table_entries": 16,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 5508,
+      "allowed": true,
+      "artifact": "decoded",
+      "cache_words": 1500513,
+      "elapsed_seconds": 0.048901709,
+      "requested_allocation_bytes": 26611790,
+      "result": "Ok(NativeProgramExecutionReport { work: 311531822, comparison_work: 13052688, visits: 53, transport_bytes: 4888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "table_entries": 262144,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 2802,
+      "allowed": false,
+      "artifact": "decoded",
+      "cache_words": 1500513,
+      "elapsed_seconds": 0.023869084,
+      "requested_allocation_bytes": 13315186,
+      "result": "Err(Control(Integrity { origin: NativeMatchOrigin { node: NodeId(1), block: Some(0), local: Some(0) } }))",
+      "table_entries": 262144,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 5508,
+      "allowed": true,
+      "artifact": "decoded",
+      "cache_words": 1500513,
+      "elapsed_seconds": 0.049474917,
+      "requested_allocation_bytes": 26611790,
+      "result": "Ok(NativeProgramExecutionReport { work: 311531822, comparison_work: 13052688, visits: 53, transport_bytes: 4888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "table_entries": 262144,
+      "witness": "recursive-word-arguments"
+    }
+  ],
+  "after": [
+    {
+      "allocation_requests": 409,
+      "allowed": true,
+      "artifact": "original",
+      "cache_words": 31,
+      "elapsed_seconds": 0.000512084,
+      "requested_allocation_bytes": 41840,
+      "result": "Ok(NativeProgramExecutionReport { work: 29664676, comparison_work: 2, visits: 53, transport_bytes: 6016, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "table_entries": 16,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 409,
+      "allowed": true,
+      "artifact": "original",
+      "cache_words": 1500513,
+      "elapsed_seconds": 0.000481625,
+      "requested_allocation_bytes": 41619,
+      "result": "Ok(NativeProgramExecutionReport { work: 107991004, comparison_work: 2, visits: 53, transport_bytes: 6016, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "table_entries": 262144,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 298,
+      "allowed": false,
+      "artifact": "original",
+      "cache_words": 1500513,
+      "elapsed_seconds": 0.000369708,
+      "requested_allocation_bytes": 35593,
+      "result": "Err(Control(Integrity { origin: NativeMatchOrigin { node: NodeId(1), block: Some(0), local: Some(0) } }))",
+      "table_entries": 262144,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 409,
+      "allowed": true,
+      "artifact": "original",
+      "cache_words": 1500513,
+      "elapsed_seconds": 0.000472667,
+      "requested_allocation_bytes": 41619,
+      "result": "Ok(NativeProgramExecutionReport { work: 107991004, comparison_work: 2, visits: 53, transport_bytes: 6016, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "table_entries": 262144,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 409,
+      "allowed": true,
+      "artifact": "decoded",
+      "cache_words": 31,
+      "elapsed_seconds": 0.000372875,
+      "requested_allocation_bytes": 41840,
+      "result": "Ok(NativeProgramExecutionReport { work: 29664676, comparison_work: 2, visits: 53, transport_bytes: 6016, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "table_entries": 16,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 409,
+      "allowed": true,
+      "artifact": "decoded",
+      "cache_words": 1500513,
+      "elapsed_seconds": 0.000499542,
+      "requested_allocation_bytes": 41619,
+      "result": "Ok(NativeProgramExecutionReport { work: 107991004, comparison_work: 2, visits: 53, transport_bytes: 6016, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "table_entries": 262144,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 298,
+      "allowed": false,
+      "artifact": "decoded",
+      "cache_words": 1500513,
+      "elapsed_seconds": 0.000367125,
+      "requested_allocation_bytes": 35593,
+      "result": "Err(Control(Integrity { origin: NativeMatchOrigin { node: NodeId(1), block: Some(0), local: Some(0) } }))",
+      "table_entries": 262144,
+      "witness": "recursive-word-arguments"
+    },
+    {
+      "allocation_requests": 409,
+      "allowed": true,
+      "artifact": "decoded",
+      "cache_words": 1500513,
+      "elapsed_seconds": 0.000451959,
+      "requested_allocation_bytes": 41619,
+      "result": "Ok(NativeProgramExecutionReport { work: 107991004, comparison_work: 2, visits: 53, transport_bytes: 6016, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "table_entries": 262144,
+      "witness": "recursive-word-arguments"
+    }
+  ]
+}
